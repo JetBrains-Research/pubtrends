@@ -1,0 +1,64 @@
+buildscript {
+    ext.kotlin_version = '1.2.+'
+
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.1'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+apply plugin: 'base'
+
+subprojects {
+    repositories {
+        jcenter()
+        maven { url 'https://jitpack.io' }
+    }
+
+    apply plugin: 'kotlin'
+
+    sourceCompatibility = 1.8
+    targetCompatibility = sourceCompatibility
+    compileKotlin { kotlinOptions.jvmTarget = sourceCompatibility }
+    compileTestKotlin { kotlinOptions.jvmTarget = sourceCompatibility }
+
+    dependencies {
+        compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+        compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+        compile 'org.jetbrains.kotlinx:kotlinx-support-jdk8:0.1'
+        compile 'log4j:log4j:1.2.+'
+
+        testCompile 'junit:junit:4.+'
+        testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
+    }
+
+    tasks.withType(Test) {
+        // Continue execution even if tests for some of the sub-projects failed.
+        ignoreFailures = true
+        maxParallelForks = Runtime.runtime.availableProcessors()
+        maxHeapSize = "1024m"
+
+        testLogging.showStandardStreams = true
+    }
+
+    test {
+        include '**/*Test.class'
+    }
+}
+
+project(':crawler') {
+    dependencies {
+        compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+        compile "org.jetbrains.exposed:exposed:0.10.5"
+        compile "org.postgresql:postgresql:42.2.2"
+        compile "commons-net:commons-net:3.6"
+    }
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '3.1'
+}
