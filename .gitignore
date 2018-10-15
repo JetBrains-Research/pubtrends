@@ -2,6 +2,8 @@
 *.iml
 
 build
+data
+*/out
 
 .gradle
 
