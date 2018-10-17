@@ -40,24 +40,24 @@ class PubmedCrawler {
         }
     }
 
-    fun parse(name : String) {
-        val spf = SAXParserFactory.newInstance()
-        spf.isNamespaceAware = true
-
-        val saxParser = spf.newSAXParser()
-        val pubmedXMLHandler = PubmedXMLHandler()
-        val xmlReader = saxParser.xmlReader
-        xmlReader.contentHandler = pubmedXMLHandler
-        try {
-            xmlReader.parse(InputSource(File(name).inputStream()))
-        } catch (e: SAXException) {
-            e.printStackTrace()
-        }
-
-        for (tag in pubmedXMLHandler.tags.keys) {
-            println("$tag ${pubmedXMLHandler.tags[tag]}")
-        }
-    }
+//    fun parse(name : String) {
+//        val spf = SAXParserFactory.newInstance()
+//        spf.isNamespaceAware = true
+//
+//        val saxParser = spf.newSAXParser()
+//        val pubmedXMLHandler = PubmedXMLHandler()
+//        val xmlReader = saxParser.xmlReader
+//        xmlReader.contentHandler = pubmedXMLHandler
+//        try {
+//            xmlReader.parse(InputSource(File(name).inputStream()))
+//        } catch (e: SAXException) {
+//            e.printStackTrace()
+//        }
+//
+//        for (tag in pubmedXMLHandler.tags.keys) {
+//            println("$tag ${pubmedXMLHandler.tags[tag]}")
+//        }
+//    }
 
     fun update() {
         // TODO: to config
