@@ -3,13 +3,25 @@
 
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level - %msg%n"/>
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %msg%n"/>
+        </Console>
+
+        <Console name="Crawler" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] Crawler: %-5level %msg%n"/>
+        </Console>
+
+        <Console name="Parser" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] Parser: %-5level %msg%n"/>
         </Console>
     </Appenders>
 
     <Loggers>
         <Logger name="PubmedCrawler" level="debug" additivity="false">
-            <AppenderRef ref="Console"/>
+            <AppenderRef ref="Crawler"/>
+        </Logger>
+
+        <Logger name="PubmedXMLHandler" level="debug" additivity="false">
+            <AppenderRef ref="Parser"/>
         </Logger>
 
         <!-- Root Logger -->

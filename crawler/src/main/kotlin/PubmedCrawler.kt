@@ -1,10 +1,26 @@
 import org.apache.logging.log4j.LogManager
+import org.xml.sax.InputSource
+import org.xml.sax.SAXException
 import java.io.*
 import java.util.zip.GZIPInputStream
+import javax.xml.parsers.SAXParserFactory
 
 class PubmedCrawler {
     private val logger = LogManager.getLogger(PubmedCrawler::class)
     private val client = PubmedFTPClient()
+    private val spf = SAXParserFactory.newInstance()
+
+    init {
+        spf.isNamespaceAware = true
+    }
+
+    private val saxParser = spf.newSAXParser()
+    private val pubmedXMLHandler = PubmedXMLHandler()
+    private val xmlReader = saxParser.xmlReader
+
+    init {
+        xmlReader.contentHandler = pubmedXMLHandler
+    }
 
     fun update() {
         // TODO: to config
@@ -53,13 +69,29 @@ class PubmedCrawler {
                 false -> client.downloadUpdateFile(it, "data/")
             }
 
-            var overallSuccess = false
+            var overallSuccess = true
             if (downloadSuccess) {
                 logger.info("$it: Unpacking...")
-                overallSuccess = unpack(it)
+                overallSuccess = overallSuccess && unpack(it)
+            }
+
+            if (overallSuccess) {
+                logger.info("$it: Parsing...")
+                overallSuccess = overallSuccess && parse(it)
             }
 
             logger.info("$it: ${if (overallSuccess) "SUCCESS" else "FAILURE"}")
+        }
+    }
+
+    private fun parse(name : String) : Boolean {
+        try {
+            val localName = "data/${name.substringBefore(".gz")}"
+            xmlReader.parse(InputSource(File(localName).inputStream()))
+            return true
+        } catch (e: SAXException) {
+            e.printStackTrace()
+            return false
         }
     }
 }
