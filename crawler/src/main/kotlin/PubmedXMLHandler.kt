@@ -17,6 +17,8 @@ class PubmedXMLHandler(private val limit : Int = 10) : DefaultHandler() {
     private var fullName = String()
     private var currentArticle = PubmedArticle(0)
 
+    val articles : MutableList<PubmedArticle> = mutableListOf()
+
     companion object {
         const val articleTag = "PubmedArticleSet/PubmedArticle"
         private const val medlineCitationTag = "PubmedArticleSet/PubmedArticle/MedlineCitation"
@@ -43,6 +45,10 @@ class PubmedXMLHandler(private val limit : Int = 10) : DefaultHandler() {
 
     override fun startDocument() {
         articleCounter = 0
+        articles.clear()
+
+        citationCounter = 0
+        keywordCounter = 0
 
         abstractState = false
         keywordState = false
@@ -107,8 +113,13 @@ class PubmedXMLHandler(private val limit : Int = 10) : DefaultHandler() {
                 articleCounter++
                 citationCounter += currentArticle.citationList.size
                 keywordCounter += currentArticle.keywordList.size
-//                TODO: store data
-//                logger.info(currentArticle.toList().joinToString(separator = ","))
+                articles.add(currentArticle)
+
+                logger.debug("Article ${currentArticle.pmid}")
+                currentArticle.description().forEach {
+                    logger.debug("${it.key}: ${it.value}")
+                }
+
                 if ((limit > 0) && (articleCounter == limit)) {
                     skip = true
                 }

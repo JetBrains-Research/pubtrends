@@ -8,6 +8,7 @@ import javax.xml.parsers.SAXParserFactory
 class PubmedCrawler {
     private val logger = LogManager.getLogger(PubmedCrawler::class)
     private val client = PubmedFTPClient()
+    private val dbHandler = DatabaseHandler("biolabs", "pubtrends")
     private val spf = SAXParserFactory.newInstance()
 
     init {
@@ -35,7 +36,7 @@ class PubmedCrawler {
         downloadFiles(updateFiles, isBaseline = false)
     }
 
-    fun unpack(archiveName : String) : Boolean {
+    private fun unpack(archiveName : String) : Boolean {
         val archive = File("data/$archiveName")
         val originalName = "data/${archiveName.substringBefore(".gz")}"
         val bufferSize = 1024
@@ -78,6 +79,13 @@ class PubmedCrawler {
             if (overallSuccess) {
                 logger.info("$it: Parsing...")
                 overallSuccess = overallSuccess && parse(it)
+            }
+
+            if (overallSuccess) {
+                logger.info("$it: Storing...")
+                pubmedXMLHandler.articles.forEach {article ->
+                    dbHandler.store(article)
+                }
             }
 
             logger.info("$it: ${if (overallSuccess) "SUCCESS" else "FAILURE"}")
