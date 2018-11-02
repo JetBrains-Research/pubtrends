@@ -2,13 +2,14 @@ import org.apache.logging.log4j.LogManager
 import org.xml.sax.InputSource
 import org.xml.sax.SAXException
 import java.io.*
+import java.sql.Timestamp
 import java.util.zip.GZIPInputStream
 import javax.xml.parsers.SAXParserFactory
 
 class PubmedCrawler {
     private val logger = LogManager.getLogger(PubmedCrawler::class)
     private val client = PubmedFTPClient()
-    private val dbHandler = DatabaseHandler("biolabs", "pubtrends")
+    private val dbHandler = DatabaseHandler("biolabs", "pubtrends", reset = true)
     private val spf = SAXParserFactory.newInstance()
 
     init {
@@ -23,10 +24,16 @@ class PubmedCrawler {
         xmlReader.contentHandler = pubmedXMLHandler
     }
 
+    private val lastCheck = dbHandler.lastModification
+//    private val lastCheck : Long = 1539513468000
+
+    init {
+        if (lastCheck.compareTo(0) != 0) {
+            logger.info("Last modification: ${Timestamp(lastCheck).toLocalDateTime()}")
+        }
+    }
+
     fun update() {
-        // TODO: to config
-        // Timestamp (ms) of 14th Oct 18 ~10:30 to download 8 new XML
-        val lastCheck : Long = 1539513468000
         val files = client.fetch(lastCheck)
 
         val baselineFiles = files.first
@@ -88,6 +95,7 @@ class PubmedCrawler {
                 }
             }
 
+            File(it.substringBefore(".gz")).delete()
             logger.info("$it: ${if (overallSuccess) "SUCCESS" else "FAILURE"}")
         }
     }
@@ -96,10 +104,10 @@ class PubmedCrawler {
         try {
             val localName = "data/${name.substringBefore(".gz")}"
             xmlReader.parse(InputSource(File(localName).inputStream()))
-            return true
         } catch (e: SAXException) {
             e.printStackTrace()
-            return false
         }
+
+        return true
     }
 }
