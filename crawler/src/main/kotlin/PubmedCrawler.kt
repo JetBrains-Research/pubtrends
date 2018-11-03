@@ -8,7 +8,7 @@ import javax.xml.parsers.SAXParserFactory
 
 class PubmedCrawler {
     private val logger = LogManager.getLogger(PubmedCrawler::class)
-    private val client = PubmedFTPClient()
+    private val client = PubmedFTPHandler()
     private val dbHandler = DatabaseHandler("biolabs", "pubtrends", reset = true)
     private val spf = SAXParserFactory.newInstance()
 
@@ -17,7 +17,7 @@ class PubmedCrawler {
     }
 
     private val saxParser = spf.newSAXParser()
-    private val pubmedXMLHandler = PubmedXMLHandler()
+    val pubmedXMLHandler = PubmedXMLHandler()
     private val xmlReader = saxParser.xmlReader
 
     init {
@@ -83,9 +83,10 @@ class PubmedCrawler {
                 overallSuccess = overallSuccess && unpack(it)
             }
 
+            val name = it.substringBefore(".gz")
             if (overallSuccess) {
                 logger.info("$it: Parsing...")
-                overallSuccess = overallSuccess && parse(it)
+                overallSuccess = overallSuccess && parse(name)
             }
 
             if (overallSuccess) {
@@ -95,14 +96,15 @@ class PubmedCrawler {
                 }
             }
 
-            File(it.substringBefore(".gz")).delete()
+            File(name).delete()
             logger.info("$it: ${if (overallSuccess) "SUCCESS" else "FAILURE"}")
         }
     }
 
-    private fun parse(name : String) : Boolean {
+    fun parse(name : String) : Boolean {
         try {
-            val localName = "data/${name.substringBefore(".gz")}"
+            val localName = "../data/$name"
+            logger.debug("File location: ${File(localName).absolutePath}")
             xmlReader.parse(InputSource(File(localName).inputStream()))
         } catch (e: SAXException) {
             e.printStackTrace()

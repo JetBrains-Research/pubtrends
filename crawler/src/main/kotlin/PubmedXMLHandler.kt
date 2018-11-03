@@ -113,6 +113,8 @@ class PubmedXMLHandler(private val limit : Int = 10) : DefaultHandler() {
                 articleCounter++
                 citationCounter += currentArticle.citationList.size
                 keywordCounter += currentArticle.keywordList.size
+                currentArticle.title = currentArticle.title.trim()
+                currentArticle.abstractText = currentArticle.abstractText.trim()
                 articles.add(currentArticle)
 
                 logger.debug("Article ${currentArticle.pmid}")
@@ -123,6 +125,9 @@ class PubmedXMLHandler(private val limit : Int = 10) : DefaultHandler() {
                 if ((limit > 0) && (articleCounter == limit)) {
                     skip = true
                 }
+            }
+            if (fullName.equals(abstractTag, ignoreCase = true)) {
+                abstractState = false
             }
             if (localName != null) {
                 fullName = fullName.removeSuffix("/$localName")
@@ -135,8 +140,7 @@ class PubmedXMLHandler(private val limit : Int = 10) : DefaultHandler() {
             val data = if (ch != null) String(ch, start, length) else ""
 
             if (abstractState) {
-                currentArticle.abstractText += data
-                abstractState = false
+                currentArticle.abstractText += data.trim { it <= ' ' }
             }
             if (citationIDState) {
                 currentArticle.citationList.add(data.toInt())

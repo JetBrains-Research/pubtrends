@@ -4,7 +4,7 @@ import java.io.File
 import java.io.IOException
 
 
-class PubmedFTPClient {
+class PubmedFTPHandler {
     companion object {
         const val server = "ftp.ncbi.nlm.nih.gov"
         const val baselinePath = "/pubmed/baseline"
