@@ -72,7 +72,7 @@ class PubmedFTPHandler {
     }
 
     private fun downloadFile(ftp : FTPClient, name : String, localPath : String) : Boolean {
-        val localFile = File("$localPath$name")
+        val localFile = File("$localPath/$name")
 
         BufferedOutputStream(localFile.outputStream()).use {
             try {

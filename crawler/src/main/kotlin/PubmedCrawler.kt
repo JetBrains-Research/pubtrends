@@ -8,8 +8,8 @@ import javax.xml.parsers.SAXParserFactory
 
 class PubmedCrawler {
     private val logger = LogManager.getLogger(PubmedCrawler::class)
-    private val client = PubmedFTPHandler()
-    private val dbHandler = DatabaseHandler("biolabs", "pubtrends", reset = true)
+    private val ftpHandler = PubmedFTPHandler()
+    private val dbHandler = DatabaseHandler("biolabs", "pubtrends", reset = false)
     private val spf = SAXParserFactory.newInstance()
 
     init {
@@ -25,32 +25,48 @@ class PubmedCrawler {
     }
 
     private val lastCheck = dbHandler.lastModification
+    private val tempDirectory = File("tmp")
 //    private val lastCheck : Long = 1539513468000
 
     init {
         if (lastCheck.compareTo(0) != 0) {
             logger.info("Last modification: ${Timestamp(lastCheck).toLocalDateTime()}")
         }
+
+        if (!tempDirectory.exists()) {
+            tempDirectory.mkdir()
+            logger.info("Created directory for file download: ${tempDirectory.absolutePath}")
+        }
     }
 
     fun update() {
-        val files = client.fetch(lastCheck)
+        val files = ftpHandler.fetch(lastCheck)
 
         val baselineFiles = files.first
         val updateFiles = files.second
         logger.info("Found ${baselineFiles.size + updateFiles.size} new file(s)")
+
         downloadFiles(baselineFiles, isBaseline = true)
         downloadFiles(updateFiles, isBaseline = false)
+
+        if (!tempDirectory.exists()) {
+            if (tempDirectory.list().isNotEmpty()) {
+                logger.warn("Temporary directory is not empty.")
+            } else {
+                logger.info("Deleting directory: ${tempDirectory.absolutePath}")
+                tempDirectory.deleteOnExit()
+            }
+        }
     }
 
     private fun unpack(archiveName : String) : Boolean {
-        val archive = File("data/$archiveName")
-        val originalName = "data/${archiveName.substringBefore(".gz")}"
+        val archive = File("${tempDirectory.name}/$archiveName")
+        val originalName = "${tempDirectory.name}/${archiveName.substringBefore(".gz")}"
         val bufferSize = 1024
         var safeUnpack = true
 
-        GZIPInputStream(BufferedInputStream(FileInputStream("data/$archiveName"))).use { inputStream ->
-            BufferedOutputStream(FileOutputStream(originalName)).use { outputStream ->
+        GZIPInputStream(BufferedInputStream(FileInputStream("${tempDirectory.name}/$archiveName"))).use {
+            inputStream -> BufferedOutputStream(FileOutputStream(originalName)).use { outputStream ->
                 try {
                     inputStream.copyTo(outputStream, bufferSize)
                 } catch (e : EOFException) {
@@ -73,8 +89,8 @@ class PubmedCrawler {
             logger.info("$it: Downloading...")
 
             val downloadSuccess = when (isBaseline) {
-                true -> client.downloadBaselineFile(it, "data/")
-                false -> client.downloadUpdateFile(it, "data/")
+                true -> ftpHandler.downloadBaselineFile(it, tempDirectory.name)
+                false -> ftpHandler.downloadUpdateFile(it, tempDirectory.name)
             }
 
             var overallSuccess = true
@@ -103,7 +119,7 @@ class PubmedCrawler {
 
     fun parse(name : String) : Boolean {
         try {
-            val localName = "../data/$name"
+            val localName = "${tempDirectory.name}/$name"
             logger.debug("File location: ${File(localName).absolutePath}")
             xmlReader.parse(InputSource(File(localName).inputStream()))
         } catch (e: SAXException) {
