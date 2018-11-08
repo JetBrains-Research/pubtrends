@@ -20,6 +20,8 @@ subprojects {
     }
 
     apply plugin: 'kotlin'
+    apply plugin: 'application'
+    apply plugin: 'com.github.johnrengelman.shadow'
 
     sourceCompatibility = 1.8
     targetCompatibility = sourceCompatibility
@@ -47,6 +49,20 @@ subprojects {
 
     test {
         include '**/*Test.class'
+    }
+
+    version = 'dev'
+    mainClassName = "MainKt"
+    applicationDefaultJvmArgs = ["-Xmx32G"]
+
+    shadowJar {
+        baseName = 'crawler'
+        classifier = ''
+    }
+
+    jar {
+        baseName = 'singlejar'
+        manifest.attributes provider: 'gradle'
     }
 }
 

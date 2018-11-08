@@ -19,7 +19,13 @@ Project workflow: https://drive.google.com/open?id=17oQAuMJ0vmDgzucGxJT_xgQBCkLE
    CREATE DATABASE pubmed OWNER biolabs; 
    ```
    
-3. Launch IntelliJ IDEA and run ```crawler/main.kt``` file, no args should be specified. 
+3. In the project folder run the following command to obtain ```crawler-dev.jar``` file in ```build/libs``` folder:
+
+   ```
+   ./gradlew crawler:shadowJar
+   ``` 
+   
+4. From now on you can use JAR archive, no args should be specified when launching the program. 
    First run allows you to download complete up-to-date PubMed database.
    Further runs will allow you to download daily updates.
    
