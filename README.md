@@ -25,7 +25,7 @@ Project workflow: https://drive.google.com/open?id=17oQAuMJ0vmDgzucGxJT_xgQBCkLE
    ./gradlew crawler:shadowJar
    ``` 
    
-4. From now on you can use JAR archive, no args should be specified when launching the program. 
+4. From now on you can use JAR file, no args should be specified when launching the program. 
    First run allows you to download complete up-to-date PubMed database.
    Further runs will allow you to download daily updates.
    

@@ -1,18 +1,20 @@
+package org.jetbrains.bio.pubtrends.crawler
+
 import org.apache.commons.net.ftp.*
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.IOException
 
 
-class PubmedFTPHandler {
+class MockFTPHandler {
     companion object {
-        const val server = "ftp.ncbi.nlm.nih.gov"
-        const val baselinePath = "/pubmed/baseline"
-        const val updatePath = "/pubmed/updatefiles"
+        const val server = "data/"
+        const val baselinePath = "pubmed/baseline/"
+        const val updatePath = "pubmed/updatefiles/"
     }
 
     fun fetch(lastCheck : Long = 0) : Pair<List<String>, List<String>> {
-        val ftp = CloseableFTPClient()
+        val ftp = MockFTPClient()
 
         ftp.use {
             connect(it)
@@ -24,7 +26,7 @@ class PubmedFTPHandler {
     }
 
     fun downloadBaselineFile(name : String, localPath: String) : Boolean {
-        val ftp = CloseableFTPClient()
+        val ftp = MockFTPClient()
 
         ftp.use {
             connect(it)
@@ -35,7 +37,7 @@ class PubmedFTPHandler {
     }
 
     fun downloadUpdateFile(name : String, localPath : String) : Boolean {
-        val ftp = CloseableFTPClient()
+        val ftp = MockFTPClient()
 
         ftp.use {
             connect(it)
@@ -72,7 +74,7 @@ class PubmedFTPHandler {
     }
 
     private fun downloadFile(ftp : FTPClient, name : String, localPath : String) : Boolean {
-        val localFile = File("$localPath/$name")
+        val localFile = File("$localPath$name")
 
         BufferedOutputStream(localFile.outputStream()).use {
             try {
@@ -88,14 +90,14 @@ class PubmedFTPHandler {
         return false
     }
 
-    private fun getNewXMLsList(ftp : FTPClient, directory : String, lastCheck : Long) : List<String> {
+    private fun getNewXMLsList(ftp : MockFTPClient, directory : String, lastCheck : Long) : List<String> {
         ftp.changeWorkingDirectory(directory)
         try {
-            return ftp.listFiles()?.filter {
-                ((it.timestamp.time.time > lastCheck) && (it.name.endsWith(".xml.gz")))
-            }?.map {
+            return ftp.listMockFiles().filter {
+                ((it.lastModified() > lastCheck) && (it.name.endsWith(".xml.gz")))
+            }.map {
                 it.name
-            } ?: emptyList()
+            }
         } catch (e: IOException) {
             e.printStackTrace()
             if (ftp.isConnected) {

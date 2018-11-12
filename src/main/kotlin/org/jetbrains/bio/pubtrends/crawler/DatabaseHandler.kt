@@ -1,7 +1,20 @@
+package org.jetbrains.bio.pubtrends.crawler
+
+import org.apache.logging.log4j.LogManager
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.statements.StatementContext
+import org.jetbrains.exposed.sql.statements.expandArgs
 import org.jetbrains.exposed.sql.transactions.transaction
 
 class DatabaseHandler(username : String, password : String, reset : Boolean = false) {
+    companion object Log4jSqlLogger : SqlLogger {
+        private val logger = LogManager.getLogger(Log4jSqlLogger::class)
+
+        override fun log(context: StatementContext, transaction: Transaction) {
+            logger.debug("SQL: ${context.expandArgs(transaction)}")
+        }
+    }
+
     init {
         Database.connect("jdbc:postgresql://localhost:5432/pubmed",
                          driver = "org.postgresql.Driver",
@@ -15,10 +28,7 @@ class DatabaseHandler(username : String, password : String, reset : Boolean = fa
                 clear()
             }
 
-            SchemaUtils.create(Publications)
-            SchemaUtils.create(Citations)
-            SchemaUtils.create(Keywords)
-            SchemaUtils.create(KeywordsPublications)
+            SchemaUtils.create(Publications, Citations, Keywords, KeywordsPublications)
         }
     }
 
@@ -46,18 +56,18 @@ class DatabaseHandler(username : String, password : String, reset : Boolean = fa
                 it[abstract] = article.abstractText
             }
 
-            val keywordIds = Keywords.batchInsert(article.keywordList, ignore = true) {keyword ->
+            val keywordIds = Keywords.batchInsert(article.keywordList, ignore = true) { keyword ->
                 this[Keywords.keyword] = keyword
             }
 
-            KeywordsPublications.batchInsert(keywordIds) {keywordId ->
+            KeywordsPublications.batchInsert(keywordIds) { keywordId ->
                 this[KeywordsPublications.pmid] = article.pmid
-                this[KeywordsPublications.keyword_id] = keywordId.getValue(Keywords.id) as Int
+                this[KeywordsPublications.keywordId] = keywordId.getValue(Keywords.id) as Int
             }
 
             Citations.batchInsert(article.citationList) { citation ->
-                this[Citations.pmid_citing] = article.pmid
-                this[Citations.pmid_cited] = citation
+                this[Citations.pmidCiting] = article.pmid
+                this[Citations.pmidCited] = citation
             }
         }
     }

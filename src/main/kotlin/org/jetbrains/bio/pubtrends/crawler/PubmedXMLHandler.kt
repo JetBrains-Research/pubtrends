@@ -1,3 +1,5 @@
+package org.jetbrains.bio.pubtrends.crawler
+
 import java.lang.Exception
 
 import org.xml.sax.*
@@ -20,18 +22,18 @@ class PubmedXMLHandler(private val limit : Int = 10) : DefaultHandler() {
     val articles : MutableList<PubmedArticle> = mutableListOf()
 
     companion object {
-        const val articleTag = "PubmedArticleSet/PubmedArticle"
-        private const val medlineCitationTag = "PubmedArticleSet/PubmedArticle/MedlineCitation"
+        const val ARTICLE_TAG = "PubmedArticleSet/PubmedArticle"
+        private const val MEDLINE_CITATION_TAG = "PubmedArticleSet/PubmedArticle/MedlineCitation"
 
-        const val abstractTag = "$medlineCitationTag/Article/Abstract/AbstractText"
-        const val otherAbstractTag = "$medlineCitationTag/OtherAbstract/AbstractText"
-        const val citationTag = "$medlineCitationTag/CommentsCorrectionsList/CommentsCorrections"
-        const val citationIDTag = "$citationTag/PMID"
-        const val keywordTag = "$medlineCitationTag/KeywordList/Keyword"
-        const val medlineTag = "$medlineCitationTag/Article/Journal/JournalIssue/PubDate/MedlineDate"
-        const val pmidTag = "$medlineCitationTag/PMID"
-        const val titleTag = "$medlineCitationTag/Article/ArticleTitle"
-        const val yearTag = "$medlineCitationTag/Article/Journal/JournalIssue/PubDate/Year"
+        const val ABSTRACT_TAG = "$MEDLINE_CITATION_TAG/Article/Abstract/AbstractText"
+        const val OTHER_ABSTRACT_TAG = "$MEDLINE_CITATION_TAG/OtherAbstract/AbstractText"
+        const val CITATION_TAG = "$MEDLINE_CITATION_TAG/CommentsCorrectionsList/CommentsCorrections"
+        const val CITATION_PMID_TAG = "$CITATION_TAG/PMID"
+        const val KEYWORD_TAG = "$MEDLINE_CITATION_TAG/KeywordList/Keyword"
+        const val MEDLINE_TAG = "$MEDLINE_CITATION_TAG/Article/Journal/JournalIssue/PubDate/MedlineDate"
+        const val PMID_TAG = "$MEDLINE_CITATION_TAG/PMID"
+        const val TITLE_TAG = "$MEDLINE_CITATION_TAG/Article/ArticleTitle"
+        const val YEAR_TAG = "$MEDLINE_CITATION_TAG/Article/Journal/JournalIssue/PubDate/Year"
     }
 
     private var abstractState = false
@@ -73,33 +75,33 @@ class PubmedXMLHandler(private val limit : Int = 10) : DefaultHandler() {
         if (!skip) {
             if (localName != null) {
                 fullName = if (fullName.isEmpty()) localName else "$fullName/$localName"
-                if (fullName.equals(articleTag, ignoreCase = true)) {
+                if (fullName.equals(ARTICLE_TAG, ignoreCase = true)) {
                     currentArticle = PubmedArticle(0)
                 }
-                if ((fullName.equals(abstractTag, ignoreCase = true)) ||
-                        (fullName.equals(otherAbstractTag, ignoreCase = true))) {
+                if ((fullName.equals(ABSTRACT_TAG, ignoreCase = true)) ||
+                        (fullName.equals(OTHER_ABSTRACT_TAG, ignoreCase = true))) {
                     abstractState = true
                 }
-                if ((fullName.equals(citationTag, ignoreCase = true)) &&
+                if ((fullName.equals(CITATION_TAG, ignoreCase = true)) &&
                         (attributes?.getValue("RefType") == "Cites")) {
                     citationState = true
                 }
-                if ((citationState) && (fullName.equals(citationIDTag, ignoreCase = true))) {
+                if ((citationState) && (fullName.equals(CITATION_PMID_TAG, ignoreCase = true))) {
                     citationIDState = true
                 }
-                if (fullName.equals(keywordTag, ignoreCase = true)) {
+                if (fullName.equals(KEYWORD_TAG, ignoreCase = true)) {
                     keywordState = true
                 }
-                if (fullName.equals(medlineTag, ignoreCase = true)) {
+                if (fullName.equals(MEDLINE_TAG, ignoreCase = true)) {
                     medlineState = true
                 }
-                if (fullName.equals(pmidTag, ignoreCase = true)) {
+                if (fullName.equals(PMID_TAG, ignoreCase = true)) {
                     pmidState = true
                 }
-                if (fullName.equals(titleTag, ignoreCase = true)) {
+                if (fullName.equals(TITLE_TAG, ignoreCase = true)) {
                     titleState = true
                 }
-                if (fullName.equals(yearTag, ignoreCase = true)) {
+                if (fullName.equals(YEAR_TAG, ignoreCase = true)) {
                     yearState = true
                 }
                 tags[fullName] = (tags[fullName] ?: 0) + 1
@@ -109,7 +111,7 @@ class PubmedXMLHandler(private val limit : Int = 10) : DefaultHandler() {
 
     override fun endElement(uri: String?, localName: String?, qName: String?) {
         if (!skip) {
-            if (fullName.equals(articleTag, ignoreCase = true)) {
+            if (fullName.equals(ARTICLE_TAG, ignoreCase = true)) {
                 articleCounter++
                 citationCounter += currentArticle.citationList.size
                 keywordCounter += currentArticle.keywordList.size
@@ -126,7 +128,7 @@ class PubmedXMLHandler(private val limit : Int = 10) : DefaultHandler() {
                     skip = true
                 }
             }
-            if (fullName.equals(abstractTag, ignoreCase = true)) {
+            if (fullName.equals(ABSTRACT_TAG, ignoreCase = true)) {
                 abstractState = false
             }
             if (localName != null) {

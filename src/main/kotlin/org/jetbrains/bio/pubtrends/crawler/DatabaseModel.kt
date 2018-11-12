@@ -1,3 +1,5 @@
+package org.jetbrains.bio.pubtrends.crawler
+
 import org.jetbrains.exposed.sql.Table
 
 object Publications : Table() {
@@ -8,9 +10,8 @@ object Publications : Table() {
 }
 
 object Citations : Table() {
-    val id = integer("id").primaryKey().autoIncrement()
-    val pmid_citing = integer("pmid_citing")
-    val pmid_cited = integer("pmid_cited")
+    val pmidCiting = integer("pmid_citing")
+    val pmidCited = integer("pmid_cited")
 }
 
 object Keywords : Table() {
@@ -19,10 +20,9 @@ object Keywords : Table() {
 }
 
 object KeywordsPublications : Table() {
-    val id = integer("id").primaryKey().autoIncrement()
     val pmid = integer("pmid")
-    val keyword_id = integer("keyword_id")
+    val keywordId = integer("keyword_id")
     init {
-        index(true, pmid, keyword_id)
+        index(true, pmid, keywordId)
     }
 }

@@ -1,3 +1,5 @@
+package org.jetbrains.bio.pubtrends.crawler
+
 import org.junit.Test
 import kotlin.test.assertEquals
 

@@ -1,3 +1,5 @@
+package org.jetbrains.bio.pubtrends.crawler
+
 import org.apache.logging.log4j.LogManager
 import org.xml.sax.InputSource
 import org.xml.sax.SAXException
@@ -65,6 +67,8 @@ class PubmedCrawler {
         val bufferSize = 1024
         var safeUnpack = true
 
+        logger.info("$archiveName: Unpacking...")
+
         GZIPInputStream(BufferedInputStream(FileInputStream("${tempDirectory.name}/$archiveName"))).use {
             inputStream -> BufferedOutputStream(FileOutputStream(originalName)).use { outputStream ->
                 try {
@@ -88,36 +92,30 @@ class PubmedCrawler {
         files.forEach {
             logger.info("$it: Downloading...")
 
-            val downloadSuccess = when (isBaseline) {
-                true -> ftpHandler.downloadBaselineFile(it, tempDirectory.name)
-                false -> ftpHandler.downloadUpdateFile(it, tempDirectory.name)
-            }
-
-            var overallSuccess = true
-            if (downloadSuccess) {
-                logger.info("$it: Unpacking...")
-                overallSuccess = overallSuccess && unpack(it)
-            }
-
+            val downloadSuccess = if (isBaseline) ftpHandler.downloadBaselineFile(it, tempDirectory.name)
+                                  else ftpHandler.downloadUpdateFile(it, tempDirectory.name)
+            var overallSuccess = false
             val name = it.substringBefore(".gz")
-            if (overallSuccess) {
-                logger.info("$it: Parsing...")
-                overallSuccess = overallSuccess && parse(name)
-            }
 
-            if (overallSuccess) {
-                logger.info("$it: Storing...")
-                pubmedXMLHandler.articles.forEach {article ->
-                    dbHandler.store(article)
+            if (downloadSuccess && unpack(it)) {
+                if (parse(name)) {
+                    logger.info("$it: Storing...")
+                    pubmedXMLHandler.articles.forEach {article ->
+                        dbHandler.store(article)
+                    }
+                    overallSuccess = true
                 }
+
+                File(name).delete()
             }
 
-            File(name).delete()
-            logger.info("$it: ${if (overallSuccess) "SUCCESS" else "FAILURE"}")
+            logger.info("$name: ${if (overallSuccess) "SUCCESS" else "FAILURE"}")
         }
     }
 
     fun parse(name : String) : Boolean {
+        logger.info("$name: Parsing...")
+
         try {
             val localName = "${tempDirectory.name}/$name"
             logger.debug("File location: ${File(localName).absolutePath}")

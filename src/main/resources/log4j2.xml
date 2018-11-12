@@ -16,11 +16,11 @@
     </Appenders>
 
     <Loggers>
-        <Logger name="PubmedCrawler" level="debug" additivity="false">
+        <Logger name="org.jetbrains.bio.pubtrends.crawler.PubmedCrawler" level="debug" additivity="false">
             <AppenderRef ref="Crawler"/>
         </Logger>
 
-        <Logger name="PubmedXMLHandler" level="debug" additivity="false">
+        <Logger name="org.jetbrains.bio.pubtrends.crawler.PubmedXMLHandler" level="info" additivity="false">
             <AppenderRef ref="Parser"/>
         </Logger>
 

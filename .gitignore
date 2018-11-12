@@ -2,7 +2,8 @@
 *.iml
 
 build
-*/out
+out
+tmp
 
 .gradle
 

@@ -1,5 +1,6 @@
+package org.jetbrains.bio.pubtrends.crawler
+
 import org.apache.commons.net.ftp.FTPClient
-import org.apache.commons.net.ftp.FTPFile
 import org.apache.logging.log4j.LogManager
 import java.io.Closeable
 import java.io.File
@@ -7,30 +8,30 @@ import java.io.OutputStream
 
 class MockFTPClient : FTPClient(), Closeable {
     private val logger = LogManager.getLogger(MockFTPClient::class)
-    private var origin = "C:/WORK/CSC/Internships/BioLabs/pubtrends/"
+    private var origin = ""
     private var current = origin
 
     init {
-        logger.debug("Origin: ${origin}")
+        logger.debug("Origin: ${File(origin).canonicalPath}")
     }
 
     override fun changeWorkingDirectory(pathname: String?): Boolean {
         current = origin + (pathname ?: "")
-        logger.debug("Current: ${current}")
+        logger.debug("Current: ${File(current).canonicalPath}")
         return true
     }
 
-    override fun connect(path : String) {
+    override fun connect(path: String) {
         origin += path
         _replyCode = 200
-        logger.debug("Origin: ${origin}")
+        logger.debug("Origin: ${File(origin).canonicalPath}")
     }
 
     override fun disconnect() {
         close()
     }
 
-    override fun enterLocalPassiveMode() { }
+    override fun enterLocalPassiveMode() {}
 
     fun listMockFiles(): Array<File> {
         return File(current).listFiles()

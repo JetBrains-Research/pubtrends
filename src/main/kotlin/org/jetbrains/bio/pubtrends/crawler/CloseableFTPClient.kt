@@ -1,3 +1,5 @@
+package org.jetbrains.bio.pubtrends.crawler
+
 import org.apache.commons.net.ftp.FTPClient
 import java.io.Closeable
 

@@ -1,3 +1,5 @@
+package org.jetbrains.bio.pubtrends.crawler
+
 data class PubmedArticle(var pmid : Int) {
     var year : Int? = null
     var title = ""
@@ -9,7 +11,7 @@ data class PubmedArticle(var pmid : Int) {
         return mapOf("Year" to (year?.toString() ?: "undefined"),
                      "Title" to title,
                      "Abstract Text" to abstractText,
-                     "Keywords" to keywordList.joinToString(separator = ",", prefix = "\"", postfix = "\""),
-                     "Citations" to citationList.joinToString(separator = ",", prefix = "\"", postfix = "\""))
+                     "org.jetbrains.bio.pubtrends.crawler.Keywords" to keywordList.joinToString(separator = ",", prefix = "\"", postfix = "\""),
+                     "org.jetbrains.bio.pubtrends.crawler.Citations" to citationList.joinToString(separator = ",", prefix = "\"", postfix = "\""))
     }
 }
