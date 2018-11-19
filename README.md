@@ -19,23 +19,27 @@ Project workflow: https://drive.google.com/open?id=17oQAuMJ0vmDgzucGxJT_xgQBCkLE
    CREATE DATABASE pubmed OWNER biolabs; 
    ```
    
-3. In the project folder run the following command to obtain ```crawler-dev.jar``` file in ```build/libs``` folder:
+3. Make sure that ```crawler/src/main/resources/config.properties``` file contains correct information about the database (url, port, username and password).
+   
+   ```
+   url = localhost
+   port = 5432
+   username = biolabs
+   password = pubtrends
+   ```
+   
+4. Use the following command to build the project:
 
    ```
-   ./gradlew crawler:shadowJar
-   ``` 
-   
-4. From now on you can use JAR file, no args should be specified when launching the program. 
+   ./gradlew clean build test
+   ```
+     
+5. Previous command should have produced ```crawler/build/libs/crawler-dev.jar``` file.
+   From now on you can use JAR file, no args should be specified when launching the program. 
    First run allows you to download complete up-to-date PubMed database.
    Further runs will allow you to download daily updates.
    
-4. Current implementation has several in-code parameters (to be refactored later):
-
-   * ```PubmedCrawler.kt:12``` - set username and password to access database, use ```reset``` to clean database while testing:
-   
-   ```
-   private val dbHandler = DatabaseHandler("biolabs", "pubtrends", reset = false)
-   ```
+6. Current implementation has several in-code parameters (to be refactored later):
    
    * ```PubmedFTPHandler.kt:10``` - if ```limit``` is equal to zero, then everything will be parsed, otherwise only first ```limit``` articles: 
    

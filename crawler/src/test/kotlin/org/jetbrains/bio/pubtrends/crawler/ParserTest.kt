@@ -57,7 +57,7 @@ class ParserTest {
         assertEquals(expectedCitationList, citations, "Wrong citations in the list")
     }
 
-    @Test
+    /*@Test
     fun testParseForArticleWithFormattedAbstract() {
         val path = parserFileSetup("article29736257withFormattedAbstract.xml")
         crawler.parse(path)
@@ -86,5 +86,5 @@ class ParserTest {
         val expectedCitationList = listOf(10587585, 11855819, 26614871, 12702809)
         assertEquals(expectedCitationList.size, citations.size,"Wrong number of citations")
         assertEquals(expectedCitationList, citations, "Wrong citations in the list")
-    }
+    }*/
 }
