@@ -42,6 +42,7 @@ class PubmedXMLHandler(private val limit : Int = 10) : DefaultHandler() {
     private var citationIDState = false
     private var medlineState = false
     private var pmidState = false
+    private var structuredAbstract = false
     private var titleState = false
     private var yearState = false
 
@@ -58,6 +59,7 @@ class PubmedXMLHandler(private val limit : Int = 10) : DefaultHandler() {
         citationIDState = false
         medlineState = false
         pmidState = false
+        structuredAbstract = false
         titleState = false
         yearState = false
 
@@ -80,6 +82,9 @@ class PubmedXMLHandler(private val limit : Int = 10) : DefaultHandler() {
                 }
                 if ((fullName.equals(ABSTRACT_TAG, ignoreCase = true)) ||
                         (fullName.equals(OTHER_ABSTRACT_TAG, ignoreCase = true))) {
+                    if ((attributes != null) && (attributes.length > 0)) {
+                        structuredAbstract = true
+                    }
                     abstractState = true
                 }
                 if ((fullName.equals(CITATION_TAG, ignoreCase = true)) &&
@@ -129,6 +134,9 @@ class PubmedXMLHandler(private val limit : Int = 10) : DefaultHandler() {
                 }
             }
             if (fullName.equals(ABSTRACT_TAG, ignoreCase = true)) {
+                if (structuredAbstract) {
+                    currentArticle.abstractText += " "
+                }
                 abstractState = false
             }
             if (localName != null) {
@@ -142,7 +150,11 @@ class PubmedXMLHandler(private val limit : Int = 10) : DefaultHandler() {
             val data = if (ch != null) String(ch, start, length) else ""
 
             if (abstractState) {
-                currentArticle.abstractText += data.trim { it <= ' ' }
+                if (!fullName.equals(ABSTRACT_TAG, ignoreCase = true)) {
+                    currentArticle.abstractText += data.trim { it <= ' ' }
+                } else {
+                    currentArticle.abstractText += data
+                }
             }
             if (citationIDState) {
                 currentArticle.citationList.add(data.toInt())
@@ -154,6 +166,7 @@ class PubmedXMLHandler(private val limit : Int = 10) : DefaultHandler() {
                 keywordState = false
             }
             if (medlineState) {
+                logger.info("Found MEDLINE date in article ${currentArticle.pmid}")
                 val regex = "^(19|20)\\d{2}\$".toRegex()
                 val match = regex.find(data)
                 try {

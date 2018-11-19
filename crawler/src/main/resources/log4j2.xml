@@ -25,7 +25,7 @@
         </Logger>
 
         <!-- Root Logger -->
-        <Root level="all">
+        <Root level="info">
             <AppenderRef ref="Console"/>
         </Root>
     </Loggers>

@@ -19,15 +19,16 @@ Project workflow: https://drive.google.com/open?id=17oQAuMJ0vmDgzucGxJT_xgQBCkLE
    CREATE DATABASE pubmed OWNER biolabs; 
    ```
    
-3. Make sure that ```crawler/src/main/resources/config.properties``` file contains correct information about the database (url, port, username and password).
+3. Make sure that ```crawler/src/main/resources/config.properties``` file contains correct information about the database (url, port, DB name, username and password).
    
    ```
    url = localhost
    port = 5432
+   database = pubmed
    username = biolabs
    password = pubtrends
    ```
-   
+
 4. Use the following command to build the project:
 
    ```
@@ -38,13 +39,5 @@ Project workflow: https://drive.google.com/open?id=17oQAuMJ0vmDgzucGxJT_xgQBCkLE
    From now on you can use JAR file, no args should be specified when launching the program. 
    First run allows you to download complete up-to-date PubMed database.
    Further runs will allow you to download daily updates.
-   
-6. Current implementation has several in-code parameters (to be refactored later):
-   
-   * ```PubmedFTPHandler.kt:10``` - if ```limit``` is equal to zero, then everything will be parsed, otherwise only first ```limit``` articles: 
-   
-   ```
-   class PubmedXMLHandler(private val limit : Int = 10) : DefaultHandler() {
-   ```
-   
-   * Interruption may cause problems with further usage.
+      
+6. Interruption may cause problems with further usage.

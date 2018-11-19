@@ -14,7 +14,7 @@ class FTPHandlerTest {
 
         assertEquals(listOf("article29736257withPlainAbstract.xml.gz"), baselineFiles,
                 "Wrong baseline files in the list")
-        assertEquals(listOf("article29736257withFormattedAbstract.xml.gz"), updateFiles,
+        assertEquals(listOf("articlesWithFormattedAbstract.xml.gz"), updateFiles,
                 "Wrong update files in the list")
     }*/
 
@@ -28,7 +28,7 @@ class FTPHandlerTest {
         val updateFiles = files.second
 
         assertEquals(0, baselineFiles.size, "Baseline file was not supposed to be found")
-        assertEquals(listOf("article29736257withFormattedAbstract.xml.gz"), updateFiles,
+        assertEquals(listOf("articlesWithFormattedAbstract.xml.gz"), updateFiles,
                 "Wrong update files in the list")
     }*/
 }

@@ -11,7 +11,7 @@ import javax.xml.parsers.SAXParserFactory
 class PubmedCrawler {
     private val logger = LogManager.getLogger(PubmedCrawler::class)
     private val ftpHandler = PubmedFTPHandler()
-    private val dbHandler = DatabaseHandler(Config["username"], Config["password"], reset = true)
+    private val dbHandler = DatabaseHandler()
     private val spf = SAXParserFactory.newInstance()
 
     init {
@@ -97,8 +97,8 @@ class PubmedCrawler {
             if (downloadSuccess && unpack(localArchiveName)) {
                 if (parse(localName)) {
                     logger.info("$it: Storing...")
-                    pubmedXMLHandler.articles.forEach {
-                        dbHandler.store(it)
+                    pubmedXMLHandler.articles.forEach { article ->
+                        dbHandler.store(article)
                     }
                     overallSuccess = true
                 }

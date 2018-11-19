@@ -6,7 +6,7 @@ import org.jetbrains.exposed.sql.statements.StatementContext
 import org.jetbrains.exposed.sql.statements.expandArgs
 import org.jetbrains.exposed.sql.transactions.transaction
 
-class DatabaseHandler(username : String, password : String, reset : Boolean = false) {
+class DatabaseHandler() {
     companion object Log4jSqlLogger : SqlLogger {
         private val logger = LogManager.getLogger(Log4jSqlLogger::class)
 
@@ -16,15 +16,15 @@ class DatabaseHandler(username : String, password : String, reset : Boolean = fa
     }
 
     init {
-        Database.connect("jdbc:postgresql://${Config["url"]}:${Config["port"]}/pubmed",
+        Database.connect("jdbc:postgresql://${Config["url"]}:${Config["port"]}/${Config["database"]}",
                          driver = "org.postgresql.Driver",
-                         user = username,
-                         password = password)
+                user = Config["username"],
+                password = Config["password"])
 
         transaction {
             addLogger(Log4jSqlLogger)
 
-            if (reset) {
+            if (Config["resetDatabase"].toBoolean()) {
                 SchemaUtils.drop(Publications, Citations, Keywords, KeywordsPublications)
             }
 
