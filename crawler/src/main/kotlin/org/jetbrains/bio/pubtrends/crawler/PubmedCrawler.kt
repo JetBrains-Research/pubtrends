@@ -1,0 +1,127 @@
+package org.jetbrains.bio.pubtrends.crawler
+
+import org.apache.logging.log4j.LogManager
+import org.xml.sax.InputSource
+import org.xml.sax.SAXException
+import java.io.*
+import java.sql.Timestamp
+import java.util.zip.GZIPInputStream
+import javax.xml.parsers.SAXParserFactory
+
+class PubmedCrawler {
+    private val logger = LogManager.getLogger(PubmedCrawler::class)
+    private val ftpHandler = PubmedFTPHandler()
+    private val dbHandler = DatabaseHandler(Config["username"], Config["password"], reset = true)
+    private val spf = SAXParserFactory.newInstance()
+
+    init {
+        spf.isNamespaceAware = true
+    }
+
+    private val saxParser = spf.newSAXParser()
+    internal val pubmedXMLHandler = PubmedXMLHandler()
+    private val xmlReader = saxParser.xmlReader
+
+    init {
+        xmlReader.contentHandler = pubmedXMLHandler
+    }
+
+    private val lastCheck = Config["lastModification"].toLong()
+    internal val tempDirectory = createTempDir()
+    //    private val lastCheck : Long = 1539513468000
+
+    init {
+        if (lastCheck.compareTo(0) != 0) {
+            logger.info("Last modification: ${Timestamp(lastCheck).toLocalDateTime()}")
+        }
+
+        if (tempDirectory.exists()) {
+            logger.info("Created temporary directory: ${tempDirectory.absolutePath}")
+        }
+    }
+
+    fun update() {
+        try {
+            val (baselineFiles, updateFiles) = ftpHandler.fetch(lastCheck)
+            logger.info("Found ${baselineFiles.size + updateFiles.size} new file(s)")
+
+            downloadFiles(baselineFiles, isBaseline = true)
+            downloadFiles(updateFiles, isBaseline = false)
+        } catch (e : IOException) {
+            logger.fatal("Failed to connect to the server. Error message: ${e.printStackTrace()}")
+        } finally {
+            if (tempDirectory.exists()) {
+                logger.info("Deleting directory: ${tempDirectory.absolutePath}")
+                tempDirectory.deleteRecursively()
+            }
+        }
+    }
+
+    private fun unpack(archiveName : String) : Boolean {
+        val archive = File(archiveName)
+        val originalName = archiveName.substringBefore(".gz")
+        val bufferSize = 1024
+        var safeUnpack = true
+
+        logger.info("$archiveName: Unpacking...")
+
+        GZIPInputStream(BufferedInputStream(FileInputStream(archiveName))).use {
+            inputStream -> BufferedOutputStream(FileOutputStream(originalName)).use { outputStream ->
+                try {
+                    inputStream.copyTo(outputStream, bufferSize)
+                } catch (e : EOFException) {
+                    logger.warn("Corrupted GZ archive. ")
+                    e.printStackTrace()
+                    safeUnpack = false
+                }
+            }
+        }
+
+        if (safeUnpack) {
+            archive.delete()
+        }
+
+        return safeUnpack
+    }
+
+    private fun downloadFiles(files : List<String>, isBaseline : Boolean) {
+        files.forEach {
+            logger.info("$it: Downloading...")
+
+            val downloadSuccess = if (isBaseline) ftpHandler.downloadBaselineFile(it, tempDirectory.absolutePath)
+                                  else ftpHandler.downloadUpdateFile(it, tempDirectory.absolutePath)
+            var overallSuccess = false
+            val localArchiveName = "${tempDirectory.absolutePath}/$it"
+            val localName = localArchiveName.substringBefore(".gz")
+
+            if (downloadSuccess && unpack(localArchiveName)) {
+                if (parse(localName)) {
+                    logger.info("$it: Storing...")
+                    pubmedXMLHandler.articles.forEach {
+                        dbHandler.store(it)
+                    }
+                    overallSuccess = true
+                }
+
+                File(localName).delete()
+            }
+
+            logger.info("$localName: ${if (overallSuccess) "SUCCESS" else "FAILURE"}")
+        }
+    }
+
+    fun parse(name : String) : Boolean {
+        logger.info("$name: Parsing...")
+
+        try {
+            logger.debug("File location: ${File(name).absolutePath}")
+            File(name).inputStream().use {
+                xmlReader.parse(InputSource(it))
+            }
+        } catch (e: SAXException) {
+            e.printStackTrace()
+        }
+
+        return true
+    }
+}
