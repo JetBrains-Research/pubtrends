@@ -19,44 +19,13 @@
                     <Title>Frontiers in immunology</Title>
                     <ISOAbbreviation>Front Immunol</ISOAbbreviation>
                 </Journal>
-                <ArticleTitle>Critical Role of TGF-β and IL-2 Receptor Signaling in Foxp3 Induction by an Inhibitor of
-                    DNA Methylation.
-                </ArticleTitle>
+                <ArticleTitle>Critical Role of TGF-β and IL-2 Receptor Signaling in Foxp3 Induction by an Inhibitor of DNA Methylation.</ArticleTitle>
                 <Pagination>
                     <MedlinePgn>125</MedlinePgn>
                 </Pagination>
                 <ELocationID EIdType="doi" ValidYN="Y">10.3389/fimmu.2018.00125</ELocationID>
                 <Abstract>
-                    <AbstractText>Under physiological conditions, CD4<sup>+</sup> regulatory T (Treg) cells expressing
-                        the transcription factor Foxp3 are generated in the thymus [thymus-derived Foxp3<sup>+</sup> Treg
-                        (tTregs) cells] and extrathymically at peripheral sites [peripherally induced Foxp3<sup>+</sup> Treg
-                        (pTreg) cell], and both developmental subsets play non-redundant roles in maintaining
-                        self-tolerance throughout life. In addition, a variety of experimental <i>in vitro</i> and <i>in
-                            vivo
-                        </i> modalities can extrathymically elicit a Foxp3<sup>+</sup> Treg cell phenotype in peripheral
-                        CD4<sup>+</sup>Foxp3<sup>-</sup> T cells, which has attracted much interest as an approach
-                        toward cell-based therapy in clinical settings of undesired immune responses. A particularly
-                        notable example is the <i>in vitro</i> induction of Foxp3 expression and Treg cell activity
-                        (iTreg cells) in initially naive CD4<sup>+</sup>Foxp3<sup>-</sup> T cells through T cell
-                        receptor (TCR) and IL-2R ligation, in the presence of exogenous TGF-β. Clinical application of
-                        Foxp3<sup>+</sup> iTreg cells has been hampered by the fact that TGF-β-driven Foxp3 induction is
-                        not sufficient to fully recapitulate the epigenetic and transcriptional signature of <i>in
-                            vivo
-                        </i> induced Foxp3<sup>+</sup> tTreg and pTreg cells, which includes the failure to imprint
-                        iTreg cells with stable Foxp3 expression. This hurdle can be potentially overcome by
-                        pharmacological interference with DNA methyltransferase activity and CpG methylation [e.g., by
-                        the cytosine nucleoside analog 5-aza-2'-deoxycytidine (5-aza-dC)] to stabilize TGF-β-induced
-                        Foxp3 expression and to promote a Foxp3<sup>+</sup> iTreg cell phenotype even in the absence of
-                        added TGF-β. However, the molecular mechanisms of 5-aza-dC-mediated Foxp3<sup>+</sup> iTreg cell
-                        generation have remained incompletely understood. Here, we show that in the absence of
-                        exogenously added TGF-β and IL-2, efficient 5-aza-dC-mediated Foxp3<sup>+</sup> iTreg cell
-                        generation from TCR-stimulated CD4<sup>+</sup>Foxp3<sup>-</sup> T cells is critically dependent
-                        on TGF-βR and IL-2R signaling and that this process is driven by TGF-β and IL-2, which could
-                        either be FCS derived or produced by T cells on TCR stimulation. Overall, these findings
-                        contribute to our understanding of the molecular mechanisms underlying the process of Foxp3
-                        induction and may provide a rational basis for generating phenotypically and functionally stable
-                        iTreg cells.
-                    </AbstractText>
+                    <AbstractText>Under physiological conditions, CD4<sup>+</sup> regulatory T (Treg) cells expressing the transcription factor Foxp3 are generated in the thymus [thymus-derived Foxp3<sup>+</sup> Treg (tTregs) cells] and extrathymically at peripheral sites [peripherally induced Foxp3<sup>+</sup> Treg (pTreg) cell], and both developmental subsets play non-redundant roles in maintaining self-tolerance throughout life. In addition, a variety of experimental <i>in vitro</i> and <i>in vivo</i> modalities can extrathymically elicit a Foxp3<sup>+</sup> Treg cell phenotype in peripheral CD4<sup>+</sup>Foxp3<sup>-</sup> T cells, which has attracted much interest as an approach toward cell-based therapy in clinical settings of undesired immune responses. A particularly notable example is the <i>in vitro</i> induction of Foxp3 expression and Treg cell activity (iTreg cells) in initially naive CD4<sup>+</sup>Foxp3<sup>-</sup> T cells through T cell receptor (TCR) and IL-2R ligation, in the presence of exogenous TGF-β. Clinical application of Foxp3<sup>+</sup> iTreg cells has been hampered by the fact that TGF-β-driven Foxp3 induction is not sufficient to fully recapitulate the epigenetic and transcriptional signature of <i>in vivo</i> induced Foxp3<sup>+</sup> tTreg and pTreg cells, which includes the failure to imprint iTreg cells with stable Foxp3 expression. This hurdle can be potentially overcome by pharmacological interference with DNA methyltransferase activity and CpG methylation [e.g., by the cytosine nucleoside analog 5-aza-2'-deoxycytidine (5-aza-dC)] to stabilize TGF-β-induced Foxp3 expression and to promote a Foxp3<sup>+</sup> iTreg cell phenotype even in the absence of added TGF-β. However, the molecular mechanisms of 5-aza-dC-mediated Foxp3<sup>+</sup> iTreg cell generation have remained incompletely understood. Here, we show that in the absence of exogenously added TGF-β and IL-2, efficient 5-aza-dC-mediated Foxp3<sup>+</sup> iTreg cell generation from TCR-stimulated CD4<sup>+</sup>Foxp3<sup>-</sup> T cells is critically dependent on TGF-βR and IL-2R signaling and that this process is driven by TGF-β and IL-2, which could either be FCS derived or produced by T cells on TCR stimulation. Overall, these findings contribute to our understanding of the molecular mechanisms underlying the process of Foxp3 induction and may provide a rational basis for generating phenotypically and functionally stable iTreg cells.</AbstractText>
                 </Abstract>
                 <AuthorList CompleteYN="Y">
                     <Author ValidYN="Y">
@@ -256,58 +225,25 @@
                 </Pagination>
                 <ELocationID EIdType="doi" ValidYN="Y">10.1038/celldisc.2017.39</ELocationID>
                 <Abstract>
-                    <AbstractText>
-                        The mechanistic target of rapamycin (mTOR) signaling pathway plays a central role in aging and a number of different disease states. Rapamycin, which suppresses activity of the mTOR complex 1 (mTORC1), shows preclinical (and sometimes clinical) efficacy in a number of disease models. Among these are <i>Lmna</i><sup>
+                    <AbstractText>The mechanistic target of rapamycin (mTOR) signaling pathway plays a central role in aging and a number of different disease states. Rapamycin, which suppresses activity of the mTOR complex 1 (mTORC1), shows preclinical (and sometimes clinical) efficacy in a number of disease models. Among these are <i>Lmna</i><sup>
                         <i>-/-</i>
-                    </sup>
-                        mice, which serve as a mouse model for dystrophy-associated laminopathies. To confirm that
-                        elevated mTORC1 signaling is responsible for the pathology manifested in
-                        <i>Lmna</i>
-                        <sup>
-                            <i>-/-</i>
-                        </sup>
-                        mice and to decipher downstream genetic mechanisms underlying the benefits of rapamycin, we
-                        tested in
-                        <i>Lmna</i>
-                        <sup>
-                            <i>-/-</i>
-                        </sup>
-                        mice whether survival could be extended and disease pathology suppressed either by reduced
-                        levels of S6K1 or enhanced levels of 4E-BP1, two canonical mTORC1 substrates. Global
-                        heterozygosity for <i>S6K1</i> ubiquitously extended lifespan of
-                        <i>Lmna</i>
-                        <sup>
-                            <i>-/-</i>
-                        </sup>
-                        mice (
-                        <i>Lmna</i>
-                        <sup>
-                            <i>-/-</i>
-                        </sup>
-                        <i>S6K1</i>
-                        <sup>
-                            <i>+/-</i>
-                        </sup>
-                        mice). This life extension is due to improving muscle, but not heart or adipose, function,
-                        consistent with the observation that genetic ablation of <i>S6K1</i> specifically in muscle
-                        tissue also extended survival of
-                        <i>Lmna</i>
-                        <sup>
-                            <i>-/-</i>
-                        </sup>
-                        mice. In contrast, whole-body overexpression of 4E-BP1 shortened the survival of
-                        <i>Lmna</i>
-                        <sup>
-                            <i>-/-</i>
-                        </sup>
-                        mice, likely by accelerating lipolysis. Thus, rapamycin-mediated lifespan extension in
-                        <i>Lmna</i>
-                        <sup>
-                            <i>-/-</i>
-                        </sup>
-                        mice is in part due to the improvement of skeletal muscle function and can be phenocopied by
-                        reduced S6K1 activity, but not 4E-BP1 activation.
-                    </AbstractText>
+                    </sup> mice, which serve as a mouse model for dystrophy-associated laminopathies. To confirm that elevated mTORC1 signaling is responsible for the pathology manifested in <i>Lmna</i><sup>
+                        <i>-/-</i>
+                    </sup> mice and to decipher downstream genetic mechanisms underlying the benefits of rapamycin, we tested in <i>Lmna</i><sup>
+                        <i>-/-</i>
+                    </sup> mice whether survival could be extended and disease pathology suppressed either by reduced levels of S6K1 or enhanced levels of 4E-BP1, two canonical mTORC1 substrates. Global heterozygosity for <i>S6K1</i> ubiquitously extended lifespan of <i>Lmna</i><sup>
+                        <i>-/-</i>
+                    </sup> mice (<i>Lmna</i><sup>
+                        <i>-/-</i>
+                    </sup><i>S6K1</i><sup>
+                        <i>+/-</i>
+                    </sup> mice). This life extension is due to improving muscle, but not heart or adipose, function, consistent with the observation that genetic ablation of <i>S6K1</i> specifically in muscle tissue also extended survival of <i>Lmna</i><sup>
+                        <i>-/-</i>
+                    </sup> mice. In contrast, whole-body overexpression of 4E-BP1 shortened the survival of <i>Lmna</i><sup>
+                        <i>-/-</i>
+                    </sup> mice, likely by accelerating lipolysis. Thus, rapamycin-mediated lifespan extension in <i>Lmna</i><sup>
+                        <i>-/-</i>
+                    </sup> mice is in part due to the improvement of skeletal muscle function and can be phenocopied by reduced S6K1 activity, but not 4E-BP1 activation.</AbstractText>
                 </Abstract>
                 <AuthorList CompleteYN="Y">
                     <Author ValidYN="Y">
@@ -583,44 +519,17 @@
                     <Title>Gerontology</Title>
                     <ISOAbbreviation>Gerontology</ISOAbbreviation>
                 </Journal>
-                <ArticleTitle>Coping strategies used by seniors going through the normal aging process: does fear of
-                    falling matter?
-                </ArticleTitle>
+                <ArticleTitle>Coping strategies used by seniors going through the normal aging process: does fear of falling matter?</ArticleTitle>
                 <Pagination>
                     <MedlinePgn>228-36</MedlinePgn>
                 </Pagination>
                 <ELocationID EIdType="doi" ValidYN="Y">10.1159/000314529</ELocationID>
                 <Abstract>
-                    <AbstractText Label="BACKGROUND" NlmCategory="BACKGROUND">Recent studies show that fear of falling,
-                        a frequent fear of community-dwelling seniors, can have a negative impact on their health and
-                        quality of life. When fear of falling is intense, it can prompt individuals to limit or avoid
-                        certain activities. This activity restriction can lead to premature physical and functional
-                        decline and, ultimately, increase the risk for falls. Although activity avoidance/restriction is
-                        a common strategy used by seniors to cope with fear of falling, they may use other strategies as
-                        well to cope with this fear. However, these other strategies have received little attention to
-                        date.
-                    </AbstractText>
-                    <AbstractText Label="OBJECTIVE" NlmCategory="OBJECTIVE">This study aimed at examining and comparing
-                        coping strategies used by seniors with and without fear of falling. It also examined if fear of
-                        falling is an independent correlate of the use of coping strategies among seniors.
-                    </AbstractText>
-                    <AbstractText Label="METHODS" NlmCategory="METHODS">288 seniors aged 65 years or over and going
-                        through the normal aging process were assessed during structured home interviews. Fear of
-                        falling was assessed through a single question (Are you afraid of falling?) and a 4-category
-                        response scale (never, occasionally, often, very often). Coping strategies used by participants
-                        were assessed with the Inventory of Coping Strategies Used by the Elderly.
-                    </AbstractText>
-                    <AbstractText Label="RESULTS" NlmCategory="RESULTS">Findings show that seniors with fear of falling
-                        use several coping strategies other than activity avoidance/restriction in their daily
-                        functioning. Compared with nonfearful seniors, they tend to use a wider range of coping
-                        strategies and use them more frequently. Results also indicate that fear of falling is an
-                        independent correlate of diversity and frequency of use of behavioral coping strategies.
-                    </AbstractText>
-                    <AbstractText Label="CONCLUSION" NlmCategory="CONCLUSIONS">This study suggests that fall prevention
-                        practitioners and researchers should document the range and frequency of use of strategies that
-                        seniors may employ to cope with fear of falling. These data could help improve interventions and
-                        evaluative research in the domain of fall prevention.
-                    </AbstractText>
+                    <AbstractText Label="BACKGROUND" NlmCategory="BACKGROUND">Recent studies show that fear of falling, a frequent fear of community-dwelling seniors, can have a negative impact on their health and quality of life. When fear of falling is intense, it can prompt individuals to limit or avoid certain activities. This activity restriction can lead to premature physical and functional decline and, ultimately, increase the risk for falls. Although activity avoidance/restriction is a common strategy used by seniors to cope with fear of falling, they may use other strategies as well to cope with this fear. However, these other strategies have received little attention to date.</AbstractText>
+                    <AbstractText Label="OBJECTIVE" NlmCategory="OBJECTIVE">This study aimed at examining and comparing coping strategies used by seniors with and without fear of falling. It also examined if fear of falling is an independent correlate of the use of coping strategies among seniors.</AbstractText>
+                    <AbstractText Label="METHODS" NlmCategory="METHODS">288 seniors aged 65 years or over and going through the normal aging process were assessed during structured home interviews. Fear of falling was assessed through a single question (Are you afraid of falling?) and a 4-category response scale (never, occasionally, often, very often). Coping strategies used by participants were assessed with the Inventory of Coping Strategies Used by the Elderly.</AbstractText>
+                    <AbstractText Label="RESULTS" NlmCategory="RESULTS">Findings show that seniors with fear of falling use several coping strategies other than activity avoidance/restriction in their daily functioning. Compared with nonfearful seniors, they tend to use a wider range of coping strategies and use them more frequently. Results also indicate that fear of falling is an independent correlate of diversity and frequency of use of behavioral coping strategies.</AbstractText>
+                    <AbstractText Label="CONCLUSION" NlmCategory="CONCLUSIONS">This study suggests that fall prevention practitioners and researchers should document the range and frequency of use of strategies that seniors may employ to cope with fear of falling. These data could help improve interventions and evaluative research in the domain of fall prevention.</AbstractText>
                     <CopyrightInformation>Copyright © 2010 S. Karger AG, Basel.</CopyrightInformation>
                 </Abstract>
                 <AuthorList CompleteYN="Y">
@@ -779,32 +688,15 @@
                     <Title>Biotechnology letters</Title>
                     <ISOAbbreviation>Biotechnol. Lett.</ISOAbbreviation>
                 </Journal>
-                <ArticleTitle>Production of 10S-hydroxy-8(E)-octadecenoic acid from oleic acid by whole recombinant
-                    Escherichia coli cells expressing 10S-dioxygenase from Nostoc punctiforme PCC 73102 with the aid of
-                    a chaperone.
-                </ArticleTitle>
+                <ArticleTitle>Production of 10S-hydroxy-8(E)-octadecenoic acid from oleic acid by whole recombinant Escherichia coli cells expressing 10S-dioxygenase from Nostoc punctiforme PCC 73102 with the aid of a chaperone.</ArticleTitle>
                 <Pagination>
                     <MedlinePgn>133-139</MedlinePgn>
                 </Pagination>
                 <ELocationID EIdType="doi" ValidYN="Y">10.1007/s10529-016-2225-x</ELocationID>
                 <Abstract>
-                    <AbstractText Label="OBJECTIVE" NlmCategory="OBJECTIVE">To increase the production of
-                        10S-hydroxy-8(E)-octadecenoic acid from oleic acid by whole recombinant Escherichia coli cells
-                        expressing Nostoc punctiforme 10S-dioxygenase with the aid of a chaperone.
-                    </AbstractText>
-                    <AbstractText Label="RESULTS" NlmCategory="RESULTS">The optimal conditions for
-                        10S-hydroxy-8(E)-octadecenoic acid production by recombinant cells co-expressing chaperone
-                        plasmid were pH 9, 35 °C, 15 % (v/v) dimethyl sulfoxide, 40 g cells l<sup>-1</sup>, and 10 g
-                        oleic acid l<sup>-1</sup>. Under these conditions, recombinant cells co-expressing chaperone
-                        plasmid produced 7.2 g 10S-hydroxy-8(E)-octadecenoic acid l<sup>-1</sup> within 30 min, with a
-                        conversion yield of 72 % (w/w) and a volumetric productivity of 14.4 g l<sup>-1</sup> h<sup>
-                            -1</sup>.
-                    </AbstractText>
-                    <AbstractText Label="CONCLUSION" NlmCategory="CONCLUSIONS">The activity of recombinant cells
-                        expressing 10S-dioxygenase was increased by 200 % with the aid of a chaperone, demonstrating the
-                        first biotechnological production of 10S-hydroxy-8(E)-octadecenoic acid using recombinant cells
-                        expressing 10S-dioxygenase.
-                    </AbstractText>
+                    <AbstractText Label="OBJECTIVE" NlmCategory="OBJECTIVE">To increase the production of 10S-hydroxy-8(E)-octadecenoic acid from oleic acid by whole recombinant Escherichia coli cells expressing Nostoc punctiforme 10S-dioxygenase with the aid of a chaperone.</AbstractText>
+                    <AbstractText Label="RESULTS" NlmCategory="RESULTS">The optimal conditions for 10S-hydroxy-8(E)-octadecenoic acid production by recombinant cells co-expressing chaperone plasmid were pH 9, 35 °C, 15 % (v/v) dimethyl sulfoxide, 40 g cells l<sup>-1</sup>, and 10 g oleic acid l<sup>-1</sup>. Under these conditions, recombinant cells co-expressing chaperone plasmid produced 7.2 g 10S-hydroxy-8(E)-octadecenoic acid l<sup>-1</sup> within 30 min, with a conversion yield of 72 % (w/w) and a volumetric productivity of 14.4 g l<sup>-1</sup> h<sup>-1</sup>.</AbstractText>
+                    <AbstractText Label="CONCLUSION" NlmCategory="CONCLUSIONS">The activity of recombinant cells expressing 10S-dioxygenase was increased by 200 % with the aid of a chaperone, demonstrating the first biotechnological production of 10S-hydroxy-8(E)-octadecenoic acid using recombinant cells expressing 10S-dioxygenase.</AbstractText>
                 </Abstract>
                 <AuthorList CompleteYN="Y">
                     <Author ValidYN="Y">
