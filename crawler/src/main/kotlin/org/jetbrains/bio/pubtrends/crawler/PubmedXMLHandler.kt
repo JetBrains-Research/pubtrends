@@ -9,13 +9,14 @@ import org.apache.logging.log4j.LogManager
 import kotlin.collections.HashMap
 
 
-class PubmedXMLHandler(private val limit : Int = 10) : DefaultHandler() {
+class PubmedXMLHandler() : DefaultHandler() {
     private val logger = LogManager.getLogger(PubmedXMLHandler::class)
-    private val tags = HashMap<String, Int>()
+    val tags = HashMap<String, Int>()
     private var articleCounter = 0
     private var citationCounter = 0
     private var keywordCounter = 0
     private var skip = false
+    private val limit = Config["parserLimit"].toInt()
     private var fullName = String()
     private var currentArticle = PubmedArticle(0)
 
@@ -166,13 +167,12 @@ class PubmedXMLHandler(private val limit : Int = 10) : DefaultHandler() {
                 keywordState = false
             }
             if (medlineState) {
-                logger.info("Found MEDLINE date in article ${currentArticle.pmid}")
                 val regex = "^(19|20)\\d{2}\$".toRegex()
                 val match = regex.find(data)
                 try {
                     currentArticle.year = match?.value?.toInt()
                 } catch (e : Exception) {
-                    logger.warn("Failed to parse MEDLINE date: $data")
+                    logger.warn("Failed to parse MEDLINE date in article ${currentArticle.pmid}: $data")
                 }
                 medlineState = false
             }

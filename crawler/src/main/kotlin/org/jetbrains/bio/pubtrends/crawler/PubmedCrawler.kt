@@ -54,6 +54,13 @@ class PubmedCrawler {
                 logger.info("Deleting directory: ${tempDirectory.absolutePath}")
                 tempDirectory.deleteRecursively()
             }
+            if (Config["gatherStats"].toBoolean()) {
+                File("tag_stats.csv").outputStream().bufferedWriter().use {
+                    pubmedXMLHandler.tags.iterator().forEach { tag ->
+                        it.write("${tag.key} ${tag.value}\n")
+                    }
+                }
+            }
         }
     }
 
@@ -86,20 +93,19 @@ class PubmedCrawler {
 
     private fun downloadFiles(files : List<String>, isBaseline : Boolean) {
         files.forEach {
-            logger.info("$it: Downloading...")
+            val localArchiveName = "${tempDirectory.absolutePath}/$it"
+            val localName = localArchiveName.substringBefore(".gz")
+
+            logger.info("$localArchiveName: Downloading...")
 
             val downloadSuccess = if (isBaseline) ftpHandler.downloadBaselineFile(it, tempDirectory.absolutePath)
                                   else ftpHandler.downloadUpdateFile(it, tempDirectory.absolutePath)
             var overallSuccess = false
-            val localArchiveName = "${tempDirectory.absolutePath}/$it"
-            val localName = localArchiveName.substringBefore(".gz")
 
             if (downloadSuccess && unpack(localArchiveName)) {
                 if (parse(localName)) {
-                    logger.info("$it: Storing...")
-                    pubmedXMLHandler.articles.forEach { article ->
-                        dbHandler.store(article)
-                    }
+                    logger.info("$localName: Storing...")
+                    dbHandler.store(pubmedXMLHandler.articles)
                     overallSuccess = true
                 }
 

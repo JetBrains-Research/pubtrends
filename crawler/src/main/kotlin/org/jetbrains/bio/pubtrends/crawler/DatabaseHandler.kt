@@ -32,29 +32,38 @@ class DatabaseHandler() {
         }
     }
 
-    fun store(article : PubmedArticle) {
+    fun store(articles: List<PubmedArticle>) {
+        val keywordsForArticle = articles.map { it.keywordList.map { kw -> it.pmid to kw } }.flatten()
+        val keywordSet = keywordsForArticle.map { it.second }.toSet()
+        val citationsForArticle = articles.map { it.citationList.map { cit -> it.pmid to cit } }.flatten()
+
         transaction {
             addLogger(Log4jSqlLogger)
 
-            Publications.insert {
-                it[pmid] = article.pmid
-                it[year] = article.year
-                it[title] = article.title
-                it[abstract] = article.abstractText
+            Publications.batchInsert(articles, ignore = true) { article ->
+                this[Publications.pmid] = article.pmid
+                this[Publications.year] = article.year
+                this[Publications.title] = article.title
+                this[Publications.abstract] = article.abstractText
             }
 
-            val keywordIds = Keywords.batchInsert(article.keywordList, ignore = true) { keyword ->
+            Citations.batchInsert(citationsForArticle) { citation ->
+                this[Citations.pmidCiting] = citation.first
+                this[Citations.pmidCited] = citation.second
+            }
+
+            val keywordIds = Keywords.batchInsert(keywordSet, ignore = true) { keyword ->
                 this[Keywords.keyword] = keyword
             }
 
-            KeywordsPublications.batchInsert(keywordIds) { keywordId ->
-                this[KeywordsPublications.pmid] = article.pmid
-                this[KeywordsPublications.keywordId] = keywordId.getValue(Keywords.id) as Int
-            }
+            val keywordIdsMap = keywordSet.zip(keywordIds) { kw, rs ->
+                kw to rs.getValue(Keywords.id) as Int
+            }.toMap()
+            val keywordIdsForArticle = keywordsForArticle.map { it.first to (keywordIdsMap[it.second] ?: 0) }
 
-            Citations.batchInsert(article.citationList) { citation ->
-                this[Citations.pmidCiting] = article.pmid
-                this[Citations.pmidCited] = citation
+            KeywordsPublications.batchInsert(keywordIdsForArticle) { keywordId ->
+                this[KeywordsPublications.pmid] = keywordId.first
+                this[KeywordsPublications.keywordId] = keywordId.second
             }
         }
     }
