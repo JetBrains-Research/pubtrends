@@ -27,12 +27,17 @@ class PubmedCrawler {
     }
 
     private val lastCheck = Config["lastModification"].toLong()
+    private val lastId = Config["lastId"].toInt()
     internal val tempDirectory = createTempDir()
     //    private val lastCheck : Long = 1539513468000
 
     init {
         if (lastCheck.compareTo(0) != 0) {
             logger.info("Last modification: ${Timestamp(lastCheck).toLocalDateTime()}")
+        }
+
+        if (lastId > 0) {
+            logger.info("Last downloaded file: pubmed18n${lastId.toString().padStart(4, '0')}.xml.gz")
         }
 
         if (tempDirectory.exists()) {
@@ -42,7 +47,7 @@ class PubmedCrawler {
 
     fun update() {
         try {
-            val (baselineFiles, updateFiles) = ftpHandler.fetch(lastCheck)
+            val (baselineFiles, updateFiles) = ftpHandler.fetch(lastCheck, lastId)
             logger.info("Found ${baselineFiles.size + updateFiles.size} new file(s)")
 
             downloadFiles(baselineFiles, isBaseline = true)

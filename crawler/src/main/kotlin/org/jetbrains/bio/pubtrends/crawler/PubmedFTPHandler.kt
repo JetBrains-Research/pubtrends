@@ -13,13 +13,13 @@ class PubmedFTPHandler {
         const val updatePath = "/pubmed/updatefiles"
     }
 
-    fun fetch(lastCheck : Long = 0) : Pair<List<String>, List<String>> {
+    fun fetch(lastCheck : Long = 0, lastId : Int = 0) : Pair<List<String>, List<String>> {
         val ftp = CloseableFTPClient()
 
         ftp.use {
             connect(it)
-            val baselineFiles = getNewXMLsList(it, baselinePath, lastCheck)
-            val updateFiles = getNewXMLsList(it, updatePath, lastCheck)
+            val baselineFiles = getNewXMLsList(it, baselinePath, lastCheck, lastId)
+            val updateFiles = getNewXMLsList(it, updatePath, lastCheck, lastId)
 
             return Pair(baselineFiles, updateFiles)
         }
@@ -90,11 +90,12 @@ class PubmedFTPHandler {
         return false
     }
 
-    private fun getNewXMLsList(ftp : FTPClient, directory : String, lastCheck : Long) : List<String> {
+    private fun getNewXMLsList(ftp : FTPClient, directory : String, lastCheck : Long, lastId : Int) : List<String> {
         ftp.changeWorkingDirectory(directory)
         try {
             return ftp.listFiles()?.filter {
-                ((it.timestamp.time.time > lastCheck) && (it.name.endsWith(".xml.gz")))
+                ((it.timestamp.time.time > lastCheck) && (it.name.endsWith(".xml.gz")) &&
+                        (it.name.removeSurrounding("pubmed18n", ".xml.gz").toInt() > lastId))
             }?.map {
                 it.name
             } ?: emptyList()

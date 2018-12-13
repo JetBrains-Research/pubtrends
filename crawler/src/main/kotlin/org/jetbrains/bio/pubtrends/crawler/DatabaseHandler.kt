@@ -33,18 +33,20 @@ class DatabaseHandler() {
     }
 
     fun store(articles: List<PubmedArticle>) {
-        val keywordsForArticle = articles.map { it.keywordList.map { kw -> it.pmid to kw } }.flatten()
-        val keywordSet = keywordsForArticle.map { it.second }.toSet()
-        val citationsForArticle = articles.map { it.citationList.map { cit -> it.pmid to cit } }.flatten()
+        // val keywordsForArticle = articles.map { it.keywordList.map { kw -> it.pmid to kw } }.flatten()
+        // val keywordSet = keywordsForArticle.mapTo(hashSetOf()) { it.second }
+        val citationsForArticle = articles.map { it.citationList.toSet().map { cit -> it.pmid to cit } }.flatten()
 
         transaction {
             addLogger(Log4jSqlLogger)
 
-            Publications.batchInsert(articles, ignore = true) { article ->
+            Publications.batchInsert(articles) { article ->
                 this[Publications.pmid] = article.pmid
                 this[Publications.year] = article.year
-                this[Publications.title] = article.title
-                this[Publications.abstract] = article.abstractText
+                this[Publications.title] = article.title.take(1023)
+                if (article.abstractText != "") {
+                    this[Publications.abstract] = article.abstractText
+                }
             }
 
             Citations.batchInsert(citationsForArticle) { citation ->
@@ -52,19 +54,26 @@ class DatabaseHandler() {
                 this[Citations.pmidCited] = citation.second
             }
 
-            val keywordIds = Keywords.batchInsert(keywordSet, ignore = true) { keyword ->
+            /*val keywordIds = Keywords.batchInsert(keywordSet, ignore = true) { keyword ->
                 this[Keywords.keyword] = keyword
             }
 
             val keywordIdsMap = keywordSet.zip(keywordIds) { kw, rs ->
-                kw to rs.getValue(Keywords.id) as Int
+                kw to try {
+                    rs.getValue(Keywords.id) as Int
+                } catch (e : NoSuchElementException) {
+                    Keywords.select { Keywords.keyword eq kw }.map { it[Keywords.id] }[0]
+                }
             }.toMap()
+            keywordIdsMap.toSortedMap().forEach {
+                println("${it.key} - ${it.value}")
+            }
             val keywordIdsForArticle = keywordsForArticle.map { it.first to (keywordIdsMap[it.second] ?: 0) }
 
             KeywordsPublications.batchInsert(keywordIdsForArticle) { keywordId ->
                 this[KeywordsPublications.pmid] = keywordId.first
                 this[KeywordsPublications.keywordId] = keywordId.second
-            }
+            }*/
         }
     }
 }

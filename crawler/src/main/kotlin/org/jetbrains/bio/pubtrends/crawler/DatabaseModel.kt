@@ -6,12 +6,7 @@ object Publications : Table() {
     val pmid = integer("pmid").primaryKey()
     val year = integer("year").nullable()
     val title = varchar("title", 1023)
-    val abstract = text("abstract")
-
-    init {
-        index(true, title)
-        index(true, abstract)
-    }
+    val abstract = text("abstract").nullable()
 }
 
 object Citations : Table() {

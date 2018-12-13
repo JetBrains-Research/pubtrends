@@ -41,6 +41,7 @@ class PubmedXMLHandler() : DefaultHandler() {
     private var keywordState = false
     private var citationState = false
     private var citationIDState = false
+    private var hasOtherVersion = false
     private var medlineState = false
     private var pmidState = false
     private var structuredAbstract = false
@@ -80,6 +81,7 @@ class PubmedXMLHandler() : DefaultHandler() {
                 fullName = if (fullName.isEmpty()) localName else "$fullName/$localName"
                 if (fullName.equals(ARTICLE_TAG, ignoreCase = true)) {
                     currentArticle = PubmedArticle(0)
+                    hasOtherVersion = false
                 }
                 if ((fullName.equals(ABSTRACT_TAG, ignoreCase = true)) ||
                         (fullName.equals(OTHER_ABSTRACT_TAG, ignoreCase = true))) {
@@ -102,6 +104,7 @@ class PubmedXMLHandler() : DefaultHandler() {
                     medlineState = true
                 }
                 if (fullName.equals(PMID_TAG, ignoreCase = true)) {
+                    hasOtherVersion = (attributes?.getValue("Version") != "1")
                     pmidState = true
                 }
                 if (fullName.equals(TITLE_TAG, ignoreCase = true)) {
@@ -123,11 +126,13 @@ class PubmedXMLHandler() : DefaultHandler() {
                 keywordCounter += currentArticle.keywordList.size
                 currentArticle.title = currentArticle.title.trim()
                 currentArticle.abstractText = currentArticle.abstractText.trim()
-                articles.add(currentArticle)
+                if (!hasOtherVersion) {
+                    articles.add(currentArticle)
 
-                logger.debug("Article ${currentArticle.pmid}")
-                currentArticle.description().forEach {
-                    logger.debug("${it.key}: ${it.value}")
+                    logger.debug("Article ${currentArticle.pmid}")
+                    currentArticle.description().forEach {
+                        logger.debug("${it.key}: ${it.value}")
+                    }
                 }
 
                 if ((limit > 0) && (articleCounter == limit)) {
