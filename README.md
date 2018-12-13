@@ -6,20 +6,21 @@ Project workflow: https://drive.google.com/open?id=17oQAuMJ0vmDgzucGxJT_xgQBCkLE
 
 ### Prerequisites
 
+* JDK 8
 * PostgreSQL (tested with 10.5)
 
 ### Getting started
 
 1. Clone the repository.
 
-2. Run ```psql``` to create a user and a database in PostgreSQL:
+2. Run `psql` to create a user and a database in PostgreSQL:
 
    ```
    CREATE ROLE biolabs WITH PASSWORD 'pubtrends';
    CREATE DATABASE pubmed OWNER biolabs; 
    ```
    
-3. Make sure that ```crawler/src/main/resources/config.properties``` file contains correct information about the database (url, port, DB name, username and password).
+3. Make sure that `crawler/src/main/resources/config.properties` file contains correct information about the database (url, port, DB name, username and password).
    
    ```
    url = localhost
@@ -29,15 +30,22 @@ Project workflow: https://drive.google.com/open?id=17oQAuMJ0vmDgzucGxJT_xgQBCkLE
    password = pubtrends
    ```
 
-4. Use the following command to build the project:
+4. Other configuration parameters in `crawler/src/main/resources/config.properties`:
+
+   * `lastId` - in case of interruption use this parameter to restart the download from article pack `pubmed18n{lastId+1}.xml` (should be done automatically later) 
+   * `parserLimit` - maximum number of articles per XML to be parsed (useful for development)
+   * `resetDatabase` - clear current contents of the database (useful for development)
+   * `gatherStats` - count number of XML tag occurences (useful for development)
+
+5. Use the following command to build the project:
 
    ```
    ./gradlew clean build test
    ```
      
-5. Previous command should have produced ```crawler/build/libs/crawler-dev.jar``` file.
+6. Previous command should have produced `crawler/build/libs/crawler-dev.jar` file.
    From now on you can use JAR file, no args should be specified when launching the program. 
    First run allows you to download complete up-to-date PubMed database.
    Further runs will allow you to download daily updates.
       
-6. Interruption may cause problems with further usage.
+7. In case of interruption use `lastId` parameter as described above. Interruption can be caused by internet connection problems.
