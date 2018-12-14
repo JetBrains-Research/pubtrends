@@ -1,11 +1,11 @@
 <PubmedArticleSet>
     <PubmedArticle>
-        <MedlineCitation Status="PubMed-not-MEDLINE" Owner="NLM">
+        <MedlineCitation Status="In-Process" Owner="NLM">
             <PMID Version="1">29456534</PMID>
             <DateRevised>
                 <Year>2018</Year>
                 <Month>11</Month>
-                <Day>13</Day>
+                <Day>20</Day>
             </DateRevised>
             <Article PubModel="Electronic-eCollection">
                 <Journal>
@@ -33,10 +33,7 @@
                         <ForeName>Kristin</ForeName>
                         <Initials>K</Initials>
                         <AffiliationInfo>
-                            <Affiliation>Molecular and Cellular Immunology/Immune Regulation, DFG-Center for
-                                Regenerative Therapies Dresden (CRTD), Center for Molecular and Cellular Bioengineering
-                                (CMCB), Technische Universität Dresden, Dresden, Germany.
-                            </Affiliation>
+                            <Affiliation>Molecular and Cellular Immunology/Immune Regulation, DFG-Center for Regenerative Therapies Dresden (CRTD), Center for Molecular and Cellular Bioengineering (CMCB), Technische Universität Dresden, Dresden, Germany.</Affiliation>
                         </AffiliationInfo>
                     </Author>
                     <Author ValidYN="Y">
@@ -44,10 +41,7 @@
                         <ForeName>Nadja</ForeName>
                         <Initials>N</Initials>
                         <AffiliationInfo>
-                            <Affiliation>Molecular and Cellular Immunology/Immune Regulation, DFG-Center for
-                                Regenerative Therapies Dresden (CRTD), Center for Molecular and Cellular Bioengineering
-                                (CMCB), Technische Universität Dresden, Dresden, Germany.
-                            </Affiliation>
+                            <Affiliation>Molecular and Cellular Immunology/Immune Regulation, DFG-Center for Regenerative Therapies Dresden (CRTD), Center for Molecular and Cellular Bioengineering (CMCB), Technische Universität Dresden, Dresden, Germany.</Affiliation>
                         </AffiliationInfo>
                     </Author>
                     <Author ValidYN="Y">
@@ -55,16 +49,10 @@
                         <ForeName>Sebastian</ForeName>
                         <Initials>S</Initials>
                         <AffiliationInfo>
-                            <Affiliation>Molecular and Cellular Immunology/Immune Regulation, DFG-Center for
-                                Regenerative Therapies Dresden (CRTD), Center for Molecular and Cellular Bioengineering
-                                (CMCB), Technische Universität Dresden, Dresden, Germany.
-                            </Affiliation>
+                            <Affiliation>Molecular and Cellular Immunology/Immune Regulation, DFG-Center for Regenerative Therapies Dresden (CRTD), Center for Molecular and Cellular Bioengineering (CMCB), Technische Universität Dresden, Dresden, Germany.</Affiliation>
                         </AffiliationInfo>
                         <AffiliationInfo>
-                            <Affiliation>Osteoimmunology, DFG-Center for Regenerative Therapies Dresden (CRTD), Center
-                                for Molecular and Cellular Bioengineering (CMCB), Technische Universität Dresden,
-                                Dresden, Germany.
-                            </Affiliation>
+                            <Affiliation>Osteoimmunology, DFG-Center for Regenerative Therapies Dresden (CRTD), Center for Molecular and Cellular Bioengineering (CMCB), Technische Universität Dresden, Dresden, Germany.</Affiliation>
                         </AffiliationInfo>
                     </Author>
                     <Author ValidYN="Y">
@@ -72,10 +60,7 @@
                         <ForeName>Annette I</ForeName>
                         <Initials>AI</Initials>
                         <AffiliationInfo>
-                            <Affiliation>Osteoimmunology, DFG-Center for Regenerative Therapies Dresden (CRTD), Center
-                                for Molecular and Cellular Bioengineering (CMCB), Technische Universität Dresden,
-                                Dresden, Germany.
-                            </Affiliation>
+                            <Affiliation>Osteoimmunology, DFG-Center for Regenerative Therapies Dresden (CRTD), Center for Molecular and Cellular Bioengineering (CMCB), Technische Universität Dresden, Dresden, Germany.</Affiliation>
                         </AffiliationInfo>
                     </Author>
                     <Author ValidYN="Y">
@@ -83,10 +68,7 @@
                         <ForeName>Sonja</ForeName>
                         <Initials>S</Initials>
                         <AffiliationInfo>
-                            <Affiliation>Molecular and Cellular Immunology/Immune Regulation, DFG-Center for
-                                Regenerative Therapies Dresden (CRTD), Center for Molecular and Cellular Bioengineering
-                                (CMCB), Technische Universität Dresden, Dresden, Germany.
-                            </Affiliation>
+                            <Affiliation>Molecular and Cellular Immunology/Immune Regulation, DFG-Center for Regenerative Therapies Dresden (CRTD), Center for Molecular and Cellular Bioengineering (CMCB), Technische Universität Dresden, Dresden, Germany.</Affiliation>
                         </AffiliationInfo>
                     </Author>
                     <Author ValidYN="Y">
@@ -94,26 +76,20 @@
                         <ForeName>Karsten</ForeName>
                         <Initials>K</Initials>
                         <AffiliationInfo>
-                            <Affiliation>Molecular and Cellular Immunology/Immune Regulation, DFG-Center for
-                                Regenerative Therapies Dresden (CRTD), Center for Molecular and Cellular Bioengineering
-                                (CMCB), Technische Universität Dresden, Dresden, Germany.
-                            </Affiliation>
+                            <Affiliation>Molecular and Cellular Immunology/Immune Regulation, DFG-Center for Regenerative Therapies Dresden (CRTD), Center for Molecular and Cellular Bioengineering (CMCB), Technische Universität Dresden, Dresden, Germany.</Affiliation>
                         </AffiliationInfo>
                         <AffiliationInfo>
-                            <Affiliation>Paul Langerhans Institute Dresden (PLID) of the Helmholtz Zentrum München at
-                                the University Hospital and Medical Faculty Carl Gustav Carus of TU Dresden, Dresden,
-                                Germany.
-                            </Affiliation>
+                            <Affiliation>Paul Langerhans Institute Dresden (PLID) of the Helmholtz Zentrum München at the University Hospital and Medical Faculty Carl Gustav Carus of TU Dresden, Dresden, Germany.</Affiliation>
                         </AffiliationInfo>
                         <AffiliationInfo>
-                            <Affiliation>German Center for Diabetes Research (DZD e.V.), Neuherberg, Germany.
-                            </Affiliation>
+                            <Affiliation>German Center for Diabetes Research (DZD e.V.), Neuherberg, Germany.</Affiliation>
                         </AffiliationInfo>
                     </Author>
                 </AuthorList>
                 <Language>eng</Language>
                 <PublicationTypeList>
                     <PublicationType UI="D016428">Journal Article</PublicationType>
+                    <PublicationType UI="D013485">Research Support, Non-U.S. Gov't</PublicationType>
                 </PublicationTypeList>
                 <ArticleDate DateType="Electronic">
                     <Year>2018</Year>
@@ -127,34 +103,12 @@
                 <NlmUniqueID>101560960</NlmUniqueID>
                 <ISSNLinking>1664-3224</ISSNLinking>
             </MedlineJournalInfo>
-            <CommentsCorrectionsList>
-                <CommentsCorrections RefType="Cites">
-                    <RefSource>Mol Cells. 2016 Dec;39(12 ):888-897</RefSource>
-                    <PMID Version="1">27989104</PMID>
-                </CommentsCorrections>
-                <CommentsCorrections RefType="Cites">
-                    <RefSource>J Exp Med. 2007 Jul 9;204(7):1543-51</RefSource>
-                    <PMID Version="1">17591856</PMID>
-                </CommentsCorrections>
-                <CommentsCorrections RefType="Cites">
-                    <RefSource>Eur J Immunol. 2014 Dec;44(12):3632-45</RefSource>
-                    <PMID Version="1">25159127</PMID>
-                </CommentsCorrections>
-                <CommentsCorrections RefType="Cites">
-                    <RefSource>Immunity. 2012 Nov 16;37(5):785-99</RefSource>
-                    <PMID Version="1">23123060</PMID>
-                </CommentsCorrections>
-                <CommentsCorrections RefType="Cites">
-                    <RefSource>Nat Rev Immunol. 2012 Feb 17;12(3):180-90</RefSource>
-                    <PMID Version="1">22343569</PMID>
-                </CommentsCorrections>
-            </CommentsCorrectionsList>
             <KeywordList Owner="NOTNLM">
-                <Keyword MajorTopicYN="N">CNS2</Keyword>
-                <Keyword MajorTopicYN="N">DNA methylation</Keyword>
-                <Keyword MajorTopicYN="N">Foxp3</Keyword>
-                <Keyword MajorTopicYN="N">epigenetic regulation</Keyword>
-                <Keyword MajorTopicYN="N">iTreg</Keyword>
+                <Keyword MajorTopicYN="Y">CNS2</Keyword>
+                <Keyword MajorTopicYN="Y">DNA methylation</Keyword>
+                <Keyword MajorTopicYN="Y">Foxp3</Keyword>
+                <Keyword MajorTopicYN="Y">epigenetic regulation</Keyword>
+                <Keyword MajorTopicYN="Y">iTreg</Keyword>
             </KeywordList>
         </MedlineCitation>
         <PubmedData>
@@ -197,6 +151,38 @@
                 <ArticleId IdType="doi">10.3389/fimmu.2018.00125</ArticleId>
                 <ArticleId IdType="pmc">PMC5801288</ArticleId>
             </ArticleIdList>
+            <ReferenceList>
+                <Reference>
+                    <Citation>Mol Cells. 2016 Dec;39(12 ):888-897</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">27989104</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>J Exp Med. 2007 Jul 9;204(7):1543-51</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">17591856</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Eur J Immunol. 2014 Dec;44(12):3632-45</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">25159127</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Immunity. 2012 Nov 16;37(5):785-99</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">23123060</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Nat Rev Immunol. 2012 Feb 17;12(3):180-90</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">22343569</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+            </ReferenceList>
         </PubmedData>
     </PubmedArticle>
     <PubmedArticle>
@@ -204,8 +190,8 @@
             <PMID Version="1">29736257</PMID>
             <DateRevised>
                 <Year>2018</Year>
-                <Month>08</Month>
-                <Day>15</Day>
+                <Month>11</Month>
+                <Day>14</Day>
             </DateRevised>
             <Article PubModel="Electronic-eCollection">
                 <Journal>
@@ -422,24 +408,6 @@
                 <NlmUniqueID>101661034</NlmUniqueID>
                 <ISSNLinking>2056-5968</ISSNLinking>
             </MedlineJournalInfo>
-            <CommentsCorrectionsList>
-                <CommentsCorrections RefType="Cites">
-                    <RefSource>Hum Mol Genet. 2000 Jan 1;9(1):109-12</RefSource>
-                    <PMID Version="1">10587585</PMID>
-                </CommentsCorrections>
-                <CommentsCorrections RefType="Cites">
-                    <RefSource>Biochem Biophys Res Commun. 2002 Mar 1;291(3):522-7</RefSource>
-                    <PMID Version="1">11855819</PMID>
-                </CommentsCorrections>
-                <CommentsCorrections RefType="Cites">
-                    <RefSource>Int Rev Cell Mol Biol. 2015;320:41-73</RefSource>
-                    <PMID Version="1">26614871</PMID>
-                </CommentsCorrections>
-                <CommentsCorrections RefType="Cites">
-                    <RefSource>Science. 2003 Jun 27;300(5628):2055</RefSource>
-                    <PMID Version="1">12702809</PMID>
-                </CommentsCorrections>
-            </CommentsCorrectionsList>
             <KeywordList Owner="NOTNLM">
                 <Keyword MajorTopicYN="N">4E-BP1</Keyword>
                 <Keyword MajorTopicYN="N">Lmna−/− mice</Keyword>
@@ -491,6 +459,32 @@
                 <ArticleId IdType="doi">10.1038/celldisc.2017.39</ArticleId>
                 <ArticleId IdType="pmc">PMC5931234</ArticleId>
             </ArticleIdList>
+            <ReferenceList>
+                <Reference>
+                    <Citation>Hum Mol Genet. 2000 Jan 1;9(1):109-12</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">10587585</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Biochem Biophys Res Commun. 2002 Mar 1;291(3):522-7</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">11855819</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Int Rev Cell Mol Biol. 2015;320:41-73</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">26614871</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Science. 2003 Jun 27;300(5628):2055</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">12702809</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+            </ReferenceList>
         </PubmedData>
     </PubmedArticle>
     <PubmedArticle>
@@ -538,9 +532,7 @@
                         <ForeName>Johanne</ForeName>
                         <Initials>J</Initials>
                         <AffiliationInfo>
-                            <Affiliation>School of Rehabilitation, Faculty of Medicine, Université de Montréal,
-                                Montreal, Que., Canada. johanne.filiatrault @ umontreal.ca
-                            </Affiliation>
+                            <Affiliation>School of Rehabilitation, Faculty of Medicine, Université de Montréal, Montreal, Que., Canada. johanne.filiatrault @ umontreal.ca</Affiliation>
                         </AffiliationInfo>
                     </Author>
                     <Author ValidYN="Y">
@@ -704,9 +696,7 @@
                         <ForeName>Min-Ji</ForeName>
                         <Initials>MJ</Initials>
                         <AffiliationInfo>
-                            <Affiliation>Department of Bioscience and Biotechnology, Konkuk University, Seoul, 05029,
-                                Republic of Korea.
-                            </Affiliation>
+                            <Affiliation>Department of Bioscience and Biotechnology, Konkuk University, Seoul, 05029, Republic of Korea.</Affiliation>
                         </AffiliationInfo>
                     </Author>
                     <Author ValidYN="Y">
@@ -714,9 +704,7 @@
                         <ForeName>Min-Ju</ForeName>
                         <Initials>MJ</Initials>
                         <AffiliationInfo>
-                            <Affiliation>Department of Bioscience and Biotechnology, Konkuk University, Seoul, 05029,
-                                Republic of Korea.
-                            </Affiliation>
+                            <Affiliation>Department of Bioscience and Biotechnology, Konkuk University, Seoul, 05029, Republic of Korea.</Affiliation>
                         </AffiliationInfo>
                     </Author>
                     <Author ValidYN="Y">
@@ -724,9 +712,7 @@
                         <ForeName>Kyung-Chul</ForeName>
                         <Initials>KC</Initials>
                         <AffiliationInfo>
-                            <Affiliation>Department of Bioscience and Biotechnology, Konkuk University, Seoul, 05029,
-                                Republic of Korea.
-                            </Affiliation>
+                            <Affiliation>Department of Bioscience and Biotechnology, Konkuk University, Seoul, 05029, Republic of Korea.</Affiliation>
                         </AffiliationInfo>
                     </Author>
                     <Author ValidYN="Y">
@@ -734,9 +720,7 @@
                         <ForeName>Deok-Kun</ForeName>
                         <Initials>DK</Initials>
                         <AffiliationInfo>
-                            <Affiliation>Department of Bioscience and Biotechnology, Konkuk University, Seoul, 05029,
-                                Republic of Korea. deokkun@konkuk.ac.kr.
-                            </Affiliation>
+                            <Affiliation>Department of Bioscience and Biotechnology, Konkuk University, Seoul, 05029, Republic of Korea. deokkun@konkuk.ac.kr.</Affiliation>
                         </AffiliationInfo>
                     </Author>
                 </AuthorList>

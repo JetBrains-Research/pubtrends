@@ -95,7 +95,7 @@ class PubmedFTPHandler {
         try {
             return ftp.listFiles()?.filter {
                 ((it.timestamp.time.time > lastCheck) && (it.name.endsWith(".xml.gz")) &&
-                        (it.name.removeSurrounding("pubmed18n", ".xml.gz").toInt() > lastId))
+                        (it.name.removeSurrounding("pubmed19n", ".xml.gz").toInt() > lastId))
             }?.map {
                 it.name
             } ?: emptyList()

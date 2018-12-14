@@ -37,7 +37,7 @@ class PubmedCrawler {
         }
 
         if (lastId > 0) {
-            logger.info("Last downloaded file: pubmed18n${lastId.toString().padStart(4, '0')}.xml.gz")
+            logger.info("Last downloaded file: pubmed19n${lastId.toString().padStart(4, '0')}.xml.gz")
         }
 
         if (tempDirectory.exists()) {

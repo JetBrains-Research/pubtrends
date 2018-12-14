@@ -25,11 +25,11 @@ class PubmedXMLHandler() : DefaultHandler() {
     companion object {
         const val ARTICLE_TAG = "PubmedArticleSet/PubmedArticle"
         private const val MEDLINE_CITATION_TAG = "PubmedArticleSet/PubmedArticle/MedlineCitation"
+        private const val PUBMED_DATA_TAG = "PubmedArticleSet/PubmedArticle/PubmedData"
 
         const val ABSTRACT_TAG = "$MEDLINE_CITATION_TAG/Article/Abstract/AbstractText"
         const val OTHER_ABSTRACT_TAG = "$MEDLINE_CITATION_TAG/OtherAbstract/AbstractText"
-        const val CITATION_TAG = "$MEDLINE_CITATION_TAG/CommentsCorrectionsList/CommentsCorrections"
-        const val CITATION_PMID_TAG = "$CITATION_TAG/PMID"
+        const val CITATION_PMID_TAG = "$PUBMED_DATA_TAG/ReferenceList/Reference/ArticleIdList/ArticleId"
         const val KEYWORD_TAG = "$MEDLINE_CITATION_TAG/KeywordList/Keyword"
         const val MEDLINE_TAG = "$MEDLINE_CITATION_TAG/Article/Journal/JournalIssue/PubDate/MedlineDate"
         const val PMID_TAG = "$MEDLINE_CITATION_TAG/PMID"
@@ -39,7 +39,6 @@ class PubmedXMLHandler() : DefaultHandler() {
 
     private var abstractState = false
     private var keywordState = false
-    private var citationState = false
     private var citationIDState = false
     private var hasOtherVersion = false
     private var medlineState = false
@@ -57,7 +56,6 @@ class PubmedXMLHandler() : DefaultHandler() {
 
         abstractState = false
         keywordState = false
-        citationState = false
         citationIDState = false
         medlineState = false
         pmidState = false
@@ -90,11 +88,8 @@ class PubmedXMLHandler() : DefaultHandler() {
                     }
                     abstractState = true
                 }
-                if ((fullName.equals(CITATION_TAG, ignoreCase = true)) &&
-                        (attributes?.getValue("RefType") == "Cites")) {
-                    citationState = true
-                }
-                if ((citationState) && (fullName.equals(CITATION_PMID_TAG, ignoreCase = true))) {
+                if (fullName.equals(CITATION_PMID_TAG, ignoreCase = true) &&
+                                ((attributes != null) && (attributes.getValue("IdType") == "pubmed"))) {
                     citationIDState = true
                 }
                 if (fullName.equals(KEYWORD_TAG, ignoreCase = true)) {
@@ -164,7 +159,6 @@ class PubmedXMLHandler() : DefaultHandler() {
             }
             if (citationIDState) {
                 currentArticle.citationList.add(data.toInt())
-                citationState = false
                 citationIDState = false
             }
             if (keywordState) {
