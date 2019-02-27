@@ -19,7 +19,7 @@ class PubmedCrawler {
     }
 
     private val saxParser = spf.newSAXParser()
-    internal val pubmedXMLHandler = PubmedXMLHandler()
+    internal val pubmedXMLHandler = PubmedXMLHandler(dbHandler)
     private val xmlReader = saxParser.xmlReader
 
     init {
@@ -108,8 +108,7 @@ class PubmedCrawler {
             var overallSuccess = false
 
             if (downloadSuccess && unpack(localArchiveName)) {
-                if (parse(localName)) {
-                    logger.info("$localName: Storing...")
+                if ((parse(localName)) && (pubmedXMLHandler.articles.size > 0)) {
                     dbHandler.store(pubmedXMLHandler.articles)
                     overallSuccess = true
                 }

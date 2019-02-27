@@ -9,7 +9,7 @@ import org.apache.logging.log4j.LogManager
 import kotlin.collections.HashMap
 
 
-class PubmedXMLHandler() : DefaultHandler() {
+class PubmedXMLHandler(private val dbHandler: DatabaseHandler) : DefaultHandler() {
     private val logger = LogManager.getLogger(PubmedXMLHandler::class)
     val tags = HashMap<String, Int>()
     private var articleCounter = 0
@@ -17,6 +17,7 @@ class PubmedXMLHandler() : DefaultHandler() {
     private var keywordCounter = 0
     private var skip = false
     private val limit = Config["parserLimit"].toInt()
+    private val batchSize = Config["batchSize"].toInt()
     private var fullName = String()
     private var currentArticle = PubmedArticle(0)
 
@@ -143,6 +144,11 @@ class PubmedXMLHandler() : DefaultHandler() {
             if (localName != null) {
                 fullName = fullName.removeSuffix("/$localName")
             }
+        }
+
+        if (articles.size == batchSize) {
+            dbHandler.store(articles)
+            articles.clear()
         }
     }
 

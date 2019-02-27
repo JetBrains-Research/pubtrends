@@ -94,8 +94,8 @@ class PubmedFTPHandler {
         ftp.changeWorkingDirectory(directory)
         try {
             return ftp.listFiles()?.filter {
-                ((it.timestamp.time.time > lastCheck) && (it.name.endsWith(".xml.gz")) &&
-                        (it.name.removeSurrounding("pubmed19n", ".xml.gz").toInt() > lastId))
+                (it.timestamp.time.time > lastCheck) && (it.name.endsWith(".xml.gz")) &&
+                        (it.name.removeSurrounding("pubmed19n", ".xml.gz").toInt() > lastId)
             }?.map {
                 it.name
             } ?: emptyList()
