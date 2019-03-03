@@ -1,25 +1,18 @@
 package org.jetbrains.bio.pubtrends.crawler
 
-import org.junit.AfterClass
 import org.junit.Test
+import java.io.File
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class ParserTest {
     companion object {
-        private val crawler = PubmedCrawler()
-
-        @JvmStatic
-        @AfterClass
-        fun cleanup() {
-            if (crawler.tempDirectory.exists()) {
-                crawler.tempDirectory.deleteRecursively()
-            }
-        }
+        private val parser = PubmedXMLParser(MockDBHandler())
     }
 
-    private fun parserFileSetup(name : String) : String{
+    private fun parserFileSetup(name : String) : String {
         this::class.java.classLoader.getResourceAsStream(name).use {
-            val file = createTempFile(directory = crawler.tempDirectory)
+            val file = createTempFile()
             file.outputStream().use {out ->
                 it.copyTo(out)
             }
@@ -39,9 +32,9 @@ class ParserTest {
     @Test
     fun testParse() {
         val path = parserFileSetup("articlesWithFormattedAbstract.xml")
-        crawler.parse(path)
+        parser.parse(path)
 
-        val articles = crawler.pubmedXMLHandler.articles
+        val articles = parser.pubmedXMLHandler.articles
         var articlesChecked = 0
 
         assertEquals(Articles.size, articles.size, "Wrong number of articles")
@@ -50,5 +43,9 @@ class ParserTest {
             articlesChecked++
         }
         assertEquals(articlesChecked, Articles.size)
+
+        val testFile = File(path)
+        testFile.delete()
+        assertTrue { !testFile.exists() }
     }
 }

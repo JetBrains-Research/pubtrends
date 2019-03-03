@@ -8,7 +8,7 @@ import org.jetbrains.exposed.sql.statements.expandArgs
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
 
-class DatabaseHandler() {
+class DatabaseHandler : AbstractDBHandler {
     companion object Log4jSqlLogger : SqlLogger {
         private val logger = LogManager.getLogger(Log4jSqlLogger::class)
 
@@ -34,7 +34,7 @@ class DatabaseHandler() {
         }
     }
 
-    fun store(articles: List<PubmedArticle>) {
+    override fun store(articles: List<PubmedArticle>) {
         // val keywordsForArticle = articles.map { it.keywordList.map { kw -> it.pmid to kw } }.flatten()
         // val keywordSet = keywordsForArticle.mapTo(hashSetOf()) { it.second }
         logger.info("Storing ${articles.size} articles...")

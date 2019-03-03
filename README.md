@@ -17,6 +17,7 @@ Project workflow: https://drive.google.com/open?id=17oQAuMJ0vmDgzucGxJT_xgQBCkLE
 
    ```
    CREATE ROLE biolabs WITH PASSWORD 'pubtrends';
+   ALTER ROLE "biolabs" WITH LOGIN;
    CREATE DATABASE pubmed OWNER biolabs; 
    ```
    

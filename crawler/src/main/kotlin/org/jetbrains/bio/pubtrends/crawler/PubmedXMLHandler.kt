@@ -9,7 +9,7 @@ import org.apache.logging.log4j.LogManager
 import kotlin.collections.HashMap
 
 
-class PubmedXMLHandler(private val dbHandler: DatabaseHandler) : DefaultHandler() {
+class PubmedXMLHandler(private val dbHandler: AbstractDBHandler) : DefaultHandler() {
     private val logger = LogManager.getLogger(PubmedXMLHandler::class)
     val tags = HashMap<String, Int>()
     private var articleCounter = 0

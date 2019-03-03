@@ -1,30 +1,14 @@
 package org.jetbrains.bio.pubtrends.crawler
 
 import org.apache.logging.log4j.LogManager
-import org.xml.sax.InputSource
-import org.xml.sax.SAXException
 import java.io.*
 import java.sql.Timestamp
 import java.util.zip.GZIPInputStream
-import javax.xml.parsers.SAXParserFactory
 
 class PubmedCrawler {
     private val logger = LogManager.getLogger(PubmedCrawler::class)
     private val ftpHandler = PubmedFTPHandler()
-    private val dbHandler = DatabaseHandler()
-    private val spf = SAXParserFactory.newInstance()
-
-    init {
-        spf.isNamespaceAware = true
-    }
-
-    private val saxParser = spf.newSAXParser()
-    internal val pubmedXMLHandler = PubmedXMLHandler(dbHandler)
-    private val xmlReader = saxParser.xmlReader
-
-    init {
-        xmlReader.contentHandler = pubmedXMLHandler
-    }
+    private val xmlParser = PubmedXMLParser(DatabaseHandler())
 
     private val lastCheck = Config["lastModification"].toLong()
     private val lastId = Config["lastId"].toInt()
@@ -61,7 +45,7 @@ class PubmedCrawler {
             }
             if (Config["gatherStats"].toBoolean()) {
                 File("tag_stats.csv").outputStream().bufferedWriter().use {
-                    pubmedXMLHandler.tags.iterator().forEach { tag ->
+                    xmlParser.pubmedXMLHandler.tags.iterator().forEach { tag ->
                         it.write("${tag.key} ${tag.value}\n")
                     }
                 }
@@ -108,30 +92,11 @@ class PubmedCrawler {
             var overallSuccess = false
 
             if (downloadSuccess && unpack(localArchiveName)) {
-                if ((parse(localName)) && (pubmedXMLHandler.articles.size > 0)) {
-                    dbHandler.store(pubmedXMLHandler.articles)
-                    overallSuccess = true
-                }
-
+                overallSuccess = xmlParser.parse(localName)
                 File(localName).delete()
             }
 
             logger.info("$localName: ${if (overallSuccess) "SUCCESS" else "FAILURE"}")
         }
-    }
-
-    fun parse(name : String) : Boolean {
-        logger.info("$name: Parsing...")
-
-        try {
-            logger.debug("File location: ${File(name).absolutePath}")
-            File(name).inputStream().use {
-                xmlReader.parse(InputSource(it))
-            }
-        } catch (e: SAXException) {
-            e.printStackTrace()
-        }
-
-        return true
     }
 }
