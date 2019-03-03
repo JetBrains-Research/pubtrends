@@ -11,7 +11,7 @@ import javax.xml.parsers.SAXParserFactory
 class PubmedCrawler {
     private val logger = LogManager.getLogger(PubmedCrawler::class)
     private val ftpHandler = PubmedFTPHandler()
-    private val dbHandler = DatabaseHandler()
+    private val dbHandler : AbstractDBHandler = MongoDBHandler()
     private val spf = SAXParserFactory.newInstance()
 
     init {
