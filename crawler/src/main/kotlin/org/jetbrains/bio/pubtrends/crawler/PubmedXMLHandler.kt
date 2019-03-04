@@ -82,12 +82,15 @@ class PubmedXMLHandler(private val dbHandler: AbstractDBHandler) : DefaultHandle
                     currentArticle = PubmedArticle(0)
                     hasOtherVersion = false
                 }
-                if ((fullName.equals(ABSTRACT_TAG, ignoreCase = true)) ||
-                        (fullName.equals(OTHER_ABSTRACT_TAG, ignoreCase = true))) {
+                if (fullName.equals(ABSTRACT_TAG, ignoreCase = true)) {
                     if ((attributes != null) && (attributes.length > 0)) {
                         structuredAbstract = true
                     }
                     abstractState = true
+                }
+                if (fullName.equals(OTHER_ABSTRACT_TAG, ignoreCase = true)) {
+                    abstractState = true
+                    currentArticle.abstractText += " ";
                 }
                 if (fullName.equals(CITATION_PMID_TAG, ignoreCase = true) &&
                                 ((attributes != null) && (attributes.getValue("IdType") == "pubmed"))) {
@@ -135,7 +138,8 @@ class PubmedXMLHandler(private val dbHandler: AbstractDBHandler) : DefaultHandle
                     skip = true
                 }
             }
-            if (fullName.equals(ABSTRACT_TAG, ignoreCase = true)) {
+            if ((fullName.equals(ABSTRACT_TAG, ignoreCase = true)) ||
+                    (fullName.equals(OTHER_ABSTRACT_TAG, ignoreCase = true))) {
                 if (structuredAbstract) {
                     currentArticle.abstractText += " "
                 }
@@ -172,7 +176,7 @@ class PubmedXMLHandler(private val dbHandler: AbstractDBHandler) : DefaultHandle
                 keywordState = false
             }
             if (medlineState) {
-                val regex = "^(19|20)\\d{2}\$".toRegex()
+                val regex = "(19|20)\\d{2}".toRegex()
                 val match = regex.find(data)
                 try {
                     currentArticle.year = match?.value?.toInt()

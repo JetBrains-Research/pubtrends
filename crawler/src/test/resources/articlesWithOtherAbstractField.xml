@@ -1,0 +1,371 @@
+<PubmedArticleSet>
+    <PubmedArticle>
+        <MedlineCitation Status="MEDLINE" Owner="NLM">
+            <PMID Version="1">11243089</PMID>
+            <DateCompleted>
+                <Year>2001</Year>
+                <Month>05</Month>
+                <Day>17</Day>
+            </DateCompleted>
+            <DateRevised>
+                <Year>2006</Year>
+                <Month>11</Month>
+                <Day>15</Day>
+            </DateRevised>
+            <Article PubModel="Print">
+                <Journal>
+                    <ISSN IssnType="Print">0019-557X</ISSN>
+                    <JournalIssue CitedMedium="Print">
+                        <Volume>43</Volume>
+                        <Issue>1</Issue>
+                        <PubDate>
+                            <MedlineDate>1999 Jan-Mar</MedlineDate>
+                        </PubDate>
+                    </JournalIssue>
+                    <Title>Indian journal of public health</Title>
+                    <ISOAbbreviation>Indian J Public Health</ISOAbbreviation>
+                </Journal>
+                <ArticleTitle>Nutritional status of pavement dweller children of Calcutta City.</ArticleTitle>
+                <Pagination>
+                    <MedlinePgn>49-54</MedlinePgn>
+                </Pagination>
+                <Abstract>
+                    <AbstractText>Pavement dwelling is likely to aggravate malnutrition among its residents due to extreme poverty, lack of dwelling and access to food and their exposure to polluted environment. Paucity of information about nutritional status of street children compared to that among urban slum dwellers, squatters or rural/tribal population is quite evident. The present study revealed the magnitude of Protein Energy Malnutrition (PEM) and few associated factors among a sample of 435 underfives belonging to pavement dweller families and selected randomly from clusters of such families, from each of the five geographical sectors of Calcutta city. Overall prevalence of PEM was found almost similar (about 70%) to that among other 'urban poor' children viz. slum dwellers etc., but about 16% of them were found severely undernourished (Grade III &amp; V of IAP classification of PEM). About 35% and 70% of street dweller children had wasting and stunting respectively. Severe PEM (Grade III &amp; IV) was more prevalent among 12-23 months old, girl child, those belonged to illiterate parents and housewife mothers rather than wage earners. It also did increase with increase of birth rate of decrease of birth interval.</AbstractText>
+                </Abstract>
+                <AuthorList CompleteYN="Y">
+                    <Author ValidYN="Y">
+                        <LastName>Ray</LastName>
+                        <ForeName>S K</ForeName>
+                        <Initials>SK</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>Department of Community Medicine, Medical College, Calcutta.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Mishra</LastName>
+                        <ForeName>R</ForeName>
+                        <Initials>R</Initials>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Biswas</LastName>
+                        <ForeName>R</ForeName>
+                        <Initials>R</Initials>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Kumar</LastName>
+                        <ForeName>S</ForeName>
+                        <Initials>S</Initials>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Halder</LastName>
+                        <ForeName>A</ForeName>
+                        <Initials>A</Initials>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Chatterjee</LastName>
+                        <ForeName>T</ForeName>
+                        <Initials>T</Initials>
+                    </Author>
+                </AuthorList>
+                <Language>eng</Language>
+                <PublicationTypeList>
+                    <PublicationType UI="D016428">Journal Article</PublicationType>
+                    <PublicationType UI="D013485">Research Support, Non-U.S. Gov't</PublicationType>
+                </PublicationTypeList>
+            </Article>
+            <MedlineJournalInfo>
+                <Country>India</Country>
+                <MedlineTA>Indian J Public Health</MedlineTA>
+                <NlmUniqueID>0400673</NlmUniqueID>
+                <ISSNLinking>0019-557X</ISSNLinking>
+            </MedlineJournalInfo>
+            <CitationSubset>IM</CitationSubset>
+            <CitationSubset>J</CitationSubset>
+            <MeshHeadingList>
+                <MeshHeading>
+                    <DescriptorName UI="D002675" MajorTopicYN="N">Child, Preschool</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D016000" MajorTopicYN="N">Cluster Analysis</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D003430" MajorTopicYN="N">Cross-Sectional Studies</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D004522" MajorTopicYN="N">Educational Status</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D005260" MajorTopicYN="N">Female</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D006801" MajorTopicYN="N">Humans</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D007194" MajorTopicYN="N" Type="Geographic">India</DescriptorName>
+                    <QualifierName UI="Q000453" MajorTopicYN="N">epidemiology</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D007223" MajorTopicYN="N">Infant</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D008297" MajorTopicYN="N">Male</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D009752" MajorTopicYN="Y">Nutritional Status</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D011203" MajorTopicYN="N">Poverty</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D011287" MajorTopicYN="N">Prejudice</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D015995" MajorTopicYN="N">Prevalence</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D011502" MajorTopicYN="N">Protein-Energy Malnutrition</DescriptorName>
+                    <QualifierName UI="Q000453" MajorTopicYN="Y">epidemiology</QualifierName>
+                </MeshHeading>
+            </MeshHeadingList>
+            <OtherID Source="PIP">143717</OtherID>
+            <OtherID Source="POP">00288124</OtherID>
+            <OtherAbstract Type="PIP" Language="eng">
+                <AbstractText>This document presents a cross-sectional survey concerning the magnitude of protein energy malnutrition (PEM) and its associated factors among 435 under-5 pavement-dwelling children in Calcutta. Results revealed that 69.43% were undernourished and that 16% of them were suffering from severe malnutrition (grade III and IV of the Indian Academy of Pediatrics criteria for PEM). The 24-35 month age group had the highest prevalence of malnutrition (82.93%) followed by the 36-47 and 12-23 month age groups with prevalences of 76.19% and 74.03%, respectively. Prevalence of severe grade malnutrition was noted to be three times higher in females (24.76%) than males (8.45%), and among families it increased in direct proportion to birth rate and inverse proportion to birth interval. Moreover, children of illiterate parents and nonworking mothers had a higher incidence of severe PEM. Simple measures such as exclusive breast-feeding and timely complementary feeding as well as measures directed toward birth spacing and limiting family size should be implemented to solve the problem of malnutrition.</AbstractText>
+            </OtherAbstract>
+            <KeywordList Owner="PIP">
+                <Keyword MajorTopicYN="N">Age Factors</Keyword>
+                <Keyword MajorTopicYN="Y">Child Nutrition</Keyword>
+                <Keyword MajorTopicYN="N">Geographic Factors</Keyword>
+                <Keyword MajorTopicYN="N">Population Characteristics</Keyword>
+                <Keyword MajorTopicYN="N">Spatial Distribution</Keyword>
+                <Keyword MajorTopicYN="Y">Urban Population</Keyword>
+            </KeywordList>
+            <GeneralNote Owner="PIP">TJ: INDIAN JOURNAL OF PUBLIC HEALTH.</GeneralNote>
+        </MedlineCitation>
+        <PubmedData>
+            <History>
+                <PubMedPubDate PubStatus="pubmed">
+                    <Year>2001</Year>
+                    <Month>3</Month>
+                    <Day>13</Day>
+                    <Hour>10</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="medline">
+                    <Year>2001</Year>
+                    <Month>5</Month>
+                    <Day>18</Day>
+                    <Hour>10</Hour>
+                    <Minute>1</Minute>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="entrez">
+                    <Year>2001</Year>
+                    <Month>3</Month>
+                    <Day>13</Day>
+                    <Hour>10</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+            </History>
+            <PublicationStatus>ppublish</PublicationStatus>
+            <ArticleIdList>
+                <ArticleId IdType="pubmed">11243089</ArticleId>
+            </ArticleIdList>
+        </PubmedData>
+    </PubmedArticle>
+    <PubmedArticle>
+        <MedlineCitation Status="MEDLINE" Owner="NASA">
+            <PMID Version="1">11540070</PMID>
+            <DateCompleted>
+                <Year>1995</Year>
+                <Month>12</Month>
+                <Day>11</Day>
+            </DateCompleted>
+            <DateRevised>
+                <Year>2013</Year>
+                <Month>11</Month>
+                <Day>21</Day>
+            </DateRevised>
+            <Article PubModel="Print">
+                <Journal>
+                    <ISSN IssnType="Print">0735-2689</ISSN>
+                    <JournalIssue CitedMedium="Print">
+                        <Volume>6</Volume>
+                        <Issue>1</Issue>
+                        <PubDate>
+                            <Year>1987</Year>
+                        </PubDate>
+                    </JournalIssue>
+                    <Title>Critical reviews in plant sciences</Title>
+                    <ISOAbbreviation>CRC Crit Rev Plant Sci</ISOAbbreviation>
+                </Journal>
+                <ArticleTitle>Calcium messenger system in plants.</ArticleTitle>
+                <Pagination>
+                    <MedlinePgn>47-103</MedlinePgn>
+                </Pagination>
+                <AuthorList CompleteYN="Y">
+                    <Author ValidYN="Y">
+                        <LastName>Poovaiah</LastName>
+                        <ForeName>B W</ForeName>
+                        <Initials>BW</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>Department of Horticulture, Washington State University, Pullman, USA.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Reddy</LastName>
+                        <ForeName>A S</ForeName>
+                        <Initials>AS</Initials>
+                    </Author>
+                </AuthorList>
+                <Language>eng</Language>
+                <GrantList CompleteYN="Y">
+                    <Grant>
+                        <GrantID>DCB-8502215</GrantID>
+                        <Acronym>DC</Acronym>
+                        <Agency>NIDCD NIH HHS</Agency>
+                        <Country>United States</Country>
+                    </Grant>
+                </GrantList>
+                <PublicationTypeList>
+                    <PublicationType UI="D016428">Journal Article</PublicationType>
+                    <PublicationType UI="D013486">Research Support, U.S. Gov't, Non-P.H.S.</PublicationType>
+                    <PublicationType UI="D013487">Research Support, U.S. Gov't, P.H.S.</PublicationType>
+                    <PublicationType UI="D016454">Review</PublicationType>
+                </PublicationTypeList>
+            </Article>
+            <MedlineJournalInfo>
+                <Country>United States</Country>
+                <MedlineTA>CRC Crit Rev Plant Sci</MedlineTA>
+                <NlmUniqueID>9889759</NlmUniqueID>
+                <ISSNLinking>0735-2689</ISSNLinking>
+            </MedlineJournalInfo>
+            <ChemicalList>
+                <Chemical>
+                    <RegistryNumber>0</RegistryNumber>
+                    <NameOfSubstance UI="D002135">Calcium-Binding Proteins</NameOfSubstance>
+                </Chemical>
+                <Chemical>
+                    <RegistryNumber>0</RegistryNumber>
+                    <NameOfSubstance UI="D002147">Calmodulin</NameOfSubstance>
+                </Chemical>
+                <Chemical>
+                    <RegistryNumber>0</RegistryNumber>
+                    <NameOfSubstance UI="D010937">Plant Growth Regulators</NameOfSubstance>
+                </Chemical>
+                <Chemical>
+                    <RegistryNumber>EC 2.7.11.17</RegistryNumber>
+                    <NameOfSubstance UI="D017871">Calcium-Calmodulin-Dependent Protein Kinases</NameOfSubstance>
+                </Chemical>
+                <Chemical>
+                    <RegistryNumber>SY7Q814VUP</RegistryNumber>
+                    <NameOfSubstance UI="D002118">Calcium</NameOfSubstance>
+                </Chemical>
+            </ChemicalList>
+            <CitationSubset>S</CitationSubset>
+            <MeshHeadingList>
+                <MeshHeading>
+                    <DescriptorName UI="D000595" MajorTopicYN="N">Amino Acid Sequence</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D002118" MajorTopicYN="N">Calcium</DescriptorName>
+                    <QualifierName UI="Q000502" MajorTopicYN="Y">physiology</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D002135" MajorTopicYN="N">Calcium-Binding Proteins</DescriptorName>
+                    <QualifierName UI="Q000502" MajorTopicYN="N">physiology</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D017871" MajorTopicYN="N">Calcium-Calmodulin-Dependent Protein Kinases</DescriptorName>
+                    <QualifierName UI="Q000378" MajorTopicYN="N">metabolism</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D002147" MajorTopicYN="N">Calmodulin</DescriptorName>
+                    <QualifierName UI="Q000378" MajorTopicYN="N">metabolism</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D018506" MajorTopicYN="Y">Gene Expression Regulation, Plant</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D018522" MajorTopicYN="N">Gravitropism</DescriptorName>
+                    <QualifierName UI="Q000502" MajorTopicYN="N">physiology</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D008969" MajorTopicYN="N">Molecular Sequence Data</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D059828" MajorTopicYN="N">Plant Cells</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D010937" MajorTopicYN="N">Plant Growth Regulators</DescriptorName>
+                    <QualifierName UI="Q000378" MajorTopicYN="N">metabolism</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D018521" MajorTopicYN="Y">Plant Physiological Phenomena</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D010944" MajorTopicYN="N">Plants</DescriptorName>
+                    <QualifierName UI="Q000235" MajorTopicYN="Y">genetics</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D015290" MajorTopicYN="Y">Second Messenger Systems</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D015398" MajorTopicYN="N">Signal Transduction</DescriptorName>
+                    <QualifierName UI="Q000502" MajorTopicYN="N">physiology</QualifierName>
+                </MeshHeading>
+            </MeshHeadingList>
+            <NumberOfReferences>363</NumberOfReferences>
+            <OtherID Source="NASA">00012050</OtherID>
+            <OtherAbstract Type="NASA" Language="eng">
+                <AbstractText>The purpose of this review is to delineate the ubiquitous and pivotal role of Ca2+ in diverse physiological processes. Emphasis will be given to the role of Ca2+ in stimulus-response coupling. In addition to reviewing the present status of research, our intention is to critically evaluate the existing data and describe the newly developing areas of Ca2+ research in plants.</AbstractText>
+            </OtherAbstract>
+            <KeywordList Owner="NASA">
+                <Keyword MajorTopicYN="N">NASA Discipline Number 40-30</Keyword>
+                <Keyword MajorTopicYN="N">NASA Discipline Plant Biology</Keyword>
+                <Keyword MajorTopicYN="N">NASA Program Space Biology</Keyword>
+                <Keyword MajorTopicYN="N">Non-NASA Center</Keyword>
+            </KeywordList>
+            <InvestigatorList>
+                <Investigator ValidYN="Y">
+                    <LastName>Poovaiah</LastName>
+                    <ForeName>B W</ForeName>
+                    <Initials>BW</Initials>
+                    <AffiliationInfo>
+                        <Affiliation>WA St U, Pullman, Dept Horticulture</Affiliation>
+                    </AffiliationInfo>
+                </Investigator>
+            </InvestigatorList>
+            <GeneralNote Owner="NASA">Grant numbers: NAG-10-0032</GeneralNote>
+        </MedlineCitation>
+        <PubmedData>
+            <History>
+                <PubMedPubDate PubStatus="pubmed">
+                    <Year>1987</Year>
+                    <Month>1</Month>
+                    <Day>1</Day>
+                    <Hour>0</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="medline">
+                    <Year>2001</Year>
+                    <Month>9</Month>
+                    <Day>11</Day>
+                    <Hour>10</Hour>
+                    <Minute>1</Minute>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="entrez">
+                    <Year>1987</Year>
+                    <Month>1</Month>
+                    <Day>1</Day>
+                    <Hour>0</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+            </History>
+            <PublicationStatus>ppublish</PublicationStatus>
+            <ArticleIdList>
+                <ArticleId IdType="pubmed">11540070</ArticleId>
+                <ArticleId IdType="doi">10.1080/07352688709382247</ArticleId>
+            </ArticleIdList>
+        </PubmedData>
+    </PubmedArticle>
+</PubmedArticleSet>

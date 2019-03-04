@@ -1,19 +1,17 @@
 package org.jetbrains.bio.pubtrends.crawler
 
 object Articles {
-    private var storage: Map<Int, PubmedArticle>
-
-    var size: Int = 0
-        get() {
-            return storage.size
-        }
-
-    operator fun get(pmid: Int): PubmedArticle? {
-        return storage[pmid]
-    }
+    val article29736257 = PubmedArticle(29736257)
+    val article29456534 = PubmedArticle(29456534)
+    val article20453483 = PubmedArticle(20453483)
+    val article27654823 = PubmedArticle(27654823)
+    val article11243089 = PubmedArticle(11243089)
+    val article11540070 = PubmedArticle(11540070)
+    val article10188493 = PubmedArticle(10188493)
+    val article14316043 = PubmedArticle(14316043)
+    val article18122624 = PubmedArticle(18122624)
 
     init {
-        val article29736257 = PubmedArticle(29736257)
         article29736257.year = 2017
         article29736257.title = "Evidence that S6K1, but not 4E-BP1, mediates skeletal muscle " +
                 "pathology associated with loss of A-type lamins."
@@ -36,7 +34,6 @@ object Articles {
                 "mTORC1", "muscle", "rapamycin"))
         article29736257.citationList.addAll(listOf(10587585, 11855819, 26614871, 12702809))
 
-        val article29456534 = PubmedArticle(29456534)
         article29456534.year = 2018
         article29456534.title = "Critical Role of TGF-β and IL-2 Receptor Signaling in Foxp3 Induction by an " +
                 "Inhibitor of DNA Methylation."
@@ -67,7 +64,6 @@ object Articles {
         article29456534.keywordList.addAll(listOf("CNS2", "DNA methylation", "Foxp3", "epigenetic regulation", "iTreg"))
         article29456534.citationList.addAll(listOf(27989104, 17591856, 25159127, 23123060, 22343569))
 
-        val article20453483 = PubmedArticle(20453483)
         article20453483.year = 2011
         article20453483.title = "Coping strategies used by seniors going through the normal aging process: " +
                 "does fear of falling matter?"
@@ -93,7 +89,6 @@ object Articles {
                 "falling. These data could help improve interventions and evaluative research in the domain of fall " +
                 "prevention."
 
-        val article27654823 = PubmedArticle(27654823)
         article27654823.year = 2017
         article27654823.title = "Production of 10S-hydroxy-8(E)-octadecenoic acid from oleic acid by whole " +
                 "recombinant Escherichia coli cells expressing 10S-dioxygenase from Nostoc punctiforme PCC 73102 " +
@@ -111,9 +106,57 @@ object Articles {
         article27654823.keywordList.addAll(listOf("10S-Dioxygenase", "10S-Hydroxy-8(E)-octadecenoic acid",
                 "Biotransformation", "Chaperone", "Nostoc punctiforme PCC 73102", "Oleic acid"))
 
-        storage = mapOf(29736257 to article29736257,
-                29456534 to article29456534,
-                20453483 to article20453483,
-                27654823 to article27654823)
+        article11243089.year = 1999
+        article11243089.title = "Nutritional status of pavement dweller children of Calcutta City."
+        article11243089.abstractText = "Pavement dwelling is likely to aggravate malnutrition among its residents due " +
+                "to extreme poverty, lack of dwelling and access to food and their exposure to polluted environment. " +
+                "Paucity of information about nutritional status of street children compared to that among urban " +
+                "slum dwellers, squatters or rural/tribal population is quite evident. The present study revealed " +
+                "the magnitude of Protein Energy Malnutrition (PEM) and few associated factors among a sample of " +
+                "435 underfives belonging to pavement dweller families and selected randomly from clusters of " +
+                "such families, from each of the five geographical sectors of Calcutta city. Overall prevalence " +
+                "of PEM was found almost similar (about 70%) to that among other 'urban poor' children viz. " +
+                "slum dwellers etc., but about 16% of them were found severely undernourished (Grade III & " +
+                "V of IAP classification of PEM). About 35% and 70% of street dweller children had wasting and " +
+                "stunting respectively. Severe PEM (Grade III & IV) was more prevalent among 12-23 months " +
+                "old, girl child, those belonged to illiterate parents and housewife mothers rather than wage " +
+                "earners. It also did increase with increase of birth rate of decrease of birth interval. This document " +
+                "presents a cross-sectional survey concerning the magnitude of protein energy malnutrition (PEM) and " +
+                "its associated factors among 435 under-5 pavement-dwelling children in Calcutta. Results revealed " +
+                "that 69.43% were undernourished and that 16% of them were suffering from severe malnutrition (grade " +
+                "III and IV of the Indian Academy of Pediatrics criteria for PEM). The 24-35 month age group had the " +
+                "highest prevalence of malnutrition (82.93%) followed by the 36-47 and 12-23 month age groups with " +
+                "prevalences of 76.19% and 74.03%, respectively. Prevalence of severe grade malnutrition was noted to " +
+                "be three times higher in females (24.76%) than males (8.45%), and among families it increased in " +
+                "direct proportion to birth rate and inverse proportion to birth interval. Moreover, children of " +
+                "illiterate parents and nonworking mothers had a higher incidence of severe PEM. Simple measures " +
+                "such as exclusive breast-feeding and timely complementary feeding as well as measures directed " +
+                "toward birth spacing and limiting family size should be implemented to solve the problem of malnutrition."
+        article11243089.keywordList.addAll(listOf("Age Factors", "Child Nutrition", "Geographic Factors",
+                "Population Characteristics", "Spatial Distribution", "Urban Population"))
+
+        article11540070.year = 1987
+        article11540070.title = "Calcium messenger system in plants."
+        article11540070.abstractText = "The purpose of this review is to delineate the ubiquitous and pivotal role " +
+                "of Ca2+ in diverse physiological processes. Emphasis will be given to the role of Ca2+ in " +
+                "stimulus-response coupling. In addition to reviewing the present status of research, our intention " +
+                "is to critically evaluate the existing data and describe the newly developing areas of Ca2+ " +
+                "research in plants."
+        article11540070.keywordList.addAll(listOf("NASA Discipline Number 40-30", "NASA Discipline Plant Biology",
+                "NASA Program Space Biology", "Non-NASA Center"))
+
+        article10188493.year = 1998
+        article10188493.title = "Women's health osteopathy: an alternative view."
+
+        article14316043.year = 1965
+        article14316043.title = "THE RESPONSIBILITY OF THE DENTIST AND THE DENTAL PROFESSION WITH RESPECT TO JAW " +
+                "FRACTURES."
+        article14316043.keywordList.addAll(listOf("DENTISTS", "FRACTURE FIXATION", "FRACTURES",
+                "INTERPROFESSIONAL RELATIONS", "JAW", "MANDIBULAR INJURIES", "MAXILLOFACIAL INJURIES",
+                "PRACTICE MANAGEMENT, DENTAL"))
+
+        article18122624.year = 1947
+        article18122624.title = "Mesenteric vascular occlusion."
+        article18122624.keywordList.add("MESENTERY/occlusion")
     }
 }

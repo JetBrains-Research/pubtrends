@@ -29,23 +29,50 @@ class ParserTest {
         assertEquals(first.citationList, second.citationList, "${second.pmid}: Wrong citation list")
     }
 
-    @Test
-    fun testParse() {
-        val path = parserFileSetup("articlesWithFormattedAbstract.xml")
+    private fun checkArticles(articles: List<PubmedArticle>, articlesMap: Map<Int, PubmedArticle>) {
+        var articlesChecked = 0
+
+        assertEquals(articlesMap.size, articles.size, "Wrong number of articles")
+        articles.forEach {
+            checkEquality(articlesMap[it.pmid]!!, it)
+            articlesChecked++
+        }
+        assertEquals(articlesChecked, articlesMap.size)
+    }
+
+    private fun testArticlesForFile(name : String, articlesMap: Map<Int, PubmedArticle>) {
+        val path = parserFileSetup(name)
         parser.parse(path)
 
         val articles = parser.pubmedXMLHandler.articles
-        var articlesChecked = 0
-
-        assertEquals(Articles.size, articles.size, "Wrong number of articles")
-        articles.forEach {
-            checkEquality(Articles[it.pmid]!!, it)
-            articlesChecked++
-        }
-        assertEquals(articlesChecked, Articles.size)
+        checkArticles(articles, articlesMap)
 
         val testFile = File(path)
         testFile.delete()
         assertTrue { !testFile.exists() }
+    }
+
+    @Test
+    fun testParseFormattedAbstract() {
+        val formattedArticles = mapOf(29736257 to Articles.article29736257,
+                29456534 to Articles.article29456534,
+                20453483 to Articles.article20453483,
+                27654823 to Articles.article27654823)
+        testArticlesForFile("articlesWithFormattedAbstract.xml", formattedArticles)
+    }
+
+    @Test
+    fun testParseOtherAbstract() {
+        val otherArticles = mapOf(11243089 to Articles.article11243089,
+                11540070 to Articles.article11540070)
+        testArticlesForFile("articlesWithOtherAbstractField.xml", otherArticles)
+    }
+
+    @Test
+    fun testParseMedlineDate() {
+        val medlineDateArticles = mapOf(10188493 to Articles.article10188493,
+                14316043 to Articles.article14316043,
+                18122624 to Articles.article18122624)
+        testArticlesForFile("articlesWithMedlineDateField.xml", medlineDateArticles)
     }
 }
