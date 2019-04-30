@@ -57,7 +57,8 @@ class ParserTest {
         val formattedArticles = mapOf(29736257 to Articles.article29736257,
                 29456534 to Articles.article29456534,
                 20453483 to Articles.article20453483,
-                27654823 to Articles.article27654823)
+                27654823 to Articles.article27654823,
+                24884411 to Articles.article24884411)
         testArticlesForFile("articlesWithFormattedAbstract.xml", formattedArticles)
     }
 

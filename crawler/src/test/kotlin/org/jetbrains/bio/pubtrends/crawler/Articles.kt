@@ -10,6 +10,7 @@ object Articles {
     val article10188493 = PubmedArticle(10188493)
     val article14316043 = PubmedArticle(14316043)
     val article18122624 = PubmedArticle(18122624)
+    val article24884411 = PubmedArticle(24884411)
 
     init {
         article29736257.year = 2017
@@ -158,5 +159,36 @@ object Articles {
         article18122624.year = 1947
         article18122624.title = "Mesenteric vascular occlusion."
         article18122624.keywordList.add("MESENTERY/occlusion")
+
+        article24884411.year = 2014
+        article24884411.title = "A multilocus timescale for oomycete evolution estimated under three distinct " +
+                "molecular clock models."
+        article24884411.abstractText = "Molecular clock methodologies allow for the estimation of divergence times " +
+                "across a variety of organisms; this can be particularly useful for groups lacking robust fossil " +
+                "histories, such as microbial eukaryotes with few distinguishing morphological traits. Here we have" +
+                " used a Bayesian molecular clock method under three distinct clock models to estimate divergence " +
+                "times within oomycetes, a group of fungal-like eukaryotes that are ubiquitous in the environment " +
+                "and include a number of devastating pathogenic species. The earliest fossil evidence for oomycetes" +
+                " comes from the Lower Devonian (~400 Ma), however the taxonomic affinities of these fossils " +
+                "are unclear. Complete genome sequences were used to identify orthologous proteins among oomycetes, " +
+                "diatoms, and a brown alga, with a focus on conserved regulators of gene expression such as DNA and " +
+                "histone modifiers and transcription factors. Our molecular clock estimates place the origin of " +
+                "oomycetes by at least the mid-Paleozoic (~430-400 Ma), with the divergence between two major " +
+                "lineages, the peronosporaleans and saprolegnialeans, in the early Mesozoic (~225-190 Ma). Divergence" +
+                " times estimated under the three clock models were similar, although only the strict and random " +
+                "local clock models produced reliable estimates for most parameters. Our molecular timescale suggests" +
+                " that modern pathogenic oomycetes diverged well after the origin of their respective hosts, " +
+                "indicating that environmental conditions or perhaps horizontal gene transfer events, rather than" +
+                " host availability, may have driven lineage diversification. Our findings also suggest that the " +
+                "last common ancestor of oomycetes possessed a full complement of eukaryotic regulatory proteins, " +
+                "including those involved in histone modification, RNA interference, and tRNA and rRNA methylation; " +
+                "interestingly no match to canonical DNA methyltransferases could be identified in the oomycete " +
+                "genomes studied here."
+        article24884411.citationList.addAll(listOf(23785293, 16822745, 23634808, 19487243, 22127870, 16946064,
+                19741609, 12396585, 20862282, 16381920, 20093431, 23020233, 16765584, 19713749, 15952895, 18092388,
+                22712506, 21810989, 19158785, 21546353, 21726377, 10198636, 21750662, 21878562, 22803798, 15459382,
+                16136655, 21935414, 18024004, 16683862, 21865245, 22367748, 18923393, 22920560, 18715673, 19582169,
+                21148394, 20525591, 21424613, 24726347, 20843846, 22105867, 21616882, 18692373, 18705878, 9866200,
+                11752195, 20807414, 20626842, 17726520, 17846036, 18451057, 20520714, 21289104))
     }
 }

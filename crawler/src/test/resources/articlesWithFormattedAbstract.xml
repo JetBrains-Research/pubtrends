@@ -829,4 +829,486 @@
             </ArticleIdList>
         </PubmedData>
     </PubmedArticle>
+    <PubmedArticle>
+        <MedlineCitation Status="MEDLINE" IndexingMethod="Curated" Owner="NLM">
+            <PMID Version="1">24884411</PMID>
+            <DateCompleted>
+                <Year>2014</Year>
+                <Month>07</Month>
+                <Day>30</Day>
+            </DateCompleted>
+            <DateRevised>
+                <Year>2019</Year>
+                <Month>01</Month>
+                <Day>08</Day>
+            </DateRevised>
+            <Article PubModel="Electronic">
+                <Journal>
+                    <ISSN IssnType="Electronic">1471-2148</ISSN>
+                    <JournalIssue CitedMedium="Internet">
+                        <Volume>14</Volume>
+                        <PubDate>
+                            <Year>2014</Year>
+                            <Month>May</Month>
+                            <Day>12</Day>
+                        </PubDate>
+                    </JournalIssue>
+                    <Title>BMC evolutionary biology</Title>
+                    <ISOAbbreviation>BMC Evol. Biol.</ISOAbbreviation>
+                </Journal>
+                <ArticleTitle>A multilocus timescale for oomycete evolution estimated under three distinct molecular clock models.</ArticleTitle>
+                <Pagination>
+                    <MedlinePgn>101</MedlinePgn>
+                </Pagination>
+                <ELocationID EIdType="doi" ValidYN="Y">10.1186/1471-2148-14-101</ELocationID>
+                <Abstract>
+                    <AbstractText Label="BACKGROUND" NlmCategory="BACKGROUND">Molecular clock methodologies allow for the estimation of divergence times across a variety of organisms; this can be particularly useful for groups lacking robust fossil histories, such as microbial eukaryotes with few distinguishing morphological traits. Here we have used a Bayesian molecular clock method under three distinct clock models to estimate divergence times within oomycetes, a group of fungal-like eukaryotes that are ubiquitous in the environment and include a number of devastating pathogenic species. The earliest fossil evidence for oomycetes comes from the Lower Devonian (~400 Ma), however the taxonomic affinities of these fossils are unclear.</AbstractText>
+                    <AbstractText Label="RESULTS" NlmCategory="RESULTS">Complete genome sequences were used to identify orthologous proteins among oomycetes, diatoms, and a brown alga, with a focus on conserved regulators of gene expression such as DNA and histone modifiers and transcription factors. Our molecular clock estimates place the origin of oomycetes by at least the mid-Paleozoic (~430-400 Ma), with the divergence between two major lineages, the peronosporaleans and saprolegnialeans, in the early Mesozoic (~225-190 Ma). Divergence times estimated under the three clock models were similar, although only the strict and random local clock models produced reliable estimates for most parameters.</AbstractText>
+                    <AbstractText Label="CONCLUSIONS" NlmCategory="CONCLUSIONS">Our molecular timescale suggests that modern pathogenic oomycetes diverged well after the origin of their respective hosts, indicating that environmental conditions or perhaps horizontal gene transfer events, rather than host availability, may have driven lineage diversification. Our findings also suggest that the last common ancestor of oomycetes possessed a full complement of eukaryotic regulatory proteins, including those involved in histone modification, RNA interference, and tRNA and rRNA methylation; interestingly no match to canonical DNA methyltransferases could be identified in the oomycete genomes studied here.</AbstractText>
+                </Abstract>
+                <AuthorList CompleteYN="Y">
+                    <Author ValidYN="Y">
+                        <LastName>Matari</LastName>
+                        <ForeName>Nahill H</ForeName>
+                        <Initials>NH</Initials>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Blair</LastName>
+                        <ForeName>Jaime E</ForeName>
+                        <Initials>JE</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>Department of Biology, Franklin &amp; Marshall College, Lancaster, PA, USA. jaime.blair@fandm.edu.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                </AuthorList>
+                <Language>eng</Language>
+                <GrantList CompleteYN="Y">
+                    <Grant>
+                        <Agency>Howard Hughes Medical Institute</Agency>
+                        <Country>United States</Country>
+                    </Grant>
+                </GrantList>
+                <PublicationTypeList>
+                    <PublicationType UI="D016428">Journal Article</PublicationType>
+                    <PublicationType UI="D013485">Research Support, Non-U.S. Gov't</PublicationType>
+                    <PublicationType UI="D013486">Research Support, U.S. Gov't, Non-P.H.S.</PublicationType>
+                </PublicationTypeList>
+                <ArticleDate DateType="Electronic">
+                    <Year>2014</Year>
+                    <Month>05</Month>
+                    <Day>12</Day>
+                </ArticleDate>
+            </Article>
+            <MedlineJournalInfo>
+                <Country>England</Country>
+                <MedlineTA>BMC Evol Biol</MedlineTA>
+                <NlmUniqueID>100966975</NlmUniqueID>
+                <ISSNLinking>1471-2148</ISSNLinking>
+            </MedlineJournalInfo>
+            <ChemicalList>
+                <Chemical>
+                    <RegistryNumber>0</RegistryNumber>
+                    <NameOfSubstance UI="D014157">Transcription Factors</NameOfSubstance>
+                </Chemical>
+            </ChemicalList>
+            <CitationSubset>IM</CitationSubset>
+            <MeshHeadingList>
+                <MeshHeading>
+                    <DescriptorName UI="D001499" MajorTopicYN="N">Bayes Theorem</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D005075" MajorTopicYN="Y">Biological Evolution</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D005580" MajorTopicYN="N">Fossils</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D022761" MajorTopicYN="N">Gene Transfer, Horizontal</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D008957" MajorTopicYN="Y">Models, Genetic</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D009868" MajorTopicYN="N">Oomycetes</DescriptorName>
+                    <QualifierName UI="Q000145" MajorTopicYN="Y">classification</QualifierName>
+                    <QualifierName UI="Q000235" MajorTopicYN="Y">genetics</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D010802" MajorTopicYN="N">Phylogeny</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D014157" MajorTopicYN="N">Transcription Factors</DescriptorName>
+                    <QualifierName UI="Q000235" MajorTopicYN="N">genetics</QualifierName>
+                </MeshHeading>
+            </MeshHeadingList>
+        </MedlineCitation>
+        <PubmedData>
+            <History>
+                <PubMedPubDate PubStatus="received">
+                    <Year>2014</Year>
+                    <Month>03</Month>
+                    <Day>04</Day>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="accepted">
+                    <Year>2014</Year>
+                    <Month>05</Month>
+                    <Day>06</Day>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="entrez">
+                    <Year>2014</Year>
+                    <Month>6</Month>
+                    <Day>3</Day>
+                    <Hour>6</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="pubmed">
+                    <Year>2014</Year>
+                    <Month>6</Month>
+                    <Day>3</Day>
+                    <Hour>6</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="medline">
+                    <Year>2014</Year>
+                    <Month>7</Month>
+                    <Day>31</Day>
+                    <Hour>6</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+            </History>
+            <PublicationStatus>epublish</PublicationStatus>
+            <ArticleIdList>
+                <ArticleId IdType="pubmed">24884411</ArticleId>
+                <ArticleId IdType="pii">1471-2148-14-101</ArticleId>
+                <ArticleId IdType="doi">10.1186/1471-2148-14-101</ArticleId>
+                <ArticleId IdType="pmc">PMC4030286</ArticleId>
+            </ArticleIdList>
+            <ReferenceList>
+                <Reference>
+                    <Citation>PLoS Genet. 2013 Jun;9(6):e1003272</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">23785293</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Proc Biol Sci. 2006 Aug 7;273(1596):1867-72</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">16822745</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Phytopathology. 2013 Oct;103(10):1035-44</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">23634808</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Nucleic Acids Res. 2009 Aug;37(14):e96</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">19487243</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Nucleic Acids Res. 2012 Jan;40(Database issue):D290-301</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">22127870</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Science. 2006 Sep 1;313(5791):1261-6</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">16946064</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Nature. 2009 Sep 17;461(7262):393-8</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">19741609</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Syst Biol. 2002 Oct;51(5):703-14</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">12396585</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>PLoS One. 2010;5(9). pii: e12759. doi: 10.1371/journal.pone.0012759</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">20862282</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Nucleic Acids Res. 2006 Jan 1;34(Database issue):D500-3</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">16381920</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Mol Biol Evol. 2010 Jun;27(6):1289-300</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">20093431</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>J Eukaryot Microbiol. 2012 Sep;59(5):429-93</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">23020233</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Mycol Res. 2006 Jun;110(Pt 6):628-32</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">16765584</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>RNA Biol. 2009 Nov-Dec;6(5):495-502</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">19713749</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Annu Rev Biochem. 2005;74:481-514</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">15952895</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>J Eukaryot Microbiol. 1999 Jul-Aug;46(4):347-66</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">18092388</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Mol Plant Microbe Interact. 2012 Oct;25(10):1350-60</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">22712506</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Proc Natl Acad Sci U S A. 2011 Aug 16;108(33):13624-9</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">21810989</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Nature. 2009 Jan 22;457(7228):396-404</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">19158785</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Mol Biol Evol. 2011 Oct;28(10):2731-9</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">21546353</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Mol Plant Pathol. 2011 Oct;12(8):772-85</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">21726377</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Mol Cell. 1999 Mar;3(3):339-48</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">10198636</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>PLoS Biol. 2011 Jul;9(7):e1001094</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">21750662</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Proc Natl Acad Sci U S A. 2011 Sep 13;108(37):15258-63</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">21878562</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Annu Rev Microbiol. 2012;66:411-27</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">22803798</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Science. 2004 Oct 1;306(5693):79-86</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">15459382</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Nat Rev Genet. 2005 Aug;6(8):654-62</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">16136655</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>PLoS One. 2011;6(9):e24500</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">21935414</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Gene. 2008 Jan 31;408(1-2):1-8</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">18024004</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>PLoS Biol. 2006 May;4(5):e88</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">16683862</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Biol Lett. 2012 Feb 23;8(1):156-9</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">21865245</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Mol Biol Evol. 2012 Aug;29(8):1969-73</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">22367748</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Nature. 2008 Nov 13;456(7219):239-44</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">18923393</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Annu Rev Phytopathol. 2012;50:295-318</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">22920560</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Trends Ecol Evol. 2008 Oct;23(10):578-87</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">18715673</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>PLoS One. 2009;4(7):e6133</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">19582169</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Science. 2010 Dec 10;330(6010):1549-51</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">21148394</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Syst Biol. 2009 Jun;58(3):367-80</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">20525591</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Protoplasma. 2012 Jan;249(1):3-19</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">21424613</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Trends Ecol Evol. 2014 May;29(5):252-9</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">24726347</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Proc Biol Sci. 2011 Mar 7;278(1706):675-80</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">20843846</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Syst Biol. 2012 Mar;61(2):346-59</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">22105867</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Am J Bot. 2010 Aug;97(8):1296-303</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">21616882</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Mycol Res. 2008 Sep;112(Pt 9):1107-14</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">18692373</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Mol Plant Pathol. 2008 May;9(3):385-402</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">18705878</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Mol Biol Evol. 1998 Dec;15(12):1647-57</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">9866200</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Mol Biol Evol. 2002 Jan;19(1):101-9</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">11752195</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>BMC Biol. 2010;8:114</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">20807414</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Genome Biol. 2010;11(7):R73</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">20626842</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>PLoS One. 2007;2(8):e790</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">17726520</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Bioinformatics. 2007 Nov 1;23(21):2947-8</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">17846036</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Microbiology. 2008 May;154(Pt 5):1482-90</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">18451057</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Nature. 2010 Jun 3;465(7298):617-21</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">20520714</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Mycologia. 2011 May-Jun;103(3):455-7</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">21289104</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+            </ReferenceList>
+        </PubmedData>
+    </PubmedArticle>
 </PubmedArticleSet>
