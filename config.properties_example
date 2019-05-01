@@ -1,3 +1,5 @@
+# Please copy this file to ~/.pubtrends/config.properties
+
 # Database configuration
 url = localhost
 port = 5432
@@ -5,15 +7,7 @@ database = pubmed
 username = biolabs
 password = pubtrends
 
-# MongoDB configuration
-mongoUrl = localhost
-mongoPort = 27017
-mongoDatabase = pubmed
-
 # Crawler settings
-lastModification = 0
-lastId = 0
 batchSize = 1000
 parserLimit = 0
-resetDatabase = false
-gatherStats = true
+collectStats = true

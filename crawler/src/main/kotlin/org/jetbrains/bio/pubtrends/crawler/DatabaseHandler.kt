@@ -8,7 +8,15 @@ import org.jetbrains.exposed.sql.statements.expandArgs
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
 
-class DatabaseHandler : AbstractDBHandler {
+class PostgresqlDatabaseHandler(
+        url: String,
+        port: Int,
+        database: String,
+        user: String,
+        password: String,
+        private val resetDatabase: Boolean
+
+) : AbstractDBHandler {
     companion object Log4jSqlLogger : SqlLogger {
         private val logger = LogManager.getLogger(Log4jSqlLogger::class)
 
@@ -18,15 +26,16 @@ class DatabaseHandler : AbstractDBHandler {
     }
 
     init {
-        Database.connect("jdbc:postgresql://${Config["url"]}:${Config["port"]}/${Config["database"]}",
-                         driver = "org.postgresql.Driver",
-                user = Config["username"],
-                password = Config["password"])
+        Database.connect(
+                url = "jdbc:postgresql://$url:$port/$database",
+                driver = "org.postgresql.Driver",
+                user = user,
+                password = password)
 
         transaction {
             addLogger(Log4jSqlLogger)
 
-            if (Config["resetDatabase"].toBoolean()) {
+            if (resetDatabase) {
                 SchemaUtils.drop(Publications, Citations, Keywords, KeywordsPublications)
             }
 
@@ -47,7 +56,7 @@ class DatabaseHandler : AbstractDBHandler {
                     listOf(Publications.year, Publications.title, Publications.abstract)) { batch, article ->
                 batch[Publications.pmid] = article.pmid
                 batch[Publications.year] = article.year
-                batch[Publications.title] = article.title.take(1023)
+                batch[Publications.title] = article.title
                 if (article.abstractText != "") {
                     batch[Publications.abstract] = article.abstractText
                 }
@@ -82,16 +91,25 @@ class DatabaseHandler : AbstractDBHandler {
     }
 }
 
-class BatchInsertUpdateOnDuplicate(table: Table, private val onDupUpdate: List<Column<*>>): BatchInsertStatement(table, false) {
+class BatchInsertUpdateOnDuplicate(
+        table: Table,
+        private val onDupUpdate: List<Column<*>>
+) : BatchInsertStatement(table, false) {
     override fun prepareSQL(transaction: Transaction): String {
-        val onUpdateSQL = if(onDupUpdate.isNotEmpty()) {
-            " ON CONFLICT (pmid) DO UPDATE SET " + onDupUpdate.joinToString { "${transaction.identity(it)} = Excluded.${transaction.identity(it)}" }
+        val onUpdateSQL = if (onDupUpdate.isNotEmpty()) {
+            " ON CONFLICT (pmid) DO UPDATE SET ${
+            onDupUpdate.joinToString {
+                "${transaction.identity(it)} = Excluded.${transaction.identity(it)}"
+            }}"
         } else ""
         return super.prepareSQL(transaction) + onUpdateSQL
     }
 }
 
-fun <T: Table, E> T.batchInsertOnDuplicateKeyUpdate(data: List<E>, onDupUpdateColumns: List<Column<*>>, body: T.(BatchInsertUpdateOnDuplicate, E) -> Unit): List<Int> {
+fun <T : Table, E> T.batchInsertOnDuplicateKeyUpdate(
+        data: List<E>,
+        onDupUpdateColumns: List<Column<*>>, body: T.(BatchInsertUpdateOnDuplicate, E) -> Unit
+): List<Int> {
     return data.takeIf { it.isNotEmpty() }?.let {
         val insert = BatchInsertUpdateOnDuplicate(this, onDupUpdateColumns)
         data.forEach {
@@ -106,7 +124,8 @@ fun <T: Table, E> T.batchInsertOnDuplicateKeyUpdate(data: List<E>, onDupUpdateCo
                     is Long -> value.toInt()
                     is Int -> value
                     null -> null
-                    else -> error("can't find primary key of type Int or Long; map['$idCol']='$value' (where map='$it')")
+                    else -> error("can't find primary key of type Int or Long; " +
+                            "map['$idCol']='$value' (where map='$it')")
                 }
             }
         }

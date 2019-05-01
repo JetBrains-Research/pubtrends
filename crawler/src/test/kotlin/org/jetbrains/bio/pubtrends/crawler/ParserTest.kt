@@ -7,7 +7,7 @@ import kotlin.test.assertTrue
 
 class ParserTest {
     companion object {
-        private val parser = PubmedXMLParser(MockDBHandler())
+        private val parser = PubmedXMLParser(PubmedXMLHandler(MockDBHandler(), 0, 1000))
     }
 
     private fun parserFileSetup(name : String) : String {

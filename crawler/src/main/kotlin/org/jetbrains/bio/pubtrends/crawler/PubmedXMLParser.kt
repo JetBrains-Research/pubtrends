@@ -6,7 +6,7 @@ import org.xml.sax.SAXException
 import java.io.File
 import javax.xml.parsers.SAXParserFactory
 
-class PubmedXMLParser(dbHandler : AbstractDBHandler) {
+class PubmedXMLParser(val pubmedXMLHandler: PubmedXMLHandler) {
     companion object {
         private val logger = LogManager.getLogger(PubmedXMLParser::class)
     }
@@ -18,14 +18,13 @@ class PubmedXMLParser(dbHandler : AbstractDBHandler) {
     }
 
     private val saxParser = spf.newSAXParser()
-    internal val pubmedXMLHandler = PubmedXMLHandler(dbHandler)
     private val xmlReader = saxParser.xmlReader
 
     init {
         xmlReader.contentHandler = pubmedXMLHandler
     }
 
-    fun parse(name : String) : Boolean {
+    fun parse(name: String): Boolean {
         logger.info("$name: Parsing...")
 
         try {

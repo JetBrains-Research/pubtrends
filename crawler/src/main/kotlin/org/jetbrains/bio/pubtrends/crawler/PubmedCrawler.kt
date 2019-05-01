@@ -2,58 +2,90 @@ package org.jetbrains.bio.pubtrends.crawler
 
 import org.apache.logging.log4j.LogManager
 import java.io.*
+import java.nio.file.Files
+import java.nio.file.Path
 import java.sql.Timestamp
+import java.time.Instant
+import java.util.*
 import java.util.zip.GZIPInputStream
 
-class PubmedCrawler {
-    private val logger = LogManager.getLogger(PubmedCrawler::class)
-    private val ftpHandler = PubmedFTPHandler()
-    private val xmlParser = PubmedXMLParser(DatabaseHandler())
+class PubmedCrawler(
+        dbHandler: PubmedXMLHandler,
+        private val collectStats: Boolean,
+        private val statsPath: Path,
+        private val progressPath: Path
+) {
 
-    private val lastCheck = Config["lastModification"].toLong()
-    private val lastId = Config["lastId"].toInt()
-    internal val tempDirectory = createTempDir()
-    //    private val lastCheck : Long = 1539513468000
+    private val logger = LogManager.getLogger(PubmedCrawler::class)
 
     init {
-        if (lastCheck.compareTo(0) != 0) {
-            logger.info("Last modification: ${Timestamp(lastCheck).toLocalDateTime()}")
-        }
-
-        if (lastId > 0) {
-            logger.info("Last downloaded file: pubmed19n${lastId.toString().padStart(4, '0')}.xml.gz")
-        }
-
-        if (tempDirectory.exists()) {
-            logger.info("Created temporary directory: ${tempDirectory.absolutePath}")
+        if (collectStats) {
+            logger.info("Collecting stats in $statsPath")
         }
     }
 
-    fun update() {
+    private val ftpHandler = PubmedFTPHandler()
+    private val xmlParser = PubmedXMLParser(dbHandler)
+    private lateinit var tempDirectory: File
+
+    private var lastSuccessfulTimestamp: Long = 0L
+    private var lastSuccessfulId: Int = 0
+
+    /**
+     * @return false if update not required
+     */
+    fun update(lastCheckCmd: Long?, lastIdCmd: Int?): Boolean {
+        val (lastCheckP, lastIdP) = loadLastProgress()
+        val lastCheck = lastCheckCmd ?: lastCheckP ?: 0L
+        val lastId = lastIdCmd ?: lastIdP ?: 0
+
+        if (lastCheck != 0L) {
+            logger.info("Last check: ${Timestamp(lastCheck).toLocalDateTime()}")
+        }
+
+        if (lastId > 0) {
+            logger.info("Last downloaded file: ${PubmedFTPHandler.idToPubmedFile(lastId)}")
+        }
+
+        tempDirectory = createTempDir()
+        logger.info("Created temporary directory: ${tempDirectory.absolutePath}")
         try {
             val (baselineFiles, updateFiles) = ftpHandler.fetch(lastCheck, lastId)
-            logger.info("Found ${baselineFiles.size + updateFiles.size} new file(s)")
-
+            val baselineSize = baselineFiles.size
+            val updatesSize = updateFiles.size
+            logger.info("Found ${baselineSize + updatesSize} new file(s)\n" +
+                    "Baseline: $baselineSize, Updates: $updatesSize")
+            if (baselineSize + updatesSize == 0) {
+                return false
+            }
+            logger.info("Processing baseline")
             downloadFiles(baselineFiles, isBaseline = true)
+            logger.info("Processing updates")
             downloadFiles(updateFiles, isBaseline = false)
-        } catch (e : IOException) {
+        } catch (e: IOException) {
             logger.fatal("Failed to connect to the server. Error message: ${e.printStackTrace()}")
         } finally {
             if (tempDirectory.exists()) {
                 logger.info("Deleting directory: ${tempDirectory.absolutePath}")
                 tempDirectory.deleteRecursively()
             }
-            if (Config["gatherStats"].toBoolean()) {
-                File("tag_stats.csv").outputStream().bufferedWriter().use {
+            if (collectStats) {
+                logger.info("Writing stats to $statsPath")
+                statsPath.toFile().outputStream().bufferedWriter().use {
                     xmlParser.pubmedXMLHandler.tags.iterator().forEach { tag ->
                         it.write("${tag.key} ${tag.value}\n")
                     }
                 }
             }
+            logger.info("Saving progress to $progressPath")
+            BufferedWriter(FileWriter(progressPath.toFile())).use {
+                it.write("lastCheck $lastSuccessfulTimestamp\nlastId $lastSuccessfulId")
+            }
         }
+        return true
     }
 
-    private fun unpack(archiveName : String) : Boolean {
+    private fun unpack(archiveName: String): Boolean {
         val archive = File(archiveName)
         val originalName = archiveName.substringBefore(".gz")
         val bufferSize = 1024
@@ -61,11 +93,11 @@ class PubmedCrawler {
 
         logger.info("$archiveName: Unpacking...")
 
-        GZIPInputStream(BufferedInputStream(FileInputStream(archiveName))).use {
-            inputStream -> BufferedOutputStream(FileOutputStream(originalName)).use { outputStream ->
+        GZIPInputStream(BufferedInputStream(FileInputStream(archiveName))).use { inputStream ->
+            BufferedOutputStream(FileOutputStream(originalName)).use { outputStream ->
                 try {
                     inputStream.copyTo(outputStream, bufferSize)
-                } catch (e : EOFException) {
+                } catch (e: EOFException) {
                     logger.warn("Corrupted GZ archive. ")
                     e.printStackTrace()
                     safeUnpack = false
@@ -80,23 +112,54 @@ class PubmedCrawler {
         return safeUnpack
     }
 
-    private fun downloadFiles(files : List<String>, isBaseline : Boolean) {
+    private fun downloadFiles(files: List<String>, isBaseline: Boolean) {
         files.forEach {
             val localArchiveName = "${tempDirectory.absolutePath}/$it"
             val localName = localArchiveName.substringBefore(".gz")
 
             logger.info("$localArchiveName: Downloading...")
 
-            val downloadSuccess = if (isBaseline) ftpHandler.downloadBaselineFile(it, tempDirectory.absolutePath)
-                                  else ftpHandler.downloadUpdateFile(it, tempDirectory.absolutePath)
+            val downloadSuccess = if (isBaseline)
+                ftpHandler.downloadBaselineFile(it, tempDirectory.absolutePath)
+            else
+                ftpHandler.downloadUpdateFile(it, tempDirectory.absolutePath)
             var overallSuccess = false
 
             if (downloadSuccess && unpack(localArchiveName)) {
                 overallSuccess = xmlParser.parse(localName)
                 File(localName).delete()
             }
+            if (overallSuccess) {
+                lastSuccessfulTimestamp = Date.from(Instant.now()).time
+                lastSuccessfulId = PubmedFTPHandler.pubmedFileToId(localName)
+            }
 
             logger.info("$localName: ${if (overallSuccess) "SUCCESS" else "FAILURE"}")
         }
     }
+
+    private fun loadLastProgress(): Pair<Long?, Int?> {
+        var lastCheck: Long? = null
+        var lastId: Int? = null
+        if (Files.exists(progressPath)) {
+            logger.info("Found crawler progress $progressPath")
+            BufferedReader(FileReader(progressPath.toFile())).useLines { lines ->
+                for (line in lines) {
+                    val chunks = line.split(" ")
+                    when {
+                        chunks.size == 2 && chunks[0] == "lastCheck" -> {
+                            lastCheck = chunks[1].toLong()
+                            logger.info("lastCheck: $lastCheck")
+                        }
+                        chunks.size == 2 && chunks[0] == "lastId" -> {
+                            lastId = chunks[1].toInt()
+                            logger.info("lastId: $lastId")
+                        }
+                    }
+                }
+            }
+        }
+        return lastCheck to lastId
+    }
+
 }

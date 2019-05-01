@@ -1,27 +1,25 @@
 package org.jetbrains.bio.pubtrends.crawler
 
-import java.lang.Exception
-
-import org.xml.sax.*
-import org.xml.sax.helpers.*
 import org.apache.logging.log4j.LogManager
+import org.xml.sax.Attributes
+import org.xml.sax.helpers.DefaultHandler
 
-import kotlin.collections.HashMap
 
-
-class PubmedXMLHandler(private val dbHandler: AbstractDBHandler) : DefaultHandler() {
+class PubmedXMLHandler(
+        private val dbHandler: AbstractDBHandler,
+        private val parserLimit: Int,
+        private val batchSize: Int
+) : DefaultHandler() {
     private val logger = LogManager.getLogger(PubmedXMLHandler::class)
     val tags = HashMap<String, Int>()
     private var articleCounter = 0
     private var citationCounter = 0
     private var keywordCounter = 0
     private var skip = false
-    private val limit = Config["parserLimit"].toInt()
-    private val batchSize = Config["batchSize"].toInt()
     private var fullName = String()
     private var currentArticle = PubmedArticle(0)
 
-    val articles : MutableList<PubmedArticle> = mutableListOf()
+    val articles: MutableList<PubmedArticle> = mutableListOf()
 
     companion object {
         const val ARTICLE_TAG = "PubmedArticleSet/PubmedArticle"
@@ -90,10 +88,10 @@ class PubmedXMLHandler(private val dbHandler: AbstractDBHandler) : DefaultHandle
                 }
                 if (fullName.equals(OTHER_ABSTRACT_TAG, ignoreCase = true)) {
                     abstractState = true
-                    currentArticle.abstractText += " ";
+                    currentArticle.abstractText += " "
                 }
                 if (fullName.equals(CITATION_PMID_TAG, ignoreCase = true) &&
-                                ((attributes != null) && (attributes.getValue("IdType") == "pubmed"))) {
+                        ((attributes != null) && (attributes.getValue("IdType") == "pubmed"))) {
                     citationIDState = true
                 }
                 if (fullName.equals(KEYWORD_TAG, ignoreCase = true)) {
@@ -134,7 +132,7 @@ class PubmedXMLHandler(private val dbHandler: AbstractDBHandler) : DefaultHandle
                     }
                 }
 
-                if ((limit > 0) && (articleCounter == limit)) {
+                if ((parserLimit > 0) && (articleCounter == parserLimit)) {
                     skip = true
                 }
             }
@@ -180,7 +178,7 @@ class PubmedXMLHandler(private val dbHandler: AbstractDBHandler) : DefaultHandle
                 val match = regex.find(data)
                 try {
                     currentArticle.year = match?.value?.toInt()
-                } catch (e : Exception) {
+                } catch (e: Exception) {
                     logger.warn("Failed to parse MEDLINE date in article ${currentArticle.pmid}: $data")
                 }
                 medlineState = false

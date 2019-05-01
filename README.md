@@ -21,7 +21,8 @@ Project workflow: https://drive.google.com/open?id=17oQAuMJ0vmDgzucGxJT_xgQBCkLE
    CREATE DATABASE pubmed OWNER biolabs; 
    ```
    
-3. Make sure that `crawler/src/main/resources/config.properties` file contains correct information about the database (url, port, DB name, username and password).
+3. Copy and modify `config.properties_examples` to `~/.pubtrends/config.properties`. 
+Ensure that file contains correct information about the database (url, port, DB name, username and password).
    
    ```
    url = localhost
@@ -29,24 +30,26 @@ Project workflow: https://drive.google.com/open?id=17oQAuMJ0vmDgzucGxJT_xgQBCkLE
    database = pubmed
    username = biolabs
    password = pubtrends
+   collectStats = true
    ```
+`collectStats` option is used to count number of XML tag occurrences (useful for development)
 
-4. Other configuration parameters in `crawler/src/main/resources/config.properties`:
+4. Command line options supported:
 
-   * `lastId` - in case of interruption use this parameter to restart the download from article pack `pubmed18n{lastId+1}.xml` (should be done automatically later) 
+   * `lastId` - in case of interruption use this parameter to restart the download from article pack `pubmed18n{lastId+1}.xml` 
    * `parserLimit` - maximum number of articles per XML to be parsed (useful for development)
    * `resetDatabase` - clear current contents of the database (useful for development)
-   * `gatherStats` - count number of XML tag occurences (useful for development)
+   
+Interruption can be caused by internet connection problems.
+In case of interruption `lastId` parameter should be saved to `~/.pubtrends/crawler`, but can be configured explicitly. 
 
-5. Use the following command to build the project:
+5. Use the following command to test the project:
 
    ```
-   ./gradlew clean build test
+   ./gradlew clean test shadowJar
    ```
      
 6. Previous command should have produced `crawler/build/libs/crawler-dev.jar` file.
    From now on you can use JAR file, no args should be specified when launching the program. 
    First run allows you to download complete up-to-date PubMed database.
    Further runs will allow you to download daily updates.
-      
-7. In case of interruption use `lastId` parameter as described above. Interruption can be caused by internet connection problems.
