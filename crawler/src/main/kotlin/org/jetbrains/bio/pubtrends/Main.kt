@@ -39,9 +39,8 @@ fun main(args: Array<String>) {
 
         // Configure settings folder
         val settingsRoot: Path = Paths.get(System.getProperty("user.home", ""), ".pubtrends")
-        if (Files.notExists(settingsRoot)) {
-            Files.createDirectories(settingsRoot)
-            logger.warn("$settingsRoot should have been created by log4j")
+        check(Files.exists(settingsRoot)) {
+            "$settingsRoot should have been created by log4j"
         }
         logger.info("Settings folder $settingsRoot")
 
