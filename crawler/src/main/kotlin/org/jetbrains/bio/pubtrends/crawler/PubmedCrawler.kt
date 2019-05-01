@@ -126,7 +126,7 @@ class PubmedCrawler(
             logger.debug("Saving progress to $progressPath")
             BufferedWriter(FileWriter(progressPath.toFile())).use {
                 it.write("lastCheck ${Date.from(Instant.now()).time}\n" +
-                        "lastId ${PubmedFTPHandler.pubmedFileToId(localName)}")
+                        "lastId ${PubmedFTPHandler.pubmedFileToId(it.toString())}")
             }
 
             logger.info("$localName: ${if (overallSuccess) "SUCCESS" else "FAILURE"}")
