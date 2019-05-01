@@ -140,7 +140,7 @@ class PubmedCrawler(
             logger.info("Found crawler progress $progressTSV")
             BufferedReader(FileReader(progressTSV.toFile())).useLines { lines ->
                 for (line in lines) {
-                    val chunks = line.split(" ")
+                    val chunks = line.split("\t")
                     when {
                         chunks.size == 2 && chunks[0] == "lastCheck" -> {
                             lastCheck = chunks[1].toLong()
