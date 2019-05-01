@@ -28,9 +28,6 @@ class PubmedCrawler(
     private val xmlParser = PubmedXMLParser(dbHandler)
     private lateinit var tempDirectory: File
 
-    private var lastSuccessfulTimestamp: Long = 0L
-    private var lastSuccessfulId: Int = 0
-
     /**
      * @return false if update not required
      */
@@ -76,10 +73,6 @@ class PubmedCrawler(
                         it.write("${tag.key} ${tag.value}\n")
                     }
                 }
-            }
-            logger.info("Saving progress to $progressPath")
-            BufferedWriter(FileWriter(progressPath.toFile())).use {
-                it.write("lastCheck $lastSuccessfulTimestamp\nlastId $lastSuccessfulId")
             }
         }
         return true
@@ -129,9 +122,11 @@ class PubmedCrawler(
                 overallSuccess = xmlParser.parse(localName)
                 File(localName).delete()
             }
-            if (overallSuccess) {
-                lastSuccessfulTimestamp = Date.from(Instant.now()).time
-                lastSuccessfulId = PubmedFTPHandler.pubmedFileToId(localName)
+            // We should save progress information to be able to recover from Ctrl-C/kill signals
+            logger.debug("Saving progress to $progressPath")
+            BufferedWriter(FileWriter(progressPath.toFile())).use {
+                it.write("lastCheck ${Date.from(Instant.now()).time}\n" +
+                        "lastId ${PubmedFTPHandler.pubmedFileToId(localName)}")
             }
 
             logger.info("$localName: ${if (overallSuccess) "SUCCESS" else "FAILURE"}")
