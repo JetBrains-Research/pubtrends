@@ -106,16 +106,16 @@ class PubmedCrawler(
     }
 
     private fun downloadFiles(files: List<String>, isBaseline: Boolean) {
-        files.forEach {
-            val localArchiveName = "${tempDirectory.absolutePath}/$it"
+        files.forEach { file ->
+            val localArchiveName = "${tempDirectory.absolutePath}/$file"
             val localName = localArchiveName.substringBefore(".gz")
 
             logger.info("$localArchiveName: Downloading...")
 
             val downloadSuccess = if (isBaseline)
-                ftpHandler.downloadBaselineFile(it, tempDirectory.absolutePath)
+                ftpHandler.downloadBaselineFile(file, tempDirectory.absolutePath)
             else
-                ftpHandler.downloadUpdateFile(it, tempDirectory.absolutePath)
+                ftpHandler.downloadUpdateFile(file, tempDirectory.absolutePath)
             var overallSuccess = false
 
             if (downloadSuccess && unpack(localArchiveName)) {
@@ -126,7 +126,7 @@ class PubmedCrawler(
             logger.debug("Saving progress to $progressPath")
             BufferedWriter(FileWriter(progressPath.toFile())).use {
                 it.write("lastCheck ${Date.from(Instant.now()).time}\n" +
-                        "lastId ${PubmedFTPHandler.pubmedFileToId(it.toString())}")
+                        "lastId ${PubmedFTPHandler.pubmedFileToId(file)}")
             }
 
             logger.info("$localName: ${if (overallSuccess) "SUCCESS" else "FAILURE"}")
