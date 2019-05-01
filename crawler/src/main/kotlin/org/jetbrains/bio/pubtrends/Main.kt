@@ -28,10 +28,20 @@ fun main(args: Array<String>) {
         acceptsAll(listOf("h", "?", "help"), "Show help").forHelp()
 
 
+
+        logger.info("Arguments: \n" + Arrays.toString(args))
+
+        val options = parse(*args)
+        if (options.has("help")) {
+            printHelpOn(System.err)
+            System.exit(0)
+        }
+
         // Configure settings folder
         val settingsRoot: Path = Paths.get(System.getProperty("user.home", ""), ".pubtrends")
-        check(Files.exists(settingsRoot)) {
-            "$settingsRoot should have been created by log4j"
+        if (Files.notExists(settingsRoot)) {
+            Files.createDirectories(settingsRoot)
+            logger.warn("$settingsRoot should have been created by log4j")
         }
         logger.info("Settings folder $settingsRoot")
 
@@ -44,14 +54,9 @@ fun main(args: Array<String>) {
         val config = Properties().apply {
             load(BufferedReader(FileReader(configPath.toFile())))
         }
-
-        val options = parse(*args)
-        if (options.has("help")) {
-            System.err.print("Arguments: ")
-            System.err.println(Arrays.toString(args))
-            printHelpOn(System.err)
-            System.exit(0)
-        }
+        logger.info("Config\n" + BufferedReader(FileReader(configPath.toFile())).use {
+            it.readLines().joinToString("\n")
+        })
 
         logger.info("Crawling...")
 
@@ -62,16 +67,19 @@ fun main(args: Array<String>) {
 
         logger.info("Init database connection")
         val dbHandler = PostgresqlDatabaseHandler(
-                config["url"] as String,
-                config["port"] as Int,
-                config["database"] as String,
-                config["user"] as String,
-                config["password"] as String,
+                config["url"].toString(),
+                config["port"].toString().toInt(),
+                config["database"].toString(),
+                config["user"].toString(),
+                config["password"].toString(),
                 resetDatabase)
 
         logger.info("Init Pubmed processor")
         val pubmedXMLHandler =
-                PubmedXMLHandler(dbHandler, config["parserLimit"] as Int, config["batchSize"] as Int)
+                PubmedXMLHandler(
+                        dbHandler,
+                        config["parserLimit"].toString().toInt(),
+                        config["batchSize"].toString().toInt())
 
         logger.info("Init crawler")
         val crawlerProgress = settingsRoot.resolve("crawler")
@@ -79,17 +87,17 @@ fun main(args: Array<String>) {
         val collectStats = config["collectStats"] as Boolean
         val pubmedCrawler = PubmedCrawler(pubmedXMLHandler, collectStats, statsFile, crawlerProgress)
 
-        val lastCheckCmd = if (options.has("lastCheck")) options.valueOf("lastCheck") as Long else null
-        val lastIdCmd = if (options.has("lastId")) options.valueOf("lastId") as Int else null
+        val lastCheckCmd = if (options.has("lastCheck")) options.valueOf("lastCheck").toString().toLong() else null
+        val lastIdCmd = if (options.has("lastId")) options.valueOf("lastId").toString().toInt() else null
         if (options.has("retry")) {
             var retry = 1
             logger.info("Retry options presents, keep retrying downloading after any problems.")
-             while (pubmedCrawler.update(lastCheckCmd, lastIdCmd)) {
-                 logger.info("Waiting for one minute...")
-                 Thread.sleep(60*10*1000)
-                 logger.info("Retry #$retry")
-                 retry += 1
-             }
+            while (pubmedCrawler.update(lastCheckCmd, lastIdCmd)) {
+                logger.info("Waiting for one minute...")
+                Thread.sleep(60 * 10 * 1000)
+                logger.info("Retry #$retry")
+                retry += 1
+            }
         } else {
             pubmedCrawler.update(lastCheckCmd, lastIdCmd)
         }
