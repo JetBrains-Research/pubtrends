@@ -12,15 +12,15 @@ import java.util.zip.GZIPInputStream
 class PubmedCrawler(
         dbHandler: PubmedXMLHandler,
         private val collectStats: Boolean,
-        private val statsPath: Path,
-        private val progressPath: Path
+        private val statsTSV: Path,
+        private val progressTSV: Path
 ) {
 
     private val logger = LogManager.getLogger(PubmedCrawler::class)
 
     init {
         if (collectStats) {
-            logger.info("Collecting stats in $statsPath")
+            logger.info("Collecting stats in $statsTSV")
         }
     }
 
@@ -67,10 +67,10 @@ class PubmedCrawler(
                 tempDirectory.deleteRecursively()
             }
             if (collectStats) {
-                logger.info("Writing stats to $statsPath")
-                statsPath.toFile().outputStream().bufferedWriter().use {
+                logger.info("Writing stats to $statsTSV")
+                statsTSV.toFile().outputStream().bufferedWriter().use {
                     xmlParser.pubmedXMLHandler.tags.iterator().forEach { tag ->
-                        it.write("${tag.key} ${tag.value}\n")
+                        it.write("${tag.key}\t${tag.value}\n")
                     }
                 }
             }
@@ -123,10 +123,10 @@ class PubmedCrawler(
                 File(localName).delete()
             }
             // We should save progress information to be able to recover from Ctrl-C/kill signals
-            logger.debug("Saving progress to $progressPath")
-            BufferedWriter(FileWriter(progressPath.toFile())).use {
-                it.write("lastCheck ${Date.from(Instant.now()).time}\n" +
-                        "lastId ${PubmedFTPHandler.pubmedFileToId(file)}")
+            logger.debug("Saving progress to $progressTSV")
+            BufferedWriter(FileWriter(progressTSV.toFile())).use {
+                it.write("lastCheck\t${Date.from(Instant.now()).time}\n" +
+                        "lastId\t${PubmedFTPHandler.pubmedFileToId(file)}")
             }
 
             logger.info("$localName: ${if (overallSuccess) "SUCCESS" else "FAILURE"}")
@@ -136,9 +136,9 @@ class PubmedCrawler(
     private fun loadLastProgress(): Pair<Long?, Int?> {
         var lastCheck: Long? = null
         var lastId: Int? = null
-        if (Files.exists(progressPath)) {
-            logger.info("Found crawler progress $progressPath")
-            BufferedReader(FileReader(progressPath.toFile())).useLines { lines ->
+        if (Files.exists(progressTSV)) {
+            logger.info("Found crawler progress $progressTSV")
+            BufferedReader(FileReader(progressTSV.toFile())).useLines { lines ->
                 for (line in lines) {
                     val chunks = line.split(" ")
                     when {

@@ -81,10 +81,10 @@ fun main(args: Array<String>) {
                         config["batchSize"].toString().toInt())
 
         logger.info("Init crawler")
-        val crawlerProgress = settingsRoot.resolve("crawler")
-        val statsFile = settingsRoot.resolve("tag_stats.csv")
+        val crawlerTSV = settingsRoot.resolve("crawler.tsv")
+        val statsTSV = settingsRoot.resolve("stats.tsv")
         val collectStats = config["collectStats"].toString().toBoolean()
-        val pubmedCrawler = PubmedCrawler(pubmedXMLHandler, collectStats, statsFile, crawlerProgress)
+        val pubmedCrawler = PubmedCrawler(pubmedXMLHandler, collectStats, statsTSV, crawlerTSV)
 
         val lastCheckCmd = if (options.has("lastCheck")) options.valueOf("lastCheck").toString().toLong() else null
         val lastIdCmd = if (options.has("lastId")) options.valueOf("lastId").toString().toInt() else null
