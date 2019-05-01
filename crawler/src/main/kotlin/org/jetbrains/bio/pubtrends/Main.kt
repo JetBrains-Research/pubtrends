@@ -70,7 +70,7 @@ fun main(args: Array<String>) {
                 config["url"].toString(),
                 config["port"].toString().toInt(),
                 config["database"].toString(),
-                config["user"].toString(),
+                config["username"].toString(),
                 config["password"].toString(),
                 resetDatabase)
 
@@ -84,7 +84,7 @@ fun main(args: Array<String>) {
         logger.info("Init crawler")
         val crawlerProgress = settingsRoot.resolve("crawler")
         val statsFile = settingsRoot.resolve("tag_stats.csv")
-        val collectStats = config["collectStats"] as Boolean
+        val collectStats = config["collectStats"].toString().toBoolean()
         val pubmedCrawler = PubmedCrawler(pubmedXMLHandler, collectStats, statsFile, crawlerProgress)
 
         val lastCheckCmd = if (options.has("lastCheck")) options.valueOf("lastCheck").toString().toLong() else null
