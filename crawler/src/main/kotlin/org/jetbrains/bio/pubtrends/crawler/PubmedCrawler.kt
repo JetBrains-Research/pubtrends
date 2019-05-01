@@ -4,9 +4,6 @@ import org.apache.logging.log4j.LogManager
 import java.io.*
 import java.nio.file.Files
 import java.nio.file.Path
-import java.sql.Timestamp
-import java.time.Instant
-import java.util.*
 import java.util.zip.GZIPInputStream
 
 class PubmedCrawler(
@@ -31,13 +28,24 @@ class PubmedCrawler(
     /**
      * @return false if update not required
      */
-    fun update(lastCheckCmd: Long?, lastIdCmd: Int?): Boolean {
-        val (lastCheckP, lastIdP) = loadLastProgress()
-        val lastCheck = lastCheckCmd ?: lastCheckP ?: 0L
-        val lastId = lastIdCmd ?: lastIdP ?: 0
-
-        if (lastCheck != 0L) {
-            logger.info("Last check: ${Timestamp(lastCheck).toLocalDateTime()}")
+    fun update(lastIdCmd: Int?): Boolean {
+        var lastId = 0
+        if (lastIdCmd == null) {
+            if (Files.exists(progressTSV)) {
+                logger.info("Found crawler progress $progressTSV")
+                BufferedReader(FileReader(progressTSV.toFile())).useLines { lines ->
+                    for (line in lines) {
+                        val chunks = line.split("\t")
+                        when {
+                            chunks.size == 2 && chunks[0] == "lastId" -> {
+                                lastId = chunks[1].toInt()
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            lastId = lastIdCmd
         }
 
         if (lastId > 0) {
@@ -47,7 +55,7 @@ class PubmedCrawler(
         tempDirectory = createTempDir()
         logger.info("Created temporary directory: ${tempDirectory.absolutePath}")
         try {
-            val (baselineFiles, updateFiles) = ftpHandler.fetch(lastCheck, lastId)
+            val (baselineFiles, updateFiles) = ftpHandler.fetch(lastId)
             val baselineSize = baselineFiles.size
             val updatesSize = updateFiles.size
             logger.info("Found ${baselineSize + updatesSize} new file(s)\n" +
@@ -122,39 +130,14 @@ class PubmedCrawler(
                 overallSuccess = xmlParser.parse(localName)
                 File(localName).delete()
             }
-            // We should save progress information to be able to recover from Ctrl-C/kill signals
-            logger.debug("Saving progress to $progressTSV")
-            BufferedWriter(FileWriter(progressTSV.toFile())).use {
-                it.write("lastCheck\t${Date.from(Instant.now()).time}\n" +
-                        "lastId\t${PubmedFTPHandler.pubmedFileToId(file)}")
-            }
 
             logger.info("$localName: ${if (overallSuccess) "SUCCESS" else "FAILURE"}")
-        }
-    }
 
-    private fun loadLastProgress(): Pair<Long?, Int?> {
-        var lastCheck: Long? = null
-        var lastId: Int? = null
-        if (Files.exists(progressTSV)) {
-            logger.info("Found crawler progress $progressTSV")
-            BufferedReader(FileReader(progressTSV.toFile())).useLines { lines ->
-                for (line in lines) {
-                    val chunks = line.split("\t")
-                    when {
-                        chunks.size == 2 && chunks[0] == "lastCheck" -> {
-                            lastCheck = chunks[1].toLong()
-                            logger.info("lastCheck: $lastCheck")
-                        }
-                        chunks.size == 2 && chunks[0] == "lastId" -> {
-                            lastId = chunks[1].toInt()
-                            logger.info("lastId: $lastId")
-                        }
-                    }
-                }
+            // Save progress information to be able to recover from Ctrl-C/kill signals
+            logger.debug("Save progress to $progressTSV")
+            BufferedWriter(FileWriter(progressTSV.toFile())).use {
+                it.write("lastId\t${PubmedFTPHandler.pubmedFileToId(file)}")
             }
         }
-        return lastCheck to lastId
     }
-
 }

@@ -2,6 +2,7 @@ package org.jetbrains.bio.pubtrends.crawler
 
 import org.apache.commons.net.ftp.FTPClient
 import org.apache.commons.net.ftp.FTPReply
+import org.apache.logging.log4j.LogManager
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.IOException
@@ -9,6 +10,8 @@ import java.io.IOException
 
 class PubmedFTPHandler {
     companion object {
+        private val logger = LogManager.getLogger(PubmedFTPHandler::class)
+
         const val server = "ftp.ncbi.nlm.nih.gov"
         const val baselinePath = "/pubmed/baseline"
         const val updatePath = "/pubmed/updatefiles"
@@ -18,13 +21,17 @@ class PubmedFTPHandler {
         fun idToPubmedFile(id: Int): String = "pubmed19n${id.toString().padStart(4, '0')}.xml.gz"
     }
 
-    fun fetch(lastCheck: Long = 0, lastId: Int = 0): Pair<List<String>, List<String>> {
+    fun fetch(lastId: Int = 0): Pair<List<String>, List<String>> {
         val ftp = CloseableFTPClient()
 
         ftp.use {
+            logger.info("Connecting to $server")
             connect(it)
-            val baselineFiles = getNewXMLsList(it, baselinePath, lastCheck, lastId)
-            val updateFiles = getNewXMLsList(it, updatePath, lastCheck, lastId)
+
+            logger.info("Fetching baseline files")
+            val baselineFiles = getNewXMLsList(it, baselinePath, lastId)
+            logger.info("Fetching update files")
+            val updateFiles = getNewXMLsList(it, updatePath, lastId)
 
             return Pair(baselineFiles, updateFiles)
         }
@@ -95,13 +102,11 @@ class PubmedFTPHandler {
         return false
     }
 
-    private fun getNewXMLsList(ftp: FTPClient, directory: String, lastCheck: Long, lastId: Int): List<String> {
+    private fun getNewXMLsList(ftp: FTPClient, directory: String, lastId: Int): List<String> {
         ftp.changeWorkingDirectory(directory)
         try {
             return ftp.listFiles()?.filter {
-                it.timestamp.time.time > lastCheck &&
-                        it.name.endsWith(".xml.gz") &&
-                        pubmedFileToId(it.name) > lastId
+                it.name.endsWith(".xml.gz") && pubmedFileToId(it.name) > lastId
             }?.map {
                 it.name
             } ?: emptyList()

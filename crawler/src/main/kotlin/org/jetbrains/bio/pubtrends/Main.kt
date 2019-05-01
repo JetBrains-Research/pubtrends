@@ -20,14 +20,10 @@ fun main(args: Array<String>) {
         accepts("resetDatabase", "Reset Database")
 
         accepts("retry", "Keep retrying downloading new files after any problems")
-        accepts("lastCheck", "Last check").withRequiredArg().ofType(Int::class.java).defaultsTo(0)
         accepts("lastId", "LastID").withRequiredArg().ofType(Int::class.java).defaultsTo(0)
-
 
         // Help option
         acceptsAll(listOf("h", "?", "help"), "Show help").forHelp()
-
-
 
         logger.info("Arguments: \n" + Arrays.toString(args))
 
@@ -86,19 +82,18 @@ fun main(args: Array<String>) {
         val collectStats = config["collectStats"].toString().toBoolean()
         val pubmedCrawler = PubmedCrawler(pubmedXMLHandler, collectStats, statsTSV, crawlerTSV)
 
-        val lastCheckCmd = if (options.has("lastCheck")) options.valueOf("lastCheck").toString().toLong() else null
         val lastIdCmd = if (options.has("lastId")) options.valueOf("lastId").toString().toInt() else null
         if (options.has("retry")) {
             var retry = 1
             logger.info("Retry options presents, keep retrying downloading after any problems.")
-            while (pubmedCrawler.update(lastCheckCmd, lastIdCmd)) {
+            while (pubmedCrawler.update(lastIdCmd)) {
                 logger.info("Waiting for one minute...")
                 Thread.sleep(60 * 10 * 1000)
                 logger.info("Retry #$retry")
                 retry += 1
             }
         } else {
-            pubmedCrawler.update(lastCheckCmd, lastIdCmd)
+            pubmedCrawler.update(lastIdCmd)
         }
         logger.info("Done crawling.")
     }
