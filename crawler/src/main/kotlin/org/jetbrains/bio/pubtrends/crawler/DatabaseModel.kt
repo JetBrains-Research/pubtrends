@@ -2,10 +2,13 @@ package org.jetbrains.bio.pubtrends.crawler
 
 import org.jetbrains.exposed.sql.Table
 
+internal const val PUBLICATION_MAX_TITLE_LENGTH = 1023
+internal const val KEYWORD_MAX_LENGTH = 80
+
 object Publications : Table() {
     val pmid = integer("pmid").primaryKey()
     val year = integer("year").nullable()
-    val title = varchar("title", 1023)
+    val title = varchar("title", PUBLICATION_MAX_TITLE_LENGTH)
     val abstract = text("abstract").nullable()
 }
 
@@ -20,7 +23,7 @@ object Citations : Table() {
 
 object Keywords : Table() {
     val id = integer("id").primaryKey().autoIncrement()
-    val keyword = varchar("keyword", 80)
+    val keyword = varchar("keyword", KEYWORD_MAX_LENGTH)
 
     init {
         index(true, keyword)

@@ -56,7 +56,7 @@ class PostgresqlDatabaseHandler(
                     listOf(Publications.year, Publications.title, Publications.abstract)) { batch, article ->
                 batch[Publications.pmid] = article.pmid
                 batch[Publications.year] = article.year
-                batch[Publications.title] = article.title
+                batch[Publications.title] = article.title.take(PUBLICATION_MAX_TITLE_LENGTH)
                 if (article.abstractText != "") {
                     batch[Publications.abstract] = article.abstractText
                 }
