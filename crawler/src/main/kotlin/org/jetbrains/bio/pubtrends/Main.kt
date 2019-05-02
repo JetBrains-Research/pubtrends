@@ -87,8 +87,8 @@ fun main(args: Array<String>) {
             var retry = 1
             logger.info("Retry options presents, keep retrying downloading after any problems.")
             while (pubmedCrawler.update(lastIdCmd)) {
-                logger.info("Waiting for one minute...")
-                Thread.sleep(60 * 10 * 1000)
+                logger.info("Waiting for 5 minutes...")
+                Thread.sleep(5 * 60 * 1000)
                 logger.info("Retry #$retry")
                 retry += 1
             }
