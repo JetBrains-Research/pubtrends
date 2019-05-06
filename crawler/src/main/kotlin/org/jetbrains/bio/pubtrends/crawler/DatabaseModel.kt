@@ -17,7 +17,7 @@ object Citations : Table() {
     val pmidCited = integer("pmid_cited")
 
     init {
-        index(true, pmidCiting, pmidCited)
+        index(true, pmidCited, pmidCiting)
     }
 }
 
