@@ -10,3 +10,4 @@ tmp
 *.class
 
 */.ipynb_checkpoints
+.pyc
