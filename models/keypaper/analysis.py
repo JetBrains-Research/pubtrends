@@ -8,24 +8,37 @@ import re
 
 from Bio import Entrez
 
-logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', level=logging.DEBUG)
-
 class KeyPaperAnalyzer:
-    def __init__(self, email):
+    def __init__(self,
+                 host='localhost', port='5432', dbname='pubmed',
+                 user='biolabs', password='pubtrends',
+                 email='nikolay.kapralov@gmail.com',
+                 debug=False):
+        if debug:
+            logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
+                                level=logging.DEBUG)
+        else:
+            logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
+                                level=logging.INFO)
+
         Entrez.email = email
-        self.conn = pg_driver.connect(dbname='pubmed', user='biolabs',
-                                      password='pubtrends', host='localhost')
+        connection_string = f"""
+        dbname={dbname} user={user} password={password} host={host} port={port}
+        """
+
+        self.conn = pg_driver.connect(connection_string)
         self.cursor = self.conn.cursor()
-        
+
     def search(self, *terms):
         print('TODO: handle queries which return more than 1000000 items')
         print('TODO: use local database instead of PubMed API')
         self.terms = [t.lower() for t in terms]
         query=' '.join(terms)
-        handle = Entrez.esearch(db='pubmed', retmax='1000000', retmode='xml', term=query)
+        handle = Entrez.esearch(db='pubmed', retmax='1000000',
+                                retmode='xml', term=query)
         self.pmids = [int(pmid) for pmid in Entrez.read(handle)['IdList']]
         logging.info(f'Found {len(self.pmids)} articles about {terms}')
-        
+
 
     def load_publications(self):
         logging.info('Loading publication data')
@@ -38,10 +51,8 @@ class KeyPaperAnalyzer:
 
         with self.conn:
             self.cursor.execute(query, (self.pmids,))
-        pub_data = []
-        for row in self.cursor:
-            pub_data.append(list(row))
-        self.pub_df = pd.DataFrame(pub_data, columns=['pmid', 'title', 'year'])
+        self.pub_df = pd.DataFrame(self.cursor.fetchall(),
+                                   columns=['pmid', 'title', 'year'])
         logging.info(f'Found {len(self.pub_df)} publications in the local database')
 
     def load_cocitations(self):
@@ -64,11 +75,8 @@ class KeyPaperAnalyzer:
 
         with self.conn:
             self.cursor.execute(query)
-
-        cocit_data = []
-        for row in self.cursor:
-            cocit_data.append(list(row))
-        self.cocit_df = pd.DataFrame(cocit_data, columns=['citing', 'cited_1', 'cited_2', 'year'])
+        self.cocit_df = pd.DataFrame(self.cursor.fetchall(),
+                                     columns=['citing', 'cited_1', 'cited_2', 'year'])
         logging.info(f'Found {len(self.cocit_df)} co-cited pairs of articles')
 
         logging.info(f'Building co-citations graph')
@@ -102,11 +110,8 @@ class KeyPaperAnalyzer:
         with self.conn:
             self.cursor.execute(query)
         logging.info('Done loading citation stats')
-
-        pub_data = []
-        for row in self.cursor:
-            pub_data.append(list(row))
-        self.cit_df = pd.DataFrame(pub_data, columns=['pmid', 'year', 'count'])
+        self.cit_df = pd.DataFrame(self.cursor.fetchall(),
+                                   columns=['pmid', 'year', 'count'])
 
         self.cit_df = self.cit_df.pivot(index='pmid', columns='year', values='count').reset_index().replace(np.nan, 0)
         self.cit_df['total'] = self.cit_df.iloc[:, 1:].sum(axis = 1)
@@ -118,15 +123,15 @@ class KeyPaperAnalyzer:
 
         logging.info(f"Loaded citation stats for {len(self.cit_df)} of {len(self.pmids)} articles. " +
                     "Others may either have zero citations or be absent in the local database.")
-        
+
     def subtopic_analysis(self):
         logging.info(f'Louvain community clustering of co-citation graph')
         p = community.best_partition(self.CG)
         components = set(p.values())
         logging.info(f'Found {len(components)} components')
-        
+
         # This will limit total number of components
-        GRANULARITY = 0.01 
+        GRANULARITY = 0.01
         logging.info(f'Merging components smaller than {GRANULARITY} to "Other" component')
         threshold = int(GRANULARITY * len(p))
         comp_sizes = {com: sum([p[node] == com for node in p.keys()]) for com in components}
@@ -146,12 +151,14 @@ class KeyPaperAnalyzer:
                 pm[k] = newcomps[v]
             logging.info(f'Processed {len(set(pm.values()))} components')
         else:
+            logging.info(f'All components are bigger than {GRANULARITY}, no need to reassign')
             pm = p
-        components = set(pm.values())    
+        components = set(pm.values())
         pmcomp_sizes = {com: sum([pm[node] == com for node in pm.keys()]) for com in components}
-        logging.info('\n'.join([f'{k}: {v} ({int(100 * v / len(pm))}%)' for k,v in pmcomp_sizes.items()]))
-        
+        for k,v in pmcomp_sizes.items():
+            logging.info(f'Cluster {k}: {v} ({int(100 * v / len(pm))}%)')
+
         pm_ints = {int(k): v for k,v in pm.items()}
         df_comp = pd.Series(pm_ints).reset_index().rename(columns={'index': 'pmid', 0: 'comp'})
-        self.pubcit_df = pd.merge(self.pub_df, self.cit_df, on='pmid')
-        self.pubcit_df = pd.merge(self.pubcit_df, df_comp, on='pmid')
+        self.df = pd.merge(self.pub_df, self.cit_df, on='pmid')
+        self.df = pd.merge(self.df, df_comp, on='pmid')
