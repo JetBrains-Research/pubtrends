@@ -10,6 +10,10 @@ object Publications : Table() {
     val year = integer("year").nullable()
     val title = varchar("title", PUBLICATION_MAX_TITLE_LENGTH)
     val abstract = text("abstract").nullable()
+    
+    init {
+        index(true, Citations.pmidCited, Citations.pmidCiting)
+    }
 }
 
 object Citations : Table() {
@@ -17,7 +21,7 @@ object Citations : Table() {
     val pmidCited = integer("pmid_cited")
 
     init {
-        index(true, pmidCiting, pmidCited)
+        index(true, pmidCited, pmidCiting)
     }
 }
 
