@@ -39,38 +39,20 @@
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css"
       integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt" crossorigin="anonymous">
 <div class="container">
-    <br/>
-    <div class="row justify-content-center">
-        <div class="col-12 col-md-10 col-lg-8">
-            <img src="{{ url_for('static', filename='pubtrends.png') }}">
-        </div>
+    <nav class="navbar navbar-light bg-light justify-content-between">
+        <a class="navbar-brand" href="/">PubTrends</a>
+        <form class="form-inline" method="POST">
+            <input class="form-control form-control-borderless" type="search"
+                   placeholder="Enter keywords" value="{{ search_string }}" name="terms">
+            <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+        </form>
+    </nav>
+    <div>
+        {% for script, div in data %}
+        {{ script|safe }}
+        {{ div|safe }}
+        {% endfor %}
     </div>
-    <div class="row justify-content-center">
-        <div class="col-12 col-md-10 col-lg-8">
-            <form class="card card-sm" method="POST">
-                <div class="card-body row no-gutters align-items-center">
-                    <div class="col-auto">
-                        <i class="fas fa-search h4 text-body"></i>
-                    </div>
-                    <!--end of col-->
-                    <div class="col">
-                        <input class="form-control form-control-lg form-control-borderless" type="search"
-                               placeholder="Enter keywords for science branch" value="{{ search_string }}" name="terms">
-                    </div>
-                    <!--end of col-->
-                    <div class="col-auto">
-                        <button class="btn btn-lg btn-success" type="submit">Search</button>
-                    </div>
-                    <!--end of col-->
-                </div>
-            </form>
-        </div>
-        <!--end of col-->
-    </div>
-    {% for script, div in data %}
-    {{ script|safe }}
-    {{ div|safe }}
-    {% endfor %}
 </div>
 </body>
 </html>
