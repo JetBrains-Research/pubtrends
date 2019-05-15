@@ -9,7 +9,7 @@ Project workflow: https://drive.google.com/open?id=17oQAuMJ0vmDgzucGxJT_xgQBCkLE
 * JDK 8
 * PostgreSQL (tested with 10.5)
 
-### Getting started
+### Setup
 
 1. Clone the repository.
 
@@ -34,22 +34,30 @@ Ensure that file contains correct information about the database (url, port, DB 
    ```
 `collectStats` option is used to count number of XML tag occurrences (useful for development)
 
-4. Command line options supported:
+## Startup
 
-   * `lastId` - in case of interruption use this parameter to restart the download from article pack `pubmed18n{lastId+1}.xml` 
+1. Command line options supported:
+
+   * `lastId` - in case of interruption use this parameter to restart the download from article pack `pubmed19n{lastId+1}.xml` 
    * `parserLimit` - maximum number of articles per XML to be parsed (useful for development)
    * `resetDatabase` - clear current contents of the database (useful for development)
    
-Interruption can be caused by internet connection problems.
-In case of interruption `lastId` parameter should be saved to `~/.pubtrends/crawler`, but can be configured explicitly. 
-
-5. Use the following command to test the project:
+2. Use the following command to test and build the project:
 
    ```
-   ./gradlew clean test shadowJar
+   ./gradlew clean test crawler:shadowJar
    ```
      
-6. Previous command should have produced `crawler/build/libs/crawler-dev.jar` file.
-   From now on you can use JAR file, no args should be specified when launching the program. 
-   First run allows you to download complete up-to-date PubMed database.
-   Further runs will allow you to download daily updates.
+3. Crawler is designed to download and keep up-to-date PubMed database. Launch crawler:
+
+   ```
+   java -jar crawler/build/libs/crawler-dev.jar
+   ``` 
+
+### Jupyter Notebook frontend
+   ```
+   cd models && jupyter notebook
+   ```
+
+### Web server fronted
+Coming soon.
