@@ -18,7 +18,7 @@ PUBMED_ARTICLE_BASE_URL = 'https://www.ncbi.nlm.nih.gov/pubmed/?term='
 
 
 def get_ngrams(string):
-    "1/2/3-gramms computation for string"
+    """1/2/3-gramms computation for string"""
     is_noun = lambda pos: pos[:2] == 'NN'
     tokenized = word_tokenize(re.sub('[^a-zA-Z0-9\- ]*', '', string.lower()))
     stop_words = set(stopwords.words('english'))
@@ -59,10 +59,10 @@ def get_subtopic_descriptions(df, size=5):
     for c in range(n_comps):
         max_cnt = max(most_common[c].values())
         idfs[c] = {k: (0.5 + 0.5 * v / max_cnt) *  # augmented frequency to avoid document length bias
-                   np.log(n_comps / sum([k in mcoc for mcoc in most_common])) \
-                   for k,v in most_common[c].items()}
+                      np.log(n_comps / sum([k in mcoc for mcoc in most_common])) \
+                   for k, v in most_common[c].items()}
         kwd[c] = ', '.join([f'{k} ({most_common[c][k]:.2f})' \
-                           for k,_v in list(sorted(idfs[c].items(),
-                                                   key=lambda kv: kv[1],
-                                                   reverse=True))[:size]])
+                            for k, _v in list(sorted(idfs[c].items(),
+                                                     key=lambda kv: kv[1],
+                                                     reverse=True))[:size]])
     return kwd

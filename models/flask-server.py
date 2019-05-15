@@ -14,6 +14,7 @@ FORM_HTML = '''<form method="POST">
                   <input type="text" name="terms"><input type="submit" value="Submit">
                </form>'''
 
+
 # Index page, no args
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -31,6 +32,7 @@ def index():
         return redirect(f'/?terms={redirect_url}')
 
     return render_template('main.html')
+
 
 # With debug=True, Flask server will auto-reload
 # when there are code changes

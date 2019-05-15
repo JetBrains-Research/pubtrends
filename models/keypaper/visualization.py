@@ -23,6 +23,7 @@ from .utils import PUBMED_ARTICLE_BASE_URL
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
 
+
 class Plotter:
     def __init__(self, analyzer):
         self.analyzer = analyzer
@@ -33,7 +34,8 @@ class Plotter:
         G = nx.Graph()
         # Using merge left keeps order
         gdf = pd.merge(pd.Series(self.analyzer.CG.nodes()).reset_index().rename(columns={0: 'pmid'}).astype(int),
-                       self.analyzer.df[['pmid', 'title', 'year', 'total', 'comp']], how='left').sort_values(by='total', ascending=False)
+                       self.analyzer.df[['pmid', 'title', 'year', 'total', 'comp']], how='left').sort_values(by='total',
+                                                                                                             ascending=False)
 
         for c in range(len(self.analyzer.components)):
             for n in gdf[gdf['comp'] == c]['pmid']:
@@ -48,7 +50,7 @@ class Plotter:
 
         n_comps = len(self.analyzer.components)
         cmap = plt.cm.get_cmap('jet', n_comps)
-        comp_palette = [RGB(*[round(c*255) for c in cmap(i)[:3]]) \
+        comp_palette = [RGB(*[round(c * 255) for c in cmap(i)[:3]]) \
                         for i in range(n_comps)]
 
         # Show with Bokeh
@@ -62,7 +64,7 @@ class Plotter:
                                                     end=edge_ends)
 
         # Start of layout code
-        circ = [i*2*math.pi/len(G.nodes()) for i in range(len(G.nodes()))]
+        circ = [i * 2 * math.pi / len(G.nodes()) for i in range(len(G.nodes()))]
         x = [math.cos(i) for i in circ]
         y = [math.sin(i) for i in circ]
         graph_layout = dict(zip(list(G.nodes()), zip(x, y)))
@@ -70,7 +72,7 @@ class Plotter:
 
         # Draw quadratic bezier paths
         def bezier(start, end, steps=10, c=1.5):
-            return [(1-s)**c*start + s**c*end for s in np.linspace(0, 1, steps)]
+            return [(1 - s) ** c * start + s ** c * end for s in np.linspace(0, 1, steps)]
 
         xs, ys = [], []
         edge_colors = []
@@ -104,8 +106,9 @@ class Plotter:
         graph.node_renderer.data_source.data['total'] = gdf['total']
         log_total = np.log(gdf['total'])
         graph.node_renderer.data_source.data['size'] = (log_total / np.max(log_total)) * 5 + 5
-        graph.node_renderer.data_source.data['topic'] =\
-            [ f'#{self.analyzer.pm[n]}{" OTHER" if self.analyzer.pm[n] == 0 and self.analyzer.components_merged else ""}' for n in G.nodes()]
+        graph.node_renderer.data_source.data['topic'] = \
+            [f'#{self.analyzer.pm[n]}{" OTHER" if self.analyzer.pm[n] == 0 and self.analyzer.components_merged else ""}'
+             for n in G.nodes()]
 
         # node rendering
         graph.node_renderer.glyph = Circle(size='size', line_color='colors', fill_color='colors',
@@ -121,7 +124,7 @@ class Plotter:
             ("Year", '@year'),
             ("Cited by", '@total paper(s) total'),
             ("Subtopic", '@topic')]),
-                       PanTool(), WheelZoomTool(), BoxZoomTool(), ResetTool(), SaveTool())
+            PanTool(), WheelZoomTool(), BoxZoomTool(), ResetTool(), SaveTool())
 
         plot.renderers.append(graph)
         return plot
@@ -132,14 +135,15 @@ class Plotter:
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
         n_comps = len(self.analyzer.components)
         cmap = plt.cm.get_cmap('jet', n_comps)
-        palette = [RGB(*[round(c*255) for c in cmap(i)[:3]]) for i in range(n_comps)]
+        palette = [RGB(*[round(c * 255) for c in cmap(i)[:3]]) for i in range(n_comps)]
 
         components = [str(i) for i in range(n_comps)]
         years = list(range(min_year, max_year))
         data = {'years': years}
         for c in range(n_comps):
-            data[str(c)] = [len(self.analyzer.df[np.logical_and(self.analyzer.df['comp'] == c, self.analyzer.df['year'] == y)]) \
-                            for y in range(min_year, max_year)]
+            data[str(c)] = [
+                len(self.analyzer.df[np.logical_and(self.analyzer.df['comp'] == c, self.analyzer.df['year'] == y)]) \
+                for y in range(min_year, max_year)]
 
         p = figure(x_range=[min_year, max_year], plot_width=960, plot_height=300, title="Components by Year",
                    toolbar_location=None, tools="hover", tooltips="#$name: @$name")
@@ -161,7 +165,7 @@ class Plotter:
 
         n_comps = len(self.analyzer.components)
         cmap = plt.cm.get_cmap('jet', n_comps)
-        self.colors = {c: RGB(*[round(ch*255) for ch in cmap(c)[:3]]) \
+        self.colors = {c: RGB(*[round(ch * 255) for ch in cmap(c)[:3]]) \
                        for c in self.analyzer.components}
         ds = [None] * n_comps
         p = [None] * n_comps
@@ -177,7 +181,7 @@ class Plotter:
                                                        title=title)
 
             p[c].circle(x='year', y='pos', fill_alpha=0.5, source=ds[c], size='size',
-                     line_color=self.colors[c], fill_color=self.colors[c])
+                        line_color=self.colors[c], fill_color=self.colors[c])
 
         return p
 
@@ -204,7 +208,7 @@ class Plotter:
 
         factors = self.analyzer.max_gain_df['pmid'].unique()
         cmap = plt.cm.get_cmap('jet', len(factors))
-        palette = [RGB(*[round(c*255) for c in cmap(i)[:3]]) for i in range(len(factors))]
+        palette = [RGB(*[round(c * 255) for c in cmap(i)[:3]]) for i in range(len(factors))]
         colors = factor_cmap('pmid', palette=palette, factors=factors)
 
         year_range = [self.analyzer.min_year, self.analyzer.max_year]
@@ -231,7 +235,7 @@ class Plotter:
 
         factors = self.analyzer.max_rel_gain_df['pmid'].astype(str).unique()
         cmap = plt.cm.get_cmap('jet', len(factors))
-        palette = [RGB(*[round(c*255) for c in cmap(i)[:3]]) for i in range(len(factors))]
+        palette = [RGB(*[round(c * 255) for c in cmap(i)[:3]]) for i in range(len(factors))]
         colors = factor_cmap('pmid', palette=palette, factors=factors)
 
         year_range = [self.analyzer.min_year, self.analyzer.max_year]
@@ -252,7 +256,7 @@ class Plotter:
     def article_citation_dynamics(self):
         logging.info('Choose ID to get detailed citations timeline for top cited / max gain or relative gain papers')
         highlight_papers = sorted(self.analyzer.top_cited_papers.union(
-                self.analyzer.max_gain_papers, self.analyzer.max_rel_gain_papers))
+            self.analyzer.max_gain_papers, self.analyzer.max_rel_gain_papers))
 
         def update(b):
             pmid = dropdown.value
@@ -270,7 +274,7 @@ class Plotter:
         d = ColumnDataSource(data=dict(x=[], y=[]))
 
         p = figure(tools=TOOLS, toolbar_location="above", plot_width=960,
-                   plot_height = 300, title=title)
+                   plot_height=300, title=title)
         bar = p.vbar(x='x', width=0.8, top='y', source=d, color='#A6CEE3', line_width=3)
         span = Span(location=None, dimension='height', line_color='red',
                     line_dash='dashed', line_width=3)
@@ -312,7 +316,7 @@ class Plotter:
         return plt
 
     def __build_data_source(self, df):
-        ARTICLE_PLOT_WIDTH = 900 # Width of the plot (without axis borders)
+        ARTICLE_PLOT_WIDTH = 900  # Width of the plot (without axis borders)
 
         # Sort papers from the same year with total number of citations as key, use rank as y-pos
         ranks = df.groupby('year')['total'].rank(ascending=False, method='first')
@@ -344,7 +348,8 @@ class Plotter:
             }
         """)
 
-        p = figure(tools=TOOLS, toolbar_location="above", plot_width=960, plot_height=400, x_range=year_range, title=title)
+        p = figure(tools=TOOLS, toolbar_location="above", plot_width=960, plot_height=400, x_range=year_range,
+                   title=title)
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Amount of articles'
         p.y_range.start = 0

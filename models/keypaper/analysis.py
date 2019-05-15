@@ -10,6 +10,7 @@ from Bio import Entrez
 
 from .utils import get_subtopic_descriptions
 
+
 class KeyPaperAnalyzer:
     def __init__(self,
                  host='localhost', port='5432', dbname='pubmed',
@@ -38,7 +39,7 @@ class KeyPaperAnalyzer:
 
         # Perform basic analysis
         self.subtopic_analysis()
-        self.find_top_cited_papers()    # run after subtopic analysis to color components
+        self.find_top_cited_papers()  # run after subtopic analysis to color components
         self.find_max_gain_papers()
         self.find_max_relative_gain_papers()
         self.subtopic_evolution_analysis()
@@ -47,7 +48,7 @@ class KeyPaperAnalyzer:
         print('TODO: handle queries which return more than 1000000 items')
         print('TODO: use local database instead of PubMed API')
         self.terms = [t.lower() for t in terms]
-        query=' '.join(terms)
+        query = ' '.join(terms)
         handle = Entrez.esearch(db='pubmed', retmax='1000000',
                                 retmode='xml', term=query)
         self.pmids = [int(pmid) for pmid in Entrez.read(handle)['IdList']]
@@ -97,19 +98,18 @@ class KeyPaperAnalyzer:
                                    columns=['pmid', 'year', 'count'])
 
         self.cit_df = self.cit_df.pivot(index='pmid', columns='year', values='count').reset_index().replace(np.nan, 0)
-        self.cit_df['total'] = self.cit_df.iloc[:, 1:].sum(axis = 1)
+        self.cit_df['total'] = self.cit_df.iloc[:, 1:].sum(axis=1)
         self.cit_df = self.cit_df.sort_values(by='total', ascending=False)
         logging.info(f"Loaded citation stats for {len(self.cit_df)} of {len(self.pmids)} articles. " +
-                    "Others may either have zero citations or be absent in the local database.")
+                     "Others may either have zero citations or be absent in the local database.")
 
-#        logging.info('Filtering top 1000 or 50% of all the papers')
-#        self.cit_df = self.cit_df.iloc[:min(1000, round(0.5 * len(self.cit_df))), :]
-#        logging.info('Done aggregation')
+        #        logging.info('Filtering top 1000 or 50% of all the papers')
+        #        self.cit_df = self.cit_df.iloc[:min(1000, round(0.5 * len(self.cit_df))), :]
+        #        logging.info('Done aggregation')
 
         self.df = pd.merge(self.pub_df, self.cit_df, on='pmid')
         self.pmids = sorted(list(self.df['pmid']))
         logging.info(f'{len(self.df)} articles are further analyzed\n')
-
 
     def load_cocitations(self):
         logging.info('Calculating co-citations for selected articles')
@@ -131,7 +131,7 @@ class KeyPaperAnalyzer:
         '''
 
         with self.conn:
-            self.cursor.execute(query, (min(self.pmids), max(self.pmids), ))
+            self.cursor.execute(query, (min(self.pmids), max(self.pmids),))
 
         cocit_data = []
         lines = 0
@@ -148,7 +148,7 @@ class KeyPaperAnalyzer:
         logging.info(f'Aggregating co-citations')
         self.cocit_grouped_df = self.cocit_df.groupby(['cited_1', 'cited_2', 'year']).count().reset_index()
         self.cocit_grouped_df = self.cocit_grouped_df.pivot_table(index=['cited_1', 'cited_2'],
-                                                          columns=['year'], values=['citing']).reset_index()
+                                                                  columns=['year'], values=['citing']).reset_index()
         self.cocit_grouped_df = self.cocit_grouped_df.replace(np.nan, 0)
         self.cocit_grouped_df['total'] = self.cocit_grouped_df.iloc[:, 2:].sum(axis=1)
         self.cocit_grouped_df = self.cocit_grouped_df.sort_values(by='total', ascending=False)
@@ -189,7 +189,7 @@ class KeyPaperAnalyzer:
 
     def find_max_relative_gain_papers(self):
         logging.info('Identifying papers with max relative citation gain for each year\n')
-        current_sum = pd.Series(np.zeros(len(self.df),))
+        current_sum = pd.Series(np.zeros(len(self.df), ))
         cols = self.df.columns[3:-2]
         df_rel = self.df.loc[:, ['pmid', 'title', 'year']]
         for col in cols:
@@ -230,10 +230,10 @@ class KeyPaperAnalyzer:
             logging.info(f'Reassigning components')
             pm = {}
             newcomps = {}
-            ci = 1 # Other component is 0.
+            ci = 1  # Other component is 0.
             for k, v in p.items():
                 if comp_sizes[v] <= threshold:
-                    pm[k] = 0 # Other
+                    pm[k] = 0  # Other
                     continue
                 if v not in newcomps:
                     newcomps[v] = ci
@@ -246,11 +246,11 @@ class KeyPaperAnalyzer:
         self.components = set(pm.values())
         self.pm = pm
         pmcomp_sizes = {com: sum([pm[node] == com for node in pm.keys()]) for com in self.components}
-        for k,v in pmcomp_sizes.items():
+        for k, v in pmcomp_sizes.items():
             logging.info(f'Cluster {k}: {v} ({int(100 * v / len(pm))}%)')
 
         # Added 'comp' column containing the ID of component
-        pm_ints = {int(k): v for k,v in pm.items()}
+        pm_ints = {int(k): v for k, v in pm.items()}
         df_comp = pd.Series(pm_ints).reset_index().rename(columns={'index': 'pmid', 0: 'comp'})
         self.df = pd.merge(self.df, df_comp, on='pmid')
 
@@ -262,14 +262,15 @@ class KeyPaperAnalyzer:
         logging.info('Done\n')
 
         # TODO: Fix components reordering
-#        KEY = 'citations' # 'size' or 'citations'
-#
-#        start = int(components_merged) # Sort from component #1 if merged, Other should be the lowest priority
-#        if KEY == 'size':
-#            order = df_all.groupby('comp')['pmid'].count().sort_values(ascending=False).index.values
-#        elif KEY == 'citations':
-#            order = df_all.groupby('comp')['total'].sum().sort_values(ascending=False).index.values
-#        df_all['comp'] = df_all['comp'].map(dict(enumerate(order)))
+
+    #        KEY = 'citations' # 'size' or 'citations'
+    #
+    #        start = int(components_merged) # Sort from component #1 if merged, Other should be the lowest priority
+    #        if KEY == 'size':
+    #            order = df_all.groupby('comp')['pmid'].count().sort_values(ascending=False).index.values
+    #        elif KEY == 'citations':
+    #            order = df_all.groupby('comp')['total'].sum().sort_values(ascending=False).index.values
+    #        df_all['comp'] = df_all['comp'].map(dict(enumerate(order)))
 
     def subtopic_evolution_analysis(self, step=2):
         min_year = self.cocit_df['year'].min().astype(int)
@@ -277,10 +278,11 @@ class KeyPaperAnalyzer:
         logging.info(f'Studying evolution of subtopic clusters in {min_year} - {max_year} with step of {step} years')
 
         evolution_series = []
-        year_range = range(max_year, min_year-1, -step)
+        year_range = range(max_year, min_year - 1, -step)
         logging.info('Filtering top 10000 or 80% of all the co-citations')
         for year in year_range:
-            cocit_grouped_df = self.cocit_df[self.cocit_df['year'] <= year].groupby(['cited_1', 'cited_2', 'year']).count().reset_index()
+            cocit_grouped_df = self.cocit_df[self.cocit_df['year'] <= year].groupby(
+                ['cited_1', 'cited_2', 'year']).count().reset_index()
             cocit_grouped_df = cocit_grouped_df.pivot_table(index=['cited_1', 'cited_2'],
                                                             columns=['year'], values=['citing']).reset_index()
             cocit_grouped_df = cocit_grouped_df.replace(np.nan, 0)
@@ -297,8 +299,8 @@ class KeyPaperAnalyzer:
             p = {int(vertex): int(comp) for vertex, comp in community.best_partition(CG).items()}
             evolution_series.append(pd.Series(p))
 
-        SHIFT = True # use random shift to see trace of separate articles
-        FILLNA = True # NaN values sometimes cause KeyError while plotting, but sometimes not (?!)
+        SHIFT = True  # use random shift to see trace of separate articles
+        FILLNA = True  # NaN values sometimes cause KeyError while plotting, but sometimes not (?!)
 
         self.evolution_df = pd.concat(evolution_series, axis=1).rename(columns=dict(enumerate(year_range)))
         self.evolution_df['current'] = self.evolution_df[max_year]
