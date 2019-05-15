@@ -92,7 +92,7 @@ class PubmedFTPHandler {
             try {
                 return ftp.retrieveFile(name, it)
             } catch (e: IOException) {
-                e.printStackTrace()
+                logger.error(e)
                 if (ftp.isConnected) {
                     ftp.disconnect()
                 }
@@ -111,7 +111,7 @@ class PubmedFTPHandler {
                 it.name
             } ?: emptyList()
         } catch (e: IOException) {
-            e.printStackTrace()
+            logger.error(e)
             if (ftp.isConnected) {
                 ftp.disconnect()
             }

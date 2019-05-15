@@ -68,7 +68,7 @@ class PubmedCrawler(
             logger.info("Processing updates")
             downloadFiles(updateFiles, isBaseline = false)
         } catch (e: IOException) {
-            logger.fatal("Failed to connect to the server. Error message: ${e.printStackTrace()}")
+            logger.error("Failed to connect to the server", e)
         } finally {
             if (tempDirectory.exists()) {
                 logger.info("Deleting directory: ${tempDirectory.absolutePath}")
@@ -99,8 +99,7 @@ class PubmedCrawler(
                 try {
                     inputStream.copyTo(outputStream, bufferSize)
                 } catch (e: EOFException) {
-                    logger.warn("Corrupted GZ archive. ")
-                    e.printStackTrace()
+                    logger.error("Corrupted GZ archive. ", e)
                     safeUnpack = false
                 }
             }

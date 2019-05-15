@@ -33,7 +33,7 @@ class PubmedXMLParser(val pubmedXMLHandler: PubmedXMLHandler) {
                 xmlReader.parse(InputSource(it))
             }
         } catch (e: SAXException) {
-            e.printStackTrace()
+            logger.error("Failed to parse $name", e)
         }
 
         return true
