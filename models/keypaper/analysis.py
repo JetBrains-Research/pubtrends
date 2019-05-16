@@ -186,7 +186,7 @@ class KeyPaperAnalyzer:
         self.cocit_grouped_df['total'] = self.cocit_grouped_df.iloc[:, 2:].sum(axis=1)
         self.cocit_grouped_df = self.cocit_grouped_df.sort_values(by='total', ascending=False)
         logging.info('Filtering top maximum top 10000 of all the co-citations')
-        self.cocit_grouped_df = self.cocit_grouped_df.iloc[:min(10000, self.cocit_grouped_df), :]
+        self.cocit_grouped_df = self.cocit_grouped_df.iloc[:min(10000, len(self.cocit_grouped_df)), :]
 
         logging.info(f'Building co-citations graph')
         self.CG = nx.Graph()
