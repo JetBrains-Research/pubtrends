@@ -24,25 +24,43 @@ class KeyPaperAnalyzer:
         self.conn = pg_driver.connect(connection_string)
         self.cursor = self.conn.cursor()
 
-    def launch(self, *terms):
+    def launch(self, *terms, task=None):
         # Search articles relevant to the terms
         self.search(*terms)
+        if task:
+            task.update_state(state='PROGRESS', meta={'current': 1, 'total': 10})
 
         # Load data about publications, citations and co-citations
         self.load_publications()
+        if task:
+            task.update_state(state='PROGRESS', meta={'current': 2, 'total': 10})
         self.load_citation_stats()
+        if task:
+            task.update_state(state='PROGRESS', meta={'current': 3, 'total': 10})
         self.load_cocitations()
+        if task:
+            task.update_state(state='PROGRESS', meta={'current': 4, 'total': 10})
 
         # Calculate min and max year of publications
-        years = self.df.columns.values[3:-2].astype(int)
-        self.min_year, self.max_year = np.min(years), np.max(years)
-
+        self.update_years()
+        if task:
+            task.update_state(state='PROGRESS', meta={'current': 5, 'total': 10})
         # Perform basic analysis
         self.subtopic_analysis()
+        if task:
+            task.update_state(state='PROGRESS', meta={'current': 6, 'total': 10})
         self.find_top_cited_papers()  # run after subtopic analysis to color components
+        if task:
+            task.update_state(state='PROGRESS', meta={'current': 7, 'total': 10})
         self.find_max_gain_papers()
+        if task:
+            task.update_state(state='PROGRESS', meta={'current': 8, 'total': 10})
         self.find_max_relative_gain_papers()
+        if task:
+            task.update_state(state='PROGRESS', meta={'current': 9, 'total': 10})
         self.subtopic_evolution_analysis()
+        if task:
+            task.update_state(state='PROGRESS', meta={'current': 10, 'total': 10})
 
     def search(self, *terms):
         print('TODO: handle queries which return more than 1000000 items')
@@ -110,6 +128,10 @@ class KeyPaperAnalyzer:
         self.df = pd.merge(self.pub_df, self.cit_df, on='pmid')
         self.pmids = sorted(list(self.df['pmid']))
         logging.info(f'{len(self.df)} articles are further analyzed\n')
+
+    def update_years(self):
+        years = self.df.columns.values[3:-2].astype(int)
+        self.min_year, self.max_year = np.min(years), np.max(years)
 
     def load_cocitations(self):
         logging.info('Calculating co-citations for selected articles')

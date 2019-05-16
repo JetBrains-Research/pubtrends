@@ -8,15 +8,17 @@
 
 Adopted from https://gist.github.com/whacked/c1feef2bf7a3a014178c
 """
+from bokeh.embed import components
+from keypaper.analysis import KeyPaperAnalyzer
+from keypaper.visualization import Plotter
 
 import json
+import flask
 import os
-import random
-import time
-import uuid
 
 from celery import Celery, current_task
 from celery.result import AsyncResult
+
 from flask import Flask, \
     request, redirect, flash, \
     url_for, session, g, \
@@ -30,15 +32,18 @@ celery = Celery(os.path.splitext(__file__)[0],
                 broker=CELERY_BROKER_HOST + '/1')
 
 
-# Tasks will be served by Celery
-@celery.task
-def slow_proc():
-    NTOTAL = 10
-    for i in range(NTOTAL):
-        time.sleep(random.random())
-        current_task.update_state(state='PROGRESS',
-                                  meta={'current': i, 'total': NTOTAL})
-    return '<h1>42</h1>'
+# Tasks will be served by Celery,
+# specify task name explicitly to avoid problems with modules
+@celery.task(name='analyze_async')
+def analyze_async(terms):
+    analyzer = KeyPaperAnalyzer()
+    plotter = Plotter(analyzer)
+    # current_task is from @celery.task
+    analyzer.launch(*terms, task=current_task)
+    data = []
+    for p in plotter.subtopic_timeline_graphs():
+        data.append(components(p))
+    return data
 
 
 app = Flask(__name__)
@@ -57,64 +62,48 @@ def progress():
         elif job.state == 'SUCCESS':
             return json.dumps({
                 'state': job.state,
-                'progress': 100,
-                'result': job.result
+                'progress': 100
             })
+    # PENDING or no jobid
     return '{}'
 
 
-@app.route('/enqueue')
-def enqueue():
-    job = slow_proc.delay()
-    return render_template_string('''
-<head>
-    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
-    <script>
-    function poll() {
-        $.ajax("{{url_for('.progress', jobid=JOBID)}}", {
-            dataType: "json", success: function(resp) {
-                console.log(resp);
-                if (resp.progress !== undefined) {
-                    $('.progress-bar').css('width', resp.progress + '%').attr('aria-valuenow', resp.progress);
-                    $('.progress-bar-label').text(resp.progress + '%');
-                    if (resp.progress < 100) {
-                        setTimeout(poll, 1000);
-                    } else {
-                        $('#progress').hide();
-                        $('#success').html(resp.result);
-                    }
-                } else {
-                    setTimeout(poll, 1000);
-                }
-            }
-        });
-    }
-    $(function() {
-        poll();
-    });
-    </script>
-</head>
-<body>
-    <div id="progress" class="progress">
-        <div class="progress-bar progress-bar-striped active" role="progressbar" 
-            aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
-            <span class="progress-bar-label">0%</span>
-        </div>
-    </div>
-    <div id="success"/>
-</body>
+@app.route('/result')
+def result():
+    # TODO don't expose JOB_ID
+    jobid = request.values.get('jobid')
+    terms = request.args.get('terms').split('+')
+    if jobid:
+        job = AsyncResult(jobid, app=celery)
+        if job.state == 'SUCCESS':
+            return render_template('result.html', search_string=' '.join(terms), data=job.result)
 
-''', JOBID=job.id)
+    return render_template_string("Something went wrong...")
 
 
-@app.route('/')
+@app.route('/process')
+def process():
+    if len(request.args) > 0:
+        terms = request.args.get('terms').split('+')
+        # Submit Celery task
+        job = analyze_async.delay(terms)
+        return render_template('process.html', search_string=' '.join(terms), JOBID=job.id)
+
+    return render_template_string("Something went wrong...")
+
+
+# Index page
+@app.route('/', methods=['GET', 'POST'])
 def index():
-    return render_template_string('''\
-<a href="{{ url_for('.enqueue') }}">launch job</a>
-''')
+    if request.method == 'POST':
+        terms = request.form.get('terms').split(' ')
+        redirect_url = '+'.join(terms)
+        if len(terms) > 0:
+            return redirect(flask.url_for('.process', terms=redirect_url))
+
+    return render_template('main.html')
 
 
+# With debug=True, Flask server will auto-reload on changes
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True, extra_files=['templates/'])

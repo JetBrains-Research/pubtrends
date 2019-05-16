@@ -53,3 +53,11 @@ In case of interruption `lastId` parameter should be saved to `~/.pubtrends/craw
    From now on you can use JAR file, no args should be specified when launching the program. 
    First run allows you to download complete up-to-date PubMed database.
    Further runs will allow you to download daily updates.
+
+## Web service
+1. Install and start Redis.
+2. start server
+    python flask-async.py
+3. start worker
+    celery -A flask-async.celery worker -c 1 --loglevel=DEBUG
+4. browse to localhost:5000/
