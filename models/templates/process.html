@@ -28,6 +28,7 @@
         "use strict";
 
         var RERTIES = 0;
+
         function poll_progress() {
             $.ajax("{{url_for('.progress', jobid=JOBID)}}", {
                 dataType: "json", success: function (responce) {
@@ -36,7 +37,7 @@
                         $('#progress').show();
                         $('.progress-bar').css('width', responce.progress + '%').attr('aria-valuenow', responce.progress);
                         $('.progress-bar-label').text(responce.progress + '%');
-                        if (responce.progress < 100) {
+                        if (responce.state !== 'SUCCESS') {
                             setTimeout(poll_progress, 1000);
                         } else {
                             window.location.replace("/result?terms={{search_string}}&jobid={{JOBID}}");
@@ -72,5 +73,10 @@
         </div>
     </div>
 </div>
+<footer style="margin-top: 20px; text-align: center">
+    <p style="display: inline-block">
+        &copy;2019 <a href="https://research.jetbrains.org/groups/biolabs" title="JetBrains Research BioLabs"
+                      target="_blank">JetBrains Research</a></p>
+</footer>
 </body>
 </html>

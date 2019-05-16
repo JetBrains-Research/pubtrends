@@ -31,12 +31,60 @@
     <nav class="navbar navbar-light bg-light justify-content-between">
         <p><a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>{{search_string}}</p>
     </nav>
-    <div id="pubtrends-results">
-        {% for script, div in data %}
-            {{ script|safe }}
-            {{ div|safe }}
+    <h1>Top Cited Papers Overall</h1>
+    <div>
+        {% for script, div in top_cited_papers %}
+        {{ script|safe }}
+        {{ div|safe }}
+        {% endfor %}
+    </div>
+    <h1>Max Gain Papers</h1>
+    <div>
+        {% for script, div in max_gain_papers %}
+        {{ script|safe }}
+        {{ div|safe }}
+        {% endfor %}
+    </div>
+    <h1>Max Relative Gain Papers</h1>
+    <div>
+        {% for script, div in max_relative_gain_papers %}
+        {{ script|safe }}
+        {{ div|safe }}
+        {% endfor %}
+    </div>
+    <!--    <h1>Papers citations dynamics</h1>-->
+    <!--    <div>-->
+    <!--        {% for script, div in citations_dynamics %}-->
+    <!--        {{ script|safe }}-->
+    <!--        {{ div|safe }}-->
+    <!--        {% endfor %}-->
+    <!--    </div>-->
+    <h1>Papers cocitations clustering</h1>
+    <div>
+        {% for script, div in chord_cocitations %}
+        {{ script|safe }}
+        {{ div|safe }}
+        {% endfor %}
+    </div>
+    <h1>Subtopics summary</h1>
+    <div>
+        {% for script, div in component_size_summary %}
+        {{ script|safe }}
+        {{ div|safe }}
+        {% endfor %}
+    </div>
+    <h1>Subtopics</h1>
+    <div>
+        {% for script, div in subtopic_timeline_graphs %}
+        {{ script|safe }}
+        {{ div|safe }}
         {% endfor %}
     </div>
 </div>
+<footer style="margin-top: 20px; text-align: center">
+    <p style="display: inline-block">
+        &copy;2019 <a href="https://research.jetbrains.org/groups/biolabs" title="JetBrains Research BioLabs"
+                      target="_blank">JetBrains Research</a></p>
+</footer>
 </body>
 </html>

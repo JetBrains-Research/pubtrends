@@ -14,6 +14,7 @@ from keypaper.visualization import Plotter
 
 import json
 import flask
+import logging
 import os
 
 from celery import Celery, current_task
@@ -40,10 +41,19 @@ def analyze_async(terms):
     plotter = Plotter(analyzer)
     # current_task is from @celery.task
     analyzer.launch(*terms, task=current_task)
-    data = []
-    for p in plotter.subtopic_timeline_graphs():
-        data.append(components(p))
-    return data
+
+    # Subtopic evolution is ignored for now.
+    # Order is important here!
+    return {
+        'chord_cocitations': [components(plotter.chord_diagram_components())],
+        'component_size_summary': [components(plotter.component_size_summary())],
+        'subtopic_timeline_graphs': [components(p) for p in plotter.subtopic_timeline_graphs()],
+        'top_cited_papers': [components(plotter.top_cited_papers())],
+        'max_gain_papers': [components(plotter.max_gain_papers())],
+        'max_relative_gain_papers': [components(plotter.max_relative_gain_papers())],
+        # TODO: this doesn't work
+        # 'citations_dynamics': [components(plotter.article_citation_dynamics())],
+    }
 
 
 app = Flask(__name__)
@@ -76,7 +86,7 @@ def result():
     if jobid:
         job = AsyncResult(jobid, app=celery)
         if job.state == 'SUCCESS':
-            return render_template('result.html', search_string=' '.join(terms), data=job.result)
+            return render_template('result.html', search_string=' '.join(terms), **job.result)
 
     return render_template_string("Something went wrong...")
 
@@ -106,4 +116,4 @@ def index():
 
 # With debug=True, Flask server will auto-reload on changes
 if __name__ == '__main__':
-    app.run(debug=True, extra_files=['templates/'])
+    app.run(host='0.0.0.0', debug=True, extra_files=['templates/'])
