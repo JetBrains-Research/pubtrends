@@ -74,6 +74,12 @@ def progress():
                 'state': job.state,
                 'progress': 100
             })
+        elif job.state == 'FAILURE':
+            return json.dumps({
+                'state': job.state,
+                'message': str(job.result)
+            })
+
     # PENDING or no jobid
     return '{}'
 

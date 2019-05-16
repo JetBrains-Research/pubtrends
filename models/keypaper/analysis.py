@@ -29,17 +29,28 @@ class KeyPaperAnalyzer:
         self.search(*terms)
         if task:
             task.update_state(state='PROGRESS', meta={'current': 1, 'total': 10})
+        # Nothing found
+        if len(self.pmids) == 0:
+            raise RuntimeError("Nothing found")
 
         # Load data about publications, citations and co-citations
         self.load_publications()
         if task:
             task.update_state(state='PROGRESS', meta={'current': 2, 'total': 10})
+        if len(self.pub_df) == 0:
+            raise RuntimeError("Nothing found in DB")
+
         self.load_citation_stats()
         if task:
             task.update_state(state='PROGRESS', meta={'current': 3, 'total': 10})
+        if len(self.df) == 0:
+            raise RuntimeError("Citations stats not found DB")
+
         self.load_cocitations()
         if task:
             task.update_state(state='PROGRESS', meta={'current': 4, 'total': 10})
+        if len(self.CG.nodes()) == 0:
+            raise RuntimeError("Failed to build co-citations graph")
 
         # Calculate min and max year of publications
         self.update_years()

@@ -31,22 +31,26 @@
 
         function poll_progress() {
             $.ajax("{{url_for('.progress', jobid=JOBID)}}", {
-                dataType: "json", success: function (responce) {
-                    console.log(responce);
-                    if (responce.progress !== undefined) {
+                dataType: "json", success: function (response) {
+                    console.log(response);
+                    if (response.state === 'FAILURE') {
+                        $('#progress').hide();
+                        $('#status').html("<h1>Error</h1>" + response.message);
+                    }
+                    else if (response.state !== undefined) {
                         $('#progress').show();
-                        $('.progress-bar').css('width', responce.progress + '%').attr('aria-valuenow', responce.progress);
-                        $('.progress-bar-label').text(responce.progress + '%');
-                        if (responce.state !== 'SUCCESS') {
-                            setTimeout(poll_progress, 1000);
-                        } else {
+                        $('.progress-bar').css('width', response.progress + '%').attr('aria-valuenow', response.progress);
+                        $('.progress-bar-label').text(response.progress + '%');
+                        if (response.state === 'SUCCESS') {
                             window.location.replace("/result?terms={{search_string}}&jobid={{JOBID}}");
+                        } else {
+                            setTimeout(poll_progress, 1000);
                         }
                     } else {
                         RERTIES += 1;
                         if (RERTIES > 5) {
                             $('#progress').hide();
-                            $('#pubtrends-results').html("<h1>Failed to fetch results...</h1>");
+                            $('#status').html("<h1>Error</h1>Failed to fetch results.");
                         } else {
                             setTimeout(poll_progress, 1000);
                         }
@@ -72,6 +76,7 @@
             <span class="progress-bar-label">0%</span>
         </div>
     </div>
+    <div id="status"></div>
 </div>
 <footer style="margin-top: 20px; text-align: center">
     <p style="display: inline-block">
