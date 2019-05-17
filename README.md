@@ -4,12 +4,12 @@ A tool for analysis of trends & pivotal points in the scientific literature.
 
 Project workflow: https://drive.google.com/open?id=17oQAuMJ0vmDgzucGxJT_xgQBCkLEio3HIeG_sfgMtcc
 
-### Prerequisites
+## Prerequisites
 
 * JDK 8
 * PostgreSQL (tested with 10.5)
 
-### Setup
+## Setup
 
 1. Clone the repository.
 
@@ -54,10 +54,15 @@ Ensure that file contains correct information about the database (url, port, DB 
    java -jar crawler/build/libs/crawler-dev.jar
    ``` 
 
-### Jupyter Notebook frontend
+## Jupyter Notebook frontend
    ```
    cd models && jupyter notebook
    ```
 
-### Web server fronted
-Coming soon.
+## Web service
+1. Install and start Redis.
+2. start server
+    python flask-async.py
+3. start worker
+    celery -A flask-async.celery worker -c 1 --loglevel=DEBUG
+4. browse to localhost:5000/

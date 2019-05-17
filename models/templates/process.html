@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PubTrends - Publication Analysis Service</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link
+            href="http://cdn.pydata.org/bokeh/release/bokeh-1.1.0.min.css"
+            rel="stylesheet" type="text/css">
+    <link
+            href="http://cdn.pydata.org/bokeh/release/bokeh-widgets-1.1.0.min.css"
+            rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css"
+          integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt" crossorigin="anonymous">
+    <script src="http://cdn.pydata.org/bokeh/release/bokeh-1.1.0.min.js"></script>
+    <script src="http://cdn.pydata.org/bokeh/release/bokeh-widgets-1.1.0.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT"
+            crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+            integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+            crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+            integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+            crossorigin="anonymous"></script>
+    <script>
+        "use strict";
+
+        var RETRIES = 0;
+
+        function poll_progress() {
+            $.ajax("{{url_for('.progress', jobid=JOBID)}}", {
+                dataType: "json", success: function (response) {
+                    console.log(response);
+                    if (response.state === 'FAILURE') {
+                        $('#progress').hide();
+                        $('#status').html("<h1>Error</h1>" + response.message);
+                        $('#log').html(response.log);
+                    }
+                    else if (response.state !== undefined) {
+                        $('#progress').show();
+                        $('.progress-bar').css('width', response.progress + '%').attr('aria-valuenow', response.progress);
+                        $('.progress-bar-label').text(response.progress + '%');
+                        if (response.state === 'SUCCESS') {
+                            window.location.replace("/result?terms={{search_string}}&jobid={{JOBID}}");
+                        } else {
+                            $('#log').html(response.log);
+                            setTimeout(poll_progress, 1000);
+                        }
+                    } else {
+                        RETRIES += 1;
+                        if (RETRIES > 5) {
+                            $('#progress').hide();
+                            $('#status').html("<h1>Error</h1>Failed to fetch results.");
+                        } else {
+                            setTimeout(poll_progress, 1000);
+                        }
+                    }
+                }
+            });
+        }
+
+        $(function () {
+            poll_progress();
+        });
+    </script>
+</head>
+<body>
+
+<div class="container">
+    <nav class="navbar navbar-light bg-light justify-content-between">
+        <span class="navbar-brand"><a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>{{search_string}}</span>
+    </nav>
+    <div id="progress" class="progress">
+        <div class="progress-bar progress-bar-striped active" role="progressbar"
+             aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+            <span class="progress-bar-label">0%</span>
+        </div>
+    </div>
+    <div id="status"></div>
+    <pre id="log"></pre>
+</div>
+<footer style="margin-top: 20px; text-align: center">
+    <p style="display: inline-block">
+        &copy;2019 <a href="https://research.jetbrains.org/groups/biolabs" title="JetBrains Research BioLabs"
+                      target="_blank">JetBrains Research</a></p>
+</footer>
+</body>
+</html>
