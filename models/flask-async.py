@@ -88,7 +88,6 @@ def progress():
 
 @app.route('/result')
 def result():
-    # TODO don't expose JOB_ID
     jobid = request.values.get('jobid')
     terms = request.args.get('terms').split('+')
     if jobid:
@@ -102,10 +101,10 @@ def result():
 @app.route('/process')
 def process():
     if len(request.args) > 0:
+        jobid = request.values.get('jobid')
         terms = request.args.get('terms').split('+')
-        # Submit Celery task
-        job = analyze_async.delay(terms)
-        return render_template('process.html', search_string=' '.join(terms), JOBID=job.id)
+        if jobid:
+            return render_template('process.html', search_string=' '.join(terms), JOBID=jobid)
 
     return render_template_string("Something went wrong...")
 
@@ -117,7 +116,9 @@ def index():
         terms = request.form.get('terms').split(' ')
         redirect_url = '+'.join(terms)
         if len(terms) > 0:
-            return redirect(flask.url_for('.process', terms=redirect_url))
+            # Submit Celery task
+            job = analyze_async.delay(terms)
+            return redirect(flask.url_for('.process', terms=redirect_url, jobid=job.id))
 
     return render_template('main.html')
 
