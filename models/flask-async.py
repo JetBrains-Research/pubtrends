@@ -79,7 +79,6 @@ def progress():
         elif job.state == 'FAILURE':
             return json.dumps({
                 'state': job.state,
-                'log': job.result['log'],
                 'message': str(job.result)
             })
 
