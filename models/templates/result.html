@@ -29,7 +29,7 @@
 
 <div class="container">
     <nav class="navbar navbar-light bg-light justify-content-between">
-        <p><a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>{{search_string}}</p>
+        <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a><p class="navbar-brand">{{search_string}}</p>
     </nav>
     <h1>Top Cited Papers Overall</h1>
     <p>
@@ -105,6 +105,8 @@
         {{ div|safe }}
         {% endfor %}
     </div>
+    <h1>Log</h1>
+    <pre id="log">{{log}}</pre>
 </div>
 <footer style="margin-top: 20px; text-align: center">
     <p style="display: inline-block">

@@ -40,11 +40,12 @@ def analyze_async(terms):
     analyzer = KeyPaperAnalyzer()
     plotter = Plotter(analyzer)
     # current_task is from @celery.task
-    analyzer.launch(*terms, task=current_task)
+    log = analyzer.launch(*terms, task=current_task)
 
     # Subtopic evolution is ignored for now.
     # Order is important here!
     return {
+        'log': log,
         'chord_cocitations': [components(plotter.chord_diagram_components())],
         'component_size_summary': [components(plotter.component_size_summary())],
         'subtopic_timeline_graphs': [components(p) for p in plotter.subtopic_timeline_graphs()],
@@ -67,6 +68,7 @@ def progress():
         if job.state == 'PROGRESS':
             return json.dumps({
                 'state': job.state,
+                'log': job.result['log'],
                 'progress': int(100.0 * job.result['current'] / job.result['total'])
             })
         elif job.state == 'SUCCESS':
@@ -77,6 +79,7 @@ def progress():
         elif job.state == 'FAILURE':
             return json.dumps({
                 'state': job.state,
+                'log': job.result['log'],
                 'message': str(job.result)
             })
 

@@ -27,7 +27,7 @@
     <script>
         "use strict";
 
-        var RERTIES = 0;
+        var RETRIES = 0;
 
         function poll_progress() {
             $.ajax("{{url_for('.progress', jobid=JOBID)}}", {
@@ -36,6 +36,7 @@
                     if (response.state === 'FAILURE') {
                         $('#progress').hide();
                         $('#status').html("<h1>Error</h1>" + response.message);
+                        $('#log').html(response.log);
                     }
                     else if (response.state !== undefined) {
                         $('#progress').show();
@@ -44,11 +45,12 @@
                         if (response.state === 'SUCCESS') {
                             window.location.replace("/result?terms={{search_string}}&jobid={{JOBID}}");
                         } else {
+                            $('#log').html(response.log);
                             setTimeout(poll_progress, 1000);
                         }
                     } else {
-                        RERTIES += 1;
-                        if (RERTIES > 5) {
+                        RETRIES += 1;
+                        if (RETRIES > 5) {
                             $('#progress').hide();
                             $('#status').html("<h1>Error</h1>Failed to fetch results.");
                         } else {
@@ -68,7 +70,7 @@
 
 <div class="container">
     <nav class="navbar navbar-light bg-light justify-content-between">
-        <p><a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>{{search_string}}</p>
+        <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a><p class="navbar-brand">{{search_string}}</p>
     </nav>
     <div id="progress" class="progress">
         <div class="progress-bar progress-bar-striped active" role="progressbar"
@@ -77,6 +79,7 @@
         </div>
     </div>
     <div id="status"></div>
+    <pre id="log"></pre>
 </div>
 <footer style="margin-top: 20px; text-align: center">
     <p style="display: inline-block">
