@@ -60,9 +60,13 @@ Ensure that file contains correct information about the database (url, port, DB 
    ```
 
 ## Web service
-1. Install and start Redis.
+1. Install and start `Redis`.
 2. start server
+    ```
     python flask-async.py
+    ```    
 3. start worker
+    ```
     celery -A flask-async.celery worker -c 1 --loglevel=DEBUG
+    ```
 4. browse to localhost:5000/
