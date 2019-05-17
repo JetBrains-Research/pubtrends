@@ -22,7 +22,8 @@ def get_ngrams(string):
     is_noun = lambda pos: pos[:2] == 'NN'
     tokenized = word_tokenize(re.sub('[^a-zA-Z0-9\- ]*', '', string.lower()))
     stop_words = set(stopwords.words('english'))
-    nouns = [word for (word, pos) in nltk.pos_tag(tokenized) if is_noun(pos) and word not in stop_words]
+    nouns = [word for (word, pos) in nltk.pos_tag(tokenized) if
+             len(word) >= 3 and is_noun(pos) and word not in stop_words]
 
     lemmatizer = WordNetLemmatizer()
     tokens = [lemmatizer.lemmatize(n) for n in nouns]
@@ -34,7 +35,8 @@ def get_ngrams(string):
     return ngrams
 
 
-def get_most_common_ngrams(titles, number=50):
+# Maximum 1 per component
+def get_most_common_ngrams(titles, number=100):
     ngrams = []
     for title in titles:
         ngrams.extend(get_ngrams(title))
