@@ -13,6 +13,14 @@ Project workflow: https://drive.google.com/open?id=17oQAuMJ0vmDgzucGxJT_xgQBCkLE
 
 1. Clone the repository.
 
+2. Launch Postgres. Commands are for Mac OS.
+    ```
+    # stop
+    pg_ctl -D /usr/local/var/postgres stop -s -m fast
+    # start
+    pg_ctl -D /usr/local/var/postgres -l /usr/local/var/postgres/server.log start
+    ```
+
 2. Run `psql` to create a user and a database in PostgreSQL:
 
    ```
@@ -56,7 +64,7 @@ Ensure that file contains correct information about the database (url, port, DB 
 
 ## Jupyter Notebook frontend
    ```
-   cd models && jupyter notebook
+   jupyter notebook
    ```
 
 ## Web service
