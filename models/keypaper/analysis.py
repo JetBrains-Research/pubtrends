@@ -161,6 +161,28 @@ class KeyPaperAnalyzer:
         self.df = pd.merge(self.pub_df, self.cit_df, on='pmid')
         self.pmids = sorted(list(self.df['pmid']))
         self.logger.info(f'{len(self.df)} articles are further analyzed\n')
+        
+    def load_citations(self):
+        self.logger.info('Started loading raw information about citations')
+
+        values = ', '.join(['({})'.format(i) for i in sorted(self.pmids)])
+        query = re.sub('\$VALUES\$', values, '''
+        SELECT C.pmid_cited, C.pmid_citing
+        FROM Citations C
+        JOIN (VALUES $VALUES$) AS CT(pmid) ON (C.pmid_cited = CT.pmid)
+        JOIN (VALUES $VALUES$) AS CT2(pmid) ON (C.pmid_citing = CT2.pmid);
+        ''')
+
+        with self.conn:
+            self.cursor.execute(query)
+        self.logger.info('Done loading citations, building citation graph')
+        
+        self.G = nx.DiGraph()
+        for row in self.cursor:
+            v, u = row
+            self.G.add_edge(v, u)
+
+        self.logger.info(f'Built citation graph - nodes {len(self.G.nodes())} edges {len(self.G.edges())}')        
 
     def update_years(self):
         years = self.df.columns.values[3:-2].astype(int)
