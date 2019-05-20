@@ -96,11 +96,11 @@ class KeyPaperAnalyzer:
             self.logger.removeHandler(handler)
 
     def search(self, *terms):
-        print('TODO: handle queries which return more than 1000000 items')
+        print('TODO: handle queries which return more than 10000 items')
         print('TODO: use local database instead of PubMed API')
         self.terms = [t.lower() for t in terms]
         query = ' '.join(terms)
-        handle = Entrez.esearch(db='pubmed', retmax='1000000',
+        handle = Entrez.esearch(db='pubmed', retmax='10000',
                                 retmode='xml', term=query)
         self.pmids = [int(pmid) for pmid in Entrez.read(handle)['IdList']]
         self.logger.info(f'Found {len(self.pmids)} articles about {terms}')
