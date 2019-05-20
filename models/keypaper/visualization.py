@@ -6,6 +6,7 @@ import math
 import pandas as pd
 
 from bokeh.io import push_notebook
+from bokeh.layouts import row
 from bokeh.models import ColumnDataSource, CDSView, GroupFilter, CustomJS
 from bokeh.models import Plot, Range1d, MultiLine, Circle, Span
 from bokeh.models import GraphRenderer, StaticLayoutProvider
@@ -18,8 +19,9 @@ from bokeh.core.properties import value
 
 from IPython.display import display
 from matplotlib import pyplot as plt
+from wordcloud import WordCloud
 
-from .utils import PUBMED_ARTICLE_BASE_URL
+from .utils import PUBMED_ARTICLE_BASE_URL, get_word_cloud_data
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
 
@@ -163,25 +165,65 @@ class Plotter:
     def subtopic_timeline_graphs(self):
         logging.info('Per component detailed info visualization')
 
+#        # Reorder subtopics by importance descending
+#        KEY = 'citations' # 'size' or 'citations'
+#
+#        if KEY == 'size':
+#            order = self.analyzer.df.groupby('comp')['pmid'].count().sort_values(ascending=False).index.values
+#        elif KEY == 'citations':
+#            order = self.analyzer.df.groupby('comp')['total'].sum().sort_values(ascending=False).index.values
+
+        # Word cloud configuration
+        WIDTH = 200
+        HEIGHT = 400
+        WORDS = 20
+
+        # Prepare layouts
         n_comps = len(self.analyzer.components)
         cmap = plt.cm.get_cmap('jet', n_comps)
-        self.colors = {c: RGB(*[round(ch * 255) for ch in cmap(c)[:3]]) \
+        self.colors = {c: RGB(*[int(round(ch * 255)) for ch in cmap(c)[:3]]) \
                        for c in self.analyzer.components}
         ds = [None] * n_comps
         p = [None] * n_comps
 
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
         for c in range(n_comps):
-            kwd = self.analyzer.df[self.analyzer.df['comp'] == c]['kwd'].values[0]
-            title = f'Subtopic #{c}{" OTHER" if c == 0 and self.analyzer.components_merged else ""}: {kwd}'
+#            kwd = self.analyzer.df[self.analyzer.df['comp'] == c]['kwd'].values[0]
 
-            ds[c] = self.__build_data_source(self.analyzer.df[self.analyzer.df['comp'] == c])
-            p[c] = self.__serve_scatter_article_layout(source=ds[c],
+            # Scatter layout for articles from subtopic
+            title = f'Subtopic #{c}{" OTHER" if c == 0 and self.analyzer.components_merged else ""}'
+
+            ds[c] = self.__build_data_source(self.analyzer.df[self.analyzer.df['comp'] == c], width=700)
+            plot = self.__serve_scatter_article_layout(source=ds[c],
                                                        year_range=[min_year, max_year],
-                                                       title=title)
+                                                       title=title, width=760)
 
-            p[c].circle(x='year', y='pos', fill_alpha=0.5, source=ds[c], size='size',
+            plot.circle(x='year', y='pos', fill_alpha=0.5, source=ds[c], size='size',
                         line_color=self.colors[c], fill_color=self.colors[c])
+
+            # Word cloud description of subtopic
+            data = get_word_cloud_data(self.analyzer.df, c)
+
+            color = (self.colors[c].r, self.colors[c].g, self.colors[c].b)
+            wc = WordCloud(background_color="white", width=WIDTH, height=HEIGHT,
+                   color_func = lambda *args, **kwargs: color,
+                   max_words=WORDS, max_font_size=40, prefer_horizontal=1)
+            wc.generate(' '.join(data))
+
+            image = wc.to_array()
+            desc = figure(title="", toolbar_location="above",
+                          plot_width=WIDTH, plot_height=HEIGHT,
+                          x_range = [0,10], y_range = [0,10], tools=[])
+            desc.axis.visible = False
+
+            img = np.empty((HEIGHT, WIDTH), dtype=np.uint32)
+            view = img.view(dtype=np.uint8).reshape((HEIGHT, WIDTH, 4))
+            view[:, :, 0:3] = image[::-1, :, :]
+            view[:, :, 3] = 255
+
+            desc.image_rgba(image=[img], x=[0], y=[0], dw=[10], dh=[10])
+
+            p[c] = row(desc, plot)
 
         return p
 
@@ -315,8 +357,8 @@ class Plotter:
         plt.legend().set_visible(False)
         return plt
 
-    def __build_data_source(self, df):
-        ARTICLE_PLOT_WIDTH = 900  # Width of the plot (without axis borders)
+    def __build_data_source(self, df, width=760):
+        ARTICLE_PLOT_WIDTH = width  # Width of the plot (without axis borders)
 
         # Sort papers from the same year with total number of citations as key, use rank as y-pos
         ranks = df.groupby('year')['total'].rank(ascending=False, method='first')
@@ -334,7 +376,7 @@ class Plotter:
                                        size=np.log(df['total']) * size_scaling_coefficient))
         return d
 
-    def __serve_scatter_article_layout(self, source, year_range, title):
+    def __serve_scatter_article_layout(self, source, year_range, title, width=960):
         callback = CustomJS(args=dict(source=source, base=PUBMED_ARTICLE_BASE_URL), code="""
             var data = source.data, selected = source.selected.indices;
             if (selected.length == 1) {
@@ -348,7 +390,7 @@ class Plotter:
             }
         """)
 
-        p = figure(tools=TOOLS, toolbar_location="above", plot_width=960, plot_height=400, x_range=year_range,
+        p = figure(tools=TOOLS, toolbar_location="above", plot_width=width, plot_height=400, x_range=year_range,
                    title=title)
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Amount of articles'

@@ -161,7 +161,7 @@ class KeyPaperAnalyzer:
         self.df = pd.merge(self.pub_df, self.cit_df, on='pmid')
         self.pmids = sorted(list(self.df['pmid']))
         self.logger.info(f'{len(self.df)} articles are further analyzed\n')
-        
+
     def load_citations(self):
         self.logger.info('Started loading raw information about citations')
 
@@ -176,13 +176,13 @@ class KeyPaperAnalyzer:
         with self.conn:
             self.cursor.execute(query)
         self.logger.info('Done loading citations, building citation graph')
-        
+
         self.G = nx.DiGraph()
         for row in self.cursor:
             v, u = row
             self.G.add_edge(v, u)
 
-        self.logger.info(f'Built citation graph - nodes {len(self.G.nodes())} edges {len(self.G.edges())}')        
+        self.logger.info(f'Built citation graph - nodes {len(self.G.nodes())} edges {len(self.G.edges())}')
 
     def update_years(self):
         years = self.df.columns.values[3:-2].astype(int)
@@ -338,16 +338,6 @@ class KeyPaperAnalyzer:
         self.df = pd.merge(self.df, df_kwd, on='comp')
         self.logger.info('Done\n')
 
-        # TODO: Fix components reordering
-
-    #        KEY = 'citations' # 'size' or 'citations'
-    #
-    #        start = int(components_merged) # Sort from component #1 if merged, Other should be the lowest priority
-    #        if KEY == 'size':
-    #            order = df_all.groupby('comp')['pmid'].count().sort_values(ascending=False).index.values
-    #        elif KEY == 'citations':
-    #            order = df_all.groupby('comp')['total'].sum().sort_values(ascending=False).index.values
-    #        df_all['comp'] = df_all['comp'].map(dict(enumerate(order)))
 
     def subtopic_evolution_analysis(self, step=2):
         min_year = self.cocit_df['year'].min().astype(int)

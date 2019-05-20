@@ -17,7 +17,7 @@ nltk.download('wordnet')
 PUBMED_ARTICLE_BASE_URL = 'https://www.ncbi.nlm.nih.gov/pubmed/?term='
 
 
-def get_ngrams(string):
+def get_ngrams(string, n=3):
     """1/2/3-gramms computation for string"""
     is_noun = lambda pos: pos[:2] == 'NN'
     tokenized = word_tokenize(re.sub('[^a-zA-Z0-9\- ]*', '', string.lower()))
@@ -28,10 +28,12 @@ def get_ngrams(string):
     lemmatizer = WordNetLemmatizer()
     tokens = [lemmatizer.lemmatize(n) for n in nouns]
     ngrams = list(tokens)
-    for t1, t2 in zip(tokens[:-1], tokens[1:]):
-        ngrams.append(t1 + ' ' + t2)
-    for t1, t2, t3 in zip(tokens[:-2], tokens[1:-1], tokens[2:]):
-        ngrams.append(t1 + ' ' + t2 + ' ' + t3)
+    if n > 1:
+        for t1, t2 in zip(tokens[:-1], tokens[1:]):
+            ngrams.append(t1 + ' ' + t2)
+    if n > 2:
+        for t1, t2, t3 in zip(tokens[:-2], tokens[1:-1], tokens[2:]):
+            ngrams.append(t1 + ' ' + t2 + ' ' + t3)
     return ngrams
 
 
@@ -68,3 +70,10 @@ def get_subtopic_descriptions(df, size=5):
                                                      key=lambda kv: kv[1],
                                                      reverse=True))[:size]])
     return kwd
+
+
+def get_word_cloud_data(df, c):
+    ngrams = []
+    for title in df[df['comp'] == c]['title'].values:
+        ngrams.extend(get_ngrams(title, n=1))
+    return ngrams
