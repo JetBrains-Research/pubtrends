@@ -28,6 +28,7 @@
         "use strict";
 
         var RETRIES = 0;
+        var MAX_RETRIES = 20;
 
         function poll_progress() {
             $.ajax("{{url_for('.progress', jobid=JOBID)}}", {
@@ -50,7 +51,7 @@
                         }
                     } else {
                         RETRIES += 1;
-                        if (RETRIES > 5) {
+                        if (RETRIES > MAX_RETRIES) {
                             $('#progress').hide();
                             $('#status').html("<h1>Error</h1>Failed to fetch results.");
                         } else {
