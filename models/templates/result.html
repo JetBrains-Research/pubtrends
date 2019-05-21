@@ -4,17 +4,11 @@
     <title>PubTrends - Publication Analysis Service</title>
     <meta charset="utf-8">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
-          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-    <link
-            href="http://cdn.pydata.org/bokeh/release/bokeh-1.1.0.min.css"
-            rel="stylesheet" type="text/css">
-    <link
-            href="http://cdn.pydata.org/bokeh/release/bokeh-widgets-1.1.0.min.css"
-            rel="stylesheet" type="text/css">
+          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
+          crossorigin="anonymous">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css"
-          integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt" crossorigin="anonymous">
-    <script src="http://cdn.pydata.org/bokeh/release/bokeh-1.1.0.min.js"></script>
-    <script src="http://cdn.pydata.org/bokeh/release/bokeh-widgets-1.1.0.min.js"></script>
+          integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt"
+          crossorigin="anonymous">
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"
             integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT"
             crossorigin="anonymous"></script>
@@ -24,6 +18,12 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
             integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
             crossorigin="anonymous"></script>
+    <script src="https://cdn.pydata.org/bokeh/release/bokeh-1.1.0.min.js"></script>
+    <script src="https://cdn.pydata.org/bokeh/release/bokeh-widgets-1.1.0.min.js"></script>
+    <link href="https://cdn.pydata.org/bokeh/release/bokeh-1.1.0.min.css"
+          rel="stylesheet" type="text/css">
+    <link href="https://cdn.pydata.org/bokeh/release/bokeh-widgets-1.1.0.min.css"
+          rel="stylesheet" type="text/css">
 </head>
 <body>
 
@@ -56,7 +56,8 @@
     </div>
     <h1>Max Relative Gain Papers</h1>
     <p>
-        For each year we show the paper which has the biggest delta number of citations in given year with respect to the previous one.
+        For each year we show the paper which has the biggest delta number of citations in given year with respect to
+        the previous one.
         Different papers have different colors. These colors has nothing to do with subtopics.
     </p>
     <div>
@@ -74,7 +75,8 @@
     <!--    </div>-->
     <h1>Papers co-citations clustering</h1>
     <p>
-        Co-citation clustering using community Louvain algorithm is used to detect dense subtopics in co-citations graph.
+        Co-citation clustering using community Louvain algorithm is used to detect dense subtopics in co-citations
+        graph.
         Chord diagram is used to show papers as graph nodes, edges demonstrate co-citations.
     </p>
     <div>
@@ -96,7 +98,8 @@
     </div>
     <h1>Subtopics</h1>
     <p>
-        For each subtopic most cited papers are shown over time. Papers are sorted descending by citations number overall from bottom to top.
+        For each subtopic most cited papers are shown over time. Papers are sorted descending by citations number
+        overall from bottom to top.
         Year reflects publication year of original paper.
     </p>
     <div>
