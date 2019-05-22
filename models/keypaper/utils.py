@@ -1,4 +1,4 @@
-import logging
+﻿import logging
 import nltk
 import numpy as np
 import re
@@ -72,8 +72,11 @@ def get_subtopic_descriptions(df, size=5):
     return kwd
 
 
-def get_word_cloud_data(df, c):
+def get_word_cloud_data(df, terms, c):
     ngrams = []
+    print(terms)
     for title in df[df['comp'] == c]['title'].values:
-        ngrams.extend(get_ngrams(title, n=1))
+        for ngram in get_ngrams(title, n=1):
+            if ngram not in terms:
+                ngrams.append(ngram)
     return ngrams

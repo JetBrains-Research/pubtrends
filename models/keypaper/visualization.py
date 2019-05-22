@@ -202,7 +202,7 @@ class Plotter:
                         line_color=self.colors[c], fill_color=self.colors[c])
 
             # Word cloud description of subtopic
-            data = get_word_cloud_data(self.analyzer.df, c)
+            data = get_word_cloud_data(self.analyzer.df, self.analyzer.terms, c)
 
             color = (self.colors[c].r, self.colors[c].g, self.colors[c].b)
             wc = WordCloud(background_color="white", width=WIDTH, height=HEIGHT,
