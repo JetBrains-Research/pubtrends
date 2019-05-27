@@ -196,7 +196,7 @@ class KeyPaperAnalyzer:
         with Z as (select pmid_citing, pmid_cited
             from citations
             -- Hack to make Postgres use index!
-            where pmid_cited between %s and %s
+            where pmid_cited between (select min(pmid) from TEMP_PMIDS) and (select max(pmid) from TEMP_PMIDS)
             and pmid_cited in (select pmid from TEMP_PMIDS)),
         X as (select pmid_citing, array_agg(pmid_cited) as cited_list
             from Z
@@ -208,7 +208,7 @@ class KeyPaperAnalyzer:
         '''
 
         with self.conn:
-            self.cursor.execute(query, (min(self.pmids), max(self.pmids),))
+            self.cursor.execute(query)
 
         cocit_data = []
         lines = 0
@@ -337,7 +337,6 @@ class KeyPaperAnalyzer:
         df_kwd = df_kwd.rename(columns={'index': 'comp', 0: 'kwd'})
         self.df = pd.merge(self.df, df_kwd, on='comp')
         self.logger.info('Done\n')
-
 
     def subtopic_evolution_analysis(self, step=2):
         min_year = self.cocit_df['year'].min().astype(int)
