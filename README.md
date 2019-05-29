@@ -53,13 +53,13 @@ Ensure that file contains correct information about the database (url, port, DB 
 2. Use the following command to test and build the project:
 
    ```
-   ./gradlew clean test crawler:shadowJar
+   ./gradlew clean test shadowJar
    ```
      
 3. Crawler is designed to download and keep up-to-date PubMed database. Launch crawler:
 
    ```
-   java -jar crawler/build/libs/crawler-dev.jar
+   java -jar build/libs/crawler-dev.jar
    ``` 
 
 ## Jupyter Notebook frontend
@@ -77,4 +77,4 @@ Ensure that file contains correct information about the database (url, port, DB 
     ```
     celery -A flask-async.celery worker -c 1 --loglevel=DEBUG
     ```
-4. browse to localhost:5000/
+4. Open localhost:5000/
