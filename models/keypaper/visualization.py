@@ -30,6 +30,21 @@ class Plotter:
     def __init__(self, analyzer):
         self.analyzer = analyzer
 
+    def pubmed_callback(self, source):
+        return CustomJS(args=dict(source=source, base=PUBMED_ARTICLE_BASE_URL), code="""
+            var data = source.data, selected = source.selected.indices;
+            if (selected.length == 1) {
+                // only consider case where one glyph is selected by user
+                selected_id = data['pmid'][selected[0]]
+                for (var i = 0; i < data['pmid'].length; ++i){
+                    if(data['pmid'][i] == selected_id){
+                        window.open(base + data['pmid'][i], '_blank');
+                    }
+                }
+            }
+        """)
+
+
     def chord_diagram_components(self):
         logging.info('Visualizing components with Chord diagram')
 
@@ -52,8 +67,7 @@ class Plotter:
 
         n_comps = len(self.analyzer.components)
         cmap = plt.cm.get_cmap('jet', n_comps)
-        comp_palette = [RGB(*[round(c * 255) for c in cmap(i)[:3]]) \
-                        for i in range(n_comps)]
+        comp_palette = [RGB(*[round(c * 255) for c in cmap(i)[:3]]) for i in range(n_comps)]
 
         # Show with Bokeh
         plot = Plot(plot_width=800, plot_height=800,
@@ -264,7 +278,7 @@ class Plotter:
             ("Year", '@paper_year'),
             ("Cited by", '@count papers in @year')
         ]
-
+        p.js_on_event('tap', self.pubmed_callback(ds_max))
         p.vbar(x='year', width=0.8, top='count', fill_alpha=0.5, source=ds_max, fill_color=colors, line_color=colors)
         return p
 
@@ -291,6 +305,7 @@ class Plotter:
             ("Year", '@paper_year'),
             ("Relative Gain", '@rel_gain in @year')
         ]
+        p.js_on_event('tap', self.pubmed_callback(ds_max))
 
         p.vbar(x='year', width=0.8, top='rel_gain', fill_alpha=0.5, source=ds_max, fill_color=colors, line_color=colors)
         return p
@@ -377,19 +392,6 @@ class Plotter:
         return d
 
     def __serve_scatter_article_layout(self, source, year_range, title, width=960):
-        callback = CustomJS(args=dict(source=source, base=PUBMED_ARTICLE_BASE_URL), code="""
-            var data = source.data, selected = source.selected.indices;
-            if (selected.length == 1) {
-                // only consider case where one glyph is selected by user
-                selected_id = data['pmid'][selected[0]]
-                for (var i = 0; i < data['pmid'].length; ++i){
-                    if(data['pmid'][i] == selected_id){
-                        window.open(base + data['pmid'][i], '_blank');
-                    }
-                }
-            }
-        """)
-
         p = figure(tools=TOOLS, toolbar_location="above", plot_width=width, plot_height=400, x_range=year_range,
                    title=title)
         p.xaxis.axis_label = 'Year'
@@ -401,6 +403,6 @@ class Plotter:
             ("Year", '@year'),
             ("Cited by", '@total paper(s) total')
         ]
-        p.js_on_event('tap', callback)
+        p.js_on_event('tap', self.pubmed_callback(source))
 
         return p
