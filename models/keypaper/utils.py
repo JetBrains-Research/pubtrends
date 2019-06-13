@@ -38,7 +38,7 @@ def get_ngrams(string, n=3):
 
 
 # Maximum 1 per component
-def get_most_common_ngrams(titles, number=100):
+def get_most_common_ngrams(titles, number=500):
     ngrams = []
     for title in titles:
         ngrams.extend(get_ngrams(title))
@@ -48,7 +48,7 @@ def get_most_common_ngrams(titles, number=100):
     return most_common
 
 
-def get_subtopic_descriptions(df, size=5):
+def get_subtopic_descriptions(df, size=50):
     logging.info('Compute most common n-gramms')
     n_comps = df['comp'].nunique()
     most_common = [None] * n_comps
@@ -65,7 +65,7 @@ def get_subtopic_descriptions(df, size=5):
         idfs[c] = {k: (0.5 + 0.5 * v / max_cnt) *  # augmented frequency to avoid document length bias
                       np.log(n_comps / sum([k in mcoc for mcoc in most_common])) \
                    for k, v in most_common[c].items()}
-        kwd[c] = ', '.join([f'{k} ({most_common[c][k]:.2f})' \
+        kwd[c] = ','.join([f'{k}:{(max(most_common[c][k], 1e-3)):.3f}'
                             for k, _v in list(sorted(idfs[c].items(),
                                                      key=lambda kv: kv[1],
                                                      reverse=True))[:size]])
@@ -73,10 +73,14 @@ def get_subtopic_descriptions(df, size=5):
 
 
 def get_word_cloud_data(df, terms, c):
-    ngrams = []
-    print(terms)
-    for title in df[df['comp'] == c]['title'].values:
-        for ngram in get_ngrams(title, n=1):
-            if ngram not in terms:
-                ngrams.append(ngram)
-    return ngrams
+    """Create TF-IDF based keywords"""
+    kwds = {}
+    for pair in list(df[df['comp'] == c]['kwd'])[0].split(','):
+        ngram, count = pair.split(':')
+        if ngram not in terms:
+            kwds[ngram] = float(count)
+    min_count = min(kwds.values())
+    text = []
+    for ngram, count in kwds.items():
+        text.extend([ngram] * int(1 + count / min_count))
+    return text
