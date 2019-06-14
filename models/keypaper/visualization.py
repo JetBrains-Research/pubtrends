@@ -51,8 +51,8 @@ class Plotter:
         G = nx.Graph()
         # Using merge left keeps order
         gdf = pd.merge(pd.Series(self.analyzer.CG.nodes()).reset_index().rename(columns={0: 'pmid'}).astype(int),
-                       self.analyzer.df[['pmid', 'title', 'year', 'total', 'comp']], how='left').sort_values(by='total',
-                                                                                                             ascending=False)
+                       self.analyzer.df[['pmid', 'title', 'year', 'total', 'comp']], how='left'
+                       ).sort_values(by='total', ascending=False)
 
         for c in range(len(self.analyzer.components)):
             for n in gdf[gdf['comp'] == c]['pmid']:
@@ -61,9 +61,11 @@ class Plotter:
 
         edge_starts = []
         edge_ends = []
-        for start, end in self.analyzer.CG.edges():
+        edge_weights = []
+        for start, end, data in self.analyzer.CG.edges(data=True):
             edge_starts.append(start)
             edge_ends.append(end)
+            edge_weights.append(data['weight'])
 
         n_comps = len(self.analyzer.components)
         cmap = plt.cm.get_cmap('jet', n_comps)
@@ -100,7 +102,7 @@ class Plotter:
             ys.append(bezier(sy, ey))
             if self.analyzer.pm[edge_start] == self.analyzer.pm[edge_end]:
                 edge_colors.append(comp_palette[self.analyzer.pm[edge_start]])
-                edge_alphas.append(0.5)
+                edge_alphas.append(0.3)
             else:
                 edge_colors.append('grey')
                 edge_alphas.append(0.1)
@@ -112,6 +114,7 @@ class Plotter:
         # Style for edges
         graph.edge_renderer.data_source.data['edge_colors'] = edge_colors
         graph.edge_renderer.data_source.data['edge_alphas'] = edge_alphas
+        graph.edge_renderer.data_source.data['edge_weights'] = edge_weights
 
         # TODO: use ColumnDatasource
         # Nodes data for rendering
@@ -130,7 +133,10 @@ class Plotter:
         graph.node_renderer.glyph = Circle(size='size', line_color='colors', fill_color='colors',
                                            line_alpha=0.5, fill_alpha=0.5)
         # edge rendering
-        graph.edge_renderer.glyph = MultiLine(line_color='edge_colors', line_alpha='edge_alphas', line_width=1)
+        graph.edge_renderer.glyph = MultiLine(
+            line_color='edge_colors',
+            line_alpha='edge_alphas',
+            line_width='edge_weights')
 
         # add tools to the plot
         # hover,pan,tap,wheel_zoom,box_zoom,reset,save
