@@ -30,7 +30,8 @@ class Plotter:
     def __init__(self, analyzer):
         self.analyzer = analyzer
 
-    def pubmed_callback(self, source):
+    @staticmethod
+    def pubmed_callback(source):
         return CustomJS(args=dict(source=source, base=PUBMED_ARTICLE_BASE_URL), code="""
             var data = source.data, selected = source.selected.indices;
             if (selected.length == 1) {
@@ -43,7 +44,6 @@ class Plotter:
                 }
             }
         """)
-
 
     def chord_diagram_components(self):
         logging.info('Visualizing components with Chord diagram')
@@ -179,18 +179,13 @@ class Plotter:
     def subtopic_timeline_graphs(self):
         logging.info('Per component detailed info visualization')
 
-#        # Reorder subtopics by importance descending
-#        KEY = 'citations' # 'size' or 'citations'
-#
-#        if KEY == 'size':
-#            order = self.analyzer.df.groupby('comp')['pmid'].count().sort_values(ascending=False).index.values
-#        elif KEY == 'citations':
-#            order = self.analyzer.df.groupby('comp')['total'].sum().sort_values(ascending=False).index.values
-
-        # Word cloud configuration
-        WIDTH = 200
-        HEIGHT = 400
-        WORDS = 20
+        #        # Reorder subtopics by importance descending
+        #        KEY = 'citations' # 'size' or 'citations'
+        #
+        #        if KEY == 'size':
+        #            order = self.analyzer.df.groupby('comp')['pmid'].count().sort_values(ascending=False).index.values
+        #        elif KEY == 'citations':
+        #            order = self.analyzer.df.groupby('comp')['total'].sum().sort_values(ascending=False).index.values
 
         # Prepare layouts
         n_comps = len(self.analyzer.components)
@@ -202,8 +197,6 @@ class Plotter:
 
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
         for c in range(n_comps):
-#            kwd = self.analyzer.df[self.analyzer.df['comp'] == c]['kwd'].values[0]
-
             # Scatter layout for articles from subtopic
             title = f'Subtopic #{c}{" OTHER" if c == 0 and self.analyzer.components_merged else ""}'
 
@@ -215,23 +208,22 @@ class Plotter:
             plot.circle(x='year', y='pos', fill_alpha=0.5, source=ds[c], size='size',
                         line_color=self.colors[c], fill_color=self.colors[c])
 
-            # Word cloud description of subtopic
-            data = get_word_cloud_data(self.analyzer.df, self.analyzer.terms, c)
-
+            # Word cloud description of subtopic by titles and abstracts
+            kwds = get_word_cloud_data(self.analyzer.df_kwd, c)
             color = (self.colors[c].r, self.colors[c].g, self.colors[c].b)
-            wc = WordCloud(background_color="white", width=WIDTH, height=HEIGHT,
-                   color_func = lambda *args, **kwargs: color,
-                   max_words=WORDS, max_font_size=40, prefer_horizontal=1)
-            wc.generate(' '.join(data))
+            wc = WordCloud(background_color="white", width=200, height=400,
+                           color_func=lambda *args, **kwargs: color,
+                           max_words=10, max_font_size=40)
+            wc.generate_from_frequencies(kwds)
 
             image = wc.to_array()
             desc = figure(title="", toolbar_location="above",
-                          plot_width=WIDTH, plot_height=HEIGHT,
-                          x_range = [0,10], y_range = [0,10], tools=[])
+                          plot_width=200, plot_height=400,
+                          x_range=[0, 10], y_range=[0, 10], tools=[])
             desc.axis.visible = False
 
-            img = np.empty((HEIGHT, WIDTH), dtype=np.uint32)
-            view = img.view(dtype=np.uint8).reshape((HEIGHT, WIDTH, 4))
+            img = np.empty((400, 200), dtype=np.uint32)
+            view = img.view(dtype=np.uint8).reshape((400, 200, 4))
             view[:, :, 0:3] = image[::-1, :, :]
             view[:, :, 3] = 255
 
@@ -247,7 +239,7 @@ class Plotter:
         ds = self.__build_data_source(self.analyzer.top_cited_df)
         p = self.__serve_scatter_article_layout(source=ds,
                                                 year_range=[min_year, max_year],
-                                                title='Top cited papers')
+                                                title=f'{len(self.analyzer.top_cited_df)} top cited papers')
 
         for c in range(n_comps):
             view = CDSView(source=ds, filters=[GroupFilter(column_name='comp',
@@ -392,7 +384,10 @@ class Plotter:
         return d
 
     def __serve_scatter_article_layout(self, source, year_range, title, width=960):
-        p = figure(tools=TOOLS, toolbar_location="above", plot_width=width, plot_height=400, x_range=year_range,
+        min_year, max_year = year_range
+        p = figure(tools=TOOLS, toolbar_location="above",
+                   plot_width=width, plot_height=400,
+                   x_range=(min_year - 1, max_year + 1),
                    title=title)
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Amount of articles'

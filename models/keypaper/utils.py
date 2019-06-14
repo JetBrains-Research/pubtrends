@@ -17,16 +17,15 @@ nltk.download('wordnet')
 PUBMED_ARTICLE_BASE_URL = 'https://www.ncbi.nlm.nih.gov/pubmed/?term='
 
 
-def get_ngrams(string, n=3):
+def get_ngrams(text, n=3):
     """1/2/3-gramms computation for string"""
     is_noun = lambda pos: pos[:2] == 'NN'
-    tokenized = word_tokenize(re.sub('[^a-zA-Z0-9\- ]*', '', string.lower()))
+    tokenized = word_tokenize(re.sub('[^a-zA-Z0-9\- ]*', '', text.lower()))
     stop_words = set(stopwords.words('english'))
-    nouns = [word for (word, pos) in nltk.pos_tag(tokenized) if
-             len(word) >= 3 and is_noun(pos) and word not in stop_words]
+    nouns = [word for (word, pos) in nltk.pos_tag(tokenized) if is_noun(pos) and word not in stop_words]
 
     lemmatizer = WordNetLemmatizer()
-    tokens = [lemmatizer.lemmatize(n) for n in nouns]
+    tokens = list(filter(lambda t: len(t) >= 3, [lemmatizer.lemmatize(n) for n in nouns]))
     ngrams = list(tokens)
     if n > 1:
         for t1, t2 in zip(tokens[:-1], tokens[1:]):
@@ -37,23 +36,31 @@ def get_ngrams(string, n=3):
     return ngrams
 
 
-# Maximum 1 per component
-def get_most_common_ngrams(titles, number=500):
-    ngrams = []
-    for title in titles:
-        ngrams.extend(get_ngrams(title))
+def get_most_common_ngrams(titles, abstracts, number=500):
+    ngrams_counter = Counter()
+    for text in titles:
+        if isinstance(text, str):
+            for ngram in get_ngrams(text):
+                # More weight for titles
+                ngrams_counter[ngram] += 1.5
+    for text in abstracts:
+        if isinstance(text, str):
+            for ngram in get_ngrams(text):
+                ngrams_counter[ngram] += 1
     most_common = {}
-    for ngram, cnt in Counter(ngrams).most_common(number):
-        most_common[ngram] = cnt / len(ngrams)
+    for ngram, cnt in ngrams_counter.most_common(number):
+        most_common[ngram] = cnt / len(ngrams_counter)
     return most_common
 
 
-def get_subtopic_descriptions(df, size=50):
-    logging.info('Compute most common n-gramms')
+def get_subtopic_descriptions(df, size=100):
+    """Create TF-IDF based description on n-grams"""
+    logging.info('Computing most common n-grams')
     n_comps = df['comp'].nunique()
     most_common = [None] * n_comps
     for c in range(n_comps):
-        most_common[c] = dict(get_most_common_ngrams(df[df['comp'] == c]['title'].values))
+        df_comp = df[df['comp'] == c]
+        most_common[c] = dict(get_most_common_ngrams(df_comp['title'], df_comp['abstract']))
 
     logging.info('Compute Augmented Term Frequency - Inverse Document Frequency')
     # The tf–idf is the product of two statistics, term frequency and inverse document frequency.
@@ -66,21 +73,17 @@ def get_subtopic_descriptions(df, size=50):
                       np.log(n_comps / sum([k in mcoc for mcoc in most_common])) \
                    for k, v in most_common[c].items()}
         kwd[c] = ','.join([f'{k}:{(max(most_common[c][k], 1e-3)):.3f}'
-                            for k, _v in list(sorted(idfs[c].items(),
-                                                     key=lambda kv: kv[1],
-                                                     reverse=True))[:size]])
+                           for k, _v in list(sorted(idfs[c].items(),
+                                                    key=lambda kv: kv[1],
+                                                    reverse=True))[:size]])
     return kwd
 
 
-def get_word_cloud_data(df, terms, c):
-    """Create TF-IDF based keywords"""
+def get_word_cloud_data(df_kwd, c):
+    """Parse TF-IDF based ngramms from text"""
     kwds = {}
-    for pair in list(df[df['comp'] == c]['kwd'])[0].split(','):
+    for pair in list(df_kwd[df_kwd['comp'] == c]['kwd'])[0].split(','):
         ngram, count = pair.split(':')
-        if ngram not in terms:
-            kwds[ngram] = float(count)
-    min_count = min(kwds.values())
-    text = []
-    for ngram, count in kwds.items():
-        text.extend([ngram] * int(1 + count / min_count))
-    return text
+        for word in ngram.split(' '):
+                kwds[word] = float(count) + kwds.get(word, 0)
+    return kwds

@@ -116,7 +116,7 @@ class KeyPaperAnalyzer:
         DROP INDEX IF EXISTS temp_pmids_unique_index;
         CREATE UNIQUE INDEX temp_pmids_unique_index ON TEMP_PMIDS USING btree (pmid);
 
-        SELECT P.pmid, P.title, P.year
+        SELECT P.pmid, P.title, P.abstract, P.year 
         FROM Publications P
         JOIN TEMP_PMIDS AS T ON (P.pmid = T.pmid);
         ''')
@@ -125,7 +125,7 @@ class KeyPaperAnalyzer:
         with self.conn:
             self.cursor.execute(query)
         self.pub_df = pd.DataFrame(self.cursor.fetchall(),
-                                   columns=['pmid', 'title', 'year'])
+                                   columns=['pmid', 'title', 'abstract', 'year'])
         self.logger.info(f'Found {len(self.pub_df)} publications in the local database\n')
 
     def load_citation_stats(self):
@@ -185,7 +185,7 @@ class KeyPaperAnalyzer:
         self.logger.info(f'Built citation graph - nodes {len(self.G.nodes())} edges {len(self.G.edges())}')
 
     def update_years(self):
-        years = self.df.columns.values[3:-2].astype(int)
+        years = self.df.columns.values[4:-2].astype(int)
         self.min_year, self.max_year = np.min(years), np.max(years)
 
     def load_cocitations(self):
@@ -241,7 +241,7 @@ class KeyPaperAnalyzer:
                 self.CG.add_edge(str(start), str(end), weight=weight)
         self.logger.info(f'Co-citations graph nodes {len(self.CG.nodes())} edges {len(self.CG.edges())}\n')
 
-    def find_top_cited_papers(self, max_papers=20, threshold=0.1):
+    def find_top_cited_papers(self, max_papers=50, threshold=0.1):
         self.logger.info(f'Identifying top cited papers overall')
         papers_to_show = min(max_papers, round(len(self.df) * threshold))
         self.top_cited_df = self.df.sort_values(by='total', ascending=False).iloc[:papers_to_show, :]
@@ -297,7 +297,7 @@ class KeyPaperAnalyzer:
         self.logger.info(f'Graph modularity: {community.modularity(p, self.CG):.3f}')
 
         # Merge small components to 'Other'
-        GRANULARITY = 0.01
+        GRANULARITY = 0.05
         self.logger.info(f'Merging components smaller than {GRANULARITY} to "Other" component')
         threshold = int(GRANULARITY * len(p))
         comp_sizes = {com: sum([p[node] == com for node in p.keys()]) for com in self.components}
@@ -335,7 +335,8 @@ class KeyPaperAnalyzer:
         self.logger.info('Getting n-gram descriptions for subtopics')
         df_kwd = pd.Series(get_subtopic_descriptions(self.df)).reset_index()
         df_kwd = df_kwd.rename(columns={'index': 'comp', 0: 'kwd'})
-        self.df = pd.merge(self.df, df_kwd, on='comp')
+        self.df_kwd = df_kwd
+        self.logger.info(f'TF-IDF\n{str(self.df_kwd)}')
         self.logger.info('Done\n')
 
     def subtopic_evolution_analysis(self, step=2):
