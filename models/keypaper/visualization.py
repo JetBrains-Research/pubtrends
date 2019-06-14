@@ -65,7 +65,7 @@ class Plotter:
         for start, end, data in self.analyzer.CG.edges(data=True):
             edge_starts.append(start)
             edge_ends.append(end)
-            edge_weights.append(data['weight'])
+            edge_weights.append(min(data['weight'], 10))
 
         n_comps = len(self.analyzer.components)
         cmap = plt.cm.get_cmap('jet', n_comps)
