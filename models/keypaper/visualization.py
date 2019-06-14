@@ -21,7 +21,7 @@ from IPython.display import display
 from matplotlib import pyplot as plt
 from wordcloud import WordCloud
 
-from .utils import PUBMED_ARTICLE_BASE_URL, get_word_cloud_data
+from .utils import PUBMED_ARTICLE_BASE_URL, get_word_cloud_data, get_most_common_ngrams
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
 
@@ -154,15 +154,15 @@ class Plotter:
         palette = [RGB(*[round(c * 255) for c in cmap(i)[:3]]) for i in range(n_comps)]
 
         components = [str(i) for i in range(n_comps)]
-        years = list(range(min_year, max_year))
+        years = list(range(min_year - 1, max_year + 1))
         data = {'years': years}
         for c in range(n_comps):
             data[str(c)] = [
-                len(self.analyzer.df[np.logical_and(self.analyzer.df['comp'] == c, self.analyzer.df['year'] == y)]) \
+                len(self.analyzer.df[np.logical_and(self.analyzer.df['comp'] == c, self.analyzer.df['year'] == y)])
                 for y in range(min_year, max_year)]
 
         p = figure(x_range=[min_year, max_year], plot_width=960, plot_height=300, title="Components by Year",
-                   toolbar_location=None, tools="hover", tooltips="#$name: @$name")
+                   toolbar_location=None, tools="hover", tooltips="Subtopic #$name: @$name")
 
         p.vbar_stack(components, x='years', width=0.9, color=palette, source=data, alpha=0.5,
                      legend=[value(c) for c in components])
@@ -213,7 +213,7 @@ class Plotter:
             color = (self.colors[c].r, self.colors[c].g, self.colors[c].b)
             wc = WordCloud(background_color="white", width=200, height=400,
                            color_func=lambda *args, **kwargs: color,
-                           max_words=10, max_font_size=40)
+                           max_words=20, max_font_size=40)
             wc.generate_from_frequencies(kwds)
 
             image = wc.to_array()
@@ -236,17 +236,43 @@ class Plotter:
     def top_cited_papers(self):
         n_comps = len(self.analyzer.components)
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
-        ds = self.__build_data_source(self.analyzer.top_cited_df)
-        p = self.__serve_scatter_article_layout(source=ds,
-                                                year_range=[min_year, max_year],
-                                                title=f'{len(self.analyzer.top_cited_df)} top cited papers')
+        ds = self.__build_data_source(self.analyzer.top_cited_df, width=700)
+        plot = self.__serve_scatter_article_layout(source=ds,
+                                                   year_range=[min_year, max_year],
+                                                   title=f'{len(self.analyzer.top_cited_df)} top cited papers',
+                                                   width=760)
 
         for c in range(n_comps):
             view = CDSView(source=ds, filters=[GroupFilter(column_name='comp',
                                                            group=str(c))])
-            p.circle(x='year', y='pos', fill_alpha=0.5, source=ds, view=view,
-                     size='size', line_color=self.colors[c], fill_color=self.colors[c])
+            plot.circle(x='year', y='pos', fill_alpha=0.5, source=ds, view=view,
+                        size='size', line_color=self.colors[c], fill_color=self.colors[c])
 
+        # Word cloud description of subtopic by titles and abstracts
+        kwds = {}
+        for ngram, count in get_most_common_ngrams(self.analyzer.top_cited_df['title'],
+                                                   self.analyzer.top_cited_df['abstract']).items():
+            for word in ngram.split(' '):
+                kwds[word] = float(count) + kwds.get(word, 0)
+        wc = WordCloud(background_color="white", width=200, height=400,
+                       color_func=lambda *args, **kwargs: 'black',
+                       max_words=20, max_font_size=40)
+        wc.generate_from_frequencies(kwds)
+
+        image = wc.to_array()
+        desc = figure(title="", toolbar_location="above",
+                      plot_width=200, plot_height=400,
+                      x_range=[0, 10], y_range=[0, 10], tools=[])
+        desc.axis.visible = False
+
+        img = np.empty((400, 200), dtype=np.uint32)
+        view = img.view(dtype=np.uint8).reshape((400, 200, 4))
+        view[:, :, 0:3] = image[::-1, :, :]
+        view[:, :, 3] = 255
+
+        desc.image_rgba(image=[img], x=[0], y=[0], dw=[10], dh=[10])
+
+        p = row(desc, plot)
         return p
 
     def max_gain_papers(self):
@@ -259,9 +285,9 @@ class Plotter:
         palette = [RGB(*[round(c * 255) for c in cmap(i)[:3]]) for i in range(len(factors))]
         colors = factor_cmap('pmid', palette=palette, factors=factors)
 
-        year_range = [self.analyzer.min_year, self.analyzer.max_year]
+        year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
         p = figure(tools=TOOLS, toolbar_location="above",
-                   plot_width=960, plot_height=300, x_range=year_range, title='Max gain')
+                   plot_width=960, plot_height=300, x_range=year_range, title='Max gain of citations per year')
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Number of citations'
         p.hover.tooltips = [
@@ -286,9 +312,9 @@ class Plotter:
         palette = [RGB(*[round(c * 255) for c in cmap(i)[:3]]) for i in range(len(factors))]
         colors = factor_cmap('pmid', palette=palette, factors=factors)
 
-        year_range = [self.analyzer.min_year, self.analyzer.max_year]
+        year_range = [self.analyzer.min_year -1 , self.analyzer.max_year + 1]
         p = figure(tools=TOOLS, toolbar_location="above",
-                   plot_width=960, plot_height=300, x_range=year_range, title='Max gain')
+                   plot_width=960, plot_height=300, x_range=year_range, title='Max relative gain of citations per year')
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Relative Gain of Citations'
         p.hover.tooltips = [

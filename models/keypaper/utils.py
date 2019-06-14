@@ -60,7 +60,7 @@ def get_subtopic_descriptions(df, size=100):
     most_common = [None] * n_comps
     for c in range(n_comps):
         df_comp = df[df['comp'] == c]
-        most_common[c] = dict(get_most_common_ngrams(df_comp['title'], df_comp['abstract']))
+        most_common[c] = get_most_common_ngrams(df_comp['title'], df_comp['abstract'])
 
     logging.info('Compute Augmented Term Frequency - Inverse Document Frequency')
     # The tf–idf is the product of two statistics, term frequency and inverse document frequency.
