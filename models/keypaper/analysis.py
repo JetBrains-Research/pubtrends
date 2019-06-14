@@ -96,8 +96,7 @@ class KeyPaperAnalyzer:
             self.logger.removeHandler(handler)
 
     def search(self, *terms):
-        print('TODO: handle queries which return more than 10000 items')
-        print('TODO: use local database instead of PubMed API')
+        self.logger.info('TODO: handle queries which return more than 10000 items')
         self.terms = [t.lower() for t in terms]
         query = ' '.join(terms)
         handle = Entrez.esearch(db='pubmed', retmax='10000',
@@ -151,16 +150,15 @@ class KeyPaperAnalyzer:
         self.cit_df = self.cit_df.pivot(index='pmid', columns='year', values='count').reset_index().replace(np.nan, 0)
         self.cit_df['total'] = self.cit_df.iloc[:, 1:].sum(axis=1)
         self.cit_df = self.cit_df.sort_values(by='total', ascending=False)
-        self.logger.info(f"Loaded citation stats for {len(self.cit_df)} of {len(self.pmids)} articles. " +
+        self.logger.info(f"Loaded citation stats for {len(self.cit_df)} of {len(self.pmids)} articles.\n" +
                          "Others may either have zero citations or be absent in the local database.")
 
-        #        self.logger.info('Filtering top 1000 or 50% of all the papers')
-        #        self.cit_df = self.cit_df.iloc[:min(1000, round(0.5 * len(self.cit_df))), :]
-        #        self.logger.info('Done aggregation')
+        self.logger.info('Filtering top 100000 or 80% of all the citations')
+        self.cit_df = self.cit_df.iloc[:min(100000, round(0.8 * len(self.cit_df))), :]
 
         self.df = pd.merge(self.pub_df, self.cit_df, on='pmid')
         self.pmids = sorted(list(self.df['pmid']))
-        self.logger.info(f'{len(self.df)} articles are further analyzed\n')
+        self.logger.info(f'{len(self.df)} articles to process.\n')
 
     def load_citations(self):
         self.logger.info('Started loading raw information about citations')
@@ -229,8 +227,8 @@ class KeyPaperAnalyzer:
         self.cocit_grouped_df = self.cocit_grouped_df.replace(np.nan, 0)
         self.cocit_grouped_df['total'] = self.cocit_grouped_df.iloc[:, 2:].sum(axis=1)
         self.cocit_grouped_df = self.cocit_grouped_df.sort_values(by='total', ascending=False)
-        self.logger.info('Filtering top maximum top 10000 of all the co-citations')
-        self.cocit_grouped_df = self.cocit_grouped_df.iloc[:min(10000, len(self.cocit_grouped_df)), :]
+        self.logger.info('Filtering top 100000 of all the co-citations')
+        self.cocit_grouped_df = self.cocit_grouped_df.iloc[:min(100000, len(self.cocit_grouped_df)), :]
 
         self.logger.info(f'Building co-citations graph')
         self.CG = nx.Graph()
@@ -333,10 +331,12 @@ class KeyPaperAnalyzer:
 
         # Get n-gram descriptions for subtopics
         self.logger.info('Getting n-gram descriptions for subtopics')
-        df_kwd = pd.Series(get_subtopic_descriptions(self.df)).reset_index()
+        kwds = get_subtopic_descriptions(self.df)
+        for k, v in kwds.items():
+            self.logger.info(f'{k}: {v}')
+        df_kwd = pd.Series(kwds).reset_index()
         df_kwd = df_kwd.rename(columns={'index': 'comp', 0: 'kwd'})
         self.df_kwd = df_kwd
-        self.logger.info(f'TF-IDF\n{str(self.df_kwd)}')
         self.logger.info('Done\n')
 
     def subtopic_evolution_analysis(self, step=2):
@@ -347,7 +347,7 @@ class KeyPaperAnalyzer:
 
         evolution_series = []
         year_range = range(max_year, min_year - 1, -step)
-        self.logger.info('Filtering top 10000 or 80% of all the co-citations')
+        self.logger.info('Filtering top 100000 co-citations')
         for year in year_range:
             cocit_grouped_df = self.cocit_df[self.cocit_df['year'] <= year].groupby(
                 ['cited_1', 'cited_2', 'year']).count().reset_index()
@@ -356,7 +356,7 @@ class KeyPaperAnalyzer:
             cocit_grouped_df = cocit_grouped_df.replace(np.nan, 0)
             cocit_grouped_df['total'] = cocit_grouped_df.iloc[:, 2:].sum(axis=1)
             cocit_grouped_df = cocit_grouped_df.sort_values(by='total', ascending=False)
-            cocit_grouped_df = cocit_grouped_df.iloc[:min(10000, round(0.8 * len(cocit_grouped_df))), :]
+            cocit_grouped_df = cocit_grouped_df.iloc[:min(100000, len(cocit_grouped_df)), :]
 
             CG = nx.Graph()
             # NOTE: we use nodes id as String to avoid problems str keys in jsonify during graph visualization

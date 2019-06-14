@@ -65,7 +65,7 @@ class Plotter:
         for start, end, data in self.analyzer.CG.edges(data=True):
             edge_starts.append(start)
             edge_ends.append(end)
-            edge_weights.append(min(data['weight'], 10))
+            edge_weights.append(min(data['weight'], 20))
 
         n_comps = len(self.analyzer.components)
         cmap = plt.cm.get_cmap('jet', n_comps)
@@ -102,10 +102,10 @@ class Plotter:
             ys.append(bezier(sy, ey))
             if self.analyzer.pm[edge_start] == self.analyzer.pm[edge_end]:
                 edge_colors.append(comp_palette[self.analyzer.pm[edge_start]])
-                edge_alphas.append(0.3)
+                edge_alphas.append(0.1)
             else:
                 edge_colors.append('grey')
-                edge_alphas.append(0.1)
+                edge_alphas.append(0.05)
 
         # Paths for edges
         graph.edge_renderer.data_source.data['xs'] = xs
