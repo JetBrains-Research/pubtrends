@@ -2,12 +2,16 @@
 
 A tool for analysis of trends & pivotal points in the scientific literature.
 
+Project presentation: https://my.compscicenter.ru/media/projects/2019-spring/758/presentations/participants.pdf
 Project workflow: https://drive.google.com/open?id=17oQAuMJ0vmDgzucGxJT_xgQBCkLEio3HIeG_sfgMtcc
 
 ## Prerequisites
 
 * JDK 8
 * PostgreSQL (tested with 10.5)
+* Python 3.6+
+* Celery
+* Redis
 
 ## Setup
 
@@ -68,12 +72,12 @@ Ensure that file contains correct information about the database (url, port, DB 
    ```
 
 ## Web service
-1. Install and start `Redis`.
-2. start server
+1. Start `Redis`.
+2. Start server
     ```
     python flask-async.py
     ```    
-3. start worker
+3. Start worker queue
     ```
     celery -A flask-async.celery worker -c 1 --loglevel=DEBUG
     ```
