@@ -13,4 +13,4 @@ parserLimit = 0
 collectStats = true
 
 # Archive File path, please paste correct path
-archive_path = /Users/anna.vlasova/Downloads/sample-S2-records
+archive_path = /
