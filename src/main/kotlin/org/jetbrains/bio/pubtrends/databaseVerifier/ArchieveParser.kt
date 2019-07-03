@@ -22,13 +22,12 @@ class ArchiveParser (
         try {
             inputStream = FileInputStream(archivePath)
             sc = Scanner(inputStream, "UTF-8")
-            val buffer = StringBuilder()
+            var buffer = StringBuilder()
             var hashId: String?
             var pmid: Int? = 0
             var citations: List<String>?
 
             while (sc.hasNextLine()) {
-
                 val line = sc.nextLine().trim()
                 if (!line.endsWith("}")) {
                     buffer.append(line)
@@ -39,7 +38,7 @@ class ArchiveParser (
                 if (buffer.isNotEmpty()) {
                     buffer.append(line)
                     jsonObject = lineToObject(buffer.toString())
-                    buffer.clear()
+                    buffer = StringBuilder()
                 } else {
                     jsonObject = lineToObject(line)
                 }
@@ -52,7 +51,7 @@ class ArchiveParser (
                 if (pmid != null) {
                     hashId = extractHashId(jsonObject?.get("id"))
                     citations = extractCitations(jsonObject?.get("outCitations"))
-                    hashId?.let { citations?.let { citations -> addArticle(it, pmid, citations) } }
+                    hashId?.let { citations?.let { citations -> DatabaseAdderUtils().addArticle(it, pmid, citations) } }
                 }
             }
             if (sc.ioException() != null) {

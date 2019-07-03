@@ -1,6 +1,5 @@
 package org.jetbrains.bio.pubtrends.databaseVerifier
 
-//import joptsimple.OptionParser
 import org.apache.logging.log4j.LogManager
 import org.jetbrains.bio.pubtrends.crawler.Citations
 import org.jetbrains.bio.pubtrends.crawler.PostgresqlDatabaseHandler
@@ -13,7 +12,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.*
 
-fun main() {
+fun main(args: Array<String>) {
 
     val logger = LogManager.getLogger("Pubtrends")
 
@@ -50,7 +49,6 @@ fun main() {
 
     logger.info("Create extra tables")
 
-
     transaction {
         addLogger(StdOutSqlLogger)
         SchemaUtils.create(SemanticScholarCitations, idMatch, PmidCitationsFromSS)
@@ -60,7 +58,7 @@ fun main() {
 
     ArchiveParser(config["archive_path"].toString()).parse()
 
-    addPmidCitations() // in progress
+    DatabaseAdderUtils().addPmidCitations() // in progress
 
     DatabaseComparator().compareTables(Citations, PmidCitationsFromSS) //in progress
 }
