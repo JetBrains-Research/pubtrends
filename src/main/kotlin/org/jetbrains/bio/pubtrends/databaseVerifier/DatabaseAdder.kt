@@ -7,8 +7,6 @@ import org.jetbrains.exposed.sql.transactions.transaction
 fun addArticle(hashId: String, pmid: Int, citations: List<String>) {
     transaction {
 //        addLogger(StdOutSqlLogger)
-
-        println("$pmid  $hashId")
         if (pmid != null && hashId != null) {
             idMatch.insertIgnore {
                 it[this.pmid] = pmid
