@@ -82,3 +82,18 @@ Ensure that file contains correct information about the database (url, port, DB 
     celery -A flask-async.celery worker -c 1 --loglevel=DEBUG
     ```
 4. Open localhost:5000/
+
+## Semantic Scholar Verifier
+
+1. Download Sample from [Semantic Scholar](https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/sample-S2-records.gz)
+
+2. Or full archive 
+   ```
+   wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/manifest.txt
+   wget -B https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/ -i manifest.txt
+   ```
+3. Unzip it
+
+4. Add the path to the resulting file to `.pubtrends/config.properties`
+
+5. Run `/databaseVerifier/Main.kt`
