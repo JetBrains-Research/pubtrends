@@ -66,6 +66,15 @@ Ensure that file contains correct information about the database (url, port, DB 
    java -jar build/libs/crawler-dev.jar
    ``` 
 
+## Anaconda environment
+
+Anaconda environment 'pubtrends' can be easily created for launching Jupyter Notebook and Web Servive:
+
+```
+conda env create -f environment.yml
+conda activate pubtrends
+```
+
 ## Jupyter Notebook frontend
    ```
    jupyter notebook
