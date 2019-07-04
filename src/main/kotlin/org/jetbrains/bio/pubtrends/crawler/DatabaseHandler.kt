@@ -46,7 +46,6 @@ class PostgresqlDatabaseHandler(
     override fun store(articles: List<PubmedArticle>) {
         // val keywordsForArticle = articles.map { it.keywordList.map { kw -> it.pmid to kw } }.flatten()
         // val keywordSet = keywordsForArticle.mapTo(hashSetOf()) { it.second }
-        logger.info("Storing ${articles.size} articles...")
         val citationsForArticle = articles.map { it.citationList.toSet().map { cit -> it.pmid to cit } }.flatten()
 
         transaction {

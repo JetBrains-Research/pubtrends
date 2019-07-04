@@ -92,8 +92,6 @@ class PubmedCrawler(
         val bufferSize = 1024
         var safeUnpack = true
 
-        logger.info("$archiveName: Unpacking...")
-
         GZIPInputStream(BufferedInputStream(FileInputStream(archiveName))).use { inputStream ->
             BufferedOutputStream(FileOutputStream(originalName)).use { outputStream ->
                 try {
@@ -113,11 +111,15 @@ class PubmedCrawler(
     }
 
     private fun downloadFiles(files: List<String>, isBaseline: Boolean) {
-        files.forEach { file ->
+        val filesSize = files.size
+        val fileType = if (isBaseline) "baseline" else "update"
+
+        files.forEachIndexed { idx, file ->
             val localArchiveName = "${tempDirectory.absolutePath}/$file"
             val localName = localArchiveName.substringBefore(".gz")
+            val progressPrefix = "(${idx + 1} / $filesSize $fileType)"
 
-            logger.info("$localArchiveName: Downloading...")
+            logger.info("$progressPrefix $localArchiveName: Downloading...")
 
             val downloadSuccess = if (isBaseline)
                 ftpHandler.downloadBaselineFile(file, tempDirectory.absolutePath)
@@ -125,15 +127,17 @@ class PubmedCrawler(
                 ftpHandler.downloadUpdateFile(file, tempDirectory.absolutePath)
             var overallSuccess = false
 
+            logger.info("$progressPrefix $localArchiveName: Unpacking...")
             if (downloadSuccess && unpack(localArchiveName)) {
+                logger.info("$progressPrefix $localName: Parsing...")
                 overallSuccess = xmlParser.parse(localName)
                 File(localName).delete()
             }
 
-            logger.info("$localName: ${if (overallSuccess) "SUCCESS" else "FAILURE"}")
+            logger.info("$progressPrefix $localName: ${if (overallSuccess) "SUCCESS" else "FAILURE"}")
 
             // Save progress information to be able to recover from Ctrl-C/kill signals
-            logger.debug("Save progress to $progressTSV")
+            logger.debug("$progressPrefix Save progress to $progressTSV")
             BufferedWriter(FileWriter(progressTSV.toFile())).use {
                 it.write("lastId\t${PubmedFTPHandler.pubmedFileToId(file)}")
             }

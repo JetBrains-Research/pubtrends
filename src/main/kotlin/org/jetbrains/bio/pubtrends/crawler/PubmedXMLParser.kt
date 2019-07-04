@@ -30,8 +30,6 @@ class PubmedXMLParser(val pubmedXMLHandler: PubmedXMLHandler) {
     }
 
     fun parse(name: String): Boolean {
-        logger.info("$name: Parsing...")
-
         try {
             logger.debug("File location: ${File(name).absolutePath}")
             File(name).inputStream().use {

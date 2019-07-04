@@ -13,6 +13,7 @@ class PubmedXMLHandler(
     private val logger = LogManager.getLogger(PubmedXMLHandler::class)
     val tags = HashMap<String, Int>()
     private var articleCounter = 0
+    private var articlesStored = 0
     private var citationCounter = 0
     private var keywordCounter = 0
     private var skip = false
@@ -48,6 +49,7 @@ class PubmedXMLHandler(
 
     override fun startDocument() {
         articleCounter = 0
+        articlesStored = 0
         articles.clear()
 
         citationCounter = 0
@@ -149,7 +151,10 @@ class PubmedXMLHandler(
         }
 
         if (articles.size == batchSize) {
+            logger.info("Storing articles ${articlesStored + 1}-${articlesStored + articles.size}...")
+
             dbHandler.store(articles)
+            articlesStored += articles.size
             articles.clear()
         }
     }
