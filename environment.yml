@@ -136,5 +136,4 @@ dependencies:
     - networkx==2.3
     - python-louvain==0.13
     - redis==3.2.1
-prefix: /home/Nikolay.Kapralov/anaconda3/envs/pubtrends-check
 
