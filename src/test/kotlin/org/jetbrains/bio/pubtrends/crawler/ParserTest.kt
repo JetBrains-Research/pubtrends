@@ -76,4 +76,11 @@ class ParserTest {
                 18122624 to Articles.article18122624)
         testArticlesForFile("articlesWithMedlineDateField.xml", medlineDateArticles)
     }
+
+    @Test
+    fun testParseTitles() {
+        val titlesArticles = mapOf(420880 to Articles.article420880,
+                29391692 to Articles.article29391692)
+        testArticlesForFile("articlesWithExtraordinaryTitle.xml", titlesArticles)
+    }
 }

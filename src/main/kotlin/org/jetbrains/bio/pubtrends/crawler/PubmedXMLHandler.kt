@@ -145,6 +145,10 @@ class PubmedXMLHandler(
                 }
                 abstractState = false
             }
+            if (fullName.equals(TITLE_TAG, ignoreCase = true)) {
+                currentArticle.title = currentArticle.title.trim('[', ']', '.')
+                titleState = false
+            }
             if (localName != null) {
                 fullName = fullName.removeSuffix("/$localName")
             }
@@ -193,8 +197,11 @@ class PubmedXMLHandler(
                 pmidState = false
             }
             if (titleState) {
-                currentArticle.title += data
-                titleState = false
+                if (!fullName.equals(TITLE_TAG, ignoreCase = true)) {
+                    currentArticle.title += data.trim { it <= ' ' }
+                } else {
+                    currentArticle.title += data
+                }
             }
             if (yearState) {
                 currentArticle.year = data.toInt()

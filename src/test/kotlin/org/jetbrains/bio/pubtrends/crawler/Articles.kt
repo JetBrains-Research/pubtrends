@@ -11,11 +11,13 @@ object Articles {
     val article14316043 = PubmedArticle(14316043)
     val article18122624 = PubmedArticle(18122624)
     val article24884411 = PubmedArticle(24884411)
+    val article420880 = PubmedArticle(420880)
+    val article29391692 = PubmedArticle(29391692)
 
     init {
         article29736257.year = 2017
         article29736257.title = "Evidence that S6K1, but not 4E-BP1, mediates skeletal muscle " +
-                "pathology associated with loss of A-type lamins."
+                "pathology associated with loss of A-type lamins"
         article29736257.abstractText = "The mechanistic target of rapamycin (mTOR) signaling pathway plays a central " +
                 "role in aging and a number of different disease states. Rapamycin, which suppresses activity" +
                 " of the mTOR complex 1 (mTORC1), shows preclinical (and sometimes clinical) efficacy in a" +
@@ -37,7 +39,7 @@ object Articles {
 
         article29456534.year = 2018
         article29456534.title = "Critical Role of TGF-β and IL-2 Receptor Signaling in Foxp3 Induction by an " +
-                "Inhibitor of DNA Methylation."
+                "Inhibitor of DNA Methylation"
         article29456534.abstractText = "Under physiological conditions, CD4+ regulatory T (Treg) cells expressing the" +
                 " transcription factor Foxp3 are generated in the thymus [thymus-derived Foxp3+ Treg (tTregs) cells] " +
                 "and extrathymically at peripheral sites [peripherally induced Foxp3+ Treg (pTreg) cell], and both " +
@@ -93,7 +95,7 @@ object Articles {
         article27654823.year = 2017
         article27654823.title = "Production of 10S-hydroxy-8(E)-octadecenoic acid from oleic acid by whole " +
                 "recombinant Escherichia coli cells expressing 10S-dioxygenase from Nostoc punctiforme PCC 73102 " +
-                "with the aid of a chaperone."
+                "with the aid of a chaperone"
         article27654823.abstractText = "To increase the production of 10S-hydroxy-8(E)-octadecenoic acid from oleic " +
                 "acid by whole recombinant Escherichia coli cells expressing Nostoc punctiforme 10S-dioxygenase with " +
                 "the aid of a chaperone. The optimal conditions for 10S-hydroxy-8(E)-octadecenoic acid production by " +
@@ -108,7 +110,7 @@ object Articles {
                 "Biotransformation", "Chaperone", "Nostoc punctiforme PCC 73102", "Oleic acid"))
 
         article11243089.year = 1999
-        article11243089.title = "Nutritional status of pavement dweller children of Calcutta City."
+        article11243089.title = "Nutritional status of pavement dweller children of Calcutta City"
         article11243089.abstractText = "Pavement dwelling is likely to aggravate malnutrition among its residents due " +
                 "to extreme poverty, lack of dwelling and access to food and their exposure to polluted environment. " +
                 "Paucity of information about nutritional status of street children compared to that among urban " +
@@ -137,7 +139,7 @@ object Articles {
                 "Population Characteristics", "Spatial Distribution", "Urban Population"))
 
         article11540070.year = 1987
-        article11540070.title = "Calcium messenger system in plants."
+        article11540070.title = "Calcium messenger system in plants"
         article11540070.abstractText = "The purpose of this review is to delineate the ubiquitous and pivotal role " +
                 "of Ca2+ in diverse physiological processes. Emphasis will be given to the role of Ca2+ in " +
                 "stimulus-response coupling. In addition to reviewing the present status of research, our intention " +
@@ -147,22 +149,22 @@ object Articles {
                 "NASA Program Space Biology", "Non-NASA Center"))
 
         article10188493.year = 1998
-        article10188493.title = "Women's health osteopathy: an alternative view."
+        article10188493.title = "Women's health osteopathy: an alternative view"
 
         article14316043.year = 1965
         article14316043.title = "THE RESPONSIBILITY OF THE DENTIST AND THE DENTAL PROFESSION WITH RESPECT TO JAW " +
-                "FRACTURES."
+                "FRACTURES"
         article14316043.keywordList.addAll(listOf("DENTISTS", "FRACTURE FIXATION", "FRACTURES",
                 "INTERPROFESSIONAL RELATIONS", "JAW", "MANDIBULAR INJURIES", "MAXILLOFACIAL INJURIES",
                 "PRACTICE MANAGEMENT, DENTAL"))
 
         article18122624.year = 1947
-        article18122624.title = "Mesenteric vascular occlusion."
+        article18122624.title = "Mesenteric vascular occlusion"
         article18122624.keywordList.add("MESENTERY/occlusion")
 
         article24884411.year = 2014
         article24884411.title = "A multilocus timescale for oomycete evolution estimated under three distinct " +
-                "molecular clock models."
+                "molecular clock models"
         article24884411.abstractText = "Molecular clock methodologies allow for the estimation of divergence times " +
                 "across a variety of organisms; this can be particularly useful for groups lacking robust fossil " +
                 "histories, such as microbial eukaryotes with few distinguishing morphological traits. Here we have" +
@@ -190,5 +192,12 @@ object Articles {
                 16136655, 21935414, 18024004, 16683862, 21865245, 22367748, 18923393, 22920560, 18715673, 19582169,
                 21148394, 20525591, 21424613, 24726347, 20843846, 22105867, 21616882, 18692373, 18705878, 9866200,
                 11752195, 20807414, 20626842, 17726520, 17846036, 18451057, 20520714, 21289104))
+
+        article420880.year = 1979
+        article420880.title = "Changes in DNA methylation in rat during ontogenesis and under effects of hydrocortisone"
+
+        article29391692.year = 2017
+        article29391692.title = "Partial purification and characterization of glutathione S-transferase from the " +
+                "somatic tissue of Gastrothylax crumenifer (Trematoda: Digenea)"
     }
 }
