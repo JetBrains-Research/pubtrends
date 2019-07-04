@@ -2,7 +2,7 @@ package org.jetbrains.bio.pubtrends.databaseVerifier
 
 import org.jetbrains.exposed.sql.Table
 
-internal const val MAX_ID_LENGTH = 40
+internal const val MAX_ID_LENGTH = 100
 
 object SemanticScholarCitations : Table() {
     val idCiting = varchar("id_citing", MAX_ID_LENGTH) // from
@@ -14,13 +14,9 @@ object SemanticScholarCitations : Table() {
 }
 
 
-object idMatch : Table() {
-    val pmid = integer("pmid")
-    val ssid = varchar("ssid", MAX_ID_LENGTH)
-
-    init {
-        index(true, pmid, ssid)
-    }
+object IdMatch : Table() {
+    val pmid = integer("pmid").uniqueIndex()
+    val ssid = varchar("ssid", MAX_ID_LENGTH).primaryKey()
 }
 
 object PmidCitationsFromSS : Table() {

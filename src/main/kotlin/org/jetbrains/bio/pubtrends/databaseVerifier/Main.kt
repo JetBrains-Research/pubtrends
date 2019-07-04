@@ -6,6 +6,7 @@ import org.jetbrains.bio.pubtrends.crawler.PostgresqlDatabaseHandler
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.BufferedReader
+import java.io.File
 import java.io.FileReader
 import java.nio.file.Files
 import java.nio.file.Path
@@ -51,12 +52,17 @@ fun main(args: Array<String>) {
 
     transaction {
         addLogger(StdOutSqlLogger)
-        SchemaUtils.create(SemanticScholarCitations, idMatch, PmidCitationsFromSS)
+        SchemaUtils.create(SemanticScholarCitations, IdMatch, PmidCitationsFromSS)
     }
-
     logger.info("Parse archive to database")
 
-    ArchiveParser(config["archive_path"].toString()).parse()
+    File(config["archive_folder_path"].toString()).walk().sorted().forEach {
+        if (!it.name.endsWith(".gz") && it.name.startsWith("s2-corpus")) { 
+            logger.info("Started parsing $it.name")
+            ArchiveParser(it).parse()
+            logger.info("Finished parsing $it.name")
+        }
+    }
 
     DatabaseAdderUtils().addPmidCitations() // in progress
 

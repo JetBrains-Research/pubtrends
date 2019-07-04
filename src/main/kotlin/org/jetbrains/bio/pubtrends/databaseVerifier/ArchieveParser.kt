@@ -5,11 +5,12 @@ import java.util.*
 import java.io.FileInputStream
 import org.apache.logging.log4j.LogManager
 import com.google.gson.reflect.TypeToken
+import java.io.File
 import java.io.IOException
 
 
 class ArchiveParser (
-        private val archivePath: String
+        private val archiveFile: File
 ) {
     companion object {
         private val logger = LogManager.getLogger(ArchiveParser::class)
@@ -20,14 +21,14 @@ class ArchiveParser (
         var inputStream: FileInputStream? = null
         var sc: Scanner? = null
         try {
-            inputStream = FileInputStream(archivePath)
+            inputStream = archiveFile.inputStream()
             sc = Scanner(inputStream, "UTF-8")
             var buffer = StringBuilder()
             var hashId: String?
             var pmid: Int? = 0
             var citations: List<String>?
 
-            while (sc.hasNextLine()) {
+            while (sc.hasNextLine()) {  // TODO: add articles using insertBatch instead of inserting each article separately
                 val line = sc.nextLine().trim()
                 if (!line.endsWith("}")) {
                     buffer.append(line)
@@ -58,7 +59,7 @@ class ArchiveParser (
                 throw sc.ioException()
             }
         } catch (e: IOException) {
-            logger.error("Please add to config file path to file, that has to be parsed")
+            logger.error("File $archiveFile can't be parsed, please make sure that you added correct archive folder path to config.properties")
         } finally {
             inputStream?.close()
             sc?.close()
@@ -80,7 +81,11 @@ class ArchiveParser (
 
     private fun extractCitations(citationsJson: JsonElement?): List<String>? {
         val itemsType = object : TypeToken<List<String>>() {}.type
-        return Gson().fromJson<List<String>>(citationsJson, itemsType).map { quoted -> deleteQuotes(quoted) }
+        val citationsList =  Gson().fromJson<List<String>>(citationsJson, itemsType)
+        if (citationsList != null)
+            return citationsList.map { quoted -> deleteQuotes(quoted) }
+
+        return null
     }
 
     private fun extractPmid(pmidJson: JsonElement): Int? {

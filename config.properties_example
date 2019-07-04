@@ -12,5 +12,5 @@ batchSize = 1000
 parserLimit = 0
 collectStats = true
 
-# Archive File path, please paste correct path
-archive_path = /
+# Archive Folder path, please paste correct path
+archive_folder_path = /

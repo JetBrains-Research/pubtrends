@@ -13,7 +13,7 @@ class DatabaseAdderUtils {
         transaction {
             //        addLogger(StdOutSqlLogger)
             if (pmid != null && hashId != null) {
-                idMatch.insertIgnore {
+                IdMatch.insertIgnore {
                     it[this.pmid] = pmid
                     it[ssid] = hashId
                 }
@@ -37,9 +37,9 @@ class DatabaseAdderUtils {
             t1.pmid AS pmid_citing,
             t2.pmid AS pmid_cited
             FROM SemanticScholarCitations
-            INNER JOIN idMatch AS t1
+            INNER JOIN IdMatch AS t1
             ON t1.ssid = SemanticScholarCitations.id_citing
-            INNER JOIN idMatch AS t2
+            INNER JOIN IdMatch AS t2
             ON t2.ssid = SemanticScholarCitations.id_cited;
             """
         logger.info("To add all needed data to database please run \"psql pubmed\" and the following command:")

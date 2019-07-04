@@ -89,10 +89,13 @@ Ensure that file contains correct information about the database (url, port, DB 
 
 2. Or full archive 
    ```
-   wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/manifest.txt
+   wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/manifest.txt -P path_to_folder
    wget -B https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/ -i manifest.txt
    ```
-3. Unzip it
+3. Unzip it (run in path_to_folder)
+    ```
+   gunzip -k *.gz
+    ```
 
 4. Add the path to the resulting file to `.pubtrends/config.properties`
 
