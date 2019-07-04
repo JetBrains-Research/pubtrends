@@ -52,15 +52,16 @@ fun main(args: Array<String>) {
 
     transaction {
         addLogger(StdOutSqlLogger)
+
         SchemaUtils.create(SemanticScholarCitations, IdMatch, PmidCitationsFromSS)
     }
     logger.info("Parse archive to database")
 
     File(config["archive_folder_path"].toString()).walk().sorted().forEach {
-        if (!it.name.endsWith(".gz") && it.name.startsWith("s2-corpus")) { 
-            logger.info("Started parsing $it.name")
-            ArchiveParser(it).parse()
-            logger.info("Finished parsing $it.name")
+        if (!it.name.endsWith(".gz") && it.name.startsWith("s2-corpus")) {
+            logger.info("Started parsing $it")
+            ArchiveParser(it, config["batchSize"].toString().toInt()).parse()
+            logger.info("Finished parsing $it")
         }
     }
 

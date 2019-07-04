@@ -97,6 +97,6 @@ Ensure that file contains correct information about the database (url, port, DB 
    gunzip -k *.gz
     ```
 
-4. Add the path to the resulting file to `.pubtrends/config.properties`
+4. Add the path to the resulting folder to `.pubtrends/config.properties`
 
 5. Run `/databaseVerifier/Main.kt`

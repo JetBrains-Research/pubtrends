@@ -10,8 +10,13 @@ import java.io.IOException
 
 
 class ArchiveParser (
-        private val archiveFile: File
+        private val archiveFile: File,
+        private var batchSize: Int
 ) {
+    private val currentBatch: MutableList<SemanticScholarArticle> = mutableListOf()
+    private val dbAdder:DatabaseAdderUtils = DatabaseAdderUtils()
+    private var batchIndex = 0
+
     companion object {
         private val logger = LogManager.getLogger(ArchiveParser::class)
     }
@@ -28,9 +33,9 @@ class ArchiveParser (
             var pmid: Int? = 0
             var citations: List<String>?
 
-            while (sc.hasNextLine()) {  // TODO: add articles using insertBatch instead of inserting each article separately
+            while (sc.hasNextLine()) {
                 val line = sc.nextLine().trim()
-                if (!line.endsWith("}")) {
+                if (!line.endsWith("}")) { // some articles are splitted into several lines
                     buffer.append(line)
                     continue
                 }
@@ -52,7 +57,8 @@ class ArchiveParser (
                 if (pmid != null) {
                     hashId = extractHashId(jsonObject?.get("id"))
                     citations = extractCitations(jsonObject?.get("outCitations"))
-                    hashId?.let { citations?.let { citations -> DatabaseAdderUtils().addArticle(it, pmid, citations) } }
+
+                    hashId?.let { citations?.let { citations -> addArticleToBatch(SemanticScholarArticle(it, pmid, citations)) } }
                 }
             }
             if (sc.ioException() != null) {
@@ -63,6 +69,18 @@ class ArchiveParser (
         } finally {
             inputStream?.close()
             sc?.close()
+        }
+    }
+
+
+    private fun addArticleToBatch(article:SemanticScholarArticle) {
+        currentBatch.add(article)
+
+        if (currentBatch.size == batchSize) {
+            dbAdder.addArticles(currentBatch)
+            currentBatch.clear()
+            batchIndex++
+            logger.info("Finished batch $batchIndex adding ($archiveFile)")
         }
     }
 
@@ -94,7 +112,7 @@ class ArchiveParser (
         val startIndex = 1
         if (index == -1) {
             if (pmidString.length > 2)
-                return deleteQuotes(pmidString).toInt() // cut " "
+                return deleteQuotes(pmidString).toInt()
 
             return null
         }

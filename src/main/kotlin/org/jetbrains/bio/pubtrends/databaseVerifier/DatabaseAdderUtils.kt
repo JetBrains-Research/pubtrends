@@ -11,13 +11,13 @@ class DatabaseAdderUtils {
 
     fun addArticle(hashId: String, pmid: Int, citations: List<String>) {
         transaction {
-            //        addLogger(StdOutSqlLogger)
-            if (pmid != null && hashId != null) {
-                IdMatch.insertIgnore {
-                    it[this.pmid] = pmid
-                    it[ssid] = hashId
-                }
+            addLogger(StdOutSqlLogger)
+
+            IdMatch.insertIgnore {
+                it[this.pmid] = pmid
+                it[ssid] = hashId
             }
+
 
             if (citations.isNotEmpty()) {
                 SemanticScholarCitations.batchInsert(citations, ignore = true) { citation ->
@@ -25,6 +25,25 @@ class DatabaseAdderUtils {
                     this[SemanticScholarCitations.idCited] = citation
                 }
             }
+        }
+    }
+
+
+    fun addArticles(articles: MutableList<SemanticScholarArticle>) {
+        val citationsForArticle = articles.map { it.citations.toSet().map { cit -> it.id to cit } }.flatten()
+
+        transaction {
+//            addLogger(StdOutSqlLogger)
+
+            IdMatch.batchInsert(articles, ignore = true) { article ->
+                this[IdMatch.pmid] = article.pmid
+                this[IdMatch.ssid] = article.id
+            }
+            SemanticScholarCitations.batchInsert(citationsForArticle, ignore = true) { citation ->
+                this[SemanticScholarCitations.idCiting] = citation.first
+                this[SemanticScholarCitations.idCited] = citation.second
+            }
+
         }
     }
 
@@ -45,4 +64,5 @@ class DatabaseAdderUtils {
         logger.info("To add all needed data to database please run \"psql pubmed\" and the following command:")
         logger.info(sqlAddStatement)
     }
+
 }
