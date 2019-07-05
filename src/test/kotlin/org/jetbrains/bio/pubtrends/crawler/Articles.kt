@@ -1,24 +1,16 @@
 package org.jetbrains.bio.pubtrends.crawler
 
 object Articles {
-    val article29736257 = PubmedArticle(29736257)
-    val article29456534 = PubmedArticle(29456534)
-    val article20453483 = PubmedArticle(20453483)
-    val article27654823 = PubmedArticle(27654823)
-    val article11243089 = PubmedArticle(11243089)
-    val article11540070 = PubmedArticle(11540070)
-    val article10188493 = PubmedArticle(10188493)
-    val article14316043 = PubmedArticle(14316043)
-    val article18122624 = PubmedArticle(18122624)
-    val article24884411 = PubmedArticle(24884411)
-    val article420880 = PubmedArticle(420880)
-    val article29391692 = PubmedArticle(29391692)
-
-    init {
-        article29736257.year = 2017
-        article29736257.title = "Evidence that S6K1, but not 4E-BP1, mediates skeletal muscle " +
+    val article420880 = PubmedArticle(420880).apply {
+        year = 1979
+        title = "Changes in DNA methylation in rat during ontogenesis and under effects of hydrocortisone"        
+    }
+    
+    val article29736257 = PubmedArticle(29736257).apply {
+        year = 2017
+        title = "Evidence that S6K1, but not 4E-BP1, mediates skeletal muscle " +
                 "pathology associated with loss of A-type lamins"
-        article29736257.abstractText = "The mechanistic target of rapamycin (mTOR) signaling pathway plays a central " +
+        abstractText = "The mechanistic target of rapamycin (mTOR) signaling pathway plays a central " +
                 "role in aging and a number of different disease states. Rapamycin, which suppresses activity" +
                 " of the mTOR complex 1 (mTORC1), shows preclinical (and sometimes clinical) efficacy in a" +
                 " number of disease models. Among these are Lmna-/- mice, which serve as a mouse model " +
@@ -33,14 +25,16 @@ object Articles {
                 "4E-BP1 shortened the survival of Lmna-/- mice, likely by accelerating lipolysis. Thus, " +
                 "rapamycin-mediated lifespan extension in Lmna-/- mice is in part due to the improvement of skeletal " +
                 "muscle function and can be phenocopied by reduced S6K1 activity, but not 4E-BP1 activation."
-        article29736257.keywordList.addAll(listOf("4E-BP1", "Lmna−/− mice", "S6K1", "lifespan",
+        keywordList.addAll(listOf("4E-BP1", "Lmna−/− mice", "S6K1", "lifespan",
                 "mTORC1", "muscle", "rapamycin"))
-        article29736257.citationList.addAll(listOf(10587585, 11855819, 26614871, 12702809))
-
-        article29456534.year = 2018
-        article29456534.title = "Critical Role of TGF-β and IL-2 Receptor Signaling in Foxp3 Induction by an " +
+        citationList.addAll(listOf(10587585, 11855819, 26614871, 12702809))
+    }
+    
+    val article29456534 = PubmedArticle(29456534).apply {
+        year = 2018
+        title = "Critical Role of TGF-β and IL-2 Receptor Signaling in Foxp3 Induction by an " +
                 "Inhibitor of DNA Methylation"
-        article29456534.abstractText = "Under physiological conditions, CD4+ regulatory T (Treg) cells expressing the" +
+        abstractText = "Under physiological conditions, CD4+ regulatory T (Treg) cells expressing the" +
                 " transcription factor Foxp3 are generated in the thymus [thymus-derived Foxp3+ Treg (tTregs) cells] " +
                 "and extrathymically at peripheral sites [peripherally induced Foxp3+ Treg (pTreg) cell], and both " +
                 "developmental subsets play non-redundant roles in maintaining self-tolerance throughout life. In " +
@@ -64,13 +58,15 @@ object Articles {
                 "stimulation. Overall, these findings contribute to our understanding of the molecular mechanisms " +
                 "underlying the process of Foxp3 induction and may provide a rational basis for generating " +
                 "phenotypically and functionally stable iTreg cells."
-        article29456534.keywordList.addAll(listOf("CNS2", "DNA methylation", "Foxp3", "epigenetic regulation", "iTreg"))
-        article29456534.citationList.addAll(listOf(27989104, 17591856, 25159127, 23123060, 22343569))
-
-        article20453483.year = 2011
-        article20453483.title = "Coping strategies used by seniors going through the normal aging process: " +
+        keywordList.addAll(listOf("CNS2", "DNA methylation", "Foxp3", "epigenetic regulation", "iTreg"))
+        citationList.addAll(listOf(27989104, 17591856, 25159127, 23123060, 22343569))
+    }
+    
+    val article20453483 = PubmedArticle(20453483).apply {
+        year = 2011
+        title = "Coping strategies used by seniors going through the normal aging process: " +
                 "does fear of falling matter?"
-        article20453483.abstractText = "Recent studies show that fear of falling, a frequent fear of " +
+        abstractText = "Recent studies show that fear of falling, a frequent fear of " +
                 "community-dwelling seniors, can have a negative impact on their health and quality of life. When " +
                 "fear of falling is intense, it can prompt individuals to limit or avoid certain activities. This " +
                 "activity restriction can lead to premature physical and functional decline and, ultimately, increase" +
@@ -91,12 +87,14 @@ object Articles {
                 "document the range and frequency of use of strategies that seniors may employ to cope with fear of " +
                 "falling. These data could help improve interventions and evaluative research in the domain of fall " +
                 "prevention."
-
-        article27654823.year = 2017
-        article27654823.title = "Production of 10S-hydroxy-8(E)-octadecenoic acid from oleic acid by whole " +
+    }
+    
+    val article27654823 = PubmedArticle(27654823).apply {
+        year = 2017
+        title = "Production of 10S-hydroxy-8(E)-octadecenoic acid from oleic acid by whole " +
                 "recombinant Escherichia coli cells expressing 10S-dioxygenase from Nostoc punctiforme PCC 73102 " +
                 "with the aid of a chaperone"
-        article27654823.abstractText = "To increase the production of 10S-hydroxy-8(E)-octadecenoic acid from oleic " +
+        abstractText = "To increase the production of 10S-hydroxy-8(E)-octadecenoic acid from oleic " +
                 "acid by whole recombinant Escherichia coli cells expressing Nostoc punctiforme 10S-dioxygenase with " +
                 "the aid of a chaperone. The optimal conditions for 10S-hydroxy-8(E)-octadecenoic acid production by " +
                 "recombinant cells co-expressing chaperone plasmid were pH 9, 35 °C, 15 % (v/v) dimethyl sulfoxide, " +
@@ -106,12 +104,14 @@ object Articles {
                 "recombinant cells expressing 10S-dioxygenase was increased by 200 % with the aid of a chaperone, " +
                 "demonstrating the first biotechnological production of 10S-hydroxy-8(E)-octadecenoic acid using " +
                 "recombinant cells expressing 10S-dioxygenase."
-        article27654823.keywordList.addAll(listOf("10S-Dioxygenase", "10S-Hydroxy-8(E)-octadecenoic acid",
+        keywordList.addAll(listOf("10S-Dioxygenase", "10S-Hydroxy-8(E)-octadecenoic acid",
                 "Biotransformation", "Chaperone", "Nostoc punctiforme PCC 73102", "Oleic acid"))
-
-        article11243089.year = 1999
-        article11243089.title = "Nutritional status of pavement dweller children of Calcutta City"
-        article11243089.abstractText = "Pavement dwelling is likely to aggravate malnutrition among its residents due " +
+    }
+    
+    val article11243089 = PubmedArticle(11243089).apply {
+        year = 1999
+        title = "Nutritional status of pavement dweller children of Calcutta City"
+        abstractText = "Pavement dwelling is likely to aggravate malnutrition among its residents due " +
                 "to extreme poverty, lack of dwelling and access to food and their exposure to polluted environment. " +
                 "Paucity of information about nutritional status of street children compared to that among urban " +
                 "slum dwellers, squatters or rural/tribal population is quite evident. The present study revealed " +
@@ -135,37 +135,47 @@ object Articles {
                 "illiterate parents and nonworking mothers had a higher incidence of severe PEM. Simple measures " +
                 "such as exclusive breast-feeding and timely complementary feeding as well as measures directed " +
                 "toward birth spacing and limiting family size should be implemented to solve the problem of malnutrition."
-        article11243089.keywordList.addAll(listOf("Age Factors", "Child Nutrition", "Geographic Factors",
+        keywordList.addAll(listOf("Age Factors", "Child Nutrition", "Geographic Factors",
                 "Population Characteristics", "Spatial Distribution", "Urban Population"))
-
-        article11540070.year = 1987
-        article11540070.title = "Calcium messenger system in plants"
-        article11540070.abstractText = "The purpose of this review is to delineate the ubiquitous and pivotal role " +
+    }
+    
+    val article11540070 = PubmedArticle(11540070).apply {
+        year = 1987
+        title = "Calcium messenger system in plants"
+        abstractText = "The purpose of this review is to delineate the ubiquitous and pivotal role " +
                 "of Ca2+ in diverse physiological processes. Emphasis will be given to the role of Ca2+ in " +
                 "stimulus-response coupling. In addition to reviewing the present status of research, our intention " +
                 "is to critically evaluate the existing data and describe the newly developing areas of Ca2+ " +
                 "research in plants."
-        article11540070.keywordList.addAll(listOf("NASA Discipline Number 40-30", "NASA Discipline Plant Biology",
+        keywordList.addAll(listOf("NASA Discipline Number 40-30", "NASA Discipline Plant Biology",
                 "NASA Program Space Biology", "Non-NASA Center"))
-
-        article10188493.year = 1998
-        article10188493.title = "Women's health osteopathy: an alternative view"
-
-        article14316043.year = 1965
-        article14316043.title = "THE RESPONSIBILITY OF THE DENTIST AND THE DENTAL PROFESSION WITH RESPECT TO JAW " +
+    }
+    
+    val article10188493 = PubmedArticle(10188493).apply {
+        year = 1998
+        title = "Women's health osteopathy: an alternative view"
+    }
+    
+    val article14316043 = PubmedArticle(14316043).apply {
+        year = 1965
+        title = "THE RESPONSIBILITY OF THE DENTIST AND THE DENTAL PROFESSION WITH RESPECT TO JAW " +
                 "FRACTURES"
-        article14316043.keywordList.addAll(listOf("DENTISTS", "FRACTURE FIXATION", "FRACTURES",
+        keywordList.addAll(listOf("DENTISTS", "FRACTURE FIXATION", "FRACTURES",
                 "INTERPROFESSIONAL RELATIONS", "JAW", "MANDIBULAR INJURIES", "MAXILLOFACIAL INJURIES",
                 "PRACTICE MANAGEMENT, DENTAL"))
-
-        article18122624.year = 1947
-        article18122624.title = "Mesenteric vascular occlusion"
-        article18122624.keywordList.add("MESENTERY/occlusion")
-
-        article24884411.year = 2014
-        article24884411.title = "A multilocus timescale for oomycete evolution estimated under three distinct " +
+    }
+    
+    val article18122624 = PubmedArticle(18122624).apply {
+        year = 1947
+        title = "Mesenteric vascular occlusion"
+        keywordList.add("MESENTERY/occlusion")
+    }
+    
+    val article24884411 = PubmedArticle(24884411).apply {
+        year = 2014
+        title = "A multilocus timescale for oomycete evolution estimated under three distinct " +
                 "molecular clock models"
-        article24884411.abstractText = "Molecular clock methodologies allow for the estimation of divergence times " +
+        abstractText = "Molecular clock methodologies allow for the estimation of divergence times " +
                 "across a variety of organisms; this can be particularly useful for groups lacking robust fossil " +
                 "histories, such as microbial eukaryotes with few distinguishing morphological traits. Here we have" +
                 " used a Bayesian molecular clock method under three distinct clock models to estimate divergence " +
@@ -186,18 +196,17 @@ object Articles {
                 "including those involved in histone modification, RNA interference, and tRNA and rRNA methylation; " +
                 "interestingly no match to canonical DNA methyltransferases could be identified in the oomycete " +
                 "genomes studied here."
-        article24884411.citationList.addAll(listOf(23785293, 16822745, 23634808, 19487243, 22127870, 16946064,
+        citationList.addAll(listOf(23785293, 16822745, 23634808, 19487243, 22127870, 16946064,
                 19741609, 12396585, 20862282, 16381920, 20093431, 23020233, 16765584, 19713749, 15952895, 18092388,
                 22712506, 21810989, 19158785, 21546353, 21726377, 10198636, 21750662, 21878562, 22803798, 15459382,
                 16136655, 21935414, 18024004, 16683862, 21865245, 22367748, 18923393, 22920560, 18715673, 19582169,
                 21148394, 20525591, 21424613, 24726347, 20843846, 22105867, 21616882, 18692373, 18705878, 9866200,
                 11752195, 20807414, 20626842, 17726520, 17846036, 18451057, 20520714, 21289104))
-
-        article420880.year = 1979
-        article420880.title = "Changes in DNA methylation in rat during ontogenesis and under effects of hydrocortisone"
-
-        article29391692.year = 2017
-        article29391692.title = "Partial purification and characterization of glutathione S-transferase from the " +
+    }
+    
+    val article29391692 = PubmedArticle(29391692).apply {
+        year = 2017
+        title = "Partial purification and characterization of glutathione S-transferase from the " +
                 "somatic tissue of Gastrothylax crumenifer (Trematoda: Digenea)"
     }
 }
