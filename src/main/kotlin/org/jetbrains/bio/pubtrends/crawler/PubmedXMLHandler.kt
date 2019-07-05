@@ -20,6 +20,10 @@ class PubmedXMLHandler(
     private var fullName = ""
     private var currentArticle = PubmedArticle(0)
 
+    private var lastName = ""
+    private var initials = ""
+    private var affiliation = mutableListOf<String>()
+
     val articles: MutableList<PubmedArticle> = mutableListOf()
 
     companion object {
@@ -28,7 +32,14 @@ class PubmedXMLHandler(
         private const val PUBMED_DATA_TAG = "PubmedArticleSet/PubmedArticle/PubmedData"
 
         const val ABSTRACT_TAG = "$MEDLINE_CITATION_TAG/Article/Abstract/AbstractText"
+        const val AUTHOR_TAG = "$MEDLINE_CITATION_TAG/Article/AuthorList/Author"
+        const val AUTHOR_LASTNAME_TAG = "$MEDLINE_CITATION_TAG/Article/AuthorList/Author/LastName"
+        const val AUTHOR_INITIALS_TAG = "$MEDLINE_CITATION_TAG/Article/AuthorList/Author/Initials"
+        const val AUTHOR_AFFILIATION_TAG = "$MEDLINE_CITATION_TAG/Article/AuthorList/Author/AffiliationInfo/Affiliation"
+        const val DOI_TAG = "$MEDLINE_CITATION_TAG/Article/ELocationID"
         const val OTHER_ABSTRACT_TAG = "$MEDLINE_CITATION_TAG/OtherAbstract/AbstractText"
+        const val LANGUAGE_TAG = "$MEDLINE_CITATION_TAG/Article/Language"
+        const val JOURNAL_NAME_TAG = "$MEDLINE_CITATION_TAG/Article/Journal/Title"
         const val CITATION_PMID_TAG = "$PUBMED_DATA_TAG/ReferenceList/Reference/ArticleIdList/ArticleId"
         const val KEYWORD_TAG = "$MEDLINE_CITATION_TAG/KeywordList/Keyword"
         const val MEDLINE_TAG = "$MEDLINE_CITATION_TAG/Article/Journal/JournalIssue/PubDate/MedlineDate"
@@ -38,10 +49,17 @@ class PubmedXMLHandler(
     }
 
     private var abstractState = false
+    private var authorLastNameState = false
+    private var authorInitialsState = false
+    private var authorAffiliationState = false
+    private var doiState = false
     private var keywordState = false
+    private var languageState = false
+    private var journalTitleState = false
     private var citationIDState = false
     private var medlineState = false
     private var pmidState = false
+    private var publicationTypeState = false
     private var structuredAbstract = false
     private var titleState = false
     private var yearState = false
@@ -55,10 +73,16 @@ class PubmedXMLHandler(
         keywordCounter = 0
 
         abstractState = false
+        authorLastNameState = false
+        authorInitialsState = false
+        authorAffiliationState = false
         keywordState = false
+        languageState = false
         citationIDState = false
+        journalTitleState = false
         medlineState = false
         pmidState = false
+        publicationTypeState = false
         structuredAbstract = false
         titleState = false
         yearState = false
@@ -84,11 +108,28 @@ class PubmedXMLHandler(
                     fullName.equals(ARTICLE_TAG, ignoreCase = true) -> {
                         currentArticle = PubmedArticle(0)
                     }
+                    fullName.equals(AUTHOR_LASTNAME_TAG, ignoreCase = true) -> {
+                        authorLastNameState = true
+                    }
+                    fullName.equals(AUTHOR_INITIALS_TAG, ignoreCase = true) -> {
+                        authorInitialsState = true
+                    }
+                    fullName.equals(AUTHOR_AFFILIATION_TAG, ignoreCase = true) -> {
+                        authorAffiliationState = true
+                    }
                     fullName.equals(ABSTRACT_TAG, ignoreCase = true) -> {
                         if ((attributes != null) && (attributes.length > 0)) {
                             structuredAbstract = true
                         }
                         abstractState = true
+                    }
+                    fullName.equals(DOI_TAG, ignoreCase = true) -> {
+                        if ((attributes != null) && (attributes.getValue("ValidYN") == "Y")) {
+                            doiState = true
+                        }
+                    }
+                    fullName.equals(JOURNAL_NAME_TAG, ignoreCase = true) -> {
+                        journalTitleState = true
                     }
                     fullName.equals(OTHER_ABSTRACT_TAG, ignoreCase = true) -> {
                         abstractState = true
@@ -98,6 +139,9 @@ class PubmedXMLHandler(
                         if ((attributes != null) && (attributes.getValue("IdType") == "pubmed")) {
                             citationIDState = true
                         }
+                    }
+                    fullName.equals(LANGUAGE_TAG, ignoreCase = true) -> {
+                        languageState = true
                     }
                     fullName.equals(KEYWORD_TAG, ignoreCase = true) -> {
                         keywordState = true
@@ -148,6 +192,13 @@ class PubmedXMLHandler(
                     }
                     abstractState = false
                 }
+                fullName.equals(AUTHOR_TAG, ignoreCase = true) -> {
+                    currentArticle.auxInfo.authors.add(Author("$lastName $initials"))
+
+                    lastName = ""
+                    initials = ""
+                    affiliation.clear()
+                }
                 fullName.equals(TITLE_TAG, ignoreCase = true) -> {
                     currentArticle.title = currentArticle.title.trim('[', ']', '.')
                     titleState = false
@@ -175,6 +226,27 @@ class PubmedXMLHandler(
                     currentArticle.abstractText += data
                 }
             }
+            if (authorLastNameState) {
+                lastName = data
+                authorLastNameState = false
+            }
+            if (authorInitialsState) {
+                initials = data
+                authorInitialsState = false
+            }
+            if (authorAffiliationState) {
+                affiliation.add(data)
+                authorAffiliationState = false
+            }
+            if (doiState) {
+                currentArticle.doi = data.trim { it <= ' ' }
+                doiState = false
+            }
+            if (journalTitleState)
+            {
+                currentArticle.auxInfo.journal.name = data
+                journalTitleState = false
+            }
             if (citationIDState) {
                 currentArticle.citationList.add(data.toInt())
                 citationIDState = false
@@ -182,6 +254,9 @@ class PubmedXMLHandler(
             if (keywordState) {
                 currentArticle.keywordList.add(data)
                 keywordState = false
+            }
+            if (languageState) {
+                currentArticle.auxInfo.language = data
             }
             if (medlineState) {
                 val regex = "(19|20)\\d{2}".toRegex()
