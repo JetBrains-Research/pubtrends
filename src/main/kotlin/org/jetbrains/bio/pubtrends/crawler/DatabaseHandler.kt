@@ -36,10 +36,10 @@ class PostgresqlDatabaseHandler(
             addLogger(Log4jSqlLogger)
 
             if (resetDatabase) {
-                SchemaUtils.drop(Publications, Citations, Keywords, KeywordsPublications)
+                SchemaUtils.drop(PMPublications, PMCitations, PMKeywords, PMKeywordsPublications)
             }
 
-            SchemaUtils.create(Publications, Citations, Keywords, KeywordsPublications)
+            SchemaUtils.create(PMPublications, PMCitations, PMKeywords, PMKeywordsPublications)
         }
     }
 
@@ -51,19 +51,22 @@ class PostgresqlDatabaseHandler(
         transaction {
             addLogger(Log4jSqlLogger)
 
-            Publications.batchInsertOnDuplicateKeyUpdate(articles,
-                    listOf(Publications.year, Publications.title, Publications.abstract)) { batch, article ->
-                batch[Publications.pmid] = article.pmid
-                batch[Publications.year] = article.year
-                batch[Publications.title] = article.title.take(PUBLICATION_MAX_TITLE_LENGTH)
+            PMPublications.batchInsertOnDuplicateKeyUpdate(articles,
+                    listOf(PMPublications.year, PMPublications.title, PMPublications.abstract)) { batch, article ->
+                batch[PMPublications.pmid] = article.pmid
+                batch[PMPublications.type] = article.type
+                batch[PMPublications.doi] = article.doi
+                batch[PMPublications.aux] = article.auxInfo
+                batch[PMPublications.year] = article.year
+                batch[PMPublications.title] = article.title.take(PUBLICATION_MAX_TITLE_LENGTH)
                 if (article.abstractText != "") {
-                    batch[Publications.abstract] = article.abstractText
+                    batch[PMPublications.abstract] = article.abstractText
                 }
             }
 
-            Citations.batchInsert(citationsForArticle, ignore = true) { citation ->
-                this[Citations.pmidCiting] = citation.first
-                this[Citations.pmidCited] = citation.second
+            PMCitations.batchInsert(citationsForArticle, ignore = true) { citation ->
+                this[PMCitations.pmidOut] = citation.first
+                this[PMCitations.pmidIn] = citation.second
             }
 
             /*val keywordIds = Keywords.batchInsert(keywordSet, ignore = true) { keyword ->
