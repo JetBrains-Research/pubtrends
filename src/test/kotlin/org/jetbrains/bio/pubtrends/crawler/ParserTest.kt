@@ -7,7 +7,8 @@ import kotlin.test.assertTrue
 
 class ParserTest {
     companion object {
-        private val parser = PubmedXMLParser(PubmedXMLHandler(MockDBHandler(), 0, 1000))
+        private val dbHandler = MockDBHandler()
+        private val parser = PubmedXMLParser(PubmedXMLHandler(dbHandler, 0, 1000))
     }
 
     private fun parserFileSetup(name : String) : String {
@@ -37,7 +38,9 @@ class ParserTest {
             checkEquality(articlesMap[it.pmid]!!, it)
             articlesChecked++
         }
+
         assertEquals(articlesChecked, articlesMap.size)
+        assertEquals(dbHandler.articlesStored, articlesMap.size)
     }
 
     private fun testArticlesForFile(name : String, articlesMap: Map<Int, PubmedArticle>) {

@@ -17,7 +17,7 @@ class PubmedXMLHandler(
     private var citationCounter = 0
     private var keywordCounter = 0
     private var skip = false
-    private var fullName = String()
+    private var fullName = ""
     private var currentArticle = PubmedArticle(0)
 
     val articles: MutableList<PubmedArticle> = mutableListOf()
@@ -40,7 +40,6 @@ class PubmedXMLHandler(
     private var abstractState = false
     private var keywordState = false
     private var citationIDState = false
-    private var hasOtherVersion = false
     private var medlineState = false
     private var pmidState = false
     private var structuredAbstract = false
@@ -66,51 +65,55 @@ class PubmedXMLHandler(
 
         skip = false
 
-        fullName = String()
+        fullName = ""
         currentArticle = PubmedArticle(0)
     }
 
     override fun endDocument() {
-        logger.info("Articles: $articleCounter, keywords: $keywordCounter, citations: $citationCounter")
+        if (articles.size > 0) {
+            storeArticles()
+        }
+        logger.info("Articles found: $articleCounter, stored: $articlesStored, keywords: $keywordCounter, citations: $citationCounter")
     }
 
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
         if (!skip) {
             if (localName != null) {
                 fullName = if (fullName.isEmpty()) localName else "$fullName/$localName"
-                if (fullName.equals(ARTICLE_TAG, ignoreCase = true)) {
-                    currentArticle = PubmedArticle(0)
-                    hasOtherVersion = false
-                }
-                if (fullName.equals(ABSTRACT_TAG, ignoreCase = true)) {
-                    if ((attributes != null) && (attributes.length > 0)) {
-                        structuredAbstract = true
+                when {
+                    fullName.equals(ARTICLE_TAG, ignoreCase = true) -> {
+                        currentArticle = PubmedArticle(0)
                     }
-                    abstractState = true
-                }
-                if (fullName.equals(OTHER_ABSTRACT_TAG, ignoreCase = true)) {
-                    abstractState = true
-                    currentArticle.abstractText += " "
-                }
-                if (fullName.equals(CITATION_PMID_TAG, ignoreCase = true) &&
-                        ((attributes != null) && (attributes.getValue("IdType") == "pubmed"))) {
-                    citationIDState = true
-                }
-                if (fullName.equals(KEYWORD_TAG, ignoreCase = true)) {
-                    keywordState = true
-                }
-                if (fullName.equals(MEDLINE_TAG, ignoreCase = true)) {
-                    medlineState = true
-                }
-                if (fullName.equals(PMID_TAG, ignoreCase = true)) {
-                    hasOtherVersion = (attributes?.getValue("Version") != "1")
-                    pmidState = true
-                }
-                if (fullName.equals(TITLE_TAG, ignoreCase = true)) {
-                    titleState = true
-                }
-                if (fullName.equals(YEAR_TAG, ignoreCase = true)) {
-                    yearState = true
+                    fullName.equals(ABSTRACT_TAG, ignoreCase = true) -> {
+                        if ((attributes != null) && (attributes.length > 0)) {
+                            structuredAbstract = true
+                        }
+                        abstractState = true
+                    }
+                    fullName.equals(OTHER_ABSTRACT_TAG, ignoreCase = true) -> {
+                        abstractState = true
+                        currentArticle.abstractText += " "
+                    }
+                    fullName.equals(CITATION_PMID_TAG, ignoreCase = true) -> {
+                        if ((attributes != null) && (attributes.getValue("IdType") == "pubmed")) {
+                            citationIDState = true
+                        }
+                    }
+                    fullName.equals(KEYWORD_TAG, ignoreCase = true) -> {
+                        keywordState = true
+                    }
+                    fullName.equals(MEDLINE_TAG, ignoreCase = true) -> {
+                        medlineState = true
+                    }
+                    fullName.equals(PMID_TAG, ignoreCase = true) -> {
+                        pmidState = true
+                    }
+                    fullName.equals(TITLE_TAG, ignoreCase = true) -> {
+                        titleState = true
+                    }
+                    fullName.equals(YEAR_TAG, ignoreCase = true) -> {
+                        yearState = true
+                    }
                 }
                 tags[fullName] = (tags[fullName] ?: 0) + 1
             }
@@ -119,35 +122,36 @@ class PubmedXMLHandler(
 
     override fun endElement(uri: String?, localName: String?, qName: String?) {
         if (!skip) {
-            if (fullName.equals(ARTICLE_TAG, ignoreCase = true)) {
-                articleCounter++
-                citationCounter += currentArticle.citationList.size
-                keywordCounter += currentArticle.keywordList.size
-                currentArticle.title = currentArticle.title.trim()
-                currentArticle.abstractText = currentArticle.abstractText.trim()
-                if (!hasOtherVersion) {
+            when {
+                fullName.equals(ARTICLE_TAG, ignoreCase = true) -> {
+                    articleCounter++
+                    citationCounter += currentArticle.citationList.size
+                    keywordCounter += currentArticle.keywordList.size
+                    currentArticle.title = currentArticle.title.trim()
+                    currentArticle.abstractText = currentArticle.abstractText.trim()
+
                     articles.add(currentArticle)
 
                     logger.debug("Article ${currentArticle.pmid}")
                     currentArticle.description().forEach {
                         logger.debug("${it.key}: ${it.value}")
                     }
-                }
 
-                if ((parserLimit > 0) && (articleCounter == parserLimit)) {
-                    skip = true
+                    if ((parserLimit > 0) && (articleCounter == parserLimit)) {
+                        skip = true
+                    }
                 }
-            }
-            if ((fullName.equals(ABSTRACT_TAG, ignoreCase = true)) ||
-                    (fullName.equals(OTHER_ABSTRACT_TAG, ignoreCase = true))) {
-                if (structuredAbstract) {
-                    currentArticle.abstractText += " "
+                (fullName.equals(ABSTRACT_TAG, ignoreCase = true)) ||
+                        (fullName.equals(OTHER_ABSTRACT_TAG, ignoreCase = true)) -> {
+                    if (structuredAbstract) {
+                        currentArticle.abstractText += " "
+                    }
+                    abstractState = false
                 }
-                abstractState = false
-            }
-            if (fullName.equals(TITLE_TAG, ignoreCase = true)) {
-                currentArticle.title = currentArticle.title.trim('[', ']', '.')
-                titleState = false
+                fullName.equals(TITLE_TAG, ignoreCase = true) -> {
+                    currentArticle.title = currentArticle.title.trim('[', ']', '.')
+                    titleState = false
+                }
             }
             if (localName != null) {
                 fullName = fullName.removeSuffix("/$localName")
@@ -155,10 +159,7 @@ class PubmedXMLHandler(
         }
 
         if (articles.size == batchSize) {
-            logger.info("Storing articles ${articlesStored + 1}-${articlesStored + articles.size}...")
-
-            dbHandler.store(articles)
-            articlesStored += articles.size
+            storeArticles()
             articles.clear()
         }
     }
@@ -208,5 +209,12 @@ class PubmedXMLHandler(
                 yearState = false
             }
         }
+    }
+
+    private fun storeArticles() {
+        logger.info("Storing articles ${articlesStored + 1}-${articlesStored + articles.size}...")
+
+        dbHandler.store(articles)
+        articlesStored += articles.size
     }
 }
