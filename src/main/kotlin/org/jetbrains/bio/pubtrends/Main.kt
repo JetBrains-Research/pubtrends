@@ -4,7 +4,7 @@ import joptsimple.OptionParser
 import org.apache.logging.log4j.LogManager
 import org.jetbrains.bio.pubtrends.crawler.PostgresqlDatabaseHandler
 import org.jetbrains.bio.pubtrends.crawler.PubmedCrawler
-import org.jetbrains.bio.pubtrends.crawler.PubmedXMLHandler
+import org.jetbrains.bio.pubtrends.crawler.PubmedXMLParser
 import java.io.BufferedReader
 import java.io.FileReader
 import java.nio.file.Files
@@ -70,8 +70,8 @@ fun main(args: Array<String>) {
                 resetDatabase)
 
         logger.info("Init Pubmed processor")
-        val pubmedXMLHandler =
-                PubmedXMLHandler(
+        val pubmedXMLParser =
+                PubmedXMLParser(
                         dbHandler,
                         config["parserLimit"].toString().toInt(),
                         config["batchSize"].toString().toInt())
@@ -80,7 +80,7 @@ fun main(args: Array<String>) {
         val crawlerTSV = settingsRoot.resolve("crawler.tsv")
         val statsTSV = settingsRoot.resolve("stats.tsv")
         val collectStats = config["collectStats"].toString().toBoolean()
-        val pubmedCrawler = PubmedCrawler(pubmedXMLHandler, collectStats, statsTSV, crawlerTSV)
+        val pubmedCrawler = PubmedCrawler(pubmedXMLParser, collectStats, statsTSV, crawlerTSV)
 
         val lastIdCmd = if (options.has("lastId")) options.valueOf("lastId").toString().toInt() else null
         if (options.has("retry")) {

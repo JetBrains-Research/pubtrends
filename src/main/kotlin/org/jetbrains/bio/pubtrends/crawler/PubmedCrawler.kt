@@ -7,7 +7,7 @@ import java.nio.file.Path
 import java.util.zip.GZIPInputStream
 
 class PubmedCrawler(
-        dbHandler: PubmedXMLHandler,
+        private val xmlParser: PubmedXMLParser,
         private val collectStats: Boolean,
         private val statsTSV: Path,
         private val progressTSV: Path
@@ -22,7 +22,6 @@ class PubmedCrawler(
     }
 
     private val ftpHandler = PubmedFTPHandler()
-    private val xmlParser = PubmedXMLParser(dbHandler)
     private lateinit var tempDirectory: File
 
     /**
@@ -77,7 +76,7 @@ class PubmedCrawler(
             if (collectStats) {
                 logger.info("Writing stats to $statsTSV")
                 statsTSV.toFile().outputStream().bufferedWriter().use {
-                    xmlParser.pubmedXMLHandler.tags.iterator().forEach { tag ->
+                    xmlParser.tags.iterator().forEach { tag ->
                         it.write("${tag.key}\t${tag.value}\n")
                     }
                 }

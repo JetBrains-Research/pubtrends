@@ -54,7 +54,7 @@ class PostgresqlDatabaseHandler(
             PMPublications.batchInsertOnDuplicateKeyUpdate(articles,
                     listOf(PMPublications.year, PMPublications.title, PMPublications.abstract)) { batch, article ->
                 batch[PMPublications.pmid] = article.pmid
-                batch[PMPublications.type] = article.type
+                batch[PMPublications.type] = article.type.name
                 batch[PMPublications.doi] = article.doi
                 batch[PMPublications.aux] = article.auxInfo
                 batch[PMPublications.year] = article.year
