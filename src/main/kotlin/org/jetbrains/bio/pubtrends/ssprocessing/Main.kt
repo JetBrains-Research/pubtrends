@@ -2,9 +2,13 @@ package org.jetbrains.bio.pubtrends.ssprocessing
 
 import org.apache.logging.log4j.LogManager
 import org.jetbrains.bio.pubtrends.crawler.PostgresqlDatabaseHandler
-import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.StdOutSqlLogger
+import org.jetbrains.exposed.sql.addLogger
 import org.jetbrains.exposed.sql.transactions.transaction
-import java.io.*
+import java.io.BufferedReader
+import java.io.File
+import java.io.FileReader
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -48,12 +52,11 @@ fun main() {
 
     transaction {
         addLogger(StdOutSqlLogger)
+//        SchemaUtils.drop(SSPublications, SSCitations, SSKeywords, SSKeywordsPublications)
+//        exec("DROP TYPE Source;")
 
-        SchemaUtils.drop(SSPublications, SSCitations, SSKeywords, SSKeywordsPublications)
-
-        exec("DROP TYPE Source;")
         exec("CREATE TYPE Source AS ENUM ('Nature', 'Arxiv');")
-        SchemaUtils.create(SSPublications, SSCitations, SSKeywords,	SSKeywordsPublications)
+        SchemaUtils.create(SSPublications, SSCitations, SSKeywords, SSKeywordsPublications)
     }
     logger.info("Parse archive to database")
 
@@ -75,7 +78,7 @@ fun main() {
             .filter { !it.name.endsWith(".gz") && it.name.startsWith("s2-corpus") }
             .sorted()
 //            .drop(lastSSId + 1)
-
+//
     files.forEach {
         logger.info("Started parsing articles $it")
         ArchiveParser(it, config["batchSize"].toString().toInt(), addCitations = false).parse()

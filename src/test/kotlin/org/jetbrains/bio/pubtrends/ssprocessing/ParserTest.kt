@@ -5,10 +5,10 @@ import java.io.File
 import kotlin.test.assertEquals
 
 class ParserTest {
-    private fun parserFileSetup(name : String) : File {
+    private fun parserFileSetup(name: String): File {
         this::class.java.classLoader.getResourceAsStream(name).use {
             val file = createTempFile()
-            file.outputStream().use {out ->
+            file.outputStream().use { out ->
                 it.copyTo(out)
             }
             return file
@@ -31,6 +31,7 @@ class ParserTest {
         assertEquals(first.citationList, second.citationList, "${second.citationList}: Wrong List Of Citations")
 
     }
+
     private fun checkArticles(articles: List<SemanticScholarArticle>, articlesList: List<SemanticScholarArticle>, citations: Boolean = false) {
         var articlesChecked = 0
 
@@ -47,7 +48,7 @@ class ParserTest {
     }
 
     private fun testArticlesForFile(name: String, correctArticles: List<SemanticScholarArticle>) {
-         val articlesFile = parserFileSetup(name)
+        val articlesFile = parserFileSetup(name)
 
         val parser = ArchiveParser(articlesFile, 1000, addCitations = false, addToDatabase = false)
         parser.parse()

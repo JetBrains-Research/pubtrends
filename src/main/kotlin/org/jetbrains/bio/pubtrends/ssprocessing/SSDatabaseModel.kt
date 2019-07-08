@@ -5,7 +5,7 @@ import org.jetbrains.bio.pubtrends.crawler.PUBLICATION_MAX_TITLE_LENGTH
 import org.jetbrains.exposed.sql.Table
 import org.postgresql.util.PGobject
 
-internal const val MAX_ID_LENGTH = 60
+internal const val MAX_ID_LENGTH = 40
 internal const val MAX_DOI_LENGTH = 100
 internal const val SS_KEYWORD_MAX_LENGTH = 30
 
@@ -22,7 +22,7 @@ object SSPublications : Table() {
     val aux = jsonb("aux", ArticleAuxInfo::class.java, jsonMapper)
 
     val sourceEnum = customEnumeration("source", "Source",
-            {value -> PublicationSource.valueOf(value as String)}, { PGEnum("Source", it)}).nullable()
+            { value -> PublicationSource.valueOf(value as String) }, { PGEnum("Source", it) }).nullable()
 }
 
 
@@ -31,7 +31,7 @@ enum class PublicationSource(source: String) {
     Arxiv("arxiv"),
 }
 
-class PGEnum<T:Enum<T>>(enumTypeName: String, enumValue: T?) : PGobject() {
+class PGEnum<T : Enum<T>>(enumTypeName: String, enumValue: T?) : PGobject() {
     init {
         value = enumValue?.name
         type = enumTypeName

@@ -26,7 +26,7 @@ class ArchiveParser(
         archiveFile.inputStream().use {
             sc = Scanner(it, "UTF-8")
             val buffer = StringBuilder()
-            var curArticle:SemanticScholarArticle
+            var curArticle: SemanticScholarArticle
             while (sc.hasNextLine()) {
                 val line = sc.nextLine().trim()
 
@@ -58,7 +58,7 @@ class ArchiveParser(
                     if (curArticle.doi == "") curArticle.doi = null
                     curArticle.abstract = jsonObject.get("paperAbstract")?.asString
                     if (curArticle.abstract == "") curArticle.abstract = null
-                    curArticle.keywordList = extractList(jsonObject.get("entities")).filter {keyword -> keyword.length < 30}
+                    curArticle.keywordList = extractList(jsonObject.get("entities")).filter { keyword -> keyword.length < SS_KEYWORD_MAX_LENGTH }
 
                     if (jsonObject.get("year") == null) {
                         curArticle.year = null
@@ -109,11 +109,11 @@ class ArchiveParser(
     }
 
     private fun getSource(journal: Journal, venue: String, pdfUrls: List<String>): PublicationSource? {
-        if (venue.equals("arxiv", ignoreCase = true) || pdfUrls.any {it.contains("arxiv.org", ignoreCase = true)}) {
+        if (venue.equals("arxiv", ignoreCase = true) || pdfUrls.any { it.contains("arxiv.org", ignoreCase = true) }) {
             return PublicationSource.Arxiv
         }
         if (venue.equals("nature", ignoreCase = true) || journal.name.equals("nature", ignoreCase = true) ||
-                pdfUrls.any {it.contains("nature.com", ignoreCase = true)}) {
+                pdfUrls.any { it.contains("nature.com", ignoreCase = true) }) {
             return PublicationSource.Nature
         }
         return null
@@ -148,8 +148,8 @@ class ArchiveParser(
     }
 
     private fun extractAuthors(authorsJson: JsonElement?): MutableList<Author> {
-        val authors = authorsJson?.asJsonArray ?:return mutableListOf()
-        val names = authors.map{author ->  Author(author.asJsonObject.get("name").asString)}
+        val authors = authorsJson?.asJsonArray ?: return mutableListOf()
+        val names = authors.map { author -> Author(author.asJsonObject.get("name").asString) }
         return names as MutableList<Author>
     }
 

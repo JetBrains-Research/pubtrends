@@ -2,8 +2,8 @@ package org.jetbrains.bio.pubtrends.ssprocessing
 
 // sample articles
 
-object SemanticScholarArticles  {
-    val article1 = SemanticScholarArticle("03029e4427cfe66c3da6257979dc2d5b6eb3a0e4").apply{
+object SemanticScholarArticles {
+    val article1 = SemanticScholarArticle("03029e4427cfe66c3da6257979dc2d5b6eb3a0e4").apply {
         id = 1
         pmid = 2252909
         citationList = mutableListOf("5451b1ef43678d473575bdfa7016d024146f2b53",
@@ -14,7 +14,7 @@ object SemanticScholarArticles  {
         doi = "10.1245/s10434-011-2100-x"
         keywordList = mutableListOf()
         source = null
-        aux = ArticleAuxInfo(journal = Journal(name = "Annals of Surgical Oncology", volume = "19", pages = "959-965" ),
+        aux = ArticleAuxInfo(journal = Journal(name = "Annals of Surgical Oncology", volume = "19", pages = "959-965"),
                 authors = mutableListOf(Author(name = "Jose Alejandro Rauh-Hain")),
                 venue = "Annals of Surgical Oncology",
                 links = Links(s2Url = "https://semanticscholar.org/paper/4cd223df721b722b1c40689caa52932a41fcc223",
@@ -22,11 +22,11 @@ object SemanticScholarArticles  {
 
     }
 
-    val article2 = SemanticScholarArticle("4cbba8127c8747a3b2cfb9c1f48c43e5c15e323e").apply{
+    val article2 = SemanticScholarArticle("4cbba8127c8747a3b2cfb9c1f48c43e5c15e323e").apply {
         id = 2
         pmid = 7629622
         citationList = mutableListOf("46ebb8d96613bb0508688a71e0d6ce67c7e3d041",
-            "347259c8a6e3aa72411cf51c4c90e8a0261dd100", "9124c0d40c07e2218cb35355daa2c8c0ae2c6e11")
+                "347259c8a6e3aa72411cf51c4c90e8a0261dd100", "9124c0d40c07e2218cb35355daa2c8c0ae2c6e11")
         title = "Lipid transport function of lipoproteins in flying insects."
         year = 1990
         keywordList = mutableListOf("Lipid Transport", "Lipoproteins")
@@ -37,8 +37,7 @@ object SemanticScholarArticles  {
     }
 
 
-
-    val article3 = SemanticScholarArticle("58ff17c7d8ca006731facf7771761946350db062").apply{
+    val article3 = SemanticScholarArticle("58ff17c7d8ca006731facf7771761946350db062").apply {
         id = 3
         pmid = 567834224
         citationList = mutableListOf("585c33b4e6b4613e6403ccd16516c335d36ab2c7",
@@ -49,22 +48,22 @@ object SemanticScholarArticles  {
         keywordList = mutableListOf("Spastic entropion")
         source = null
         aux = ArticleAuxInfo(journal = Journal(name = "Canadian journal of ophthalmology. Journal canadien d'ophtalmologie",
-                volume = "11 4", pages = "346" ),
+                volume = "11 4", pages = "346"),
                 authors = mutableListOf(Author(name = "R I Noble")),
                 venue = "Canadian journal of ophthalmology. Journal canadien d'ophtalmologie",
                 links = Links(s2Url = "https://semanticscholar.org/paper/34ca6d85db744543ddc27d74d7f225b13c66b95f"))
 
 
-}
+    }
 
-    val article4 = SemanticScholarArticle("gjj4fv5jx6g89shhgf342ig345s678").apply{
+    val article4 = SemanticScholarArticle("gjj4fv5jx6g89shhgf342ig345s678").apply {
         id = 4
         pmid = 8548282
-        title =  "Knowledge-rich, computer-assisted composition of Chinese couplets"
+        title = "Knowledge-rich, computer-assisted composition of Chinese couplets"
 
     }
 
-    val article5 = SemanticScholarArticle("eyu6d7f6s8dg68sgkhskfsfk4l6j37sg8").apply{
+    val article5 = SemanticScholarArticle("eyu6d7f6s8dg68sgkhskfsfk4l6j37sg8").apply {
         id = 5
         title = "Article with id and title"
     }
