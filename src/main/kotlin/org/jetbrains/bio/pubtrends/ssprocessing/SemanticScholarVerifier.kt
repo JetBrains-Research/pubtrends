@@ -1,15 +1,15 @@
-package org.jetbrains.bio.pubtrends.databaseVerifier
+package org.jetbrains.bio.pubtrends.ssprocessing
 
 import org.apache.logging.log4j.LogManager
 import org.jetbrains.exposed.sql.Table
 
 
-class DatabaseComparator {
+class SemanticScholarVerifier {
     companion object {
-        private val logger = LogManager.getLogger(DatabaseComparator::class)
+        private val logger = LogManager.getLogger(SemanticScholarVerifier::class)
     }
 
-    fun compareTables (first: Table, second: Table) {
+    fun verify(first: Table, second: Table) {
         // cant find sql "except" operator at "exposed"
         val sqlExceptStatement = """
                 SELECT COUNT(*) FROM

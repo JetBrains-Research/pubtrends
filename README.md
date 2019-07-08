@@ -83,20 +83,24 @@ Ensure that file contains correct information about the database (url, port, DB 
     ```
 4. Open localhost:5000/
 
-## Semantic Scholar Verifier
+## Semantic Scholar Processing
 
 1. Download Sample from [Semantic Scholar](https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/sample-S2-records.gz)
 
 2. Or full archive 
    ```
-   wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/manifest.txt -P path_to_folder
+   wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/manifest.txt -P  <PATH_TO_SEMANTIC_SCHOLAR_ARCHIVE>
    wget -B https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/ -i manifest.txt
    ```
-3. Unzip it (run in path_to_folder)
+3. Unzip it (run in `<PATH_TO_SEMANTIC_SCHOLAR_ARCHIVE>`)
     ```
    gunzip -k *.gz
     ```
 
-4. Add the path to the resulting folder to `.pubtrends/config.properties`
+4. Add `<PATH_TO_SEMANTIC_SCHOLAR_ARCHIVE>` to `.pubtrends/config.properties`
 
-5. Run `/databaseVerifier/Main.kt`
+5. Launch Semantic Scholar Processor
+ 
+    ```
+    build/libs/crawler-dev.jar org.jetbrains.bio.pubtrends.ssprocessing.MainKt
+    ```
