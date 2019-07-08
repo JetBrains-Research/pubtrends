@@ -4,7 +4,7 @@ import org.junit.Test
 import java.io.File
 import kotlin.test.assertEquals
 
-class ParserTest {
+class SSParserTest {
     private fun parserFileSetup(name: String): File {
         this::class.java.classLoader.getResourceAsStream(name).use {
             val file = createTempFile()
@@ -25,23 +25,16 @@ class ParserTest {
         assertEquals(first.keywordList, second.keywordList, "${second.keywordList}: Wrong Keyword List")
         assertEquals(first.source, second.source, "${second.source}: Wrong source")
         assertEquals(first.aux, second.aux, "${second.aux}: Wrong aux")
-    }
-
-    private fun checkCitations(first: SemanticScholarArticle, second: SemanticScholarArticle) {
         assertEquals(first.citationList, second.citationList, "${second.citationList}: Wrong List Of Citations")
-
     }
 
-    private fun checkArticles(articles: List<SemanticScholarArticle>, articlesList: List<SemanticScholarArticle>, citations: Boolean = false) {
+    private fun checkArticles(articles: List<SemanticScholarArticle>, articlesList: List<SemanticScholarArticle>) {
         var articlesChecked = 0
 
         assertEquals(articlesList.size, articles.size, "Wrong number of articles")
 
         for (i in articles.indices) {
-            if (citations)
-                checkCitations(articlesList[i], articles[i])
-            else
-                checkEquality(articlesList[i], articles[i])
+            checkEquality(articlesList[i], articles[i])
             articlesChecked++
         }
         assertEquals(articlesChecked, articlesList.size)
@@ -50,16 +43,10 @@ class ParserTest {
     private fun testArticlesForFile(name: String, correctArticles: List<SemanticScholarArticle>) {
         val articlesFile = parserFileSetup(name)
 
-        val parser = ArchiveParser(articlesFile, 1000, addCitations = false, addToDatabase = false)
+        val parser = ArchiveParser(articlesFile, 1000, addToDatabase = false)
         parser.parse()
         val parsedArticles = parser.currentArticles
         checkArticles(parsedArticles, correctArticles)
-
-        val citationsParser = ArchiveParser(articlesFile, 1000, addCitations = true, addToDatabase = false)
-        citationsParser.parse()
-        val parsedArticleCitations = citationsParser.currentArticles
-        checkArticles(parsedArticleCitations, correctArticles, citations = true)
-
     }
 
     @Test

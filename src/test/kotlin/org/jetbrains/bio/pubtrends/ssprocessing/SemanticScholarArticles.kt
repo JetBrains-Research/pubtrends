@@ -4,7 +4,6 @@ package org.jetbrains.bio.pubtrends.ssprocessing
 
 object SemanticScholarArticles {
     val article1 = SemanticScholarArticle("03029e4427cfe66c3da6257979dc2d5b6eb3a0e4").apply {
-        id = 1
         pmid = 2252909
         citationList = mutableListOf("5451b1ef43678d473575bdfa7016d024146f2b53",
                 "3c61e275f82faa0c3f370d16d4c254bdf592c05c",
@@ -23,7 +22,6 @@ object SemanticScholarArticles {
     }
 
     val article2 = SemanticScholarArticle("4cbba8127c8747a3b2cfb9c1f48c43e5c15e323e").apply {
-        id = 2
         pmid = 7629622
         citationList = mutableListOf("46ebb8d96613bb0508688a71e0d6ce67c7e3d041",
                 "347259c8a6e3aa72411cf51c4c90e8a0261dd100", "9124c0d40c07e2218cb35355daa2c8c0ae2c6e11")
@@ -38,7 +36,6 @@ object SemanticScholarArticles {
 
 
     val article3 = SemanticScholarArticle("58ff17c7d8ca006731facf7771761946350db062").apply {
-        id = 3
         pmid = 567834224
         citationList = mutableListOf("585c33b4e6b4613e6403ccd16516c335d36ab2c7",
                 "2430c97f1aa9c8036702f8f9686d7056a58775fa", "01829ca43653742e9749122560b1b4866df07bd5",
@@ -57,14 +54,12 @@ object SemanticScholarArticles {
     }
 
     val article4 = SemanticScholarArticle("gjj4fv5jx6g89shhgf342ig345s678").apply {
-        id = 4
         pmid = 8548282
         title = "Knowledge-rich, computer-assisted composition of Chinese couplets"
 
     }
 
     val article5 = SemanticScholarArticle("eyu6d7f6s8dg68sgkhskfsfk4l6j37sg8").apply {
-        id = 5
         title = "Article with id and title"
     }
 

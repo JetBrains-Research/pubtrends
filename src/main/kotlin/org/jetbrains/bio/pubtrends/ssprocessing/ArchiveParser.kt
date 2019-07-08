@@ -1,16 +1,15 @@
 package org.jetbrains.bio.pubtrends.ssprocessing
 
 import com.google.gson.*
-import java.util.*
-import org.apache.logging.log4j.LogManager
 import com.google.gson.reflect.TypeToken
-import java.io.*
+import org.apache.logging.log4j.LogManager
+import java.io.File
+import java.util.*
 
 
 class ArchiveParser(
         private val archiveFile: File,
         private var batchSize: Int,
-        private val addCitations: Boolean,
         private val addToDatabase: Boolean = true
 ) {
     val currentArticles: MutableList<SemanticScholarArticle> = mutableListOf()
@@ -52,30 +51,29 @@ class ArchiveParser(
                 curArticle = SemanticScholarArticle(ssid)
                 curArticle.title = jsonObject.get("title")?.asString ?: continue
 
-                if (!addCitations) {
-                    curArticle.pmid = extractPmid(jsonObject.get("pmid"))
-                    curArticle.doi = jsonObject.get("doi")?.asString
-                    if (curArticle.doi == "") curArticle.doi = null
-                    curArticle.abstract = jsonObject.get("paperAbstract")?.asString
-                    if (curArticle.abstract == "") curArticle.abstract = null
-                    curArticle.keywordList = extractList(jsonObject.get("entities")).filter { keyword -> keyword.length < SS_KEYWORD_MAX_LENGTH }
+                curArticle.pmid = extractPmid(jsonObject.get("pmid"))
+                curArticle.doi = jsonObject.get("doi")?.asString
+                if (curArticle.doi == "") curArticle.doi = null
+                curArticle.abstract = jsonObject.get("paperAbstract")?.asString
+                if (curArticle.abstract == "") curArticle.abstract = null
+                curArticle.keywordList = extractList(jsonObject.get("entities")).filter { keyword -> keyword.length < SS_KEYWORD_MAX_LENGTH }
 
-                    if (jsonObject.get("year") == null) {
-                        curArticle.year = null
-                    } else {
-                        curArticle.year = jsonObject.get("year").asInt
-                    }
-
-                    val authors = extractAuthors(jsonObject.get("authors"))
-                    val journal = extractJournal(jsonObject)
-                    val links = extractLinks(jsonObject)
-                    val venue = jsonObject.get("venue")?.asString ?: ""
-                    curArticle.aux = ArticleAuxInfo(authors, journal, links, venue)
-                    curArticle.source = getSource(journal, venue, links.pdfUrls)
-
+                if (jsonObject.get("year") == null) {
+                    curArticle.year = null
                 } else {
-                    curArticle.citationList = extractList(jsonObject.get("outCitations"))
+                    curArticle.year = jsonObject.get("year").asInt
                 }
+
+                curArticle.citationList = extractList(jsonObject.get("outCitations"))
+
+                val authors = extractAuthors(jsonObject.get("authors"))
+                val journal = extractJournal(jsonObject)
+                val links = extractLinks(jsonObject)
+                val venue = jsonObject.get("venue")?.asString ?: ""
+                curArticle.aux = ArticleAuxInfo(authors, journal, links, venue)
+                curArticle.source = getSource(journal, venue, links.pdfUrls)
+
+
                 addArticleToBatch(curArticle)
             }
             handleEndDocument()
@@ -83,11 +81,7 @@ class ArchiveParser(
     }
 
     private fun storeBatch() {
-        if (!addCitations) {
-            DatabaseAdderUtils.addArticles(currentArticles)
-        } else {
-            DatabaseAdderUtils.addCitations(currentArticles)
-        }
+        DatabaseAdderUtils.addArticles(currentArticles)
         currentArticles.clear()
         batchIndex++
         logger.info("Finished batch $batchIndex adding ($archiveFile)")
@@ -98,7 +92,6 @@ class ArchiveParser(
             storeBatch()
         }
     }
-
 
     private fun addArticleToBatch(article: SemanticScholarArticle) {
         currentArticles.add(article)

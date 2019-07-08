@@ -6,9 +6,7 @@ import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.StdOutSqlLogger
 import org.jetbrains.exposed.sql.addLogger
 import org.jetbrains.exposed.sql.transactions.transaction
-import java.io.BufferedReader
-import java.io.File
-import java.io.FileReader
+import java.io.*
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -60,39 +58,32 @@ fun main() {
     }
     logger.info("Parse archive to database")
 
-//    val ssTSV = settingsRoot.resolve("semantic_scholar_last.tsv")
-//    var lastSSId = -1
-//    if (Files.exists(ssTSV)) {
-//        BufferedReader(FileReader(ssTSV.toFile())).use {
-//            val chunks = it.readLine().split("\t")
-//            when {
-//                chunks.size == 2 && chunks[0] == "lastSSArticleId" -> {
-//                    lastSSId = chunks[1].toInt()
-//                }
-//            }
-//        }
-//    }
+    val ssTSV = settingsRoot.resolve("semantic_scholar_last.tsv")
+    var lastSSId = -1
+    if (Files.exists(ssTSV)) {
+        BufferedReader(FileReader(ssTSV.toFile())).use {
+            val chunks = it.readLine().split("\t")
+            when {
+                chunks.size == 2 && chunks[0] == "lastSSId" -> {
+                    lastSSId = chunks[1].toInt()
+                }
+            }
+        }
+    }
 
     val files = File(config["archive_folder_path"]
             .toString()).walk()
             .filter { !it.name.endsWith(".gz") && it.name.startsWith("s2-corpus") }
             .sorted()
-//            .drop(lastSSId + 1)
-//
+            .drop(lastSSId + 1)
+
     files.forEach {
         logger.info("Started parsing articles $it")
-        ArchiveParser(it, config["batchSize"].toString().toInt(), addCitations = false).parse()
+        ArchiveParser(it, config["batchSize"].toString().toInt()).parse()
         logger.info("Finished parsing articles $it")
-//        BufferedWriter(FileWriter(ssTSV.toFile())).use {
-//            br -> println(it)
-//            br.write("lastSSArticleId\t${it.toString().takeLast(2)}")
-//        }
+        BufferedWriter(FileWriter(ssTSV.toFile())).use { br ->
+//            println(it)
+            br.write("lastSSId\t${it.toString().takeLast(2)}")
+        }
     }
-
-    files.forEach {
-        logger.info("Started parsing citations $it")
-        ArchiveParser(it, config["batchSize"].toString().toInt(), addCitations = true).parse()
-        logger.info("Finished parsing citations $it")
-    }
-
 }

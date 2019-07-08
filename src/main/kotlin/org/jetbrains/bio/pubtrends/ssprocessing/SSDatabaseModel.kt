@@ -12,8 +12,7 @@ internal const val SS_KEYWORD_MAX_LENGTH = 30
 internal val jsonMapper = ObjectMapper()
 
 object SSPublications : Table() {
-    val id = integer("id").autoIncrement()
-    val ssid = varchar("ssid", MAX_ID_LENGTH)
+    val ssid = varchar("ssid", MAX_ID_LENGTH) //.primaryKey()
     val pmid = integer("pmid").nullable()
     val title = varchar("title", PUBLICATION_MAX_TITLE_LENGTH)
     val abstract = text("abstract").nullable()
@@ -39,8 +38,8 @@ class PGEnum<T : Enum<T>>(enumTypeName: String, enumValue: T?) : PGobject() {
 }
 
 object SSCitations : Table() {
-    val id_out = integer("id_out") // from
-    val id_in = integer("id_in") // to
+    val id_out = varchar("id_out", MAX_ID_LENGTH) // from
+    val id_in = varchar("id_in", MAX_ID_LENGTH) // to
 
     init {
         index(true, id_in, id_out)
@@ -58,7 +57,7 @@ object SSKeywords : Table() {
 }
 
 object SSKeywordsPublications : Table() {
-    val sspid = integer("sspid")
+    val sspid = varchar("sspid", MAX_ID_LENGTH)
     val sskid = integer("sskid")
 //    init {
 //        index(true, pmid, keywordId)
