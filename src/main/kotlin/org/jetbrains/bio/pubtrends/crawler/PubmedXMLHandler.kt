@@ -11,6 +11,7 @@ class PubmedXMLHandler(
         private val batchSize: Int
 ) : DefaultHandler() {
     private val logger = LogManager.getLogger(PubmedXMLHandler::class)
+
     val tags = HashMap<String, Int>()
     private var articleCounter = 0
     private var articlesStored = 0
@@ -27,19 +28,23 @@ class PubmedXMLHandler(
     val articles: MutableList<PubmedArticle> = mutableListOf()
 
     companion object {
+        // Article tag
         const val ARTICLE_TAG = "PubmedArticleSet/PubmedArticle"
+
+        // Sub-article tags
         private const val MEDLINE_CITATION_TAG = "PubmedArticleSet/PubmedArticle/MedlineCitation"
         private const val PUBMED_DATA_TAG = "PubmedArticleSet/PubmedArticle/PubmedData"
 
+        // Tags that actually contain data
         const val ABSTRACT_TAG = "$MEDLINE_CITATION_TAG/Article/Abstract/AbstractText"
         const val AUTHOR_TAG = "$MEDLINE_CITATION_TAG/Article/AuthorList/Author"
         const val AUTHOR_LASTNAME_TAG = "$MEDLINE_CITATION_TAG/Article/AuthorList/Author/LastName"
         const val AUTHOR_INITIALS_TAG = "$MEDLINE_CITATION_TAG/Article/AuthorList/Author/Initials"
         const val AUTHOR_AFFILIATION_TAG = "$MEDLINE_CITATION_TAG/Article/AuthorList/Author/AffiliationInfo/Affiliation"
-        const val DOI_TAG = "$MEDLINE_CITATION_TAG/Article/ELocationID"
+        const val DOI_TAG = "$PUBMED_DATA_TAG/ArticleIdList/ArticleId"
         const val OTHER_ABSTRACT_TAG = "$MEDLINE_CITATION_TAG/OtherAbstract/AbstractText"
         const val LANGUAGE_TAG = "$MEDLINE_CITATION_TAG/Article/Language"
-        const val JOURNAL_NAME_TAG = "$MEDLINE_CITATION_TAG/Article/Journal/Title"
+        const val JOURNAL_TITLE_TAG = "$MEDLINE_CITATION_TAG/Article/Journal/Title"
         const val CITATION_PMID_TAG = "$PUBMED_DATA_TAG/ReferenceList/Reference/ArticleIdList/ArticleId"
         const val KEYWORD_TAG = "$MEDLINE_CITATION_TAG/KeywordList/Keyword"
         const val MEDLINE_TAG = "$MEDLINE_CITATION_TAG/Article/Journal/JournalIssue/PubDate/MedlineDate"
@@ -97,7 +102,8 @@ class PubmedXMLHandler(
         if (articles.size > 0) {
             storeArticles()
         }
-        logger.info("Articles found: $articleCounter, stored: $articlesStored, keywords: $keywordCounter, citations: $citationCounter")
+        logger.info("Articles found: $articleCounter, stored: $articlesStored, " +
+                "keywords: $keywordCounter, citations: $citationCounter")
     }
 
     override fun startElement(uri: String?, localName: String?, qName: String?, attributes: Attributes?) {
@@ -128,7 +134,7 @@ class PubmedXMLHandler(
                             doiState = true
                         }
                     }
-                    fullName.equals(JOURNAL_NAME_TAG, ignoreCase = true) -> {
+                    fullName.equals(JOURNAL_TITLE_TAG, ignoreCase = true) -> {
                         journalTitleState = true
                     }
                     fullName.equals(OTHER_ABSTRACT_TAG, ignoreCase = true) -> {
