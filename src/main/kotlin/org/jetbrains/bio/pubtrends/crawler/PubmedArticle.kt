@@ -19,8 +19,6 @@ data class ArticleAuxInfo (val authors : MutableList<Author> = mutableListOf(),
 
 data class DatabankEntry (val name: String = "", val accessionNumber : String = "") { }
 
-data class MeshHeading (val name: String, val type: String, val meshId: String) { }
-
 data class PubmedArticle(var pmid : Int = 0,
                          var year : Int? = null,
                          var title : String = "",
@@ -28,7 +26,7 @@ data class PubmedArticle(var pmid : Int = 0,
                          val keywordList : MutableList<String> = mutableListOf(),
                          val citationList : MutableList<Int> = mutableListOf(),
                          val databankEntryList : MutableList<DatabankEntry> = mutableListOf(),
-                         val meshHeadingList : MutableList<MeshHeading> = mutableListOf(),
+                         val meshHeadingList : MutableList<String> = mutableListOf(),
                          var type : ArticleTypes = ArticleTypes.Article,
                          var doi : String = "",
                          val auxInfo : ArticleAuxInfo = ArticleAuxInfo()) {

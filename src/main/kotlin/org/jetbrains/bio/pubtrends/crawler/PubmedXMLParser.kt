@@ -25,22 +25,35 @@ class PubmedXMLParser(
         private const val PUBMED_DATA_TAG = "PubmedArticleSet/PubmedArticle/PubmedData"
 
         // Tags that actually contain data
-        const val ABSTRACT_TAG = "$MEDLINE_CITATION_TAG/Article/Abstract/AbstractText"
-        const val AUTHOR_TAG = "$MEDLINE_CITATION_TAG/Article/AuthorList/Author"
-        const val AUTHOR_LASTNAME_TAG = "$MEDLINE_CITATION_TAG/Article/AuthorList/Author/LastName"
-        const val AUTHOR_INITIALS_TAG = "$MEDLINE_CITATION_TAG/Article/AuthorList/Author/Initials"
-        const val AUTHOR_AFFILIATION_TAG = "$MEDLINE_CITATION_TAG/Article/AuthorList/Author/AffiliationInfo/Affiliation"
-        const val DOI_TAG = "$PUBMED_DATA_TAG/ArticleIdList/ArticleId"
-        const val OTHER_ABSTRACT_TAG = "$MEDLINE_CITATION_TAG/OtherAbstract/AbstractText"
-        const val LANGUAGE_TAG = "$MEDLINE_CITATION_TAG/Article/Language"
-        const val JOURNAL_TITLE_TAG = "$MEDLINE_CITATION_TAG/Article/Journal/Title"
-        const val CITATION_PMID_TAG = "$PUBMED_DATA_TAG/ReferenceList/Reference/ArticleIdList/ArticleId"
-        const val KEYWORD_TAG = "$MEDLINE_CITATION_TAG/KeywordList/Keyword"
-        const val MEDLINE_TAG = "$MEDLINE_CITATION_TAG/Article/Journal/JournalIssue/PubDate/MedlineDate"
         const val PMID_TAG = "$MEDLINE_CITATION_TAG/PMID"
+        const val YEAR_TAG = "$MEDLINE_CITATION_TAG/Article/Journal/JournalIssue/PubDate/Year"
+        const val MEDLINE_TAG = "$MEDLINE_CITATION_TAG/Article/Journal/JournalIssue/PubDate/MedlineDate"
+
         const val PUBLICATION_TYPE_TAG = "$MEDLINE_CITATION_TAG/Article/PublicationTypeList/PublicationType"
         const val TITLE_TAG = "$MEDLINE_CITATION_TAG/Article/ArticleTitle"
-        const val YEAR_TAG = "$MEDLINE_CITATION_TAG/Article/Journal/JournalIssue/PubDate/Year"
+
+        const val ABSTRACT_TAG = "$MEDLINE_CITATION_TAG/Article/Abstract/AbstractText"
+        const val OTHER_ABSTRACT_TAG = "$MEDLINE_CITATION_TAG/OtherAbstract/AbstractText"
+
+        const val AUTHOR_TAG = "$MEDLINE_CITATION_TAG/Article/AuthorList/Author"
+        const val AUTHOR_LASTNAME_TAG = "$AUTHOR_TAG/LastName"
+        const val AUTHOR_INITIALS_TAG = "$AUTHOR_TAG/Initials"
+        const val AUTHOR_AFFILIATION_TAG = "$AUTHOR_TAG/AffiliationInfo/Affiliation"
+
+        const val CITATION_PMID_TAG = "$PUBMED_DATA_TAG/ReferenceList/Reference/ArticleIdList/ArticleId"
+        const val KEYWORD_TAG = "$MEDLINE_CITATION_TAG/KeywordList/Keyword"
+
+        const val MESH_HEADING_TAG = "$MEDLINE_CITATION_TAG/MeshHeadingList/MeshHeading"
+        const val MESH_DESCRIPTOR_TAG = "$MESH_HEADING_TAG/DescriptorName"
+        const val MESH_QUALIFIER_TAG = "$MESH_HEADING_TAG/QualifierName"
+
+        const val DATABANK_TAG = "$MEDLINE_CITATION_TAG/Article/DataBankList/DataBank"
+        const val DATABANK_NAME_TAG = "$DATABANK_TAG/DataBankName"
+        const val ACCESSION_NUMBER_TAG = "$DATABANK_TAG/AccessionNumber"
+
+        const val DOI_TAG = "$PUBMED_DATA_TAG/ArticleIdList/ArticleId"
+        const val LANGUAGE_TAG = "$MEDLINE_CITATION_TAG/Article/Language"
+        const val JOURNAL_TITLE_TAG = "$MEDLINE_CITATION_TAG/Article/Journal/Title"
     }
 
     private val factory = XMLInputFactory.newFactory()!!
@@ -58,12 +71,16 @@ class PubmedXMLParser(
     // Temporary containers for information about articles and authors respectively
     private var currentArticle = PubmedArticle()
     private var currentAuthor = Author()
+    private var currentMeshHeading : String = ""
+    private var currentDatabankName : String = ""
 
     // Auxiliary variables for parsing
     private var fullName = ""
     private var isAbstractStructured = false
     private var isArticleTitleParsed = false
     private var isAbstractTextParsed = false
+    private var isCitationPMIDFound = false
+    private var isDOIFound = false
 
     fun parse(name: String): Boolean {
         try {
@@ -106,6 +123,8 @@ class PubmedXMLParser(
                         isAbstractStructured = false
                         isArticleTitleParsed = false
                         isAbstractTextParsed = false
+                        isCitationPMIDFound = false
+                        isDOIFound = false
                     }
                     AUTHOR_TAG -> {
                         currentAuthor = Author()
@@ -114,22 +133,26 @@ class PubmedXMLParser(
                         if (startElement.attributes.hasNext()) {
                             isAbstractStructured = true
                         }
+                        isAbstractTextParsed = true
                     }
 
                     // Citations (PMID)
                     CITATION_PMID_TAG -> {
                         if (startElement.getAttributeByName(QName("IdType")).value == "pubmed") {
-                            val citationPMIDDataEvent = eventReader.nextEvent() as Characters
-                            currentArticle.citationList.add(citationPMIDDataEvent.data.toInt())
+                            isCitationPMIDFound = true
                         }
                     }
 
                     // DOI
                     DOI_TAG -> {
                         if (startElement.getAttributeByName(QName("IdType")).value == "doi") {
-                            val doiDataEvent = eventReader.nextEvent() as Characters
-                            currentArticle.doi = doiDataEvent.data
+                            isDOIFound = true
                         }
+                    }
+
+                    // MeSH
+                    MESH_HEADING_TAG -> {
+                        currentMeshHeading = ""
                     }
                 }
 
@@ -142,15 +165,15 @@ class PubmedXMLParser(
                 // Fill the contents of the PubmedArticle class with useful information
                 when {
                     // PMID
-                    fullName.equals(PMID_TAG) -> {
+                    fullName == PMID_TAG -> {
                         currentArticle.pmid = dataElement.data.toInt()
                     }
 
                     // Year of publication
-                    fullName.equals(YEAR_TAG) -> {
+                    fullName == YEAR_TAG -> {
                         currentArticle.year = dataElement.data.toInt()
                     }
-                    fullName.equals(MEDLINE_TAG) -> {
+                    fullName == MEDLINE_TAG -> {
                         val regex = "(19|20)\\d{2}".toRegex()
                         val match = regex.find(dataElement.data)
                         try {
@@ -164,7 +187,7 @@ class PubmedXMLParser(
                     isArticleTitleParsed -> {
                         currentArticle.title += dataElement.data
                     }
-                    fullName.equals(TITLE_TAG) -> {
+                    fullName == TITLE_TAG -> {
                         currentArticle.title = dataElement.data
                         isArticleTitleParsed = true
                     }
@@ -173,45 +196,69 @@ class PubmedXMLParser(
                     isAbstractTextParsed -> {
                         logger.debug("$fullName <${dataElement.data}>")
 
-                        currentArticle.abstractText += dataElement.data.trim {it <= ' '}
+                        if (fullName == ABSTRACT_TAG) {
+                            currentArticle.abstractText += dataElement.data
+                        } else {
+                            currentArticle.abstractText += dataElement.data.trim { it <= ' ' }
+                        }
                     }
-                    fullName.equals(ABSTRACT_TAG) -> {
-                        logger.debug("$fullName <${dataElement.data}>")
-
-                        currentArticle.abstractText += dataElement.data
-
-                        isAbstractTextParsed = true
-                    }
-                    fullName.equals(OTHER_ABSTRACT_TAG) -> {
+                    fullName == OTHER_ABSTRACT_TAG -> {
                         logger.debug("$fullName <${dataElement.data}>")
 
                         currentArticle.abstractText += " ${dataElement.data}"
                     }
 
                     // Keywords
-                    fullName.equals(KEYWORD_TAG) -> {
+                    fullName == KEYWORD_TAG -> {
                         currentArticle.keywordList.add(dataElement.data)
                     }
 
+                    // Citations
+                    fullName == CITATION_PMID_TAG -> {
+                        currentArticle.citationList.add(dataElement.data.toInt())
+                        isCitationPMIDFound = false
+                    }
+
+                    // Databanks
+                    fullName == DATABANK_NAME_TAG -> {
+                        currentDatabankName = dataElement.data
+                    }
+                    fullName == ACCESSION_NUMBER_TAG -> {
+                        val accessionNumber = dataElement.data
+                        currentArticle.databankEntryList.add(DatabankEntry(currentDatabankName, accessionNumber))
+                    }
+
+                    // MeSH
+                    fullName == MESH_DESCRIPTOR_TAG -> {
+                        currentMeshHeading = dataElement.data
+                    }
+                    fullName == MESH_QUALIFIER_TAG -> {
+                        currentMeshHeading += " ${dataElement.data}"
+                    }
+
                     // Authors
-                    fullName.equals(AUTHOR_LASTNAME_TAG) -> {
+                    fullName == AUTHOR_LASTNAME_TAG -> {
                         currentAuthor.name = dataElement.data
                     }
-                    fullName.equals(AUTHOR_INITIALS_TAG) -> {
+                    fullName == AUTHOR_INITIALS_TAG -> {
                         currentAuthor.name += " ${dataElement.data}"
                     }
-                    fullName.equals(AUTHOR_AFFILIATION_TAG) -> {
+                    fullName == AUTHOR_AFFILIATION_TAG -> {
                         currentAuthor.affiliation.add(dataElement.data)
                     }
 
-                    // Other information - journal title, language, publication type
-                    fullName.equals(JOURNAL_TITLE_TAG) -> {
+                    // Other information - journal title, language, DOI, publication type
+                    fullName == JOURNAL_TITLE_TAG -> {
                         currentArticle.auxInfo.journal.name = dataElement.data
                     }
-                    fullName.equals(LANGUAGE_TAG) -> {
+                    fullName == LANGUAGE_TAG -> {
                         currentArticle.auxInfo.language = dataElement.data
                     }
-                    fullName.equals(PUBLICATION_TYPE_TAG) -> {
+                    fullName == DOI_TAG -> {
+                        currentArticle.doi = dataElement.data
+                        isDOIFound = false
+                    }
+                    fullName == PUBLICATION_TYPE_TAG -> {
                         val publicationType = dataElement.data
                         when {
                             publicationType.contains("Technical Report") -> {
@@ -236,35 +283,44 @@ class PubmedXMLParser(
                 val endElement = xmlEvent.asEndElement()
                 val localName = endElement.name.localPart
 
-                // Add article to the list and store if needed
-                if (fullName.equals(ARTICLE_TAG)) {
-                    articleCounter++
-                    citationCounter += currentArticle.citationList.size
-                    keywordCounter += currentArticle.keywordList.size
+                when (fullName) {
+                    // Add article to the list and store if needed
+                    ARTICLE_TAG -> {
+                        articleCounter++
+                        citationCounter += currentArticle.citationList.size
+                        keywordCounter += currentArticle.keywordList.size
 
-                    articleList.add(currentArticle)
+                        currentArticle.abstractText = currentArticle.abstractText.trim()
+                        articleList.add(currentArticle)
 
-                    logger.debug("Found new article")
-                    currentArticle.description().forEach {
-                        logger.debug("${it.key}: ${it.value}")
+                        logger.debug("Found new article")
+                        currentArticle.description().forEach {
+                            logger.debug("${it.key}: ${it.value}")
+                        }
                     }
-                }
 
-                // Add author to the list of authors
-                if (fullName.equals(AUTHOR_TAG)) {
-                    currentArticle.auxInfo.authors.add(currentAuthor)
-                }
-
-                // Fix information
-                if (fullName.equals(ABSTRACT_TAG)) {
-                    if (isAbstractStructured) {
-                        currentArticle.abstractText += " "
+                    // Add author to the list of authors
+                    AUTHOR_TAG -> {
+                        currentArticle.auxInfo.authors.add(currentAuthor)
                     }
-                    isAbstractTextParsed = false
-                }
-                if (fullName.equals(TITLE_TAG)) {
-                    currentArticle.title = currentArticle.title.trim('[', ']', '.')
-                    isArticleTitleParsed = false
+
+                    // Fix title & abstract
+                    ABSTRACT_TAG -> {
+                        if (isAbstractStructured) {
+                            currentArticle.abstractText += " "
+                        }
+                        isAbstractTextParsed = false
+                    }
+
+                    TITLE_TAG -> {
+                        currentArticle.title = currentArticle.title.trim('[', ']', '.')
+                        isArticleTitleParsed = false
+                    }
+
+                    // MeSH
+                    MESH_HEADING_TAG -> {
+                        currentArticle.meshHeadingList.add(currentMeshHeading)
+                    }
                 }
 
                 // Update the full name of the tag -- tag closed
