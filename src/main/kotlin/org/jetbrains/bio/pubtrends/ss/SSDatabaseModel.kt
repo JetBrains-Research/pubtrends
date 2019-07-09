@@ -1,4 +1,4 @@
-package org.jetbrains.bio.pubtrends.ssprocessing
+package org.jetbrains.bio.pubtrends.ss
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.jetbrains.bio.pubtrends.crawler.PUBLICATION_MAX_TITLE_LENGTH
@@ -10,6 +10,10 @@ internal const val MAX_DOI_LENGTH = 100
 
 internal val jsonMapper = ObjectMapper()
 
+/*
+    "ssid" is hex identifier produced by Semantic Scholar
+    "crc32id" is ssid encoded by crc32, non-unique identifier that is used for table index
+*/
 object SSPublications : Table() {
     val ssid = varchar("ssid", MAX_ID_LENGTH)
     val crc32id = integer("crc32id")
@@ -30,9 +34,9 @@ object SSPublications : Table() {
 }
 
 
-enum class PublicationSource(source: String) {
-    Nature("nature"),
-    Arxiv("arxiv"),
+enum class PublicationSource {
+    Nature,
+    Arxiv
 }
 
 class PGEnum<T : Enum<T>>(enumTypeName: String, enumValue: T?) : PGobject() {

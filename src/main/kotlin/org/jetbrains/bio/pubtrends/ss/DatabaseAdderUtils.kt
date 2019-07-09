@@ -1,13 +1,11 @@
-package org.jetbrains.bio.pubtrends.ssprocessing
+package org.jetbrains.bio.pubtrends.ss
 
 import org.apache.logging.log4j.LogManager
 import org.jetbrains.exposed.sql.batchInsert
 import org.jetbrains.exposed.sql.transactions.transaction
-import java.util.zip.CRC32
 
 object DatabaseAdderUtils {
     private val logger = LogManager.getLogger(DatabaseAdderUtils::class)
-    private val crc32sum = CRC32()
 
     fun addArticles(articles: MutableList<SemanticScholarArticle>) {
         val citationsList = articles.map { it.citationList.distinct().map { cit -> it.ssid to cit } }.flatten()

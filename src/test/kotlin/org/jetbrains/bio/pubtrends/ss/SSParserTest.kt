@@ -1,4 +1,4 @@
-package org.jetbrains.bio.pubtrends.ssprocessing
+package org.jetbrains.bio.pubtrends.ss
 
 import org.junit.Test
 import java.io.File
@@ -29,15 +29,11 @@ class SSParserTest {
     }
 
     private fun checkArticles(articles: List<SemanticScholarArticle>, articlesList: List<SemanticScholarArticle>) {
-        var articlesChecked = 0
-
         assertEquals(articlesList.size, articles.size, "Wrong number of articles")
 
         for (i in articles.indices) {
             checkEquality(articlesList[i], articles[i])
-            articlesChecked++
         }
-        assertEquals(articlesChecked, articlesList.size)
     }
 
     private fun testArticlesForFile(name: String, correctArticles: List<SemanticScholarArticle>) {

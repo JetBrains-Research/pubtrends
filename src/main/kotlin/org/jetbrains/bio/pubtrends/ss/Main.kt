@@ -1,4 +1,4 @@
-package org.jetbrains.bio.pubtrends.ssprocessing
+package org.jetbrains.bio.pubtrends.ss
 
 import org.apache.logging.log4j.LogManager
 import org.jetbrains.bio.pubtrends.crawler.PostgresqlDatabaseHandler
@@ -52,8 +52,8 @@ fun main() {
         addLogger(StdOutSqlLogger)
 //        SchemaUtils.drop(SSPublications, SSCitations)
 //        exec("DROP TYPE Source;")
-//
-        exec("CREATE TYPE Source AS ENUM ('Nature', 'Arxiv');")
+
+//        exec("CREATE TYPE Source AS ENUM ('Nature', 'Arxiv');")
         SchemaUtils.create(SSPublications, SSCitations)
     }
     logger.info("Parse archive to database")
@@ -71,18 +71,17 @@ fun main() {
         }
     }
 
-    val files = File(config["archive_folder_path"]
+    File(config["archive_folder_path"]
             .toString()).walk()
             .filter { !it.name.endsWith(".gz") && it.name.startsWith("s2-corpus") }
             .sorted()
             .drop(lastSSId + 1)
-
-    files.forEach {
-        logger.info("Started parsing articles $it")
-        ArchiveParser(it, config["batchSize"].toString().toInt()).parse()
-        logger.info("Finished parsing articles $it")
-        BufferedWriter(FileWriter(ssTSV.toFile())).use { br ->
-            br.write("lastSSId\t${it.toString().takeLast(2)}")
-        }
-    }
+            .forEach {
+                logger.info("Started parsing articles $it")
+                ArchiveParser(it, config["batchSize"].toString().toInt(), addToDatabase = false).parse()
+                logger.info("Finished parsing articles $it")
+                BufferedWriter(FileWriter(ssTSV.toFile())).use { br ->
+                    br.write("lastSSId\t${it.toString().takeLast(2)}")
+                }
+            }
 }

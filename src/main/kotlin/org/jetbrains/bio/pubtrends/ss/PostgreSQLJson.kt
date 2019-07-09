@@ -1,4 +1,4 @@
-package org.jetbrains.bio.pubtrends.ssprocessing
+package org.jetbrains.bio.pubtrends.ss
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.jetbrains.exposed.sql.Column

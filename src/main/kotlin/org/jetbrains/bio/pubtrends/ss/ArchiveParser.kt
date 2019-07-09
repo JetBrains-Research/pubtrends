@@ -1,4 +1,4 @@
-package org.jetbrains.bio.pubtrends.ssprocessing
+package org.jetbrains.bio.pubtrends.ss
 
 import com.google.gson.*
 import com.google.gson.reflect.TypeToken
@@ -12,14 +12,14 @@ import javax.xml.bind.DatatypeConverter
 class ArchiveParser(
         private val archiveFile: File,
         private var batchSize: Int,
-        private val addToDatabase: Boolean = true,
-        private val crc32: CRC32 = CRC32()
+        private val addToDatabase: Boolean = true
 ) {
     val currentArticles: MutableList<SemanticScholarArticle> = mutableListOf()
     private var batchIndex = 0
 
     companion object {
         private val logger = LogManager.getLogger(ArchiveParser::class)
+        private val crc32: CRC32 = CRC32()
     }
 
 
@@ -51,35 +51,40 @@ class ArchiveParser(
                 }
 
                 val ssid = jsonObject.get("id")?.asString ?: continue
-                curArticle = SemanticScholarArticle(ssid)
-                curArticle.title = jsonObject.get("title")?.asString ?: continue
+                val title = jsonObject.get("title")?.asString ?: continue
 
-                curArticle.pmid = extractPmid(jsonObject.get("pmid"))
-                curArticle.doi = jsonObject.get("doi")?.asString
-                if (curArticle.doi == "") curArticle.doi = null
-                curArticle.abstract = jsonObject.get("paperAbstract")?.asString
-                if (curArticle.abstract == "") curArticle.abstract = null
-                curArticle.keywords = deleteBoundarySymbol(jsonObject.get("entities").toString()
-                        .replace("\"", ""), '[', ']')
+                val pmid = extractPmid(jsonObject.get("pmid").asString)
+                var doi = jsonObject.get("doi")?.asString
+                if (doi == "") doi = null
+                var abstract = jsonObject.get("paperAbstract")?.asString
+                if (abstract == "") abstract = null
+                var keywords: String? = jsonObject.get("entities").toString()
+                        .replace("\"", "").removeSurrounding("[", "]")
+                if (keywords == "") keywords = null
 
+                var year: Int?
                 if (jsonObject.get("year") == null) {
-                    curArticle.year = null
+                    year = null
                 } else {
-                    curArticle.year = jsonObject.get("year").asInt
+                    year = jsonObject.get("year").asInt
                 }
 
-                curArticle.citationList = extractList(jsonObject.get("outCitations"))
+                val citationList = extractList(jsonObject.get("outCitations"))
 
                 val authors = extractAuthors(jsonObject.get("authors"))
                 val journal = extractJournal(jsonObject)
                 val links = extractLinks(jsonObject)
                 val venue = jsonObject.get("venue")?.asString ?: ""
-                curArticle.aux = ArticleAuxInfo(authors, journal, links, venue)
-                curArticle.source = getSource(journal, venue, links.pdfUrls)
+                val aux = ArticleAuxInfo(authors, journal, links, venue)
+                val source = getSource(journal, venue, links.pdfUrls)
 
-                crc32.update(DatatypeConverter.parseHexBinary(curArticle.ssid))
-                curArticle.crc32id = crc32.value.toInt()
+                crc32.update(DatatypeConverter.parseHexBinary(ssid))
+                val crc32id = crc32.value.toInt()
                 crc32.reset()
+
+                curArticle = SemanticScholarArticle(ssid = ssid, crc32id = crc32id, title = title,
+                        pmid = pmid, doi = doi, abstract = abstract, keywords = keywords, year = year,
+                        citationList = citationList, aux = aux, source = source)
 
                 addArticleToBatch(curArticle)
             }
@@ -119,32 +124,23 @@ class ArchiveParser(
         return null
     }
 
-    private fun deleteBoundarySymbol(str: String, left: Char, right: Char = left): String? {
-        if (str.isEmpty()) return null
-        if (str.first() == left && str.last() == right)
-            return str.substring(1, str.length - 1)
-
-        return str
-    }
-
     private fun extractList(listJson: JsonElement?): List<String> {
         val itemsType = object : TypeToken<List<String>>() {}.type
         val list = Gson().fromJson<List<String>>(listJson, itemsType) ?: return listOf()
-        return list.mapNotNull { quoted -> deleteBoundarySymbol(quoted, '\"') }
+        return list.map { quoted -> quoted.removeSurrounding("\"") }
     }
 
-    private fun extractPmid(pmidJson: JsonElement?): Int? { //переделать
-        var pmidString = pmidJson?.toString() ?: return null
+    private fun extractPmid(pmidString: String): Int? {
         val index = pmidString.indexOf("v") // version number is not needed
-        val startIndex = 1
         if (index == -1) {
-            if (pmidString.length > 2)
-                return deleteBoundarySymbol(pmidString, '\"')?.toInt()
+            val pmid = pmidString.removeSurrounding("\"")
+            if (pmid.isEmpty())
+                return null
 
-            return null
+            return pmid.toInt()
         }
 
-        return pmidString.substring(startIndex, index).toInt()
+        return pmidString.substring(0, index).toInt()
     }
 
     private fun extractAuthors(authorsJson: JsonElement?): MutableList<Author> {
