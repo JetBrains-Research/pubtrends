@@ -47,14 +47,20 @@ fun main() {
             resetDatabase)
 
     logger.info("Create SS tables")
+    val dropTable = false
+    val createTable = true
 
-    transaction {
-        addLogger(StdOutSqlLogger)
-//        SchemaUtils.drop(SSPublications, SSCitations)
-//        exec("DROP TYPE Source;")
+    if (createTable) {
+        transaction {
+            addLogger(StdOutSqlLogger)
+            if (dropTable) {
+                SchemaUtils.drop(SSPublications, SSCitations)
+                exec("DROP TYPE Source;")
+            }
 
-//        exec("CREATE TYPE Source AS ENUM ('Nature', 'Arxiv');")
-        SchemaUtils.create(SSPublications, SSCitations)
+            exec("CREATE TYPE Source AS ENUM ('Nature', 'Arxiv');")
+            SchemaUtils.create(SSPublications, SSCitations)
+        }
     }
     logger.info("Parse archive to database")
 
@@ -78,7 +84,7 @@ fun main() {
             .drop(lastSSId + 1)
             .forEach {
                 logger.info("Started parsing articles $it")
-                ArchiveParser(it, config["batchSize"].toString().toInt(), addToDatabase = false).parse()
+                ArchiveParser(it, config["batchSize"].toString().toInt()).parse()
                 logger.info("Finished parsing articles $it")
                 BufferedWriter(FileWriter(ssTSV.toFile())).use { br ->
                     br.write("lastSSId\t${it.toString().takeLast(2)}")
