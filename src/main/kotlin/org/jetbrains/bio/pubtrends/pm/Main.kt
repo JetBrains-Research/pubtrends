@@ -1,10 +1,7 @@
-package org.jetbrains.bio.pubtrends
+package org.jetbrains.bio.pubtrends.pm
 
 import joptsimple.OptionParser
 import org.apache.logging.log4j.LogManager
-import org.jetbrains.bio.pubtrends.crawler.PostgresqlDatabaseHandler
-import org.jetbrains.bio.pubtrends.crawler.PubmedCrawler
-import org.jetbrains.bio.pubtrends.crawler.PubmedXMLParser
 import java.io.BufferedReader
 import java.io.FileReader
 import java.nio.file.Files

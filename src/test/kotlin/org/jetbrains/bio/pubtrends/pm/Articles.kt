@@ -1,4 +1,4 @@
-package org.jetbrains.bio.pubtrends.crawler
+package org.jetbrains.bio.pubtrends.pm
 
 object Articles {
     val article420880 = PubmedArticle(420880).apply {

@@ -1,4 +1,4 @@
-package org.jetbrains.bio.pubtrends.crawler
+package org.jetbrains.bio.pubtrends.pm
 
 import org.apache.logging.log4j.LogManager
 import org.jetbrains.exposed.sql.*
@@ -36,16 +36,17 @@ class PostgresqlDatabaseHandler(
             addLogger(Log4jSqlLogger)
 
             if (resetDatabase) {
-                SchemaUtils.drop(PMPublications, PMCitations, PMKeywords, PMKeywordsPublications)
+                SchemaUtils.drop(PMPublications, PMCitations)
             }
 
-            SchemaUtils.create(PMPublications, PMCitations, PMKeywords, PMKeywordsPublications)
+            exec("DROP TYPE IF EXISTS PublicationType; " +
+                    "CREATE TYPE PublicationType " +
+                    "AS ENUM ('ClinicalTrial', 'Dataset', 'TechnicalReport', 'Article', 'Review');")
+            SchemaUtils.create(PMPublications, PMCitations)
         }
     }
 
     override fun store(articles: List<PubmedArticle>) {
-        // val keywordsForArticle = articles.map { it.keywordList.map { kw -> it.pmid to kw } }.flatten()
-        // val keywordSet = keywordsForArticle.mapTo(hashSetOf()) { it.second }
         val citationsForArticle = articles.map { it.citationList.toSet().map { cit -> it.pmid to cit } }.flatten()
 
         transaction {
@@ -54,41 +55,24 @@ class PostgresqlDatabaseHandler(
             PMPublications.batchInsertOnDuplicateKeyUpdate(articles,
                     listOf(PMPublications.year, PMPublications.title, PMPublications.abstract)) { batch, article ->
                 batch[PMPublications.pmid] = article.pmid
-                batch[PMPublications.type] = article.type.name
-                batch[PMPublications.doi] = article.doi
-                batch[PMPublications.aux] = article.auxInfo
                 batch[PMPublications.year] = article.year
                 batch[PMPublications.title] = article.title.take(PUBLICATION_MAX_TITLE_LENGTH)
                 if (article.abstractText != "") {
                     batch[PMPublications.abstract] = article.abstractText
                 }
+
+                batch[PMPublications.keywords] = article.keywordList.joinToString(separator = ", ")
+                batch[PMPublications.mesh] = article.meshHeadingList.joinToString(separator = ", ")
+
+                batch[PMPublications.type] = article.type
+                batch[PMPublications.doi] = article.doi
+                batch[PMPublications.aux] = article.auxInfo
             }
 
             PMCitations.batchInsert(citationsForArticle, ignore = true) { citation ->
                 this[PMCitations.pmidOut] = citation.first
                 this[PMCitations.pmidIn] = citation.second
             }
-
-            /*val keywordIds = Keywords.batchInsert(keywordSet, ignore = true) { keyword ->
-                this[Keywords.keyword] = keyword
-            }
-
-            val keywordIdsMap = keywordSet.zip(keywordIds) { kw, rs ->
-                kw to try {
-                    rs.getValue(Keywords.id) as Int
-                } catch (e : NoSuchElementException) {
-                    Keywords.select { Keywords.keyword eq kw }.map { it[Keywords.id] }[0]
-                }
-            }.toMap()
-            keywordIdsMap.toSortedMap().forEach {
-                println("${it.key} - ${it.value}")
-            }
-            val keywordIdsForArticle = keywordsForArticle.map { it.first to (keywordIdsMap[it.second] ?: 0) }
-
-            KeywordsPublications.batchInsert(keywordIdsForArticle) { keywordId ->
-                this[KeywordsPublications.pmid] = keywordId.first
-                this[KeywordsPublications.keywordId] = keywordId.second
-            }*/
         }
     }
 }

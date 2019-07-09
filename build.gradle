@@ -68,7 +68,7 @@ project(':') {
     applicationDefaultJvmArgs = ["-Xmx32G"]
 
     shadowJar {
-        baseName = 'crawler'
+        baseName = 'pm-crawler'
         classifier = ''
     }
 

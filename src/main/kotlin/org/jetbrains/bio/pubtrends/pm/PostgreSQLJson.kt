@@ -1,4 +1,4 @@
-package org.jetbrains.bio.pubtrends.crawler
+package org.jetbrains.bio.pubtrends.pm
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.jetbrains.exposed.sql.Column

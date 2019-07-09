@@ -1,4 +1,4 @@
-package org.jetbrains.bio.pubtrends.crawler
+package org.jetbrains.bio.pubtrends.pm
 
 import org.apache.logging.log4j.LogManager
 import org.xml.sax.SAXException
@@ -6,7 +6,6 @@ import java.io.File
 import javax.xml.namespace.QName
 import javax.xml.stream.XMLEventReader
 import javax.xml.stream.XMLInputFactory
-import javax.xml.stream.events.Characters
 
 
 class PubmedXMLParser(
@@ -72,7 +71,7 @@ class PubmedXMLParser(
     private var currentArticle = PubmedArticle()
     private var currentAuthor = Author()
     private var currentMeshHeading : String = ""
-    private var currentDatabankName : String = ""
+    private var currentDatabankEntry = DatabankEntry()
 
     // Auxiliary variables for parsing
     private var fullName = ""
@@ -143,6 +142,11 @@ class PubmedXMLParser(
                         }
                     }
 
+                    // Databanks
+                    DATABANK_TAG -> {
+                        currentDatabankEntry = DatabankEntry()
+                    }
+
                     // DOI
                     DOI_TAG -> {
                         if (startElement.getAttributeByName(QName("IdType")).value == "doi") {
@@ -194,8 +198,6 @@ class PubmedXMLParser(
 
                     // Abstract
                     isAbstractTextParsed -> {
-                        logger.debug("$fullName <${dataElement.data}>")
-
                         if (fullName == ABSTRACT_TAG) {
                             currentArticle.abstractText += dataElement.data
                         } else {
@@ -203,8 +205,6 @@ class PubmedXMLParser(
                         }
                     }
                     fullName == OTHER_ABSTRACT_TAG -> {
-                        logger.debug("$fullName <${dataElement.data}>")
-
                         currentArticle.abstractText += " ${dataElement.data}"
                     }
 
@@ -221,11 +221,10 @@ class PubmedXMLParser(
 
                     // Databanks
                     fullName == DATABANK_NAME_TAG -> {
-                        currentDatabankName = dataElement.data
+                        currentDatabankEntry.name = dataElement.data
                     }
                     fullName == ACCESSION_NUMBER_TAG -> {
-                        val accessionNumber = dataElement.data
-                        currentArticle.databankEntryList.add(DatabankEntry(currentDatabankName, accessionNumber))
+                        currentDatabankEntry.accessionNumber.add(dataElement.data)
                     }
 
                     // MeSH
@@ -262,16 +261,16 @@ class PubmedXMLParser(
                         val publicationType = dataElement.data
                         when {
                             publicationType.contains("Technical Report") -> {
-                                currentArticle.type = ArticleTypes.TechnicalReport
+                                currentArticle.type = PublicationType.TechnicalReport
                             }
                             publicationType.contains("Clinical Trial") -> {
-                                currentArticle.type = ArticleTypes.ClinicalTrial
+                                currentArticle.type = PublicationType.ClinicalTrial
                             }
                             publicationType.equals("Dataset") -> {
-                                currentArticle.type = ArticleTypes.Dataset
+                                currentArticle.type = PublicationType.Dataset
                             }
                             publicationType.equals("Review") -> {
-                                currentArticle.type = ArticleTypes.Review
+                                currentArticle.type = PublicationType.Review
                             }
                         }
                     }
@@ -301,7 +300,7 @@ class PubmedXMLParser(
 
                     // Add author to the list of authors
                     AUTHOR_TAG -> {
-                        currentArticle.auxInfo.authors.add(currentAuthor)
+                        currentArticle.auxInfo.authorList.add(currentAuthor)
                     }
 
                     // Fix title & abstract
@@ -310,6 +309,11 @@ class PubmedXMLParser(
                             currentArticle.abstractText += " "
                         }
                         isAbstractTextParsed = false
+                    }
+
+                    // Databanks
+                    DATABANK_TAG -> {
+                        currentArticle.databankEntryList.add(currentDatabankEntry)
                     }
 
                     TITLE_TAG -> {

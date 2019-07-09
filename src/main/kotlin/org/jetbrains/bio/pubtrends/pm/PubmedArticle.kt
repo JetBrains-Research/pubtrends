@@ -1,23 +1,17 @@
-package org.jetbrains.bio.pubtrends.crawler
-
-enum class ArticleTypes {
-    ClinicalTrial,
-    Dataset,
-    TechnicalReport,
-    Review,
-    Article
-}
+package org.jetbrains.bio.pubtrends.pm
 
 data class Author (var name : String = "",
                    val affiliation : MutableList<String> = mutableListOf()) { }
 
 data class Journal (var name : String = "") { }
 
+data class DatabankEntry (var name: String = "",
+                          val accessionNumber : MutableList<String> = mutableListOf()) { }
+
 data class ArticleAuxInfo (val authors : MutableList<Author> = mutableListOf(),
+                           val databanks : MutableList<DatabankEntry> = mutableListOf(),
                            val journal : Journal = Journal(),
                            var language : String = "") { }
-
-data class DatabankEntry (val name: String = "", val accessionNumber : String = "") { }
 
 data class PubmedArticle(var pmid : Int = 0,
                          var year : Int? = null,
@@ -27,7 +21,7 @@ data class PubmedArticle(var pmid : Int = 0,
                          val citationList : MutableList<Int> = mutableListOf(),
                          val databankEntryList : MutableList<DatabankEntry> = mutableListOf(),
                          val meshHeadingList : MutableList<String> = mutableListOf(),
-                         var type : ArticleTypes = ArticleTypes.Article,
+                         var type : PublicationType = PublicationType.Article,
                          var doi : String = "",
                          val auxInfo : ArticleAuxInfo = ArticleAuxInfo()) {
 
