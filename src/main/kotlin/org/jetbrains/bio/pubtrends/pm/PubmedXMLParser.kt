@@ -300,7 +300,7 @@ class PubmedXMLParser(
 
                     // Add author to the list of authors
                     AUTHOR_TAG -> {
-                        currentArticle.auxInfo.authorList.add(currentAuthor)
+                        currentArticle.auxInfo.authors.add(currentAuthor)
                     }
 
                     // Fix title & abstract

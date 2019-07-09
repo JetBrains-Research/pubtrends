@@ -7,6 +7,9 @@ database = pubmed
 username = biolabs
 password = pubtrends
 
+# Test database configuration
+test_database = pubmed_test
+
 # Crawler settings
 batchSize = 1000
 parserLimit = 0

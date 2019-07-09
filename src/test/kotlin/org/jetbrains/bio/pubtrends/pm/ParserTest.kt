@@ -12,13 +12,14 @@ class ParserTest {
     }
 
     private fun parserFileSetup(name : String) : String {
-        this::class.java.classLoader.getResourceAsStream(name).use {
+        this::class.java.classLoader.getResourceAsStream(name)?.use {
             val file = createTempFile()
             file.outputStream().use {out ->
                 it.copyTo(out)
             }
             return file.absolutePath
         }
+        return ""
     }
 
     private fun checkEquality(first: PubmedArticle, second: PubmedArticle) {
@@ -45,6 +46,9 @@ class ParserTest {
 
     private fun testArticlesForFile(name : String, articlesMap: Map<Int, PubmedArticle>) {
         val path = parserFileSetup(name)
+        check(path != "") {
+            "Failed to load test file: $name"
+        }
         parser.parse(path)
 
         val articles = parser.articleList

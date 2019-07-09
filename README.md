@@ -3,6 +3,7 @@
 A tool for analysis of trends & pivotal points in the scientific literature.
 
 Project presentation: https://my.compscicenter.ru/media/projects/2019-spring/758/presentations/participants.pdf
+
 Project workflow: https://drive.google.com/open?id=17oQAuMJ0vmDgzucGxJT_xgQBCkLEio3HIeG_sfgMtcc
 
 ## Prerequisites
@@ -25,12 +26,13 @@ Project workflow: https://drive.google.com/open?id=17oQAuMJ0vmDgzucGxJT_xgQBCkLE
     pg_ctl -D /usr/local/var/postgres -l /usr/local/var/postgres/server.log start
     ```
 
-2. Run `psql` to create a user and a database in PostgreSQL:
+2. Run `psql` to create a user and two databases (second is for testing) in PostgreSQL:
 
    ```
    CREATE ROLE biolabs WITH PASSWORD 'pubtrends';
    ALTER ROLE "biolabs" WITH LOGIN;
-   CREATE DATABASE pubmed OWNER biolabs; 
+   CREATE DATABASE pubmed OWNER biolabs;
+   CREATE DATABASE pubmed_test OWNER biolabs;
    ```
    
 3. Copy and modify `config.properties_examples` to `~/.pubtrends/config.properties`. 
@@ -43,6 +45,10 @@ Ensure that file contains correct information about the database (url, port, DB 
    username = biolabs
    password = pubtrends
    collectStats = true
+   
+   ...
+
+   test_database = pubmed_test
    ```
 `collectStats` option is used to count number of XML tag occurrences (useful for development)
 

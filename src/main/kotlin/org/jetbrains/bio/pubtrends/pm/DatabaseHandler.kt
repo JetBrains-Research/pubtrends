@@ -8,7 +8,7 @@ import org.jetbrains.exposed.sql.statements.expandArgs
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
 
-class PostgresqlDatabaseHandler(
+open class PostgresqlDatabaseHandler(
         url: String,
         port: Int,
         database: String,
@@ -54,19 +54,19 @@ class PostgresqlDatabaseHandler(
 
             PMPublications.batchInsertOnDuplicateKeyUpdate(articles,
                     listOf(PMPublications.year, PMPublications.title, PMPublications.abstract)) { batch, article ->
-                batch[PMPublications.pmid] = article.pmid
-                batch[PMPublications.year] = article.year
-                batch[PMPublications.title] = article.title.take(PUBLICATION_MAX_TITLE_LENGTH)
+                batch[pmid] = article.pmid
+                batch[year] = article.year
+                batch[title] = article.title.take(PUBLICATION_MAX_TITLE_LENGTH)
                 if (article.abstractText != "") {
-                    batch[PMPublications.abstract] = article.abstractText
+                    batch[abstract] = article.abstractText
                 }
 
-                batch[PMPublications.keywords] = article.keywordList.joinToString(separator = ", ")
-                batch[PMPublications.mesh] = article.meshHeadingList.joinToString(separator = ", ")
+                batch[keywords] = article.keywordList.joinToString(separator = ", ")
+                batch[mesh] = article.meshHeadingList.joinToString(separator = ", ")
 
-                batch[PMPublications.type] = article.type
-                batch[PMPublications.doi] = article.doi
-                batch[PMPublications.aux] = article.auxInfo
+                batch[type] = article.type
+                batch[doi] = article.doi
+                batch[aux] = article.auxInfo
             }
 
             PMCitations.batchInsert(citationsForArticle, ignore = true) { citation ->
