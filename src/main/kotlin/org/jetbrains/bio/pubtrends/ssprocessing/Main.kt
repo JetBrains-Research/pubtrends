@@ -50,11 +50,11 @@ fun main() {
 
     transaction {
         addLogger(StdOutSqlLogger)
-//        SchemaUtils.drop(SSPublications, SSCitations, SSKeywords, SSKeywordsPublications)
+//        SchemaUtils.drop(SSPublications, SSCitations)
 //        exec("DROP TYPE Source;")
-
+//
         exec("CREATE TYPE Source AS ENUM ('Nature', 'Arxiv');")
-        SchemaUtils.create(SSPublications, SSCitations, SSKeywords, SSKeywordsPublications)
+        SchemaUtils.create(SSPublications, SSCitations)
     }
     logger.info("Parse archive to database")
 
@@ -82,7 +82,6 @@ fun main() {
         ArchiveParser(it, config["batchSize"].toString().toInt()).parse()
         logger.info("Finished parsing articles $it")
         BufferedWriter(FileWriter(ssTSV.toFile())).use { br ->
-//            println(it)
             br.write("lastSSId\t${it.toString().takeLast(2)}")
         }
     }

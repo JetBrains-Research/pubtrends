@@ -22,7 +22,7 @@ class SSParserTest {
         assertEquals(first.abstract, second.abstract, "${second.abstract}: Wrong abstract")
         assertEquals(first.year, second.year, "${second.year}: Wrong year")
         assertEquals(first.doi, second.doi, "${second.doi}: Wrong doi")
-        assertEquals(first.keywordList, second.keywordList, "${second.keywordList}: Wrong Keyword List")
+        assertEquals(first.keywords, second.keywords, "${second.keywords}: Wrong Keywords")
         assertEquals(first.source, second.source, "${second.source}: Wrong source")
         assertEquals(first.aux, second.aux, "${second.aux}: Wrong aux")
         assertEquals(first.citationList, second.citationList, "${second.citationList}: Wrong List Of Citations")

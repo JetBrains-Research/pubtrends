@@ -5,12 +5,15 @@ import com.google.gson.reflect.TypeToken
 import org.apache.logging.log4j.LogManager
 import java.io.File
 import java.util.*
+import java.util.zip.CRC32
+import javax.xml.bind.DatatypeConverter
 
 
 class ArchiveParser(
         private val archiveFile: File,
         private var batchSize: Int,
-        private val addToDatabase: Boolean = true
+        private val addToDatabase: Boolean = true,
+        private val crc32: CRC32 = CRC32()
 ) {
     val currentArticles: MutableList<SemanticScholarArticle> = mutableListOf()
     private var batchIndex = 0
@@ -56,7 +59,8 @@ class ArchiveParser(
                 if (curArticle.doi == "") curArticle.doi = null
                 curArticle.abstract = jsonObject.get("paperAbstract")?.asString
                 if (curArticle.abstract == "") curArticle.abstract = null
-                curArticle.keywordList = extractList(jsonObject.get("entities")).filter { keyword -> keyword.length < SS_KEYWORD_MAX_LENGTH }
+                curArticle.keywords = deleteBoundarySymbol(jsonObject.get("entities").toString()
+                        .replace("\"", ""), '[', ']')
 
                 if (jsonObject.get("year") == null) {
                     curArticle.year = null
@@ -73,6 +77,9 @@ class ArchiveParser(
                 curArticle.aux = ArticleAuxInfo(authors, journal, links, venue)
                 curArticle.source = getSource(journal, venue, links.pdfUrls)
 
+                crc32.update(DatatypeConverter.parseHexBinary(curArticle.ssid))
+                curArticle.crc32id = crc32.value.toInt()
+                crc32.reset()
 
                 addArticleToBatch(curArticle)
             }
@@ -112,9 +119,9 @@ class ArchiveParser(
         return null
     }
 
-    private fun deleteQuotes(str: String): String? {
+    private fun deleteBoundarySymbol(str: String, left: Char, right: Char = left): String? {
         if (str.isEmpty()) return null
-        if (str.first() == '\"' && str.last() == '\"')
+        if (str.first() == left && str.last() == right)
             return str.substring(1, str.length - 1)
 
         return str
@@ -123,7 +130,7 @@ class ArchiveParser(
     private fun extractList(listJson: JsonElement?): List<String> {
         val itemsType = object : TypeToken<List<String>>() {}.type
         val list = Gson().fromJson<List<String>>(listJson, itemsType) ?: return listOf()
-        return list.mapNotNull { quoted -> deleteQuotes(quoted) }
+        return list.mapNotNull { quoted -> deleteBoundarySymbol(quoted, '\"') }
     }
 
     private fun extractPmid(pmidJson: JsonElement?): Int? { //переделать
@@ -132,7 +139,7 @@ class ArchiveParser(
         val startIndex = 1
         if (index == -1) {
             if (pmidString.length > 2)
-                return deleteQuotes(pmidString)?.toInt()
+                return deleteBoundarySymbol(pmidString, '\"')?.toInt()
 
             return null
         }

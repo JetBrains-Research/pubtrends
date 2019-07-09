@@ -7,21 +7,26 @@ import org.postgresql.util.PGobject
 
 internal const val MAX_ID_LENGTH = 40
 internal const val MAX_DOI_LENGTH = 100
-internal const val SS_KEYWORD_MAX_LENGTH = 30
 
 internal val jsonMapper = ObjectMapper()
 
 object SSPublications : Table() {
-    val ssid = varchar("ssid", MAX_ID_LENGTH) //.primaryKey()
+    val ssid = varchar("ssid", MAX_ID_LENGTH)
+    val crc32id = integer("crc32id")
     val pmid = integer("pmid").nullable()
     val title = varchar("title", PUBLICATION_MAX_TITLE_LENGTH)
     val abstract = text("abstract").nullable()
+    val keywords = text("keywords").nullable()
     val year = integer("year").nullable()
     val doi = varchar("doi", MAX_DOI_LENGTH).nullable()
     val aux = jsonb("aux", ArticleAuxInfo::class.java, jsonMapper)
 
     val sourceEnum = customEnumeration("source", "Source",
             { value -> PublicationSource.valueOf(value as String) }, { PGEnum("Source", it) }).nullable()
+
+    init {
+        index(false, crc32id)
+    }
 }
 
 
@@ -41,25 +46,7 @@ object SSCitations : Table() {
     val id_out = varchar("id_out", MAX_ID_LENGTH) // from
     val id_in = varchar("id_in", MAX_ID_LENGTH) // to
 
-    init {
-        index(true, id_in, id_out)
-    }
-}
-
-
-object SSKeywords : Table() {
-    val id = integer("id").primaryKey().autoIncrement()
-    val keyword = varchar("keyword", SS_KEYWORD_MAX_LENGTH).uniqueIndex()
-
 //    init {
-//        index(true, keyword)
-//    }
-}
-
-object SSKeywordsPublications : Table() {
-    val sspid = varchar("sspid", MAX_ID_LENGTH)
-    val sskid = integer("sskid")
-//    init {
-//        index(true, pmid, keywordId)
+//        index(true, id_in, id_out)
 //    }
 }

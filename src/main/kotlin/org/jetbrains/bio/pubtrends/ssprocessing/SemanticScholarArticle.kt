@@ -23,7 +23,8 @@ data class SemanticScholarArticle(var ssid: String) {
     var abstract: String? = null
     var year: Int? = null
     var doi: String? = null
-    var keywordList: List<String> = mutableListOf()
+    var keywords: String? = null
     var source: PublicationSource? = null
     var aux: ArticleAuxInfo = ArticleAuxInfo()
+    var crc32id: Int = 0
 }

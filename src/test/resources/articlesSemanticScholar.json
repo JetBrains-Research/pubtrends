@@ -54,13 +54,16 @@
   "sources": ["Medline"],
   "doiUrl": "",
   "venue": "Canadian journal of ophthalmology. Journal canadien d'ophtalmologie"}
-{"id": "gjj4fv5jx6g89shhgf342ig345s678",
+{"entities": "",
+  "id": "2430c97f1aa9c8036702f8f9686d7056a58775fa",
   "pmid": "8548282",
   "outCitations": [],
   "title": "Knowledge-rich, computer-assisted composition of Chinese couplets"}
-{"id": "eyu6d7f6s8dg68sgkhskfsfk4l6j37sg8",
+{"entities":"",
+  "id": "585c33b4e6b4613e6403ccd16516c335d36ab2c7",
   "pmid": "",
   "outCitations": [],
-  "title" : "Article with id and title"}
+  "title" : "Article from ArXiv with id and title",
+  "pdfUrls": ["http://arxiv.org/pdf/cond-mat/0606534v1.pdf"]}
 {}
-{"id": "sgf476fd78klhaj"}
+{"id": "bd391353a350c3b912592a8159caf55c87d552d3"}

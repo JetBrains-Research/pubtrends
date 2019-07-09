@@ -11,7 +11,7 @@ object SemanticScholarArticles {
         title = "Primary Debulking Surgery Versus Neoadjuvant Chemotherapy in Stage IV Ovarian Cancer"
         year = 2011
         doi = "10.1245/s10434-011-2100-x"
-        keywordList = mutableListOf()
+        keywords = ""
         source = null
         aux = ArticleAuxInfo(journal = Journal(name = "Annals of Surgical Oncology", volume = "19", pages = "959-965"),
                 authors = mutableListOf(Author(name = "Jose Alejandro Rauh-Hain")),
@@ -27,7 +27,7 @@ object SemanticScholarArticles {
                 "347259c8a6e3aa72411cf51c4c90e8a0261dd100", "9124c0d40c07e2218cb35355daa2c8c0ae2c6e11")
         title = "Lipid transport function of lipoproteins in flying insects."
         year = 1990
-        keywordList = mutableListOf("Lipid Transport", "Lipoproteins")
+        keywords = "Lipid Transport,Lipoproteins"
         source = null
         aux = ArticleAuxInfo(journal = Journal(name = "Biochimica et biophysica acta", volume = "1047 3", pages = "195-211"),
                 authors = mutableListOf(Author(name = "Dick J van der Horst")),
@@ -42,7 +42,7 @@ object SemanticScholarArticles {
                 "bd391353a350c3b912592a8159caf55c87d552d3")
         title = "Acute spastic entropion."
         year = 1976
-        keywordList = mutableListOf("Spastic entropion")
+        keywords = "Spastic entropion"
         source = null
         aux = ArticleAuxInfo(journal = Journal(name = "Canadian journal of ophthalmology. Journal canadien d'ophtalmologie",
                 volume = "11 4", pages = "346"),
@@ -53,14 +53,16 @@ object SemanticScholarArticles {
 
     }
 
-    val article4 = SemanticScholarArticle("gjj4fv5jx6g89shhgf342ig345s678").apply {
+    val article4 = SemanticScholarArticle("2430c97f1aa9c8036702f8f9686d7056a58775fa").apply {
         pmid = 8548282
         title = "Knowledge-rich, computer-assisted composition of Chinese couplets"
 
     }
 
-    val article5 = SemanticScholarArticle("eyu6d7f6s8dg68sgkhskfsfk4l6j37sg8").apply {
-        title = "Article with id and title"
+    val article5 = SemanticScholarArticle("585c33b4e6b4613e6403ccd16516c335d36ab2c7").apply {
+        title = "Article from ArXiv with id and title"
+        aux = ArticleAuxInfo(links = Links(pdfUrls = listOf("http://arxiv.org/pdf/cond-mat/0606534v1.pdf")))
+        source = PublicationSource.Arxiv
     }
 
 }
