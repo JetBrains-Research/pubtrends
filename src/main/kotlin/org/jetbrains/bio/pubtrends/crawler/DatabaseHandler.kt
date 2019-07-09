@@ -51,7 +51,7 @@ class PostgresqlDatabaseHandler(
         transaction {
             addLogger(Log4jSqlLogger)
 
-            Publications.batchInsertOnDuplicateKeyUpdate(articles,
+            Publications.batchInsertOnDuplicateKeyUpdate(articles, Publications.pmid,
                     listOf(Publications.year, Publications.title, Publications.abstract)) { batch, article ->
                 batch[Publications.pmid] = article.pmid
                 batch[Publications.year] = article.year
@@ -92,11 +92,12 @@ class PostgresqlDatabaseHandler(
 
 class BatchInsertUpdateOnDuplicate(
         table: Table,
+        private val conflictColumn: Column<*>,
         private val onDupUpdate: List<Column<*>>
 ) : BatchInsertStatement(table, false) {
     override fun prepareSQL(transaction: Transaction): String {
         val onUpdateSQL = if (onDupUpdate.isNotEmpty()) {
-            " ON CONFLICT (pmid) DO UPDATE SET ${
+            " ON CONFLICT (${conflictColumn.name}) DO UPDATE SET ${
             onDupUpdate.joinToString {
                 "${transaction.identity(it)} = Excluded.${transaction.identity(it)}"
             }}"
@@ -107,10 +108,11 @@ class BatchInsertUpdateOnDuplicate(
 
 fun <T : Table, E> T.batchInsertOnDuplicateKeyUpdate(
         data: List<E>,
+        conflictColumn: Column<*>,
         onDupUpdateColumns: List<Column<*>>, body: T.(BatchInsertUpdateOnDuplicate, E) -> Unit
 ): List<Int> {
     return data.takeIf { it.isNotEmpty() }?.let {
-        val insert = BatchInsertUpdateOnDuplicate(this, onDupUpdateColumns)
+        val insert = BatchInsertUpdateOnDuplicate(this, conflictColumn, onDupUpdateColumns)
         data.forEach {
             insert.addBatch()
             body(insert, it)

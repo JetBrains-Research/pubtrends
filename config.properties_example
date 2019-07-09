@@ -11,3 +11,6 @@ password = pubtrends
 batchSize = 1000
 parserLimit = 0
 collectStats = true
+
+# Archive Folder path, please paste correct path
+archive_folder_path = <PATH_TO_SEMANTIC_SCHOLAR_ARCHIVE>
