@@ -102,5 +102,5 @@ Ensure that file contains correct information about the database (url, port, DB 
 5. Launch Semantic Scholar Processor
  
     ```
-    build/libs/crawler-dev.jar org.jetbrains.bio.pubtrends.ssprocessing.MainKt
+    java -cp build/libs/crawler-dev.jar org.jetbrains.bio.pubtrends.ssprocessing.MainKt
     ```
