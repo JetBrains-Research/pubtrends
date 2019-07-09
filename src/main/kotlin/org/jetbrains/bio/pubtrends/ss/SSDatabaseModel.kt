@@ -2,6 +2,9 @@ package org.jetbrains.bio.pubtrends.ss
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.jetbrains.bio.pubtrends.crawler.PUBLICATION_MAX_TITLE_LENGTH
+import org.jetbrains.bio.pubtrends.ss.SSPublications.crc32id
+import org.jetbrains.bio.pubtrends.ss.SSPublications.keywords
+import org.jetbrains.bio.pubtrends.ss.SSPublications.ssid
 import org.jetbrains.exposed.sql.Table
 import org.postgresql.util.PGobject
 
@@ -10,10 +13,13 @@ internal const val MAX_DOI_LENGTH = 100
 
 internal val jsonMapper = ObjectMapper()
 
-/*
-    "ssid" is hex identifier produced by Semantic Scholar
-    "crc32id" is ssid encoded by crc32, non-unique identifier that is used for table index
-*/
+/**
+ * Table for storing Semantic Scholar Publications.
+ *
+ * @property ssid hex identifier produced by Semantic Scholar
+ * @property crc32id ssid encoded by crc32, non-unique identifier that is used for the table index
+ * @property keywords comma separated keywords
+ */
 object SSPublications : Table() {
     val ssid = varchar("ssid", MAX_ID_LENGTH)
     val crc32id = integer("crc32id")
@@ -47,10 +53,6 @@ class PGEnum<T : Enum<T>>(enumTypeName: String, enumValue: T?) : PGobject() {
 }
 
 object SSCitations : Table() {
-    val id_out = varchar("id_out", MAX_ID_LENGTH) // from
-    val id_in = varchar("id_in", MAX_ID_LENGTH) // to
-
-//    init {
-//        index(true, id_in, id_out)
-//    }
+    val id_out = varchar("id_out", MAX_ID_LENGTH)
+    val id_in = varchar("id_in", MAX_ID_LENGTH)
 }

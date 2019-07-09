@@ -7,10 +7,10 @@ data class Author(var name: String = "")
 data class Journal(var name: String = "", var volume: String = "", var pages: String = "")
 
 
-data class Links(var s2Url: String = "", var s2PdfUrl: String = "", var pdfUrls: List<String> = mutableListOf())
+data class Links(var s2Url: String = "", var s2PdfUrl: String = "", var pdfUrls: List<String> = listOf())
 
 
-data class ArticleAuxInfo(val authors: MutableList<Author> = mutableListOf(),
+data class ArticleAuxInfo(val authors: List<Author> = listOf(),
                           val journal: Journal = Journal(),
                           val links: Links = Links(),
                           val venue: String = "")

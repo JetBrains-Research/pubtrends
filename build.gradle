@@ -44,7 +44,8 @@ project(':') {
         compile 'net.sf.jopt-simple:jopt-simple:5.0.4'
 
         compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.9'
-        
+        compile group: 'javax.xml.bind', name: 'jaxb-api', version: '2.1'
+
         testCompile 'junit:junit:4.+'
         testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
     }

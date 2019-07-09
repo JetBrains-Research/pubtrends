@@ -78,9 +78,9 @@ class ArchiveParser(
                 val aux = ArticleAuxInfo(authors, journal, links, venue)
                 val source = getSource(journal, venue, links.pdfUrls)
 
+                crc32.reset()
                 crc32.update(DatatypeConverter.parseHexBinary(ssid))
                 val crc32id = crc32.value.toInt()
-                crc32.reset()
 
                 curArticle = SemanticScholarArticle(ssid = ssid, crc32id = crc32id, title = title,
                         pmid = pmid, doi = doi, abstract = abstract, keywords = keywords, year = year,
@@ -131,22 +131,16 @@ class ArchiveParser(
     }
 
     private fun extractPmid(pmidString: String): Int? {
-        val index = pmidString.indexOf("v") // version number is not needed
-        if (index == -1) {
-            val pmid = pmidString.removeSurrounding("\"")
-            if (pmid.isEmpty())
-                return null
+        val pmidWithoutVersion = pmidString.substringBefore("v")
+        if (pmidWithoutVersion.isEmpty())
+            return null
 
-            return pmid.toInt()
-        }
-
-        return pmidString.substring(0, index).toInt()
+        return pmidWithoutVersion.toInt()
     }
 
-    private fun extractAuthors(authorsJson: JsonElement?): MutableList<Author> {
-        val authors = authorsJson?.asJsonArray ?: return mutableListOf()
-        val names = authors.map { author -> Author(author.asJsonObject.get("name").asString) }
-        return names as MutableList<Author>
+    private fun extractAuthors(authorsJson: JsonElement?): List<Author> {
+        val authors = authorsJson?.asJsonArray ?: return listOf()
+        return authors.map { author -> Author(author.asJsonObject.get("name").asString) }
     }
 
     private fun extractLinks(articleJson: JsonObject): Links {

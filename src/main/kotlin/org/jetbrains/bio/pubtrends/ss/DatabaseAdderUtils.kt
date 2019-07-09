@@ -7,7 +7,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 object DatabaseAdderUtils {
     private val logger = LogManager.getLogger(DatabaseAdderUtils::class)
 
-    fun addArticles(articles: MutableList<SemanticScholarArticle>) {
+    fun addArticles(articles: List<SemanticScholarArticle>) {
         val citationsList = articles.map { it.citationList.distinct().map { cit -> it.ssid to cit } }.flatten()
 
         transaction {
