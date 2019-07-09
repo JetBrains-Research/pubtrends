@@ -2,11 +2,13 @@ package org.jetbrains.bio.pubtrends.ss
 
 import com.google.gson.*
 import com.google.gson.reflect.TypeToken
+import org.apache.commons.codec.binary.Hex
 import org.apache.logging.log4j.LogManager
+import org.jetbrains.exposed.sql.batchInsert
+import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
 import java.util.*
 import java.util.zip.CRC32
-import javax.xml.bind.DatatypeConverter
 
 
 class ArchiveParser(
@@ -79,7 +81,7 @@ class ArchiveParser(
                 val source = getSource(journal, venue, links.pdfUrls)
 
                 crc32.reset()
-                crc32.update(DatatypeConverter.parseHexBinary(ssid))
+                crc32.update(Hex.decodeHex(ssid.toCharArray()))
                 val crc32id = crc32.value.toInt()
 
                 curArticle = SemanticScholarArticle(ssid = ssid, crc32id = crc32id, title = title,
@@ -93,7 +95,7 @@ class ArchiveParser(
     }
 
     private fun storeBatch() {
-        DatabaseAdderUtils.addArticles(currentArticles)
+        addArticles(currentArticles)
         currentArticles.clear()
         batchIndex++
         logger.info("Finished batch $batchIndex adding ($archiveFile)")
@@ -110,6 +112,30 @@ class ArchiveParser(
 
         if (currentArticles.size == batchSize && addToDatabase) {
             storeBatch()
+        }
+    }
+
+    private fun addArticles(articles: List<SemanticScholarArticle>) {
+        val citationsList = articles.map { it.citationList.distinct().map { cit -> it.ssid to cit } }.flatten()
+
+        transaction {
+            SSPublications.batchInsert(articles, ignore = true) { article ->
+                this[SSPublications.ssid] = article.ssid
+                this[SSPublications.pmid] = article.pmid
+                this[SSPublications.abstract] = article.abstract
+                this[SSPublications.keywords] = article.keywords
+                this[SSPublications.title] = article.title
+                this[SSPublications.year] = article.year
+                this[SSPublications.doi] = article.doi
+                this[SSPublications.sourceEnum] = article.source
+                this[SSPublications.aux] = article.aux
+                this[SSPublications.crc32id] = article.crc32id
+            }
+
+            SSCitations.batchInsert(citationsList, ignore = true) { citation ->
+                this[SSCitations.id_out] = citation.first
+                this[SSCitations.id_in] = citation.second
+            }
         }
     }
 

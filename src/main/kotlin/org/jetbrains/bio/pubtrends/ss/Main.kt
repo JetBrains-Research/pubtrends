@@ -1,7 +1,7 @@
 package org.jetbrains.bio.pubtrends.ss
 
 import org.apache.logging.log4j.LogManager
-import org.jetbrains.bio.pubtrends.crawler.PostgresqlDatabaseHandler
+import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.StdOutSqlLogger
 import org.jetbrains.exposed.sql.addLogger
@@ -37,14 +37,18 @@ fun main() {
 
 
     logger.info("Init database connection")
-    val resetDatabase = false
-    val dbHandler = PostgresqlDatabaseHandler(
-            config["url"].toString(),
-            config["port"].toString().toInt(),
-            config["database"].toString(),
-            config["username"].toString(),
-            config["password"].toString(),
-            resetDatabase)
+
+    val url = config["url"].toString()
+    val port = config["port"].toString().toInt()
+    val database = config["database"].toString()
+    val user = config["username"].toString()
+    val password = config["password"].toString()
+
+    Database.connect(
+            url = "jdbc:postgresql://$url:$port/$database",
+            driver = "org.postgresql.Driver",
+            user = user,
+            password = password)
 
     logger.info("Create SS tables")
     val dropTable = false
