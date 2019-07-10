@@ -64,11 +64,11 @@ project(':') {
     }
 
     version = 'dev'
-    mainClassName = "org.jetbrains.bio.pubtrends.MainKt"
+    mainClassName = "org.jetbrains.bio.pubtrends.pm.MainKt"
     applicationDefaultJvmArgs = ["-Xmx32G"]
 
     shadowJar {
-        baseName = 'pm-crawler'
+        baseName = 'crawler'
         classifier = ''
     }
 
