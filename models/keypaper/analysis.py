@@ -116,7 +116,7 @@ class KeyPaperAnalyzer:
         CREATE UNIQUE INDEX temp_pmids_unique_index ON TEMP_PMIDS USING btree (pmid);
 
         SELECT P.pmid, P.title, P.abstract, P.year 
-        FROM Publications P
+        FROM PMPublications P
         JOIN TEMP_PMIDS AS T ON (P.pmid = T.pmid);
         ''')
         self.logger.info('Creating pmids table for request with index.')
@@ -132,13 +132,13 @@ class KeyPaperAnalyzer:
 
         values = ', '.join(['({})'.format(i) for i in sorted(self.pmids)])
         query = re.sub('\$VALUES\$', values, '''
-        SELECT C.pmid_cited AS pmid, P.year, COUNT(1) AS count
-        FROM Citations C
-        JOIN (VALUES $VALUES$) AS CT(pmid) ON (C.pmid_cited = CT.pmid)
-        JOIN Publications P
-        ON C.pmid_citing = P.pmid
+        SELECT C.pmid_in AS pmid, P.year, COUNT(1) AS count
+        FROM PMCitations C
+        JOIN (VALUES $VALUES$) AS CT(pmid) ON (C.pmid_in = CT.pmid)
+        JOIN PMPublications P
+        ON C.pmid_out = P.pmid
         WHERE P.year > 0
-        GROUP BY C.pmid_cited, P.year;
+        GROUP BY C.pmid_in, P.year;
         ''')
 
         with self.conn:
@@ -165,10 +165,10 @@ class KeyPaperAnalyzer:
 
         values = ', '.join(['({})'.format(i) for i in sorted(self.pmids)])
         query = re.sub('\$VALUES\$', values, '''
-        SELECT C.pmid_cited, C.pmid_citing
-        FROM Citations C
-        JOIN (VALUES $VALUES$) AS CT(pmid) ON (C.pmid_cited = CT.pmid)
-        JOIN (VALUES $VALUES$) AS CT2(pmid) ON (C.pmid_citing = CT2.pmid);
+        SELECT C.pmid_in, C.pmid_out
+        FROM PMCitations C
+        JOIN (VALUES $VALUES$) AS CT(pmid) ON (C.pmid_in = CT.pmid)
+        JOIN (VALUES $VALUES$) AS CT2(pmid) ON (C.pmid_out = CT2.pmid);
         ''')
 
         with self.conn:
@@ -191,18 +191,18 @@ class KeyPaperAnalyzer:
 
         # Use unfolding to pairs on the client side instead of DataBase
         query = '''
-        with Z as (select pmid_citing, pmid_cited
-            from citations
+        with Z as (select pmid_out, pmid_in
+            from PMCitations
             -- Hack to make Postgres use index!
-            where pmid_cited between (select min(pmid) from TEMP_PMIDS) and (select max(pmid) from TEMP_PMIDS)
-            and pmid_cited in (select pmid from TEMP_PMIDS)),
-        X as (select pmid_citing, array_agg(pmid_cited) as cited_list
+            where pmid_in between (select min(pmid) from TEMP_PMIDS) and (select max(pmid) from TEMP_PMIDS)
+            and pmid_in in (select pmid from TEMP_PMIDS)),
+        X as (select pmid_out, array_agg(pmid_in) as cited_list
             from Z
-            group by pmid_citing
+            group by pmid_out
             having count(*) >= 2)
-        select X.pmid_citing, P.year, X.cited_list from
-            X join publications P
-            on pmid_citing = P.pmid;
+        select X.pmid_out, P.year, X.cited_list from
+            X join PMPublications P
+            on pmid_out = P.pmid;
         '''
 
         with self.conn:

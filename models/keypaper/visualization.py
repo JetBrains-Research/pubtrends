@@ -343,7 +343,7 @@ class Plotter:
             pmid = dropdown.value
             data = self.analyzer.df[self.analyzer.df['pmid'] == pmid]
 
-            x = data.columns[3:-3].values.astype(int)
+            x = data.columns[4:-3].values.astype(int)
             y = data[x].values[0]
 
             bar.data_source.data = {'x': x, 'y': y}
