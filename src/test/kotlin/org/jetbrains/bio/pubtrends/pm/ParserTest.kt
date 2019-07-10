@@ -1,119 +1,258 @@
 package org.jetbrains.bio.pubtrends.pm
 
+import org.junit.AfterClass
 import org.junit.Test
 import java.io.File
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class ParserTest {
     companion object {
         private val dbHandler = MockDBHandler()
         private val parser = PubmedXMLParser(dbHandler, 0, 1000)
-    }
+        private val testXMLFileName = "articlesForParserTest.xml"
 
-    private fun parserFileSetup(name : String) : String {
-        this::class.java.classLoader.getResourceAsStream(name)?.use {
-            val file = createTempFile()
-            file.outputStream().use {out ->
-                it.copyTo(out)
+        init {
+            this::class.java.classLoader.getResourceAsStream(testXMLFileName)?.let {
+                val file = createTempFile()
+                file.outputStream().use { out ->
+                    it.copyTo(out)
+                }
+                parser.parse(file.absolutePath)
             }
-            return file.absolutePath
-        }
-        return ""
-    }
-
-    private fun checkEquality(first: PubmedArticle, second: PubmedArticle) {
-        assertEquals(first.pmid, second.pmid, "${second.pmid}: Wrong PMID")
-        assertEquals(first.year, second.year, "${second.pmid}: Wrong year")
-        assertEquals(first.title, second.title, "${second.pmid}: Wrong title")
-        assertEquals(first.abstractText, second.abstractText, "${second.pmid}: Wrong abstract")
-        assertEquals(first.keywordList, second.keywordList, "${second.pmid}: Wrong keyword list")
-        assertEquals(first.citationList, second.citationList, "${second.pmid}: Wrong citation list")
-    }
-
-    private fun checkArticles(articles: List<PubmedArticle>, articlesMap: Map<Int, PubmedArticle>) {
-        var articlesChecked = 0
-
-        assertEquals(articlesMap.size, articles.size, "Wrong number of articles")
-        articles.forEach {
-            checkEquality(articlesMap[it.pmid]!!, it)
-            articlesChecked++
         }
 
-        assertEquals(articlesChecked, articlesMap.size)
-        assertEquals(dbHandler.articlesStored, articlesMap.size)
-    }
+        private val articleMap = parser.articleList.associate { Pair(it.pmid, it) }
 
-    private fun testArticlesForFile(name : String, articlesMap: Map<Int, PubmedArticle>) {
-        val path = parserFileSetup(name)
-        check(path != "") {
-            "Failed to load test file: $name"
+        @AfterClass
+        @JvmStatic
+        fun tearDown() {
+            val testFile = File(testXMLFileName)
+            testFile.delete()
+            assertFalse(testFile.exists())
         }
-        parser.parse(path)
-
-        val articles = parser.articleList
-        checkArticles(articles, articlesMap)
-
-        val testFile = File(path)
-        testFile.delete()
-        assertTrue { !testFile.exists() }
     }
 
     @Test
-    fun testParseFormattedAbstract() {
-        val formattedArticles = mapOf(29736257 to Articles.article29736257,
-                29456534 to Articles.article29456534,
-                20453483 to Articles.article20453483,
-                27654823 to Articles.article27654823,
-                24884411 to Articles.article24884411)
-        testArticlesForFile("articlesWithFormattedAbstract.xml", formattedArticles)
+    fun testParseArticlesCount() {
+        assertEquals(Articles.articles.size, parser.articleList.size)
     }
 
     @Test
-    fun testParseOtherAbstract() {
-        val otherArticles = mapOf(11243089 to Articles.article11243089,
-                11540070 to Articles.article11540070)
-        testArticlesForFile("articlesWithOtherAbstractField.xml", otherArticles)
+    fun testParseArticlePMIDs() {
+        assertEquals(Articles.articles.keys, parser.articleList.map { it.pmid }.toSet())
+    }
+
+    // Year
+
+    @Test
+    fun testParseYear() {
+        assertEquals(Articles.articles[420880]?.year, articleMap[420880]?.year)
     }
 
     @Test
-    fun testParseMedlineDate() {
-        val medlineDateArticles = mapOf(10188493 to Articles.article10188493,
-                14316043 to Articles.article14316043,
-                18122624 to Articles.article18122624)
-        testArticlesForFile("articlesWithMedlineDateField.xml", medlineDateArticles)
+    fun testParseYearFromMedlineDateField() {
+        listOf(10188493, 14316043, 18122624).forEach {
+            assertEquals(Articles.articles[it]?.year, articleMap[it]?.year)
+        }
+    }
+
+    // Publication Type
+    @Test
+    fun testParsePublicationType() {
+        listOf(420880, 11540070, 11243089).forEach {
+            assertEquals(Articles.articles[it]?.type, articleMap[it]?.type)
+        }
+    }
+
+    // Title
+
+    @Test
+    fun testParseArticleTitleWithSpecialSymbols() {
+        assertEquals(Articles.articles[420880]?.title, articleMap[420880]?.title)
     }
 
     @Test
-    fun testParseTitles() {
-        val titlesArticles = mapOf(420880 to Articles.article420880,
-                29391692 to Articles.article29391692)
-        testArticlesForFile("articlesWithExtraordinaryTitle.xml", titlesArticles)
+    fun testParseArticleTitleWithInnerXMLTags() {
+        assertEquals(Articles.articles[29391692]?.title, articleMap[29391692]?.title)
     }
+
+    // Abstract
+
+    @Test
+    fun testParseNoAbstract() {
+        assertEquals("", articleMap[420880]?.abstractText)
+    }
+
+    @Test
+    fun testParseAbstractWithInnerXMLTags() {
+        listOf(29736257, 29456534).forEach {
+            assertEquals(Articles.articles[it]?.abstractText, articleMap[it]?.abstractText)
+        }
+    }
+
+    @Test
+    fun testParseStructuredAbstract() {
+        listOf(20453483, 27654823, 24884411).forEach {
+            assertEquals(Articles.articles[it]?.abstractText, articleMap[it]?.abstractText)
+        }
+    }
+
+    @Test
+    fun testParseOtherAbstractField() {
+        listOf(11243089, 11540070).forEach {
+            assertEquals(Articles.articles[it]?.abstractText, articleMap[it]?.abstractText)
+        }
+    }
+
+    // Keywords
+
+    @Test
+    fun testParseNoKeywords() {
+        assertTrue(articleMap[420880]?.keywordList?.isEmpty() ?: false)
+    }
+
+    @Test
+    fun testParseKeywordCount() {
+        assertEquals(Articles.articles[29456534]?.keywordList?.size, articleMap[29456534]?.keywordList?.size)
+    }
+
+    @Test
+    fun testParseKeywords() {
+        listOf(29456534, 14316043, 18122624).forEach {
+            assertEquals(Articles.articles[it]?.keywordList, articleMap[it]?.keywordList)
+        }
+    }
+
+    // MeSH
+    @Test
+    fun testParseNoMeSH() {
+        assertTrue(articleMap[29391692]?.meshHeadingList?.isEmpty() ?: false)
+    }
+
+    @Test
+    fun testParseMeSHCount() {
+        assertEquals(Articles.articles[420880]?.meshHeadingList?.size, articleMap[420880]?.meshHeadingList?.size)
+    }
+
+    @Test
+    fun testParseMeSH() {
+        assertEquals(Articles.articles[420880]?.meshHeadingList, articleMap[420880]?.meshHeadingList)
+    }
+
+    // Citations
+
+    @Test
+    fun testParseNoCitations() {
+        assertTrue(articleMap[420880]?.citationList?.isEmpty() ?: false)
+    }
+
+    @Test
+    fun testParseCitationCount() {
+        assertEquals(Articles.articles[24884411]?.citationList?.size, articleMap[24884411]?.citationList?.size)
+    }
+
+    @Test
+    fun testParseCitationPMIDs() {
+        assertEquals(Articles.articles[24884411]?.citationList, articleMap[24884411]?.citationList)
+    }
+
+    // Databanks
+
+    @Test
+    fun testParseNoDatabanks() {
+        assertTrue(Articles.articles[24884411]?.auxInfo?.databanks?.isEmpty() ?: false)
+    }
+
+    @Test
+    fun testParseDatabankCount() {
+        assertEquals(Articles.articles[420880]?.auxInfo?.databanks?.size, articleMap[420880]?.auxInfo?.databanks?.size)
+    }
+
+    @Test
+    fun testParseDatabankNames() {
+        assertEquals(Articles.articles[420880]?.auxInfo?.databanks?.map { it.name },
+                articleMap[420880]?.auxInfo?.databanks?.map { it.name })
+    }
+
+    @Test
+    fun testParseAccessionNumberCount() {
+        assertEquals(Articles.articles[420880]?.auxInfo?.databanks?.map { it.accessionNumber.size },
+                articleMap[420880]?.auxInfo?.databanks?.map { it.accessionNumber.size })
+    }
+
+    @Test
+    fun testParseAccessionNumbers() {
+        assertEquals(Articles.articles[420880]?.auxInfo?.databanks?.map { it.accessionNumber },
+                articleMap[420880]?.auxInfo?.databanks?.map { it.accessionNumber })
+    }
+
+    // Authors
+
+    @Test
+    fun testParseNoAuthors() {
+        assertTrue(Articles.articles[420880]?.auxInfo?.authors?.isEmpty() ?: false)
+    }
+
+    @Test
+    fun testParseAuthorCount() {
+        assertEquals(Articles.articles[29456534]?.auxInfo?.authors?.size,
+                articleMap[29456534]?.auxInfo?.authors?.size)
+    }
+
+    @Test
+    fun testParseAuthorNames() {
+        assertEquals(Articles.articles[29456534]?.auxInfo?.authors?.map { it.name },
+                articleMap[29456534]?.auxInfo?.authors?.map { it.name })
+    }
+
+    @Test
+    fun testParseAuthorAffiliationCount() {
+        assertEquals(Articles.articles[29456534]?.auxInfo?.authors?.map { it.affiliation.size },
+                articleMap[29456534]?.auxInfo?.authors?.map { it.affiliation.size })
+    }
+
+    @Test
+    fun testParseAuthorAffiliations() {
+        assertEquals(Articles.articles[29456534]?.auxInfo?.authors?.map { it.affiliation },
+                articleMap[29456534]?.auxInfo?.authors?.map { it.affiliation })
+    }
+
+    // Journal
+
+    @Test
+    fun testParseJournal() {
+        assertEquals(Articles.articles[420880]?.auxInfo?.journal?.name, articleMap[420880]?.auxInfo?.journal?.name)
+    }
+
+    // Language
+    @Test
+    fun testParseLanguage() {
+        assertEquals(Articles.articles[420880]?.auxInfo?.language, articleMap[420880]?.auxInfo?.language)
+    }
+
+    // DOI
+
+    @Test
+    fun testParseNoDOI() {
+        assertEquals("", articleMap[420880]?.doi)
+    }
+
+    @Test
+    fun testParseDOI() {
+        assertEquals(Articles.articles[29391692]?.doi, articleMap[29391692]?.doi)
+    }
+
+    // Deleted articles
 
     @Test
     fun testParseDeleteArticlesCount() {
-        val name = "articlesWithExtraordinaryTitle.xml"
-        val path = parserFileSetup(name)
-        check(path != "") {
-            "Failed to load test file: $name"
-        }
-        parser.parse(path)
-
-        val deletedArticlePMIDList = parser.deletedArticlePMIDList
-        assertEquals(deletedArticlePMIDList.size, 2)
+        assertEquals(2, parser.deletedArticlePMIDList.size)
     }
 
     @Test
     fun testParseDeleteArticlePMIDs() {
-        val name = "articlesWithExtraordinaryTitle.xml"
-        val path = parserFileSetup(name)
-        check(path != "") {
-            "Failed to load test file: $name"
-        }
-        parser.parse(path)
-
-        val deletedArticlePMIDList = parser.deletedArticlePMIDList
-        assertEquals(deletedArticlePMIDList, listOf<Int>(12345, 23456))
+        assertEquals(listOf(12345, 23456), parser.deletedArticlePMIDList)
     }
 }

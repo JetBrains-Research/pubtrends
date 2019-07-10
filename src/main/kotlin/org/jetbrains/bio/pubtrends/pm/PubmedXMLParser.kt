@@ -11,7 +11,7 @@ import javax.xml.stream.XMLInputFactory
 class PubmedXMLParser(
         private val dbHandler: AbstractDBHandler,
         private val parserLimit: Int,
-        private val batchSize: Int
+        private val batchSize: Int = 0
 ) {
     companion object {
         private val logger = LogManager.getLogger(PubmedXMLParser::class)
@@ -49,7 +49,7 @@ class PubmedXMLParser(
 
         const val DATABANK_TAG = "$MEDLINE_CITATION_TAG/Article/DataBankList/DataBank"
         const val DATABANK_NAME_TAG = "$DATABANK_TAG/DataBankName"
-        const val ACCESSION_NUMBER_TAG = "$DATABANK_TAG/AccessionNumber"
+        const val ACCESSION_NUMBER_TAG = "$DATABANK_TAG/AccessionNumberList/AccessionNumber"
 
         const val DOI_TAG = "$PUBMED_DATA_TAG/ArticleIdList/ArticleId"
         const val LANGUAGE_TAG = "$MEDLINE_CITATION_TAG/Article/Language"
@@ -191,7 +191,8 @@ class PubmedXMLParser(
                         try {
                             currentArticle.year = match?.value?.toInt()
                         } catch (e: Exception) {
-//                        logger.warn("Failed to parse MEDLINE date in article ${currentArticle.pmid}: $data")
+                            logger.warn("Failed to parse MEDLINE date in article ${currentArticle.pmid}: " +
+                                    dataElement.data)
                         }
                     }
 
@@ -218,7 +219,7 @@ class PubmedXMLParser(
 
                     // Keywords
                     fullName == KEYWORD_TAG -> {
-                        currentArticle.keywordList.add(dataElement.data)
+                        currentArticle.keywordList.add(dataElement.data.trim().replace(", ", " ").replace('/',' '))
                     }
 
                     // Citations
@@ -237,10 +238,14 @@ class PubmedXMLParser(
 
                     // MeSH
                     fullName == MESH_DESCRIPTOR_TAG -> {
-                        currentMeshHeading = dataElement.data
+                        val descriptor = dataElement.data.replace(", ", " ").replace("[/&]+", " ").trim()
+                        currentMeshHeading = descriptor
+                        logger.debug("${currentArticle.pmid}: MeSH Descriptor <$descriptor> <${currentMeshHeading}>")
                     }
                     fullName == MESH_QUALIFIER_TAG -> {
-                        currentMeshHeading += " ${dataElement.data}"
+                        val qualifier = dataElement.data.replace(", ", " ").replace("[/&]+", " ").trim()
+                        currentMeshHeading += " $qualifier"
+                        logger.debug("${currentArticle.pmid}: MeSH Qualifier <$qualifier> <${currentMeshHeading}>")
                     }
 
                     // Authors
@@ -251,7 +256,7 @@ class PubmedXMLParser(
                         currentAuthor.name += " ${dataElement.data}"
                     }
                     fullName == AUTHOR_AFFILIATION_TAG -> {
-                        currentAuthor.affiliation.add(dataElement.data)
+                        currentAuthor.affiliation.add(dataElement.data.trim(' ', '.'))
                     }
 
                     // Other information - journal title, language, DOI, publication type
@@ -261,7 +266,7 @@ class PubmedXMLParser(
                     fullName == LANGUAGE_TAG -> {
                         currentArticle.auxInfo.language = dataElement.data
                     }
-                    fullName == DOI_TAG -> {
+                    (fullName == DOI_TAG) && (isDOIFound) -> {
                         currentArticle.doi = dataElement.data
                         isDOIFound = false
                     }
@@ -321,7 +326,7 @@ class PubmedXMLParser(
 
                     // Databanks
                     DATABANK_TAG -> {
-                        currentArticle.databankEntryList.add(currentDatabankEntry)
+                        currentArticle.auxInfo.databanks.add(currentDatabankEntry)
                     }
 
                     TITLE_TAG -> {
@@ -347,7 +352,7 @@ class PubmedXMLParser(
             }
 
             // Store articles if reached preferred size of the batch
-            if (articleList.size == batchSize) {
+            if ((batchSize > 0) && (articleList.size == batchSize)) {
                 storeArticles()
                 articleList.clear()
             }

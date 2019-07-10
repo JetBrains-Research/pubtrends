@@ -33,6 +33,8 @@ data class PubmedArticle(var pmid : Int = 0,
                 "Abstract Text" to abstractText,
                 "DOI" to doi,
                 "Keywords" to keywordList.joinToString(separator = ",", prefix = "\"", postfix = "\""),
+                "MesH" to meshHeadingList.joinToString(separator = ",", prefix = "\"", postfix = "\""),
+                "Databanks" to databankEntryList.joinToString(separator = ",", prefix = "\"", postfix = "\""),
                 "Citations" to citationList.joinToString(separator = ",", prefix = "\"", postfix = "\""),
                 "Other information" to auxInfo.toString())
     }

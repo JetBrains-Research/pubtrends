@@ -45,7 +45,7 @@ class DBHandlerTest {
         )
         private val parser = PubmedXMLParser(dbHandler, 0, 1000)
 
-        private val path = "articlesWithFormattedAbstract.xml"
+        private val path = "articlesForDBHandlerTest.xml"
 
         private fun parserFileSetup(name : String) : String {
             this::class.java.classLoader.getResourceAsStream(name)?.use {

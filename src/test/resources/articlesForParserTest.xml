@@ -1,0 +1,2279 @@
+<PubmedArticleSet>
+    <PubmedArticle>
+        <MedlineCitation Status="PubMed-not-MEDLINE" Owner="NLM">
+            <PMID Version="1">29391692</PMID>
+            <DateRevised>
+                <Year>2018</Year>
+                <Month>11</Month>
+                <Day>13</Day>
+            </DateRevised>
+            <Article PubModel="Print-Electronic">
+                <Journal>
+                    <ISSN IssnType="Print">0972-8988</ISSN>
+                    <JournalIssue CitedMedium="Print">
+                        <Volume>10</Volume>
+                        <Issue>12</Issue>
+                        <PubDate>
+                            <Year>2017</Year>
+                            <Month>Dec</Month>
+                        </PubDate>
+                    </JournalIssue>
+                    <Title>Veterinary world</Title>
+                    <ISOAbbreviation>Vet World</ISOAbbreviation>
+                </Journal>
+                <ArticleTitle>Partial purification and characterization of glutathione S-transferase from the somatic tissue of <i>Gastrothylax crumenifer</i> (Trematoda: Digenea).</ArticleTitle>
+                <Pagination>
+                    <MedlinePgn>1493-1500</MedlinePgn>
+                </Pagination>
+                <ELocationID EIdType="doi" ValidYN="Y">10.14202/vetworld.2017.1493-1500</ELocationID>
+                <AuthorList CompleteYN="Y">
+                    <Author ValidYN="Y">
+                        <LastName>Ahmed</LastName>
+                        <ForeName>Sakil</ForeName>
+                        <Initials>S</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>Section of Parasitology, Department of Zoology, Aligarh Muslim University, Aligarh, Uttar Pradesh, India.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Sohail</LastName>
+                        <ForeName>Aamir</ForeName>
+                        <Initials>A</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>Department of Biochemistry, Aligarh Muslim University, Aligarh, Uttar Pradesh, India.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Khatoon</LastName>
+                        <ForeName>Sabiha</ForeName>
+                        <Initials>S</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>Section of Parasitology, Department of Zoology, Aligarh Muslim University, Aligarh, Uttar Pradesh, India.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Khan</LastName>
+                        <ForeName>Shabnam</ForeName>
+                        <Initials>S</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>Section of Parasitology, Department of Zoology, Aligarh Muslim University, Aligarh, Uttar Pradesh, India.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Saifullah</LastName>
+                        <ForeName>Mohammad Khalid</ForeName>
+                        <Initials>MK</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>Section of Parasitology, Department of Zoology, Aligarh Muslim University, Aligarh, Uttar Pradesh, India.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                </AuthorList>
+                <Language>eng</Language>
+                <PublicationTypeList>
+                    <PublicationType UI="D016428">Journal Article</PublicationType>
+                </PublicationTypeList>
+                <ArticleDate DateType="Electronic">
+                    <Year>2014</Year>
+                    <Month>12</Month>
+                    <Day>21</Day>
+                </ArticleDate>
+            </Article>
+            <MedlineJournalInfo>
+                <Country>India</Country>
+                <MedlineTA>Vet World</MedlineTA>
+                <NlmUniqueID>101504872</NlmUniqueID>
+                <ISSNLinking>0972-8988</ISSNLinking>
+            </MedlineJournalInfo>
+        </MedlineCitation>
+        <PubmedData>
+            <History>
+                <PubMedPubDate PubStatus="received">
+                    <Year>2017</Year>
+                    <Month>08</Month>
+                    <Day>19</Day>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="accepted">
+                    <Year>2017</Year>
+                    <Month>11</Month>
+                    <Day>15</Day>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="entrez">
+                    <Year>2018</Year>
+                    <Month>2</Month>
+                    <Day>3</Day>
+                    <Hour>6</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="pubmed">
+                    <Year>2018</Year>
+                    <Month>2</Month>
+                    <Day>3</Day>
+                    <Hour>6</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="medline">
+                    <Year>2018</Year>
+                    <Month>2</Month>
+                    <Day>3</Day>
+                    <Hour>6</Hour>
+                    <Minute>1</Minute>
+                </PubMedPubDate>
+            </History>
+            <PublicationStatus>ppublish</PublicationStatus>
+            <ArticleIdList>
+                <ArticleId IdType="pubmed">29391692</ArticleId>
+                <ArticleId IdType="doi">10.14202/vetworld.2017.1493-1500</ArticleId>
+                <ArticleId IdType="pmc">PMC5771176</ArticleId>
+            </ArticleIdList>
+        </PubmedData>
+    </PubmedArticle>
+    <PubmedArticle>
+        <MedlineCitation Status="In-Process" Owner="NLM">
+            <PMID Version="1">29456534</PMID>
+            <DateRevised>
+                <Year>2018</Year>
+                <Month>11</Month>
+                <Day>20</Day>
+            </DateRevised>
+            <Article PubModel="Electronic-eCollection">
+                <Journal>
+                    <ISSN IssnType="Print">1664-3224</ISSN>
+                    <JournalIssue CitedMedium="Print">
+                        <Volume>9</Volume>
+                        <PubDate>
+                            <Year>2018</Year>
+                        </PubDate>
+                    </JournalIssue>
+                    <Title>Frontiers in immunology</Title>
+                    <ISOAbbreviation>Front Immunol</ISOAbbreviation>
+                </Journal>
+                <ArticleTitle>Critical Role of TGF-β and IL-2 Receptor Signaling in Foxp3 Induction by an Inhibitor of DNA Methylation.</ArticleTitle>
+                <Pagination>
+                    <MedlinePgn>125</MedlinePgn>
+                </Pagination>
+                <ELocationID EIdType="doi" ValidYN="Y">10.3389/fimmu.2018.00125</ELocationID>
+                <Abstract>
+                    <AbstractText>Under physiological conditions, CD4<sup>+</sup> regulatory T (Treg) cells expressing the transcription factor Foxp3 are generated in the thymus [thymus-derived Foxp3<sup>+</sup> Treg (tTregs) cells] and extrathymically at peripheral sites [peripherally induced Foxp3<sup>+</sup> Treg (pTreg) cell], and both developmental subsets play non-redundant roles in maintaining self-tolerance throughout life. In addition, a variety of experimental <i>in vitro</i> and <i>in vivo</i> modalities can extrathymically elicit a Foxp3<sup>+</sup> Treg cell phenotype in peripheral CD4<sup>+</sup>Foxp3<sup>-</sup> T cells, which has attracted much interest as an approach toward cell-based therapy in clinical settings of undesired immune responses. A particularly notable example is the <i>in vitro</i> induction of Foxp3 expression and Treg cell activity (iTreg cells) in initially naive CD4<sup>+</sup>Foxp3<sup>-</sup> T cells through T cell receptor (TCR) and IL-2R ligation, in the presence of exogenous TGF-β. Clinical application of Foxp3<sup>+</sup> iTreg cells has been hampered by the fact that TGF-β-driven Foxp3 induction is not sufficient to fully recapitulate the epigenetic and transcriptional signature of <i>in vivo</i> induced Foxp3<sup>+</sup> tTreg and pTreg cells, which includes the failure to imprint iTreg cells with stable Foxp3 expression. This hurdle can be potentially overcome by pharmacological interference with DNA methyltransferase activity and CpG methylation [e.g., by the cytosine nucleoside analog 5-aza-2'-deoxycytidine (5-aza-dC)] to stabilize TGF-β-induced Foxp3 expression and to promote a Foxp3<sup>+</sup> iTreg cell phenotype even in the absence of added TGF-β. However, the molecular mechanisms of 5-aza-dC-mediated Foxp3<sup>+</sup> iTreg cell generation have remained incompletely understood. Here, we show that in the absence of exogenously added TGF-β and IL-2, efficient 5-aza-dC-mediated Foxp3<sup>+</sup> iTreg cell generation from TCR-stimulated CD4<sup>+</sup>Foxp3<sup>-</sup> T cells is critically dependent on TGF-βR and IL-2R signaling and that this process is driven by TGF-β and IL-2, which could either be FCS derived or produced by T cells on TCR stimulation. Overall, these findings contribute to our understanding of the molecular mechanisms underlying the process of Foxp3 induction and may provide a rational basis for generating phenotypically and functionally stable iTreg cells.</AbstractText>
+                </Abstract>
+                <AuthorList CompleteYN="Y">
+                    <Author ValidYN="Y">
+                        <LastName>Freudenberg</LastName>
+                        <ForeName>Kristin</ForeName>
+                        <Initials>K</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>Molecular and Cellular Immunology/Immune Regulation, DFG-Center for Regenerative Therapies Dresden (CRTD), Center for Molecular and Cellular Bioengineering (CMCB), Technische Universität Dresden, Dresden, Germany.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Dohnke</LastName>
+                        <ForeName>Sebastian</ForeName>
+                        <Initials>S</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>Molecular and Cellular Immunology/Immune Regulation, DFG-Center for Regenerative Therapies Dresden (CRTD), Center for Molecular and Cellular Bioengineering (CMCB), Technische Universität Dresden, Dresden, Germany.</Affiliation>
+                        </AffiliationInfo>
+                        <AffiliationInfo>
+                            <Affiliation>Osteoimmunology, DFG-Center for Regenerative Therapies Dresden (CRTD), Center for Molecular and Cellular Bioengineering (CMCB), Technische Universität Dresden, Dresden, Germany.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                </AuthorList>
+                <Language>eng</Language>
+                <PublicationTypeList>
+                    <PublicationType UI="D016428">Journal Article</PublicationType>
+                    <PublicationType UI="D013485">Research Support, Non-U.S. Gov't</PublicationType>
+                </PublicationTypeList>
+                <ArticleDate DateType="Electronic">
+                    <Year>2018</Year>
+                    <Month>02</Month>
+                    <Day>02</Day>
+                </ArticleDate>
+            </Article>
+            <MedlineJournalInfo>
+                <Country>Switzerland</Country>
+                <MedlineTA>Front Immunol</MedlineTA>
+                <NlmUniqueID>101560960</NlmUniqueID>
+                <ISSNLinking>1664-3224</ISSNLinking>
+            </MedlineJournalInfo>
+            <KeywordList Owner="NOTNLM">
+                <Keyword MajorTopicYN="Y">CNS2</Keyword>
+                <Keyword MajorTopicYN="Y">DNA methylation</Keyword>
+                <Keyword MajorTopicYN="Y">Foxp3</Keyword>
+                <Keyword MajorTopicYN="Y">epigenetic regulation</Keyword>
+                <Keyword MajorTopicYN="Y">iTreg</Keyword>
+            </KeywordList>
+        </MedlineCitation>
+        <PubmedData>
+            <History>
+                <PubMedPubDate PubStatus="received">
+                    <Year>2017</Year>
+                    <Month>10</Month>
+                    <Day>16</Day>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="accepted">
+                    <Year>2018</Year>
+                    <Month>01</Month>
+                    <Day>16</Day>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="entrez">
+                    <Year>2018</Year>
+                    <Month>2</Month>
+                    <Day>20</Day>
+                    <Hour>6</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="pubmed">
+                    <Year>2018</Year>
+                    <Month>2</Month>
+                    <Day>20</Day>
+                    <Hour>6</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="medline">
+                    <Year>2018</Year>
+                    <Month>2</Month>
+                    <Day>20</Day>
+                    <Hour>6</Hour>
+                    <Minute>1</Minute>
+                </PubMedPubDate>
+            </History>
+            <PublicationStatus>epublish</PublicationStatus>
+            <ArticleIdList>
+                <ArticleId IdType="pubmed">29456534</ArticleId>
+                <ArticleId IdType="doi">10.3389/fimmu.2018.00125</ArticleId>
+                <ArticleId IdType="pmc">PMC5801288</ArticleId>
+            </ArticleIdList>
+            <ReferenceList>
+                <Reference>
+                    <Citation>Mol Cells. 2016 Dec;39(12 ):888-897</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">27989104</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>J Exp Med. 2007 Jul 9;204(7):1543-51</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">17591856</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Eur J Immunol. 2014 Dec;44(12):3632-45</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">25159127</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Immunity. 2012 Nov 16;37(5):785-99</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">23123060</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Nat Rev Immunol. 2012 Feb 17;12(3):180-90</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">22343569</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+            </ReferenceList>
+        </PubmedData>
+    </PubmedArticle>
+    <PubmedArticle>
+        <MedlineCitation Status="PubMed-not-MEDLINE" Owner="NLM">
+            <PMID Version="1">29736257</PMID>
+            <DateRevised>
+                <Year>2018</Year>
+                <Month>11</Month>
+                <Day>14</Day>
+            </DateRevised>
+            <Article PubModel="Electronic-eCollection">
+                <Journal>
+                    <ISSN IssnType="Print">2056-5968</ISSN>
+                    <JournalIssue CitedMedium="Print">
+                        <Volume>3</Volume>
+                        <PubDate>
+                            <Year>2017</Year>
+                        </PubDate>
+                    </JournalIssue>
+                    <Title>Cell discovery</Title>
+                    <ISOAbbreviation>Cell Discov</ISOAbbreviation>
+                </Journal>
+                <ArticleTitle>Evidence that S6K1, but not 4E-BP1, mediates skeletal muscle pathology associated with loss of A-type lamins.</ArticleTitle>
+                <Pagination>
+                    <MedlinePgn>17039</MedlinePgn>
+                </Pagination>
+                <ELocationID EIdType="doi" ValidYN="Y">10.1038/celldisc.2017.39</ELocationID>
+                <Abstract>
+                    <AbstractText>The mechanistic target of rapamycin (mTOR) signaling pathway plays a central role in aging and a number of different disease states. Rapamycin, which suppresses activity of the mTOR complex 1 (mTORC1), shows preclinical (and sometimes clinical) efficacy in a number of disease models. Among these are <i>Lmna</i><sup>
+                        <i>-/-</i>
+                    </sup> mice, which serve as a mouse model for dystrophy-associated laminopathies. To confirm that elevated mTORC1 signaling is responsible for the pathology manifested in <i>Lmna</i><sup>
+                        <i>-/-</i>
+                    </sup> mice and to decipher downstream genetic mechanisms underlying the benefits of rapamycin, we tested in <i>Lmna</i><sup>
+                        <i>-/-</i>
+                    </sup> mice whether survival could be extended and disease pathology suppressed either by reduced levels of S6K1 or enhanced levels of 4E-BP1, two canonical mTORC1 substrates. Global heterozygosity for <i>S6K1</i> ubiquitously extended lifespan of <i>Lmna</i><sup>
+                        <i>-/-</i>
+                    </sup> mice (<i>Lmna</i><sup>
+                        <i>-/-</i>
+                    </sup><i>S6K1</i><sup>
+                        <i>+/-</i>
+                    </sup> mice). This life extension is due to improving muscle, but not heart or adipose, function, consistent with the observation that genetic ablation of <i>S6K1</i> specifically in muscle tissue also extended survival of <i>Lmna</i><sup>
+                        <i>-/-</i>
+                    </sup> mice. In contrast, whole-body overexpression of 4E-BP1 shortened the survival of <i>Lmna</i><sup>
+                        <i>-/-</i>
+                    </sup> mice, likely by accelerating lipolysis. Thus, rapamycin-mediated lifespan extension in <i>Lmna</i><sup>
+                        <i>-/-</i>
+                    </sup> mice is in part due to the improvement of skeletal muscle function and can be phenocopied by reduced S6K1 activity, but not 4E-BP1 activation.</AbstractText>
+                </Abstract>
+                <AuthorList CompleteYN="Y">
+                    <Author ValidYN="Y">
+                        <LastName>Liao</LastName>
+                        <ForeName>Chen-Yu</ForeName>
+                        <Initials>CY</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>Buck Institute for Research on Aging, Novato, CA, USA.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Anderson</LastName>
+                        <ForeName>Sydney S</ForeName>
+                        <Initials>SS</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>Buck Institute for Research on Aging, Novato, CA, USA.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Chicoine</LastName>
+                        <ForeName>Nicole H</ForeName>
+                        <Initials>NH</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>Buck Institute for Research on Aging, Novato, CA, USA.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Mayfield</LastName>
+                        <ForeName>Jarrott R</ForeName>
+                        <Initials>JR</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>Buck Institute for Research on Aging, Novato, CA, USA.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Garrett</LastName>
+                        <ForeName>Brittany J</ForeName>
+                        <Initials>BJ</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>Buck Institute for Research on Aging, Novato, CA, USA.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Kwok</LastName>
+                        <ForeName>Charlotte S</ForeName>
+                        <Initials>CS</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>Buck Institute for Research on Aging, Novato, CA, USA.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Academia</LastName>
+                        <ForeName>Emmeline C</ForeName>
+                        <Initials>EC</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>Buck Institute for Research on Aging, Novato, CA, USA.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Hsu</LastName>
+                        <ForeName>Yueh-Mei</ForeName>
+                        <Initials>YM</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>Buck Institute for Research on Aging, Novato, CA, USA.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Miller</LastName>
+                        <ForeName>Delana M</ForeName>
+                        <Initials>DM</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>Buck Institute for Research on Aging, Novato, CA, USA.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Bair</LastName>
+                        <ForeName>Amanda M</ForeName>
+                        <Initials>AM</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>Buck Institute for Research on Aging, Novato, CA, USA.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Wilson</LastName>
+                        <ForeName>Joy A</ForeName>
+                        <Initials>JA</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>Buck Institute for Research on Aging, Novato, CA, USA.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Tannady</LastName>
+                        <ForeName>Gabriella</ForeName>
+                        <Initials>G</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>Buck Institute for Research on Aging, Novato, CA, USA.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Stewart</LastName>
+                        <ForeName>Erin M</ForeName>
+                        <Initials>EM</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>Buck Institute for Research on Aging, Novato, CA, USA.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Adamson</LastName>
+                        <ForeName>Stuart S</ForeName>
+                        <Initials>SS</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>Buck Institute for Research on Aging, Novato, CA, USA.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Wang</LastName>
+                        <ForeName>Junying</ForeName>
+                        <Initials>J</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>Buck Institute for Research on Aging, Novato, CA, USA.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Withers</LastName>
+                        <ForeName>Dominic J</ForeName>
+                        <Initials>DJ</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>MRC London Institute of Medical Sciences, London, UK.</Affiliation>
+                        </AffiliationInfo>
+                        <AffiliationInfo>
+                            <Affiliation>Institute of Clinical Sciences, Faculty of Medicine, Imperial College London, London, UK.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Kennedy</LastName>
+                        <ForeName>Brian K</ForeName>
+                        <Initials>BK</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>Buck Institute for Research on Aging, Novato, CA, USA.</Affiliation>
+                        </AffiliationInfo>
+                        <AffiliationInfo>
+                            <Affiliation>Departments of Biochemistry and Physiology, Yong Loo Lin School of Medicine, National University of Singapore, Singapore, Singapore.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                </AuthorList>
+                <Language>eng</Language>
+                <GrantList CompleteYN="Y">
+                    <Grant>
+                        <Agency>Wellcome Trust</Agency>
+                        <Country>United Kingdom</Country>
+                    </Grant>
+                    <Grant>
+                        <GrantID>BB/H020527/2</GrantID>
+                        <Agency>Biotechnology and Biological Sciences Research Council</Agency>
+                        <Country>United Kingdom</Country>
+                    </Grant>
+                    <Grant>
+                        <GrantID>R01 AG050441</GrantID>
+                        <Acronym>AG</Acronym>
+                        <Agency>NIA NIH HHS</Agency>
+                        <Country>United States</Country>
+                    </Grant>
+                </GrantList>
+                <PublicationTypeList>
+                    <PublicationType UI="D016428">Journal Article</PublicationType>
+                </PublicationTypeList>
+                <ArticleDate DateType="Electronic">
+                    <Year>2017</Year>
+                    <Month>10</Month>
+                    <Day>31</Day>
+                </ArticleDate>
+            </Article>
+            <MedlineJournalInfo>
+                <Country>England</Country>
+                <MedlineTA>Cell Discov</MedlineTA>
+                <NlmUniqueID>101661034</NlmUniqueID>
+                <ISSNLinking>2056-5968</ISSNLinking>
+            </MedlineJournalInfo>
+            <KeywordList Owner="NOTNLM">
+                <Keyword MajorTopicYN="N">4E-BP1</Keyword>
+                <Keyword MajorTopicYN="N">Lmna−/− mice</Keyword>
+                <Keyword MajorTopicYN="N">S6K1</Keyword>
+                <Keyword MajorTopicYN="N">lifespan</Keyword>
+                <Keyword MajorTopicYN="N">mTORC1</Keyword>
+                <Keyword MajorTopicYN="N">muscle</Keyword>
+                <Keyword MajorTopicYN="N">rapamycin</Keyword>
+            </KeywordList>
+            <CoiStatement>The authors declare no conflict of interests.</CoiStatement>
+        </MedlineCitation>
+        <PubmedData>
+            <History>
+                <PubMedPubDate PubStatus="received">
+                    <Year>2017</Year>
+                    <Month>06</Month>
+                    <Day>08</Day>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="accepted">
+                    <Year>2017</Year>
+                    <Month>09</Month>
+                    <Day>04</Day>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="entrez">
+                    <Year>2018</Year>
+                    <Month>5</Month>
+                    <Day>9</Day>
+                    <Hour>6</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="pubmed">
+                    <Year>2018</Year>
+                    <Month>5</Month>
+                    <Day>8</Day>
+                    <Hour>6</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="medline">
+                    <Year>2018</Year>
+                    <Month>5</Month>
+                    <Day>8</Day>
+                    <Hour>6</Hour>
+                    <Minute>1</Minute>
+                </PubMedPubDate>
+            </History>
+            <PublicationStatus>epublish</PublicationStatus>
+            <ArticleIdList>
+                <ArticleId IdType="pubmed">29736257</ArticleId>
+                <ArticleId IdType="doi">10.1038/celldisc.2017.39</ArticleId>
+                <ArticleId IdType="pmc">PMC5931234</ArticleId>
+            </ArticleIdList>
+            <ReferenceList>
+                <Reference>
+                    <Citation>Hum Mol Genet. 2000 Jan 1;9(1):109-12</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">10587585</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Biochem Biophys Res Commun. 2002 Mar 1;291(3):522-7</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">11855819</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Int Rev Cell Mol Biol. 2015;320:41-73</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">26614871</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Science. 2003 Jun 27;300(5628):2055</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">12702809</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+            </ReferenceList>
+        </PubmedData>
+    </PubmedArticle>
+    <PubmedArticle>
+        <MedlineCitation Status="MEDLINE" Owner="NLM">
+            <PMID Version="1">20453483</PMID>
+            <DateCompleted>
+                <Year>2011</Year>
+                <Month>08</Month>
+                <Day>24</Day>
+            </DateCompleted>
+            <DateRevised>
+                <Year>2015</Year>
+                <Month>11</Month>
+                <Day>19</Day>
+            </DateRevised>
+            <Article PubModel="Print-Electronic">
+                <Journal>
+                    <ISSN IssnType="Electronic">1423-0003</ISSN>
+                    <JournalIssue CitedMedium="Internet">
+                        <Volume>57</Volume>
+                        <Issue>3</Issue>
+                        <PubDate>
+                            <Year>2011</Year>
+                        </PubDate>
+                    </JournalIssue>
+                    <Title>Gerontology</Title>
+                    <ISOAbbreviation>Gerontology</ISOAbbreviation>
+                </Journal>
+                <ArticleTitle>Coping strategies used by seniors going through the normal aging process: does fear of falling matter?</ArticleTitle>
+                <Pagination>
+                    <MedlinePgn>228-36</MedlinePgn>
+                </Pagination>
+                <ELocationID EIdType="doi" ValidYN="Y">10.1159/000314529</ELocationID>
+                <Abstract>
+                    <AbstractText Label="BACKGROUND" NlmCategory="BACKGROUND">Recent studies show that fear of falling, a frequent fear of community-dwelling seniors, can have a negative impact on their health and quality of life. When fear of falling is intense, it can prompt individuals to limit or avoid certain activities. This activity restriction can lead to premature physical and functional decline and, ultimately, increase the risk for falls. Although activity avoidance/restriction is a common strategy used by seniors to cope with fear of falling, they may use other strategies as well to cope with this fear. However, these other strategies have received little attention to date.</AbstractText>
+                    <AbstractText Label="OBJECTIVE" NlmCategory="OBJECTIVE">This study aimed at examining and comparing coping strategies used by seniors with and without fear of falling. It also examined if fear of falling is an independent correlate of the use of coping strategies among seniors.</AbstractText>
+                    <AbstractText Label="METHODS" NlmCategory="METHODS">288 seniors aged 65 years or over and going through the normal aging process were assessed during structured home interviews. Fear of falling was assessed through a single question (Are you afraid of falling?) and a 4-category response scale (never, occasionally, often, very often). Coping strategies used by participants were assessed with the Inventory of Coping Strategies Used by the Elderly.</AbstractText>
+                    <AbstractText Label="RESULTS" NlmCategory="RESULTS">Findings show that seniors with fear of falling use several coping strategies other than activity avoidance/restriction in their daily functioning. Compared with nonfearful seniors, they tend to use a wider range of coping strategies and use them more frequently. Results also indicate that fear of falling is an independent correlate of diversity and frequency of use of behavioral coping strategies.</AbstractText>
+                    <AbstractText Label="CONCLUSION" NlmCategory="CONCLUSIONS">This study suggests that fall prevention practitioners and researchers should document the range and frequency of use of strategies that seniors may employ to cope with fear of falling. These data could help improve interventions and evaluative research in the domain of fall prevention.</AbstractText>
+                    <CopyrightInformation>Copyright © 2010 S. Karger AG, Basel.</CopyrightInformation>
+                </Abstract>
+                <AuthorList CompleteYN="Y">
+                    <Author ValidYN="Y">
+                        <LastName>Filiatrault</LastName>
+                        <ForeName>Johanne</ForeName>
+                        <Initials>J</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>School of Rehabilitation, Faculty of Medicine, Université de Montréal, Montreal, Que., Canada. johanne.filiatrault @ umontreal.ca</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Desrosiers</LastName>
+                        <ForeName>Johanne</ForeName>
+                        <Initials>J</Initials>
+                    </Author>
+                </AuthorList>
+                <Language>eng</Language>
+                <GrantList CompleteYN="Y">
+                    <Grant>
+                        <GrantID>MOP-68871</GrantID>
+                        <Agency>Canadian Institutes of Health Research</Agency>
+                        <Country>Canada</Country>
+                    </Grant>
+                </GrantList>
+                <PublicationTypeList>
+                    <PublicationType UI="D016428">Journal Article</PublicationType>
+                    <PublicationType UI="D013485">Research Support, Non-U.S. Gov't</PublicationType>
+                </PublicationTypeList>
+                <ArticleDate DateType="Electronic">
+                    <Year>2010</Year>
+                    <Month>05</Month>
+                    <Day>06</Day>
+                </ArticleDate>
+            </Article>
+            <MedlineJournalInfo>
+                <Country>Switzerland</Country>
+                <MedlineTA>Gerontology</MedlineTA>
+                <NlmUniqueID>7601655</NlmUniqueID>
+                <ISSNLinking>0304-324X</ISSNLinking>
+            </MedlineJournalInfo>
+            <CitationSubset>IM</CitationSubset>
+            <MeshHeadingList>
+                <MeshHeading>
+                    <DescriptorName UI="D000058" MajorTopicYN="Y">Accidental Falls</DescriptorName>
+                    <QualifierName UI="Q000517" MajorTopicYN="N">prevention &amp; control</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D000223" MajorTopicYN="Y">Adaptation, Psychological</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D000368" MajorTopicYN="N">Aged</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D000369" MajorTopicYN="N">Aged, 80 and over</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D000375" MajorTopicYN="N">Aging</DescriptorName>
+                    <QualifierName UI="Q000523" MajorTopicYN="Y">psychology</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D003071" MajorTopicYN="N">Cognition</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D005239" MajorTopicYN="N">Fear</DescriptorName>
+                    <QualifierName UI="Q000523" MajorTopicYN="Y">psychology</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D005260" MajorTopicYN="N">Female</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D006801" MajorTopicYN="N">Humans</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D008297" MajorTopicYN="N">Male</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D011792" MajorTopicYN="N" Type="Geographic">Quebec</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D012111" MajorTopicYN="N">Residence Characteristics</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D011795" MajorTopicYN="N">Surveys and Questionnaires</DescriptorName>
+                </MeshHeading>
+            </MeshHeadingList>
+        </MedlineCitation>
+        <PubmedData>
+            <History>
+                <PubMedPubDate PubStatus="received">
+                    <Year>2009</Year>
+                    <Month>05</Month>
+                    <Day>27</Day>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="accepted">
+                    <Year>2010</Year>
+                    <Month>02</Month>
+                    <Day>05</Day>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="entrez">
+                    <Year>2010</Year>
+                    <Month>5</Month>
+                    <Day>11</Day>
+                    <Hour>6</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="pubmed">
+                    <Year>2010</Year>
+                    <Month>5</Month>
+                    <Day>11</Day>
+                    <Hour>6</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="medline">
+                    <Year>2011</Year>
+                    <Month>8</Month>
+                    <Day>25</Day>
+                    <Hour>6</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+            </History>
+            <PublicationStatus>ppublish</PublicationStatus>
+            <ArticleIdList>
+                <ArticleId IdType="pubmed">20453483</ArticleId>
+                <ArticleId IdType="pii">000314529</ArticleId>
+                <ArticleId IdType="doi">10.1159/000314529</ArticleId>
+            </ArticleIdList>
+        </PubmedData>
+    </PubmedArticle>
+    <PubmedArticle>
+        <MedlineCitation Status="MEDLINE" Owner="NLM">
+            <PMID Version="1">27654823</PMID>
+            <DateCompleted>
+                <Year>2017</Year>
+                <Month>03</Month>
+                <Day>08</Day>
+            </DateCompleted>
+            <DateRevised>
+                <Year>2017</Year>
+                <Month>03</Month>
+                <Day>08</Day>
+            </DateRevised>
+            <Article PubModel="Print-Electronic">
+                <Journal>
+                    <ISSN IssnType="Electronic">1573-6776</ISSN>
+                    <JournalIssue CitedMedium="Internet">
+                        <Volume>39</Volume>
+                        <Issue>1</Issue>
+                        <PubDate>
+                            <Year>2017</Year>
+                            <Month>Jan</Month>
+                        </PubDate>
+                    </JournalIssue>
+                    <Title>Biotechnology letters</Title>
+                    <ISOAbbreviation>Biotechnol. Lett.</ISOAbbreviation>
+                </Journal>
+                <ArticleTitle>Production of 10S-hydroxy-8(E)-octadecenoic acid from oleic acid by whole recombinant Escherichia coli cells expressing 10S-dioxygenase from Nostoc punctiforme PCC 73102 with the aid of a chaperone.</ArticleTitle>
+                <Pagination>
+                    <MedlinePgn>133-139</MedlinePgn>
+                </Pagination>
+                <ELocationID EIdType="doi" ValidYN="Y">10.1007/s10529-016-2225-x</ELocationID>
+                <Abstract>
+                    <AbstractText Label="OBJECTIVE" NlmCategory="OBJECTIVE">To increase the production of 10S-hydroxy-8(E)-octadecenoic acid from oleic acid by whole recombinant Escherichia coli cells expressing Nostoc punctiforme 10S-dioxygenase with the aid of a chaperone.</AbstractText>
+                    <AbstractText Label="RESULTS" NlmCategory="RESULTS">The optimal conditions for 10S-hydroxy-8(E)-octadecenoic acid production by recombinant cells co-expressing chaperone plasmid were pH 9, 35 °C, 15 % (v/v) dimethyl sulfoxide, 40 g cells l<sup>-1</sup>, and 10 g oleic acid l<sup>-1</sup>. Under these conditions, recombinant cells co-expressing chaperone plasmid produced 7.2 g 10S-hydroxy-8(E)-octadecenoic acid l<sup>-1</sup> within 30 min, with a conversion yield of 72 % (w/w) and a volumetric productivity of 14.4 g l<sup>-1</sup> h<sup>-1</sup>.</AbstractText>
+                    <AbstractText Label="CONCLUSION" NlmCategory="CONCLUSIONS">The activity of recombinant cells expressing 10S-dioxygenase was increased by 200 % with the aid of a chaperone, demonstrating the first biotechnological production of 10S-hydroxy-8(E)-octadecenoic acid using recombinant cells expressing 10S-dioxygenase.</AbstractText>
+                </Abstract>
+                <AuthorList CompleteYN="Y">
+                    <Author ValidYN="Y">
+                        <LastName>Kim</LastName>
+                        <ForeName>Min-Ji</ForeName>
+                        <Initials>MJ</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>Department of Bioscience and Biotechnology, Konkuk University, Seoul, 05029, Republic of Korea.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Seo</LastName>
+                        <ForeName>Min-Ju</ForeName>
+                        <Initials>MJ</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>Department of Bioscience and Biotechnology, Konkuk University, Seoul, 05029, Republic of Korea.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Shin</LastName>
+                        <ForeName>Kyung-Chul</ForeName>
+                        <Initials>KC</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>Department of Bioscience and Biotechnology, Konkuk University, Seoul, 05029, Republic of Korea.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Oh</LastName>
+                        <ForeName>Deok-Kun</ForeName>
+                        <Initials>DK</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>Department of Bioscience and Biotechnology, Konkuk University, Seoul, 05029, Republic of Korea. deokkun@konkuk.ac.kr.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                </AuthorList>
+                <Language>eng</Language>
+                <PublicationTypeList>
+                    <PublicationType UI="D016428">Journal Article</PublicationType>
+                </PublicationTypeList>
+                <ArticleDate DateType="Electronic">
+                    <Year>2016</Year>
+                    <Month>09</Month>
+                    <Day>21</Day>
+                </ArticleDate>
+            </Article>
+            <MedlineJournalInfo>
+                <Country>Netherlands</Country>
+                <MedlineTA>Biotechnol Lett</MedlineTA>
+                <NlmUniqueID>8008051</NlmUniqueID>
+                <ISSNLinking>0141-5492</ISSNLinking>
+            </MedlineJournalInfo>
+            <ChemicalList>
+                <Chemical>
+                    <RegistryNumber>0</RegistryNumber>
+                    <NameOfSubstance UI="D013229">Stearic Acids</NameOfSubstance>
+                </Chemical>
+                <Chemical>
+                    <RegistryNumber>2UMI9U37CP</RegistryNumber>
+                    <NameOfSubstance UI="D019301">Oleic Acid</NameOfSubstance>
+                </Chemical>
+                <Chemical>
+                    <RegistryNumber>EC 1.13.11.-</RegistryNumber>
+                    <NameOfSubstance UI="D049308">Dioxygenases</NameOfSubstance>
+                </Chemical>
+            </ChemicalList>
+            <CitationSubset>IM</CitationSubset>
+            <MeshHeadingList>
+                <MeshHeading>
+                    <DescriptorName UI="D049308" MajorTopicYN="N">Dioxygenases</DescriptorName>
+                    <QualifierName UI="Q000235" MajorTopicYN="N">genetics</QualifierName>
+                    <QualifierName UI="Q000378" MajorTopicYN="Y">metabolism</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D004926" MajorTopicYN="N">Escherichia coli</DescriptorName>
+                    <QualifierName UI="Q000201" MajorTopicYN="Y">enzymology</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D046937" MajorTopicYN="N">Nostoc</DescriptorName>
+                    <QualifierName UI="Q000201" MajorTopicYN="Y">enzymology</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D019301" MajorTopicYN="N">Oleic Acid</DescriptorName>
+                    <QualifierName UI="Q000378" MajorTopicYN="Y">metabolism</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D013229" MajorTopicYN="N">Stearic Acids</DescriptorName>
+                    <QualifierName UI="Q000378" MajorTopicYN="Y">metabolism</QualifierName>
+                </MeshHeading>
+            </MeshHeadingList>
+            <KeywordList Owner="NOTNLM">
+                <Keyword MajorTopicYN="Y">10S-Dioxygenase</Keyword>
+                <Keyword MajorTopicYN="Y">10S-Hydroxy-8(E)-octadecenoic acid</Keyword>
+                <Keyword MajorTopicYN="Y">Biotransformation</Keyword>
+                <Keyword MajorTopicYN="Y">Chaperone</Keyword>
+                <Keyword MajorTopicYN="Y">Nostoc punctiforme PCC 73102</Keyword>
+                <Keyword MajorTopicYN="Y">Oleic acid</Keyword>
+            </KeywordList>
+        </MedlineCitation>
+        <PubmedData>
+            <History>
+                <PubMedPubDate PubStatus="received">
+                    <Year>2016</Year>
+                    <Month>08</Month>
+                    <Day>01</Day>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="accepted">
+                    <Year>2016</Year>
+                    <Month>09</Month>
+                    <Day>13</Day>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="pubmed">
+                    <Year>2016</Year>
+                    <Month>9</Month>
+                    <Day>23</Day>
+                    <Hour>6</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="medline">
+                    <Year>2017</Year>
+                    <Month>3</Month>
+                    <Day>9</Day>
+                    <Hour>6</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="entrez">
+                    <Year>2016</Year>
+                    <Month>9</Month>
+                    <Day>23</Day>
+                    <Hour>6</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+            </History>
+            <PublicationStatus>ppublish</PublicationStatus>
+            <ArticleIdList>
+                <ArticleId IdType="pubmed">27654823</ArticleId>
+                <ArticleId IdType="doi">10.1007/s10529-016-2225-x</ArticleId>
+                <ArticleId IdType="pii">10.1007/s10529-016-2225-x</ArticleId>
+            </ArticleIdList>
+        </PubmedData>
+    </PubmedArticle>
+    <PubmedArticle>
+        <MedlineCitation Status="MEDLINE" IndexingMethod="Curated" Owner="NLM">
+            <PMID Version="1">24884411</PMID>
+            <DateCompleted>
+                <Year>2014</Year>
+                <Month>07</Month>
+                <Day>30</Day>
+            </DateCompleted>
+            <DateRevised>
+                <Year>2019</Year>
+                <Month>01</Month>
+                <Day>08</Day>
+            </DateRevised>
+            <Article PubModel="Electronic">
+                <Journal>
+                    <ISSN IssnType="Electronic">1471-2148</ISSN>
+                    <JournalIssue CitedMedium="Internet">
+                        <Volume>14</Volume>
+                        <PubDate>
+                            <Year>2014</Year>
+                            <Month>May</Month>
+                            <Day>12</Day>
+                        </PubDate>
+                    </JournalIssue>
+                    <Title>BMC evolutionary biology</Title>
+                    <ISOAbbreviation>BMC Evol. Biol.</ISOAbbreviation>
+                </Journal>
+                <ArticleTitle>A multilocus timescale for oomycete evolution estimated under three distinct molecular clock models.</ArticleTitle>
+                <Pagination>
+                    <MedlinePgn>101</MedlinePgn>
+                </Pagination>
+                <ELocationID EIdType="doi" ValidYN="Y">10.1186/1471-2148-14-101</ELocationID>
+                <Abstract>
+                    <AbstractText Label="BACKGROUND" NlmCategory="BACKGROUND">Molecular clock methodologies allow for the estimation of divergence times across a variety of organisms; this can be particularly useful for groups lacking robust fossil histories, such as microbial eukaryotes with few distinguishing morphological traits. Here we have used a Bayesian molecular clock method under three distinct clock models to estimate divergence times within oomycetes, a group of fungal-like eukaryotes that are ubiquitous in the environment and include a number of devastating pathogenic species. The earliest fossil evidence for oomycetes comes from the Lower Devonian (~400 Ma), however the taxonomic affinities of these fossils are unclear.</AbstractText>
+                    <AbstractText Label="RESULTS" NlmCategory="RESULTS">Complete genome sequences were used to identify orthologous proteins among oomycetes, diatoms, and a brown alga, with a focus on conserved regulators of gene expression such as DNA and histone modifiers and transcription factors. Our molecular clock estimates place the origin of oomycetes by at least the mid-Paleozoic (~430-400 Ma), with the divergence between two major lineages, the peronosporaleans and saprolegnialeans, in the early Mesozoic (~225-190 Ma). Divergence times estimated under the three clock models were similar, although only the strict and random local clock models produced reliable estimates for most parameters.</AbstractText>
+                    <AbstractText Label="CONCLUSIONS" NlmCategory="CONCLUSIONS">Our molecular timescale suggests that modern pathogenic oomycetes diverged well after the origin of their respective hosts, indicating that environmental conditions or perhaps horizontal gene transfer events, rather than host availability, may have driven lineage diversification. Our findings also suggest that the last common ancestor of oomycetes possessed a full complement of eukaryotic regulatory proteins, including those involved in histone modification, RNA interference, and tRNA and rRNA methylation; interestingly no match to canonical DNA methyltransferases could be identified in the oomycete genomes studied here.</AbstractText>
+                </Abstract>
+                <AuthorList CompleteYN="Y">
+                    <Author ValidYN="Y">
+                        <LastName>Matari</LastName>
+                        <ForeName>Nahill H</ForeName>
+                        <Initials>NH</Initials>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Blair</LastName>
+                        <ForeName>Jaime E</ForeName>
+                        <Initials>JE</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>Department of Biology, Franklin &amp; Marshall College, Lancaster, PA, USA. jaime.blair@fandm.edu.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                </AuthorList>
+                <Language>eng</Language>
+                <GrantList CompleteYN="Y">
+                    <Grant>
+                        <Agency>Howard Hughes Medical Institute</Agency>
+                        <Country>United States</Country>
+                    </Grant>
+                </GrantList>
+                <PublicationTypeList>
+                    <PublicationType UI="D016428">Journal Article</PublicationType>
+                    <PublicationType UI="D013485">Research Support, Non-U.S. Gov't</PublicationType>
+                    <PublicationType UI="D013486">Research Support, U.S. Gov't, Non-P.H.S.</PublicationType>
+                </PublicationTypeList>
+                <ArticleDate DateType="Electronic">
+                    <Year>2014</Year>
+                    <Month>05</Month>
+                    <Day>12</Day>
+                </ArticleDate>
+            </Article>
+            <MedlineJournalInfo>
+                <Country>England</Country>
+                <MedlineTA>BMC Evol Biol</MedlineTA>
+                <NlmUniqueID>100966975</NlmUniqueID>
+                <ISSNLinking>1471-2148</ISSNLinking>
+            </MedlineJournalInfo>
+            <ChemicalList>
+                <Chemical>
+                    <RegistryNumber>0</RegistryNumber>
+                    <NameOfSubstance UI="D014157">Transcription Factors</NameOfSubstance>
+                </Chemical>
+            </ChemicalList>
+            <CitationSubset>IM</CitationSubset>
+            <MeshHeadingList>
+                <MeshHeading>
+                    <DescriptorName UI="D001499" MajorTopicYN="N">Bayes Theorem</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D005075" MajorTopicYN="Y">Biological Evolution</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D005580" MajorTopicYN="N">Fossils</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D022761" MajorTopicYN="N">Gene Transfer, Horizontal</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D008957" MajorTopicYN="Y">Models, Genetic</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D009868" MajorTopicYN="N">Oomycetes</DescriptorName>
+                    <QualifierName UI="Q000145" MajorTopicYN="Y">classification</QualifierName>
+                    <QualifierName UI="Q000235" MajorTopicYN="Y">genetics</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D010802" MajorTopicYN="N">Phylogeny</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D014157" MajorTopicYN="N">Transcription Factors</DescriptorName>
+                    <QualifierName UI="Q000235" MajorTopicYN="N">genetics</QualifierName>
+                </MeshHeading>
+            </MeshHeadingList>
+        </MedlineCitation>
+        <PubmedData>
+            <History>
+                <PubMedPubDate PubStatus="received">
+                    <Year>2014</Year>
+                    <Month>03</Month>
+                    <Day>04</Day>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="accepted">
+                    <Year>2014</Year>
+                    <Month>05</Month>
+                    <Day>06</Day>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="entrez">
+                    <Year>2014</Year>
+                    <Month>6</Month>
+                    <Day>3</Day>
+                    <Hour>6</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="pubmed">
+                    <Year>2014</Year>
+                    <Month>6</Month>
+                    <Day>3</Day>
+                    <Hour>6</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="medline">
+                    <Year>2014</Year>
+                    <Month>7</Month>
+                    <Day>31</Day>
+                    <Hour>6</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+            </History>
+            <PublicationStatus>epublish</PublicationStatus>
+            <ArticleIdList>
+                <ArticleId IdType="pubmed">24884411</ArticleId>
+                <ArticleId IdType="pii">1471-2148-14-101</ArticleId>
+                <ArticleId IdType="doi">10.1186/1471-2148-14-101</ArticleId>
+                <ArticleId IdType="pmc">PMC4030286</ArticleId>
+            </ArticleIdList>
+            <ReferenceList>
+                <Reference>
+                    <Citation>PLoS Genet. 2013 Jun;9(6):e1003272</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">23785293</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Proc Biol Sci. 2006 Aug 7;273(1596):1867-72</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">16822745</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Phytopathology. 2013 Oct;103(10):1035-44</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">23634808</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Nucleic Acids Res. 2009 Aug;37(14):e96</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">19487243</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Nucleic Acids Res. 2012 Jan;40(Database issue):D290-301</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">22127870</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Science. 2006 Sep 1;313(5791):1261-6</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">16946064</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Nature. 2009 Sep 17;461(7262):393-8</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">19741609</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Syst Biol. 2002 Oct;51(5):703-14</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">12396585</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>PLoS One. 2010;5(9). pii: e12759. doi: 10.1371/journal.pone.0012759</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">20862282</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Nucleic Acids Res. 2006 Jan 1;34(Database issue):D500-3</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">16381920</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Mol Biol Evol. 2010 Jun;27(6):1289-300</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">20093431</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>J Eukaryot Microbiol. 2012 Sep;59(5):429-93</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">23020233</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Mycol Res. 2006 Jun;110(Pt 6):628-32</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">16765584</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>RNA Biol. 2009 Nov-Dec;6(5):495-502</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">19713749</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Annu Rev Biochem. 2005;74:481-514</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">15952895</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>J Eukaryot Microbiol. 1999 Jul-Aug;46(4):347-66</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">18092388</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Mol Plant Microbe Interact. 2012 Oct;25(10):1350-60</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">22712506</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Proc Natl Acad Sci U S A. 2011 Aug 16;108(33):13624-9</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">21810989</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Nature. 2009 Jan 22;457(7228):396-404</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">19158785</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Mol Biol Evol. 2011 Oct;28(10):2731-9</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">21546353</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Mol Plant Pathol. 2011 Oct;12(8):772-85</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">21726377</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Mol Cell. 1999 Mar;3(3):339-48</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">10198636</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>PLoS Biol. 2011 Jul;9(7):e1001094</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">21750662</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Proc Natl Acad Sci U S A. 2011 Sep 13;108(37):15258-63</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">21878562</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Annu Rev Microbiol. 2012;66:411-27</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">22803798</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Science. 2004 Oct 1;306(5693):79-86</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">15459382</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Nat Rev Genet. 2005 Aug;6(8):654-62</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">16136655</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>PLoS One. 2011;6(9):e24500</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">21935414</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Gene. 2008 Jan 31;408(1-2):1-8</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">18024004</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>PLoS Biol. 2006 May;4(5):e88</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">16683862</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Biol Lett. 2012 Feb 23;8(1):156-9</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">21865245</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Mol Biol Evol. 2012 Aug;29(8):1969-73</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">22367748</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Nature. 2008 Nov 13;456(7219):239-44</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">18923393</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Annu Rev Phytopathol. 2012;50:295-318</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">22920560</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Trends Ecol Evol. 2008 Oct;23(10):578-87</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">18715673</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>PLoS One. 2009;4(7):e6133</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">19582169</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Science. 2010 Dec 10;330(6010):1549-51</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">21148394</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Syst Biol. 2009 Jun;58(3):367-80</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">20525591</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Protoplasma. 2012 Jan;249(1):3-19</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">21424613</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Trends Ecol Evol. 2014 May;29(5):252-9</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">24726347</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Proc Biol Sci. 2011 Mar 7;278(1706):675-80</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">20843846</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Syst Biol. 2012 Mar;61(2):346-59</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">22105867</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Am J Bot. 2010 Aug;97(8):1296-303</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">21616882</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Mycol Res. 2008 Sep;112(Pt 9):1107-14</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">18692373</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Mol Plant Pathol. 2008 May;9(3):385-402</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">18705878</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Mol Biol Evol. 1998 Dec;15(12):1647-57</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">9866200</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Mol Biol Evol. 2002 Jan;19(1):101-9</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">11752195</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>BMC Biol. 2010;8:114</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">20807414</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Genome Biol. 2010;11(7):R73</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">20626842</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>PLoS One. 2007;2(8):e790</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">17726520</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Bioinformatics. 2007 Nov 1;23(21):2947-8</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">17846036</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Microbiology. 2008 May;154(Pt 5):1482-90</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">18451057</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Nature. 2010 Jun 3;465(7298):617-21</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">20520714</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Mycologia. 2011 May-Jun;103(3):455-7</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">21289104</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+            </ReferenceList>
+        </PubmedData>
+    </PubmedArticle>
+    <PubmedArticle>
+        <MedlineCitation Status="MEDLINE" Owner="NLM">
+            <PMID Version="1">10188493</PMID>
+            <DateCompleted>
+                <Year>1999</Year>
+                <Month>04</Month>
+                <Day>13</Day>
+            </DateCompleted>
+            <DateRevised>
+                <Year>2016</Year>
+                <Month>11</Month>
+                <Day>24</Day>
+            </DateRevised>
+            <Article PubModel="Print">
+                <Journal>
+                    <ISSN IssnType="Print">1354-5760</ISSN>
+                    <JournalIssue CitedMedium="Print">
+                        <Volume>5</Volume>
+                        <Issue>8</Issue>
+                        <PubDate>
+                            <MedlineDate>1998 Dec-1999 Jan</MedlineDate>
+                        </PubDate>
+                    </JournalIssue>
+                    <Title>Nursing management (Harrow, London, England : 1994)</Title>
+                    <ISOAbbreviation>Nurs Manag (Harrow)</ISOAbbreviation>
+                </Journal>
+                <ArticleTitle>Women's health osteopathy: an alternative view.</ArticleTitle>
+                <Pagination>
+                    <MedlinePgn>6-9</MedlinePgn>
+                </Pagination>
+                <AuthorList CompleteYN="Y">
+                    <Author ValidYN="Y">
+                        <LastName>Hyne</LastName>
+                        <ForeName>J</ForeName>
+                        <Initials>J</Initials>
+                    </Author>
+                </AuthorList>
+                <Language>eng</Language>
+                <PublicationTypeList>
+                    <PublicationType UI="D016428">Journal Article</PublicationType>
+                </PublicationTypeList>
+            </Article>
+            <MedlineJournalInfo>
+                <Country>England</Country>
+                <MedlineTA>Nurs Manag (Harrow)</MedlineTA>
+                <NlmUniqueID>9433248</NlmUniqueID>
+                <ISSNLinking>1354-5760</ISSNLinking>
+            </MedlineJournalInfo>
+            <CitationSubset>N</CitationSubset>
+            <MeshHeadingList>
+                <MeshHeading>
+                    <DescriptorName UI="D005260" MajorTopicYN="N">Female</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D006801" MajorTopicYN="N">Humans</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D010021" MajorTopicYN="N">Osteopathic Medicine</DescriptorName>
+                    <QualifierName UI="Q000379" MajorTopicYN="Y">methods</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D013222" MajorTopicYN="N">State Medicine</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D006113" MajorTopicYN="N">United Kingdom</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D016387" MajorTopicYN="Y">Women's Health</DescriptorName>
+                </MeshHeading>
+            </MeshHeadingList>
+        </MedlineCitation>
+        <PubmedData>
+            <History>
+                <PubMedPubDate PubStatus="pubmed">
+                    <Year>1999</Year>
+                    <Month>4</Month>
+                    <Day>3</Day>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="medline">
+                    <Year>1999</Year>
+                    <Month>4</Month>
+                    <Day>3</Day>
+                    <Hour>0</Hour>
+                    <Minute>1</Minute>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="entrez">
+                    <Year>1999</Year>
+                    <Month>4</Month>
+                    <Day>3</Day>
+                    <Hour>0</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+            </History>
+            <PublicationStatus>ppublish</PublicationStatus>
+            <ArticleIdList>
+                <ArticleId IdType="pubmed">10188493</ArticleId>
+            </ArticleIdList>
+        </PubmedData>
+    </PubmedArticle>
+    <PubmedArticle>
+        <MedlineCitation Status="MEDLINE" IndexingMethod="Automated" Owner="NLM">
+            <PMID Version="1">14316043</PMID>
+            <DateCompleted>
+                <Year>1996</Year>
+                <Month>12</Month>
+                <Day>01</Day>
+            </DateCompleted>
+            <DateRevised>
+                <Year>2018</Year>
+                <Month>12</Month>
+                <Day>01</Day>
+            </DateRevised>
+            <Article PubModel="Print">
+                <Journal>
+                    <ISSN IssnType="Print">0042-0255</ISSN>
+                    <JournalIssue CitedMedium="Print">
+                        <Volume>2</Volume>
+                        <PubDate>
+                            <MedlineDate>1965 Dec-1966 Jan</MedlineDate>
+                        </PubDate>
+                    </JournalIssue>
+                    <Title>University of Toronto undergraduate dental journal</Title>
+                    <ISOAbbreviation>Univ Toronto Undergrad Dent J</ISOAbbreviation>
+                </Journal>
+                <ArticleTitle>THE RESPONSIBILITY OF THE DENTIST AND THE DENTAL PROFESSION WITH RESPECT TO JAW FRACTURES.</ArticleTitle>
+                <Pagination>
+                    <MedlinePgn>5-11</MedlinePgn>
+                </Pagination>
+                <AuthorList CompleteYN="Y">
+                    <Author ValidYN="Y">
+                        <LastName>PHILLIPS</LastName>
+                        <ForeName>H</ForeName>
+                        <Initials>H</Initials>
+                    </Author>
+                </AuthorList>
+                <Language>eng</Language>
+                <PublicationTypeList>
+                    <PublicationType UI="D016428">Journal Article</PublicationType>
+                </PublicationTypeList>
+            </Article>
+            <MedlineJournalInfo>
+                <Country>Canada</Country>
+                <MedlineTA>Univ Toronto Undergrad Dent J</MedlineTA>
+                <NlmUniqueID>7905911</NlmUniqueID>
+                <ISSNLinking>0042-0255</ISSNLinking>
+            </MedlineJournalInfo>
+            <CitationSubset>D</CitationSubset>
+            <CitationSubset>OM</CitationSubset>
+            <MeshHeadingList>
+                <MeshHeading>
+                    <DescriptorName UI="D003815" MajorTopicYN="Y">Dentists</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D005592" MajorTopicYN="Y">Fracture Fixation</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D050723" MajorTopicYN="Y">Fractures, Bone</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D006801" MajorTopicYN="N">Humans</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D007400" MajorTopicYN="Y">Interprofessional Relations</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D007568" MajorTopicYN="Y">Jaw</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D007572" MajorTopicYN="Y">Jaw Fractures</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D008338" MajorTopicYN="Y">Mandibular Injuries</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D008446" MajorTopicYN="Y">Maxillofacial Injuries</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D011215" MajorTopicYN="Y">Practice Management, Dental</DescriptorName>
+                </MeshHeading>
+            </MeshHeadingList>
+            <KeywordList Owner="NLM">
+                <Keyword MajorTopicYN="Y">DENTISTS</Keyword>
+                <Keyword MajorTopicYN="Y">FRACTURE FIXATION</Keyword>
+                <Keyword MajorTopicYN="Y">FRACTURES</Keyword>
+                <Keyword MajorTopicYN="Y">INTERPROFESSIONAL RELATIONS</Keyword>
+                <Keyword MajorTopicYN="Y">JAW</Keyword>
+                <Keyword MajorTopicYN="Y">MANDIBULAR INJURIES</Keyword>
+                <Keyword MajorTopicYN="Y">MAXILLOFACIAL INJURIES</Keyword>
+                <Keyword MajorTopicYN="Y">PRACTICE MANAGEMENT, DENTAL</Keyword>
+            </KeywordList>
+        </MedlineCitation>
+        <PubmedData>
+            <History>
+                <PubMedPubDate PubStatus="pubmed">
+                    <Year>1965</Year>
+                    <Month>12</Month>
+                    <Day>1</Day>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="medline">
+                    <Year>1965</Year>
+                    <Month>12</Month>
+                    <Day>1</Day>
+                    <Hour>0</Hour>
+                    <Minute>1</Minute>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="entrez">
+                    <Year>1965</Year>
+                    <Month>12</Month>
+                    <Day>1</Day>
+                    <Hour>0</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+            </History>
+            <PublicationStatus>ppublish</PublicationStatus>
+            <ArticleIdList>
+                <ArticleId IdType="pubmed">14316043</ArticleId>
+            </ArticleIdList>
+        </PubmedData>
+    </PubmedArticle>
+    <PubmedArticle>
+        <MedlineCitation Status="MEDLINE" IndexingMethod="Automated" Owner="NLM">
+            <PMID Version="1">18122624</PMID>
+            <DateCompleted>
+                <Year>2007</Year>
+                <Month>12</Month>
+                <Day>27</Day>
+            </DateCompleted>
+            <DateRevised>
+                <Year>2018</Year>
+                <Month>12</Month>
+                <Day>01</Day>
+            </DateRevised>
+            <Article PubModel="Print">
+                <Journal>
+                    <ISSN IssnType="Print">0891-3633</ISSN>
+                    <JournalIssue CitedMedium="Print">
+                        <Volume>59 (1 vol.)</Volume>
+                        <PubDate>
+                            <MedlineDate>1947-1948</MedlineDate>
+                        </PubDate>
+                    </JournalIssue>
+                    <Title>Transactions of the Southern Surgical Association. Southern Surgical Association (U.S.)</Title>
+                    <ISOAbbreviation>Trans South Surg Assoc</ISOAbbreviation>
+                </Journal>
+                <ArticleTitle>Mesenteric vascular occlusion.</ArticleTitle>
+                <Pagination>
+                    <MedlinePgn>136-55</MedlinePgn>
+                </Pagination>
+                <AuthorList CompleteYN="Y">
+                    <Author ValidYN="Y">
+                        <LastName>RIVES</LastName>
+                        <ForeName>J D</ForeName>
+                        <Initials>JD</Initials>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>STRUG</LastName>
+                        <ForeName>L H</ForeName>
+                        <Initials>LH</Initials>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>ESSRIG</LastName>
+                        <ForeName>I M</ForeName>
+                        <Initials>IM</Initials>
+                    </Author>
+                </AuthorList>
+                <Language>eng</Language>
+                <PublicationTypeList>
+                    <PublicationType UI="D016428">Journal Article</PublicationType>
+                </PublicationTypeList>
+            </Article>
+            <MedlineJournalInfo>
+                <Country>United States</Country>
+                <MedlineTA>Trans South Surg Assoc</MedlineTA>
+                <NlmUniqueID>20930080R</NlmUniqueID>
+                <ISSNLinking>0891-3633</ISSNLinking>
+            </MedlineJournalInfo>
+            <CitationSubset>OM</CitationSubset>
+            <MeshHeadingList>
+                <MeshHeading>
+                    <DescriptorName UI="D006801" MajorTopicYN="N">Humans</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D008641" MajorTopicYN="Y">Mesenteric Vascular Occlusion</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D008643" MajorTopicYN="Y">Mesentery</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D014652" MajorTopicYN="Y">Vascular Diseases</DescriptorName>
+                </MeshHeading>
+            </MeshHeadingList>
+            <OtherID Source="CLML">4916:397a1</OtherID>
+            <KeywordList Owner="NLM">
+                <Keyword MajorTopicYN="Y">MESENTERY/occlusion</Keyword>
+            </KeywordList>
+        </MedlineCitation>
+        <PubmedData>
+            <History>
+                <PubMedPubDate PubStatus="pubmed">
+                    <Year>1947</Year>
+                    <Month>1</Month>
+                    <Day>1</Day>
+                    <Hour>0</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="medline">
+                    <Year>2018</Year>
+                    <Month>12</Month>
+                    <Day>4</Day>
+                    <Hour>6</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="entrez">
+                    <Year>1947</Year>
+                    <Month>1</Month>
+                    <Day>1</Day>
+                    <Hour>0</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+            </History>
+            <PublicationStatus>ppublish</PublicationStatus>
+            <ArticleIdList>
+                <ArticleId IdType="pubmed">18122624</ArticleId>
+            </ArticleIdList>
+        </PubmedData>
+    </PubmedArticle>
+    <PubmedArticle>
+        <MedlineCitation Status="MEDLINE" Owner="NLM">
+            <PMID Version="1">11243089</PMID>
+            <DateCompleted>
+                <Year>2001</Year>
+                <Month>05</Month>
+                <Day>17</Day>
+            </DateCompleted>
+            <DateRevised>
+                <Year>2006</Year>
+                <Month>11</Month>
+                <Day>15</Day>
+            </DateRevised>
+            <Article PubModel="Print">
+                <Journal>
+                    <ISSN IssnType="Print">0019-557X</ISSN>
+                    <JournalIssue CitedMedium="Print">
+                        <Volume>43</Volume>
+                        <Issue>1</Issue>
+                        <PubDate>
+                            <MedlineDate>1999 Jan-Mar</MedlineDate>
+                        </PubDate>
+                    </JournalIssue>
+                    <Title>Indian journal of public health</Title>
+                    <ISOAbbreviation>Indian J Public Health</ISOAbbreviation>
+                </Journal>
+                <ArticleTitle>Nutritional status of pavement dweller children of Calcutta City.</ArticleTitle>
+                <Pagination>
+                    <MedlinePgn>49-54</MedlinePgn>
+                </Pagination>
+                <Abstract>
+                    <AbstractText>Pavement dwelling is likely to aggravate malnutrition among its residents due to extreme poverty, lack of dwelling and access to food and their exposure to polluted environment. Paucity of information about nutritional status of street children compared to that among urban slum dwellers, squatters or rural/tribal population is quite evident. The present study revealed the magnitude of Protein Energy Malnutrition (PEM) and few associated factors among a sample of 435 underfives belonging to pavement dweller families and selected randomly from clusters of such families, from each of the five geographical sectors of Calcutta city. Overall prevalence of PEM was found almost similar (about 70%) to that among other 'urban poor' children viz. slum dwellers etc., but about 16% of them were found severely undernourished (Grade III &amp; V of IAP classification of PEM). About 35% and 70% of street dweller children had wasting and stunting respectively. Severe PEM (Grade III &amp; IV) was more prevalent among 12-23 months old, girl child, those belonged to illiterate parents and housewife mothers rather than wage earners. It also did increase with increase of birth rate of decrease of birth interval.</AbstractText>
+                </Abstract>
+                <AuthorList CompleteYN="Y">
+                    <Author ValidYN="Y">
+                        <LastName>Ray</LastName>
+                        <ForeName>S K</ForeName>
+                        <Initials>SK</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>Department of Community Medicine, Medical College, Calcutta.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Mishra</LastName>
+                        <ForeName>R</ForeName>
+                        <Initials>R</Initials>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Biswas</LastName>
+                        <ForeName>R</ForeName>
+                        <Initials>R</Initials>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Kumar</LastName>
+                        <ForeName>S</ForeName>
+                        <Initials>S</Initials>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Halder</LastName>
+                        <ForeName>A</ForeName>
+                        <Initials>A</Initials>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Chatterjee</LastName>
+                        <ForeName>T</ForeName>
+                        <Initials>T</Initials>
+                    </Author>
+                </AuthorList>
+                <Language>eng</Language>
+                <PublicationTypeList>
+                    <PublicationType UI="D016428">Journal Article</PublicationType>
+                    <PublicationType UI="D013485">Clinical Trial, Phase IV</PublicationType>
+                </PublicationTypeList>
+            </Article>
+            <MedlineJournalInfo>
+                <Country>India</Country>
+                <MedlineTA>Indian J Public Health</MedlineTA>
+                <NlmUniqueID>0400673</NlmUniqueID>
+                <ISSNLinking>0019-557X</ISSNLinking>
+            </MedlineJournalInfo>
+            <CitationSubset>IM</CitationSubset>
+            <CitationSubset>J</CitationSubset>
+            <MeshHeadingList>
+                <MeshHeading>
+                    <DescriptorName UI="D002675" MajorTopicYN="N">Child, Preschool</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D016000" MajorTopicYN="N">Cluster Analysis</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D003430" MajorTopicYN="N">Cross-Sectional Studies</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D004522" MajorTopicYN="N">Educational Status</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D005260" MajorTopicYN="N">Female</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D006801" MajorTopicYN="N">Humans</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D007194" MajorTopicYN="N" Type="Geographic">India</DescriptorName>
+                    <QualifierName UI="Q000453" MajorTopicYN="N">epidemiology</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D007223" MajorTopicYN="N">Infant</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D008297" MajorTopicYN="N">Male</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D009752" MajorTopicYN="Y">Nutritional Status</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D011203" MajorTopicYN="N">Poverty</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D011287" MajorTopicYN="N">Prejudice</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D015995" MajorTopicYN="N">Prevalence</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D011502" MajorTopicYN="N">Protein-Energy Malnutrition</DescriptorName>
+                    <QualifierName UI="Q000453" MajorTopicYN="Y">epidemiology</QualifierName>
+                </MeshHeading>
+            </MeshHeadingList>
+            <OtherID Source="PIP">143717</OtherID>
+            <OtherID Source="POP">00288124</OtherID>
+            <OtherAbstract Type="PIP" Language="eng">
+                <AbstractText>This document presents a cross-sectional survey concerning the magnitude of protein energy malnutrition (PEM) and its associated factors among 435 under-5 pavement-dwelling children in Calcutta. Results revealed that 69.43% were undernourished and that 16% of them were suffering from severe malnutrition (grade III and IV of the Indian Academy of Pediatrics criteria for PEM). The 24-35 month age group had the highest prevalence of malnutrition (82.93%) followed by the 36-47 and 12-23 month age groups with prevalences of 76.19% and 74.03%, respectively. Prevalence of severe grade malnutrition was noted to be three times higher in females (24.76%) than males (8.45%), and among families it increased in direct proportion to birth rate and inverse proportion to birth interval. Moreover, children of illiterate parents and nonworking mothers had a higher incidence of severe PEM. Simple measures such as exclusive breast-feeding and timely complementary feeding as well as measures directed toward birth spacing and limiting family size should be implemented to solve the problem of malnutrition.</AbstractText>
+            </OtherAbstract>
+            <KeywordList Owner="PIP">
+                <Keyword MajorTopicYN="N">Age Factors</Keyword>
+                <Keyword MajorTopicYN="Y">Child Nutrition</Keyword>
+                <Keyword MajorTopicYN="N">Geographic Factors</Keyword>
+                <Keyword MajorTopicYN="N">Population Characteristics</Keyword>
+                <Keyword MajorTopicYN="N">Spatial Distribution</Keyword>
+                <Keyword MajorTopicYN="Y">Urban Population</Keyword>
+            </KeywordList>
+            <GeneralNote Owner="PIP">TJ: INDIAN JOURNAL OF PUBLIC HEALTH.</GeneralNote>
+        </MedlineCitation>
+        <PubmedData>
+            <History>
+                <PubMedPubDate PubStatus="pubmed">
+                    <Year>2001</Year>
+                    <Month>3</Month>
+                    <Day>13</Day>
+                    <Hour>10</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="medline">
+                    <Year>2001</Year>
+                    <Month>5</Month>
+                    <Day>18</Day>
+                    <Hour>10</Hour>
+                    <Minute>1</Minute>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="entrez">
+                    <Year>2001</Year>
+                    <Month>3</Month>
+                    <Day>13</Day>
+                    <Hour>10</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+            </History>
+            <PublicationStatus>ppublish</PublicationStatus>
+            <ArticleIdList>
+                <ArticleId IdType="pubmed">11243089</ArticleId>
+            </ArticleIdList>
+        </PubmedData>
+    </PubmedArticle>
+    <PubmedArticle>
+        <MedlineCitation Status="MEDLINE" Owner="NASA">
+            <PMID Version="1">11540070</PMID>
+            <DateCompleted>
+                <Year>1995</Year>
+                <Month>12</Month>
+                <Day>11</Day>
+            </DateCompleted>
+            <DateRevised>
+                <Year>2013</Year>
+                <Month>11</Month>
+                <Day>21</Day>
+            </DateRevised>
+            <Article PubModel="Print">
+                <Journal>
+                    <ISSN IssnType="Print">0735-2689</ISSN>
+                    <JournalIssue CitedMedium="Print">
+                        <Volume>6</Volume>
+                        <Issue>1</Issue>
+                        <PubDate>
+                            <Year>1987</Year>
+                        </PubDate>
+                    </JournalIssue>
+                    <Title>Critical reviews in plant sciences</Title>
+                    <ISOAbbreviation>CRC Crit Rev Plant Sci</ISOAbbreviation>
+                </Journal>
+                <ArticleTitle>Calcium messenger system in plants.</ArticleTitle>
+                <Pagination>
+                    <MedlinePgn>47-103</MedlinePgn>
+                </Pagination>
+                <AuthorList CompleteYN="Y">
+                    <Author ValidYN="Y">
+                        <LastName>Poovaiah</LastName>
+                        <ForeName>B W</ForeName>
+                        <Initials>BW</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>Department of Horticulture, Washington State University, Pullman, USA.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Reddy</LastName>
+                        <ForeName>A S</ForeName>
+                        <Initials>AS</Initials>
+                    </Author>
+                </AuthorList>
+                <Language>eng</Language>
+                <GrantList CompleteYN="Y">
+                    <Grant>
+                        <GrantID>DCB-8502215</GrantID>
+                        <Acronym>DC</Acronym>
+                        <Agency>NIDCD NIH HHS</Agency>
+                        <Country>United States</Country>
+                    </Grant>
+                </GrantList>
+                <PublicationTypeList>
+                    <PublicationType UI="D016428">Journal Article</PublicationType>
+                    <PublicationType UI="D013486">Research Support, U.S. Gov't, Non-P.H.S.</PublicationType>
+                    <PublicationType UI="D013487">Research Support, U.S. Gov't, P.H.S.</PublicationType>
+                    <PublicationType UI="D016454">Review</PublicationType>
+                </PublicationTypeList>
+            </Article>
+            <MedlineJournalInfo>
+                <Country>United States</Country>
+                <MedlineTA>CRC Crit Rev Plant Sci</MedlineTA>
+                <NlmUniqueID>9889759</NlmUniqueID>
+                <ISSNLinking>0735-2689</ISSNLinking>
+            </MedlineJournalInfo>
+            <ChemicalList>
+                <Chemical>
+                    <RegistryNumber>0</RegistryNumber>
+                    <NameOfSubstance UI="D002135">Calcium-Binding Proteins</NameOfSubstance>
+                </Chemical>
+                <Chemical>
+                    <RegistryNumber>0</RegistryNumber>
+                    <NameOfSubstance UI="D002147">Calmodulin</NameOfSubstance>
+                </Chemical>
+                <Chemical>
+                    <RegistryNumber>0</RegistryNumber>
+                    <NameOfSubstance UI="D010937">Plant Growth Regulators</NameOfSubstance>
+                </Chemical>
+                <Chemical>
+                    <RegistryNumber>EC 2.7.11.17</RegistryNumber>
+                    <NameOfSubstance UI="D017871">Calcium-Calmodulin-Dependent Protein Kinases</NameOfSubstance>
+                </Chemical>
+                <Chemical>
+                    <RegistryNumber>SY7Q814VUP</RegistryNumber>
+                    <NameOfSubstance UI="D002118">Calcium</NameOfSubstance>
+                </Chemical>
+            </ChemicalList>
+            <CitationSubset>S</CitationSubset>
+            <MeshHeadingList>
+                <MeshHeading>
+                    <DescriptorName UI="D000595" MajorTopicYN="N">Amino Acid Sequence</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D002118" MajorTopicYN="N">Calcium</DescriptorName>
+                    <QualifierName UI="Q000502" MajorTopicYN="Y">physiology</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D002135" MajorTopicYN="N">Calcium-Binding Proteins</DescriptorName>
+                    <QualifierName UI="Q000502" MajorTopicYN="N">physiology</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D017871" MajorTopicYN="N">Calcium-Calmodulin-Dependent Protein Kinases</DescriptorName>
+                    <QualifierName UI="Q000378" MajorTopicYN="N">metabolism</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D002147" MajorTopicYN="N">Calmodulin</DescriptorName>
+                    <QualifierName UI="Q000378" MajorTopicYN="N">metabolism</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D018506" MajorTopicYN="Y">Gene Expression Regulation, Plant</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D018522" MajorTopicYN="N">Gravitropism</DescriptorName>
+                    <QualifierName UI="Q000502" MajorTopicYN="N">physiology</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D008969" MajorTopicYN="N">Molecular Sequence Data</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D059828" MajorTopicYN="N">Plant Cells</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D010937" MajorTopicYN="N">Plant Growth Regulators</DescriptorName>
+                    <QualifierName UI="Q000378" MajorTopicYN="N">metabolism</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D018521" MajorTopicYN="Y">Plant Physiological Phenomena</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D010944" MajorTopicYN="N">Plants</DescriptorName>
+                    <QualifierName UI="Q000235" MajorTopicYN="Y">genetics</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D015290" MajorTopicYN="Y">Second Messenger Systems</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D015398" MajorTopicYN="N">Signal Transduction</DescriptorName>
+                    <QualifierName UI="Q000502" MajorTopicYN="N">physiology</QualifierName>
+                </MeshHeading>
+            </MeshHeadingList>
+            <NumberOfReferences>363</NumberOfReferences>
+            <OtherID Source="NASA">00012050</OtherID>
+            <OtherAbstract Type="NASA" Language="eng">
+                <AbstractText>The purpose of this review is to delineate the ubiquitous and pivotal role of Ca2+ in diverse physiological processes. Emphasis will be given to the role of Ca2+ in stimulus-response coupling. In addition to reviewing the present status of research, our intention is to critically evaluate the existing data and describe the newly developing areas of Ca2+ research in plants.</AbstractText>
+            </OtherAbstract>
+            <KeywordList Owner="NASA">
+                <Keyword MajorTopicYN="N">NASA Discipline Number 40-30</Keyword>
+                <Keyword MajorTopicYN="N">NASA Discipline Plant Biology</Keyword>
+                <Keyword MajorTopicYN="N">NASA Program Space Biology</Keyword>
+                <Keyword MajorTopicYN="N">Non-NASA Center</Keyword>
+            </KeywordList>
+            <InvestigatorList>
+                <Investigator ValidYN="Y">
+                    <LastName>Poovaiah</LastName>
+                    <ForeName>B W</ForeName>
+                    <Initials>BW</Initials>
+                    <AffiliationInfo>
+                        <Affiliation>WA St U, Pullman, Dept Horticulture</Affiliation>
+                    </AffiliationInfo>
+                </Investigator>
+            </InvestigatorList>
+            <GeneralNote Owner="NASA">Grant numbers: NAG-10-0032</GeneralNote>
+        </MedlineCitation>
+        <PubmedData>
+            <History>
+                <PubMedPubDate PubStatus="pubmed">
+                    <Year>1987</Year>
+                    <Month>1</Month>
+                    <Day>1</Day>
+                    <Hour>0</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="medline">
+                    <Year>2001</Year>
+                    <Month>9</Month>
+                    <Day>11</Day>
+                    <Hour>10</Hour>
+                    <Minute>1</Minute>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="entrez">
+                    <Year>1987</Year>
+                    <Month>1</Month>
+                    <Day>1</Day>
+                    <Hour>0</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+            </History>
+            <PublicationStatus>ppublish</PublicationStatus>
+            <ArticleIdList>
+                <ArticleId IdType="pubmed">11540070</ArticleId>
+                <ArticleId IdType="doi">10.1080/07352688709382247</ArticleId>
+            </ArticleIdList>
+        </PubmedData>
+    </PubmedArticle>
+    <PubmedArticle>
+        <MedlineCitation Status="MEDLINE" Owner="NLM">
+            <PMID Version="1">420880</PMID>
+            <DateCompleted>
+                <Year>1979</Year>
+                <Month>05</Month>
+                <Day>26</Day>
+            </DateCompleted>
+            <DateRevised>
+                <Year>2017</Year>
+                <Month>11</Month>
+                <Day>17</Day>
+            </DateRevised>
+            <Article PubModel="Print">
+                <Journal>
+                    <ISSN IssnType="Print">0320-9725</ISSN>
+                    <JournalIssue CitedMedium="Print">
+                        <Volume>44</Volume>
+                        <Issue>1</Issue>
+                        <PubDate>
+                            <Year>1979</Year>
+                            <Month>Jan</Month>
+                        </PubDate>
+                    </JournalIssue>
+                    <Title>Biokhimiia (Moscow, Russia)</Title>
+                    <ISOAbbreviation>Biokhimiia</ISOAbbreviation>
+                </Journal>
+                <ArticleTitle>[Changes in DNA methylation in rat during ontogenesis and under effects of hydrocortisone].</ArticleTitle>
+                <Pagination>
+                    <MedlinePgn>78-35</MedlinePgn>
+                </Pagination>
+                <AuthorList CompleteYN="Y">
+                    <Author ValidYN="Y">
+                        <LastName>Vaniushi</LastName>
+                        <ForeName>B F</ForeName>
+                        <Initials>BF</Initials>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Romanenko</LastName>
+                        <ForeName>E B</ForeName>
+                        <Initials>EB</Initials>
+                    </Author>
+                </AuthorList>
+                <Language>rus</Language>
+                <DataBankList CompleteYN="Y">
+                    <DataBank>
+                        <DataBankName>GENBANK</DataBankName>
+                        <AccessionNumberList>
+                            <AccessionNumber>AF321191</AccessionNumber>
+                            <AccessionNumber>AF321192</AccessionNumber>
+                        </AccessionNumberList>
+                    </DataBank>
+                    <DataBank>
+                        <DataBankName>OMIM</DataBankName>
+                        <AccessionNumberList>
+                            <AccessionNumber>118200</AccessionNumber>
+                            <AccessionNumber>145900</AccessionNumber>
+                            <AccessionNumber>162500</AccessionNumber>
+                            <AccessionNumber>605253</AccessionNumber>
+                        </AccessionNumberList>
+                    </DataBank>
+                </DataBankList>
+                <PublicationTypeList>
+                    <PublicationType UI="D016428">Journal Article</PublicationType>
+                </PublicationTypeList>
+                <VernacularTitle>Izmenenie metilirovaniia DNK krys v ontogeneze i pod vliianiem gidrokortizona.</VernacularTitle>
+            </Article>
+            <MedlineJournalInfo>
+                <Country>Russia (Federation)</Country>
+                <MedlineTA>Biokhimiia</MedlineTA>
+                <NlmUniqueID>0372667</NlmUniqueID>
+                <ISSNLinking>0320-9725</ISSNLinking>
+            </MedlineJournalInfo>
+            <ChemicalList>
+                <Chemical>
+                    <RegistryNumber>9007-49-2</RegistryNumber>
+                    <NameOfSubstance UI="D004247">DNA</NameOfSubstance>
+                </Chemical>
+                <Chemical>
+                    <RegistryNumber>EC 2.1.1.-</RegistryNumber>
+                    <NameOfSubstance UI="D008780">Methyltransferases</NameOfSubstance>
+                </Chemical>
+                <Chemical>
+                    <RegistryNumber>EC 2.1.1.37</RegistryNumber>
+                    <NameOfSubstance UI="D004248">DNA (Cytosine-5-)-Methyltransferases</NameOfSubstance>
+                </Chemical>
+                <Chemical>
+                    <RegistryNumber>WI4X0X7BPJ</RegistryNumber>
+                    <NameOfSubstance UI="D006854">Hydrocortisone</NameOfSubstance>
+                </Chemical>
+            </ChemicalList>
+            <CitationSubset>IM</CitationSubset>
+            <MeshHeadingList>
+                <MeshHeading>
+                    <DescriptorName UI="D000375" MajorTopicYN="N">Aging</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D000818" MajorTopicYN="N">Animals</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D000831" MajorTopicYN="N">Animals, Newborn</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D001921" MajorTopicYN="N">Brain</DescriptorName>
+                    <QualifierName UI="Q000254" MajorTopicYN="N">growth &amp; development</QualifierName>
+                    <QualifierName UI="Q000378" MajorTopicYN="Y">metabolism</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D004247" MajorTopicYN="N">DNA</DescriptorName>
+                    <QualifierName UI="Q000378" MajorTopicYN="Y">metabolism</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D004248" MajorTopicYN="N">DNA (Cytosine-5-)-Methyltransferases</DescriptorName>
+                    <QualifierName UI="Q000378" MajorTopicYN="Y">metabolism</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D004622" MajorTopicYN="N">Embryo, Mammalian</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D005260" MajorTopicYN="N">Female</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D006854" MajorTopicYN="N">Hydrocortisone</DescriptorName>
+                    <QualifierName UI="Q000494" MajorTopicYN="Y">pharmacology</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D007700" MajorTopicYN="N">Kinetics</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D008099" MajorTopicYN="N">Liver</DescriptorName>
+                    <QualifierName UI="Q000254" MajorTopicYN="N">growth &amp; development</QualifierName>
+                    <QualifierName UI="Q000378" MajorTopicYN="Y">metabolism</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D008745" MajorTopicYN="N">Methylation</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D008780" MajorTopicYN="N">Methyltransferases</DescriptorName>
+                    <QualifierName UI="Q000378" MajorTopicYN="Y">metabolism</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D011247" MajorTopicYN="N">Pregnancy</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D051381" MajorTopicYN="N">Rats</DescriptorName>
+                </MeshHeading>
+            </MeshHeadingList>
+        </MedlineCitation>
+        <PubmedData>
+            <History>
+                <PubMedPubDate PubStatus="pubmed">
+                    <Year>1979</Year>
+                    <Month>1</Month>
+                    <Day>1</Day>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="medline">
+                    <Year>1979</Year>
+                    <Month>1</Month>
+                    <Day>1</Day>
+                    <Hour>0</Hour>
+                    <Minute>1</Minute>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="entrez">
+                    <Year>1979</Year>
+                    <Month>1</Month>
+                    <Day>1</Day>
+                    <Hour>0</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+            </History>
+            <PublicationStatus>ppublish</PublicationStatus>
+            <ArticleIdList>
+                <ArticleId IdType="pubmed">420880</ArticleId>
+            </ArticleIdList>
+        </PubmedData>
+    </PubmedArticle>
+    <DeleteCitation>
+        <PMID Version="1">12345</PMID>
+        <PMID Version="1">23456</PMID>
+    </DeleteCitation>
+</PubmedArticleSet>
