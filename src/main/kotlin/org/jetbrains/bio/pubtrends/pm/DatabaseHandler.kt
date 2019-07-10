@@ -75,6 +75,17 @@ open class PostgresqlDatabaseHandler(
             }
         }
     }
+
+    override fun delete(articlePMIDs: List<Int>) {
+        transaction {
+            addLogger(Log4jSqlLogger)
+
+            PMPublications.deleteWhere { PMPublications.pmid inList articlePMIDs }
+            PMCitations.deleteWhere {
+                (PMCitations.pmidOut inList articlePMIDs) or (PMCitations.pmidIn inList articlePMIDs)
+            }
+        }
+    }
 }
 
 class BatchInsertUpdateOnDuplicate(

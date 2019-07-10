@@ -285,4 +285,8 @@
             </ArticleIdList>
         </PubmedData>
     </PubmedArticle>
+    <DeleteCitation>
+        <PMID Version="1">12345</PMID>
+        <PMID Version="1">23456</PMID>
+    </DeleteCitation>
 </PubmedArticleSet>

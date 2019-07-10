@@ -90,4 +90,30 @@ class ParserTest {
                 29391692 to Articles.article29391692)
         testArticlesForFile("articlesWithExtraordinaryTitle.xml", titlesArticles)
     }
+
+    @Test
+    fun testParseDeleteArticlesCount() {
+        val name = "articlesWithExtraordinaryTitle.xml"
+        val path = parserFileSetup(name)
+        check(path != "") {
+            "Failed to load test file: $name"
+        }
+        parser.parse(path)
+
+        val deletedArticlePMIDList = parser.deletedArticlePMIDList
+        assertEquals(deletedArticlePMIDList.size, 2)
+    }
+
+    @Test
+    fun testParseDeleteArticlePMIDs() {
+        val name = "articlesWithExtraordinaryTitle.xml"
+        val path = parserFileSetup(name)
+        check(path != "") {
+            "Failed to load test file: $name"
+        }
+        parser.parse(path)
+
+        val deletedArticlePMIDList = parser.deletedArticlePMIDList
+        assertEquals(deletedArticlePMIDList, listOf<Int>(12345, 23456))
+    }
 }

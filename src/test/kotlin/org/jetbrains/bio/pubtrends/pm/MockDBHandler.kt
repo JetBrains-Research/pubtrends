@@ -9,6 +9,7 @@ class MockDBHandler (private val batch : Boolean = false) : AbstractDBHandler {
      */
 
     var articlesStored = 0
+    var articlesDeleted = 0
 
     companion object {
         private val logger = LogManager.getLogger(MockDBHandler::class)
@@ -21,5 +22,11 @@ class MockDBHandler (private val batch : Boolean = false) : AbstractDBHandler {
         } else {
             articlesStored = articles.size
         }
+    }
+
+    override fun delete(articlePMIDs: List<Int>) {
+        logger.info("Attempted to delete ${articlePMIDs.size} articles")
+        logger.info("Article PMIDs: ${articlePMIDs.joinToString(separator = ",")}")
+        articlesDeleted = articlePMIDs.size
     }
 }

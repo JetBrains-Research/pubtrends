@@ -25,6 +25,7 @@ class PubmedXMLParser(
 
         // Tags that actually contain data
         const val PMID_TAG = "$MEDLINE_CITATION_TAG/PMID"
+        const val DELETED_PMID_TAG = "PubmedArticleSet/DeleteCitation/PMID"
         const val YEAR_TAG = "$MEDLINE_CITATION_TAG/Article/Journal/JournalIssue/PubDate/Year"
         const val MEDLINE_TAG = "$MEDLINE_CITATION_TAG/Article/Journal/JournalIssue/PubDate/MedlineDate"
 
@@ -59,6 +60,7 @@ class PubmedXMLParser(
 
     // Container for parsed articles
     internal val articleList = mutableListOf<PubmedArticle>()
+    internal val deletedArticlePMIDList = mutableListOf<Int>()
 
     // Stats about articles & XML tags
     val tags = HashMap<String, Int>()
@@ -98,6 +100,7 @@ class PubmedXMLParser(
         articleCounter = 0
         articlesStored = 0
         articleList.clear()
+        deletedArticlePMIDList.clear()
         keywordCounter = 0
         citationCounter = 0
         tags.clear()
@@ -171,6 +174,11 @@ class PubmedXMLParser(
                     // PMID
                     fullName == PMID_TAG -> {
                         currentArticle.pmid = dataElement.data.toInt()
+                    }
+
+                    // PMIDs of deleted articles
+                    fullName == DELETED_PMID_TAG -> {
+                        deletedArticlePMIDList.add(dataElement.data.toInt())
                     }
 
                     // Year of publication
@@ -349,7 +357,15 @@ class PubmedXMLParser(
         if (articleList.size > 0) {
             storeArticles()
         }
-        logger.info("Articles found: $articleCounter, stored: $articlesStored, " +
+
+        // Delete articles if needed
+        if (deletedArticlePMIDList.size > 0) {
+            logger.info("Deleting ${deletedArticlePMIDList.size} articles")
+
+            dbHandler.delete(deletedArticlePMIDList)
+        }
+
+        logger.info("Articles found: $articleCounter, deleted: ${deletedArticlePMIDList.size}, " +
                 "keywords: $keywordCounter, citations: $citationCounter")
     }
 
