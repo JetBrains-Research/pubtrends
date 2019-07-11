@@ -1,15 +1,16 @@
 package org.jetbrains.bio.pubtrends.ss
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.jetbrains.bio.pubtrends.crawler.PUBLICATION_MAX_TITLE_LENGTH
+import org.jetbrains.bio.pubtrends.PGEnum
+import org.jetbrains.bio.pubtrends.jsonb
 import org.jetbrains.bio.pubtrends.ss.SSPublications.crc32id
 import org.jetbrains.bio.pubtrends.ss.SSPublications.keywords
 import org.jetbrains.bio.pubtrends.ss.SSPublications.ssid
 import org.jetbrains.exposed.sql.Table
-import org.postgresql.util.PGobject
 
 internal const val MAX_ID_LENGTH = 40
 internal const val MAX_DOI_LENGTH = 100
+internal const val PUBLICATION_MAX_TITLE_LENGTH = 1023
 
 internal val jsonMapper = ObjectMapper()
 
@@ -43,13 +44,6 @@ object SSPublications : Table() {
 enum class PublicationSource {
     Nature,
     Arxiv
-}
-
-class PGEnum<T : Enum<T>>(enumTypeName: String, enumValue: T?) : PGobject() {
-    init {
-        value = enumValue?.name
-        type = enumTypeName
-    }
 }
 
 object SSCitations : Table() {

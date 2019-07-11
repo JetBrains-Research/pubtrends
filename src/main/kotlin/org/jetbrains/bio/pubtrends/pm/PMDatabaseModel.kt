@@ -1,19 +1,14 @@
 package org.jetbrains.bio.pubtrends.pm
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.jetbrains.bio.pubtrends.PGEnum
+import org.jetbrains.bio.pubtrends.jsonb
 import org.jetbrains.exposed.sql.Table
 import org.postgresql.util.PGobject
 
 internal const val PUBLICATION_MAX_TITLE_LENGTH = 1023
 
 internal val jsonMapper = ObjectMapper()
-
-class PGEnum<T : Enum<T>>(enumTypeName: String, enumValue: T?) : PGobject() {
-    init {
-        value = enumValue?.name
-        type = enumTypeName
-    }
-}
 
 enum class PublicationType {
     ClinicalTrial,
@@ -30,7 +25,7 @@ object PMPublications : Table() {
     val abstract = text("abstract").nullable()
 
     val type = customEnumeration("type", "PublicationType",
-        { value -> PublicationType.valueOf(value as String) }, { PGEnum("PublicationType", it) })
+            { value -> PublicationType.valueOf(value as String) }, { PGEnum("PublicationType", it) })
 
     val keywords = text("keywords").nullable()
     val mesh = text("mesh").nullable()

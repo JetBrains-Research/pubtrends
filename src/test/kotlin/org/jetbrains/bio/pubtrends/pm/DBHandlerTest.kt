@@ -15,7 +15,7 @@ import kotlin.test.assertTrue
 
 class DBHandlerTest {
     companion object {
-        val settingsRoot: Path = Paths.get(System.getProperty("user.home", ""), ".pubtrends")
+        private val settingsRoot: Path = Paths.get(System.getProperty("user.home", ""), ".pubtrends")
 
         init {
             check(Files.exists(settingsRoot)) {
@@ -23,7 +23,7 @@ class DBHandlerTest {
             }
         }
 
-        val configPath: Path = settingsRoot.resolve("config.properties")
+        private val configPath: Path = settingsRoot.resolve("config.properties")
 
         init {
             check(Files.exists(configPath)) {

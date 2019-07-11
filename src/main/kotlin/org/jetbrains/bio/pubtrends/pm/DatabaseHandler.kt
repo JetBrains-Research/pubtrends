@@ -1,20 +1,19 @@
 package org.jetbrains.bio.pubtrends.pm
 
 import org.apache.logging.log4j.LogManager
+import org.jetbrains.bio.pubtrends.batchInsertOnDuplicateKeyUpdate
 import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.statements.BatchInsertStatement
 import org.jetbrains.exposed.sql.statements.StatementContext
 import org.jetbrains.exposed.sql.statements.expandArgs
-import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
 
 open class PostgresqlDatabaseHandler(
-    url: String,
-    port: Int,
-    database: String,
-    user: String,
-    password: String,
-    private val resetDatabase: Boolean
+        url: String,
+        port: Int,
+        database: String,
+        user: String,
+        password: String,
+        private val resetDatabase: Boolean
 
 ) : AbstractDBHandler {
     companion object Log4jSqlLogger : SqlLogger {
@@ -27,10 +26,10 @@ open class PostgresqlDatabaseHandler(
 
     init {
         Database.connect(
-            url = "jdbc:postgresql://$url:$port/$database",
-            driver = "org.postgresql.Driver",
-            user = user,
-            password = password
+                url = "jdbc:postgresql://$url:$port/$database",
+                driver = "org.postgresql.Driver",
+                user = user,
+                password = password
         )
 
         transaction {
@@ -41,15 +40,15 @@ open class PostgresqlDatabaseHandler(
             }
 
             val customTypeExists = exec(
-                "SELECT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'publicationtype');"
+                    "SELECT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'publicationtype');"
             ) { rs ->
                 rs.next() && (rs.getBoolean("exists"))
             }
 
             if (customTypeExists == false) {
                 exec(
-                    "CREATE TYPE PublicationType AS ENUM " +
-                            "('ClinicalTrial', 'Dataset', 'TechnicalReport', 'Article', 'Review');"
+                        "CREATE TYPE PublicationType AS ENUM " +
+                                "('ClinicalTrial', 'Dataset', 'TechnicalReport', 'Article', 'Review');"
                 )
             }
 
@@ -64,8 +63,8 @@ open class PostgresqlDatabaseHandler(
             addLogger(Log4jSqlLogger)
 
             PMPublications.batchInsertOnDuplicateKeyUpdate(
-                articles,
-                listOf(PMPublications.year, PMPublications.title, PMPublications.abstract)
+                    articles, PMPublications.pmid,
+                    listOf(PMPublications.year, PMPublications.title, PMPublications.abstract)
             ) { batch, article ->
                 batch[pmid] = article.pmid
                 batch[year] = article.year
@@ -99,47 +98,4 @@ open class PostgresqlDatabaseHandler(
             }
         }
     }
-}
-
-class BatchInsertUpdateOnDuplicate(
-    table: Table,
-    private val onDupUpdate: List<Column<*>>
-) : BatchInsertStatement(table, false) {
-    override fun prepareSQL(transaction: Transaction): String {
-        val onUpdateSQL = if (onDupUpdate.isNotEmpty()) {
-            " ON CONFLICT (pmid) DO UPDATE SET ${
-            onDupUpdate.joinToString {
-                "${transaction.identity(it)} = Excluded.${transaction.identity(it)}"
-            }}"
-        } else ""
-        return super.prepareSQL(transaction) + onUpdateSQL
-    }
-}
-
-fun <T : Table, E> T.batchInsertOnDuplicateKeyUpdate(
-    data: List<E>,
-    onDupUpdateColumns: List<Column<*>>, body: T.(BatchInsertUpdateOnDuplicate, E) -> Unit
-): List<Int> {
-    return data.takeIf { it.isNotEmpty() }?.let {
-        val insert = BatchInsertUpdateOnDuplicate(this, onDupUpdateColumns)
-        data.forEach {
-            insert.addBatch()
-            body(insert, it)
-        }
-        TransactionManager.current().exec(insert)
-        columns.firstOrNull { it.columnType.isAutoInc }?.let { idCol ->
-            insert.generatedKey?.mapNotNull {
-                val value = it[idCol]
-                when (value) {
-                    is Long -> value.toInt()
-                    is Int -> value
-                    null -> null
-                    else -> error(
-                        "can't find primary key of type Int or Long; " +
-                                "map['$idCol']='$value' (where map='$it')"
-                    )
-                }
-            }
-        }
-    }.orEmpty()
 }

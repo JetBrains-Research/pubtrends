@@ -8,6 +8,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.*
+import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
 
@@ -26,7 +27,7 @@ fun main(args: Array<String>) {
         val options = parse(*args)
         if (options.has("help")) {
             printHelpOn(System.err)
-            System.exit(0)
+            exitProcess(0)
         }
 
         // Configure settings folder
@@ -39,7 +40,7 @@ fun main(args: Array<String>) {
         val configPath: Path = settingsRoot.resolve("config.properties")
         if (Files.notExists(configPath)) {
             logger.error("Config file not found, please modify and copy config.properties_example to $configPath")
-            System.exit(1)
+            exitProcess(1)
         }
 
         val config = Properties().apply {
