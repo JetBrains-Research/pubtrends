@@ -1,23 +1,22 @@
-import ipywidgets as widgets
 import logging
-import numpy as np
-import networkx as nx
 import math
-import pandas as pd
 
+import ipywidgets as widgets
+import networkx as nx
+import numpy as np
+import pandas as pd
+from IPython.display import display
+from bokeh.colors import RGB
+from bokeh.core.properties import value
 from bokeh.io import push_notebook
 from bokeh.layouts import row
 from bokeh.models import ColumnDataSource, CDSView, GroupFilter, CustomJS
-from bokeh.models import Plot, Range1d, MultiLine, Circle, Span
 from bokeh.models import GraphRenderer, StaticLayoutProvider
 # Tools used: hover,pan,tap,wheel_zoom,box_zoom,reset,save
 from bokeh.models import HoverTool, PanTool, WheelZoomTool, BoxZoomTool, ResetTool, SaveTool
+from bokeh.models import Plot, Range1d, MultiLine, Circle, Span
 from bokeh.plotting import figure, show
 from bokeh.transform import factor_cmap
-from bokeh.colors import RGB
-from bokeh.core.properties import value
-
-from IPython.display import display
 from matplotlib import pyplot as plt
 from wordcloud import WordCloud
 
@@ -318,7 +317,7 @@ class Plotter:
         palette = [RGB(*[round(c * 255) for c in cmap(i)[:3]]) for i in range(len(factors))]
         colors = factor_cmap('pmid', palette=palette, factors=factors)
 
-        year_range = [self.analyzer.min_year -1 , self.analyzer.max_year + 1]
+        year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
         p = figure(tools=TOOLS, toolbar_location="above",
                    plot_width=960, plot_height=300, x_range=year_range, title='Max relative gain of citations per year')
         p.xaxis.axis_label = 'Year'
@@ -343,7 +342,7 @@ class Plotter:
             pmid = dropdown.value
             data = self.analyzer.df[self.analyzer.df['pmid'] == pmid]
 
-            x = data.columns[4:-3].values.astype(int)
+            x = self.analyzer.years
             y = data[x].values[0]
 
             bar.data_source.data = {'x': x, 'y': y}

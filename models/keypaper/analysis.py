@@ -209,8 +209,8 @@ class KeyPaperAnalyzer:
         self.logger.info(f'Built citation graph - nodes {len(self.G.nodes())} edges {len(self.G.edges())}')
 
     def update_years(self):
-        years = self.df.columns.values[4:-2].astype(int)
-        self.min_year, self.max_year = np.min(years), np.max(years)
+        self.years = [int(col) for col in list(self.df.columns) if isinstance(col, int)]
+        self.min_year, self.max_year = np.min(self.years), np.max(self.years)
 
     def load_cocitations(self):
         self.logger.info('Calculating co-citations for selected articles')
@@ -274,12 +274,11 @@ class KeyPaperAnalyzer:
     def find_max_gain_papers(self):
         self.logger.info('Identifying papers with max citation gain for each year')
         max_gain_data = []
-        cols = self.df.columns[3:-2]
-        for i in range(len(cols)):
-            max_gain = self.df[cols[i]].astype(int).max()
+        for year in self.years:
+            max_gain = self.df[year].astype(int).max()
             if max_gain > 0:
-                sel = self.df[self.df[cols[i]] == max_gain]
-                max_gain_data.append([cols[i], str(sel['pmid'].values[0]),
+                sel = self.df[self.df[year] == max_gain]
+                max_gain_data.append([year, str(sel['pmid'].values[0]),
                                       sel['title'].values[0],
                                       sel['year'].values[0], max_gain])
 
@@ -291,19 +290,17 @@ class KeyPaperAnalyzer:
     def find_max_relative_gain_papers(self):
         self.logger.info('Identifying papers with max relative citation gain for each year\n')
         current_sum = pd.Series(np.zeros(len(self.df), ))
-        cols = self.df.columns[3:-2]
         df_rel = self.df.loc[:, ['pmid', 'title', 'year']]
-        for col in cols:
-            df_rel[col] = self.df[col] / (current_sum + (current_sum == 0))
-            current_sum += self.df[col]
+        for year in self.years:
+            df_rel[year] = self.df[year] / (current_sum + (current_sum == 0))
+            current_sum += self.df[year]
 
         max_rel_gain_data = []
-        cols = self.df.columns[3:-2]
-        for col in cols:
-            max_rel_gain = df_rel[col].max()
+        for year in self.years:
+            max_rel_gain = df_rel[year].max()
             if max_rel_gain > 1e-6:
-                sel = df_rel[df_rel[col] == max_rel_gain]
-                max_rel_gain_data.append([col, str(sel['pmid'].values[0]),
+                sel = df_rel[df_rel[year] == max_rel_gain]
+                max_rel_gain_data.append([year, str(sel['pmid'].values[0]),
                                           sel['title'].values[0],
                                           sel['year'].values[0], max_rel_gain])
 

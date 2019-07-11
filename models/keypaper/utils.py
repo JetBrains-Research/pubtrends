@@ -1,13 +1,12 @@
 ﻿import logging
+import re
+from collections import Counter
+
 import nltk
 import numpy as np
-import re
-
 from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
-
-from collections import Counter
+from nltk.tokenize import word_tokenize
 
 nltk.download('stopwords')
 nltk.download('punkt')
@@ -85,5 +84,5 @@ def get_word_cloud_data(df_kwd, c):
     for pair in list(df_kwd[df_kwd['comp'] == c]['kwd'])[0].split(','):
         ngram, count = pair.split(':')
         for word in ngram.split(' '):
-                kwds[word] = float(count) + kwds.get(word, 0)
+            kwds[word] = float(count) + kwds.get(word, 0)
     return kwds
