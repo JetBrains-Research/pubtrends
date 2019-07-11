@@ -58,6 +58,10 @@ class PubmedXMLParser(
 
     private val factory = XMLInputFactory.newFactory()!!
 
+    init {
+        factory.setProperty(XMLInputFactory.SUPPORT_DTD, false)
+    }
+
     // Container for parsed articles
     private var articlesStored = 0
     internal val articleList = mutableListOf<PubmedArticle>()
