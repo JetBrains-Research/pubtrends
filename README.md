@@ -97,3 +97,25 @@ conda activate pubtrends
     celery -A flask-async.celery worker -c 1 --loglevel=DEBUG
     ```
 4. Open localhost:5000/
+
+## Semantic Scholar Processing
+
+1. Download Sample from [Semantic Scholar](https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/sample-S2-records.gz)
+
+2. Or full archive 
+   ```
+   wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/manifest.txt -P  <PATH_TO_SEMANTIC_SCHOLAR_ARCHIVE>
+   wget -B https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/ -i manifest.txt
+   ```
+3. Unzip it (run in `<PATH_TO_SEMANTIC_SCHOLAR_ARCHIVE>`)
+    ```
+   gunzip -k *.gz
+    ```
+
+4. Add `<PATH_TO_SEMANTIC_SCHOLAR_ARCHIVE>` to `.pubtrends/config.properties`
+
+5. Launch Semantic Scholar Processor
+ 
+    ```
+    java -cp build/libs/crawler-dev.jar org.jetbrains.bio.pubtrends.ss.MainKt
+    ```
