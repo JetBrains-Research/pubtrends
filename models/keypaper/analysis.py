@@ -1,22 +1,49 @@
-import community
+import configparser
 import logging
+import os
+import re
+from io import StringIO
+
+import community
 import networkx as nx
 import numpy as np
 import pandas as pd
 import psycopg2 as pg_driver
-import re
-
 from Bio import Entrez
-from io import StringIO
 
 from .utils import get_subtopic_descriptions
 
 
 class KeyPaperAnalyzer:
     def __init__(self,
-                 host='localhost', port='5432', dbname='pubmed',
-                 user='biolabs', password='pubtrends',
+                 host=None, port=None, dbname=None,
+                 user=None, password=None,
                  email='nikolay.kapralov@gmail.com'):
+        self.logger = logging.getLogger(__name__)
+
+        # Find 'config.properties' file for parser
+        config = configparser.ConfigParser()
+        home_dir = os.path.expanduser('~')
+
+        # Add fake section [params] for ConfigParser to accept the file
+        with open(f'{home_dir}/.pubtrends/config.properties') as config_properties:
+            config.read_string("[params]\n" + config_properties.read())
+
+        if host is None:
+            host = config['params']['url']
+
+        if port is None:
+            port = config['params']['port']
+
+        if dbname is None:
+            dbname = config['params']['database']
+
+        if user is None:
+            user = config['params']['username']
+
+        if password is None:
+            password = config['params']['password']
+
         Entrez.email = email
         connection_string = f"""
         dbname={dbname} user={user} password={password} host={host} port={port}
@@ -24,7 +51,6 @@ class KeyPaperAnalyzer:
 
         self.conn = pg_driver.connect(connection_string)
         self.cursor = self.conn.cursor()
-        self.logger = logging.getLogger(__name__)
 
     def launch(self, *terms, task=None):
         """:return full log"""
