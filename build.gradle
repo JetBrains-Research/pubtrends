@@ -47,7 +47,6 @@ project(':') {
         compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.9'
         compile group: 'commons-codec', name: 'commons-codec', version: '1.9'
 
-
         testCompile 'junit:junit:4.+'
         testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
     }
@@ -66,7 +65,7 @@ project(':') {
     }
 
     version = 'dev'
-    mainClassName = "org.jetbrains.bio.pubtrends.MainKt"
+    mainClassName = "org.jetbrains.bio.pubtrends.pm.MainKt"
     applicationDefaultJvmArgs = ["-Xmx32G"]
 
     shadowJar {

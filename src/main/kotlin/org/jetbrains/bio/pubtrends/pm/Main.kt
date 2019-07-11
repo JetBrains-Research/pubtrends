@@ -1,10 +1,7 @@
-package org.jetbrains.bio.pubtrends
+package org.jetbrains.bio.pubtrends.pm
 
 import joptsimple.OptionParser
 import org.apache.logging.log4j.LogManager
-import org.jetbrains.bio.pubtrends.crawler.PostgresqlDatabaseHandler
-import org.jetbrains.bio.pubtrends.crawler.PubmedCrawler
-import org.jetbrains.bio.pubtrends.crawler.PubmedXMLHandler
 import java.io.BufferedReader
 import java.io.FileReader
 import java.nio.file.Files
@@ -61,30 +58,32 @@ fun main(args: Array<String>) {
 
         logger.info("Init database connection")
         val dbHandler = PostgresqlDatabaseHandler(
-                config["url"].toString(),
-                config["port"].toString().toInt(),
-                config["database"].toString(),
-                config["username"].toString(),
-                config["password"].toString(),
-                resetDatabase)
+            config["url"].toString(),
+            config["port"].toString().toInt(),
+            config["database"].toString(),
+            config["username"].toString(),
+            config["password"].toString(),
+            resetDatabase
+        )
 
         logger.info("Init Pubmed processor")
-        val pubmedXMLHandler =
-                PubmedXMLHandler(
-                        dbHandler,
-                        config["parserLimit"].toString().toInt(),
-                        config["batchSize"].toString().toInt())
+        val pubmedXMLParser =
+            PubmedXMLParser(
+                dbHandler,
+                config["parserLimit"].toString().toInt(),
+                config["batchSize"].toString().toInt()
+            )
 
         logger.info("Init crawler")
         val crawlerTSV = settingsRoot.resolve("crawler.tsv")
         val statsTSV = settingsRoot.resolve("stats.tsv")
         val collectStats = config["collectStats"].toString().toBoolean()
-        val pubmedCrawler = PubmedCrawler(pubmedXMLHandler, collectStats, statsTSV, crawlerTSV)
+        val pubmedCrawler = PubmedCrawler(pubmedXMLParser, collectStats, statsTSV, crawlerTSV)
 
         val lastIdCmd = if (options.has("lastId")) options.valueOf("lastId").toString().toInt() else null
 
         var retry = 1
-        var waitTime : Long = 1
+        var waitTime: Long = 1
         logger.info("Retrying downloading after any problems.")
         while (pubmedCrawler.update(lastIdCmd)) {
             logger.info("Waiting for $waitTime seconds...")

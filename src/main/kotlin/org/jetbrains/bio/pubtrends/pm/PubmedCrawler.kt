@@ -1,4 +1,4 @@
-package org.jetbrains.bio.pubtrends.crawler
+package org.jetbrains.bio.pubtrends.pm
 
 import org.apache.logging.log4j.LogManager
 import java.io.*
@@ -7,10 +7,10 @@ import java.nio.file.Path
 import java.util.zip.GZIPInputStream
 
 class PubmedCrawler(
-        dbHandler: PubmedXMLHandler,
-        private val collectStats: Boolean,
-        private val statsTSV: Path,
-        private val progressTSV: Path
+    private val xmlParser: PubmedXMLParser,
+    private val collectStats: Boolean,
+    private val statsTSV: Path,
+    private val progressTSV: Path
 ) {
 
     private val logger = LogManager.getLogger(PubmedCrawler::class)
@@ -22,7 +22,6 @@ class PubmedCrawler(
     }
 
     private val ftpHandler = PubmedFTPHandler()
-    private val xmlParser = PubmedXMLParser(dbHandler)
     private lateinit var tempDirectory: File
 
     /**
@@ -58,8 +57,10 @@ class PubmedCrawler(
             val (baselineFiles, updateFiles) = ftpHandler.fetch(lastId)
             val baselineSize = baselineFiles.size
             val updatesSize = updateFiles.size
-            logger.info("Found ${baselineSize + updatesSize} new file(s)\n" +
-                    "Baseline: $baselineSize, Updates: $updatesSize")
+            logger.info(
+                "Found ${baselineSize + updatesSize} new file(s)\n" +
+                        "Baseline: $baselineSize, Updates: $updatesSize"
+            )
             if (baselineSize + updatesSize == 0) {
                 return false
             }
@@ -77,7 +78,7 @@ class PubmedCrawler(
             if (collectStats) {
                 logger.info("Writing stats to $statsTSV")
                 statsTSV.toFile().outputStream().bufferedWriter().use {
-                    xmlParser.pubmedXMLHandler.tags.iterator().forEach { tag ->
+                    xmlParser.tags.iterator().forEach { tag ->
                         it.write("${tag.key}\t${tag.value}\n")
                     }
                 }

@@ -1,22 +1,49 @@
-import community
+import configparser
 import logging
+import os
+import re
+from io import StringIO
+
+import community
 import networkx as nx
 import numpy as np
 import pandas as pd
 import psycopg2 as pg_driver
-import re
-
 from Bio import Entrez
-from io import StringIO
 
 from .utils import get_subtopic_descriptions
 
 
 class KeyPaperAnalyzer:
     def __init__(self,
-                 host='localhost', port='5432', dbname='pubmed',
-                 user='biolabs', password='pubtrends',
+                 host=None, port=None, dbname=None,
+                 user=None, password=None,
                  email='nikolay.kapralov@gmail.com'):
+        self.logger = logging.getLogger(__name__)
+
+        # Find 'config.properties' file for parser
+        config = configparser.ConfigParser()
+        home_dir = os.path.expanduser('~')
+
+        # Add fake section [params] for ConfigParser to accept the file
+        with open(f'{home_dir}/.pubtrends/config.properties') as config_properties:
+            config.read_string("[params]\n" + config_properties.read())
+
+        if host is None:
+            host = config['params']['url']
+
+        if port is None:
+            port = config['params']['port']
+
+        if dbname is None:
+            dbname = config['params']['database']
+
+        if user is None:
+            user = config['params']['username']
+
+        if password is None:
+            password = config['params']['password']
+
         Entrez.email = email
         connection_string = f"""
         dbname={dbname} user={user} password={password} host={host} port={port}
@@ -24,7 +51,6 @@ class KeyPaperAnalyzer:
 
         self.conn = pg_driver.connect(connection_string)
         self.cursor = self.conn.cursor()
-        self.logger = logging.getLogger(__name__)
 
     def launch(self, *terms, task=None):
         """:return full log"""
@@ -116,7 +142,7 @@ class KeyPaperAnalyzer:
         CREATE UNIQUE INDEX temp_pmids_unique_index ON TEMP_PMIDS USING btree (pmid);
 
         SELECT P.pmid, P.title, P.abstract, P.year 
-        FROM Publications P
+        FROM PMPublications P
         JOIN TEMP_PMIDS AS T ON (P.pmid = T.pmid);
         ''')
         self.logger.info('Creating pmids table for request with index.')
@@ -132,13 +158,13 @@ class KeyPaperAnalyzer:
 
         values = ', '.join(['({})'.format(i) for i in sorted(self.pmids)])
         query = re.sub('\$VALUES\$', values, '''
-        SELECT C.pmid_cited AS pmid, P.year, COUNT(1) AS count
-        FROM Citations C
-        JOIN (VALUES $VALUES$) AS CT(pmid) ON (C.pmid_cited = CT.pmid)
-        JOIN Publications P
-        ON C.pmid_citing = P.pmid
+        SELECT C.pmid_in AS pmid, P.year, COUNT(1) AS count
+        FROM PMCitations C
+        JOIN (VALUES $VALUES$) AS CT(pmid) ON (C.pmid_in = CT.pmid)
+        JOIN PMPublications P
+        ON C.pmid_out = P.pmid
         WHERE P.year > 0
-        GROUP BY C.pmid_cited, P.year;
+        GROUP BY C.pmid_in, P.year;
         ''')
 
         with self.conn:
@@ -165,10 +191,10 @@ class KeyPaperAnalyzer:
 
         values = ', '.join(['({})'.format(i) for i in sorted(self.pmids)])
         query = re.sub('\$VALUES\$', values, '''
-        SELECT C.pmid_cited, C.pmid_citing
-        FROM Citations C
-        JOIN (VALUES $VALUES$) AS CT(pmid) ON (C.pmid_cited = CT.pmid)
-        JOIN (VALUES $VALUES$) AS CT2(pmid) ON (C.pmid_citing = CT2.pmid);
+        SELECT C.pmid_in, C.pmid_out
+        FROM PMCitations C
+        JOIN (VALUES $VALUES$) AS CT(pmid) ON (C.pmid_in = CT.pmid)
+        JOIN (VALUES $VALUES$) AS CT2(pmid) ON (C.pmid_out = CT2.pmid);
         ''')
 
         with self.conn:
@@ -183,26 +209,26 @@ class KeyPaperAnalyzer:
         self.logger.info(f'Built citation graph - nodes {len(self.G.nodes())} edges {len(self.G.edges())}')
 
     def update_years(self):
-        years = self.df.columns.values[4:-2].astype(int)
-        self.min_year, self.max_year = np.min(years), np.max(years)
+        self.years = [int(col) for col in list(self.df.columns) if isinstance(col, int)]
+        self.min_year, self.max_year = np.min(self.years), np.max(self.years)
 
     def load_cocitations(self):
         self.logger.info('Calculating co-citations for selected articles')
 
         # Use unfolding to pairs on the client side instead of DataBase
         query = '''
-        with Z as (select pmid_citing, pmid_cited
-            from citations
+        with Z as (select pmid_out, pmid_in
+            from PMCitations
             -- Hack to make Postgres use index!
-            where pmid_cited between (select min(pmid) from TEMP_PMIDS) and (select max(pmid) from TEMP_PMIDS)
-            and pmid_cited in (select pmid from TEMP_PMIDS)),
-        X as (select pmid_citing, array_agg(pmid_cited) as cited_list
+            where pmid_in between (select min(pmid) from TEMP_PMIDS) and (select max(pmid) from TEMP_PMIDS)
+            and pmid_in in (select pmid from TEMP_PMIDS)),
+        X as (select pmid_out, array_agg(pmid_in) as cited_list
             from Z
-            group by pmid_citing
+            group by pmid_out
             having count(*) >= 2)
-        select X.pmid_citing, P.year, X.cited_list from
-            X join publications P
-            on pmid_citing = P.pmid;
+        select X.pmid_out, P.year, X.cited_list from
+            X join PMPublications P
+            on pmid_out = P.pmid;
         '''
 
         with self.conn:
@@ -248,12 +274,11 @@ class KeyPaperAnalyzer:
     def find_max_gain_papers(self):
         self.logger.info('Identifying papers with max citation gain for each year')
         max_gain_data = []
-        cols = self.df.columns[3:-2]
-        for i in range(len(cols)):
-            max_gain = self.df[cols[i]].astype(int).max()
+        for year in self.years:
+            max_gain = self.df[year].astype(int).max()
             if max_gain > 0:
-                sel = self.df[self.df[cols[i]] == max_gain]
-                max_gain_data.append([cols[i], str(sel['pmid'].values[0]),
+                sel = self.df[self.df[year] == max_gain]
+                max_gain_data.append([year, str(sel['pmid'].values[0]),
                                       sel['title'].values[0],
                                       sel['year'].values[0], max_gain])
 
@@ -265,19 +290,17 @@ class KeyPaperAnalyzer:
     def find_max_relative_gain_papers(self):
         self.logger.info('Identifying papers with max relative citation gain for each year\n')
         current_sum = pd.Series(np.zeros(len(self.df), ))
-        cols = self.df.columns[3:-2]
         df_rel = self.df.loc[:, ['pmid', 'title', 'year']]
-        for col in cols:
-            df_rel[col] = self.df[col] / (current_sum + (current_sum == 0))
-            current_sum += self.df[col]
+        for year in self.years:
+            df_rel[year] = self.df[year] / (current_sum + (current_sum == 0))
+            current_sum += self.df[year]
 
         max_rel_gain_data = []
-        cols = self.df.columns[3:-2]
-        for col in cols:
-            max_rel_gain = df_rel[col].max()
+        for year in self.years:
+            max_rel_gain = df_rel[year].max()
             if max_rel_gain > 1e-6:
-                sel = df_rel[df_rel[col] == max_rel_gain]
-                max_rel_gain_data.append([col, str(sel['pmid'].values[0]),
+                sel = df_rel[df_rel[year] == max_rel_gain]
+                max_rel_gain_data.append([year, str(sel['pmid'].values[0]),
                                           sel['title'].values[0],
                                           sel['year'].values[0], max_rel_gain])
 
