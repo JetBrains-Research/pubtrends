@@ -44,8 +44,6 @@ class ParserTest {
         assertEquals(Articles.articles.keys, parser.articleList.map { it.pmid }.toSet())
     }
 
-    // Year
-
     @Test
     fun testParseYear() {
         assertEquals(Articles.articles[420880]?.year, articleMap[420880]?.year)
@@ -58,15 +56,12 @@ class ParserTest {
         }
     }
 
-    // Publication Type
     @Test
     fun testParsePublicationType() {
         listOf(420880, 11540070, 11243089).forEach {
             assertEquals(Articles.articles[it]?.type, articleMap[it]?.type)
         }
     }
-
-    // Title
 
     @Test
     fun testParseArticleTitleWithSpecialSymbols() {
@@ -77,8 +72,6 @@ class ParserTest {
     fun testParseArticleTitleWithInnerXMLTags() {
         assertEquals(Articles.articles[29391692]?.title, articleMap[29391692]?.title)
     }
-
-    // Abstract
 
     @Test
     fun testParseNoAbstract() {
@@ -106,8 +99,6 @@ class ParserTest {
         }
     }
 
-    // Keywords
-
     @Test
     fun testParseNoKeywords() {
         assertTrue(articleMap[420880]?.keywordList?.isEmpty() ?: false)
@@ -125,7 +116,6 @@ class ParserTest {
         }
     }
 
-    // MeSH
     @Test
     fun testParseNoMeSH() {
         assertTrue(articleMap[29391692]?.meshHeadingList?.isEmpty() ?: false)
@@ -140,8 +130,6 @@ class ParserTest {
     fun testParseMeSH() {
         assertEquals(Articles.articles[420880]?.meshHeadingList, articleMap[420880]?.meshHeadingList)
     }
-
-    // Citations
 
     @Test
     fun testParseNoCitations() {
@@ -158,8 +146,6 @@ class ParserTest {
         assertEquals(Articles.articles[24884411]?.citationList, articleMap[24884411]?.citationList)
     }
 
-    // Databanks
-
     @Test
     fun testParseNoDatabanks() {
         assertTrue(Articles.articles[24884411]?.auxInfo?.databanks?.isEmpty() ?: false)
@@ -173,22 +159,20 @@ class ParserTest {
     @Test
     fun testParseDatabankNames() {
         assertEquals(Articles.articles[420880]?.auxInfo?.databanks?.map { it.name },
-                articleMap[420880]?.auxInfo?.databanks?.map { it.name })
+            articleMap[420880]?.auxInfo?.databanks?.map { it.name })
     }
 
     @Test
     fun testParseAccessionNumberCount() {
         assertEquals(Articles.articles[420880]?.auxInfo?.databanks?.map { it.accessionNumber.size },
-                articleMap[420880]?.auxInfo?.databanks?.map { it.accessionNumber.size })
+            articleMap[420880]?.auxInfo?.databanks?.map { it.accessionNumber.size })
     }
 
     @Test
     fun testParseAccessionNumbers() {
         assertEquals(Articles.articles[420880]?.auxInfo?.databanks?.map { it.accessionNumber },
-                articleMap[420880]?.auxInfo?.databanks?.map { it.accessionNumber })
+            articleMap[420880]?.auxInfo?.databanks?.map { it.accessionNumber })
     }
-
-    // Authors
 
     @Test
     fun testParseNoAuthors() {
@@ -197,42 +181,39 @@ class ParserTest {
 
     @Test
     fun testParseAuthorCount() {
-        assertEquals(Articles.articles[29456534]?.auxInfo?.authors?.size,
-                articleMap[29456534]?.auxInfo?.authors?.size)
+        assertEquals(
+            Articles.articles[29456534]?.auxInfo?.authors?.size,
+            articleMap[29456534]?.auxInfo?.authors?.size
+        )
     }
 
     @Test
     fun testParseAuthorNames() {
         assertEquals(Articles.articles[29456534]?.auxInfo?.authors?.map { it.name },
-                articleMap[29456534]?.auxInfo?.authors?.map { it.name })
+            articleMap[29456534]?.auxInfo?.authors?.map { it.name })
     }
 
     @Test
     fun testParseAuthorAffiliationCount() {
         assertEquals(Articles.articles[29456534]?.auxInfo?.authors?.map { it.affiliation.size },
-                articleMap[29456534]?.auxInfo?.authors?.map { it.affiliation.size })
+            articleMap[29456534]?.auxInfo?.authors?.map { it.affiliation.size })
     }
 
     @Test
     fun testParseAuthorAffiliations() {
         assertEquals(Articles.articles[29456534]?.auxInfo?.authors?.map { it.affiliation },
-                articleMap[29456534]?.auxInfo?.authors?.map { it.affiliation })
+            articleMap[29456534]?.auxInfo?.authors?.map { it.affiliation })
     }
-
-    // Journal
 
     @Test
     fun testParseJournal() {
         assertEquals(Articles.articles[420880]?.auxInfo?.journal?.name, articleMap[420880]?.auxInfo?.journal?.name)
     }
 
-    // Language
     @Test
     fun testParseLanguage() {
         assertEquals(Articles.articles[420880]?.auxInfo?.language, articleMap[420880]?.auxInfo?.language)
     }
-
-    // DOI
 
     @Test
     fun testParseNoDOI() {
@@ -243,8 +224,6 @@ class ParserTest {
     fun testParseDOI() {
         assertEquals(Articles.articles[29391692]?.doi, articleMap[29391692]?.doi)
     }
-
-    // Deleted articles
 
     @Test
     fun testParseDeleteArticlesCount() {

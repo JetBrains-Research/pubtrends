@@ -36,21 +36,21 @@ class DBHandlerTest {
         }
 
         private val dbHandler = TestDBHandler(
-                config["url"].toString(),
-                config["port"].toString().toInt(),
-                config["test_database"].toString(),
-                config["username"].toString(),
-                config["password"].toString(),
-                resetDatabase = true
+            config["url"].toString(),
+            config["port"].toString().toInt(),
+            config["test_database"].toString(),
+            config["username"].toString(),
+            config["password"].toString(),
+            resetDatabase = true
         )
         private val parser = PubmedXMLParser(dbHandler, 0, 1000)
 
         private val path = "articlesForDBHandlerTest.xml"
 
-        private fun parserFileSetup(name : String) : String {
+        private fun parserFileSetup(name: String): String {
             this::class.java.classLoader.getResourceAsStream(name)?.use {
                 val file = createTempFile()
-                file.outputStream().use {out ->
+                file.outputStream().use { out ->
                     it.copyTo(out)
                 }
                 return file.absolutePath

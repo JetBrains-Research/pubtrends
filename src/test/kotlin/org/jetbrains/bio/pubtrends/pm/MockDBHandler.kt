@@ -2,12 +2,11 @@ package org.jetbrains.bio.pubtrends.pm
 
 import org.apache.logging.log4j.LogManager
 
-class MockDBHandler (private val batch : Boolean = false) : AbstractDBHandler {
-    /**
-     * This class is used to avoid interaction with a real database while testing PubmedXMLParser class.
-     * The 'store' method of this class is fake - it only logs the attempt to store a number of articles.
-     */
-
+/**
+ * This class is used to avoid interaction with a real database while testing PubmedXMLParser class.
+ * The 'store' method of this class is fake - it only logs the attempt to store a number of articles.
+ */
+class MockDBHandler(private val batch: Boolean = false) : AbstractDBHandler {
     var articlesStored = 0
     var articlesDeleted = 0
 

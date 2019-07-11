@@ -7,10 +7,10 @@ import java.nio.file.Path
 import java.util.zip.GZIPInputStream
 
 class PubmedCrawler(
-        private val xmlParser: PubmedXMLParser,
-        private val collectStats: Boolean,
-        private val statsTSV: Path,
-        private val progressTSV: Path
+    private val xmlParser: PubmedXMLParser,
+    private val collectStats: Boolean,
+    private val statsTSV: Path,
+    private val progressTSV: Path
 ) {
 
     private val logger = LogManager.getLogger(PubmedCrawler::class)
@@ -57,8 +57,10 @@ class PubmedCrawler(
             val (baselineFiles, updateFiles) = ftpHandler.fetch(lastId)
             val baselineSize = baselineFiles.size
             val updatesSize = updateFiles.size
-            logger.info("Found ${baselineSize + updatesSize} new file(s)\n" +
-                    "Baseline: $baselineSize, Updates: $updatesSize")
+            logger.info(
+                "Found ${baselineSize + updatesSize} new file(s)\n" +
+                        "Baseline: $baselineSize, Updates: $updatesSize"
+            )
             if (baselineSize + updatesSize == 0) {
                 return false
             }

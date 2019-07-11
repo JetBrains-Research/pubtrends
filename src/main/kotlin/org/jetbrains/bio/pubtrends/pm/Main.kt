@@ -58,19 +58,21 @@ fun main(args: Array<String>) {
 
         logger.info("Init database connection")
         val dbHandler = PostgresqlDatabaseHandler(
-                config["url"].toString(),
-                config["port"].toString().toInt(),
-                config["database"].toString(),
-                config["username"].toString(),
-                config["password"].toString(),
-                resetDatabase)
+            config["url"].toString(),
+            config["port"].toString().toInt(),
+            config["database"].toString(),
+            config["username"].toString(),
+            config["password"].toString(),
+            resetDatabase
+        )
 
         logger.info("Init Pubmed processor")
         val pubmedXMLParser =
-                PubmedXMLParser(
-                        dbHandler,
-                        config["parserLimit"].toString().toInt(),
-                        config["batchSize"].toString().toInt())
+            PubmedXMLParser(
+                dbHandler,
+                config["parserLimit"].toString().toInt(),
+                config["batchSize"].toString().toInt()
+            )
 
         logger.info("Init crawler")
         val crawlerTSV = settingsRoot.resolve("crawler.tsv")
@@ -81,7 +83,7 @@ fun main(args: Array<String>) {
         val lastIdCmd = if (options.has("lastId")) options.valueOf("lastId").toString().toInt() else null
 
         var retry = 1
-        var waitTime : Long = 1
+        var waitTime: Long = 1
         logger.info("Retrying downloading after any problems.")
         while (pubmedCrawler.update(lastIdCmd)) {
             logger.info("Waiting for $waitTime seconds...")

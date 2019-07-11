@@ -74,6 +74,9 @@ class PubmedFTPHandler {
                 throw IOException("Failed to log in.")
             }
 
+            ftp.bufferSize = 1024 * 1024
+            logger.debug("New buffer size: ${ftp.bufferSize}")
+
             if (!ftp.setFileType(FTPClient.BINARY_FILE_TYPE)) {
                 throw IOException("Failed to set binary file type.")
             }
