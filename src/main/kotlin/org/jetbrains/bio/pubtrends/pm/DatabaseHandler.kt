@@ -8,12 +8,12 @@ import org.jetbrains.exposed.sql.statements.expandArgs
 import org.jetbrains.exposed.sql.transactions.transaction
 
 open class PostgresqlDatabaseHandler(
-        url: String,
-        port: Int,
-        database: String,
-        user: String,
-        password: String,
-        private val resetDatabase: Boolean
+    url: String,
+    port: Int,
+    database: String,
+    user: String,
+    password: String,
+    private val resetDatabase: Boolean
 
 ) : AbstractDBHandler {
     companion object Log4jSqlLogger : SqlLogger {
@@ -26,10 +26,10 @@ open class PostgresqlDatabaseHandler(
 
     init {
         Database.connect(
-                url = "jdbc:postgresql://$url:$port/$database",
-                driver = "org.postgresql.Driver",
-                user = user,
-                password = password
+            url = "jdbc:postgresql://$url:$port/$database",
+            driver = "org.postgresql.Driver",
+            user = user,
+            password = password
         )
 
         transaction {
@@ -40,15 +40,15 @@ open class PostgresqlDatabaseHandler(
             }
 
             val customTypeExists = exec(
-                    "SELECT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'publicationtype');"
+                "SELECT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'publicationtype');"
             ) { rs ->
                 rs.next() && (rs.getBoolean("exists"))
             }
 
             if (customTypeExists == false) {
                 exec(
-                        "CREATE TYPE PublicationType AS ENUM " +
-                                "('ClinicalTrial', 'Dataset', 'TechnicalReport', 'Article', 'Review');"
+                    "CREATE TYPE PublicationType AS ENUM " +
+                            "('ClinicalTrial', 'Dataset', 'TechnicalReport', 'Article', 'Review');"
                 )
             }
 
@@ -63,11 +63,15 @@ open class PostgresqlDatabaseHandler(
             addLogger(Log4jSqlLogger)
 
             PMPublications.batchInsertOnDuplicateKeyUpdate(
-                    articles, PMPublications.pmid,
-                    listOf(PMPublications.year, PMPublications.title, PMPublications.abstract)
+                articles, PMPublications.pmid,
+                listOf(
+                    PMPublications.date, PMPublications.title, PMPublications.abstract,
+                    PMPublications.keywords, PMPublications.mesh, PMPublications.type,
+                    PMPublications.doi, PMPublications.aux
+                )
             ) { batch, article ->
                 batch[pmid] = article.pmid
-                batch[year] = article.year
+                batch[date] = article.date
                 batch[title] = article.title.take(PUBLICATION_MAX_TITLE_LENGTH)
                 if (article.abstractText != "") {
                     batch[abstract] = article.abstractText

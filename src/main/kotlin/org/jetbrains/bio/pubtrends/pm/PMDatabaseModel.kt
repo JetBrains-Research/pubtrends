@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import org.jetbrains.bio.pubtrends.PGEnum
 import org.jetbrains.bio.pubtrends.jsonb
 import org.jetbrains.exposed.sql.Table
-import org.postgresql.util.PGobject
 
 internal const val PUBLICATION_MAX_TITLE_LENGTH = 1023
 
@@ -20,7 +19,7 @@ enum class PublicationType {
 
 object PMPublications : Table() {
     val pmid = integer("pmid").primaryKey()
-    val year = integer("year").nullable()
+    val date = date("date").nullable()
     val title = varchar("title", PUBLICATION_MAX_TITLE_LENGTH)
     val abstract = text("abstract").nullable()
 
@@ -38,6 +37,6 @@ object PMCitations : Table() {
     val pmidIn = integer("pmid_in")
 
     init {
-        index(true, pmidOut, pmidIn)
+        index(true, pmidIn, pmidOut)
     }
 }

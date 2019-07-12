@@ -46,13 +46,13 @@ class ParserTest {
 
     @Test
     fun testParseYear() {
-        assertEquals(Articles.articles[420880]?.year, articleMap[420880]?.year)
+        assertEquals(Articles.articles[420880]?.date, articleMap[420880]?.date)
     }
 
     @Test
     fun testParseYearFromMedlineDateField() {
         listOf(10188493, 14316043, 18122624).forEach {
-            assertEquals(Articles.articles[it]?.year, articleMap[it]?.year)
+            assertEquals(Articles.articles[it]?.date, articleMap[it]?.date)
         }
     }
 

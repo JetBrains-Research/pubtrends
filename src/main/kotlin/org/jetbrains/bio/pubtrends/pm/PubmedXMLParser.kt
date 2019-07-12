@@ -1,6 +1,7 @@
 package org.jetbrains.bio.pubtrends.pm
 
 import org.apache.logging.log4j.LogManager
+import org.joda.time.DateTime
 import java.io.File
 import javax.xml.namespace.QName
 import javax.xml.stream.XMLEventReader
@@ -27,6 +28,8 @@ class PubmedXMLParser(
         const val PMID_TAG = "$MEDLINE_CITATION_TAG/PMID"
         const val DELETED_PMID_TAG = "PubmedArticleSet/DeleteCitation/PMID"
         const val YEAR_TAG = "$MEDLINE_CITATION_TAG/Article/Journal/JournalIssue/PubDate/Year"
+        const val MONTH_TAG = "$MEDLINE_CITATION_TAG/Article/Journal/JournalIssue/PubDate/Month"
+        const val DAY_TAG = "$MEDLINE_CITATION_TAG/Article/Journal/JournalIssue/PubDate/Day"
         const val MEDLINE_TAG = "$MEDLINE_CITATION_TAG/Article/Journal/JournalIssue/PubDate/MedlineDate"
 
         const val PUBLICATION_TYPE_TAG = "$MEDLINE_CITATION_TAG/Article/PublicationTypeList/PublicationType"
@@ -54,6 +57,12 @@ class PubmedXMLParser(
         const val DOI_TAG = "$PUBMED_DATA_TAG/ArticleIdList/ArticleId"
         const val LANGUAGE_TAG = "$MEDLINE_CITATION_TAG/Article/Language"
         const val JOURNAL_TITLE_TAG = "$MEDLINE_CITATION_TAG/Article/Journal/Title"
+
+        // Month mapping
+        private val CALENDAR_MONTH = mapOf(
+            "Jan" to 1, "Feb" to 2, "Mar" to 3, "Apr" to 4, "May" to 5, "Jun" to 6,
+            "Jul" to 7, "Aug" to 8, "Sep" to 9, "Oct" to 10, "Nov" to 11, "Dec" to 12
+        )
     }
 
     private val factory = XMLInputFactory.newFactory()!!
@@ -84,7 +93,7 @@ class PubmedXMLParser(
         return true
     }
 
-    fun parseData(eventReader: XMLEventReader) {
+    private fun parseData(eventReader: XMLEventReader) {
         // Stats about articles & tags
         var articleCounter = 0
         var keywordCounter = 0
@@ -94,6 +103,8 @@ class PubmedXMLParser(
         // Containers for data about current article
         var pmid = 0
         var year: Int? = null
+        var month = 1
+        var day = 1
         var title = ""
         var abstractText = ""
 
@@ -150,6 +161,8 @@ class PubmedXMLParser(
 
                         pmid = 0
                         year = null
+                        month = 1
+                        day = 1
                         title = ""
                         abstractText = ""
 
@@ -229,14 +242,40 @@ class PubmedXMLParser(
                     fullName == YEAR_TAG -> {
                         year = dataElement.data.toInt()
                     }
+                    fullName == MONTH_TAG -> {
+                        month = CALENDAR_MONTH[dataElement.data] ?: 1
+                    }
+                    fullName == DAY_TAG -> {
+                        day = dataElement.data.toInt()
+                    }
                     fullName == MEDLINE_TAG -> {
-                        val regex = "(19|20)\\d{2}".toRegex()
-                        val match = regex.find(dataElement.data)
-                        try {
-                            year = match?.value?.toInt()
-                        } catch (e: Exception) {
+                        val yearRegex = "(19|20)\\d{2}".toRegex()
+                        val yearMatch = yearRegex.find(dataElement.data)
+
+                        if (yearMatch != null) {
+                            year = yearMatch.value.toInt()
+                        } else {
                             logger.warn(
-                                "Failed to parse MEDLINE date in article ${pmid}: " +
+                                "Failed to parse year from MEDLINE date in article $pmid: " +
+                                        dataElement.data
+                            )
+                        }
+
+                        val monthRegex = "(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)".toRegex()
+                        val monthMatch = monthRegex.find(dataElement.data)
+
+                        if (monthMatch != null) {
+                            if (monthMatch.value in CALENDAR_MONTH.keys) {
+                                month = CALENDAR_MONTH[monthMatch.value] ?: 1
+                            } else {
+                                logger.warn(
+                                    "Failed to parse name of MEDLINE month in article $pmid: " +
+                                            dataElement.data
+                                )
+                            }
+                        } else {
+                            logger.warn(
+                                "Failed to parse value of MEDLINE month in article $pmid: " +
                                         dataElement.data
                             )
                         }
@@ -253,11 +292,9 @@ class PubmedXMLParser(
 
                     // Abstract
                     isAbstractTextParsed -> {
-                        if (fullName == ABSTRACT_TAG) {
-                            abstractText += dataElement.data
-                        } else {
-                            abstractText += dataElement.data.trim { it <= ' ' }
-                        }
+                        abstractText += if (fullName == ABSTRACT_TAG)
+                            dataElement.data
+                        else dataElement.data.trim { it <= ' ' }
                     }
                     fullName == OTHER_ABSTRACT_TAG -> {
                         abstractText += " ${dataElement.data}"
@@ -286,12 +323,12 @@ class PubmedXMLParser(
                     fullName == MESH_DESCRIPTOR_TAG -> {
                         val descriptor = dataElement.data.replace(", ", " ").replace("[/&]+", " ").trim()
                         currentMeshHeading = descriptor
-                        logger.debug("${pmid}: MeSH Descriptor <$descriptor> <${currentMeshHeading}>")
+                        logger.debug("$pmid: MeSH Descriptor <$descriptor> <$currentMeshHeading>")
                     }
                     fullName == MESH_QUALIFIER_TAG -> {
                         val qualifier = dataElement.data.replace(", ", " ").replace("[/&]+", " ").trim()
                         currentMeshHeading += " $qualifier"
-                        logger.debug("${pmid}: MeSH Qualifier <$qualifier> <${currentMeshHeading}>")
+                        logger.debug("$pmid: MeSH Qualifier <$qualifier> <$currentMeshHeading>")
                     }
 
                     // Authors
@@ -325,10 +362,10 @@ class PubmedXMLParser(
                             publicationType.contains("Clinical Trial") -> {
                                 type = PublicationType.ClinicalTrial
                             }
-                            publicationType.equals("Dataset") -> {
+                            publicationType == "Dataset" -> {
                                 type = PublicationType.Dataset
                             }
-                            publicationType.equals("Review") -> {
+                            publicationType == "Review" -> {
                                 type = PublicationType.Review
                             }
                         }
@@ -348,11 +385,13 @@ class PubmedXMLParser(
                         citationCounter += citationList.size
                         keywordCounter += keywordList.size
 
+                        val date = if (year != null) DateTime(year, month, day, 0, 0) else null
+
                         abstractText = abstractText.trim()
                         articleList.add(
                             PubmedArticle(
                                 pmid = pmid,
-                                year = year,
+                                date = date,
                                 title = title,
                                 abstractText = abstractText,
                                 keywordList = keywordList.toList(),

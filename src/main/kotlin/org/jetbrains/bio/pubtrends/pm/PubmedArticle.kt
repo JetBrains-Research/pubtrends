@@ -1,5 +1,7 @@
 package org.jetbrains.bio.pubtrends.pm
 
+import org.joda.time.DateTime
+
 data class Author(
     val name: String = "",
     val affiliation: List<String> = listOf()
@@ -21,7 +23,7 @@ data class ArticleAuxInfo(
 
 data class PubmedArticle(
     val pmid: Int = 0,
-    val year: Int? = null,
+    val date: DateTime? = null,
     val title: String = "",
     val abstractText: String = "",
     val keywordList: List<String> = listOf(),
@@ -35,7 +37,7 @@ data class PubmedArticle(
     fun description(): Map<String, String> {
         return mapOf(
             "PMID" to pmid.toString(),
-            "Year" to (year?.toString() ?: "undefined"),
+            "Year" to (date?.toString() ?: "undefined"),
             "Title" to title,
             "Type" to type.name,
             "Abstract Text" to abstractText,
