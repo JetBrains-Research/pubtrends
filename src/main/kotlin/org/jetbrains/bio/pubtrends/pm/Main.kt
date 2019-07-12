@@ -85,8 +85,17 @@ fun main(args: Array<String>) {
 
         var retry = 1
         var waitTime: Long = 1
+        var isUpdateRequired = true
         logger.info("Retrying downloading after any problems.")
-        while (pubmedCrawler.update(lastIdCmd)) {
+        while (isUpdateRequired) {
+            try {
+                isUpdateRequired = pubmedCrawler.update(lastIdCmd)
+                waitTime = 1
+            } catch (e: PubmedCrawlerException) {
+                logger.error(e.message)
+                isUpdateRequired = true
+            }
+
             logger.info("Waiting for $waitTime seconds...")
             Thread.sleep(waitTime * 1000)
             logger.info("Retry #$retry")

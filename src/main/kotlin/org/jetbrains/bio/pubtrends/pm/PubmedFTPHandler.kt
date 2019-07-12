@@ -59,6 +59,7 @@ class PubmedFTPHandler {
         }
     }
 
+    @Throws(IOException::class)
     private fun connect(ftp: FTPClient) {
         try {
             ftp.connect(server)
@@ -74,8 +75,9 @@ class PubmedFTPHandler {
                 throw IOException("Failed to log in.")
             }
 
-            ftp.bufferSize = 1024 * 1024
-            logger.debug("New buffer size: ${ftp.bufferSize}")
+            // Timeouts are set to avoid infinite download
+            ftp.soTimeout = 20000
+            ftp.setDataTimeout(20000)
 
             if (!ftp.setFileType(FTPClient.BINARY_FILE_TYPE)) {
                 throw IOException("Failed to set binary file type.")

@@ -5,6 +5,9 @@ import java.io.*
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.zip.GZIPInputStream
+import javax.xml.stream.XMLStreamException
+
+class PubmedCrawlerException(message: String) : Exception(message)
 
 class PubmedCrawler(
     private val xmlParser: PubmedXMLParser,
@@ -51,7 +54,11 @@ class PubmedCrawler(
             logger.info("Last downloaded file: ${PubmedFTPHandler.idToPubmedFile(lastId)}")
         }
 
-        tempDirectory = createTempDir()
+        try {
+            tempDirectory = createTempDir()
+        } catch (e: IOException) {
+            throw PubmedCrawlerException("Failed to create temporary directory")
+        }
         logger.info("Created temporary directory: ${tempDirectory.absolutePath}")
         try {
             val (baselineFiles, updateFiles) = ftpHandler.fetch(lastId)
@@ -69,7 +76,7 @@ class PubmedCrawler(
             logger.info("Processing updates")
             downloadFiles(updateFiles, isBaseline = false)
         } catch (e: IOException) {
-            logger.error("Failed to connect to the server", e)
+            throw PubmedCrawlerException("Failed to connect to the server")
         } finally {
             if (tempDirectory.exists()) {
                 logger.info("Deleting directory: ${tempDirectory.absolutePath}")
@@ -87,28 +94,18 @@ class PubmedCrawler(
         return true
     }
 
-    private fun unpack(archiveName: String): Boolean {
+    private fun unpack(archiveName: String) {
         val archive = File(archiveName)
         val originalName = archiveName.substringBefore(".gz")
         val bufferSize = 1024
-        var safeUnpack = true
 
         GZIPInputStream(BufferedInputStream(FileInputStream(archiveName))).use { inputStream ->
             BufferedOutputStream(FileOutputStream(originalName)).use { outputStream ->
-                try {
-                    inputStream.copyTo(outputStream, bufferSize)
-                } catch (e: EOFException) {
-                    logger.error("Corrupted GZ archive. ", e)
-                    safeUnpack = false
-                }
+                inputStream.copyTo(outputStream, bufferSize)
             }
         }
 
-        if (safeUnpack) {
-            archive.delete()
-        }
-
-        return safeUnpack
+        archive.delete()
     }
 
     private fun downloadFiles(files: List<String>, isBaseline: Boolean) {
@@ -122,20 +119,31 @@ class PubmedCrawler(
 
             logger.info("$progressPrefix $localArchiveName: Downloading...")
 
-            val downloadSuccess = if (isBaseline)
-                ftpHandler.downloadBaselineFile(file, tempDirectory.absolutePath)
-            else
-                ftpHandler.downloadUpdateFile(file, tempDirectory.absolutePath)
-            var overallSuccess = false
-
-            logger.info("$progressPrefix $localArchiveName: Unpacking...")
-            if (downloadSuccess && unpack(localArchiveName)) {
-                logger.info("$progressPrefix $localName: Parsing...")
-                overallSuccess = xmlParser.parse(localName)
-                File(localName).delete()
+            try {
+                if (isBaseline)
+                    ftpHandler.downloadBaselineFile(file, tempDirectory.absolutePath)
+                else
+                    ftpHandler.downloadUpdateFile(file, tempDirectory.absolutePath)
+            } catch (e: IOException) {
+                throw PubmedCrawlerException("Failed to download XML archive")
             }
 
-            logger.info("$progressPrefix $localName: ${if (overallSuccess) "SUCCESS" else "FAILURE"}")
+            try {
+                logger.info("$progressPrefix $localArchiveName: Unpacking...")
+                unpack(localArchiveName)
+            } catch (e: IOException) {
+                throw PubmedCrawlerException("Failed to unpack $localArchiveName : corrupted GZ archive")
+            }
+
+            try {
+                logger.info("$progressPrefix $localName: Parsing...")
+                xmlParser.parse(localName)
+                File(localName).delete()
+            } catch (e: XMLStreamException) {
+                throw PubmedCrawlerException("Failed to parse $localName")
+            }
+
+            logger.info("$progressPrefix $localName: SUCCESS")
 
             // Save progress information to be able to recover from Ctrl-C/kill signals
             logger.debug("$progressPrefix Save progress to $progressTSV")

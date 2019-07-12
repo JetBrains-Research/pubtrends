@@ -1,11 +1,11 @@
 package org.jetbrains.bio.pubtrends.pm
 
 import org.apache.logging.log4j.LogManager
-import org.xml.sax.SAXException
 import java.io.File
 import javax.xml.namespace.QName
 import javax.xml.stream.XMLEventReader
 import javax.xml.stream.XMLInputFactory
+import javax.xml.stream.XMLStreamException
 
 
 class PubmedXMLParser(
@@ -76,8 +76,9 @@ class PubmedXMLParser(
             File(name).inputStream().use {
                 parseData(factory.createXMLEventReader(it))
             }
-        } catch (e: SAXException) {
+        } catch (e: XMLStreamException) {
             logger.error("Failed to parse $name", e)
+            throw e
         }
 
         return true
