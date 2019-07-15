@@ -141,7 +141,7 @@ class KeyPaperAnalyzer:
         DROP INDEX IF EXISTS temp_pmids_unique_index;
         CREATE UNIQUE INDEX temp_pmids_unique_index ON TEMP_PMIDS USING btree (pmid);
 
-        SELECT P.pmid, P.title, P.abstract, P.year 
+        SELECT P.pmid, P.title, P.abstract, date_part('year', P.date) AS year 
         FROM PMPublications P
         JOIN TEMP_PMIDS AS T ON (P.pmid = T.pmid);
         ''')
@@ -158,13 +158,13 @@ class KeyPaperAnalyzer:
 
         values = ', '.join(['({})'.format(i) for i in sorted(self.pmids)])
         query = re.sub('\$VALUES\$', values, '''
-        SELECT C.pmid_in AS pmid, P.year, COUNT(1) AS count
+        SELECT C.pmid_in AS pmid, date_part('year', P.date) AS year, COUNT(1) AS count
         FROM PMCitations C
         JOIN (VALUES $VALUES$) AS CT(pmid) ON (C.pmid_in = CT.pmid)
         JOIN PMPublications P
         ON C.pmid_out = P.pmid
-        WHERE P.year > 0
-        GROUP BY C.pmid_in, P.year;
+        WHERE date_part('year', P.date) > 0
+        GROUP BY C.pmid_in, date_part('year', P.date);
         ''')
 
         with self.conn:
@@ -209,7 +209,7 @@ class KeyPaperAnalyzer:
         self.logger.info(f'Built citation graph - nodes {len(self.G.nodes())} edges {len(self.G.edges())}')
 
     def update_years(self):
-        self.years = [int(col) for col in list(self.df.columns) if isinstance(col, int)]
+        self.years = [int(col) for col in list(self.df.columns) if isinstance(col, (int, float))]
         self.min_year, self.max_year = np.min(self.years), np.max(self.years)
 
     def load_cocitations(self):
@@ -226,7 +226,7 @@ class KeyPaperAnalyzer:
             from Z
             group by pmid_out
             having count(*) >= 2)
-        select X.pmid_out, P.year, X.cited_list from
+        select X.pmid_out, date_part('year', P.date) AS year, X.cited_list from
             X join PMPublications P
             on pmid_out = P.pmid;
         '''

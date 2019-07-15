@@ -268,13 +268,13 @@ class PubmedXMLParser(
                             if (monthMatch.value in CALENDAR_MONTH.keys) {
                                 month = CALENDAR_MONTH[monthMatch.value] ?: 1
                             } else {
-                                logger.warn(
+                                logger.debug(
                                     "Failed to parse name of MEDLINE month in article $pmid: " +
                                             dataElement.data
                                 )
                             }
                         } else {
-                            logger.warn(
+                            logger.debug(
                                 "Failed to parse value of MEDLINE month in article $pmid: " +
                                         dataElement.data
                             )
@@ -385,7 +385,7 @@ class PubmedXMLParser(
                         citationCounter += citationList.size
                         keywordCounter += keywordList.size
 
-                        val date = if (year != null) DateTime(year, month, day, 0, 0) else null
+                        val date = if (year != null) DateTime(year, month, day, 12, 0) else null
 
                         abstractText = abstractText.trim()
                         articleList.add(

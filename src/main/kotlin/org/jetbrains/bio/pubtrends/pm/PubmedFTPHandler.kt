@@ -12,9 +12,11 @@ class PubmedFTPHandler {
     companion object {
         private val logger = LogManager.getLogger(PubmedFTPHandler::class)
 
-        const val server = "ftp.ncbi.nlm.nih.gov"
-        const val baselinePath = "/pubmed/baseline"
-        const val updatePath = "/pubmed/updatefiles"
+        const val SERVER = "ftp.ncbi.nlm.nih.gov"
+        const val BASELINE_PATH = "/pubmed/baseline"
+        const val UPDATE_PATH = "/pubmed/updatefiles"
+
+        const val TIMEOUT_MS = 20000
 
         fun pubmedFileToId(name: String): Int = name.removeSurrounding("pubmed19n", ".xml.gz").toInt()
 
@@ -25,13 +27,13 @@ class PubmedFTPHandler {
         val ftp = CloseableFTPClient()
 
         ftp.use {
-            logger.info("Connecting to $server")
+            logger.info("Connecting to $SERVER")
             connect(it)
 
             logger.info("Fetching baseline files")
-            val baselineFiles = getNewXMLsList(it, baselinePath, lastId)
+            val baselineFiles = getNewXMLsList(it, BASELINE_PATH, lastId)
             logger.info("Fetching update files")
-            val updateFiles = getNewXMLsList(it, updatePath, lastId)
+            val updateFiles = getNewXMLsList(it, UPDATE_PATH, lastId)
 
             return Pair(baselineFiles, updateFiles)
         }
@@ -43,7 +45,7 @@ class PubmedFTPHandler {
         ftp.use {
             connect(it)
 
-            ftp.changeWorkingDirectory(baselinePath)
+            ftp.changeWorkingDirectory(BASELINE_PATH)
             return downloadFile(it, name, localPath)
         }
     }
@@ -54,7 +56,7 @@ class PubmedFTPHandler {
         ftp.use {
             connect(it)
 
-            ftp.changeWorkingDirectory(updatePath)
+            ftp.changeWorkingDirectory(UPDATE_PATH)
             return downloadFile(it, name, localPath)
         }
     }
@@ -62,7 +64,7 @@ class PubmedFTPHandler {
     @Throws(IOException::class)
     private fun connect(ftp: FTPClient) {
         try {
-            ftp.connect(server)
+            ftp.connect(SERVER)
             val reply = ftp.replyCode
 
             if (!FTPReply.isPositiveCompletion(reply)) {
@@ -76,8 +78,12 @@ class PubmedFTPHandler {
             }
 
             // Timeouts are set to avoid infinite download
-            ftp.soTimeout = 20000
-            ftp.setDataTimeout(20000)
+            ftp.defaultTimeout = TIMEOUT_MS
+            ftp.setDataTimeout(TIMEOUT_MS)
+            ftp.connectTimeout = TIMEOUT_MS
+            ftp.soTimeout = TIMEOUT_MS
+            ftp.controlKeepAliveTimeout = TIMEOUT_MS.toLong()
+            ftp.controlKeepAliveReplyTimeout = TIMEOUT_MS
 
             if (!ftp.setFileType(FTPClient.BINARY_FILE_TYPE)) {
                 throw IOException("Failed to set binary file type.")
