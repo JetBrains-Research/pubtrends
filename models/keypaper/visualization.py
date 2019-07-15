@@ -49,7 +49,7 @@ class Plotter:
 
         G = nx.Graph()
         # Using merge left keeps order
-        gdf = pd.merge(pd.Series(self.analyzer.CG.nodes()).reset_index().rename(columns={0: 'pmid'}).astype(int),
+        gdf = pd.merge(pd.Series(self.analyzer.CG.nodes(), dtype=object).reset_index().rename(columns={0: 'pmid'}),
                        self.analyzer.df[['pmid', 'title', 'year', 'total', 'comp']], how='left'
                        ).sort_values(by='total', ascending=False)
 
