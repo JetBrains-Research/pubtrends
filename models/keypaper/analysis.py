@@ -146,34 +146,11 @@ class KeyPaperAnalyzer:
         # Graph clustering via Louvain algorithm
         self.logger.info(f'Louvain community clustering of co-citation graph')
         p = community.best_partition(self.CG)
-        self.components = set(p.values())
-        self.logger.info(f'Found {len(self.components)} components')
+        self.logger.info(f'Found {len(set(p.values()))} components')
         self.logger.info(f'Graph modularity: {community.modularity(p, self.CG):.3f}')
 
         # Merge small components to 'Other'
-        GRANULARITY = 0.05
-        self.logger.info(f'Merging components smaller than {GRANULARITY} to "Other" component')
-        threshold = int(GRANULARITY * len(p))
-        comp_sizes = {com: sum([p[node] == com for node in p.keys()]) for com in self.components}
-        comp_to_merge = {com: comp_sizes[com] <= threshold for com in self.components}
-        self.components_merged = sum(comp_to_merge.values()) > 0
-        if self.components_merged > 0:
-            self.logger.info(f'Reassigning components')
-            pm = {}
-            newcomps = {}
-            ci = 1  # Other component is 0.
-            for k, v in p.items():
-                if comp_sizes[v] <= threshold:
-                    pm[k] = 0  # Other
-                    continue
-                if v not in newcomps:
-                    newcomps[v] = ci
-                    ci += 1
-                pm[k] = newcomps[v]
-            self.logger.info(f'Processed {len(set(pm.values()))} components')
-        else:
-            self.logger.info(f'All components are bigger than {GRANULARITY}, no need to reassign')
-            pm = p
+        pm, self.components_merged = self.merge_components(p)
         self.components = set(pm.values())
         self.pm = pm
         pmcomp_sizes = {com: sum([pm[node] == com for node in pm.keys()]) for com in self.components}
@@ -196,16 +173,42 @@ class KeyPaperAnalyzer:
         self.df_kwd = df_kwd
         self.logger.info('Done\n')
 
-    def subtopic_evolution_analysis(self, step=2):
-        min_year = self.cocit_df['year'].min().astype(int)
-        max_year = self.cocit_df['year'].max().astype(int)
+    def merge_components(self, p, granularity=0.05):
+        self.logger.info(f'Merging components smaller than {granularity} to "Other" component')
+        threshold = int(granularity * len(p))
+        components = set(p.values())
+        comp_sizes = {com: sum([p[node] == com for node in p.keys()]) for com in components}
+        comp_to_merge = {com: comp_sizes[com] <= threshold for com in components}
+        components_merged = sum(comp_to_merge.values()) > 0
+        if components_merged > 0:
+            self.logger.info(f'Reassigning components')
+            pm = {}
+            newcomps = {}
+            ci = 1  # Other component is 0.
+            for k, v in p.items():
+                if comp_sizes[v] <= threshold:
+                    pm[k] = 0  # Other
+                    continue
+                if v not in newcomps:
+                    newcomps[v] = ci
+                    ci += 1
+                pm[k] = newcomps[v]
+            self.logger.info(f'Processed {len(set(pm.values()))} components')
+        else:
+            self.logger.info(f'All components are bigger than {granularity}, no need to reassign')
+            pm = p
+        return pm, components_merged
+
+    def subtopic_evolution_analysis(self, step=2, min_papers=0):
+        min_year = int(self.cocit_df['year'].min())
+        max_year = int(self.cocit_df['year'].max())
         self.logger.info(
             f'Studying evolution of subtopic clusters in {min_year} - {max_year} with step of {step} years')
 
         evolution_series = []
         year_range = range(max_year, min_year - 1, -step)
-        self.logger.info('Filtering top 100000 co-citations')
-        for year in year_range:
+        years_processed = 0
+        for i, year in enumerate(year_range):
             cocit_grouped_df = self.cocit_df[self.cocit_df['year'] <= year].groupby(
                 ['cited_1', 'cited_2', 'year']).count().reset_index()
             cocit_grouped_df = cocit_grouped_df.pivot_table(index=['cited_1', 'cited_2'],
@@ -221,8 +224,15 @@ class KeyPaperAnalyzer:
                 CG.add_edge(str(el[0]), str(el[1]), weight=el[2])
             self.logger.info(f'{year}: graph contains {len(CG.nodes)} nodes, {len(CG.edges)} edges')
 
-            p = {int(vertex): int(comp) for vertex, comp in community.best_partition(CG).items()}
-            evolution_series.append(pd.Series(p))
+            if len(CG.nodes) > min_papers:
+                p = {int(vertex): int(comp) for vertex, comp in community.best_partition(CG).items()}
+                p, _ = self.merge_components(p)
+                evolution_series.append(pd.Series(p))
+            else:
+                years_processed = i
+                break
+
+        year_range = year_range[:years_processed]
 
         SHIFT = True  # use random shift to see trace of separate articles
         FILLNA = True  # NaN values sometimes cause KeyError while plotting, but sometimes not (?!)
