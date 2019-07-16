@@ -214,7 +214,7 @@ class KeyPaperAnalyzer:
                 evolution_series.append(pd.Series(p))
                 years_processed += 1
             else:
-                self.logger.info(f'Total number of papers is less than {min_papers}, stopping.')
+                self.logger.debug(f'Total number of papers is less than {min_papers}, stopping.')
                 break
 
         year_range = year_range[:years_processed]
