@@ -1,93 +1,64 @@
-import configparser
 import logging
-import os
-import re
 from io import StringIO
 
 import community
 import networkx as nx
 import numpy as np
 import pandas as pd
-import psycopg2 as pg_driver
-from Bio import Entrez
 
 from .utils import get_subtopic_descriptions
 
 
 class KeyPaperAnalyzer:
-    def __init__(self,
-                 host=None, port=None, dbname=None,
-                 user=None, password=None,
-                 email='nikolay.kapralov@gmail.com'):
+    def __init__(self, loader):
         self.logger = logging.getLogger(__name__)
 
-        # Find 'config.properties' file for parser
-        config = configparser.ConfigParser()
-        home_dir = os.path.expanduser('~')
-
-        # Add fake section [params] for ConfigParser to accept the file
-        with open(f'{home_dir}/.pubtrends/config.properties') as config_properties:
-            config.read_string("[params]\n" + config_properties.read())
-
-        if host is None:
-            host = config['params']['url']
-
-        if port is None:
-            port = config['params']['port']
-
-        if dbname is None:
-            dbname = config['params']['database']
-
-        if user is None:
-            user = config['params']['username']
-
-        if password is None:
-            password = config['params']['password']
-
-        Entrez.email = email
-        connection_string = f"""
-        dbname={dbname} user={user} password={password} host={host} port={port}
-        """
-
-        self.conn = pg_driver.connect(connection_string)
-        self.cursor = self.conn.cursor()
+        self.loader = loader
+        loader.set_logger(self.logger)
+        self.index = loader.index
 
     def launch(self, *terms, task=None):
         """:return full log"""
         stream = StringIO()
         handler = logging.StreamHandler(stream)
+
         self.logger.addHandler(handler)
         try:
             # Search articles relevant to the terms
-            self.search(*terms)
+            self.loader.search(*terms)
             if task:
                 handler.flush()
                 task.update_state(state='PROGRESS', meta={'current': 1, 'total': 10, 'log': stream.getvalue()})
             # Nothing found
-            if len(self.pmids) == 0:
+            if len(getattr(self.loader, self.index + 's')) == 0:
                 raise RuntimeError("Nothing found")
 
             # Load data about publications, citations and co-citations
-            self.load_publications()
+            self.loader.load_publications()
             if task:
                 handler.flush()
                 task.update_state(state='PROGRESS', meta={'current': 2, 'total': 10, 'log': stream.getvalue()})
-            if len(self.pub_df) == 0:
+            if len(self.loader.pub_df) == 0:
                 raise RuntimeError("Nothing found in DB")
 
-            self.load_citation_stats()
+            self.loader.load_citation_stats()
             if task:
                 handler.flush()
                 task.update_state(state='PROGRESS', meta={'current': 3, 'total': 10, 'log': stream.getvalue()})
-            if len(self.df) == 0:
+            if len(self.loader.df) == 0:
                 raise RuntimeError("Citations stats not found DB")
 
-            self.load_cocitations()
+            self.df = self.loader.df
+
+            self.loader.load_cocitations()
             if task:
                 handler.flush()
                 task.update_state(state='PROGRESS', meta={'current': 4, 'total': 10, 'log': stream.getvalue()})
-            if len(self.CG.nodes()) == 0:
+            if len(self.loader.CG.nodes()) == 0:
                 raise RuntimeError("Failed to build co-citations graph")
+
+            self.cocit_df = self.loader.cocit_df
+            self.CG = self.loader.CG
 
             # Calculate min and max year of publications
             self.update_years()
@@ -121,165 +92,15 @@ class KeyPaperAnalyzer:
         finally:
             self.logger.removeHandler(handler)
 
-    def search(self, *terms):
-        self.logger.info('TODO: handle queries which return more than 10000 items')
-        self.terms = [t.lower() for t in terms]
-        query = ' '.join(terms)
-        handle = Entrez.esearch(db='pubmed', retmax='100000',
-                                retmode='xml', term=query)
-        self.pmids = Entrez.read(handle)['IdList']
-        self.logger.info(f'Found {len(self.pmids)} articles about {terms}')
-
-    def load_publications(self):
-        self.logger.info('Loading publication data')
-
-        values = ', '.join(['({})'.format(i) for i in sorted(self.pmids)])
-        query = re.sub('\$VALUES\$', values, '''
-        DROP TABLE IF EXISTS TEMP_PMIDS;
-        WITH vals(pmid) AS (VALUES $VALUES$)
-        SELECT pmid INTO temporary table TEMP_PMIDS FROM vals;
-        DROP INDEX IF EXISTS temp_pmids_unique_index;
-        CREATE UNIQUE INDEX temp_pmids_unique_index ON TEMP_PMIDS USING btree (pmid);
-
-        SELECT P.pmid, P.title, P.abstract, date_part('year', P.date) AS year 
-        FROM PMPublications P
-        JOIN TEMP_PMIDS AS T ON (P.pmid = T.pmid);
-        ''')
-        self.logger.info('Creating pmids table for request with index.')
-
-        with self.conn:
-            self.cursor.execute(query)
-        self.pub_df = pd.DataFrame(self.cursor.fetchall(),
-                                   columns=['pmid', 'title', 'abstract', 'year'],
-                                   dtype=object)
-
-        self.logger.info(f'Found {len(self.pub_df)} publications in the local database\n')
-
-    def load_citation_stats(self):
-        self.logger.info('Started loading citation stats')
-
-        values = ', '.join(['({})'.format(i) for i in sorted(self.pmids)])
-        query = re.sub('\$VALUES\$', values, '''
-        SELECT C.pmid_in AS pmid, date_part('year', P.date) AS year, COUNT(1) AS count
-        FROM PMCitations C
-        JOIN (VALUES $VALUES$) AS CT(pmid) ON (C.pmid_in = CT.pmid)
-        JOIN PMPublications P
-        ON C.pmid_out = P.pmid
-        WHERE date_part('year', P.date) > 0
-        GROUP BY C.pmid_in, date_part('year', P.date);
-        ''')
-
-        with self.conn:
-            self.cursor.execute(query)
-        self.logger.info('Done loading citation stats')
-        self.cit_df = pd.DataFrame(self.cursor.fetchall(),
-                                   columns=['pmid', 'year', 'count'],
-                                   dtype=object)
-
-        self.cit_df = self.cit_df.pivot(index='pmid', columns='year', values='count').reset_index().replace(np.nan, 0)
-        self.cit_df['total'] = self.cit_df.iloc[:, 1:].sum(axis=1)
-        self.cit_df = self.cit_df.sort_values(by='total', ascending=False)
-        self.logger.info(f"Loaded citation stats for {len(self.cit_df)} of {len(self.pmids)} articles.\n" +
-                         "Others may either have zero citations or be absent in the local database.")
-
-        self.logger.info('Filtering top 100000 or 80% of all the citations')
-        self.cit_df = self.cit_df.iloc[:min(100000, round(0.8 * len(self.cit_df))), :]
-
-        self.df = pd.merge(self.pub_df, self.cit_df, on='pmid')
-        self.pmids = sorted(list(self.df['pmid']))
-        self.logger.info(f'{len(self.df)} articles to process.\n')
-
-    def load_citations(self):
-        self.logger.info('Started loading raw information about citations')
-
-        values = ', '.join(['({})'.format(i) for i in sorted(self.pmids)])
-        query = re.sub('\$VALUES\$', values, '''
-        SELECT C.pmid_in, C.pmid_out
-        FROM PMCitations C
-        JOIN (VALUES $VALUES$) AS CT(pmid) ON (C.pmid_in = CT.pmid)
-        JOIN (VALUES $VALUES$) AS CT2(pmid) ON (C.pmid_out = CT2.pmid);
-        ''')
-
-        with self.conn:
-            self.cursor.execute(query)
-        self.logger.info('Done loading citations, building citation graph')
-
-        self.G = nx.DiGraph()
-        for row in self.cursor:
-            v, u = row
-            self.G.add_edge(v, u)
-
-        self.logger.info(f'Built citation graph - nodes {len(self.G.nodes())} edges {len(self.G.edges())}')
-
     def update_years(self):
         self.years = [int(col) for col in list(self.df.columns) if isinstance(col, (int, float))]
         self.min_year, self.max_year = np.min(self.years), np.max(self.years)
-
-    def load_cocitations(self):
-        self.logger.info('Calculating co-citations for selected articles')
-
-        # Use unfolding to pairs on the client side instead of DataBase
-        query = '''
-        with Z as (select pmid_out, pmid_in
-            from PMCitations
-            -- Hack to make Postgres use index!
-            where pmid_in between (select min(pmid) from TEMP_PMIDS) and (select max(pmid) from TEMP_PMIDS)
-            and pmid_in in (select pmid from TEMP_PMIDS)),
-        X as (select pmid_out, array_agg(pmid_in) as cited_list
-            from Z
-            group by pmid_out
-            having count(*) >= 2)
-        select X.pmid_out, date_part('year', P.date) AS year, X.cited_list from
-            X join PMPublications P
-            on pmid_out = P.pmid;
-        '''
-
-        with self.conn:
-            self.cursor.execute(query)
-
-        cocit_data = []
-        lines = 0
-        for row in self.cursor:
-            lines += 1
-            citing, year, cited = row
-            for i in range(len(cited)):
-                for j in range(i + 1, len(cited)):
-                    cocit_data.append((citing, cited[i], cited[j], year))
-        self.cocit_df = pd.DataFrame(cocit_data,
-                                     columns=['citing', 'cited_1', 'cited_2', 'year'],
-                                     dtype=object)
-
-        self.logger.info(f'Loaded {lines} lines of citing info')
-        self.logger.info(f'Found {len(self.cocit_df)} co-cited pairs of articles')
-
-        self.logger.info(f'Aggregating co-citations')
-        self.cocit_grouped_df = self.cocit_df.groupby(['cited_1', 'cited_2', 'year']).count().reset_index()
-        self.cocit_grouped_df = self.cocit_grouped_df.pivot_table(index=['cited_1', 'cited_2'],
-                                                                  columns=['year'], values=['citing']).reset_index()
-        self.cocit_grouped_df = self.cocit_grouped_df.replace(np.nan, 0)
-        self.cocit_grouped_df['total'] = self.cocit_grouped_df.iloc[:, 2:].sum(axis=1)
-
-        self.cocit_grouped_df = self.cocit_grouped_df.sort_values(by='total', ascending=False)
-        self.logger.info('Filtering top 100000 of all the co-citations')
-        self.cocit_grouped_df = self.cocit_grouped_df.iloc[:min(100000, len(self.cocit_grouped_df)), :]
-
-        for col in self.cocit_grouped_df:
-            self.cocit_grouped_df[col] = self.cocit_grouped_df[col].astype(object)
-
-        self.logger.info(f'Building co-citations graph')
-        self.CG = nx.Graph()
-        # NOTE: we use nodes id as String to avoid problems str keys in jsonify during graph visualization
-        for el in self.cocit_grouped_df[['cited_1', 'cited_2', 'total']].values:
-            start, end, weight = el
-            if start in self.pmids and end in self.pmids:
-                self.CG.add_edge(str(start), str(end), weight=int(weight))
-        self.logger.info(f'Co-citations graph nodes {len(self.CG.nodes())} edges {len(self.CG.edges())}\n')
 
     def find_top_cited_papers(self, max_papers=50, threshold=0.1):
         self.logger.info(f'Identifying top cited papers overall')
         papers_to_show = min(max_papers, round(len(self.df) * threshold))
         self.top_cited_df = self.df.sort_values(by='total', ascending=False).iloc[:papers_to_show, :]
-        self.top_cited_papers = set(self.top_cited_df['pmid'].values)
+        self.top_cited_papers = set(self.top_cited_df['id'].values)
 
     def find_max_gain_papers(self):
         self.logger.info('Identifying papers with max citation gain for each year')
@@ -288,19 +109,19 @@ class KeyPaperAnalyzer:
             max_gain = self.df[year].astype(int).max()
             if max_gain > 0:
                 sel = self.df[self.df[year] == max_gain]
-                max_gain_data.append([year, str(sel['pmid'].values[0]),
+                max_gain_data.append([year, str(sel['id'].values[0]),
                                       sel['title'].values[0],
                                       sel['year'].values[0], max_gain])
 
         self.max_gain_df = pd.DataFrame(max_gain_data,
-                                        columns=['year', 'pmid', 'title',
+                                        columns=['year', 'id', 'title',
                                                  'paper_year', 'count'])
-        self.max_gain_papers = set(self.max_gain_df['pmid'].values)
+        self.max_gain_papers = set(self.max_gain_df['id'].values)
 
     def find_max_relative_gain_papers(self):
         self.logger.info('Identifying papers with max relative citation gain for each year\n')
         current_sum = pd.Series(np.zeros(len(self.df), ))
-        df_rel = self.df.loc[:, ['pmid', 'title', 'year']]
+        df_rel = self.df.loc[:, ['id', 'title', 'year']]
         for year in self.years:
             df_rel[year] = self.df[year] / (current_sum + (current_sum == 0))
             current_sum += self.df[year]
@@ -310,14 +131,14 @@ class KeyPaperAnalyzer:
             max_rel_gain = df_rel[year].max()
             if max_rel_gain > 1e-6:
                 sel = df_rel[df_rel[year] == max_rel_gain]
-                max_rel_gain_data.append([year, str(sel['pmid'].values[0]),
+                max_rel_gain_data.append([year, str(sel['id'].values[0]),
                                           sel['title'].values[0],
                                           sel['year'].values[0], max_rel_gain])
 
         self.max_rel_gain_df = pd.DataFrame(max_rel_gain_data,
-                                            columns=['year', 'pmid', 'title',
+                                            columns=['year', 'id', 'title',
                                                      'paper_year', 'rel_gain'])
-        self.max_rel_gain_papers = set(self.max_rel_gain_df['pmid'].values)
+        self.max_rel_gain_papers = set(self.max_rel_gain_df['id'].values)
 
     def subtopic_analysis(self, sort_components_key='size'):
         # Graph clustering via Louvain algorithm
@@ -358,10 +179,10 @@ class KeyPaperAnalyzer:
             self.logger.info(f'Cluster {k}: {v} ({int(100 * v / len(pm))}%)')
 
         # Added 'comp' column containing the ID of component
-        df_comp = pd.Series(pm).reset_index().rename(columns={'index': 'pmid', 0: 'comp'})
-        self.df = pd.merge(self.df.assign(pmid=self.df.pmid.astype(str)),
-                           df_comp.assign(pmid=df_comp.pmid.astype(str)),
-                           on='pmid')
+        df_comp = pd.Series(pm).reset_index().rename(columns={'index': self.index, 0: 'comp'})
+        self.df = pd.merge(self.df.assign(id=self.df[self.index].astype(str)),
+                           df_comp.assign(id=df_comp[self.index].astype(str)),
+                           on='id')
 
         # Get n-gram descriptions for subtopics
         self.logger.info('Getting n-gram descriptions for subtopics')

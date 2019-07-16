@@ -10,20 +10,21 @@ Adopted from https://gist.github.com/whacked/c1feef2bf7a3a014178c
 """
 from bokeh.embed import components
 from keypaper.analysis import KeyPaperAnalyzer
+from keypaper.pm_loader import PubmedLoader
+from keypaper.ss_loader import SemanticScholarLoader
 from keypaper.visualization import Plotter
 
 import json
 import flask
-import logging
 import os
 
 from celery import Celery, current_task
 from celery.result import AsyncResult
 
-from flask import Flask, \
-    request, redirect, flash, \
-    url_for, session, g, \
+from flask import (
+    Flask, request, redirect,
     render_template, render_template_string
+)
 
 # Configure according REDIS server
 REDIS_SERVER_URL = 'localhost'
@@ -36,8 +37,12 @@ celery = Celery(os.path.splitext(__file__)[0],
 # Tasks will be served by Celery,
 # specify task name explicitly to avoid problems with modules
 @celery.task(name='analyze_async')
-def analyze_async(terms):
-    analyzer = KeyPaperAnalyzer()
+def analyze_async(source, terms):
+    if source == 'Pubmed':
+        loader = PubmedLoader()
+    elif source == 'Semantic Scholar':
+        loader = SemanticScholarLoader()
+    analyzer = KeyPaperAnalyzer(loader)
     plotter = Plotter(analyzer)
     # current_task is from @celery.task
     log = analyzer.launch(*terms, task=current_task)
@@ -114,10 +119,12 @@ def process():
 def index():
     if request.method == 'POST':
         terms = request.form.get('terms').split(' ')
+        source = request.form.get('source')
+
         redirect_url = '+'.join(terms)
         if len(terms) > 0:
             # Submit Celery task
-            job = analyze_async.delay(terms)
+            job = analyze_async.delay(source, terms)
             return redirect(flask.url_for('.process', terms=redirect_url, jobid=job.id))
 
     return render_template('main.html')

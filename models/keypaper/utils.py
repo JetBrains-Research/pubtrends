@@ -14,6 +14,7 @@ nltk.download('averaged_perceptron_tagger')
 nltk.download('wordnet')
 
 PUBMED_ARTICLE_BASE_URL = 'https://www.ncbi.nlm.nih.gov/pubmed/?term='
+SEMANTIC_SCHOLAR_BASE_URL = 'https://www.semanticscholar.org/paper/'
 
 
 def get_ngrams(text, n=3):
@@ -69,7 +70,7 @@ def get_subtopic_descriptions(df, size=100):
     for c in range(n_comps):
         max_cnt = max(most_common[c].values())
         idfs[c] = {k: (0.5 + 0.5 * v / max_cnt) *  # augmented frequency to avoid document length bias
-                      np.log(n_comps / sum([k in mcoc for mcoc in most_common])) \
+                   np.log(n_comps / sum([k in mcoc for mcoc in most_common])) \
                    for k, v in most_common[c].items()}
         kwd[c] = ','.join([f'{k}:{(max(most_common[c][k], 1e-3)):.3f}'
                            for k, _v in list(sorted(idfs[c].items(),
