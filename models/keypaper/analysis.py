@@ -205,6 +205,7 @@ class KeyPaperAnalyzer:
         self.logger.info(
             f'Studying evolution of subtopic clusters in {min_year} - {max_year} with step of {step} years')
 
+        components_merged = {}
         evolution_series = []
         year_range = range(max_year, min_year - 1, -step)
         years_processed = 0
@@ -224,27 +225,22 @@ class KeyPaperAnalyzer:
                 CG.add_edge(str(el[0]), str(el[1]), weight=el[2])
             self.logger.info(f'{year}: graph contains {len(CG.nodes)} nodes, {len(CG.edges)} edges')
 
-            if len(CG.nodes) > min_papers:
+            if len(CG.nodes) >= min_papers:
                 p = {int(vertex): int(comp) for vertex, comp in community.best_partition(CG).items()}
-                p, _ = self.merge_components(p)
+                p, components_merged[year] = self.merge_components(p)
                 evolution_series.append(pd.Series(p))
+                years_processed += 1
             else:
-                years_processed = i
+                self.logger.info(f'Total number of papers is less than {min_papers}, stopping.')
                 break
 
         year_range = year_range[:years_processed]
-
-        SHIFT = True  # use random shift to see trace of separate articles
-        FILLNA = True  # NaN values sometimes cause KeyError while plotting, but sometimes not (?!)
 
         self.evolution_df = pd.concat(evolution_series, axis=1).rename(columns=dict(enumerate(year_range)))
         self.evolution_df['current'] = self.evolution_df[max_year]
         self.evolution_df = self.evolution_df[list(reversed(list(self.evolution_df.columns)))]
 
-        if SHIFT:
-            shift = np.random.uniform(0.25, 0.75, size=(len(self.evolution_df),))
-            for year in year_range:
-                self.evolution_df[year] += shift
+        # Assign -1 to articles that do not belong to any cluster at some step
+        self.evolution_df = self.evolution_df.fillna(-1.0)
 
-        if FILLNA:
-            self.evolution_df = self.evolution_df.fillna(-1.0)
+        return components_merged
