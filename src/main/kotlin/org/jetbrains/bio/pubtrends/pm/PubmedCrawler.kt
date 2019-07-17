@@ -1,5 +1,6 @@
 package org.jetbrains.bio.pubtrends.pm
 
+import kotlinx.coroutines.TimeoutCancellationException
 import org.apache.logging.log4j.LogManager
 import java.io.*
 import java.nio.file.Files
@@ -77,6 +78,8 @@ class PubmedCrawler(
             downloadFiles(updateFiles, isBaseline = false)
         } catch (e: IOException) {
             throw PubmedCrawlerException("Failed to connect to the server")
+        } catch (e: TimeoutCancellationException) {
+            throw PubmedCrawlerException("Download timed out")
         } finally {
             if (tempDirectory.exists()) {
                 logger.info("Deleting directory: ${tempDirectory.absolutePath}")
@@ -91,6 +94,7 @@ class PubmedCrawler(
                 }
             }
         }
+
         return true
     }
 

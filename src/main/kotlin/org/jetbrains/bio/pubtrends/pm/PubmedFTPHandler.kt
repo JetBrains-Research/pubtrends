@@ -1,5 +1,7 @@
 package org.jetbrains.bio.pubtrends.pm
 
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.apache.commons.net.ftp.FTPClient
 import org.apache.commons.net.ftp.FTPReply
 import org.apache.logging.log4j.LogManager
@@ -17,6 +19,7 @@ class PubmedFTPHandler {
         const val UPDATE_PATH = "/pubmed/updatefiles"
 
         const val TIMEOUT_MS = 20000
+        const val DOWNLOAD_TIMEOUT_MS = 100000L
 
         fun pubmedFileToId(name: String): Int = name.removeSurrounding("pubmed19n", ".xml.gz").toInt()
 
@@ -39,25 +42,25 @@ class PubmedFTPHandler {
         }
     }
 
-    fun downloadBaselineFile(name: String, localPath: String): Boolean {
+    fun downloadBaselineFile(name: String, localPath: String) {
         val ftp = CloseableFTPClient()
 
         ftp.use {
             connect(it)
 
             ftp.changeWorkingDirectory(BASELINE_PATH)
-            return downloadFile(it, name, localPath)
+            downloadFile(it, name, localPath)
         }
     }
 
-    fun downloadUpdateFile(name: String, localPath: String): Boolean {
+    fun downloadUpdateFile(name: String, localPath: String) {
         val ftp = CloseableFTPClient()
 
         ftp.use {
             connect(it)
 
             ftp.changeWorkingDirectory(UPDATE_PATH)
-            return downloadFile(it, name, localPath)
+            downloadFile(it, name, localPath)
         }
     }
 
@@ -88,29 +91,29 @@ class PubmedFTPHandler {
             if (!ftp.setFileType(FTPClient.BINARY_FILE_TYPE)) {
                 throw IOException("Failed to set binary file type.")
             }
-        } catch (e: IOException) {
+        } finally {
             if (ftp.isConnected) {
                 ftp.disconnect()
             }
-            throw IOException(e)
         }
     }
 
-    private fun downloadFile(ftp: FTPClient, name: String, localPath: String): Boolean {
+    private fun downloadFile(ftp: FTPClient, name: String, localPath: String) {
         val localFile = File("$localPath/$name")
 
-        BufferedOutputStream(localFile.outputStream()).use {
-            try {
-                return ftp.retrieveFile(name, it)
-            } catch (e: IOException) {
-                logger.error(e)
-                if (ftp.isConnected) {
-                    ftp.disconnect()
+        runBlocking {
+            withTimeout(timeMillis = DOWNLOAD_TIMEOUT_MS) {
+                BufferedOutputStream(localFile.outputStream()).use {
+                    try {
+                        ftp.retrieveFile(name, it)
+                    } finally {
+                        if (ftp.isConnected) {
+                            ftp.disconnect()
+                        }
+                    }
                 }
             }
         }
-
-        return false
     }
 
     private fun getNewXMLsList(ftp: FTPClient, directory: String, lastId: Int): List<String> {
@@ -121,13 +124,10 @@ class PubmedFTPHandler {
             }?.map {
                 it.name
             } ?: emptyList()
-        } catch (e: IOException) {
-            logger.error(e)
+        } finally {
             if (ftp.isConnected) {
                 ftp.disconnect()
             }
         }
-
-        return emptyList()
     }
 }

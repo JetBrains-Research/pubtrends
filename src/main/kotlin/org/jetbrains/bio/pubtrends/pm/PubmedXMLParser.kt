@@ -2,6 +2,7 @@ package org.jetbrains.bio.pubtrends.pm
 
 import org.apache.logging.log4j.LogManager
 import org.joda.time.DateTime
+import org.joda.time.IllegalFieldValueException
 import java.io.File
 import javax.xml.namespace.QName
 import javax.xml.stream.XMLEventReader
@@ -249,7 +250,7 @@ class PubmedXMLParser(
                         day = dataElement.data.toInt()
                     }
                     fullName == MEDLINE_TAG -> {
-                        val yearRegex = "(19|20)\\d{2}".toRegex()
+                        val yearRegex = "(1\\d|20)\\d{2}".toRegex()
                         val yearMatch = yearRegex.find(dataElement.data)
 
                         if (yearMatch != null) {
@@ -385,7 +386,12 @@ class PubmedXMLParser(
                         citationCounter += citationList.size
                         keywordCounter += keywordList.size
 
-                        val date = if (year != null) DateTime(year, month, day, 12, 0) else null
+                        // There is an issue when some local dates might be absent in other calendars
+                        val date = try {
+                            if (year != null) DateTime(year, month, day, 12, 0) else null
+                        } catch (e: IllegalFieldValueException) {
+                            if (year != null) DateTime(year, 1, 1, 12, 0) else null
+                        }
 
                         abstractText = abstractText.trim()
                         articleList.add(
