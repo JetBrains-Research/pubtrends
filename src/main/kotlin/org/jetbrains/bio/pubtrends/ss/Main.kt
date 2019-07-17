@@ -54,6 +54,40 @@ fun main() {
     logger.info("Create SS tables")
     val dropTable = false
     val createTable = true
+    val createGinIndex = true
+
+    if (createGinIndex) {
+        val min = Int.MIN_VALUE
+        val max = Int.MAX_VALUE
+        val batchSize = 1048576
+
+        transaction {
+            addLogger(StdOutSqlLogger)
+            exec("alter table sspublications add column if not exists tsv2 tsvector;")
+        }
+
+        var curStart = min.toLong()
+        while (curStart <= max) {
+            val curEnd = minOf(curStart + batchSize, max.toLong())
+            transaction {
+                exec("""
+                    update sspublications
+                    set tsv2 = to_tsvector('english', coalesce(title,'') || coalesce(abstract,''))
+                    where crc32id between $curStart and $curEnd;
+                    commit;
+                    """)
+                logger.info("Added $curEnd to tsvector")
+            }
+            curStart += batchSize
+        }
+
+        logger.info("Creating gin index...")
+        transaction {
+            addLogger(StdOutSqlLogger)
+            val sqlIndexCreation = "create index if not exists pub_gin_index on sspublications using GIN(tsv);"
+            exec(sqlIndexCreation)
+        }
+    }
 
     if (createTable) {
         transaction {

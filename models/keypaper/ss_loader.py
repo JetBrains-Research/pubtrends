@@ -37,7 +37,7 @@ class SemanticScholarLoader(Loader):
         query = f'''
                 DROP TABLE IF EXISTS {self.temp_ids_table};
                 WITH vals(crc32id, ssid) AS (VALUES {self.values})
-                SELECT crc32id, ssid INTO table {self.temp_ids_table} FROM vals;
+                SELECT crc32id, ssid INTO temporary table {self.temp_ids_table} FROM vals;
                 DROP INDEX IF EXISTS temp_ssids_index;
                 CREATE INDEX temp_ssids_index ON {self.temp_ids_table} USING btree (crc32id);
                 '''
