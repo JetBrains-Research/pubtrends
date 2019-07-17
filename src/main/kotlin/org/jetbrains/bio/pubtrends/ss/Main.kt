@@ -63,7 +63,7 @@ fun main() {
 
         transaction {
             addLogger(StdOutSqlLogger)
-            exec("alter table sspublications add column if not exists tsv2 tsvector;")
+            exec("alter table sspublications add column if not exists tsv tsvector;")
         }
 
         var curStart = min.toLong()
@@ -72,7 +72,7 @@ fun main() {
             transaction {
                 exec("""
                     update sspublications
-                    set tsv2 = to_tsvector('english', coalesce(title,'') || coalesce(abstract,''))
+                    set tsv = to_tsvector('english', coalesce(title,'') || coalesce(abstract,''))
                     where crc32id between $curStart and $curEnd;
                     commit;
                     """)
