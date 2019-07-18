@@ -33,7 +33,7 @@ class PubmedLoader(Loader):
         DROP INDEX IF EXISTS temp_pmids_unique_index;
         CREATE UNIQUE INDEX temp_pmids_unique_index ON TEMP_PMIDS USING btree (pmid);
 
-        SELECT P.pmid, P.title, P.abstract, date_part('year', P.date) AS year
+        SELECT P.pmid, P.title, P.aux, P.abstract, date_part('year', P.date) AS year
         FROM PMPublications P
         JOIN TEMP_PMIDS AS T ON (P.pmid = T.pmid);
         ''')
@@ -42,7 +42,11 @@ class PubmedLoader(Loader):
         with self.conn:
             self.cursor.execute(query)
         self.pub_df = pd.DataFrame(self.cursor.fetchall(),
-                                   columns=['pmid', 'title', 'abstract', 'year'], dtype=object)
+                                   columns=['pmid', 'title', 'aux', 'abstract', 'year'], dtype=object)
+
+        self.pub_df['authors'] = self.pub_df['aux'].apply(
+            lambda aux: ', '.join(map(lambda authors: authors['name'], aux['authors'])))
+
         self.logger.info(f'Found {len(self.pub_df)} publications in the local database\n')
 
     def load_citation_stats(self):

@@ -19,14 +19,18 @@ class SemanticScholarLoader(Loader):
         self.logger.info('Searching publication data')
         terms_str = '\'' + ' '.join(self.terms) + '\''
         query = f'''
-        SELECT ssid, crc32id, title, abstract, year FROM {self.publications_table} P
-        WHERE tsv @@ plainto_tsquery({terms_str}) limit 1000;
+        SELECT ssid, crc32id, title, abstract, year, aux FROM {self.publications_table} P
+        WHERE tsv @@ plainto_tsquery({terms_str}) limit 100000;
         '''
 
         with self.conn:
             self.cursor.execute(query)
         self.pub_df = pd.DataFrame(self.cursor.fetchall(),
-                                   columns=['ssid', 'crc32id', 'title', 'abstract', 'year'], dtype=object)
+                                   columns=['ssid', 'crc32id', 'title', 'abstract', 'year', 'aux'], dtype=object)
+
+        self.pub_df['authors'] = self.pub_df['aux'].apply(
+            lambda aux: ', '.join(map(lambda authors: authors['name'], aux['authors'])))
+
         self.logger.info(f'Found {len(self.pub_df)} publications in the local database\n')
 
         self.ssids = self.pub_df['ssid']
@@ -37,7 +41,7 @@ class SemanticScholarLoader(Loader):
         query = f'''
                 DROP TABLE IF EXISTS {self.temp_ids_table};
                 WITH vals(crc32id, ssid) AS (VALUES {self.values})
-                SELECT crc32id, ssid INTO temporary table {self.temp_ids_table} FROM vals;
+                SELECT crc32id, ssid INTO table {self.temp_ids_table} FROM vals;
                 DROP INDEX IF EXISTS temp_ssids_index;
                 CREATE INDEX temp_ssids_index ON {self.temp_ids_table} USING btree (crc32id);
                 '''
@@ -51,17 +55,13 @@ class SemanticScholarLoader(Loader):
         self.logger.info('Started loading citation stats')
 
         query = f'''
-            WITH C as (select id_out, id_in, crc32id_out, crc32id_in
-                FROM {self.citations_table}
-                WHERE crc32id_in BETWEEN (SELECT MIN(crc32id) FROM {self.temp_ids_table})
-                AND (select max(crc32id) FROM {self.temp_ids_table}))
-            SELECT C.id_in AS ssid, P.year, COUNT(1) AS count
-                FROM C
+           SELECT C.id_in AS ssid, P.year, COUNT(1) AS count
+                FROM {self.citations_table} C
                 JOIN (VALUES {self.values}) AS CT(crc32id, ssid)
                   ON (C.crc32id_in = CT.crc32id AND C.id_in = CT.ssid)
                 JOIN {self.publications_table} P
-                  ON C.crc32id_in = P.crc32id AND C.id_in = P.ssid
-                WHERE P.year > 0
+                  ON C.crc32id_out = P.crc32id AND C.id_out = P.ssid
+                WHERE C.crc32id_in between (SELECT MIN(crc32id) FROM {self.temp_ids_table}) AND (select max(crc32id) FROM {self.temp_ids_table}) AND P.year > 0
                 GROUP BY C.id_in, P.year;
             '''
 

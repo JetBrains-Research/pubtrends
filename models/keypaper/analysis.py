@@ -111,17 +111,18 @@ class KeyPaperAnalyzer:
                 sel = self.df[self.df[year] == max_gain]
                 max_gain_data.append([year, str(sel['id'].values[0]),
                                       sel['title'].values[0],
+                                      sel['authors'].values[0],
                                       sel['year'].values[0], max_gain])
 
         self.max_gain_df = pd.DataFrame(max_gain_data,
-                                        columns=['year', 'id', 'title',
+                                        columns=['year', 'id', 'title', 'authors',
                                                  'paper_year', 'count'])
         self.max_gain_papers = set(self.max_gain_df['id'].values)
 
     def find_max_relative_gain_papers(self):
         self.logger.info('Identifying papers with max relative citation gain for each year\n')
         current_sum = pd.Series(np.zeros(len(self.df), ))
-        df_rel = self.df.loc[:, ['id', 'title', 'year']]
+        df_rel = self.df.loc[:, ['id', 'title', 'authors', 'year']]
         for year in self.years:
             df_rel[year] = self.df[year] / (current_sum + (current_sum == 0))
             current_sum += self.df[year]
@@ -133,10 +134,11 @@ class KeyPaperAnalyzer:
                 sel = df_rel[df_rel[year] == max_rel_gain]
                 max_rel_gain_data.append([year, str(sel['id'].values[0]),
                                           sel['title'].values[0],
+                                          sel['authors'].values[0],
                                           sel['year'].values[0], max_rel_gain])
 
         self.max_rel_gain_df = pd.DataFrame(max_rel_gain_data,
-                                            columns=['year', 'id', 'title',
+                                            columns=['year', 'id', 'title', 'authors',
                                                      'paper_year', 'rel_gain'])
         self.max_rel_gain_papers = set(self.max_rel_gain_df['id'].values)
 

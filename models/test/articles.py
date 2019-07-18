@@ -31,7 +31,7 @@ class Article:
 
 
 article1 = Article('5451b1ef43678d473575bdfa7016d024146f2b53', -410264312,
-                   'Differences between Salt-sensitive and Salt-tolerant Genotypes of the Tomato.', 1976)
+                   'Differences between Salt-sensitive and Salt-tolerant Genotypes of the Tomato.', 1999)
 
 article2 = Article('cad767094c2c4fff5206793fd8674a10e7fba3fe', 984465402,
                    'Ear injury and its therapy at the ORL clinic in Olomouc from 1967 to 1976.',
@@ -43,22 +43,22 @@ article3 = Article('e7cdbddc7af4b6138227139d714df28e2090bd5f', 17079054,
 article4 = Article('3cf82f53a52867aaade081324dff65dd35b5b7eb', -1875049083,
                    'Multiwavelength shearography for quantitative measurements '
                    'of two-dimensional strain distributions.',
-                   1999)
+                   1976)
 
 article5 = Article('5a63b4199bb58992882b0bf60bc1b1b3f392e5a5', 1831680518, 'The Problem of Safe Milk.',
-                   1937)
+                   2003)
 
 article6 = Article('7dc6f2c387193925d3be92d4cc31c7a7cea66d4e', -1626578460,
                    'Retrospective analysis of efficacy and safety of amrubicin in refractory '
                    'and relapsed small-cell lung cancer',
-                   2008)
+                   2018)
 
 article7 = Article('0f9c1d2a70608d36ad7588d3d93ef261d1ae3203', 1075821748, 'The inside view on plant growth',
                    2010)
 
 article8 = Article('872ad0e120b9eefd334562149c065afcfbf90268', -1861977375,
                    'Crystal structure of the Escherichia coli Tas protein, an NADP(H)-dependent aldo-keto reductase.',
-                   2003)
+                   1937)
 
 article9 = Article('89ffce2b5da6669f63c99ff6398b312389c357dc', -1190899769,
                    'Ischiopubic synchondrosis as a case of non specific groin pain in a 12 year old football player',
@@ -76,11 +76,14 @@ required_citations = [(article1, article4), (article1, article3), (article1, art
                       (article6, article10)]
 extra_citations = [(article5, article1)]
 
-citations_stats = [[article1.ssid, article1.year, 1],
-                   [article4.ssid, article4.year, 2],
-                   [article7.ssid, article7.year, 1],
-                   [article8.ssid, article8.year, 2],
-                   [article10.ssid, article10.year, 1]]
+citations_stats = [[article1.ssid, article5.year, 1],
+                   [article3.ssid, article1.year, 1],
+                   [article3.ssid, article2.year, 1],
+                   [article4.ssid, article1.year, 1],
+                   [article4.ssid, article2.year, 1],
+                   [article7.ssid, article6.year, 1],
+                   [article8.ssid, article1.year, 1],
+                   [article10.ssid, article6.year, 1]]
 
 cit_stats_df = pd.DataFrame(citations_stats, columns=['ssid', 'year', 'count'])
 

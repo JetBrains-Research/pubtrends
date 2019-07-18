@@ -1,6 +1,7 @@
 import logging
 import re
 import unittest
+
 import networkx as nx
 import networkx.algorithms.isomorphism as iso
 
@@ -94,8 +95,8 @@ class TestSemanticScholarLoader(unittest.TestCase):
     def test_load_citations_stats(self):
         self.loader.load_citation_stats(filter_citations=False)
         actual = self.loader.cit_stats_df_from_query
-        actual_sorted = actual.sort_values(by=['ssid']).reset_index(drop=True)
-        expected_sorted = cit_stats_df.sort_values(by=['ssid']).reset_index(drop=True).astype(dtype=object)
+        actual_sorted = actual.sort_values(by=['ssid', 'year']).reset_index(drop=True)
+        expected_sorted = cit_stats_df.sort_values(by=['ssid', 'year']).reset_index(drop=True).astype(dtype=object)
         assert actual_sorted.equals(expected_sorted), "Citations statistics is incorrect"
 
     def test_load_citations(self):
