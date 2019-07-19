@@ -8,6 +8,7 @@ import pandas as pd
 from .progress_logger import ProgressLogger
 from .utils import get_subtopic_descriptions
 
+SEED = 20190719
 
 class KeyPaperAnalyzer:
     def __init__(self, loader):
