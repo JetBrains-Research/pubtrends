@@ -1,16 +1,19 @@
-import re
-
 import networkx as nx
 import numpy as np
 import pandas as pd
+import re
 from Bio import Entrez
 
 from .loader import Loader
 
 
 class PubmedLoader(Loader):
-    def __init__(self, index='pmid'):
-        super(PubmedLoader, self).__init__()
+    def __init__(self,
+                 index='pmid',
+                 email='bioinformatics@jetbrains.com',
+                 test=True):
+        super(PubmedLoader, self).__init__(test)
+        Entrez.email = email
         self.index = index
 
     def search(self, *terms):

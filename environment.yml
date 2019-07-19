@@ -96,6 +96,7 @@ dependencies:
   - prompt_toolkit=2.0.9
   - psycopg2=2.7.6.1
   - ptyprocess=0.6.0
+  - pycodestyle=2.5.0
   - pycparser=2.19
   - pygments=2.4.2
   - pyopenssl=19.0.0
@@ -105,6 +106,7 @@ dependencies:
   - pysocks=1.7.0
   - python=3.7.3
   - python-dateutil=2.8.0
+  - pytest=5.0.1
   - pytz=2019.1
   - pyviz_comms=0.7.2
   - pyyaml=5.1.1

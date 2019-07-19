@@ -16,7 +16,8 @@ class TestSemanticScholarLoader(unittest.TestCase):
     def setUpClass(cls):
         cls.loader = SemanticScholarLoader(publications_table='sspublications_test',
                                            citations_table='sscitations_test',
-                                           temp_ids_table='temp_ssids_test')
+                                           temp_ids_table='temp_ssids_test',
+                                           test=True)
         cls.loader.set_logger(logging.getLogger(__name__))
         query_citations = '''
         drop table if exists sscitations_test;

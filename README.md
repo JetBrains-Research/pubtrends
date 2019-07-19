@@ -12,7 +12,7 @@ A tool for analysis of trends & pivotal points in the scientific literature.
 * Celery
 * Redis
 
-# Configuration
+## Configuration
 
 1. Conda environment `pubtrends` can be easily created for launching Jupyter Notebook and Web Service:
 
@@ -44,6 +44,9 @@ A tool for analysis of trends & pivotal points in the scientific literature.
    CREATE ROLE biolabs WITH PASSWORD 'password';
    ALTER ROLE biolabs WITH LOGIN;
    CREATE DATABASE pubtrends OWNER biolabs;
+   ```
+   Create testing database if you don't want to use Docker based Postgresql for tests
+   ```
    CREATE DATABASE pubtrends_test OWNER biolabs;
    ```
    
@@ -119,8 +122,41 @@ Ensure that file contains correct information about the database (url, port, DB 
     ```    
 4. Open localhost:5000/
 
-Useful links
-------------
+
+## Testing
+
+### Docker Postgresql
+
+1. Start official Postgresql docker [image](https://hub.docker.com/_/postgres/)
+    ```
+    docker run --rm --name pg-docker -e POSTGRES_USER=biolabs -e POSTGRES_PASSWORD=password \
+    -e POSTGRES_DB=pubtrends_test -d -p 5433:5432 postgres
+    ```
+
+    Check access:
+    ```
+    psql postgresql://biolabs:password@localhost:5433/pubtrends_test
+    ```
+
+2. Kotlin tests
+
+    ```
+    ./gradlew clean test shadowJar
+    ```
+
+3. Python tests
+
+    ```
+    python -m pytest models/test/*.py
+    ```
+   
+4. Python code style tests
+    ```
+    python -m pycodestyle --show-source models
+    ```
+
+
+# Materials
+
 * Project presentation at [Computer Science Center](https://my.compscicenter.ru/media/projects/2019-spring/758/presentations/participants.pdf)
-* JetBrains [TeamCity CI](https://teamcity.jetbrains.com/project.html?projectId=BioLabs)
 * JetBrains Research BioLabs [homepage](https://research.jetbrains.org/groups/biolabs)

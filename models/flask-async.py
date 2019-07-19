@@ -39,9 +39,11 @@ celery = Celery(os.path.splitext(__file__)[0],
 @celery.task(name='analyze_async')
 def analyze_async(source, terms):
     if source == 'Pubmed':
-        loader = PubmedLoader()
+        loader = PubmedLoader(test=False)
     elif source == 'Semantic Scholar':
-        loader = SemanticScholarLoader()
+        loader = SemanticScholarLoader(test=False)
+    else:
+        raise Exception(f"Unknown source {source}")
     analyzer = KeyPaperAnalyzer(loader)
     plotter = Plotter(analyzer)
     # current_task is from @celery.task

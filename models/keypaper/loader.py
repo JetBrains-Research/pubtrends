@@ -2,16 +2,11 @@ import configparser as configparser
 import os
 
 import psycopg2 as pg_driver
-from Bio import Entrez
 
 
-class Loader:
-    def __init__(self,
-                 host='localhost', port='5432', dbname='pubmed',
-                 user='biolabs', password='pubtrends',
-                 email='nikolay.kapralov@gmail.com'):
-
-        # Find 'config.properties' file for parser
+class DBConfig:
+    def __init__(self, test=True):
+        # Find 'config.properties' file
         config = configparser.ConfigParser()
         home_dir = os.path.expanduser('~')
 
@@ -19,26 +14,19 @@ class Loader:
         with open(f'{home_dir}/.pubtrends/config.properties') as config_properties:
             config.read_string("[params]\n" + config_properties.read())
 
-        if host is None:
-            host = config['params']['url']
+        self.host = config['params']['url' if not test else 'test_url']
+        self.port = config['params']['port' if not test else 'test_port']
+        self.dbname = config['params']['database' if not test else 'test_database']
+        self.user = config['params']['username' if not test else 'test_username']
+        self.password = config['params']['password' if not test else 'test_password']
 
-        if port is None:
-            port = config['params']['port']
 
-        if dbname is None:
-            dbname = config['params']['database']
-
-        if user is None:
-            user = config['params']['username']
-
-        if password is None:
-            password = config['params']['password']
-
-        Entrez.email = email
+class Loader:
+    def __init__(self, test=True):
+        db_config = DBConfig(test)
         connection_string = f"""
-        dbname={dbname} user={user} password={password} host={host} port={port}
+dbname={db_config.dbname} user={db_config.user} password={db_config.password} host={db_config.host} port={db_config.port}
         """
-
         self.conn = pg_driver.connect(connection_string)
         self.cursor = self.conn.cursor()
 

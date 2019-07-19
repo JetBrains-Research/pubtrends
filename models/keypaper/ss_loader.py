@@ -6,9 +6,14 @@ from .loader import Loader
 
 
 class SemanticScholarLoader(Loader):
-    def __init__(self, publications_table='sspublications', citations_table='sscitations', temp_ids_table='temp_ssids',
-                 index='ssid'):
-        super(SemanticScholarLoader, self).__init__()
+    def __init__(self,
+                 publications_table='sspublications',
+                 citations_table='sscitations',
+                 temp_ids_table='temp_ssids',
+                 index='ssid',
+                 test=True):
+        super(SemanticScholarLoader, self).__init__(test)
+
         self.publications_table = publications_table
         self.citations_table = citations_table
         self.temp_ids_table = temp_ids_table

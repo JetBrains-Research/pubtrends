@@ -36,16 +36,16 @@ class DBHandlerTest {
         }
 
         private val dbHandler = TestDBHandler(
-            config["url"].toString(),
-            config["port"].toString().toInt(),
+            config["test_url"].toString(),
+            config["test_port"].toString().toInt(),
             config["test_database"].toString(),
-            config["username"].toString(),
-            config["password"].toString(),
+            config["test_username"].toString(),
+            config["test_password"].toString(),
             resetDatabase = true
         )
         private val parser = PubmedXMLParser(dbHandler, 0, 1000)
 
-        private val path = "articlesForDBHandlerTest.xml"
+        private const val path = "articlesForDBHandlerTest.xml"
 
         private fun parserFileSetup(name: String): String {
             this::class.java.classLoader.getResourceAsStream(name)?.use {

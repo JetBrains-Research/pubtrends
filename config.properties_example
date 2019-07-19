@@ -9,11 +9,15 @@ password = password
 
 # Test database configuration
 test_database = pubtrends_test
+test_url = localhost
+test_port = 5433
+test_username = biolabs
+test_password = password
 
 # Pubmed crawler settings
 batchSize = 1000
 parserLimit = 0
 collectStats = true
 
-# Semantic Scholar archive folder path, please paste correct path
+# Semantic Scholar archive folder path
 archive_folder_path = <PATH_TO_SEMANTIC_SCHOLAR_ARCHIVE>
