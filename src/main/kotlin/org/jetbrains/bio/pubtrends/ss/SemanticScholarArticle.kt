@@ -25,6 +25,6 @@ data class SemanticScholarArticle(val ssid: String,
                                   val doi: String? = null,
                                   val keywords: String? = null,
                                   val source: PublicationSource? = null,
-                                  val aux: ArticleAuxInfo = ArticleAuxInfo(),
-                                  val crc32id: Int = 0)
+                                  val aux: ArticleAuxInfo = ArticleAuxInfo())
+
 

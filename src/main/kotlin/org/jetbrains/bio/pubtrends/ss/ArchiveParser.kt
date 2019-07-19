@@ -80,11 +80,7 @@ class ArchiveParser(
                 val aux = ArticleAuxInfo(authors, journal, links, venue)
                 val source = getSource(journal, venue, links.pdfUrls)
 
-                crc32.reset()
-                crc32.update(Hex.decodeHex(ssid.toCharArray()))
-                val crc32id = crc32.value.toInt()
-
-                curArticle = SemanticScholarArticle(ssid = ssid, crc32id = crc32id, title = title,
+                curArticle = SemanticScholarArticle(ssid = ssid, title = title,
                         pmid = pmid, doi = doi, abstract = abstract, keywords = keywords, year = year,
                         citationList = citationList, aux = aux, source = source)
 
@@ -129,14 +125,22 @@ class ArchiveParser(
                 this[SSPublications.doi] = article.doi
                 this[SSPublications.sourceEnum] = article.source
                 this[SSPublications.aux] = article.aux
-                this[SSPublications.crc32id] = article.crc32id
+                this[SSPublications.crc32id] = crc32id(article.ssid)
             }
 
             SSCitations.batchInsert(citationsList, ignore = true) { citation ->
                 this[SSCitations.id_out] = citation.first
                 this[SSCitations.id_in] = citation.second
+                this[SSCitations.crc32id_out] = crc32id(citation.first)
+                this[SSCitations.crc32id_in] = crc32id(citation.second)
             }
         }
+    }
+
+    private fun crc32id(ssid: String): Int {
+        crc32.reset()
+        crc32.update(Hex.decodeHex(ssid.toCharArray()))
+        return crc32.value.toInt()
     }
 
     private fun getSource(journal: Journal, venue: String, pdfUrls: List<String>): PublicationSource? {
