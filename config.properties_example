@@ -3,17 +3,17 @@
 # Database configuration
 url = localhost
 port = 5432
-database = pubmed
+database = pubtrends
 username = biolabs
-password = pubtrends
+password = password
 
 # Test database configuration
-test_database = pubmed_test
+test_database = pubtrends_test
 
-# Crawler settings
+# Pubmed crawler settings
 batchSize = 1000
 parserLimit = 0
 collectStats = true
 
-# Archive Folder path, please paste correct path
+# Semantic Scholar archive folder path, please paste correct path
 archive_folder_path = <PATH_TO_SEMANTIC_SCHOLAR_ARCHIVE>
