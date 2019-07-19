@@ -141,7 +141,8 @@ class KeyPaperAnalyzer:
 
         # Get n-gram descriptions for subtopics
         self.logger.debug('Getting n-gram descriptions for subtopics', current=current, task=task)
-        kwds = get_subtopic_descriptions(self.df)
+        comps = self.df.groupby('comp')['id'].apply(list).to_dict()
+        kwds = get_subtopic_descriptions(self.df, comps)
         for k, v in kwds.items():
             self.logger.debug(f'{k}: {v}', current=current, task=task)
         df_kwd = pd.Series(kwds).reset_index()
@@ -186,6 +187,7 @@ class KeyPaperAnalyzer:
             current=current, task=task)
 
         components_merged = {}
+        CG = {}
         evolution_series = []
         year_range = range(max_year, min_year - 1, -step)
         years_processed = 0
@@ -199,15 +201,15 @@ class KeyPaperAnalyzer:
             cocit_grouped_df = cocit_grouped_df.sort_values(by='total', ascending=False)
             cocit_grouped_df = cocit_grouped_df.iloc[:min(100000, len(cocit_grouped_df)), :]
 
-            CG = nx.Graph()
+            CG[year] = nx.Graph()
             # NOTE: we use nodes id as String to avoid problems str keys in jsonify during graph visualization
             for el in cocit_grouped_df[['cited_1', 'cited_2', 'total']].values.astype(int):
-                CG.add_edge(str(el[0]), str(el[1]), weight=el[2])
-            self.logger.debug(f'{year}: graph contains {len(CG.nodes)} nodes, {len(CG.edges)} edges', current=current,
-                              task=task)
+                CG[year].add_edge(str(el[0]), str(el[1]), weight=el[2])
+            self.logger.debug(f'{year}: graph contains {len(CG[year].nodes)} nodes, {len(CG[year].edges)} edges',
+                              current=current, task=task)
 
-            if len(CG.nodes) >= min_papers:
-                p = {int(vertex): int(comp) for vertex, comp in community.best_partition(CG).items()}
+            if len(CG[year].nodes) >= min_papers:
+                p = {int(vertex): int(comp) for vertex, comp in community.best_partition(CG[year]).items()}
                 p, components_merged[year] = self.merge_components(p)
                 evolution_series.append(pd.Series(p))
                 years_processed += 1
@@ -224,4 +226,4 @@ class KeyPaperAnalyzer:
         # Assign -1 to articles that do not belong to any cluster at some step
         self.evolution_df = self.evolution_df.fillna(-1.0)
 
-        return components_merged
+        return CG, components_merged
