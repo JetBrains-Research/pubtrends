@@ -66,35 +66,29 @@ class PubmedFTPHandler {
 
     @Throws(IOException::class)
     private fun connect(ftp: FTPClient) {
-        try {
-            ftp.connect(SERVER)
-            val reply = ftp.replyCode
+        ftp.connect(SERVER)
+        val reply = ftp.replyCode
 
-            if (!FTPReply.isPositiveCompletion(reply)) {
-                ftp.disconnect()
-                throw IOException("FTP server refused connection.")
-            }
+        if (!FTPReply.isPositiveCompletion(reply)) {
+            ftp.disconnect()
+            throw IOException("FTP server refused connection.")
+        }
 
-            ftp.enterLocalPassiveMode()
-            if (!ftp.login("anonymous", "")) {
-                throw IOException("Failed to log in.")
-            }
+        ftp.enterLocalPassiveMode()
+        if (!ftp.login("anonymous", "")) {
+            throw IOException("Failed to log in.")
+        }
 
-            // Timeouts are set to avoid infinite download
-            ftp.defaultTimeout = TIMEOUT_MS
-            ftp.setDataTimeout(TIMEOUT_MS)
-            ftp.connectTimeout = TIMEOUT_MS
-            ftp.soTimeout = TIMEOUT_MS
-            ftp.controlKeepAliveTimeout = TIMEOUT_MS.toLong()
-            ftp.controlKeepAliveReplyTimeout = TIMEOUT_MS
+        // Timeouts are set to avoid infinite download
+        ftp.defaultTimeout = TIMEOUT_MS
+        ftp.setDataTimeout(TIMEOUT_MS)
+        ftp.connectTimeout = TIMEOUT_MS
+        ftp.soTimeout = TIMEOUT_MS
+        ftp.controlKeepAliveTimeout = TIMEOUT_MS.toLong()
+        ftp.controlKeepAliveReplyTimeout = TIMEOUT_MS
 
-            if (!ftp.setFileType(FTPClient.BINARY_FILE_TYPE)) {
-                throw IOException("Failed to set binary file type.")
-            }
-        } finally {
-            if (ftp.isConnected) {
-                ftp.disconnect()
-            }
+        if (!ftp.setFileType(FTPClient.BINARY_FILE_TYPE)) {
+            throw IOException("Failed to set binary file type.")
         }
     }
 
@@ -104,13 +98,7 @@ class PubmedFTPHandler {
         runBlocking {
             withTimeout(timeMillis = DOWNLOAD_TIMEOUT_MS) {
                 BufferedOutputStream(localFile.outputStream()).use {
-                    try {
-                        ftp.retrieveFile(name, it)
-                    } finally {
-                        if (ftp.isConnected) {
-                            ftp.disconnect()
-                        }
-                    }
+                    ftp.retrieveFile(name, it)
                 }
             }
         }
@@ -118,16 +106,11 @@ class PubmedFTPHandler {
 
     private fun getNewXMLsList(ftp: FTPClient, directory: String, lastId: Int): List<String> {
         ftp.changeWorkingDirectory(directory)
-        try {
-            return ftp.listFiles()?.filter {
-                it.name.endsWith(".xml.gz") && pubmedFileToId(it.name) > lastId
-            }?.map {
-                it.name
-            } ?: emptyList()
-        } finally {
-            if (ftp.isConnected) {
-                ftp.disconnect()
-            }
-        }
+
+        return ftp.listFiles()?.filter {
+            it.name.endsWith(".xml.gz") && pubmedFileToId(it.name) > lastId
+        }?.map {
+            it.name
+        } ?: emptyList()
     }
 }

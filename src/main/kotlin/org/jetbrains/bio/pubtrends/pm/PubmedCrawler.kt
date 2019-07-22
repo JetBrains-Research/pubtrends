@@ -8,7 +8,10 @@ import java.nio.file.Path
 import java.util.zip.GZIPInputStream
 import javax.xml.stream.XMLStreamException
 
-class PubmedCrawlerException(message: String) : Exception(message)
+class PubmedCrawlerException : Exception {
+    constructor(message: String) : super(message)
+    constructor(cause: Throwable) : super(cause)
+}
 
 class PubmedCrawler(
     private val xmlParser: PubmedXMLParser,
@@ -61,6 +64,7 @@ class PubmedCrawler(
             throw PubmedCrawlerException("Failed to create temporary directory")
         }
         logger.info("Created temporary directory: ${tempDirectory.absolutePath}")
+
         try {
             val (baselineFiles, updateFiles) = ftpHandler.fetch(lastId)
             val baselineSize = baselineFiles.size
@@ -77,9 +81,11 @@ class PubmedCrawler(
             logger.info("Processing updates")
             downloadFiles(updateFiles, isBaseline = false)
         } catch (e: IOException) {
-            throw PubmedCrawlerException("Failed to connect to the server")
+            logger.error("Download failed: ${e.message}")
+            throw PubmedCrawlerException(e)
         } catch (e: TimeoutCancellationException) {
-            throw PubmedCrawlerException("Download timed out")
+            logger.error("Download timed out")
+            throw PubmedCrawlerException(e)
         } finally {
             if (tempDirectory.exists()) {
                 logger.info("Deleting directory: ${tempDirectory.absolutePath}")
@@ -95,7 +101,7 @@ class PubmedCrawler(
             }
         }
 
-        return true
+        return false
     }
 
     private fun unpack(archiveName: String) {
@@ -136,7 +142,8 @@ class PubmedCrawler(
                 logger.info("$progressPrefix $localArchiveName: Unpacking...")
                 unpack(localArchiveName)
             } catch (e: IOException) {
-                throw PubmedCrawlerException("Failed to unpack $localArchiveName : corrupted GZ archive")
+                logger.error("Failed to unpack $localArchiveName : corrupted GZ archive")
+                throw PubmedCrawlerException(e)
             }
 
             try {
@@ -144,7 +151,8 @@ class PubmedCrawler(
                 xmlParser.parse(localName)
                 File(localName).delete()
             } catch (e: XMLStreamException) {
-                throw PubmedCrawlerException("Failed to parse $localName")
+                logger.error("Failed to parse $localName")
+                throw PubmedCrawlerException(e)
             }
 
             logger.info("$progressPrefix $localName: SUCCESS")

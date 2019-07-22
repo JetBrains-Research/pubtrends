@@ -89,20 +89,24 @@ fun main(args: Array<String>) {
         logger.info("Retrying downloading after any problems.")
         while (isUpdateRequired) {
             try {
-                isUpdateRequired = pubmedCrawler.update(lastIdCmd)
+                if (retry == 1) {
+                    isUpdateRequired = pubmedCrawler.update(lastIdCmd)
+                } else {
+                    isUpdateRequired = pubmedCrawler.update(null)
+                }
                 waitTime = 1
             } catch (e: PubmedCrawlerException) {
-                logger.error(e.message)
+                logger.error(e)
                 isUpdateRequired = true
-            }
 
-            logger.info("Waiting for $waitTime seconds...")
-            Thread.sleep(waitTime * 1000)
-            logger.info("Retry #$retry")
-            retry += 1
+                logger.info("Waiting for $waitTime seconds...")
+                Thread.sleep(waitTime * 1000)
+                logger.info("Retry #$retry")
+                retry += 1
 
-            if (waitTime < 1024) {
-                waitTime *= 2
+                if (waitTime < 1024) {
+                    waitTime *= 2
+                }
             }
         }
 
