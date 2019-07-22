@@ -93,7 +93,7 @@ pub_df.abstract = ''
 expected_graph = nx.DiGraph()
 for citation in required_citations:
     u, v = citation
-    expected_graph.add_edge(v.ssid, u.ssid)
+    expected_graph.add_edge(u.ssid, v.ssid)
 
 expected_cgraph = nx.Graph()
 expected_cgraph.add_weighted_edges_from([(article7.ssid, article10.ssid, 1),

@@ -99,6 +99,12 @@ Ensure that file contains correct information about the database (url, port, DB 
     ```
     java -cp build/libs/pubtrends-dev.jar org.jetbrains.bio.pubtrends.ss.MainKt
     ```
+7. Command line options supported:
+
+   * `resetDatabase` - clear current contents of the database (useful for development) 
+   * `fillDatabase` - create and fill database with Semantic Scholar data
+   * `createIndex` - create index for already created tables
+
 ## Service
 
 ### Jupyter Notebook
