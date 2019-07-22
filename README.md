@@ -11,6 +11,7 @@ A tool for analysis of trends & pivotal points in the scientific literature.
 * Python 3.6+
 * Celery
 * Redis
+* Docker
 
 ## Configuration
 
@@ -67,7 +68,7 @@ Ensure that file contains correct information about the database (url, port, DB 
 2. Crawler is designed to download and keep up-to-date Pubmed database. Launch crawler:
 
    ```
-   java -cp build/libs/crawler-dev.jar org.jetbrains.bio.pubtrends.pm.MainKt
+   java -cp build/libs/pubtrends-dev.jar org.jetbrains.bio.pubtrends.pm.MainKt
    ``` 
    
 3. Command line options supported:
@@ -101,7 +102,7 @@ Ensure that file contains correct information about the database (url, port, DB 
    
 6. Launch Semantic Scholar Processing
     ```
-    java -cp build/libs/crawler-dev.jar org.jetbrains.bio.pubtrends.ss.MainKt
+    java -cp build/libs/pubtrends-dev.jar org.jetbrains.bio.pubtrends.ss.MainKt
     ```
 ## Service
 
@@ -127,10 +128,14 @@ Ensure that file contains correct information about the database (url, port, DB 
 
 ### Docker Postgresql
 
-1. Start official Postgresql docker [image](https://hub.docker.com/_/postgres/)
+1. Build `biolabs/pubtrends` Docker image
     ```
-    docker run --rm --name pg-docker -e POSTGRES_USER=biolabs -e POSTGRES_PASSWORD=password \
-    -e POSTGRES_DB=pubtrends_test -d -p 5433:5432 postgres
+    docker build biolabs/pubtrends .
+    ```
+
+2. Start Docker image for Kotlin tests
+    ```
+    docker run --name pg-docker -p 5433:5432 -v $(pwd):/pubtrends:ro -d biolabs/pubtrends
     ```
 
     Check access:
@@ -138,21 +143,24 @@ Ensure that file contains correct information about the database (url, port, DB 
     psql postgresql://biolabs:password@localhost:5433/pubtrends_test
     ```
 
-2. Kotlin tests
+3. Kotlin tests
 
     ```
-    ./gradlew clean test shadowJar
+    ./gradlew clean test
     ```
 
-3. Python tests
+4. Python tests
 
     ```
-    python -m pytest models/test/*.py
+    docker run -v $(pwd):/pubtrends:ro -t biolabs/pubtrends /bin/bash \
+    -c "/usr/lib/postgresql/10/bin/pg_ctl -D /home/user/postgres start; \
+    source activate pubtrends; cd /pubtrends; python -m pytest models/test"
     ```
    
-4. Python code style tests
+5. Python code style tests
     ```
-    python -m pycodestyle --show-source models
+    docker run -v $(pwd):/pubtrends:ro -t biolabs/pubtrends /bin/bash \
+    -c "source activate pubtrends; cd /pubtrends; python -m pytest --codestyle -m codestyle"
     ```
 
 

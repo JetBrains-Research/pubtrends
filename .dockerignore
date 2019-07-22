@@ -1,0 +1,6 @@
+.gradle/*
+.idea/*
+.pytest_cache/*
+build/*
+out/*
+ss/*
