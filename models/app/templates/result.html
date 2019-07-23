@@ -3,7 +3,8 @@
 <head>
     <title>PubTrends - Publication Analysis Service</title>
     <meta charset="utf-8">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+    <link rel="stylesheet"
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
           integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
           crossorigin="anonymous">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css"
@@ -37,9 +38,36 @@
         <span class="navbar-brand"><a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>{{search_string}}</span>
     </nav>
     <div class="card">
+        <div class="card-title">
+            <h1 class="card-header">Overview</h1>
+        </div>
         <div class="card-body">
-            <h1 class="card-title">Overview</h1>
-            <p class="card-text">Found {{found_papers}} papers out of {{number_of_papers}}. </p>
+            <div class="row">
+                <div class="col-sm-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <span class="stats-number"><b>300</b></span><br>
+                            <span class="card-text">papers</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <span class="stats-number"><b>2000</b></span><br>
+                            <span class="card-text">citations</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <span class="stats-number"><b>4</b></span><br>
+                            <span class="card-text">subtopics</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <div>
                 {% for script, div in papers_stats %}
@@ -50,81 +78,130 @@
         </div>
     </div>
 
-    <h1>Top Cited Papers Overall</h1>
-    <p>
-        Top cited papers visualize top N cited papers among all the papers for given terms.
-        Coloring is corresponding to the subtopics, which can be found below.
-        Year reflects publication year of original paper.
-    </p>
-    <div>
-        {% for script, div in top_cited_papers %}
-        {{ script|safe }}
-        {{ div|safe }}
-        {% endfor %}
-    </div>
-    <h1>Max Gain Papers</h1>
-    <p>
-        For each year we show the paper which has the biggest number of citations in given year.
-        Different papers have different colors. These colors has nothing to do with subtopics.
-    </p>
-    <div>
-        {% for script, div in max_gain_papers %}
-        {{ script|safe }}
-        {{ div|safe }}
-        {% endfor %}
-    </div>
-    <h1>Max Relative Gain Papers</h1>
-    <p>
-        For each year we show the paper which has the biggest delta number of citations in given year with respect to
-        the previous one.
-        Different papers have different colors. These colors has nothing to do with subtopics.
-    </p>
-    <div>
-        {% for script, div in max_relative_gain_papers %}
-        {{ script|safe }}
-        {{ div|safe }}
-        {% endfor %}
-    </div>
-    <!--    <h1>Papers citations dynamics</h1>-->
-    <!--    <div>-->
-    <!--        {% for script, div in citations_dynamics %}-->
-    <!--        {{ script|safe }}-->
-    <!--        {{ div|safe }}-->
-    <!--        {% endfor %}-->
-    <!--    </div>-->
+    <div class="card">
+        <div class="card-title">
+            <h1 class="card-header">Highlights</h1>
+        </div>
+        <div class="card-body">
+            <h1 class="card-title">Top Cited Papers Overall</h1>
+            <p>
+                Top cited papers visualize top N cited papers among all the papers for given terms.
+                Coloring is corresponding to the subtopics, which can be found below.
+                Year reflects publication year of original paper.
+            </p>
+            <div>
+                {% for script, div in top_cited_papers %}
+                {{ script|safe }}
+                {{ div|safe }}
+                {% endfor %}
+            </div>
 
-    <h1>Papers co-citations clustering</h1>
-    <p> Co-citation clustering using community Louvain algorithm is used to detect dense subtopics in co-citations
-        graph. {{clusters_info_message}} </p>
-    <div>
-        {% for script, div in cocitations_clusters %}
-        {{ script|safe }}
-        {{ div|safe }}
-        {% endfor %}
+            <h1 class="card-title">Top Cited Papers of the Year</h1>
+            <p>
+                For each year we show the paper which has the biggest number of citations in given
+                year.
+                Different papers have different colors. These colors has nothing to do with
+                subtopics.
+            </p>
+            <div>
+                {% for script, div in max_gain_papers %}
+                {{ script|safe }}
+                {{ div|safe }}
+                {% endfor %}
+            </div>
+
+            <h1 class="card-title">Hot Papers</h1>
+            <p>
+                For each year we show the paper which has the biggest delta number of citations in
+                given year with respect to
+                the previous one.
+                Different papers have different colors. These colors has nothing to do with
+                subtopics.
+            </p>
+            <div>
+                {% for script, div in max_relative_gain_papers %}
+                {{ script|safe }}
+                {{ div|safe }}
+                {% endfor %}
+            </div>
+        </div>
     </div>
 
-    <h1>Subtopics summary</h1>
-    <p>
-        Subtopics dynamics is shown for the timeline. Explore evolution of trends.
-        Colors are the same as in previous diagram.
-    </p>
-    <div>
-        {% for script, div in component_size_summary %}
-        {{ script|safe }}
-        {{ div|safe }}
-        {% endfor %}
+    <div class="card">
+        <div class="card-title">
+            <h1 class="card-header">Topics</h1>
+        </div>
+        <div class="card-body">
+            <ul id="subtopic-list">
+                {% for description, color in comps %}
+                <li>
+                    <a href="#subtopic-{{ loop.index0 }}">
+                        {{ description }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+
+            <!--    <h1>Papers citations dynamics</h1>-->
+            <!--    <div>-->
+            <!--        {% for script, div in citations_dynamics %}-->
+            <!--        {{ script|safe }}-->
+            <!--        {{ div|safe }}-->
+            <!--        {% endfor %}-->
+            <!--    </div>-->
+
+            <h1>Papers co-citations clustering</h1>
+            <p> Co-citation clustering using community Louvain algorithm is used to detect dense subtopics in co-citations
+                graph. {{clusters_info_message}} </p>
+            <div>
+                {% for script, div in cocitations_clusters %}
+                {{ script|safe }}
+                {{ div|safe }}
+                {% endfor %}
+            </div>
+        </div>
     </div>
-    <h1>Subtopics</h1>
-    <p>
-        For each subtopic most cited papers are shown over time. Papers are sorted descending by citations number
-        overall from bottom to top.
-        Year reflects publication year of original paper.
-    </p>
-    <div>
-        {% for script, div in subtopic_timeline_graphs %}
-        {{ script|safe }}
-        {{ div|safe }}
-        {% endfor %}
+    <div class="card">
+        <div class="card-title">
+            <h1 class="card-header">Trends</h1>
+        </div>
+        <div class="card-body">
+            <h1>Subtopics summary</h1>
+            <p>
+                Subtopics dynamics is shown for the timeline. Explore evolution of trends.
+                Colors are the same as in previous diagram.
+            </p>
+            <div>
+                {% for script, div in component_size_summary %}
+                {{ script|safe }}
+                {{ div|safe }}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">
+            <h1 class="card-header" id="publications">Publications</h1>
+        </div>
+        <div class="card-body">
+            <h1>Subtopics</h1>
+            <p>
+                For each subtopic most cited papers are shown over time. Papers are sorted
+                descending by
+                citations number
+                overall from bottom to top.
+                Year reflects publication year of original paper.
+            </p>
+            <div>
+                {% for script, div in subtopic_timeline_graphs %}
+                <div id="subtopic-{{ loop.index0 }}">
+                    {{ script|safe }}
+                    {{ div|safe }}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
     </div>
     <h1>Subtopic Evolution</h1>
     <div>
@@ -137,8 +214,6 @@
             Failed to analyze subtopic evolution because year step is too big.
         {% endif %}
     </div>
-    <h1>Log</h1>
-    <pre id="log">{{log}}</pre>
 </div>
 <footer>
     <p>version {{ version }}<br/>
