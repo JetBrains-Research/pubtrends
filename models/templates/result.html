@@ -31,6 +31,22 @@
     <nav class="navbar navbar-light bg-light justify-content-between">
         <span class="navbar-brand"><a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>{{search_string}}</span>
     </nav>
+
+    <div class="card">
+        <div class="card-body">
+            <h1 class="card-title">Overview</h1>
+            <p class="card-text">Found {{founded_papers}} papers out of {{number_of_papers}}. </p>
+
+            <div>
+                {% for script, div in papers_stats %}
+                {{ script|safe }}
+                {{ div|safe }}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+
     <h1>Top Cited Papers Overall</h1>
     <p>
         Top cited papers visualize top N cited papers among all the papers for given terms.
@@ -108,8 +124,6 @@
         {{ div|safe }}
         {% endfor %}
     </div>
-    <h1>Log</h1>
-    <pre id="log">{{log}}</pre>
 </div>
 <footer style="margin-top: 20px; text-align: center">
     <p style="display: inline-block">

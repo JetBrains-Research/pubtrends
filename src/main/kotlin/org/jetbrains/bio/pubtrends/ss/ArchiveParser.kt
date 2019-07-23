@@ -14,7 +14,9 @@ import java.util.zip.CRC32
 class ArchiveParser(
         private val archiveFile: File,
         private var batchSize: Int,
-        private val addToDatabase: Boolean = true
+        private val addToDatabase: Boolean = true,
+        private val curFile: Int,
+        private val filesAmount: Int
 ) {
     val currentArticles: MutableList<SemanticScholarArticle> = mutableListOf()
     private var batchIndex = 0
@@ -94,7 +96,8 @@ class ArchiveParser(
         addArticles(currentArticles)
         currentArticles.clear()
         batchIndex++
-        logger.info("Finished batch $batchIndex adding ($archiveFile)")
+        val progress = batchIndex.toDouble() / 10 //number of batches is about 1000
+        logger.info("Finished batch $batchIndex adding ($archiveFile) (about $progress% done of $curFile/$filesAmount file)")
     }
 
     private fun handleEndDocument() {

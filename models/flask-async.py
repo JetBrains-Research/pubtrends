@@ -8,23 +8,22 @@
 
 Adopted from https://gist.github.com/whacked/c1feef2bf7a3a014178c
 """
-from bokeh.embed import components
-from keypaper.analysis import KeyPaperAnalyzer
-from keypaper.pm_loader import PubmedLoader
-from keypaper.ss_loader import SemanticScholarLoader
-from keypaper.visualization import Plotter
-
 import json
-import flask
 import os
+from urllib.parse import quote
 
+import flask
+from bokeh.embed import components
 from celery import Celery, current_task
 from celery.result import AsyncResult
-
 from flask import (
     Flask, request, redirect,
     render_template, render_template_string
 )
+from keypaper.analysis import KeyPaperAnalyzer
+from keypaper.pm_loader import PubmedLoader
+from keypaper.ss_loader import SemanticScholarLoader
+from keypaper.visualization import Plotter
 
 # Configure according REDIS server
 REDIS_SERVER_URL = 'localhost'
@@ -40,8 +39,10 @@ celery = Celery(os.path.splitext(__file__)[0],
 def analyze_async(source, terms):
     if source == 'Pubmed':
         loader = PubmedLoader(test=False)
+        amount_of_papers = '20 million'
     elif source == 'Semantic Scholar':
         loader = SemanticScholarLoader(test=False)
+        amount_of_papers = '45 million'
     else:
         raise Exception(f"Unknown source {source}")
     analyzer = KeyPaperAnalyzer(loader)
@@ -59,6 +60,9 @@ def analyze_async(source, terms):
         'top_cited_papers': [components(plotter.top_cited_papers())],
         'max_gain_papers': [components(plotter.max_gain_papers())],
         'max_relative_gain_papers': [components(plotter.max_relative_gain_papers())],
+        'papers_stats': [components(plotter.papers_statistics())],
+        'founded_papers': str(loader.articles_found),
+        'number_of_papers': amount_of_papers
         # TODO: this doesn't work
         # 'citations_dynamics': [components(plotter.article_citation_dynamics())],
     }
@@ -88,8 +92,12 @@ def progress():
                 'state': job.state,
                 'message': str(job.result)
             })
+        elif job.state == 'PENDING':
+            return json.dumps({'state': job.state,
+                               'message': 'Task is in queue, please wait',
+                               })
 
-    # PENDING or no jobid
+    # no jobid
     return '{}'
 
 
@@ -111,7 +119,9 @@ def process():
         jobid = request.values.get('jobid')
         terms = request.args.get('terms').split('+')
         if jobid:
-            return render_template('process.html', search_string=' '.join(terms), JOBID=jobid)
+            return render_template('process.html', search_string=' '.join(terms),
+                                   url_search_string=quote(' '.join(terms)),
+                                   JOBID=jobid)
 
     return render_template_string("Something went wrong...")
 
