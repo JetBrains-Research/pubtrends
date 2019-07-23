@@ -9,10 +9,11 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
 import java.util.*
 import java.util.zip.CRC32
+import java.util.zip.GZIPInputStream
 
 
 class ArchiveParser(
-        private val archiveFile: File,
+        private val archiveFileGz: File,
         private var batchSize: Int,
         private val addToDatabase: Boolean = true
 ) {
@@ -27,7 +28,7 @@ class ArchiveParser(
 
     fun parse() {
         var sc: Scanner
-        archiveFile.inputStream().use {
+        GZIPInputStream(archiveFileGz.inputStream()).use {
             sc = Scanner(it, "UTF-8")
             val buffer = StringBuilder()
             var curArticle: SemanticScholarArticle
@@ -94,7 +95,7 @@ class ArchiveParser(
         addArticles(currentArticles)
         currentArticles.clear()
         batchIndex++
-        logger.info("Finished batch $batchIndex adding ($archiveFile)")
+        logger.info("Finished batch $batchIndex adding ($archiveFileGz)")
     }
 
     private fun handleEndDocument() {

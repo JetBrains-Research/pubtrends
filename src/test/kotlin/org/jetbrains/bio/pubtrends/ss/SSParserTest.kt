@@ -51,6 +51,6 @@ class SSParserTest {
                 SemanticScholarArticles.article2, SemanticScholarArticles.article3,
                 SemanticScholarArticles.article4, SemanticScholarArticles.article5)
 
-        testArticlesForFile("articlesSemanticScholar.json", listArticles)
+        testArticlesForFile("articlesSemanticScholar.json.gz", listArticles)
     }
 }

@@ -118,7 +118,7 @@ fun main() {
 
     File(config["archive_folder_path"]
             .toString()).walk()
-            .filter { !it.name.endsWith(".gz") && it.name.startsWith("s2-corpus") }
+            .filter { it.name.endsWith(".gz") && it.name.startsWith("s2-corpus") }
             .sorted()
             .drop(lastSSId + 1)
             .forEach {
