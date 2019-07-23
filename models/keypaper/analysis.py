@@ -8,9 +8,9 @@ import pandas as pd
 from .progress_logger import ProgressLogger
 from .utils import get_subtopic_descriptions
 
-SEED = 20190719
-
 class KeyPaperAnalyzer:
+    SEED = 20190723
+
     def __init__(self, loader):
         self.logger = logging.getLogger(__name__)
 
@@ -18,13 +18,22 @@ class KeyPaperAnalyzer:
 
         self.loader = loader
         loader.set_logger(self.logger)
+
         self.index = loader.index
+
+        # Data containers
+        self.terms = None
+        self.df = None
+
+        # Graphs
+        self.CG = None
 
     def launch(self, *terms, task=None):
         """:return full log"""
 
         try:
             # Search articles relevant to the terms
+            self.terms = terms
             self.loader.search(*terms, current=1, task=task)
 
             # Nothing found
@@ -37,17 +46,16 @@ class KeyPaperAnalyzer:
                 raise RuntimeError("Nothing found in DB")
 
             self.loader.load_citation_stats(current=3, task=task)
+            self.df = pd.merge(self.loader.pub_df, self.loader.cit_df, on='id', how='outer')
             if len(self.loader.df) == 0:
                 raise RuntimeError("Citations stats not found DB")
 
-            self.df = self.loader.df
-
             self.loader.load_cocitations(current=4, task=task)
+            self.build_cocitation_graph()
             if len(self.loader.CG.nodes()) == 0:
                 raise RuntimeError("Failed to build co-citations graph")
 
             self.cocit_df = self.loader.cocit_df
-            self.CG = self.loader.CG
 
             # Calculate min and max year of publications
             self.update_years(current=5, task=task)
@@ -67,6 +75,18 @@ class KeyPaperAnalyzer:
             self.loader.close_connection()
             self.logger.remove_handler()
 
+    def build_cocitation_graph(self):
+        self.logger.info(f'Building co-citations graph')
+        self.CG = nx.Graph()
+
+        # NOTE: we use nodes id as String to avoid problems str keys in jsonify
+        # during graph visualization
+        for el in self.loader.cocit_grouped_df[['cited_1', 'cited_2', 'total']].values:
+            start, end, weight = el
+            self.CG.add_edge(str(start), str(end), weight=int(weight))
+        self.logger.info(
+            f'Co-citations graph nodes {len(self.CG.nodes())} edges {len(self.CG.edges())}\n')
+
     def update_years(self, current=0, task=None):
         self.logger.update_state(current, task=task)
         self.years = [int(col) for col in list(self.df.columns) if isinstance(col, (int, float))]
@@ -75,7 +95,8 @@ class KeyPaperAnalyzer:
     def find_top_cited_papers(self, max_papers=50, threshold=0.1, current=0, task=None):
         self.logger.info(f'Identifying top cited papers overall', current=current, task=task)
         papers_to_show = min(max_papers, round(len(self.df) * threshold))
-        self.top_cited_df = self.df.sort_values(by='total', ascending=False).iloc[:papers_to_show, :]
+        self.top_cited_df = self.df.sort_values(by='total',
+                                                ascending=False).iloc[:papers_to_show, :]
         self.top_cited_papers = set(self.top_cited_df['id'].values)
 
     def find_max_gain_papers(self, current=0, task=None):
@@ -196,21 +217,24 @@ class KeyPaperAnalyzer:
             cocit_grouped_df = self.cocit_df[self.cocit_df['year'] <= year].groupby(
                 ['cited_1', 'cited_2', 'year']).count().reset_index()
             cocit_grouped_df = cocit_grouped_df.pivot_table(index=['cited_1', 'cited_2'],
-                                                            columns=['year'], values=['citing']).reset_index()
+                                                            columns=['year'],
+                                                            values=['citing']).reset_index()
             cocit_grouped_df = cocit_grouped_df.replace(np.nan, 0)
             cocit_grouped_df['total'] = cocit_grouped_df.iloc[:, 2:].sum(axis=1)
             cocit_grouped_df = cocit_grouped_df.sort_values(by='total', ascending=False)
             cocit_grouped_df = cocit_grouped_df.iloc[:min(100000, len(cocit_grouped_df)), :]
 
             CG[year] = nx.Graph()
-            # NOTE: we use nodes id as String to avoid problems str keys in jsonify during graph visualization
+            # NOTE: we use nodes id as String to avoid problems str keys in jsonify
+            # during graph visualization
             for el in cocit_grouped_df[['cited_1', 'cited_2', 'total']].values.astype(int):
                 CG[year].add_edge(str(el[0]), str(el[1]), weight=el[2])
             self.logger.debug(f'{year}: graph contains {len(CG[year].nodes)} nodes, {len(CG[year].edges)} edges',
                               current=current, task=task)
 
             if len(CG[year].nodes) >= min_papers:
-                p = {int(vertex): int(comp) for vertex, comp in community.best_partition(CG[year]).items()}
+                p = {int(vertex): int(comp) for vertex, comp in
+                     community.best_partition(CG[year], random_state=KeyPaperAnalyzer.SEED).items()}
                 p, components_merged[year] = self.merge_components(p)
                 evolution_series.append(pd.Series(p))
                 years_processed += 1
@@ -220,7 +244,8 @@ class KeyPaperAnalyzer:
 
         year_range = year_range[:years_processed]
 
-        self.evolution_df = pd.concat(evolution_series, axis=1).rename(columns=dict(enumerate(year_range)))
+        self.evolution_df = pd.concat(evolution_series, axis=1).rename(
+            columns=dict(enumerate(year_range)))
         self.evolution_df['current'] = self.evolution_df[max_year]
         self.evolution_df = self.evolution_df[list(reversed(list(self.evolution_df.columns)))]
 

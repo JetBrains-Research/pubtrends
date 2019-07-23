@@ -75,7 +75,10 @@ class SemanticScholarLoader(Loader):
                   ON (C.crc32id_in = CT.crc32id AND C.id_in = CT.ssid)
                 JOIN {self.publications_table} P
                   ON C.crc32id_out = P.crc32id AND C.id_out = P.ssid
-                WHERE C.crc32id_in between (SELECT MIN(crc32id) FROM {self.temp_ids_table}) AND (select max(crc32id) FROM {self.temp_ids_table}) AND P.year > 0
+                WHERE C.crc32id_in 
+                between (SELECT MIN(crc32id) FROM {self.temp_ids_table}) 
+                  AND (select max(crc32id) FROM {self.temp_ids_table}) 
+                AND P.year > 0
                 GROUP BY C.id_in, P.year;
             '''
 
@@ -85,8 +88,10 @@ class SemanticScholarLoader(Loader):
         self.cit_stats_df_from_query = pd.DataFrame(self.cursor.fetchall(),
                                                     columns=['ssid', 'year', 'count'], dtype=object)
 
-        self.cit_df = self.cit_stats_df_from_query.pivot(index='ssid', columns='year',
-                                                         values='count').reset_index().replace(np.nan, 0)
+        self.cit_df = self.cit_stats_df_from_query.pivot(index='ssid',
+                                                         columns='year',
+                                                         values='count')\
+            .reset_index().replace(np.nan, 0)
         self.cit_df['total'] = self.cit_df.iloc[:, 1:].sum(axis=1)
         self.cit_df = self.cit_df.sort_values(by='total', ascending=False)
         self.logger.debug(f"Loaded citation stats for {len(self.cit_df)} of {len(self.ssids)} articles.\n" +
@@ -134,9 +139,11 @@ class SemanticScholarLoader(Loader):
                     from {self.citations_table}
                     where crc32id_in between (select min(crc32id) from {self.temp_ids_table})
                         and (select max(crc32id) from {self.temp_ids_table})
-                        and (crc32id_in, id_in) in (select crc32id, ssid from {self.temp_ids_table})),
+                        and (crc32id_in, id_in) in (select crc32id, ssid 
+                                                    from {self.temp_ids_table})),
 
-                    X as (select id_out, array_agg(id_in) as cited_list, min(crc32id_out) as crc32id_out
+                    X as (select id_out, array_agg(id_in) as cited_list, 
+                                 min(crc32id_out) as crc32id_out
                           from Z
                           group by id_out
                           having count(*) >= 2)
@@ -165,7 +172,8 @@ class SemanticScholarLoader(Loader):
         self.logger.debug(f'Aggregating co-citations', current=current, task=task)
         self.cocit_grouped_df = self.cocit_df.groupby(['cited_1', 'cited_2', 'year']).count().reset_index()
         self.cocit_grouped_df = self.cocit_grouped_df.pivot_table(index=['cited_1', 'cited_2'],
-                                                                  columns=['year'], values=['citing']).reset_index()
+                                                                  columns=['year'],
+                                                                  values=['citing']).reset_index()
         self.cocit_grouped_df = self.cocit_grouped_df.replace(np.nan, 0)
         self.cocit_grouped_df['total'] = self.cocit_grouped_df.iloc[:, 2:].sum(axis=1)
         self.cocit_grouped_df = self.cocit_grouped_df.sort_values(by='total', ascending=False)
@@ -177,7 +185,8 @@ class SemanticScholarLoader(Loader):
 
         self.logger.info(f'Building co-citations graph', current=current, task=task)
         self.CG = nx.Graph()
-        # NOTE: we use nodes id as String to avoid problems str keys in jsonify during graph visualization
+        # NOTE: we use nodes id as String to avoid problems str keys in jsonify
+        # during graph visualization
         for el in self.cocit_grouped_df[['cited_1', 'cited_2', 'total']].values:
             start, end, weight = el
             if start in self.ssids and end in self.ssids:

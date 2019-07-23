@@ -21,9 +21,11 @@ SEMANTIC_SCHOLAR_BASE_URL = 'https://www.semanticscholar.org/paper/'
 def get_ngrams(text, n=1):
     """1/2/3-gramms computation for string"""
     is_noun = lambda pos: pos[:2] == 'NN'
-    tokenized = word_tokenize(re.sub('[^a-zA-Z0-9\- ]*', '', text.lower()))
+    special_symbols_regex = re.compile(r'[^a-zA-Z0-9\- ]*')
+    tokenized = word_tokenize(re.sub(special_symbols_regex, '', text.lower()))
     stop_words = set(stopwords.words('english'))
-    nouns = [word for (word, pos) in nltk.pos_tag(tokenized) if is_noun(pos) and word not in stop_words]
+    nouns = [word for (word, pos) in nltk.pos_tag(tokenized) if
+             is_noun(pos) and word not in stop_words]
 
     lemmatizer = WordNetLemmatizer()
     tokens = list(filter(lambda t: len(t) >= 3, [lemmatizer.lemmatize(n) for n in nouns]))
@@ -83,9 +85,9 @@ def get_subtopic_descriptions(df, comps, size=100):
                      np.log(n_comps / sum([k in mcoc for mcoc in most_common])) \
                      for k, v in most_common[idx].items()}
         kwd[idx] = ','.join([f'{k}:{(max(most_common[idx][k], 1e-3)):.3f}'
-                           for k, _v in list(sorted(idfs[idx].items(),
-                                                    key=lambda kv: kv[1],
-                                                    reverse=True))[:size]])
+                             for k, _v in list(sorted(idfs[idx].items(),
+                                                      key=lambda kv: kv[1],
+                                                      reverse=True))[:size]])
     return kwd
 
 
@@ -101,9 +103,11 @@ def get_word_cloud_data(df_kwd, c):
 
 def tokenize(text):
     is_noun = lambda pos: pos[:2] == 'NN'
-    tokenized = word_tokenize(re.sub('[^a-zA-Z0-9\- ]*', '', text.lower()))
+    special_symbols_regex = re.compile(r'[^a-zA-Z0-9\- ]*')
+    tokenized = word_tokenize(re.sub(special_symbols_regex, '', text.lower()))
     stop_words = set(stopwords.words('english'))
-    nouns = [word for (word, pos) in nltk.pos_tag(tokenized) if is_noun(pos) and word not in stop_words]
+    nouns = [word for (word, pos) in nltk.pos_tag(tokenized) if
+             is_noun(pos) and word not in stop_words]
 
     lemmatizer = WordNetLemmatizer()
     return list(filter(lambda t: len(t) >= 3, [lemmatizer.lemmatize(n) for n in nouns]))

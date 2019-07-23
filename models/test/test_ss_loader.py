@@ -29,7 +29,8 @@ class TestSemanticScholarLoader(unittest.TestCase):
             id_out      varchar(40) not null,
             id_in       varchar(40) not null
         );
-        create index if not exists sscitations_test_crc32id_out_crc32id_in_index on sscitations_test (crc32id_out, crc32id_in);
+        create index if not exists sscitations_test_crc32id_out_crc32id_in_index 
+        on sscitations_test (crc32id_out, crc32id_in);
         '''
 
         query_publications = '''
@@ -40,7 +41,8 @@ class TestSemanticScholarLoader(unittest.TestCase):
             title   varchar(1023),
             year    integer
         );
-        create index if not exists sspublications_test_crc32id_index on sspublications_test (crc32id);
+        create index if not exists sspublications_test_crc32id_index 
+        on sspublications_test (crc32id);
         '''
 
         with cls.loader.conn:
@@ -53,7 +55,8 @@ class TestSemanticScholarLoader(unittest.TestCase):
 
     @classmethod
     def _insert_publications(cls):
-        articles = ', '.join(map(lambda article: article.to_db_publication(), (required_articles + extra_articles)))
+        articles = ', '.join(
+            map(lambda article: article.to_db_publication(), (required_articles + extra_articles)))
 
         query = re.sub('\$values\$', articles, '''
         insert into sspublications_test(ssid, crc32id, title, year) values $values$;
@@ -64,7 +67,8 @@ class TestSemanticScholarLoader(unittest.TestCase):
     @classmethod
     def _insert_citations(cls):
         citations_str = ', '.join(
-            "('{0}', {1}, '{2}', {3})".format(citation[0].ssid, citation[0].crc32id, citation[1].ssid,
+            "('{0}', {1}, '{2}', {3})".format(citation[0].ssid, citation[0].crc32id,
+                                              citation[1].ssid,
                                               citation[1].crc32id) for citation in
             (required_citations + extra_citations))
 
@@ -91,7 +95,8 @@ class TestSemanticScholarLoader(unittest.TestCase):
         cls.loader.ssids = list(map(lambda article: article.ssid, required_articles))
         cls.loader.crc32ids = list(map(lambda article: article.crc32id, required_articles))
         cls.loader.values = ', '.join(
-            ['({0}, \'{1}\')'.format(i, j) for (i, j) in zip(cls.loader.crc32ids, cls.loader.ssids)])
+            ['({0}, \'{1}\')'.format(i, j) for (i, j) in
+             zip(cls.loader.crc32ids, cls.loader.ssids)])
 
         cls.loader.pub_df = pub_df
 
@@ -99,7 +104,8 @@ class TestSemanticScholarLoader(unittest.TestCase):
         self.loader.load_citation_stats(filter_citations=False)
         actual = self.loader.cit_stats_df_from_query
         actual_sorted = actual.sort_values(by=['ssid', 'year']).reset_index(drop=True)
-        expected_sorted = cit_stats_df.sort_values(by=['ssid', 'year']).reset_index(drop=True).astype(dtype=object)
+        expected_sorted = cit_stats_df.sort_values(by=['ssid', 'year']).reset_index(
+            drop=True).astype(dtype=object)
         assert actual_sorted.equals(expected_sorted), "Citations statistics is incorrect"
 
     def test_load_citations(self):
@@ -111,7 +117,8 @@ class TestSemanticScholarLoader(unittest.TestCase):
         self.loader.load_cocitations()
         actual = self.loader.CG
         em = iso.numerical_edge_match('weight', 1)
-        assert nx.is_isomorphic(actual, expected_cgraph, edge_match=em), "Graph of co-citations is incorrect"
+        assert nx.is_isomorphic(actual, expected_cgraph,
+                                edge_match=em), "Graph of co-citations is incorrect"
 
     @classmethod
     def tearDownClass(cls):
