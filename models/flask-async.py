@@ -8,23 +8,22 @@
 
 Adopted from https://gist.github.com/whacked/c1feef2bf7a3a014178c
 """
-from bokeh.embed import components
-from keypaper.analysis import KeyPaperAnalyzer
-from keypaper.pm_loader import PubmedLoader
-from keypaper.ss_loader import SemanticScholarLoader
-from keypaper.visualization import Plotter
-
 import json
-import flask
 import os
 
+import flask
+from bokeh.embed import components
 from celery import Celery, current_task
 from celery.result import AsyncResult
-
 from flask import (
     Flask, request, redirect,
     render_template, render_template_string
 )
+
+from keypaper.analysis import KeyPaperAnalyzer
+from keypaper.pm_loader import PubmedLoader
+from keypaper.ss_loader import SemanticScholarLoader
+from keypaper.visualization import Plotter
 
 # Configure according REDIS server
 REDIS_SERVER_URL = 'localhost'
@@ -59,6 +58,7 @@ def analyze_async(source, terms):
         'top_cited_papers': [components(plotter.top_cited_papers())],
         'max_gain_papers': [components(plotter.max_gain_papers())],
         'max_relative_gain_papers': [components(plotter.max_relative_gain_papers())],
+        'comps': [(f'Subtopic #{c}', plotter.colors[c].to_css()) for c in analyzer.components]
         # TODO: this doesn't work
         # 'citations_dynamics': [components(plotter.article_citation_dynamics())],
     }

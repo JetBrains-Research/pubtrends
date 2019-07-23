@@ -21,7 +21,8 @@ from bokeh.transform import factor_cmap
 from matplotlib import pyplot as plt
 from wordcloud import WordCloud
 
-from .utils import PUBMED_ARTICLE_BASE_URL, SEMANTIC_SCHOLAR_BASE_URL, get_word_cloud_data, get_most_common_ngrams
+from .utils import PUBMED_ARTICLE_BASE_URL, SEMANTIC_SCHOLAR_BASE_URL, get_word_cloud_data, \
+    get_most_common_ngrams
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
 
@@ -201,7 +202,7 @@ class Plotter:
         # Prepare layouts
         n_comps = len(self.analyzer.components)
         cmap = plt.cm.get_cmap('jet', n_comps)
-        self.colors = {c: RGB(*[int(round(ch * 255)) for ch in cmap(c)[:3]]) \
+        self.colors = {c: RGB(*[int(round(ch * 255)) for ch in cmap(c)[:3]], a=0.5)
                        for c in self.analyzer.components}
         ds = [None] * n_comps
         p = [None] * n_comps
