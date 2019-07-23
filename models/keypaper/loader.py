@@ -1,5 +1,6 @@
-import configparser as configparser
+import configparser
 import os
+import re
 
 import psycopg2 as pg_driver
 
@@ -22,13 +23,24 @@ class DBConfig:
 
 
 class Loader:
+    VALUES_REGEX = re.compile(r'\$VALUES\$')
+
     def __init__(self, test=True):
+        # Database connection and cursor
         db_config = DBConfig(test)
-        connection_string = f"""
-dbname={db_config.dbname} user={db_config.user} password={db_config.password} host={db_config.host} port={db_config.port}
-        """
+        connection_string = f'dbname={db_config.dbname} user={db_config.user} ' \
+            f'password={db_config.password} host={db_config.host} port={db_config.port}'
         self.conn = pg_driver.connect(connection_string)
         self.cursor = self.conn.cursor()
+
+        # Logger
+        self.logger = None
+
+        # Data containers
+        self.pub_df = None
+        self.cit_df = None
+        self.cocit_df = None
+        self.cocit_grouped_df = None
 
     def set_logger(self, logger):
         self.logger = logger

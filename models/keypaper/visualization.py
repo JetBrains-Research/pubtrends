@@ -21,7 +21,8 @@ from bokeh.transform import factor_cmap
 from matplotlib import pyplot as plt
 from wordcloud import WordCloud
 
-from .utils import PUBMED_ARTICLE_BASE_URL, SEMANTIC_SCHOLAR_BASE_URL, get_word_cloud_data, get_most_common_ngrams
+from .utils import PUBMED_ARTICLE_BASE_URL, SEMANTIC_SCHOLAR_BASE_URL, get_word_cloud_data, \
+    get_most_common_ngrams
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
 
@@ -55,13 +56,16 @@ class Plotter:
 
         G = nx.Graph()
         # Using merge left keeps order
-        gdf = pd.merge(pd.Series(self.analyzer.CG.nodes(), dtype=object).reset_index().rename(columns={0: 'id'}),
-                       self.analyzer.df[['id', 'title', 'authors', 'year', 'total', 'comp']], how='left'
+        gdf = pd.merge(pd.Series(self.analyzer.CG.nodes(), dtype=object).reset_index().rename(
+            columns={0: 'id'}),
+                       self.analyzer.df[['id', 'title', 'authors', 'year', 'total', 'comp']],
+                       how='left'
                        ).sort_values(by='total', ascending=False)
 
         for c in range(len(self.analyzer.components)):
             for n in gdf[gdf['comp'] == c]['id']:
-                # NOTE: we use nodes id as String to avoid problems str keys in jsonify during graph visualization
+                # NOTE: we use nodes id as String to avoid problems str keys in jsonify
+                # during graph visualization
                 G.add_node(str(n))
 
         edge_starts = []
@@ -124,7 +128,8 @@ class Plotter:
         # TODO: use ColumnDatasource
         # Nodes data for rendering
         graph.node_renderer.data_source.data['id'] = list(G.nodes())
-        graph.node_renderer.data_source.data['colors'] = [comp_palette[self.analyzer.pm[n]] for n in G.nodes()]
+        graph.node_renderer.data_source.data['colors'] = [comp_palette[self.analyzer.pm[n]] for n in
+                                                          G.nodes()]
         graph.node_renderer.data_source.data['title'] = gdf['title']
         graph.node_renderer.data_source.data['authors'] = gdf['authors']
         graph.node_renderer.data_source.data['year'] = gdf['year']
@@ -169,10 +174,12 @@ class Plotter:
         data = {'years': years}
         for c in range(n_comps):
             data[str(c)] = [
-                len(self.analyzer.df[np.logical_and(self.analyzer.df['comp'] == c, self.analyzer.df['year'] == y)])
+                len(self.analyzer.df[np.logical_and(self.analyzer.df['comp'] == c,
+                                                    self.analyzer.df['year'] == y)])
                 for y in range(min_year, max_year)]
 
-        p = figure(x_range=[min_year, max_year], plot_width=960, plot_height=300, title="Components by Year",
+        p = figure(x_range=[min_year, max_year], plot_width=960, plot_height=300,
+                   title="Components by Year",
                    toolbar_location=None, tools="hover", tooltips="Subtopic #$name: @$name")
 
         p.vbar_stack(components, x='years', width=0.9, color=palette, source=data, alpha=0.5,
@@ -190,14 +197,6 @@ class Plotter:
     def subtopic_timeline_graphs(self):
         logging.info('Per component detailed info visualization')
 
-        #        # Reorder subtopics by importance descending
-        #        KEY = 'citations' # 'size' or 'citations'
-        #
-        #        if KEY == 'size':
-        #            order = self.analyzer.df.groupby('comp')['pmid'].count().sort_values(ascending=False).index.values
-        #        elif KEY == 'citations':
-        #            order = self.analyzer.df.groupby('comp')['total'].sum().sort_values(ascending=False).index.values
-
         # Prepare layouts
         n_comps = len(self.analyzer.components)
         cmap = plt.cm.get_cmap('jet', n_comps)
@@ -211,7 +210,8 @@ class Plotter:
             # Scatter layout for articles from subtopic
             title = f'Subtopic #{c}{" OTHER" if c == 0 and self.analyzer.components_merged else ""}'
 
-            ds[c] = self.__build_data_source(self.analyzer.df[self.analyzer.df['comp'] == c], width=700)
+            ds[c] = self.__build_data_source(self.analyzer.df[self.analyzer.df['comp'] == c],
+                                             width=700)
             plot = self.__serve_scatter_article_layout(source=ds[c],
                                                        year_range=[min_year, max_year],
                                                        title=title, width=760)
@@ -298,7 +298,8 @@ class Plotter:
 
         year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
         p = figure(tools=TOOLS, toolbar_location="above",
-                   plot_width=960, plot_height=300, x_range=year_range, title='Max gain of citations per year')
+                   plot_width=960, plot_height=300, x_range=year_range,
+                   title='Max gain of citations per year')
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Number of citations'
         p.hover.tooltips = self._html_tooltips([
@@ -307,7 +308,8 @@ class Plotter:
             ("Cited by", '@count papers in @year')
         ])
         p.js_on_event('tap', self.pubmed_callback(ds_max, self.index))
-        p.vbar(x='year', width=0.8, top='count', fill_alpha=0.5, source=ds_max, fill_color=colors, line_color=colors)
+        p.vbar(x='year', width=0.8, top='count', fill_alpha=0.5, source=ds_max, fill_color=colors,
+               line_color=colors)
         return p
 
     def max_relative_gain_papers(self):
@@ -324,7 +326,8 @@ class Plotter:
 
         year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
         p = figure(tools=TOOLS, toolbar_location="above",
-                   plot_width=960, plot_height=300, x_range=year_range, title='Max relative gain of citations per year')
+                   plot_width=960, plot_height=300, x_range=year_range,
+                   title='Max relative gain of citations per year')
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Relative Gain of Citations'
         p.hover.tooltips = self._html_tooltips([
@@ -333,11 +336,13 @@ class Plotter:
             ("Relative Gain", '@rel_gain in @year')])
         p.js_on_event('tap', self.pubmed_callback(ds_max, self.index))
 
-        p.vbar(x='year', width=0.8, top='rel_gain', fill_alpha=0.5, source=ds_max, fill_color=colors, line_color=colors)
+        p.vbar(x='year', width=0.8, top='rel_gain', fill_alpha=0.5, source=ds_max,
+               fill_color=colors, line_color=colors)
         return p
 
     def article_citation_dynamics(self):
-        logging.info('Choose ID to get detailed citations timeline for top cited / max gain or relative gain papers')
+        logging.info('Choose ID to get detailed citations timeline '
+                     'for top cited / max gain or relative gain papers')
         highlight_papers = sorted(self.analyzer.top_cited_papers.union(
             self.analyzer.max_gain_papers, self.analyzer.max_rel_gain_papers))
 
@@ -447,7 +452,8 @@ class Plotter:
         style_value = Template('<span style="font-size: 11px;">$value</span>')
 
         tips_list_html = '\n'.join([f'''
-        <div> {style_caption.substitute(caption=tip[0])} {style_value.substitute(value=tip[1])} </div>'''
+        <div> {style_caption.substitute(caption=tip[0])} {style_value.substitute(
+            value=tip[1])} </div>'''
                                     for tip in tips_list])
 
         html_tooltips_str = f'''
