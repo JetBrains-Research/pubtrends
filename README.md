@@ -87,20 +87,15 @@ Ensure that file contains correct information about the database (url, port, DB 
    wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/manifest.txt
    wget -B https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/ -i manifest.txt
    ```
-3. Unzip it (run in `<PATH_TO_SEMANTIC_SCHOLAR_ARCHIVE>`)
-    ```
-   gunzip -k *.gz
-    ```
+3. Add `<PATH_TO_SEMANTIC_SCHOLAR_ARCHIVE>` to `.pubtrends/config.properties`
 
-4. Add `<PATH_TO_SEMANTIC_SCHOLAR_ARCHIVE>` to `.pubtrends/config.properties`
-
-5. Use the following command to test and build the project:
+4. Use the following command to test and build the project:
 
    ```
    ./gradlew clean test shadowJar
    ```
    
-6. Launch Semantic Scholar Processing
+5. Launch Semantic Scholar Processing
     ```
     java -cp build/libs/pubtrends-dev.jar org.jetbrains.bio.pubtrends.ss.MainKt
     ```
