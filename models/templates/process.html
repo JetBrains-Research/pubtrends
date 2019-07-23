@@ -32,13 +32,16 @@
                         $('#progress').hide();
                         $('#status').html("<h1>Error</h1>" + response.message);
                         $('#log').html(response.log);
-                    }
-                    else if (response.state !== undefined) {
+                    } else if (response.state === 'PENDING') {
+                        $('#status').html(response.message);
+                        setTimeout(poll_progress, 1000);
+                    } else if (response.state !== undefined) {
+                        $('#status').html('Analyzing...');
                         $('#progress').show();
                         $('.progress-bar').css('width', response.progress + '%').attr('aria-valuenow', response.progress);
                         $('.progress-bar-label').text(response.progress + '%');
                         if (response.state === 'SUCCESS') {
-                            window.location.replace("/result?terms={{search_string}}&jobid={{JOBID}}");
+                            window.location.replace("/result?terms={{url_search_string}}&jobid={{JOBID}}");
                         } else {
                             $('#log').html(response.log);
                             setTimeout(poll_progress, 1000);
@@ -74,7 +77,7 @@
             <span class="progress-bar-label">0%</span>
         </div>
     </div>
-    <h4>Analyzing...</h4>
+<!--    <h4>Analyzing...</h4>-->
     <div id="status"></div>
     <pre id="log"></pre>
 </div>

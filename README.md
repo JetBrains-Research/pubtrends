@@ -104,6 +104,9 @@ Ensure that file contains correct information about the database (url, port, DB 
    * `resetDatabase` - clear current contents of the database (useful for development) 
    * `fillDatabase` - create and fill database with Semantic Scholar data
    * `createIndex` - create index for already created tables
+   
+   For example, if you launch Semantic Scholar Processing for the first time, 
+   you need to use `fillDatabase` and `createIndex` options. 
 
 ## Service
 

@@ -19,12 +19,13 @@ class PubmedLoader(Loader):
         self.index = index
 
     def search(self, *terms, current=0, task=None):
-        self.logger.info('TODO: handle queries which return more than 10000 items', current=current, task=task)
+        self.logger.debug('TODO: handle queries which return more than 10000 items', current=current, task=task)
         self.terms = [t.lower() for t in terms]
-        query = ' '.join(terms)
+        query = ' '.join(terms).replace("\"", "")
         handle = Entrez.esearch(db='pubmed', retmax='100000',
                                 retmode='xml', term=query)
         self.pmids = Entrez.read(handle)['IdList']
+        self.articles_found = len(self.pmids)
         self.logger.info(f'Found {len(self.pmids)} articles about {terms}', current=current, task=task)
 
     def load_publications(self, current=0, task=None):
@@ -42,7 +43,7 @@ class PubmedLoader(Loader):
         FROM PMPublications P
         JOIN TEMP_PMIDS AS T ON (P.pmid = T.pmid);
         ''')
-        self.logger.info('Creating pmids table for request with index.', current=current, task=task)
+        self.logger.debug('Creating pmids table for request with index.', current=current, task=task)
 
         with self.conn:
             self.cursor.execute(query)
@@ -52,10 +53,11 @@ class PubmedLoader(Loader):
         self.pub_df['authors'] = self.pub_df['aux'].apply(
             lambda aux: ', '.join(map(lambda authors: html.unescape(authors['name']), aux['authors'])))
 
-        self.logger.info(f'Found {len(self.pub_df)} publications in the local database\n', current=current, task=task)
+        self.logger.debug(f'Found {len(self.pub_df)} publications in the local database\n', current=current, task=task)
 
     def load_citation_stats(self, current=0, task=None):
-        self.logger.info('Started loading citation stats', current=current, task=task)
+        self.logger.info('Loading citations statistics: searching for correct citations in 150 million of citations',
+                         current=current, task=task)
 
         values = ', '.join(['({})'.format(i) for i in sorted(self.pmids)])
         query = re.sub('\$VALUES\$', values, '''
@@ -70,23 +72,23 @@ class PubmedLoader(Loader):
 
         with self.conn:
             self.cursor.execute(query)
-        self.logger.info('Done loading citation stats', current=current, task=task)
+        self.logger.debug('Done loading citation stats', current=current, task=task)
         self.cit_df = pd.DataFrame(self.cursor.fetchall(),
                                    columns=['pmid', 'year', 'count'])
 
         self.cit_df = self.cit_df.pivot(index='pmid', columns='year', values='count').reset_index().replace(np.nan, 0)
         self.cit_df['total'] = self.cit_df.iloc[:, 1:].sum(axis=1)
         self.cit_df = self.cit_df.sort_values(by='total', ascending=False)
-        self.logger.info(f"Loaded citation stats for {len(self.cit_df)} of {len(self.pmids)} articles.\n" +
-                         "Others may either have zero citations or be absent in the local database.", current=current,
-                         task=task)
+        self.logger.debug(f"Loaded citation stats for {len(self.cit_df)} of {len(self.pmids)} articles.\n" +
+                          "Others may either have zero citations or be absent in the local database.", current=current,
+                          task=task)
 
-        self.logger.info('Filtering top 100000 or 80% of all the citations', current=current, task=task)
+        self.logger.debug('Filtering top 100000 or 80% of all the citations', current=current, task=task)
         self.cit_df = self.cit_df.iloc[:min(100000, round(0.8 * len(self.cit_df))), :]
 
         self.df = pd.merge(self.pub_df, self.cit_df, on='pmid')
         self.pmids = sorted(list(self.df['pmid']))
-        self.logger.info(f'{len(self.df)} articles to process.\n', current=current, task=task)
+        self.logger.debug(f'{len(self.df)} articles to process.\n', current=current, task=task)
 
     def load_citations(self, current=0, task=None):
         self.logger.info('Started loading raw information about citations', current=current, task=task)
@@ -101,15 +103,15 @@ class PubmedLoader(Loader):
 
         with self.conn:
             self.cursor.execute(query)
-        self.logger.info('Done loading citations, building citation graph', current=current, task=task)
+        self.logger.debug('Done loading citations, building citation graph', current=current, task=task)
 
         self.G = nx.DiGraph()
         for row in self.cursor:
             v, u = row
             self.G.add_edge(v, u)
 
-        self.logger.info(f'Built citation graph - nodes {len(self.G.nodes())} edges {len(self.G.edges())}',
-                         current=current, task=task)
+        self.logger.debug(f'Built citation graph - nodes {len(self.G.nodes())} edges {len(self.G.edges())}',
+                          current=current, task=task)
 
     def load_cocitations(self, current=0, task=None):
         self.logger.info('Calculating co-citations for selected articles', current=current, task=task)
@@ -143,17 +145,17 @@ class PubmedLoader(Loader):
                     cocit_data.append((citing, cited[i], cited[j], year))
 
         self.cocit_df = pd.DataFrame(cocit_data, columns=['citing', 'cited_1', 'cited_2', 'year'], dtype=object)
-        self.logger.info(f'Loaded {lines} lines of citing info', current=current, task=task)
-        self.logger.info(f'Found {len(self.cocit_df)} co-cited pairs of articles', current=current, task=task)
+        self.logger.debug(f'Loaded {lines} lines of citing info', current=current, task=task)
+        self.logger.debug(f'Found {len(self.cocit_df)} co-cited pairs of articles', current=current, task=task)
 
-        self.logger.info(f'Aggregating co-citations', current=current, task=task)
+        self.logger.debug(f'Aggregating co-citations', current=current, task=task)
         self.cocit_grouped_df = self.cocit_df.groupby(['cited_1', 'cited_2', 'year']).count().reset_index()
         self.cocit_grouped_df = self.cocit_grouped_df.pivot_table(index=['cited_1', 'cited_2'],
                                                                   columns=['year'], values=['citing']).reset_index()
         self.cocit_grouped_df = self.cocit_grouped_df.replace(np.nan, 0)
         self.cocit_grouped_df['total'] = self.cocit_grouped_df.iloc[:, 2:].sum(axis=1)
         self.cocit_grouped_df = self.cocit_grouped_df.sort_values(by='total', ascending=False)
-        self.logger.info('Filtering top 100000 of all the co-citations', current=current, task=task)
+        self.logger.debug('Filtering top 100000 of all the co-citations', current=current, task=task)
         self.cocit_grouped_df = self.cocit_grouped_df.iloc[:min(100000, len(self.cocit_grouped_df)), :]
 
         for col in self.cocit_grouped_df:
@@ -166,5 +168,5 @@ class PubmedLoader(Loader):
             start, end, weight = el
             if start in self.pmids and end in self.pmids:
                 self.CG.add_edge(str(start), str(end), weight=int(weight))
-        self.logger.info(f'Co-citations graph nodes {len(self.CG.nodes())} edges {len(self.CG.edges())}\n',
-                         current=current, task=task)
+        self.logger.debug(f'Co-citations graph nodes {len(self.CG.nodes())} edges {len(self.CG.edges())}\n',
+                          current=current, task=task)

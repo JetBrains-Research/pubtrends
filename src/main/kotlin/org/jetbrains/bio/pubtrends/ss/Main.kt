@@ -117,19 +117,22 @@ fun main(args: Array<String>) {
                 }
             }
 
-            File(config["archive_folder_path"]
+            val files = File(config["archive_folder_path"]
                     .toString()).walk()
                     .filter { !it.name.endsWith(".gz") && it.name.startsWith("s2-corpus") }
                     .sorted()
                     .drop(lastSSId + 1)
-                    .forEach {
-                        logger.info("Started parsing articles $it")
-                        ArchiveParser(it, config["batchSize"].toString().toInt()).parse()
-                        logger.info("Finished parsing articles $it")
-                        BufferedWriter(FileWriter(ssTSV.toFile())).use { br ->
-                            br.write("lastSSId\t${it.toString().takeLast(2)}")
-                        }
-                    }
+
+            val filesAmount = files.toList().size
+
+            files.forEachIndexed { index, file ->
+                logger.info("Started parsing articles $file")
+                ArchiveParser(file, config["batchSize"].toString().toInt(), curFile = index + 1, filesAmount = filesAmount).parse()
+                logger.info("Finished parsing articles $file")
+                BufferedWriter(FileWriter(ssTSV.toFile())).use { br ->
+                    br.write("lastSSId\t${file.toString().takeLast(2)}")
+                }
+            }
         }
 
         if (createGinIndex) {
