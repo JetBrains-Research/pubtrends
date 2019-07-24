@@ -18,6 +18,7 @@ from bokeh.models import GraphRenderer, StaticLayoutProvider
 # Tools used: hover,pan,tap,wheel_zoom,box_zoom,reset,save
 from bokeh.models import HoverTool, PanTool, WheelZoomTool, BoxZoomTool, ResetTool, SaveTool
 from bokeh.models import LinearColorMapper, PrintfTickFormatter, ColorBar
+from bokeh.models import NumeralTickFormatter
 from bokeh.models import Plot, Range1d, MultiLine, Circle, Span
 from bokeh.models.widgets.tables import DataTable, TableColumn
 from bokeh.palettes import Category20
@@ -328,6 +329,27 @@ class Plotter:
 
         return p
 
+    def component_ratio(self):
+        comp_size = dict(self.analyzer.df.groupby('comp')['id'].count())
+        total_papers = sum(self.analyzer.df['comp'] >= 0)
+
+        comps = list(map(str, comp_size.keys()))
+        source = {str(k): [(v / total_papers)] for k, v in comp_size.items()}
+        colors = [color.to_hex() for color in self.colors.values()]
+
+        p = figure(plot_width=900, plot_height=50, toolbar_location=None, tools="")
+
+        p.hbar_stack(comps, y=0, height=0.1, fill_alpha=0.5, color=colors, source=source)
+
+        p.axis.visible = False
+        p.y_range.start = 0
+        p.xgrid.grid_line_color = None
+        p.ygrid.grid_line_color = None
+        p.axis.minor_tick_line_color = None
+        p.outline_line_color = None
+
+        return p
+
     def top_cited_papers(self):
         n_comps = len(self.analyzer.components)
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
@@ -591,9 +613,13 @@ class Plotter:
 
         # NOTE: 'comp' column is used as string because GroupFilter supports
         #       only categorical values (needed to color top cited papers by components)
+        # d = ColumnDataSource(data=dict(id=df['id'], title=df['title'], authors=df['authors'],
+        #                                year=df['year'], total=df['total'],
+        #                                comp=df['comp'].astype(str), pos=ranks,
+        #                                size=np.log(df['total']) * size_scaling_coefficient))
         d = ColumnDataSource(data=dict(id=df['id'], title=df['title'], authors=df['authors'],
                                        year=df['year'].replace(np.nan, "Undefined"),
-                                       total=df['total'], comp=df['comp'].astype(str), pos=ranks,
+                                       total=df['total'], comp=df['comp'].astype(str), pos=df['total'],
                                        size=np.log(df['total']) * size_scaling_coefficient))
         return d
 
@@ -602,10 +628,11 @@ class Plotter:
         p = figure(tools=TOOLS, toolbar_location="above",
                    plot_width=width, plot_height=400,
                    x_range=(min_year - 1, max_year + 1),
-                   title=title)
+                   title=title,
+                   y_axis_type="log")
         p.xaxis.axis_label = 'Year'
-        p.yaxis.axis_label = 'Amount of articles'
-        p.y_range.start = 0
+        p.yaxis.axis_label = 'Number of citations'
+        p.yaxis.formatter = NumeralTickFormatter(format='0,0')
 
         p.hover.tooltips = self._html_tooltips([
             ("Author(s)", '@authors'),
