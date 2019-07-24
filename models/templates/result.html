@@ -63,7 +63,7 @@
         <span class="navbar-brand"><a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>{{search_string}}</span>
     </nav>
 
-    <div class="card">
+    <div class="card mt-3">
         <div class="card-title">
             <h1 class="card-header">Overview</h1>
         </div>
@@ -72,7 +72,7 @@
                 <div class="col-sm-4">
                     <div class="card">
                         <div class="card-body text-center">
-                            <span class="stats-number"><b>300</b></span><br>
+                            <span class="stats-number"><b>{{ n_papers }}</b></span><br>
                             <span class="card-text">papers</span>
                         </div>
                     </div>
@@ -80,7 +80,7 @@
                 <div class="col-sm-4">
                     <div class="card">
                         <div class="card-body text-center">
-                            <span class="stats-number"><b>2000</b></span><br>
+                            <span class="stats-number"><b>{{ n_citations }}</b></span><br>
                             <span class="card-text">citations</span>
                         </div>
                     </div>
@@ -88,23 +88,20 @@
                 <div class="col-sm-4">
                     <div class="card">
                         <div class="card-body text-center">
-                            <span class="stats-number"><b>4</b></span><br>
+                            <span class="stats-number"><b>{{ n_subtopics }}</b></span><br>
                             <span class="card-text">subtopics</span>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <div>
-                {% for script, div in papers_stats %}
-                {{ script|safe }}
-                {{ div|safe }}
-                {% endfor %}
-            </div>
+        </div>
+        <div class="card-footer text-muted">
+            Note: subtopics are merged to "Other" if they contain less than 5% of publications
+                in the field
         </div>
     </div>
 
-    <div class="card">
+    <div class="card mt-3">
         <div class="card-title">
             <h1 class="card-header">Highlights</h1>
         </div>
@@ -153,11 +150,18 @@
         </div>
     </div>
 
-    <div class="card">
+    <div class="card mt-3">
         <div class="card-title">
             <h1 class="card-header">Topics</h1>
         </div>
         <div class="card-body">
+            <div>
+                {% for script, div in component_ratio %}
+                {{ script|safe }}
+                {{ div|safe }}
+                {% endfor %}
+            </div>
+
             <ul id="subtopic-list">
                 {% for description, color in comps %}
                 <li>
@@ -185,7 +189,7 @@
         </div>
     </div>
 
-    <div class="card">
+    <div class="card mt-3">
         <div class="card-title">
             <h1 class="card-header">Trends</h1>
         </div>
@@ -204,17 +208,14 @@
         </div>
     </div>
 
-    <div class="card">
+    <div class="card mt-3">
         <div class="card-title">
             <h1 class="card-header" id="publications">Publications</h1>
         </div>
         <div class="card-body">
-            <h1>Subtopics</h1>
             <p>
                 For each subtopic most cited papers are shown over time. Papers are sorted
-                descending by
-                citations number
-                overall from bottom to top.
+                descending by citations number overall from bottom to top.
                 Year reflects publication year of original paper.
             </p>
             <div>

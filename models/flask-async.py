@@ -51,10 +51,14 @@ def analyze_async(source, terms):
     # Subtopic evolution is ignored for now.
     # Order is important here!
     return {
+        'n_papers': len(analyzer.df),
+        'n_citations': int(analyzer.df['total'].sum()),
+        'n_subtopics': len(analyzer.components),
         'log': log,
         'chord_cocitations': [components(plotter.chord_diagram_components())],
         'component_size_summary': [components(plotter.component_size_summary())],
         'subtopic_timeline_graphs': [components(p) for p in plotter.subtopic_timeline_graphs()],
+        'component_ratio': [components(plotter.component_ratio())],
         'top_cited_papers': [components(plotter.top_cited_papers())],
         'max_gain_papers': [components(plotter.max_gain_papers())],
         'max_relative_gain_papers': [components(plotter.max_relative_gain_papers())],
