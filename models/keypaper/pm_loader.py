@@ -14,7 +14,7 @@ class PubmedLoader(Loader):
                  pubtrends_config,
                  index='pmid'):
         super(PubmedLoader, self).__init__(pubtrends_config)
-        Entrez.email = pubtrends_config['pm_entrez_email']
+        Entrez.email = pubtrends_config.pm_entrez_email
         self.index = index
 
     def search(self, *terms, current=0, task=None):

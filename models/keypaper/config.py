@@ -21,3 +21,5 @@ class PubtrendsConfig:
 
         self.redis_host = config_parser['params']['redis_host']
         self.redis_port = config_parser['params']['redis_port']
+
+        self.pm_entrez_email = config_parser['params']['pm_entrez_email']
