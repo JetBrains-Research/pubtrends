@@ -1,11 +1,11 @@
 import logging
-from io import StringIO
 
 import community
 import networkx as nx
 import numpy as np
 import pandas as pd
 
+from .progress_logger import ProgressLogger
 from .utils import get_subtopic_descriptions
 
 
@@ -13,47 +13,35 @@ class KeyPaperAnalyzer:
     def __init__(self, loader):
         self.logger = logging.getLogger(__name__)
 
+        self.logger = ProgressLogger()
+
         self.loader = loader
         loader.set_logger(self.logger)
         self.index = loader.index
 
     def launch(self, *terms, task=None):
         """:return full log"""
-        stream = StringIO()
-        handler = logging.StreamHandler(stream)
 
-        self.logger.addHandler(handler)
         try:
             # Search articles relevant to the terms
-            self.loader.search(*terms)
-            if task:
-                handler.flush()
-                task.update_state(state='PROGRESS', meta={'current': 1, 'total': 10, 'log': stream.getvalue()})
+            self.loader.search(*terms, current=1, task=task)
+
             # Nothing found
             if len(getattr(self.loader, self.index + 's')) == 0:
                 raise RuntimeError("Nothing found")
 
             # Load data about publications, citations and co-citations
-            self.loader.load_publications()
-            if task:
-                handler.flush()
-                task.update_state(state='PROGRESS', meta={'current': 2, 'total': 10, 'log': stream.getvalue()})
+            self.loader.load_publications(current=2, task=task)
             if len(self.loader.pub_df) == 0:
                 raise RuntimeError("Nothing found in DB")
 
-            self.loader.load_citation_stats()
-            if task:
-                handler.flush()
-                task.update_state(state='PROGRESS', meta={'current': 3, 'total': 10, 'log': stream.getvalue()})
+            self.loader.load_citation_stats(current=3, task=task)
             if len(self.loader.df) == 0:
                 raise RuntimeError("Citations stats not found DB")
 
             self.df = self.loader.df
 
-            self.loader.load_cocitations()
-            if task:
-                handler.flush()
-                task.update_state(state='PROGRESS', meta={'current': 4, 'total': 10, 'log': stream.getvalue()})
+            self.loader.load_cocitations(current=4, task=task)
             if len(self.loader.CG.nodes()) == 0:
                 raise RuntimeError("Failed to build co-citations graph")
 
@@ -61,49 +49,35 @@ class KeyPaperAnalyzer:
             self.CG = self.loader.CG
 
             # Calculate min and max year of publications
-            self.update_years()
-            if task:
-                handler.flush()
-                task.update_state(state='PROGRESS', meta={'current': 5, 'total': 10, 'log': stream.getvalue()})
+            self.update_years(current=5, task=task)
             # Perform basic analysis
-            self.subtopic_analysis()
-            if task:
-                handler.flush()
-                task.update_state(state='PROGRESS', meta={'current': 6, 'total': 10, 'log': stream.getvalue()})
-            self.find_top_cited_papers()  # run after subtopic analysis to color components
-            if task:
-                handler.flush()
-                task.update_state(state='PROGRESS', meta={'current': 7, 'total': 10, 'log': stream.getvalue()})
-            self.find_max_gain_papers()
-            if task:
-                handler.flush()
-                task.update_state(state='PROGRESS', meta={'current': 8, 'total': 10, 'log': stream.getvalue()})
-            self.find_max_relative_gain_papers()
-            if task:
-                handler.flush()
-                task.update_state(state='PROGRESS', meta={'current': 9, 'total': 10, 'log': stream.getvalue()})
-            # Not visualized anyway
-            # self.subtopic_evolution_analysis()
-            # if task:
-            #     handler.flush()
-            #     task.update_state(state='PROGRESS', meta={'current': 10, 'total': 10, 'log': stream.getvalue()})
-            handler.flush()
-            return stream.getvalue()
-        finally:
-            self.logger.removeHandler(handler)
+            self.subtopic_analysis(current=6, task=task)
 
-    def update_years(self):
+            self.find_top_cited_papers(current=7, task=task)  # run after subtopic analysis to color components
+
+            self.find_max_gain_papers(current=8, task=task)
+
+            self.find_max_relative_gain_papers(current=9, task=task)
+
+            # Not visualized anyway
+            # self.subtopic_evolution_analysis(current=10, task=task)
+            return self.logger.stream.getvalue()
+        finally:
+            self.logger.remove_handler()
+
+    def update_years(self, current=0, task=None):
+        self.logger.update_state(current, task=task)
         self.years = [int(col) for col in list(self.df.columns) if isinstance(col, (int, float))]
         self.min_year, self.max_year = np.min(self.years), np.max(self.years)
 
-    def find_top_cited_papers(self, max_papers=50, threshold=0.1):
-        self.logger.info(f'Identifying top cited papers overall')
+    def find_top_cited_papers(self, max_papers=50, threshold=0.1, current=0, task=None):
+        self.logger.info(f'Identifying top cited papers overall', current=current, task=task)
         papers_to_show = min(max_papers, round(len(self.df) * threshold))
         self.top_cited_df = self.df.sort_values(by='total', ascending=False).iloc[:papers_to_show, :]
         self.top_cited_papers = set(self.top_cited_df['id'].values)
 
-    def find_max_gain_papers(self):
-        self.logger.info('Identifying papers with max citation gain for each year')
+    def find_max_gain_papers(self, current=0, task=None):
+        self.logger.info('Identifying papers with max citation gain for each year', current=current, task=task)
         max_gain_data = []
         for year in self.years:
             max_gain = self.df[year].astype(int).max()
@@ -119,8 +93,9 @@ class KeyPaperAnalyzer:
                                                  'paper_year', 'count'])
         self.max_gain_papers = set(self.max_gain_df['id'].values)
 
-    def find_max_relative_gain_papers(self):
-        self.logger.info('Identifying papers with max relative citation gain for each year\n')
+    def find_max_relative_gain_papers(self, current=0, task=None):
+        self.logger.info('Identifying papers with max relative citation gain for each year\n', current=current,
+                         task=task)
         current_sum = pd.Series(np.zeros(len(self.df), ))
         df_rel = self.df.loc[:, ['id', 'title', 'authors', 'year']]
         for year in self.years:
@@ -142,23 +117,24 @@ class KeyPaperAnalyzer:
                                                      'paper_year', 'rel_gain'])
         self.max_rel_gain_papers = set(self.max_rel_gain_df['id'].values)
 
-    def subtopic_analysis(self, sort_components_key='size'):
+    def subtopic_analysis(self, sort_components_key='size', current=0, task=None):
         # Graph clustering via Louvain algorithm
-        self.logger.info(f'Louvain community clustering of co-citation graph')
+        self.logger.info(f'Analyzing suptopics: clustering co-citation graph', current=current, task=task)
         p = community.best_partition(self.CG)
         self.components = set(p.values())
-        self.logger.info(f'Found {len(self.components)} components')
-        self.logger.info(f'Graph modularity: {community.modularity(p, self.CG):.3f}')
+        self.logger.debug(f'Found {len(self.components)} components', current=current, task=task)
+        self.logger.debug(f'Graph modularity: {community.modularity(p, self.CG):.3f}', current=current, task=task)
 
         # Merge small components to 'Other'
         GRANULARITY = 0.05
-        self.logger.info(f'Merging components smaller than {GRANULARITY} to "Other" component')
+        self.logger.debug(f'Merging components smaller than {GRANULARITY} to "Other" component', current=current,
+                          task=task)
         threshold = int(GRANULARITY * len(p))
         comp_sizes = {com: sum([p[node] == com for node in p.keys()]) for com in self.components}
         comp_to_merge = {com: comp_sizes[com] <= threshold for com in self.components}
         self.components_merged = sum(comp_to_merge.values()) > 0
         if self.components_merged > 0:
-            self.logger.info(f'Reassigning components')
+            self.logger.debug(f'Reassigning components', current=current, task=task)
             pm = {}
             newcomps = {}
             ci = 1  # Other component is 0.
@@ -170,15 +146,16 @@ class KeyPaperAnalyzer:
                     newcomps[v] = ci
                     ci += 1
                 pm[k] = newcomps[v]
-            self.logger.info(f'Processed {len(set(pm.values()))} components')
+            self.logger.debug(f'Processed {len(set(pm.values()))} components', current=current, task=task)
         else:
-            self.logger.info(f'All components are bigger than {GRANULARITY}, no need to reassign')
+            self.logger.debug(f'All components are bigger than {GRANULARITY}, no need to reassign', current=current,
+                              task=task)
             pm = p
         self.components = set(pm.values())
         self.pm = pm
         pmcomp_sizes = {com: sum([pm[node] == com for node in pm.keys()]) for com in self.components}
         for k, v in pmcomp_sizes.items():
-            self.logger.info(f'Cluster {k}: {v} ({int(100 * v / len(pm))}%)')
+            self.logger.debug(f'Cluster {k}: {v} ({int(100 * v / len(pm))}%)', current=current, task=task)
 
         # Added 'comp' column containing the ID of component
         df_comp = pd.Series(pm).reset_index().rename(columns={'index': self.index, 0: 'comp'})
@@ -187,24 +164,25 @@ class KeyPaperAnalyzer:
                            on='id')
 
         # Get n-gram descriptions for subtopics
-        self.logger.info('Getting n-gram descriptions for subtopics')
+        self.logger.debug('Getting n-gram descriptions for subtopics', current=current, task=task)
         kwds = get_subtopic_descriptions(self.df)
         for k, v in kwds.items():
-            self.logger.info(f'{k}: {v}')
+            self.logger.debug(f'{k}: {v}', current=current, task=task)
         df_kwd = pd.Series(kwds).reset_index()
         df_kwd = df_kwd.rename(columns={'index': 'comp', 0: 'kwd'})
         self.df_kwd = df_kwd
-        self.logger.info('Done\n')
+        self.logger.debug('Done\n', current=current, task=task)
 
-    def subtopic_evolution_analysis(self, step=2):
+    def subtopic_evolution_analysis(self, step=2, current=0, task=None):
         min_year = self.cocit_df['year'].min().astype(int)
         max_year = self.cocit_df['year'].max().astype(int)
-        self.logger.info(
-            f'Studying evolution of subtopic clusters in {min_year} - {max_year} with step of {step} years')
+        self.logger.debug(
+            f'Studying evolution of subtopic clusters in {min_year} - {max_year} with step of {step} years',
+            current=current, task=task)
 
         evolution_series = []
         year_range = range(max_year, min_year - 1, -step)
-        self.logger.info('Filtering top 100000 co-citations')
+        self.logger.debug('Filtering top 100000 co-citations', current=current, task=task)
         for year in year_range:
             cocit_grouped_df = self.cocit_df[self.cocit_df['year'] <= year].groupby(
                 ['cited_1', 'cited_2', 'year']).count().reset_index()
@@ -219,7 +197,8 @@ class KeyPaperAnalyzer:
             # NOTE: we use nodes id as String to avoid problems str keys in jsonify during graph visualization
             for el in cocit_grouped_df[['cited_1', 'cited_2', 'total']].values.astype(int):
                 CG.add_edge(str(el[0]), str(el[1]), weight=el[2])
-            self.logger.info(f'{year}: graph contains {len(CG.nodes)} nodes, {len(CG.edges)} edges')
+            self.logger.debug(f'{year}: graph contains {len(CG.nodes)} nodes, {len(CG.edges)} edges', current=current,
+                              task=task)
 
             p = {int(vertex): int(comp) for vertex, comp in community.best_partition(CG).items()}
             evolution_series.append(pd.Series(p))

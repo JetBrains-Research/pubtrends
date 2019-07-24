@@ -127,7 +127,7 @@ class Plotter:
         graph.node_renderer.data_source.data['colors'] = [comp_palette[self.analyzer.pm[n]] for n in G.nodes()]
         graph.node_renderer.data_source.data['title'] = gdf['title']
         graph.node_renderer.data_source.data['authors'] = gdf['authors']
-        graph.node_renderer.data_source.data['year'] = gdf['year']
+        graph.node_renderer.data_source.data['year'] = gdf['year'].replace(np.nan, "Undefined")
         graph.node_renderer.data_source.data['total'] = gdf['total']
         log_total = np.log(gdf['total'])
         graph.node_renderer.data_source.data['size'] = (log_total / np.max(log_total)) * 5 + 5
@@ -251,7 +251,7 @@ class Plotter:
         plot = self.__serve_scatter_article_layout(source=ds,
                                                    year_range=[min_year, max_year],
                                                    title=f'{len(self.analyzer.top_cited_df)} top cited papers',
-                                                   width=760)
+                                                   width=960)
 
         for c in range(n_comps):
             view = CDSView(source=ds, filters=[GroupFilter(column_name='comp',
@@ -259,37 +259,13 @@ class Plotter:
             plot.circle(x='year', y='pos', fill_alpha=0.5, source=ds, view=view,
                         size='size', line_color=self.colors[c], fill_color=self.colors[c])
 
-        # Word cloud description of subtopic by titles and abstracts
-        kwds = {}
-        for ngram, count in get_most_common_ngrams(self.analyzer.top_cited_df['title'],
-                                                   self.analyzer.top_cited_df['abstract']).items():
-            for word in ngram.split(' '):
-                kwds[word] = float(count) + kwds.get(word, 0)
-        wc = WordCloud(background_color="white", width=200, height=400,
-                       color_func=lambda *args, **kwargs: 'black',
-                       max_words=20, max_font_size=40)
-        wc.generate_from_frequencies(kwds)
-
-        image = wc.to_array()
-        desc = figure(title="", toolbar_location="above",
-                      plot_width=200, plot_height=400,
-                      x_range=[0, 10], y_range=[0, 10], tools=[])
-        desc.axis.visible = False
-
-        img = np.empty((400, 200), dtype=np.uint32)
-        view = img.view(dtype=np.uint8).reshape((400, 200, 4))
-        view[:, :, 0:3] = image[::-1, :, :]
-        view[:, :, 3] = 255
-
-        desc.image_rgba(image=[img], x=[0], y=[0], dw=[10], dh=[10])
-
-        p = row(desc, plot)
-        return p
+        return plot
 
     def max_gain_papers(self):
         logging.info('Different colors encode different papers')
         cols = ['year', 'id', 'title', 'authors', 'paper_year', 'count']
-        ds_max = ColumnDataSource(self.analyzer.max_gain_df[cols])
+        max_gain_df = self.analyzer.max_gain_df[cols].replace(np.nan, "Undefined")
+        ds_max = ColumnDataSource(max_gain_df)
 
         factors = self.analyzer.max_gain_df['id'].unique()
         cmap = plt.cm.get_cmap('jet', len(factors))
@@ -315,7 +291,8 @@ class Plotter:
         logging.info('Relative gain (year) = Citation Gain (year) / Citations before year')
         logging.info('Different colors encode different papers')
         cols = ['year', 'id', 'title', 'authors', 'paper_year', 'rel_gain']
-        ds_max = ColumnDataSource(self.analyzer.max_rel_gain_df[cols])
+        max_rel_gain_df = self.analyzer.max_rel_gain_df[cols].replace(np.nan, "Undefined")
+        ds_max = ColumnDataSource(max_rel_gain_df)
 
         factors = self.analyzer.max_rel_gain_df['id'].astype(str).unique()
         cmap = plt.cm.get_cmap('jet', len(factors))
@@ -388,6 +365,45 @@ class Plotter:
         display(panel)
         h = show(p, notebook_handle=True)
 
+    def papers_statistics(self):
+        cols = ['year', 'id', 'title', 'authors']
+        df_stats = self.analyzer.df[cols].groupby(['year']).size().reset_index(name='counts')
+        ds_stats = ColumnDataSource(df_stats)
+
+        year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
+        p = figure(tools=TOOLS, toolbar_location="above",
+                   plot_width=760, plot_height=400, x_range=year_range, title='Amount of articles per year')
+        p.xaxis.axis_label = 'Year'
+        p.yaxis.axis_label = 'Amount of articles'
+        p.hover.tooltips = [("Amount", '@counts'), ("Year", '@year')]
+
+        p.vbar(x='year', width=0.8, top='counts', fill_alpha=0.5, source=ds_stats)
+
+        kwds = {}
+        for ngram, count in get_most_common_ngrams(self.analyzer.top_cited_df['title'],
+                                                   self.analyzer.top_cited_df['abstract']).items():
+            for word in ngram.split(' '):
+                kwds[word] = float(count) + kwds.get(word, 0)
+        wc = WordCloud(background_color="white", width=200, height=400,
+                       color_func=lambda *args, **kwargs: 'black',
+                       max_words=20, max_font_size=40)
+        wc.generate_from_frequencies(kwds)
+
+        image = wc.to_array()
+        desc = figure(title="", toolbar_location="above",
+                      plot_width=200, plot_height=400,
+                      x_range=[0, 10], y_range=[0, 10], tools=[])
+        desc.axis.visible = False
+
+        img = np.empty((400, 200), dtype=np.uint32)
+        view = img.view(dtype=np.uint8).reshape((400, 200, 4))
+        view[:, :, 0:3] = image[::-1, :, :]
+        view[:, :, 3] = 255
+
+        desc.image_rgba(image=[img], x=[0], y=[0], dw=[10], dh=[10])
+        p = row(desc, p)
+        return p
+
     def subtopic_evolution(self):
         plt.rcParams['figure.figsize'] = 20, 10
         pd.plotting.parallel_coordinates(self.analyzer.evolution_df,
@@ -412,8 +428,8 @@ class Plotter:
         # NOTE: 'comp' column is used as string because GroupFilter supports
         #       only categorical values (needed to color top cited papers by components)
         d = ColumnDataSource(data=dict(id=df['id'], title=df['title'], authors=df['authors'],
-                                       year=df['year'], total=df['total'],
-                                       comp=df['comp'].astype(str), pos=ranks,
+                                       year=df['year'].replace(np.nan, "Undefined"),
+                                       total=df['total'], comp=df['comp'].astype(str), pos=ranks,
                                        size=np.log(df['total']) * size_scaling_coefficient))
         return d
 
@@ -443,6 +459,7 @@ class Plotter:
 
     def _html_tooltips(self, tips_list):
         tips_list = self._add_pmid(tips_list)
+
         style_caption = Template('<span style="font-size: 12px;color:dodgerblue;">$caption:</span>')
         style_value = Template('<span style="font-size: 11px;">$value</span>')
 
