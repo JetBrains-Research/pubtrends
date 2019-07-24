@@ -14,10 +14,15 @@ test_port = 5433
 test_username = biolabs
 test_password = password
 
-# Pubmed crawler settings
-batchSize = 1000
-parserLimit = 0
-collectStats = true
+# Redis configuration
+redis_host = localhost
+redis_port = 6379
 
-# Semantic Scholar archive folder path
-archive_folder_path = <PATH_TO_SEMANTIC_SCHOLAR_ARCHIVE>
+# Pubmed settings
+pm_batch_size = 1000
+pm_parser_limit = 0
+pm_collect_stats = true
+pm_entrez_email = bioinformatics@jetbrains.com
+
+# Semantic Scholar settings
+ss_archive_folder_path = <PATH_TO_SEMANTIC_SCHOLAR_ARCHIVE>

@@ -71,35 +71,32 @@ Ensure that file contains correct information about the database (url, port, DB 
    java -cp build/libs/pubtrends-dev.jar org.jetbrains.bio.pubtrends.pm.MainKt
    ``` 
    
-3. Command line options supported:
-
+   Command line options supported:
    * `lastId` - in case of interruption use this parameter to restart the download from article pack `pubmed19n{lastId+1}.xml` 
-   * `parserLimit` - maximum number of articles per XML to be parsed (useful for development)
    * `resetDatabase` - clear current contents of the database (useful for development)   
 
 ### Semantic Scholar
 
 1. Download Sample from [Semantic Scholar](https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/sample-S2-records.gz)
-
-2. Or full archive 
+   Or full archive 
    ```
    cd <PATH_TO_SEMANTIC_SCHOLAR_ARCHIVE>
    wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/manifest.txt
    wget -B https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/ -i manifest.txt
    ```
-3. Add `<PATH_TO_SEMANTIC_SCHOLAR_ARCHIVE>` to `.pubtrends/config.properties`
+2. Add `<PATH_TO_SEMANTIC_SCHOLAR_ARCHIVE>` to `.pubtrends/config.properties`
 
-4. Use the following command to test and build the project:
+3. Use the following command to test and build the project:
 
    ```
    ./gradlew clean test shadowJar
    ```
    
-5. Launch Semantic Scholar Processing
+4. Launch Semantic Scholar Processing
     ```
     java -cp build/libs/pubtrends-dev.jar org.jetbrains.bio.pubtrends.ss.MainKt
     ```
-7. Command line options supported:
+5. Command line options supported:
 
    * `resetDatabase` - clear current contents of the database (useful for development) 
    * `fillDatabase` - create and fill database with Semantic Scholar data

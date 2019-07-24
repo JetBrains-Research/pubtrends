@@ -119,7 +119,7 @@ fun main(args: Array<String>) {
                 }
             }
 
-            val files = File(config["archive_folder_path"]
+            val files = File(config["ss_archive_folder_path"]
                     .toString()).walk()
                     .filter { SEMANTIC_SCHOLAR_NAME_REGEX.matches(it.name) }
                     .sorted()
@@ -129,7 +129,7 @@ fun main(args: Array<String>) {
             files.forEachIndexed{index, file ->
                         val id = SEMANTIC_SCHOLAR_NAME_REGEX.matchEntire(file.name)!!.groups[1]!!.value
                         logger.info("Started parsing articles $file")
-                        ArchiveParser(file, config["batchSize"].toString().toInt(), curFile = index + 1, filesAmount = filesAmount).parse()
+                        ArchiveParser(file, config["pm_batch_size"].toString().toInt(), curFile = index + 1, filesAmount = filesAmount).parse()
                         logger.info("Finished parsing articles $file")
                         BufferedWriter(FileWriter(ssTSV.toFile())).use { br ->
                             br.write("lastSSId\t$id")

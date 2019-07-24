@@ -71,14 +71,14 @@ fun main(args: Array<String>) {
         val pubmedXMLParser =
             PubmedXMLParser(
                 dbHandler,
-                config["parserLimit"].toString().toInt(),
-                config["batchSize"].toString().toInt()
+                config["pm_parser_limit"].toString().toInt(),
+                config["pm_batch_size"].toString().toInt()
             )
 
         logger.info("Init crawler")
         val crawlerTSV = settingsRoot.resolve("crawler.tsv")
         val statsTSV = settingsRoot.resolve("stats.tsv")
-        val collectStats = config["collectStats"].toString().toBoolean()
+        val collectStats = config["pm_collect_stats"].toString().toBoolean()
         val pubmedCrawler = PubmedCrawler(pubmedXMLParser, collectStats, statsTSV, crawlerTSV)
 
         val lastIdCmd = if (options.has("lastId")) options.valueOf("lastId").toString().toInt() else null

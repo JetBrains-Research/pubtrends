@@ -11,11 +11,10 @@ from .loader import Loader
 
 class PubmedLoader(Loader):
     def __init__(self,
-                 index='pmid',
-                 email='bioinformatics@jetbrains.com',
-                 test=True):
-        super(PubmedLoader, self).__init__(test)
-        Entrez.email = email
+                 pubtrends_config,
+                 index='pmid'):
+        super(PubmedLoader, self).__init__(pubtrends_config)
+        Entrez.email = pubtrends_config['pm_entrez_email']
         self.index = index
 
     def search(self, *terms, current=0, task=None):

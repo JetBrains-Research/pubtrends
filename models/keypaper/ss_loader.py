@@ -9,12 +9,12 @@ from .loader import Loader
 
 class SemanticScholarLoader(Loader):
     def __init__(self,
+                 pubtrends_config,
                  publications_table='sspublications',
                  citations_table='sscitations',
                  temp_ids_table='temp_ssids',
-                 index='ssid',
-                 test=True):
-        super(SemanticScholarLoader, self).__init__(test)
+                 index='ssid'):
+        super(SemanticScholarLoader, self).__init__(pubtrends_config)
 
         self.publications_table = publications_table
         self.citations_table = citations_table

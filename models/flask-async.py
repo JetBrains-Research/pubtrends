@@ -24,13 +24,15 @@ from keypaper.analysis import KeyPaperAnalyzer
 from keypaper.pm_loader import PubmedLoader
 from keypaper.ss_loader import SemanticScholarLoader
 from keypaper.visualization import Plotter
+from keypaper.config import PubtrendsConfig
 
-# Configure according REDIS server
-REDIS_SERVER_URL = 'localhost'
-CELERY_BROKER_HOST = f'redis://{REDIS_SERVER_URL}:6379'
+PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
+
+# Configure Celery
+redis_url = f'redis://{PUBTRENDS_CONFIG.redis_host}:{PUBTRENDS_CONFIG.redis_port}'
 celery = Celery(os.path.splitext(__file__)[0],
-                backend=CELERY_BROKER_HOST + '/1',
-                broker=CELERY_BROKER_HOST + '/1')
+                backend=f"{redis_url}/1",
+                broker=f"{redis_url}/1")
 
 
 # Tasks will be served by Celery,
@@ -38,10 +40,10 @@ celery = Celery(os.path.splitext(__file__)[0],
 @celery.task(name='analyze_async')
 def analyze_async(source, terms):
     if source == 'Pubmed':
-        loader = PubmedLoader(test=False)
+        loader = PubmedLoader(PUBTRENDS_CONFIG)
         amount_of_papers = '20 million'
     elif source == 'Semantic Scholar':
-        loader = SemanticScholarLoader(test=False)
+        loader = SemanticScholarLoader(PUBTRENDS_CONFIG)
         amount_of_papers = '45 million'
     else:
         raise Exception(f"Unknown source {source}")

@@ -5,6 +5,7 @@ import unittest
 import networkx as nx
 import networkx.algorithms.isomorphism as iso
 
+from models.keypaper.config import PubtrendsConfig
 from models.keypaper.ss_loader import SemanticScholarLoader
 from models.test.articles import required_articles, extra_articles, required_citations, cit_stats_df, pub_df, \
     extra_citations, expected_graph, expected_cgraph
@@ -14,10 +15,11 @@ class TestSemanticScholarLoader(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.loader = SemanticScholarLoader(publications_table='sspublications_test',
-                                           citations_table='sscitations_test',
-                                           temp_ids_table='temp_ssids_test',
-                                           test=True)
+        cls.loader = SemanticScholarLoader(
+            pubtrends_config=PubtrendsConfig(test=True),
+            publications_table='sspublications_test',
+            citations_table='sscitations_test',
+            temp_ids_table='temp_ssids_test')
         cls.loader.set_logger(logging.getLogger(__name__))
         query_citations = '''
         drop table if exists sscitations_test;
