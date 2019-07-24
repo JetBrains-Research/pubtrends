@@ -13,6 +13,8 @@ import java.nio.file.Paths
 import java.util.*
 import kotlin.system.exitProcess
 
+private val SEMANTIC_SCHOLAR_NAME_REGEX = "s2-corpus-(\\d\\d)\\.gz".toRegex()
+
 fun main() {
     val logger = LogManager.getLogger("Pubtrends")
 
@@ -53,8 +55,8 @@ fun main() {
 
     logger.info("Create SS tables")
     val dropTable = false
-    val createTable = true
-    val createGinIndex = true
+    val createTable = false
+    val createGinIndex = false
 
     if (createGinIndex) {
         val min = Int.MIN_VALUE
@@ -118,15 +120,16 @@ fun main() {
 
     File(config["archive_folder_path"]
             .toString()).walk()
-            .filter { it.name.endsWith(".gz") && it.name.startsWith("s2-corpus") }
+            .filter { SEMANTIC_SCHOLAR_NAME_REGEX.matches(it.name) }
             .sorted()
             .drop(lastSSId + 1)
             .forEach {
+                val id = SEMANTIC_SCHOLAR_NAME_REGEX.matchEntire(it.name)!!.groups[1]!!.value
                 logger.info("Started parsing articles $it")
                 ArchiveParser(it, config["batchSize"].toString().toInt()).parse()
                 logger.info("Finished parsing articles $it")
                 BufferedWriter(FileWriter(ssTSV.toFile())).use { br ->
-                    br.write("lastSSId\t${it.toString().takeLast(2)}")
+                    br.write("lastSSId\t$id")
                 }
             }
 }
