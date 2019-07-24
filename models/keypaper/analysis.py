@@ -153,8 +153,8 @@ class KeyPaperAnalyzer:
             pm = p
         self.components = set(pm.values())
         self.pm = pm
-        pmcomp_sizes = {com: sum([pm[node] == com for node in pm.keys()]) for com in self.components}
-        for k, v in pmcomp_sizes.items():
+        self.pmcomp_sizes = {com: sum([pm[node] == com for node in pm.keys()]) for com in self.components}
+        for k, v in self.pmcomp_sizes.items():
             self.logger.debug(f'Cluster {k}: {v} ({int(100 * v / len(pm))}%)', current=current, task=task)
 
         # Added 'comp' column containing the ID of component

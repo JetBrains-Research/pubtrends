@@ -46,7 +46,6 @@
         </div>
     </div>
 
-
     <h1>Top Cited Papers Overall</h1>
     <p>
         Top cited papers visualize top N cited papers among all the papers for given terms.
@@ -90,9 +89,18 @@
     <!--        {% endfor %}-->
     <!--    </div>-->
     <h1>Papers co-citations clustering</h1>
+    <p> Co-citation clustering using community Louvain algorithm is used to detect dense subtopics in co-citations
+        graph. </p>
+    <h2>Heatmap</h2>
+    <div>
+        {% for script, div in clusters_heatmap %}
+        {{ script|safe }}
+        {{ div|safe }}
+        {% endfor %}
+    </div>
+
+    <h2>Chord diagram</h2>
     <p>
-        Co-citation clustering using community Louvain algorithm is used to detect dense subtopics in co-citations
-        graph.
         Chord diagram is used to show papers as graph nodes, edges demonstrate co-citations.
     </p>
     <div>

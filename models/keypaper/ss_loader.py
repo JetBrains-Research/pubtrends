@@ -64,7 +64,7 @@ class SemanticScholarLoader(Loader):
         self.logger.debug('Created table for request with index.', current=current, task=task)
 
     def load_citation_stats(self, filter_citations=True, current=0, task=None):
-        self.logger.info('Loading citations statistics: searching for correct citations in 150 million of citations',
+        self.logger.info('Loading citations statistics: searching for correct citations over 150 million of citations',
                          current=current, task=task)
 
         query = f'''
