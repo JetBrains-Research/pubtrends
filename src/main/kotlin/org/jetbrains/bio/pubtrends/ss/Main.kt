@@ -15,6 +15,8 @@ import java.nio.file.Paths
 import java.util.*
 import kotlin.system.exitProcess
 
+private val SEMANTIC_SCHOLAR_NAME_REGEX = "s2-corpus-(\\d\\d)\\.gz".toRegex()
+
 fun main(args: Array<String>) {
     val logger = LogManager.getLogger("Pubtrends")
 
@@ -119,20 +121,20 @@ fun main(args: Array<String>) {
 
             val files = File(config["archive_folder_path"]
                     .toString()).walk()
-                    .filter { !it.name.endsWith(".gz") && it.name.startsWith("s2-corpus") }
+                    .filter { SEMANTIC_SCHOLAR_NAME_REGEX.matches(it.name) }
                     .sorted()
                     .drop(lastSSId + 1)
-
             val filesAmount = files.toList().size
 
-            files.forEachIndexed { index, file ->
-                logger.info("Started parsing articles $file")
-                ArchiveParser(file, config["batchSize"].toString().toInt(), curFile = index + 1, filesAmount = filesAmount).parse()
-                logger.info("Finished parsing articles $file")
-                BufferedWriter(FileWriter(ssTSV.toFile())).use { br ->
-                    br.write("lastSSId\t${file.toString().takeLast(2)}")
-                }
-            }
+            files.forEachIndexed{index, file ->
+                        val id = SEMANTIC_SCHOLAR_NAME_REGEX.matchEntire(file.name)!!.groups[1]!!.value
+                        logger.info("Started parsing articles $file")
+                        ArchiveParser(file, config["batchSize"].toString().toInt(), curFile = index + 1, filesAmount = filesAmount).parse()
+                        logger.info("Finished parsing articles $file")
+                        BufferedWriter(FileWriter(ssTSV.toFile())).use { br ->
+                            br.write("lastSSId\t$id")
+                        }
+                    }
         }
 
         if (createGinIndex) {
