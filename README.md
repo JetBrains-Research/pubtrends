@@ -116,14 +116,25 @@ Ensure that file contains correct information about the database (url, port, DB 
 1. Start `Redis`
 2. Start worker queue
     ```
-    celery -A flask-async.celery worker -c 1 --loglevel=INFO
+    celery -A models.celery.tasks worker --loglevel=info
     ```
 3. Start server
     ```
-    python flask-async.py
+    python models.flask-app.py
     ```    
 4. Open localhost:5000/
 
+### Deployment in Docker
+Configure database in `docker-compose.yml` file and launch Gunicorn serving Flask app, Redis and Celery in containers by the command:
+    
+    ```
+    # start
+    docker-compose up -d --build
+    # stop
+    docker-compose down
+    # inpect logs
+    docker-compose logs
+    ```
 
 ## Testing
 

@@ -3,20 +3,16 @@
 # Database configuration
 url = localhost
 port = 5432
-database = pubtrends
 username = biolabs
 password = password
+database = pubtrends
 
 # Test database configuration
-test_database = pubtrends_test
 test_url = localhost
 test_port = 5433
 test_username = biolabs
 test_password = password
-
-# Redis configuration
-redis_host = localhost
-redis_port = 6379
+test_database = pubtrends_test
 
 # Pubmed settings
 pm_batch_size = 1000

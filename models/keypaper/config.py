@@ -19,7 +19,4 @@ class PubtrendsConfig:
         self.user = config_parser['params']['username' if not test else 'test_username']
         self.password = config_parser['params']['password' if not test else 'test_password']
 
-        self.redis_host = config_parser['params']['redis_host']
-        self.redis_port = config_parser['params']['redis_port']
-
         self.pm_entrez_email = config_parser['params']['pm_entrez_email']
