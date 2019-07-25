@@ -24,6 +24,8 @@
           rel="stylesheet" type="text/css">
     <link href="https://cdn.pydata.org/bokeh/release/bokeh-widgets-1.2.0.min.css"
           rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+<!--    <link rel="stylesheet" href="../static/style.css"/>-->
 </head>
 <body>
 
@@ -31,7 +33,6 @@
     <nav class="navbar navbar-light bg-light justify-content-between">
         <span class="navbar-brand"><a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>{{search_string}}</span>
     </nav>
-
     <div class="card">
         <div class="card-body">
             <h1 class="card-title">Overview</h1>
@@ -123,10 +124,9 @@
         {% endfor %}
     </div>
 </div>
-<footer style="margin: 20px">
-    <p style="text-align: center; color: #777; font-size: 11pt;">
-        version {{ version }}<br/>
-        &copy;2019 <a style="color: #777" href="https://research.jetbrains.org/groups/biolabs"
+<footer>
+    <p>version {{ version }}<br/>
+        &copy;2019 <a href="https://research.jetbrains.org/groups/biolabs"
                       title="JetBrains Research BioLabs"
                       target="_blank">JetBrains Research</a></p>
 </footer>

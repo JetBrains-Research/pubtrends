@@ -18,6 +18,9 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
             integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
             crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+<!--    <link rel="stylesheet" href="../static/style.css"/>-->
+
     <script>
         "use strict";
 
@@ -63,6 +66,8 @@
             poll_progress();
         });
 
+
+
     </script>
 </head>
 <body>
@@ -73,17 +78,16 @@
     </nav>
     <div id="progress" class="progress">
         <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
-             aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+             aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
             <span class="progress-bar-label">0%</span>
         </div>
     </div>
     <div class="h4" id="status"></div>
     <pre class="h7" id="log"></pre>
 </div>
-<footer style="margin: 20px">
-    <p style="text-align: center; color: #777; font-size: 11pt;">
-        version {{ version }}<br/>
-        &copy;2019 <a style="color: #777" href="https://research.jetbrains.org/groups/biolabs"
+<footer>
+    <p>version {{ version }}<br/>
+        &copy;2019 <a href="https://research.jetbrains.org/groups/biolabs"
                       title="JetBrains Research BioLabs"
                       target="_blank">JetBrains Research</a></p>
 </footer>

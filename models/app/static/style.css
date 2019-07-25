@@ -1,0 +1,18 @@
+.container {
+    width: 1020px;
+}
+
+footer {
+    margin: 20px;
+    font-size: 11pt;
+    text-align: center;
+    color: #777;
+}
+
+footer a {
+    color: #777;
+}
+
+#progress {
+    width: 0%;
+}
