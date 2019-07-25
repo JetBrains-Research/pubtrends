@@ -34,13 +34,13 @@ FULL_VERSION="${VERSION_BUILD} built on $(date)"
 # Update config
 mkdir -p pubtrends
 cp config.properties pubtrends/
-sed -i pubtrends/config.properties -E "s/version = [^\n]*/version = ${FULL_VERSION}/g"
-sed -i pubtrends/config.properties -E "s/url = [^\n]*/url = ${url}/g"
-sed -i pubtrends/config.properties -E "s/port = [^\n]*/port = ${port}/g"
-sed -i pubtrends/config.properties -E "s/username = [^\n]*/username = ${username}/g"
+sed -E "s/version = [^\n]*/version = ${FULL_VERSION}/g"     -i pubtrends/config.properties
+sed -E "s/url = [^\n]*/url = ${url}/g"                      -i pubtrends/config.properties
+sed -E "s/port = [^\n]*/port = ${port}/g"                   -i pubtrends/config.properties
+sed -E "s/username = [^\n]*/username = ${username}/g"       -i pubtrends/config.properties
 # TODO BAD idea to store password like this
-sed -i pubtrends/config.properties -E "s/password = [^\n]*/password = ${password}/g"
-sed -i pubtrends/config.properties -E "s/database = [^\n]*/database = ${database}/g"
+sed -E "s/password = [^\n]*/password = ${password}/g"       -i pubtrends/config.properties
+sed -E "s/database = [^\n]*/database = ${database}/g"       -i pubtrends/config.properties
 cp docker-compose.yml pubtrends/
 cp -r models pubtrends/
 
