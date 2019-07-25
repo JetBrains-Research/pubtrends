@@ -221,10 +221,11 @@ class Plotter:
         p.add_layout(color_bar, 'right')
         return p
 
-    def cocitations_clustering(self, max_chord_diagram_size=1000):
+    def cocitations_clustering(self, max_chord_diagram_size=500):
         if self.analyzer.df.shape[0] > max_chord_diagram_size:
             self.clusters_info_message = """
-            Heatmap is used to show density, which is based on co-citations between clusters 
+            Heatmap is used to show which subtopics are related to each other. 
+            Density is based on co-citations between clusters 
             and depends on the size of the clusters."""
             return self.heatmap_clusters()
 
