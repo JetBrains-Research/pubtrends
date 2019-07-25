@@ -33,7 +33,8 @@ class SemanticScholarLoader(Loader):
         with self.conn:
             self.cursor.execute(query)
         self.pub_df = pd.DataFrame(self.cursor.fetchall(),
-                                   columns=['ssid', 'crc32id', 'title', 'abstract', 'year', 'aux'], dtype=object)
+                                   columns=['ssid', 'crc32id', 'title', 'abstract', 'year', 'aux'],
+                                   dtype=object).drop_duplicates('ssid', inplace=True)
 
         self.pub_df['authors'] = self.pub_df['aux'].apply(
             lambda aux: ', '.join(map(lambda authors: html.unescape(authors['name']), aux['authors'])))
