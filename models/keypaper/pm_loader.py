@@ -18,7 +18,7 @@ class PubmedLoader(Loader):
         self.index = index
 
     def search(self, *terms, current=0, task=None):
-        self.logger.debug('TODO: handle queries which return more than 10000 items', current=current, task=task)
+        self.logger.debug('TODO: handle queries which return more than 100000 items', current=current, task=task)
         self.terms = [t.lower() for t in terms]
         query = ' '.join(terms).replace("\"", "")
         handle = Entrez.esearch(db='pubmed', retmax='100000',
@@ -55,7 +55,7 @@ class PubmedLoader(Loader):
         self.logger.debug(f'Found {len(self.pub_df)} publications in the local database\n', current=current, task=task)
 
     def load_citation_stats(self, current=0, task=None):
-        self.logger.info('Loading citations statistics: searching for correct citations over 150 million of citations',
+        self.logger.info('Loading citations statistics: searching for correct citations over 168 million of citations',
                          current=current, task=task)
 
         values = ', '.join(['({})'.format(i) for i in sorted(self.pmids)])
