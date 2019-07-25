@@ -35,7 +35,7 @@
     <div class="card">
         <div class="card-body">
             <h1 class="card-title">Overview</h1>
-            <p class="card-text">Found {{founded_papers}} papers out of {{number_of_papers}}. </p>
+            <p class="card-text">Found {{found_papers}} papers out of {{number_of_papers}}. </p>
 
             <div>
                 {% for script, div in papers_stats %}
@@ -45,7 +45,6 @@
             </div>
         </div>
     </div>
-
 
     <h1>Top Cited Papers Overall</h1>
     <p>
@@ -89,18 +88,17 @@
     <!--        {{ div|safe }}-->
     <!--        {% endfor %}-->
     <!--    </div>-->
+
     <h1>Papers co-citations clustering</h1>
-    <p>
-        Co-citation clustering using community Louvain algorithm is used to detect dense subtopics in co-citations
-        graph.
-        Chord diagram is used to show papers as graph nodes, edges demonstrate co-citations.
-    </p>
+    <p> Co-citation clustering using community Louvain algorithm is used to detect dense subtopics in co-citations
+        graph. {{clusters_info_message}} </p>
     <div>
-        {% for script, div in chord_cocitations %}
+        {% for script, div in cocitations_clusters %}
         {{ script|safe }}
         {{ div|safe }}
         {% endfor %}
     </div>
+
     <h1>Subtopics summary</h1>
     <p>
         Subtopics dynamics is shown for the timeline. Explore evolution of trends.

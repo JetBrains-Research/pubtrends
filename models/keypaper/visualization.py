@@ -1,5 +1,6 @@
 import logging
 import math
+from itertools import product as cart_product
 from string import Template
 
 import ipywidgets as widgets
@@ -15,6 +16,7 @@ from bokeh.models import ColumnDataSource, CDSView, GroupFilter, CustomJS
 from bokeh.models import GraphRenderer, StaticLayoutProvider
 # Tools used: hover,pan,tap,wheel_zoom,box_zoom,reset,save
 from bokeh.models import HoverTool, PanTool, WheelZoomTool, BoxZoomTool, ResetTool, SaveTool
+from bokeh.models import LinearColorMapper, PrintfTickFormatter, ColorBar
 from bokeh.models import Plot, Range1d, MultiLine, Circle, Span
 from bokeh.plotting import figure, show
 from bokeh.transform import factor_cmap
@@ -155,6 +157,82 @@ class Plotter:
 
         plot.renderers.append(graph)
         return plot
+
+    def heatmap_clusters(self):
+        logging.info('Visualizing components with heatmap')
+
+        clusters = list(map(str, self.analyzer.components))
+        n_comps = len(clusters)
+
+        links = pd.DataFrame(self.analyzer.CG.edges(data=True), columns=['source', 'target', 'value'])
+        links['value'] = links['value'].apply(lambda data: data['weight'])
+
+        cluster_edges = links.merge(self.analyzer.df[['id', 'comp']], how='left', left_on='source',
+                                    right_on='id').merge(self.analyzer.df[['id', 'comp']], how='left', left_on='target',
+                                                         right_on='id')
+
+        are_swapped = (cluster_edges['comp_x'] <= cluster_edges['comp_y'])
+        cluster_edges = cluster_edges.loc[are_swapped].rename(columns={'comp_x': 'comp_y', 'comp_y': 'comp_x'})
+        cluster_edges = cluster_edges.groupby(['comp_x', 'comp_y'])['value'].sum().reset_index()
+
+        connectivity_matrix = [[0] * n_comps for _ in range(n_comps)]
+        for index, row in cluster_edges.iterrows():
+            connectivity_matrix[row['comp_x']][row['comp_y']] = row['value']
+            connectivity_matrix[row['comp_y']][row['comp_x']] = row['value']
+
+        cluster_edges = pd.DataFrame([{'comp_x': i, 'comp_y': j, 'value': connectivity_matrix[i][j]}
+                                      for i, j in cart_product(range(n_comps), range(n_comps))])
+
+        def get_density(row):
+            return row['value'] / (
+                    self.analyzer.pmcomp_sizes[row['comp_x']] * self.analyzer.pmcomp_sizes[row['comp_y']])
+
+        cluster_edges['density'] = cluster_edges.apply(lambda row: get_density(row), axis=1)
+        cluster_edges['comp_x'] = cluster_edges['comp_x'].astype(str)
+        cluster_edges['comp_y'] = cluster_edges['comp_y'].astype(str)
+
+        step = 30
+        cmap = plt.cm.get_cmap('PuBu', step)
+        colors = [RGB(*[round(c * 255) for c in cmap(i)[:3]]) for i in range(step)]
+        mapper = LinearColorMapper(palette=colors, low=cluster_edges.density.min(),
+                                   high=cluster_edges.density.max())
+
+        p = figure(title="Density between different clusters",
+                   x_range=clusters, y_range=clusters,
+                   x_axis_location="below", plot_width=960, plot_height=400,
+                   tools=TOOLS, toolbar_location='above',
+                   tooltips=[('subtopic1', '#@comp_x'), ('subtopic2', '#@comp_y'),
+                             ('density', '@density, @value co-citations')])
+
+        p.grid.grid_line_color = None
+        p.axis.axis_line_color = None
+        p.axis.major_tick_line_color = None
+        p.axis.major_label_text_font_size = "10pt"
+        p.axis.major_label_standoff = 0
+
+        p.rect(x="comp_x", y="comp_y", width=1, height=1,
+               source=cluster_edges,
+               fill_color={'field': 'density', 'transform': mapper},
+               line_color=None)
+
+        color_bar = ColorBar(color_mapper=mapper, major_label_text_font_size="10pt",
+                             formatter=PrintfTickFormatter(format="%.2f"),
+                             label_standoff=11, border_line_color=None, location=(0, 0))
+        p.add_layout(color_bar, 'right')
+        return p
+
+    def cocitations_clustering(self, max_chord_diagram_size=500):
+        if self.analyzer.df.shape[0] > max_chord_diagram_size:
+            self.clusters_info_message = """
+            Heatmap is used to show which subtopics are related to each other. 
+            Density is based on co-citations between clusters 
+            and depends on the size of the clusters."""
+            return self.heatmap_clusters()
+
+        self.clusters_info_message = """
+        Chord diagram is used to show papers as graph nodes, 
+        edges demonstrate co-citations."""
+        return self.chord_diagram_components()
 
     def component_size_summary(self):
         logging.info('Summary component detailed info visualization')
@@ -464,15 +542,15 @@ class Plotter:
         style_value = Template('<span style="font-size: 11px;">$value</span>')
 
         tips_list_html = '\n'.join([f'''
-        <div> {style_caption.substitute(caption=tip[0])} {style_value.substitute(value=tip[1])} </div>'''
+            <div> {style_caption.substitute(caption=tip[0])} {style_value.substitute(value=tip[1])} </div>'''
                                     for tip in tips_list])
 
         html_tooltips_str = f'''
-           <div style="max-width: 320px">
-               <div>
-                   <span style="font-size: 13px; font-weight: bold;">@title</span>
+               <div style="max-width: 320px">
+                   <div>
+                       <span style="font-size: 13px; font-weight: bold;">@title</span>
+                   </div>
+                   {tips_list_html}
                </div>
-               {tips_list_html}
-           </div>
-        '''
+            '''
         return html_tooltips_str

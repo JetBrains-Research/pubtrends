@@ -33,7 +33,8 @@ class SemanticScholarLoader(Loader):
         with self.conn:
             self.cursor.execute(query)
         self.pub_df = pd.DataFrame(self.cursor.fetchall(),
-                                   columns=['ssid', 'crc32id', 'title', 'abstract', 'year', 'aux'], dtype=object)
+                                   columns=['ssid', 'crc32id', 'title', 'abstract', 'year', 'aux'],
+                                   dtype=object).drop_duplicates('ssid', inplace=True)
 
         self.pub_df['authors'] = self.pub_df['aux'].apply(
             lambda aux: ', '.join(map(lambda authors: html.unescape(authors['name']), aux['authors'])))
@@ -64,7 +65,7 @@ class SemanticScholarLoader(Loader):
         self.logger.debug('Created table for request with index.', current=current, task=task)
 
     def load_citation_stats(self, filter_citations=True, current=0, task=None):
-        self.logger.info('Loading citations statistics: searching for correct citations in 150 million of citations',
+        self.logger.info('Loading citations statistics: searching for correct citations over 150 million of citations',
                          current=current, task=task)
 
         query = f'''
