@@ -56,8 +56,7 @@ def analyze_async(source, terms):
     # Order is important here!
     return {
         'log': log,
-        'chord_cocitations': [components(plotter.chord_diagram_components())],
-        'clusters_heatmap': [components(plotter.heatmap_clusters())],
+        'cocitations_clusters': [components(plotter.cocitations_clustering())],
         'component_size_summary': [components(plotter.component_size_summary())],
         'subtopic_timeline_graphs': [components(p) for p in plotter.subtopic_timeline_graphs()],
         'top_cited_papers': [components(plotter.top_cited_papers())],
@@ -65,8 +64,8 @@ def analyze_async(source, terms):
         'max_relative_gain_papers': [components(plotter.max_relative_gain_papers())],
         'papers_stats': [components(plotter.papers_statistics())],
         'founded_papers': str(loader.articles_found),
-        'number_of_papers': amount_of_papers
-        # 'cocitations_clusters': [components(plotter.cocitations_clustersing())]
+        'number_of_papers': amount_of_papers,
+        'clusters_info_message': plotter.clusters_info_message,
 
         # TODO: this doesn't work
         # 'citations_dynamics': [components(plotter.article_citation_dynamics())],
