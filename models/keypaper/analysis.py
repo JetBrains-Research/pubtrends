@@ -201,7 +201,7 @@ class KeyPaperAnalyzer:
             pm = p
         return pm, components_merged
 
-    def subtopic_evolution_analysis(self, step=2, min_papers=0, current=0, task=None):
+    def subtopic_evolution_analysis(self, step=5, min_papers=0, current=0, task=None):
         min_year = int(self.cocit_df['year'].min())
         max_year = int(self.cocit_df['year'].max())
         self.logger.debug(
