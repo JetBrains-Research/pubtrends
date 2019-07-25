@@ -45,9 +45,8 @@ COPY environment.yml /home/user/environment.yml
 RUN conda init bash \
     && conda env create -f /home/user/environment.yml \
     && source activate pubtrends \
-    && pip install teamcity-messages pytest-codestyle \
+    && pip install teamcity-messages pytest-codestyle redis \
     && conda clean -afy \
-    && source deactivate \
     && rm /home/user/environment.yml
 
 # Create Postgresql cluster
