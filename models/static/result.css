@@ -1,0 +1,27 @@
+.card-header {
+    font-size: 20pt;
+}
+
+.card-title {
+    font-size: 20pt;
+}
+
+.card-text {
+    font-size: 15pt;
+}
+
+.stats-number {
+    font-size: 30pt;
+}
+
+.color-box {
+    float: left;
+    width: 15px;
+    height: 15px;
+    margin: 5px;
+    border: 1px solid rgba(0, 0, 0, .2);
+}
+
+#subtopic-list {
+    list-style-type: square;
+}
