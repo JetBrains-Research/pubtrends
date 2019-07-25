@@ -13,6 +13,9 @@ ENV C_FORCE_ROOT true
 COPY . /home/user/
 WORKDIR /home/user/
 
+# Download all the nltk resources
+RUN source activate pubtrends && python models/keypaper/utils.py
+
 # Config file
 RUN cp config.properties ~/.pubtrends/config.properties
 
