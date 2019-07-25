@@ -92,6 +92,8 @@
     <p> Co-citation clustering using community Louvain algorithm is used to detect dense subtopics in co-citations
         graph. </p>
     <h2>Heatmap</h2>
+    <p> Color shows density, which is based on co-citations between clusters and depends on the size of the
+        clusters.</p>
     <div>
         {% for script, div in clusters_heatmap %}
         {{ script|safe }}
