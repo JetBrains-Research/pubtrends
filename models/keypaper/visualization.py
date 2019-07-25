@@ -223,7 +223,14 @@ class Plotter:
 
     def cocitations_clustering(self, max_chord_diagram_size=1000):
         if self.analyzer.df.shape[0] > max_chord_diagram_size:
+            self.clusters_info_message = """
+            Heatmap is used to show density, which is based on co-citations between clusters 
+            and depends on the size of the clusters."""
             return self.heatmap_clusters()
+
+        self.clusters_info_message = """
+        Chord diagram is used to show papers as graph nodes, 
+        edges demonstrate co-citations."""
         return self.chord_diagram_components()
 
     def component_size_summary(self):
@@ -534,15 +541,15 @@ class Plotter:
         style_value = Template('<span style="font-size: 11px;">$value</span>')
 
         tips_list_html = '\n'.join([f'''
-        <div> {style_caption.substitute(caption=tip[0])} {style_value.substitute(value=tip[1])} </div>'''
+            <div> {style_caption.substitute(caption=tip[0])} {style_value.substitute(value=tip[1])} </div>'''
                                     for tip in tips_list])
 
         html_tooltips_str = f'''
-           <div style="max-width: 320px">
-               <div>
-                   <span style="font-size: 13px; font-weight: bold;">@title</span>
+               <div style="max-width: 320px">
+                   <div>
+                       <span style="font-size: 13px; font-weight: bold;">@title</span>
+                   </div>
+                   {tips_list_html}
                </div>
-               {tips_list_html}
-           </div>
-        '''
+            '''
         return html_tooltips_str

@@ -88,29 +88,17 @@
     <!--        {{ div|safe }}-->
     <!--        {% endfor %}-->
     <!--    </div>-->
+
     <h1>Papers co-citations clustering</h1>
     <p> Co-citation clustering using community Louvain algorithm is used to detect dense subtopics in co-citations
-        graph. </p>
-    <h2>Heatmap</h2>
-    <p> Color shows density, which is based on co-citations between clusters and depends on the size of the
-        clusters.</p>
+        graph. {{clusters_info_message}} </p>
     <div>
-        {% for script, div in clusters_heatmap %}
+        {% for script, div in cocitations_clusters %}
         {{ script|safe }}
         {{ div|safe }}
         {% endfor %}
     </div>
 
-    <h2>Chord diagram</h2>
-    <p>
-        Chord diagram is used to show papers as graph nodes, edges demonstrate co-citations.
-    </p>
-    <div>
-        {% for script, div in chord_cocitations %}
-        {{ script|safe }}
-        {{ div|safe }}
-        {% endfor %}
-    </div>
     <h1>Subtopics summary</h1>
     <p>
         Subtopics dynamics is shown for the timeline. Explore evolution of trends.
