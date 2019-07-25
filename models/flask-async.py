@@ -8,6 +8,7 @@
 
 Adopted from https://gist.github.com/whacked/c1feef2bf7a3a014178c
 """
+import html
 import json
 import os
 from urllib.parse import quote
@@ -94,7 +95,8 @@ def progress():
         elif job.state == 'FAILURE':
             return json.dumps({
                 'state': job.state,
-                'message': str(job.result)
+                # should be replaced with the same html tags in process.html
+                'message': "<span style=\"white-space: pre-line;\">" + html.unescape(str(job.result)[2:-2]) + "</span>"
             })
         elif job.state == 'PENDING':
             return json.dumps({'state': job.state,
