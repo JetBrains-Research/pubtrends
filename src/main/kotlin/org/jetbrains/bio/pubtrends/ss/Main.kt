@@ -119,8 +119,10 @@ fun main(args: Array<String>) {
                 }
             }
 
-            val files = File(config["ss_archive_folder_path"]
-                    .toString()).walk()
+            // Replace '~' with '/home/<username>' if path starts with '~'
+            val archivePath = config["ss_archive_folder_path"].toString()
+                .replace("^~".toRegex(), System.getProperty("user.home"))
+            val files = File(archivePath).walk()
                     .filter { SEMANTIC_SCHOLAR_NAME_REGEX.matches(it.name) }
                     .sorted()
                     .drop(lastSSId + 1)
