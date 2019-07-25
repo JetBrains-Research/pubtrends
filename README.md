@@ -51,7 +51,7 @@ A tool for analysis of trends & pivotal points in the scientific literature.
    CREATE DATABASE pubtrends_test OWNER biolabs;
    ```
    
-3. Copy and modify `config.properties_examples` to `~/.pubtrends/config.properties`. 
+3. Copy and modify `config.properties` to `~/.pubtrends/config.properties`. 
 Ensure that file contains correct information about the database (url, port, DB name, username and password).
  
 
@@ -125,7 +125,7 @@ Ensure that file contains correct information about the database (url, port, DB 
 4. Open localhost:5000/
 
 ### Deployment in Docker
-Configure database in `docker-compose.yml` file and launch Gunicorn serving Flask app, Redis and Celery in containers by the command:
+Launch Gunicorn serving Flask app, Redis and Celery in containers by the command:
     
     ```
     # start

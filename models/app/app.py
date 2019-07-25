@@ -7,8 +7,10 @@ from flask import (
     Flask, request, redirect,
     render_template, render_template_string
 )
-
 from models.celery.tasks import celery, analyze_async
+from models.keypaper.config import PubtrendsConfig
+
+PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
 app = Flask(__name__)
 
@@ -50,7 +52,9 @@ def result():
     if jobid:
         job = AsyncResult(jobid, app=celery)
         if job.state == 'SUCCESS':
-            return render_template('result.html', search_string=' '.join(terms), **job.result)
+            return render_template('result.html', search_string=' '.join(terms),
+                                   version=PUBTRENDS_CONFIG.version,
+                                   **job.result)
 
     return render_template_string("Something went wrong...")
 
@@ -63,7 +67,8 @@ def process():
         if jobid:
             return render_template('process.html', search_string=' '.join(terms),
                                    url_search_string=quote(' '.join(terms)),
-                                   JOBID=jobid)
+                                   JOBID=jobid,
+                                   version=PUBTRENDS_CONFIG.version)
 
     return render_template_string("Something went wrong...")
 
@@ -81,7 +86,7 @@ def index():
             job = analyze_async.delay(source, terms)
             return redirect(flask.url_for('.process', terms=redirect_url, jobid=job.id))
 
-    return render_template('main.html')
+    return render_template('main.html', version=PUBTRENDS_CONFIG.version)
 
 
 def get_app():

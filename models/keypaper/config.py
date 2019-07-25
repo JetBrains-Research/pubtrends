@@ -13,6 +13,8 @@ class PubtrendsConfig:
         with open(os.path.expanduser(config_path)) as config_properties:
             config_parser.read_string("[params]\n" + config_properties.read())
 
+        self.version = config_parser['params']['version']
+
         self.host = config_parser['params']['url' if not test else 'test_url']
         self.port = config_parser['params']['port' if not test else 'test_port']
         self.dbname = config_parser['params']['database' if not test else 'test_database']

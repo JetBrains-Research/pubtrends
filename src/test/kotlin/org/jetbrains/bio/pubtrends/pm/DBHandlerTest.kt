@@ -27,7 +27,7 @@ class DBHandlerTest {
 
         init {
             check(Files.exists(configPath)) {
-                "Config file not found, please modify and copy config.properties_example to $configPath"
+                "Config file not found, please modify and copy config.properties to $configPath"
             }
         }
 

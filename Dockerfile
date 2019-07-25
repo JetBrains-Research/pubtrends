@@ -76,10 +76,10 @@ RUN /usr/lib/postgresql/10/bin/pg_ctl -D /home/user/postgres start \
     && /usr/lib/postgresql/10/bin/pg_ctl -D /home/user/postgres stop
 
 # Tests project configuration
-COPY config.properties_example /home/user/config.properties_example
+COPY config.properties /home/user/config.properties
 RUN mkdir -p ~/.pubtrends \
-    && cat ~/config.properties_example | sed 's/5433/5432/g' > ~/.pubtrends/config.properties \
-    && rm /home/user/config.properties_example
+    && cat ~/config.properties | sed 's/5433/5432/g' > ~/.pubtrends/config.properties \
+    && rm /home/user/config.properties
 
 # Use `-d` param to launch container as daemon with Postgresql running
 CMD /usr/lib/postgresql/10/bin/pg_ctl -D /home/user/postgres start \

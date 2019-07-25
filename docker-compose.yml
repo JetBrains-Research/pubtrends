@@ -4,8 +4,6 @@ services:
     build:
       context: .
       dockerfile: models/app/Dockerfile
-      args:
-      - PUBTRENDS_VERSION=0.1.development
     restart: always
     ports:
       - "8000:8000"
@@ -15,13 +13,6 @@ services:
     build:
       context: .
       dockerfile: models/celery/Dockerfile
-      # TODO: change to real database URL
-      args:
-      - POSTGRESQL_URL=localhost
-      - POSTGRESQL_PORT=5432
-      - POSTGRESQL_USERNAME=biolabs
-      - POSTGRESQL_PASSWORD=password
-      - POSTGRESQL_DATABASE=pubtrends
     depends_on:
       - redis
   redis:

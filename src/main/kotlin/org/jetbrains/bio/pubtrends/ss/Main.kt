@@ -43,7 +43,7 @@ fun main(args: Array<String>) {
 
         val configPath: Path = settingsRoot.resolve("config.properties")
         if (Files.notExists(configPath)) {
-            logger.error("Config file not found, please modify and copy config.properties_example to $configPath")
+            logger.error("Config file not found, please modify and copy config.properties to $configPath")
             exitProcess(1)
         }
 
