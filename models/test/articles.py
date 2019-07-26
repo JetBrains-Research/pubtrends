@@ -91,7 +91,7 @@ citations_stats = [[article1.ssid, article5.year, 1],
                    [article8.ssid, article1.year, 1],
                    [article10.ssid, article6.year, 1]]
 
-cit_stats_df = pd.DataFrame(citations_stats, columns=['ssid', 'year', 'count'])
+cit_stats_df = pd.DataFrame(citations_stats, columns=['id', 'year', 'count'])
 
 pub_df = pd.DataFrame.from_records([article.to_dict() for article in required_articles])
 pub_df.abstract = ''

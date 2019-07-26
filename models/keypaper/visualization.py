@@ -32,14 +32,15 @@ TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
 class Plotter:
     def __init__(self, analyzer):
         self.analyzer = analyzer
-        self.index = analyzer.loader.index
 
     @staticmethod
-    def pubmed_callback(source, index):
-        if index == 'ssid':
+    def pubmed_callback(source, db):
+        if db == 'semantic':
             base = SEMANTIC_SCHOLAR_BASE_URL
-        elif index == 'pmid':
+        elif db == 'pubmed':
             base = PUBMED_ARTICLE_BASE_URL
+        else:
+            raise ValueError("Wrong value of db")
         return CustomJS(args=dict(source=source, base=base), code="""
             var data = source.data, selected = source.selected.indices;
             if (selected.length == 1) {
@@ -79,8 +80,8 @@ class Plotter:
             edge_weights.append(min(data['weight'], 20))
 
         n_comps = len(self.analyzer.components)
-        cmap = plt.cm.get_cmap('jet', n_comps)
-        comp_palette = [RGB(*[round(c * 255) for c in cmap(i)[:3]]) for i in range(n_comps)]
+        self.cmap = plt.cm.get_cmap('tab20b', n_comps)
+        self.comp_palette = [RGB(*[int(round(c * 255)) for c in self.cmap(i)[:3]]) for i in range(n_comps)]
 
         # Show with Bokeh
         plot = Plot(plot_width=800, plot_height=800,
@@ -112,7 +113,7 @@ class Plotter:
             xs.append(bezier(sx, ex))
             ys.append(bezier(sy, ey))
             if self.analyzer.pm[edge_start] == self.analyzer.pm[edge_end]:
-                edge_colors.append(comp_palette[self.analyzer.pm[edge_start]])
+                edge_colors.append(self.comp_palette[self.analyzer.pm[edge_start]])
                 edge_alphas.append(0.1)
             else:
                 edge_colors.append('grey')
@@ -130,7 +131,7 @@ class Plotter:
         # TODO: use ColumnDatasource
         # Nodes data for rendering
         graph.node_renderer.data_source.data['id'] = list(G.nodes())
-        graph.node_renderer.data_source.data['colors'] = [comp_palette[self.analyzer.pm[n]] for n in
+        graph.node_renderer.data_source.data['colors'] = [self.comp_palette[self.analyzer.pm[n]] for n in
                                                           G.nodes()]
         graph.node_renderer.data_source.data['title'] = gdf['title']
         graph.node_renderer.data_source.data['authors'] = gdf['authors']
@@ -144,7 +145,7 @@ class Plotter:
 
         # node rendering
         graph.node_renderer.glyph = Circle(size='size', line_color='colors', fill_color='colors',
-                                           line_alpha=0.5, fill_alpha=0.5)
+                                           line_alpha=0.5, fill_alpha=0.8)
         # edge rendering
         graph.edge_renderer.glyph = MultiLine(
             line_color='edge_colors',
@@ -244,8 +245,6 @@ class Plotter:
 
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
         n_comps = len(self.analyzer.components)
-        cmap = plt.cm.get_cmap('jet', n_comps)
-        palette = [RGB(*[round(c * 255) for c in cmap(i)[:3]]) for i in range(n_comps)]
 
         components = [str(i) for i in range(n_comps)]
         years = list(range(min_year - 1, max_year + 1))
@@ -260,7 +259,7 @@ class Plotter:
                    title="Components by Year",
                    toolbar_location=None, tools="hover", tooltips="Subtopic #$name: @$name")
 
-        p.vbar_stack(components, x='years', width=0.9, color=palette, source=data, alpha=0.5,
+        p.vbar_stack(components, x='years', width=0.9, color=self.comp_palette, source=data, alpha=0.5,
                      legend=[value(c) for c in components])
 
         p.y_range.start = 0
@@ -277,9 +276,7 @@ class Plotter:
 
         # Prepare layouts
         n_comps = len(self.analyzer.components)
-        cmap = plt.cm.get_cmap('jet', n_comps)
-        self.colors = {c: RGB(*[int(round(ch * 255)) for ch in cmap(c)[:3]]) \
-                       for c in self.analyzer.components}
+        self.colors = dict(enumerate(self.comp_palette))
         ds = [None] * n_comps
         p = [None] * n_comps
 
@@ -294,7 +291,7 @@ class Plotter:
                                                        year_range=[min_year, max_year],
                                                        title=title, width=760)
 
-            plot.circle(x='year', y='pos', fill_alpha=0.5, source=ds[c], size='size',
+            plot.circle(x='year', y='pos', fill_alpha=0.8, source=ds[c], size='size',
                         line_color=self.colors[c], fill_color=self.colors[c])
 
             # Word cloud description of subtopic by titles and abstracts
@@ -334,7 +331,7 @@ class Plotter:
         for c in range(n_comps):
             view = CDSView(source=ds, filters=[GroupFilter(column_name='comp',
                                                            group=str(c))])
-            plot.circle(x='year', y='pos', fill_alpha=0.5, source=ds, view=view,
+            plot.circle(x='year', y='pos', fill_alpha=0.8, source=ds, view=view,
                         size='size', line_color=self.colors[c], fill_color=self.colors[c])
 
         return plot
@@ -361,7 +358,7 @@ class Plotter:
             ("Year", '@paper_year'),
             ("Cited by", '@count papers in @year')
         ])
-        p.js_on_event('tap', self.pubmed_callback(ds_max, self.index))
+        p.js_on_event('tap', self.pubmed_callback(ds_max, self.analyzer.source))
         p.vbar(x='year', width=0.8, top='count', fill_alpha=0.5, source=ds_max, fill_color=colors,
                line_color=colors)
         return p
@@ -389,7 +386,7 @@ class Plotter:
             ("Author(s)", '@authors'),
             ("Year", '@paper_year'),
             ("Relative Gain", '@rel_gain in @year')])
-        p.js_on_event('tap', self.pubmed_callback(ds_max, self.index))
+        p.js_on_event('tap', self.pubmed_callback(ds_max, self.analyzer.source))
 
         p.vbar(x='year', width=0.8, top='rel_gain', fill_alpha=0.5, source=ds_max,
                fill_color=colors, line_color=colors)
@@ -530,12 +527,12 @@ class Plotter:
             ("Author(s)", '@authors'),
             ("Year", '@year'),
             ("Cited by", '@total paper(s) total')])
-        p.js_on_event('tap', self.pubmed_callback(source, self.index))
+        p.js_on_event('tap', self.pubmed_callback(source, self.analyzer.source))
 
         return p
 
     def _add_pmid(self, tips_list):
-        if self.index == "pmid":
+        if self.analyzer.source == "pubmed":
             tips_list.insert(0, ("PMID", '@id'))
 
         return tips_list

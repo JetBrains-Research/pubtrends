@@ -5,6 +5,8 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
+from .pm_loader import PubmedLoader
+from .ss_loader import SemanticScholarLoader
 from .progress_logger import ProgressLogger
 from .utils import get_subtopic_descriptions
 
@@ -19,11 +21,19 @@ class KeyPaperAnalyzer:
         self.loader = loader
         loader.set_logger(self.logger)
 
-        self.index = loader.index
+        # Determine source to provide correct URLs to articles
+        if isinstance(self.loader, PubmedLoader):
+            self.source = 'pubmed'
+        elif isinstance(self.loader, SemanticScholarLoader):
+            self.source = 'semantic'
+        else:
+            raise TypeError("loader should be either PubmedLoader or SemanticScholarLoader")
 
         # Data containers
         self.terms = None
+        self.ids = None
         self.df = None
+        self.cocit_df = None
 
         # Graphs
         self.CG = None
@@ -37,7 +47,7 @@ class KeyPaperAnalyzer:
             self.loader.search(*terms, current=1, task=task)
 
             # Nothing found
-            if len(getattr(self.loader, self.index + 's')) == 0:
+            if len(self.loader.ids) == 0:
                 raise RuntimeError("Nothing found")
 
             # Load data about publications, citations and co-citations
@@ -92,8 +102,44 @@ class KeyPaperAnalyzer:
         self.years = [int(col) for col in list(self.df.columns) if isinstance(col, (int, float))]
         self.min_year, self.max_year = np.min(self.years), np.max(self.years)
 
-    def find_top_cited_papers(self, max_papers=50, threshold=0.1, current=0, task=None):
-        self.logger.info(f'Identifying top cited papers overall', current=current, task=task)
+    def subtopic_analysis(self current=0, task=None):
+        # Graph clustering via Louvain algorithm
+        self.logger.info(f'Louvain community clustering of co-citation graph', current=current, task=task)
+        self.logger.debug(f'Co-citation graph has {nx.number_connected_components(self.CG)} connected components',
+                          current=current, task=task)
+        p = community.best_partition(self.CG, random_state=KeyPaperAnalyzer.SEED)
+        self.logger.debug(f'Found {len(set(p.values()))} components', current=current, task=task)
+        self.logger.debug(f'Graph modularity: {community.modularity(p, self.CG):.3f}', current=current, task=task)
+
+        # Merge small components to 'Other'
+        pm, self.components_merged = self.merge_components(p)
+        self.components = set(pm.values())
+        self.pm = pm
+        pmcomp_sizes = {com: sum([pm[node] == com for node in pm.keys()]) for com in
+                        self.components}
+        for k, v in pmcomp_sizes.items():
+            self.logger.debug(f'Cluster {k}: {v} ({int(100 * v / len(pm))}%)', current=current, task=task)
+
+        # Added 'comp' column containing the ID of component
+        df_comp = pd.Series(pm).reset_index().rename(columns={'index': 'id', 0: 'comp'})
+        self.df = pd.merge(self.df.assign(id=self.df['id'].astype(str)),
+                           df_comp.assign(id=df_comp['id'].astype(str)),
+                           on='id', how='outer').fillna(-1)
+        self.df['comp'] = self.df['comp'].apply(int)
+
+        # Get n-gram descriptions for subtopics
+        self.logger.debug('Getting n-gram descriptions for subtopics', current=current, task=task)
+        comps = self.df.groupby('comp')['id'].apply(list).to_dict()
+        kwds = get_subtopic_descriptions(self.df, comps)
+        for k, v in kwds.items():
+            self.logger.info(f'{k}: {v}')
+        df_kwd = pd.Series(kwds).reset_index()
+        df_kwd = df_kwd.rename(columns={'index': 'comp', 0: 'kwd'})
+        self.df_kwd = df_kwd
+        self.logger.debug('Done\n', current=current, task=task)
+
+    def find_top_cited_papers(self, max_papers=50, threshold=0.1):
+        self.logger.info(f'Identifying top cited papers overall')
         papers_to_show = min(max_papers, round(len(self.df) * threshold))
         self.top_cited_df = self.df.sort_values(by='total',
                                                 ascending=False).iloc[:papers_to_show, :]
@@ -140,78 +186,19 @@ class KeyPaperAnalyzer:
                                                      'paper_year', 'rel_gain'])
         self.max_rel_gain_papers = set(self.max_rel_gain_df['id'].values)
 
-    def subtopic_analysis(self, sort_components_key='size', current=0, task=None):
-        # Graph clustering via Louvain algorithm
-        self.logger.info(f'Analyzing subtopics: clustering co-citation graph', current=current, task=task)
-        p = community.best_partition(self.CG)
-        self.logger.debug(f'Found {len(set(p.values()))} components', current=current, task=task)
-        self.logger.debug(f'Graph modularity: {community.modularity(p, self.CG):.3f}', current=current, task=task)
-
-        # Merge small components to 'Other'
-        pm, self.components_merged = self.merge_components(p, current=current, task=task)
-        self.components = set(pm.values())
-        self.pm = pm
-        self.pmcomp_sizes = {com: sum([pm[node] == com for node in pm.keys()]) for com in self.components}
-        for k, v in self.pmcomp_sizes.items():
-            self.logger.debug(f'Cluster {k}: {v} ({int(100 * v / len(pm))}%)', current=current, task=task)
-
-        # Added 'comp' column containing the ID of component
-        df_comp = pd.Series(pm).reset_index().rename(columns={'index': self.index, 0: 'comp'})
-        self.df = pd.merge(self.df.assign(id=self.df[self.index].astype(str)),
-                           df_comp.assign(id=df_comp[self.index].astype(str)),
-                           on='id')
-
-        # Get n-gram descriptions for subtopics
-        self.logger.debug('Getting n-gram descriptions for subtopics', current=current, task=task)
-        comps = self.df.groupby('comp')['id'].apply(list).to_dict()
-        kwds = get_subtopic_descriptions(self.df, comps)
-        for k, v in kwds.items():
-            self.logger.debug(f'{k}: {v}', current=current, task=task)
-        df_kwd = pd.Series(kwds).reset_index()
-        df_kwd = df_kwd.rename(columns={'index': 'comp', 0: 'kwd'})
-        self.df_kwd = df_kwd
-        self.logger.debug('Done\n', current=current, task=task)
-
-    def merge_components(self, p, granularity=0.05, current=0, task=None):
-        self.logger.debug(f'Merging components smaller than {granularity} to "Other" component',
-                          current=current, task=task)
-        threshold = int(granularity * len(p))
-        components = set(p.values())
-        comp_sizes = {com: sum([p[node] == com for node in p.keys()]) for com in components}
-        comp_to_merge = {com: comp_sizes[com] <= threshold for com in components}
-        components_merged = sum(comp_to_merge.values()) > 0
-        if components_merged > 0:
-            self.logger.debug(f'Reassigning components', current=current, task=task)
-            pm = {}
-            newcomps = {}
-            ci = 1  # Other component is 0.
-            for k, v in p.items():
-                if comp_sizes[v] <= threshold:
-                    pm[k] = 0  # Other
-                    continue
-                if v not in newcomps:
-                    newcomps[v] = ci
-                    ci += 1
-                pm[k] = newcomps[v]
-            self.logger.debug(f'Processed {len(set(pm.values()))} components',
-                              current=current, task=task)
-        else:
-            self.logger.debug(f'All components are bigger than {granularity}, no need to reassign',
-                              current=current, task=task)
-            pm = p
-        return pm, components_merged
-
-    def subtopic_evolution_analysis(self, step=5, min_papers=0, current=0, task=None):
+    def subtopic_evolution_analysis(self, steps=5, min_papers=0):
         min_year = int(self.cocit_df['year'].min())
         max_year = int(self.cocit_df['year'].max())
         self.logger.debug(
-            f'Studying evolution of subtopic clusters in {min_year} - {max_year} with step of {step} years',
+            f'Studying evolution of subtopic clusters in {min_year} - {max_year} in {steps} steps',
             current=current, task=task)
 
         components_merged = {}
         CG = {}
         evolution_series = []
-        year_range = range(max_year, min_year - 1, -step)
+        year_range = list(np.linspace(min_year, max_year, steps).astype(int))[::-1]
+        self.logger.info(f"Years when subtopics are studied: {', '.join([str(year) for year in year_range[1:]])}")
+
         years_processed = 0
         for i, year in enumerate(year_range):
             cocit_grouped_df = self.cocit_df[self.cocit_df['year'] <= year].groupby(
@@ -227,13 +214,13 @@ class KeyPaperAnalyzer:
             CG[year] = nx.Graph()
             # NOTE: we use nodes id as String to avoid problems str keys in jsonify
             # during graph visualization
-            for el in cocit_grouped_df[['cited_1', 'cited_2', 'total']].values.astype(int):
+            for el in cocit_grouped_df[['cited_1', 'cited_2', 'total']].values:
                 CG[year].add_edge(str(el[0]), str(el[1]), weight=el[2])
             self.logger.debug(f'{year}: graph contains {len(CG[year].nodes)} nodes, {len(CG[year].edges)} edges',
                               current=current, task=task)
 
             if len(CG[year].nodes) >= min_papers:
-                p = {int(vertex): int(comp) for vertex, comp in
+                p = {vertex: int(comp) for vertex, comp in
                      community.best_partition(CG[year], random_state=KeyPaperAnalyzer.SEED).items()}
                 p, components_merged[year] = self.merge_components(p)
                 evolution_series.append(pd.Series(p))

@@ -19,7 +19,6 @@ class SemanticScholarLoader(Loader):
         self.publications_table = publications_table
         self.citations_table = citations_table
         self.temp_ids_table = temp_ids_table
-        self.index = index
 
     def search(self, *terms, current=0, task=None):
         self.terms = [t.lower() for t in terms]
@@ -33,7 +32,7 @@ class SemanticScholarLoader(Loader):
         with self.conn:
             self.cursor.execute(query)
         self.pub_df = pd.DataFrame(self.cursor.fetchall(),
-                                   columns=['ssid', 'crc32id', 'title', 'abstract', 'year', 'aux'],
+                                   columns=['id', 'crc32id', 'title', 'abstract', 'year', 'aux'],
                                    dtype=object)
 
         self.pub_df['authors'] = self.pub_df['aux'].apply(
@@ -44,9 +43,9 @@ class SemanticScholarLoader(Loader):
 
         self.pub_df['title'] = self.pub_df['title'].apply(lambda title: html.unescape(title))
 
-        self.ssids = self.pub_df['ssid']
+        self.ids = self.pub_df['id']
         self.crc32ids = self.pub_df['crc32id']
-        self.values = ', '.join(['({0}, \'{1}\')'.format(i, j) for (i, j) in zip(self.crc32ids, self.ssids)])
+        self.values = ', '.join(['({0}, \'{1}\')'.format(i, j) for (i, j) in zip(self.crc32ids, self.ids)])
         self.articles_found = len(self.ssids)
 
     def load_publications(self, current=0, task=None):
@@ -86,26 +85,21 @@ class SemanticScholarLoader(Loader):
             self.cursor.execute(query)
         self.logger.debug('Done loading citation stats', current=current, task=task)
         self.cit_stats_df_from_query = pd.DataFrame(self.cursor.fetchall(),
-                                                    columns=['ssid', 'year', 'count'], dtype=object)
+                                                    columns=['id', 'year', 'count'], dtype=object)
 
-        self.cit_df = self.cit_stats_df_from_query.pivot(index='ssid',
+        self.cit_df = self.cit_stats_df_from_query.pivot(index='id',
                                                          columns='year',
                                                          values='count')\
             .reset_index().replace(np.nan, 0)
         self.cit_df['total'] = self.cit_df.iloc[:, 1:].sum(axis=1)
         self.cit_df = self.cit_df.sort_values(by='total', ascending=False)
-        self.logger.debug(f"Loaded citation stats for {len(self.cit_df)} of {len(self.ssids)} articles.\n" +
+        self.logger.debug(f"Loaded citation stats for {len(self.cit_df)} of {len(self.ids)} articles.\n" +
                           "Others may either have zero citations or be absent in the local database.", current=current,
                           task=task)
 
         if filter_citations:
             self.logger.debug('Filtering top 100000 or 80% of all the citations', current=current, task=task)
             self.cit_df = self.cit_df.iloc[:min(100000, round(0.8 * len(self.cit_df))), :]
-            self.df = pd.merge(self.pub_df, self.cit_df, on='ssid')
-            self.ssids = list(self.df['ssid'])
-            self.crc32ids = list(self.df['crc32id'])
-            self.logger.info(f'{len(self.df)} articles to process.', current=current, task=task)
-            self.values = ', '.join(['({0}, {1})'.format(i, j) for (i, j) in zip(self.crc32ids, self.ssids)])
 
     def load_citations(self, current=0, task=None):
         self.logger.info('Loading citations data', current=current, task=task)
@@ -182,14 +176,3 @@ class SemanticScholarLoader(Loader):
 
         for col in self.cocit_grouped_df:
             self.cocit_grouped_df[col] = self.cocit_grouped_df[col].astype(object)
-
-        self.logger.info(f'Building co-citations graph', current=current, task=task)
-        self.CG = nx.Graph()
-        # NOTE: we use nodes id as String to avoid problems str keys in jsonify
-        # during graph visualization
-        for el in self.cocit_grouped_df[['cited_1', 'cited_2', 'total']].values:
-            start, end, weight = el
-            if start in self.ssids and end in self.ssids:
-                self.CG.add_edge(str(start), str(end), weight=int(weight))
-        self.logger.debug(f'Co-citations graph nodes {len(self.CG.nodes())} edges {len(self.CG.edges())}\n',
-                          current=current, task=task)

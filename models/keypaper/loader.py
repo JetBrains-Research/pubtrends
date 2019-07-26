@@ -16,6 +16,7 @@ dbname={pubtrends_config.dbname} user={pubtrends_config.user} password={pubtrend
         self.logger = None
 
         # Data containers
+        self.ids = None
         self.pub_df = None
         self.cit_df = None
         self.cocit_df = None

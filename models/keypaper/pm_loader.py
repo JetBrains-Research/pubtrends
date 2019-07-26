@@ -23,14 +23,14 @@ class PubmedLoader(Loader):
         query = ' '.join(terms).replace("\"", "")
         handle = Entrez.esearch(db='pubmed', retmax='100000',
                                 retmode='xml', term=query)
-        self.pmids = Entrez.read(handle)['IdList']
+        self.ids = Entrez.read(handle)['IdList']
         self.articles_found = len(self.pmids)
-        self.logger.info(f'Found {len(self.pmids)} articles about {terms}', current=current, task=task)
+        self.logger.info(f'Found {len(self.ids)} articles about {terms}', current=current, task=task)
 
     def load_publications(self, current=0, task=None):
         self.logger.info('Loading publication data', current=current, task=task)
 
-        values = ', '.join(['({})'.format(i) for i in sorted(self.pmids)])
+        values = ', '.join(['({})'.format(i) for i in sorted(self.ids)])
         query = re.sub(Loader.VALUES_REGEX, values, '''
         DROP TABLE IF EXISTS TEMP_PMIDS;
         WITH vals(pmid) AS (VALUES $VALUES$)
@@ -59,7 +59,7 @@ class PubmedLoader(Loader):
         self.logger.info('Loading citations statistics: searching for correct citations over 168 million of citations',
                          current=current, task=task)
 
-        values = ', '.join(['({})'.format(i) for i in sorted(self.pmids)])
+        values = ', '.join(['({})'.format(i) for i in sorted(self.ids)])
         query = re.sub(Loader.VALUES_REGEX, values, '''
         SELECT CAST(C.pmid_in AS TEXT) AS pmid, date_part('year', P.date) AS year, COUNT(1) AS count
         FROM PMCitations C
@@ -80,14 +80,14 @@ class PubmedLoader(Loader):
                                         values='count').reset_index().replace(np.nan, 0)
         self.cit_df['total'] = self.cit_df.iloc[:, 1:].sum(axis=1)
         self.cit_df = self.cit_df.sort_values(by='total', ascending=False)
-        self.logger.debug(f"Loaded citation stats for {len(self.cit_df)} of {len(self.pmids)} articles.\n" +
+        self.logger.debug(f"Loaded citation stats for {len(self.cit_df)} of {len(self.ids)} articles.\n" +
                           "Others may either have zero citations or be absent in the local database.", current=current,
                           task=task)
 
     def load_citations(self):
         self.logger.info('Started loading raw information about citations', current=current, task=task)
 
-        values = ', '.join(['({})'.format(i) for i in sorted(self.pmids)])
+        values = ', '.join(['({})'.format(i) for i in sorted(self.ids)])
         query = re.sub(Loader.VALUES_REGEX, values, '''
         SELECT CAST(C.pmid_out AS TEXT), CAST(C.pmid_in AS TEXT)
         FROM PMCitations C
@@ -137,7 +137,7 @@ class PubmedLoader(Loader):
             citing, year, cited = row
             for i in range(len(cited)):
                 for j in range(i + 1, len(cited)):
-                    if cited[i] in self.pmids and cited[j] in self.pmids:
+                    if cited[i] in self.ids and cited[j] in self.ids:
                         cocit_data.append((citing, cited[i], cited[j], year))
 
         self.cocit_df = pd.DataFrame(cocit_data, columns=['citing', 'cited_1', 'cited_2', 'year'], dtype=object)

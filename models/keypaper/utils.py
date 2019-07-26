@@ -18,17 +18,29 @@ PUBMED_ARTICLE_BASE_URL = 'https://www.ncbi.nlm.nih.gov/pubmed/?term='
 SEMANTIC_SCHOLAR_BASE_URL = 'https://www.semanticscholar.org/paper/'
 
 
-def get_ngrams(text, n=1):
-    """1/2/3-gramms computation for string"""
+def tokenize(text, terms=None):
     is_noun = lambda pos: pos[:2] == 'NN'
     special_symbols_regex = re.compile(r'[^a-zA-Z0-9\- ]*')
-    tokenized = word_tokenize(re.sub(special_symbols_regex, '', text.lower()))
+    text = text.lower()
+
+    # Filter out search terms
+    if terms is not None:
+        for term in terms:
+            text = text.replace(term.lower(), '')
+
+    tokenized = word_tokenize(re.sub(special_symbols_regex, '', text))
     stop_words = set(stopwords.words('english'))
     nouns = [word for (word, pos) in nltk.pos_tag(tokenized) if
              is_noun(pos) and word not in stop_words]
 
     lemmatizer = WordNetLemmatizer()
     tokens = list(filter(lambda t: len(t) >= 3, [lemmatizer.lemmatize(n) for n in nouns]))
+    return tokens
+
+
+def get_ngrams(text, n=1):
+    """1/2/3-grams computation for string"""
+    tokens = tokenize(text)
     ngrams = list(tokens)
     if n > 1:
         for t1, t2 in zip(tokens[:-1], tokens[1:]):
@@ -101,29 +113,32 @@ def get_word_cloud_data(df_kwd, c):
     return kwds
 
 
-def tokenize(text):
-    is_noun = lambda pos: pos[:2] == 'NN'
-    special_symbols_regex = re.compile(r'[^a-zA-Z0-9\- ]*')
-    tokenized = word_tokenize(re.sub(special_symbols_regex, '', text.lower()))
-    stop_words = set(stopwords.words('english'))
-    nouns = [word for (word, pos) in nltk.pos_tag(tokenized) if
-             is_noun(pos) and word not in stop_words]
-
-    lemmatizer = WordNetLemmatizer()
-    return list(filter(lambda t: len(t) >= 3, [lemmatizer.lemmatize(n) for n in nouns]))
-
-
-def get_tfidf_words(df, comps, size=5):
+def get_tfidf_words(df, comps, terms, size=5):
     corpus = []
 
-    for comp in comps:
+    for comp, article_ids in comps.items():
         comp_corpus = ''
-        for pmid in comp:
-            sel = df[df['pmid'] == 'pmid']
-            title = sel['title'].values
-            abstract = sel['abstract'].values
-            comp_corpus += f'{title} {abstract}'
+        for article_id in article_ids:
+            sel = df[df['id'] == article_id]
+            if len(sel) > 0:
+                title = sel['title'].astype(str).values[0]
+                abstract = sel['abstract'].astype(str).values[0]
+                comp_corpus += f'{title} {abstract}'
+            else:
+                raise ValueError('Empty selection by id')
         corpus.append(comp_corpus)
 
-    vectorizer = TfidfVectorizer(tokenizer=tokenize, stop_words='english')
+    vectorizer = TfidfVectorizer(tokenizer=lambda text: tokenize(text, terms=terms), stop_words='english')
     tfidf = vectorizer.fit_transform(corpus)
+
+    words = vectorizer.get_feature_names()
+    kwd = {}
+    for i in comps.keys():
+        # It might be faster to use np.argpartition instead of np.argsort
+        # Sort indices by tfidf value
+        ind = np.argsort(tfidf[i, :].toarray(), axis=1)
+
+        # Take size indices with the largest tfidf
+        kwd[i] = list(map(lambda idx: words[idx], ind[0, -size:]))
+
+    return kwd
