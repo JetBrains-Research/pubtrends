@@ -53,18 +53,15 @@ class Plotter:
         """)
 
     @staticmethod
-    def subtopic_callback(source, index):
+    def subtopic_callback(source):
         return CustomJS(args=dict(source=source), code="""
             var data = source.data, selected = source.selected.indices;
             if (selected.length == 1) {
                 // only consider case where one glyph is selected by user
-                selected_id = data['id'][selected[0]]
-                for (var i = 0; i < data['id'].length; ++i){
-                    if(data['id'][i] == selected_id){
-                        window.open(base + data['id'][i], '_blank');
-                    }
-                }
+                selected_comp = data['comps'][selected[0]];
+                document.getElementById('subtopic-' + selected_comp).scrollIntoView();
             }
+            source.selected.indices = [];
         """)
 
     def chord_diagram_components(self):
@@ -268,15 +265,17 @@ class Plotter:
         comps = list(map(str, comp_size.keys()))
         ratios = [100 * v / total_papers for _, v in comp_size.items()]
         colors = list(self.colors.values())
+        source = ColumnDataSource(data=dict(comps=comps, ratios=ratios, colors=colors))
 
         p = figure(plot_width=900, plot_height=50*len(comps), toolbar_location=None, tools=TOOLS, y_range=comps)
-        p.hbar(y=comps, right=ratios, height=0.9, fill_alpha=0.5, color=colors)
+        p.hbar(y='comps', right='ratios', height=0.9, fill_alpha=0.5, color='colors', source=source)
 
         p.axis.visible = False
         p.xgrid.grid_line_color = None
         p.ygrid.grid_line_color = None
         p.axis.minor_tick_line_color = None
         p.outline_line_color = None
+        p.js_on_event('tap', self.subtopic_callback(source))
 
         return p
 

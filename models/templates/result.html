@@ -133,16 +133,6 @@
                 {% endfor %}
             </div>
 
-            <ul id="subtopic-list">
-                {% for description, color in comps %}
-                <li>
-                    <a href="#subtopic-{{ loop.index0 }}">
-                        {{ description }}
-                    </a>
-                </li>
-                {% endfor %}
-            </ul>
-
             <h1>Papers co-citations clustering</h1>
             <p>
                 Co-citation clustering using community Louvain algorithm is used to detect dense
