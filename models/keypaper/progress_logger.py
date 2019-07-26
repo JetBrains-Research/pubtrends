@@ -1,6 +1,7 @@
 import logging
 from io import StringIO
 
+
 class ProgressLogger:
 
     def __init__(self):

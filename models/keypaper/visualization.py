@@ -199,8 +199,8 @@ class Plotter:
                                       for i, j in cart_product(range(n_comps), range(n_comps))])
 
         def get_density(row):
-            return row['value'] / (
-                    self.analyzer.pmcomp_sizes[row['comp_x']] * self.analyzer.pmcomp_sizes[row['comp_y']])
+            return row['value'] / (self.analyzer.pmcomp_sizes[row['comp_x']] *
+                                   self.analyzer.pmcomp_sizes[row['comp_y']])
 
         cluster_edges['density'] = cluster_edges.apply(lambda row: get_density(row), axis=1)
         cluster_edges['comp_x'] = cluster_edges['comp_x'].astype(str)
@@ -239,13 +239,13 @@ class Plotter:
     def cocitations_clustering(self, max_chord_diagram_size=500):
         if self.analyzer.df.shape[0] > max_chord_diagram_size:
             self.clusters_info_message = """
-            Heatmap is used to show which subtopics are related to each other. 
-            Density is based on co-citations between clusters 
+            Heatmap is used to show which subtopics are related to each other.
+            Density is based on co-citations between clusters
             and depends on the size of the clusters."""
             return self.heatmap_clusters()
 
         self.clusters_info_message = """
-        Chord diagram is used to show papers as graph nodes, 
+        Chord diagram is used to show papers as graph nodes,
         edges demonstrate co-citations."""
         return self.chord_diagram_components()
 
@@ -546,7 +546,7 @@ class Plotter:
 
         topic_evolution = hv.Sankey((edges, nodes_ds), ['From', 'To'], vdims=value_dim)
         topic_evolution.opts(labels='label', width=960, height=600, show_values=False, cmap='tab20',
-                                 edge_color=dim('To').str(), node_color=dim('index').str())
+                             edge_color=dim('To').str(), node_color=dim('index').str())
 
         if n_steps > 3:
             years = []
@@ -579,7 +579,6 @@ class Plotter:
             return column(hv.render(topic_evolution, backend='bokeh'), subtopic_keywords)
 
         return hv.render(topic_evolution, backend='bokeh')
-
 
     def __build_data_source(self, df, width=760):
         # Sort papers from the same year with total number of citations as key, use rank as y-pos

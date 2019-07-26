@@ -74,9 +74,9 @@ class SemanticScholarLoader(Loader):
                   ON (C.crc32id_in = CT.crc32id AND C.id_in = CT.ssid)
                 JOIN {self.publications_table} P
                   ON C.crc32id_out = P.crc32id AND C.id_out = P.ssid
-                WHERE C.crc32id_in 
-                between (SELECT MIN(crc32id) FROM {self.temp_ids_table}) 
-                  AND (select max(crc32id) FROM {self.temp_ids_table}) 
+                WHERE C.crc32id_in
+                between (SELECT MIN(crc32id) FROM {self.temp_ids_table})
+                  AND (select max(crc32id) FROM {self.temp_ids_table})
                 AND P.year > 0
                 GROUP BY C.id_in, P.year;
             '''
@@ -89,7 +89,7 @@ class SemanticScholarLoader(Loader):
 
         self.cit_df = self.cit_stats_df_from_query.pivot(index='id',
                                                          columns='year',
-                                                         values='count')\
+                                                         values='count') \
             .reset_index().replace(np.nan, 0)
         self.cit_df['total'] = self.cit_df.iloc[:, 1:].sum(axis=1)
         self.cit_df = self.cit_df.sort_values(by='total', ascending=False)
@@ -133,10 +133,10 @@ class SemanticScholarLoader(Loader):
                     from {self.citations_table}
                     where crc32id_in between (select min(crc32id) from {self.temp_ids_table})
                         and (select max(crc32id) from {self.temp_ids_table})
-                        and (crc32id_in, id_in) in (select crc32id, ssid 
+                        and (crc32id_in, id_in) in (select crc32id, ssid
                                                     from {self.temp_ids_table})),
 
-                    X as (select id_out, array_agg(id_in) as cited_list, 
+                    X as (select id_out, array_agg(id_in) as cited_list,
                                  min(crc32id_out) as crc32id_out
                           from Z
                           group by id_out

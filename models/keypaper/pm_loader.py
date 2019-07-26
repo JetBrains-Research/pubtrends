@@ -115,7 +115,7 @@ class PubmedLoader(Loader):
         with Z as (select pmid_out, CAST(pmid_in AS TEXT)
             from PMCitations
             -- Hack to make Postgres use index!
-            where pmid_in 
+            where pmid_in
             between (select min(pmid) from TEMP_PMIDS) and (select max(pmid) from TEMP_PMIDS)
             and pmid_in in (select pmid from TEMP_PMIDS)),
         X as (select pmid_out, array_agg(pmid_in) as cited_list

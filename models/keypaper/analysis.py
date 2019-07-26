@@ -119,7 +119,7 @@ class KeyPaperAnalyzer:
         self.components = set(pm.values())
         self.pm = pm
         self.pmcomp_sizes = {com: sum([pm[node] == com for node in pm.keys()]) for com in
-                        self.components}
+                             self.components}
         for k, v in self.pmcomp_sizes.items():
             self.logger.debug(f'Cluster {k}: {v} ({int(100 * v / len(pm))}%)', current=current, task=task)
 
@@ -231,7 +231,7 @@ class KeyPaperAnalyzer:
                 years_processed += 1
             else:
                 self.logger.debug(f'Total number of papers is less than {min_papers}, stopping.',
-                         current=current, task=task)
+                                  current=current, task=task)
                 break
 
         year_range = year_range[:years_processed]
