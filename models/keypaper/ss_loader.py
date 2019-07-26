@@ -26,7 +26,7 @@ class SemanticScholarLoader(Loader):
         self.logger.info('Searching publication data', current=current, task=task)
         terms_str = '\'' + ' '.join(self.terms) + '\''
         query = f'''
-        SELECT ssid, crc32id, title, abstract, year, aux FROM {self.publications_table} P
+        SELECT DISTINCT ON(ssid) ssid, crc32id, title, abstract, year, aux FROM {self.publications_table} P
         WHERE tsv @@ websearch_to_tsquery('english', {terms_str}) limit 100000;
         '''
 
@@ -34,7 +34,7 @@ class SemanticScholarLoader(Loader):
             self.cursor.execute(query)
         self.pub_df = pd.DataFrame(self.cursor.fetchall(),
                                    columns=['ssid', 'crc32id', 'title', 'abstract', 'year', 'aux'],
-                                   dtype=object).drop_duplicates('ssid', inplace=True)
+                                   dtype=object)
 
         self.pub_df['authors'] = self.pub_df['aux'].apply(
             lambda aux: ', '.join(map(lambda authors: html.unescape(authors['name']), aux['authors'])))
