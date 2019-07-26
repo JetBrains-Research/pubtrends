@@ -6,9 +6,9 @@ import numpy as np
 import pandas as pd
 
 from .pm_loader import PubmedLoader
-from .ss_loader import SemanticScholarLoader
 from .progress_logger import ProgressLogger
-from .utils import get_subtopic_descriptions
+from .ss_loader import SemanticScholarLoader
+from .utils import get_subtopic_descriptions, get_tfidf_words
 
 class KeyPaperAnalyzer:
     SEED = 20190723
@@ -78,8 +78,7 @@ class KeyPaperAnalyzer:
 
             self.find_max_relative_gain_papers(current=9, task=task)
 
-            # Not visualized anyway
-            # self.subtopic_evolution_analysis(current=10, task=task)
+            self.subtopic_evolution_analysis(current=10, task=task)
             return self.logger.stream.getvalue()
         finally:
             self.loader.close_connection()
@@ -186,7 +185,7 @@ class KeyPaperAnalyzer:
                                                      'paper_year', 'rel_gain'])
         self.max_rel_gain_papers = set(self.max_rel_gain_df['id'].values)
 
-    def subtopic_evolution_analysis(self, steps=5, min_papers=0):
+    def subtopic_evolution_analysis(self, steps=3, min_papers=0):
         min_year = int(self.cocit_df['year'].min())
         max_year = int(self.cocit_df['year'].max())
         self.logger.debug(
@@ -238,5 +237,16 @@ class KeyPaperAnalyzer:
 
         # Assign -1 to articles that do not belong to any cluster at some step
         self.evolution_df = self.evolution_df.fillna(-1.0)
+
+        self.evolution_df = self.evolution_df.reset_index().rename(columns={'index': 'id'})
+        self.evolution_df['id'] = self.evolution_df['id'].astype(str)
+
+        self.evolution_kwds = {}
+        for col in self.evolution_df:
+            self.logger.info(f'Generating TF-IDF descriptions for year {col}')
+            if isinstance(col, (int, float)):
+                self.evolution_df[col] = self.evolution_df[col].apply(int)
+                comps = dict(self.evolution_df.groupby(col)['id'].apply(list))
+                self.evolution_kwds[col] = get_tfidf_words(self.df, comps, self.terms)
 
         return CG, components_merged

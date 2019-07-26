@@ -3,6 +3,7 @@ import math
 from itertools import product as cart_product
 from string import Template
 
+import holoviews as hv
 import ipywidgets as widgets
 import networkx as nx
 import numpy as np
@@ -18,8 +19,10 @@ from bokeh.models import GraphRenderer, StaticLayoutProvider
 from bokeh.models import HoverTool, PanTool, WheelZoomTool, BoxZoomTool, ResetTool, SaveTool
 from bokeh.models import LinearColorMapper, PrintfTickFormatter, ColorBar
 from bokeh.models import Plot, Range1d, MultiLine, Circle, Span
+from bokeh.palettes import Category20
 from bokeh.plotting import figure, show
 from bokeh.transform import factor_cmap
+from holoviews import dim
 from matplotlib import pyplot as plt
 from wordcloud import WordCloud
 
@@ -27,11 +30,19 @@ from .utils import PUBMED_ARTICLE_BASE_URL, SEMANTIC_SCHOLAR_BASE_URL, get_word_
     get_most_common_ngrams
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
-
+hv.extension('bokeh')
 
 class Plotter:
     def __init__(self, analyzer):
         self.analyzer = analyzer
+
+        n_comps = len(self.analyzer.components)
+        self.comp_palette = []
+        for color in Category20[20][:n_comps]:
+            rgb_values = []
+            for pos in range(1, 7, 2):
+                rgb_values.append(int(color[pos:pos + 2], 16))
+            self.comp_palette.append(RGB(*rgb_values))
 
     @staticmethod
     def pubmed_callback(source, db):
@@ -61,9 +72,9 @@ class Plotter:
         # Using merge left keeps order
         gdf = pd.merge(pd.Series(self.analyzer.CG.nodes(), dtype=object).reset_index().rename(
             columns={0: 'id'}),
-                       self.analyzer.df[['id', 'title', 'authors', 'year', 'total', 'comp']],
-                       how='left'
-                       ).sort_values(by='total', ascending=False)
+            self.analyzer.df[['id', 'title', 'authors', 'year', 'total', 'comp']],
+            how='left'
+        ).sort_values(by='total', ascending=False)
 
         for c in range(len(self.analyzer.components)):
             for n in gdf[gdf['comp'] == c]['id']:
@@ -78,10 +89,6 @@ class Plotter:
             edge_starts.append(start)
             edge_ends.append(end)
             edge_weights.append(min(data['weight'], 20))
-
-        n_comps = len(self.analyzer.components)
-        self.cmap = plt.cm.get_cmap('tab20b', n_comps)
-        self.comp_palette = [RGB(*[int(round(c * 255)) for c in self.cmap(i)[:3]]) for i in range(n_comps)]
 
         # Show with Bokeh
         plot = Plot(plot_width=800, plot_height=800,
@@ -485,14 +492,52 @@ class Plotter:
         return p
 
     def subtopic_evolution(self):
-        plt.rcParams['figure.figsize'] = 20, 10
-        pd.plotting.parallel_coordinates(self.analyzer.evolution_df,
-                                         'current', sort_labels=True)
-        plt.xlabel('Year')
-        plt.ylabel('Component ID')
-        plt.grid(b=True, which='both', linestyle='--')
-        plt.legend().set_visible(False)
-        return plt
+
+        def sort_nodes_key(node):
+            y, c = node[0].split(' ')
+            return int(y), -int(c)
+
+        cols = self.analyzer.evolution_df.columns[2:]
+        pairs = list(zip(cols, cols[1:]))
+        nodes = set()
+        edges = []
+
+        for now, then in pairs:
+            nodes_now = [f'{now} {c}' for c in self.analyzer.evolution_df[now].unique()]
+            nodes_then = [f'{then} {c}' for c in self.analyzer.evolution_df[then].unique()]
+
+            inner = {node: 0 for node in nodes_then}
+            changes = {node: inner.copy() for node in nodes_now}
+            for pmid, comp in self.analyzer.evolution_df.iterrows():
+                c_now, c_then = comp[now], comp[then]
+                changes[f'{now} {c_now}'][f'{then} {c_then}'] += 1
+
+            for v in nodes_now:
+                for u in nodes_then:
+                    if changes[v][u] > 0:
+                        edges.append((v, u, changes[v][u]))
+                        nodes.add(v)
+                        nodes.add(u)
+
+        nodes_data = []
+
+        for node in nodes:
+            year, c = node.split(' ')
+            if int(c) >= 0:
+                label = f"{year} {', '.join(self.analyzer.evolution_kwds[int(year)][int(c)])}"
+            else:
+                label = f"Published after {year}"
+            nodes_data.append((node, label))
+        nodes_data = sorted(nodes_data, key=sort_nodes_key, reverse=True)
+
+        nodes_ds = hv.Dataset(nodes_data, 'index', 'label')
+
+        value_dim = hv.Dimension('Amount', unit=None)
+        topic_evolution = hv.Sankey((edges, nodes_ds), ['From', 'To'], vdims=value_dim)
+        topic_evolution.opts(labels='label', height=600, show_values=False, cmap='tab20',
+                             edge_color=dim('To').str(), node_color=dim('index').str())
+
+        return topic_evolution
 
     def __build_data_source(self, df, width=760):
         ARTICLE_PLOT_WIDTH = width  # Width of the plot (without axis borders)

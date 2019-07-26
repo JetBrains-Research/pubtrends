@@ -123,11 +123,19 @@
         {{ div|safe }}
         {% endfor %}
     </div>
+    <h1>Subtopic Evolution</h1>
+    <div>
+        {% for script, div in subtopic_evolution %}
+        {{ script|safe }}
+        {{ div|safe }}
+        {% endfor %}
+    </div>
+    <h1>Log</h1>
+    <pre id="log">{{log}}</pre>
 </div>
-<footer>
-    <p>version {{ version }}<br/>
-        &copy;2019 <a href="https://research.jetbrains.org/groups/biolabs"
-                      title="JetBrains Research BioLabs"
+<footer style="margin-top: 20px; text-align: center">
+    <p style="display: inline-block">
+        &copy;2019 <a href="https://research.jetbrains.org/groups/biolabs" title="JetBrains Research BioLabs"
                       target="_blank">JetBrains Research</a></p>
 </footer>
 </body>
