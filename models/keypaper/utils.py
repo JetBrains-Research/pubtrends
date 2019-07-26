@@ -7,6 +7,7 @@ import numpy as np
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 nltk.download('stopwords')
 nltk.download('punkt')
@@ -17,15 +18,29 @@ PUBMED_ARTICLE_BASE_URL = 'https://www.ncbi.nlm.nih.gov/pubmed/?term='
 SEMANTIC_SCHOLAR_BASE_URL = 'https://www.semanticscholar.org/paper/'
 
 
-def get_ngrams(text, n=3):
-    """1/2/3-gramms computation for string"""
+def tokenize(text, terms=None):
     is_noun = lambda pos: pos[:2] == 'NN'
-    tokenized = word_tokenize(re.sub('[^a-zA-Z0-9\- ]*', '', text.lower()))
+    special_symbols_regex = re.compile(r'[^a-zA-Z0-9\- ]*')
+    text = text.lower()
+
+    # Filter out search terms
+    if terms is not None:
+        for term in terms:
+            text = text.replace(term.lower(), '')
+
+    tokenized = word_tokenize(re.sub(special_symbols_regex, '', text))
     stop_words = set(stopwords.words('english'))
-    nouns = [word for (word, pos) in nltk.pos_tag(tokenized) if is_noun(pos) and word not in stop_words]
+    nouns = [word for (word, pos) in nltk.pos_tag(tokenized) if
+             is_noun(pos) and word not in stop_words]
 
     lemmatizer = WordNetLemmatizer()
     tokens = list(filter(lambda t: len(t) >= 3, [lemmatizer.lemmatize(n) for n in nouns]))
+    return tokens
+
+
+def get_ngrams(text, n=1):
+    """1/2/3-grams computation for string"""
+    tokens = tokenize(text)
     ngrams = list(tokens)
     if n > 1:
         for t1, t2 in zip(tokens[:-1], tokens[1:]):
@@ -37,6 +52,12 @@ def get_ngrams(text, n=3):
 
 
 def get_most_common_ngrams(titles, abstracts, number=500):
+    """
+    :param titles: list of titles for articles in a component
+    :param abstracts: list of abstracts
+    :param number: amount of most common ngrams
+    :return: dictionary {ngram : frequency}
+    """
     ngrams_counter = Counter()
     for text in titles:
         if isinstance(text, str):
@@ -53,29 +74,32 @@ def get_most_common_ngrams(titles, abstracts, number=500):
     return most_common
 
 
-def get_subtopic_descriptions(df, size=100):
-    """Create TF-IDF based description on n-grams"""
+def get_subtopic_descriptions(df, comps, size=100):
+    """
+    Create TF-IDF based description on n-grams
+    :param comps: dictionary {component : [list of ids]}
+    """
     logging.info('Computing most common n-grams')
-    n_comps = df['comp'].nunique()
+    n_comps = len(set(comps.keys()))
     most_common = [None] * n_comps
-    for c in range(n_comps):
-        df_comp = df[df['comp'] == c]
-        most_common[c] = get_most_common_ngrams(df_comp['title'], df_comp['abstract'])
+    for idx, comp in comps.items():
+        df_comp = df[df['id'].isin(comp)]
+        most_common[idx] = get_most_common_ngrams(df_comp['title'], df_comp['abstract'])
 
     logging.info('Compute Augmented Term Frequency - Inverse Document Frequency')
     # The tf–idf is the product of two statistics, term frequency and inverse document frequency.
     # This provides greater weight to values that occur in fewer documents.
     idfs = {}
     kwd = {}
-    for c in range(n_comps):
-        max_cnt = max(most_common[c].values())
-        idfs[c] = {k: (0.5 + 0.5 * v / max_cnt) *  # augmented frequency to avoid document length bias
-                      np.log(n_comps / sum([k in mcoc for mcoc in most_common])) \
-                   for k, v in most_common[c].items()}
-        kwd[c] = ','.join([f'{k}:{(max(most_common[c][k], 1e-3)):.3f}'
-                           for k, _v in list(sorted(idfs[c].items(),
-                                                    key=lambda kv: kv[1],
-                                                    reverse=True))[:size]])
+    for idx in range(n_comps):
+        max_cnt = max(most_common[idx].values())
+        idfs[idx] = {k: (0.5 + 0.5 * v / max_cnt) *  # augmented frequency to avoid document length bias
+                     np.log(n_comps / sum([k in mcoc for mcoc in most_common])) \
+                     for k, v in most_common[idx].items()}
+        kwd[idx] = ','.join([f'{k}:{(max(most_common[idx][k], 1e-3)):.3f}'
+                             for k, _v in list(sorted(idfs[idx].items(),
+                                                      key=lambda kv: kv[1],
+                                                      reverse=True))[:size]])
     return kwd
 
 
@@ -87,3 +111,34 @@ def get_word_cloud_data(df_kwd, c):
         for word in ngram.split(' '):
             kwds[word] = float(count) + kwds.get(word, 0)
     return kwds
+
+
+def get_tfidf_words(df, comps, terms, size=5):
+    corpus = []
+
+    for comp, article_ids in comps.items():
+        comp_corpus = ''
+        for article_id in article_ids:
+            sel = df[df['id'] == article_id]
+            if len(sel) > 0:
+                title = sel['title'].astype(str).values[0]
+                abstract = sel['abstract'].astype(str).values[0]
+                comp_corpus += f'{title} {abstract}'
+            else:
+                raise ValueError('Empty selection by id')
+        corpus.append(comp_corpus)
+
+    vectorizer = TfidfVectorizer(tokenizer=lambda text: tokenize(text, terms=terms), stop_words='english')
+    tfidf = vectorizer.fit_transform(corpus)
+
+    words = vectorizer.get_feature_names()
+    kwd = {}
+    for i in comps.keys():
+        # It might be faster to use np.argpartition instead of np.argsort
+        # Sort indices by tfidf value
+        ind = np.argsort(tfidf[i, :].toarray(), axis=1)
+
+        # Take size indices with the largest tfidf
+        kwd[i] = list(map(lambda idx: words[idx], ind[0, -size:]))
+
+    return kwd
