@@ -2,6 +2,7 @@ import logging
 import re
 import unittest
 
+from models.keypaper.config import PubtrendsConfig
 from models.keypaper.ss_loader import SemanticScholarLoader
 from models.test.articles import required_articles, extra_articles, required_citations, cit_stats_df, \
     pub_df, extra_citations

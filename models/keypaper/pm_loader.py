@@ -84,7 +84,7 @@ class PubmedLoader(Loader):
                           "Others may either have zero citations or be absent in the local database.", current=current,
                           task=task)
 
-    def load_citations(self):
+    def load_citations(self, current=0, task=None):
         self.logger.info('Started loading raw information about citations', current=current, task=task)
 
         values = ', '.join(['({})'.format(i) for i in sorted(self.ids)])
