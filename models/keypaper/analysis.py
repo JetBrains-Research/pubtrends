@@ -10,6 +10,7 @@ from .progress_logger import ProgressLogger
 from .ss_loader import SemanticScholarLoader
 from .utils import get_subtopic_descriptions, get_tfidf_words
 
+
 class KeyPaperAnalyzer:
     SEED = 20190723
 
@@ -56,13 +57,16 @@ class KeyPaperAnalyzer:
                 raise RuntimeError("Nothing found in DB")
 
             self.loader.load_citation_stats(current=3, task=task)
-            self.df = pd.merge(self.loader.pub_df, self.loader.cit_df, on='id', how='outer')
-            if len(self.loader.df) == 0:
+            if len(self.loader.cit_df) == 0:
                 raise RuntimeError("Citations stats not found DB")
 
+            self.df = pd.merge(self.loader.pub_df, self.loader.cit_df, on='id', how='outer')
+            if len(self.df) == 0:
+                raise RuntimeError("Failed to merge publications and citations")
+
             self.loader.load_cocitations(current=4, task=task)
-            self.build_cocitation_graph()
-            if len(self.loader.CG.nodes()) == 0:
+            self.build_cocitation_graph(current=4, task=task)
+            if len(self.CG.nodes()) == 0:
                 raise RuntimeError("Failed to build co-citations graph")
 
             self.cocit_df = self.loader.cocit_df
@@ -84,8 +88,8 @@ class KeyPaperAnalyzer:
             self.loader.close_connection()
             self.logger.remove_handler()
 
-    def build_cocitation_graph(self):
-        self.logger.info(f'Building co-citations graph')
+    def build_cocitation_graph(self, current=0, task=None):
+        self.logger.info(f'Building co-citations graph', current=current, task=task)
         self.CG = nx.Graph()
 
         # NOTE: we use nodes id as String to avoid problems str keys in jsonify
@@ -93,15 +97,15 @@ class KeyPaperAnalyzer:
         for el in self.loader.cocit_grouped_df[['cited_1', 'cited_2', 'total']].values:
             start, end, weight = el
             self.CG.add_edge(str(start), str(end), weight=int(weight))
-        self.logger.info(
-            f'Co-citations graph nodes {len(self.CG.nodes())} edges {len(self.CG.edges())}\n')
+        self.logger.debug(f'Co-citations graph nodes {len(self.CG.nodes())} edges {len(self.CG.edges())}\n',
+                          current=current, task=task)
 
     def update_years(self, current=0, task=None):
         self.logger.update_state(current, task=task)
         self.years = [int(col) for col in list(self.df.columns) if isinstance(col, (int, float))]
         self.min_year, self.max_year = np.min(self.years), np.max(self.years)
 
-    def subtopic_analysis(self current=0, task=None):
+    def subtopic_analysis(self, current=0, task=None):
         # Graph clustering via Louvain algorithm
         self.logger.info(f'Louvain community clustering of co-citation graph', current=current, task=task)
         self.logger.debug(f'Co-citation graph has {nx.number_connected_components(self.CG)} connected components',
@@ -131,14 +135,14 @@ class KeyPaperAnalyzer:
         comps = self.df.groupby('comp')['id'].apply(list).to_dict()
         kwds = get_subtopic_descriptions(self.df, comps)
         for k, v in kwds.items():
-            self.logger.info(f'{k}: {v}')
+            self.logger.debug(f'{k}: {v}', current=current, task=task)
         df_kwd = pd.Series(kwds).reset_index()
         df_kwd = df_kwd.rename(columns={'index': 'comp', 0: 'kwd'})
         self.df_kwd = df_kwd
         self.logger.debug('Done\n', current=current, task=task)
 
-    def find_top_cited_papers(self, max_papers=50, threshold=0.1):
-        self.logger.info(f'Identifying top cited papers overall')
+    def find_top_cited_papers(self, max_papers=50, threshold=0.1, current=0, task=None):
+        self.logger.info(f'Identifying top cited papers overall', current=current, task=task)
         papers_to_show = min(max_papers, round(len(self.df) * threshold))
         self.top_cited_df = self.df.sort_values(by='total',
                                                 ascending=False).iloc[:papers_to_show, :]
@@ -185,18 +189,19 @@ class KeyPaperAnalyzer:
                                                      'paper_year', 'rel_gain'])
         self.max_rel_gain_papers = set(self.max_rel_gain_df['id'].values)
 
-    def subtopic_evolution_analysis(self, step=5, keywords=15, min_papers=0):
+    def subtopic_evolution_analysis(self, step=5, keywords=15, min_papers=0, current=0, task=None):
         min_year = int(self.cocit_df['year'].min())
         max_year = int(self.cocit_df['year'].max())
-        self.logger.debug(
+        self.logger.info(
             f'Studying evolution of subtopic clusters in {min_year} - {max_year} with a step of {step} years',
             current=current, task=task)
 
         components_merged = {}
-        CG = {}
+        cg = {}
         evolution_series = []
         year_range = list(np.arange(max_year, min_year - 1, step=-step).astype(int))
-        self.logger.info(f"Years when subtopics are studied: {', '.join([str(year) for year in year_range])}")
+        self.logger.debug(f"Years when subtopics are studied: {', '.join([str(year) for year in year_range])}",
+                          current=current, task=task)
 
         years_processed = 0
         for i, year in enumerate(year_range):
@@ -210,22 +215,23 @@ class KeyPaperAnalyzer:
             cocit_grouped_df = cocit_grouped_df.sort_values(by='total', ascending=False)
             cocit_grouped_df = cocit_grouped_df.iloc[:min(100000, len(cocit_grouped_df)), :]
 
-            CG[year] = nx.Graph()
+            cg[year] = nx.Graph()
             # NOTE: we use nodes id as String to avoid problems str keys in jsonify
             # during graph visualization
             for el in cocit_grouped_df[['cited_1', 'cited_2', 'total']].values:
-                CG[year].add_edge(str(el[0]), str(el[1]), weight=el[2])
-            self.logger.debug(f'{year}: graph contains {len(CG[year].nodes)} nodes, {len(CG[year].edges)} edges',
+                cg[year].add_edge(str(el[0]), str(el[1]), weight=el[2])
+            self.logger.debug(f'{year}: graph contains {len(cg[year].nodes)} nodes, {len(cg[year].edges)} edges',
                               current=current, task=task)
 
-            if len(CG[year].nodes) >= min_papers:
+            if len(cg[year].nodes) >= min_papers:
                 p = {vertex: int(comp) for vertex, comp in
-                     community.best_partition(CG[year], random_state=KeyPaperAnalyzer.SEED).items()}
+                     community.best_partition(cg[year], random_state=KeyPaperAnalyzer.SEED).items()}
                 p, components_merged[year] = self.merge_components(p)
                 evolution_series.append(pd.Series(p))
                 years_processed += 1
             else:
-                self.logger.debug(f'Total number of papers is less than {min_papers}, stopping.')
+                self.logger.debug(f'Total number of papers is less than {min_papers}, stopping.',
+                         current=current, task=task)
                 break
 
         year_range = year_range[:years_processed]
@@ -244,10 +250,39 @@ class KeyPaperAnalyzer:
         self.evolution_kwds = {}
         for col in self.evolution_df:
             if col in year_range:
-                self.logger.info(f'Generating TF-IDF descriptions for year {col}')
+                self.logger.debug(f'Generating TF-IDF descriptions for year {col}',
+                                  current=current, task=task)
                 if isinstance(col, (int, float)):
                     self.evolution_df[col] = self.evolution_df[col].apply(int)
                     comps = dict(self.evolution_df.groupby(col)['id'].apply(list))
                     self.evolution_kwds[col] = get_tfidf_words(self.df, comps, self.terms, size=keywords)
 
-        return CG, components_merged
+        return cg, components_merged
+
+    def merge_components(self, p, granularity=0.05, current=0, task=None):
+        self.logger.debug(f'Merging components smaller than {granularity} to "Other" component',
+                          current=current, task=task)
+        threshold = int(granularity * len(p))
+        components = set(p.values())
+        comp_sizes = {com: sum([p[node] == com for node in p.keys()]) for com in components}
+        comp_to_merge = {com: comp_sizes[com] <= threshold for com in components}
+        components_merged = sum(comp_to_merge.values()) > 0
+        if components_merged > 0:
+            self.logger.debug(f'Reassigning components', current=current, task=task)
+            pm = {}
+            newcomps = {}
+            ci = 1  # Other component is 0.
+            for k, v in p.items():
+                if comp_sizes[v] <= threshold:
+                    pm[k] = 0  # Other
+                    continue
+                if v not in newcomps:
+                    newcomps[v] = ci
+                    ci += 1
+                pm[k] = newcomps[v]
+            self.logger.debug(f'Processed {len(set(pm.values()))} components', current=current, task=task)
+        else:
+            self.logger.debug(f'All components are bigger than {granularity}, no need to reassign',
+                              current=current, task=task)
+            pm = p
+        return pm, components_merged

@@ -1,13 +1,13 @@
 import os
+
 from bokeh.embed import components
 from celery import Celery, current_task
 
 from models.keypaper.analysis import KeyPaperAnalyzer
+from models.keypaper.config import PubtrendsConfig
 from models.keypaper.pm_loader import PubmedLoader
 from models.keypaper.ss_loader import SemanticScholarLoader
 from models.keypaper.visualization import Plotter
-from models.keypaper.config import PubtrendsConfig
-
 
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379'),
 CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379')
@@ -30,9 +30,11 @@ def analyze_async(source, terms):
     else:
         raise Exception(f"Unknown source {source}")
     analyzer = KeyPaperAnalyzer(loader)
-    plotter = Plotter(analyzer)
     # current_task is from @celery.task
     log = analyzer.launch(*terms, task=current_task)
+
+    # Initialize plotter after completion of analysis
+    plotter = Plotter(analyzer)
 
     # Subtopic evolution is ignored for now.
     # Order is important here!
@@ -48,6 +50,7 @@ def analyze_async(source, terms):
         'found_papers': str(loader.articles_found),
         'number_of_papers': amount_of_papers,
         'clusters_info_message': plotter.clusters_info_message,
+        'subtopic_evolution': [components(plotter.subtopic_evolution())]
         # TODO: this doesn't work
         # 'citations_dynamics': [components(plotter.article_citation_dynamics())],
     }

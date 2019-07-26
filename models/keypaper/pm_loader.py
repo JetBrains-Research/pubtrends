@@ -24,7 +24,7 @@ class PubmedLoader(Loader):
         handle = Entrez.esearch(db='pubmed', retmax='100000',
                                 retmode='xml', term=query)
         self.ids = Entrez.read(handle)['IdList']
-        self.articles_found = len(self.pmids)
+        self.articles_found = len(self.ids)
         self.logger.info(f'Found {len(self.ids)} articles about {terms}', current=current, task=task)
 
     def load_publications(self, current=0, task=None):

@@ -46,7 +46,7 @@ class SemanticScholarLoader(Loader):
         self.ids = self.pub_df['id']
         self.crc32ids = self.pub_df['crc32id']
         self.values = ', '.join(['({0}, \'{1}\')'.format(i, j) for (i, j) in zip(self.crc32ids, self.ids)])
-        self.articles_found = len(self.ssids)
+        self.articles_found = len(self.ids)
 
     def load_publications(self, current=0, task=None):
         self.logger.info('Loading publication data', current=current, task=task)
