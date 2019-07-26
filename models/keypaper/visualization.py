@@ -12,13 +12,14 @@ from IPython.display import display
 from bokeh.colors import RGB
 from bokeh.core.properties import value
 from bokeh.io import push_notebook
-from bokeh.layouts import row
+from bokeh.layouts import row, column
 from bokeh.models import ColumnDataSource, CDSView, GroupFilter, CustomJS
 from bokeh.models import GraphRenderer, StaticLayoutProvider
 # Tools used: hover,pan,tap,wheel_zoom,box_zoom,reset,save
 from bokeh.models import HoverTool, PanTool, WheelZoomTool, BoxZoomTool, ResetTool, SaveTool
 from bokeh.models import LinearColorMapper, PrintfTickFormatter, ColorBar
 from bokeh.models import Plot, Range1d, MultiLine, Circle, Span
+from bokeh.models.widgets.tables import DataTable, TableColumn
 from bokeh.palettes import Category20
 from bokeh.plotting import figure, show
 from bokeh.transform import factor_cmap
@@ -31,6 +32,7 @@ from .utils import PUBMED_ARTICLE_BASE_URL, SEMANTIC_SCHOLAR_BASE_URL, get_word_
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
 hv.extension('bokeh')
+
 
 class Plotter:
     def __init__(self, analyzer):
@@ -519,12 +521,22 @@ class Plotter:
                         nodes.add(v)
                         nodes.add(u)
 
+        n_steps = len(self.analyzer.evolution_df.columns) - 2
+        value_dim = hv.Dimension('Amount', unit=None)
+
+        # One step is not enough to analyze evolution
+        if n_steps < 2:
+            return None
+
         nodes_data = []
 
         for node in nodes:
             year, c = node.split(' ')
             if int(c) >= 0:
-                label = f"{year} {', '.join(self.analyzer.evolution_kwds[int(year)][int(c)])}"
+                if n_steps < 4:
+                    label = f"{year} {', '.join(self.analyzer.evolution_kwds[int(year)][int(c)][:5])}"
+                else:
+                    label = node
             else:
                 label = f"Published after {year}"
             nodes_data.append((node, label))
@@ -532,22 +544,50 @@ class Plotter:
 
         nodes_ds = hv.Dataset(nodes_data, 'index', 'label')
 
-        value_dim = hv.Dimension('Amount', unit=None)
         topic_evolution = hv.Sankey((edges, nodes_ds), ['From', 'To'], vdims=value_dim)
-        topic_evolution.opts(labels='label', height=600, show_values=False, cmap='tab20',
-                             edge_color=dim('To').str(), node_color=dim('index').str())
+        topic_evolution.opts(labels='label', width=960, height=600, show_values=False, cmap='tab20',
+                                 edge_color=dim('To').str(), node_color=dim('index').str())
 
-        return topic_evolution
+        if n_steps > 3:
+            years = []
+            subtopics = []
+            keywords = []
+
+            for year, comps in self.analyzer.evolution_kwds.items():
+                for c, kwd in comps.items():
+                    if c >= 0:
+                        years.append(year)
+                        subtopics.append(c)
+                        keywords.append(', '.join(kwd))
+
+            data = dict(
+                years=years,
+                subtopics=subtopics,
+                keywords=keywords
+            )
+
+            source = ColumnDataSource(data)
+
+            columns = [
+                TableColumn(field="years", title="Year", width=50),
+                TableColumn(field="subtopics", title="Subtopic", width=50),
+                TableColumn(field="keywords", title="Keywords", width=800),
+            ]
+
+            subtopic_keywords = DataTable(source=source, columns=columns, width=900)
+
+            return column(hv.render(topic_evolution, backend='bokeh'), subtopic_keywords)
+
+        return hv.render(topic_evolution, backend='bokeh')
+
 
     def __build_data_source(self, df, width=760):
-        ARTICLE_PLOT_WIDTH = width  # Width of the plot (without axis borders)
-
         # Sort papers from the same year with total number of citations as key, use rank as y-pos
         ranks = df.groupby('year')['total'].rank(ascending=False, method='first')
 
         # Calculate max size of circles to avoid overlapping along x-axis
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
-        max_radius_screen_units = ARTICLE_PLOT_WIDTH / (max_year - min_year + 1)
+        max_radius_screen_units = width / (max_year - min_year + 1)
         size_scaling_coefficient = max_radius_screen_units / np.log(df['total']).max()
 
         # NOTE: 'comp' column is used as string because GroupFilter supports

@@ -20,9 +20,12 @@
             crossorigin="anonymous"></script>
     <script src="https://cdn.pydata.org/bokeh/release/bokeh-1.2.0.min.js"></script>
     <script src="https://cdn.pydata.org/bokeh/release/bokeh-widgets-1.2.0.min.js"></script>
+    <script src="https://cdn.pydata.org/bokeh/release/bokeh-tables-1.2.0.min.js"></script>
     <link href="https://cdn.pydata.org/bokeh/release/bokeh-1.2.0.min.css"
           rel="stylesheet" type="text/css">
     <link href="https://cdn.pydata.org/bokeh/release/bokeh-widgets-1.2.0.min.css"
+          rel="stylesheet" type="text/css">
+    <link href="https://cdn.pydata.org/bokeh/release/bokeh-tables-1.2.0.min.css"
           rel="stylesheet" type="text/css">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
 <!--    <link rel="stylesheet" href="../static/style.css"/>-->
@@ -125,10 +128,14 @@
     </div>
     <h1>Subtopic Evolution</h1>
     <div>
-        {% for script, div in subtopic_evolution %}
-        {{ script|safe }}
-        {{ div|safe }}
-        {% endfor %}
+        {% if subtopic_evolution is not none %}
+            {% for script, div in subtopic_evolution %}
+            {{ script|safe }}
+            {{ div|safe }}
+            {% endfor %}
+        {% else %}
+            Failed to analyze subtopic evolution because year step is too big.
+        {% endif %}
     </div>
     <h1>Log</h1>
     <pre id="log">{{log}}</pre>

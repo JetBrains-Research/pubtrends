@@ -185,18 +185,18 @@ class KeyPaperAnalyzer:
                                                      'paper_year', 'rel_gain'])
         self.max_rel_gain_papers = set(self.max_rel_gain_df['id'].values)
 
-    def subtopic_evolution_analysis(self, steps=3, min_papers=0):
+    def subtopic_evolution_analysis(self, step=5, keywords=15, min_papers=0):
         min_year = int(self.cocit_df['year'].min())
         max_year = int(self.cocit_df['year'].max())
         self.logger.debug(
-            f'Studying evolution of subtopic clusters in {min_year} - {max_year} in {steps} steps',
+            f'Studying evolution of subtopic clusters in {min_year} - {max_year} with a step of {step} years',
             current=current, task=task)
 
         components_merged = {}
         CG = {}
         evolution_series = []
-        year_range = list(np.linspace(min_year, max_year, steps).astype(int))[::-1]
-        self.logger.info(f"Years when subtopics are studied: {', '.join([str(year) for year in year_range[1:]])}")
+        year_range = list(np.arange(max_year, min_year - 1, step=-step).astype(int))
+        self.logger.info(f"Years when subtopics are studied: {', '.join([str(year) for year in year_range])}")
 
         years_processed = 0
         for i, year in enumerate(year_range):
@@ -243,10 +243,11 @@ class KeyPaperAnalyzer:
 
         self.evolution_kwds = {}
         for col in self.evolution_df:
-            self.logger.info(f'Generating TF-IDF descriptions for year {col}')
-            if isinstance(col, (int, float)):
-                self.evolution_df[col] = self.evolution_df[col].apply(int)
-                comps = dict(self.evolution_df.groupby(col)['id'].apply(list))
-                self.evolution_kwds[col] = get_tfidf_words(self.df, comps, self.terms)
+            if col in year_range:
+                self.logger.info(f'Generating TF-IDF descriptions for year {col}')
+                if isinstance(col, (int, float)):
+                    self.evolution_df[col] = self.evolution_df[col].apply(int)
+                    comps = dict(self.evolution_df.groupby(col)['id'].apply(list))
+                    self.evolution_kwds[col] = get_tfidf_words(self.df, comps, self.terms, size=keywords)
 
         return CG, components_merged
