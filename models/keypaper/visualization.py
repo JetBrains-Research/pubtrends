@@ -52,6 +52,21 @@ class Plotter:
             }
         """)
 
+    @staticmethod
+    def subtopic_callback(source, index):
+        return CustomJS(args=dict(source=source), code="""
+            var data = source.data, selected = source.selected.indices;
+            if (selected.length == 1) {
+                // only consider case where one glyph is selected by user
+                selected_id = data['id'][selected[0]]
+                for (var i = 0; i < data['id'].length; ++i){
+                    if(data['id'][i] == selected_id){
+                        window.open(base + data['id'][i], '_blank');
+                    }
+                }
+            }
+        """)
+
     def chord_diagram_components(self):
         logging.info('Visualizing components with Chord diagram')
 
@@ -251,15 +266,13 @@ class Plotter:
         total_papers = sum(self.analyzer.df['comp'] >= 0)
 
         comps = list(map(str, comp_size.keys()))
-        source = {str(k): [(v / total_papers)] for k, v in comp_size.items()}
-        colors = [color.to_hex() for color in self.colors.values()]
+        ratios = [100 * v / total_papers for _, v in comp_size.items()]
+        colors = list(self.colors.values())
 
-        p = figure(plot_width=900, plot_height=50, toolbar_location=None, tools="")
-
-        p.hbar_stack(comps, y=0, height=0.1, fill_alpha=0.5, color=colors, source=source)
+        p = figure(plot_width=900, plot_height=50*len(comps), toolbar_location=None, tools=TOOLS, y_range=comps)
+        p.hbar(y=comps, right=ratios, height=0.9, fill_alpha=0.5, color=colors)
 
         p.axis.visible = False
-        p.y_range.start = 0
         p.xgrid.grid_line_color = None
         p.ygrid.grid_line_color = None
         p.axis.minor_tick_line_color = None
