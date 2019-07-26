@@ -9,5 +9,9 @@ dbname={pubtrends_config.dbname} user={pubtrends_config.user} password={pubtrend
         self.conn = pg_driver.connect(connection_string)
         self.cursor = self.conn.cursor()
 
+    def close_connection(self):
+        self.cursor.close()
+        self.conn.close()
+
     def set_logger(self, logger):
         self.logger = logger

@@ -63,6 +63,7 @@ class KeyPaperAnalyzer:
             # self.subtopic_evolution_analysis(current=10, task=task)
             return self.logger.stream.getvalue()
         finally:
+            self.loader.close_connection()
             self.logger.remove_handler()
 
     def update_years(self, current=0, task=None):
