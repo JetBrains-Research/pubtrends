@@ -15,14 +15,17 @@ A tool for analysis of trends & pivotal points in the scientific literature.
 
 ## Configuration
 
-1. Conda environment `pubtrends` can be easily created for launching Jupyter Notebook and Web Service:
+1. Copy and modify `config.properties` to `~/.pubtrends/config.properties`. 
+Ensure that file contains correct information about the database (url, port, DB name, username and password).
+
+2. Conda environment `pubtrends` can be easily created for launching Jupyter Notebook and Web Service:
 
     ```
     conda env create -f environment.yml
     conda activate pubtrends
     ```
 
-2. Launch Postgres. 
+3. Launch Postgres. 
 
     Mac OS
     ```
@@ -39,7 +42,7 @@ A tool for analysis of trends & pivotal points in the scientific literature.
     service postgresql stop 
     ```
 
-3. Run `psql` to create a user and databases
+4. Run `psql` to create a user and databases
 
    ```
    CREATE ROLE biolabs WITH PASSWORD 'password';
@@ -50,12 +53,8 @@ A tool for analysis of trends & pivotal points in the scientific literature.
    ```
    CREATE DATABASE pubtrends_test OWNER biolabs;
    ```
-   
-3. Copy and modify `config.properties` to `~/.pubtrends/config.properties`. 
-Ensure that file contains correct information about the database (url, port, DB name, username and password).
- 
 
-## Papers crawling
+## Papers processing
  
 ### Pubmed
 
@@ -96,7 +95,7 @@ Ensure that file contains correct information about the database (url, port, DB 
     ```
     java -cp build/libs/pubtrends-dev.jar org.jetbrains.bio.pubtrends.ss.MainKt
     ```
-5. Command line options supported:
+   Command line options supported:
 
    * `resetDatabase` - clear current contents of the database (useful for development) 
    * `fillDatabase` - create and fill database with Semantic Scholar data
@@ -107,24 +106,26 @@ Ensure that file contains correct information about the database (url, port, DB 
 
 ## Service
 
+Several front-ends are supported.
+
 ### Jupyter Notebook
    ```
    jupyter notebook
    ```
 
 ### Web service
-1. Start `Redis`
-2. Start worker queue
+1. Start Redis
+2. Start Celery worker queue
     ```
     celery -A models.celery.tasks worker --loglevel=info
     ```
-3. Start server
+3. Start flask server at localhost:5000/
     ```
-    python models.flask-app.py
+    python models/flask-app.py
     ```    
-4. Open localhost:5000/
 
-### Deployment in Docker
+### Deployment with Docker Compose
+
 Launch Gunicorn serving Flask app, Redis and Celery in containers by the command:
     
     ```
@@ -138,7 +139,7 @@ Launch Gunicorn serving Flask app, Redis and Celery in containers by the command
 
 ## Testing
 
-### Docker Postgresql
+### Docker Image for testing
 
 1. Build `biolabs/pubtrends` Docker image
     ```
