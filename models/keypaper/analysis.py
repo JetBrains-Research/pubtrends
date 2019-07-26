@@ -65,24 +65,24 @@ class KeyPaperAnalyzer:
                 raise RuntimeError("Failed to merge publications and citations")
 
             self.loader.load_cocitations(current=4, task=task)
-            self.build_cocitation_graph(current=4, task=task)
+            self.build_cocitation_graph(current=5, task=task)
             if len(self.CG.nodes()) == 0:
                 raise RuntimeError("Failed to build co-citations graph")
 
             self.cocit_df = self.loader.cocit_df
 
             # Calculate min and max year of publications
-            self.update_years(current=5, task=task)
+            self.update_years(current=6, task=task)
             # Perform basic analysis
-            self.subtopic_analysis(current=6, task=task)
+            self.subtopic_analysis(current=7, task=task)
 
-            self.find_top_cited_papers(current=7, task=task)  # run after subtopic analysis to color components
+            self.find_top_cited_papers(current=8, task=task)  # run after subtopic analysis to color components
 
-            self.find_max_gain_papers(current=8, task=task)
+            self.find_max_gain_papers(current=9, task=task)
 
-            self.find_max_relative_gain_papers(current=9, task=task)
+            self.find_max_relative_gain_papers(current=10, task=task)
 
-            self.subtopic_evolution_analysis(current=10, task=task)
+            self.subtopic_evolution_analysis(current=11, task=task)
             return self.logger.stream.getvalue()
         finally:
             self.loader.close_connection()
@@ -118,9 +118,9 @@ class KeyPaperAnalyzer:
         pm, self.components_merged = self.merge_components(p)
         self.components = set(pm.values())
         self.pm = pm
-        pmcomp_sizes = {com: sum([pm[node] == com for node in pm.keys()]) for com in
+        self.pmcomp_sizes = {com: sum([pm[node] == com for node in pm.keys()]) for com in
                         self.components}
-        for k, v in pmcomp_sizes.items():
+        for k, v in self.pmcomp_sizes.items():
             self.logger.debug(f'Cluster {k}: {v} ({int(100 * v / len(pm))}%)', current=current, task=task)
 
         # Added 'comp' column containing the ID of component
@@ -166,7 +166,7 @@ class KeyPaperAnalyzer:
         self.max_gain_papers = set(self.max_gain_df['id'].values)
 
     def find_max_relative_gain_papers(self, current=0, task=None):
-        self.logger.info('Identifying papers with max relative citation gain for each year\n', current=current,
+        self.logger.info('Identifying papers with max relative citation gain for each year', current=current,
                          task=task)
         current_sum = pd.Series(np.zeros(len(self.df), ))
         df_rel = self.df.loc[:, ['id', 'title', 'authors', 'year']]
