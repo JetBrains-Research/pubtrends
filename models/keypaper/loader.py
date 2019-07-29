@@ -13,6 +13,9 @@ class Loader:
         """.strip()
         self.conn = pg_driver.connect(connection_string)
         self.cursor = self.conn.cursor()
+        self.max_number_of_articles = pubtrends_config.max_number_of_articles
+        self.max_number_of_citations = pubtrends_config.max_number_of_citations
+        self.max_number_of_cocitations = pubtrends_config.max_number_of_cocitations
 
         # Logger
         self.logger = None

@@ -18,10 +18,11 @@ class PubmedLoader(Loader):
         self.index = index
 
     def search(self, *terms, current=0, task=None):
-        self.logger.debug('TODO: handle queries which return more than 100000 items', current=current, task=task)
+        self.logger.debug('TODO: handle queries which return more than {0} items'.format(self.max_number_of_articles),
+                          current=current, task=task)
         self.terms = [t.lower() for t in terms]
         query = ' '.join(terms).replace("\"", "")
-        handle = Entrez.esearch(db='pubmed', retmax='100000',
+        handle = Entrez.esearch(db='pubmed', retmax=str(self.max_number_of_articles),
                                 retmode='xml', term=query)
         self.ids = Entrez.read(handle)['IdList']
         self.articles_found = len(self.ids)
@@ -151,8 +152,10 @@ class PubmedLoader(Loader):
         self.cocit_grouped_df = self.cocit_grouped_df.replace(np.nan, 0)
         self.cocit_grouped_df['total'] = self.cocit_grouped_df.iloc[:, 2:].sum(axis=1)
         self.cocit_grouped_df = self.cocit_grouped_df.sort_values(by='total', ascending=False)
-        self.logger.debug('Filtering top 100000 of all the co-citations', current=current, task=task)
-        self.cocit_grouped_df = self.cocit_grouped_df.iloc[:min(100000, len(self.cocit_grouped_df)), :]
+        self.logger.debug('Filtering top {0} of all the co-citations'.format(self.max_number_of_cocitations),
+                          current=current, task=task)
+        self.cocit_grouped_df = self.cocit_grouped_df.iloc[:min(self.max_number_of_cocitations,
+                                                                len(self.cocit_grouped_df)), :]
 
         for col in self.cocit_grouped_df:
             self.cocit_grouped_df[col] = self.cocit_grouped_df[col].astype(object)

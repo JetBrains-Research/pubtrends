@@ -26,7 +26,7 @@ class SemanticScholarLoader(Loader):
         terms_str = '\'' + ' '.join(self.terms) + '\''
         query = f'''
         SELECT DISTINCT ON(ssid) ssid, crc32id, title, abstract, year, aux FROM {self.publications_table} P
-        WHERE tsv @@ websearch_to_tsquery('english', {terms_str}) limit 100000;
+        WHERE tsv @@ websearch_to_tsquery('english', {terms_str}) limit {self.max_number_of_articles};
         '''
 
         with self.conn:
@@ -98,8 +98,9 @@ class SemanticScholarLoader(Loader):
                           task=task)
 
         if filter_citations:
-            self.logger.debug('Filtering top 100000 or 80% of all the citations', current=current, task=task)
-            self.cit_df = self.cit_df.iloc[:min(100000, round(0.8 * len(self.cit_df))), :]
+            self.logger.debug('Filtering top {0} or 80% of all the citations'.format(self.max_number_of_citations),
+                              current=current, task=task)
+            self.cit_df = self.cit_df.iloc[:min(self.max_number_of_citations, round(0.8 * len(self.cit_df))), :]
 
     def load_citations(self, current=0, task=None):
         self.logger.info('Loading citations data', current=current, task=task)
@@ -171,8 +172,10 @@ class SemanticScholarLoader(Loader):
         self.cocit_grouped_df = self.cocit_grouped_df.replace(np.nan, 0)
         self.cocit_grouped_df['total'] = self.cocit_grouped_df.iloc[:, 2:].sum(axis=1)
         self.cocit_grouped_df = self.cocit_grouped_df.sort_values(by='total', ascending=False)
-        self.logger.debug('Filtering top 100000 of all the co-citations', current=current, task=task)
-        self.cocit_grouped_df = self.cocit_grouped_df.iloc[:min(100000, len(self.cocit_grouped_df)), :]
+        self.logger.debug('Filtering top {0} of all the co-citations'.format(self.max_number_of_cocitations),
+                          current=current, task=task)
+        self.cocit_grouped_df = self.cocit_grouped_df.iloc[:min(self.max_number_of_cocitations,
+                                                                len(self.cocit_grouped_df)), :]
 
         for col in self.cocit_grouped_df:
             self.cocit_grouped_df[col] = self.cocit_grouped_df[col].astype(object)
