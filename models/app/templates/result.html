@@ -43,7 +43,7 @@
             <h1 class="card-header">Overview</h1>
         </div>
         <div class="card-body">
-            <div class="row">
+            <div class="row mb-3">
                 <div class="col-sm-4">
                     <div class="card">
                         <div class="card-body text-center">
@@ -190,6 +190,18 @@
                 {{ div|safe }}
                 {% endfor %}
             </div>
+
+            <h1>Subtopic Evolution</h1>
+            <div>
+                {% if subtopic_evolution is not none %}
+                    {% for script, div in subtopic_evolution %}
+                    {{ script|safe }}
+                    {{ div|safe }}
+                    {% endfor %}
+                {% else %}
+                    Failed to analyze subtopic evolution because year step is too big.
+                {% endif %}
+            </div>
         </div>
     </div>
 
@@ -212,17 +224,6 @@
                 {% endfor %}
             </div>
         </div>
-    </div>
-    <h1>Subtopic Evolution</h1>
-    <div>
-        {% if subtopic_evolution is not none %}
-            {% for script, div in subtopic_evolution %}
-            {{ script|safe }}
-            {{ div|safe }}
-            {% endfor %}
-        {% else %}
-            Failed to analyze subtopic evolution because year step is too big.
-        {% endif %}
     </div>
 </div>
 <footer>
