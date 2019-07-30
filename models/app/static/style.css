@@ -1,5 +1,11 @@
-.container {
-    width: 1020px;
+body {
+    padding-top: 65px;
+}
+
+/* Fixes jumps to cards */
+:target {
+  padding-top: 75px;
+  margin-top: -75px;
 }
 
 footer {
