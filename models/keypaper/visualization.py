@@ -17,6 +17,7 @@ from bokeh.models import ColumnDataSource, CDSView, GroupFilter, CustomJS
 from bokeh.models import GraphRenderer, StaticLayoutProvider
 # Tools used: hover,pan,tap,wheel_zoom,box_zoom,reset,save
 from bokeh.models import HoverTool, PanTool, WheelZoomTool, BoxZoomTool, ResetTool, SaveTool
+from bokeh.models import NumeralTickFormatter
 from bokeh.models import LinearColorMapper, PrintfTickFormatter, ColorBar
 from bokeh.models import NumeralTickFormatter
 from bokeh.models import Plot, Range1d, MultiLine, Circle, Span
