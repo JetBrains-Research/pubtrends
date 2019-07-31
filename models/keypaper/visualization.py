@@ -594,7 +594,7 @@ class Plotter:
 
         columns = [
             TableColumn(field="author", title="Author", width=500),
-            TableColumn(field="sum", title="Amount of articles", width=100),
+            TableColumn(field="sum", title="Number of articles", width=100),
             TableColumn(field="subtopics", title="Subtopics", formatter=formatter, width=100, sortable=False),
         ]
 

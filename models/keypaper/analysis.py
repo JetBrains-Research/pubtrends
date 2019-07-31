@@ -318,8 +318,12 @@ class KeyPaperAnalyzer:
         journal_stats.columns = journal_stats.columns.droplevel(level=1)
         journal_stats.columns = ['journal', 'comp', 'counts', 'sum']
 
-        self.journal_stats = journal_stats.sort_values(by=['sum'], ascending=False).head(
-            n=20)
+        journal_stats = journal_stats.sort_values(by=['sum'], ascending=False)
+
+        if journal_stats['journal'].iloc[0] == '':
+            journal_stats.drop(journal_stats.index[0], inplace=True)
+
+        self.journal_stats = journal_stats.head(n=20)
 
     def popular_authors(self, current=0, task=None):
         self.logger.info("Finding popular authors", current=current, task=task)
@@ -341,5 +345,9 @@ class KeyPaperAnalyzer:
 
         author_stats.columns = author_stats.columns.droplevel(level=1)
         author_stats.columns = ['author', 'comp', 'counts', 'sum']
-        self.author_stats = author_stats.sort_values(by=['sum'], ascending=False).head(
-            n=20)
+        author_stats = author_stats.sort_values(by=['sum'], ascending=False)
+
+        if author_stats['author'].iloc[0] == '':
+            author_stats.drop(author_stats.index[0], inplace=True)
+
+        self.author_stats = author_stats.head(n=20)
