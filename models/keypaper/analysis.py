@@ -83,6 +83,10 @@ class KeyPaperAnalyzer:
             self.find_max_relative_gain_papers(current=10, task=task)
 
             self.subtopic_evolution_analysis(current=11, task=task)
+
+            self.popular_journals(current=12, task=task)
+            self.popular_authors(current=13, task=task)
+
             return self.logger.stream.getvalue()
         finally:
             self.loader.close_connection()
@@ -286,3 +290,42 @@ class KeyPaperAnalyzer:
                               current=current, task=task)
             pm = p
         return pm, components_merged
+
+    def popular_journals(self, current=0, task=None):
+        self.logger.info("Finding popular journals", current=current, task=task)
+        journal_stats = self.df.groupby(['journal', 'comp']).size().reset_index(name='counts')
+        # drop papers with undefined subtopic
+        journal_stats = journal_stats[journal_stats.comp != -1]
+
+        journal_stats.sort_values(by=['journal', 'counts'], ascending=False, inplace=True)
+
+        journal_stats = journal_stats.groupby('journal').agg(
+            {'comp': lambda x: list(x), 'counts': [lambda x: list(x), 'sum']}).reset_index()
+
+        journal_stats.columns = journal_stats.columns.droplevel(level=1)
+        journal_stats.columns = ['journal', 'comp', 'counts', 'sum']
+        self.journal_stats = journal_stats.sort_values(by=['sum'], ascending=False).drop(journal_stats.index[0]).head(
+            n=20)
+
+    def popular_authors(self, current=0, task=None):
+        self.logger.info("Finding popular authors", current=current, task=task)
+
+        author_stats = pd.DataFrame()
+        author_stats['author'] = self.df[self.df.authors != -1]['authors'].apply(lambda authors: authors.split(', '))
+
+        author_stats = author_stats.author.apply(pd.Series).stack().reset_index(level=1, drop=True).to_frame(
+            'author').join(self.df[['id', 'comp']], how='left')
+
+        author_stats = author_stats.groupby(['author', 'comp']).size().reset_index(name='counts')
+        # drop papers with undefined subtopic
+        author_stats = author_stats[author_stats.comp != -1]
+
+        author_stats.sort_values(by=['author', 'counts'], ascending=False, inplace=True)
+
+        author_stats = author_stats.groupby('author').agg(
+            {'comp': lambda x: list(x), 'counts': [lambda x: list(x), 'sum']}).reset_index()
+
+        author_stats.columns = author_stats.columns.droplevel(level=1)
+        author_stats.columns = ['author', 'comp', 'counts', 'sum']
+        self.author_stats = author_stats.sort_values(by=['sum'], ascending=False).drop(author_stats.index[0]).head(
+            n=20)
