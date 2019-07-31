@@ -17,7 +17,6 @@ from bokeh.models import ColumnDataSource, CDSView, GroupFilter, CustomJS
 from bokeh.models import GraphRenderer, StaticLayoutProvider
 # Tools used: hover,pan,tap,wheel_zoom,box_zoom,reset,save
 from bokeh.models import HoverTool, PanTool, WheelZoomTool, BoxZoomTool, ResetTool, SaveTool
-from bokeh.models import NumeralTickFormatter
 from bokeh.models import LinearColorMapper, PrintfTickFormatter, ColorBar
 from bokeh.models import NumeralTickFormatter
 from bokeh.models import Plot, Range1d, MultiLine, Circle, Span
@@ -326,7 +325,7 @@ class Plotter:
             wc.generate_from_frequencies(kwds)
 
             image = wc.to_array()
-            desc = figure(title="", toolbar_location="above",
+            desc = figure(title="Word Cloud", toolbar_location="above",
                           plot_width=200, plot_height=400,
                           x_range=[0, 10], y_range=[0, 10], tools=[])
             desc.axis.visible = False
@@ -514,7 +513,7 @@ class Plotter:
         wc.generate_from_frequencies(kwds)
 
         image = wc.to_array()
-        desc = figure(title="", toolbar_location="above",
+        desc = figure(title="Word Cloud", toolbar_location="above",
                       plot_width=200, plot_height=400,
                       x_range=[0, 10], y_range=[0, 10], tools=[])
         desc.axis.visible = False

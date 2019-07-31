@@ -1,0 +1,53 @@
+body {
+    padding-top: 65px;
+}
+
+/* Fixes link jumps to cards */
+:target {
+    padding-top: 75px;
+    margin-top: -75px;
+}
+
+.sidebar .nav-link {
+  font-weight: 500;
+  color: #333;
+}
+
+.sidebar .nav-link .feather {
+  margin-right: 4px;
+  color: #999;
+}
+
+.sidebar .nav-link.active {
+  color: #007bff;
+}
+
+.sidebar .nav-link:hover .feather,
+.sidebar .nav-link.active .feather {
+  color: inherit;
+}
+
+.sidebar-heading {
+  font-size: .75rem;
+  text-transform: uppercase;
+}
+
+.section {
+    width: 1020px;
+}
+
+.card-header {
+    font-size: 20pt;
+}
+
+.card-title {
+    font-size: 20pt;
+}
+
+.card-text {
+    font-size: 15pt;
+}
+
+.stats-number {
+    font-size: 30pt;
+}

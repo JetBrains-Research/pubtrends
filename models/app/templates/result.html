@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css"
           integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt"
           crossorigin="anonymous">
+    <script src="https://unpkg.com/feather-icons/dist/feather.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"
             integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT"
             crossorigin="anonymous"></script>
@@ -26,17 +27,18 @@
           rel="stylesheet" type="text/css">
     <link href="https://cdn.pydata.org/bokeh/release/bokeh-widgets-1.2.0.min.css"
           rel="stylesheet" type="text/css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='result.css') }}">
     <link href="https://cdn.pydata.org/bokeh/release/bokeh-tables-1.2.0.min.css"
           rel="stylesheet" type="text/css">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
-<!--     <link rel="stylesheet" href="../static/style.css"/> -->
+    <!--     <link rel="stylesheet" href="../static/style.css"/> -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='result.css') }}">
+    <!--     <link rel="stylesheet" href="../static/result.css"/> -->
 </head>
 <body>
 
 <!-- Fixed navbar -->
-<nav class="navbar navbar-light bg-light justify-content-between fixed-top border-bottom">
-    <span class="navbar-brand col-sm-3 col-md-2 mr-0">
+<nav class="navbar navbar-light bg-light justify-content-start fixed-top border-bottom">
+    <span class="navbar-brand col-sm-3 col-md-2 col-xl-2 mr-0">
         <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
     </span>
     <span class="nav-item">
@@ -46,46 +48,44 @@
 
 <div class="container-fluid">
     <div class="row">
-        <nav class="col-md-2 d-none d-md-block bg-light sidebar fixed-left">
-            <div class="sidebar">
-                <ul class="nav flex-column mt-3">
-                    <li class="nav-item">
-                        <a class="nav-link" href="#overview">
-                          <span data-feather="home"></span>
-                          Overview
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#highlights">
-                          <span data-feather="file"></span>
-                          Highlights
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#topics">
-                          <span data-feather="shopping-cart"></span>
-                          Topics
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#trends">
-                          <span data-feather="users"></span>
-                          Trends
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#publications">
-                          <span data-feather="bar-chart-2"></span>
-                          Publications
-                        </a>
-                    </li>
-                </ul>
-            </div>
+        <nav class="col-md-2 col-xl-2 d-none d-md-block bg-light sidebar fixed-left">
+            <ul class="nav flex-column mt-3">
+                <li class="nav-item">
+                    <a class="nav-link" href="#overview">
+                        <span data-feather="map"></span>
+                        Overview
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#highlights">
+                        <span data-feather="flag"></span>
+                        Highlights
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#topics">
+                        <span data-feather="grid"></span>
+                        Topics
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#trends">
+                        <span data-feather="trending-up"></span>
+                        Trends
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#publications">
+                        <span data-feather="book-open"></span>
+                        Publications
+                    </a>
+                </li>
+            </ul>
         </nav>
 
-        <main class="col-12 col-md-9 col-xl-8 py-md-3 pl-md-5 bd-content" role="main">
-            <div class="card mt-3" id="overview">
-                <div class="card-title">
+        <main class="col-12 col-md-12 col-xl-9 justify-content-between" role="main">
+            <div class="card section mt-3">
+                <div class="card-title" id="overview">
                     <h2 class="card-header">Overview</h2>
                 </div>
                 <div class="card-body">
@@ -129,7 +129,7 @@
                 </div>
             </div>
 
-            <div class="card mt-3">
+            <div class="card section mt-3">
                 <div class="card-title" id="highlights">
                     <h1 class="card-header">Highlights</h1>
                 </div>
@@ -178,7 +178,7 @@
                 </div>
             </div>
 
-            <div class="card mt-3">
+            <div class="card section mt-3">
                 <div class="card-title" id="topics">
                     <h1 class="card-header">Topics</h1>
                 </div>
@@ -209,7 +209,8 @@
                     <!--    </div>-->
 
                     <h1>Papers co-citations clustering</h1>
-                    <p> Co-citation clustering using community Louvain algorithm is used to detect dense subtopics in co-citations
+                    <p> Co-citation clustering using community Louvain algorithm is used to detect dense subtopics in
+                        co-citations
                         graph. {{clusters_info_message}} </p>
                     <div>
                         {% for script, div in cocitations_clusters %}
@@ -220,7 +221,7 @@
                 </div>
             </div>
 
-            <div class="card mt-3">
+            <div class="card section mt-3">
                 <div class="card-title" id="trends">
                     <h1 class="card-header">Trends</h1>
                 </div>
@@ -240,20 +241,20 @@
                     <h1>Subtopic Evolution</h1>
                     <div>
                         {% if subtopic_evolution is not none %}
-                            {% for script, div in subtopic_evolution %}
-                            {{ script|safe }}
-                            {{ div|safe }}
-                            {% endfor %}
+                        {% for script, div in subtopic_evolution %}
+                        {{ script|safe }}
+                        {{ div|safe }}
+                        {% endfor %}
                         {% else %}
-                            Failed to analyze subtopic evolution because year step is too big.
+                        Failed to analyze subtopic evolution because year step is too big.
                         {% endif %}
                     </div>
                 </div>
             </div>
 
-            <div class="card mt-3">
+            <div class="card section mt-3">
                 <div class="card-title" id="publications">
-                    <h1 class="card-header" id="publications">Publications</h1>
+                    <h1 class="card-header">Publications</h1>
                 </div>
                 <div class="card-body">
                     <p>
@@ -280,5 +281,8 @@
                       title="JetBrains Research BioLabs"
                       target="_blank">JetBrains Research</a></p>
 </footer>
+<script>
+      feather.replace()
+</script>
 </body>
 </html>
