@@ -628,10 +628,6 @@ class Plotter:
 
         # NOTE: 'comp' column is used as string because GroupFilter supports
         #       only categorical values (needed to color top cited papers by components)
-        # d = ColumnDataSource(data=dict(id=df['id'], title=df['title'], authors=df['authors'],
-        #                                year=df['year'], total=df['total'],
-        #                                comp=df['comp'].astype(str), pos=ranks,
-        #                                size=np.log(df['total']) * size_scaling_coefficient))
         d = ColumnDataSource(data=dict(id=df['id'], title=df['title'], authors=df['authors'],
                                        year=df['year'].replace(np.nan, "Undefined"),
                                        total=df['total'], comp=df['comp'].astype(str), pos=df['total'],
