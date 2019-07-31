@@ -38,6 +38,8 @@ class SemanticScholarLoader(Loader):
         self.pub_df['authors'] = self.pub_df['aux'].apply(
             lambda aux: ', '.join(map(lambda authors: html.unescape(authors['name']), aux['authors'])))
 
+        self.pub_df['journal'] = self.pub_df['aux'].apply(lambda aux: html.unescape(aux['journal']['name']))
+
         self.logger.info(f'Found {len(self.pub_df)} publications in the local database', current=current,
                          task=task)
 
