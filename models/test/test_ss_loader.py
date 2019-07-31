@@ -26,7 +26,7 @@ class TestSemanticScholarLoader(unittest.TestCase):
             id_out      varchar(40) not null,
             id_in       varchar(40) not null
         );
-        create index if not exists sscitations_test_crc32id_out_crc32id_in_index 
+        create index if not exists sscitations_test_crc32id_out_crc32id_in_index
         on sscitations_test (crc32id_out, crc32id_in);
         '''
 
@@ -38,13 +38,15 @@ class TestSemanticScholarLoader(unittest.TestCase):
             title   varchar(1023),
             year    integer
         );
-        create index if not exists sspublications_test_crc32id_index 
+        create index if not exists sspublications_test_crc32id_index
         on sspublications_test (crc32id);
         '''
 
         with cls.loader.conn:
             cls.loader.cursor.execute(query_citations)
             cls.loader.cursor.execute(query_publications)
+
+        cls.VALUES_REGEX = re.compile(r'\$VALUES\$')
 
         cls._insert_publications()
         cls._insert_citations()
@@ -55,8 +57,8 @@ class TestSemanticScholarLoader(unittest.TestCase):
         articles = ', '.join(
             map(lambda article: article.to_db_publication(), (required_articles + extra_articles)))
 
-        query = re.sub('\$values\$', articles, '''
-        insert into sspublications_test(ssid, crc32id, title, year) values $values$;
+        query = re.sub(cls.VALUES_REGEX, articles, '''
+        insert into sspublications_test(ssid, crc32id, title, year) values $VALUES$;
         ''')
         with cls.loader.conn:
             cls.loader.cursor.execute(query)
@@ -69,8 +71,8 @@ class TestSemanticScholarLoader(unittest.TestCase):
                                               citation[1].crc32id) for citation in
             (required_citations + extra_citations))
 
-        query = re.sub('\$values\$', citations_str, '''
-        insert into sscitations_test (id_out, crc32id_out, id_in, crc32id_in) values $values$;
+        query = re.sub(cls.VALUES_REGEX, citations_str, '''
+        insert into sscitations_test (id_out, crc32id_out, id_in, crc32id_in) values $VALUES$;
         ''')
 
         with cls.loader.conn:
@@ -79,7 +81,7 @@ class TestSemanticScholarLoader(unittest.TestCase):
     @classmethod
     def _load_publications(cls):
         values = ', '.join(map(lambda article: article.indexes(), required_articles))
-        query = re.sub('\$VALUES\$', values, '''
+        query = re.sub(cls.VALUES_REGEX, values, '''
                 DROP TABLE IF EXISTS temp_ssids_test;
                 WITH vals(ssid, crc32id) AS (VALUES $VALUES$)
                 SELECT crc32id, ssid INTO temporary table temp_ssids_test FROM vals;

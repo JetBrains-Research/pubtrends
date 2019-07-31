@@ -77,7 +77,7 @@ class Plotter:
             if (selected.length == 1) {
                 // only consider case where one glyph is selected by user
                 selected_comp = data['comps'][selected[0]];
-                document.getElementById('subtopic-' + selected_comp).scrollIntoView();
+                window.location.hash = '#subtopic-' + selected_comp;
             }
             source.selected.indices = [];
         """)
@@ -353,7 +353,7 @@ class Plotter:
         colors = [self.colors[int(c)] for c in comps]
         source = ColumnDataSource(data=dict(comps=comps, ratios=ratios, colors=colors))
 
-        p = figure(plot_width=900, plot_height=50*len(comps), toolbar_location="above", tools=TOOLS, y_range=comps)
+        p = figure(plot_width=900, plot_height=50 * len(comps), toolbar_location="above", tools=TOOLS, y_range=comps)
         p.hbar(y='comps', right='ratios', height=0.9, fill_alpha=0.5, color='colors', source=source)
         p.hover.tooltips = [("Subtopic", '@comps'), ("Amount", '@ratios %')]
 
