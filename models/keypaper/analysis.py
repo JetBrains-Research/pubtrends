@@ -27,8 +27,8 @@ class KeyPaperAnalyzer:
             self.source = 'pubmed'
         elif isinstance(self.loader, SemanticScholarLoader):
             self.source = 'semantic'
-        else:
-            raise TypeError("loader should be either PubmedLoader or SemanticScholarLoader")
+        # else:
+        #     raise TypeError("loader should be either PubmedLoader or SemanticScholarLoader")
 
         # Data containers
         self.terms = None
@@ -304,7 +304,8 @@ class KeyPaperAnalyzer:
 
         journal_stats.columns = journal_stats.columns.droplevel(level=1)
         journal_stats.columns = ['journal', 'comp', 'counts', 'sum']
-        self.journal_stats = journal_stats.sort_values(by=['sum'], ascending=False).drop(journal_stats.index[0]).head(
+
+        self.journal_stats = journal_stats.sort_values(by=['sum'], ascending=False).head(
             n=20)
 
     def popular_authors(self, current=0, task=None):
@@ -327,5 +328,5 @@ class KeyPaperAnalyzer:
 
         author_stats.columns = author_stats.columns.droplevel(level=1)
         author_stats.columns = ['author', 'comp', 'counts', 'sum']
-        self.author_stats = author_stats.sort_values(by=['sum'], ascending=False).drop(author_stats.index[0]).head(
+        self.author_stats = author_stats.sort_values(by=['sum'], ascending=False).head(
             n=20)
