@@ -9,9 +9,6 @@ from .ss_loader import SemanticScholarLoader
 from .utils import get_subtopic_descriptions, get_tfidf_words, split_df_list
 
 
-# from memory_profiler import profile
-
-
 class KeyPaperAnalyzer:
     SEED = 20190723
 
@@ -29,7 +26,6 @@ class KeyPaperAnalyzer:
         elif not test:
             raise TypeError("loader should be either PubmedLoader or SemanticScholarLoader")
 
-    # @profile
     def launch(self, *terms, task=None):
         """:return full log"""
 
