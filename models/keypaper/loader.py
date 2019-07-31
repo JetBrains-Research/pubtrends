@@ -6,13 +6,17 @@ import psycopg2 as pg_driver
 class Loader:
     VALUES_REGEX = re.compile(r'\$VALUES\$')
 
-    def __init__(self, pubtrends_config):
-        connection_string = f"""
-            dbname={pubtrends_config.dbname} user={pubtrends_config.user} password={pubtrends_config.password} \
-            host={pubtrends_config.host} port={pubtrends_config.port}
-        """.strip()
-        self.conn = pg_driver.connect(connection_string)
-        self.cursor = self.conn.cursor()
+    def __init__(self, pubtrends_config, connect=True):
+        self.conn = None
+        self.cursor = None
+
+        if connect:
+            connection_string = f"""
+                dbname={pubtrends_config.dbname} user={pubtrends_config.user} password={pubtrends_config.password} \
+                host={pubtrends_config.host} port={pubtrends_config.port}
+            """.strip()
+            self.conn = pg_driver.connect(connection_string)
+            self.cursor = self.conn.cursor()
 
         # Logger
         self.logger = None
@@ -25,8 +29,10 @@ class Loader:
         self.cocit_grouped_df = None
 
     def close_connection(self):
-        self.cursor.close()
-        self.conn.close()
+        if self.cursor is not None:
+            self.cursor.close()
+        if self.conn is not None:
+            self.conn.close()
 
     def set_logger(self, logger):
         self.logger = logger

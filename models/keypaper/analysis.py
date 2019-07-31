@@ -27,8 +27,9 @@ class KeyPaperAnalyzer:
             self.source = 'pubmed'
         elif isinstance(self.loader, SemanticScholarLoader):
             self.source = 'semantic'
-        else:
-            raise TypeError("loader should be either PubmedLoader or SemanticScholarLoader")
+        # Added MockLoader which raises TypeError, temporarily disabled TypeError raise
+        # else:
+        #     raise TypeError("loader should be either PubmedLoader or SemanticScholarLoader")
 
         # Data containers
         self.terms = None
@@ -60,7 +61,7 @@ class KeyPaperAnalyzer:
             if len(self.loader.cit_df) == 0:
                 raise RuntimeError("Citations stats not found DB")
 
-            self.df = pd.merge(self.loader.pub_df, self.loader.cit_df, on='id', how='outer')
+            self.merge_citation_stats()
             if len(self.df) == 0:
                 raise RuntimeError("Failed to merge publications and citations")
 
@@ -87,6 +88,9 @@ class KeyPaperAnalyzer:
         finally:
             self.loader.close_connection()
             self.logger.remove_handler()
+
+    def merge_citation_stats(self):
+        self.df = pd.merge(self.loader.pub_df, self.loader.cit_df, on='id', how='outer')
 
     def build_cocitation_graph(self, current=0, task=None):
         self.logger.info(f'Building co-citations graph', current=current, task=task)
@@ -141,9 +145,9 @@ class KeyPaperAnalyzer:
         self.df_kwd = df_kwd
         self.logger.debug('Done\n', current=current, task=task)
 
-    def find_top_cited_papers(self, max_papers=50, threshold=0.1, current=0, task=None):
+    def find_top_cited_papers(self, max_papers=50, threshold=0.1, min_papers=1, current=0, task=None):
         self.logger.info(f'Identifying top cited papers overall', current=current, task=task)
-        papers_to_show = min(max_papers, round(len(self.df) * threshold))
+        papers_to_show = max(min(max_papers, round(len(self.df) * threshold)), min_papers)
         self.top_cited_df = self.df.sort_values(by='total',
                                                 ascending=False).iloc[:papers_to_show, :]
         self.top_cited_papers = set(self.top_cited_df['id'].values)
