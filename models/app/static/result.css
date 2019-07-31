@@ -21,7 +21,6 @@ body {
     position: -webkit-sticky;
     position: sticky;
     top: 65px; /* Height of navbar */
-    /* height: calc(100vh - 65px); */
     padding-top: .5rem;
     overflow-x: hidden;
     overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
@@ -61,6 +60,10 @@ body {
 
 .card-title {
     font-size: 20pt;
+}
+
+.card-subtitle {
+    font-size: 18pt;
 }
 
 .card-text {

@@ -13,7 +13,7 @@ from bokeh.colors import RGB
 from bokeh.core.properties import value
 from bokeh.io import push_notebook
 from bokeh.layouts import row, column
-from bokeh.models import ColumnDataSource, CDSView, GroupFilter, CustomJS
+from bokeh.models import ColumnDataSource, CustomJS
 from bokeh.models import GraphRenderer, StaticLayoutProvider
 # Tools used: hover,pan,tap,wheel_zoom,box_zoom,reset,save
 from bokeh.models import HoverTool, PanTool, WheelZoomTool, BoxZoomTool, ResetTool, SaveTool
@@ -42,10 +42,11 @@ class Plotter:
         n_comps = len(self.analyzer.components)
         self.comp_palette = []
         for color in Category20[20][:n_comps]:
-            rgb_values = []
-            for pos in range(1, 7, 2):
-                rgb_values.append(int(color[pos:pos + 2], 16))
-            self.comp_palette.append(RGB(*rgb_values))
+            self.comp_palette.append(RGB(*Plotter.hex2rgb(color)))
+
+    @staticmethod
+    def hex2rgb(color):
+        return [int(color[pos:pos + 2], 16) for pos in range(1, 7, 2)]
 
     @staticmethod
     def pubmed_callback(source, db):
@@ -61,8 +62,9 @@ class Plotter:
                 // only consider case where one glyph is selected by user
                 selected_id = data['id'][selected[0]]
                 for (var i = 0; i < data['id'].length; ++i){
-                    if(data['id'][i] == selected_id){
+                    if (data['id'][i] == selected_id) {
                         window.open(base + data['id'][i], '_blank');
+                        break;
                     }
                 }
             }
@@ -89,7 +91,7 @@ class Plotter:
             columns={0: 'id'}),
             self.analyzer.df[['id', 'title', 'authors', 'year', 'total', 'comp']],
             how='left'
-        ).sort_values(by='total', ascending=False)
+        ).sort_values(by=['comp', 'total'], ascending=[True, False])
 
         for c in range(len(self.analyzer.components)):
             for n in gdf[gdf['comp'] == c]['id']:
@@ -162,7 +164,7 @@ class Plotter:
         log_total = np.log(gdf['total'])
         graph.node_renderer.data_source.data['size'] = (log_total / np.max(log_total)) * 5 + 5
         graph.node_renderer.data_source.data['topic'] = \
-            [f'#{self.analyzer.pm[n]}{" OTHER" if self.analyzer.pm[n] == 0 and self.analyzer.components_merged else ""}'
+            [f'#{self.analyzer.pm[n]}{" OTHER" if self.analyzer.pm[n] == self.analyzer.comp_other else ""}'
              for n in G.nodes()]
 
         # node rendering
@@ -305,7 +307,7 @@ class Plotter:
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
         for c in range(n_comps):
             # Scatter layout for articles from subtopic
-            title = f'Subtopic #{c}{" OTHER" if c == 0 and self.analyzer.components_merged else ""}'
+            title = f'Subtopic #{c}{" OTHER" if c == self.analyzer.comp_other else ""}'
 
             ds[c] = self.__build_data_source(self.analyzer.df[self.analyzer.df['comp'] == c],
                                              width=700)
@@ -342,18 +344,22 @@ class Plotter:
         return p
 
     def component_ratio(self):
-        comp_size = dict(self.analyzer.df.groupby('comp')['id'].count())
-        total_papers = sum(self.analyzer.df['comp'] >= 0)
+        assigned_comps = self.analyzer.df[self.analyzer.df['comp'] >= 0]
+        comp_size = dict(assigned_comps.groupby('comp')['id'].count())
+        total_papers = sum(assigned_comps['comp'] >= 0)
 
-        comps = list(map(str, comp_size.keys()))
-        ratios = [100 * v / total_papers for _, v in comp_size.items()]
-        colors = list(self.colors.values())
+        comps = list(reversed(list(map(str, comp_size.keys()))))
+        ratios = [100 * comp_size[int(c)] / total_papers for c in comps]
+        colors = [self.colors[int(c)] for c in comps]
         source = ColumnDataSource(data=dict(comps=comps, ratios=ratios, colors=colors))
 
-        p = figure(plot_width=900, plot_height=50*len(comps), toolbar_location=None, tools=TOOLS, y_range=comps)
+        p = figure(plot_width=900, plot_height=50*len(comps), toolbar_location="above", tools=TOOLS, y_range=comps)
         p.hbar(y='comps', right='ratios', height=0.9, fill_alpha=0.5, color='colors', source=source)
+        p.hover.tooltips = [("Subtopic", '@comps'), ("Amount", '@ratios %')]
 
-        p.axis.visible = False
+        p.x_range.start = 0
+        p.xaxis.axis_label = 'Percentage of articles'
+        p.yaxis.axis_label = 'Subtopic'
         p.xgrid.grid_line_color = None
         p.ygrid.grid_line_color = None
         p.axis.minor_tick_line_color = None
@@ -371,11 +377,8 @@ class Plotter:
                                                    title=f'{len(self.analyzer.top_cited_df)} top cited papers',
                                                    width=960)
 
-        for c in range(n_comps):
-            view = CDSView(source=ds, filters=[GroupFilter(column_name='comp',
-                                                           group=str(c))])
-            plot.circle(x='year', y='pos', fill_alpha=0.8, source=ds, view=view,
-                        size='size', line_color=self.colors[c], fill_color=self.colors[c])
+        plot.circle(x='year', y='pos', fill_alpha=0.5, source=ds,
+                    size='size', line_color='blue')
 
         return plot
 

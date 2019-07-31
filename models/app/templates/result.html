@@ -10,7 +10,6 @@
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css"
           integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt"
           crossorigin="anonymous">
-<!--    <script src="https://unpkg.com/feather-icons/dist/feather.min.js"></script>-->
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"
             integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT"
             crossorigin="anonymous"></script>
@@ -53,32 +52,32 @@
                 <ul class="nav flex-column mt-3">
                     <li class="nav-item">
                         <a class="nav-link" href="#overview">
-    <!--                        <span data-feather="map"></span>-->
                             Overview
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#highlights">
-    <!--                        <span data-feather="flag"></span>-->
                             Highlights
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#topics">
-    <!--                        <span data-feather="grid"></span>-->
                             Topics
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#trends">
-    <!--                        <span data-feather="trending-up"></span>-->
                             Trends
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#publications">
-    <!--                        <span data-feather="book-open"></span>-->
                             Publications
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#evolution">
+                            Experimental Features
                         </a>
                     </li>
                 </ul>
@@ -136,10 +135,9 @@
                     <h1 class="card-header">Highlights</h1>
                 </div>
                 <div class="card-body">
-                    <h1 class="card-title">Top Cited Papers Overall</h1>
+                    <h2 class="card-subtitle">Top Cited Papers Overall</h2>
                     <p>
                         Top cited papers visualize top N cited papers among all the papers for given terms.
-                        Coloring is corresponding to the subtopics, which can be found below.
                         Year reflects publication year of original paper.
                     </p>
                     <div>
@@ -149,12 +147,10 @@
                         {% endfor %}
                     </div>
 
-                    <h1 class="card-title">Top Cited Papers of the Year</h1>
+                    <h2 class="card-subtitle">Top Cited Papers of the Year</h2>
                     <p>
                         For each year we show the paper which has the biggest number of citations in given
-                        year.
-                        Different papers have different colors. These colors has nothing to do with
-                        subtopics.
+                        year. Different papers have different colors.
                     </p>
                     <div>
                         {% for script, div in max_gain_papers %}
@@ -163,13 +159,10 @@
                         {% endfor %}
                     </div>
 
-                    <h1 class="card-title">Hot Papers</h1>
+                    <h2 class="card-subtitle">Hot Papers</h2>
                     <p>
-                        For each year we show the paper which has the biggest delta number of citations in
-                        given year with respect to
-                        the previous one.
-                        Different papers have different colors. These colors has nothing to do with
-                        subtopics.
+                        For each year we show a recent paper which has the biggest number of citation since
+                        the moment of publication. Different papers have different colors.
                     </p>
                     <div>
                         {% for script, div in max_relative_gain_papers %}
@@ -185,22 +178,14 @@
                     <h1 class="card-header">Topics</h1>
                 </div>
                 <div class="card-body">
+                    <p> Co-citation clustering using community Louvain algorithm is used to detect dense subtopics in
+                        co-citations graph. Click on bars to see keywords and publications for each subtopic. </p>
                     <div>
                         {% for script, div in component_ratio %}
                         {{ script|safe }}
                         {{ div|safe }}
                         {% endfor %}
                     </div>
-
-                    <ul id="subtopic-list">
-                        {% for description, color in comps %}
-                        <li>
-                            <a href="#subtopic-{{ loop.index0 }}">
-                                {{ description }}
-                            </a>
-                        </li>
-                        {% endfor %}
-                    </ul>
 
                     <!--    <h1>Papers citations dynamics</h1>-->
                     <!--    <div>-->
@@ -210,10 +195,8 @@
                     <!--        {% endfor %}-->
                     <!--    </div>-->
 
-                    <h1>Papers co-citations clustering</h1>
-                    <p> Co-citation clustering using community Louvain algorithm is used to detect dense subtopics in
-                        co-citations
-                        graph. {{clusters_info_message}} </p>
+                    <h2 class="card-subtitle">Papers co-citations clustering</h2>
+                    <p> {{clusters_info_message}} </p>
                     <div>
                         {% for script, div in cocitations_clusters %}
                         {{ script|safe }}
@@ -228,7 +211,7 @@
                     <h1 class="card-header">Trends</h1>
                 </div>
                 <div class="card-body">
-                    <h1>Subtopics summary</h1>
+                    <h2 class="card-subtitle">Subtopics summary</h2>
                     <p>
                         Subtopics dynamics is shown for the timeline. Explore evolution of trends.
                         Colors are the same as in previous diagram.
@@ -238,18 +221,6 @@
                         {{ script|safe }}
                         {{ div|safe }}
                         {% endfor %}
-                    </div>
-
-                    <h1>Subtopic Evolution</h1>
-                    <div>
-                        {% if subtopic_evolution is not none %}
-                        {% for script, div in subtopic_evolution %}
-                        {{ script|safe }}
-                        {{ div|safe }}
-                        {% endfor %}
-                        {% else %}
-                        Failed to analyze subtopic evolution because year step is too big.
-                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -266,11 +237,37 @@
                     </p>
                     <div>
                         {% for script, div in subtopic_timeline_graphs %}
+                        <h2 class="card-subtitle">Subtopic {{ loop.index0 }}</h2>
                         <div id="subtopic-{{ loop.index0 }}">
                             {{ script|safe }}
                             {{ div|safe }}
                         </div>
                         {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card section mt-3">
+                <div class="card-title" id="evolution">
+                    <h1 class="card-header">Experimental Features</h1>
+                </div>
+                <div class="card-body">
+                    <h2 class="card-subtitle">Subtopic Evolution</h2>
+                    <p>
+                        Co-citation clustering is performed for several years to detect merges and splits of clusters,
+                        which can be related to new ideas. Clusters are described by several words with the highest
+                        TF-IDF value, edge width reflects the amount of articles which moved from one cluster to
+                        another.
+                    </p>
+                    <div>
+                        {% if subtopic_evolution is not none %}
+                        {% for script, div in subtopic_evolution %}
+                        {{ script|safe }}
+                        {{ div|safe }}
+                        {% endfor %}
+                        {% else %}
+                        Failed to analyze subtopic evolution because year step is too big.
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -283,8 +280,5 @@
                       title="JetBrains Research BioLabs"
                       target="_blank">JetBrains Research</a></p>
 </footer>
-<script>
-      feather.replace()
-</script>
 </body>
 </html>

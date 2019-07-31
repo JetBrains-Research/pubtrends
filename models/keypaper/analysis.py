@@ -115,7 +115,8 @@ class KeyPaperAnalyzer:
         self.logger.debug(f'Graph modularity: {community.modularity(p, self.CG):.3f}', current=current, task=task)
 
         # Merge small components to 'Other'
-        pm, self.components_merged = self.merge_components(p)
+        pm, components_merged = self.merge_components(p)
+        pm, self.comp_other = self.sort_components(pm, components_merged)
         self.components = set(pm.values())
         self.pm = pm
         self.pmcomp_sizes = {com: sum([pm[node] == com for node in pm.keys()]) for com in
@@ -286,3 +287,19 @@ class KeyPaperAnalyzer:
                               current=current, task=task)
             pm = p
         return pm, components_merged
+
+    def sort_components(self, pm, components_merged):
+        components = set(pm.values())
+        comp_sizes = {com: sum([pm[node] == com for node in pm.keys()]) for com in components}
+
+        argsort = lambda seq: sorted(range(len(seq)), key=seq.__getitem__, reverse=True)
+        sorted_comps = list(argsort(list(comp_sizes.values())))
+        mapping = dict(zip(sorted_comps, range(len(components))))
+        sorted_pm = {node: mapping[c] for node, c in pm.items()}
+
+        if components_merged:
+            other = sorted_comps.index(0)
+        else:
+            other = None
+
+        return sorted_pm, other
