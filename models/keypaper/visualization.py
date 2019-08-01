@@ -213,13 +213,13 @@ class Plotter:
             # Scatter layout for articles from subtopic
             title = f'Subtopic #{c}{" OTHER" if c == self.analyzer.comp_other else ""}'
 
-            ds[c] = self.__build_data_source(self.analyzer.df[self.analyzer.df['comp'] == c],
-                                             width=700)
+            ds[c] = PlotPreprocessor.article_view_data_source(self.analyzer.df[self.analyzer.df['comp'] == c],
+                                                              min_year, max_year, width=700)
             plot = self.__serve_scatter_article_layout(source=ds[c],
                                                        year_range=[min_year, max_year],
                                                        title=title, width=760)
 
-            plot.circle(x='year', y='pos', fill_alpha=0.8, source=ds[c], size='size',
+            plot.circle(x='year', y='pos', fill_alpha=0.5, source=ds[c], size='size',
                         line_color=self.colors[c], fill_color=self.colors[c])
 
             # Word cloud description of subtopic by titles and abstracts
@@ -268,9 +268,10 @@ class Plotter:
         return p
 
     def top_cited_papers(self):
-        n_comps = len(self.analyzer.components)
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
-        ds = self.__build_data_source(self.analyzer.top_cited_df, width=700)
+        ds = PlotPreprocessor.article_view_data_source(
+            self.analyzer.top_cited_df, min_year, max_year, width=700
+        )
         plot = self.__serve_scatter_article_layout(source=ds,
                                                    year_range=[min_year, max_year],
                                                    title=f'{len(self.analyzer.top_cited_df)} top cited papers',
@@ -391,9 +392,7 @@ class Plotter:
         h = show(p, notebook_handle=True)
 
     def papers_statistics(self):
-        cols = ['year', 'id', 'title', 'authors']
-        df_stats = self.analyzer.df[cols].groupby(['year']).size().reset_index(name='counts')
-        ds_stats = ColumnDataSource(df_stats)
+        ds_stats = PlotPreprocessor.papers_statistics_data(self.analyzer.df)
 
         year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
         p = figure(tools=TOOLS, toolbar_location="above",
@@ -454,20 +453,6 @@ class Plotter:
             return column(hv.render(topic_evolution, backend='bokeh'), subtopic_keywords)
 
         return hv.render(topic_evolution, backend='bokeh')
-
-    def __build_data_source(self, df, width=760):
-        # Calculate max size of circles to avoid overlapping along x-axis
-        min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
-        max_radius_screen_units = width / (max_year - min_year + 1)
-        size_scaling_coefficient = max_radius_screen_units / np.log(df['total']).max()
-
-        # NOTE: 'comp' column is used as string because GroupFilter supports
-        #       only categorical values (needed to color top cited papers by components)
-        d = ColumnDataSource(data=dict(id=df['id'], title=df['title'], authors=df['authors'],
-                                       year=df['year'].replace(np.nan, "Undefined"),
-                                       total=df['total'], comp=df['comp'].astype(str), pos=df['total'],
-                                       size=np.log(df['total']) * size_scaling_coefficient))
-        return d
 
     def __serve_scatter_article_layout(self, source, year_range, title, width=960):
         min_year, max_year = year_range

@@ -204,3 +204,26 @@ class PlotPreprocessor:
             TableColumn(field="keywords", title="Keywords", width=800),
         ]
         return columns, source
+
+    @staticmethod
+    def article_view_data_source(df, min_year, max_year, width=760):
+        # Calculate max size of circles to avoid overlapping along x-axis
+        max_radius_screen_units = width / (max_year - min_year + 1)
+        size_scaling_coefficient = max_radius_screen_units / np.log(df['total']).max()
+
+        df_local = df[['id', 'title', 'year', 'total', 'authors', 'comp']].copy()
+        df_local['year'] = df_local['year'].replace(np.nan, "Undefined")
+
+        # NOTE: 'comp' column is used as string because GroupFilter supports
+        #       only categorical values (needed to color top cited papers by components)
+        df_local['comp'] = df_local['comp'].astype(str)
+        df_local['size'] = np.log(df['total']) * size_scaling_coefficient
+        df_local['pos'] = df_local['total']
+
+        return ColumnDataSource(df_local)
+
+    @staticmethod
+    def papers_statistics_data(df):
+        cols = ['year', 'id', 'title', 'authors']
+        df_stats = df[cols].groupby(['year']).size().reset_index(name='counts')
+        return ColumnDataSource(df_stats)
