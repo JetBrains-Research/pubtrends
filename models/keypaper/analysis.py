@@ -56,11 +56,12 @@ class KeyPaperAnalyzer:
             if len(self.loader.pub_df) == 0:
                 raise RuntimeError("Nothing found in DB")
 
-            self.loader.load_citation_stats(current=3, task=task)
-            if len(self.loader.cit_df) == 0:
+            self.cit_stats_df_from_query = self.loader.load_citation_stats(current=3, task=task)
+            self.cit_df = self.build_cit_df(current=3.5, task=task)
+            if len(self.cit_df) == 0:
                 raise RuntimeError("Citations stats not found DB")
 
-            self.df = pd.merge(self.loader.pub_df, self.loader.cit_df, on='id', how='outer')
+            self.df = pd.merge(self.loader.pub_df, self.cit_df, on='id', how='outer')
             if len(self.df) == 0:
                 raise RuntimeError("Failed to merge publications and citations")
 
@@ -87,6 +88,23 @@ class KeyPaperAnalyzer:
         finally:
             self.loader.close_connection()
             self.logger.remove_handler()
+
+    def build_cit_df(self, current, task, filter_citations=True):
+        cit_df = self.cit_stats_df_from_query.pivot(index='id', columns='year',
+                                                    values='count').reset_index().replace(np.nan, 0)
+        cit_df['total'] = cit_df.iloc[:, 1:].sum(axis=1)
+        cit_df = cit_df.sort_values(by='total', ascending=False)
+        self.logger.debug(f"Loaded citation stats for {len(cit_df)} of {len(self.loader.ids)} articles.\n" +
+                          "Others may either have zero citations or be absent in the local database.", current=current,
+                          task=task)
+
+        # if filter_citations:
+        #     self.logger.debug(
+        #         'Filtering top {0} or 80% of all the citations'.format(self.loader.max_number_of_citations),
+        #         current=current, task=task)
+        #     cit_df = cit_df.iloc[:min(self.loader.max_number_of_citations, round(0.8 * len(cit_df))), :]
+
+        return cit_df
 
     def build_cocitation_graph(self, current=0, task=None):
         self.logger.info(f'Building co-citations graph', current=current, task=task)

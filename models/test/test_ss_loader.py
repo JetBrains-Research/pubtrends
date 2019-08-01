@@ -108,8 +108,8 @@ class TestSemanticScholarLoader(unittest.TestCase):
 
     @classmethod
     def _load_citations_stats(cls):
-        cls.loader.load_citation_stats(filter_citations=False)
-        return cls.loader.cit_stats_df_from_query.sort_values(by=['id', 'year']).reset_index(drop=True)
+        cit_stats_df_from_query = cls.loader.load_citation_stats()
+        return cit_stats_df_from_query.sort_values(by=['id', 'year']).reset_index(drop=True)
 
     @classmethod
     def _load_citations_graph(cls):
