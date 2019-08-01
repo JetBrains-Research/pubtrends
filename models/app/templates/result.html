@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PubTrends - Publication Analysis Service</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet"
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
+          crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css"
+          integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt"
+          crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT"
+            crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+            integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+            crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+            integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.pydata.org/bokeh/release/bokeh-1.2.0.min.js"></script>
+    <script src="https://cdn.pydata.org/bokeh/release/bokeh-widgets-1.2.0.min.js"></script>
+    <script src="https://cdn.pydata.org/bokeh/release/bokeh-tables-1.2.0.min.js"></script>
+    <link href="https://cdn.pydata.org/bokeh/release/bokeh-1.2.0.min.css"
+          rel="stylesheet" type="text/css">
+    <link href="https://cdn.pydata.org/bokeh/release/bokeh-widgets-1.2.0.min.css"
+          rel="stylesheet" type="text/css">
+    <link href="https://cdn.pydata.org/bokeh/release/bokeh-tables-1.2.0.min.css"
+          rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+    <!--     <link rel="stylesheet" href="../static/style.css"/> -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='result.css') }}">
+    <!--     <link rel="stylesheet" href="../static/result.css"/> -->
+</head>
+<body>
+
+<!-- Fixed navbar -->
+<nav class="navbar navbar-light bg-light justify-content-start fixed-top border-bottom">
+    <span class="navbar-brand col-sm-3 col-md-2 col-xl-2 mr-0">
+        <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
+    </span>
+    <span class="nav-item">
+        {{search_string}}
+    </span>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sticky sidebar -->
+        <nav class="col-md-2 col-xl-2 d-none d-md-block bg-light sidebar">
+            <div class="sidebar-sticky">
+                <ul class="nav flex-column mt-3">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#overview">
+                            Overview
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#highlights">
+                            Highlights
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#topics">
+                            Topics
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#trends">
+                            Trends
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#publications">
+                            Publications
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#evolution">
+                            Experimental Features
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main content -->
+        <main class="col-12 col-md-12 col-xl-9 justify-content-between" role="main">
+            <div class="card section mt-3">
+                <div class="card-title" id="overview">
+                    <h2 class="card-header">Overview</h2>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <span class="stats-number"><b>{{ n_papers }}</b></span><br>
+                                    <span class="card-text">papers</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <span class="stats-number"><b>{{ n_citations }}</b></span><br>
+                                    <span class="card-text">citations</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <span class="stats-number"><b>{{ n_subtopics }}</b></span><br>
+                                    <span class="card-text">subtopics</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        {% for script, div in papers_stats %}
+                        {{ script|safe }}
+                        {{ div|safe }}
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="card-footer text-muted">
+                    Note: subtopics are merged to "Other" if they contain less than 5% of publications
+                    in the field
+                </div>
+            </div>
+
+            <div class="card section mt-3">
+                <div class="card-title" id="highlights">
+                    <h1 class="card-header">Highlights</h1>
+                </div>
+                <div class="card-body">
+                    <h2 class="card-subtitle">Top Cited Papers Overall</h2>
+                    <p>
+                        Top cited papers visualize top N cited papers among all the papers for given terms.
+                        Year reflects publication year of original paper.
+                    </p>
+                    <div>
+                        {% for script, div in top_cited_papers %}
+                        {{ script|safe }}
+                        {{ div|safe }}
+                        {% endfor %}
+                    </div>
+
+                    <h2 class="card-subtitle">Top Cited Papers of the Year</h2>
+                    <p>
+                        For each year we show the paper which has the biggest number of citations in given
+                        year. Different papers have different colors.
+                    </p>
+                    <div>
+                        {% for script, div in max_gain_papers %}
+                        {{ script|safe }}
+                        {{ div|safe }}
+                        {% endfor %}
+                    </div>
+
+                    <h2 class="card-subtitle">Hot Papers</h2>
+                    <p>
+                        For each year we show a recent paper which has the biggest number of citation since
+                        the moment of publication. Different papers have different colors.
+                    </p>
+                    <div>
+                        {% for script, div in max_relative_gain_papers %}
+                        {{ script|safe }}
+                        {{ div|safe }}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card section mt-3">
+                <div class="card-title" id="topics">
+                    <h1 class="card-header">Topics</h1>
+                </div>
+                <div class="card-body">
+                    <p> Co-citation clustering using community Louvain algorithm is used to detect dense subtopics in
+                        co-citations graph. Click on bars to see keywords and publications for each subtopic. </p>
+                    <div>
+                        {% for script, div in component_ratio %}
+                        {{ script|safe }}
+                        {{ div|safe }}
+                        {% endfor %}
+                    </div>
+
+                    <!--    <h1>Papers citations dynamics</h1>-->
+                    <!--    <div>-->
+                    <!--        {% for script, div in citations_dynamics %}-->
+                    <!--        {{ script|safe }}-->
+                    <!--        {{ div|safe }}-->
+                    <!--        {% endfor %}-->
+                    <!--    </div>-->
+
+                    <h2 class="card-subtitle">Papers co-citations clustering</h2>
+                    <p> {{clusters_info_message}} </p>
+                    <div>
+                        {% for script, div in cocitations_clusters %}
+                        {{ script|safe }}
+                        {{ div|safe }}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card section mt-3">
+                <div class="card-title" id="trends">
+                    <h1 class="card-header">Trends</h1>
+                </div>
+                <div class="card-body">
+                    <h2 class="card-subtitle">Subtopics summary</h2>
+                    <p>
+                        Subtopics dynamics is shown for the timeline. Explore evolution of trends.
+                        Colors are the same as in previous diagram.
+                    </p>
+                    <div>
+                        {% for script, div in component_size_summary %}
+                        {{ script|safe }}
+                        {{ div|safe }}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card section mt-3">
+                <div class="card-title" id="publications">
+                    <h1 class="card-header">Publications</h1>
+                </div>
+                <div class="card-body">
+                    <p>
+                        For each subtopic most cited papers are shown over time. Papers are sorted
+                        descending by citations number overall from bottom to top.
+                        Year reflects publication year of original paper.
+                    </p>
+                    <div>
+                        {% for script, div in subtopic_timeline_graphs %}
+                        <h2 class="card-subtitle">Subtopic {{ loop.index0 }}</h2>
+                        <div id="subtopic-{{ loop.index0 }}">
+                            {{ script|safe }}
+                            {{ div|safe }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card section mt-3">
+                <div class="card-title" id="evolution">
+                    <h1 class="card-header">Experimental Features</h1>
+                </div>
+                <div class="card-body">
+                    <h2 class="card-subtitle">Subtopic Evolution</h2>
+                    <p>
+                        Co-citation clustering is performed for several years to detect merges and splits of clusters,
+                        which can be related to new ideas. Clusters are described by several words with the highest
+                        TF-IDF value, edge width reflects the amount of articles which moved from one cluster to
+                        another.
+                    </p>
+                    <div>
+                        {% if subtopic_evolution is not none %}
+                        {% for script, div in subtopic_evolution %}
+                        {{ script|safe }}
+                        {{ div|safe }}
+                        {% endfor %}
+                        {% else %}
+                        Failed to analyze subtopic evolution because year step is too big.
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+<footer>
+    <p>version {{ version }}<br/>
+        &copy;2019 <a href="https://research.jetbrains.org/groups/biolabs"
+                      title="JetBrains Research BioLabs"
+                      target="_blank">JetBrains Research</a></p>
+</footer>
+</body>
+</html>

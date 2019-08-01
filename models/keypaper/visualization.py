@@ -1,7 +1,9 @@
 import logging
 import math
+from itertools import product as cart_product
 from string import Template
 
+import holoviews as hv
 import ipywidgets as widgets
 import networkx as nx
 import numpy as np
@@ -10,14 +12,19 @@ from IPython.display import display
 from bokeh.colors import RGB
 from bokeh.core.properties import value
 from bokeh.io import push_notebook
-from bokeh.layouts import row
-from bokeh.models import ColumnDataSource, CDSView, GroupFilter, CustomJS
+from bokeh.layouts import row, column
+from bokeh.models import ColumnDataSource, CustomJS
 from bokeh.models import GraphRenderer, StaticLayoutProvider
 # Tools used: hover,pan,tap,wheel_zoom,box_zoom,reset,save
 from bokeh.models import HoverTool, PanTool, WheelZoomTool, BoxZoomTool, ResetTool, SaveTool
+from bokeh.models import LinearColorMapper, PrintfTickFormatter, ColorBar
+from bokeh.models import NumeralTickFormatter
 from bokeh.models import Plot, Range1d, MultiLine, Circle, Span
+from bokeh.models.widgets.tables import DataTable, TableColumn
+from bokeh.palettes import Category20
 from bokeh.plotting import figure, show
 from bokeh.transform import factor_cmap
+from holoviews import dim
 from matplotlib import pyplot as plt
 from wordcloud import WordCloud
 
@@ -25,30 +32,54 @@ from .utils import PUBMED_ARTICLE_BASE_URL, SEMANTIC_SCHOLAR_BASE_URL, get_word_
     get_most_common_ngrams
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
+hv.extension('bokeh')
 
 
 class Plotter:
     def __init__(self, analyzer):
         self.analyzer = analyzer
-        self.index = analyzer.loader.index
+
+        n_comps = len(self.analyzer.components)
+        self.comp_palette = []
+        for color in Category20[20][:n_comps]:
+            self.comp_palette.append(RGB(*Plotter.hex2rgb(color)))
 
     @staticmethod
-    def pubmed_callback(source, index):
-        if index == 'ssid':
+    def hex2rgb(color):
+        return [int(color[pos:pos + 2], 16) for pos in range(1, 7, 2)]
+
+    @staticmethod
+    def pubmed_callback(source, db):
+        if db == 'semantic':
             base = SEMANTIC_SCHOLAR_BASE_URL
-        elif index == 'pmid':
+        elif db == 'pubmed':
             base = PUBMED_ARTICLE_BASE_URL
+        else:
+            raise ValueError("Wrong value of db")
         return CustomJS(args=dict(source=source, base=base), code="""
             var data = source.data, selected = source.selected.indices;
             if (selected.length == 1) {
                 // only consider case where one glyph is selected by user
                 selected_id = data['id'][selected[0]]
                 for (var i = 0; i < data['id'].length; ++i){
-                    if(data['id'][i] == selected_id){
+                    if (data['id'][i] == selected_id) {
                         window.open(base + data['id'][i], '_blank');
+                        break;
                     }
                 }
             }
+        """)
+
+    @staticmethod
+    def subtopic_callback(source):
+        return CustomJS(args=dict(source=source), code="""
+            var data = source.data, selected = source.selected.indices;
+            if (selected.length == 1) {
+                // only consider case where one glyph is selected by user
+                selected_comp = data['comps'][selected[0]];
+                window.location.hash = '#subtopic-' + selected_comp;
+            }
+            source.selected.indices = [];
         """)
 
     def chord_diagram_components(self):
@@ -56,13 +87,16 @@ class Plotter:
 
         G = nx.Graph()
         # Using merge left keeps order
-        gdf = pd.merge(pd.Series(self.analyzer.CG.nodes(), dtype=object).reset_index().rename(columns={0: 'id'}),
-                       self.analyzer.df[['id', 'title', 'authors', 'year', 'total', 'comp']], how='left'
-                       ).sort_values(by='total', ascending=False)
+        gdf = pd.merge(pd.Series(self.analyzer.CG.nodes(), dtype=object).reset_index().rename(
+            columns={0: 'id'}),
+            self.analyzer.df[['id', 'title', 'authors', 'year', 'total', 'comp']],
+            how='left'
+        ).sort_values(by=['comp', 'total'], ascending=[True, False])
 
         for c in range(len(self.analyzer.components)):
             for n in gdf[gdf['comp'] == c]['id']:
-                # NOTE: we use nodes id as String to avoid problems str keys in jsonify during graph visualization
+                # NOTE: we use nodes id as String to avoid problems str keys in jsonify
+                # during graph visualization
                 G.add_node(str(n))
 
         edge_starts = []
@@ -72,10 +106,6 @@ class Plotter:
             edge_starts.append(start)
             edge_ends.append(end)
             edge_weights.append(min(data['weight'], 20))
-
-        n_comps = len(self.analyzer.components)
-        cmap = plt.cm.get_cmap('jet', n_comps)
-        comp_palette = [RGB(*[round(c * 255) for c in cmap(i)[:3]]) for i in range(n_comps)]
 
         # Show with Bokeh
         plot = Plot(plot_width=800, plot_height=800,
@@ -107,7 +137,7 @@ class Plotter:
             xs.append(bezier(sx, ex))
             ys.append(bezier(sy, ey))
             if self.analyzer.pm[edge_start] == self.analyzer.pm[edge_end]:
-                edge_colors.append(comp_palette[self.analyzer.pm[edge_start]])
+                edge_colors.append(self.comp_palette[self.analyzer.pm[edge_start]])
                 edge_alphas.append(0.1)
             else:
                 edge_colors.append('grey')
@@ -125,20 +155,21 @@ class Plotter:
         # TODO: use ColumnDatasource
         # Nodes data for rendering
         graph.node_renderer.data_source.data['id'] = list(G.nodes())
-        graph.node_renderer.data_source.data['colors'] = [comp_palette[self.analyzer.pm[n]] for n in G.nodes()]
+        graph.node_renderer.data_source.data['colors'] = [self.comp_palette[self.analyzer.pm[n]] for n in
+                                                          G.nodes()]
         graph.node_renderer.data_source.data['title'] = gdf['title']
         graph.node_renderer.data_source.data['authors'] = gdf['authors']
-        graph.node_renderer.data_source.data['year'] = gdf['year']
+        graph.node_renderer.data_source.data['year'] = gdf['year'].replace(np.nan, "Undefined")
         graph.node_renderer.data_source.data['total'] = gdf['total']
         log_total = np.log(gdf['total'])
         graph.node_renderer.data_source.data['size'] = (log_total / np.max(log_total)) * 5 + 5
         graph.node_renderer.data_source.data['topic'] = \
-            [f'#{self.analyzer.pm[n]}{" OTHER" if self.analyzer.pm[n] == 0 and self.analyzer.components_merged else ""}'
+            [f'#{self.analyzer.pm[n]}{" OTHER" if self.analyzer.pm[n] == self.analyzer.comp_other else ""}'
              for n in G.nodes()]
 
         # node rendering
         graph.node_renderer.glyph = Circle(size='size', line_color='colors', fill_color='colors',
-                                           line_alpha=0.5, fill_alpha=0.5)
+                                           line_alpha=0.5, fill_alpha=0.8)
         # edge rendering
         graph.edge_renderer.glyph = MultiLine(
             line_color='edge_colors',
@@ -157,26 +188,102 @@ class Plotter:
         plot.renderers.append(graph)
         return plot
 
+    def heatmap_clusters(self):
+        logging.info('Visualizing components with heatmap')
+
+        clusters = list(map(str, self.analyzer.components))
+        n_comps = len(clusters)
+
+        links = pd.DataFrame(self.analyzer.CG.edges(data=True), columns=['source', 'target', 'value'])
+        links['value'] = links['value'].apply(lambda data: data['weight'])
+
+        cluster_edges = links.merge(self.analyzer.df[['id', 'comp']], how='left', left_on='source',
+                                    right_on='id').merge(self.analyzer.df[['id', 'comp']], how='left', left_on='target',
+                                                         right_on='id')
+
+        are_swapped = (cluster_edges['comp_x'] <= cluster_edges['comp_y'])
+        cluster_edges = cluster_edges.loc[are_swapped].rename(columns={'comp_x': 'comp_y', 'comp_y': 'comp_x'})
+        cluster_edges = cluster_edges.groupby(['comp_x', 'comp_y'])['value'].sum().reset_index()
+
+        connectivity_matrix = [[0] * n_comps for _ in range(n_comps)]
+        for index, row in cluster_edges.iterrows():
+            connectivity_matrix[row['comp_x']][row['comp_y']] = row['value']
+            connectivity_matrix[row['comp_y']][row['comp_x']] = row['value']
+
+        cluster_edges = pd.DataFrame([{'comp_x': i, 'comp_y': j, 'value': connectivity_matrix[i][j]}
+                                      for i, j in cart_product(range(n_comps), range(n_comps))])
+
+        def get_density(row):
+            return row['value'] / (self.analyzer.pmcomp_sizes[row['comp_x']] *
+                                   self.analyzer.pmcomp_sizes[row['comp_y']])
+
+        cluster_edges['density'] = cluster_edges.apply(lambda row: get_density(row), axis=1)
+        cluster_edges['comp_x'] = cluster_edges['comp_x'].astype(str)
+        cluster_edges['comp_y'] = cluster_edges['comp_y'].astype(str)
+
+        step = 30
+        cmap = plt.cm.get_cmap('PuBu', step)
+        colors = [RGB(*[round(c * 255) for c in cmap(i)[:3]]) for i in range(step)]
+        mapper = LinearColorMapper(palette=colors, low=cluster_edges.density.min(),
+                                   high=cluster_edges.density.max())
+
+        p = figure(title="Density between different clusters",
+                   x_range=clusters, y_range=clusters,
+                   x_axis_location="below", plot_width=960, plot_height=400,
+                   tools=TOOLS, toolbar_location='above',
+                   tooltips=[('subtopic1', '#@comp_x'), ('subtopic2', '#@comp_y'),
+                             ('density', '@density, @value co-citations')])
+
+        p.grid.grid_line_color = None
+        p.axis.axis_line_color = None
+        p.axis.major_tick_line_color = None
+        p.axis.major_label_text_font_size = "10pt"
+        p.axis.major_label_standoff = 0
+
+        p.rect(x="comp_x", y="comp_y", width=1, height=1,
+               source=cluster_edges,
+               fill_color={'field': 'density', 'transform': mapper},
+               line_color=None)
+
+        color_bar = ColorBar(color_mapper=mapper, major_label_text_font_size="10pt",
+                             formatter=PrintfTickFormatter(format="%.2f"),
+                             label_standoff=11, border_line_color=None, location=(0, 0))
+        p.add_layout(color_bar, 'right')
+        return p
+
+    def cocitations_clustering(self, max_chord_diagram_size=500):
+        if self.analyzer.df.shape[0] > max_chord_diagram_size:
+            self.clusters_info_message = """
+            Heatmap is used to show which subtopics are related to each other.
+            Density is based on co-citations between clusters
+            and depends on the size of the clusters."""
+            return self.heatmap_clusters()
+
+        self.clusters_info_message = """
+        Chord diagram is used to show papers as graph nodes,
+        edges demonstrate co-citations."""
+        return self.chord_diagram_components()
+
     def component_size_summary(self):
         logging.info('Summary component detailed info visualization')
 
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
         n_comps = len(self.analyzer.components)
-        cmap = plt.cm.get_cmap('jet', n_comps)
-        palette = [RGB(*[round(c * 255) for c in cmap(i)[:3]]) for i in range(n_comps)]
 
         components = [str(i) for i in range(n_comps)]
         years = list(range(min_year - 1, max_year + 1))
         data = {'years': years}
         for c in range(n_comps):
             data[str(c)] = [
-                len(self.analyzer.df[np.logical_and(self.analyzer.df['comp'] == c, self.analyzer.df['year'] == y)])
+                len(self.analyzer.df[np.logical_and(self.analyzer.df['comp'] == c,
+                                                    self.analyzer.df['year'] == y)])
                 for y in range(min_year, max_year)]
 
-        p = figure(x_range=[min_year, max_year], plot_width=960, plot_height=300, title="Components by Year",
+        p = figure(x_range=[min_year, max_year], plot_width=960, plot_height=300,
+                   title="Components by Year",
                    toolbar_location=None, tools="hover", tooltips="Subtopic #$name: @$name")
 
-        p.vbar_stack(components, x='years', width=0.9, color=palette, source=data, alpha=0.5,
+        p.vbar_stack(components, x='years', width=0.9, color=self.comp_palette, source=data, alpha=0.5,
                      legend=[value(c) for c in components])
 
         p.y_range.start = 0
@@ -191,33 +298,24 @@ class Plotter:
     def subtopic_timeline_graphs(self):
         logging.info('Per component detailed info visualization')
 
-        #        # Reorder subtopics by importance descending
-        #        KEY = 'citations' # 'size' or 'citations'
-        #
-        #        if KEY == 'size':
-        #            order = self.analyzer.df.groupby('comp')['pmid'].count().sort_values(ascending=False).index.values
-        #        elif KEY == 'citations':
-        #            order = self.analyzer.df.groupby('comp')['total'].sum().sort_values(ascending=False).index.values
-
         # Prepare layouts
         n_comps = len(self.analyzer.components)
-        cmap = plt.cm.get_cmap('jet', n_comps)
-        self.colors = {c: RGB(*[int(round(ch * 255)) for ch in cmap(c)[:3]], a=0.5)
-                       for c in self.analyzer.components}
+        self.colors = dict(enumerate(self.comp_palette))
         ds = [None] * n_comps
         p = [None] * n_comps
 
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
         for c in range(n_comps):
             # Scatter layout for articles from subtopic
-            title = f'Subtopic #{c}{" OTHER" if c == 0 and self.analyzer.components_merged else ""}'
+            title = f'Subtopic #{c}{" OTHER" if c == self.analyzer.comp_other else ""}'
 
-            ds[c] = self.__build_data_source(self.analyzer.df[self.analyzer.df['comp'] == c], width=700)
+            ds[c] = self.__build_data_source(self.analyzer.df[self.analyzer.df['comp'] == c],
+                                             width=700)
             plot = self.__serve_scatter_article_layout(source=ds[c],
                                                        year_range=[min_year, max_year],
                                                        title=title, width=760)
 
-            plot.circle(x='year', y='pos', fill_alpha=0.5, source=ds[c], size='size',
+            plot.circle(x='year', y='pos', fill_alpha=0.8, source=ds[c], size='size',
                         line_color=self.colors[c], fill_color=self.colors[c])
 
             # Word cloud description of subtopic by titles and abstracts
@@ -229,7 +327,7 @@ class Plotter:
             wc.generate_from_frequencies(kwds)
 
             image = wc.to_array()
-            desc = figure(title="", toolbar_location="above",
+            desc = figure(title="Word Cloud", toolbar_location="above",
                           plot_width=200, plot_height=400,
                           x_range=[0, 10], y_range=[0, 10], tools=[])
             desc.axis.visible = False
@@ -245,6 +343,31 @@ class Plotter:
 
         return p
 
+    def component_ratio(self):
+        assigned_comps = self.analyzer.df[self.analyzer.df['comp'] >= 0]
+        comp_size = dict(assigned_comps.groupby('comp')['id'].count())
+        total_papers = sum(assigned_comps['comp'] >= 0)
+
+        comps = list(reversed(list(map(str, comp_size.keys()))))
+        ratios = [100 * comp_size[int(c)] / total_papers for c in comps]
+        colors = [self.colors[int(c)] for c in comps]
+        source = ColumnDataSource(data=dict(comps=comps, ratios=ratios, colors=colors))
+
+        p = figure(plot_width=900, plot_height=50 * len(comps), toolbar_location="above", tools=TOOLS, y_range=comps)
+        p.hbar(y='comps', right='ratios', height=0.9, fill_alpha=0.5, color='colors', source=source)
+        p.hover.tooltips = [("Subtopic", '@comps'), ("Amount", '@ratios %')]
+
+        p.x_range.start = 0
+        p.xaxis.axis_label = 'Percentage of articles'
+        p.yaxis.axis_label = 'Subtopic'
+        p.xgrid.grid_line_color = None
+        p.ygrid.grid_line_color = None
+        p.axis.minor_tick_line_color = None
+        p.outline_line_color = None
+        p.js_on_event('tap', self.subtopic_callback(source))
+
+        return p
+
     def top_cited_papers(self):
         n_comps = len(self.analyzer.components)
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
@@ -252,45 +375,18 @@ class Plotter:
         plot = self.__serve_scatter_article_layout(source=ds,
                                                    year_range=[min_year, max_year],
                                                    title=f'{len(self.analyzer.top_cited_df)} top cited papers',
-                                                   width=760)
+                                                   width=960)
 
-        for c in range(n_comps):
-            view = CDSView(source=ds, filters=[GroupFilter(column_name='comp',
-                                                           group=str(c))])
-            plot.circle(x='year', y='pos', fill_alpha=0.5, source=ds, view=view,
-                        size='size', line_color=self.colors[c], fill_color=self.colors[c])
+        plot.circle(x='year', y='pos', fill_alpha=0.5, source=ds,
+                    size='size', line_color='blue')
 
-        # Word cloud description of subtopic by titles and abstracts
-        kwds = {}
-        for ngram, count in get_most_common_ngrams(self.analyzer.top_cited_df['title'],
-                                                   self.analyzer.top_cited_df['abstract']).items():
-            for word in ngram.split(' '):
-                kwds[word] = float(count) + kwds.get(word, 0)
-        wc = WordCloud(background_color="white", width=200, height=400,
-                       color_func=lambda *args, **kwargs: 'black',
-                       max_words=20, max_font_size=40)
-        wc.generate_from_frequencies(kwds)
-
-        image = wc.to_array()
-        desc = figure(title="", toolbar_location="above",
-                      plot_width=200, plot_height=400,
-                      x_range=[0, 10], y_range=[0, 10], tools=[])
-        desc.axis.visible = False
-
-        img = np.empty((400, 200), dtype=np.uint32)
-        view = img.view(dtype=np.uint8).reshape((400, 200, 4))
-        view[:, :, 0:3] = image[::-1, :, :]
-        view[:, :, 3] = 255
-
-        desc.image_rgba(image=[img], x=[0], y=[0], dw=[10], dh=[10])
-
-        p = row(desc, plot)
-        return p
+        return plot
 
     def max_gain_papers(self):
         logging.info('Different colors encode different papers')
         cols = ['year', 'id', 'title', 'authors', 'paper_year', 'count']
-        ds_max = ColumnDataSource(self.analyzer.max_gain_df[cols])
+        max_gain_df = self.analyzer.max_gain_df[cols].replace(np.nan, "Undefined")
+        ds_max = ColumnDataSource(max_gain_df)
 
         factors = self.analyzer.max_gain_df['id'].unique()
         cmap = plt.cm.get_cmap('jet', len(factors))
@@ -299,7 +395,8 @@ class Plotter:
 
         year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
         p = figure(tools=TOOLS, toolbar_location="above",
-                   plot_width=960, plot_height=300, x_range=year_range, title='Max gain of citations per year')
+                   plot_width=960, plot_height=300, x_range=year_range,
+                   title='Max gain of citations per year')
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Number of citations'
         p.hover.tooltips = self._html_tooltips([
@@ -307,8 +404,9 @@ class Plotter:
             ("Year", '@paper_year'),
             ("Cited by", '@count papers in @year')
         ])
-        p.js_on_event('tap', self.pubmed_callback(ds_max, self.index))
-        p.vbar(x='year', width=0.8, top='count', fill_alpha=0.5, source=ds_max, fill_color=colors, line_color=colors)
+        p.js_on_event('tap', self.pubmed_callback(ds_max, self.analyzer.source))
+        p.vbar(x='year', width=0.8, top='count', fill_alpha=0.5, source=ds_max, fill_color=colors,
+               line_color=colors)
         return p
 
     def max_relative_gain_papers(self):
@@ -316,7 +414,8 @@ class Plotter:
         logging.info('Relative gain (year) = Citation Gain (year) / Citations before year')
         logging.info('Different colors encode different papers')
         cols = ['year', 'id', 'title', 'authors', 'paper_year', 'rel_gain']
-        ds_max = ColumnDataSource(self.analyzer.max_rel_gain_df[cols])
+        max_rel_gain_df = self.analyzer.max_rel_gain_df[cols].replace(np.nan, "Undefined")
+        ds_max = ColumnDataSource(max_rel_gain_df)
 
         factors = self.analyzer.max_rel_gain_df['id'].astype(str).unique()
         cmap = plt.cm.get_cmap('jet', len(factors))
@@ -325,20 +424,23 @@ class Plotter:
 
         year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
         p = figure(tools=TOOLS, toolbar_location="above",
-                   plot_width=960, plot_height=300, x_range=year_range, title='Max relative gain of citations per year')
+                   plot_width=960, plot_height=300, x_range=year_range,
+                   title='Max relative gain of citations per year')
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Relative Gain of Citations'
         p.hover.tooltips = self._html_tooltips([
             ("Author(s)", '@authors'),
             ("Year", '@paper_year'),
             ("Relative Gain", '@rel_gain in @year')])
-        p.js_on_event('tap', self.pubmed_callback(ds_max, self.index))
+        p.js_on_event('tap', self.pubmed_callback(ds_max, self.analyzer.source))
 
-        p.vbar(x='year', width=0.8, top='rel_gain', fill_alpha=0.5, source=ds_max, fill_color=colors, line_color=colors)
+        p.vbar(x='year', width=0.8, top='rel_gain', fill_alpha=0.5, source=ds_max,
+               fill_color=colors, line_color=colors)
         return p
 
     def article_citation_dynamics(self):
-        logging.info('Choose ID to get detailed citations timeline for top cited / max gain or relative gain papers')
+        logging.info('Choose ID to get detailed citations timeline '
+                     'for top cited / max gain or relative gain papers')
         highlight_papers = sorted(self.analyzer.top_cited_papers.union(
             self.analyzer.max_gain_papers, self.analyzer.max_rel_gain_papers))
 
@@ -389,32 +491,146 @@ class Plotter:
         display(panel)
         h = show(p, notebook_handle=True)
 
+    def papers_statistics(self):
+        cols = ['year', 'id', 'title', 'authors']
+        df_stats = self.analyzer.df[cols].groupby(['year']).size().reset_index(name='counts')
+        ds_stats = ColumnDataSource(df_stats)
+
+        year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
+        p = figure(tools=TOOLS, toolbar_location="above",
+                   plot_width=760, plot_height=400, x_range=year_range, title='Amount of articles per year')
+        p.xaxis.axis_label = 'Year'
+        p.yaxis.axis_label = 'Amount of articles'
+        p.hover.tooltips = [("Amount", '@counts'), ("Year", '@year')]
+
+        p.vbar(x='year', width=0.8, top='counts', fill_alpha=0.5, source=ds_stats)
+
+        kwds = {}
+        for ngram, count in get_most_common_ngrams(self.analyzer.top_cited_df['title'],
+                                                   self.analyzer.top_cited_df['abstract']).items():
+            for word in ngram.split(' '):
+                kwds[word] = float(count) + kwds.get(word, 0)
+        wc = WordCloud(background_color="white", width=200, height=400,
+                       color_func=lambda *args, **kwargs: 'black',
+                       max_words=20, max_font_size=40)
+        wc.generate_from_frequencies(kwds)
+
+        image = wc.to_array()
+        desc = figure(title="Word Cloud", toolbar_location="above",
+                      plot_width=200, plot_height=400,
+                      x_range=[0, 10], y_range=[0, 10], tools=[])
+        desc.axis.visible = False
+
+        img = np.empty((400, 200), dtype=np.uint32)
+        view = img.view(dtype=np.uint8).reshape((400, 200, 4))
+        view[:, :, 0:3] = image[::-1, :, :]
+        view[:, :, 3] = 255
+
+        desc.image_rgba(image=[img], x=[0], y=[0], dw=[10], dh=[10])
+        p = row(desc, p)
+        return p
+
     def subtopic_evolution(self):
-        plt.rcParams['figure.figsize'] = 20, 10
-        pd.plotting.parallel_coordinates(self.analyzer.evolution_df,
-                                         'current', sort_labels=True)
-        plt.xlabel('Year')
-        plt.ylabel('Component ID')
-        plt.grid(b=True, which='both', linestyle='--')
-        plt.legend().set_visible(False)
-        return plt
+
+        def sort_nodes_key(node):
+            y, c = node[0].split(' ')
+            return int(y), -int(c)
+
+        cols = self.analyzer.evolution_df.columns[2:]
+        pairs = list(zip(cols, cols[1:]))
+        nodes = set()
+        edges = []
+
+        for now, then in pairs:
+            nodes_now = [f'{now} {c}' for c in self.analyzer.evolution_df[now].unique()]
+            nodes_then = [f'{then} {c}' for c in self.analyzer.evolution_df[then].unique()]
+
+            inner = {node: 0 for node in nodes_then}
+            changes = {node: inner.copy() for node in nodes_now}
+            for pmid, comp in self.analyzer.evolution_df.iterrows():
+                c_now, c_then = comp[now], comp[then]
+                changes[f'{now} {c_now}'][f'{then} {c_then}'] += 1
+
+            for v in nodes_now:
+                for u in nodes_then:
+                    if changes[v][u] > 0:
+                        edges.append((v, u, changes[v][u]))
+                        nodes.add(v)
+                        nodes.add(u)
+
+        n_steps = len(self.analyzer.evolution_df.columns) - 2
+        value_dim = hv.Dimension('Amount', unit=None)
+
+        # One step is not enough to analyze evolution
+        if n_steps < 2:
+            return None
+
+        nodes_data = []
+
+        for node in nodes:
+            year, c = node.split(' ')
+            if int(c) >= 0:
+                if n_steps < 4:
+                    label = f"{year} {', '.join(self.analyzer.evolution_kwds[int(year)][int(c)][:5])}"
+                else:
+                    label = node
+            else:
+                label = f"Published after {year}"
+            nodes_data.append((node, label))
+        nodes_data = sorted(nodes_data, key=sort_nodes_key, reverse=True)
+
+        nodes_ds = hv.Dataset(nodes_data, 'index', 'label')
+
+        topic_evolution = hv.Sankey((edges, nodes_ds), ['From', 'To'], vdims=value_dim)
+        topic_evolution.opts(labels='label', width=960, height=600, show_values=False, cmap='tab20',
+                             edge_color=dim('To').str(), node_color=dim('index').str())
+
+        if n_steps > 3:
+            years = []
+            subtopics = []
+            keywords = []
+
+            for year, comps in self.analyzer.evolution_kwds.items():
+                for c, kwd in comps.items():
+                    if c >= 0:
+                        years.append(year)
+                        subtopics.append(c)
+                        keywords.append(', '.join(kwd))
+
+            data = dict(
+                years=years,
+                subtopics=subtopics,
+                keywords=keywords
+            )
+
+            source = ColumnDataSource(data)
+
+            columns = [
+                TableColumn(field="years", title="Year", width=50),
+                TableColumn(field="subtopics", title="Subtopic", width=50),
+                TableColumn(field="keywords", title="Keywords", width=800),
+            ]
+
+            subtopic_keywords = DataTable(source=source, columns=columns, width=900)
+
+            return column(hv.render(topic_evolution, backend='bokeh'), subtopic_keywords)
+
+        return hv.render(topic_evolution, backend='bokeh')
 
     def __build_data_source(self, df, width=760):
-        ARTICLE_PLOT_WIDTH = width  # Width of the plot (without axis borders)
-
         # Sort papers from the same year with total number of citations as key, use rank as y-pos
         ranks = df.groupby('year')['total'].rank(ascending=False, method='first')
 
         # Calculate max size of circles to avoid overlapping along x-axis
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
-        max_radius_screen_units = ARTICLE_PLOT_WIDTH / (max_year - min_year + 1)
+        max_radius_screen_units = width / (max_year - min_year + 1)
         size_scaling_coefficient = max_radius_screen_units / np.log(df['total']).max()
 
         # NOTE: 'comp' column is used as string because GroupFilter supports
         #       only categorical values (needed to color top cited papers by components)
         d = ColumnDataSource(data=dict(id=df['id'], title=df['title'], authors=df['authors'],
-                                       year=df['year'], total=df['total'],
-                                       comp=df['comp'].astype(str), pos=ranks,
+                                       year=df['year'].replace(np.nan, "Undefined"),
+                                       total=df['total'], comp=df['comp'].astype(str), pos=df['total'],
                                        size=np.log(df['total']) * size_scaling_coefficient))
         return d
 
@@ -423,40 +639,42 @@ class Plotter:
         p = figure(tools=TOOLS, toolbar_location="above",
                    plot_width=width, plot_height=400,
                    x_range=(min_year - 1, max_year + 1),
-                   title=title)
+                   title=title,
+                   y_axis_type="log")
         p.xaxis.axis_label = 'Year'
-        p.yaxis.axis_label = 'Amount of articles'
-        p.y_range.start = 0
+        p.yaxis.axis_label = 'Number of citations'
+        p.yaxis.formatter = NumeralTickFormatter(format='0,0')
 
         p.hover.tooltips = self._html_tooltips([
             ("Author(s)", '@authors'),
             ("Year", '@year'),
             ("Cited by", '@total paper(s) total')])
-        p.js_on_event('tap', self.pubmed_callback(source, self.index))
+        p.js_on_event('tap', self.pubmed_callback(source, self.analyzer.source))
 
         return p
 
     def _add_pmid(self, tips_list):
-        if self.index == "pmid":
+        if self.analyzer.source == "pubmed":
             tips_list.insert(0, ("PMID", '@id'))
 
         return tips_list
 
     def _html_tooltips(self, tips_list):
         tips_list = self._add_pmid(tips_list)
+
         style_caption = Template('<span style="font-size: 12px;color:dodgerblue;">$caption:</span>')
         style_value = Template('<span style="font-size: 11px;">$value</span>')
 
         tips_list_html = '\n'.join([f'''
-        <div> {style_caption.substitute(caption=tip[0])} {style_value.substitute(value=tip[1])} </div>'''
+            <div> {style_caption.substitute(caption=tip[0])} {style_value.substitute(value=tip[1])} </div>'''
                                     for tip in tips_list])
 
         html_tooltips_str = f'''
-           <div style="max-width: 320px">
-               <div>
-                   <span style="font-size: 13px; font-weight: bold;">@title</span>
+               <div style="max-width: 320px">
+                   <div>
+                       <span style="font-size: 13px; font-weight: bold;">@title</span>
+                   </div>
+                   {tips_list_html}
                </div>
-               {tips_list_html}
-           </div>
-        '''
+            '''
         return html_tooltips_str

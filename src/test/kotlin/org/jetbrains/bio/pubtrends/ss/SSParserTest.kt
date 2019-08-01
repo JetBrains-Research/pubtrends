@@ -39,7 +39,7 @@ class SSParserTest {
     private fun testArticlesForFile(name: String, correctArticles: List<SemanticScholarArticle>) {
         val articlesFile = parserFileSetup(name)
 
-        val parser = ArchiveParser(articlesFile, 1000, addToDatabase = false)
+        val parser = ArchiveParser(articlesFile, 1000, addToDatabase = false, curFile = 1, filesAmount = 1)
         parser.parse()
         val parsedArticles = parser.currentArticles
         checkArticles(parsedArticles, correctArticles)

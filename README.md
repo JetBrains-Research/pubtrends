@@ -1,3 +1,6 @@
+[![JetBrains team project](https://jb.gg/badges/team.svg)](https://confluence.jetbrains.com/display/ALL/JetBrains+on+GitHub)
+
+
 PubTrends
 =========
 
@@ -15,14 +18,17 @@ A tool for analysis of trends & pivotal points in the scientific literature.
 
 ## Configuration
 
-1. Conda environment `pubtrends` can be easily created for launching Jupyter Notebook and Web Service:
+1. Copy and modify `config.properties` to `~/.pubtrends/config.properties`. 
+Ensure that file contains correct information about the database (url, port, DB name, username and password).
+
+2. Conda environment `pubtrends` can be easily created for launching Jupyter Notebook and Web Service:
 
     ```
     conda env create -f environment.yml
     conda activate pubtrends
     ```
 
-2. Launch Postgres. 
+3. Launch Postgres. 
 
     Mac OS
     ```
@@ -39,7 +45,7 @@ A tool for analysis of trends & pivotal points in the scientific literature.
     service postgresql stop 
     ```
 
-3. Run `psql` to create a user and databases
+4. Run `psql` to create a user and databases
 
    ```
    CREATE ROLE biolabs WITH PASSWORD 'password';
@@ -50,12 +56,8 @@ A tool for analysis of trends & pivotal points in the scientific literature.
    ```
    CREATE DATABASE pubtrends_test OWNER biolabs;
    ```
-   
-3. Copy and modify `config.properties_examples` to `~/.pubtrends/config.properties`. 
-Ensure that file contains correct information about the database (url, port, DB name, username and password).
- 
 
-## Papers crawling
+## Papers processing
  
 ### Pubmed
 
@@ -71,35 +73,43 @@ Ensure that file contains correct information about the database (url, port, DB 
    java -cp build/libs/pubtrends-dev.jar org.jetbrains.bio.pubtrends.pm.MainKt
    ``` 
    
-3. Command line options supported:
-
+   Command line options supported:
    * `lastId` - in case of interruption use this parameter to restart the download from article pack `pubmed19n{lastId+1}.xml` 
-   * `parserLimit` - maximum number of articles per XML to be parsed (useful for development)
    * `resetDatabase` - clear current contents of the database (useful for development)   
 
 ### Semantic Scholar
 
 1. Download Sample from [Semantic Scholar](https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/sample-S2-records.gz)
-
-2. Or full archive 
+   Or full archive 
    ```
    cd <PATH_TO_SEMANTIC_SCHOLAR_ARCHIVE>
    wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/manifest.txt
    wget -B https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/ -i manifest.txt
    ```
-3. Add `<PATH_TO_SEMANTIC_SCHOLAR_ARCHIVE>` to `.pubtrends/config.properties`
+2. Add `<PATH_TO_SEMANTIC_SCHOLAR_ARCHIVE>` to `.pubtrends/config.properties`
 
-4. Use the following command to test and build the project:
+3. Use the following command to test and build the project:
 
    ```
    ./gradlew clean test shadowJar
    ```
    
-5. Launch Semantic Scholar Processing
+4. Launch Semantic Scholar Processing
     ```
     java -cp build/libs/pubtrends-dev.jar org.jetbrains.bio.pubtrends.ss.MainKt
     ```
+   Command line options supported:
+
+   * `resetDatabase` - clear current contents of the database (useful for development) 
+   * `fillDatabase` - create and fill database with Semantic Scholar data
+   * `createIndex` - create index for already created tables
+   
+   For example, if you launch Semantic Scholar Processing for the first time, 
+   you need to use `fillDatabase` and `createIndex` options. 
+
 ## Service
+
+Several front-ends are supported.
 
 ### Jupyter Notebook
    ```
@@ -107,21 +117,32 @@ Ensure that file contains correct information about the database (url, port, DB 
    ```
 
 ### Web service
-1. Start `Redis`
-2. Start worker queue
+1. Start Redis
+2. Start Celery worker queue
     ```
-    celery -A flask-async.celery worker -c 1 --loglevel=INFO
+    celery -A models.celery.tasks worker --loglevel=info
     ```
-3. Start server
+3. Start flask server at localhost:5000/
     ```
-    python flask-async.py
+    python models/flask-app.py
     ```    
-4. Open localhost:5000/
 
+### Deployment with Docker Compose
+
+Launch Gunicorn serving Flask app, Redis and Celery in containers by the command:
+    
+    ```
+    # start
+    docker-compose up -d --build
+    # stop
+    docker-compose down
+    # inpect logs
+    docker-compose logs
+    ```
 
 ## Testing
 
-### Docker Postgresql
+### Docker Image for testing
 
 1. Build `biolabs/pubtrends` Docker image
     ```

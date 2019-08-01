@@ -1,0 +1,19 @@
+version: "3"
+services:
+  web:
+    build:
+      context: .
+      dockerfile: models/app/Dockerfile
+    restart: always
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+  worker:
+    build:
+      context: .
+      dockerfile: models/celery/Dockerfile
+    depends_on:
+      - redis
+  redis:
+    image: redis
