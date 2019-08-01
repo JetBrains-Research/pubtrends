@@ -1,11 +1,9 @@
 import logging
-import math
 from itertools import product as cart_product
 from string import Template
 
 import holoviews as hv
 import ipywidgets as widgets
-import networkx as nx
 import numpy as np
 import pandas as pd
 from IPython.display import display
@@ -13,7 +11,7 @@ from bokeh.colors import RGB
 from bokeh.core.properties import value
 from bokeh.io import push_notebook
 from bokeh.layouts import row, column
-from bokeh.models import ColumnDataSource, CustomJS
+from bokeh.models import ColumnDataSource, CustomJS, NodesAndLinkedEdges, TapTool
 from bokeh.models import GraphRenderer, StaticLayoutProvider
 # Tools used: hover,pan,tap,wheel_zoom,box_zoom,reset,save
 from bokeh.models import HoverTool, PanTool, WheelZoomTool, BoxZoomTool, ResetTool, SaveTool
@@ -28,6 +26,7 @@ from holoviews import dim
 from matplotlib import pyplot as plt
 from wordcloud import WordCloud
 
+from models.keypaper.visualization_data import PlotPreprocessor
 from .utils import PUBMED_ARTICLE_BASE_URL, SEMANTIC_SCHOLAR_BASE_URL, get_word_cloud_data, \
     get_most_common_ngrams
 
@@ -64,6 +63,7 @@ class Plotter:
                 for (var i = 0; i < data['id'].length; ++i){
                     if (data['id'][i] == selected_id) {
                         window.open(base + data['id'][i], '_blank');
+                        // avoid opening multiple tabs with the same article
                         break;
                     }
                 }
@@ -85,105 +85,48 @@ class Plotter:
     def chord_diagram_components(self):
         logging.info('Visualizing components with Chord diagram')
 
-        G = nx.Graph()
-        # Using merge left keeps order
-        gdf = pd.merge(pd.Series(self.analyzer.CG.nodes(), dtype=object).reset_index().rename(
-            columns={0: 'id'}),
-            self.analyzer.df[['id', 'title', 'authors', 'year', 'total', 'comp']],
-            how='left'
-        ).sort_values(by=['comp', 'total'], ascending=[True, False])
+        layout, node_data_source, edge_data_source = PlotPreprocessor.chord_diagram_data_source(
+            self.analyzer.CG, self.analyzer.df, self.analyzer.pm, self.analyzer.comp_other, self.comp_palette
+        )
 
-        for c in range(len(self.analyzer.components)):
-            for n in gdf[gdf['comp'] == c]['id']:
-                # NOTE: we use nodes id as String to avoid problems str keys in jsonify
-                # during graph visualization
-                G.add_node(str(n))
-
-        edge_starts = []
-        edge_ends = []
-        edge_weights = []
-        for start, end, data in self.analyzer.CG.edges(data=True):
-            edge_starts.append(start)
-            edge_ends.append(end)
-            edge_weights.append(min(data['weight'], 20))
-
-        # Show with Bokeh
         plot = Plot(plot_width=800, plot_height=800,
                     x_range=Range1d(-1.1, 1.1), y_range=Range1d(-1.1, 1.1))
         plot.title.text = 'Co-citations graph'
 
         graph = GraphRenderer()
-        graph.node_renderer.data_source.add(list(G.nodes), 'index')
-        graph.edge_renderer.data_source.data = dict(start=edge_starts,
-                                                    end=edge_ends)
 
-        # Start of layout code
-        circ = [i * 2 * math.pi / len(G.nodes()) for i in range(len(G.nodes()))]
-        x = [math.cos(i) for i in circ]
-        y = [math.sin(i) for i in circ]
-        graph_layout = dict(zip(list(G.nodes()), zip(x, y)))
-        graph.layout_provider = StaticLayoutProvider(graph_layout=graph_layout)
+        # Data for nodes & edges
+        # Assignment `graph.node_renderer.data_source = node_data_source` leads to an empty graph, do not use it!
+        graph.node_renderer.data_source.data = node_data_source.data
+        graph.edge_renderer.data_source.data = edge_data_source.data
 
-        # Draw quadratic bezier paths
-        def bezier(start, end, steps=10, c=1.5):
-            return [(1 - s) ** c * start + s ** c * end for s in np.linspace(0, 1, steps)]
+        # Node layout
+        graph.layout_provider = StaticLayoutProvider(graph_layout=layout)
 
-        xs, ys = [], []
-        edge_colors = []
-        edge_alphas = []
-        for edge_start, edge_end in zip(edge_starts, edge_ends):
-            sx, sy = graph_layout[edge_start]
-            ex, ey = graph_layout[edge_end]
-            xs.append(bezier(sx, ex))
-            ys.append(bezier(sy, ey))
-            if self.analyzer.pm[edge_start] == self.analyzer.pm[edge_end]:
-                edge_colors.append(self.comp_palette[self.analyzer.pm[edge_start]])
-                edge_alphas.append(0.1)
-            else:
-                edge_colors.append('grey')
-                edge_alphas.append(0.05)
-
-        # Paths for edges
-        graph.edge_renderer.data_source.data['xs'] = xs
-        graph.edge_renderer.data_source.data['ys'] = ys
-
-        # Style for edges
-        graph.edge_renderer.data_source.data['edge_colors'] = edge_colors
-        graph.edge_renderer.data_source.data['edge_alphas'] = edge_alphas
-        graph.edge_renderer.data_source.data['edge_weights'] = edge_weights
-
-        # TODO: use ColumnDatasource
-        # Nodes data for rendering
-        graph.node_renderer.data_source.data['id'] = list(G.nodes())
-        graph.node_renderer.data_source.data['colors'] = [self.comp_palette[self.analyzer.pm[n]] for n in
-                                                          G.nodes()]
-        graph.node_renderer.data_source.data['title'] = gdf['title']
-        graph.node_renderer.data_source.data['authors'] = gdf['authors']
-        graph.node_renderer.data_source.data['year'] = gdf['year'].replace(np.nan, "Undefined")
-        graph.node_renderer.data_source.data['total'] = gdf['total']
-        log_total = np.log(gdf['total'])
-        graph.node_renderer.data_source.data['size'] = (log_total / np.max(log_total)) * 5 + 5
-        graph.node_renderer.data_source.data['topic'] = \
-            [f'#{self.analyzer.pm[n]}{" OTHER" if self.analyzer.pm[n] == self.analyzer.comp_other else ""}'
-             for n in G.nodes()]
-
-        # node rendering
+        # Node rendering
         graph.node_renderer.glyph = Circle(size='size', line_color='colors', fill_color='colors',
                                            line_alpha=0.5, fill_alpha=0.8)
-        # edge rendering
-        graph.edge_renderer.glyph = MultiLine(
-            line_color='edge_colors',
-            line_alpha='edge_alphas',
-            line_width='edge_weights')
+        graph.node_renderer.selection_glyph = Circle(size='size', line_color='#91C82F', fill_color='#91C82F',
+                                                     line_alpha=0.5, fill_alpha=0.8)
 
-        # add tools to the plot
+        # Edge rendering
+        graph.edge_renderer.glyph = MultiLine(line_color='edge_colors',
+                                              line_alpha='edge_alphas',
+                                              line_width='edge_weights')
+        graph.edge_renderer.selection_glyph = MultiLine(line_color='#91C82F',
+                                                        line_alpha=0.5,
+                                                        line_width='edge_weights')
+
+        graph.selection_policy = NodesAndLinkedEdges()
+
+        # Add tools to the plot
         # hover,pan,tap,wheel_zoom,box_zoom,reset,save
         plot.add_tools(HoverTool(tooltips=self._html_tooltips([
             ("Author(s)", '@authors'),
             ("Year", '@year'),
             ("Cited by", '@total paper(s) total'),
             ("Subtopic", '@topic')])),
-            PanTool(), WheelZoomTool(), BoxZoomTool(), ResetTool(), SaveTool())
+            PanTool(), TapTool(), WheelZoomTool(), BoxZoomTool(), ResetTool(), SaveTool())
 
         plot.renderers.append(graph)
         return plot
@@ -231,8 +174,8 @@ class Plotter:
                    x_range=clusters, y_range=clusters,
                    x_axis_location="below", plot_width=960, plot_height=400,
                    tools=TOOLS, toolbar_location='above',
-                   tooltips=[('subtopic1', '#@comp_x'), ('subtopic2', '#@comp_y'),
-                             ('density', '@density, @value co-citations')])
+                   tooltips=[('Subtopic 1', '#@comp_x'), ('Subtopic 2', '#@comp_y'),
+                             ('Density', '@density, @value co-citations')])
 
         p.grid.grid_line_color = None
         p.axis.axis_line_color = None
@@ -252,7 +195,7 @@ class Plotter:
         return p
 
     def cocitations_clustering(self, max_chord_diagram_size=500):
-        if self.analyzer.df.shape[0] > max_chord_diagram_size:
+        if len(self.analyzer.df) > max_chord_diagram_size:
             self.clusters_info_message = """
             Heatmap is used to show which subtopics are related to each other.
             Density is based on co-citations between clusters
@@ -261,7 +204,8 @@ class Plotter:
 
         self.clusters_info_message = """
         Chord diagram is used to show papers as graph nodes,
-        edges demonstrate co-citations."""
+        edges demonstrate co-citations. Click on any node 
+        to highlight all incident edges."""
         return self.chord_diagram_components()
 
     def component_size_summary(self):
