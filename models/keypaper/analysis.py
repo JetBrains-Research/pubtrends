@@ -64,7 +64,7 @@ class KeyPaperAnalyzer:
             if len(self.df) == 0:
                 raise RuntimeError("Failed to merge publications and citations")
 
-            self.loader.load_cocitations(current=4, task=task)
+            self.cocit_grouped_df = self.loader.load_cocitations(current=4, task=task)
             self.build_cocitation_graph(current=5, task=task)
             if len(self.CG.nodes()) == 0:
                 raise RuntimeError("Failed to build co-citations graph")
@@ -94,7 +94,7 @@ class KeyPaperAnalyzer:
 
         # NOTE: we use nodes id as String to avoid problems str keys in jsonify
         # during graph visualization
-        for el in self.loader.cocit_grouped_df[['cited_1', 'cited_2', 'total']].values:
+        for el in self.cocit_grouped_df[['cited_1', 'cited_2', 'total']].values:
             start, end, weight = el
             self.CG.add_edge(str(start), str(end), weight=int(weight))
         self.logger.debug(f'Co-citations graph nodes {len(self.CG.nodes())} edges {len(self.CG.edges())}\n',

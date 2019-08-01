@@ -118,13 +118,14 @@ class SemanticScholarLoader(Loader):
             self.cursor.execute(query)
         self.logger.info('Building citation graph', current=current, task=task)
 
-        self.G = nx.DiGraph()
+        G = nx.DiGraph()
         for row in self.cursor:
             v, u = row
-            self.G.add_edge(v, u)
+            G.add_edge(v, u)
 
-        self.logger.debug(f'Built citation graph - nodes {len(self.G.nodes())} edges {len(self.G.edges())}',
+        self.logger.debug(f'Built citation graph - nodes {len(G.nodes())} edges {len(G.edges())}',
                           current=current, task=task)
+        return G
 
     def load_cocitations(self, current=0, task=None):
         self.logger.info('Calculating co-citations for selected articles', current=current, task=task)
@@ -165,17 +166,19 @@ class SemanticScholarLoader(Loader):
         self.logger.debug(f'Found {len(self.cocit_df)} co-cited pairs of articles', current=current, task=task)
 
         self.logger.debug(f'Aggregating co-citations', current=current, task=task)
-        self.cocit_grouped_df = self.cocit_df.groupby(['cited_1', 'cited_2', 'year']).count().reset_index()
-        self.cocit_grouped_df = self.cocit_grouped_df.pivot_table(index=['cited_1', 'cited_2'],
+        cocit_grouped_df = self.cocit_df.groupby(['cited_1', 'cited_2', 'year']).count().reset_index()
+        cocit_grouped_df = cocit_grouped_df.pivot_table(index=['cited_1', 'cited_2'],
                                                                   columns=['year'],
                                                                   values=['citing']).reset_index()
-        self.cocit_grouped_df = self.cocit_grouped_df.replace(np.nan, 0)
-        self.cocit_grouped_df['total'] = self.cocit_grouped_df.iloc[:, 2:].sum(axis=1)
-        self.cocit_grouped_df = self.cocit_grouped_df.sort_values(by='total', ascending=False)
+        cocit_grouped_df = cocit_grouped_df.replace(np.nan, 0)
+        cocit_grouped_df['total'] = cocit_grouped_df.iloc[:, 2:].sum(axis=1)
+        cocit_grouped_df = cocit_grouped_df.sort_values(by='total', ascending=False)
         self.logger.debug('Filtering top {0} of all the co-citations'.format(self.max_number_of_cocitations),
                           current=current, task=task)
-        self.cocit_grouped_df = self.cocit_grouped_df.iloc[:min(self.max_number_of_cocitations,
-                                                                len(self.cocit_grouped_df)), :]
+        cocit_grouped_df = cocit_grouped_df.iloc[:min(self.max_number_of_cocitations,
+                                                                len(cocit_grouped_df)), :]
 
-        for col in self.cocit_grouped_df:
-            self.cocit_grouped_df[col] = self.cocit_grouped_df[col].astype(object)
+        for col in cocit_grouped_df:
+            cocit_grouped_df[col] = cocit_grouped_df[col].astype(object)
+            
+        return cocit_grouped_df
