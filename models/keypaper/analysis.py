@@ -103,7 +103,7 @@ class KeyPaperAnalyzer:
     def update_years(self, current=0, task=None):
         self.logger.update_state(current, task=task)
         self.years = [int(col) for col in list(self.df.columns) if isinstance(col, (int, float))]
-        self.min_year, self.max_year = np.min(self.years), np.max(self.years)
+        self.min_year, self.max_year = int(self.df['year'].min()), int(self.df['year'].max())
 
     def subtopic_analysis(self, current=0, task=None):
         # Graph clustering via Louvain algorithm
