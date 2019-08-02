@@ -279,7 +279,7 @@ class Plotter:
                                                    title=f'{len(self.analyzer.top_cited_df)} top cited papers',
                                                    width=960)
 
-        plot.circle(x='year', y='pos', fill_alpha=0.5, source=ds,
+        plot.circle(x='year', y='total', fill_alpha=0.5, source=ds,
                     size='size', line_color='blue')
 
         return plot
