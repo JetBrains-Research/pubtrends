@@ -122,7 +122,7 @@ class KeyPaperAnalyzer:
     def update_years(self, current=0, task=None):
         self.logger.update_state(current, task=task)
         self.years = [int(col) for col in list(self.df.columns) if isinstance(col, (int, float))]
-        self.min_year, self.max_year = np.min(self.years), np.max(self.years)
+        self.min_year, self.max_year = int(self.df['year'].min()), int(self.df['year'].max())
 
     def subtopic_analysis(self, current=0, task=None):
         # Graph clustering via Louvain algorithm
@@ -134,7 +134,8 @@ class KeyPaperAnalyzer:
         self.logger.debug(f'Graph modularity: {community.modularity(p, self.CG):.3f}', current=current, task=task)
 
         # Merge small components to 'Other'
-        pm, self.components_merged = self.merge_components(p)
+        pm, components_merged = self.merge_components(p)
+        pm, self.comp_other = self.sort_components(pm, components_merged)
         self.components = set(pm.values())
         self.pm = pm
         self.pmcomp_sizes = {com: sum([pm[node] == com for node in pm.keys()]) for com in
@@ -305,6 +306,23 @@ class KeyPaperAnalyzer:
                               current=current, task=task)
             pm = p
         return pm, components_merged
+
+
+    def sort_components(self, pm, components_merged):
+        components = set(pm.values())
+        comp_sizes = {com: sum([pm[node] == com for node in pm.keys()]) for com in components}
+
+        argsort = lambda seq: sorted(range(len(seq)), key=seq.__getitem__, reverse=True)
+        sorted_comps = list(argsort(list(comp_sizes.values())))
+        mapping = dict(zip(sorted_comps, range(len(components))))
+        sorted_pm = {node: mapping[c] for node, c in pm.items()}
+
+        if components_merged:
+            other = sorted_comps.index(0)
+        else:
+            other = None
+
+        return sorted_pm, other
 
     def popular_journals(self, current=0, task=None):
         self.logger.info("Finding popular journals", current=current, task=task)
