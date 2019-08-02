@@ -39,6 +39,7 @@ class Plotter:
         n_comps = len(self.analyzer.components)
         for color in Category20[20][:n_comps]:
             self.comp_palette.append(RGB(*PlotPreprocessor.hex2rgb(color)))
+
     @staticmethod
     def pubmed_callback(source, db):
         if db == 'semantic':
@@ -133,7 +134,8 @@ class Plotter:
         step = 30
         cmap = plt.cm.get_cmap('PuBu', step)
         colors = [RGB(*[round(c * 255) for c in cmap(i)[:3]]) for i in range(step)]
-        mapper = LinearColorMapper(palette=colors, low=cluster_edges.density.min(),
+        mapper = LinearColorMapper(palette=colors,
+                                   low=cluster_edges.density.min(),
                                    high=cluster_edges.density.max())
 
         p = figure(title="Density between different clusters",
@@ -170,7 +172,7 @@ class Plotter:
 
         self.clusters_info_message = """
         Chord diagram is used to show papers as graph nodes,
-        edges demonstrate co-citations. Click on any node 
+        edges demonstrate co-citations. Click on any node
         to highlight all incident edges."""
         return self.chord_diagram_components()
 
@@ -182,7 +184,7 @@ class Plotter:
             self.analyzer.df, self.analyzer.components, min_year, max_year
         )
 
-        p = figure(x_range=[min_year, max_year], plot_width=960, plot_height=300,
+        p = figure(x_range=[min_year - 1, max_year + 1], plot_width=960, plot_height=300,
                    title="Components by Year",
                    toolbar_location=None, tools="hover", tooltips="Subtopic #$name: @$name")
 
@@ -219,7 +221,7 @@ class Plotter:
                                                        year_range=[min_year, max_year],
                                                        title=title, width=760)
 
-            plot.circle(x='year', y='pos', fill_alpha=0.5, source=ds[c], size='size',
+            plot.circle(x='year', y='total', fill_alpha=0.5, source=ds[c], size='size',
                         line_color=self.colors[c], fill_color=self.colors[c])
 
             # Word cloud description of subtopic by titles and abstracts
@@ -429,7 +431,6 @@ class Plotter:
         return p
 
     def subtopic_evolution(self):
-
         n_steps = len(self.analyzer.evolution_df.columns) - 2
 
         # One step is not enough to analyze evolution

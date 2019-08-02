@@ -16,7 +16,8 @@ class PlotPreprocessor:
     def chord_diagram_data(cocitation_graph, df, comps, comp_other, palette):
         # Co-citation graph nodes and weighted edges
         nodes = list(cocitation_graph.nodes())
-        edges = list(cocitation_graph.edges(data=True))
+        edges = list(cocitation_graph.edges())
+        weighted_edges = list(cocitation_graph.edges(data=True))
 
         # Using merge left keeps order
         gdf = pd.merge(pd.Series(nodes, dtype=object).reset_index().rename(
@@ -27,10 +28,10 @@ class PlotPreprocessor:
 
         sorted_nodes = list(gdf['id'].values)
 
+        # Index column is required by GraphRenderer, see corresponding Plotter function
         gdf['index'] = gdf['id']
         gdf['colors'] = [palette[comps[n]] for n in sorted_nodes]
         gdf['year'] = gdf['year'].replace(np.nan, "Undefined")
-        gdf['total'] = gdf['total']
         log_total = np.log(gdf['total'])
         gdf['size'] = (log_total / np.max(log_total)) * 5 + 5
         gdf['topic'] = [f'#{comps[n]}{" OTHER" if comps[n] == comp_other else ""}' for n in sorted_nodes]
@@ -38,7 +39,7 @@ class PlotPreprocessor:
         edge_starts = []
         edge_ends = []
         edge_weights = []
-        for start, end, data in edges:
+        for start, end, data in weighted_edges:
             edge_starts.append(start)
             edge_ends.append(end)
             edge_weights.append(min(data['weight'], 20))
@@ -79,7 +80,7 @@ class PlotPreprocessor:
 
         # Edge paths
         xs, ys = [], []
-        for edge_start, edge_end, _ in edges:
+        for edge_start, edge_end in edges:
             sx, sy = layout[edge_start]
             ex, ey = layout[edge_end]
             xs.append(bezier(sx, ex))
@@ -92,24 +93,28 @@ class PlotPreprocessor:
         clusters = list(map(str, comp_sizes.keys()))
         n_comps = len(clusters)
 
+        # Load edge data to DataFrame
         links = pd.DataFrame(cocitation_graph.edges(data=True), columns=['source', 'target', 'value'])
         links['value'] = links['value'].apply(lambda data: data['weight'])
-        cluster_edges = links.merge(df[['id', 'comp']], how='left', left_on='source',
-                                    right_on='id').merge(df[['id', 'comp']], how='left', left_on='target',
-                                                         right_on='id')
-        are_swapped = (cluster_edges['comp_x'] <= cluster_edges['comp_y'])
-        cluster_edges = cluster_edges.loc[are_swapped].rename(columns={'comp_x': 'comp_y', 'comp_y': 'comp_x'})
+
+        # Map each node to corresponding component
+        cluster_edges = links.merge(df[['id', 'comp']], how='left', left_on='source', right_on='id') \
+                             .merge(df[['id', 'comp']], how='left', left_on='target', right_on='id')
+
+        # Calculate connectivity matrix for components
         cluster_edges = cluster_edges.groupby(['comp_x', 'comp_y'])['value'].sum().reset_index()
         connectivity_matrix = [[0] * n_comps for _ in range(n_comps)]
         for index, row in cluster_edges.iterrows():
-            connectivity_matrix[row['comp_x']][row['comp_y']] = row['value']
-            connectivity_matrix[row['comp_y']][row['comp_x']] = row['value']
+            cx, cy = row['comp_x'], row['comp_y']
+            connectivity_matrix[cx][cy] += row['value']
+            if cx != cy:
+                connectivity_matrix[cy][cx] += row['value']
         cluster_edges = pd.DataFrame([{'comp_x': i, 'comp_y': j, 'value': connectivity_matrix[i][j]}
                                       for i, j in cart_product(range(n_comps), range(n_comps))])
 
+        # Density = number of co-citations between subtopics / (size of subtopic 1 * size of subtopic 2)
         def get_density(row):
-            return row['value'] / (comp_sizes[row['comp_x']] *
-                                   comp_sizes[row['comp_y']])
+            return row['value'] / (comp_sizes[row['comp_x']] * comp_sizes[row['comp_y']])
 
         cluster_edges['density'] = cluster_edges.apply(lambda row: get_density(row), axis=1)
         cluster_edges['comp_x'] = cluster_edges['comp_x'].astype(str)
@@ -122,6 +127,7 @@ class PlotPreprocessor:
         comp_size = dict(assigned_comps.groupby('comp')['id'].count())
         total_papers = sum(assigned_comps['comp'] >= 0)
 
+        # comps are reversed to display in descending order
         comps = list(reversed(list(map(str, comp_size.keys()))))
         ratios = [100 * comp_size[int(c)] / total_papers for c in comps]
         colors = [palette[int(c)] for c in comps]
@@ -132,11 +138,11 @@ class PlotPreprocessor:
     def component_size_summary_data(df, comps, min_year, max_year):
         n_comps = len(comps)
         components = [str(i) for i in range(n_comps)]
-        years = list(range(min_year - 1, max_year + 1))
+        years = list(range(min_year, max_year + 1))
         data = {'years': years}
         for c in range(n_comps):
             data[str(c)] = [len(df[np.logical_and(df['comp'] == c, df['year'] == y)])
-                            for y in range(min_year, max_year)]
+                            for y in range(min_year, max_year + 1)]
         return components, data
 
     @staticmethod
@@ -207,18 +213,20 @@ class PlotPreprocessor:
 
     @staticmethod
     def article_view_data_source(df, min_year, max_year, width=760):
+        df_local = df[['id', 'title', 'year', 'total', 'authors', 'comp']].copy()
+
+        # Size is based on the citations number, at least 1
+        df_local['size'] = 1 + np.log(df['total'] + 1)
+
         # Calculate max size of circles to avoid overlapping along x-axis
         max_radius_screen_units = width / (max_year - min_year + 1)
-        size_scaling_coefficient = max_radius_screen_units / np.log(df['total']).max()
+        size_scaling_coefficient = max_radius_screen_units / df_local['size'].max()
+        df_local['size'] = df_local['size'] * size_scaling_coefficient
 
-        df_local = df[['id', 'title', 'year', 'total', 'authors', 'comp']].copy()
+        # Replace NaN values with Undefined for tooltips
         df_local['year'] = df_local['year'].replace(np.nan, "Undefined")
 
-        # NOTE: 'comp' column is used as string because GroupFilter supports
-        #       only categorical values (needed to color top cited papers by components)
-        df_local['comp'] = df_local['comp'].astype(str)
-        df_local['size'] = np.log(df['total']) * size_scaling_coefficient
-        df_local['pos'] = df_local['total']
+        df_local['comp'] = df_local['comp']
 
         return ColumnDataSource(df_local)
 

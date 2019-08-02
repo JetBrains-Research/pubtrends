@@ -1,0 +1,91 @@
+{
+  "2014": {
+    "-1": [
+      "rassf1a",
+      "tsg",
+      "datasets",
+      "biopsy",
+      "apc",
+      "benign",
+      "mutation",
+      "measure",
+      "history",
+      "type",
+      "epithelium",
+      "tissue",
+      "risk",
+      "cell",
+      "age"
+    ],
+    "0": [
+      "body",
+      "susceptibility",
+      "ieaa",
+      "risk",
+      "time",
+      "acceleration",
+      "gene",
+      "association",
+      "tumor",
+      "ageaccel",
+      "development",
+      "tissue",
+      "blood",
+      "study",
+      "age"
+    ],
+    "1": [
+      "reaction",
+      "disturbance",
+      "pattern",
+      "study",
+      "rhythm",
+      "result",
+      "change",
+      "analysis",
+      "shiftwork",
+      "disruption",
+      "per2",
+      "per1",
+      "promoter",
+      "expression",
+      "gene"
+    ]
+  },
+  "2019": {
+    "0": [
+      "shiftwork",
+      "estrogen",
+      "pattern",
+      "disturbance",
+      "cell",
+      "per2",
+      "disruption",
+      "night",
+      "analysis",
+      "study",
+      "rhythm",
+      "per1",
+      "promoter",
+      "expression",
+      "gene"
+    ],
+    "1": [
+      "study",
+      "analysis",
+      "association",
+      "time",
+      "cpg",
+      "sample",
+      "development",
+      "ageaccel",
+      "type",
+      "blood",
+      "cell",
+      "acceleration",
+      "risk",
+      "tissue",
+      "age"
+    ]
+  }
+}

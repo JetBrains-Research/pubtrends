@@ -14,6 +14,7 @@ dependencies:
   - matplotlib=3.1.1
   - nltk=3.4.4
   - pandas=0.24.2
+  - parameterized=0.6.1
   - psycopg2=2.7.6.1
   - python=3.7.3
   - pytest=5.0.1
