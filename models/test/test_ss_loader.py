@@ -2,10 +2,13 @@ import logging
 import re
 import unittest
 
+import networkx as nx
+from pandas.util.testing import assert_frame_equal, assert_series_equal
+
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.ss_loader import SemanticScholarLoader
 from models.test.articles import required_articles, extra_articles, required_citations, cit_stats_df, \
-    pub_df, extra_citations
+    pub_df, extra_citations, expected_graph, cocitations_df
 
 
 class TestSemanticScholarLoader(unittest.TestCase):
@@ -26,7 +29,7 @@ class TestSemanticScholarLoader(unittest.TestCase):
             id_out      varchar(40) not null,
             id_in       varchar(40) not null
         );
-        create index if not exists sscitations_test_crc32id_out_crc32id_in_index 
+        create index if not exists sscitations_test_crc32id_out_crc32id_in_index
         on sscitations_test (crc32id_out, crc32id_in);
         '''
 
@@ -38,7 +41,7 @@ class TestSemanticScholarLoader(unittest.TestCase):
             title   varchar(1023),
             year    integer
         );
-        create index if not exists sspublications_test_crc32id_index 
+        create index if not exists sspublications_test_crc32id_index
         on sspublications_test (crc32id);
         '''
 
@@ -46,17 +49,23 @@ class TestSemanticScholarLoader(unittest.TestCase):
             cls.loader.cursor.execute(query_citations)
             cls.loader.cursor.execute(query_publications)
 
+        cls.VALUES_REGEX = re.compile(r'\$VALUES\$')
+
         cls._insert_publications()
         cls._insert_citations()
         cls._load_publications()
+
+        cls.citations_stats = cls._load_citations_stats()
+        cls.citations_graph = cls._load_citations_graph()
+        cls.cocitations_df = cls._load_cocitations()
 
     @classmethod
     def _insert_publications(cls):
         articles = ', '.join(
             map(lambda article: article.to_db_publication(), (required_articles + extra_articles)))
 
-        query = re.sub('\$values\$', articles, '''
-        insert into sspublications_test(ssid, crc32id, title, year) values $values$;
+        query = re.sub(cls.VALUES_REGEX, articles, '''
+        insert into sspublications_test(ssid, crc32id, title, year) values $VALUES$;
         ''')
         with cls.loader.conn:
             cls.loader.cursor.execute(query)
@@ -69,8 +78,8 @@ class TestSemanticScholarLoader(unittest.TestCase):
                                               citation[1].crc32id) for citation in
             (required_citations + extra_citations))
 
-        query = re.sub('\$values\$', citations_str, '''
-        insert into sscitations_test (id_out, crc32id_out, id_in, crc32id_in) values $values$;
+        query = re.sub(cls.VALUES_REGEX, citations_str, '''
+        insert into sscitations_test (id_out, crc32id_out, id_in, crc32id_in) values $VALUES$;
         ''')
 
         with cls.loader.conn:
@@ -79,7 +88,7 @@ class TestSemanticScholarLoader(unittest.TestCase):
     @classmethod
     def _load_publications(cls):
         values = ', '.join(map(lambda article: article.indexes(), required_articles))
-        query = re.sub('\$VALUES\$', values, '''
+        query = re.sub(cls.VALUES_REGEX, values, '''
                 DROP TABLE IF EXISTS temp_ssids_test;
                 WITH vals(ssid, crc32id) AS (VALUES $VALUES$)
                 SELECT crc32id, ssid INTO temporary table temp_ssids_test FROM vals;
@@ -97,25 +106,63 @@ class TestSemanticScholarLoader(unittest.TestCase):
 
         cls.loader.pub_df = pub_df
 
+    @classmethod
+    def _load_citations_stats(cls):
+        cit_stats_df_from_query = cls.loader.load_citation_stats()
+        return cit_stats_df_from_query.sort_values(by=['id', 'year']).reset_index(drop=True)
+
+    @classmethod
+    def _load_citations_graph(cls):
+        G = cls.loader.load_citations()
+        return G
+
+    @classmethod
+    def _load_cocitations(cls):
+        cocit_grouped_df = cls.loader.load_cocitations()
+        # flatten dataframe with multi index
+        actual = cocit_grouped_df.sort_values(by=['cited_1', 'cited_2']).reset_index(drop=True)
+        for col in actual['citing'].columns:
+            actual[col] = actual['citing'][col]
+        actual.drop(['citing', 'year'], axis=1, level=0, inplace=True)
+        actual.columns = [col[0] for col in actual.columns]
+        return actual
+
+    def test_citations_stats_rows(self):
+        expected_rows = cit_stats_df.shape[0]
+        actual_rows = self.citations_stats.shape[0]
+        self.assertEqual(expected_rows, actual_rows, "Number of rows in citations statistics is incorrect")
+
     def test_load_citations_stats(self):
-        self.loader.load_citation_stats(filter_citations=False)
-        actual = self.loader.cit_stats_df_from_query
-        actual_sorted = actual.sort_values(by=['id', 'year']).reset_index(drop=True)
-        expected_sorted = cit_stats_df.sort_values(by=['id', 'year']).reset_index(
-            drop=True).astype(dtype=object)
-        assert actual_sorted.equals(expected_sorted), "Citations statistics is incorrect"
+        assert_frame_equal(self.citations_stats, cit_stats_df, "Citations statistics is incorrect")
 
-    # def test_load_citations(self):
-    #     self.loader.load_citations()
-    #     actual = self.loader.G
-    #     assert nx.is_isomorphic(actual, expected_graph), "Graph of citations is incorrect"
+    def test_citation_nodes_amount(self):
+        expected_number_of_nodes = len(expected_graph.nodes())
+        actual_number_of_nodes = len(self.citations_graph.nodes())
+        self.assertEqual(expected_number_of_nodes, actual_number_of_nodes,
+                         "Amount of nodes in citation graph is incorrect")
 
-    # def test_load_cocitations(self):
-    #     self.loader.load_cocitations()
-    #     actual = self.loader.CG
-    #     em = iso.numerical_edge_match('weight', 1)
-    #     assert nx.is_isomorphic(actual, expected_cgraph,
-    #                             edge_match=em), "Graph of co-citations is incorrect"
+    def test_citations_nodes(self):
+        expected_nodes = expected_graph.nodes()
+        actual_nodes = self.citations_graph.nodes()
+        self.assertEqual(expected_nodes, actual_nodes, "Nodes in citation graph are incorrect")
+
+    def test_load_citations(self):
+        self.assertTrue(nx.is_isomorphic(expected_graph, self.citations_graph), "Graph of citations is incorrect")
+
+    def test_cocitations_df_rows(self):
+        expected_rows = cocitations_df.shape[0]
+        actual_rows = self.cocitations_df.shape[0]
+        self.assertEqual(expected_rows, actual_rows, "Number of rows in co-citations dataframe is incorrect")
+
+    def test_cocitations_total(self):
+        expected_total = cocitations_df['total']
+        actual_total = self.cocitations_df['total']
+        assert_series_equal(expected_total, actual_total, "Total amount of co-citations is incorrect")
+
+    def test_load_cocitations(self):
+        expected_cocit_df = cocitations_df
+        actual = self.cocitations_df
+        assert_frame_equal(expected_cocit_df, actual, "Co-citations dataframe is incorrect")
 
     @classmethod
     def tearDownClass(cls):

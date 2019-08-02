@@ -91,7 +91,9 @@ citations_stats = [[article1.ssid, article5.year, 1],
                    [article8.ssid, article1.year, 1],
                    [article10.ssid, article6.year, 1]]
 
-cit_stats_df = pd.DataFrame(citations_stats, columns=['id', 'year', 'count'])
+cit_stats_df = pd.DataFrame(citations_stats, columns=['id', 'year', 'count']).sort_values(
+    by=['id', 'year']).reset_index(
+    drop=True).astype(dtype=object)
 
 pub_df = pd.DataFrame.from_records([article.to_dict() for article in required_articles])
 pub_df.abstract = ''
@@ -106,3 +108,11 @@ expected_cgraph.add_weighted_edges_from([(article7.ssid, article10.ssid, 1),
                                          (article4.ssid, article3.ssid, 2),
                                          (article3.ssid, article8.ssid, 1),
                                          (article4.ssid, article8.ssid, 1)])
+
+cocitations_stats = [[article7.ssid, article10.ssid, 1, 0, 0, 1],
+                     [article4.ssid, article3.ssid, 2, 1, 1, 0],
+                     [article3.ssid, article8.ssid, 1, 0, 1, 0],
+                     [article4.ssid, article8.ssid, 1, 0, 1, 0]]
+
+cocitations_df = pd.DataFrame(cocitations_stats, columns=['cited_1', 'cited_2', 'total', 1980, 1999, 2018])
+cocitations_df = cocitations_df.sort_values(by=['cited_1', 'cited_2']).reset_index(drop=True).astype(object)

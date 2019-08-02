@@ -22,3 +22,7 @@ class PubtrendsConfig:
         self.password = config_parser['params']['password' if not test else 'test_password']
 
         self.pm_entrez_email = config_parser['params']['pm_entrez_email']
+
+        self.max_number_of_articles = int(config_parser['params']['max_number_of_articles'])
+        self.max_number_of_citations = int(config_parser['params']['max_number_of_citations'])
+        self.max_number_of_cocitations = int(config_parser['params']['max_number_of_cocitations'])
