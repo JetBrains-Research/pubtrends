@@ -17,6 +17,7 @@ celery = Celery("tasks", backend=CELERY_RESULT_BACKEND, broker=CELERY_BROKER_URL
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
+
 # Tasks will be served by Celery,
 # specify task name explicitly to avoid problems with modules
 @celery.task(name='analyze_async')
@@ -51,8 +52,12 @@ def analyze_async(source, terms):
         'max_relative_gain_papers': [components(plotter.max_relative_gain_papers())],
         'component_ratio': [components(plotter.component_ratio())],
         'papers_stats': [components(plotter.papers_statistics())],
+        'found_papers': str(analyzer.articles_found),
+        'number_of_papers': amount_of_papers,
         'clusters_info_message': plotter.clusters_info_message,
-        'subtopic_evolution': [components(plotter.subtopic_evolution())]
+        'subtopic_evolution': [components(plotter.subtopic_evolution())],
+        'author_statistics': [components(plotter.author_statistics())],
+        'journal_statistics': [components(plotter.journal_statistics())]
         # TODO: this doesn't work
         # 'citations_dynamics': [components(plotter.article_citation_dynamics())],
     }

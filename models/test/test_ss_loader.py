@@ -2,10 +2,13 @@ import logging
 import re
 import unittest
 
+import networkx as nx
+from pandas.util.testing import assert_frame_equal, assert_series_equal
+
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.ss_loader import SemanticScholarLoader
 from models.test.articles import required_articles, extra_articles, required_citations, cit_stats_df, \
-    pub_df, extra_citations
+    pub_df, extra_citations, expected_graph, cocitations_df
 
 
 class TestSemanticScholarLoader(unittest.TestCase):
@@ -51,6 +54,10 @@ class TestSemanticScholarLoader(unittest.TestCase):
         cls._insert_publications()
         cls._insert_citations()
         cls._load_publications()
+
+        cls.citations_stats = cls._load_citations_stats()
+        cls.citations_graph = cls._load_citations_graph()
+        cls.cocitations_df = cls._load_cocitations()
 
     @classmethod
     def _insert_publications(cls):
@@ -99,25 +106,62 @@ class TestSemanticScholarLoader(unittest.TestCase):
 
         cls.loader.pub_df = pub_df
 
+    @classmethod
+    def _load_citations_stats(cls):
+        cit_stats_df_from_query = cls.loader.load_citation_stats()
+        return cit_stats_df_from_query.sort_values(by=['id', 'year']).reset_index(drop=True)
+
+    @classmethod
+    def _load_citations_graph(cls):
+        return cls.loader.load_citations()
+
+    @classmethod
+    def _load_cocitations(cls):
+        cocit_grouped_df = cls.loader.load_cocitations()
+        # flatten dataframe with multi index
+        actual = cocit_grouped_df.sort_values(by=['cited_1', 'cited_2']).reset_index(drop=True)
+        for col in actual['citing'].columns:
+            actual[col] = actual['citing'][col]
+        actual.drop(['citing', 'year'], axis=1, level=0, inplace=True)
+        actual.columns = [col[0] for col in actual.columns]
+        return actual
+
+    def test_citations_stats_rows(self):
+        expected_rows = cit_stats_df.shape[0]
+        actual_rows = self.citations_stats.shape[0]
+        self.assertEqual(expected_rows, actual_rows, "Number of rows in citations statistics is incorrect")
+
     def test_load_citations_stats(self):
-        self.loader.load_citation_stats(filter_citations=False)
-        actual = self.loader.cit_stats_df_from_query
-        actual_sorted = actual.sort_values(by=['id', 'year']).reset_index(drop=True)
-        expected_sorted = cit_stats_df.sort_values(by=['id', 'year']).reset_index(
-            drop=True).astype(dtype=object)
-        assert actual_sorted.equals(expected_sorted), "Citations statistics is incorrect"
+        assert_frame_equal(self.citations_stats, cit_stats_df, "Citations statistics is incorrect")
 
-    # def test_load_citations(self):
-    #     self.loader.load_citations()
-    #     actual = self.loader.G
-    #     assert nx.is_isomorphic(actual, expected_graph), "Graph of citations is incorrect"
+    def test_citation_nodes_amount(self):
+        expected_number_of_nodes = len(expected_graph.nodes())
+        actual_number_of_nodes = len(self.citations_graph.nodes())
+        self.assertEqual(expected_number_of_nodes, actual_number_of_nodes,
+                         "Amount of nodes in citation graph is incorrect")
 
-    # def test_load_cocitations(self):
-    #     self.loader.load_cocitations()
-    #     actual = self.loader.CG
-    #     em = iso.numerical_edge_match('weight', 1)
-    #     assert nx.is_isomorphic(actual, expected_cgraph,
-    #                             edge_match=em), "Graph of co-citations is incorrect"
+    def test_citations_nodes(self):
+        expected_nodes = expected_graph.nodes()
+        actual_nodes = self.citations_graph.nodes()
+        self.assertEqual(expected_nodes, actual_nodes, "Nodes in citation graph are incorrect")
+
+    def test_load_citations(self):
+        self.assertTrue(nx.is_isomorphic(expected_graph, self.citations_graph), "Graph of citations is incorrect")
+
+    def test_cocitations_df_rows(self):
+        expected_rows = cocitations_df.shape[0]
+        actual_rows = self.cocitations_df.shape[0]
+        self.assertEqual(expected_rows, actual_rows, "Number of rows in co-citations dataframe is incorrect")
+
+    def test_cocitations_total(self):
+        expected_total = cocitations_df['total']
+        actual_total = self.cocitations_df['total']
+        assert_series_equal(expected_total, actual_total, "Total amount of co-citations is incorrect")
+
+    def test_load_cocitations(self):
+        expected_cocit_df = cocitations_df
+        actual = self.cocitations_df
+        assert_frame_equal(expected_cocit_df, actual, "Co-citations dataframe is incorrect")
 
     @classmethod
     def tearDownClass(cls):

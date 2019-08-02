@@ -275,6 +275,46 @@
             </div>
         </main>
     </div>
+    <div class="card mt-3">
+        <div class="card-title">
+            <h1 class="card-header" id="authors">Authors</h1>
+        </div>
+        <div class="card-body">
+            <p>
+                List of authors with the largest number of articles for given terms.
+                The colors of the circles in the subtopics column indicate the most common subtopics among these articles.
+                The subtopic circles are arranged according to the number of articles, in descending order.
+            </p>
+            <div>
+                {% for script, div in author_statistics %}
+                    {{ script|safe }}
+                    {{ div|safe }}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-3">
+        <div class="card-title">
+            <h1 class="card-header" id="journals">Journals</h1>
+        </div>
+        <div class="card-body">
+            <p>
+                List of journals with the largest number of articles for given terms.
+                The colors of the circles in the subtopics column indicate the most common subtopics among these articles.
+                The subtopic circles are arranged according to the number of articles, in descending order.
+            </p>
+            <div>
+                {% for script, div in journal_statistics %}
+                {{ script|safe }}
+                {{ div|safe }}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <h1>Log</h1>
+    <pre id="log">{{log}}</pre>
 </div>
 <footer>
     <p>version {{ version }}<br/>

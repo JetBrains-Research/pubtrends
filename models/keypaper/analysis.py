@@ -1,10 +1,9 @@
-import logging
-
 import community
 import networkx as nx
 import numpy as np
 import pandas as pd
 
+from models.test.test_loader import TestLoader
 from .pm_loader import PubmedLoader
 from .progress_logger import ProgressLogger
 from .ss_loader import SemanticScholarLoader
@@ -15,8 +14,6 @@ class KeyPaperAnalyzer:
     SEED = 20190723
 
     def __init__(self, loader):
-        self.logger = logging.getLogger(__name__)
-
         self.logger = ProgressLogger()
 
         self.loader = loader
@@ -27,13 +24,17 @@ class KeyPaperAnalyzer:
             self.source = 'pubmed'
         elif isinstance(self.loader, SemanticScholarLoader):
             self.source = 'semantic'
+        elif isinstance(self.loader, TestLoader):
+            self.source = 'test'
         else:
-            raise TypeError("loader should be either PubmedLoader or SemanticScholarLoader")
+            raise TypeError("loader should be either PubmedLoader or SemanticScholarLoader (or TestLoader)")
 
         # Data containers
         self.terms = None
         self.ids = None
         self.df = None
+        self.pub_df = None
+        self.cit_df = None
         self.cocit_df = None
 
         # Graphs
@@ -45,27 +46,29 @@ class KeyPaperAnalyzer:
         try:
             # Search articles relevant to the terms
             self.terms = terms
-            self.loader.search(*terms, current=1, task=task)
+            self.ids = self.loader.search(*terms, current=1, task=task)
+            self.articles_found = len(self.ids)
 
             # Nothing found
-            if len(self.loader.ids) == 0:
+            if self.articles_found == 0:
                 raise RuntimeError("Nothing found")
 
             # Load data about publications, citations and co-citations
-            self.loader.load_publications(current=2, task=task)
-            if len(self.loader.pub_df) == 0:
+            self.pub_df = self.loader.load_publications(current=2, task=task)
+            if len(self.pub_df) == 0:
                 raise RuntimeError("Nothing found in DB")
 
-            self.loader.load_citation_stats(current=3, task=task)
-            if len(self.loader.cit_df) == 0:
+            cit_stats_df_from_query = self.loader.load_citation_stats(current=3, task=task)
+            self.cit_df = self.build_cit_df(cit_stats_df_from_query, current=3.5, task=task)
+            if len(self.cit_df) == 0:
                 raise RuntimeError("Citations stats not found DB")
 
-            self.df = pd.merge(self.loader.pub_df, self.loader.cit_df, on='id', how='outer')
+            self.df = pd.merge(self.pub_df, self.cit_df, on='id', how='outer')
             if len(self.df) == 0:
                 raise RuntimeError("Failed to merge publications and citations")
 
-            self.loader.load_cocitations(current=4, task=task)
-            self.build_cocitation_graph(current=5, task=task)
+            cocit_grouped_df = self.loader.load_cocitations(current=4, task=task)
+            self.CG = self.build_cocitation_graph(cocit_grouped_df, current=5, task=task)
             if len(self.CG.nodes()) == 0:
                 raise RuntimeError("Failed to build co-citations graph")
 
@@ -83,22 +86,38 @@ class KeyPaperAnalyzer:
             self.find_max_relative_gain_papers(current=10, task=task)
 
             self.subtopic_evolution_analysis(current=11, task=task)
+
+            self.journal_stats = self.popular_journals(current=12, task=task)
+            self.author_stats = self.popular_authors(current=13, task=task)
+
             return self.logger.stream.getvalue()
         finally:
             self.loader.close_connection()
             self.logger.remove_handler()
 
-    def build_cocitation_graph(self, current=0, task=None):
+    def build_cit_df(self, cit_stats_df_from_query, current=None, task=None):
+        cit_df = cit_stats_df_from_query.pivot(index='id', columns='year',
+                                               values='count').reset_index().replace(np.nan, 0)
+        cit_df['total'] = cit_df.iloc[:, 1:].sum(axis=1)
+        cit_df = cit_df.sort_values(by='total', ascending=False)
+        self.logger.debug(f"Loaded citation stats for {len(cit_df)} of {self.articles_found} articles.\n" +
+                          "Others may either have zero citations or be absent in the local database.", current=current,
+                          task=task)
+
+        return cit_df
+
+    def build_cocitation_graph(self, cocit_grouped_df, current=0, task=None):
         self.logger.info(f'Building co-citations graph', current=current, task=task)
-        self.CG = nx.Graph()
+        CG = nx.Graph()
 
         # NOTE: we use nodes id as String to avoid problems str keys in jsonify
         # during graph visualization
-        for el in self.loader.cocit_grouped_df[['cited_1', 'cited_2', 'total']].values:
+        for el in cocit_grouped_df[['cited_1', 'cited_2', 'total']].values:
             start, end, weight = el
-            self.CG.add_edge(str(start), str(end), weight=int(weight))
-        self.logger.debug(f'Co-citations graph nodes {len(self.CG.nodes())} edges {len(self.CG.edges())}\n',
+            CG.add_edge(str(start), str(end), weight=int(weight))
+        self.logger.debug(f'Co-citations graph nodes {len(CG.nodes())} edges {len(CG.edges())}\n',
                           current=current, task=task)
+        return CG
 
     def update_years(self, current=0, task=None):
         self.logger.update_state(current, task=task)
@@ -288,6 +307,7 @@ class KeyPaperAnalyzer:
             pm = p
         return pm, components_merged
 
+
     def sort_components(self, pm, components_merged):
         components = set(pm.values())
         comp_sizes = {com: sum([pm[node] == com for node in pm.keys()]) for com in components}
@@ -303,3 +323,51 @@ class KeyPaperAnalyzer:
             other = None
 
         return sorted_pm, other
+
+    def popular_journals(self, current=0, task=None):
+        self.logger.info("Finding popular journals", current=current, task=task)
+        journal_stats = self.df.groupby(['journal', 'comp']).size().reset_index(name='counts')
+        # drop papers with undefined subtopic
+        journal_stats = journal_stats[journal_stats.comp != -1]
+
+        journal_stats.sort_values(by=['journal', 'counts'], ascending=False, inplace=True)
+
+        journal_stats = journal_stats.groupby('journal').agg(
+            {'comp': lambda x: list(x), 'counts': [lambda x: list(x), 'sum']}).reset_index()
+
+        journal_stats.columns = journal_stats.columns.droplevel(level=1)
+        journal_stats.columns = ['journal', 'comp', 'counts', 'sum']
+
+        journal_stats = journal_stats.sort_values(by=['sum'], ascending=False)
+
+        if journal_stats['journal'].iloc[0] == '':
+            journal_stats.drop(journal_stats.index[0], inplace=True)
+
+        return journal_stats.head(n=20)
+
+    def popular_authors(self, current=0, task=None):
+        self.logger.info("Finding popular authors", current=current, task=task)
+
+        author_stats = pd.DataFrame()
+        author_stats['author'] = self.df[self.df.authors != -1]['authors'].apply(lambda authors: authors.split(', '))
+
+        author_stats = author_stats.author.apply(pd.Series).stack().reset_index(level=1, drop=True).to_frame(
+            'author').join(self.df[['id', 'comp']], how='left')
+
+        author_stats = author_stats.groupby(['author', 'comp']).size().reset_index(name='counts')
+        # drop papers with undefined subtopic
+        author_stats = author_stats[author_stats.comp != -1]
+
+        author_stats.sort_values(by=['author', 'counts'], ascending=False, inplace=True)
+
+        author_stats = author_stats.groupby('author').agg(
+            {'comp': lambda x: list(x), 'counts': [lambda x: list(x), 'sum']}).reset_index()
+
+        author_stats.columns = author_stats.columns.droplevel(level=1)
+        author_stats.columns = ['author', 'comp', 'counts', 'sum']
+        author_stats = author_stats.sort_values(by=['sum'], ascending=False)
+
+        if author_stats['author'].iloc[0] == '':
+            author_stats.drop(author_stats.index[0], inplace=True)
+
+        return author_stats.head(n=20)

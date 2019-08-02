@@ -9,7 +9,8 @@ from bokeh.colors import RGB
 from bokeh.core.properties import value
 from bokeh.io import push_notebook
 from bokeh.layouts import row, column
-from bokeh.models import ColumnDataSource, CustomJS, NodesAndLinkedEdges, TapTool
+from bokeh.models import (ColumnDataSource, CDSView, CustomJS, GroupFilter, CustomJS, 
+                          HTMLTemplateFormatter, NodesAndLinkedEdges, TapTool)
 from bokeh.models import GraphRenderer, StaticLayoutProvider
 # Tools used: hover,pan,tap,wheel_zoom,box_zoom,reset,save
 from bokeh.models import HoverTool, PanTool, WheelZoomTool, BoxZoomTool, ResetTool, SaveTool
@@ -454,6 +455,71 @@ class Plotter:
             return column(hv.render(topic_evolution, backend='bokeh'), subtopic_keywords)
 
         return hv.render(topic_evolution, backend='bokeh')
+
+    def author_statistics(self):
+        data = dict(
+            author=self.analyzer.author_stats['author'],
+            sum=self.analyzer.author_stats['sum'],
+            subtopics=self.analyzer.author_stats['comp'].apply(lambda comp: self._to_colored_circle(comp))
+        )
+
+        template = """<p <%= subtopics %> </p>"""
+        formatter = HTMLTemplateFormatter(template=template)
+
+        source = ColumnDataSource(data)
+
+        columns = [
+            TableColumn(field="author", title="Author", width=500),
+            TableColumn(field="sum", title="Number of articles", width=100),
+            TableColumn(field="subtopics", title="Subtopics", formatter=formatter, width=100, sortable=False),
+        ]
+
+        author_stats = DataTable(source=source, columns=columns, width=700)
+
+        return author_stats
+
+    def journal_statistics(self):
+        data = dict(
+            journal=self.analyzer.journal_stats['journal'],
+            sum=self.analyzer.journal_stats['sum'],
+            subtopics=self.analyzer.journal_stats['comp'].apply(lambda comp: self._to_colored_circle(comp))
+        )
+
+        template = """<p <%= subtopics %> </p>"""
+        formatter = HTMLTemplateFormatter(template=template)
+
+        source = ColumnDataSource(data)
+
+        columns = [
+            TableColumn(field="journal", title="Journal", width=500),
+            TableColumn(field="sum", title='Number of articles', width=100),
+            TableColumn(field="subtopics", title='Subtopics', formatter=formatter, width=100, sortable=False),
+        ]
+
+        journal_stats = DataTable(source=source, columns=columns, width=700)
+        return journal_stats
+
+    def _to_colored_circle(self, components):
+        # html code to generate circles corresponding to the 3 most popular subtopics
+        return ' '.join(
+            map(lambda i: f'''<i class="fas fa-circle" style="color:{self.colors[i]}"></i> ''', components[:3]))
+
+    def __build_data_source(self, df, width=760):
+        # Sort papers from the same year with total number of citations as key, use rank as y-pos
+        ranks = df.groupby('year')['total'].rank(ascending=False, method='first')
+
+        # Calculate max size of circles to avoid overlapping along x-axis
+        min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
+        max_radius_screen_units = width / (max_year - min_year + 1)
+        size_scaling_coefficient = max_radius_screen_units / np.log(df['total']).max()
+
+        # NOTE: 'comp' column is used as string because GroupFilter supports
+        #       only categorical values (needed to color top cited papers by components)
+        d = ColumnDataSource(data=dict(id=df['id'], title=df['title'], authors=df['authors'],
+                                       year=df['year'].replace(np.nan, "Undefined"),
+                                       total=df['total'], comp=df['comp'].astype(str), pos=ranks,
+                                       size=np.log(df['total']) * size_scaling_coefficient))
+        return d
 
     def __serve_scatter_article_layout(self, source, year_range, title, width=960):
         min_year, max_year = year_range

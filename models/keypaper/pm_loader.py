@@ -18,20 +18,21 @@ class PubmedLoader(Loader):
         self.index = index
 
     def search(self, *terms, current=0, task=None):
-        self.logger.debug('TODO: handle queries which return more than 100000 items', current=current, task=task)
+        self.logger.debug(f'TODO: handle queries which return more than {self.max_number_of_articles} items',
+                          current=current, task=task)
         self.terms = [t.lower() for t in terms]
         query = ' '.join(terms).replace("\"", "")
-        handle = Entrez.esearch(db='pubmed', retmax='100000',
+        handle = Entrez.esearch(db='pubmed', retmax=str(self.max_number_of_articles),
                                 retmode='xml', term=query)
-        self.ids = Entrez.read(handle)['IdList']
-        self.articles_found = len(self.ids)
-        self.logger.info(f'Found {len(self.ids)} articles about {terms}', current=current, task=task)
+        ids = Entrez.read(handle)['IdList']
+        self.logger.info(f'Found {len(ids)} articles about {terms}', current=current, task=task)
+        self.values = ', '.join(['({})'.format(i) for i in sorted(ids)])
+        return ids
 
     def load_publications(self, current=0, task=None):
         self.logger.info('Loading publication data', current=current, task=task)
 
-        values = ', '.join(['({})'.format(i) for i in sorted(self.ids)])
-        query = re.sub(Loader.VALUES_REGEX, values, '''
+        query = re.sub(Loader.VALUES_REGEX, self.values, '''
         DROP TABLE IF EXISTS TEMP_PMIDS;
         WITH vals(pmid) AS (VALUES $VALUES$)
         SELECT pmid INTO temporary table TEMP_PMIDS FROM vals;
@@ -46,21 +47,23 @@ class PubmedLoader(Loader):
 
         with self.conn:
             self.cursor.execute(query)
-        self.pub_df = pd.DataFrame(self.cursor.fetchall(),
-                                   columns=['id', 'title', 'aux', 'abstract', 'year'],
-                                   dtype=object)
+        pub_df = pd.DataFrame(self.cursor.fetchall(),
+                              columns=['id', 'title', 'aux', 'abstract', 'year'],
+                              dtype=object)
 
-        self.pub_df['authors'] = self.pub_df['aux'].apply(
+        pub_df['authors'] = pub_df['aux'].apply(
             lambda aux: ', '.join(map(lambda authors: html.unescape(authors['name']), aux['authors'])))
 
-        self.logger.debug(f'Found {len(self.pub_df)} publications in the local database\n', current=current, task=task)
+        pub_df['journal'] = pub_df['aux'].apply(lambda aux: html.unescape(aux['journal']['name']))
+
+        self.logger.debug(f'Found {len(pub_df)} publications in the local database\n', current=current, task=task)
+        return pub_df
 
     def load_citation_stats(self, current=0, task=None):
         self.logger.info('Loading citations statistics: searching for correct citations over 168 million of citations',
                          current=current, task=task)
 
-        values = ', '.join(['({})'.format(i) for i in sorted(self.ids)])
-        query = re.sub(Loader.VALUES_REGEX, values, '''
+        query = re.sub(Loader.VALUES_REGEX, self.values, '''
         SELECT CAST(C.pmid_in AS TEXT) AS pmid, date_part('year', P.date) AS year, COUNT(1) AS count
         FROM PMCitations C
         JOIN (VALUES $VALUES$) AS CT(pmid) ON (C.pmid_in = CT.pmid)
@@ -73,22 +76,15 @@ class PubmedLoader(Loader):
         with self.conn:
             self.cursor.execute(query)
         self.logger.debug('Done loading citation stats', current=current, task=task)
-        self.cit_df = pd.DataFrame(self.cursor.fetchall(),
-                                   columns=['id', 'year', 'count'])
+        cit_stats_df_from_query = pd.DataFrame(self.cursor.fetchall(),
+                                               columns=['id', 'year', 'count'])
 
-        self.cit_df = self.cit_df.pivot(index='id', columns='year',
-                                        values='count').reset_index().replace(np.nan, 0)
-        self.cit_df['total'] = self.cit_df.iloc[:, 1:].sum(axis=1)
-        self.cit_df = self.cit_df.sort_values(by='total', ascending=False)
-        self.logger.debug(f"Loaded citation stats for {len(self.cit_df)} of {len(self.ids)} articles.\n" +
-                          "Others may either have zero citations or be absent in the local database.", current=current,
-                          task=task)
+        return cit_stats_df_from_query
 
     def load_citations(self, current=0, task=None):
         self.logger.info('Started loading raw information about citations', current=current, task=task)
 
-        values = ', '.join(['({})'.format(i) for i in sorted(self.ids)])
-        query = re.sub(Loader.VALUES_REGEX, values, '''
+        query = re.sub(Loader.VALUES_REGEX, self.values, '''
         SELECT CAST(C.pmid_out AS TEXT), CAST(C.pmid_in AS TEXT)
         FROM PMCitations C
         JOIN (VALUES $VALUES$) AS CT(pmid) ON (C.pmid_in = CT.pmid)
@@ -99,13 +95,14 @@ class PubmedLoader(Loader):
             self.cursor.execute(query)
         self.logger.debug('Done loading citations, building citation graph', current=current, task=task)
 
-        self.G = nx.DiGraph()
+        G = nx.DiGraph()
         for row in self.cursor:
             v, u = row
-            self.G.add_edge(v, u)
+            G.add_edge(v, u)
 
-        self.logger.debug(f'Built citation graph - nodes {len(self.G.nodes())} edges {len(self.G.edges())}',
+        self.logger.debug(f'Built citation graph - nodes {len(G.nodes())} edges {len(G.edges())}',
                           current=current, task=task)
+        return G
 
     def load_cocitations(self, current=0, task=None):
         self.logger.info('Calculating co-citations for selected articles', current=current, task=task)
@@ -137,22 +134,25 @@ class PubmedLoader(Loader):
             citing, year, cited = row
             for i in range(len(cited)):
                 for j in range(i + 1, len(cited)):
-                    if cited[i] in self.ids and cited[j] in self.ids:
-                        cocit_data.append((citing, cited[i], cited[j], year))
+                    cocit_data.append((citing, cited[i], cited[j], year))
 
         self.cocit_df = pd.DataFrame(cocit_data, columns=['citing', 'cited_1', 'cited_2', 'year'], dtype=object)
         self.logger.debug(f'Loaded {lines} lines of citing info', current=current, task=task)
         self.logger.debug(f'Found {len(self.cocit_df)} co-cited pairs of articles', current=current, task=task)
 
         self.logger.debug(f'Aggregating co-citations', current=current, task=task)
-        self.cocit_grouped_df = self.cocit_df.groupby(['cited_1', 'cited_2', 'year']).count().reset_index()
-        self.cocit_grouped_df = self.cocit_grouped_df.pivot_table(index=['cited_1', 'cited_2'],
-                                                                  columns=['year'], values=['citing']).reset_index()
-        self.cocit_grouped_df = self.cocit_grouped_df.replace(np.nan, 0)
-        self.cocit_grouped_df['total'] = self.cocit_grouped_df.iloc[:, 2:].sum(axis=1)
-        self.cocit_grouped_df = self.cocit_grouped_df.sort_values(by='total', ascending=False)
-        self.logger.debug('Filtering top 100000 of all the co-citations', current=current, task=task)
-        self.cocit_grouped_df = self.cocit_grouped_df.iloc[:min(100000, len(self.cocit_grouped_df)), :]
+        cocit_grouped_df = self.cocit_df.groupby(['cited_1', 'cited_2', 'year']).count().reset_index()
+        cocit_grouped_df = cocit_grouped_df.pivot_table(index=['cited_1', 'cited_2'],
+                                                        columns=['year'], values=['citing']).reset_index()
+        cocit_grouped_df = cocit_grouped_df.replace(np.nan, 0)
+        cocit_grouped_df['total'] = cocit_grouped_df.iloc[:, 2:].sum(axis=1)
+        cocit_grouped_df = cocit_grouped_df.sort_values(by='total', ascending=False)
+        self.logger.debug(f'Filtering top {self.max_number_of_cocitations} of all the co-citations',
+                          current=current, task=task)
+        cocit_grouped_df = cocit_grouped_df.iloc[:min(self.max_number_of_cocitations,
+                                                      len(cocit_grouped_df)), :]
 
-        for col in self.cocit_grouped_df:
-            self.cocit_grouped_df[col] = self.cocit_grouped_df[col].astype(object)
+        for col in cocit_grouped_df:
+            cocit_grouped_df[col] = cocit_grouped_df[col].astype(object)
+
+        return cocit_grouped_df
