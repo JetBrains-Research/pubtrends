@@ -18,7 +18,7 @@ class PubmedLoader(Loader):
         self.index = index
 
     def search(self, *terms, current=0, task=None):
-        self.logger.debug('TODO: handle queries which return more than {0} items'.format(self.max_number_of_articles),
+        self.logger.debug(f'TODO: handle queries which return more than {self.max_number_of_articles} items',
                           current=current, task=task)
         self.terms = [t.lower() for t in terms]
         query = ' '.join(terms).replace("\"", "")
@@ -147,7 +147,7 @@ class PubmedLoader(Loader):
         cocit_grouped_df = cocit_grouped_df.replace(np.nan, 0)
         cocit_grouped_df['total'] = cocit_grouped_df.iloc[:, 2:].sum(axis=1)
         cocit_grouped_df = cocit_grouped_df.sort_values(by='total', ascending=False)
-        self.logger.debug('Filtering top {0} of all the co-citations'.format(self.max_number_of_cocitations),
+        self.logger.debug(f'Filtering top {self.max_number_of_cocitations} of all the co-citations',
                           current=current, task=task)
         cocit_grouped_df = cocit_grouped_df.iloc[:min(self.max_number_of_cocitations,
                                                       len(cocit_grouped_df)), :]

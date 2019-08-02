@@ -65,8 +65,8 @@ class KeyPaperAnalyzer:
             if len(self.df) == 0:
                 raise RuntimeError("Failed to merge publications and citations")
 
-            self.cocit_grouped_df = self.loader.load_cocitations(current=4, task=task)
-            self.build_cocitation_graph(current=5, task=task)
+            cocit_grouped_df = self.loader.load_cocitations(current=4, task=task)
+            self.CG = self.build_cocitation_graph(cocit_grouped_df, current=5, task=task)
             if len(self.CG.nodes()) == 0:
                 raise RuntimeError("Failed to build co-citations graph")
 
@@ -89,7 +89,7 @@ class KeyPaperAnalyzer:
             self.loader.close_connection()
             self.logger.remove_handler()
 
-    def build_cit_df(self, current, task, filter_citations=True):
+    def build_cit_df(self, current, task):
         cit_df = self.cit_stats_df_from_query.pivot(index='id', columns='year',
                                                     values='count').reset_index().replace(np.nan, 0)
         cit_df['total'] = cit_df.iloc[:, 1:].sum(axis=1)
@@ -98,25 +98,20 @@ class KeyPaperAnalyzer:
                           "Others may either have zero citations or be absent in the local database.", current=current,
                           task=task)
 
-        # if filter_citations:
-        #     self.logger.debug(
-        #         'Filtering top {0} or 80% of all the citations'.format(self.loader.max_number_of_citations),
-        #         current=current, task=task)
-        #     cit_df = cit_df.iloc[:min(self.loader.max_number_of_citations, round(0.8 * len(cit_df))), :]
-
         return cit_df
 
-    def build_cocitation_graph(self, current=0, task=None):
+    def build_cocitation_graph(self, cocit_grouped_df, current=0, task=None):
         self.logger.info(f'Building co-citations graph', current=current, task=task)
-        self.CG = nx.Graph()
+        CG = nx.Graph()
 
         # NOTE: we use nodes id as String to avoid problems str keys in jsonify
         # during graph visualization
-        for el in self.cocit_grouped_df[['cited_1', 'cited_2', 'total']].values:
+        for el in cocit_grouped_df[['cited_1', 'cited_2', 'total']].values:
             start, end, weight = el
-            self.CG.add_edge(str(start), str(end), weight=int(weight))
-        self.logger.debug(f'Co-citations graph nodes {len(self.CG.nodes())} edges {len(self.CG.edges())}\n',
+            CG.add_edge(str(start), str(end), weight=int(weight))
+        self.logger.debug(f'Co-citations graph nodes {len(CG.nodes())} edges {len(CG.edges())}\n',
                           current=current, task=task)
+        return CG
 
     def update_years(self, current=0, task=None):
         self.logger.update_state(current, task=task)
