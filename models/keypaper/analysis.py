@@ -16,8 +16,6 @@ class KeyPaperAnalyzer:
     SEED = 20190723
 
     def __init__(self, loader):
-        self.logger = logging.getLogger(__name__)
-
         self.logger = ProgressLogger()
 
         self.loader = loader
@@ -37,6 +35,8 @@ class KeyPaperAnalyzer:
         self.terms = None
         self.ids = None
         self.df = None
+        self.pub_df = None
+        self.cit_df = None
         self.cocit_df = None
 
         # Graphs
@@ -48,23 +48,24 @@ class KeyPaperAnalyzer:
         try:
             # Search articles relevant to the terms
             self.terms = terms
-            self.loader.search(*terms, current=1, task=task)
+            self.ids = self.loader.search(*terms, current=1, task=task)
+            self.articles_found = len(self.ids)
 
             # Nothing found
-            if len(self.loader.ids) == 0:
+            if self.articles_found == 0:
                 raise RuntimeError("Nothing found")
 
             # Load data about publications, citations and co-citations
-            self.loader.load_publications(current=2, task=task)
-            if len(self.loader.pub_df) == 0:
+            self.pub_df = self.loader.load_publications(current=2, task=task)
+            if len(self.pub_df) == 0:
                 raise RuntimeError("Nothing found in DB")
 
-            self.cit_stats_df_from_query = self.loader.load_citation_stats(current=3, task=task)
-            self.cit_df = self.build_cit_df(current=3.5, task=task)
+            cit_stats_df_from_query = self.loader.load_citation_stats(current=3, task=task)
+            self.cit_df = self.build_cit_df(cit_stats_df_from_query, current=3.5, task=task)
             if len(self.cit_df) == 0:
                 raise RuntimeError("Citations stats not found DB")
 
-            self.df = pd.merge(self.loader.pub_df, self.cit_df, on='id', how='outer')
+            self.df = pd.merge(self.pub_df, self.cit_df, on='id', how='outer')
             if len(self.df) == 0:
                 raise RuntimeError("Failed to merge publications and citations")
 
@@ -96,12 +97,12 @@ class KeyPaperAnalyzer:
             self.loader.close_connection()
             self.logger.remove_handler()
 
-    def build_cit_df(self, current, task):
-        cit_df = self.cit_stats_df_from_query.pivot(index='id', columns='year',
+    def build_cit_df(self, cit_stats_df_from_query, current=None, task=None):
+        cit_df = cit_stats_df_from_query.pivot(index='id', columns='year',
                                                     values='count').reset_index().replace(np.nan, 0)
         cit_df['total'] = cit_df.iloc[:, 1:].sum(axis=1)
         cit_df = cit_df.sort_values(by='total', ascending=False)
-        self.logger.debug(f"Loaded citation stats for {len(cit_df)} of {len(self.loader.ids)} articles.\n" +
+        self.logger.debug(f"Loaded citation stats for {len(cit_df)} of {self.articles_found} articles.\n" +
                           "Others may either have zero citations or be absent in the local database.", current=current,
                           task=task)
 

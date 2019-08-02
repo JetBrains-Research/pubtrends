@@ -48,7 +48,7 @@ def analyze_async(source, terms):
         'max_gain_papers': [components(plotter.max_gain_papers())],
         'max_relative_gain_papers': [components(plotter.max_relative_gain_papers())],
         'papers_stats': [components(plotter.papers_statistics())],
-        'found_papers': str(loader.articles_found),
+        'found_papers': str(analyzer.articles_found),
         'number_of_papers': amount_of_papers,
         'clusters_info_message': plotter.clusters_info_message,
         'subtopic_evolution': [components(plotter.subtopic_evolution())],

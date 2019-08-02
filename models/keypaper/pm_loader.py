@@ -24,15 +24,15 @@ class PubmedLoader(Loader):
         query = ' '.join(terms).replace("\"", "")
         handle = Entrez.esearch(db='pubmed', retmax=str(self.max_number_of_articles),
                                 retmode='xml', term=query)
-        self.ids = Entrez.read(handle)['IdList']
-        self.articles_found = len(self.ids)
-        self.logger.info(f'Found {len(self.ids)} articles about {terms}', current=current, task=task)
+        ids = Entrez.read(handle)['IdList']
+        self.logger.info(f'Found {len(ids)} articles about {terms}', current=current, task=task)
+        self.values = ', '.join(['({})'.format(i) for i in sorted(ids)])
+        return ids
 
     def load_publications(self, current=0, task=None):
         self.logger.info('Loading publication data', current=current, task=task)
 
-        values = ', '.join(['({})'.format(i) for i in sorted(self.ids)])
-        query = re.sub(Loader.VALUES_REGEX, values, '''
+        query = re.sub(Loader.VALUES_REGEX, self.values, '''
         DROP TABLE IF EXISTS TEMP_PMIDS;
         WITH vals(pmid) AS (VALUES $VALUES$)
         SELECT pmid INTO temporary table TEMP_PMIDS FROM vals;
@@ -47,23 +47,23 @@ class PubmedLoader(Loader):
 
         with self.conn:
             self.cursor.execute(query)
-        self.pub_df = pd.DataFrame(self.cursor.fetchall(),
+        pub_df = pd.DataFrame(self.cursor.fetchall(),
                                    columns=['id', 'title', 'aux', 'abstract', 'year'],
                                    dtype=object)
 
-        self.pub_df['authors'] = self.pub_df['aux'].apply(
+        pub_df['authors'] = pub_df['aux'].apply(
             lambda aux: ', '.join(map(lambda authors: html.unescape(authors['name']), aux['authors'])))
 
-        self.pub_df['journal'] = self.pub_df['aux'].apply(lambda aux: html.unescape(aux['journal']['name']))
+        pub_df['journal'] = pub_df['aux'].apply(lambda aux: html.unescape(aux['journal']['name']))
 
-        self.logger.debug(f'Found {len(self.pub_df)} publications in the local database\n', current=current, task=task)
+        self.logger.debug(f'Found {len(pub_df)} publications in the local database\n', current=current, task=task)
+        return pub_df
 
     def load_citation_stats(self, current=0, task=None):
         self.logger.info('Loading citations statistics: searching for correct citations over 168 million of citations',
                          current=current, task=task)
 
-        values = ', '.join(['({})'.format(i) for i in sorted(self.ids)])
-        query = re.sub(Loader.VALUES_REGEX, values, '''
+        query = re.sub(Loader.VALUES_REGEX, self.values, '''
         SELECT CAST(C.pmid_in AS TEXT) AS pmid, date_part('year', P.date) AS year, COUNT(1) AS count
         FROM PMCitations C
         JOIN (VALUES $VALUES$) AS CT(pmid) ON (C.pmid_in = CT.pmid)
@@ -84,8 +84,7 @@ class PubmedLoader(Loader):
     def load_citations(self, current=0, task=None):
         self.logger.info('Started loading raw information about citations', current=current, task=task)
 
-        values = ', '.join(['({})'.format(i) for i in sorted(self.ids)])
-        query = re.sub(Loader.VALUES_REGEX, values, '''
+        query = re.sub(Loader.VALUES_REGEX, self.values, '''
         SELECT CAST(C.pmid_out AS TEXT), CAST(C.pmid_in AS TEXT)
         FROM PMCitations C
         JOIN (VALUES $VALUES$) AS CT(pmid) ON (C.pmid_in = CT.pmid)
@@ -135,8 +134,7 @@ class PubmedLoader(Loader):
             citing, year, cited = row
             for i in range(len(cited)):
                 for j in range(i + 1, len(cited)):
-                    if cited[i] in self.ids and cited[j] in self.ids:
-                        cocit_data.append((citing, cited[i], cited[j], year))
+                    cocit_data.append((citing, cited[i], cited[j], year))
 
         self.cocit_df = pd.DataFrame(cocit_data, columns=['citing', 'cited_1', 'cited_2', 'year'], dtype=object)
         self.logger.debug(f'Loaded {lines} lines of citing info', current=current, task=task)

@@ -26,9 +26,7 @@ class Loader:
         self.logger = None
 
         # Data containers
-        self.ids = None
         self.pub_df = None
-        self.cit_df = None
         self.cocit_df = None
         self.cocit_grouped_df = None
 

@@ -45,10 +45,10 @@ class SemanticScholarLoader(Loader):
 
         self.pub_df['title'] = self.pub_df['title'].apply(lambda title: html.unescape(title))
 
-        self.ids = self.pub_df['id']
-        self.crc32ids = self.pub_df['crc32id']
-        self.values = ', '.join(['({0}, \'{1}\')'.format(i, j) for (i, j) in zip(self.crc32ids, self.ids)])
-        self.articles_found = len(self.ids)
+        ids = self.pub_df['id']
+        crc32ids = self.pub_df['crc32id']
+        self.values = ', '.join(['({0}, \'{1}\')'.format(i, j) for (i, j) in zip(crc32ids, ids)])
+        return ids
 
     def load_publications(self, current=0, task=None):
         self.logger.info('Loading publication data', current=current, task=task)
@@ -64,6 +64,8 @@ class SemanticScholarLoader(Loader):
             self.cursor.execute(query)
 
         self.logger.debug('Created table for request with index.', current=current, task=task)
+
+        return self.pub_df
 
     def load_citation_stats(self, current=0, task=None):
         self.logger.info('Loading citations statistics: searching for correct citations over 150 million of citations',
