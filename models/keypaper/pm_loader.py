@@ -48,8 +48,8 @@ class PubmedLoader(Loader):
         with self.conn:
             self.cursor.execute(query)
         pub_df = pd.DataFrame(self.cursor.fetchall(),
-                                   columns=['id', 'title', 'aux', 'abstract', 'year'],
-                                   dtype=object)
+                              columns=['id', 'title', 'aux', 'abstract', 'year'],
+                              dtype=object)
 
         pub_df['authors'] = pub_df['aux'].apply(
             lambda aux: ', '.join(map(lambda authors: html.unescape(authors['name']), aux['authors'])))

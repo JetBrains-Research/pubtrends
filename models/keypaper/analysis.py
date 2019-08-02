@@ -1,5 +1,3 @@
-import logging
-
 import community
 import networkx as nx
 import numpy as np
@@ -99,7 +97,7 @@ class KeyPaperAnalyzer:
 
     def build_cit_df(self, cit_stats_df_from_query, current=None, task=None):
         cit_df = cit_stats_df_from_query.pivot(index='id', columns='year',
-                                                    values='count').reset_index().replace(np.nan, 0)
+                                               values='count').reset_index().replace(np.nan, 0)
         cit_df['total'] = cit_df.iloc[:, 1:].sum(axis=1)
         cit_df = cit_df.sort_values(by='total', ascending=False)
         self.logger.debug(f"Loaded citation stats for {len(cit_df)} of {self.articles_found} articles.\n" +
