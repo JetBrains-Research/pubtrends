@@ -12,3 +12,7 @@ footer {
 footer a {
     color: #777;
 }
+
+span.error-message {
+    white-space: pre-line;
+}

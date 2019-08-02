@@ -113,8 +113,7 @@ class TestSemanticScholarLoader(unittest.TestCase):
 
     @classmethod
     def _load_citations_graph(cls):
-        G = cls.loader.load_citations()
-        return G
+        return cls.loader.load_citations()
 
     @classmethod
     def _load_cocitations(cls):
