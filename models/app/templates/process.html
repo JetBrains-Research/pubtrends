@@ -33,8 +33,8 @@
                     console.log(response);
                     if (response.state === 'FAILURE') {
                         $('#progress').hide();
-                        $('#status').html("<h1>Error</h1>" +
-                            `<span style=\\"white-space: pre-line;\\"> ${response.message} </span>`);
+                        $('#status').html("<h1>Error</h1>"+
+                            `<span class="error-message"> ${response.message} </span>`);
                         $('#log').html(response.log);
                     } else if (response.state === 'PENDING') {
                         $('#status').html(response.message);

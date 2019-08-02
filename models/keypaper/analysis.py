@@ -5,6 +5,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
+from models.test.test_loader import TestLoader
 from .pm_loader import PubmedLoader
 from .progress_logger import ProgressLogger
 from .ss_loader import SemanticScholarLoader
@@ -27,8 +28,10 @@ class KeyPaperAnalyzer:
             self.source = 'pubmed'
         elif isinstance(self.loader, SemanticScholarLoader):
             self.source = 'semantic'
-        # else:
-        #     raise TypeError("loader should be either PubmedLoader or SemanticScholarLoader")
+        elif isinstance(self.loader, TestLoader):
+            self.source = 'test'
+        else:
+            raise TypeError("loader should be either PubmedLoader or SemanticScholarLoader (or TestLoader)")
 
         # Data containers
         self.terms = None
@@ -85,8 +88,8 @@ class KeyPaperAnalyzer:
 
             self.subtopic_evolution_analysis(current=11, task=task)
 
-            self.popular_journals(current=12, task=task)
-            self.popular_authors(current=13, task=task)
+            self.journal_stats = self.popular_journals(current=12, task=task)
+            self.author_stats = self.popular_authors(current=13, task=task)
 
             return self.logger.stream.getvalue()
         finally:
@@ -323,7 +326,7 @@ class KeyPaperAnalyzer:
         if journal_stats['journal'].iloc[0] == '':
             journal_stats.drop(journal_stats.index[0], inplace=True)
 
-        self.journal_stats = journal_stats.head(n=20)
+        return journal_stats.head(n=20)
 
     def popular_authors(self, current=0, task=None):
         self.logger.info("Finding popular authors", current=current, task=task)
@@ -350,4 +353,4 @@ class KeyPaperAnalyzer:
         if author_stats['author'].iloc[0] == '':
             author_stats.drop(author_stats.index[0], inplace=True)
 
-        self.author_stats = author_stats.head(n=20)
+        return author_stats.head(n=20)

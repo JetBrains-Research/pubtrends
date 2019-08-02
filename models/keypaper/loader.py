@@ -33,9 +33,9 @@ class Loader:
         self.cocit_grouped_df = None
 
     def close_connection(self):
-        if self.cursor is not None:
+        if self.cursor:
             self.cursor.close()
-        if self.conn is not None:
+        if self.conn:
             self.conn.close()
 
     def set_logger(self, logger):

@@ -6,6 +6,7 @@ class PubtrendsConfig:
     """
     Main service configuration loaded from ~/.pubtrends/config.properties
     """
+
     def __init__(self, config_path='~/.pubtrends/config.properties', test=True):
         config_parser = configparser.ConfigParser()
 
