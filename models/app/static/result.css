@@ -2,7 +2,7 @@ body {
     padding-top: 65px;
 }
 
-/* Fixes link jumps to cards */
+/* Fixes link jumps to cards by the height of fixed navbar */
 :target {
     padding-top: 75px;
     margin-top: -75px;
@@ -15,6 +15,7 @@ body {
     z-index: 100; /* Behind the navbar */
     padding: 0;
     box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+    border: bottom;
 }
 
 .sidebar-sticky {
@@ -48,10 +49,6 @@ body {
 .sidebar-heading {
     font-size: .75rem;
     text-transform: uppercase;
-}
-
-.section {
-    width: 1020px;
 }
 
 .card-header {

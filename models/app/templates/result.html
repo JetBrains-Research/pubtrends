@@ -48,7 +48,7 @@
 <div class="container-fluid">
     <div class="row">
         <!-- Sticky sidebar -->
-        <nav class="col-md-2 col-xl-2 d-none d-md-block bg-light sidebar">
+        <nav class="col-md-2 col-xl-2 d-none d-md-block bg-light sidebar border-bottom">
             <div class="sidebar-sticky">
                 <ul class="nav flex-column mt-3">
                     <li class="nav-item">
@@ -72,6 +72,16 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" href="#authors">
+                            Authors
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#journals">
+                            Journals
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="#publications">
                             Publications
                         </a>
@@ -81,13 +91,18 @@
                             Experimental Features
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#log">
+                            Log
+                        </a>
+                    </li>
                 </ul>
             </div>
         </nav>
 
         <!-- Main content -->
-        <main class="col-12 col-md-12 col-xl-9 justify-content-between" role="main">
-            <div class="card section mt-3">
+        <main class="col-12 col-md-auto col-xl-10 justify-content-between" role="main">
+            <div class="card mt-3">
                 <div class="card-title" id="overview">
                     <h2 class="card-header">Overview</h2>
                 </div>
@@ -132,7 +147,7 @@
                 </div>
             </div>
 
-            <div class="card section mt-3">
+            <div class="card mt-3">
                 <div class="card-title" id="highlights">
                     <h1 class="card-header">Highlights</h1>
                 </div>
@@ -175,7 +190,7 @@
                 </div>
             </div>
 
-            <div class="card section mt-3">
+            <div class="card mt-3">
                 <div class="card-title" id="topics">
                     <h1 class="card-header">Topics</h1>
                 </div>
@@ -208,7 +223,7 @@
                 </div>
             </div>
 
-            <div class="card section mt-3">
+            <div class="card mt-3">
                 <div class="card-title" id="trends">
                     <h1 class="card-header">Trends</h1>
                 </div>
@@ -227,7 +242,47 @@
                 </div>
             </div>
 
-            <div class="card section mt-3">
+            <div class="card mt-3">
+                <div class="card-title" id="authors">
+                    <h1 class="card-header">Authors</h1>
+                </div>
+                <div class="card-body">
+                    <p>
+                        List of authors with the largest number of articles for given terms.
+                        The colors of the circles in the subtopics column indicate the most common subtopics among these
+                        articles.
+                        The subtopic circles are arranged according to the number of articles, in descending order.
+                    </p>
+                    <div>
+                        {% for script, div in author_statistics %}
+                        {{ script|safe }}
+                        {{ div|safe }}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-title" id="journals">
+                    <h1 class="card-header">Journals</h1>
+                </div>
+                <div class="card-body">
+                    <p>
+                        List of journals with the largest number of articles for given terms.
+                        The colors of the circles in the subtopics column indicate the most common subtopics among these
+                        articles.
+                        The subtopic circles are arranged according to the number of articles, in descending order.
+                    </p>
+                    <div>
+                        {% for script, div in journal_statistics %}
+                        {{ script|safe }}
+                        {{ div|safe }}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
                 <div class="card-title" id="publications">
                     <h1 class="card-header">Publications</h1>
                 </div>
@@ -249,7 +304,7 @@
                 </div>
             </div>
 
-            <div class="card section mt-3">
+            <div class="card mt-3">
                 <div class="card-title" id="evolution">
                     <h1 class="card-header">Experimental Features</h1>
                 </div>
@@ -273,48 +328,17 @@
                     </div>
                 </div>
             </div>
+
+            <div class="card mt-3">
+                <div class="card-title" id="log">
+                    <h1 class="card-header">Log</h1>
+                </div>
+                <div class="card-body">
+                    <pre>{{log}}</pre>
+                </div>
+            </div>
         </main>
     </div>
-    <div class="card mt-3">
-        <div class="card-title">
-            <h1 class="card-header" id="authors">Authors</h1>
-        </div>
-        <div class="card-body">
-            <p>
-                List of authors with the largest number of articles for given terms.
-                The colors of the circles in the subtopics column indicate the most common subtopics among these articles.
-                The subtopic circles are arranged according to the number of articles, in descending order.
-            </p>
-            <div>
-                {% for script, div in author_statistics %}
-                    {{ script|safe }}
-                    {{ div|safe }}
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-
-    <div class="card mt-3">
-        <div class="card-title">
-            <h1 class="card-header" id="journals">Journals</h1>
-        </div>
-        <div class="card-body">
-            <p>
-                List of journals with the largest number of articles for given terms.
-                The colors of the circles in the subtopics column indicate the most common subtopics among these articles.
-                The subtopic circles are arranged according to the number of articles, in descending order.
-            </p>
-            <div>
-                {% for script, div in journal_statistics %}
-                {{ script|safe }}
-                {{ div|safe }}
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-
-    <h1>Log</h1>
-    <pre id="log">{{log}}</pre>
 </div>
 <footer>
     <p>version {{ version }}<br/>

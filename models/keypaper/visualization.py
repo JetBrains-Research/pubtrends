@@ -9,15 +9,14 @@ from bokeh.colors import RGB
 from bokeh.core.properties import value
 from bokeh.io import push_notebook
 from bokeh.layouts import row, column
-from bokeh.models import (ColumnDataSource, CDSView, CustomJS, GroupFilter, CustomJS, 
-                          HTMLTemplateFormatter, NodesAndLinkedEdges, TapTool)
+from bokeh.models import ColumnDataSource, CustomJS, HTMLTemplateFormatter, NodesAndLinkedEdges, TapTool
 from bokeh.models import GraphRenderer, StaticLayoutProvider
 # Tools used: hover,pan,tap,wheel_zoom,box_zoom,reset,save
 from bokeh.models import HoverTool, PanTool, WheelZoomTool, BoxZoomTool, ResetTool, SaveTool
 from bokeh.models import LinearColorMapper, PrintfTickFormatter, ColorBar
 from bokeh.models import NumeralTickFormatter
 from bokeh.models import Plot, Range1d, MultiLine, Circle, Span
-from bokeh.models.widgets.tables import DataTable
+from bokeh.models.widgets.tables import DataTable, TableColumn
 from bokeh.palettes import Category20
 from bokeh.plotting import figure, show
 from bokeh.transform import factor_cmap
