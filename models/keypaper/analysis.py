@@ -3,9 +3,8 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-from models.test.test_loader import TestLoader
 from models.test.mock_loader import MockLoader
-
+from models.test.test_loader import TestLoader
 from .pm_loader import PubmedLoader
 from .progress_logger import ProgressLogger
 from .ss_loader import SemanticScholarLoader
@@ -69,19 +68,18 @@ class KeyPaperAnalyzer:
             if len(self.df) == 0:
                 raise RuntimeError("Failed to merge publications and citations")
 
-            cocit_grouped_df = self.loader.load_cocitations(current=4, task=task)
+            self.cocit_df, cocit_grouped_df = self.loader.load_cocitations(current=4, task=task)
             self.CG = self.build_cocitation_graph(cocit_grouped_df, current=5, task=task)
             if len(self.CG.nodes()) == 0:
                 raise RuntimeError("Failed to build co-citations graph")
 
-            self.cocit_df = self.loader.cocit_df
-
             # Calculate min and max year of publications
             self.update_years(current=6, task=task)
+
             # Perform basic analysis
             self.subtopic_analysis(current=7, task=task)
 
-            self.find_top_cited_papers(current=8, task=task)  # run after subtopic analysis to color components
+            self.find_top_cited_papers(current=8, task=task)
 
             self.find_max_gain_papers(current=9, task=task)
 
@@ -89,8 +87,8 @@ class KeyPaperAnalyzer:
 
             self.subtopic_evolution_analysis(current=11, task=task)
 
-            self.journal_stats = self.popular_journals(current=12, task=task)
-            self.author_stats = self.popular_authors(current=13, task=task)
+            # self.journal_stats = self.popular_journals(current=12, task=task)
+            # self.author_stats = self.popular_authors(current=13, task=task)
 
             return self.logger.stream.getvalue()
         finally:

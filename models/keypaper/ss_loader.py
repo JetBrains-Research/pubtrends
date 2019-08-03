@@ -12,8 +12,7 @@ class SemanticScholarLoader(Loader):
                  pubtrends_config,
                  publications_table='sspublications',
                  citations_table='sscitations',
-                 temp_ids_table='temp_ssids',
-                 index='ssid'):
+                 temp_ids_table='temp_ssids'):
         super(SemanticScholarLoader, self).__init__(pubtrends_config)
 
         self.publications_table = publications_table
@@ -152,12 +151,12 @@ class SemanticScholarLoader(Loader):
             for i in range(len(cited)):
                 for j in range(i + 1, len(cited)):
                     cocit_data.append((citing, cited[i], cited[j], year))
-        self.cocit_df = pd.DataFrame(cocit_data, columns=['citing', 'cited_1', 'cited_2', 'year'], dtype=object)
+        cocit_df = pd.DataFrame(cocit_data, columns=['citing', 'cited_1', 'cited_2', 'year'], dtype=object)
         self.logger.debug(f'Loaded {lines} lines of citing info', current=current, task=task)
-        self.logger.debug(f'Found {len(self.cocit_df)} co-cited pairs of articles', current=current, task=task)
+        self.logger.debug(f'Found {len(cocit_df)} co-cited pairs of articles', current=current, task=task)
 
         self.logger.debug(f'Aggregating co-citations', current=current, task=task)
-        cocit_grouped_df = self.cocit_df.groupby(['cited_1', 'cited_2', 'year']).count().reset_index()
+        cocit_grouped_df = cocit_df.groupby(['cited_1', 'cited_2', 'year']).count().reset_index()
         cocit_grouped_df = cocit_grouped_df.pivot_table(index=['cited_1', 'cited_2'],
                                                         columns=['year'],
                                                         values=['citing']).reset_index()
@@ -172,4 +171,4 @@ class SemanticScholarLoader(Loader):
         for col in cocit_grouped_df:
             cocit_grouped_df[col] = cocit_grouped_df[col].astype(object)
 
-        return cocit_grouped_df
+        return cocit_df, cocit_grouped_df
