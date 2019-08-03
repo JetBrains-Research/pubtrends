@@ -12,10 +12,15 @@ from .loader import Loader
 class PubmedLoader(Loader):
     def __init__(self,
                  pubtrends_config,
-                 index='pmid'):
+                 publications_table='PMPublications',
+                 citations_table='PMCitations',
+                 temp_ids_table='temp_pmids'):
         super(PubmedLoader, self).__init__(pubtrends_config)
         Entrez.email = pubtrends_config.pm_entrez_email
-        self.index = index
+
+        self.publications_table = publications_table
+        self.citations_table = citations_table
+        self.temp_ids_table = temp_ids_table
 
     def search(self, *terms, current=0, task=None):
         self.logger.debug(f'TODO: handle queries which return more than {self.max_number_of_articles} items',
@@ -136,12 +141,12 @@ class PubmedLoader(Loader):
                 for j in range(i + 1, len(cited)):
                     cocit_data.append((citing, cited[i], cited[j], year))
 
-        self.cocit_df = pd.DataFrame(cocit_data, columns=['citing', 'cited_1', 'cited_2', 'year'], dtype=object)
+        cocit_df = pd.DataFrame(cocit_data, columns=['citing', 'cited_1', 'cited_2', 'year'], dtype=object)
         self.logger.debug(f'Loaded {lines} lines of citing info', current=current, task=task)
-        self.logger.debug(f'Found {len(self.cocit_df)} co-cited pairs of articles', current=current, task=task)
+        self.logger.debug(f'Found {len(cocit_df)} co-cited pairs of articles', current=current, task=task)
 
         self.logger.debug(f'Aggregating co-citations', current=current, task=task)
-        cocit_grouped_df = self.cocit_df.groupby(['cited_1', 'cited_2', 'year']).count().reset_index()
+        cocit_grouped_df = cocit_df.groupby(['cited_1', 'cited_2', 'year']).count().reset_index()
         cocit_grouped_df = cocit_grouped_df.pivot_table(index=['cited_1', 'cited_2'],
                                                         columns=['year'], values=['citing']).reset_index()
         cocit_grouped_df = cocit_grouped_df.replace(np.nan, 0)
@@ -155,4 +160,4 @@ class PubmedLoader(Loader):
         for col in cocit_grouped_df:
             cocit_grouped_df[col] = cocit_grouped_df[col].astype(object)
 
-        return cocit_grouped_df
+        return cocit_df, cocit_grouped_df

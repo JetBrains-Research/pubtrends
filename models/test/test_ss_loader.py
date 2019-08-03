@@ -117,7 +117,7 @@ class TestSemanticScholarLoader(unittest.TestCase):
 
     @classmethod
     def _load_cocitations(cls):
-        cocit_grouped_df = cls.loader.load_cocitations()
+        cocit_df, cocit_grouped_df = cls.loader.load_cocitations()
         # flatten dataframe with multi index
         actual = cocit_grouped_df.sort_values(by=['cited_1', 'cited_2']).reset_index(drop=True)
         for col in actual['citing'].columns:
