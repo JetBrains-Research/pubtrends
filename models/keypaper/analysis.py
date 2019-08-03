@@ -30,17 +30,6 @@ class KeyPaperAnalyzer:
         else:
             raise TypeError("loader should be either PubmedLoader or SemanticScholarLoader (or TestLoader)")
 
-        # Data containers
-        self.terms = None
-        self.ids = None
-        self.df = None
-        self.pub_df = None
-        self.cit_df = None
-        self.cocit_df = None
-
-        # Graphs
-        self.CG = None
-
     def launch(self, *terms, task=None):
         """:return full log"""
 
@@ -48,10 +37,10 @@ class KeyPaperAnalyzer:
             # Search articles relevant to the terms
             self.terms = terms
             self.ids = self.loader.search(*terms, current=1, task=task)
-            self.articles_found = len(self.ids)
+            self.n_papers = len(self.ids)
 
             # Nothing found
-            if self.articles_found == 0:
+            if self.n_papers == 0:
                 raise RuntimeError("Nothing found")
 
             # Load data about publications, citations and co-citations
@@ -60,11 +49,12 @@ class KeyPaperAnalyzer:
                 raise RuntimeError("Nothing found in DB")
 
             cit_stats_df_from_query = self.loader.load_citation_stats(current=3, task=task)
-            self.cit_df = self.build_cit_df(cit_stats_df_from_query, current=4, task=task)
+            self.cit_df = self.build_cit_df(cit_stats_df_from_query, self.n_papers, current=4, task=task)
             if len(self.cit_df) == 0:
                 raise RuntimeError("Citations stats not found DB")
 
-            self.merge_citation_stats()
+            self.df, self.min_year, self.max_year, self.citation_years = self.merge_citation_stats(self.pub_df,
+                                                                                                   self.cit_df)
             if len(self.df) == 0:
                 raise RuntimeError("Failed to merge publications and citations")
 
@@ -75,40 +65,64 @@ class KeyPaperAnalyzer:
             if len(self.CG.nodes()) == 0:
                 raise RuntimeError("Failed to build co-citations graph")
 
-            # Calculate min and max year of publications
-            self.update_years(current=8, task=task)
-            # Perform basic analysis
-            self.subtopic_analysis(current=9, task=task)
+            # Perform subtopic analysis and get subtopic descriptions
+            self.df, self.components, self.comp_other, self.pm, self.pmcomp_sizes = self.subtopic_analysis(
+                self.df, self.CG, current=8, task=task
+            )
+            self.df_kwd = self.subtopic_descriptions(self.df)
 
-            self.find_top_cited_papers(current=10, task=task)
+            # Find interesting papers
+            self.top_cited_papers, self.top_cited_df = self.find_top_cited_papers(self.df, current=9, task=task)
 
-            self.find_max_gain_papers(current=11, task=task)
+            self.max_gain_papers, self.max_gain_df = self.find_max_gain_papers(self.df, self.citation_years,
+                                                                               current=10, task=task)
 
-            self.find_max_relative_gain_papers(current=12, task=task)
+            self.max_rel_gain_papers, self.max_rel_gain_df = self.find_max_relative_gain_papers(
+                self.df, self.citation_years, current=11, task=task
+            )
 
-            self.subtopic_evolution_analysis(current=13, task=task)
+            # Perform subtopic evolution analysis and get subtopic descriptions
+            self.evolution_df, self.evolution_year_range = self.subtopic_evolution_analysis(self.cocit_df, current=12,
+                                                                                            task=task)
+            self.evolution_kwds = self.subtopic_evolution_descriptions(self.df, self.evolution_df,
+                                                                       self.evolution_year_range, self.terms)
 
-            # self.journal_stats = self.popular_journals(current=14, task=task)
-            # self.author_stats = self.popular_authors(current=15, task=task)
+            # Find top journals
+            self.journal_stats = self.popular_journals(self.df, current=13, task=task)
+
+            # Find top authors
+            self.author_stats = self.popular_authors(self.df, current=14, task=task)
 
             return self.logger.stream.getvalue()
         finally:
             self.loader.close_connection()
             self.logger.remove_handler()
 
-    def build_cit_df(self, cit_stats_df_from_query, current=None, task=None):
+    def build_cit_df(self, cit_stats_df_from_query, n_papers, current=None, task=None):
         cit_df = cit_stats_df_from_query.pivot(index='id', columns='year',
-                                               values='count').reset_index().replace(np.nan, 0)
+                                               values='count').reset_index()
         cit_df['total'] = cit_df.iloc[:, 1:].sum(axis=1)
         cit_df = cit_df.sort_values(by='total', ascending=False)
-        self.logger.debug(f"Loaded citation stats for {len(cit_df)} of {self.articles_found} articles.\n" +
-                          "Others may either have zero citations or be absent in the local database.", current=current,
-                          task=task)
+        self.logger.debug(f"Loaded citation stats for {len(cit_df)} of {n_papers} articles.\n" +
+                          "Others may either have zero citations or be absent in the local database.",
+                          current=current, task=task)
 
         return cit_df
 
-    def merge_citation_stats(self):
-        self.df = pd.merge(self.pub_df, self.cit_df, on='id', how='outer')
+    @staticmethod
+    def merge_citation_stats(pub_df, cit_df):
+        df = pd.merge(pub_df, cit_df, on='id', how='outer')
+
+        # Publication and citation year range
+        citation_years = [int(col) for col in list(df.columns) if isinstance(col, (int, float))]
+        min_year, max_year = int(df['year'].min()), int(df['year'].max())
+
+        # Fill NaN in citation_stats with 0
+        values = {year: 0 for year in citation_years}
+        values['total'] = 0
+        df = df.fillna(value=values)
+
+        return df, min_year, max_year, citation_years
 
     def build_cocitation_graph(self, cocit_grouped_df, current=0, task=None, add_citation_edges=False,
                                citation_weight=0.3):
@@ -132,83 +146,87 @@ class KeyPaperAnalyzer:
                           current=current, task=task)
         return CG
 
-    def update_years(self, current=0, task=None):
-        self.logger.update_state(current, task=task)
-        self.years = [int(col) for col in list(self.df.columns) if isinstance(col, (int, float))]
-        self.min_year, self.max_year = int(self.df['year'].min()), int(self.df['year'].max())
-
-    def subtopic_analysis(self, current=0, task=None):
-        # Graph clustering via Louvain algorithm
+    def subtopic_analysis(self, df, cocitation_graph, current=0, task=None):
         self.logger.info(f'Louvain community clustering of co-citation graph', current=current, task=task)
-        self.logger.debug(f'Co-citation graph has {nx.number_connected_components(self.CG)} connected components',
+        connected_components = nx.number_connected_components(cocitation_graph)
+        self.logger.debug(f'Co-citation graph has {connected_components} connected components',
                           current=current, task=task)
-        p = community.best_partition(self.CG, random_state=KeyPaperAnalyzer.SEED)
+
+        # Graph clustering via Louvain algorithm
+        p = community.best_partition(cocitation_graph, random_state=KeyPaperAnalyzer.SEED)
         self.logger.debug(f'Found {len(set(p.values()))} components', current=current, task=task)
-        self.logger.debug(f'Graph modularity: {community.modularity(p, self.CG):.3f}', current=current, task=task)
+
+        # Calculate modularity for partition
+        modularity = community.modularity(p, cocitation_graph)
+        self.logger.debug(f'Graph modularity (possible range is [-1, 1]): {modularity :.3f}',
+                          current=current, task=task)
 
         # Merge small components to 'Other'
         pm, components_merged = self.merge_components(p)
-        pm, self.comp_other = self.sort_components(pm, components_merged)
-        self.components = set(pm.values())
-        self.pm = pm
-        self.pmcomp_sizes = {com: sum([pm[node] == com for node in pm.keys()]) for com in
-                             self.components}
-        for k, v in self.pmcomp_sizes.items():
+        pm, comp_other = self.sort_components(pm, components_merged)
+        components = set(pm.values())
+        pmcomp_sizes = {com: sum([pm[node] == com for node in pm.keys()]) for com in
+                        components}
+        for k, v in pmcomp_sizes.items():
             self.logger.debug(f'Cluster {k}: {v} ({int(100 * v / len(pm))}%)', current=current, task=task)
 
         # Added 'comp' column containing the ID of component
         df_comp = pd.Series(pm).reset_index().rename(columns={'index': 'id', 0: 'comp'})
-        self.df = pd.merge(self.df.assign(id=self.df['id'].astype(str)),
-                           df_comp.assign(id=df_comp['id'].astype(str)),
-                           on='id', how='outer').fillna(-1)
-        self.df['comp'] = self.df['comp'].apply(int)
+        df_merged = pd.merge(df.assign(id=df['id'].astype(str)),
+                             df_comp.assign(id=df_comp['id'].astype(str)),
+                             on='id', how='outer').fillna(-1)
+        df_merged['comp'] = df_merged['comp'].apply(int)
+        return df_merged, components, comp_other, pm, pmcomp_sizes
 
+    def subtopic_descriptions(self, df, current=0, task=None):
         # Get n-gram descriptions for subtopics
         self.logger.debug('Getting n-gram descriptions for subtopics', current=current, task=task)
-        comps = self.df.groupby('comp')['id'].apply(list).to_dict()
-        kwds = get_subtopic_descriptions(self.df, comps)
+        comps = df.groupby('comp')['id'].apply(list).to_dict()
+        kwds = get_subtopic_descriptions(df, comps)
         for k, v in kwds.items():
             self.logger.debug(f'{k}: {v}', current=current, task=task)
         df_kwd = pd.Series(kwds).reset_index()
         df_kwd = df_kwd.rename(columns={'index': 'comp', 0: 'kwd'})
-        self.df_kwd = df_kwd
         self.logger.debug('Done\n', current=current, task=task)
+        return df_kwd
 
-    def find_top_cited_papers(self, max_papers=50, threshold=0.1, min_papers=1, current=0, task=None):
+    def find_top_cited_papers(self, df, max_papers=50, threshold=0.1, min_papers=1, current=0, task=None):
         self.logger.info(f'Identifying top cited papers overall', current=current, task=task)
-        papers_to_show = max(min(max_papers, round(len(self.df) * threshold)), min_papers)
-        self.top_cited_df = self.df.sort_values(by='total',
-                                                ascending=False).iloc[:papers_to_show, :]
-        self.top_cited_papers = set(self.top_cited_df['id'].values)
+        papers_to_show = max(min(max_papers, round(len(df) * threshold)), min_papers)
+        top_cited_df = df.sort_values(by='total',
+                                      ascending=False).iloc[:papers_to_show, :]
+        top_cited_papers = set(top_cited_df['id'].values)
+        return top_cited_papers, top_cited_df
 
-    def find_max_gain_papers(self, current=0, task=None):
+    def find_max_gain_papers(self, df, citation_years, current=0, task=None):
         self.logger.info('Identifying papers with max citation gain for each year', current=current, task=task)
         max_gain_data = []
-        for year in self.years:
-            max_gain = self.df[year].astype(int).max()
+        for year in citation_years:
+            max_gain = df[year].astype(int).max()
             if max_gain > 0:
-                sel = self.df[self.df[year] == max_gain]
+                sel = df[df[year] == max_gain]
                 max_gain_data.append([year, str(sel['id'].values[0]),
                                       sel['title'].values[0],
                                       sel['authors'].values[0],
                                       sel['year'].values[0], max_gain])
 
-        self.max_gain_df = pd.DataFrame(max_gain_data,
-                                        columns=['year', 'id', 'title', 'authors',
-                                                 'paper_year', 'count'])
-        self.max_gain_papers = set(self.max_gain_df['id'].values)
+        max_gain_df = pd.DataFrame(max_gain_data,
+                                   columns=['year', 'id', 'title', 'authors',
+                                            'paper_year', 'count'])
+        max_gain_papers = set(max_gain_df['id'].values)
+        return max_gain_papers, max_gain_df
 
-    def find_max_relative_gain_papers(self, current=0, task=None):
+    def find_max_relative_gain_papers(self, df, citation_years, current=0, task=None):
         self.logger.info('Identifying papers with max relative citation gain for each year', current=current,
                          task=task)
-        current_sum = pd.Series(np.zeros(len(self.df), ))
-        df_rel = self.df.loc[:, ['id', 'title', 'authors', 'year']]
-        for year in self.years:
-            df_rel[year] = self.df[year] / (current_sum + (current_sum == 0))
-            current_sum += self.df[year]
+        current_sum = pd.Series(np.zeros(len(df), ))
+        df_rel = df.loc[:, ['id', 'title', 'authors', 'year']]
+        for year in citation_years:
+            df_rel[year] = df[year] / (current_sum + (current_sum == 0))
+            current_sum += df[year]
 
         max_rel_gain_data = []
-        for year in self.years:
+        for year in citation_years:
             max_rel_gain = df_rel[year].max()
             if max_rel_gain > 1e-6:
                 sel = df_rel[df_rel[year] == max_rel_gain]
@@ -217,17 +235,17 @@ class KeyPaperAnalyzer:
                                           sel['authors'].values[0],
                                           sel['year'].values[0], max_rel_gain])
 
-        self.max_rel_gain_df = pd.DataFrame(max_rel_gain_data,
-                                            columns=['year', 'id', 'title', 'authors',
-                                                     'paper_year', 'rel_gain'])
-        self.max_rel_gain_papers = set(self.max_rel_gain_df['id'].values)
+        max_rel_gain_df = pd.DataFrame(max_rel_gain_data,
+                                       columns=['year', 'id', 'title', 'authors',
+                                                'paper_year', 'rel_gain'])
+        max_rel_gain_papers = set(max_rel_gain_df['id'].values)
+        return max_rel_gain_papers, max_rel_gain_df
 
-    def subtopic_evolution_analysis(self, step=5, keywords=15, min_papers=0, current=0, task=None):
-        min_year = int(self.cocit_df['year'].min())
-        max_year = int(self.cocit_df['year'].max())
-        self.logger.info(
-            f'Studying evolution of subtopic clusters in {min_year} - {max_year} with a step of {step} years',
-            current=current, task=task)
+    def subtopic_evolution_analysis(self, cocit_df, step=5, min_papers=0, current=0, task=None):
+        min_year = int(cocit_df['year'].min())
+        max_year = int(cocit_df['year'].max())
+        self.logger.info(f'Studying evolution of subtopic clusters in {min_year} - {max_year}',
+                         current=current, task=task)
 
         components_merged = {}
         cg = {}
@@ -238,7 +256,7 @@ class KeyPaperAnalyzer:
 
         years_processed = 0
         for i, year in enumerate(year_range):
-            cocit_grouped_df = self.cocit_df[self.cocit_df['year'] <= year].groupby(
+            cocit_grouped_df = cocit_df[cocit_df['year'] <= year].groupby(
                 ['cited_1', 'cited_2', 'year']).count().reset_index()
             cocit_grouped_df = cocit_grouped_df.pivot_table(index=['cited_1', 'cited_2'],
                                                             columns=['year'],
@@ -269,28 +287,30 @@ class KeyPaperAnalyzer:
 
         year_range = year_range[:years_processed]
 
-        self.evolution_df = pd.concat(evolution_series, axis=1).rename(
+        evolution_df = pd.concat(evolution_series, axis=1).rename(
             columns=dict(enumerate(year_range)))
-        self.evolution_df['current'] = self.evolution_df[max_year]
-        self.evolution_df = self.evolution_df[list(reversed(list(self.evolution_df.columns)))]
+        evolution_df['current'] = evolution_df[max_year]
+        evolution_df = evolution_df[list(reversed(list(evolution_df.columns)))]
 
         # Assign -1 to articles that do not belong to any cluster at some step
-        self.evolution_df = self.evolution_df.fillna(-1.0)
+        evolution_df = evolution_df.fillna(-1.0)
 
-        self.evolution_df = self.evolution_df.reset_index().rename(columns={'index': 'id'})
-        self.evolution_df['id'] = self.evolution_df['id'].astype(str)
+        evolution_df = evolution_df.reset_index().rename(columns={'index': 'id'})
+        evolution_df['id'] = evolution_df['id'].astype(str)
+        return evolution_df, year_range
 
-        self.evolution_kwds = {}
-        for col in self.evolution_df:
+    def subtopic_evolution_descriptions(self, df, evolution_df, year_range, terms, keywords=15, current=0, task=None):
+        evolution_kwds = {}
+        for col in evolution_df:
             if col in year_range:
                 self.logger.debug(f'Generating TF-IDF descriptions for year {col}',
                                   current=current, task=task)
                 if isinstance(col, (int, float)):
-                    self.evolution_df[col] = self.evolution_df[col].apply(int)
-                    comps = dict(self.evolution_df.groupby(col)['id'].apply(list))
-                    self.evolution_kwds[col] = get_tfidf_words(self.df, comps, self.terms, size=keywords)
+                    evolution_df[col] = evolution_df[col].apply(int)
+                    comps = dict(evolution_df.groupby(col)['id'].apply(list))
+                    evolution_kwds[col] = get_tfidf_words(df, comps, terms, size=keywords)
 
-        return cg, components_merged
+        return evolution_kwds
 
     def merge_components(self, p, granularity=0.05, current=0, task=None):
         self.logger.debug(f'Merging components smaller than {granularity} to "Other" component',
@@ -320,13 +340,15 @@ class KeyPaperAnalyzer:
             pm = p
         return pm, components_merged
 
-    def sort_components(self, pm, components_merged):
+    def sort_components(self, pm, components_merged, current=0, task=None):
+        self.logger.debug('Sorting components by size descending', current=current, task=task)
         components = set(pm.values())
         comp_sizes = {com: sum([pm[node] == com for node in pm.keys()]) for com in components}
 
         argsort = lambda seq: sorted(range(len(seq)), key=seq.__getitem__, reverse=True)
         sorted_comps = list(argsort(list(comp_sizes.values())))
         mapping = dict(zip(sorted_comps, range(len(components))))
+        self.logger.debug(f'Mapping: {mapping}', current=current, task=task)
         sorted_pm = {node: mapping[c] for node, c in pm.items()}
 
         if components_merged:
@@ -336,9 +358,9 @@ class KeyPaperAnalyzer:
 
         return sorted_pm, other
 
-    def popular_journals(self, current=0, task=None):
+    def popular_journals(self, df, n=20, current=0, task=None):
         self.logger.info("Finding popular journals", current=current, task=task)
-        journal_stats = self.df.groupby(['journal', 'comp']).size().reset_index(name='counts')
+        journal_stats = df.groupby(['journal', 'comp']).size().reset_index(name='counts')
         # drop papers with undefined subtopic
         journal_stats = journal_stats[journal_stats.comp != -1]
         journal_stats['journal'].replace('', np.nan, inplace=True)
@@ -356,14 +378,14 @@ class KeyPaperAnalyzer:
 
         return journal_stats.head(n=20)
 
-    def popular_authors(self, current=0, task=None):
+    def popular_authors(self, df, n=20, current=0, task=None):
         self.logger.info("Finding popular authors", current=current, task=task)
 
         author_stats = pd.DataFrame()
-        author_stats['author'] = self.df[self.df.authors != -1]['authors'].apply(lambda authors: authors.split(', '))
+        author_stats['author'] = df[df.authors != -1]['authors'].apply(lambda authors: authors.split(', '))
 
         author_stats = author_stats.author.apply(pd.Series).stack().reset_index(level=1, drop=True).to_frame(
-            'author').join(self.df[['id', 'comp']], how='left')
+            'author').join(df[['id', 'comp']], how='left')
 
         author_stats = author_stats.groupby(['author', 'comp']).size().reset_index(name='counts')
         # drop papers with undefined subtopic
