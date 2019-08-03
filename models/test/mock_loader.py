@@ -3,18 +3,18 @@ import pandas as pd
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.loader import Loader
 
-PUBLICATION_DATA = [['1', 1963, 'Article 1', None,            ''],
-                    ['2', 1965, 'Article 2', 'abstract',      ''],
-                    ['3', 1967, 'Article 3', 'otherabstract', ''],
-                    ['4', 1968, 'Article 4', None,            ''],
-                    ['5', 1975, 'Article 5', None,            '']]
+PUBLICATION_DATA = [['1', 1963, 'Article 1', None, 'Geller R, Geller M, Bing Ch', 'Nature'],
+                    ['2', 1965, 'Article 2', 'abstract', 'Buffay Ph, Geller M, Doe J', 'Science'],
+                    ['3', 1967, 'Article 3', 'otherabstract', 'Doe J, Buffay Ph', 'Nature'],
+                    ['4', 1968, 'Article 4', None, 'Doe J, Geller R', 'Science'],
+                    ['5', 1975, 'Article 5', None, 'Green R, Geller R, Doe J', 'Nature']]
 
-CITATION_STATS_DATA = [['1', 0, 2, 15, 17],
-                       ['2', 0, 0, 1, 1],
-                       ['3', 0, 5, 13, 18],
-                       ['4', 0, 1, 8, 9],
-                       ['5', 0, 0, 5, 5]]
-CITATION_YEARS = [1970, 1972, 1974]
+CITATION_STATS_DATA = [['1', 1972, 2], ['1', 1974, 15],
+                       ['2', 1974, 1],
+                       ['3', 1972, 5], ['3', 1974, 13],
+                       ['4', 1972, 1], ['4', 1974, 8],
+                       ['5', 1974, 5]]
+CITATION_YEARS = [1972, 1974]
 
 CITATION_DATA = [['4', '1'], ['3', '1'], ['4', '2'], ['3', '2'],
                  ['5', '1'], ['5', '2'], ['5', '3'], ['5', '4']]
@@ -42,15 +42,16 @@ class MockLoader(Loader):
         super(MockLoader, self).__init__(config, connect=False)
 
     def search(self, current=None, task=None):
-        self.ids = [1, 2, 3, 4, 5]
+        return [1, 2, 3, 4, 5]
 
     def load_publications(self, current=None, task=None):
-        self.pub_df = pd.DataFrame(PUBLICATION_DATA, columns=['id', 'year', 'title', 'abstract', 'authors'])
+        return pd.DataFrame(PUBLICATION_DATA, columns=['id', 'year', 'title', 'abstract', 'authors', 'journal'])
 
     def load_citation_stats(self, current=None, task=None):
-        self.cit_df = pd.DataFrame(CITATION_STATS_DATA, columns=['id', *CITATION_YEARS, 'total'])
+        return pd.DataFrame(CITATION_STATS_DATA, columns=['id', 'year', 'count'])
 
     def load_cocitations(self, current=None, task=None):
-        self.cocit_df = pd.DataFrame(COCITATION_DATA, columns=['citing', 'cited_1', 'cited_2', 'year'])
-        self.cocit_grouped_df = pd.DataFrame(COCITATION_GROUPED_DATA,
-                                             columns=['cited_1', 'cited_2', *COCITATION_YEARS, 'total'])
+        cocit_df = pd.DataFrame(COCITATION_DATA, columns=['citing', 'cited_1', 'cited_2', 'year'])
+        cocit_grouped_df = pd.DataFrame(COCITATION_GROUPED_DATA,
+                                        columns=['cited_1', 'cited_2', *COCITATION_YEARS, 'total'])
+        return cocit_df, cocit_grouped_df
