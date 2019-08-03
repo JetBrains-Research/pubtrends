@@ -41,7 +41,7 @@ def analyze_async(source, terms):
     # Order is important here!
     return {
         'log': log,
-        'n_papers': len(analyzer.df),
+        'n_papers': analyzer.n_papers,
         'n_citations': int(analyzer.df['total'].sum()),
         'n_subtopics': len(analyzer.components),
         'cocitations_clusters': [components(plotter.cocitations_clustering())],
@@ -52,8 +52,6 @@ def analyze_async(source, terms):
         'max_relative_gain_papers': [components(plotter.max_relative_gain_papers())],
         'component_ratio': [components(plotter.component_ratio())],
         'papers_stats': [components(plotter.papers_statistics())],
-        'found_papers': str(analyzer.articles_found),
-        'number_of_papers': amount_of_papers,
         'clusters_info_message': plotter.clusters_info_message,
         'subtopic_evolution': [components(plotter.subtopic_evolution())],
         'author_statistics': [components(plotter.author_statistics())],
