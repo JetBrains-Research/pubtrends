@@ -146,7 +146,7 @@ Launch Gunicorn serving Flask app, Redis and Celery in containers by the command
 
 1. Build `biolabs/pubtrends` Docker image
     ```
-    docker build biolabs/pubtrends .
+    docker build -t biolabs/pubtrends .
     ```
 
 2. Start Docker image for Kotlin tests
