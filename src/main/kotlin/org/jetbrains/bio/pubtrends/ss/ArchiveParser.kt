@@ -98,7 +98,7 @@ class ArchiveParser(
         currentArticles.clear()
         batchIndex++
         val progress = batchIndex.toDouble() / 10 //number of batches is about 1000
-        logger.info("Finished batch $batchIndex adding ($archiveFileGz) (about $progress% done of $curFile/$filesAmount file)")
+        logger.info("Finished batch $batchIndex adding ($archiveFileGz) ($progress% done of $curFile/$filesAmount file)")
     }
 
     private fun handleEndDocument() {
