@@ -10,17 +10,9 @@ from .loader import Loader
 
 
 class PubmedLoader(Loader):
-    def __init__(self,
-                 pubtrends_config,
-                 publications_table='PMPublications',
-                 citations_table='PMCitations',
-                 temp_ids_table='temp_pmids'):
+    def __init__(self, pubtrends_config):
         super(PubmedLoader, self).__init__(pubtrends_config)
         Entrez.email = pubtrends_config.pm_entrez_email
-
-        self.publications_table = publications_table
-        self.citations_table = citations_table
-        self.temp_ids_table = temp_ids_table
 
     def search(self, *terms, current=0, task=None):
         self.logger.debug(f'TODO: handle queries which return more than {self.max_number_of_articles} items',

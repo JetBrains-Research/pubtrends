@@ -13,8 +13,8 @@ class TestPopularAuthorsAndJournals(unittest.TestCase):
     def setUpClass(cls):
         cls.analyzer = KeyPaperAnalyzer(TestLoader())
         cls.analyzer.df = df_authors_and_journals
-        cls.author_stats = cls.analyzer.popular_authors()
-        cls.journal_stats = cls.analyzer.popular_journals()
+        cls.author_stats = cls.analyzer.popular_authors(cls.analyzer.df)
+        cls.journal_stats = cls.analyzer.popular_journals(cls.analyzer.df)
 
     def test_author_stats_rows(self):
         expected_rows = author_df.shape[0]

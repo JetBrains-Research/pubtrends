@@ -29,7 +29,7 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
         self.assertCountEqual(list(self.analyzer.CG.edges(data=True)), expected_edges)
 
     def test_update_years(self):
-        self.assertCountEqual(self.analyzer.years, CITATION_YEARS)
+        self.assertCountEqual(self.analyzer.citation_years, CITATION_YEARS)
 
     def test_find_max_gain_papers_count(self):
         max_gain_count = len(list(self.analyzer.max_gain_df['year'].values))
@@ -75,8 +75,9 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
         ('pick at least 1', 50, 0.1, ['3'])
     ])
     def test_find_top_cited_papers(self, name, max_papers, threshold, expected):
-        self.analyzer.find_top_cited_papers(max_papers, threshold)
-        top_cited_papers = list(self.analyzer.top_cited_df['id'].values)
+        _, top_cited_df = self.analyzer.find_top_cited_papers(self.analyzer.df, max_papers=max_papers,
+                                                              threshold=threshold)
+        top_cited_papers = list(top_cited_df['id'].values)
         self.assertListEqual(top_cited_papers, expected)
 
     @parameterized.expand([
@@ -88,7 +89,6 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
         partition, merged = self.analyzer.merge_components(partition, granularity)
         expected_partition, expected_merged = expected
         self.assertEqual(partition, expected_partition)
-
 
 # class TestKeyPaperAnalyzerDataLeak(unittest.TestCase):
 #
