@@ -183,5 +183,5 @@ Launch Gunicorn serving Flask app, Redis and Celery in containers by the command
 # Materials
 
 * Project presentation at [Computer Science Center](https://my.compscicenter.ru/media/projects/2019-spring/758/presentations/participants.pdf)
-* Project [workflow](https://docs.google.com/presentation/d/1rIVxEmpJhQWfFXsIWMwg9vZsKSTDEv7Whxe39EuJn60/edit#slide=id.g5efdb45a3b_0_30)
+* Project [workflow](https://docs.google.com/presentation/d/1rIVxEmpJhQWfFXsIWMwg9vZsKSTDEv7Whxe39EuJn60/edit#slide=id.p)
 * JetBrains Research BioLabs [homepage](https://research.jetbrains.org/groups/biolabs)
