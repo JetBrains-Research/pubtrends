@@ -307,7 +307,6 @@ class KeyPaperAnalyzer:
             pm = p
         return pm, components_merged
 
-
     def sort_components(self, pm, components_merged):
         components = set(pm.values())
         comp_sizes = {com: sum([pm[node] == com for node in pm.keys()]) for com in components}
