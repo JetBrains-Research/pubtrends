@@ -11,7 +11,7 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.analyzer = KeyPaperAnalyzer(MockLoader())
+        cls.analyzer = KeyPaperAnalyzer(MockLoader(), test=True)
         cls.analyzer.launch()
 
     def test_build_cocitation_graph_nodes_count(self):
