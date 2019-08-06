@@ -165,20 +165,14 @@ Launch Gunicorn serving Flask app, Redis and Celery in containers by the command
     ./gradlew clean test
     ```
 
-4. Python tests
+4. Python tests with codestyle check
 
     ```
     docker run -v $(pwd):/pubtrends:ro -t biolabs/pubtrends /bin/bash \
     -c "/usr/lib/postgresql/10/bin/pg_ctl -D /home/user/postgres start; \
-    source activate pubtrends; cd /pubtrends; python -m pytest models/test"
+    source activate pubtrends; cd /pubtrends; python -m pytest --codestyle models"
     ```
    
-5. Python code style tests
-    ```
-    docker run -v $(pwd):/pubtrends:ro -t biolabs/pubtrends /bin/bash \
-    -c "source activate pubtrends; cd /pubtrends; python -m pytest --codestyle -m codestyle"
-    ```
-
 
 # Materials
 
