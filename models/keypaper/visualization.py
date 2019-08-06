@@ -186,12 +186,18 @@ class Plotter:
         )
 
         p = figure(x_range=[min_year - 1, max_year + 1], plot_width=960, plot_height=300,
-                   title="Components by Year",
-                   toolbar_location=None, tools="hover", tooltips="Subtopic #$name: @$name")
+                   title="Components by Year", toolbar_location="right", tools=TOOLS,
+                   tooltips=[('Subtopic', '$name'), ('Amount', '@$name')])
 
-        p.vbar_stack(components, x='years', width=0.9, color=self.comp_palette, source=data, alpha=0.5,
-                     legend=[f'{c} OTHER' if int(c) == self.analyzer.comp_other else value(c)
-                             for c in components])
+        # NOTE: VBar is invisible (alpha = 0) to provide tooltips on hover as stacked area does not support them
+        p.vbar_stack(components, x='years', width=0.9, color=self.comp_palette, source=data, alpha=0,
+               legend=[f'{c} OTHER' if int(c) == self.analyzer.comp_other else value(c)
+                       for c in components])
+
+        # VArea is actually displayed
+        p.varea_stack(stackers=components, x='years', color=self.comp_palette, source=data, alpha=0.5,
+                      legend=[f'{c} OTHER' if int(c) == self.analyzer.comp_other else value(c)
+                              for c in components])
 
         p.y_range.start = 0
         p.xgrid.grid_line_color = None
