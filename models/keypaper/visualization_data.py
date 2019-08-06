@@ -105,7 +105,7 @@ class PlotPreprocessor:
         cluster_edges = cluster_edges.groupby(['comp_x', 'comp_y'])['value'].sum().reset_index()
         connectivity_matrix = [[0] * n_comps for _ in range(n_comps)]
         for index, row in cluster_edges.iterrows():
-            cx, cy = row['comp_x'], row['comp_y']
+            cx, cy = int(row['comp_x']), int(row['comp_y'])
             connectivity_matrix[cx][cy] += row['value']
             if cx != cy:
                 connectivity_matrix[cy][cx] += row['value']

@@ -19,7 +19,7 @@ SEMANTIC_SCHOLAR_BASE_URL = 'https://www.semanticscholar.org/paper/'
 
 
 def tokenize(text, terms=None):
-    is_noun = lambda pos: pos[:2] == 'NN'
+    is_noun_or_adj = lambda pos: (pos[:2] == 'NN' or pos[:3] == 'ADJ')
     special_symbols_regex = re.compile(r'[^a-zA-Z0-9\- ]*')
     text = text.lower()
 
@@ -31,7 +31,7 @@ def tokenize(text, terms=None):
     tokenized = word_tokenize(re.sub(special_symbols_regex, '', text))
     stop_words = set(stopwords.words('english'))
     nouns = [word for (word, pos) in nltk.pos_tag(tokenized) if
-             is_noun(pos) and word not in stop_words]
+             is_noun_or_adj(pos) and word not in stop_words]
 
     lemmatizer = WordNetLemmatizer()
     tokens = list(filter(lambda t: len(t) >= 3, [lemmatizer.lemmatize(n) for n in nouns]))

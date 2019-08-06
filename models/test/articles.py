@@ -116,3 +116,16 @@ cocitations_stats = [[article7.ssid, article10.ssid, 1, 0, 0, 1],
 
 cocitations_df = pd.DataFrame(cocitations_stats, columns=['cited_1', 'cited_2', 'total', 1980, 1999, 2018])
 cocitations_df = cocitations_df.sort_values(by=['cited_1', 'cited_2']).reset_index(drop=True).astype(object)
+
+expected_cocit_and_cit_graph = nx.Graph()
+expected_cocit_and_cit_graph.add_weighted_edges_from([(article7.ssid, article10.ssid, 1),
+                                                      (article4.ssid, article3.ssid, 2),
+                                                      (article3.ssid, article8.ssid, 1.3),
+                                                      (article4.ssid, article8.ssid, 1),
+                                                      (article6.ssid, article7.ssid, 0.3),
+                                                      (article6.ssid, article10.ssid, 0.3),
+                                                      (article2.ssid, article3.ssid, 0.3),
+                                                      (article2.ssid, article4.ssid, 0.3),
+                                                      (article1.ssid, article4.ssid, 0.3),
+                                                      (article1.ssid, article3.ssid, 0.3),
+                                                      (article1.ssid, article8.ssid, 0.3)])

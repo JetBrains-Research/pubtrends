@@ -45,10 +45,10 @@ class SemanticScholarLoader(Loader):
 
         self.pub_df['title'] = self.pub_df['title'].apply(lambda title: html.unescape(title))
 
-        ids = self.pub_df['id']
+        self.ids = self.pub_df['id']
         crc32ids = self.pub_df['crc32id']
-        self.values = ', '.join(['({0}, \'{1}\')'.format(i, j) for (i, j) in zip(crc32ids, ids)])
-        return ids
+        self.values = ', '.join(['({0}, \'{1}\')'.format(i, j) for (i, j) in zip(crc32ids, self.ids)])
+        return self.ids
 
     def load_publications(self, current=0, task=None):
         self.logger.info('Loading publication data', current=current, task=task)
@@ -101,17 +101,23 @@ class SemanticScholarLoader(Loader):
                     FROM {self.citations_table} C
                     JOIN (VALUES {self.values}) AS CT(crc32id, ssid)
                     ON (C.crc32id_in = CT.crc32id AND C.id_in = CT.ssid)
-                    JOIN (VALUES {self.values}) AS CT2(crc32id, ssid)
-                    ON (C.crc32id_out = CT2.crc32id AND C.id_out = CT2.ssid);
+                    WHERE C.crc32id_in
+                    between (SELECT MIN(crc32id) FROM {self.temp_ids_table})
+                    AND (select max(crc32id) FROM {self.temp_ids_table});
                     '''
 
         with self.conn:
             self.cursor.execute(query)
         self.logger.info('Building citation graph', current=current, task=task)
 
+        citations = pd.DataFrame(self.cursor.fetchall(),
+                                 columns=['id_out', 'id_in'], dtype=object)
+
+        citations = citations[citations['id_out'].isin(self.ids)]
+
         G = nx.DiGraph()
-        for row in self.cursor:
-            v, u = row
+        for index, row in citations.iterrows():
+            v, u = row['id_out'], row['id_in']
             G.add_edge(v, u)
 
         self.logger.debug(f'Built citation graph - nodes {len(G.nodes())} edges {len(G.edges())}',
