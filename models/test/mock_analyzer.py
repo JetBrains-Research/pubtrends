@@ -3,10 +3,10 @@ import json
 import networkx as nx
 import pandas as pd
 
-CG_GRAPHML = 'test_data/cg.graphml'
-DF_CSV = 'test_data/df.csv'
-EVOLUTION_DF_CSV = 'test_data/evolution_df.csv'
-EVOLUTION_KEYWORDS_JSON = 'test_data/evolution_keywords.json'
+CG_GRAPHML = 'models/test/test_data/cg.graphml'
+DF_CSV = 'models/test/test_data/df.csv'
+EVOLUTION_DF_CSV = 'models/test/test_data/evolution_df.csv'
+EVOLUTION_KEYWORDS_JSON = 'models/test/test_data/evolution_keywords.json'
 
 
 class MockAnalyzer:
