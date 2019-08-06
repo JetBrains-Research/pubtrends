@@ -52,6 +52,4 @@ class MockLoader(Loader):
 
     def load_cocitations(self, current=None, task=None):
         cocit_df = pd.DataFrame(COCITATION_DATA, columns=['citing', 'cited_1', 'cited_2', 'year'])
-        cocit_grouped_df = pd.DataFrame(COCITATION_GROUPED_DATA,
-                                        columns=['cited_1', 'cited_2', *COCITATION_YEARS, 'total'])
-        return cocit_df, cocit_grouped_df
+        return cocit_df
