@@ -12,7 +12,7 @@ database=pubtrends
 
 for ARGUMENT in "$@"; do
 
-    KEY=$(echo ${ARGUMENT} | cut -f1 -d=)
+    KEY=$(echo "${ARGUMENT}" | cut -f1 -d=)
     VALUE=$(echo ${ARGUMENT} | cut -f2 -d=)
 
     case "$KEY" in
@@ -47,4 +47,11 @@ cp -r models pubtrends/
 # Create distributive tar.gz
 rm -r dist
 mkdir -p dist
-tar -zcvf dist/pubtrends-${VERSION_BUILD}.tar.gz pubtrends
+tar -zcvf "dist/pubtrends-${VERSION_BUILD}.tar.gz" pubtrends
+# Cleanup
+rm -f pubtrends
+
+# Move jar to dist if exists
+if [[ -f build/libs/pubtrends-dev.jar ]]; then
+  mv build/libs/pubtrends-dev.jar "dist/pubtrends-${VERSION_BUILD}.jar"
+fi
