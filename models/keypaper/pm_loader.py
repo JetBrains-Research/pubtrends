@@ -24,10 +24,10 @@ class PubmedLoader(Loader):
         query = ' '.join(terms).replace("\"", "")
         handle = Entrez.esearch(db='pubmed', retmax=str(self.max_number_of_articles),
                                 retmode='xml', term=query)
-        ids = Entrez.read(handle)['IdList']
-        self.logger.info(f'Found {len(ids)} articles about {terms}', current=current, task=task)
-        self.values = ', '.join(['({})'.format(i) for i in sorted(ids)])
-        return ids
+        self.ids = Entrez.read(handle)['IdList']
+        self.logger.info(f'Found {len(self.ids)} articles about {terms}', current=current, task=task)
+        self.values = ', '.join(['({})'.format(i) for i in sorted(self.ids)])
+        return self.ids
 
     def load_publications(self, current=0, task=None):
         self.logger.info('Loading publication data', current=current, task=task)

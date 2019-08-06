@@ -59,7 +59,7 @@ class KeyPaperAnalyzer:
                 raise RuntimeError("Nothing found in DB")
 
             cit_stats_df_from_query = self.loader.load_citation_stats(current=3, task=task)
-            self.cit_df = self.build_cit_df(cit_stats_df_from_query, current=3.5, task=task)
+            self.cit_df = self.build_cit_df(cit_stats_df_from_query, current=4, task=task)
             if len(self.cit_df) == 0:
                 raise RuntimeError("Citations stats not found DB")
 
@@ -67,28 +67,30 @@ class KeyPaperAnalyzer:
             if len(self.df) == 0:
                 raise RuntimeError("Failed to merge publications and citations")
 
-            cocit_grouped_df = self.loader.load_cocitations(current=4, task=task)
-            self.CG = self.build_cocitation_graph(cocit_grouped_df, current=5, task=task)
+            self.G = self.loader.load_citations(current=5, task=task)
+
+            cocit_grouped_df = self.loader.load_cocitations(current=6, task=task)
+            self.CG = self.build_cocitation_graph(cocit_grouped_df, current=7, task=task, add_citation_edges=False)
             if len(self.CG.nodes()) == 0:
                 raise RuntimeError("Failed to build co-citations graph")
 
             self.cocit_df = self.loader.cocit_df
 
             # Calculate min and max year of publications
-            self.update_years(current=6, task=task)
+            self.update_years(current=8, task=task)
             # Perform basic analysis
-            self.subtopic_analysis(current=7, task=task)
+            self.subtopic_analysis(current=9, task=task)
 
-            self.find_top_cited_papers(current=8, task=task)  # run after subtopic analysis to color components
+            self.find_top_cited_papers(current=10, task=task)  # run after subtopic analysis to color components
 
-            self.find_max_gain_papers(current=9, task=task)
+            self.find_max_gain_papers(current=11, task=task)
 
-            self.find_max_relative_gain_papers(current=10, task=task)
+            self.find_max_relative_gain_papers(current=12, task=task)
 
-            self.subtopic_evolution_analysis(current=11, task=task)
+            self.subtopic_evolution_analysis(current=13, task=task)
 
-            self.journal_stats = self.popular_journals(current=12, task=task)
-            self.author_stats = self.popular_authors(current=13, task=task)
+            self.journal_stats = self.popular_journals(current=14, task=task)
+            self.author_stats = self.popular_authors(current=15, task=task)
 
             return self.logger.stream.getvalue()
         finally:
@@ -106,7 +108,8 @@ class KeyPaperAnalyzer:
 
         return cit_df
 
-    def build_cocitation_graph(self, cocit_grouped_df, current=0, task=None):
+    def build_cocitation_graph(self, cocit_grouped_df, current=0, task=None, add_citation_edges=False,
+                               citation_weight=0.3):
         self.logger.info(f'Building co-citations graph', current=current, task=task)
         CG = nx.Graph()
 
@@ -115,6 +118,14 @@ class KeyPaperAnalyzer:
         for el in cocit_grouped_df[['cited_1', 'cited_2', 'total']].values:
             start, end, weight = el
             CG.add_edge(str(start), str(end), weight=int(weight))
+
+        if add_citation_edges:
+            for u, v in self.G.edges:
+                if CG.has_edge(u, v):
+                    CG.add_edge(u, v, weight=CG[u][v]['weight'] + citation_weight)
+                else:
+                    CG.add_edge(u, v, weight=citation_weight)
+
         self.logger.debug(f'Co-citations graph nodes {len(CG.nodes())} edges {len(CG.edges())}\n',
                           current=current, task=task)
         return CG

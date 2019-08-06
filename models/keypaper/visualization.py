@@ -459,10 +459,11 @@ class Plotter:
         data = dict(
             author=self.analyzer.author_stats['author'],
             sum=self.analyzer.author_stats['sum'],
-            subtopics=self.analyzer.author_stats['comp'].apply(lambda comp: self._to_colored_circle(comp))
+            subtopics=self.analyzer.author_stats.apply(
+                lambda row: self._to_colored_circle(row['comp'], row['counts'], row['sum']), axis=1)
         )
 
-        template = """<p <%= subtopics %> </p>"""
+        template = """<div> <%= subtopics %> </div>"""
         formatter = HTMLTemplateFormatter(template=template)
 
         source = ColumnDataSource(data)
@@ -470,10 +471,10 @@ class Plotter:
         columns = [
             TableColumn(field="author", title="Author", width=500),
             TableColumn(field="sum", title="Number of articles", width=100),
-            TableColumn(field="subtopics", title="Subtopics", formatter=formatter, width=100, sortable=False),
+            TableColumn(field="subtopics", title="Subtopics", formatter=formatter, width=160, sortable=False),
         ]
 
-        author_stats = DataTable(source=source, columns=columns, width=700)
+        author_stats = DataTable(source=source, columns=columns, width=760)
 
         return author_stats
 
@@ -481,10 +482,11 @@ class Plotter:
         data = dict(
             journal=self.analyzer.journal_stats['journal'],
             sum=self.analyzer.journal_stats['sum'],
-            subtopics=self.analyzer.journal_stats['comp'].apply(lambda comp: self._to_colored_circle(comp))
+            subtopics=self.analyzer.journal_stats.apply(
+                lambda row: self._to_colored_circle(row['comp'], row['counts'], row['sum']), axis=1)
         )
 
-        template = """<p <%= subtopics %> </p>"""
+        template = """<div> <%= subtopics %> </div>"""
         formatter = HTMLTemplateFormatter(template=template)
 
         source = ColumnDataSource(data)
@@ -492,16 +494,19 @@ class Plotter:
         columns = [
             TableColumn(field="journal", title="Journal", width=500),
             TableColumn(field="sum", title='Number of articles', width=100),
-            TableColumn(field="subtopics", title='Subtopics', formatter=formatter, width=100, sortable=False),
+            TableColumn(field="subtopics", title='Subtopics', formatter=formatter, width=160, sortable=False),
         ]
 
-        journal_stats = DataTable(source=source, columns=columns, width=700)
+        journal_stats = DataTable(source=source, columns=columns, width=760)
         return journal_stats
 
-    def _to_colored_circle(self, components):
+    def _to_colored_circle(self, components, counts, sum):
         # html code to generate circles corresponding to the 3 most popular subtopics
+        top = 3
         return ' '.join(
-            map(lambda i: f'''<i class="fas fa-circle" style="color:{self.colors[i]}"></i> ''', components[:3]))
+            map(lambda topic: f'''<i class="fas fa-circle" style="color:{self.colors[topic[0]]}"></i>
+                                  <span class="bk" style="color:black">{int(topic[1] / sum * 100)}%</span> ''',
+                zip(components[:top], counts[:top])))
 
     def __build_data_source(self, df, width=760):
         # Sort papers from the same year with total number of citations as key, use rank as y-pos
