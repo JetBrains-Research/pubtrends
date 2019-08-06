@@ -328,6 +328,8 @@ class KeyPaperAnalyzer:
         journal_stats = self.df.groupby(['journal', 'comp']).size().reset_index(name='counts')
         # drop papers with undefined subtopic
         journal_stats = journal_stats[journal_stats.comp != -1]
+        journal_stats['journal'].replace('', np.nan, inplace=True)
+        journal_stats.dropna(subset=['journal'], inplace=True)
 
         journal_stats.sort_values(by=['journal', 'counts'], ascending=False, inplace=True)
 
@@ -338,9 +340,6 @@ class KeyPaperAnalyzer:
         journal_stats.columns = ['journal', 'comp', 'counts', 'sum']
 
         journal_stats = journal_stats.sort_values(by=['sum'], ascending=False)
-
-        if journal_stats['journal'].iloc[0] == '':
-            journal_stats.drop(journal_stats.index[0], inplace=True)
 
         return journal_stats.head(n=20)
 
@@ -356,6 +355,8 @@ class KeyPaperAnalyzer:
         author_stats = author_stats.groupby(['author', 'comp']).size().reset_index(name='counts')
         # drop papers with undefined subtopic
         author_stats = author_stats[author_stats.comp != -1]
+        author_stats['author'].replace('', np.nan, inplace=True)
+        author_stats.dropna(subset=['author'], inplace=True)
 
         author_stats.sort_values(by=['author', 'counts'], ascending=False, inplace=True)
 
@@ -365,8 +366,5 @@ class KeyPaperAnalyzer:
         author_stats.columns = author_stats.columns.droplevel(level=1)
         author_stats.columns = ['author', 'comp', 'counts', 'sum']
         author_stats = author_stats.sort_values(by=['sum'], ascending=False)
-
-        if author_stats['author'].iloc[0] == '':
-            author_stats.drop(author_stats.index[0], inplace=True)
 
         return author_stats.head(n=20)

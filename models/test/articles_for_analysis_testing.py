@@ -29,7 +29,9 @@ article4 = Article(id=4, comp=1, authors='Doe J, Geller R', journal='Science')
 
 article5 = Article(id=5, comp=0, authors='Green R, Geller R, Doe J', journal='Nature')
 
-articles = [article1, article2, article3, article4, article5]
+article6 = Article(id=6, comp=0, authors='', journal='')
+
+articles = [article1, article2, article3, article4, article5, article6]
 
 df_authors_and_journals = pd.DataFrame.from_records([article.to_dict() for article in articles])
 

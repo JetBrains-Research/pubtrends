@@ -204,7 +204,9 @@ class PlotPreprocessor:
             keywords=keywords
         )
         source = ColumnDataSource(data)
+        source.add(pd.RangeIndex(start=1, stop=len(keywords), step=1), 'index')
         columns = [
+            TableColumn(field="index", title="#", width=20),
             TableColumn(field="years", title="Year", width=50),
             TableColumn(field="subtopics", title="Subtopic", width=50),
             TableColumn(field="keywords", title="Keywords", width=800),

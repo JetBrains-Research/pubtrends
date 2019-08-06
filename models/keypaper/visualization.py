@@ -22,6 +22,7 @@ from bokeh.plotting import figure, show
 from bokeh.transform import factor_cmap
 from holoviews import dim
 from matplotlib import pyplot as plt
+from pandas import RangeIndex
 from wordcloud import WordCloud
 
 from .utils import PUBMED_ARTICLE_BASE_URL, SEMANTIC_SCHOLAR_BASE_URL, get_word_cloud_data, \
@@ -449,7 +450,7 @@ class Plotter:
 
         if n_steps > 3:
             columns, source = PlotPreprocessor.subtopic_evolution_keywords_data(self.analyzer.evolution_kwds)
-            subtopic_keywords = DataTable(source=source, columns=columns, width=900)
+            subtopic_keywords = DataTable(source=source, columns=columns, width=900, index_position=None)
 
             return column(hv.render(topic_evolution, backend='bokeh'), subtopic_keywords)
 
@@ -466,15 +467,16 @@ class Plotter:
         formatter = HTMLTemplateFormatter(template=template)
 
         source = ColumnDataSource(data)
+        source.add(RangeIndex(start=1, stop=self.analyzer.author_stats.shape[0], step=1), 'index')
 
         columns = [
+            TableColumn(field="index", title="#", width=20),
             TableColumn(field="author", title="Author", width=500),
             TableColumn(field="sum", title="Number of articles", width=100),
             TableColumn(field="subtopics", title="Subtopics", formatter=formatter, width=100, sortable=False),
         ]
 
-        author_stats = DataTable(source=source, columns=columns, width=700)
-
+        author_stats = DataTable(source=source, columns=columns, width=700, index_position=None)
         return author_stats
 
     def journal_statistics(self):
@@ -488,14 +490,16 @@ class Plotter:
         formatter = HTMLTemplateFormatter(template=template)
 
         source = ColumnDataSource(data)
+        source.add(RangeIndex(start=1, stop=self.analyzer.journal_stats.shape[0], step=1), 'index')
 
         columns = [
+            TableColumn(field="index", title="#", width=20),
             TableColumn(field="journal", title="Journal", width=500),
             TableColumn(field="sum", title='Number of articles', width=100),
             TableColumn(field="subtopics", title='Subtopics', formatter=formatter, width=100, sortable=False),
         ]
 
-        journal_stats = DataTable(source=source, columns=columns, width=700)
+        journal_stats = DataTable(source=source, columns=columns, width=700, index_position=None)
         return journal_stats
 
     def _to_colored_circle(self, components):
