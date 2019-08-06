@@ -191,8 +191,8 @@ class Plotter:
 
         # NOTE: VBar is invisible (alpha = 0) to provide tooltips on hover as stacked area does not support them
         p.vbar_stack(components, x='years', width=0.9, color=self.comp_palette, source=data, alpha=0,
-               legend=[f'{c} OTHER' if int(c) == self.analyzer.comp_other else value(c)
-                       for c in components])
+                     legend=[f'{c} OTHER' if int(c) == self.analyzer.comp_other else value(c)
+                             for c in components])
 
         # VArea is actually displayed
         p.varea_stack(stackers=components, x='years', color=self.comp_palette, source=data, alpha=0.5,
