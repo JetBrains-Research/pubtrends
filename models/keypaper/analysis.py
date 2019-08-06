@@ -3,18 +3,19 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-from models.test.mock_loader import MockLoader
-from models.test.test_loader import TestLoader
 from .pm_loader import PubmedLoader
 from .progress_logger import ProgressLogger
 from .ss_loader import SemanticScholarLoader
 from .utils import get_subtopic_descriptions, get_tfidf_words
 
 
+# from memory_profiler import profile
+
+
 class KeyPaperAnalyzer:
     SEED = 20190723
 
-    def __init__(self, loader):
+    def __init__(self, loader, test=False):
         self.logger = ProgressLogger()
 
         self.loader = loader
@@ -25,11 +26,10 @@ class KeyPaperAnalyzer:
             self.source = 'pubmed'
         elif isinstance(self.loader, SemanticScholarLoader):
             self.source = 'semantic'
-        elif isinstance(self.loader, (TestLoader, MockLoader)):
-            self.source = 'test'
-        else:
-            raise TypeError("loader should be either PubmedLoader or SemanticScholarLoader (or TestLoader)")
+        elif not test:
+            raise TypeError("loader should be either PubmedLoader or SemanticScholarLoader")
 
+    # @profile
     def launch(self, *terms, task=None):
         """:return full log"""
 
@@ -49,18 +49,19 @@ class KeyPaperAnalyzer:
                 raise RuntimeError("Nothing found in DB")
 
             cit_stats_df_from_query = self.loader.load_citation_stats(current=3, task=task)
-            self.cit_df = self.build_cit_df(cit_stats_df_from_query, self.n_papers, current=4, task=task)
-            if len(self.cit_df) == 0:
+            self.cit_stats_df = self.build_cit_df(cit_stats_df_from_query, self.n_papers, current=4, task=task)
+            if len(self.cit_stats_df) == 0:
                 raise RuntimeError("Citations stats not found DB")
 
             self.df, self.min_year, self.max_year, self.citation_years = self.merge_citation_stats(self.pub_df,
-                                                                                                   self.cit_df)
+                                                                                                   self.cit_stats_df)
             if len(self.df) == 0:
                 raise RuntimeError("Failed to merge publications and citations")
 
             self.G = self.loader.load_citations(current=5, task=task)
 
-            self.cocit_df, cocit_grouped_df = self.loader.load_cocitations(current=6, task=task)
+            self.cocit_df = self.loader.load_cocitations(current=6, task=task)
+            cocit_grouped_df = self.build_cocit_grouped_df(self.cocit_df)
             self.CG = self.build_cocitation_graph(cocit_grouped_df, current=7, task=task, add_citation_edges=True)
             if len(self.CG.nodes()) == 0:
                 raise RuntimeError("Failed to build co-citations graph")
@@ -99,8 +100,17 @@ class KeyPaperAnalyzer:
             self.logger.remove_handler()
 
     def build_cit_df(self, cit_stats_df_from_query, n_papers, current=None, task=None):
+        # Get citation stats with columns 'id', year_1, ..., year_N
         cit_df = cit_stats_df_from_query.pivot(index='id', columns='year',
-                                               values='count').reset_index()
+                                               values='count').reset_index().fillna(0)
+
+        # Fix column names from float 'YYYY.0' to int 'YYYY'
+        mapper = {}
+        for col in cit_df.columns:
+            if col != 'id':
+                mapper[col] = int(col)
+        cit_df = cit_df.rename(mapper)
+
         cit_df['total'] = cit_df.iloc[:, 1:].sum(axis=1)
         cit_df = cit_df.sort_values(by='total', ascending=False)
         self.logger.debug(f"Loaded citation stats for {len(cit_df)} of {n_papers} articles.\n" +
@@ -109,20 +119,43 @@ class KeyPaperAnalyzer:
 
         return cit_df
 
+    def build_cocit_grouped_df(self, cocit_df, current=0, task=None):
+        self.logger.debug(f'Aggregating co-citations', current=current, task=task)
+        cocit_grouped_df = cocit_df.groupby(['cited_1', 'cited_2', 'year']).count().reset_index()
+        cocit_grouped_df = cocit_grouped_df.pivot_table(index=['cited_1', 'cited_2'],
+                                                        columns=['year'], values=['citing']).reset_index()
+        cocit_grouped_df = cocit_grouped_df.replace(np.nan, 0)
+        cocit_grouped_df['total'] = cocit_grouped_df.iloc[:, 2:].sum(axis=1)
+        cocit_grouped_df = cocit_grouped_df.sort_values(by='total', ascending=False)
+        self.logger.debug(f'Filtering top {self.loader.max_number_of_cocitations} of all the co-citations',
+                          current=current, task=task)
+        cocit_grouped_df = cocit_grouped_df.iloc[:min(self.loader.max_number_of_cocitations,
+                                                      len(cocit_grouped_df)), :]
+
+        for col in cocit_grouped_df:
+            cocit_grouped_df[col] = cocit_grouped_df[col].astype(object)
+
+        return cocit_grouped_df
+
     @staticmethod
     def merge_citation_stats(pub_df, cit_df):
-        df = pd.merge(pub_df, cit_df, on='id', how='outer')
+        df = pd.merge(pub_df, cit_df, on='id', how='outer').fillna(0)
 
         # Publication and citation year range
         citation_years = [int(col) for col in list(df.columns) if isinstance(col, (int, float))]
         min_year, max_year = int(df['year'].min()), int(df['year'].max())
 
-        # Fill NaN in citation_stats with 0
-        values = {year: 0 for year in citation_years}
-        values['total'] = 0
-        df = df.fillna(value=values)
-
         return df, min_year, max_year, citation_years
+
+    def build_citation_graph(self, cit_df, current=0, task=None):
+        G = nx.DiGraph()
+        for row in cit_df.iterrows():
+            v, u = row['id_out'], row['id_in']
+            G.add_edge(v, u)
+
+        self.logger.debug(f'Built citation graph - nodes {len(G.nodes())} edges {len(G.edges())}',
+                          current=current, task=task)
+        return G
 
     def build_cocitation_graph(self, cocit_grouped_df, current=0, task=None, add_citation_edges=False,
                                citation_weight=0.3):

@@ -34,15 +34,17 @@ class SemanticScholarLoader(Loader):
                                    columns=['id', 'crc32id', 'title', 'abstract', 'year', 'aux'],
                                    dtype=object)
 
+        if np.any(self.pub_df[['id', 'crc32id', 'title']].isna()):
+            raise ValueError('Article must have ID and title')
+        self.pub_df = self.pub_df.fillna(value={'aux': '', 'abstract': '', 'year': -1})
+
         self.pub_df['authors'] = self.pub_df['aux'].apply(
             lambda aux: ', '.join(map(lambda authors: html.unescape(authors['name']), aux['authors'])))
-
         self.pub_df['journal'] = self.pub_df['aux'].apply(lambda aux: html.unescape(aux['journal']['name']))
+        self.pub_df['title'] = self.pub_df['title'].apply(lambda title: html.unescape(title))
 
         self.logger.info(f'Found {len(self.pub_df)} publications in the local database', current=current,
                          task=task)
-
-        self.pub_df['title'] = self.pub_df['title'].apply(lambda title: html.unescape(title))
 
         self.ids = self.pub_df['id']
         crc32ids = self.pub_df['crc32id']

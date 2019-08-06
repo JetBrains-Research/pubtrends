@@ -11,7 +11,7 @@ class TestPopularAuthorsAndJournals(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.analyzer = KeyPaperAnalyzer(TestLoader())
+        cls.analyzer = KeyPaperAnalyzer(TestLoader(), test=True)
         cls.analyzer.df = df_authors_and_journals
         cls.author_stats = cls.analyzer.popular_authors(cls.analyzer.df)
         cls.journal_stats = cls.analyzer.popular_journals(cls.analyzer.df)
