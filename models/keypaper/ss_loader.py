@@ -29,7 +29,7 @@ class SemanticScholarLoader(Loader):
             raise ValueError('Article must have ID and title')
         self.pub_df = self.pub_df.fillna(value={'abstract': ''})
 
-        self.pub_df['year'] = self.pub_df['year'].apply(lambda year: int(year) if year else 0)
+        self.pub_df['year'] = self.pub_df['year'].apply(lambda year: int(year) if year else np.nan)
         self.pub_df['authors'] = self.pub_df['aux'].apply(
             lambda aux: ', '.join(map(lambda authors: html.unescape(authors['name']), aux['authors'])))
         self.pub_df['journal'] = self.pub_df['aux'].apply(lambda aux: html.unescape(aux['journal']['name']))
