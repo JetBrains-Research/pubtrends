@@ -7,6 +7,7 @@ from pandas.util.testing import assert_frame_equal
 
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.pm_loader import PubmedLoader
+from models.test.mock_database_loader import MockDatabaseLoader
 from models.test.pm_articles import REQUIRED_ARTICLES, ARTICLES, EXPECTED_PUB_DF, \
     INNER_CITATIONS, CITATIONS, EXPECTED_CIT_DF, EXPECTED_COCIT_DF, EXPECTED_CIT_STATS_DF
 
@@ -24,61 +25,16 @@ class TestPubmedLoader(unittest.TestCase):
         cls.loader.values = ', '.join(['({})'.format(i) for i in sorted(cls.ids)])
 
         # Reset and load data to the test database
-        cls.init_database()
-        cls.insert_publications()
-        cls.insert_citations()
+        mock_database_loader = MockDatabaseLoader(PubtrendsConfig(test=True))
+        mock_database_loader.init_pubmed_database()
+        mock_database_loader.insert_pubmed_publications(ARTICLES)
+        mock_database_loader.insert_pubmed_citations(CITATIONS)
 
         # Get data via PubmedLoader methods
         cls.pub_df = cls.loader.load_publications()
         cls.cit_stats_df = cls.loader.load_citation_stats()
         cls.cit_df = cls.loader.load_citations()
         cls.cocit_df = cls.loader.load_cocitations()
-
-    @classmethod
-    def init_database(cls):
-        query_citations = '''
-        DROP TABLE IF EXISTS PMCitations;
-        CREATE TABLE PMCitations (
-            pmid_out    INTEGER,
-            pmid_in     INTEGER
-        );
-        '''
-
-        query_publications = '''
-        DROP TABLE IF EXISTS PMPublications;
-        CREATE TABLE PMPublications (
-            pmid        INTEGER PRIMARY KEY,
-            date        DATE NULL,
-            title       VARCHAR(1023),
-            abstract    TEXT NULL,
-            aux         JSONB
-        );
-        '''
-
-        with cls.loader.conn:
-            cls.loader.cursor.execute(query_citations)
-            cls.loader.cursor.execute(query_publications)
-
-    @classmethod
-    def insert_publications(cls):
-        articles = ', '.join(list(map(str, ARTICLES)))
-
-        query = re.sub(cls.VALUES_REGEX, articles, '''
-            INSERT INTO PMPublications(pmid, title, aux, abstract, date) VALUES $VALUES$;
-        ''')
-        with cls.loader.conn:
-            cls.loader.cursor.execute(query)
-
-    @classmethod
-    def insert_citations(cls):
-        citations = [f'({id_out}, {id_in})' for id_out, id_in in CITATIONS]
-
-        query = re.sub(cls.VALUES_REGEX, ', '.join(citations), '''
-            INSERT INTO PMCitations(pmid_out, pmid_in) VALUES $VALUES$;
-        ''')
-
-        with cls.loader.conn:
-            cls.loader.cursor.execute(query)
 
     @staticmethod
     def get_row(df, article):

@@ -6,6 +6,7 @@ from pandas.util.testing import assert_frame_equal
 
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.ss_loader import SemanticScholarLoader
+from models.test.mock_database_loader import MockDatabaseLoader
 from models.test.ss_articles import required_articles, extra_articles, required_citations, cit_stats_df, \
     pub_df, cit_df, extra_citations, cocitations_df
 
@@ -19,69 +20,15 @@ class TestSemanticScholarLoader(unittest.TestCase):
         cls.loader = SemanticScholarLoader(pubtrends_config=PubtrendsConfig(test=True))
         cls.loader.set_logger(logging.getLogger(__name__))
 
-        cls.init_database()
-        cls.insert_publications()
-        cls.insert_citations()
+        mock_database_loader = MockDatabaseLoader(PubtrendsConfig(test=True))
+        mock_database_loader.init_semantic_scholar_database()
+        mock_database_loader.insert_semantic_scholar_publications(required_articles + extra_articles)
+        mock_database_loader.insert_semantic_scholar_citations(required_citations + extra_citations)
         cls._load_publications()
 
         cls.citations_stats = cls._load_citations_stats()
         cls.citations = cls.loader.load_citations()
         cls.cocitations_df = cls._load_cocitations()
-
-    @classmethod
-    def init_database(cls):
-        query_citations = '''
-                drop table if exists sscitations;
-                create table sscitations (
-                    crc32id_out integer,
-                    crc32id_in  integer,
-                    id_out      varchar(40) not null,
-                    id_in       varchar(40) not null
-                );
-                create index if not exists sscitations_crc32id_out_crc32id_in_index
-                on sscitations (crc32id_out, crc32id_in);
-                '''
-
-        query_publications = '''
-                drop table if exists sspublications;
-                create table sspublications(
-                    ssid    varchar(40) not null,
-                    crc32id integer     not null,
-                    title   varchar(1023),
-                    year    integer
-                );
-                create index if not exists sspublications_crc32id_index
-                on sspublications (crc32id);
-                '''
-
-        with cls.loader.conn:
-            cls.loader.cursor.execute(query_citations)
-            cls.loader.cursor.execute(query_publications)
-
-    @classmethod
-    def insert_publications(cls):
-        articles = ', '.join(
-            map(lambda article: article.to_db_publication(), (required_articles + extra_articles)))
-
-        query = re.sub(cls.VALUES_REGEX, articles, '''
-        insert into sspublications(ssid, crc32id, title, year) values $VALUES$;
-        ''')
-        with cls.loader.conn:
-            cls.loader.cursor.execute(query)
-
-    @classmethod
-    def insert_citations(cls):
-        citations_str = ', '.join(
-            "('{0}', {1}, '{2}', {3})".format(citation[0].ssid, citation[0].crc32id,
-                                              citation[1].ssid, citation[1].crc32id) for citation in
-            (required_citations + extra_citations))
-
-        query = re.sub(cls.VALUES_REGEX, citations_str, '''
-        insert into sscitations (id_out, crc32id_out, id_in, crc32id_in) values $VALUES$;
-        ''')
-
-        with cls.loader.conn:
-            cls.loader.cursor.execute(query)
 
     @classmethod
     def _load_publications(cls):

@@ -8,7 +8,7 @@ from models.keypaper.config import PubtrendsConfig
 from models.keypaper.pm_loader import PubmedLoader
 from models.keypaper.ss_loader import SemanticScholarLoader
 from models.test.mock_loader import MockLoader, COCITATION_GRAPH_EDGES, COCITATION_GRAPH_NODES, \
-    CITATION_YEARS, EXPECTED_MAX_GAIN, EXPECTED_MAX_RELATIVE_GAIN
+    CITATION_YEARS, EXPECTED_MAX_GAIN, EXPECTED_MAX_RELATIVE_GAIN, CITATION_GRAPH_NODES, CITATION_GRAPH_EDGES
 
 
 class TestKeyPaperAnalyzer(unittest.TestCase):
@@ -18,6 +18,8 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
     def setUpClass(cls):
         cls.analyzer = KeyPaperAnalyzer(MockLoader(), test=True)
         cls.analyzer.launch()
+        cls.analyzer.cit_df = cls.analyzer.loader.load_citations()
+        cls.analyzer.G = cls.analyzer.build_citation_graph(cls.analyzer.cit_df)
 
     @parameterized.expand([
         ('pubmed', PubmedLoader(PUBTRENDS_CONFIG), False, 'pubmed'),
@@ -29,13 +31,25 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
 
     def test_bad_source(self):
         with self.assertRaises(TypeError):
-            analyzer = KeyPaperAnalyzer(MockLoader(), test=False)
+            KeyPaperAnalyzer(MockLoader(), test=False)
+
+    def test_build_citation_graph_nodes_count(self):
+        self.assertEqual(self.analyzer.G.number_of_nodes(), len(CITATION_GRAPH_NODES))
+
+    def test_build_citation_graph_edges_count(self):
+        self.assertEqual(self.analyzer.G.number_of_edges(), len(CITATION_GRAPH_EDGES))
+
+    def test_build_citation_graph_nodes(self):
+        self.assertCountEqual(list(self.analyzer.G.nodes()), CITATION_GRAPH_NODES)
+
+    def test_build_citation_graph_edges(self):
+        self.assertCountEqual(list(self.analyzer.G.edges()), CITATION_GRAPH_EDGES)
 
     def test_build_cocitation_graph_nodes_count(self):
         self.assertEqual(self.analyzer.CG.number_of_nodes(), len(COCITATION_GRAPH_NODES))
 
     def test_build_cocitation_graph_edges_count(self):
-        self.assertEqual(self.analyzer.CG.number_of_nodes(), len(COCITATION_GRAPH_NODES))
+        self.assertEqual(self.analyzer.CG.number_of_edges(), len(COCITATION_GRAPH_EDGES))
 
     def test_build_cocitation_graph_nodes(self):
         self.assertCountEqual(list(self.analyzer.CG.nodes()), COCITATION_GRAPH_NODES)
@@ -69,7 +83,7 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
         max_rel_gain = dict(self.analyzer.max_rel_gain_df[['year', 'id']].values)
         self.assertDictEqual(max_rel_gain, EXPECTED_MAX_RELATIVE_GAIN)
 
-    def test_subtopic_analysis_paper_count_after_comp_merge(self):
+    def test_merge_comps_paper_count(self):
         self.assertEqual(len(self.analyzer.df), len(self.analyzer.pub_df))
 
     def test_subtopic_analysis_all_nodes_assigned(self):
@@ -124,7 +138,7 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
         df, _, _, _ = self.analyzer.merge_citation_stats(self.analyzer.pub_df, self.analyzer.cit_stats_df)
         self.assertEqual(len(df), len(self.analyzer.pub_df))
 
-    def test_merge_citation_stats_non_negative_total_value(self):
+    def test_merge_citation_stats_total_value_ge_0(self):
         df, _, _, _ = self.analyzer.merge_citation_stats(self.analyzer.pub_df, self.analyzer.cit_stats_df)
         added_columns = self.analyzer.cit_stats_df.columns
         self.assertFalse(np.any(df[added_columns].isna()), msg='NaN values in citation stats')
