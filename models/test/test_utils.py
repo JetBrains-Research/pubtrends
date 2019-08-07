@@ -46,4 +46,4 @@ class TestUtils(unittest.TestCase):
                          [4, 'd'], [4, 'c']]
         expected_df = pd.DataFrame(expected_data, columns=['id', 'list'])
         actual_df = split_df_list(df_with_list_column, target_column='list', separator=', ')
-        assert_frame_equal(expected_df, actual_df, "Co-citations dataframe is incorrect")
+        assert_frame_equal(expected_df, actual_df, "Splitting list into several rows works incorrectly")
