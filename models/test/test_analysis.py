@@ -45,18 +45,6 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
     def test_build_citation_graph_edges(self):
         self.assertCountEqual(list(self.analyzer.G.edges()), CITATION_GRAPH_EDGES)
 
-    @parameterized.expand([
-        ('pubmed', PubmedLoader(PUBTRENDS_CONFIG), False, 'pubmed'),
-        ('semantic scholar', SemanticScholarLoader(PUBTRENDS_CONFIG), False, 'semantic')
-    ])
-    def test_valid_source(self, name, loader, test, expected):
-        analyzer = KeyPaperAnalyzer(loader, test=test)
-        self.assertEqual(analyzer.source, expected)
-
-    def test_bad_source(self):
-        with self.assertRaises(TypeError):
-            analyzer = KeyPaperAnalyzer(MockLoader(), test=False)
-
     def test_build_cocitation_graph_nodes_count(self):
         self.assertEqual(self.analyzer.CG.number_of_nodes(), len(COCITATION_GRAPH_NODES))
 
