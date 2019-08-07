@@ -100,7 +100,7 @@ class KeyPaperAnalyzer:
             self.logger.remove_handler()
 
     def build_cit_df(self, cit_stats_df_from_query, n_papers, current=None, task=None):
-        # Get citation stats with columns 'id', year_1, ..., year_N
+        # Get citation stats with columns 'id', year_1, ..., year_N and fill NaN with 0
         cit_df = cit_stats_df_from_query.pivot(index='id', columns='year',
                                                values='count').reset_index().fillna(0)
 
@@ -139,7 +139,10 @@ class KeyPaperAnalyzer:
 
     @staticmethod
     def merge_citation_stats(pub_df, cit_df):
-        df = pd.merge(pub_df, cit_df, on='id', how='outer').fillna(0)
+        df = pd.merge(pub_df, cit_df, on='id', how='outer')
+
+        # Fill only new columns to preserve year NaN values
+        df[cit_df.columns] = df[cit_df.columns].fillna(0)
 
         # Publication and citation year range
         citation_years = [int(col) for col in list(df.columns) if isinstance(col, (int, float))]
