@@ -97,6 +97,13 @@ class TestPubmedLoader(unittest.TestCase):
                 row = self.pub_df[self.pub_df['id'] == str(article.pmid)]
                 self.assertEqual(row['abstract'].values[0], '', msg='Null abstract was filled with wrong value')
 
+    def test_load_publications_fill_null_year(self):
+        self.assertFalse(np.any(self.pub_df['year'].isna()), msg='NaN year found')
+        for article in REQUIRED_ARTICLES:
+            if article.date is None:
+                row = self.pub_df[self.pub_df['id'] == str(article.pmid)]
+                self.assertEqual(row['year'].values[0], 0, msg='Null year was filled with wrong value')
+
     def test_load_publications_authors(self):
         actual = []
         expected = []

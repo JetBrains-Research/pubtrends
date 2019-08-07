@@ -157,9 +157,12 @@ class KeyPaperAnalyzer:
                           current=current, task=task)
         return G
 
-    def build_cocitation_graph(self, cocit_grouped_df, current=0, task=None, add_citation_edges=False,
+    def build_cocitation_graph(self, cocit_grouped_df, year=None, current=0, task=None, add_citation_edges=False,
                                citation_weight=0.3):
-        self.logger.info(f'Building co-citations graph', current=current, task=task)
+        if year:
+            self.logger.info(f'Building co-citations graph for {year} year', current=current, task=task)
+        else:
+            self.logger.info(f'Building co-citations graph', current=current, task=task)
         CG = nx.Graph()
 
         # NOTE: we use nodes id as String to avoid problems str keys in jsonify
@@ -205,10 +208,10 @@ class KeyPaperAnalyzer:
 
         # Added 'comp' column containing the ID of component
         df_comp = pd.Series(pm).reset_index().rename(columns={'index': 'id', 0: 'comp'})
-        df_merged = pd.merge(df.assign(id=df['id'].astype(str)),
-                             df_comp.assign(id=df_comp['id'].astype(str)),
-                             on='id', how='outer').fillna(-1)
-        df_merged['comp'] = df_merged['comp'].apply(int)
+        df_comp['id'] = df_comp['id'].astype(str)
+        df_merged = pd.merge(df, df_comp,
+                             on='id', how='outer')
+        df_merged['comp'] = df_merged['comp'].fillna(-1).apply(int)
         return df_merged, components, comp_other, pm, pmcomp_sizes
 
     def subtopic_descriptions(self, df, current=0, task=None):
@@ -282,30 +285,17 @@ class KeyPaperAnalyzer:
 
         components_merged = {}
         cg = {}
-        evolution_series = []
         year_range = list(np.arange(max_year, min_year - 1, step=-step).astype(int))
         self.logger.debug(f"Years when subtopics are studied: {', '.join([str(year) for year in year_range])}",
                           current=current, task=task)
 
-        years_processed = 0
-        for i, year in enumerate(year_range):
-            cocit_grouped_df = cocit_df[cocit_df['year'] <= year].groupby(
-                ['cited_1', 'cited_2', 'year']).count().reset_index()
-            cocit_grouped_df = cocit_grouped_df.pivot_table(index=['cited_1', 'cited_2'],
-                                                            columns=['year'],
-                                                            values=['citing']).reset_index()
-            cocit_grouped_df = cocit_grouped_df.replace(np.nan, 0)
-            cocit_grouped_df['total'] = cocit_grouped_df.iloc[:, 2:].sum(axis=1)
-            cocit_grouped_df = cocit_grouped_df.sort_values(by='total', ascending=False)
-            cocit_grouped_df = cocit_grouped_df.iloc[:min(100000, len(cocit_grouped_df)), :]
-
-            cg[year] = nx.Graph()
-            # NOTE: we use nodes id as String to avoid problems str keys in jsonify
-            # during graph visualization
-            for el in cocit_grouped_df[['cited_1', 'cited_2', 'total']].values:
-                cg[year].add_edge(str(el[0]), str(el[1]), weight=el[2])
-            self.logger.debug(f'{year}: graph contains {len(cg[year].nodes)} nodes, {len(cg[year].edges)} edges',
-                              current=current, task=task)
+        # Use results of subtopic analysis for current year, perform analysis for other years
+        years_processed = 1
+        evolution_series = [pd.Series(self.pm)]
+        for i, year in enumerate(year_range[1:]):
+            # Use only co-citations earlier than year
+            cocit_grouped_df = self.build_cocit_grouped_df(cocit_df[cocit_df['year'] <= year])
+            cg[year] = self.build_cocitation_graph(cocit_grouped_df, year=year, current=current, task=task)
 
             if len(cg[year].nodes) >= min_papers:
                 p = {vertex: int(comp) for vertex, comp in
@@ -352,8 +342,8 @@ class KeyPaperAnalyzer:
         components = set(p.values())
         comp_sizes = {com: sum([p[node] == com for node in p.keys()]) for com in components}
         comp_to_merge = {com: comp_sizes[com] <= threshold for com in components}
-        components_merged = sum(comp_to_merge.values()) > 0
-        if components_merged > 0:
+        components_merged = sum(comp_to_merge.values())
+        if components_merged > 1:
             self.logger.debug(f'Reassigning components', current=current, task=task)
             pm = {}
             newcomps = {}
@@ -368,7 +358,7 @@ class KeyPaperAnalyzer:
                 pm[k] = newcomps[v]
             self.logger.debug(f'Processed {len(set(pm.values()))} components', current=current, task=task)
         else:
-            self.logger.debug(f'All components are bigger than {granularity}, no need to reassign',
+            self.logger.debug(f'No need to reassign components',
                               current=current, task=task)
             pm = p
         return pm, components_merged
@@ -415,7 +405,7 @@ class KeyPaperAnalyzer:
         self.logger.info("Finding popular authors", current=current, task=task)
 
         author_stats = pd.DataFrame()
-        author_stats['author'] = df[df.authors != -1]['authors'].apply(lambda authors: authors.split(', '))
+        author_stats['author'] = df[df.authors != '']['authors'].apply(lambda authors: authors.split(', '))
 
         author_stats = author_stats.author.apply(pd.Series).stack().reset_index(level=1, drop=True).to_frame(
             'author').join(df[['id', 'comp']], how='left')
