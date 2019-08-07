@@ -148,6 +148,6 @@ def cut_authors_list(authors, limit=10):
     before_separator = limit - 1
     separator = ',...,'
     author_list = authors.split(', ')
-    if len(author_list) > before_separator:
+    if len(author_list) > limit:
         return ', '.join(author_list[:before_separator]) + separator + author_list[-1]
     return authors

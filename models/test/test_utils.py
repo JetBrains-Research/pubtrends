@@ -1,6 +1,6 @@
 import unittest
 
-from models.keypaper.utils import tokenize
+from models.keypaper.utils import tokenize, cut_authors_list
 
 
 class TestUtils(unittest.TestCase):
@@ -14,3 +14,19 @@ class TestUtils(unittest.TestCase):
                     'opinion', 'indian']
         actual = tokenize(text)
         self.assertSequenceEqual(actual, expected)
+
+    def test_cut_authors_list_limit_size(self):
+        limit_size_list = "first, second, third"
+        actual = cut_authors_list(limit_size_list, limit=len(limit_size_list))
+        self.assertEquals(actual, limit_size_list)
+
+    def test_cut_authors_list_less(self):
+        long_list = "first, second, third"
+        actual = cut_authors_list(long_list, 2)
+        expected = "first,...,third"
+        self.assertEquals(actual, expected)
+
+    def test_cut_authors_list_greater(self):
+        short_list = "first, second, third"
+        actual = cut_authors_list(short_list, 4)
+        self.assertEquals(actual, short_list)
