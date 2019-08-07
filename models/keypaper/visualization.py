@@ -26,7 +26,7 @@ from pandas import RangeIndex
 from wordcloud import WordCloud
 
 from .utils import PUBMED_ARTICLE_BASE_URL, SEMANTIC_SCHOLAR_BASE_URL, get_word_cloud_data, \
-    get_most_common_ngrams
+    get_most_common_ngrams, cut_authors_list
 from .visualization_data import PlotPreprocessor
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
@@ -295,6 +295,7 @@ class Plotter:
         logging.info('Different colors encode different papers')
         cols = ['year', 'id', 'title', 'authors', 'paper_year', 'count']
         max_gain_df = self.analyzer.max_gain_df[cols].replace(np.nan, "Undefined")
+        max_gain_df['authors'] = max_gain_df['authors'].apply(lambda authors: cut_authors_list(authors))
         ds_max = ColumnDataSource(max_gain_df)
 
         factors = self.analyzer.max_gain_df['id'].unique()
@@ -324,6 +325,7 @@ class Plotter:
         logging.info('Different colors encode different papers')
         cols = ['year', 'id', 'title', 'authors', 'paper_year', 'rel_gain']
         max_rel_gain_df = self.analyzer.max_rel_gain_df[cols].replace(np.nan, "Undefined")
+        max_rel_gain_df['authors'] = max_rel_gain_df['authors'].apply(lambda authors: cut_authors_list(authors))
         ds_max = ColumnDataSource(max_rel_gain_df)
 
         factors = self.analyzer.max_rel_gain_df['id'].astype(str).unique()
