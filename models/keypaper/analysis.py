@@ -49,7 +49,7 @@ class KeyPaperAnalyzer:
                 raise RuntimeError("Nothing found in DB")
 
             cit_stats_df_from_query = self.loader.load_citation_stats(current=3, task=task)
-            self.cit_stats_df = self.build_cit_df(cit_stats_df_from_query, self.n_papers, current=4, task=task)
+            self.cit_stats_df = self.build_cit_stats_df(cit_stats_df_from_query, self.n_papers, current=4, task=task)
             if len(self.cit_stats_df) == 0:
                 raise RuntimeError("Citations stats not found DB")
 
@@ -67,9 +67,10 @@ class KeyPaperAnalyzer:
                 raise RuntimeError("Failed to build co-citations graph")
 
             # Perform subtopic analysis and get subtopic descriptions
-            self.df, self.components, self.comp_other, self.pm, self.pmcomp_sizes = self.subtopic_analysis(
+            self.components, self.comp_other, self.pm, self.pmcomp_sizes = self.subtopic_analysis(
                 self.df, self.CG, current=8, task=task
             )
+            self.df = self.merge_comps(self.df, self.pm)
             self.df_kwd = self.subtopic_descriptions(self.df)
 
             # Find interesting papers
@@ -99,25 +100,25 @@ class KeyPaperAnalyzer:
             self.loader.close_connection()
             self.logger.remove_handler()
 
-    def build_cit_df(self, cit_stats_df_from_query, n_papers, current=None, task=None):
+    def build_cit_stats_df(self, cit_stats_df_from_query, n_papers, current=None, task=None):
         # Get citation stats with columns 'id', year_1, ..., year_N and fill NaN with 0
-        cit_df = cit_stats_df_from_query.pivot(index='id', columns='year',
+        cit_stats_df = cit_stats_df_from_query.pivot(index='id', columns='year',
                                                values='count').reset_index().fillna(0)
 
         # Fix column names from float 'YYYY.0' to int 'YYYY'
         mapper = {}
-        for col in cit_df.columns:
+        for col in cit_stats_df.columns:
             if col != 'id':
                 mapper[col] = int(col)
-        cit_df = cit_df.rename(mapper)
+        cit_stats_df = cit_stats_df.rename(mapper)
 
-        cit_df['total'] = cit_df.iloc[:, 1:].sum(axis=1)
-        cit_df = cit_df.sort_values(by='total', ascending=False)
-        self.logger.debug(f"Loaded citation stats for {len(cit_df)} of {n_papers} articles.\n" +
+        cit_stats_df['total'] = cit_stats_df.iloc[:, 1:].sum(axis=1)
+        cit_stats_df = cit_stats_df.sort_values(by='total', ascending=False)
+        self.logger.debug(f"Loaded citation stats for {len(cit_stats_df)} of {n_papers} articles.\n" +
                           "Others may either have zero citations or be absent in the local database.",
                           current=current, task=task)
 
-        return cit_df
+        return cit_stats_df
 
     def build_cocit_grouped_df(self, cocit_df, current=0, task=None):
         self.logger.debug(f'Aggregating co-citations', current=current, task=task)
@@ -152,7 +153,7 @@ class KeyPaperAnalyzer:
 
     def build_citation_graph(self, cit_df, current=0, task=None):
         G = nx.DiGraph()
-        for row in cit_df.iterrows():
+        for index, row in cit_df.iterrows():
             v, u = row['id_out'], row['id_in']
             G.add_edge(v, u)
 
@@ -209,13 +210,18 @@ class KeyPaperAnalyzer:
         for k, v in pmcomp_sizes.items():
             self.logger.debug(f'Cluster {k}: {v} ({int(100 * v / len(pm))}%)', current=current, task=task)
 
+        return components, comp_other, pm, pmcomp_sizes
+
+    @staticmethod
+    def merge_comps(df, pm):
         # Added 'comp' column containing the ID of component
         df_comp = pd.Series(pm).reset_index().rename(columns={'index': 'id', 0: 'comp'})
         df_comp['id'] = df_comp['id'].astype(str)
         df_merged = pd.merge(df, df_comp,
                              on='id', how='outer')
         df_merged['comp'] = df_merged['comp'].fillna(-1).apply(int)
-        return df_merged, components, comp_other, pm, pmcomp_sizes
+
+        return df_merged
 
     def subtopic_descriptions(self, df, current=0, task=None):
         # Get n-gram descriptions for subtopics

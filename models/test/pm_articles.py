@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from datetime import date
 from typing import List
 
+import numpy as np
 import pandas as pd
 
 
@@ -61,7 +62,7 @@ class PubmedArticle:
 
     def to_list(self):
         return [str(self.pmid), self.title, self.aux.to_dict(), self.abstract if self.abstract else '',
-                int(self.date.year) if self.date else 0, self.authors(), self.journal()]
+                int(self.date.year) if self.date else np.nan, self.authors(), self.journal()]
 
 
 REQUIRED_ARTICLES = [
