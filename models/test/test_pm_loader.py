@@ -24,9 +24,9 @@ class TestPubmedLoader(unittest.TestCase):
         cls.loader.values = ', '.join(['({})'.format(i) for i in sorted(cls.ids)])
 
         # Reset and load data to the test database
-        cls._init_database()
-        cls._insert_publications()
-        cls._insert_citations()
+        cls.init_database()
+        cls.insert_publications()
+        cls.insert_citations()
 
         # Get data via PubmedLoader methods
         cls.pub_df = cls.loader.load_publications()
@@ -35,7 +35,7 @@ class TestPubmedLoader(unittest.TestCase):
         cls.cocit_df = cls.loader.load_cocitations()
 
     @classmethod
-    def _init_database(cls):
+    def init_database(cls):
         query_citations = '''
         DROP TABLE IF EXISTS PMCitations;
         CREATE TABLE PMCitations (
@@ -60,7 +60,7 @@ class TestPubmedLoader(unittest.TestCase):
             cls.loader.cursor.execute(query_publications)
 
     @classmethod
-    def _insert_publications(cls):
+    def insert_publications(cls):
         articles = ', '.join(list(map(str, ARTICLES)))
 
         query = re.sub(cls.VALUES_REGEX, articles, '''
@@ -70,7 +70,7 @@ class TestPubmedLoader(unittest.TestCase):
             cls.loader.cursor.execute(query)
 
     @classmethod
-    def _insert_citations(cls):
+    def insert_citations(cls):
         citations = [f'({id_out}, {id_in})' for id_out, id_in in CITATIONS]
 
         query = re.sub(cls.VALUES_REGEX, ', '.join(citations), '''
@@ -137,8 +137,7 @@ class TestPubmedLoader(unittest.TestCase):
 
     def test_load_citation_stats_data_frame(self):
         # Sort to compare with expected
-        self.cit_stats_df = self.cit_stats_df.sort_values(by=['id', 'year'],
-                                                          ascending=[True, True]).reset_index(drop=True)
+        self.cit_stats_df = self.cit_stats_df.sort_values(by=['id', 'year']).reset_index(drop=True)
         assert_frame_equal(self.cit_stats_df, EXPECTED_CIT_STATS_DF, 'Wrong citation stats data')
 
     def test_load_citations_count(self):
@@ -149,14 +148,12 @@ class TestPubmedLoader(unittest.TestCase):
 
     def test_load_cocitations_data_frame(self):
         # Sort to compare with expected
-        self.cocit_df = self.cocit_df.sort_values(by=['citing', 'cited_1', 'cited_2'],
-                                                  ascending=[True, True, True]).reset_index(drop=True)
+        self.cocit_df = self.cocit_df.sort_values(by=['citing', 'cited_1', 'cited_2']).reset_index(drop=True)
         assert_frame_equal(self.cocit_df, EXPECTED_COCIT_DF, 'Wrong co-citation data')
 
     @classmethod
     def tearDownClass(cls):
-        cls.loader.cursor.close()
-        cls.loader.conn.close()
+        cls.loader.close_connection()
 
 
 if __name__ == "__main__":
