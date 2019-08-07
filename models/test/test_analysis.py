@@ -4,16 +4,32 @@ import numpy as np
 from parameterized import parameterized
 
 from models.keypaper.analysis import KeyPaperAnalyzer
+from models.keypaper.config import PubtrendsConfig
+from models.keypaper.pm_loader import PubmedLoader
+from models.keypaper.ss_loader import SemanticScholarLoader
 from models.test.mock_loader import MockLoader, COCITATION_GRAPH_EDGES, COCITATION_GRAPH_NODES, \
     CITATION_YEARS, EXPECTED_MAX_GAIN, EXPECTED_MAX_RELATIVE_GAIN
 
 
 class TestKeyPaperAnalyzer(unittest.TestCase):
+    PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
 
     @classmethod
     def setUpClass(cls):
         cls.analyzer = KeyPaperAnalyzer(MockLoader(), test=True)
         cls.analyzer.launch()
+
+    @parameterized.expand([
+        ('pubmed', PubmedLoader(PUBTRENDS_CONFIG), False, 'pubmed'),
+        ('semantic scholar', SemanticScholarLoader(PUBTRENDS_CONFIG), False, 'semantic')
+    ])
+    def test_valid_source(self, name, loader, test, expected):
+        analyzer = KeyPaperAnalyzer(loader, test=test)
+        self.assertEqual(analyzer.source, expected)
+
+    def test_bad_source(self):
+        with self.assertRaises(TypeError):
+            analyzer = KeyPaperAnalyzer(MockLoader(), test=False)
 
     def test_build_cocitation_graph_nodes_count(self):
         self.assertEqual(self.analyzer.CG.number_of_nodes(), len(COCITATION_GRAPH_NODES))
@@ -117,3 +133,7 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
     def test_merge_citation_stats_citation_years(self):
         _, _, _, citation_years = self.analyzer.merge_citation_stats(self.analyzer.pub_df, self.analyzer.cit_stats_df)
         self.assertCountEqual(citation_years, CITATION_YEARS)
+
+
+if __name__ == '__main__':
+    unittest.main()
