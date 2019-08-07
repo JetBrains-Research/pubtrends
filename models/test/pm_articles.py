@@ -126,11 +126,11 @@ EXPECTED_PUB_DF = pd.DataFrame([article.to_list() for article in REQUIRED_ARTICL
                                columns=['id', 'title', 'aux', 'abstract', 'year', 'authors', 'journal'])
 
 EXPECTED_CIT_STATS_DF = pd.DataFrame(CITATION_STATS, columns=['id', 'year', 'count']).sort_values(
-    by=['id', 'year'], ascending=[True, True]
+    by=['id', 'year']
 ).reset_index(drop=True)
 
 EXPECTED_CIT_DF = pd.DataFrame(INNER_CITATIONS, columns=['id_out', 'id_in'])
 
 EXPECTED_COCIT_DF = pd.DataFrame(COCITATIONS, columns=['citing', 'cited_1', 'cited_2', 'year']).sort_values(
-    by=['citing', 'cited_1', 'cited_2'], ascending=[True, True, True]
+    by=['citing', 'cited_1', 'cited_2']
 ).reset_index(drop=True)
