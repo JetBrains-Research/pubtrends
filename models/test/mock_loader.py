@@ -18,6 +18,9 @@ CITATION_YEARS = [1972, 1974]
 CITATION_DATA = [['4', '1'], ['3', '1'], ['4', '2'], ['3', '2'],
                  ['5', '1'], ['5', '2'], ['5', '3'], ['5', '4']]
 
+CITATION_GRAPH_NODES = ['1', '2', '3', '4', '5']
+CITATION_GRAPH_EDGES = [(e[0], e[1]) for e in CITATION_DATA]
+
 COCITATION_DATA = [['3', '1', '2', 1967],
                    ['4', '1', '2', 1968],
                    ['5', '1', '2', 1975],
@@ -48,6 +51,9 @@ class MockLoader(Loader):
 
     def load_citation_stats(self, current=None, task=None):
         return pd.DataFrame(CITATION_STATS_DATA, columns=['id', 'year', 'count'])
+
+    def load_citations(self, current=None, task=None):
+        return pd.DataFrame(CITATION_DATA, columns=['id_out', 'id_in'])
 
     def load_cocitations(self, current=None, task=None):
         cocit_df = pd.DataFrame(COCITATION_DATA, columns=['citing', 'cited_1', 'cited_2', 'year'])
