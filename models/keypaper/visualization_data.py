@@ -5,6 +5,8 @@ import numpy as np
 import pandas as pd
 from bokeh.models import ColumnDataSource, TableColumn
 
+from .utils import cut_authors_list
+
 
 class PlotPreprocessor:
 
@@ -35,6 +37,7 @@ class PlotPreprocessor:
         log_total = np.log(gdf['total'])
         gdf['size'] = (log_total / np.max(log_total)) * 5 + 5
         gdf['topic'] = [f'#{comps[n]}{" OTHER" if comps[n] == comp_other else ""}' for n in sorted_nodes]
+        gdf['authors'] = gdf['authors'].apply(lambda authors: cut_authors_list(authors))
 
         edge_starts = []
         edge_ends = []
@@ -227,6 +230,8 @@ class PlotPreprocessor:
 
         # Replace NaN values with Undefined for tooltips
         df_local['year'] = df_local['year'].replace(np.nan, "Undefined")
+
+        df_local['authors'] = df_local['authors'].apply(lambda authors: cut_authors_list(authors))
 
         df_local['comp'] = df_local['comp']
 
