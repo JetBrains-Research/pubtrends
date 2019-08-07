@@ -7,7 +7,7 @@ from models.test.test_loader import TestLoader
 from .pm_loader import PubmedLoader
 from .progress_logger import ProgressLogger
 from .ss_loader import SemanticScholarLoader
-from .utils import get_subtopic_descriptions, get_tfidf_words
+from .utils import get_subtopic_descriptions, get_tfidf_words, split_df_list
 
 
 class KeyPaperAnalyzer:
@@ -346,17 +346,16 @@ class KeyPaperAnalyzer:
     def popular_authors(self, current=0, task=None):
         self.logger.info("Finding popular authors", current=current, task=task)
 
-        author_stats = pd.DataFrame()
-        author_stats['author'] = self.df[self.df.authors != -1]['authors'].apply(lambda authors: authors.split(', '))
+        author_stats = self.df[['authors', 'comp']].copy()
+        author_stats['authors'].replace({'': np.nan, -1: np.nan}, inplace=True)
+        author_stats.dropna(subset=['authors'], inplace=True)
 
-        author_stats = author_stats.author.apply(pd.Series).stack().reset_index(level=1, drop=True).to_frame(
-            'author').join(self.df[['id', 'comp']], how='left')
+        author_stats = split_df_list(author_stats, target_column='authors', separator=', ')
+        author_stats.rename(columns={'authors': 'author'}, inplace=True)
 
         author_stats = author_stats.groupby(['author', 'comp']).size().reset_index(name='counts')
         # drop papers with undefined subtopic
         author_stats = author_stats[author_stats.comp != -1]
-        author_stats['author'].replace('', np.nan, inplace=True)
-        author_stats.dropna(subset=['author'], inplace=True)
 
         author_stats.sort_values(by=['author', 'counts'], ascending=False, inplace=True)
 

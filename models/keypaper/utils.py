@@ -4,6 +4,7 @@ from collections import Counter
 
 import nltk
 import numpy as np
+import pandas as pd
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
@@ -142,3 +143,25 @@ def get_tfidf_words(df, comps, terms, size=5):
         kwd[i] = list(map(lambda idx: words[idx], ind[0, -size:]))
 
     return kwd
+
+
+def split_df_list(df, target_column, separator):
+    """
+    :param df: dataframe to split
+    :param target_column: the column containing the values to split
+    :param separator:  the symbol used to perform the split
+    :return: a dataframe with each entry for the target column separated, with each element moved into a new row.
+    The values in the other columns are duplicated across the newly divided rows.
+    """
+
+    def split_list_to_rows(row, row_accumulator, target_column, separator):
+        split_row = row[target_column].split(separator)
+        for s in split_row:
+            new_row = row.to_dict()
+            new_row[target_column] = s
+            row_accumulator.append(new_row)
+
+    new_rows = []
+    df.apply(split_list_to_rows, axis=1, args=(new_rows, target_column, separator))
+    new_df = pd.DataFrame(new_rows)
+    return new_df
