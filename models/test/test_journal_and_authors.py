@@ -4,14 +4,14 @@ from pandas.util.testing import assert_frame_equal
 
 from models.keypaper.analysis import KeyPaperAnalyzer
 from models.test.articles_for_analysis_testing import df_authors_and_journals, author_df, journal_df
-from models.test.test_loader import TestLoader
+from models.test.mock_loader import MockLoader
 
 
 class TestPopularAuthorsAndJournals(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.analyzer = KeyPaperAnalyzer(TestLoader(), test=True)
+        cls.analyzer = KeyPaperAnalyzer(MockLoader(), test=True)
         cls.analyzer.df = df_authors_and_journals
         cls.author_stats = cls.analyzer.popular_authors(cls.analyzer.df)
         cls.journal_stats = cls.analyzer.popular_journals(cls.analyzer.df)
