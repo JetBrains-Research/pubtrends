@@ -1,5 +1,6 @@
 import unittest
 
+import numpy as np
 from parameterized import parameterized
 
 from models.keypaper.analysis import KeyPaperAnalyzer
@@ -28,9 +29,6 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
         expected_edges = [(v, u, {'weight': w}) for v, u, w in COCITATION_GRAPH_EDGES]
         self.assertCountEqual(list(self.analyzer.CG.edges(data=True)), expected_edges)
 
-    def test_update_years(self):
-        self.assertCountEqual(self.analyzer.citation_years, CITATION_YEARS)
-
     def test_find_max_gain_papers_count(self):
         max_gain_count = len(list(self.analyzer.max_gain_df['year'].values))
         self.assertEqual(max_gain_count, len(EXPECTED_MAX_GAIN.keys()))
@@ -55,6 +53,9 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
         max_rel_gain = dict(self.analyzer.max_rel_gain_df[['year', 'id']].values)
         self.assertDictEqual(max_rel_gain, EXPECTED_MAX_RELATIVE_GAIN)
 
+    def test_subtopic_analysis_paper_count_after_comp_merge(self):
+        self.assertEqual(len(self.analyzer.df), len(self.analyzer.pub_df))
+
     def test_subtopic_analysis_all_nodes_assigned(self):
         nodes = self.analyzer.CG.nodes()
         for row in self.analyzer.df.itertuples():
@@ -68,10 +69,10 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
                 self.assertEqual(getattr(row, 'comp'), -1)
 
     @parameterized.expand([
-        ('threshold 1', 5, 1, ['3', '1', '4', '5', '2']),
-        ('threshold 1.5', 10, 1.5, ['3', '1', '4', '5', '2']),
+        ('threshold 1', 5, 1, ['3', '1', '4', '2', '5']),
+        ('threshold 1.5', 10, 1.5, ['3', '1', '4', '2', '5']),
         ('limit-1', 2, 0.5, ['3', '1']),
-        ('limit-2', 4, 0.8, ['3', '1', '4', '5']),
+        ('limit-2', 4, 0.8, ['3', '1', '4', '2']),
         ('pick at least 1', 50, 0.1, ['3'])
     ])
     def test_find_top_cited_papers(self, name, max_papers, threshold, expected):
@@ -83,38 +84,36 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
     @parameterized.expand([
         ('granularity 0', {1: 0, 2: 1, 3: 2, 4: 3, 5: 4}, 0, ({1: 0, 2: 1, 3: 2, 4: 3, 5: 4}, 0)),
         ('granularity 1', {1: 0, 2: 1, 3: 2, 4: 3, 5: 4}, 1, ({1: 0, 2: 0, 3: 0, 4: 0, 5: 0}, 1)),
-        ('granularity 0.5', {1: 0, 2: 1, 3: 1, 4: 1, 5: 2}, 0.5, ({1: 0, 2: 1, 3: 1, 4: 1, 5: 0}, 1))
+        ('granularity 0.5', {1: 0, 2: 1, 3: 1, 4: 1, 5: 2}, 0.5, ({1: 0, 2: 1, 3: 1, 4: 1, 5: 0}, 1)),
+        ('do not merge one component', {1: 0, 2: 1, 3: 1, 4: 1, 5: 1}, 0.5, ({1: 0, 2: 1, 3: 1, 4: 1, 5: 1}, 0))
     ])
     def test_merge_components(self, name, partition, granularity, expected):
         partition, merged = self.analyzer.merge_components(partition, granularity)
         expected_partition, expected_merged = expected
         self.assertEqual(partition, expected_partition)
 
-# class TestKeyPaperAnalyzerDataLeak(unittest.TestCase):
-#
-#     def setUp(self):
-#         self.analyzer = KeyPaperAnalyzer(MockLoader())
-#
-#         # Load publications
-#         self.analyzer.loader.search()
-#         self.analyzer.loader.load_publications()
-#         self.paper_count = len(self.analyzer.pub_df)
-#
-#         # Load citation stats
-#         self.analyzer.loader.load_citation_stats()
-#         self.analyzer.merge_citation_stats()
-#         self.paper_count_after_stat_merge = len(self.analyzer.df)
-#
-#         # Load cocitations and perform subtopic analysis
-#         self.analyzer.loader.load_cocitations()
-#         self.analyzer.build_cocitation_graph(self.analyzer.cocit_grouped_df)
-#         self.analyzer.cocit_df = self.analyzer.loader.cocit_df
-#         self.analyzer.update_years()
-#         self.analyzer.subtopic_analysis()
-#         self.paper_count_after_comp_merge = len(self.analyzer.df)
-#
-#     def test_paper_count_after_citation_stats_merge(self):
-#         self.assertEqual(self.paper_count_after_stat_merge, self.paper_count)
-#
-#     def test_paper_count_after_subtopic_data_merge(self):
-#         self.assertEqual(self.paper_count_after_comp_merge, self.paper_count)
+    @parameterized.expand([
+        # Component sizes: {0: 1, 1: 3, 2: 2}, correct order - [1, 2, 0], no other
+        ('no other', {1: 0, 2: 1, 3: 1, 4: 1, 5: 2, 6: 2}, False, ({1: 2, 2: 0, 3: 0, 4: 0, 5: 1, 6: 1}, None)),
+        # Component sizes: {0: 2, 1: 3, 2: 1}, correct order - [1, 0, 2], other = 1
+        ('with other', {1: 0, 2: 1, 3: 1, 4: 1, 5: 0, 6: 2}, True, ({1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 2}, 1))
+    ])
+    def test_sort_components(self, name, partition, components_merged, expected):
+        partition, other = self.analyzer.sort_components(partition, components_merged)
+        expected_partition, expected_other = expected
+        self.assertEqual(partition, expected_partition)
+        self.assertEqual(other, expected_other)
+
+    def test_merge_citation_stats_paper_count(self):
+        df, _, _, _ = self.analyzer.merge_citation_stats(self.analyzer.pub_df, self.analyzer.cit_stats_df)
+        self.assertEqual(len(df), len(self.analyzer.pub_df))
+
+    def test_merge_citation_stats_non_negative_total_value(self):
+        df, _, _, _ = self.analyzer.merge_citation_stats(self.analyzer.pub_df, self.analyzer.cit_stats_df)
+        added_columns = self.analyzer.cit_stats_df.columns
+        self.assertFalse(np.any(df[added_columns].isna()), msg='NaN values in citation stats')
+        self.assertTrue(np.all(df['total'] >= 0), msg='Negative total citations count')
+
+    def test_merge_citation_stats_citation_years(self):
+        _, _, _, citation_years = self.analyzer.merge_citation_stats(self.analyzer.pub_df, self.analyzer.cit_stats_df)
+        self.assertCountEqual(citation_years, CITATION_YEARS)
