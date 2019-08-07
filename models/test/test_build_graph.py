@@ -19,15 +19,15 @@ class TestBuildGraph(unittest.TestCase):
         expected_number_of_nodes = len(expected_cocit_and_cit_graph.nodes())
         actual_number_of_nodes = len(self.CG.nodes())
         self.assertEqual(expected_number_of_nodes, actual_number_of_nodes,
-                         "Amount of nodes in citation graph is incorrect")
+                         "Amount of nodes in co-citation graph is incorrect")
 
     def test_cocitations_nodes(self):
         expected_nodes = expected_cocit_and_cit_graph.nodes()
         actual_nodes = self.CG.nodes()
-        self.assertEqual(expected_nodes, actual_nodes, "Nodes in citation graph are incorrect")
+        self.assertEqual(expected_nodes, actual_nodes, "Nodes in co-citation graph are incorrect")
 
-    def test_load_citations(self):
-        self.assertTrue(nx.is_isomorphic(expected_cocit_and_cit_graph, self.CG), "Graph of cocitations is incorrect")
+    def test_build_cocitations_graph(self):
+        self.assertTrue(nx.is_isomorphic(expected_cocit_and_cit_graph, self.CG), "Graph of co-citations is incorrect")
 
 
 if __name__ == "__main__":
