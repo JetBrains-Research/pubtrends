@@ -19,7 +19,7 @@ SEMANTIC_SCHOLAR_BASE_URL = 'https://www.semanticscholar.org/paper/'
 
 
 def tokenize(text, terms=None):
-    is_noun_or_adj = lambda pos: (pos[:2] == 'NN' or pos[:3] == 'ADJ')
+    is_noun_or_adj = lambda pos: (pos[:2] == 'NN' or pos == 'JJ')
     special_symbols_regex = re.compile(r'[^a-zA-Z0-9\- ]*')
     text = text.lower()
 

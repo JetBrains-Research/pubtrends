@@ -70,7 +70,6 @@ class KeyPaperAnalyzer:
             self.G = self.loader.load_citations(current=5, task=task)
 
             cocit_grouped_df = self.loader.load_cocitations(current=6, task=task)
-            self.CG = self.build_cocitation_graph(cocit_grouped_df, current=7, task=task, add_citation_edges=False)
             self.CG = self.build_cocitation_graph(cocit_grouped_df, current=7, task=task, add_citation_edges=True)
             if len(self.CG.nodes()) == 0:
                 raise RuntimeError("Failed to build co-citations graph")
