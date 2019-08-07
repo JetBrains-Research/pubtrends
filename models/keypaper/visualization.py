@@ -186,12 +186,18 @@ class Plotter:
         )
 
         p = figure(x_range=[min_year - 1, max_year + 1], plot_width=960, plot_height=300,
-                   title="Components by Year",
-                   toolbar_location=None, tools="hover", tooltips="Subtopic #$name: @$name")
+                   title="Components by Year", toolbar_location="right", tools=TOOLS,
+                   tooltips=[('Subtopic', '$name'), ('Amount', '@$name')])
 
-        p.vbar_stack(components, x='years', width=0.9, color=self.comp_palette, source=data, alpha=0.5,
+        # NOTE: VBar is invisible (alpha = 0) to provide tooltips on hover as stacked area does not support them
+        p.vbar_stack(components, x='years', width=0.9, color=self.comp_palette, source=data, alpha=0,
                      legend=[f'{c} OTHER' if int(c) == self.analyzer.comp_other else value(c)
                              for c in components])
+
+        # VArea is actually displayed
+        p.varea_stack(stackers=components, x='years', color=self.comp_palette, source=data, alpha=0.5,
+                      legend=[f'{c} OTHER' if int(c) == self.analyzer.comp_other else value(c)
+                              for c in components])
 
         p.y_range.start = 0
         p.xgrid.grid_line_color = None
@@ -400,11 +406,17 @@ class Plotter:
         year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
         p = figure(tools=TOOLS, toolbar_location="above",
                    plot_width=760, plot_height=400, x_range=year_range, title='Amount of articles per year')
+        p.y_range.start = 0
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Amount of articles'
         p.hover.tooltips = [("Amount", '@counts'), ("Year", '@year')]
 
-        p.vbar(x='year', width=0.8, top='counts', fill_alpha=0.5, source=ds_stats)
+        # NOTE: VBar is invisible (alpha=0) to provide tooltips, as in self.component_size_summary()
+        p.vbar(x='year', width=0.8, top='counts', fill_alpha=0, line_alpha=0, source=ds_stats)
+
+        # VArea is actually displayed
+        ds_stats.data['bottom'] = [0] * len(ds_stats.data['year'])
+        p.varea(x='year', y1='bottom', y2='counts', fill_alpha=0.5, source=ds_stats)
 
         kwds = {}
         for ngram, count in get_most_common_ngrams(self.analyzer.top_cited_df['title'],
