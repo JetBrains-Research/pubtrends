@@ -20,19 +20,49 @@ class SemanticScholarLoader(Loader):
         self.citations_table = citations_table
         self.temp_ids_table = temp_ids_table
 
-    def search(self, *terms, current=0, task=None):
+    def search(self, *terms, limit=None, sort=None, current=0, task=None):
         self.terms = [t.lower() for t in terms]
         self.logger.info('Searching publication data', current=current, task=task)
         terms_str = '\'' + ' '.join(self.terms) + '\''
-        query = f'''
-        SELECT DISTINCT ON(ssid) ssid, crc32id, title, abstract, year, aux FROM {self.publications_table} P
-        WHERE tsv @@ websearch_to_tsquery('english', {terms_str}) limit {self.max_number_of_articles};
-        '''
+
+        columns = ['id', 'crc32id', 'title', 'abstract', 'year', 'aux']
+        if sort == 'relevance':
+            query = f'''
+            SELECT DISTINCT ON(P.ssid) P.ssid, P.crc32id, P.title, P.abstract, P.year, P.aux, 
+                                       ts_rank_cd(P.tsv, query) AS rank
+            FROM {self.publications_table} P, websearch_to_tsquery('english', {terms_str}) query
+            WHERE tsv @@ query
+            ORDER BY rank DESC
+            LIMIT {limit};
+            '''
+            columns.append('ts_rank')
+        elif sort == 'citations':
+            query = f'''
+            SELECT DISTINCT ON(P.ssid) P.ssid, P.crc32id, P.title, P.abstract, P.year, P.aux, COUNT(1) AS count 
+            FROM {self.publications_table} P
+            LEFT JOIN {self.citations_table} C
+            ON C.crc32id_in = P.crc32id AND C.id_in = P.ssid
+            WHERE tsv @@ websearch_to_tsquery('english', {terms_str})
+            GROUP BY P.ssid
+            ORDER BY count DESC
+            LIMIT {limit};
+            '''
+            columns.append('citations')
+        elif sort == 'year':
+            query = f'''
+            SELECT DISTINCT ON(ssid) ssid, crc32id, title, abstract, year, aux 
+            FROM {self.publications_table} P
+            WHERE tsv @@ websearch_to_tsquery('english', {terms_str})
+            ORDER BY year DESC
+            LIMIT {limit};
+            '''
+        else:
+            raise ValueError('sort can be either citations, relevance or year')
 
         with self.conn:
             self.cursor.execute(query)
         self.pub_df = pd.DataFrame(self.cursor.fetchall(),
-                                   columns=['id', 'crc32id', 'title', 'abstract', 'year', 'aux'],
+                                   columns=columns,
                                    dtype=object)
 
         self.pub_df['authors'] = self.pub_df['aux'].apply(

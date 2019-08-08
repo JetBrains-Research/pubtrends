@@ -17,36 +17,94 @@ class PubmedLoader(Loader):
         Entrez.email = pubtrends_config.pm_entrez_email
         self.index = index
 
-    def search(self, *terms, current=0, task=None):
-        self.logger.debug(f'TODO: handle queries which return more than {self.max_number_of_articles} items',
-                          current=current, task=task)
+    def search(self, *terms, limit=None, sort=None, current=0, task=None):
+        """
+        This function uses Pubmed API to find papers relevant to the given terms
+        :param terms: list of search terms
+        :param limit: max amount of papers to use
+        :param sort: order by 'citations', 'relevance' or 'year'
+        :param current: progress value
+        :param task: celery task
+        :return: ids of relevant papers
+        """
         self.terms = [t.lower() for t in terms]
         query = ' '.join(terms).replace("\"", "")
-        handle = Entrez.esearch(db='pubmed', retmax=str(self.max_number_of_articles),
-                                retmode='xml', term=query)
-        self.ids = Entrez.read(handle)['IdList']
-        self.logger.info(f'Found {len(self.ids)} articles about {terms}', current=current, task=task)
-        self.values = ', '.join(['({})'.format(i) for i in sorted(self.ids)])
-        return self.ids
 
-    def load_publications(self, current=0, task=None):
+        # Return everything possible if limit is not set or need to sort by citations
+        query_limit = str(limit) if limit and sort != 'citations' else '50000000'
+
+        # Set sort method for query
+        query_sort = sort if sort == 'relevance' else None
+
+        handle = Entrez.esearch(db='pubmed', retmax=query_limit,
+                                retmode='xml', term=query, sort=query_sort)
+        self.ids = Entrez.read(handle)['IdList']
+
+        self.logger.info(f'Found {len(self.ids)} articles about {terms}', current=current, task=task)
+
+        self.ids, temp_table_created = self.sort_results(self.ids, limit, sort, current, task)
+
+        self.values = ', '.join(['({})'.format(i) for i in sorted(self.ids)])
+        return self.ids, temp_table_created
+
+    def sort_results(self, ids, limit, sort, current, task):
+        # Pubmed can return the most recent or the most relevant papers
+        # Results need to be changed only if sorting by citations number
+        if sort == 'citations':
+            self.logger.info(f'Selecting {limit} most cited articles', current=current, task=task)
+
+            values = ', '.join(['({})'.format(i) for i in sorted(ids)])
+            query = re.sub(Loader.VALUES_REGEX, values, f"""
+                    DROP TABLE IF EXISTS TEMP_PMIDS;
+                    
+                    WITH vals(pmid) AS (VALUES $VALUES$)
+                    SELECT pmid, COUNT(1) AS count INTO temporary table TEMP_PMIDS 
+                    FROM vals V
+                    LEFT JOIN PMCitations C
+                    ON C.pmid_in = V.pmid
+                    GROUP BY V.pmid
+                    ORDER BY count DESC
+                    LIMIT {limit};
+                    
+                    DROP INDEX IF EXISTS temp_pmids_unique_index;
+                    CREATE UNIQUE INDEX temp_pmids_unique_index ON TEMP_PMIDS USING btree (pmid);
+                    
+                    SELECT pmid FROM temp_pmids;
+                    """)
+            self.logger.debug('Creating pmids table for request with index.', current=current, task=task)
+
+            with self.conn:
+                self.cursor.execute(query)
+
+            ids = [row[0] for row in self.cursor.fetchall()]
+            return ids, True
+
+        return ids, False
+
+    def load_publications(self, temp_table_created, current=0, task=None):
         self.logger.info('Loading publication data', current=current, task=task)
 
-        query = re.sub(Loader.VALUES_REGEX, self.values, '''
-        DROP TABLE IF EXISTS TEMP_PMIDS;
-        WITH vals(pmid) AS (VALUES $VALUES$)
-        SELECT pmid INTO temporary table TEMP_PMIDS FROM vals;
-        DROP INDEX IF EXISTS temp_pmids_unique_index;
-        CREATE UNIQUE INDEX temp_pmids_unique_index ON TEMP_PMIDS USING btree (pmid);
+        if not temp_table_created:
+            query = re.sub(Loader.VALUES_REGEX, self.values, '''
+            DROP TABLE IF EXISTS TEMP_PMIDS;
+            WITH vals(pmid) AS (VALUES $VALUES$)
+            SELECT pmid INTO temporary table TEMP_PMIDS FROM vals;
+            DROP INDEX IF EXISTS temp_pmids_unique_index;
+            CREATE UNIQUE INDEX temp_pmids_unique_index ON TEMP_PMIDS USING btree (pmid);
+            ''')
 
+            with self.conn:
+                self.cursor.execute(query)
+            self.logger.debug('Creating pmids table for request with index.', current=current, task=task)
+
+        load_query = '''
         SELECT CAST(P.pmid AS TEXT), P.title, P.aux, P.abstract, date_part('year', P.date) AS year
         FROM PMPublications P
         JOIN TEMP_PMIDS AS T ON (P.pmid = T.pmid);
-        ''')
-        self.logger.debug('Creating pmids table for request with index.', current=current, task=task)
+        '''
 
         with self.conn:
-            self.cursor.execute(query)
+            self.cursor.execute(load_query)
         pub_df = pd.DataFrame(self.cursor.fetchall(),
                               columns=['id', 'title', 'aux', 'abstract', 'year'],
                               dtype=object)

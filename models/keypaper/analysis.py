@@ -3,7 +3,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-from models.test.test_loader import TestLoader
+# from models.test.test_loader import TestLoader
 from .pm_loader import PubmedLoader
 from .progress_logger import ProgressLogger
 from .ss_loader import SemanticScholarLoader
@@ -24,10 +24,10 @@ class KeyPaperAnalyzer:
             self.source = 'pubmed'
         elif isinstance(self.loader, SemanticScholarLoader):
             self.source = 'semantic'
-        elif isinstance(self.loader, TestLoader):
-            self.source = 'test'
-        else:
-            raise TypeError("loader should be either PubmedLoader or SemanticScholarLoader (or TestLoader)")
+        # elif isinstance(self.loader, TestLoader):
+        #     self.source = 'test'
+        # else:
+        #     raise TypeError("loader should be either PubmedLoader or SemanticScholarLoader (or TestLoader)")
 
         # Data containers
         self.terms = None
@@ -40,13 +40,13 @@ class KeyPaperAnalyzer:
         # Graphs
         self.CG = None
 
-    def launch(self, *terms, task=None):
+    def launch(self, *terms, limit=None, sort=None, task=None):
         """:return full log"""
 
         try:
             # Search articles relevant to the terms
             self.terms = terms
-            self.ids = self.loader.search(*terms, current=1, task=task)
+            self.ids, temp_table_created = self.loader.search(*terms, limit=limit, sort=sort, current=1, task=task)
             self.articles_found = len(self.ids)
 
             # Nothing found
@@ -54,7 +54,7 @@ class KeyPaperAnalyzer:
                 raise RuntimeError("Nothing found")
 
             # Load data about publications, citations and co-citations
-            self.pub_df = self.loader.load_publications(current=2, task=task)
+            self.pub_df = self.loader.load_publications(temp_table_created, current=2, task=task)
             if len(self.pub_df) == 0:
                 raise RuntimeError("Nothing found in DB")
 
