@@ -18,7 +18,6 @@ celery = Celery("tasks", backend=CELERY_RESULT_BACKEND, broker=CELERY_BROKER_URL
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 SORT_METHODS = {'Most Cited': 'citations', 'Most Relevant': 'relevance', 'Most Recent': 'year'}
 
-
 # Tasks will be served by Celery,
 # specify task name explicitly to avoid problems with modules
 @celery.task(name='analyze_async')
