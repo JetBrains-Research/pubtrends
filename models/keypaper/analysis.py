@@ -2,7 +2,6 @@ import community
 import networkx as nx
 import numpy as np
 import pandas as pd
-from memory_profiler import profile
 
 from .pm_loader import PubmedLoader
 from .progress_logger import ProgressLogger
@@ -27,7 +26,6 @@ class KeyPaperAnalyzer:
         elif not test:
             raise TypeError("loader should be either PubmedLoader or SemanticScholarLoader")
 
-    @profile
     def launch(self, *terms, task=None):
         """:return full log"""
 
