@@ -52,7 +52,7 @@ class PubmedLoader(Loader):
                               dtype=object)
 
         pub_df['authors'] = pub_df['aux'].apply(
-            lambda aux: ', '.join(map(lambda authors: html.unescape(authors['name']), aux['authors'])))
+            lambda aux: ', '.join(filter(None, map(lambda authors: html.unescape(authors['name']), aux['authors']))))
 
         pub_df['journal'] = pub_df['aux'].apply(lambda aux: html.unescape(aux['journal']['name']))
 
