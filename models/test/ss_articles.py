@@ -108,14 +108,22 @@ expected_cgraph.add_weighted_edges_from([(article7.ssid, article10.ssid, 1),
                                          (article3.ssid, article8.ssid, 1),
                                          (article4.ssid, article8.ssid, 1)])
 
-cocitations = [[article6.ssid, article7.ssid, article10.ssid, article6.year],
-               [article1.ssid, article4.ssid, article3.ssid, article1.year],
-               [article2.ssid, article4.ssid, article3.ssid, article2.year],
-               [article1.ssid, article3.ssid, article8.ssid, article1.year],
-               [article1.ssid, article4.ssid, article8.ssid, article1.year]]
+raw_cocitations = [[article6.ssid, article7.ssid, article10.ssid, article6.year],
+                   [article1.ssid, article4.ssid, article3.ssid, article1.year],
+                   [article2.ssid, article4.ssid, article3.ssid, article2.year],
+                   [article1.ssid, article3.ssid, article8.ssid, article1.year],
+                   [article1.ssid, article4.ssid, article8.ssid, article1.year]]
 
-cocitations_df = pd.DataFrame(cocitations, columns=['citing', 'cited_1', 'cited_2', 'year'])
-cocitations_df = cocitations_df.sort_values(by=['citing', 'cited_1', 'cited_2']).reset_index(drop=True)
+raw_cocitations_df = pd.DataFrame(raw_cocitations, columns=['citing', 'cited_1', 'cited_2', 'year'])
+raw_cocitations_df = raw_cocitations_df.sort_values(by=['citing', 'cited_1', 'cited_2']).reset_index(drop=True)
+
+cocitations = [[article7.ssid, article10.ssid, 1],
+               [article4.ssid, article3.ssid, 2],
+               [article3.ssid, article8.ssid, 1],
+               [article4.ssid, article8.ssid, 1]]
+
+cocitations_df = pd.DataFrame(cocitations, columns=['cited_1', 'cited_2', 'total'])
+cocitations_df = cocitations_df.sort_values(by=['cited_1', 'cited_2']).reset_index(drop=True)
 
 expected_cocit_and_cit_graph = nx.Graph()
 expected_cocit_and_cit_graph.add_weighted_edges_from([(article7.ssid, article10.ssid, 1),

@@ -2,14 +2,12 @@ import community
 import networkx as nx
 import numpy as np
 import pandas as pd
+from memory_profiler import profile
 
 from .pm_loader import PubmedLoader
 from .progress_logger import ProgressLogger
 from .ss_loader import SemanticScholarLoader
 from .utils import get_subtopic_descriptions, get_tfidf_words
-
-
-# from memory_profiler import profile
 
 
 class KeyPaperAnalyzer:
@@ -29,7 +27,7 @@ class KeyPaperAnalyzer:
         elif not test:
             raise TypeError("loader should be either PubmedLoader or SemanticScholarLoader")
 
-    # @profile
+    @profile
     def launch(self, *terms, task=None):
         """:return full log"""
 
@@ -58,42 +56,43 @@ class KeyPaperAnalyzer:
             if len(self.df) == 0:
                 raise RuntimeError("Failed to merge publications and citations")
 
-            self.G = self.loader.load_citations(current=5, task=task)
+            self.cit_df = self.loader.load_citations(current=5, task=task)
+            self.G = self.build_citation_graph(self.cit_df, current=6, task=task)
 
-            self.cocit_df = self.loader.load_cocitations(current=6, task=task)
+            self.cocit_df = self.loader.load_cocitations(current=7, task=task)
             cocit_grouped_df = self.build_cocit_grouped_df(self.cocit_df)
-            self.CG = self.build_cocitation_graph(cocit_grouped_df, current=7, task=task, add_citation_edges=True)
+            self.CG = self.build_cocitation_graph(cocit_grouped_df, current=8, task=task, add_citation_edges=True)
             if len(self.CG.nodes()) == 0:
                 raise RuntimeError("Failed to build co-citations graph")
 
             # Perform subtopic analysis and get subtopic descriptions
             self.components, self.comp_other, self.pm, self.pmcomp_sizes = self.subtopic_analysis(
-                self.df, self.CG, current=8, task=task
+                self.df, self.CG, current=9, task=task
             )
             self.df = self.merge_comps(self.df, self.pm)
-            self.df_kwd = self.subtopic_descriptions(self.df)
+            # self.df_kwd = self.subtopic_descriptions(self.df)
 
             # Find interesting papers
-            self.top_cited_papers, self.top_cited_df = self.find_top_cited_papers(self.df, current=9, task=task)
+            self.top_cited_papers, self.top_cited_df = self.find_top_cited_papers(self.df, current=10, task=task)
 
             self.max_gain_papers, self.max_gain_df = self.find_max_gain_papers(self.df, self.citation_years,
-                                                                               current=10, task=task)
+                                                                               current=11, task=task)
 
             self.max_rel_gain_papers, self.max_rel_gain_df = self.find_max_relative_gain_papers(
-                self.df, self.citation_years, current=11, task=task
+                self.df, self.citation_years, current=12, task=task
             )
 
             # Perform subtopic evolution analysis and get subtopic descriptions
-            self.evolution_df, self.evolution_year_range = self.subtopic_evolution_analysis(self.cocit_df, current=12,
-                                                                                            task=task)
-            self.evolution_kwds = self.subtopic_evolution_descriptions(self.df, self.evolution_df,
-                                                                       self.evolution_year_range, self.terms)
+            # self.evolution_df, self.evolution_year_range = self.subtopic_evolution_analysis(self.cocit_df, current=13,
+            #                                                                                 task=task)
+            # self.evolution_kwds = self.subtopic_evolution_descriptions(self.df, self.evolution_df,
+            #                                                            self.evolution_year_range, self.terms)
 
             # Find top journals
-            self.journal_stats = self.popular_journals(self.df, current=13, task=task)
+            self.journal_stats = self.popular_journals(self.df, current=14, task=task)
 
             # Find top authors
-            self.author_stats = self.popular_authors(self.df, current=14, task=task)
+            self.author_stats = self.popular_authors(self.df, current=15, task=task)
 
             return self.logger.stream.getvalue()
         finally:

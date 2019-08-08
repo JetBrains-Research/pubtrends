@@ -46,18 +46,26 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
         self.assertCountEqual(list(self.analyzer.G.edges()), CITATION_GRAPH_EDGES)
 
     def test_build_cocitation_graph_nodes_count(self):
-        self.assertEqual(self.analyzer.CG.number_of_nodes(), len(COCITATION_GRAPH_NODES))
+        CG = self.analyzer.build_cocitation_graph(self.analyzer.build_cocit_grouped_df(self.analyzer.cocit_df),
+                                                  add_citation_edges=False)
+        self.assertEqual(CG.number_of_nodes(), len(COCITATION_GRAPH_NODES))
 
     def test_build_cocitation_graph_edges_count(self):
-        self.assertEqual(self.analyzer.CG.number_of_edges(), len(COCITATION_GRAPH_EDGES))
+        CG = self.analyzer.build_cocitation_graph(self.analyzer.build_cocit_grouped_df(self.analyzer.cocit_df),
+                                                  add_citation_edges=False)
+        self.assertEqual(CG.number_of_edges(), len(COCITATION_GRAPH_EDGES))
 
     def test_build_cocitation_graph_nodes(self):
-        self.assertCountEqual(list(self.analyzer.CG.nodes()), COCITATION_GRAPH_NODES)
+        CG = self.analyzer.build_cocitation_graph(self.analyzer.build_cocit_grouped_df(self.analyzer.cocit_df),
+                                                  add_citation_edges=False)
+        self.assertCountEqual(list(CG.nodes()), COCITATION_GRAPH_NODES)
 
     def test_build_cocitation_graph_edges(self):
+        CG = self.analyzer.build_cocitation_graph(self.analyzer.build_cocit_grouped_df(self.analyzer.cocit_df),
+                                                  add_citation_edges=False)
         # Convert edge data to networkx format
         expected_edges = [(v, u, {'weight': w}) for v, u, w in COCITATION_GRAPH_EDGES]
-        self.assertCountEqual(list(self.analyzer.CG.edges(data=True)), expected_edges)
+        self.assertCountEqual(list(CG.edges(data=True)), expected_edges)
 
     def test_find_max_gain_papers_count(self):
         max_gain_count = len(list(self.analyzer.max_gain_df['year'].values))
