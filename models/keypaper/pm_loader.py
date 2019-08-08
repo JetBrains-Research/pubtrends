@@ -53,7 +53,7 @@ class PubmedLoader(Loader):
 
         pub_df['year'] = pub_df['year'].apply(lambda year: int(year) if year else np.nan)
         pub_df['authors'] = pub_df['aux'].apply(
-            lambda aux: ', '.join(map(lambda authors: html.unescape(authors['name']), aux['authors'])))
+            lambda aux: ', '.join(filter(None, map(lambda authors: html.unescape(authors['name']), aux['authors']))))
 
         pub_df['journal'] = pub_df['aux'].apply(lambda aux: html.unescape(aux['journal']['name']))
 
