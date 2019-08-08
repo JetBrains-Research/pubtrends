@@ -100,7 +100,7 @@ class KeyPaperAnalyzer:
     def build_cit_stats_df(self, cit_stats_df_from_query, n_papers, current=None, task=None):
         # Get citation stats with columns 'id', year_1, ..., year_N and fill NaN with 0
         cit_stats_df = cit_stats_df_from_query.pivot(index='id', columns='year',
-                                               values='count').reset_index().fillna(0)
+                                                     values='count').reset_index().fillna(0)
 
         # Fix column names from float 'YYYY.0' to int 'YYYY'
         mapper = {}
