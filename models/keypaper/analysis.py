@@ -68,29 +68,30 @@ class KeyPaperAnalyzer:
                 self.df, self.CG, current=9, task=task
             )
             self.df = self.merge_comps(self.df, self.pm)
-            # self.df_kwd = self.subtopic_descriptions(self.df)
+            self.df_kwd = self.subtopic_descriptions(self.df, current=10, task=task)
 
             # Find interesting papers
-            self.top_cited_papers, self.top_cited_df = self.find_top_cited_papers(self.df, current=10, task=task)
+            self.top_cited_papers, self.top_cited_df = self.find_top_cited_papers(self.df, current=11, task=task)
 
             self.max_gain_papers, self.max_gain_df = self.find_max_gain_papers(self.df, self.citation_years,
-                                                                               current=11, task=task)
+                                                                               current=12, task=task)
 
             self.max_rel_gain_papers, self.max_rel_gain_df = self.find_max_relative_gain_papers(
-                self.df, self.citation_years, current=12, task=task
+                self.df, self.citation_years, current=13, task=task
             )
 
             # Perform subtopic evolution analysis and get subtopic descriptions
-            # self.evolution_df, self.evolution_year_range = self.subtopic_evolution_analysis(self.cocit_df, current=13,
-            #                                                                                 task=task)
-            # self.evolution_kwds = self.subtopic_evolution_descriptions(self.df, self.evolution_df,
-            #                                                            self.evolution_year_range, self.terms)
+            self.evolution_df, self.evolution_year_range = self.subtopic_evolution_analysis(self.cocit_df, current=14,
+                                                                                            task=task)
+            self.evolution_kwds = self.subtopic_evolution_descriptions(
+                self.df, self.evolution_df, self.evolution_year_range, self.terms, current=15, task=task
+            )
 
             # Find top journals
-            self.journal_stats = self.popular_journals(self.df, current=14, task=task)
+            self.journal_stats = self.popular_journals(self.df, current=16, task=task)
 
             # Find top authors
-            self.author_stats = self.popular_authors(self.df, current=15, task=task)
+            self.author_stats = self.popular_authors(self.df, current=17, task=task)
 
             return self.logger.stream.getvalue()
         finally:
@@ -149,6 +150,7 @@ class KeyPaperAnalyzer:
         return df, min_year, max_year, citation_years
 
     def build_citation_graph(self, cit_df, current=0, task=None):
+        self.logger.info(f'Building citation graph', current=current, task=task)
         G = nx.DiGraph()
         for index, row in cit_df.iterrows():
             v, u = row['id_out'], row['id_in']
@@ -329,6 +331,7 @@ class KeyPaperAnalyzer:
         return evolution_df, year_range
 
     def subtopic_evolution_descriptions(self, df, evolution_df, year_range, terms, keywords=15, current=0, task=None):
+        self.logger.info('Generating descriptions for subtopic during evolution', current=current, task=task)
         evolution_kwds = {}
         for col in evolution_df:
             if col in year_range:
