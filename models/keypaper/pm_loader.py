@@ -89,7 +89,7 @@ class PubmedLoader(Loader):
         return cit_stats_df_from_query
 
     def load_citations(self, current=0, task=None):
-        self.logger.info('Started loading raw information about citations', current=current, task=task)
+        self.logger.info('Started loading citations', current=current, task=task)
 
         query = re.sub(Loader.VALUES_REGEX, self.values, '''
         SELECT CAST(C.pmid_out AS TEXT), CAST(C.pmid_in AS TEXT)
@@ -100,12 +100,13 @@ class PubmedLoader(Loader):
 
         with self.conn:
             self.cursor.execute(query)
-        self.logger.debug('Done loading citations, building citation graph', current=current, task=task)
 
         cit_df = pd.DataFrame(self.cursor.fetchall(), columns=['id_out', 'id_in'])
 
         if np.any(cit_df.isna()):
             raise ValueError('Citation must have id_out and id_in')
+
+        self.logger.debug(f'Found {len(cit_df)} citations', current=current, task=task)
 
         return cit_df
 
