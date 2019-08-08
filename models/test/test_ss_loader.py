@@ -8,7 +8,7 @@ from models.keypaper.config import PubtrendsConfig
 from models.keypaper.ss_loader import SemanticScholarLoader
 from models.test.mock_database_loader import MockDatabaseLoader
 from models.test.ss_articles import required_articles, extra_articles, required_citations, cit_stats_df, \
-    pub_df, cit_df, extra_citations, cocitations_df
+    pub_df, cit_df, extra_citations, raw_cocitations_df
 
 
 class TestSemanticScholarLoader(unittest.TestCase):
@@ -87,12 +87,12 @@ class TestSemanticScholarLoader(unittest.TestCase):
         assert_frame_equal(self.citations, cit_df, 'Wrong citation data')
 
     def test_load_cocitations_count(self):
-        expected_rows = cocitations_df.shape[0]
+        expected_rows = raw_cocitations_df.shape[0]
         actual_rows = self.cocitations_df.shape[0]
         self.assertEqual(expected_rows, actual_rows, "Number of rows in co-citations dataframe is incorrect")
 
     def test_load_cocitations_data_frame(self):
-        expected_cocit_df = cocitations_df
+        expected_cocit_df = raw_cocitations_df
         actual = self.cocitations_df
         assert_frame_equal(expected_cocit_df, actual, "Co-citations dataframe is incorrect")
 

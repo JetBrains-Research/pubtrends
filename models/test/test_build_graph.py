@@ -3,15 +3,15 @@ import unittest
 import networkx as nx
 
 from models.keypaper.analysis import KeyPaperAnalyzer
-from models.test.articles import expected_graph, cocitations_df, expected_cocit_and_cit_graph
-from models.test.test_loader import TestLoader
+from models.test.mock_loader import MockLoader
+from models.test.ss_articles import expected_graph, cocitations_df, expected_cocit_and_cit_graph
 
 
 class TestBuildGraph(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.analyzer = KeyPaperAnalyzer(TestLoader())
+        cls.analyzer = KeyPaperAnalyzer(MockLoader(), test=True)
         cls.analyzer.G = expected_graph
         cls.CG = cls.analyzer.build_cocitation_graph(cocitations_df, add_citation_edges=True)
 
