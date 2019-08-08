@@ -11,18 +11,49 @@ class SemanticScholarLoader(Loader):
     def __init__(self, pubtrends_config):
         super(SemanticScholarLoader, self).__init__(pubtrends_config)
 
-    def search(self, terms, current=0, task=None):
+    def search(self, terms, limit=None, sort=None, current=0, task=None):
+        self.terms = [t.lower() for t in terms]
         self.logger.info('Searching publication data', current=current, task=task)
         terms_str = '\'' + terms + '\''
-        query = f'''
-        SELECT DISTINCT ON(ssid) ssid, crc32id, title, abstract, year, aux FROM SSPublications P
-        WHERE tsv @@ websearch_to_tsquery('english', {terms_str}) limit {self.max_number_of_articles};
-        '''
+
+        columns = ['id', 'crc32id', 'title', 'abstract', 'year', 'aux']
+        if sort == 'relevance':
+            query = f'''
+            SELECT DISTINCT ON(P.ssid) P.ssid, P.crc32id, P.title, P.abstract, P.year, P.aux, 
+                                       ts_rank_cd(P.tsv, query) AS rank
+            FROM SSPublications P, websearch_to_tsquery('english', {terms_str}) query
+            WHERE tsv @@ query
+            ORDER BY rank DESC
+            LIMIT {limit};
+            '''
+            columns.append('ts_rank')
+        elif sort == 'citations':
+            query = f'''
+            SELECT DISTINCT ON(P.ssid) P.ssid, P.crc32id, P.title, P.abstract, P.year, P.aux, COUNT(1) AS count 
+            FROM SSPublications P
+            LEFT JOIN SSCitations C
+            ON C.crc32id_in = P.crc32id AND C.id_in = P.ssid
+            WHERE tsv @@ websearch_to_tsquery('english', {terms_str})
+            GROUP BY P.ssid
+            ORDER BY count DESC
+            LIMIT {limit};
+            '''
+            columns.append('citations')
+        elif sort == 'year':
+            query = f'''
+            SELECT DISTINCT ON(ssid) ssid, crc32id, title, abstract, year, aux 
+            FROM SSPublications P
+            WHERE tsv @@ websearch_to_tsquery('english', {terms_str})
+            ORDER BY year DESC
+            LIMIT {limit};
+            '''
+        else:
+            raise ValueError('sort can be either citations, relevance or year')
 
         with self.conn.cursor() as cursor:
             cursor.execute(query)
             self.pub_df = pd.DataFrame(cursor.fetchall(),
-                                       columns=['id', 'crc32id', 'title', 'abstract', 'year', 'aux'],
+                                       columns=columns,
                                        dtype=object)
 
         if np.any(self.pub_df[['id', 'crc32id', 'title']].isna()):

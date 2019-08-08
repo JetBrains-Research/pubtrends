@@ -16,12 +16,13 @@ CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localho
 celery = Celery("tasks", backend=CELERY_RESULT_BACKEND, broker=CELERY_BROKER_URL)
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
+SORT_METHODS = {'Most Cited': 'citations', 'Most Relevant': 'relevance', 'Most Recent': 'year'}
 
 
 # Tasks will be served by Celery,
 # specify task name explicitly to avoid problems with modules
 @celery.task(name='analyze_async')
-def analyze_async(source, terms):
+def analyze_async(terms, source, sort, amount):
     if source == 'Pubmed':
         loader = PubmedLoader(PUBTRENDS_CONFIG)
         amount_of_papers = '29 million'
@@ -32,7 +33,7 @@ def analyze_async(source, terms):
         raise Exception(f"Unknown source {source}")
     analyzer = KeyPaperAnalyzer(loader)
     # current_task is from @celery.task
-    log = analyzer.launch(terms, task=current_task)
+    log = analyzer.launch(terms, limit=str(amount), sort=SORT_METHODS[sort], task=current_task)
 
     # Initialize plotter after completion of analysis
     plotter = Plotter(analyzer)

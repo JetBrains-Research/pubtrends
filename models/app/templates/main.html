@@ -29,31 +29,53 @@
     <div class="row justify-content-center">
         <div class="col-lg-12">
             <form class="card card-sm" method="POST">
-                <div class="card-body row no-gutters align-items-center">
-                    <div class="col-auto">
-                        <i class="fas fa-search h4 text-body"></i>
-                    </div>
-                    <!--end of col-->
-                    &nbsp;&nbsp;
-                    <div class="col">
-                        <input class="form-control form-control-borderless" type="search"
-                               placeholder="Enter keywords" name="terms">
-                    </div>
-                    &nbsp;&nbsp;
-
-                    <div class="col-auto">
-                        <select class="form-control" name="source">
-                            <option>Pubmed</option>
-                            <option>Semantic Scholar</option>
-                        </select>
+                <div class="card-body container">
+                    <div class="row no-gutters align-items-center mb-3">
+                        <div class="col input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="query-addon">Query</span>
+                            </div>
+                            <input class="form-control form-control-borderless" type="search" name="terms"
+                                   placeholder="Enter keywords" aria-describedby="query-addon" autofocus>
+                        </div>
+                        &nbsp;&nbsp;&nbsp;
+                        <!--end of col-->
+                        <div class="col-auto">
+                            <button class="btn btn-success" type="submit">Search</button>
+                        </div>
+                        <!--end of col-->
                     </div>
 
-                    &nbsp;&nbsp;
-                    <!--end of col-->
-                    <div class="col-auto">
-                        <button class="btn btn-success" type="submit">Search</button>
+                    <div class="row no-gutters align-items-center">
+                        <div class="col input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="source-addon">Source</span>
+                            </div>
+                            <select class="form-control" name="source" aria-describedby="source-addon">
+                                <option>Pubmed</option>
+                                <option>Semantic Scholar</option>
+                            </select>
+                        </div>
+                        &nbsp;&nbsp;&nbsp;
+                        <div class="col input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="sort-addon">Sort By</span>
+                            </div>
+                            <select class="form-control" name="sort" aria-describedby="sort-addon">
+                                <option>Most Cited</option>
+                                <option>Most Recent</option>
+                                <option>Most Revelant</option>
+                            </select>
+                        </div>
+                        &nbsp;&nbsp;&nbsp;
+                        <div class="col input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="amount-addon">Amount</span>
+                            </div>
+                            <input class="form-control form-control-borderless" type="number"
+                                   aria-describedby="amount-addon" name="amount" value="10000" min="0" max="50000000">
+                        </div>
                     </div>
-                    <!--end of col-->
                 </div>
             </form>
         </div>

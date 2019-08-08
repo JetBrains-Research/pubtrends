@@ -80,10 +80,12 @@ def index():
     if request.method == 'POST':
         terms = request.form.get('terms')
         source = request.form.get('source')
+        sort = request.form.get('sort')
+        amount = request.form.get('amount')
 
         if len(terms) > 0:
             # Submit Celery task
-            job = analyze_async.delay(source, terms)
+            job = analyze_async.delay(terms, source, sort, amount)
             return redirect(flask.url_for('.process', terms=terms, jobid=job.id))
 
     return render_template('main.html', version=PUBTRENDS_CONFIG.version)
