@@ -8,6 +8,7 @@ from flask import (
     Flask, request, redirect,
     render_template, render_template_string
 )
+
 from models.celery.tasks import celery, analyze_async
 from models.keypaper.config import PubtrendsConfig
 
@@ -80,11 +81,13 @@ def index():
     if request.method == 'POST':
         terms = request.form.get('terms').split(' ')
         source = request.form.get('source')
+        sort = request.form.get('sort')
+        amount = request.form.get('amount')
 
         redirect_url = '+'.join(terms)
         if len(terms) > 0:
             # Submit Celery task
-            job = analyze_async.delay(source, terms)
+            job = analyze_async.delay(terms, source, sort, amount)
             return redirect(flask.url_for('.process', terms=redirect_url, jobid=job.id))
 
     return render_template('main.html', version=PUBTRENDS_CONFIG.version)

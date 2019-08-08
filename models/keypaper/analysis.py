@@ -26,13 +26,13 @@ class KeyPaperAnalyzer:
         elif not test:
             raise TypeError("loader should be either PubmedLoader or SemanticScholarLoader")
 
-    def launch(self, *terms, task=None):
+    def launch(self, *terms, limit=None, sort=None, task=None):
         """:return full log"""
 
         try:
             # Search articles relevant to the terms
             self.terms = terms
-            self.ids = self.loader.search(*terms, current=1, task=task)
+            self.ids, temp_table_created = self.loader.search(*terms, limit=limit, sort=sort, current=1, task=task)
             self.n_papers = len(self.ids)
 
             # Nothing found
@@ -40,7 +40,7 @@ class KeyPaperAnalyzer:
                 raise RuntimeError("Nothing found")
 
             # Load data about publications, citations and co-citations
-            self.pub_df = self.loader.load_publications(current=2, task=task)
+            self.pub_df = self.loader.load_publications(temp_table_created, current=2, task=task)
             if len(self.pub_df) == 0:
                 raise RuntimeError("Nothing found in DB")
 
