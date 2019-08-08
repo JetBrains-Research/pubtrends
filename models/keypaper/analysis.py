@@ -408,7 +408,7 @@ class KeyPaperAnalyzer:
 
         journal_stats = journal_stats.sort_values(by=['sum'], ascending=False)
 
-        return journal_stats.head(n=20)
+        return journal_stats.head(n=n)
 
     def popular_authors(self, df, n=20, current=0, task=None):
         self.logger.info("Finding popular authors", current=current, task=task)
@@ -433,4 +433,4 @@ class KeyPaperAnalyzer:
         author_stats.columns = ['author', 'comp', 'counts', 'sum']
         author_stats = author_stats.sort_values(by=['sum'], ascending=False)
 
-        return author_stats.head(n=20)
+        return author_stats.head(n=n)
