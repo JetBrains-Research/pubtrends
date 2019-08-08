@@ -1,7 +1,6 @@
 import html
 import re
 
-import networkx as nx
 import numpy as np
 import pandas as pd
 from Bio import Entrez
@@ -10,12 +9,9 @@ from .loader import Loader
 
 
 class PubmedLoader(Loader):
-    def __init__(self,
-                 pubtrends_config,
-                 index='pmid'):
+    def __init__(self, pubtrends_config):
         super(PubmedLoader, self).__init__(pubtrends_config)
         Entrez.email = pubtrends_config.pm_entrez_email
-        self.index = index
 
     def search(self, *terms, current=0, task=None):
         self.logger.debug(f'TODO: handle queries which return more than {self.max_number_of_articles} items',
@@ -51,6 +47,11 @@ class PubmedLoader(Loader):
                               columns=['id', 'title', 'aux', 'abstract', 'year'],
                               dtype=object)
 
+        if np.any(pub_df[['id', 'title']].isna()):
+            raise ValueError('Article must have PMID and title')
+        pub_df = pub_df.fillna(value={'abstract': ''})
+
+        pub_df['year'] = pub_df['year'].apply(lambda year: int(year) if year else np.nan)
         pub_df['authors'] = pub_df['aux'].apply(
             lambda aux: ', '.join(map(lambda authors: html.unescape(authors['name']), aux['authors'])))
 
@@ -69,7 +70,7 @@ class PubmedLoader(Loader):
         JOIN (VALUES $VALUES$) AS CT(pmid) ON (C.pmid_in = CT.pmid)
         JOIN PMPublications P
         ON C.pmid_out = P.pmid
-        WHERE date_part('year', P.date) > 0
+        WHERE date IS NOT NULL
         GROUP BY C.pmid_in, date_part('year', P.date);
         ''')
 
@@ -79,10 +80,16 @@ class PubmedLoader(Loader):
         cit_stats_df_from_query = pd.DataFrame(self.cursor.fetchall(),
                                                columns=['id', 'year', 'count'])
 
+        if np.any(cit_stats_df_from_query.isna()):
+            raise ValueError('NaN values are not allowed in citation stats DataFrame')
+
+        cit_stats_df_from_query['year'] = cit_stats_df_from_query['year'].apply(int)
+        cit_stats_df_from_query['count'] = cit_stats_df_from_query['count'].apply(int)
+
         return cit_stats_df_from_query
 
     def load_citations(self, current=0, task=None):
-        self.logger.info('Started loading raw information about citations', current=current, task=task)
+        self.logger.info('Started loading citations', current=current, task=task)
 
         query = re.sub(Loader.VALUES_REGEX, self.values, '''
         SELECT CAST(C.pmid_out AS TEXT), CAST(C.pmid_in AS TEXT)
@@ -93,16 +100,15 @@ class PubmedLoader(Loader):
 
         with self.conn:
             self.cursor.execute(query)
-        self.logger.debug('Done loading citations, building citation graph', current=current, task=task)
 
-        G = nx.DiGraph()
-        for row in self.cursor:
-            v, u = row
-            G.add_edge(v, u)
+        cit_df = pd.DataFrame(self.cursor.fetchall(), columns=['id_out', 'id_in'])
 
-        self.logger.debug(f'Built citation graph - nodes {len(G.nodes())} edges {len(G.edges())}',
-                          current=current, task=task)
-        return G
+        if np.any(cit_df.isna()):
+            raise ValueError('Citation must have id_out and id_in')
+
+        self.logger.debug(f'Found {len(cit_df)} citations', current=current, task=task)
+
+        return cit_df
 
     def load_cocitations(self, current=0, task=None):
         self.logger.info('Calculating co-citations for selected articles', current=current, task=task)
@@ -136,23 +142,13 @@ class PubmedLoader(Loader):
                 for j in range(i + 1, len(cited)):
                     cocit_data.append((citing, cited[i], cited[j], year))
 
-        self.cocit_df = pd.DataFrame(cocit_data, columns=['citing', 'cited_1', 'cited_2', 'year'], dtype=object)
+        cocit_df = pd.DataFrame(cocit_data, columns=['citing', 'cited_1', 'cited_2', 'year'], dtype=object)
+
+        if np.any(cocit_df.isna()):
+            raise ValueError('NaN values are not allowed in co-citation DataFrame')
+        cocit_df['year'] = cocit_df['year'].apply(int)
+
         self.logger.debug(f'Loaded {lines} lines of citing info', current=current, task=task)
-        self.logger.debug(f'Found {len(self.cocit_df)} co-cited pairs of articles', current=current, task=task)
+        self.logger.debug(f'Found {len(cocit_df)} co-cited pairs of articles', current=current, task=task)
 
-        self.logger.debug(f'Aggregating co-citations', current=current, task=task)
-        cocit_grouped_df = self.cocit_df.groupby(['cited_1', 'cited_2', 'year']).count().reset_index()
-        cocit_grouped_df = cocit_grouped_df.pivot_table(index=['cited_1', 'cited_2'],
-                                                        columns=['year'], values=['citing']).reset_index()
-        cocit_grouped_df = cocit_grouped_df.replace(np.nan, 0)
-        cocit_grouped_df['total'] = cocit_grouped_df.iloc[:, 2:].sum(axis=1)
-        cocit_grouped_df = cocit_grouped_df.sort_values(by='total', ascending=False)
-        self.logger.debug(f'Filtering top {self.max_number_of_cocitations} of all the co-citations',
-                          current=current, task=task)
-        cocit_grouped_df = cocit_grouped_df.iloc[:min(self.max_number_of_cocitations,
-                                                      len(cocit_grouped_df)), :]
-
-        for col in cocit_grouped_df:
-            cocit_grouped_df[col] = cocit_grouped_df[col].astype(object)
-
-        return cocit_grouped_df
+        return cocit_df

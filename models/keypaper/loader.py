@@ -18,17 +18,11 @@ class Loader:
             self.conn = pg_driver.connect(connection_string)
             self.cursor = self.conn.cursor()
 
+        self.logger = None
+
         self.max_number_of_articles = pubtrends_config.max_number_of_articles
         self.max_number_of_citations = pubtrends_config.max_number_of_citations
         self.max_number_of_cocitations = pubtrends_config.max_number_of_cocitations
-
-        # Logger
-        self.logger = None
-
-        # Data containers
-        self.pub_df = None
-        self.cocit_df = None
-        self.cocit_grouped_df = None
 
     def close_connection(self):
         if self.cursor:

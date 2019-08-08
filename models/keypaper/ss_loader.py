@@ -1,6 +1,5 @@
 import html
 
-import networkx as nx
 import numpy as np
 import pandas as pd
 
@@ -8,24 +7,15 @@ from .loader import Loader
 
 
 class SemanticScholarLoader(Loader):
-    def __init__(self,
-                 pubtrends_config,
-                 publications_table='sspublications',
-                 citations_table='sscitations',
-                 temp_ids_table='temp_ssids',
-                 index='ssid'):
+    def __init__(self, pubtrends_config):
         super(SemanticScholarLoader, self).__init__(pubtrends_config)
-
-        self.publications_table = publications_table
-        self.citations_table = citations_table
-        self.temp_ids_table = temp_ids_table
 
     def search(self, *terms, current=0, task=None):
         self.terms = [t.lower() for t in terms]
         self.logger.info('Searching publication data', current=current, task=task)
         terms_str = '\'' + ' '.join(self.terms) + '\''
         query = f'''
-        SELECT DISTINCT ON(ssid) ssid, crc32id, title, abstract, year, aux FROM {self.publications_table} P
+        SELECT DISTINCT ON(ssid) ssid, crc32id, title, abstract, year, aux FROM SSPublications P
         WHERE tsv @@ websearch_to_tsquery('english', {terms_str}) limit {self.max_number_of_articles};
         '''
 
@@ -35,15 +25,18 @@ class SemanticScholarLoader(Loader):
                                    columns=['id', 'crc32id', 'title', 'abstract', 'year', 'aux'],
                                    dtype=object)
 
+        if np.any(self.pub_df[['id', 'crc32id', 'title']].isna()):
+            raise ValueError('Article must have ID and title')
+        self.pub_df = self.pub_df.fillna(value={'abstract': ''})
+
+        self.pub_df['year'] = self.pub_df['year'].apply(lambda year: int(year) if year else np.nan)
         self.pub_df['authors'] = self.pub_df['aux'].apply(
             lambda aux: ', '.join(map(lambda authors: html.unescape(authors['name']), aux['authors'])))
-
         self.pub_df['journal'] = self.pub_df['aux'].apply(lambda aux: html.unescape(aux['journal']['name']))
+        self.pub_df['title'] = self.pub_df['title'].apply(lambda title: html.unescape(title))
 
         self.logger.info(f'Found {len(self.pub_df)} publications in the local database', current=current,
                          task=task)
-
-        self.pub_df['title'] = self.pub_df['title'].apply(lambda title: html.unescape(title))
 
         self.ids = self.pub_df['id']
         crc32ids = self.pub_df['crc32id']
@@ -53,11 +46,11 @@ class SemanticScholarLoader(Loader):
     def load_publications(self, current=0, task=None):
         self.logger.info('Loading publication data', current=current, task=task)
         query = f'''
-                DROP TABLE IF EXISTS {self.temp_ids_table};
+                DROP TABLE IF EXISTS temp_ssids;
                 WITH vals(crc32id, ssid) AS (VALUES {self.values})
-                SELECT crc32id, ssid INTO table {self.temp_ids_table} FROM vals;
+                SELECT crc32id, ssid INTO table temp_ssids FROM vals;
                 DROP INDEX IF EXISTS temp_ssids_index;
-                CREATE INDEX temp_ssids_index ON {self.temp_ids_table} USING btree (crc32id);
+                CREATE INDEX temp_ssids_index ON temp_ssids USING btree (crc32id);
                 '''
 
         with self.conn:
@@ -73,14 +66,14 @@ class SemanticScholarLoader(Loader):
 
         query = f'''
            SELECT C.id_in AS ssid, P.year, COUNT(1) AS count
-                FROM {self.citations_table} C
+                FROM SSCitations C
                 JOIN (VALUES {self.values}) AS CT(crc32id, ssid)
                   ON (C.crc32id_in = CT.crc32id AND C.id_in = CT.ssid)
-                JOIN {self.publications_table} P
+                JOIN SSPublications P
                   ON C.crc32id_out = P.crc32id AND C.id_out = P.ssid
                 WHERE C.crc32id_in
-                between (SELECT MIN(crc32id) FROM {self.temp_ids_table})
-                  AND (select max(crc32id) FROM {self.temp_ids_table})
+                between (SELECT MIN(crc32id) FROM temp_ssids)
+                  AND (select max(crc32id) FROM temp_ssids)
                 AND P.year > 0
                 GROUP BY C.id_in, P.year;
             '''
@@ -91,6 +84,12 @@ class SemanticScholarLoader(Loader):
         cit_stats_df_from_query = pd.DataFrame(self.cursor.fetchall(),
                                                columns=['id', 'year', 'count'], dtype=object)
 
+        if np.any(cit_stats_df_from_query.isna()):
+            raise ValueError('NaN values are not allowed in citation stats DataFrame')
+
+        cit_stats_df_from_query['year'] = cit_stats_df_from_query['year'].apply(int)
+        cit_stats_df_from_query['count'] = cit_stats_df_from_query['count'].apply(int)
+
         return cit_stats_df_from_query
 
     def load_citations(self, current=0, task=None):
@@ -98,42 +97,38 @@ class SemanticScholarLoader(Loader):
         self.logger.debug('Started loading raw information about citations', current=current, task=task)
 
         query = f'''SELECT C.id_out, C.id_in
-                    FROM {self.citations_table} C
+                    FROM SSCitations C
                     JOIN (VALUES {self.values}) AS CT(crc32id, ssid)
                     ON (C.crc32id_in = CT.crc32id AND C.id_in = CT.ssid)
                     WHERE C.crc32id_in
-                    between (SELECT MIN(crc32id) FROM {self.temp_ids_table})
-                    AND (select max(crc32id) FROM {self.temp_ids_table});
+                    between (SELECT MIN(crc32id) FROM temp_ssids)
+                    AND (select max(crc32id) FROM temp_ssids);
                     '''
 
         with self.conn:
             self.cursor.execute(query)
-        self.logger.info('Building citation graph', current=current, task=task)
-
         citations = pd.DataFrame(self.cursor.fetchall(),
                                  columns=['id_out', 'id_in'], dtype=object)
 
         citations = citations[citations['id_out'].isin(self.ids)]
 
-        G = nx.DiGraph()
-        for index, row in citations.iterrows():
-            v, u = row['id_out'], row['id_in']
-            G.add_edge(v, u)
+        if np.any(citations.isna()):
+            raise ValueError('Citation must have id_out and id_in')
 
-        self.logger.debug(f'Built citation graph - nodes {len(G.nodes())} edges {len(G.edges())}',
-                          current=current, task=task)
-        return G
+        self.logger.debug(f'Found {len(citations)} citations', current=current, task=task)
+
+        return citations
 
     def load_cocitations(self, current=0, task=None):
         self.logger.info('Calculating co-citations for selected articles', current=current, task=task)
 
         query = f'''
                 with Z as (select id_out, id_in, crc32id_out, crc32id_in
-                    from {self.citations_table}
-                    where crc32id_in between (select min(crc32id) from {self.temp_ids_table})
-                        and (select max(crc32id) from {self.temp_ids_table})
+                    from SSCitations
+                    where crc32id_in between (select min(crc32id) from temp_ssids)
+                        and (select max(crc32id) from temp_ssids)
                         and (crc32id_in, id_in) in (select crc32id, ssid
-                                                    from {self.temp_ids_table})),
+                                                    from temp_ssids)),
 
                     X as (select id_out, array_agg(id_in) as cited_list,
                                  min(crc32id_out) as crc32id_out
@@ -143,7 +138,7 @@ class SemanticScholarLoader(Loader):
 
                 select X.id_out, P.year, X.cited_list
                 from X
-                    join {self.publications_table} P
+                    join SSPublications P
                         on crc32id_out = P.crc32id and id_out = P.ssid;
                 '''
 
@@ -158,24 +153,13 @@ class SemanticScholarLoader(Loader):
             for i in range(len(cited)):
                 for j in range(i + 1, len(cited)):
                     cocit_data.append((citing, cited[i], cited[j], year))
-        self.cocit_df = pd.DataFrame(cocit_data, columns=['citing', 'cited_1', 'cited_2', 'year'], dtype=object)
+        cocit_df = pd.DataFrame(cocit_data, columns=['citing', 'cited_1', 'cited_2', 'year'], dtype=object)
+
+        if np.any(cocit_df.isna()):
+            raise ValueError('NaN values are not allowed in co-citation DataFrame')
+        cocit_df['year'] = cocit_df['year'].apply(int)
+
         self.logger.debug(f'Loaded {lines} lines of citing info', current=current, task=task)
-        self.logger.debug(f'Found {len(self.cocit_df)} co-cited pairs of articles', current=current, task=task)
+        self.logger.debug(f'Found {len(cocit_df)} co-cited pairs of articles', current=current, task=task)
 
-        self.logger.debug(f'Aggregating co-citations', current=current, task=task)
-        cocit_grouped_df = self.cocit_df.groupby(['cited_1', 'cited_2', 'year']).count().reset_index()
-        cocit_grouped_df = cocit_grouped_df.pivot_table(index=['cited_1', 'cited_2'],
-                                                        columns=['year'],
-                                                        values=['citing']).reset_index()
-        cocit_grouped_df = cocit_grouped_df.replace(np.nan, 0)
-        cocit_grouped_df['total'] = cocit_grouped_df.iloc[:, 2:].sum(axis=1)
-        cocit_grouped_df = cocit_grouped_df.sort_values(by='total', ascending=False)
-        self.logger.debug(f'Filtering top {self.max_number_of_cocitations} of all the co-citations',
-                          current=current, task=task)
-        cocit_grouped_df = cocit_grouped_df.iloc[:min(self.max_number_of_cocitations,
-                                                      len(cocit_grouped_df)), :]
-
-        for col in cocit_grouped_df:
-            cocit_grouped_df[col] = cocit_grouped_df[col].astype(object)
-
-        return cocit_grouped_df
+        return cocit_df
