@@ -27,7 +27,7 @@ class SemanticScholarLoader(Loader):
             columns.append('ts_rank')
         elif sort == 'citations':
             query = f'''
-            SELECT P.ssid, P.crc32id, P.title, P.abstract, P.year, P.aux, COUNT(1) AS count 
+            SELECT P.ssid, P.crc32id, P.title, P.abstract, P.year, P.aux, COUNT(1) AS count
             FROM SSPublications P
             LEFT JOIN SSCitations C
             ON C.crc32id_in = P.crc32id AND C.id_in = P.ssid
@@ -39,7 +39,7 @@ class SemanticScholarLoader(Loader):
             columns.append('citations')
         elif sort == 'year':
             query = f'''
-            SELECT ssid, crc32id, title, abstract, year, aux 
+            SELECT ssid, crc32id, title, abstract, year, aux
             FROM SSPublications P
             WHERE tsv @@ websearch_to_tsquery('english', {terms_str})
             ORDER BY year DESC
