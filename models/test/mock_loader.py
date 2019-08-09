@@ -43,10 +43,10 @@ class MockLoader(Loader):
         config = PubtrendsConfig(test=True)
         super(MockLoader, self).__init__(config, connect=False)
 
-    def search(self, current=None, task=None):
-        return [1, 2, 3, 4, 5]
+    def search(self, limit=None, sort=None, current=None, task=None):
+        return [1, 2, 3, 4, 5], True
 
-    def load_publications(self, current=None, task=None):
+    def load_publications(self, temp_table_created=True, current=None, task=None):
         return pd.DataFrame(PUBLICATION_DATA, columns=['id', 'year', 'title', 'abstract', 'authors', 'journal'])
 
     def load_citation_stats(self, current=None, task=None):

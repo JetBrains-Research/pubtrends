@@ -75,7 +75,7 @@ class SemanticScholarLoader(Loader):
         self.values = ', '.join(['({0}, \'{1}\')'.format(i, j) for (i, j) in zip(crc32ids, self.ids)])
         return self.ids, False
 
-    def load_publications(self, temp_table_created, current=0, task=None):
+    def load_publications(self, temp_table_created=False, current=0, task=None):
         if not temp_table_created:
             self.logger.info('Loading publication data', current=current, task=task)
             query = f'''
