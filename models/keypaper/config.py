@@ -27,3 +27,6 @@ class PubtrendsConfig:
         self.max_number_of_articles = int(config_parser['params']['max_number_of_articles'])
         self.max_number_of_citations = int(config_parser['params']['max_number_of_citations'])
         self.max_number_of_cocitations = int(config_parser['params']['max_number_of_cocitations'])
+        self.show_max_articles_options = [opt.strip() for opt in
+                                          config_parser['params']['show_max_articles_options'].split(',')]
+        self.show_max_articles_default_value = config_parser['params']['show_max_articles_default_value'].strip()
