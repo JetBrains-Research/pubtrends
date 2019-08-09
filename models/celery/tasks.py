@@ -37,9 +37,8 @@ def analyze_async(source, terms):
     # Initialize plotter after completion of analysis
     plotter = Plotter(analyzer)
 
-    # Subtopic evolution is ignored for now.
     # Order is important here!
-    return {
+    result = {
         'log': log,
         'n_papers': analyzer.n_papers,
         'n_citations': int(analyzer.df['total'].sum()),
@@ -53,9 +52,15 @@ def analyze_async(source, terms):
         'component_ratio': [components(plotter.component_ratio())],
         'papers_stats': [components(plotter.papers_statistics())],
         'clusters_info_message': plotter.clusters_info_message,
-        'subtopic_evolution': [components(plotter.subtopic_evolution())],
         'author_statistics': [components(plotter.author_statistics())],
         'journal_statistics': [components(plotter.journal_statistics())]
         # TODO: this doesn't work
         # 'citations_dynamics': [components(plotter.article_citation_dynamics())],
     }
+
+    # Pass subtopic evolution only if not None
+    subtopic_evolution = plotter.subtopic_evolution()
+    if subtopic_evolution:
+        result['subtopic_evolution'] = components(subtopic_evolution)
+
+    return result

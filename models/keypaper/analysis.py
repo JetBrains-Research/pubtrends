@@ -47,7 +47,7 @@ class KeyPaperAnalyzer:
             cit_stats_df_from_query = self.loader.load_citation_stats(current=3, task=task)
             self.cit_stats_df = self.build_cit_stats_df(cit_stats_df_from_query, self.n_papers, current=4, task=task)
             if len(self.cit_stats_df) == 0:
-                raise RuntimeError("Citations stats not found DB")
+                raise RuntimeError("No citations of papers were found")
 
             self.df, self.min_year, self.max_year, self.citation_years = self.merge_citation_stats(self.pub_df,
                                                                                                    self.cit_stats_df)
@@ -288,12 +288,20 @@ class KeyPaperAnalyzer:
     def subtopic_evolution_analysis(self, cocit_df, step=5, min_papers=0, current=0, task=None):
         min_year = int(cocit_df['year'].min())
         max_year = int(cocit_df['year'].max())
-        self.logger.info(f'Studying evolution of subtopic clusters in {min_year} - {max_year}',
+        year_range = list(np.arange(max_year, min_year - 1, step=-step).astype(int))
+
+        # Cannot analyze evolution
+        if len(year_range) < 2:
+            self.logger.info(f'Year step is too big to analyze evovution of subtopics in {min_year} - {max_year}',
+                             current=current, task=task)
+            return None, None
+
+        self.logger.info(f'Studying evolution of subtopics in {min_year} - {max_year}',
                          current=current, task=task)
 
         components_merged = {}
         cg = {}
-        year_range = list(np.arange(max_year, min_year - 1, step=-step).astype(int))
+
         self.logger.debug(f"Years when subtopics are studied: {', '.join([str(year) for year in year_range])}",
                           current=current, task=task)
 
@@ -331,6 +339,10 @@ class KeyPaperAnalyzer:
         return evolution_df, year_range
 
     def subtopic_evolution_descriptions(self, df, evolution_df, year_range, terms, keywords=15, current=0, task=None):
+        # Subtopic evolution failed, no need to generate keywords
+        if evolution_df is None or not year_range:
+            return None
+
         self.logger.info('Generating descriptions for subtopic during evolution', current=current, task=task)
         evolution_kwds = {}
         for col in evolution_df:

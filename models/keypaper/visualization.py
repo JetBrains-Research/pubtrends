@@ -446,11 +446,18 @@ class Plotter:
         return p
 
     def subtopic_evolution(self):
-        n_steps = len(self.analyzer.evolution_df.columns) - 2
-
-        # One step is not enough to analyze evolution
-        if n_steps < 2:
+        """
+        Sankey diagram of subtopic evolution
+        :return:
+            if self.analyzer.evolution_df is None: None, as no evolution can be observed in 1 step
+            if number of steps < 3: Sankey diagram
+            else: Sankey diagram + table with keywords
+        """
+        # Subtopic evolution analysis failed, one step is not enough to analyze evolution
+        if not self.analyzer.evolution_df or not self.analyzer.evolution_kwds:
             return None
+
+        n_steps = len(self.analyzer.evolution_df.columns) - 2
 
         edges, nodes_data = PlotPreprocessor.subtopic_evolution_data(
             self.analyzer.evolution_df, self.analyzer.evolution_kwds, n_steps
