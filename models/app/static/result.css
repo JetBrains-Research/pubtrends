@@ -46,9 +46,8 @@ body {
     color: inherit;
 }
 
-.sidebar-heading {
-    font-size: .75rem;
-    text-transform: uppercase;
+.search-string {
+    font-size: 15pt;
 }
 
 .card-header {
