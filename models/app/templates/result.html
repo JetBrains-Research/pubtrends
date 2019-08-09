@@ -317,13 +317,13 @@
                         another.
                     </p>
                     <div>
-                        {% if subtopic_evolution is not none %}
-                        {% for script, div in subtopic_evolution %}
-                        {{ script|safe }}
-                        {{ div|safe }}
-                        {% endfor %}
+                        {% if subtopic_evolution is defined %}
+                            {% for script, div in subtopic_evolution %}
+                            {{ script|safe }}
+                            {{ div|safe }}
+                            {% endfor %}
                         {% else %}
-                        Failed to analyze subtopic evolution because year step is too big.
+                            Failed to analyze subtopic evolution because year step is too big.
                         {% endif %}
                     </div>
                 </div>

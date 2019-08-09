@@ -156,6 +156,25 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
         _, _, _, citation_years = self.analyzer.merge_citation_stats(self.analyzer.pub_df, self.analyzer.cit_stats_df)
         self.assertCountEqual(citation_years, CITATION_YEARS)
 
+    @parameterized.expand([
+        ('too large step', 10, True, None),
+        ('2 steps', 5, False, [1975, 1970]),
+        ('5 steps', 2, False, [1975, 1973, 1971, 1969, 1967])
+    ])
+    def test_subtopic_evolution(self, name, step, expect_none, expected_year_range):
+        evolution_df, year_range = self.analyzer.subtopic_evolution_analysis(
+            self.analyzer.cocit_df, step=step
+        )
+
+        if expect_none:
+            self.assertIsNone(evolution_df, msg='Evolution DataFrame is not None when step is too large')
+
+        if expected_year_range:
+            self.assertListEqual(year_range, expected_year_range, msg='Wrong year range')
+            self.assertEqual(len(year_range), len(evolution_df.columns) - 2, msg='Wrong n_steps')
+        else:
+            self.assertIsNone(year_range, msg='Year range is not None when step is too large')
+
 
 if __name__ == '__main__':
     unittest.main()
