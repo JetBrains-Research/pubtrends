@@ -43,7 +43,7 @@ class PubmedLoader(Loader):
         self.values = ', '.join(['({})'.format(i) for i in sorted(self.ids)])
         return self.ids, temp_table_created
 
-    def sort_results(self, ids, limit, sort, current, task):
+    def sort_results(self, ids, limit, sort, current=0, task=None):
         # Pubmed can return the most recent or the most relevant papers
         # Results need to be changed only if sorting by citations number
         if sort == 'citations':
@@ -62,7 +62,7 @@ class PubmedLoader(Loader):
                     LIMIT {limit};
                     DROP INDEX IF EXISTS temp_pmids_unique_index;
                     CREATE UNIQUE INDEX temp_pmids_unique_index ON TEMP_PMIDS USING btree (pmid);
-                    SELECT pmid FROM temp_pmids;
+                    SELECT pmid, count FROM temp_pmids;
                     """)
             self.logger.debug('Creating pmids table for request with index.', current=current, task=task)
 
