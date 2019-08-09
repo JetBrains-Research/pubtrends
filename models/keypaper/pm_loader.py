@@ -52,19 +52,19 @@ class PubmedLoader(Loader):
             values = ', '.join(['({})'.format(i) for i in sorted(ids)])
             query = re.sub(Loader.VALUES_REGEX, values, f"""
                     DROP TABLE IF EXISTS TEMP_PMIDS;
-                    
+
                     WITH vals(pmid) AS (VALUES $VALUES$)
-                    SELECT pmid, COUNT(1) AS count INTO temporary table TEMP_PMIDS 
+                    SELECT pmid, COUNT(1) AS count INTO temporary table TEMP_PMIDS
                     FROM vals V
                     LEFT JOIN PMCitations C
                     ON C.pmid_in = V.pmid
                     GROUP BY V.pmid
                     ORDER BY count DESC
                     LIMIT {limit};
-                    
+            
                     DROP INDEX IF EXISTS temp_pmids_unique_index;
                     CREATE UNIQUE INDEX temp_pmids_unique_index ON TEMP_PMIDS USING btree (pmid);
-                    
+                 
                     SELECT pmid FROM temp_pmids;
                     """)
             self.logger.debug('Creating pmids table for request with index.', current=current, task=task)
