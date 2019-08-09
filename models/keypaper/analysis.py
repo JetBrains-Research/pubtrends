@@ -33,7 +33,7 @@ class KeyPaperAnalyzer:
 
         try:
             # Search articles relevant to the terms
-            special_symbols = re.compile('\W+')
+            special_symbols = re.compile('\\W+')
             self.terms = [term.strip() for term in re.sub(special_symbols, ' ', search_query).split()]
             self.ids = self.loader.search(search_query, current=1, task=task)
             self.n_papers = len(self.ids)
