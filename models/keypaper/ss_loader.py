@@ -18,7 +18,7 @@ class SemanticScholarLoader(Loader):
         columns = ['id', 'crc32id', 'title', 'abstract', 'year', 'aux']
         if sort == 'relevance':
             query = f'''
-            SELECT P.ssid, P.crc32id, P.title, P.abstract, P.year, P, ts_rank_cd(P.tsv, query) AS rank
+            SELECT P.ssid, P.crc32id, P.title, P.abstract, P.year, P.aux, ts_rank_cd(P.tsv, query) AS rank
             FROM SSPublications P, websearch_to_tsquery('english', {terms_str}) query
             WHERE tsv @@ query
             ORDER BY rank DESC
@@ -42,7 +42,7 @@ class SemanticScholarLoader(Loader):
             SELECT ssid, crc32id, title, abstract, year, aux
             FROM SSPublications P
             WHERE tsv @@ websearch_to_tsquery('english', {terms_str})
-            ORDER BY year DESC
+            ORDER BY year DESC NULLS LAST
             LIMIT {limit};
             '''
         else:
@@ -57,21 +57,11 @@ class SemanticScholarLoader(Loader):
         # Duplicate rows may occur if crawler was stopped while parsing Semantic Scholar archive
         self.pub_df.drop_duplicates(subset='id', inplace=True)
 
-        if np.any(self.pub_df[['id', 'crc32id', 'title']].isna()):
-            raise ValueError('Article must have ID and title')
-        self.pub_df = self.pub_df.fillna(value={'abstract': ''})
-
-        self.pub_df['year'] = self.pub_df['year'].apply(lambda year: int(year) if year else np.nan)
-        self.pub_df['authors'] = self.pub_df['aux'].apply(
-            lambda aux: ', '.join(map(lambda authors: html.unescape(authors['name']), aux['authors'])))
-        self.pub_df['journal'] = self.pub_df['aux'].apply(lambda aux: html.unescape(aux['journal']['name']))
-        self.pub_df['title'] = self.pub_df['title'].apply(lambda title: html.unescape(title))
-
         self.logger.info(f'Found {len(self.pub_df)} publications in the local database', current=current,
                          task=task)
 
-        self.ids = self.pub_df['id']
-        crc32ids = self.pub_df['crc32id']
+        self.ids = list(self.pub_df['id'].values)
+        crc32ids = list(self.pub_df['crc32id'].values)
         self.values = ', '.join(['({0}, \'{1}\')'.format(i, j) for (i, j) in zip(crc32ids, self.ids)])
         return self.ids, False
 
@@ -90,6 +80,16 @@ class SemanticScholarLoader(Loader):
                 self.cursor.execute(query)
 
             self.logger.debug('Created table for request with index.', current=current, task=task)
+
+        if np.any(self.pub_df[['id', 'crc32id', 'title']].isna()):
+            raise ValueError('Article must have ID and title')
+        self.pub_df = self.pub_df.fillna(value={'abstract': ''})
+
+        self.pub_df['year'] = self.pub_df['year'].apply(lambda year: int(year) if year else np.nan)
+        self.pub_df['authors'] = self.pub_df['aux'].apply(
+            lambda aux: ', '.join(map(lambda authors: html.unescape(authors['name']), aux['authors'])))
+        self.pub_df['journal'] = self.pub_df['aux'].apply(lambda aux: html.unescape(aux['journal']['name']))
+        self.pub_df['title'] = self.pub_df['title'].apply(lambda title: html.unescape(title))
 
         return self.pub_df
 

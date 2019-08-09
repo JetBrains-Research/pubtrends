@@ -69,10 +69,12 @@ class MockDatabaseLoader(Loader):
         query_publications = '''
                     drop table if exists sspublications;
                     create table sspublications(
-                        ssid    varchar(40) not null,
-                        crc32id integer     not null,
-                        title   varchar(1023),
-                        year    integer
+                        ssid        varchar(40) not null,
+                        crc32id     integer     not null,
+                        title       varchar(1023),
+                        abstract    text        null,
+                        year        integer     null,
+                        aux         jsonb
                     );
                     create index if not exists sspublications_crc32id_index
                     on sspublications (crc32id);
@@ -88,6 +90,9 @@ class MockDatabaseLoader(Loader):
 
         query = re.sub(self.VALUES_REGEX, articles_str, '''
             insert into sspublications(ssid, crc32id, title, year) values $VALUES$;
+            alter table sspublications add column tsv TSVECTOR;
+            create index sspublications_tsv on sspublications using gin(tsv);
+            update sspublications set tsv = to_tsvector(COALESCE(title, ''));
             ''')
         with self.conn:
             self.cursor.execute(query)

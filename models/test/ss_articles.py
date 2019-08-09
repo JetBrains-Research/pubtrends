@@ -28,46 +28,40 @@ class Article:
 
 
 article1 = Article('5451b1ef43678d473575bdfa7016d024146f2b53', -410264312,
-                   'Differences between Salt-sensitive and Salt-tolerant Genotypes of the Tomato.',
+                   'I can find this using full text search',
                    year=1999)
 
 article2 = Article('cad767094c2c4fff5206793fd8674a10e7fba3fe', 984465402,
-                   'Ear injury and its therapy at the ORL clinic in Olomouc from 1967 to 1976.',
+                   'Can find using search',
                    year=1980)
 
 article3 = Article('e7cdbddc7af4b6138227139d714df28e2090bd5f', 17079054,
-                   'Laser-based sensing for assessing and monitoring civil infrastructures')
+                   'Use search to find it')
 
 article4 = Article('3cf82f53a52867aaade081324dff65dd35b5b7eb', -1875049083,
-                   'Multiwavelength shearography for quantitative measurements '
-                   'of two-dimensional strain distributions.',
-                   year=1976)
+                   'Want to find it? Just search', year=1976)
 
 article5 = Article('5a63b4199bb58992882b0bf60bc1b1b3f392e5a5', 1831680518,
-                   'The Problem of Safe Milk.',
+                   'Search is key to find',
                    year=2003)
 
 article6 = Article('7dc6f2c387193925d3be92d4cc31c7a7cea66d4e', -1626578460,
-                   'Retrospective analysis of efficacy and safety of amrubicin in refractory '
-                   'and relapsed small-cell lung cancer',
+                   'Article 6 is here',
                    year=2018)
 
 article7 = Article('0f9c1d2a70608d36ad7588d3d93ef261d1ae3203', 1075821748,
-                   'The inside view on plant growth',
+                   'Article 7 is here',
                    year=2010)
 
 article8 = Article('872ad0e120b9eefd334562149c065afcfbf90268', -1861977375,
-                   'Crystal structure of the Escherichia coli Tas protein, '
-                   'an NADP(H)-dependent aldo-keto reductase.',
+                   'Article 8 is here',
                    year=1937)
 
 article9 = Article('89ffce2b5da6669f63c99ff6398b312389c357dc', -1190899769,
-                   'Ischiopubic synchondrosis as a case of non specific groin pain '
-                   'in a 12 year old football player')
+                   'Article 9 is here')
 
 article10 = Article('390f6fbb1f25bfbc53232e8248c581cdcc1fb9e9', -751585733,
-                    'Lost wax-bolus technique to process closed hollow obturator '
-                    'with uniform wall thickness using single flasking procedure',
+                    'Article 10 is here',
                     year=2017)
 
 required_articles = [article1, article2, article3, article4, article6, article7, article8, article9,
