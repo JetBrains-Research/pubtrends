@@ -142,6 +142,7 @@ class KeyPaperAnalyzer:
 
         # Fill only new columns to preserve year NaN values
         df[cit_df.columns] = df[cit_df.columns].fillna(0)
+        df.authors = df.authors.fillna('')
 
         # Publication and citation year range
         citation_years = [int(col) for col in list(df.columns) if isinstance(col, (int, float))]

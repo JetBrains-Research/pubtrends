@@ -1,4 +1,5 @@
-﻿import logging
+﻿import html
+import logging
 import re
 from collections import Counter
 
@@ -168,9 +169,20 @@ def split_df_list(df, target_column, separator):
 
 
 def cut_authors_list(authors, limit=10):
+    # handle empty string and float('nan') cases
+    if not authors or pd.isnull(authors):
+        return "No authors listed"
+
     before_separator = limit - 1
     separator = ',...,'
     author_list = authors.split(', ')
     if len(author_list) > limit:
         return ', '.join(author_list[:before_separator]) + separator + author_list[-1]
     return authors
+
+
+def extract_authors(authors_list):
+    if not authors_list:
+        return ''
+
+    return ', '.join(filter(None, map(lambda authors: html.unescape(authors['name']), authors_list)))

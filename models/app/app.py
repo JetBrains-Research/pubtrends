@@ -35,7 +35,7 @@ def progress():
         elif job.state == 'FAILURE':
             return json.dumps({
                 'state': job.state,
-                'message': html.unescape(str(job.result)[2:-2])
+                'message': html.unescape(str(job.result).replace('\\n', '\n')[2:-2])
             })
         elif job.state == 'PENDING':
             return json.dumps({'state': job.state,
