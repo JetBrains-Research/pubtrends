@@ -10,10 +10,9 @@ class SemanticScholarLoader(Loader):
     def __init__(self, pubtrends_config):
         super(SemanticScholarLoader, self).__init__(pubtrends_config)
 
-    def search(self, *terms, current=0, task=None):
-        self.terms = [t.lower() for t in terms]
+    def search(self, terms, current=0, task=None):
         self.logger.info('Searching publication data', current=current, task=task)
-        terms_str = '\'' + ' '.join(self.terms) + '\''
+        terms_str = '\'' + terms + '\''
         query = f'''
         SELECT DISTINCT ON(ssid) ssid, crc32id, title, abstract, year, aux FROM SSPublications P
         WHERE tsv @@ websearch_to_tsquery('english', {terms_str}) limit {self.max_number_of_articles};

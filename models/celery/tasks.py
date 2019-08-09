@@ -32,7 +32,7 @@ def analyze_async(source, terms):
         raise Exception(f"Unknown source {source}")
     analyzer = KeyPaperAnalyzer(loader)
     # current_task is from @celery.task
-    log = analyzer.launch(*terms, task=current_task)
+    log = analyzer.launch(terms, task=current_task)
 
     # Initialize plotter after completion of analysis
     plotter = Plotter(analyzer)

@@ -1,3 +1,5 @@
+import re
+
 import community
 import networkx as nx
 import numpy as np
@@ -26,13 +28,14 @@ class KeyPaperAnalyzer:
         elif not test:
             raise TypeError("loader should be either PubmedLoader or SemanticScholarLoader")
 
-    def launch(self, *terms, task=None):
+    def launch(self, search_query, task=None):
         """:return full log"""
 
         try:
             # Search articles relevant to the terms
-            self.terms = terms
-            self.ids = self.loader.search(*terms, current=1, task=task)
+            special_symbols = re.compile('\W+')
+            self.terms = [term.strip() for term in re.sub(special_symbols, ' ', search_query).split()]
+            self.ids = self.loader.search(search_query, current=1, task=task)
             self.n_papers = len(self.ids)
 
             # Nothing found
