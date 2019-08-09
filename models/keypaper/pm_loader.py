@@ -20,7 +20,7 @@ class PubmedLoader(Loader):
         handle = Entrez.esearch(db='pubmed', retmax=str(self.max_number_of_articles),
                                 retmode='xml', term=terms)
         self.ids = Entrez.read(handle)['IdList']
-        self.logger.info(f'Found {len(self.ids)} articles matching {terms}', current=current, task=task)
+        self.logger.info(f'Found {len(self.ids)} publications matching {terms}', current=current, task=task)
         self.values = ', '.join(['({})'.format(i) for i in sorted(self.ids)])
         return self.ids
 
