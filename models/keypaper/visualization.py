@@ -266,7 +266,7 @@ class Plotter:
         p.hover.tooltips = [("Subtopic", '@comps'), ("Amount", '@ratios %')]
 
         p.x_range.start = 0
-        p.xaxis.axis_label = 'Percentage of articles'
+        p.xaxis.axis_label = 'Percentage of papers'
         p.yaxis.axis_label = 'Subtopic'
         p.xgrid.grid_line_color = None
         p.ygrid.grid_line_color = None
@@ -407,10 +407,10 @@ class Plotter:
 
         year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
         p = figure(tools=TOOLS, toolbar_location="above",
-                   plot_width=760, plot_height=400, x_range=year_range, title='Amount of articles per year')
+                   plot_width=760, plot_height=400, x_range=year_range, title='Amount of papers per year')
         p.y_range.start = 0
         p.xaxis.axis_label = 'Year'
-        p.yaxis.axis_label = 'Amount of articles'
+        p.yaxis.axis_label = 'Amount of papers'
         p.hover.tooltips = [("Amount", '@counts'), ("Year", '@year')]
 
         # NOTE: VBar is invisible (alpha=0) to provide tooltips, as in self.component_size_summary()
@@ -487,7 +487,7 @@ class Plotter:
         columns = [
             TableColumn(field="index", title="#", width=20),
             TableColumn(field="author", title="Author", width=500),
-            TableColumn(field="sum", title="Number of articles", width=100),
+            TableColumn(field="sum", title="Number of papers", width=100),
             TableColumn(field="subtopics", title="Subtopics", formatter=formatter, width=160, sortable=False),
         ]
 
@@ -512,7 +512,7 @@ class Plotter:
         columns = [
             TableColumn(field="index", title="#", width=20),
             TableColumn(field="journal", title="Journal", width=500),
-            TableColumn(field="sum", title='Number of articles', width=100),
+            TableColumn(field="sum", title='Number of papers', width=100),
             TableColumn(field="subtopics", title='Subtopics', formatter=formatter, width=160, sortable=False),
         ]
 

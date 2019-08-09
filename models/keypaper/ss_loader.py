@@ -26,7 +26,7 @@ class SemanticScholarLoader(Loader):
                                    dtype=object)
 
         if np.any(self.pub_df[['id', 'crc32id', 'title']].isna()):
-            raise ValueError('Article must have ID and title')
+            raise ValueError('Paper must have ID and title')
         self.pub_df = self.pub_df.fillna(value={'abstract': ''})
 
         self.pub_df['year'] = self.pub_df['year'].apply(lambda year: int(year) if year else np.nan)
@@ -120,7 +120,7 @@ class SemanticScholarLoader(Loader):
         return citations
 
     def load_cocitations(self, current=0, task=None):
-        self.logger.info('Calculating co-citations for selected articles', current=current, task=task)
+        self.logger.info('Calculating co-citations for selected papers', current=current, task=task)
 
         query = f'''
                 with Z as (select id_out, id_in, crc32id_out, crc32id_in
@@ -160,6 +160,6 @@ class SemanticScholarLoader(Loader):
         cocit_df['year'] = cocit_df['year'].apply(int)
 
         self.logger.debug(f'Loaded {lines} lines of citing info', current=current, task=task)
-        self.logger.debug(f'Found {len(cocit_df)} co-cited pairs of articles', current=current, task=task)
+        self.logger.debug(f'Found {len(cocit_df)} co-cited pairs of papers', current=current, task=task)
 
         return cocit_df

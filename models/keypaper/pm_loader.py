@@ -21,7 +21,7 @@ class PubmedLoader(Loader):
         handle = Entrez.esearch(db='pubmed', retmax=str(self.max_number_of_articles),
                                 retmode='xml', term=query)
         self.ids = Entrez.read(handle)['IdList']
-        self.logger.info(f'Found {len(self.ids)} articles about {terms}', current=current, task=task)
+        self.logger.info(f'Found {len(self.ids)} papers about {terms}', current=current, task=task)
         self.values = ', '.join(['({})'.format(i) for i in sorted(self.ids)])
         return self.ids
 
@@ -48,7 +48,7 @@ class PubmedLoader(Loader):
                               dtype=object)
 
         if np.any(pub_df[['id', 'title']].isna()):
-            raise ValueError('Article must have PMID and title')
+            raise ValueError('Paper must have PMID and title')
         pub_df = pub_df.fillna(value={'abstract': ''})
 
         pub_df['year'] = pub_df['year'].apply(lambda year: int(year) if year else np.nan)
@@ -111,7 +111,7 @@ class PubmedLoader(Loader):
         return cit_df
 
     def load_cocitations(self, current=0, task=None):
-        self.logger.info('Calculating co-citations for selected articles', current=current, task=task)
+        self.logger.info('Calculating co-citations for selected papers', current=current, task=task)
 
         # Use unfolding to pairs on the client side instead of DataBase
         query = '''
@@ -149,6 +149,6 @@ class PubmedLoader(Loader):
         cocit_df['year'] = cocit_df['year'].apply(int)
 
         self.logger.debug(f'Loaded {lines} lines of citing info', current=current, task=task)
-        self.logger.debug(f'Found {len(cocit_df)} co-cited pairs of articles', current=current, task=task)
+        self.logger.debug(f'Found {len(cocit_df)} co-cited pairs of papers', current=current, task=task)
 
         return cocit_df

@@ -112,7 +112,7 @@ class KeyPaperAnalyzer:
 
         cit_stats_df['total'] = cit_stats_df.iloc[:, 1:].sum(axis=1)
         cit_stats_df = cit_stats_df.sort_values(by='total', ascending=False)
-        self.logger.debug(f"Loaded citation stats for {len(cit_stats_df)} of {n_papers} articles.\n" +
+        self.logger.debug(f"Loaded citation stats for {len(cit_stats_df)} of {n_papers} papers.\n" +
                           "Others may either have zero citations or be absent in the local database.",
                           current=current, task=task)
 
