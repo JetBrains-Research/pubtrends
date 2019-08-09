@@ -28,8 +28,7 @@ class SemanticScholarLoader(Loader):
         columns = ['id', 'crc32id', 'title', 'abstract', 'year', 'aux']
         if sort == 'relevance':
             query = f'''
-            SELECT DISTINCT ON(P.ssid) P.ssid, P.crc32id, P.title, P.abstract, P.year, P.aux, 
-                                       ts_rank_cd(P.tsv, query) AS rank
+            SELECT P.ssid, P.crc32id, P.title, P.abstract, P.year, P, ts_rank_cd(P.tsv, query) AS rank
             FROM {self.publications_table} P, websearch_to_tsquery('english', {terms_str}) query
             WHERE tsv @@ query
             ORDER BY rank DESC
@@ -38,19 +37,19 @@ class SemanticScholarLoader(Loader):
             columns.append('ts_rank')
         elif sort == 'citations':
             query = f'''
-            SELECT DISTINCT ON(P.ssid) P.ssid, P.crc32id, P.title, P.abstract, P.year, P.aux, COUNT(1) AS count 
+            SELECT P.ssid, P.crc32id, P.title, P.abstract, P.year, P.aux, COUNT(1) AS count 
             FROM {self.publications_table} P
             LEFT JOIN {self.citations_table} C
             ON C.crc32id_in = P.crc32id AND C.id_in = P.ssid
             WHERE tsv @@ websearch_to_tsquery('english', {terms_str})
-            GROUP BY P.ssid
+            GROUP BY P.ssid, P.crc32id, P.title, P.abstract, P.year, P.aux
             ORDER BY count DESC
             LIMIT {limit};
             '''
             columns.append('citations')
         elif sort == 'year':
             query = f'''
-            SELECT DISTINCT ON(ssid) ssid, crc32id, title, abstract, year, aux 
+            SELECT ssid, crc32id, title, abstract, year, aux 
             FROM {self.publications_table} P
             WHERE tsv @@ websearch_to_tsquery('english', {terms_str})
             ORDER BY year DESC
@@ -65,6 +64,9 @@ class SemanticScholarLoader(Loader):
                                    columns=columns,
                                    dtype=object)
 
+        # Duplicate rows may occur if crawler was stopped while parsing Semantic Scholar archive
+        self.pub_df.drop_duplicates(subset='id', inplace=True)
+
         self.pub_df['authors'] = self.pub_df['aux'].apply(
             lambda aux: ', '.join(map(lambda authors: html.unescape(authors['name']), aux['authors'])))
 
@@ -78,22 +80,23 @@ class SemanticScholarLoader(Loader):
         self.ids = self.pub_df['id']
         crc32ids = self.pub_df['crc32id']
         self.values = ', '.join(['({0}, \'{1}\')'.format(i, j) for (i, j) in zip(crc32ids, self.ids)])
-        return self.ids
+        return self.ids, False
 
-    def load_publications(self, current=0, task=None):
-        self.logger.info('Loading publication data', current=current, task=task)
-        query = f'''
-                DROP TABLE IF EXISTS {self.temp_ids_table};
-                WITH vals(crc32id, ssid) AS (VALUES {self.values})
-                SELECT crc32id, ssid INTO table {self.temp_ids_table} FROM vals;
-                DROP INDEX IF EXISTS temp_ssids_index;
-                CREATE INDEX temp_ssids_index ON {self.temp_ids_table} USING btree (crc32id);
-                '''
+    def load_publications(self, temp_table_created, current=0, task=None):
+        if not temp_table_created:
+            self.logger.info('Loading publication data', current=current, task=task)
+            query = f'''
+                    DROP TABLE IF EXISTS {self.temp_ids_table};
+                    WITH vals(crc32id, ssid) AS (VALUES {self.values})
+                    SELECT crc32id, ssid INTO table {self.temp_ids_table} FROM vals;
+                    DROP INDEX IF EXISTS temp_ssids_index;
+                    CREATE INDEX temp_ssids_index ON {self.temp_ids_table} USING btree (crc32id);
+                    '''
 
-        with self.conn:
-            self.cursor.execute(query)
+            with self.conn:
+                self.cursor.execute(query)
 
-        self.logger.debug('Created table for request with index.', current=current, task=task)
+            self.logger.debug('Created table for request with index.', current=current, task=task)
 
         return self.pub_df
 
