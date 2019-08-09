@@ -295,8 +295,7 @@ class Plotter:
         logging.info('Different colors encode different papers')
         cols = ['year', 'id', 'title', 'authors', 'paper_year', 'count']
         max_gain_df = self.analyzer.max_gain_df[cols].replace(np.nan, "Undefined")
-        max_gain_df['authors'] = max_gain_df['authors'].apply(lambda authors: cut_authors_list(authors))\
-            .replace('', "No authors listed")
+        max_gain_df['authors'] = max_gain_df['authors'].apply(lambda authors: cut_authors_list(authors))
         ds_max = ColumnDataSource(max_gain_df)
 
         factors = self.analyzer.max_gain_df['id'].unique()
@@ -326,8 +325,7 @@ class Plotter:
         logging.info('Different colors encode different papers')
         cols = ['year', 'id', 'title', 'authors', 'paper_year', 'rel_gain']
         max_rel_gain_df = self.analyzer.max_rel_gain_df[cols].replace(np.nan, "Undefined")
-        max_rel_gain_df['authors'] = max_rel_gain_df['authors'].apply(lambda authors: cut_authors_list(authors))\
-            .replace('', "No authors listed")
+        max_rel_gain_df['authors'] = max_rel_gain_df['authors'].apply(lambda authors: cut_authors_list(authors))
         ds_max = ColumnDataSource(max_rel_gain_df)
 
         factors = self.analyzer.max_rel_gain_df['id'].astype(str).unique()

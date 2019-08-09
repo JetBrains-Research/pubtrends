@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from Bio import Entrez
 
+from models.keypaper.utils import extract_authors
 from .loader import Loader
 
 
@@ -52,9 +53,7 @@ class PubmedLoader(Loader):
         pub_df = pub_df.fillna(value={'abstract': ''})
 
         pub_df['year'] = pub_df['year'].apply(lambda year: int(year) if year else np.nan)
-        pub_df['authors'] = pub_df['aux'].apply(
-            lambda aux: ', '.join(filter(None, map(lambda authors: html.unescape(authors['name']), aux['authors']))))
-
+        pub_df['authors'] = pub_df['aux'].apply(lambda aux: extract_authors(aux['authors']))
         pub_df['journal'] = pub_df['aux'].apply(lambda aux: html.unescape(aux['journal']['name']))
 
         self.logger.debug(f'Found {len(pub_df)} publications in the local database\n', current=current, task=task)

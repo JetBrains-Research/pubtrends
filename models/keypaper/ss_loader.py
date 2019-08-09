@@ -3,6 +3,7 @@ import html
 import numpy as np
 import pandas as pd
 
+from models.keypaper.utils import extract_authors
 from .loader import Loader
 
 
@@ -30,8 +31,7 @@ class SemanticScholarLoader(Loader):
         self.pub_df = self.pub_df.fillna(value={'abstract': ''})
 
         self.pub_df['year'] = self.pub_df['year'].apply(lambda year: int(year) if year else np.nan)
-        self.pub_df['authors'] = self.pub_df['aux'].apply(
-            lambda aux: ', '.join(map(lambda authors: html.unescape(authors['name']), aux['authors'])))
+        self.pub_df['authors'] = self.pub_df['aux'].apply(lambda aux: extract_authors(aux['authors']))
         self.pub_df['journal'] = self.pub_df['aux'].apply(lambda aux: html.unescape(aux['journal']['name']))
         self.pub_df['title'] = self.pub_df['title'].apply(lambda title: html.unescape(title))
 
