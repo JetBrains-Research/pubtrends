@@ -30,9 +30,10 @@ class MockDatabaseLoader(Loader):
             );
             '''
 
-        with self.conn:
-            self.cursor.execute(query_citations)
-            self.cursor.execute(query_publications)
+        with self.conn.cursor() as cursor:
+            cursor.execute(query_citations)
+            cursor.execute(query_publications)
+            self.conn.commit()
 
     def insert_pubmed_publications(self, articles):
         articles_str = ', '.join(list(map(str, articles)))
@@ -40,8 +41,9 @@ class MockDatabaseLoader(Loader):
         query = re.sub(self.VALUES_REGEX, articles_str, '''
                 INSERT INTO PMPublications(pmid, title, aux, abstract, date) VALUES $VALUES$;
             ''')
-        with self.conn:
-            self.cursor.execute(query)
+        with self.conn.cursor() as cursor:
+            cursor.execute(query)
+            self.conn.commit()
 
     def insert_pubmed_citations(self, citations):
         citations_formatted = [f'({id_out}, {id_in})' for id_out, id_in in citations]
@@ -50,8 +52,9 @@ class MockDatabaseLoader(Loader):
                 INSERT INTO PMCitations(pmid_out, pmid_in) VALUES $VALUES$;
             ''')
 
-        with self.conn:
-            self.cursor.execute(query)
+        with self.conn.cursor() as cursor:
+            cursor.execute(query)
+            self.conn.commit()
 
     def init_semantic_scholar_database(self):
         query_citations = '''
@@ -78,9 +81,10 @@ class MockDatabaseLoader(Loader):
                     on sspublications (crc32id);
                     '''
 
-        with self.conn:
-            self.cursor.execute(query_citations)
-            self.cursor.execute(query_publications)
+        with self.conn.cursor() as cursor:
+            cursor.execute(query_citations)
+            cursor.execute(query_publications)
+            self.conn.commit()
 
     def insert_semantic_scholar_publications(self, articles):
         articles_str = ', '.join(
@@ -89,8 +93,9 @@ class MockDatabaseLoader(Loader):
         query = re.sub(self.VALUES_REGEX, articles_str, '''
             insert into sspublications(ssid, crc32id, title, year) values $VALUES$;
             ''')
-        with self.conn:
-            self.cursor.execute(query)
+        with self.conn.cursor() as cursor:
+            cursor.execute(query)
+            self.conn.commit()
 
     def insert_semantic_scholar_citations(self, citations):
         citations_str = ', '.join(
@@ -101,5 +106,6 @@ class MockDatabaseLoader(Loader):
             insert into sscitations (id_out, crc32id_out, id_in, crc32id_in) values $VALUES$;
             ''')
 
-        with self.conn:
-            self.cursor.execute(query)
+        with self.conn.cursor() as cursor:
+            cursor.execute(query)
+            self.conn.commit()

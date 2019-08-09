@@ -40,8 +40,9 @@ class TestSemanticScholarLoader(unittest.TestCase):
                 DROP INDEX IF EXISTS temp_ssids_index;
                 CREATE INDEX temp_ssids_index ON temp_ssids USING btree (crc32id);''')
 
-        with cls.loader.conn:
-            cls.loader.cursor.execute(query)
+        with cls.loader.conn.cursor() as cursor:
+            cursor.execute(query)
+            cls.loader.conn.commit()
 
         cls.loader.ids = list(map(lambda article: article.ssid, required_articles))
         cls.loader.crc32ids = list(map(lambda article: article.crc32id, required_articles))
@@ -101,8 +102,8 @@ class TestSemanticScholarLoader(unittest.TestCase):
         query = '''
         drop table sscitations;
         drop table sspublications;'''
-        with cls.loader.conn:
-            cls.loader.cursor.execute(query)
+        with cls.loader.conn.cursor() as cursor:
+            cursor.execute(query)
 
         cls.loader.close_connection()
 

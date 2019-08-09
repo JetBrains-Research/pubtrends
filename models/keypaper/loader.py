@@ -8,7 +8,6 @@ class Loader:
 
     def __init__(self, pubtrends_config, connect=True):
         self.conn = None
-        self.cursor = None
 
         if connect:
             connection_string = f"""
@@ -16,7 +15,6 @@ class Loader:
                 host={pubtrends_config.host} port={pubtrends_config.port}
             """.strip()
             self.conn = pg_driver.connect(connection_string)
-            self.cursor = self.conn.cursor()
 
         self.logger = None
 
@@ -25,8 +23,6 @@ class Loader:
         self.max_number_of_cocitations = pubtrends_config.max_number_of_cocitations
 
     def close_connection(self):
-        if self.cursor:
-            self.cursor.close()
         if self.conn:
             self.conn.close()
 

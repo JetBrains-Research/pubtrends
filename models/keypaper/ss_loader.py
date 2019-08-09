@@ -19,11 +19,11 @@ class SemanticScholarLoader(Loader):
         WHERE tsv @@ websearch_to_tsquery('english', {terms_str}) limit {self.max_number_of_articles};
         '''
 
-        with self.conn:
-            self.cursor.execute(query)
-        self.pub_df = pd.DataFrame(self.cursor.fetchall(),
-                                   columns=['id', 'crc32id', 'title', 'abstract', 'year', 'aux'],
-                                   dtype=object)
+        with self.conn.cursor() as cursor:
+            cursor.execute(query)
+            self.pub_df = pd.DataFrame(cursor.fetchall(),
+                                       columns=['id', 'crc32id', 'title', 'abstract', 'year', 'aux'],
+                                       dtype=object)
 
         if np.any(self.pub_df[['id', 'crc32id', 'title']].isna()):
             raise ValueError('Paper must have ID and title')
@@ -53,8 +53,8 @@ class SemanticScholarLoader(Loader):
                 CREATE INDEX temp_ssids_index ON temp_ssids USING btree (crc32id);
                 '''
 
-        with self.conn:
-            self.cursor.execute(query)
+        with self.conn.cursor() as cursor:
+            cursor.execute(query)
 
         self.logger.debug('Created table for request with index.', current=current, task=task)
 
@@ -78,11 +78,11 @@ class SemanticScholarLoader(Loader):
                 GROUP BY C.id_in, P.year;
             '''
 
-        with self.conn:
-            self.cursor.execute(query)
-        self.logger.debug('Done loading citation stats', current=current, task=task)
-        cit_stats_df_from_query = pd.DataFrame(self.cursor.fetchall(),
-                                               columns=['id', 'year', 'count'], dtype=object)
+        with self.conn.cursor() as cursor:
+            cursor.execute(query)
+            self.logger.debug('Done loading citation stats', current=current, task=task)
+            cit_stats_df_from_query = pd.DataFrame(cursor.fetchall(),
+                                                   columns=['id', 'year', 'count'], dtype=object)
 
         if np.any(cit_stats_df_from_query.isna()):
             raise ValueError('NaN values are not allowed in citation stats DataFrame')
@@ -105,10 +105,10 @@ class SemanticScholarLoader(Loader):
                     AND (select max(crc32id) FROM temp_ssids);
                     '''
 
-        with self.conn:
-            self.cursor.execute(query)
-        citations = pd.DataFrame(self.cursor.fetchall(),
-                                 columns=['id_out', 'id_in'], dtype=object)
+        with self.conn.cursor() as cursor:
+            cursor.execute(query)
+            citations = pd.DataFrame(cursor.fetchall(),
+                                     columns=['id_out', 'id_in'], dtype=object)
 
         citations = citations[citations['id_out'].isin(self.ids)]
 
@@ -142,18 +142,18 @@ class SemanticScholarLoader(Loader):
                         on crc32id_out = P.crc32id and id_out = P.ssid;
                 '''
 
-        with self.conn:
-            self.cursor.execute(query)
+        with self.conn.cursor() as cursor:
+            cursor.execute(query)
 
-        cocit_data = []
-        lines = 0
-        for row in self.cursor:
-            lines += 1
-            citing, year, cited = row
-            for i in range(len(cited)):
-                for j in range(i + 1, len(cited)):
-                    cocit_data.append((citing, cited[i], cited[j], year))
-        cocit_df = pd.DataFrame(cocit_data, columns=['citing', 'cited_1', 'cited_2', 'year'], dtype=object)
+            cocit_data = []
+            lines = 0
+            for row in cursor:
+                lines += 1
+                citing, year, cited = row
+                for i in range(len(cited)):
+                    for j in range(i + 1, len(cited)):
+                        cocit_data.append((citing, cited[i], cited[j], year))
+            cocit_df = pd.DataFrame(cocit_data, columns=['citing', 'cited_1', 'cited_2', 'year'], dtype=object)
 
         if np.any(cocit_df.isna()):
             raise ValueError('NaN values are not allowed in co-citation DataFrame')

@@ -41,11 +41,11 @@ class PubmedLoader(Loader):
         ''')
         self.logger.debug('Creating pmids table for request with index.', current=current, task=task)
 
-        with self.conn:
-            self.cursor.execute(query)
-        pub_df = pd.DataFrame(self.cursor.fetchall(),
-                              columns=['id', 'title', 'aux', 'abstract', 'year'],
-                              dtype=object)
+        with self.conn.cursor() as cursor:
+            cursor.execute(query)
+            pub_df = pd.DataFrame(cursor.fetchall(),
+                                  columns=['id', 'title', 'aux', 'abstract', 'year'],
+                                  dtype=object)
 
         if np.any(pub_df[['id', 'title']].isna()):
             raise ValueError('Paper must have PMID and title')
@@ -74,11 +74,11 @@ class PubmedLoader(Loader):
         GROUP BY C.pmid_in, date_part('year', P.date);
         ''')
 
-        with self.conn:
-            self.cursor.execute(query)
-        self.logger.debug('Done loading citation stats', current=current, task=task)
-        cit_stats_df_from_query = pd.DataFrame(self.cursor.fetchall(),
-                                               columns=['id', 'year', 'count'])
+        with self.conn.cursor() as cursor:
+            cursor.execute(query)
+            self.logger.debug('Done loading citation stats', current=current, task=task)
+            cit_stats_df_from_query = pd.DataFrame(cursor.fetchall(),
+                                                   columns=['id', 'year', 'count'])
 
         if np.any(cit_stats_df_from_query.isna()):
             raise ValueError('NaN values are not allowed in citation stats DataFrame')
@@ -98,10 +98,10 @@ class PubmedLoader(Loader):
         JOIN (VALUES $VALUES$) AS CT2(pmid) ON (C.pmid_out = CT2.pmid);
         ''')
 
-        with self.conn:
-            self.cursor.execute(query)
+        with self.conn.cursor() as cursor:
+            cursor.execute(query)
 
-        cit_df = pd.DataFrame(self.cursor.fetchall(), columns=['id_out', 'id_in'])
+            cit_df = pd.DataFrame(cursor.fetchall(), columns=['id_out', 'id_in'])
 
         if np.any(cit_df.isna()):
             raise ValueError('Citation must have id_out and id_in')
@@ -130,17 +130,17 @@ class PubmedLoader(Loader):
             on pmid_out = P.pmid;
         '''
 
-        with self.conn:
-            self.cursor.execute(query)
+        with self.conn.cursor() as cursor:
+            cursor.execute(query)
 
-        cocit_data = []
-        lines = 0
-        for row in self.cursor:
-            lines += 1
-            citing, year, cited = row
-            for i in range(len(cited)):
-                for j in range(i + 1, len(cited)):
-                    cocit_data.append((citing, cited[i], cited[j], year))
+            cocit_data = []
+            lines = 0
+            for row in cursor:
+                lines += 1
+                citing, year, cited = row
+                for i in range(len(cited)):
+                    for j in range(i + 1, len(cited)):
+                        cocit_data.append((citing, cited[i], cited[j], year))
 
         cocit_df = pd.DataFrame(cocit_data, columns=['citing', 'cited_1', 'cited_2', 'year'], dtype=object)
 
