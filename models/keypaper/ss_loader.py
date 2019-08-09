@@ -188,9 +188,9 @@ class SemanticScholarLoader(Loader):
                     cocit_data.append((citing, cited[i], cited[j], year))
         cocit_df = pd.DataFrame(cocit_data, columns=['citing', 'cited_1', 'cited_2', 'year'], dtype=object)
 
-        if np.any(cocit_df.isna()):
-            raise ValueError('NaN values are not allowed in co-citation DataFrame')
-        cocit_df['year'] = cocit_df['year'].apply(int)
+        if np.any(cocit_df[['citing', 'cited_1', 'cited_2']].isna()):
+            raise ValueError('NaN values are not allowed in ids of co-citation DataFrame')
+        cocit_df['year'] = cocit_df['year'].apply(lambda x: int(x) if x else np.nan)
 
         self.logger.debug(f'Loaded {lines} lines of citing info', current=current, task=task)
         self.logger.debug(f'Found {len(cocit_df)} co-cited pairs of articles', current=current, task=task)
