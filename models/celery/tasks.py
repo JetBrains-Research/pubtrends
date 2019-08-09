@@ -61,6 +61,6 @@ def analyze_async(source, terms):
     # Pass subtopic evolution only if not None
     subtopic_evolution = plotter.subtopic_evolution()
     if subtopic_evolution:
-        result['subtopic_evolution'] = components(subtopic_evolution)
+        result['subtopic_evolution'] = [components(subtopic_evolution)]
 
     return result

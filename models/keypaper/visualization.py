@@ -454,7 +454,7 @@ class Plotter:
             else: Sankey diagram + table with keywords
         """
         # Subtopic evolution analysis failed, one step is not enough to analyze evolution
-        if not self.analyzer.evolution_df or not self.analyzer.evolution_kwds:
+        if self.analyzer.evolution_df is None or not self.analyzer.evolution_kwds:
             return None
 
         n_steps = len(self.analyzer.evolution_df.columns) - 2
