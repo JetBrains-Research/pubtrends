@@ -44,7 +44,7 @@ class KeyPaperAnalyzer:
                 raise RuntimeError("Nothing found")
 
             # Load data about publications, citations and co-citations
-            self.pub_df = self.loader.load_publications(temp_table_created, current=2, task=task)
+            self.pub_df = self.loader.load_publications(temp_table_created=temp_table_created, current=2, task=task)
             if len(self.pub_df) == 0:
                 raise RuntimeError("Nothing found in DB")
 

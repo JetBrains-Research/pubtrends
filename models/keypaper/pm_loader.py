@@ -77,7 +77,7 @@ class PubmedLoader(Loader):
 
         return ids, False
 
-    def load_publications(self, temp_table_created, current=0, task=None):
+    def load_publications(self, temp_table_created=False, current=0, task=None):
         self.logger.info('Loading publication data', current=current, task=task)
 
         if not temp_table_created:
