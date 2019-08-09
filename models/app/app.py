@@ -88,7 +88,9 @@ def index():
             job = analyze_async.delay(terms, source, sort, amount)
             return redirect(flask.url_for('.process', terms=terms, jobid=job.id))
 
-    return render_template('main.html', version=PUBTRENDS_CONFIG.version)
+    return render_template('main.html', version=PUBTRENDS_CONFIG.version,
+                           amounts=PUBTRENDS_CONFIG.show_max_articles_options,
+                           default_amount=PUBTRENDS_CONFIG.show_max_articles_default_value)
 
 
 def get_app():

@@ -64,16 +64,26 @@
                             <select class="form-control" name="sort" aria-describedby="sort-addon">
                                 <option>Most Cited</option>
                                 <option>Most Recent</option>
-                                <option>Most Revelant</option>
+                                <option>Most Relevant</option>
                             </select>
                         </div>
                         &nbsp;&nbsp;&nbsp;
                         <div class="col input-group">
                             <div class="input-group-prepend">
-                                <span class="input-group-text" id="amount-addon">Amount</span>
+                                <span class="input-group-text" id="amount-addon">Show</span>
                             </div>
-                            <input class="form-control form-control-borderless" type="number"
-                                   aria-describedby="amount-addon" name="amount" value="10000" min="0" max="50000000">
+                            <select class="form-control" aria-describedby="amount-addon" name="amount">
+                                {% for amount in amounts %}
+                                    {% if amount == default_amount %}
+                                    <option selected>{{ amount }}</option>
+                                    {% else %}
+                                    <option>{{ amount }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                            <div class="input-group-append">
+                                <span class="input-group-text">papers</span>
+                            </div>
                         </div>
                     </div>
                 </div>

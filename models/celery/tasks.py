@@ -31,6 +31,7 @@ def analyze_async(terms, source, sort, amount):
         amount_of_papers = '45 million'
     else:
         raise Exception(f"Unknown source {source}")
+
     analyzer = KeyPaperAnalyzer(loader)
     # current_task is from @celery.task
     log = analyzer.launch(terms, limit=str(amount), sort=SORT_METHODS[sort], task=current_task)
