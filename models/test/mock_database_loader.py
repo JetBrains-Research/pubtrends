@@ -75,7 +75,9 @@ class MockDatabaseLoader(Loader):
                         ssid    varchar(40) not null,
                         crc32id integer     not null,
                         title   varchar(1023),
-                        year    integer
+                        year    integer,
+                        abstract text,
+                        aux     jsonb
                     );
                     create index if not exists sspublications_crc32id_index
                     on sspublications (crc32id);
@@ -91,7 +93,7 @@ class MockDatabaseLoader(Loader):
             map(lambda article: article.to_db_publication(), articles))
 
         query = re.sub(self.VALUES_REGEX, articles_str, '''
-            insert into sspublications(ssid, crc32id, title, year) values $VALUES$;
+            insert into sspublications(ssid, crc32id, title, year, abstract, aux) values $VALUES$;
             ''')
         with self.conn.cursor() as cursor:
             cursor.execute(query)
