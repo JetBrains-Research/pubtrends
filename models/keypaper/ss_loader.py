@@ -1,9 +1,7 @@
-import html
-
 import numpy as np
 import pandas as pd
 
-from models.keypaper.utils import extract_authors
+from models.keypaper.utils import crc32
 from .loader import Loader
 
 
@@ -11,7 +9,7 @@ class SemanticScholarLoader(Loader):
     def __init__(self, pubtrends_config):
         super(SemanticScholarLoader, self).__init__(pubtrends_config)
 
-    def search(self, *terms, current=0, task=None):
+    def search(self, terms, current=0, task=None):
         self.terms = [t.lower() for t in terms]
         self.logger.info('Searching publication data', current=current, task=task)
         terms_str = '\'' + ' '.join(self.terms) + '\''
@@ -28,12 +26,8 @@ class SemanticScholarLoader(Loader):
 
         if np.any(self.pub_df[['id', 'crc32id', 'title']].isna()):
             raise ValueError('Paper must have ID and title')
-        self.pub_df = self.pub_df.fillna(value={'abstract': ''})
 
-        self.pub_df['year'] = self.pub_df['year'].apply(lambda year: int(year) if year else np.nan)
-        self.pub_df['authors'] = self.pub_df['aux'].apply(lambda aux: extract_authors(aux['authors']))
-        self.pub_df['journal'] = self.pub_df['aux'].apply(lambda aux: html.unescape(aux['journal']['name']))
-        self.pub_df['title'] = self.pub_df['title'].apply(lambda title: html.unescape(title))
+        self.pub_df = Loader.process_publications_dataframe(self.pub_df)
 
         self.logger.info(f'Found {len(self.pub_df)} publications in the local database', current=current,
                          task=task)
@@ -57,6 +51,43 @@ class SemanticScholarLoader(Loader):
             cursor.execute(query)
 
         self.logger.debug('Created table for request with index.', current=current, task=task)
+
+        return self.pub_df
+
+    def search_with_given_ids(self, ids, current=0, task=None):
+        self.logger.info('Searching publication data', current=current, task=task)
+        self.ids = ids
+        crc32ids = list(map(crc32, self.ids))
+        self.values = ', '.join(['({0}, \'{1}\')'.format(i, j) for (i, j) in zip(crc32ids, self.ids)])
+        query_fill_temp_ids = f'''
+                DROP TABLE IF EXISTS temp_ssids;
+                WITH vals(crc32id, ssid) AS (VALUES {self.values})
+                SELECT crc32id, ssid INTO table temp_ssids FROM vals;
+                DROP INDEX IF EXISTS temp_ssids_index;
+                CREATE INDEX temp_ssids_index ON temp_ssids USING btree (crc32id);
+                '''
+
+        with self.conn.cursor() as cursor:
+            cursor.execute(query_fill_temp_ids)
+
+        query_load_publications = f'''
+        SELECT DISTINCT ON (P.ssid) P.ssid, P.crc32id, P.title, P.abstract, P.year, P.aux
+        FROM SSPublications P
+        JOIN temp_ssids AS T ON (P.crc32id = T.crc32id AND P.ssid = T.ssid);
+        '''
+
+        with self.conn.cursor() as cursor:
+            cursor.execute(query_load_publications)
+            self.pub_df = pd.DataFrame(cursor.fetchall(),
+                                       columns=['id', 'crc32id', 'title', 'abstract', 'year', 'aux'],
+                                       dtype=object)
+
+        if np.any(self.pub_df[['id', 'crc32id', 'title']].isna()):
+            raise ValueError('Paper must have ID and title')
+
+        self.pub_df = Loader.process_publications_dataframe(self.pub_df)
+        self.logger.info(f'Found {len(self.pub_df)} publications in the local database', current=current,
+                         task=task)
 
         return self.pub_df
 

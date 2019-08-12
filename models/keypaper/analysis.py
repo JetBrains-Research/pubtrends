@@ -20,29 +20,36 @@ class KeyPaperAnalyzer:
 
         # Determine source to provide correct URLs to articles
         if isinstance(self.loader, PubmedLoader):
-            self.source = 'pubmed'
+            self.source = 'Pubmed'
         elif isinstance(self.loader, SemanticScholarLoader):
-            self.source = 'semantic'
+            self.source = 'Semantic Scholar'
         elif not test:
             raise TypeError("loader should be either PubmedLoader or SemanticScholarLoader")
 
-    def launch(self, *terms, task=None):
+    def launch(self, terms=None, id_list=None, task=None):
         """:return full log"""
 
         try:
-            # Search articles relevant to the terms
             self.terms = terms
-            self.ids = self.loader.search(*terms, current=1, task=task)
-            self.n_papers = len(self.ids)
+            if not id_list:
+                # Search articles relevant to the terms
+                self.ids = self.loader.search(terms, current=1, task=task)
 
-            # Nothing found
-            if self.n_papers == 0:
-                raise RuntimeError("Nothing found")
+                self.n_papers = len(self.ids)
 
-            # Load data about publications, citations and co-citations
-            self.pub_df = self.loader.load_publications(current=2, task=task)
-            if len(self.pub_df) == 0:
-                raise RuntimeError("Nothing found in DB")
+                # Nothing found
+                if self.n_papers == 0:
+                    raise RuntimeError("Nothing found")
+
+                # Load data about publications
+                self.pub_df = self.loader.load_publications(current=2, task=task)
+                if len(self.pub_df) == 0:
+                    raise RuntimeError("Nothing found in DB")
+            else:
+                # Load data about publications with given ids
+                self.ids = id_list
+                self.pub_df = self.loader.search_with_given_ids(id_list, current=1, task=task)
+                self.n_papers = len(self.ids)
 
             cit_stats_df_from_query = self.loader.load_citation_stats(current=3, task=task)
             self.cit_stats_df = self.build_cit_stats_df(cit_stats_df_from_query, self.n_papers, current=4, task=task)
