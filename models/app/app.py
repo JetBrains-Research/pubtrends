@@ -78,13 +78,19 @@ def process():
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        terms = request.form.get('terms').split(' ')
+        terms, id_list = '', ''
         source = request.form.get('source')
+        if 'terms' in request.form:
+            terms = request.form.get('terms').split(' ')
+        elif 'id_list' in request.form:
+            id_list = request.form.get('id_list').split(',')
+        else:
+            raise Exception("Request should contain either terms or list of ids")
 
         redirect_url = '+'.join(terms)
-        if len(terms) > 0:
+        if len(terms) > 0 or id_list:
             # Submit Celery task
-            job = analyze_async.delay(source, terms)
+            job = analyze_async.delay(source=source, terms=terms, id_list=id_list)
             return redirect(flask.url_for('.process', terms=redirect_url, jobid=job.id))
 
     return render_template('main.html', version=PUBTRENDS_CONFIG.version)

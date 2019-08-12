@@ -1,11 +1,9 @@
-import html
 import re
 
 import numpy as np
 import pandas as pd
 from Bio import Entrez
 
-from models.keypaper.utils import extract_authors
 from .loader import Loader
 
 
@@ -14,7 +12,7 @@ class PubmedLoader(Loader):
         super(PubmedLoader, self).__init__(pubtrends_config)
         Entrez.email = pubtrends_config.pm_entrez_email
 
-    def search(self, *terms, current=0, task=None):
+    def search(self, terms, current=0, task=None):
         self.logger.debug(f'TODO: handle queries which return more than {self.max_number_of_articles} items',
                           current=current, task=task)
         self.terms = [t.lower() for t in terms]
@@ -50,14 +48,16 @@ class PubmedLoader(Loader):
 
         if np.any(pub_df[['id', 'title']].isna()):
             raise ValueError('Paper must have PMID and title')
-        pub_df = pub_df.fillna(value={'abstract': ''})
-
-        pub_df['year'] = pub_df['year'].apply(lambda year: int(year) if year else np.nan)
-        pub_df['authors'] = pub_df['aux'].apply(lambda aux: extract_authors(aux['authors']))
-        pub_df['journal'] = pub_df['aux'].apply(lambda aux: html.unescape(aux['journal']['name']))
+        pub_df = Loader.process_publications_dataframe(pub_df)
 
         self.logger.debug(f'Found {len(pub_df)} publications in the local database\n', current=current, task=task)
         return pub_df
+
+    def search_with_given_ids(self, ids, current=0, task=None):
+        self.ids = ids
+        self.values = ', '.join(['({})'.format(i) for i in self.ids])
+        print(self.values)
+        return self.load_publications()
 
     def load_citation_stats(self, current=0, task=None):
         self.logger.info('Loading citations statistics: searching for correct citations over 168 million of citations',
