@@ -93,7 +93,7 @@ class MockDatabaseLoader(Loader):
             map(lambda article: article.to_db_publication(), articles))
 
         query = re.sub(self.VALUES_REGEX, articles_str, '''
-            insert into sspublications(ssid, crc32id, title, year) values $VALUES$;
+            insert into sspublications(ssid, crc32id, title, year, abstract, aux) values $VALUES$;
             alter table sspublications add column tsv TSVECTOR;
             create index sspublications_tsv on sspublications using gin(tsv);
             update sspublications set tsv = to_tsvector(COALESCE(title, ''));

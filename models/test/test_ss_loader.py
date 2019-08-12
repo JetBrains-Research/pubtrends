@@ -2,6 +2,7 @@ import logging
 import re
 import unittest
 
+import pandas as pd
 from pandas.util.testing import assert_frame_equal
 from parameterized import parameterized
 
@@ -9,7 +10,7 @@ from models.keypaper.config import PubtrendsConfig
 from models.keypaper.ss_loader import SemanticScholarLoader
 from models.test.mock_database_loader import MockDatabaseLoader
 from models.test.ss_articles import required_articles, extra_articles, required_citations, cit_stats_df, \
-    pub_df, cit_df, extra_citations, raw_cocitations_df
+    pub_df, cit_df, extra_citations, raw_cocitations_df, part_of_articles, pub_df_given_ids
 
 
 class TestSemanticScholarLoader(unittest.TestCase):
@@ -113,6 +114,13 @@ class TestSemanticScholarLoader(unittest.TestCase):
         expected_cocit_df = raw_cocitations_df
         actual = self.cocitations_df
         assert_frame_equal(expected_cocit_df, actual, "Co-citations dataframe is incorrect")
+
+    def test_search_with_given_ids(self):
+        initial_columns = ['abstract', 'aux', 'crc32id', 'id', 'title', 'year']
+        ids_list = list(map(lambda article: article.ssid, part_of_articles))
+        expected = pub_df_given_ids
+        actual_pub_given_ids = self.loader.search_with_given_ids(ids_list)
+        assert_frame_equal(expected, actual_pub_given_ids[initial_columns], "Wrong publications extracted")
 
     @classmethod
     def tearDownClass(cls):

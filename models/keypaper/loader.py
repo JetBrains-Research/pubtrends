@@ -1,6 +1,10 @@
+import html
 import re
 
+import numpy as np
 import psycopg2 as pg_driver
+
+from models.keypaper.utils import extract_authors
 
 
 class Loader:
@@ -28,3 +32,14 @@ class Loader:
 
     def set_logger(self, logger):
         self.logger = logger
+
+    @staticmethod
+    def process_publications_dataframe(publications_df):
+        publications_df = publications_df.fillna(value={'abstract': ''})
+        publications_df['year'] = publications_df['year'].apply(lambda year: int(year) if year else np.nan)
+        publications_df['authors'] = publications_df['aux'].apply(lambda aux: extract_authors(aux['authors']))
+        publications_df['journal'] = publications_df['aux'].apply(lambda aux: html.unescape(aux['journal']['name']))
+        publications_df['title'] = publications_df['title'].apply(lambda title: html.unescape(title))
+        if 'crc32id' in publications_df:
+            publications_df['crc32id'] = publications_df['crc32id'].apply(int)
+        return publications_df

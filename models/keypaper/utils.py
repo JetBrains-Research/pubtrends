@@ -1,4 +1,5 @@
-﻿import html
+import binascii
+import html
 import logging
 import re
 from collections import Counter
@@ -208,3 +209,14 @@ def extract_authors(authors_list):
         return ''
 
     return ', '.join(filter(None, map(lambda authors: html.unescape(authors['name']), authors_list)))
+
+
+def crc32(hex_string):
+    n = binascii.crc32(bytes.fromhex(hex_string))
+    return to_32_bit_int(n)
+
+
+def to_32_bit_int(n):
+    if n >= (1 << 31):
+        return -(1 << 32) + n
+    return n
