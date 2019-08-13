@@ -152,6 +152,23 @@ class KeyPaperAnalyzer:
             self.loader.close_connection()
             self.logger.remove_handler()
 
+    def launch_paper(self, key, value, task=None):
+        """
+        Launcher for analysis of certain paper specified by key - value pair.
+        :param key: search key, one of 'title', 'doi', 'pmid'
+        :param value: value corresponding to the key
+        :return full log
+        """
+
+        try:
+            # Search article with this key and value
+            self.ids = self.loader.find(key, value, current=1, task=task)
+
+            return self.logger.stream.getvalue()
+        finally:
+            self.loader.close_connection()
+            self.logger.remove_handler()
+
     def build_cit_stats_df(self, cit_stats_df_from_query, n_papers, current=None, task=None):
         # Get citation stats with columns 'id', year_1, ..., year_N and fill NaN with 0
         cit_stats_df = cit_stats_df_from_query.pivot(index='id', columns='year',

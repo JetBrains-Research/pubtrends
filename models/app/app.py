@@ -78,12 +78,14 @@ def process():
                 return render_template('process.html', search_string=f'{key}: {value}',
                                        subpage="paper", query=quote(f'{key}+{value}'),
                                        JOBID=jobid, version=PUBTRENDS_CONFIG.version)
-            if not terms:
-                terms = f"{analysis_type} analysis of the previous query"
-            terms += f" at {source}"
-            return render_template('process.html', search_string=' '.join(terms),
-                                   subpage="result", key="terms", value=quote(' '.join(terms)),
-                                   JOBID=jobid, version=PUBTRENDS_CONFIG.version)
+            else:
+                if not terms:
+                    terms = f"{analysis_type} analysis of the previous query
+                terms += f"at {source}"
+
+                return render_template('process.html', search_string=' '.join(terms),
+                                       subpage="result", key="terms", value=quote(' '.join(terms)),
+                                       JOBID=jobid, version=PUBTRENDS_CONFIG.version)
 
     return render_template_string("Something went wrong...")
 
@@ -91,15 +93,10 @@ def process():
 @app.route('/paper')
 def paper():
     jobid = request.values.get('jobid')
-    source = request.args.get('source')
-    pid = request.args.get('id')
     if jobid:
         job = AsyncResult(jobid, app=celery)
-        _, data = job.result
-
         if job.state == 'SUCCESS':
-            return render_template('paper.html', **prepare_paper_data(data, source, pid),
-                                   version=PUBTRENDS_CONFIG.version)
+            return render_template('paper.html', **job.result)
 
     return render_template_string("Something went wrong...")
 
@@ -129,27 +126,29 @@ def cancel():
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        terms, id_list, zoom, analysis_type = '', '', '', ''
+        terms, id_list, zoom, key, value, analysis_type = '', '', '', '', '', ''
         source = request.form.get('source')
-        key = request.form.get('key')
-        value = request.form.get('value')
+
         if 'terms' in request.form:
             terms = request.form.get('terms')
-            analysis_type = ''
         elif 'id_list' in request.form:
             id_list = request.form.get('id_list').split(',')
             zoom = request.form.get('zoom')
             analysis_type = 'expanded' if zoom == 'out' else 'detailed'
+        elif 'key' in request.form and 'value' in request.form:
+            key = request.form.get('key')
+            value = request.form.get('value')
+        else:
+            raise Exception("Request contains no parameters")
 
         sort = request.form.get('sort')
         amount = request.form.get('amount')
 
-        if len(terms) > 0or id_list:
+        if len(terms) > 0 or id_list:
             # Submit Celery task for topic analysis
             job = analyze_topic_async.delay(source, terms=terms, id_list=id_list, zoom=zoom, sort=sort, amount=amount)
-            return redirect(url_for('.process', terms=terms, analysis_type=analysis_type,
-                                          source=source, jobid=job.id))
-        if len(value) > 0:
+            return redirect(url_for('.process', terms=terms, analysis_type=analysis_type, jobid=job.id))
+        elif len(value) > 0:
             # Submit Celery task for paper analysis
             job = analyze_paper_async.delay(source, key, value)
             return redirect(url_for('.process', key=key, value=value, jobid=job.id))
