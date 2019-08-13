@@ -6,7 +6,7 @@ from collections import Counter
 import nltk
 import numpy as np
 import pandas as pd
-from nltk.corpus import stopwords
+from nltk.corpus import stopwords, wordnet
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -20,8 +20,22 @@ PUBMED_ARTICLE_BASE_URL = 'https://www.ncbi.nlm.nih.gov/pubmed/?term='
 SEMANTIC_SCHOLAR_BASE_URL = 'https://www.semanticscholar.org/paper/'
 
 
+def get_wordnet_pos(treebank_tag):
+    """Convert pos_tag output to WordNetLemmatizer tags."""
+    if treebank_tag.startswith('J'):
+        return wordnet.ADJ
+    elif treebank_tag.startswith('V'):
+        return wordnet.VERB
+    elif treebank_tag.startswith('N'):
+        return wordnet.NOUN
+    elif treebank_tag.startswith('R'):
+        return wordnet.ADV
+    else:
+        return ''
+
+
 def tokenize(text, terms=None):
-    is_noun_or_adj = lambda pos: (pos[:2] == 'NN' or pos == 'JJ')
+    is_noun_or_adj = lambda pos: pos == wordnet.NOUN or pos == wordnet.ADJ
     special_symbols_regex = re.compile(r'[^a-zA-Z0-9\- ]*')
     text = text.lower()
 
@@ -32,11 +46,12 @@ def tokenize(text, terms=None):
 
     tokenized = word_tokenize(re.sub(special_symbols_regex, '', text))
     stop_words = set(stopwords.words('english'))
-    nouns = [word for (word, pos) in nltk.pos_tag(tokenized) if
-             is_noun_or_adj(pos) and word not in stop_words]
+    tagged_words = [(word, get_wordnet_pos(pos)) for word, pos in nltk.pos_tag(tokenized)]
+    words_of_interest = [(word, pos) for word, pos in tagged_words if
+                         word not in stop_words and is_noun_or_adj(pos)]
 
     lemmatizer = WordNetLemmatizer()
-    tokens = list(filter(lambda t: len(t) >= 3, [lemmatizer.lemmatize(n) for n in nouns]))
+    tokens = list(filter(lambda t: len(t) >= 3, [lemmatizer.lemmatize(w, pos=pos) for w, pos in words_of_interest]))
     return tokens
 
 
@@ -96,7 +111,7 @@ def get_subtopic_descriptions(df, comps, size=100):
     for idx in range(n_comps):
         max_cnt = max(most_common[idx].values())
         idfs[idx] = {k: (0.5 + 0.5 * v / max_cnt) *  # augmented frequency to avoid document length bias
-                     np.log(n_comps / sum([k in mcoc for mcoc in most_common])) \
+                        np.log(n_comps / sum([k in mcoc for mcoc in most_common])) \
                      for k, v in most_common[idx].items()}
         kwd[idx] = ','.join([f'{k}:{(max(most_common[idx][k], 1e-3)):.3f}'
                              for k, _v in list(sorted(idfs[idx].items(),
