@@ -288,7 +288,7 @@ class Plotter:
             zoom_in_button.js_on_event(ButtonClick, self.zoom_callback(ColumnDataSource(comp_source[['id']]),
                                                                        self.analyzer.source, zoom='in'))
 
-            p[c] = row(desc, plot, button)
+            p[c] = row(desc, plot, zoom_in_button)
 
         return p
 
