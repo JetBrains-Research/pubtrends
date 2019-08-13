@@ -3,7 +3,7 @@ import unittest
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
 
-from models.keypaper.utils import tokenize, cut_authors_list, split_df_list
+from models.keypaper.utils import tokenize, cut_authors_list, split_df_list, crc32
 
 
 class TestUtils(unittest.TestCase):
@@ -47,3 +47,13 @@ class TestUtils(unittest.TestCase):
         expected_df = pd.DataFrame(expected_data, columns=['id', 'list'])
         actual_df = split_df_list(df_with_list_column, target_column='list', separator=', ')
         assert_frame_equal(expected_df, actual_df, "Splitting list into several rows works incorrectly")
+
+    def test_crc32_positive(self):
+        ssid = '6d8484217c9fa02419536c9118435715d3a8e705'
+        crc32id = 1979136599
+        self.assertEqual(crc32(ssid), crc32id, "Hashed id is wrong (positive case)")
+
+    def test_crc32_negative(self):
+        ssid = 'cc77a65ff80a9d060e48461603bcf06bb0ef9294'
+        crc32id = -189727251
+        self.assertEqual(crc32(ssid), crc32id, "Hashed id is wrong (negative case)")
