@@ -9,7 +9,7 @@ from models.keypaper.config import PubtrendsConfig
 from models.keypaper.ss_loader import SemanticScholarLoader
 from models.test.mock_database_loader import MockDatabaseLoader
 from models.test.ss_articles import required_articles, extra_articles, required_citations, cit_stats_df, \
-    pub_df, cit_df, extra_citations, raw_cocitations_df, part_of_articles, pub_df_given_ids
+    pub_df, cit_df, extra_citations, raw_cocitations_df, part_of_articles, pub_df_given_ids, expanded_articles
 
 
 class TestSemanticScholarLoader(unittest.TestCase):
@@ -104,6 +104,12 @@ class TestSemanticScholarLoader(unittest.TestCase):
         expected = pub_df_given_ids
         actual_pub_given_ids = self.loader.search_with_given_ids(ids_list)
         assert_frame_equal(expected, actual_pub_given_ids[initial_columns], "Wrong publications extracted")
+
+    def test_expand(self):
+        ids = list(map(lambda article: article.ssid, part_of_articles))
+        expected = list(map(lambda article: article.ssid, expanded_articles))
+        actual = self.loader.expand(ids)
+        self.assertSequenceEqual(sorted(expected), sorted(actual), "Wrong list of expanded ids")
 
     @classmethod
     def tearDownClass(cls):

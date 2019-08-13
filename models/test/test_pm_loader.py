@@ -9,7 +9,8 @@ from models.keypaper.config import PubtrendsConfig
 from models.keypaper.pm_loader import PubmedLoader
 from models.test.mock_database_loader import MockDatabaseLoader
 from models.test.pm_articles import REQUIRED_ARTICLES, ARTICLES, EXPECTED_PUB_DF, \
-    INNER_CITATIONS, CITATIONS, EXPECTED_CIT_DF, EXPECTED_COCIT_DF, EXPECTED_CIT_STATS_DF
+    INNER_CITATIONS, CITATIONS, EXPECTED_CIT_DF, EXPECTED_COCIT_DF, EXPECTED_CIT_STATS_DF, \
+    EXPANDED_IDS, PART_OF_ARTICLES, EXPECTED_PUB_DF_GIVEN_IDS
 
 
 class TestPubmedLoader(unittest.TestCase):
@@ -99,6 +100,18 @@ class TestPubmedLoader(unittest.TestCase):
         # Sort to compare with expected
         self.cocit_df = self.cocit_df.sort_values(by=['citing', 'cited_1', 'cited_2']).reset_index(drop=True)
         assert_frame_equal(self.cocit_df, EXPECTED_COCIT_DF, 'Wrong co-citation data')
+
+    def test_search_with_given_ids(self):
+        ids_list = list(map(lambda article: article.pmid, PART_OF_ARTICLES))
+        assert_frame_equal(EXPECTED_PUB_DF_GIVEN_IDS, self.loader.search_with_given_ids(ids_list),
+                           "Wrong publications extracted")
+
+    def test_expand(self):
+        expected = EXPANDED_IDS
+        ids_list = list(map(lambda article: article.pmid, PART_OF_ARTICLES))
+        actual = self.loader.expand(ids_list)
+        self.assertSequenceEqual(sorted(expected), sorted(actual), "Wrong list of expanded ids")
+
 
     @classmethod
     def tearDownClass(cls):

@@ -98,6 +98,10 @@ EXTRA_ARTICLES = [
 
 ARTICLES = REQUIRED_ARTICLES + EXTRA_ARTICLES
 
+PART_OF_ARTICLES = [REQUIRED_ARTICLES[2], REQUIRED_ARTICLES[3]]
+
+EXPANDED_IDS = [2, 3, 4, 5, 7, 8, 9, 10]
+
 OUTER_CITATIONS = [
     ('7', '1'), ('7', '2'), ('7', '3'), ('8', '1'), ('8', '3'),
     ('8', '4'), ('9', '4'), ('9', '5'), ('10', '4'), ('10', '5')
@@ -135,3 +139,6 @@ EXPECTED_CIT_DF = pd.DataFrame(INNER_CITATIONS, columns=['id_out', 'id_in'])
 EXPECTED_COCIT_DF = pd.DataFrame(COCITATIONS, columns=['citing', 'cited_1', 'cited_2', 'year']).sort_values(
     by=['citing', 'cited_1', 'cited_2']
 ).reset_index(drop=True)
+
+EXPECTED_PUB_DF_GIVEN_IDS = pd.DataFrame([article.to_list() for article in PART_OF_ARTICLES],
+                                         columns=['id', 'title', 'aux', 'abstract', 'year', 'authors', 'journal'])
