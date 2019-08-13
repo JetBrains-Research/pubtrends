@@ -1,4 +1,5 @@
 import re
+from collections import Iterable
 
 import numpy as np
 import pandas as pd
@@ -107,7 +108,6 @@ class PubmedLoader(Loader):
     def search_with_given_ids(self, ids, current=0, task=None):
         self.ids = ids
         self.values = ', '.join(['({})'.format(i) for i in self.ids])
-        print(self.values)
         return self.load_publications()
 
     def load_citation_stats(self, current=0, task=None):
@@ -202,3 +202,43 @@ class PubmedLoader(Loader):
         self.logger.debug(f'Found {len(cocit_df)} co-cited pairs of papers', current=current, task=task)
 
         return cocit_df
+
+    def expand(self, ids, current=0, task=None):
+        if isinstance(ids, Iterable):
+            self.logger.info('Expanding current topic', current=current, task=task)
+            values = ', '.join(['({})'.format(i) for i in sorted(ids)])
+
+            query = re.sub(Loader.VALUES_REGEX, values, '''
+                DROP TABLE IF EXISTS TEMP_PMIDS;
+                WITH vals(pmid) AS (VALUES $VALUES$)
+                SELECT pmid INTO temporary table TEMP_PMIDS FROM vals;
+                DROP INDEX IF EXISTS temp_pmids_unique_index;
+                CREATE UNIQUE INDEX temp_pmids_unique_index ON TEMP_PMIDS USING btree (pmid);
+
+                SELECT C.pmid_out, ARRAY_AGG(C.pmid_in)
+                FROM pmcitations C
+                JOIN temp_pmids T
+                ON C.pmid_out = T.pmid OR C.pmid_in = T.pmid
+                GROUP BY C.pmid_out;
+                ''')
+        elif isinstance(ids, int):
+            query = f'''
+                SELECT C.pmid_out, ARRAY_AGG(C.pmid_in)
+                FROM pmcitations C
+                WHERE C.pmid_out = {ids} OR C.pmid_in = {ids}
+                GROUP BY C.pmid_out;
+                '''
+        else:
+            raise TypeError('ids should be either int or Iterable')
+
+        expanded = set()
+        with self.conn.cursor() as cursor:
+            cursor.execute(query)
+
+            for row in cursor.fetchall():
+                citing, cited = row
+                expanded.add(citing)
+                expanded |= set(cited)
+
+        self.logger.info(f'Found {len(expanded)} papers', current=current, task=task)
+        return expanded

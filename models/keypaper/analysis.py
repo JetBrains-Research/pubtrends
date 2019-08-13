@@ -28,7 +28,7 @@ class KeyPaperAnalyzer:
         elif not test:
             raise TypeError("loader should be either PubmedLoader or SemanticScholarLoader")
 
-    def launch(self, search_query=None, id_list=None, limit=None, sort=None, task=None):
+    def launch(self, search_query=None, id_list=None, limit=None, sort=None, zoom=None, task=None):
         """:return full log"""
 
         try:
@@ -51,7 +51,9 @@ class KeyPaperAnalyzer:
                 # Load data about publications with given ids
                 self.terms = search_query
                 self.ids = id_list
-                self.pub_df = self.loader.search_with_given_ids(id_list, current=1, task=task)
+                if zoom == 'out':
+                    self.ids = self.loader.expand(id_list, current=1, task=task)
+                self.pub_df = self.loader.search_with_given_ids(self.ids, current=2, task=task)
                 self.n_papers = len(self.ids)
 
             cit_stats_df_from_query = self.loader.load_citation_stats(current=3, task=task)
@@ -439,7 +441,7 @@ class KeyPaperAnalyzer:
     def popular_authors(self, df, n=20, current=0, task=None):
         self.logger.info("Finding popular authors", current=current, task=task)
 
-        author_stats = self.df[['authors', 'comp']].copy()
+        author_stats = df[['authors', 'comp']].copy()
         author_stats['authors'].replace({'': np.nan, -1: np.nan}, inplace=True)
         author_stats.dropna(subset=['authors'], inplace=True)
 
