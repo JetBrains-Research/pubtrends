@@ -35,7 +35,7 @@ def get_wordnet_pos(treebank_tag):
 
 
 def tokenize(text, terms=None):
-    is_noun_or_adj = lambda pos: pos == wordnet.NOUN or pos == wordnet.ADJ
+    is_noun_or_adj = lambda pos: pos[:2] == 'NN' or pos == 'JJ'
     special_symbols_regex = re.compile(r'[^a-zA-Z0-9\- ]*')
     text = text.lower()
 
@@ -46,12 +46,12 @@ def tokenize(text, terms=None):
 
     tokenized = word_tokenize(re.sub(special_symbols_regex, '', text))
     stop_words = set(stopwords.words('english'))
-    tagged_words = [(word, get_wordnet_pos(pos)) for word, pos in nltk.pos_tag(tokenized)]
-    words_of_interest = [(word, pos) for word, pos in tagged_words if
+    words_of_interest = [(word, pos) for word, pos in nltk.pos_tag(tokenized) if
                          word not in stop_words and is_noun_or_adj(pos)]
 
     lemmatizer = WordNetLemmatizer()
-    tokens = list(filter(lambda t: len(t) >= 3, [lemmatizer.lemmatize(w, pos=pos) for w, pos in words_of_interest]))
+    tokens = list(filter(lambda t: len(t) >= 3, [lemmatizer.lemmatize(w, pos=get_wordnet_pos(pos))
+                                                 for w, pos in words_of_interest]))
     return tokens
 
 
