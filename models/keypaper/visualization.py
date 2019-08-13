@@ -79,9 +79,9 @@ class Plotter:
         """)
 
     @staticmethod
-    def zoom_in_callback(source, db):
+    def zoom_callback(source, db, zoom):
         # submit list of ids and database name to the main page using invisible form
-        return CustomJS(args=dict(source=source, db=db), code="""
+        return CustomJS(args=dict(source=source, db=db, zoom=zoom), code="""
         var data = source.data, url='/';
         var form = document.createElement('form');
         document.body.appendChild(form);
@@ -99,6 +99,12 @@ class Plotter:
         input.type = 'hidden';
         input.name = 'source';
         input.value = db;
+        form.appendChild(input);
+
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'zoom';
+        input.value = zoom;
         form.appendChild(input);
 
         form.submit();
@@ -281,11 +287,15 @@ class Plotter:
 
             desc.image_rgba(image=[img], x=[0], y=[0], dw=[10], dh=[10])
 
-            button = Button(label="Zoom in", button_type="default", width=60)
-            button.js_on_event(ButtonClick,
-                               self.zoom_in_callback(ColumnDataSource(comp_source[['id']]), self.analyzer.source))
+            zoom_in_button = Button(label="Zoom in", button_type="default", width=80)
+            zoom_in_button.js_on_event(ButtonClick, self.zoom_callback(ColumnDataSource(comp_source[['id']]),
+                                                                       self.analyzer.source, zoom='in'))
 
-            p[c] = row(desc, plot, button)
+            zoom_out_button = Button(label="Zoom out", button_type="default", width=80)
+            zoom_out_button.js_on_event(ButtonClick, self.zoom_callback(ColumnDataSource(comp_source[['id']]),
+                                                                        self.analyzer.source, zoom='out'))
+
+            p[c] = row(desc, plot, column(zoom_in_button, zoom_out_button))
 
         return p
 
@@ -475,7 +485,11 @@ class Plotter:
         view[:, :, 3] = 255
 
         desc.image_rgba(image=[img], x=[0], y=[0], dw=[10], dh=[10])
-        p = row(desc, p)
+
+        zoom_out_button = Button(label="Zoom out", button_type="default", width=80)
+        zoom_out_button.js_on_event(ButtonClick, self.zoom_callback(ColumnDataSource(self.analyzer.df[['id']]),
+                                                                    self.analyzer.source, zoom='out'))
+        p = row(desc, p, zoom_out_button)
         return p
 
     def subtopic_evolution(self):

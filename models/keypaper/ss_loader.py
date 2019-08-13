@@ -1,3 +1,5 @@
+from collections import Iterable
+
 import numpy as np
 import pandas as pd
 
@@ -186,6 +188,7 @@ class SemanticScholarLoader(Loader):
                         cocit_data.append((citing, cited[i], cited[j], year))
             cocit_df = pd.DataFrame(cocit_data, columns=['citing', 'cited_1', 'cited_2', 'year'], dtype=object)
 
+        cocit_df.dropna(inplace=True)
         if np.any(cocit_df.isna()):
             raise ValueError('NaN values are not allowed in co-citation DataFrame')
         cocit_df['year'] = cocit_df['year'].apply(int)
@@ -194,3 +197,47 @@ class SemanticScholarLoader(Loader):
         self.logger.debug(f'Found {len(cocit_df)} co-cited pairs of papers', current=current, task=task)
 
         return cocit_df
+
+    def expand(self, ids, current=0, task=None):
+        if isinstance(ids, Iterable):
+            self.logger.info('Expanding current topic', current=current, task=task)
+            crc32ids = list(map(crc32, ids))
+            values = ', '.join(['({0}, \'{1}\')'.format(i, j) for (i, j) in zip(crc32ids, ids)])
+
+            query = f'''
+                DROP TABLE IF EXISTS TEMP_SSIDS;
+                WITH vals(crc32id, ssid) AS (VALUES {values})
+                SELECT crc32id, ssid INTO table TEMP_SSIDS FROM vals;
+                DROP INDEX IF EXISTS temp_ssids_unique_index;
+                CREATE UNIQUE INDEX temp_ssids_unique_index ON TEMP_SSIDS USING btree (crc32id);
+
+                SELECT C.id_out, ARRAY_AGG(C.id_in)
+                FROM sscitations C
+                JOIN temp_ssids T
+                ON (C.crc32id_out = T.crc32id OR C.crc32id_in = T.crc32id)
+                AND (C.id_out = T.ssid OR C.id_in = T.ssid)
+                GROUP BY C.id_out;
+                '''
+        elif isinstance(ids, int):
+            crc32id = crc32(ids)
+            query = f'''
+                SELECT C.id_out, ARRAY_AGG(C.id_in)
+                FROM sscitations C
+                WHERE (C.crc32id_out = {crc32id} OR C.crc32id_in = {crc32id})
+                AND (C.id_out = {ids} OR C.id_in = {ids})
+                GROUP BY C.id_out;
+                '''
+        else:
+            raise TypeError('ids should be either int or Iterable')
+
+        expanded = set()
+        with self.conn.cursor() as cursor:
+            cursor.execute(query)
+
+            for row in cursor.fetchall():
+                citing, cited = row
+                expanded.add(citing)
+                expanded |= set(cited)
+
+        self.logger.info(f'Found {len(expanded)} papers', current=current, task=task)
+        return expanded

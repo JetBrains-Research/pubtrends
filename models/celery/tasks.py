@@ -21,7 +21,7 @@ PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 # Tasks will be served by Celery,
 # specify task name explicitly to avoid problems with modules
 @celery.task(name='analyze_async')
-def analyze_async(source, terms=None, id_list=None):
+def analyze_async(source, terms=None, id_list=None, zoom=None):
     if source == 'Pubmed':
         loader = PubmedLoader(PUBTRENDS_CONFIG)
     elif source == 'Semantic Scholar':
@@ -30,7 +30,7 @@ def analyze_async(source, terms=None, id_list=None):
         raise Exception(f"Unknown source {source}")
     analyzer = KeyPaperAnalyzer(loader)
     # current_task is from @celery.task
-    log = analyzer.launch(terms=terms, id_list=id_list, task=current_task)
+    log = analyzer.launch(terms=terms, id_list=id_list, zoom=zoom, task=current_task)
 
     # Initialize plotter after completion of analysis
     plotter = Plotter(analyzer)
