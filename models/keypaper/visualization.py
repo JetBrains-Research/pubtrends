@@ -284,15 +284,11 @@ class Plotter:
 
             desc.image_rgba(image=[img], x=[0], y=[0], dw=[10], dh=[10])
 
-            zoom_in_button = Button(label="Zoom in", button_type="default", width=80)
+            zoom_in_button = Button(label="Analyze subtopic", button_type="default", width=100)
             zoom_in_button.js_on_event(ButtonClick, self.zoom_callback(ColumnDataSource(comp_source[['id']]),
                                                                        self.analyzer.source, zoom='in'))
 
-            zoom_out_button = Button(label="Zoom out", button_type="default", width=80)
-            zoom_out_button.js_on_event(ButtonClick, self.zoom_callback(ColumnDataSource(comp_source[['id']]),
-                                                                        self.analyzer.source, zoom='out'))
-
-            p[c] = row(desc, plot, column(zoom_in_button, zoom_out_button))
+            p[c] = row(desc, plot, column(zoom_in_button))
 
         return p
 
@@ -483,7 +479,7 @@ class Plotter:
 
         desc.image_rgba(image=[img], x=[0], y=[0], dw=[10], dh=[10])
 
-        zoom_out_button = Button(label="Zoom out", button_type="default", width=80)
+        zoom_out_button = Button(label="Expand topic", button_type="default", width=100)
         zoom_out_button.js_on_event(ButtonClick, self.zoom_callback(ColumnDataSource(self.analyzer.df[['id']]),
                                                                     self.analyzer.source, zoom='out'))
         p = row(desc, p, zoom_out_button)
