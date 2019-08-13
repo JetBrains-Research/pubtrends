@@ -175,6 +175,10 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
         else:
             self.assertIsNone(year_range, msg='Year range is not None when step is too large')
 
+    def test_get_most_cited_papers_for_comps(self):
+        comps = self.analyzer.get_most_cited_papers_for_comps(self.analyzer.df, n=1)
+        self.assertDictEqual(comps, {0: ['3'], 1: ['1']})
+
 
 if __name__ == '__main__':
     unittest.main()
