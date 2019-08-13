@@ -143,12 +143,14 @@ def index():
 
         sort = request.form.get('sort')
         amount = request.form.get('amount')
-        if len(terms) > 0 or id_list:
-            # Submit Celery task
+
+        if len(terms) > 0or id_list:
+            # Submit Celery task for topic analysis
             job = analyze_topic_async.delay(source, terms=terms, id_list=id_list, zoom=zoom, sort=sort, amount=amount)
             return redirect(url_for('.process', terms=terms, analysis_type=analysis_type,
                                           source=source, jobid=job.id))
         if len(value) > 0:
+            # Submit Celery task for paper analysis
             job = analyze_paper_async.delay(source, key, value)
             return redirect(url_for('.process', key=key, value=value, jobid=job.id))
 

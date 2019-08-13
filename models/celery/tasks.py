@@ -131,3 +131,23 @@ def prepare_paper_data(data, source, pid):
         result['abstract'] = abstract
 
     return result
+
+
+@celery.task(name='analyze_paper_async')
+def analyze_paper_async(source, key, value):
+    if source == 'Pubmed':
+        loader = PubmedLoader(PUBTRENDS_CONFIG)
+    elif source == 'Semantic Scholar':
+        loader = SemanticScholarLoader(PUBTRENDS_CONFIG)
+    else:
+        raise Exception(f"Unknown source {source}")
+
+    analyzer = KeyPaperAnalyzer(loader)
+    log = analyzer.launch_paper(key, value, task=current_task)
+
+    result = {
+        'log': log,
+        'ids': analyzer.ids
+    }
+
+    return result
