@@ -105,6 +105,11 @@ class PubmedLoader(Loader):
         self.logger.debug(f'Found {len(pub_df)} publications in the local database\n', current=current, task=task)
         return pub_df
 
+    def search_with_given_ids(self, ids, current=0, task=None):
+        self.ids = ids
+        self.values = ', '.join(['({})'.format(i) for i in self.ids])
+        return self.load_publications()
+
     def load_citation_stats(self, current=0, task=None):
         self.logger.info('Loading citations statistics: searching for correct citations over 168 million of citations',
                          current=current, task=task)
