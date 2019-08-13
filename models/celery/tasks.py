@@ -20,8 +20,8 @@ PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
 # Tasks will be served by Celery,
 # specify task name explicitly to avoid problems with modules
-@celery.task(name='analyze_async')
-def analyze_async(source, terms):
+@celery.task(name='analyze_topic_async')
+def analyze_topic_async(source, terms):
     if source == 'Pubmed':
         loader = PubmedLoader(PUBTRENDS_CONFIG)
         amount_of_papers = '29 million'
@@ -62,5 +62,25 @@ def analyze_async(source, terms):
     subtopic_evolution = plotter.subtopic_evolution()
     if subtopic_evolution:
         result['subtopic_evolution'] = [components(subtopic_evolution)]
+
+    return result
+
+
+@celery.task(name='analyze_paper_async')
+def analyze_paper_async(source, key, value):
+    if source == 'Pubmed':
+        loader = PubmedLoader(PUBTRENDS_CONFIG)
+    elif source == 'Semantic Scholar':
+        loader = SemanticScholarLoader(PUBTRENDS_CONFIG)
+    else:
+        raise Exception(f"Unknown source {source}")
+
+    analyzer = KeyPaperAnalyzer(loader)
+    log = analyzer.launch_paper(key, value, task=current_task)
+
+    result = {
+        'log': log,
+        'ids': analyzer.ids
+    }
 
     return result

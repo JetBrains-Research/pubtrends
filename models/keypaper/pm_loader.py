@@ -14,6 +14,19 @@ class PubmedLoader(Loader):
         super(PubmedLoader, self).__init__(pubtrends_config)
         Entrez.email = pubtrends_config.pm_entrez_email
 
+    def find(self, key, value, current=0, task=None):
+        self.logger.info(f"Searching for a publication with {key} '{value}'", current=current, task=task)
+        query = f"""
+        SELECT pmid FROM PMPublications
+        WHERE {key} = {repr(value)};
+        """
+
+        with self.conn.cursor() as cursor:
+            cursor.execute(query)
+            result = cursor.fetchall()
+
+        return [row[0] for row in result]
+
     def search(self, *terms, current=0, task=None):
         self.logger.debug(f'TODO: handle queries which return more than {self.max_number_of_articles} items',
                           current=current, task=task)
