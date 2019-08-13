@@ -50,7 +50,7 @@
                         $('.progress-bar').css('width', response.progress + '%').attr('aria-valuenow', response.progress);
                         $('.progress-bar-label').text(response.progress + '%');
                         if (response.state === 'SUCCESS') {
-                            window.location.replace("/result?terms={{url_search_string}}&jobid={{JOBID}}");
+                            window.location.replace("/{{subpage}}?{{key}}={{value}}&jobid={{JOBID}}");
                         } else {
                             $('#log').html(response.log);
                             setTimeout(poll_progress, TIMEOUT);

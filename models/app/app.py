@@ -2,14 +2,13 @@ import html
 import json
 from urllib.parse import quote
 
-import flask
 from celery.result import AsyncResult
 from flask import (
-    Flask, request, redirect,
+    Flask, request, redirect, url_for,
     render_template, render_template_string
 )
 
-from models.celery.tasks import celery, analyze_async
+from models.celery.tasks import celery, analyze_paper_async, analyze_topic_async
 from models.keypaper.config import PubtrendsConfig
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
@@ -71,15 +70,30 @@ def process():
         terms = request.args.get('terms')
         analysis_type = request.values.get('analysis_type')
         source = request.values.get('source')
+        key = request.args.get('key')
+        value = request.args.get('value')
         if jobid:
+            if key and value:
+                return render_template('process.html', search_string=f'{key}: {value}',
+                                       subpage="paper", query=quote(f'{key}+{value}'),
+                                       JOBID=jobid, version=PUBTRENDS_CONFIG.version)
             if not terms:
                 terms = f"{analysis_type} analysis of the previous query"
             terms += f" at {source}"
+            return render_template('process.html', search_string=' '.join(terms),
+                                   subpage="result", key="terms", value=quote(' '.join(terms)),
+                                   JOBID=jobid, version=PUBTRENDS_CONFIG.version)
 
-            return render_template('process.html', search_string=terms,
-                                   url_search_string=quote(terms),
-                                   source=source, JOBID=jobid,
-                                   version=PUBTRENDS_CONFIG.version)
+    return render_template_string("Something went wrong...")
+
+
+@app.route('/paper')
+def paper():
+    jobid = request.values.get('jobid')
+    if jobid:
+        job = AsyncResult(jobid, app=celery)
+        if job.state == 'SUCCESS':
+            return render_template('paper.html', **job.result)
 
     return render_template_string("Something went wrong...")
 
@@ -109,8 +123,10 @@ def cancel():
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        terms, id_list, zoom = '', '', ''
+        terms, id_list, zoom, analysis_type = '', '', '', ''
         source = request.form.get('source')
+        key = request.form.get('key')
+        value = request.form.get('value')
         if 'terms' in request.form:
             terms = request.form.get('terms')
             analysis_type = ''
@@ -118,16 +134,17 @@ def index():
             id_list = request.form.get('id_list').split(',')
             zoom = request.form.get('zoom')
             analysis_type = 'expanded' if zoom == 'out' else 'detailed'
-        else:
-            raise Exception("Request should contain either terms or list of ids")
 
         sort = request.form.get('sort')
         amount = request.form.get('amount')
         if len(terms) > 0 or id_list:
             # Submit Celery task
-            job = analyze_async.delay(source, terms=terms, id_list=id_list, zoom=zoom, sort=sort, amount=amount)
-            return redirect(flask.url_for('.process', terms=terms, analysis_type=analysis_type,
+            job = analyze_topic_async.delay(source, terms=terms, id_list=id_list, zoom=zoom, sort=sort, amount=amount)
+            return redirect(url_for('.process', terms=terms, analysis_type=analysis_type,
                                           source=source, jobid=job.id))
+        if len(value) > 0:
+            job = analyze_paper_async.delay(source, key, value)
+            return redirect(url_for('.process', key=key, value=value, jobid=job.id))
 
     return render_template('main.html', version=PUBTRENDS_CONFIG.version,
                            amounts=PUBTRENDS_CONFIG.show_max_articles_options,
