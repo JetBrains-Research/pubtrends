@@ -32,7 +32,7 @@ class KeyPaperAnalyzer:
         """:return full log"""
 
         try:
-            if not id_list:
+            if search_query:
                 # Search articles relevant to the terms
                 special_symbols = re.compile('\\W+')
                 self.terms = [term.strip() for term in re.sub(special_symbols, ' ', search_query).split()]
@@ -47,7 +47,7 @@ class KeyPaperAnalyzer:
                 self.pub_df = self.loader.load_publications(current=2, task=task)
                 if len(self.pub_df) == 0:
                     raise RuntimeError("Nothing found in DB")
-            else:
+            elif id_list:
                 # Load data about publications with given ids
                 self.terms = search_query
                 self.ids = id_list

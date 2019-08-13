@@ -17,13 +17,13 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.analyzer = KeyPaperAnalyzer(MockLoader(), test=True)
-        cls.analyzer.launch('')
+        cls.analyzer.launch(search_query='')
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations()
         cls.analyzer.G = cls.analyzer.build_citation_graph(cls.analyzer.cit_df)
 
     @parameterized.expand([
-        ('pubmed', PubmedLoader(PUBTRENDS_CONFIG), False, 'pubmed'),
-        ('semantic scholar', SemanticScholarLoader(PUBTRENDS_CONFIG), False, 'semantic')
+        ('Pubmed', PubmedLoader(PUBTRENDS_CONFIG), False, 'Pubmed'),
+        ('Semantic Scholar', SemanticScholarLoader(PUBTRENDS_CONFIG), False, 'Semantic Scholar')
     ])
     def test_valid_source(self, name, loader, test, expected):
         analyzer = KeyPaperAnalyzer(loader, test=test)
