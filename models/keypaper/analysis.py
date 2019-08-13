@@ -31,7 +31,7 @@ class KeyPaperAnalyzer:
 
         try:
             self.terms = terms
-            if not id_list:
+            if terms:
                 # Search articles relevant to the terms
                 self.ids = self.loader.search(terms, current=1, task=task)
 
@@ -45,7 +45,7 @@ class KeyPaperAnalyzer:
                 self.pub_df = self.loader.load_publications(current=2, task=task)
                 if len(self.pub_df) == 0:
                     raise RuntimeError("Nothing found in DB")
-            else:
+            elif id_list:
                 # Load data about publications with given ids
                 self.ids = id_list
                 if zoom == 'out':
