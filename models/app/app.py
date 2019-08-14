@@ -8,7 +8,7 @@ from flask import (
     render_template, render_template_string
 )
 
-from models.celery.tasks import celery, analyze_paper_async, analyze_topic_async
+from models.celery.tasks import celery, analyze_paper_async, analyze_topic_async, prepare_paper_data
 from models.keypaper.config import PubtrendsConfig
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
@@ -52,10 +52,11 @@ def result():
     terms = request.args.get('terms')
     if jobid:
         job = AsyncResult(jobid, app=celery)
+        data, _ = job.result
         if job.state == 'SUCCESS':
             return render_template('result.html', search_string=terms,
                                    version=PUBTRENDS_CONFIG.version,
-                                   **job.result)
+                                   **data)
 
     return render_template_string("Something went wrong...")
 
@@ -92,10 +93,15 @@ def process():
 @app.route('/paper')
 def paper():
     jobid = request.values.get('jobid')
+    source = request.args.get('source')
+    pid = request.args.get('id')
     if jobid:
         job = AsyncResult(jobid, app=celery)
+        _, data = job.result
+
         if job.state == 'SUCCESS':
-            return render_template('paper.html', **job.result)
+            return render_template('paper.html', **prepare_paper_data(data, source, pid),
+                                   version=PUBTRENDS_CONFIG.version)
 
     return render_template_string("Something went wrong...")
 
