@@ -2,9 +2,7 @@ import logging
 from string import Template
 
 import holoviews as hv
-import ipywidgets as widgets
 import numpy as np
-from IPython.display import display
 from bokeh.colors import RGB
 from bokeh.core.properties import value
 from bokeh.events import ButtonClick
@@ -16,18 +14,18 @@ from bokeh.models import GraphRenderer, StaticLayoutProvider
 from bokeh.models import HoverTool, PanTool, WheelZoomTool, BoxZoomTool, ResetTool, SaveTool
 from bokeh.models import LinearColorMapper, PrintfTickFormatter, ColorBar
 from bokeh.models import NumeralTickFormatter
-from bokeh.models import Plot, Range1d, MultiLine, Circle, Span
+from bokeh.models import Plot, Range1d, MultiLine, Circle
 from bokeh.models.widgets import Button
 from bokeh.models.widgets.tables import DataTable, TableColumn
 from bokeh.palettes import Category20
-from bokeh.plotting import figure, show
+from bokeh.plotting import figure
 from bokeh.transform import factor_cmap
 from holoviews import dim
 from matplotlib import pyplot as plt
 from pandas import RangeIndex
 from wordcloud import WordCloud
 
-from .utils import PUBMED_ARTICLE_BASE_URL, SEMANTIC_SCHOLAR_BASE_URL, get_word_cloud_data, \
+from .utils import LOCAL_BASE_URL, get_word_cloud_data, \
     get_most_common_ngrams, cut_authors_list
 from .visualization_data import PlotPreprocessor
 
@@ -36,29 +34,34 @@ hv.extension('bokeh')
 
 
 class Plotter:
-    def __init__(self, analyzer):
+    def __init__(self, analyzer=None):
         self.analyzer = analyzer
-        self.comp_palette = []
-        n_comps = len(self.analyzer.components)
-        for color in Category20[20][:n_comps]:
-            self.comp_palette.append(RGB(*PlotPreprocessor.hex2rgb(color)))
+
+        if self.analyzer:
+            self.comp_palette = []
+            n_comps = len(self.analyzer.components)
+            for color in Category20[20][:n_comps]:
+                self.comp_palette.append(RGB(*PlotPreprocessor.hex2rgb(color)))
 
     @staticmethod
-    def pubmed_callback(source, db):
-        if db == 'Semantic Scholar':
-            base = SEMANTIC_SCHOLAR_BASE_URL
-        elif db == 'Pubmed':
-            base = PUBMED_ARTICLE_BASE_URL
+    def paper_callback(source, db):
+        if db in ['semantic', 'pubmed']:
+            base = LOCAL_BASE_URL.substitute(source=db)
         else:
             raise ValueError("Wrong value of db")
         return CustomJS(args=dict(source=source, base=base), code="""
             var data = source.data, selected = source.selected.indices;
+            
+            // Decode jobid from URL, which is supposed to be last
+            var tokens = window.location.href.split('&');
+            var jobid = tokens[tokens.length - 1];
+            
             if (selected.length == 1) {
                 // only consider case where one glyph is selected by user
                 selected_id = data['id'][selected[0]]
                 for (var i = 0; i < data['id'].length; ++i){
                     if (data['id'][i] == selected_id) {
-                        window.open(base + data['id'][i], '_blank');
+                        window.open(base + data['id'][i] + '&' + jobid);
                         // avoid opening multiple tabs with the same article
                         break;
                     }
@@ -348,7 +351,7 @@ class Plotter:
             ("Year", '@paper_year'),
             ("Cited by", '@count papers in @year')
         ])
-        p.js_on_event('tap', self.pubmed_callback(ds_max, self.analyzer.source))
+        p.js_on_event('tap', self.paper_callback(ds_max, self.analyzer.source))
         p.vbar(x='year', width=0.8, top='count', fill_alpha=0.5, source=ds_max, fill_color=colors,
                line_color=colors)
         return p
@@ -377,64 +380,27 @@ class Plotter:
             ("Author(s)", '@authors'),
             ("Year", '@paper_year'),
             ("Relative Gain", '@rel_gain in @year')])
-        p.js_on_event('tap', self.pubmed_callback(ds_max, self.analyzer.source))
+        p.js_on_event('tap', self.paper_callback(ds_max, self.analyzer.source))
 
         p.vbar(x='year', width=0.8, top='rel_gain', fill_alpha=0.5, source=ds_max,
                fill_color=colors, line_color=colors)
         return p
 
-    def article_citation_dynamics(self):
-        logging.info('Choose ID to get detailed citations timeline '
-                     'for top cited / max gain or relative gain papers')
-        highlight_papers = sorted(self.analyzer.top_cited_papers.union(
-            self.analyzer.max_gain_papers, self.analyzer.max_rel_gain_papers))
-
-        def update(b):
-            id = dropdown.value
-            data = self.analyzer.df[self.analyzer.df['id'] == id]
-
-            x = self.analyzer.years
-            y = data[x].values[0]
-
-            bar.data_source.data = {'x': x, 'y': y}
-            span.location = data['year'].values[0]
-
-            push_notebook(handle=h)
-
-        title = "Number of Citations per Year"
-        d = ColumnDataSource(data=dict(x=[], y=[]))
+    @staticmethod
+    def article_citation_dynamics(df, pid):
+        d = PlotPreprocessor.article_citation_dynamics_data(df, pid)
 
         p = figure(tools=TOOLS, toolbar_location="above", plot_width=960,
-                   plot_height=300, title=title)
-        bar = p.vbar(x='x', width=0.8, top='y', source=d, color='#A6CEE3', line_width=3)
-        span = Span(location=None, dimension='height', line_color='red',
-                    line_dash='dashed', line_width=3)
+                   plot_height=300, title="Number of Citations per Year")
+        p.vbar(x='x', width=0.8, top='y', source=d, color='#A6CEE3', line_width=3)
         p.xaxis.axis_label = "Year"
         p.yaxis.axis_label = "Number of citations"
         p.hover.tooltips = [
             ("Year", "@x"),
             ("Cited by", "@y paper(s) in @x"),
         ]
-        p.renderers.append(span)
 
-        dropdown = widgets.Dropdown(
-            options=list(highlight_papers),
-            description='ID:',
-            disabled=False
-        )
-
-        button = widgets.Button(
-            description='Show',
-            disabled=False,
-            button_style='info',
-            tooltip='Show'
-        )
-        button.on_click(update)
-
-        panel = widgets.HBox([dropdown, button])
-
-        display(panel)
-        h = show(p, notebook_handle=True)
+        return p
 
     def papers_statistics(self):
         ds_stats = PlotPreprocessor.papers_statistics_data(self.analyzer.df)
@@ -603,7 +569,7 @@ class Plotter:
             ("Author(s)", '@authors'),
             ("Year", '@year'),
             ("Cited by", '@total paper(s) total')])
-        p.js_on_event('tap', self.pubmed_callback(source, self.analyzer.source))
+        p.js_on_event('tap', self.paper_callback(source, self.analyzer.source))
 
         return p
 
