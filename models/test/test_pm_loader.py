@@ -112,7 +112,6 @@ class TestPubmedLoader(unittest.TestCase):
         actual = self.loader.expand(ids_list)
         self.assertSequenceEqual(sorted(expected), sorted(actual), "Wrong list of expanded ids")
 
-
     @classmethod
     def tearDownClass(cls):
         cls.loader.close_connection()
