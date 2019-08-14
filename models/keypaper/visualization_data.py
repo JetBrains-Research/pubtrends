@@ -102,7 +102,7 @@ class PlotPreprocessor:
 
         # Map each node to corresponding component
         cluster_edges = links.merge(df[['id', 'comp']], how='left', left_on='source', right_on='id') \
-                             .merge(df[['id', 'comp']], how='left', left_on='target', right_on='id')
+            .merge(df[['id', 'comp']], how='left', left_on='target', right_on='id')
 
         # Calculate connectivity matrix for components
         cluster_edges = cluster_edges.groupby(['comp_x', 'comp_y'])['value'].sum().reset_index()
@@ -242,3 +242,12 @@ class PlotPreprocessor:
         cols = ['year', 'id', 'title', 'authors']
         df_stats = df[cols].groupby(['year']).size().reset_index(name='counts')
         return ColumnDataSource(df_stats)
+
+    @staticmethod
+    def article_citation_dynamics_data(df, pid):
+        sel = df[df['id'] == pid]
+        year = int(sel['year'].values[0])
+
+        x = [col for col in df.columns if isinstance(col, (int, float)) and col >= year]
+        y = list(sel[x].values[0])
+        return ColumnDataSource(data=dict(x=x, y=y))
