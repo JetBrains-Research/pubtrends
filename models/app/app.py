@@ -93,10 +93,15 @@ def process():
 @app.route('/paper')
 def paper():
     jobid = request.values.get('jobid')
+    source = request.args.get('source')
+    pid = request.args.get('id')
     if jobid:
         job = AsyncResult(jobid, app=celery)
+        _, data = job.result
+
         if job.state == 'SUCCESS':
-            return render_template('paper.html', **job.result)
+            return render_template('paper.html', **prepare_paper_data(data, source, pid),
+                                   version=PUBTRENDS_CONFIG.version)
 
     return render_template_string("Something went wrong...")
 

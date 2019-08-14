@@ -6,7 +6,6 @@ import numpy as np
 from bokeh.colors import RGB
 from bokeh.core.properties import value
 from bokeh.events import ButtonClick
-from bokeh.io import push_notebook
 from bokeh.layouts import row, column
 from bokeh.models import ColumnDataSource, CustomJS, HTMLTemplateFormatter, NodesAndLinkedEdges, TapTool
 from bokeh.models import GraphRenderer, StaticLayoutProvider

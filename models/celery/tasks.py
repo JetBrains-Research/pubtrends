@@ -1,8 +1,8 @@
+import numpy as np
 import os
 import pandas as pd
 import html
 
-import numpy as np
 from bokeh.embed import components
 from celery import Celery, current_task
 
@@ -82,65 +82,6 @@ def analyze_paper_async(source, key, value):
     elif source == 'Semantic Scholar':
         loader = SemanticScholarLoader(PUBTRENDS_CONFIG)
     else:
-        raise Exception(f"Unknown source {source}")
-
-    analyzer = KeyPaperAnalyzer(loader)
-    log = analyzer.launch_paper(key, value, task=current_task)
-
-    result = {
-        'log': log,
-        'ids': analyzer.ids
-    }
-
-    return result
-
-
-def prepare_paper_data(data, source, pid):
-    df = pd.read_json(data)
-    df['id'] = df['id'].apply(str)
-
-    plotter = Plotter()
-
-    if source == 'pubmed':
-        url = PUBMED_ARTICLE_BASE_URL + pid
-        source_name = 'Pubmed'
-    elif source == 'semantic':
-        url = SEMANTIC_SCHOLAR_BASE_URL + pid
-        source_name = 'Semantic Scholar'
-    else:
-        raise ValueError('Bad source')
-
-    sel = df[df['id'] == pid]
-
-    max_title_length = 100
-    title = sel['title'].values[0]
-    trimmed_title = f'{title[:max_title_length]}...' if len(title) > max_title_length else title
-
-    result = {
-        'title': title,
-        'trimmed_title': trimmed_title,
-        'authors': sel['authors'].values[0],
-        'journal': sel['journal'].values[0],
-        'year': sel['year'].values[0],
-        'url': url,
-        'source': source_name,
-        'citation_dynamics': [components(plotter.article_citation_dynamics(df, pid))]
-    }
-
-    abstract = sel['abstract'].values[0]
-    if abstract != '':
-        result['abstract'] = abstract
-
-    return result, analyzer.dump()
-
-
-@celery.task(name='analyze_paper_async')
-def analyze_paper_async(source, key, value):
-    if source == 'Pubmed':
-        loader = PubmedLoader(PUBTRENDS_CONFIG)
-    elif source == 'Semantic Scholar':
-        loader = SemanticScholarLoader(PUBTRENDS_CONFIG)
-    else:
         raise ValueError(f"Unknown source {source}")
 
     analyzer = KeyPaperAnalyzer(loader)
@@ -207,25 +148,5 @@ def prepare_paper_data(data, source, pid):
     abstract = sel['abstract'].values[0]
     if abstract != '':
         result['abstract'] = abstract
-
-    return result
-
-
-@celery.task(name='analyze_paper_async')
-def analyze_paper_async(source, key, value):
-    if source == 'Pubmed':
-        loader = PubmedLoader(PUBTRENDS_CONFIG)
-    elif source == 'Semantic Scholar':
-        loader = SemanticScholarLoader(PUBTRENDS_CONFIG)
-    else:
-        raise Exception(f"Unknown source {source}")
-
-    analyzer = KeyPaperAnalyzer(loader)
-    log = analyzer.launch_paper(key, value, task=current_task)
-
-    result = {
-        'log': log,
-        'ids': analyzer.ids
-    }
 
     return result
