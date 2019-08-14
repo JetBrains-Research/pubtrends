@@ -1,5 +1,6 @@
 import os
 
+import pandas as pd
 from bokeh.embed import components
 from celery import Celery, current_task
 
@@ -7,6 +8,7 @@ from models.keypaper.analysis import KeyPaperAnalyzer
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.pm_loader import PubmedLoader
 from models.keypaper.ss_loader import SemanticScholarLoader
+from models.keypaper.utils import PUBMED_ARTICLE_BASE_URL, SEMANTIC_SCHOLAR_BASE_URL
 from models.keypaper.visualization import Plotter
 
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379'),
@@ -24,10 +26,8 @@ SORT_METHODS = {'Most Cited': 'citations', 'Most Relevant': 'relevance', 'Most R
 def analyze_topic_async(terms, source, sort, amount):
     if source == 'Pubmed':
         loader = PubmedLoader(PUBTRENDS_CONFIG)
-        amount_of_papers = '29 million'
     elif source == 'Semantic Scholar':
         loader = SemanticScholarLoader(PUBTRENDS_CONFIG)
-        amount_of_papers = '45 million'
     else:
         raise Exception(f"Unknown source {source}")
 
@@ -36,7 +36,7 @@ def analyze_topic_async(terms, source, sort, amount):
     log = analyzer.launch(terms, limit=str(amount), sort=SORT_METHODS[sort], task=current_task)
 
     # Initialize plotter after completion of analysis
-    plotter = Plotter(analyzer)
+    plotter = Plotter(analyzer=analyzer)
 
     # Order is important here!
     result = {
@@ -56,8 +56,6 @@ def analyze_topic_async(terms, source, sort, amount):
         'clusters_info_message': plotter.clusters_info_message,
         'author_statistics': [components(plotter.author_statistics())],
         'journal_statistics': [components(plotter.journal_statistics())]
-        # TODO: this doesn't work
-        # 'citations_dynamics': [components(plotter.article_citation_dynamics())],
     }
 
     # Pass subtopic evolution only if not None
@@ -65,7 +63,7 @@ def analyze_topic_async(terms, source, sort, amount):
     if subtopic_evolution:
         result['subtopic_evolution'] = [components(subtopic_evolution)]
 
-    return result
+    return result, analyzer.df.to_json()
 
 
 @celery.task(name='analyze_paper_async')
@@ -84,5 +82,44 @@ def analyze_paper_async(source, key, value):
         'log': log,
         'ids': analyzer.ids
     }
+
+    return result
+
+
+def prepare_paper_data(data, source, pid):
+    df = pd.read_json(data)
+    df['id'] = df['id'].apply(str)
+
+    plotter = Plotter()
+
+    if source == 'pubmed':
+        url = PUBMED_ARTICLE_BASE_URL + pid
+        source_name = 'Pubmed'
+    elif source == 'semantic':
+        url = SEMANTIC_SCHOLAR_BASE_URL + pid
+        source_name = 'Semantic Scholar'
+    else:
+        raise ValueError('Bad source')
+
+    sel = df[df['id'] == pid]
+
+    max_title_length = 100
+    title = sel['title'].values[0]
+    trimmed_title = f'{title[:max_title_length]}...' if len(title) > max_title_length else title
+
+    result = {
+        'title': title,
+        'trimmed_title': trimmed_title,
+        'authors': sel['authors'].values[0],
+        'journal': sel['journal'].values[0],
+        'year': sel['year'].values[0],
+        'url': url,
+        'source': source_name,
+        'citation_dynamics': [components(plotter.article_citation_dynamics(df, pid))]
+    }
+
+    abstract = sel['abstract'].values[0]
+    if abstract != '':
+        result['abstract'] = abstract
 
     return result

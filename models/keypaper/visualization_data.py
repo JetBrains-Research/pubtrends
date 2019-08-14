@@ -247,3 +247,12 @@ class PlotPreprocessor:
         cols = ['year', 'id', 'title', 'authors']
         df_stats = df[cols].groupby(['year']).size().reset_index(name='counts')
         return ColumnDataSource(df_stats)
+
+    @staticmethod
+    def article_citation_dynamics_data(df, pid):
+        sel = df[df['id'] == pid]
+        year = int(sel['year'].values[0])
+
+        x = [col for col in df.columns if isinstance(col, (int, float)) and col >= year]
+        y = list(sel[x].values[0])
+        return ColumnDataSource(data=dict(x=x, y=y))
