@@ -7,6 +7,7 @@ import pandas as pd
 from Bio import Entrez
 
 from .loader import Loader
+from .utils import extract_authors
 
 
 class PubmedLoader(Loader):
