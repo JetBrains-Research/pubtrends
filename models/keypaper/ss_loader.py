@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from .loader import Loader
+from .utils import extract_authors
 
 
 class SemanticScholarLoader(Loader):

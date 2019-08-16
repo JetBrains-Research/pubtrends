@@ -5,8 +5,8 @@ import numpy as np
 import pandas as pd
 from Bio import Entrez
 
-from models.keypaper.utils import extract_authors
 from .loader import Loader
+from .utils import extract_authors
 
 
 class PubmedLoader(Loader):
