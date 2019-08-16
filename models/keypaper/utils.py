@@ -2,15 +2,17 @@ import binascii
 import html
 import logging
 import re
+import sys
 from collections import Counter
 
 import nltk
 import numpy as np
 import pandas as pd
 from nltk.corpus import stopwords, wordnet
-from nltk.stem import WordNetLemmatizer
+from nltk.stem import WordNetLemmatizer, SnowballStemmer
 from nltk.tokenize import word_tokenize
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.decomposition import LatentDirichletAllocation
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 
 nltk.download('stopwords')
 nltk.download('punkt')
@@ -54,6 +56,21 @@ def tokenize(text, terms=None):
     tokens = list(filter(lambda t: len(t) >= 3, [lemmatizer.lemmatize(w, pos=get_wordnet_pos(pos))
                                                  for w, pos in words_of_interest]))
     return tokens
+    lemmatized = [lemmatizer.lemmatize(w, pos=get_wordnet_pos(pos)) for w, pos in words_of_interest]
+
+    stemmer = SnowballStemmer('english')
+    stemmed = [(stemmer.stem(word), word) for word in lemmatized]
+
+    # Substitute each stem with the shortest similar word
+    stems_mapping = {}
+    for stem, word in stemmed:
+        if stem in stems_mapping:
+            if len(stems_mapping[stem]) > len(word):
+                stems_mapping[stem] = word
+        else:
+            stems_mapping[stem] = word
+
+    return [stems_mapping[stem] for stem, _ in stemmed]
 
 
 def get_ngrams(text, n=1):
@@ -209,6 +226,35 @@ def extract_authors(authors_list):
         return ''
 
     return ', '.join(filter(None, map(lambda authors: html.unescape(authors['name']), authors_list)))
+
+
+def lda_subtopics(df, n_words, n_topics):
+    logging.info(f'Building corpus from {len(df)} articles')
+    corpus = [f'{title} {abstract}'
+              for title, abstract in zip(df['title'].values, df['abstract'].values)]
+    logging.info(f'Corpus size: {sys.getsizeof(corpus)} bytes')
+
+    logging.info(f'Counting word usage in the corpus, using only {n_words} most frequent words')
+    vectorizer = CountVectorizer(tokenizer=tokenize, max_features=n_words)
+    tfidf = vectorizer.fit_transform(corpus)
+    logging.info(f'Output shape: {tfidf.shape}')
+
+    logging.info(f'Performing LDA subtopic analysis')
+    lda = LatentDirichletAllocation(n_components=n_topics, random_state=0)
+    lda.fit(tfidf)
+
+    topics = lda.transform(tfidf)
+    logging.info('Done')
+    return topics, lda, vectorizer
+
+
+def explain_lda_subtopics(lda, vectorizer, n_top_words):
+    feature_names = vectorizer.get_feature_names()
+    explanations = {}
+    for i, topic in enumerate(lda.components_):
+        explanations[i] = [(topic[i], feature_names[i]) for i in topic.argsort()[:-n_top_words - 1:-1]]
+
+    return explanations
 
 
 def crc32(hex_string):
