@@ -1,15 +1,17 @@
 ﻿import html
 import logging
 import re
+import sys
 from collections import Counter
 
 import nltk
 import numpy as np
 import pandas as pd
-from nltk.corpus import stopwords
-from nltk.stem import WordNetLemmatizer
+from nltk.corpus import stopwords, wordnet
+from nltk.stem import WordNetLemmatizer, SnowballStemmer
 from nltk.tokenize import word_tokenize
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.decomposition import LatentDirichletAllocation
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 
 nltk.download('stopwords')
 nltk.download('punkt')
@@ -18,6 +20,20 @@ nltk.download('wordnet')
 
 PUBMED_ARTICLE_BASE_URL = 'https://www.ncbi.nlm.nih.gov/pubmed/?term='
 SEMANTIC_SCHOLAR_BASE_URL = 'https://www.semanticscholar.org/paper/'
+
+
+def get_wordnet_pos(treebank_tag):
+    """Convert pos_tag output to WordNetLemmatizer tags."""
+    if treebank_tag.startswith('J'):
+        return wordnet.ADJ
+    elif treebank_tag.startswith('V'):
+        return wordnet.VERB
+    elif treebank_tag.startswith('N'):
+        return wordnet.NOUN
+    elif treebank_tag.startswith('R'):
+        return wordnet.ADV
+    else:
+        return ''
 
 
 def tokenize(text, terms=None):
@@ -32,12 +48,25 @@ def tokenize(text, terms=None):
 
     tokenized = word_tokenize(re.sub(special_symbols_regex, '', text))
     stop_words = set(stopwords.words('english'))
-    nouns = [word for (word, pos) in nltk.pos_tag(tokenized) if
-             is_noun_or_adj(pos) and word not in stop_words]
+    words_of_interest = [(word, pos) for word, pos in nltk.pos_tag(tokenized) if
+                         word not in stop_words and is_noun_or_adj(pos)]
 
     lemmatizer = WordNetLemmatizer()
-    tokens = list(filter(lambda t: len(t) >= 3, [lemmatizer.lemmatize(n) for n in nouns]))
-    return tokens
+    lemmatized = [lemmatizer.lemmatize(w, pos=get_wordnet_pos(pos)) for w, pos in words_of_interest]
+
+    stemmer = SnowballStemmer('english')
+    stemmed = [(stemmer.stem(word), word) for word in lemmatized]
+
+    # Substitute each stem with the shortest similar word
+    stems_mapping = {}
+    for stem, word in stemmed:
+        if stem in stems_mapping:
+            if len(stems_mapping[stem]) > len(word):
+                stems_mapping[stem] = word
+        else:
+            stems_mapping[stem] = word
+
+    return [stems_mapping[stem] for stem, _ in stemmed]
 
 
 def get_ngrams(text, n=1):
@@ -96,7 +125,7 @@ def get_subtopic_descriptions(df, comps, size=100):
     for idx in range(n_comps):
         max_cnt = max(most_common[idx].values())
         idfs[idx] = {k: (0.5 + 0.5 * v / max_cnt) *  # augmented frequency to avoid document length bias
-                     np.log(n_comps / sum([k in mcoc for mcoc in most_common])) \
+                        np.log(n_comps / sum([k in mcoc for mcoc in most_common])) \
                      for k, v in most_common[idx].items()}
         kwd[idx] = ','.join([f'{k}:{(max(most_common[idx][k], 1e-3)):.3f}'
                              for k, _v in list(sorted(idfs[idx].items(),
@@ -186,3 +215,32 @@ def extract_authors(authors_list):
         return ''
 
     return ', '.join(filter(None, map(lambda authors: html.unescape(authors['name']), authors_list)))
+
+
+def lda_subtopics(df, n_words, n_topics):
+    logging.info(f'Building corpus from {len(df)} articles')
+    corpus = [f'{title} {abstract}'
+              for title, abstract in zip(df['title'].values, df['abstract'].values)]
+    logging.info(f'Corpus size: {sys.getsizeof(corpus)} bytes')
+
+    logging.info(f'Counting word usage in the corpus, using only {n_words} most frequent words')
+    vectorizer = CountVectorizer(tokenizer=tokenize, max_features=n_words)
+    tfidf = vectorizer.fit_transform(corpus)
+    logging.info(f'Output shape: {tfidf.shape}')
+
+    logging.info(f'Performing LDA subtopic analysis')
+    lda = LatentDirichletAllocation(n_components=n_topics, random_state=0)
+    lda.fit(tfidf)
+
+    topics = lda.transform(tfidf)
+    logging.info('Done')
+    return topics, lda, vectorizer
+
+
+def explain_lda_subtopics(lda, vectorizer, n_top_words):
+    feature_names = vectorizer.get_feature_names()
+    explanations = {}
+    for i, topic in enumerate(lda.components_):
+        explanations[i] = [(topic[i], feature_names[i]) for i in topic.argsort()[:-n_top_words - 1:-1]]
+
+    return explanations
