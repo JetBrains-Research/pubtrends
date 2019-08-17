@@ -3,6 +3,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
+from .arxiv_loader import ArxivLoader
 from .pm_loader import PubmedLoader
 from .progress_logger import ProgressLogger
 from .ss_loader import SemanticScholarLoader
@@ -23,6 +24,8 @@ class KeyPaperAnalyzer:
             self.source = 'pubmed'
         elif isinstance(self.loader, SemanticScholarLoader):
             self.source = 'semantic'
+        elif isinstance(self.loader, ArxivLoader):
+            self.source = 'arxiv'
         elif not test:
             raise TypeError("loader should be either PubmedLoader or SemanticScholarLoader")
 
@@ -426,7 +429,7 @@ class KeyPaperAnalyzer:
     def popular_authors(self, df, n=20, current=0, task=None):
         self.logger.info("Finding popular authors", current=current, task=task)
 
-        author_stats = self.df[['authors', 'comp']].copy()
+        author_stats = df[['authors', 'comp']].copy()
         author_stats['authors'].replace({'': np.nan, -1: np.nan}, inplace=True)
         author_stats.dropna(subset=['authors'], inplace=True)
 
