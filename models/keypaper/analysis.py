@@ -5,6 +5,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
+from .arxiv_loader import ArxivLoader
 from .pm_loader import PubmedLoader
 from .progress_logger import ProgressLogger
 from .ss_loader import SemanticScholarLoader
@@ -28,6 +29,9 @@ class KeyPaperAnalyzer:
         if isinstance(self.loader, PubmedLoader):
             self.source = 'Pubmed'
         elif isinstance(self.loader, SemanticScholarLoader):
+            self.source = 'Semantic Scholar'
+        elif isinstance(self.loader, ArxivLoader):
+            self.source = 'arxiv'
             self.source = 'Semantic Scholar'
         elif not test:
             raise TypeError("loader should be either PubmedLoader or SemanticScholarLoader")
