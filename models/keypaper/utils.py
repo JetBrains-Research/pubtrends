@@ -217,27 +217,29 @@ def extract_authors(authors_list):
     return ', '.join(filter(None, map(lambda authors: html.unescape(authors['name']), authors_list)))
 
 
-def lda_subtopics(df, n_words, n_topics):
+def build_corpus(df):
     logging.info(f'Building corpus from {len(df)} articles')
     corpus = [f'{title} {abstract}'
               for title, abstract in zip(df['title'].values, df['abstract'].values)]
     logging.info(f'Corpus size: {sys.getsizeof(corpus)} bytes')
+    return corpus
 
+def lda_subtopics(corpus, terms=None, n_words=1000, n_topics=10):
     logging.info(f'Counting word usage in the corpus, using only {n_words} most frequent words')
-    vectorizer = CountVectorizer(tokenizer=tokenize, max_features=n_words)
-    tfidf = vectorizer.fit_transform(corpus)
-    logging.info(f'Output shape: {tfidf.shape}')
+    vectorizer = CountVectorizer(tokenizer=lambda t: tokenize(t, terms), max_features=n_words)
+    counts = vectorizer.fit_transform(corpus)
+    logging.info(f'Output shape: {counts.shape}')
 
     logging.info(f'Performing LDA subtopic analysis')
     lda = LatentDirichletAllocation(n_components=n_topics, random_state=0)
-    lda.fit(tfidf)
+    lda.fit(counts)
 
-    topics = lda.transform(tfidf)
+    topics = lda.transform(counts)
     logging.info('Done')
     return topics, lda, vectorizer
 
 
-def explain_lda_subtopics(lda, vectorizer, n_top_words):
+def explain_lda_subtopics(lda, vectorizer, n_top_words=20):
     feature_names = vectorizer.get_feature_names()
     explanations = {}
     for i, topic in enumerate(lda.components_):
