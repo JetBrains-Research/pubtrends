@@ -68,18 +68,6 @@ def tokenize(text, terms=None):
         else:
             stems_mapping[stem] = word
 
-    stemmer = SnowballStemmer('english')
-    stemmed = [(stemmer.stem(word), word) for word in lemmatized]
-
-    # Substitute each stem with the shortest similar word
-    stems_mapping = {}
-    for stem, word in stemmed:
-        if stem in stems_mapping:
-            if len(stems_mapping[stem]) > len(word):
-                stems_mapping[stem] = word
-        else:
-            stems_mapping[stem] = word
-
     return [stems_mapping[stem] for stem, _ in stemmed]
 
 
@@ -139,7 +127,7 @@ def get_subtopic_descriptions(df, comps, size=100):
     for idx in range(n_comps):
         max_cnt = max(most_common[idx].values())
         idfs[idx] = {k: (0.5 + 0.5 * v / max_cnt) *  # augmented frequency to avoid document length bias
-                     np.log(n_comps / sum([k in mcoc for mcoc in most_common])) \
+                        np.log(n_comps / sum([k in mcoc for mcoc in most_common])) \
                      for k, v in most_common[idx].items()}
         kwd[idx] = ','.join([f'{k}:{(max(most_common[idx][k], 1e-3)):.3f}'
                              for k, _v in list(sorted(idfs[idx].items(),
@@ -255,6 +243,7 @@ def build_corpus(df):
               for title, abstract in zip(df['title'].values, df['abstract'].values)]
     logging.info(f'Corpus size: {sys.getsizeof(corpus)} bytes')
     return corpus
+
 
 def lda_subtopics(corpus, terms=None, n_words=1000, n_topics=10):
     logging.info(f'Counting word usage in the corpus, using only {n_words} most frequent words')
