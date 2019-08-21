@@ -43,6 +43,7 @@ def analyze_async(source, terms):
         'n_papers': analyzer.n_papers,
         'n_citations': int(analyzer.df['total'].sum()),
         'n_subtopics': len(analyzer.components),
+        'comp_other': analyzer.comp_other,
         'cocitations_clusters': [components(plotter.cocitations_clustering())],
         'component_size_summary': [components(plotter.component_size_summary())],
         'subtopic_timeline_graphs': [components(p) for p in plotter.subtopic_timeline_graphs()],
