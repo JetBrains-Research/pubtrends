@@ -191,12 +191,12 @@ class Plotter:
 
         # NOTE: VBar is invisible (alpha = 0) to provide tooltips on hover as stacked area does not support them
         p.vbar_stack(components, x='years', width=0.9, color=self.comp_palette, source=data, alpha=0,
-                     legend=[f'{c} OTHER' if int(c) == self.analyzer.comp_other + 1 else value(c)
+                     legend=[f'{c} OTHER' if int(c) - 1 == self.analyzer.comp_other else value(c)
                              for c in components])
 
         # VArea is actually displayed
         p.varea_stack(stackers=components, x='years', color=self.comp_palette, source=data, alpha=0.5,
-                      legend=[f'{c} OTHER' if int(c) == self.analyzer.comp_other + 1 else value(c)
+                      legend=[f'{c} OTHER' if int(c) - 1 == self.analyzer.comp_other else value(c)
                               for c in components])
 
         p.y_range.start = 0
@@ -527,7 +527,8 @@ class Plotter:
         # html code to generate circles corresponding to the 3 most popular subtopics
         top = 3
         return ' '.join(
-            map(lambda topic: f'''<i class="fas fa-circle" style="color:{self.colors[topic[0]]}"></i>
+            map(lambda topic: f'''<a class="fas fa-circle" style="color:{self.colors[topic[0]]}"
+                                     href="#subtopic-{topic[0] + 1}"></a>
                                   <span class="bk" style="color:black">{int(topic[1] / sum * 100)}%</span> ''',
                 zip(components[:top], counts[:top])))
 
