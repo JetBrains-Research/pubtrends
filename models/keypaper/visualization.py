@@ -191,12 +191,12 @@ class Plotter:
 
         # NOTE: VBar is invisible (alpha = 0) to provide tooltips on hover as stacked area does not support them
         p.vbar_stack(components, x='years', width=0.9, color=self.comp_palette, source=data, alpha=0,
-                     legend=[f'{c} OTHER' if int(c) == self.analyzer.comp_other else value(c)
+                     legend=[f'{c} OTHER' if int(c) == self.analyzer.comp_other + 1 else value(c)
                              for c in components])
 
         # VArea is actually displayed
         p.varea_stack(stackers=components, x='years', color=self.comp_palette, source=data, alpha=0.5,
-                      legend=[f'{c} OTHER' if int(c) == self.analyzer.comp_other else value(c)
+                      legend=[f'{c} OTHER' if int(c) == self.analyzer.comp_other + 1 else value(c)
                               for c in components])
 
         p.y_range.start = 0
@@ -219,14 +219,11 @@ class Plotter:
 
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
         for c in range(n_comps):
-            # Scatter layout for articles from subtopic
-            title = f'Subtopic #{c}{" OTHER" if c == self.analyzer.comp_other else ""}'
-
             ds[c] = PlotPreprocessor.article_view_data_source(self.analyzer.df[self.analyzer.df['comp'] == c],
                                                               min_year, max_year, width=700)
             plot = self.__serve_scatter_article_layout(source=ds[c],
                                                        year_range=[min_year, max_year],
-                                                       title=title, width=760)
+                                                       title="Publications", width=760)
 
             plot.circle(x='year', y='total', fill_alpha=0.5, source=ds[c], size='size',
                         line_color=self.colors[c], fill_color=self.colors[c])
@@ -556,8 +553,7 @@ class Plotter:
         p = figure(tools=TOOLS, toolbar_location="above",
                    plot_width=width, plot_height=400,
                    x_range=(min_year - 1, max_year + 1),
-                   title=title,
-                   y_axis_type="log")
+                   title=title, y_axis_type="log")
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Number of citations'
         p.yaxis.formatter = NumeralTickFormatter(format='0,0')

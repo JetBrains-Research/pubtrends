@@ -291,8 +291,13 @@
                     </p>
                     <div>
                         {% for script, div in subtopic_timeline_graphs %}
-                        <h2 class="card-subtitle">Subtopic {{ loop.index0 }}</h2>
-                        <div id="subtopic-{{ loop.index0 }}">
+                        <h2 class="card-subtitle">
+                            Subtopic {{ loop.index }}
+                            {% if loop.index0 == comp_other %}
+                            - OTHER
+                            {% endif %}
+                        </h2>
+                        <div id="subtopic-{{ loop.index }}">
                             {{ script|safe }}
                             {{ div|safe }}
                         </div>
