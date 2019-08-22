@@ -105,7 +105,6 @@ class PubmedCrawler(
     }
 
     private fun unpack(archiveName: String) {
-        val archive = File(archiveName)
         val originalName = archiveName.substringBefore(".gz")
         val bufferSize = 1024
 
@@ -114,8 +113,6 @@ class PubmedCrawler(
                 inputStream.copyTo(outputStream, bufferSize)
             }
         }
-
-        archive.delete()
     }
 
     private fun downloadFiles(files: List<String>, isBaseline: Boolean) {
@@ -136,6 +133,8 @@ class PubmedCrawler(
                     ftpHandler.downloadUpdateFile(file, tempDirectory.absolutePath)
             } catch (e: IOException) {
                 throw PubmedCrawlerException("Failed to download XML archive")
+            } finally {
+                deleteIfExists(localArchiveName)
             }
 
             try {
@@ -144,15 +143,18 @@ class PubmedCrawler(
             } catch (e: IOException) {
                 logger.error("Failed to unpack $localArchiveName : corrupted GZ archive")
                 throw PubmedCrawlerException(e)
+            } finally {
+                deleteIfExists(localArchiveName)
             }
 
             try {
                 logger.info("$progressPrefix $localName: Parsing...")
                 xmlParser.parse(localName)
-                File(localName).delete()
             } catch (e: XMLStreamException) {
                 logger.error("Failed to parse $localName")
                 throw PubmedCrawlerException(e)
+            } finally {
+                deleteIfExists(localName)
             }
 
             logger.info("$progressPrefix $localName: SUCCESS")
@@ -162,6 +164,13 @@ class PubmedCrawler(
             BufferedWriter(FileWriter(progressTSV.toFile())).use {
                 it.write("lastId\t${PubmedFTPHandler.pubmedFileToId(file)}")
             }
+        }
+    }
+
+    private fun deleteIfExists(name: String) {
+        val file = File(name)
+        if (file.exists()) {
+            file.delete()
         }
     }
 }
