@@ -79,34 +79,37 @@ Ensure that file contains correct information about the database (url, port, DB 
 
 ### Semantic Scholar
 
-1. Download Sample from [Semantic Scholar](https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/sample-S2-records.gz)
-   Or full archive 
-   ```
-   cd <PATH_TO_SEMANTIC_SCHOLAR_ARCHIVE>
-   wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/manifest.txt
-   wget -B https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/ -i manifest.txt
-   ```
-2. Add `<PATH_TO_SEMANTIC_SCHOLAR_ARCHIVE>` to `.pubtrends/config.properties`
-
-3. Use the following command to test and build the project:
+1. Use the following command to test and build the project:
 
    ```
    ./gradlew clean test shadowJar
    ```
+
+2. Add `<PATH_TO_SEMANTIC_SCHOLAR_ARCHIVE>` to `.pubtrends/config.properties`     
+
+3. Download Sample from [Semantic Scholar](https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/sample-S2-records.gz)
+   Or full archive 
+   ```
+   cd <PATH_TO_SEMANTIC_SCHOLAR_ARCHIVE>
+   wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/manifest.txt
+   cat manifest.txt | grep corpus | while read -r url; do 
+      wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/$url;
+      java -cp build/libs/pubtrends-dev.jar org.jetbrains.bio.pubtrends.ss.MainKt --fillDatabase
+      rm $(echo $url | sed -E 's#^.*/##g');
+   done
+   ```
+
+4. Build Semantic Scholar Indexes
+    ```
+    java -cp build/libs/pubtrends-dev.jar org.jetbrains.bio.pubtrends.ss.MainKt --createIndex
+    ```
    
-4. Launch Semantic Scholar Processing
-    ```
-    java -cp build/libs/pubtrends-dev.jar org.jetbrains.bio.pubtrends.ss.MainKt
-    ```
-   Command line options supported:
+   Additional command line options supported:
 
    * `resetDatabase` - clear current contents of the database (useful for development) 
    * `fillDatabase` - create and fill database with Semantic Scholar data
    * `createIndex` - create index for already created tables
    
-   For example, if you launch Semantic Scholar Processing for the first time, 
-   you need to use `fillDatabase` and `createIndex` options. 
-
 ## Service
 
 Several front-ends are supported.
