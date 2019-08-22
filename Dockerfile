@@ -19,7 +19,7 @@ LABEL email = "os@jetbrains.com"
 USER root
 
 # Update all the packages
-RUN echo "" && apt-get update --fix-missing
+RUN apt-get update --fix-missing
 
 # Install conda, curl should install certificates, so no --no-install-recommends
 RUN apt-get install -y curl bzip2 gnupg2 wget ca-certificates
