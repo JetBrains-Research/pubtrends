@@ -36,7 +36,7 @@ class PlotPreprocessor:
         gdf['year'] = gdf['year'].replace(np.nan, "Undefined")
         log_total = np.log(gdf['total'])
         gdf['size'] = (log_total / np.max(log_total)) * 5 + 5
-        gdf['topic'] = [f'#{comps[n]}{" OTHER" if comps[n] == comp_other else ""}' for n in sorted_nodes]
+        gdf['topic'] = [f'#{comps[n] + 1}{" OTHER" if comps[n] == comp_other else ""}' for n in sorted_nodes]
         gdf['authors'] = gdf['authors'].apply(lambda authors: cut_authors_list(authors))
 
         edge_starts = []
@@ -93,7 +93,8 @@ class PlotPreprocessor:
 
     @staticmethod
     def heatmap_clusters_data(cocitation_graph, df, comp_sizes):
-        clusters = list(map(str, comp_sizes.keys()))
+        # c + 1 is used to start numbering with 1
+        clusters = list(map(str, [c + 1 for c in comp_sizes.keys()]))
         n_comps = len(clusters)
 
         # Load edge data to DataFrame
@@ -102,7 +103,7 @@ class PlotPreprocessor:
 
         # Map each node to corresponding component
         cluster_edges = links.merge(df[['id', 'comp']], how='left', left_on='source', right_on='id') \
-                             .merge(df[['id', 'comp']], how='left', left_on='target', right_on='id')
+            .merge(df[['id', 'comp']], how='left', left_on='target', right_on='id')
 
         # Calculate connectivity matrix for components
         cluster_edges = cluster_edges.groupby(['comp_x', 'comp_y'])['value'].sum().reset_index()
@@ -120,8 +121,8 @@ class PlotPreprocessor:
             return row['value'] / (comp_sizes[row['comp_x']] * comp_sizes[row['comp_y']])
 
         cluster_edges['density'] = cluster_edges.apply(lambda row: get_density(row), axis=1)
-        cluster_edges['comp_x'] = cluster_edges['comp_x'].astype(str)
-        cluster_edges['comp_y'] = cluster_edges['comp_y'].astype(str)
+        cluster_edges['comp_x'] = cluster_edges['comp_x'].apply(lambda x: x + 1).astype(str)
+        cluster_edges['comp_y'] = cluster_edges['comp_y'].apply(lambda x: x + 1).astype(str)
         return cluster_edges, clusters
 
     @staticmethod
@@ -131,21 +132,24 @@ class PlotPreprocessor:
         total_papers = sum(assigned_comps['comp'] >= 0)
 
         # comps are reversed to display in descending order
-        comps = list(reversed(list(map(str, comp_size.keys()))))
-        ratios = [100 * comp_size[int(c)] / total_papers for c in comps]
-        colors = [palette[int(c)] for c in comps]
+        comps = list(reversed(list(comp_size.keys())))
+        ratios = [100 * comp_size[c] / total_papers for c in comps]
+        colors = [palette[c] for c in comps]
+
+        # c + 1 is used to start numbering from 1
+        comps = list(map(str, [c + 1 for c in comps]))
         source = ColumnDataSource(data=dict(comps=comps, ratios=ratios, colors=colors))
         return comps, source
 
     @staticmethod
     def component_size_summary_data(df, comps, min_year, max_year):
         n_comps = len(comps)
-        components = [str(i) for i in range(n_comps)]
+        components = [str(i + 1) for i in range(n_comps)]
         years = list(range(min_year, max_year + 1))
         data = {'years': years}
         for c in range(n_comps):
-            data[str(c)] = [len(df[np.logical_and(df['comp'] == c, df['year'] == y)])
-                            for y in range(min_year, max_year + 1)]
+            data[str(c + 1)] = [len(df[np.logical_and(df['comp'] == c, df['year'] == y)])
+                                for y in range(min_year, max_year + 1)]
         return components, data
 
     @staticmethod
@@ -182,9 +186,10 @@ class PlotPreprocessor:
                 if n_steps < 4:
                     label = f"{year} {', '.join(kwds[int(year)][int(c)][:5])}"
                 else:
-                    label = node
+                    # Fix subtopic numbering to start with 1
+                    label = f"{year} {int(c) + 1}"
             else:
-                label = f"Published after {year}"
+                label = "TBD"
             nodes_data.append((node, label))
         nodes_data = sorted(nodes_data, key=sort_nodes_key, reverse=True)
 
@@ -199,7 +204,7 @@ class PlotPreprocessor:
             for c, kwd in comps.items():
                 if c >= 0:
                     years.append(year)
-                    subtopics.append(c)
+                    subtopics.append(c + 1)
                     keywords.append(', '.join(kwd))
         data = dict(
             years=years,

@@ -26,15 +26,15 @@ class TestPlotPreprocessor(unittest.TestCase):
             self.analyzer.df, self.analyzer.components, self.analyzer.min_year, self.analyzer.max_year
         )
 
-        expected_components = ['0', '1', '2']
+        expected_components = ['1', '2', '3']
         expected_components_data = {
             # from 2005 to 2019
             # 0 : {2008: 1, 2013: 1, 2017: 3, 2018: 1}
-            '0': [0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 3, 1, 0],
+            '1': [0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 3, 1, 0],
             # 1 : {2005: 1, 2009: 1, 2011: 1, 2016: 1}
-            '1': [1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0],
+            '2': [1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0],
             # 2 : {2019: 2}
-            '2': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
+            '3': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
         }
 
         self.assertEqual(components, expected_components, 'Wrong list of components')
@@ -49,7 +49,7 @@ class TestPlotPreprocessor(unittest.TestCase):
             self.analyzer.df, self.plotter.comp_palette
         )
 
-        expected_comps = ['2', '1', '0']
+        expected_comps = ['3', '2', '1']
         expected_ratios = [9.090909, 36.363636, 54.545454]
         expected_colors = list(reversed(self.plotter.comp_palette))
 
@@ -84,7 +84,7 @@ class TestPlotPreprocessor(unittest.TestCase):
         for node in expected_nodes:
             idx = list(data['index']).index(node)
             comp = self.analyzer.df[self.analyzer.df['id'] == node]['comp'].values[0]
-            expected_topic = f'#{comp} OTHER' if comp == self.analyzer.comp_other else f'#{comp}'
+            expected_topic = f'#{comp + 1} OTHER' if comp == self.analyzer.comp_other else f'#{comp + 1}'
 
             self.assertEqual(data['colors'][idx], self.plotter.comp_palette[comp], f'Wrong color for node {node}')
             self.assertEqual(data['topic'][idx], expected_topic, f'Wrong topic for node {node}')
@@ -123,7 +123,7 @@ class TestPlotPreprocessor(unittest.TestCase):
 
     def test_heatmap_clusters(self):
 
-        # Find data for [i, j] cell in DataFrame
+        # Find data for comp_x=i and comp_y=j in DataFrame
         def cell_filter(i, j):
             return np.logical_and(cluster_edges['comp_x'] == str(i), cluster_edges['comp_y'] == str(j))
 
@@ -131,7 +131,7 @@ class TestPlotPreprocessor(unittest.TestCase):
             self.analyzer.CG, self.analyzer.df, self.analyzer.pmcomp_sizes
         )
 
-        self.assertListEqual(clusters, ['0', '1', '2'], 'Wrong clusters')
+        self.assertListEqual(clusters, ['1', '2', '3'], 'Wrong clusters')
 
         expected_values = np.array([[36, 2, 0],
                                     [2, 26, 0],
@@ -140,8 +140,9 @@ class TestPlotPreprocessor(unittest.TestCase):
         n_comps = len(self.analyzer.components)
         for i in range(n_comps):
             for j in range(n_comps):
-                self.assertAlmostEqual(cluster_edges[cell_filter(i, j)]['value'].values[0], expected_values[i, j],
-                                       places=3, msg=f'Wrong value for comp_x {i} and comp_y {j}')
+                self.assertAlmostEqual(cluster_edges[cell_filter(i + 1, j + 1)]['value'].values[0],
+                                       expected_values[i, j], places=3,
+                                       msg=f'Wrong value for comp_x {i} and comp_y {j}')
 
         expected_densities = np.array([[1.0, 0.083, 0],
                                        [0.083, 1.625, 0],
@@ -150,8 +151,9 @@ class TestPlotPreprocessor(unittest.TestCase):
         n_comps = len(self.analyzer.components)
         for i in range(n_comps):
             for j in range(n_comps):
-                self.assertAlmostEqual(cluster_edges[cell_filter(i, j)]['density'].values[0], expected_densities[i, j],
-                                       places=3, msg=f'Wrong density for comp_x {i} and comp_y {j}')
+                self.assertAlmostEqual(cluster_edges[cell_filter(i + 1, j + 1)]['density'].values[0],
+                                       expected_densities[i, j], places=3,
+                                       msg=f'Wrong density for comp_x {i} and comp_y {j}')
 
     def test_subtopic_evolution_data(self):
         edges, nodes_data = PlotPreprocessor.subtopic_evolution_data(
@@ -162,7 +164,7 @@ class TestPlotPreprocessor(unittest.TestCase):
                           ('2014 0', '2019 0', 3), ('2014 1', '2019 1', 2)]
         expected_nodes_data = [('2019 0', '2019 shiftwork, estrogen, pattern, disturbance, cell'),
                                ('2019 1', '2019 study, analysis, association, time, cpg'),
-                               ('2014 -1', 'Published after 2014'),
+                               ('2014 -1', 'TBD'),
                                ('2014 0', '2014 body, susceptibility, ieaa, risk, time'),
                                ('2014 1', '2014 reaction, disturbance, pattern, study, rhythm')]
 
@@ -178,7 +180,7 @@ class TestPlotPreprocessor(unittest.TestCase):
 
         expected_keywords_data = {
             'years': [2014, 2014, 2019, 2019],
-            'subtopics': [0, 1, 0, 1],
+            'subtopics': [1, 2, 1, 2],
             'keywords': [
                 'body, susceptibility, ieaa, risk, time, acceleration, gene, association, tumor, ageaccel, '
                 'development, tissue, blood, study, age',
