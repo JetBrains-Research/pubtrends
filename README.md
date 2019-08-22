@@ -9,11 +9,9 @@ A tool for analysis of trends & pivotal points in the scientific literature.
 ## Prerequisites
 
 * JDK 8+
-* PostgreSQL 10.5+
+* PostgreSQL 11+
 * Conda
 * Python 3.6+
-* Celery
-* Redis
 * Docker
 
 ## Configuration
@@ -116,17 +114,6 @@ Several front-ends are supported.
    jupyter notebook
    ```
 
-### Web service
-1. Start Redis
-2. Start Celery worker queue
-    ```
-    celery -A models.celery.tasks worker --loglevel=info
-    ```
-3. Start flask server at localhost:5000/
-    ```
-    python models/flask-app.py
-    ```    
-
 ### Deployment with Docker Compose
 
 Launch Gunicorn serving Flask app, Redis and Celery in containers by the command:
@@ -169,7 +156,7 @@ Launch Gunicorn serving Flask app, Redis and Celery in containers by the command
 
     ```
     docker run -v $(pwd):/pubtrends:ro -t biolabs/pubtrends /bin/bash \
-    -c "/usr/lib/postgresql/10/bin/pg_ctl -D /home/user/postgres start; \
+    -c "/usr/lib/postgresql/11/bin/pg_ctl -D /home/user/postgres start; \
     source activate pubtrends; cd /pubtrends; python -m pytest --codestyle models"
     ```
    
