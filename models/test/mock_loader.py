@@ -43,7 +43,7 @@ class MockLoader(Loader):
         config = PubtrendsConfig(test=True)
         super(MockLoader, self).__init__(config, connect=False)
 
-    def search(self, current=None, task=None):
+    def search(self, terms, current=None, task=None):
         return [1, 2, 3, 4, 5]
 
     def load_publications(self, current=None, task=None):

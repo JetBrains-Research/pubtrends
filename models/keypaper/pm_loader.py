@@ -14,15 +14,13 @@ class PubmedLoader(Loader):
         super(PubmedLoader, self).__init__(pubtrends_config)
         Entrez.email = pubtrends_config.pm_entrez_email
 
-    def search(self, *terms, current=0, task=None):
+    def search(self, terms, current=0, task=None):
         self.logger.debug(f'TODO: handle queries which return more than {self.max_number_of_articles} items',
                           current=current, task=task)
-        self.terms = [t.lower() for t in terms]
-        query = ' '.join(terms).replace("\"", "")
         handle = Entrez.esearch(db='pubmed', retmax=str(self.max_number_of_articles),
-                                retmode='xml', term=query)
+                                retmode='xml', term=terms)
         self.ids = Entrez.read(handle)['IdList']
-        self.logger.info(f'Found {len(self.ids)} papers about {terms}', current=current, task=task)
+        self.logger.info(f'Found {len(self.ids)} publications matching {terms}', current=current, task=task)
         self.values = ', '.join(['({})'.format(i) for i in sorted(self.ids)])
         return self.ids
 
