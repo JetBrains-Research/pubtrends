@@ -14,19 +14,16 @@ class PubmedLoader(Loader):
         super(PubmedLoader, self).__init__(pubtrends_config)
         Entrez.email = pubtrends_config.pm_entrez_email
 
-    def search(self, *terms, limit=None, sort=None, current=0, task=None):
+    def search(self, terms, limit=None, sort=None, current=0, task=None):
         """
         This function uses Pubmed API to find papers relevant to the given terms
-        :param terms: list of search terms
+        :param terms: query string compliant with Pubmed API syntax
         :param limit: max amount of papers to use
         :param sort: order by 'citations', 'relevance' or 'year'
         :param current: progress value
         :param task: celery task
         :return: ids of relevant papers
         """
-        self.terms = [t.lower() for t in terms]
-        query = ' '.join(terms).replace("\"", "")
-
         # Return everything possible if limit is not set or need to sort by citations
         query_limit = str(limit) if limit and sort != 'citations' else '50000000'
 
@@ -34,10 +31,10 @@ class PubmedLoader(Loader):
         query_sort = sort if sort == 'relevance' else None
 
         handle = Entrez.esearch(db='pubmed', retmax=query_limit,
-                                retmode='xml', term=query, sort=query_sort)
+                                retmode='xml', term=terms, sort=query_sort)
         self.ids = Entrez.read(handle)['IdList']
 
-        self.logger.info(f'Found {len(self.ids)} publications matching {terms}', current=current, task=task)
+        self.logger.info(f'Found {len(self.ids)} publications matching <{terms}>', current=current, task=task)
 
         self.ids, temp_table_created = self.sort_results(self.ids, limit, sort, current, task)
         self.values = ', '.join(['({})'.format(i) for i in sorted(self.ids)])
@@ -58,7 +55,7 @@ class PubmedLoader(Loader):
                     LEFT JOIN PMCitations C
                     ON C.pmid_in = V.pmid
                     GROUP BY V.pmid
-                    ORDER BY count DESC
+                    ORDER BY count DESC NULLS LAST
                     LIMIT {limit};
                     DROP INDEX IF EXISTS temp_pmids_unique_index;
                     CREATE UNIQUE INDEX temp_pmids_unique_index ON TEMP_PMIDS USING btree (pmid);

@@ -3,7 +3,6 @@ import html
 import numpy as np
 import pandas as pd
 
-from models.keypaper.utils import extract_authors
 from .loader import Loader
 
 
@@ -12,8 +11,7 @@ class SemanticScholarLoader(Loader):
         super(SemanticScholarLoader, self).__init__(pubtrends_config)
 
     def search(self, terms, limit=None, sort=None, current=0, task=None):
-        self.terms = [t.lower() for t in terms]
-        self.logger.info('Searching publication data', current=current, task=task)
+        self.logger.info(f'Searching publications matching <{terms}>', current=current, task=task)
         terms_str = '\'' + terms + '\''
 
         columns = ['id', 'crc32id', 'title', 'abstract', 'year', 'aux']
@@ -34,7 +32,7 @@ class SemanticScholarLoader(Loader):
             ON C.crc32id_in = P.crc32id AND C.id_in = P.ssid
             WHERE tsv @@ websearch_to_tsquery('english', {terms_str})
             GROUP BY P.ssid, P.crc32id, P.title, P.abstract, P.year, P.aux
-            ORDER BY count DESC
+            ORDER BY count DESC NULLS LAST
             LIMIT {limit};
             '''
             columns.append('citations')

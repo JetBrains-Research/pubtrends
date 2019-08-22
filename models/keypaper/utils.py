@@ -119,16 +119,18 @@ def get_tfidf_words(df, comps, terms, size=5):
     corpus = []
 
     for comp, article_ids in comps.items():
-        comp_corpus = ''
-        for article_id in article_ids:
-            sel = df[df['id'] == article_id]
-            if len(sel) > 0:
-                title = sel['title'].astype(str).values[0]
-                abstract = sel['abstract'].astype(str).values[0]
-                comp_corpus += f'{title} {abstract}'
-            else:
-                raise ValueError('Empty selection by id')
-        corpus.append(comp_corpus)
+        # Generate descriptions only for meaningful components, avoid -1
+        if comp >= 0:
+            comp_corpus = ''
+            for article_id in article_ids:
+                sel = df[df['id'] == article_id]
+                if len(sel) > 0:
+                    title = sel['title'].astype(str).values[0]
+                    abstract = sel['abstract'].astype(str).values[0]
+                    comp_corpus += f'{title} {abstract}'
+                else:
+                    raise ValueError('Empty selection by id')
+            corpus.append(comp_corpus)
 
     vectorizer = TfidfVectorizer(tokenizer=lambda text: tokenize(text, terms=terms), stop_words='english')
     tfidf = vectorizer.fit_transform(corpus)
