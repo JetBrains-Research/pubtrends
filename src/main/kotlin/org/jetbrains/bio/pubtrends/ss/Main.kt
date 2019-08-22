@@ -17,6 +17,8 @@ import kotlin.system.exitProcess
 
 private val SEMANTIC_SCHOLAR_NAME_REGEX = "s2-corpus-(\\d\\d)\\.gz".toRegex()
 
+private fun semanticScholarFileToId(name: String): Int = name.removeSurrounding("s2-corpus-", ".gz").toInt()
+
 fun main(args: Array<String>) {
     val logger = LogManager.getLogger("Pubtrends")
 
@@ -125,7 +127,7 @@ fun main(args: Array<String>) {
             val files = File(archivePath).walk()
                     .filter { SEMANTIC_SCHOLAR_NAME_REGEX.matches(it.name) }
                     .sorted()
-                    .drop(lastSSId + 1)
+                    .filter { semanticScholarFileToId(it.name) > lastSSId }
             val filesAmount = files.toList().size
 
             files.forEachIndexed{index, file ->

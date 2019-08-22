@@ -76,8 +76,8 @@ fun main(args: Array<String>) {
             )
 
         logger.info("Init crawler")
-        val crawlerTSV = settingsRoot.resolve("crawler.tsv")
-        val statsTSV = settingsRoot.resolve("stats.tsv")
+        val crawlerTSV = settingsRoot.resolve("pubmed_last.tsv")
+        val statsTSV = settingsRoot.resolve("pubmed_stats.tsv")
         val collectStats = config["pm_collect_stats"].toString().toBoolean()
         val pubmedCrawler = PubmedCrawler(pubmedXMLParser, collectStats, statsTSV, crawlerTSV)
 
