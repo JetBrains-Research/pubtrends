@@ -13,6 +13,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.*
+import java.util.stream.Collectors
 import kotlin.system.exitProcess
 
 private val SEMANTIC_SCHOLAR_NAME_REGEX = "s2-corpus-(\\d\\d)\\.gz".toRegex()
@@ -124,21 +125,26 @@ fun main(args: Array<String>) {
             // Replace '~' with '/home/<username>' if path starts with '~'
             val archivePath = config["ss_archive_folder_path"].toString()
                 .replace("^~".toRegex(), System.getProperty("user.home"))
-            val files = File(archivePath).walk()
+            logger.info("Last id: $lastSSId")
+            logger.info("Archive path: $archivePath")
+            val files = Files.list(Paths.get(archivePath))
+                    .map { it.toFile() }
                     .filter { SEMANTIC_SCHOLAR_NAME_REGEX.matches(it.name) }
-                    .sorted()
                     .filter { semanticScholarFileToId(it.name) > lastSSId }
+                    .sorted()
+                    .collect(Collectors.toList())
+            logger.info("Files: ${files.joinToString(",") { it.name }}")
             val filesAmount = files.toList().size
 
             files.forEachIndexed{index, file ->
-                        val id = SEMANTIC_SCHOLAR_NAME_REGEX.matchEntire(file.name)!!.groups[1]!!.value
-                        logger.info("Started parsing articles $file")
-                        ArchiveParser(file, config["pm_batch_size"].toString().toInt(), curFile = index + 1, filesAmount = filesAmount).parse()
-                        logger.info("Finished parsing articles $file")
-                        BufferedWriter(FileWriter(ssTSV.toFile())).use { br ->
-                            br.write("lastSSId\t$id")
-                        }
-                    }
+                val id = SEMANTIC_SCHOLAR_NAME_REGEX.matchEntire(file.name)!!.groups[1]!!.value
+                logger.info("Started parsing articles $file")
+                ArchiveParser(file, config["pm_batch_size"].toString().toInt(), curFile = index + 1, filesAmount = filesAmount).parse()
+                logger.info("Finished parsing articles $file")
+                BufferedWriter(FileWriter(ssTSV.toFile())).use { br ->
+                    br.write("lastSSId\t$id")
+                }
+            }
         }
 
         if (createGinIndex) {
