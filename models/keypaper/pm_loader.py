@@ -88,7 +88,7 @@ class PubmedLoader(Loader):
             self.logger.debug('Creating pmids table for request with index.', current=current, task=task)
 
         load_query = '''
-        SELECT CAST(P.pmid AS TEXT), P.title, P.aux, P.abstract, date_part('year', P.date) AS year
+        SELECT CAST(P.pmid AS TEXT), P.title, P.aux, P.abstract, date_part('year', P.date) AS year, P.mesh
         FROM PMPublications P
         JOIN TEMP_PMIDS AS T ON (P.pmid = T.pmid);
         '''
@@ -96,12 +96,12 @@ class PubmedLoader(Loader):
         with self.conn.cursor() as cursor:
             cursor.execute(load_query)
             pub_df = pd.DataFrame(cursor.fetchall(),
-                                  columns=['id', 'title', 'aux', 'abstract', 'year'],
+                                  columns=['id', 'title', 'aux', 'abstract', 'year', 'mesh'],
                                   dtype=object)
 
         if np.any(pub_df[['id', 'title']].isna()):
             raise ValueError('Paper must have PMID and title')
-        pub_df = pub_df.fillna(value={'abstract': ''})
+        pub_df = pub_df.fillna(value={'abstract': '', 'mesh': ''})
 
         pub_df['year'] = pub_df['year'].apply(lambda year: int(year) if year else np.nan)
         pub_df['authors'] = pub_df['aux'].apply(lambda aux: extract_authors(aux['authors']))
