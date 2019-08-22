@@ -28,7 +28,7 @@ class KeyPaperAnalyzer:
         elif not test:
             raise TypeError("loader should be either PubmedLoader or SemanticScholarLoader")
 
-    def launch(self, search_query, limit=None, sort=None, limit=None, sort=None, task=None):
+    def launch(self, search_query, limit=None, sort=None, task=None):
         """:return full log"""
 
         try:

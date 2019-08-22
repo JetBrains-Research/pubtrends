@@ -75,7 +75,7 @@ class TestSemanticScholarLoader(unittest.TestCase):
                                                     '3cf82f53a52867aaade081324dff65dd35b5b7eb']),
     ])
     def test_search(self, name, limit, sort, expected):
-        ids, _ = self.loader.search('find', 'search', limit=limit, sort=sort)
+        ids, _ = self.loader.search('find search', limit=limit, sort=sort)
 
         self.assertListEqual(ids, expected)
 
