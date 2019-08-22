@@ -66,10 +66,10 @@ class PubmedLoader(Loader):
                     """)
             self.logger.debug('Creating pmids table for request with index.', current=current, task=task)
 
-            with self.conn:
-                self.cursor.execute(query)
+            with self.conn.cursor() as cursor:
+                cursor.execute(query)
+                ids = [row[0] for row in cursor.fetchall()]
 
-            ids = [row[0] for row in self.cursor.fetchall()]
             return ids, True
 
         return ids, False
