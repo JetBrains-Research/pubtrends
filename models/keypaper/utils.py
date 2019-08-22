@@ -6,7 +6,7 @@ from collections import Counter
 import nltk
 import numpy as np
 import pandas as pd
-from nltk.corpus import stopwords
+from nltk.corpus import stopwords, wordnet
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -20,8 +20,22 @@ PUBMED_ARTICLE_BASE_URL = 'https://www.ncbi.nlm.nih.gov/pubmed/?term='
 SEMANTIC_SCHOLAR_BASE_URL = 'https://www.semanticscholar.org/paper/'
 
 
+def get_wordnet_pos(treebank_tag):
+    """Convert pos_tag output to WordNetLemmatizer tags."""
+    if treebank_tag.startswith('J'):
+        return wordnet.ADJ
+    elif treebank_tag.startswith('V'):
+        return wordnet.VERB
+    elif treebank_tag.startswith('N'):
+        return wordnet.NOUN
+    elif treebank_tag.startswith('R'):
+        return wordnet.ADV
+    else:
+        return ''
+
+
 def tokenize(text, terms=None):
-    is_noun_or_adj = lambda pos: (pos[:2] == 'NN' or pos == 'JJ')
+    is_noun_or_adj = lambda pos: pos[:2] == 'NN' or pos == 'JJ'
     special_symbols_regex = re.compile(r'[^a-zA-Z0-9\- ]*')
     text = text.lower()
 
@@ -32,11 +46,12 @@ def tokenize(text, terms=None):
 
     tokenized = word_tokenize(re.sub(special_symbols_regex, '', text))
     stop_words = set(stopwords.words('english'))
-    nouns = [word for (word, pos) in nltk.pos_tag(tokenized) if
-             is_noun_or_adj(pos) and word not in stop_words]
+    words_of_interest = [(word, pos) for word, pos in nltk.pos_tag(tokenized) if
+                         word not in stop_words and is_noun_or_adj(pos)]
 
     lemmatizer = WordNetLemmatizer()
-    tokens = list(filter(lambda t: len(t) >= 3, [lemmatizer.lemmatize(n) for n in nouns]))
+    tokens = list(filter(lambda t: len(t) >= 3, [lemmatizer.lemmatize(w, pos=get_wordnet_pos(pos))
+                                                 for w, pos in words_of_interest]))
     return tokens
 
 
