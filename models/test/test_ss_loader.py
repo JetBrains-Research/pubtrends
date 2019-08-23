@@ -3,6 +3,7 @@ import re
 import unittest
 
 from pandas.util.testing import assert_frame_equal
+from parameterized import parameterized
 
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.ss_loader import SemanticScholarLoader
@@ -61,6 +62,22 @@ class TestSemanticScholarLoader(unittest.TestCase):
     def _load_cocitations(cls):
         cocitations = cls.loader.load_cocitations()
         return cocitations.sort_values(by=['citing', 'cited_1', 'cited_2']).reset_index(drop=True)
+
+    @parameterized.expand([
+        ('limit 3, most recent', 3, 'year', ['5a63b4199bb58992882b0bf60bc1b1b3f392e5a5',
+                                             '5451b1ef43678d473575bdfa7016d024146f2b53',
+                                             'cad767094c2c4fff5206793fd8674a10e7fba3fe']),
+        ('limit 3, most cited', 3, 'citations', ['3cf82f53a52867aaade081324dff65dd35b5b7eb',
+                                                 'e7cdbddc7af4b6138227139d714df28e2090bd5f',
+                                                 '5451b1ef43678d473575bdfa7016d024146f2b53']),
+        ('limit 3, most relevant', 3, 'relevance', ['cad767094c2c4fff5206793fd8674a10e7fba3fe',
+                                                    'e7cdbddc7af4b6138227139d714df28e2090bd5f',
+                                                    '3cf82f53a52867aaade081324dff65dd35b5b7eb']),
+    ])
+    def test_search(self, name, limit, sort, expected):
+        ids, _ = self.loader.search('find search', limit=limit, sort=sort)
+
+        self.assertListEqual(ids, expected)
 
     def test_citations_stats_rows(self):
         expected_rows = cit_stats_df.shape[0]

@@ -4,6 +4,7 @@ import unittest
 
 import numpy as np
 from pandas.util.testing import assert_frame_equal
+from parameterized import parameterized
 
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.pm_loader import PubmedLoader
@@ -73,6 +74,17 @@ class TestPubmedLoader(unittest.TestCase):
 
     def test_load_publications_data_frame(self):
         assert_frame_equal(self.pub_df, EXPECTED_PUB_DF, 'Wrong publication data')
+
+    @parameterized.expand([
+        ('limit 5, most recent', [1, 2, 3, 4, 5], 5, 'year', [1, 2, 3, 4, 5], False),
+        ('limit 5, most relevant', [1, 2, 3, 4, 5], 5, 'relevance', [1, 2, 3, 4, 5], False),
+        ('limit 5, most relevant', [7, 8, 5, 3, 4, 6, 2, 1, 10, 9], 5, 'citations', [4, 3, 1, 5, 2], True),
+    ])
+    def test_sort_results(self, name, ids, limit, sort, expected_ids, expected_temp_table_created):
+        ids, temp_table_created = self.loader.sort_results(ids, limit=limit, sort=sort)
+
+        self.assertListEqual(ids, expected_ids, 'Wrong IDs of papers')
+        self.assertEqual(temp_table_created, expected_temp_table_created, 'Wrong status of temp table')
 
     def test_load_citation_stats_null_year_is_ignored(self):
         expected_ignored_citations = []
