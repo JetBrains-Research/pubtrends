@@ -50,8 +50,8 @@ class TestUtils(unittest.TestCase):
         assert_frame_equal(expected_df, actual_df, "Splitting list into several rows works incorrectly")
 
     @parameterized.expand([
-        ('', 'cc77a65ff80a9d060e48461603bcf06bb0ef9294', -189727251, 'negative'),
-        ('', '6d8484217c9fa02419536c9118435715d3a8e705', 1979136599, 'positive')
+        ('cc77a65ff80a9d060e48461603bcf06bb0ef9294', -189727251, 'negative'),
+        ('6d8484217c9fa02419536c9118435715d3a8e705', 1979136599, 'positive')
     ])
-    def test_crc32(self, name, ssid, crc32id, case):
+    def test_crc32(self, ssid, crc32id, case):
         self.assertEqual(crc32(ssid), crc32id, f"Hashed id is wrong ({case} case)")

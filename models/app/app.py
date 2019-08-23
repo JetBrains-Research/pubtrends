@@ -49,11 +49,11 @@ def progress():
 @app.route('/result')
 def result():
     jobid = request.values.get('jobid')
-    terms = request.args.get('terms').split('+')
+    terms = request.args.get('terms')
     if jobid:
         job = AsyncResult(jobid, app=celery)
         if job.state == 'SUCCESS':
-            return render_template('result.html', search_string=' '.join(terms),
+            return render_template('result.html', search_string=terms,
                                    version=PUBTRENDS_CONFIG.version,
                                    **job.result)
 
@@ -64,10 +64,17 @@ def result():
 def process():
     if len(request.args) > 0:
         jobid = request.values.get('jobid')
-        terms = request.args.get('terms').split('+')
+        terms = request.args.get('terms').replace('+', ' ')
+        analysis_type = request.values.get("analysis_type")
+
         if jobid:
-            return render_template('process.html', search_string=' '.join(terms),
-                                   url_search_string=quote(' '.join(terms)),
+            if terms:
+                search_string = terms
+            else:
+                search_string = f"{analysis_type} analysis of the previous query"
+
+            return render_template('process.html', search_string=search_string,
+                                   url_search_string=quote(search_string),
                                    JOBID=jobid,
                                    version=PUBTRENDS_CONFIG.version)
 
@@ -82,9 +89,11 @@ def index():
         source = request.form.get('source')
         if 'terms' in request.form:
             terms = request.form.get('terms').split(' ')
+            analysis_type = ''
         elif 'id_list' in request.form:
             id_list = request.form.get('id_list').split(',')
             zoom = request.form.get('zoom')
+            analysis_type = 'expanded' if zoom == 'out' else 'detailed'
         else:
             raise Exception("Request should contain either terms or list of ids")
 
@@ -92,7 +101,7 @@ def index():
         if len(terms) > 0 or id_list:
             # Submit Celery task
             job = analyze_async.delay(source=source, terms=terms, id_list=id_list, zoom=zoom)
-            return redirect(flask.url_for('.process', terms=redirect_url, jobid=job.id))
+            return redirect(flask.url_for('.process', terms=redirect_url, analysis_type=analysis_type, jobid=job.id))
 
     return render_template('main.html', version=PUBTRENDS_CONFIG.version)
 
