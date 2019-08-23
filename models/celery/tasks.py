@@ -72,7 +72,7 @@ def analyze_topic_async(source, terms=None, id_list=None, zoom=None, sort='Most 
         if subtopic_evolution:
             result['subtopic_evolution'] = [components(subtopic_evolution)]
 
-    return result, analyzer.df.to_json()
+    return result, analyzer.dump()
 
 
 @celery.task(name='analyze_paper_async')
