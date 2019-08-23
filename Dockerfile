@@ -19,15 +19,8 @@ LABEL email = "os@jetbrains.com"
 USER root
 
 # Update all the packages
-RUN apt-get update --fix-missing
-
-# Install conda, curl should install certificates, so no --no-install-recommends
-RUN apt-get install -y curl bzip2 gnupg2 wget ca-certificates
-RUN curl --location https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh --output ~/miniconda.sh \
-    && /bin/bash ~/miniconda.sh -b -p /opt/conda \
-    && rm ~/miniconda.sh
-ENV PATH /opt/conda/bin:$PATH
-RUN ln -snf /bin/bash /bin/sh
+RUN apt-get update --fix-missing \
+    && apt-get install -y curl bzip2 gnupg2 wget ca-certificates
 
 # Install Postgresql 11, Redis and cleanup
 RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
@@ -41,8 +34,17 @@ RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-k
 # Make new user
 RUN groupadd -r pubtrends && useradd -ms /bin/bash -g pubtrends user
 
-# Create pubtrends conda env
+# Install Conda and create pubtrends conda env
 USER user
+RUN curl --location https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh --output ~/miniconda.sh \
+    && /bin/bash ~/miniconda.sh -b \
+    && rm ~/miniconda.sh
+ENV PATH /home/user/miniconda3/bin:$PATH
+# Fix shell for conda
+USER root
+RUN ln -snf /bin/bash /bin/sh
+USER user
+
 COPY environment.yml /home/user/environment.yml
 RUN conda init bash \
     && conda env create -f /home/user/environment.yml \

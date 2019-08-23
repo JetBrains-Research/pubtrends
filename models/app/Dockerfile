@@ -6,7 +6,7 @@ LABEL email = "os@jetbrains.com"
 USER user
 
 # Updated pubtrends conda env
-RUN source activate pubtrends && conda install gunicorn && pip install redis
+RUN source activate pubtrends && pip install gunicorn redis
 
 ENV CELERY_BROKER_URL redis://redis:6379/0
 ENV CELERY_RESULT_BACKEND redis://redis:6379/0

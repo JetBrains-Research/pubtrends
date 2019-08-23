@@ -227,10 +227,11 @@ class KeyPaperAnalyzer:
 
         return df_merged
 
-    def subtopic_descriptions(self, df, current=0, task=None):
+    def subtopic_descriptions(self, df, n=200, current=0, task=None):
         # Get n-gram descriptions for subtopics
-        self.logger.debug('Getting n-gram descriptions for subtopics', current=current, task=task)
-        comps = df.groupby('comp')['id'].apply(list).to_dict()
+        self.logger.debug(f'Getting n-gram descriptions for subtopics using top {n} cited papers',
+                          current=current, task=task)
+        comps = self.get_most_cited_papers_for_comps(df, n=n)
         kwds = get_subtopic_descriptions(df, comps)
         for k, v in kwds.items():
             self.logger.debug(f'{k}: {v}', current=current, task=task)
@@ -343,12 +344,14 @@ class KeyPaperAnalyzer:
         evolution_df['id'] = evolution_df['id'].astype(str)
         return evolution_df, year_range
 
-    def subtopic_evolution_descriptions(self, df, evolution_df, year_range, terms, keywords=15, current=0, task=None):
+    def subtopic_evolution_descriptions(self, df, evolution_df, year_range, terms,
+                                        n=200, keywords=15, current=0, task=None):
         # Subtopic evolution failed, no need to generate keywords
         if evolution_df is None or not year_range:
             return None
 
-        self.logger.info('Generating descriptions for subtopic during evolution', current=current, task=task)
+        self.logger.info(f'Generating descriptions for subtopics during evolution using top {n} cited papers',
+                         current=current, task=task)
         evolution_kwds = {}
         for col in evolution_df:
             if col in year_range:
@@ -356,7 +359,7 @@ class KeyPaperAnalyzer:
                                   current=current, task=task)
                 if isinstance(col, (int, float)):
                     evolution_df[col] = evolution_df[col].apply(int)
-                    comps = dict(evolution_df.groupby(col)['id'].apply(list))
+                    comps = self.get_most_cited_papers_for_comps(df, n=n)
                     evolution_kwds[col] = get_tfidf_words(df, comps, terms, size=keywords)
 
         return evolution_kwds
@@ -451,3 +454,8 @@ class KeyPaperAnalyzer:
         author_stats = author_stats.sort_values(by=['sum'], ascending=False)
 
         return author_stats.head(n=n)
+
+    @staticmethod
+    def get_most_cited_papers_for_comps(df, n):
+        ids = df[df['comp'] >= 0].sort_values(by='total', ascending=False).groupby('comp')['id']
+        return ids.apply(list).apply(lambda x: x[:n]).to_dict()
