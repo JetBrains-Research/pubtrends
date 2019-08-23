@@ -28,7 +28,7 @@ class KeyPaperAnalyzer:
         elif not test:
             raise TypeError("loader should be either PubmedLoader or SemanticScholarLoader")
 
-    def launch(self, search_query=None, id_list=None, limit=None, sort=None, zoom=None, task=None):
+    def launch(self, search_query=None, id_list=None, zoom=None, task=None):
         """:return full log"""
 
         try:
@@ -36,7 +36,7 @@ class KeyPaperAnalyzer:
                 # Search articles relevant to the terms
                 special_symbols = re.compile('\\W+')
                 self.terms = [term.strip() for term in re.sub(special_symbols, ' ', search_query).split()]
-                self.ids, temp_table_created = self.loader.search(search_query, limit=limit, sort=sort, current=1, task=task)
+                self.ids = self.loader.search(search_query, current=1, task=task)
                 self.n_papers = len(self.ids)
 
                 # Nothing found
@@ -44,7 +44,7 @@ class KeyPaperAnalyzer:
                     raise RuntimeError("Nothing found")
 
                 # Load data about publications
-                self.pub_df = self.loader.load_publications(temp_table_created=temp_table_created, current=2, task=task)
+                self.pub_df = self.loader.load_publications(current=2, task=task)
                 if len(self.pub_df) == 0:
                     raise RuntimeError("Nothing found in DB")
             elif id_list:
@@ -367,7 +367,7 @@ class KeyPaperAnalyzer:
                                   current=current, task=task)
                 if isinstance(col, (int, float)):
                     evolution_df[col] = evolution_df[col].apply(int)
-                    comps = evolution_df.groupby(col)['id'].apply(list).to_dict()
+                    comps = self.get_most_cited_papers_for_comps(df, n=n)
                     evolution_kwds[col] = get_tfidf_words(df, comps, terms, size=keywords)
 
         return evolution_kwds
