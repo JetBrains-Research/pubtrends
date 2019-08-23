@@ -3,5 +3,5 @@
 .pytest_cache/*
 build/*
 out/*
-ss/*
+**/*.gz
 docker-compose.yml
