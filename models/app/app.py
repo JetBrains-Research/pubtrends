@@ -66,8 +66,15 @@ def process():
     if len(request.args) > 0:
         jobid = request.values.get('jobid')
         terms = request.args.get('terms')
+        analysis_type = request.values.get("analysis_type")
+
         if jobid:
-            return render_template('process.html', search_string=terms,
+            if terms:
+                search_string = terms
+            else:
+                search_string = f"{analysis_type} analysis of the previous query"
+
+            return render_template('process.html', search_string=search_string,
                                    url_search_string=quote(terms), JOBID=jobid,
                                    version=PUBTRENDS_CONFIG.version)
 
@@ -81,9 +88,11 @@ def index():
         terms, id_list, zoom = '', '', ''
         if 'terms' in request.form:
             terms = request.form.get('terms')
+            analysis_type = ''
         elif 'id_list' in request.form:
             id_list = request.form.get('id_list').split(',')
             zoom = request.form.get('zoom')
+            analysis_type = 'expanded' if zoom == 'out' else 'detailed'
         else:
             raise Exception("Request should contain either terms or list of ids")
         source = request.form.get('source')
@@ -91,9 +100,9 @@ def index():
         amount = request.form.get('amount')
         if len(terms) > 0 or id_list:
             # Submit Celery task
-            job = analyze_async.delay(source=source, terms=terms, id_list=id_list,
-                                      sort=sort, amount=amount, zoom=zoom)
-            return redirect(flask.url_for('.process', terms=terms, jobid=job.id))
+            job = analyze_async.delay(source=source, terms=terms, id_list=id_list, zoom=zoom,
+                                      sort=sort, amount=amount)
+            return redirect(flask.url_for('.process', terms=terms, analysis_type=analysis_type, jobid=job.id))
 
     return render_template('main.html', version=PUBTRENDS_CONFIG.version,
                            amounts=PUBTRENDS_CONFIG.show_max_articles_options,

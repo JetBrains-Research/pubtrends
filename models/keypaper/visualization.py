@@ -479,10 +479,10 @@ class Plotter:
 
         desc.image_rgba(image=[img], x=[0], y=[0], dw=[10], dh=[10])
 
-        zoom_out_button = Button(label="Expand topic", button_type="default", width=100)
+        zoom_out_button = Button(label="Expand topic — analyze the topic with related papers", button_type="default")
         zoom_out_button.js_on_event(ButtonClick, self.zoom_callback(ColumnDataSource(self.analyzer.df[['id']]),
                                                                     self.analyzer.source, zoom='out'))
-        p = row(desc, p, zoom_out_button)
+        p = column(row(desc, p), zoom_out_button)
         return p
 
     def subtopic_evolution(self):
