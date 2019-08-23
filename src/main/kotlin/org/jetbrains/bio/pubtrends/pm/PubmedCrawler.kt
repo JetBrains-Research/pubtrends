@@ -11,6 +11,7 @@ import javax.xml.stream.XMLStreamException
 class PubmedCrawlerException : Exception {
     constructor(message: String) : super(message)
     constructor(cause: Throwable) : super(cause)
+    constructor(message: String, cause: Throwable) : super(message, cause)
 }
 
 class PubmedCrawler(
@@ -135,15 +136,14 @@ class PubmedCrawler(
                 else
                     ftpHandler.downloadUpdateFile(file, tempDirectory.absolutePath)
             } catch (e: IOException) {
-                throw PubmedCrawlerException("Failed to download XML archive")
+                throw PubmedCrawlerException("Failed to download XML archive", e)
             }
 
             try {
                 logger.info("$progressPrefix $localArchiveName: Unpacking...")
                 unpack(localArchiveName)
             } catch (e: IOException) {
-                logger.error("Failed to unpack $localArchiveName : corrupted GZ archive")
-                throw PubmedCrawlerException(e)
+                throw PubmedCrawlerException("Failed to unpack $localArchiveName : corrupted GZ archive", e)
             }
 
             try {
@@ -151,8 +151,7 @@ class PubmedCrawler(
                 xmlParser.parse(localName)
                 File(localName).delete()
             } catch (e: XMLStreamException) {
-                logger.error("Failed to parse $localName")
-                throw PubmedCrawlerException(e)
+                throw PubmedCrawlerException("Failed to parse $localName", e)
             }
 
             logger.info("$progressPrefix $localName: SUCCESS")
