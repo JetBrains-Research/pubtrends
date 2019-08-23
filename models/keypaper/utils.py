@@ -153,6 +153,11 @@ def get_tfidf_words(df, comps, terms, size=5):
     words = vectorizer.get_feature_names()
     kwd = {}
     for i in comps.keys():
+        # Generate no keywords for '-1' component
+        if i < 0:
+            kwd[i] = ''
+            continue
+
         # It might be faster to use np.argpartition instead of np.argsort
         # Sort indices by tfidf value
         ind = np.argsort(tfidf[i, :].toarray(), axis=1)

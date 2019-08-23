@@ -359,7 +359,7 @@ class KeyPaperAnalyzer:
                                   current=current, task=task)
                 if isinstance(col, (int, float)):
                     evolution_df[col] = evolution_df[col].apply(int)
-                    comps = self.get_most_cited_papers_for_comps(df, n=n)
+                    comps = evolution_df.groupby(col)['id'].apply(list).to_dict()
                     evolution_kwds[col] = get_tfidf_words(df, comps, terms, size=keywords)
 
         return evolution_kwds
