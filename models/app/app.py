@@ -72,9 +72,8 @@ def process():
 
         if jobid:
             if terms:
-                terms = terms.split('+')
-                return render_template('process.html', search_string=' '.join(terms),
-                                       subpage="result", key="terms", value=quote(' '.join(terms)),
+                return render_template('process.html', search_string=terms,
+                                       subpage="result", key="terms", value=quote(terms),
                                        JOBID=jobid, version=PUBTRENDS_CONFIG.version)
             elif key and value:
                 return render_template('process.html', search_string=f'{key}: {value}',

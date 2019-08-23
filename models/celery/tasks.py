@@ -1,6 +1,6 @@
 import os
 
-import pandas as pd
+import numpy as np
 from bokeh.embed import components
 from celery import Celery, current_task
 
@@ -29,7 +29,7 @@ def analyze_topic_async(source, terms=None, id_list=None, zoom=None, sort='Most 
     elif source == 'Semantic Scholar':
         loader = SemanticScholarLoader(PUBTRENDS_CONFIG)
     else:
-        raise Exception(f"Unknown source {source}")
+        raise ValueError(f"Unknown source {source}")
 
     if not sort:
         sort = 'Most Cited'
@@ -67,7 +67,7 @@ def analyze_topic_async(source, terms=None, id_list=None, zoom=None, sort='Most 
     if subtopic_evolution:
         result['subtopic_evolution'] = [components(subtopic_evolution)]
 
-    return result, analyzer.df.to_json()
+    return result, analyzer.dump()
 
 
 @celery.task(name='analyze_paper_async')
@@ -77,7 +77,7 @@ def analyze_paper_async(source, key, value):
     elif source == 'Semantic Scholar':
         loader = SemanticScholarLoader(PUBTRENDS_CONFIG)
     else:
-        raise Exception(f"Unknown source {source}")
+        raise ValueError(f"Unknown source {source}")
 
     analyzer = KeyPaperAnalyzer(loader)
     log = analyzer.launch_paper(key, value, task=current_task)
@@ -91,35 +91,53 @@ def analyze_paper_async(source, key, value):
 
 
 def prepare_paper_data(data, source, pid):
-    df = pd.read_json(data)
-    df['id'] = df['id'].apply(str)
-
-    plotter = Plotter()
-
     if source == 'pubmed':
+        loader = PubmedLoader(PUBTRENDS_CONFIG)
         url = PUBMED_ARTICLE_BASE_URL + pid
         source_name = 'Pubmed'
     elif source == 'semantic':
+        loader = SemanticScholarLoader(PUBTRENDS_CONFIG)
         url = SEMANTIC_SCHOLAR_BASE_URL + pid
         source_name = 'Semantic Scholar'
     else:
-        raise ValueError('Bad source')
+        raise ValueError(f"Unknown source {source}")
 
-    sel = df[df['id'] == pid]
+    analyzer = KeyPaperAnalyzer(loader)
+    analyzer.load(data)
+
+    plotter = Plotter()
+
+    sel = analyzer.df[analyzer.df['id'] == pid]
 
     max_title_length = 100
     title = sel['title'].values[0]
     trimmed_title = f'{title[:max_title_length]}...' if len(title) > max_title_length else title
 
+    journal = sel['journal'].values[0]
+    year = sel['year'].values[0]
+
+    if journal == '':
+        if year == np.nan:
+            citation = ''
+        else:
+            citation = f'Published in {year}'
+    else:
+        if year == np.nan:
+            citation = journal
+        else:
+            citation = f'{journal} ({year})'
+
     result = {
         'title': title,
         'trimmed_title': trimmed_title,
         'authors': sel['authors'].values[0],
-        'journal': sel['journal'].values[0],
-        'year': sel['year'].values[0],
+        'citation': citation,
         'url': url,
         'source': source_name,
-        'citation_dynamics': [components(plotter.article_citation_dynamics(df, pid))]
+        'citation_dynamics': [components(plotter.article_citation_dynamics(analyzer.df, str(pid)))],
+        'related_topics': sel.to_html(),
+        'citing_papers': list(analyzer.G[pid]),
+        'cociting_papers': list(analyzer.CG[pid])
     }
 
     abstract = sel['abstract'].values[0]
