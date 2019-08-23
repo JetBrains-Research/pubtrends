@@ -249,7 +249,7 @@ class Plotter:
         n_comps = len(self.analyzer.components)
         self.colors = dict(enumerate(self.comp_palette))
         ds = [None] * n_comps
-        p = [None] * n_comps
+        result = [None] * n_comps
 
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
         for c in range(n_comps):
@@ -284,13 +284,13 @@ class Plotter:
 
             desc.image_rgba(image=[img], x=[0], y=[0], dw=[10], dh=[10])
 
-            zoom_in_button = Button(label="Analyze subtopic", button_type="default", width=100)
+            zoom_in_button = Button(label="+ Zoom into subtopic", button_type="default", width=100)
             zoom_in_button.js_on_event(ButtonClick, self.zoom_callback(ColumnDataSource(comp_source[['id']]),
                                                                        self.analyzer.source, zoom='in'))
 
-            p[c] = row(desc, plot, column(zoom_in_button))
+            result[c] = column(zoom_in_button, row(desc, plot))
 
-        return p
+        return result
 
     def component_ratio(self):
         comps, source = PlotPreprocessor.component_ratio_data(
@@ -478,12 +478,11 @@ class Plotter:
         view[:, :, 3] = 255
 
         desc.image_rgba(image=[img], x=[0], y=[0], dw=[10], dh=[10])
-
-        zoom_out_button = Button(label="Expand topic — analyze the topic with related papers", button_type="default")
+        zoom_out_button = Button(label="— Zoom out to related papers",
+                                 button_type="default")
         zoom_out_button.js_on_event(ButtonClick, self.zoom_callback(ColumnDataSource(self.analyzer.df[['id']]),
                                                                     self.analyzer.source, zoom='out'))
-        p = column(row(desc, p), zoom_out_button)
-        return p
+        return column(row(desc, p), zoom_out_button)
 
     def subtopic_evolution(self):
         """
