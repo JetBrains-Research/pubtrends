@@ -25,6 +25,8 @@ class PubmedLoader(Loader):
         """
         # Return everything possible if limit is not set or need to sort by citations
         query_limit = str(limit) if limit and sort != 'citations' else '50000000'
+        if not limit:
+            limit = self.max_number_of_articles
 
         # Set sort method for query
         query_sort = sort if sort == 'relevance' else None

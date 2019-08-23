@@ -11,48 +11,83 @@ class SemanticScholarLoader(Loader):
     def __init__(self, pubtrends_config):
         super(SemanticScholarLoader, self).__init__(pubtrends_config)
 
-    def search(self, terms, current=0, task=None):
-        self.terms = [t.lower() for t in terms]
-        self.logger.info('Searching publication data', current=current, task=task)
+    def search(self, terms, limit=None, sort=None, current=0, task=None):
+        self.logger.info(f'Searching publications matching <{terms}>', current=current, task=task)
         terms_str = '\'' + terms + '\''
-        query = f'''
-        SELECT DISTINCT ON(ssid) ssid, crc32id, title, abstract, year, aux FROM SSPublications P
-        WHERE tsv @@ websearch_to_tsquery('english', {terms_str}) limit {self.max_number_of_articles};
-        '''
+        if not limit:
+            limit = self.max_number_of_articles
+
+        columns = ['id', 'crc32id', 'title', 'abstract', 'year', 'aux']
+        if sort == 'relevance':
+            query = f'''
+                SELECT P.ssid, P.crc32id, P.title, P.abstract, P.year, P.aux, ts_rank_cd(P.tsv, query) AS rank
+                FROM SSPublications P, websearch_to_tsquery('english', {terms_str}) query
+                WHERE tsv @@ query
+                ORDER BY rank DESC
+                LIMIT {limit};
+                '''
+            columns.append('ts_rank')
+        elif sort == 'citations':
+            query = f'''
+                SELECT P.ssid, P.crc32id, P.title, P.abstract, P.year, P.aux, COUNT(1) AS count
+                FROM SSPublications P
+                LEFT JOIN SSCitations C
+                ON C.crc32id_in = P.crc32id AND C.id_in = P.ssid
+                WHERE tsv @@ websearch_to_tsquery('english', {terms_str})
+                GROUP BY P.ssid, P.crc32id, P.title, P.abstract, P.year, P.aux
+                ORDER BY count DESC NULLS LAST
+                LIMIT {limit};
+                '''
+            columns.append('citations')
+        elif sort == 'year':
+            query = f'''
+                SELECT ssid, crc32id, title, abstract, year, aux
+                FROM SSPublications P
+                WHERE tsv @@ websearch_to_tsquery('english', {terms_str})
+                ORDER BY year DESC NULLS LAST
+                LIMIT {limit};
+                '''
+        else:
+            raise ValueError('sort can be either citations, relevance or year')
 
         with self.conn.cursor() as cursor:
             cursor.execute(query)
             self.pub_df = pd.DataFrame(cursor.fetchall(),
-                                       columns=['id', 'crc32id', 'title', 'abstract', 'year', 'aux'],
+                                       columns=columns,
                                        dtype=object)
+
+        # Duplicate rows may occur if crawler was stopped while parsing Semantic Scholar archive
+        self.pub_df.drop_duplicates(subset='id', inplace=True)
+
+        self.logger.info(f'Found {len(self.pub_df)} publications in the local database', current=current,
+                         task=task)
+
+        self.ids = list(self.pub_df['id'].values)
+        crc32ids = list(self.pub_df['crc32id'].values)
+        self.values = ', '.join(['({0}, \'{1}\')'.format(i, j) for (i, j) in zip(crc32ids, self.ids)])
+        return self.ids, False
+
+    def load_publications(self, temp_table_created=False, current=0, task=None):
+        if not temp_table_created:
+            self.logger.info('Loading publication data', current=current, task=task)
+            query = f'''
+                    DROP TABLE IF EXISTS temp_ssids;
+                    WITH vals(crc32id, ssid) AS (VALUES {self.values})
+                    SELECT crc32id, ssid INTO table temp_ssids FROM vals;
+                    DROP INDEX IF EXISTS temp_ssids_index;
+                    CREATE INDEX temp_ssids_index ON temp_ssids USING btree (crc32id);
+                    '''
+
+            with self.conn.cursor() as cursor:
+                cursor.execute(query)
+
+            self.logger.debug('Created table for request with index.', current=current, task=task)
 
         if np.any(self.pub_df[['id', 'crc32id', 'title']].isna()):
             raise ValueError('Paper must have ID and title')
 
         self.pub_df = Loader.process_publications_dataframe(self.pub_df)
 
-        self.logger.info(f'Found {len(self.pub_df)} publications in the local database', current=current,
-                         task=task)
-
-        self.ids = self.pub_df['id']
-        crc32ids = self.pub_df['crc32id']
-        self.values = ', '.join(['({0}, \'{1}\')'.format(i, j) for (i, j) in zip(crc32ids, self.ids)])
-        return self.ids
-
-    def load_publications(self, current=0, task=None):
-        self.logger.info('Loading publication data', current=current, task=task)
-        query = f'''
-                DROP TABLE IF EXISTS temp_ssids;
-                WITH vals(crc32id, ssid) AS (VALUES {self.values})
-                SELECT crc32id, ssid INTO table temp_ssids FROM vals;
-                DROP INDEX IF EXISTS temp_ssids_index;
-                CREATE INDEX temp_ssids_index ON temp_ssids USING btree (crc32id);
-                '''
-
-        with self.conn.cursor() as cursor:
-            cursor.execute(query)
-
-        self.logger.debug('Created table for request with index.', current=current, task=task)
 
         return self.pub_df
 
