@@ -163,6 +163,9 @@ Launch Gunicorn serving Flask app, Redis and Celery in containers by the command
     source activate pubtrends; cd /pubtrends; python -m pytest --codestyle models"
     ```
    
+# Authors
+
+See [AUTHORS.md](AUTHORS.md) for a list of authors and contributors.
 
 # Materials
 
