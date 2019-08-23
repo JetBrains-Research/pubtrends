@@ -44,17 +44,17 @@ class Plotter:
 
     @staticmethod
     def paper_callback(source, db):
-        if db in ['semantic', 'pubmed']:
+        if db in ['Semantic Scholar', 'Pubmed']:
             base = LOCAL_BASE_URL.substitute(source=db)
         else:
             raise ValueError("Wrong value of db")
         return CustomJS(args=dict(source=source, base=base), code="""
             var data = source.data, selected = source.selected.indices;
-            
+
             // Decode jobid from URL, which is supposed to be last
             var tokens = window.location.href.split('&');
             var jobid = tokens[tokens.length - 1];
-            
+
             if (selected.length == 1) {
                 // only consider case where one glyph is selected by user
                 selected_id = data['id'][selected[0]]

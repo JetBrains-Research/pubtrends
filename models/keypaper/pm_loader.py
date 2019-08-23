@@ -57,7 +57,7 @@ class PubmedLoader(Loader):
     def sort_results(self, ids, limit, sort, current=0, task=None):
         # Pubmed can return the most recent or the most relevant papers
         # Results need to be changed only if sorting by citations number
-        if sort == 'citations':
+        if sort == 'citations' and len(ids) > limit:
             self.logger.info(f'Selecting {limit} most cited articles', current=current, task=task)
 
             values = ', '.join(['({})'.format(i) for i in sorted(ids)])

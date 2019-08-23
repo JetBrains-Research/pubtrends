@@ -91,14 +91,12 @@ def analyze_paper_async(source, key, value):
 
 
 def prepare_paper_data(data, source, pid):
-    if source == 'pubmed':
+    if source == 'Pubmed':
         loader = PubmedLoader(PUBTRENDS_CONFIG)
         url = PUBMED_ARTICLE_BASE_URL + pid
-        source_name = 'Pubmed'
-    elif source == 'semantic':
+    elif source == 'Semantic Scholar':
         loader = SemanticScholarLoader(PUBTRENDS_CONFIG)
         url = SEMANTIC_SCHOLAR_BASE_URL + pid
-        source_name = 'Semantic Scholar'
     else:
         raise ValueError(f"Unknown source {source}")
 
@@ -133,7 +131,7 @@ def prepare_paper_data(data, source, pid):
         'authors': sel['authors'].values[0],
         'citation': citation,
         'url': url,
-        'source': source_name,
+        'source': source,
         'citation_dynamics': [components(plotter.article_citation_dynamics(analyzer.df, str(pid)))],
         'related_topics': sel.to_html(),
         'citing_papers': list(analyzer.G[pid]),
