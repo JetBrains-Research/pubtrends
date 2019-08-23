@@ -4,6 +4,7 @@ import community
 import networkx as nx
 import numpy as np
 import pandas as pd
+from networkx.readwrite import json_graph
 
 from .pm_loader import PubmedLoader
 from .progress_logger import ProgressLogger
@@ -476,3 +477,31 @@ class KeyPaperAnalyzer:
     def get_most_cited_papers_for_comps(df, n):
         ids = df[df['comp'] >= 0].sort_values(by='total', ascending=False).groupby('comp')['id']
         return ids.apply(list).apply(lambda x: x[:n]).to_dict()
+
+    def dump(self):
+        """
+        Dump valuable fields of KeyPaperAnalyzer to JSON-serializable dict. Use 'load' to restore analyzer.
+        """
+        return {'cg': json_graph.node_link_data(self.CG),
+                'df': self.df.to_json(),
+                'g': json_graph.node_link_data(self.G)}
+
+    def load(self, fields):
+        """
+        Load valuable fields of KeyPaperAnalyzer from JSON-serializable dict. Use 'dump' to dump analyzer.
+        """
+        # Restore main dataframe
+        self.df = pd.read_json(fields['df'])
+        self.df['id'] = self.df['id'].apply(str)
+
+        mapping = {}
+        for col in self.df.columns:
+            try:
+                mapping[col] = int(col)
+            except ValueError:
+                mapping[col] = col
+        self.df = self.df.rename(columns=mapping)
+
+        # Restore citation and co-citation graphs
+        self.CG = json_graph.node_link_graph(fields['cg'])
+        self.G = json_graph.node_link_graph(fields['g'])

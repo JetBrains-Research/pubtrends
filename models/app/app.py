@@ -70,7 +70,6 @@ def process():
         value = request.args.get('value')
         if jobid:
             if terms:
-                terms = terms.split('+')
                 return render_template('process.html', search_string=terms,
                                        subpage="result", key="terms", value=quote(terms),
                                        JOBID=jobid, version=PUBTRENDS_CONFIG.version)
