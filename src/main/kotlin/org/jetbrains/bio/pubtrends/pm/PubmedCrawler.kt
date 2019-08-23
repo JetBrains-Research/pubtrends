@@ -15,10 +15,10 @@ class PubmedCrawlerException : Exception {
 }
 
 class PubmedCrawler(
-    private val xmlParser: PubmedXMLParser,
-    private val collectStats: Boolean,
-    private val statsTSV: Path,
-    private val progressTSV: Path
+        private val xmlParser: PubmedXMLParser,
+        private val collectStats: Boolean,
+        private val statsTSV: Path,
+        private val progressTSV: Path
 ) {
 
     private val logger = LogManager.getLogger(PubmedCrawler::class)
@@ -71,8 +71,8 @@ class PubmedCrawler(
             val baselineSize = baselineFiles.size
             val updatesSize = updateFiles.size
             logger.info(
-                "Found ${baselineSize + updatesSize} new file(s)\n" +
-                        "Baseline: $baselineSize, Updates: $updatesSize"
+                    "Found ${baselineSize + updatesSize} new file(s)\n" +
+                            "Baseline: $baselineSize, Updates: $updatesSize"
             )
             if (baselineSize + updatesSize == 0) {
                 return false
@@ -105,24 +105,12 @@ class PubmedCrawler(
         return false
     }
 
-    private fun unpack(archiveName: String) {
-        val originalName = archiveName.substringBefore(".gz")
-        val bufferSize = 1024
-
-        GZIPInputStream(BufferedInputStream(FileInputStream(archiveName))).use { inputStream ->
-            BufferedOutputStream(FileOutputStream(originalName)).use { outputStream ->
-                inputStream.copyTo(outputStream, bufferSize)
-            }
-        }
-    }
-
     private fun downloadFiles(files: List<String>, isBaseline: Boolean) {
         val filesSize = files.size
         val fileType = if (isBaseline) "baseline" else "update"
 
         files.forEachIndexed { idx, file ->
             val localArchiveName = "${tempDirectory.absolutePath}/$file"
-            val localName = localArchiveName.substringBefore(".gz")
             val progressPrefix = "(${idx + 1} / $filesSize $fileType)"
 
             logger.info("$progressPrefix $localArchiveName: Downloading...")
@@ -133,30 +121,20 @@ class PubmedCrawler(
                 else
                     ftpHandler.downloadUpdateFile(file, tempDirectory.absolutePath)
             } catch (e: IOException) {
+                deleteIfExists(localArchiveName)
                 throw PubmedCrawlerException("Failed to download XML archive", e)
-            } finally {
-                deleteIfExists(localArchiveName)
             }
 
             try {
-                logger.info("$progressPrefix $localArchiveName: Unpacking...")
-                unpack(localArchiveName)
-            } catch (e: IOException) {
-                throw PubmedCrawlerException("Failed to unpack $localArchiveName : corrupted GZ archive", e)
-            } finally {
-                deleteIfExists(localArchiveName)
-            }
-
-            try {
-                logger.info("$progressPrefix $localName: Parsing...")
-                xmlParser.parse(localName)
+                logger.info("$progressPrefix $localArchiveName: Parsing...")
+                xmlParser.parse(localArchiveName)
             } catch (e: XMLStreamException) {
-                throw PubmedCrawlerException("Failed to parse $localName", e)
+                throw PubmedCrawlerException("Failed to parse $localArchiveName", e)
             } finally {
-                deleteIfExists(localName)
+                deleteIfExists(localArchiveName)
             }
 
-            logger.info("$progressPrefix $localName: SUCCESS")
+            logger.info("$progressPrefix $localArchiveName: SUCCESS")
 
             // Save progress information to be able to recover from Ctrl-C/kill signals
             logger.debug("$progressPrefix Save progress to $progressTSV")

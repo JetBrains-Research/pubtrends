@@ -3,7 +3,8 @@ package org.jetbrains.bio.pubtrends.pm
 import org.apache.logging.log4j.LogManager
 import org.joda.time.DateTime
 import org.joda.time.IllegalFieldValueException
-import java.io.File
+import java.io.*
+import java.util.zip.GZIPInputStream
 import javax.xml.namespace.QName
 import javax.xml.stream.XMLEventReader
 import javax.xml.stream.XMLInputFactory
@@ -11,9 +12,9 @@ import javax.xml.stream.XMLStreamException
 
 
 class PubmedXMLParser(
-    private val dbHandler: AbstractDBHandler,
-    private val parserLimit: Int,
-    private val batchSize: Int = 0
+        private val dbHandler: AbstractDBHandler,
+        private val parserLimit: Int,
+        private val batchSize: Int = 0
 ) {
     companion object {
         private val logger = LogManager.getLogger(PubmedXMLParser::class)
@@ -61,8 +62,8 @@ class PubmedXMLParser(
 
         // Month mapping
         private val CALENDAR_MONTH = mapOf(
-            "Jan" to 1, "Feb" to 2, "Mar" to 3, "Apr" to 4, "May" to 5, "Jun" to 6,
-            "Jul" to 7, "Aug" to 8, "Sep" to 9, "Oct" to 10, "Nov" to 11, "Dec" to 12
+                "Jan" to 1, "Feb" to 2, "Mar" to 3, "Apr" to 4, "May" to 5, "Jun" to 6,
+                "Jul" to 7, "Aug" to 8, "Sep" to 9, "Oct" to 10, "Nov" to 11, "Dec" to 12
         )
     }
 
@@ -82,8 +83,13 @@ class PubmedXMLParser(
 
     fun parse(name: String): Boolean {
         try {
-            logger.debug("File location: ${File(name).absolutePath}")
-            File(name).inputStream().use {
+            val file = File(name)
+            logger.debug("File location: ${file.absolutePath}")
+            val `in` = if (name.endsWith(".gz"))
+                GZIPInputStream(BufferedInputStream(FileInputStream(file)))
+            else // for tests
+                BufferedInputStream(FileInputStream(file))
+            `in`.use {
                 parseData(factory.createXMLEventReader(it))
             }
         } catch (e: XMLStreamException) {
@@ -257,8 +263,8 @@ class PubmedXMLParser(
                             year = yearMatch.value.toInt()
                         } else {
                             logger.warn(
-                                "Failed to parse year from MEDLINE date in article $pmid: " +
-                                        dataElement.data
+                                    "Failed to parse year from MEDLINE date in article $pmid: " +
+                                            dataElement.data
                             )
                         }
 
@@ -270,14 +276,14 @@ class PubmedXMLParser(
                                 month = CALENDAR_MONTH[monthMatch.value] ?: 1
                             } else {
                                 logger.debug(
-                                    "Failed to parse name of MEDLINE month in article $pmid: " +
-                                            dataElement.data
+                                        "Failed to parse name of MEDLINE month in article $pmid: " +
+                                                dataElement.data
                                 )
                             }
                         } else {
                             logger.debug(
-                                "Failed to parse value of MEDLINE month in article $pmid: " +
-                                        dataElement.data
+                                    "Failed to parse value of MEDLINE month in article $pmid: " +
+                                            dataElement.data
                             )
                         }
                     }
@@ -395,20 +401,20 @@ class PubmedXMLParser(
 
                         abstractText = abstractText.trim()
                         articleList.add(
-                            PubmedArticle(
-                                pmid = pmid,
-                                date = date,
-                                title = title,
-                                abstractText = abstractText,
-                                keywordList = keywordList.toList(),
-                                citationList = citationList.toList(),
-                                meshHeadingList = meshHeadingList.toList(),
-                                type = type,
-                                doi = doi,
-                                auxInfo = ArticleAuxInfo(
-                                    authors.toList(), databanks.toList(), Journal(journalName), language
+                                PubmedArticle(
+                                        pmid = pmid,
+                                        date = date,
+                                        title = title,
+                                        abstractText = abstractText,
+                                        keywordList = keywordList.toList(),
+                                        citationList = citationList.toList(),
+                                        meshHeadingList = meshHeadingList.toList(),
+                                        type = type,
+                                        doi = doi,
+                                        auxInfo = ArticleAuxInfo(
+                                                authors.toList(), databanks.toList(), Journal(journalName), language
+                                        )
                                 )
-                            )
                         )
 
                         logger.debug("Found new article")
@@ -420,9 +426,9 @@ class PubmedXMLParser(
                     // Add author to the list of authors
                     AUTHOR_TAG -> {
                         authors.add(
-                            Author(
-                                authorName, authorAffiliations.toList()
-                            )
+                                Author(
+                                        authorName, authorAffiliations.toList()
+                                )
                         )
                     }
 
@@ -437,9 +443,9 @@ class PubmedXMLParser(
                     // Databanks
                     DATABANK_TAG -> {
                         databanks.add(
-                            DatabankEntry(
-                                databankName, databankAccessionNumbers.toList()
-                            )
+                                DatabankEntry(
+                                        databankName, databankAccessionNumbers.toList()
+                                )
                         )
                     }
 
@@ -485,8 +491,8 @@ class PubmedXMLParser(
         }
 
         logger.info(
-            "Articles found: $articleCounter, deleted: ${deletedArticlePMIDList.size}, " +
-                    "keywords: $keywordCounter, citations: $citationCounter"
+                "Articles found: $articleCounter, deleted: ${deletedArticlePMIDList.size}, " +
+                        "keywords: $keywordCounter, citations: $citationCounter"
         )
     }
 
