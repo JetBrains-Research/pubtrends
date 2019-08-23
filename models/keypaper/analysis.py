@@ -22,31 +22,40 @@ class KeyPaperAnalyzer:
 
         # Determine source to provide correct URLs to articles
         if isinstance(self.loader, PubmedLoader):
-            self.source = 'pubmed'
+            self.source = 'Pubmed'
         elif isinstance(self.loader, SemanticScholarLoader):
-            self.source = 'semantic'
+            self.source = 'Semantic Scholar'
         elif not test:
             raise TypeError("loader should be either PubmedLoader or SemanticScholarLoader")
 
-    def launch(self, search_query, limit=None, sort=None, task=None):
+    def launch(self, search_query=None, id_list=None, zoom=None, limit=None, sort=None, task=None):
         """:return full log"""
 
         try:
-            # Search articles relevant to the terms
-            special_symbols = re.compile('\\W+')
-            self.terms = [term.strip() for term in re.sub(special_symbols, ' ', search_query).split()]
-            self.ids, temp_table_created = self.loader.search(search_query, limit=limit, sort=sort,
-                                                              current=1, task=task)
-            self.n_papers = len(self.ids)
+            if search_query:
+                # Search articles relevant to the terms
+                special_symbols = re.compile('\\W+')
+                self.terms = [term.strip() for term in re.sub(special_symbols, ' ', search_query).split()]
+                self.ids, temp_table_created = self.loader.search(search_query, limit=limit, sort=sort,
+                                                                  current=1, task=task)
+                self.n_papers = len(self.ids)
 
-            # Nothing found
-            if self.n_papers == 0:
-                raise RuntimeError("Nothing found")
+                # Nothing found
+                if self.n_papers == 0:
+                    raise RuntimeError("Nothing found")
 
-            # Load data about publications, citations and co-citations
-            self.pub_df = self.loader.load_publications(temp_table_created=temp_table_created, current=2, task=task)
-            if len(self.pub_df) == 0:
-                raise RuntimeError("Nothing found in DB")
+                # Load data about publications
+                self.pub_df = self.loader.load_publications(temp_table_created=temp_table_created, current=2, task=task)
+                if len(self.pub_df) == 0:
+                    raise RuntimeError("Nothing found in DB")
+            elif id_list:
+                # Load data about publications with given ids
+                self.terms = search_query
+                self.ids = id_list
+                if zoom == 'out':
+                    self.ids = self.loader.expand(id_list, current=1, task=task)
+                self.pub_df = self.loader.search_with_given_ids(self.ids, current=2, task=task)
+                self.n_papers = len(self.ids)
 
             cit_stats_df_from_query = self.loader.load_citation_stats(current=3, task=task)
             self.cit_stats_df = self.build_cit_stats_df(cit_stats_df_from_query, self.n_papers, current=4, task=task)
@@ -433,7 +442,7 @@ class KeyPaperAnalyzer:
     def popular_authors(self, df, n=20, current=0, task=None):
         self.logger.info("Finding popular authors", current=current, task=task)
 
-        author_stats = self.df[['authors', 'comp']].copy()
+        author_stats = df[['authors', 'comp']].copy()
         author_stats['authors'].replace({'': np.nan, -1: np.nan}, inplace=True)
         author_stats.dropna(subset=['authors'], inplace=True)
 

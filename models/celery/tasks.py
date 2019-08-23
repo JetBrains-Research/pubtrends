@@ -21,19 +21,21 @@ SORT_METHODS = {'Most Cited': 'citations', 'Most Relevant': 'relevance', 'Most R
 # Tasks will be served by Celery,
 # specify task name explicitly to avoid problems with modules
 @celery.task(name='analyze_async')
-def analyze_async(terms, source, sort, amount):
+def analyze_async(source, terms=None, id_list=None, zoom=None, sort='Most Cited', amount=None):
     if source == 'Pubmed':
         loader = PubmedLoader(PUBTRENDS_CONFIG)
-        amount_of_papers = '29 million'
     elif source == 'Semantic Scholar':
         loader = SemanticScholarLoader(PUBTRENDS_CONFIG)
-        amount_of_papers = '45 million'
     else:
         raise Exception(f"Unknown source {source}")
 
+    if not sort:
+        sort = 'Most Cited'
+
     analyzer = KeyPaperAnalyzer(loader)
     # current_task is from @celery.task
-    log = analyzer.launch(terms, limit=str(amount), sort=SORT_METHODS[sort], task=current_task)
+    log = analyzer.launch(search_query=terms, id_list=id_list, zoom=zoom, limit=str(amount),
+                          sort=SORT_METHODS[sort], task=current_task)
 
     # Initialize plotter after completion of analysis
     plotter = Plotter(analyzer)

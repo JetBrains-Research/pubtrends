@@ -12,18 +12,22 @@ class Article:
     year: int = None
 
     def to_db_publication(self):
-        return "('{0}', {1}, '{2}', {3})".format(self.ssid, self.crc32id, self.title,
-                                                 self.year if self.year else 'null')
+        empty_json = '{"journal": {"name": ""}, "authors": []}'
+        return "('{0}', {1}, '{2}', {3}, '', '{4}')".format(self.ssid, self.crc32id, self.title,
+                                                            self.year if self.year else 'null',
+                                                            empty_json)
 
     def indexes(self):
         return "('{0}', {1})".format(self.ssid, self.crc32id)
 
     def to_dict(self):
         return {
-            'ssid': self.ssid,
+            'id': self.ssid,
             'crc32id': self.crc32id,
             'title': self.title,
-            'year': self.year
+            'year': self.year,
+            'abstract': '',
+            'aux': {"journal": {"name": ""}, "authors": []}
         }
 
 
@@ -131,3 +135,9 @@ expected_cocit_and_cit_graph.add_weighted_edges_from([(article7.ssid, article10.
                                                       (article1.ssid, article4.ssid, 0.3),
                                                       (article1.ssid, article3.ssid, 0.3),
                                                       (article1.ssid, article8.ssid, 0.3)])
+
+part_of_articles = [article1, article4, article3, article8, article7, article10]
+expanded_articles = [article1, article2, article3, article4, article5, article6, article7, article8, article10]
+
+pub_df_given_ids = pd.DataFrame.from_records([article.to_dict() for article in part_of_articles])\
+    .sort_values(by=['id']).reset_index(drop=True)

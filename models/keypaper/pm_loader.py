@@ -1,11 +1,10 @@
-import html
 import re
+from collections import Iterable
 
 import numpy as np
 import pandas as pd
 from Bio import Entrez
 
-from models.keypaper.utils import extract_authors
 from .loader import Loader
 
 
@@ -26,6 +25,8 @@ class PubmedLoader(Loader):
         """
         # Return everything possible if limit is not set or need to sort by citations
         query_limit = str(limit) if limit and sort != 'citations' else '50000000'
+        if not limit:
+            limit = self.max_number_of_articles
 
         # Set sort method for query
         query_sort = sort if sort == 'relevance' else None
@@ -101,14 +102,15 @@ class PubmedLoader(Loader):
 
         if np.any(pub_df[['id', 'title']].isna()):
             raise ValueError('Paper must have PMID and title')
-        pub_df = pub_df.fillna(value={'abstract': ''})
-
-        pub_df['year'] = pub_df['year'].apply(lambda year: int(year) if year else np.nan)
-        pub_df['authors'] = pub_df['aux'].apply(lambda aux: extract_authors(aux['authors']))
-        pub_df['journal'] = pub_df['aux'].apply(lambda aux: html.unescape(aux['journal']['name']))
+        pub_df = Loader.process_publications_dataframe(pub_df)
 
         self.logger.debug(f'Found {len(pub_df)} publications in the local database\n', current=current, task=task)
         return pub_df
+
+    def search_with_given_ids(self, ids, current=0, task=None):
+        self.ids = ids
+        self.values = ', '.join(['({})'.format(i) for i in self.ids])
+        return self.load_publications()
 
     def load_citation_stats(self, current=0, task=None):
         self.logger.info('Loading citations statistics: searching for correct citations over 168 million of citations',
@@ -202,3 +204,43 @@ class PubmedLoader(Loader):
         self.logger.debug(f'Found {len(cocit_df)} co-cited pairs of papers', current=current, task=task)
 
         return cocit_df
+
+    def expand(self, ids, current=0, task=None):
+        if isinstance(ids, Iterable):
+            self.logger.info('Expanding current topic', current=current, task=task)
+            values = ', '.join(['({})'.format(i) for i in sorted(ids)])
+
+            query = re.sub(Loader.VALUES_REGEX, values, '''
+                DROP TABLE IF EXISTS TEMP_PMIDS;
+                WITH vals(pmid) AS (VALUES $VALUES$)
+                SELECT pmid INTO temporary table TEMP_PMIDS FROM vals;
+                DROP INDEX IF EXISTS temp_pmids_unique_index;
+                CREATE UNIQUE INDEX temp_pmids_unique_index ON TEMP_PMIDS USING btree (pmid);
+
+                SELECT C.pmid_out, ARRAY_AGG(C.pmid_in)
+                FROM pmcitations C
+                JOIN temp_pmids T
+                ON C.pmid_out = T.pmid OR C.pmid_in = T.pmid
+                GROUP BY C.pmid_out;
+                ''')
+        elif isinstance(ids, int):
+            query = f'''
+                SELECT C.pmid_out, ARRAY_AGG(C.pmid_in)
+                FROM pmcitations C
+                WHERE C.pmid_out = {ids} OR C.pmid_in = {ids}
+                GROUP BY C.pmid_out;
+                '''
+        else:
+            raise TypeError('ids should be either int or Iterable')
+
+        expanded = set()
+        with self.conn.cursor() as cursor:
+            cursor.execute(query)
+
+            for row in cursor.fetchall():
+                citing, cited = row
+                expanded.add(citing)
+                expanded |= set(cited)
+
+        self.logger.info(f'Found {len(expanded)} papers', current=current, task=task)
+        return expanded

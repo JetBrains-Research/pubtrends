@@ -7,6 +7,7 @@ import numpy as np
 from IPython.display import display
 from bokeh.colors import RGB
 from bokeh.core.properties import value
+from bokeh.events import ButtonClick
 from bokeh.io import push_notebook
 from bokeh.layouts import row, column
 from bokeh.models import ColumnDataSource, CustomJS, HTMLTemplateFormatter, NodesAndLinkedEdges, TapTool
@@ -16,6 +17,7 @@ from bokeh.models import HoverTool, PanTool, WheelZoomTool, BoxZoomTool, ResetTo
 from bokeh.models import LinearColorMapper, PrintfTickFormatter, ColorBar
 from bokeh.models import NumeralTickFormatter
 from bokeh.models import Plot, Range1d, MultiLine, Circle, Span
+from bokeh.models.widgets import Button
 from bokeh.models.widgets.tables import DataTable, TableColumn
 from bokeh.palettes import Category20
 from bokeh.plotting import figure, show
@@ -43,9 +45,9 @@ class Plotter:
 
     @staticmethod
     def pubmed_callback(source, db):
-        if db == 'semantic':
+        if db == 'Semantic Scholar':
             base = SEMANTIC_SCHOLAR_BASE_URL
-        elif db == 'pubmed':
+        elif db == 'Pubmed':
             base = PUBMED_ARTICLE_BASE_URL
         else:
             raise ValueError("Wrong value of db")
@@ -74,6 +76,38 @@ class Plotter:
                 window.location.hash = '#subtopic-' + selected_comp;
             }
             source.selected.indices = [];
+        """)
+
+    @staticmethod
+    def zoom_callback(source, db, zoom):
+        # submit list of ids and database name to the main page using invisible form
+        return CustomJS(args=dict(source=source, db=db, zoom=zoom), code="""
+        var data = source.data, url='/';
+        var form = document.createElement('form');
+        document.body.appendChild(form);
+        form.method = 'post';
+        form.action = url;
+        form.target = '_blank'
+
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'id_list';
+        input.value = data['id'];
+        form.appendChild(input);
+
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'source';
+        input.value = db;
+        form.appendChild(input);
+
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'zoom';
+        input.value = zoom;
+        form.appendChild(input);
+
+        form.submit();
         """)
 
     def chord_diagram_components(self):
@@ -219,7 +253,8 @@ class Plotter:
 
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
         for c in range(n_comps):
-            ds[c] = PlotPreprocessor.article_view_data_source(self.analyzer.df[self.analyzer.df['comp'] == c],
+            comp_source = self.analyzer.df[self.analyzer.df['comp'] == c]
+            ds[c] = PlotPreprocessor.article_view_data_source(comp_source,
                                                               min_year, max_year, width=700)
             plot = self.__serve_scatter_article_layout(source=ds[c],
                                                        year_range=[min_year, max_year],
@@ -249,7 +284,11 @@ class Plotter:
 
             desc.image_rgba(image=[img], x=[0], y=[0], dw=[10], dh=[10])
 
-            p[c] = row(desc, plot)
+            zoom_in_button = Button(label="Analyze subtopic", button_type="default", width=100)
+            zoom_in_button.js_on_event(ButtonClick, self.zoom_callback(ColumnDataSource(comp_source[['id']]),
+                                                                       self.analyzer.source, zoom='in'))
+
+            p[c] = row(desc, plot, column(zoom_in_button))
 
         return p
 
@@ -439,7 +478,11 @@ class Plotter:
         view[:, :, 3] = 255
 
         desc.image_rgba(image=[img], x=[0], y=[0], dw=[10], dh=[10])
-        p = row(desc, p)
+
+        zoom_out_button = Button(label="Expand topic — analyze the topic with related papers", button_type="default")
+        zoom_out_button.js_on_event(ButtonClick, self.zoom_callback(ColumnDataSource(self.analyzer.df[['id']]),
+                                                                    self.analyzer.source, zoom='out'))
+        p = column(row(desc, p), zoom_out_button)
         return p
 
     def subtopic_evolution(self):
