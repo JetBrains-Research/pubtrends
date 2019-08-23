@@ -13,6 +13,7 @@ A tool for analysis of trends & pivotal points in the scientific literature.
 * Conda
 * Python 3.6+
 * Docker
+* Redis
 
 ## Configuration
 
@@ -55,17 +56,25 @@ Ensure that file contains correct information about the database (url, port, DB 
    CREATE DATABASE pubtrends_test OWNER biolabs;
    ```
 
-## Papers processing
- 
-### Pubmed
+## Build
 
 1. Use the following command to test and build the project:
 
    ```
    ./gradlew clean test shadowJar
    ```
-     
-2. Crawler is designed to download and keep up-to-date Pubmed database. Launch crawler:
+
+2. Build `biolabs/pubtrends` Docker image (available on Docker hub).
+    ```
+    docker build -t biolabs/pubtrends .
+    ```
+
+
+## Papers processing
+ 
+### Pubmed
+
+Launch crawler to download and keep up-to-date Pubmed database:
 
    ```
    java -cp build/libs/pubtrends-dev.jar org.jetbrains.bio.pubtrends.pm.MainKt
@@ -77,15 +86,9 @@ Ensure that file contains correct information about the database (url, port, DB 
 
 ### Semantic Scholar
 
-1. Use the following command to test and build the project:
+1. Add `<PATH_TO_SEMANTIC_SCHOLAR_ARCHIVE>` to `.pubtrends/config.properties`     
 
-   ```
-   ./gradlew clean test shadowJar
-   ```
-
-2. Add `<PATH_TO_SEMANTIC_SCHOLAR_ARCHIVE>` to `.pubtrends/config.properties`     
-
-3. Download Sample from [Semantic Scholar](https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/sample-S2-records.gz)
+2. Download Sample from [Semantic Scholar](https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/sample-S2-records.gz)
    Or full archive 
    ```
    cd <PATH_TO_SEMANTIC_SCHOLAR_ARCHIVE>
@@ -97,7 +100,7 @@ Ensure that file contains correct information about the database (url, port, DB 
    done
    ```
 
-4. Build Semantic Scholar Indexes
+3. Build Semantic Scholar Indexes
     ```
     java -cp build/libs/pubtrends-dev.jar org.jetbrains.bio.pubtrends.ss.MainKt --createIndex
     ```
@@ -117,7 +120,20 @@ Several front-ends are supported.
    jupyter notebook
    ```
 
-### Deployment with Docker Compose
+### Web service
+
+1. Start Redis
+
+2. Start Celery worker queue
+    ```
+    celery -A models.celery.tasks worker -c 1 --loglevel=info
+    ```
+3. Start flask server at localhost:5000/
+    ```
+    python models/flask-app.py
+    ```    
+
+### Deployment
 
 Launch Gunicorn serving Flask app, Redis and Celery in containers by the command:
     
@@ -132,14 +148,7 @@ Launch Gunicorn serving Flask app, Redis and Celery in containers by the command
 
 ## Testing
 
-### Docker Image for testing
-
-1. Build `biolabs/pubtrends` Docker image
-    ```
-    docker build -t biolabs/pubtrends .
-    ```
-
-2. Start Docker image for Kotlin tests
+1. Start Docker image with Postgres for tests
     ```
     docker run --name pg-docker -p 5433:5432 -v $(pwd):/pubtrends:ro -d biolabs/pubtrends
     ```
@@ -149,13 +158,13 @@ Launch Gunicorn serving Flask app, Redis and Celery in containers by the command
     psql postgresql://biolabs:password@localhost:5433/pubtrends_test
     ```
 
-3. Kotlin tests
+2. Kotlin tests
 
     ```
     ./gradlew clean test
     ```
 
-4. Python tests with codestyle check
+3. Python tests with codestyle check
 
     ```
     docker run -v $(pwd):/pubtrends:ro -t biolabs/pubtrends /bin/bash \
