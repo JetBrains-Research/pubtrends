@@ -17,7 +17,7 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.analyzer = KeyPaperAnalyzer(MockLoader(), test=True)
-        cls.analyzer.launch(search_query='')
+        cls.analyzer.launch(search_query='query')
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations()
         cls.analyzer.G = cls.analyzer.build_citation_graph(cls.analyzer.cit_df)
 

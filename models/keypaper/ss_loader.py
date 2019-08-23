@@ -88,7 +88,6 @@ class SemanticScholarLoader(Loader):
 
         self.pub_df = Loader.process_publications_dataframe(self.pub_df)
 
-
         return self.pub_df
 
     def search_with_given_ids(self, ids, current=0, task=None):
