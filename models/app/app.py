@@ -8,7 +8,7 @@ from flask import (
     render_template, render_template_string
 )
 
-from models.celery.tasks import celery, analyze_paper_async, analyze_topic_async, prepare_paper_data
+from models.celery.tasks import celery, find_paper_async, analyze_topic_async, prepare_paper_data
 from models.keypaper.config import PubtrendsConfig
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
@@ -73,21 +73,49 @@ def process():
         source = request.values.get('source')
         key = request.args.get('key')
         value = request.args.get('value')
+
         if jobid:
-            if key and value:
+            if terms:
+                terms += f'at {source}'
+                return render_template('process.html', search_string=terms,
+                                       subpage="result", args={'terms': quote(terms), 'jobid': jobid},
+                                       JOBID=jobid, version=PUBTRENDS_CONFIG.version)
+            elif key and value:
                 return render_template('process.html', search_string=f'{key}: {value}',
-                                       subpage="paper", query=quote(f'{key}+{value}'),
+                                       subpage="search", args={'source': source, 'jobid': jobid},
                                        JOBID=jobid, version=PUBTRENDS_CONFIG.version)
             else:
-                if not terms:
-                    terms = f"{analysis_type} analysis of the previous query
-                terms += f"at {source}"
+                if analysis_type in ['detailed', 'expanded']:
+                    terms = f"{analysis_type} analysis of the previous query at {source}"
 
-                return render_template('process.html', search_string=' '.join(terms),
-                                       subpage="result", key="terms", value=quote(' '.join(terms)),
-                                       JOBID=jobid, version=PUBTRENDS_CONFIG.version)
+                    return render_template('process.html', search_string=terms,
+                                           subpage="result", JOBID=jobid, version=PUBTRENDS_CONFIG.version,
+                                           args={'key': "terms", 'value': quote(terms), 'jobid': jobid})
+                else:
+                    return render_template('process.html', search_string=terms,
+                                           subpage="paper", JOBID=jobid, version=PUBTRENDS_CONFIG.version,
+                                           args={'source': source, 'id': analysis_type, 'jobid': jobid})
 
     return render_template_string("Something went wrong...")
+
+
+@app.route('/search')
+def search():
+    jobid = request.values.get('jobid')
+    source = request.values.get('source')
+    if jobid:
+        find_job = AsyncResult(jobid, app=celery)
+
+        if find_job.state == 'SUCCESS':
+            ids = find_job.result
+            if len(ids) == 1:
+                job = analyze_topic_async.delay(source, id_list=ids, zoom='out')
+                return redirect(url_for('.process', terms=None, analysis_type=ids[0],
+                                        source=source, jobid=job.id))
+            elif len(ids) == 0:
+                return render_template_string('Found no papers matching specified key - value pair')
+            else:
+                return render_template_string('Found multiple papers matching your search')
 
 
 @app.route('/paper')
@@ -155,8 +183,8 @@ def index():
             return redirect(url_for('.process', terms=terms, analysis_type=analysis_type, jobid=job.id))
         elif len(value) > 0:
             # Submit Celery task for paper analysis
-            job = analyze_paper_async.delay(source, key, value)
-            return redirect(url_for('.process', key=key, value=value, jobid=job.id))
+            job = find_paper_async.delay(source, key, value)
+            return redirect(url_for('.process', source=source, key=key, value=value, jobid=job.id))
 
     return render_template('main.html', version=PUBTRENDS_CONFIG.version,
                            amounts=PUBTRENDS_CONFIG.show_max_articles_options,

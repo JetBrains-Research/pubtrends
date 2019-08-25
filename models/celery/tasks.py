@@ -9,6 +9,7 @@ from celery import Celery, current_task
 from models.keypaper.analysis import KeyPaperAnalyzer
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.pm_loader import PubmedLoader
+from models.keypaper.progress_logger import ProgressLogger
 from models.keypaper.ss_loader import SemanticScholarLoader
 from models.keypaper.utils import PUBMED_ARTICLE_BASE_URL, SEMANTIC_SCHOLAR_BASE_URL
 from models.keypaper.visualization import Plotter
@@ -75,8 +76,8 @@ def analyze_topic_async(source, terms=None, id_list=None, zoom=None, sort='Most 
     return result, analyzer.dump()
 
 
-@celery.task(name='analyze_paper_async')
-def analyze_paper_async(source, key, value):
+@celery.task(name='find_paper_async')
+def find_paper_async(source, key, value):
     if source == 'Pubmed':
         loader = PubmedLoader(PUBTRENDS_CONFIG)
     elif source == 'Semantic Scholar':
@@ -84,15 +85,19 @@ def analyze_paper_async(source, key, value):
     else:
         raise ValueError(f"Unknown source {source}")
 
-    analyzer = KeyPaperAnalyzer(loader)
-    log = analyzer.launch_paper(key, value, task=current_task)
+    loader.set_logger(ProgressLogger())
 
-    result = {
-        'log': log,
-        'ids': analyzer.ids
-    }
+    return loader.find(key, value)
 
-    return result
+    # analyzer = KeyPaperAnalyzer(loader)
+    # log = analyzer.launch_paper(key, value, task=current_task)
+    #
+    # result = {
+    #     'log': log,
+    #     'ids': analyzer.ids
+    # }
+    #
+    # return result
 
 
 def prepare_paper_data(data, source, pid):

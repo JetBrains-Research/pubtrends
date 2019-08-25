@@ -50,7 +50,17 @@
                         $('.progress-bar').css('width', response.progress + '%').attr('aria-valuenow', response.progress);
                         $('.progress-bar-label').text(response.progress + '%');
                         if (response.state === 'SUCCESS') {
-                            window.location.replace("/{{subpage}}?{{key}}={{value}}&jobid={{JOBID}}");
+                            // Join arg-value pairs for URL
+                            var args = {{ args|safe }};
+                            var args_list = [];
+                            for (var key in args) {
+                                args_list.push(`${key}=${args[key]}`);
+                            }
+
+                            // Build href for given subpage and args
+                            var subpage = '{{ subpage }}';
+                            var href = `/${subpage}?${args_list.join('&')}`;
+                            window.location.replace(href);
                         } else {
                             $('#log').html(response.log);
                             setTimeout(poll_progress, TIMEOUT);
