@@ -286,7 +286,7 @@ class Plotter:
 
             zoom_in_button = Button(label="+ Zoom into subtopic", button_type="default", width=100)
             zoom_in_button.js_on_event(ButtonClick, self.zoom_callback(ColumnDataSource(comp_source[['id']]),
-                                                                       self.analyzer.source, zoom='in'))
+                                                                       self.analyzer.source, zoom=0))
 
             result[c] = column(zoom_in_button, row(desc, plot))
 
@@ -444,7 +444,7 @@ class Plotter:
         zoom_out_button = Button(label="— Zoom out to related papers",
                                  button_type="default")
         zoom_out_button.js_on_event(ButtonClick, self.zoom_callback(ColumnDataSource(self.analyzer.df[['id']]),
-                                                                    self.analyzer.source, zoom='out'))
+                                                                    self.analyzer.source, zoom=1))
         return column(row(desc, p), zoom_out_button)
 
     def subtopic_evolution(self):

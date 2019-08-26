@@ -125,8 +125,29 @@
                     <h1 class="card-header">Related Papers</h1>
                 </div>
                 <div class="card-body">
+                    {% if citing_papers is defined %}
+                    Valuable Citing Papers
                     {{ citing_papers }}
-                    {{ cociting_papers }}
+                    <table class="table">
+                        {% for row in citing_papers %}
+                            <tr>
+                                <td>{{ row[0] }}</td>
+                                <td>{{ row[1] }}</td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+                    {% endif %}
+                    {% if cocited_papers is defined %}
+                    <span class="card-subtitle">Valuable Co-cited Papers</span>
+                    <table class="table">
+                        {% for row in cocited_papers %}
+                            <tr>
+                                <td>{{ row[0] }}</td>
+                                <td>{{ row[1] }}</td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+                    {% endif %}
                 </div>
             </div>
         </main>
