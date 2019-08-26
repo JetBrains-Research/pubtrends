@@ -106,7 +106,7 @@ def search():
         if find_job.state == 'SUCCESS':
             ids = find_job.result
             if len(ids) == 1:
-                job = analyze_topic_async.delay(source, id_list=ids, zoom='out')
+                job = analyze_topic_async.delay(source, id_list=ids, zoom=2)
                 return redirect(url_for('.process', terms=None, analysis_type=ids[0],
                                         source=source, jobid=job.id))
             elif len(ids) == 0:
@@ -135,7 +135,7 @@ def paper():
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        terms, id_list, zoom, key, value, analysis_type = '', '', '', '', '', ''
+        terms, id_list, zoom, key, value, analysis_type = '', '', 0, '', '', ''
         source = request.form.get('source')
 
         if 'terms' in request.form:
@@ -143,7 +143,7 @@ def index():
         elif 'id_list' in request.form:
             id_list = request.form.get('id_list').split(',')
             zoom = request.form.get('zoom')
-            analysis_type = 'expanded' if zoom == 'out' else 'detailed'
+            analysis_type = 'expanded' if int(zoom) > 0 else 'detailed'
         elif 'key' in request.form and 'value' in request.form:
             key = request.form.get('key')
             value = request.form.get('value')
@@ -155,7 +155,8 @@ def index():
 
         if len(terms) > 0 or id_list:
             # Submit Celery task for topic analysis
-            job = analyze_topic_async.delay(source, terms=terms, id_list=id_list, zoom=zoom, sort=sort, amount=amount)
+            job = analyze_topic_async.delay(source, terms=terms, id_list=id_list,
+                                            zoom=int(zoom), sort=sort, amount=amount)
             return redirect(url_for('.process', terms=terms, analysis_type=analysis_type, jobid=job.id))
         elif len(value) > 0:
             # Submit Celery task for paper analysis

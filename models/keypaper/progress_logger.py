@@ -3,7 +3,7 @@ from io import StringIO
 
 
 class ProgressLogger:
-    TOTAL = 17
+    TOTAL = 18
 
     def __init__(self):
         self.stream = StringIO()

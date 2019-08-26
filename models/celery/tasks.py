@@ -21,6 +21,7 @@ celery = Celery("tasks", backend=CELERY_RESULT_BACKEND, broker=CELERY_BROKER_URL
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 SORT_METHODS = {'Most Cited': 'citations', 'Most Relevant': 'relevance', 'Most Recent': 'year'}
 
+
 # Tasks will be served by Celery,
 # specify task name explicitly to avoid problems with modules
 @celery.task(name='analyze_topic_async')
@@ -84,16 +85,6 @@ def find_paper_async(source, key, value):
 
     return loader.find(key, value)
 
-    # analyzer = KeyPaperAnalyzer(loader)
-    # log = analyzer.launch_paper(key, value, task=current_task)
-    #
-    # result = {
-    #     'log': log,
-    #     'ids': analyzer.ids
-    # }
-    #
-    # return result
-
 
 def prepare_paper_data(data, source, pid):
     if source == 'Pubmed':
@@ -130,6 +121,12 @@ def prepare_paper_data(data, source, pid):
         else:
             citation = f'{journal} ({year})'
 
+    citing_papers = map(lambda v: (v, analyzer.df[analyzer.df['id'] == v]['pagerank']), list(analyzer.G[pid]))
+    top_citing_papers = sorted(citing_papers, key=lambda x: x[1], reverse=True)[:10]
+
+    cocited_papers = map(lambda v: (v, analyzer.CG.edges[pid, v]['weight']), list(analyzer.CG[pid]))
+    top_cocited_papers = sorted(cocited_papers, key=lambda x: x[1], reverse=True)[:10]
+
     result = {
         'title': title,
         'trimmed_title': trimmed_title,
@@ -139,12 +136,14 @@ def prepare_paper_data(data, source, pid):
         'source': source,
         'citation_dynamics': [components(plotter.article_citation_dynamics(analyzer.df, str(pid)))],
         'related_topics': sel.to_html(),
-        'citing_papers': list(analyzer.G[pid]),
-        'cociting_papers': list(analyzer.CG[pid])
+        'cocited_papers': top_cocited_papers
     }
 
     abstract = sel['abstract'].values[0]
     if abstract != '':
         result['abstract'] = abstract
+
+    if len(top_citing_papers) > 0:
+        result['citing_papers'] = top_citing_papers
 
     return result
