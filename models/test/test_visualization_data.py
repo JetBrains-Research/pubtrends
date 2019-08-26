@@ -74,13 +74,17 @@ class TestPlotPreprocessor(unittest.TestCase):
 
         expected_nodes = self.analyzer.CG.nodes()
         expected_edges = self.analyzer.CG.edges()
+        data = node_data_source.data
 
         self.assertCountEqual(list(layout.keys()), expected_nodes, 'Wrong nodes in layout')
-        self.assertCountEqual(list(node_data_source.data['index']), expected_nodes,
+        self.assertCountEqual(list(data['index']), expected_nodes,
                               'Wrong order of nodes in data source')
 
+        # Check that the size of all nodes is defined and is positive
+        self.assertFalse(np.any(np.isnan(data['size'])))
+        self.assertTrue(np.all(data['size'] > 0))
+
         # Check that data corresponds to correct nodes
-        data = node_data_source.data
         for node in expected_nodes:
             idx = list(data['index']).index(node)
             comp = self.analyzer.df[self.analyzer.df['id'] == node]['comp'].values[0]

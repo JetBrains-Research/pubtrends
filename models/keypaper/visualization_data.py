@@ -34,7 +34,7 @@ class PlotPreprocessor:
         gdf['index'] = gdf['id']
         gdf['colors'] = [palette[comps[n]] for n in sorted_nodes]
         gdf['year'] = gdf['year'].replace(np.nan, "Undefined")
-        log_total = np.log(gdf['total'])
+        log_total = np.log1p(gdf['total'])
         gdf['size'] = (log_total / np.max(log_total)) * 5 + 5
         gdf['topic'] = [f'#{comps[n] + 1}{" OTHER" if comps[n] == comp_other else ""}' for n in sorted_nodes]
         gdf['authors'] = gdf['authors'].apply(lambda authors: cut_authors_list(authors))
