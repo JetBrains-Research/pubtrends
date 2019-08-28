@@ -12,7 +12,7 @@ Authors
   &nbsp; Oleg Shpynov
   
 
-<a href="https://icons8.com">Icons by Icons8</a>
+<a href="https://feathericons.com/">Icons by Feather</a>
 
-[mail]: resources/mail.png
-[github]: resources/github.png
+[mail]: resources/mail.svg
+[github]: resources/github.svg
