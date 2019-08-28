@@ -1,3 +1,4 @@
+import html
 import re
 from collections import Iterable
 
@@ -35,7 +36,8 @@ class PubmedLoader(Loader):
                                 retmode='xml', term=terms, sort=query_sort)
         self.ids = Entrez.read(handle)['IdList']
 
-        self.logger.info(f'Found {len(self.ids)} publications matching <{terms}>', current=current, task=task)
+        self.logger.info(html.escape(f'Found {len(self.ids)} publications matching <{terms}>'), current=current,
+                         task=task)
 
         self.ids, temp_table_created = self.sort_results(self.ids, limit, sort, current, task)
         self.values = ', '.join(['({})'.format(i) for i in sorted(self.ids)])
