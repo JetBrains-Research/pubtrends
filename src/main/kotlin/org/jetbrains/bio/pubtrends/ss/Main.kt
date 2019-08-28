@@ -151,7 +151,7 @@ fun main(args: Array<String>) {
             val min = Int.MIN_VALUE
             val max = Int.MAX_VALUE
             val batchSize = 1048576
-            val numberOfBatches = (Int.MAX_VALUE.toLong() - Int.MIN_VALUE.toLong()) / batchSize
+            val numberOfBatches = (Int.MAX_VALUE.toLong() - Int.MIN_VALUE.toLong()) / batchSize + 1
             var curBatch = 1
 
             transaction {
