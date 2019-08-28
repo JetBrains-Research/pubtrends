@@ -40,11 +40,14 @@ def progress():
             })
         elif job.state == 'PENDING':
             return json.dumps({'state': job.state,
-                               'message': 'Task is in queue, please wait',
+                               'message': 'Task is in queue, please wait...',
                                })
 
     # no jobid
-    return '{}'
+    return json.dumps({
+        'state': 'FAILURE',
+        'message': f'Unknown search id {jobid}'
+    })
 
 
 @app.route('/result')
