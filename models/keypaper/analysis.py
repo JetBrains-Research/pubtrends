@@ -170,8 +170,8 @@ class KeyPaperAnalyzer:
             v, u = row['id_out'], row['id_in']
             G.add_edge(v, u)
 
-        self.logger.debug(f'Built citation graph - nodes {len(G.nodes())} edges {len(G.edges())}',
-                          current=current, task=task)
+        self.logger.info(f'Built citation graph - nodes {len(G.nodes())} edges {len(G.edges())}',
+                         current=current, task=task)
         return G
 
     def build_cocitation_graph(self, cocit_grouped_df, year=None, current=0, task=None, add_citation_edges=False,
@@ -195,8 +195,8 @@ class KeyPaperAnalyzer:
                 else:
                     CG.add_edge(u, v, weight=citation_weight)
 
-        self.logger.debug(f'Co-citations graph nodes {len(CG.nodes())} edges {len(CG.edges())}\n',
-                          current=current, task=task)
+        self.logger.info(f'Built co-citations graph - nodes {len(CG.nodes())} edges {len(CG.edges())}',
+                         current=current, task=task)
         return CG
 
     def subtopic_analysis(self, df, cocitation_graph, current=0, task=None):

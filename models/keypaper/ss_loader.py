@@ -148,7 +148,6 @@ class SemanticScholarLoader(Loader):
 
         with self.conn.cursor() as cursor:
             cursor.execute(query)
-            self.logger.debug('Done loading citation stats', current=current, task=task)
             cit_stats_df_from_query = pd.DataFrame(cursor.fetchall(),
                                                    columns=['id', 'year', 'count'], dtype=object)
 
@@ -157,6 +156,9 @@ class SemanticScholarLoader(Loader):
 
         cit_stats_df_from_query['year'] = cit_stats_df_from_query['year'].apply(int)
         cit_stats_df_from_query['count'] = cit_stats_df_from_query['count'].apply(int)
+
+        self.logger.info(f'Found {cit_stats_df_from_query.shape[0]} lines of citations statistics',
+                         current=current, task=task)
 
         return cit_stats_df_from_query
 
@@ -183,7 +185,7 @@ class SemanticScholarLoader(Loader):
         if np.any(citations.isna()):
             raise ValueError('Citation must have id_out and id_in')
 
-        self.logger.debug(f'Found {len(citations)} citations', current=current, task=task)
+        self.logger.info(f'Found {len(citations)} citations', current=current, task=task)
 
         return citations
 
@@ -228,7 +230,7 @@ class SemanticScholarLoader(Loader):
         cocit_df['year'] = cocit_df['year'].apply(lambda x: int(x) if x else np.nan)
 
         self.logger.debug(f'Loaded {lines} lines of citing info', current=current, task=task)
-        self.logger.debug(f'Found {len(cocit_df)} co-cited pairs of papers', current=current, task=task)
+        self.logger.info(f'Found {len(cocit_df)} co-cited pairs of papers', current=current, task=task)
 
         return cocit_df
 

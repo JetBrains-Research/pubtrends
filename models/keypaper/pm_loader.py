@@ -106,7 +106,7 @@ class PubmedLoader(Loader):
             raise ValueError('Paper must have PMID and title')
         pub_df = Loader.process_publications_dataframe(pub_df)
 
-        self.logger.debug(f'Found {len(pub_df)} publications in the local database\n', current=current, task=task)
+        self.logger.debug(f'Found {len(pub_df)} publications in the local database', current=current, task=task)
         return pub_df
 
     def search_with_given_ids(self, ids, current=0, task=None):
@@ -140,6 +140,9 @@ class PubmedLoader(Loader):
         cit_stats_df_from_query['year'] = cit_stats_df_from_query['year'].apply(int)
         cit_stats_df_from_query['count'] = cit_stats_df_from_query['count'].apply(int)
 
+        self.logger.info(f'Found {cit_stats_df_from_query.shape[0]} lines of citations statistics',
+                         current=current, task=task)
+
         return cit_stats_df_from_query
 
     def load_citations(self, current=0, task=None):
@@ -160,7 +163,7 @@ class PubmedLoader(Loader):
         if np.any(cit_df.isna()):
             raise ValueError('Citation must have id_out and id_in')
 
-        self.logger.debug(f'Found {len(cit_df)} citations', current=current, task=task)
+        self.logger.info(f'Found {len(cit_df)} citations', current=current, task=task)
 
         return cit_df
 
@@ -203,7 +206,7 @@ class PubmedLoader(Loader):
         cocit_df['year'] = cocit_df['year'].apply(int)
 
         self.logger.debug(f'Loaded {lines} lines of citing info', current=current, task=task)
-        self.logger.debug(f'Found {len(cocit_df)} co-cited pairs of papers', current=current, task=task)
+        self.logger.info(f'Found {len(cocit_df)} co-cited pairs of papers', current=current, task=task)
 
         return cocit_df
 

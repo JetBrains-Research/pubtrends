@@ -1,5 +1,5 @@
 import os
-
+import html
 from bokeh.embed import components
 from celery import Celery, current_task
 
@@ -42,7 +42,7 @@ def analyze_async(source, terms=None, id_list=None, zoom=None, sort='Most Cited'
 
     # Order is important here!
     result = {
-        'log': log,
+        'log': html.unescape(log),
         'n_papers': analyzer.n_papers,
         'n_citations': int(analyzer.df['total'].sum()),
         'n_subtopics': len(analyzer.components),
