@@ -17,7 +17,7 @@ A tool for analysis of trends & pivotal points in the scientific literature.
 
 ## Configuration
 
-1. Copy and modify `config.properties` to `~/.pubtrends/config.properties`. 
+1. Copy and modify `config.properties` to `~/.pubtrends/config.properties`.\
 Ensure that file contains correct information about the database (url, port, DB name, username and password).
 
 2. Conda environment `pubtrends` can be easily created for launching Jupyter Notebook and Web Service:
@@ -58,9 +58,10 @@ Ensure that file contains correct information about the database (url, port, DB 
    
 5. Configure PostgreSQL. **NOTE**: production service should be configured more securely!
 
-   * Configure minimal `work_mem` to support search query sorted by citations in `postgresql.conf`
+   * Configure `work_mem` to support search query sorted by citations in `postgresql.conf`. \
+   Experimentally, this amount is sufficient to search term 'computer' in Semantic Scholar sorted by citations count. 
    ```
-   work_mem = '1024MB';   
+   work_mem = '2048MB';   
    ```
    * Configure DB to accept connections in `postgresql.conf`
    ```
