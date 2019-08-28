@@ -31,7 +31,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
     <!--     <link rel="stylesheet" href="../static/style.css"/> -->
     <link rel="stylesheet" href="{{ url_for('static', filename='result.css') }}">
-    <!--     <link rel="stylesheet" href="../static/result.css"/> -->
+<!--    <link rel="stylesheet" href="../static/result.css"/>-->
 </head>
 <body>
 
@@ -53,47 +53,47 @@
                 <ul class="nav flex-column mt-3">
                     <li class="nav-item">
                         <a class="nav-link" href="#overview">
-                            Overview
+                            <img src="{{ url_for('static', filename='home.svg') }}"/>&nbsp;Overview
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#highlights">
-                            Highlights
+                            <img src="{{ url_for('static', filename='bar-chart-2.svg') }}"/>&nbsp;Highlights
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#topics">
-                            Topics
+                            <img src="{{ url_for('static', filename='tag.svg') }}"/>&nbsp;Topics
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#trends">
-                            Trends
+                            <img src="{{ url_for('static', filename='trending-up.svg') }}"/>&nbsp;Trends
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#authors">
-                            Authors
+                            <img src="{{ url_for('static', filename='users.svg') }}"/>&nbsp;Authors
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#journals">
-                            Journals
+                            <img src="{{ url_for('static', filename='book-open.svg') }}"/>&nbsp;Journals
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#publications">
-                            Publications
+                            <img src="{{ url_for('static', filename='columns.svg') }}"/>&nbsp;Publications
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#evolution">
-                            Experimental Features
+                            <img src="{{ url_for('static', filename='flag.svg') }}"/>&nbsp;Experimental
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#log">
-                            Log
+                            <img src="{{ url_for('static', filename='align-justify.svg') }}"/>&nbsp;Log
                         </a>
                     </li>
                 </ul>
@@ -308,7 +308,7 @@
 
             <div class="card mt-3">
                 <div class="card-title" id="evolution">
-                    <h1 class="card-header">Experimental Features</h1>
+                    <h1 class="card-header">Experimental</h1>
                 </div>
                 <div class="card-body">
                     <h2 class="card-subtitle">Subtopic Evolution</h2>
@@ -320,12 +320,12 @@
                     </p>
                     <div>
                         {% if subtopic_evolution is defined %}
-                            {% for script, div in subtopic_evolution %}
-                            {{ script|safe }}
-                            {{ div|safe }}
-                            {% endfor %}
+                        {% for script, div in subtopic_evolution %}
+                        {{ script|safe }}
+                        {{ div|safe }}
+                        {% endfor %}
                         {% else %}
-                            Failed to analyze subtopic evolution because year step is too big.
+                        Failed to analyze subtopic evolution because year step is too big.
                         {% endif %}
                     </div>
                 </div>
