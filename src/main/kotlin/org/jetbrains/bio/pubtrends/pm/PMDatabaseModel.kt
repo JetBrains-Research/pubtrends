@@ -38,5 +38,6 @@ object PMCitations : Table() {
 
     init {
         index(true, pmidIn, pmidOut)
+        index(false, pmidOut)
     }
 }

@@ -55,5 +55,6 @@ object SSCitations : Table() {
 
     init {
         index(false, crc32id_in, crc32id_out)
+        index(false, crc32id_out)
     }
 }
