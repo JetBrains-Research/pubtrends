@@ -55,7 +55,22 @@ Ensure that file contains correct information about the database (url, port, DB 
    ```
    CREATE DATABASE pubtrends_test OWNER biolabs;
    ```
+   
+5. Configure PostgreSQL. **NOTE**: production service should be configured more securely!
 
+   * Configure minimal `work_mem` to support search query sorted by citations in `postgresql.conf`
+   ```
+   work_mem = '1024MB';   
+   ```
+   * Configure DB to accept connections in `postgresql.conf`
+   ```
+   listen_addresses='*'
+   ```
+   * Configure password access in `pg_hba.conf`
+   ```
+   host all all 0.0.0.0/0 md5
+   ```
+   
 ## Build
 
 1. Use the following command to test and build the project:
