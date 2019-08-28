@@ -7,7 +7,10 @@ class ProgressLogger:
 
     def __init__(self):
         self.stream = StringIO()
+        ch = logging.StreamHandler()
+        formatter = logging.Formatter('[%(asctime)s] %(message)s', "%H:%M:%S")
         self.handler = logging.StreamHandler(self.stream)
+        self.handler.setFormatter(formatter)
         self.logger = logging.getLogger(__name__)
         self.logger.addHandler(self.handler)
 
