@@ -87,7 +87,7 @@ def cancel():
     if len(request.args) > 0:
         jobid = request.values.get('jobid')
         if jobid:
-            celery.control.revoke(jobid)
+            celery.control.revoke(jobid, terminate=True)
             return json.dumps({
                 'state': 'CANCELLED',
                 'message': f'Successfully cancelled search {jobid}'
