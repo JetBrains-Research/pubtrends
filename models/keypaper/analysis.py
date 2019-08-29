@@ -13,9 +13,13 @@ from .utils import get_subtopic_descriptions, get_tfidf_words, split_df_list
 
 class KeyPaperAnalyzer:
     SEED = 20190723
+    TOTAL_STEPS = 15
+    EXPERIMENTAL_STEPS = 2
 
-    def __init__(self, loader, test=False):
-        self.logger = ProgressLogger()
+    def __init__(self, loader, config, test=False):
+        self.run_experimental = config.run_experimental
+        self.logger = ProgressLogger(KeyPaperAnalyzer.TOTAL_STEPS + (KeyPaperAnalyzer.EXPERIMENTAL_STEPS
+                                                                     if self.run_experimental else 0))
 
         self.loader = loader
         loader.set_logger(self.logger)
@@ -93,18 +97,20 @@ class KeyPaperAnalyzer:
                 self.df, self.citation_years, current=13, task=task
             )
 
-            # Perform subtopic evolution analysis and get subtopic descriptions
-            self.evolution_df, self.evolution_year_range = self.subtopic_evolution_analysis(self.cocit_df, current=14,
-                                                                                            task=task)
-            self.evolution_kwds = self.subtopic_evolution_descriptions(
-                self.df, self.evolution_df, self.evolution_year_range, self.terms, current=15, task=task
-            )
-
             # Find top journals
-            self.journal_stats = self.popular_journals(self.df, current=16, task=task)
+            self.journal_stats = self.popular_journals(self.df, current=14, task=task)
 
             # Find top authors
-            self.author_stats = self.popular_authors(self.df, current=17, task=task)
+            self.author_stats = self.popular_authors(self.df, current=15, task=task)
+
+            # Experimental features, can be turned off in 'config.properties'
+            if self.run_experimental:
+                # Perform subtopic evolution analysis and get subtopic descriptions
+                self.evolution_df, self.evolution_year_range = self.subtopic_evolution_analysis(self.cocit_df,
+                                                                                                current=16, task=task)
+                self.evolution_kwds = self.subtopic_evolution_descriptions(
+                    self.df, self.evolution_df, self.evolution_year_range, self.terms, current=17, task=task
+                )
 
             return self.logger.stream.getvalue()
         finally:

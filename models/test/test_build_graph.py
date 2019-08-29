@@ -3,15 +3,17 @@ import unittest
 import networkx as nx
 
 from models.keypaper.analysis import KeyPaperAnalyzer
+from models.keypaper.config import PubtrendsConfig
 from models.test.mock_loader import MockLoader
 from models.test.ss_articles import expected_graph, cocitations_df, expected_cocit_and_cit_graph
 
 
 class TestBuildGraph(unittest.TestCase):
+    PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
 
     @classmethod
     def setUpClass(cls):
-        cls.analyzer = KeyPaperAnalyzer(MockLoader(), test=True)
+        cls.analyzer = KeyPaperAnalyzer(MockLoader(), TestBuildGraph.PUBTRENDS_CONFIG, test=True)
         cls.analyzer.G = expected_graph
         cls.CG = cls.analyzer.build_cocitation_graph(cocitations_df, add_citation_edges=True)
 

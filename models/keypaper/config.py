@@ -1,4 +1,4 @@
-import configparser as configparser
+import configparser
 import os
 
 
@@ -13,20 +13,23 @@ class PubtrendsConfig:
         # Add fake section [params] for ConfigParser to accept the file
         with open(os.path.expanduser(config_path)) as config_properties:
             config_parser.read_string("[params]\n" + config_properties.read())
+        params = config_parser['params']
 
-        self.version = config_parser['params']['version']
+        self.version = params['version']
 
-        self.host = config_parser['params']['url' if not test else 'test_url']
-        self.port = config_parser['params']['port' if not test else 'test_port']
-        self.dbname = config_parser['params']['database' if not test else 'test_database']
-        self.user = config_parser['params']['username' if not test else 'test_username']
-        self.password = config_parser['params']['password' if not test else 'test_password']
+        self.host = params['url' if not test else 'test_url']
+        self.port = params['port' if not test else 'test_port']
+        self.dbname = params['database' if not test else 'test_database']
+        self.user = params['username' if not test else 'test_username']
+        self.password = params['password' if not test else 'test_password']
 
-        self.pm_entrez_email = config_parser['params']['pm_entrez_email']
+        self.pm_entrez_email = params['pm_entrez_email']
+        self.run_experimental = params.getboolean('run_experimental')
 
-        self.max_number_of_articles = int(config_parser['params']['max_number_of_articles'])
-        self.max_number_of_citations = int(config_parser['params']['max_number_of_citations'])
-        self.max_number_of_cocitations = int(config_parser['params']['max_number_of_cocitations'])
+        self.max_number_of_articles = params.getint('max_number_of_articles')
+        self.max_number_of_citations = params.getint('max_number_of_citations')
+        self.max_number_of_cocitations = params.getint('max_number_of_cocitations')
+
         self.show_max_articles_options = [opt.strip() for opt in
-                                          config_parser['params']['show_max_articles_options'].split(',')]
-        self.show_max_articles_default_value = config_parser['params']['show_max_articles_default_value'].strip()
+                                          params['show_max_articles_options'].split(',')]
+        self.show_max_articles_default_value = params['show_max_articles_default_value'].strip()
