@@ -14,12 +14,12 @@ from .utils import get_subtopic_descriptions, get_tfidf_words, split_df_list
 class KeyPaperAnalyzer:
     SEED = 20190723
     TOTAL_STEPS = 15
-    TOTAL_STEPS_WITH_EXPERIMENTAL = 17
+    EXPERIMENTAL_STEPS = 2
 
     def __init__(self, loader, config, test=False):
         self.run_experimental = config.run_experimental
-        self.logger = ProgressLogger(KeyPaperAnalyzer.TOTAL_STEPS_WITH_EXPERIMENTAL if self.run_experimental
-                                     else KeyPaperAnalyzer.TOTAL_STEPS)
+        self.logger = ProgressLogger(KeyPaperAnalyzer.TOTAL_STEPS + (KeyPaperAnalyzer.EXPERIMENTAL_STEPS
+                                                                     if self.run_experimental else 0))
 
         self.loader = loader
         loader.set_logger(self.logger)
