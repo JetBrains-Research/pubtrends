@@ -31,7 +31,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
     <!--     <link rel="stylesheet" href="../static/style.css"/> -->
     <link rel="stylesheet" href="{{ url_for('static', filename='result.css') }}">
-<!--    <link rel="stylesheet" href="../static/result.css"/>-->
+    <!--    <link rel="stylesheet" href="../static/result.css"/>-->
 </head>
 <body>
 
@@ -150,8 +150,8 @@
                 <div class="card-body">
                     <h2 class="card-subtitle">Top Cited Papers Overall</h2>
                     <p>
-                        Top cited papers visualize top N cited papers among all the papers for given terms.
-                        Year reflects publication year of original paper.
+                        Top cited papers are shown among all the papers for given terms.<br>
+                        Year reflects publication year of the original paper.
                     </p>
                     <div>
                         {% for script, div in top_cited_papers %}
@@ -162,8 +162,9 @@
 
                     <h2 class="card-subtitle">Top Cited Papers of the Year</h2>
                     <p>
-                        For each year we show the paper which has the biggest number of citations in given
-                        year. Different papers have different colors.
+                        For each year we show the paper which has the most significant number of citations in a given
+                        year.<br>
+                        Different papers have different colors.
                     </p>
                     <div>
                         {% for script, div in max_gain_papers %}
@@ -174,8 +175,9 @@
 
                     <h2 class="card-subtitle">Hot Papers</h2>
                     <p>
-                        For each year we show a recent paper which has the biggest number of citation since
-                        the moment of publication. Different papers have different colors.
+                        For each year we show a recent paper which has the biggest number of citation since the moment
+                        of publication. <br>
+                        Different papers have different colors.
                     </p>
                     <div>
                         {% for script, div in max_relative_gain_papers %}
@@ -191,23 +193,21 @@
                     <h1 class="card-header">Topics</h1>
                 </div>
                 <div class="card-body">
-                    <p> Co-citation clustering using community Louvain algorithm is used to detect dense subtopics in
-                        co-citations graph. Click on bars to see keywords and publications for each subtopic. Note:
-                        subtopics are merged to "Other" if they contain less than 5% of publications of the field. </p>
+                    <p> Citations graph is used to find all the papers which are cited together or <em>co-cited</em> by
+                        other papers.<br>
+                        <em>Co-citations</em> clustering using community <em>Louvain</em> algorithm is used to detect
+                        dense subtopics among papers. <br>
+                        Click on bars to get detailed information about keywords and publications for each subtopic.
+                        <br>
+                        <em>Note: subtopics are merged to "Other" if they contain less than 5% of publications of the
+                            field.</em>
+                    </p>
                     <div>
                         {% for script, div in component_ratio %}
                         {{ script|safe }}
                         {{ div|safe }}
                         {% endfor %}
                     </div>
-
-                    <!--    <h1>Papers citations dynamics</h1>-->
-                    <!--    <div>-->
-                    <!--        {% for script, div in citations_dynamics %}-->
-                    <!--        {{ script|safe }}-->
-                    <!--        {{ div|safe }}-->
-                    <!--        {% endfor %}-->
-                    <!--    </div>-->
 
                     <h2 class="card-subtitle">Papers co-citations clustering</h2>
                     <p> {{clusters_info_message}} </p>
@@ -227,8 +227,8 @@
                 <div class="card-body">
                     <h2 class="card-subtitle">Subtopics summary</h2>
                     <p>
-                        Subtopics dynamics is shown for the timeline. Explore evolution of trends.
-                        Colors are the same as in previous diagram.
+                        Explore the evolution of trends - dynamics is shown for the timeline.<br>
+                        Colors are the same as in the previous diagram.
                     </p>
                     <div>
                         {% for script, div in component_size_summary %}
@@ -245,9 +245,9 @@
                 </div>
                 <div class="card-body">
                     <p>
-                        List of authors with the largest number of papers for given terms.
+                        List of authors with the largest number of papers for given terms.<br>
                         The colors of the circles in the subtopics column indicate top 3 most common subtopics among
-                        these papers.
+                        these papers.<br>
                         The subtopic circles are arranged according to the number of papers, in descending order.
                     </p>
                     <div>
@@ -265,9 +265,9 @@
                 </div>
                 <div class="card-body">
                     <p>
-                        List of journals with the largest number of papers for given terms.
+                        List of journals with the largest number of papers for given terms.<br>
                         The colors of the circles in the subtopics column indicate top 3 most common subtopics among
-                        these papers.
+                        these papers.<br>
                         The subtopic circles are arranged according to the number of papers, in descending order.
                     </p>
                     <div>
@@ -285,9 +285,9 @@
                 </div>
                 <div class="card-body">
                     <p>
-                        For each subtopic most cited papers are shown over time. Papers are sorted
-                        descending by citations number overall from bottom to top.
-                        Year reflects publication year of original paper.
+                        Learn more about subtopics - most cited papers over time are shown for each topic.<br>
+                        Papers are sorted descending by citations number overall from bottom to top.<br>
+                        Year reflects publication year of the original paper.
                     </p>
                     <div>
                         {% for script, div in subtopic_timeline_graphs %}
@@ -313,9 +313,10 @@
                 <div class="card-body">
                     <h2 class="card-subtitle">Subtopic Evolution</h2>
                     <p>
-                        Co-citation clustering is performed for several years to detect merges and splits of clusters,
-                        which can be related to new ideas. Clusters are described by several words with the highest
-                        TF-IDF value, edge width reflects the amount of papers which moved from one cluster to
+                        Topics extraction is performed longitudinally at several time points to detect merges and splits
+                        of clusters,<br>
+                        which can be related to new ideas. Clusters are described by several words with the highest<br>
+                        <em>TF-IDF</em> value, edge width reflects the number of papers which moved from one cluster to
                         another.
                     </p>
                     <div>

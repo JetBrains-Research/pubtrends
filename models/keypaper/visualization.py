@@ -200,15 +200,13 @@ class Plotter:
     def cocitations_clustering(self, max_chord_diagram_size=500):
         if len(self.analyzer.df) > max_chord_diagram_size:
             self.clusters_info_message = """
-            Heatmap is used to show which subtopics are related to each other.
-            Density is based on co-citations between clusters
-            and depends on the size of the clusters."""
+            Heatmap is used to show which subtopics are related to each other.<br>
+            Density is based on co-citations between clusters and depends on the size of the clusters."""
             return self.heatmap_clusters()
 
         self.clusters_info_message = """
-        Chord diagram is used to show papers as graph nodes,
-        edges demonstrate co-citations. Click on any node
-        to highlight all incident edges."""
+        Chord diagram is used to show papers as graph nodes, and edges demonstrate co-citations.<br>
+        Click on any node to highlight all incident edges."""
         return self.chord_diagram_components()
 
     def component_size_summary(self):
