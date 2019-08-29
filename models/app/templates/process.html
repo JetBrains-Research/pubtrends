@@ -27,8 +27,12 @@
         const TIMEOUT = 1000;
         const MAX_RETRIES = 20;
         let retries = 0;
+        let cancelled = false;
 
         function poll_progress() {
+            if (cancelled) {
+                return;
+            }
             $.ajax("{{url_for('.progress', jobid=JOBID)}}", {
                 dataType: "json", success: function (response) {
                     console.log(response);
@@ -64,18 +68,40 @@
             });
         }
 
+        function cancel() {
+            cancelled = true;
+            $.ajax("{{url_for('.cancel', jobid=JOBID)}}", {
+                dataType: "json", success: function (response) {
+                    console.log(response);
+                     if (response.state === 'CANCELLED') {
+                        $('#status').html(response.message);
+                        $('#log').empty();
+                        setTimeout(function() { window.location.replace("/"); }, 2000);
+                    } else if (response.state === 'FAILURE') {
+                        $('#progress').hide();
+                        $('#status').html("<h1>Error</h1>"+
+                            `<span class="error-message"> ${response.message} </span>`);
+                        $('#log').html(response.log);
+                        $('#log').empty();
+                        setTimeout(function() { window.location.replace("/"); }, 2000);
+                    }
+                }
+            });
+        }
+
         $(function () {
             poll_progress();
         });
-
-
     </script>
 </head>
 <body>
 
 <div class="container">
     <nav class="navbar navbar-light bg-light justify-content-between">
-        <span class="navbar-brand"><a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>{{search_string}}</span>
+        <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a><span class="navbar-brand">{{search_string}}</span>
+        <div class="col-auto">
+            <button class="btn btn-link" type="reset" onclick="cancel()">&#10006;&nbsp;Cancel</button>
+        </div>
     </nav>
     <div id="progress" class="progress">
         <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"

@@ -82,6 +82,27 @@ def process():
     return render_template_string("Something went wrong...")
 
 
+@app.route('/cancel')
+def cancel():
+    if len(request.args) > 0:
+        jobid = request.values.get('jobid')
+        if jobid:
+            celery.control.revoke(jobid)
+            return json.dumps({
+                'state': 'CANCELLED',
+                'message': f'Successfully cancelled search {jobid}'
+            })
+        else:
+            return json.dumps({
+                'state': 'FAILURE',
+                'message': f'Failed to cancel search {jobid}'
+            })
+    return json.dumps({
+        'state': 'FAILURE',
+        'message': f'Unknown search id'
+    })
+
+
 # Index page
 @app.route('/', methods=['GET', 'POST'])
 def index():
