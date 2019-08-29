@@ -55,7 +55,7 @@ def analyze_async(source, terms=None, id_list=None, zoom=None, sort='Most Cited'
         'max_relative_gain_papers': [components(plotter.max_relative_gain_papers())],
         'component_ratio': [components(plotter.component_ratio())],
         'papers_stats': [components(plotter.papers_statistics())],
-        'clusters_info_message': plotter.clusters_info_message,
+        'clusters_info_message': html.unescape(plotter.clusters_info_message),
         'author_statistics': [components(plotter.author_statistics())],
         'journal_statistics': [components(plotter.journal_statistics())]
         # TODO: this doesn't work
