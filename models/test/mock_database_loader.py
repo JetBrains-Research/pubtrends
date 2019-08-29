@@ -74,6 +74,7 @@ class MockDatabaseLoader(Loader):
                     create table sspublications(
                         ssid    varchar(40) not null,
                         crc32id integer     not null,
+                        pmid    integer,
                         title   varchar(1023),
                         year    integer,
                         abstract text,
