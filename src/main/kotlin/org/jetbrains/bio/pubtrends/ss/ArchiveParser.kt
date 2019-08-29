@@ -97,7 +97,7 @@ class ArchiveParser(
         addArticles(currentArticles)
         currentArticles.clear()
         batchIndex++
-        val progress = batchIndex.toDouble() / 10 //number of batches is about 1000
+        val progress = 100 * batchIndex.toDouble() / batchSize
         logger.info("Finished batch $batchIndex adding ($archiveFileGz) ($progress% done of $curFile/$filesAmount file)")
     }
 
