@@ -19,7 +19,7 @@
             integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
             crossorigin="anonymous"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
-    <!--    <link rel="stylesheet" href="../static/style.css"/>-->
+        <link rel="stylesheet" href="../static/style.css"/>
 
     <script>
         "use strict";
@@ -81,7 +81,6 @@
                         $('#progress').hide();
                         $('#status').html("<h1>Error</h1>"+
                             `<span class="error-message"> ${response.message} </span>`);
-                        $('#log').html(response.log);
                         $('#log').empty();
                         setTimeout(function() { window.location.replace("/"); }, 2000);
                     }
@@ -98,7 +97,9 @@
 
 <div class="container">
     <nav class="navbar navbar-light bg-light justify-content-between">
-        <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a><span class="navbar-brand">{{search_string}}</span>
+        <nav class="navbar navbar-light bg-light justify-content-between">
+            <span class="navbar-brand"><a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>{{search_string}}</span>
+        </nav>
         <div class="col-auto">
             <button class="btn btn-link" type="reset" onclick="cancel()">&#10006;&nbsp;Cancel</button>
         </div>
@@ -109,8 +110,10 @@
             <span class="progress-bar-label">0%</span>
         </div>
     </div>
-    <div class="h4" id="status"></div>
-    <pre class="h7" id="log"></pre>
+    <div class="content">
+        <div class="h4" id="status">Status</div>
+        <pre class="h7" id="log">Log</pre>
+    </div>
 </div>
 <footer>
     <p>version {{ version }}<br/>

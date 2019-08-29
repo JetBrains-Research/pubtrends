@@ -12,3 +12,7 @@ footer a {
 span.error-message {
     white-space: pre-line;
 }
+
+.content {
+    margin-top: 10px;
+}
