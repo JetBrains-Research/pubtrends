@@ -32,7 +32,7 @@ def analyze_async(source, terms=None, id_list=None, zoom=None, sort='Most Cited'
     if not sort:
         sort = 'Most Cited'
 
-    analyzer = KeyPaperAnalyzer(loader)
+    analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
     # current_task is from @celery.task
     log = analyzer.launch(search_query=terms, id_list=id_list, zoom=zoom, limit=str(amount),
                           sort=SORT_METHODS[sort], task=current_task)
@@ -43,6 +43,7 @@ def analyze_async(source, terms=None, id_list=None, zoom=None, sort='Most Cited'
     # Order is important here!
     result = {
         'log': log,
+        'experimental': PUBTRENDS_CONFIG.run_experimental,
         'n_papers': analyzer.n_papers,
         'n_citations': int(analyzer.df['total'].sum()),
         'n_subtopics': len(analyzer.components),
@@ -62,9 +63,11 @@ def analyze_async(source, terms=None, id_list=None, zoom=None, sort='Most Cited'
         # 'citations_dynamics': [components(plotter.article_citation_dynamics())],
     }
 
-    # Pass subtopic evolution only if not None
-    subtopic_evolution = plotter.subtopic_evolution()
-    if subtopic_evolution:
-        result['subtopic_evolution'] = [components(subtopic_evolution)]
+    # Experimental features
+    if PUBTRENDS_CONFIG.run_experimental:
+        subtopic_evolution = plotter.subtopic_evolution()
+        # Pass subtopic evolution only if not None
+        if subtopic_evolution:
+            result['subtopic_evolution'] = [components(subtopic_evolution)]
 
     return result
