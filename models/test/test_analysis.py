@@ -16,7 +16,7 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.analyzer = KeyPaperAnalyzer(MockLoader(), test=True)
+        cls.analyzer = KeyPaperAnalyzer(MockLoader(), TestKeyPaperAnalyzer.PUBTRENDS_CONFIG, test=True)
         cls.analyzer.launch(search_query='query')
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations()
         cls.analyzer.G = cls.analyzer.build_citation_graph(cls.analyzer.cit_df)
@@ -26,12 +26,12 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
         ('Semantic Scholar', SemanticScholarLoader(PUBTRENDS_CONFIG), False, 'Semantic Scholar')
     ])
     def test_valid_source(self, name, loader, test, expected):
-        analyzer = KeyPaperAnalyzer(loader, test=test)
+        analyzer = KeyPaperAnalyzer(loader, TestKeyPaperAnalyzer.PUBTRENDS_CONFIG, test=test)
         self.assertEqual(analyzer.source, expected)
 
     def test_bad_source(self):
         with self.assertRaises(TypeError):
-            KeyPaperAnalyzer(MockLoader(), test=False)
+            KeyPaperAnalyzer(MockLoader(), TestKeyPaperAnalyzer.PUBTRENDS_CONFIG, test=False)
 
     def test_build_citation_graph_nodes_count(self):
         self.assertEqual(self.analyzer.G.number_of_nodes(), len(CITATION_GRAPH_NODES))
