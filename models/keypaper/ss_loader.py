@@ -18,10 +18,10 @@ class SemanticScholarLoader(Loader):
         if not limit:
             limit = self.max_number_of_articles
 
-        columns = ['id', 'crc32id', 'title', 'abstract', 'year', 'aux']
+        columns = ['id', 'crc32id', 'pmid', 'title', 'abstract', 'year', 'aux']
         if sort == 'relevance':
             query = f'''
-                SELECT P.ssid, P.crc32id, P.title, P.abstract, P.year, P.aux, ts_rank_cd(P.tsv, query) AS rank
+                SELECT P.ssid, P.crc32id, P.pmid, P.title, P.abstract, P.year, P.aux, ts_rank_cd(P.tsv, query) AS rank
                 FROM SSPublications P, websearch_to_tsquery('english', {terms_str}) query
                 WHERE tsv @@ query
                 ORDER BY rank DESC
@@ -30,19 +30,19 @@ class SemanticScholarLoader(Loader):
             columns.append('ts_rank')
         elif sort == 'citations':
             query = f'''
-                SELECT P.ssid, P.crc32id, P.title, P.abstract, P.year, P.aux, COUNT(1) AS count
+                SELECT P.ssid, P.crc32id, P.pmid, P.title, P.abstract, P.year, P.aux, COUNT(1) AS count
                 FROM SSPublications P
                 LEFT JOIN SSCitations C
                 ON C.crc32id_in = P.crc32id AND C.id_in = P.ssid
                 WHERE tsv @@ websearch_to_tsquery('english', {terms_str})
-                GROUP BY P.ssid, P.crc32id, P.title, P.abstract, P.year, P.aux
+                GROUP BY P.ssid, P.crc32id, P.pmid, P.title, P.abstract, P.year, P.aux
                 ORDER BY count DESC NULLS LAST
                 LIMIT {limit};
                 '''
             columns.append('citations')
         elif sort == 'year':
             query = f'''
-                SELECT ssid, crc32id, title, abstract, year, aux
+                SELECT ssid, crc32id, pmid, title, abstract, year, aux
                 FROM SSPublications P
                 WHERE tsv @@ websearch_to_tsquery('english', {terms_str})
                 ORDER BY year DESC NULLS LAST
@@ -59,6 +59,8 @@ class SemanticScholarLoader(Loader):
 
         # Duplicate rows may occur if crawler was stopped while parsing Semantic Scholar archive
         self.pub_df.drop_duplicates(subset='id', inplace=True)
+        self.pub_df = self.pub_df[pd.isnull(self.pub_df.pmid)]
+        self.pub_df.drop(columns=['pmid'], inplace=True)
 
         self.logger.info(f'Found {len(self.pub_df)} publications in the local database', current=current,
                          task=task)
