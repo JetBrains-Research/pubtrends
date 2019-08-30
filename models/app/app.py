@@ -70,7 +70,7 @@ def process():
         jobid = request.values.get('jobid')
         terms = request.args.get('terms')
         analysis_type = request.values.get('analysis_type')
-        source = request.values.get('source')
+        source = request.args.get('source')
         key = request.args.get('key')
         value = request.args.get('value')
 

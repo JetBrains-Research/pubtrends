@@ -100,7 +100,7 @@ class KeyPaperAnalyzer:
                                                                                current=13, task=task)
 
             self.max_rel_gain_papers, self.max_rel_gain_df = self.find_max_relative_gain_papers(
-                self.df, self.citation_years, current=14, task=task
+                self.df, self.citation_years, current=13, task=task
             )
 
             # Find top journals
