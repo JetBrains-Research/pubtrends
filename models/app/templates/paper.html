@@ -116,7 +116,26 @@
                     <h1 class="card-header">Related Topics</h1>
                 </div>
                 <div class="card-body">
-                    {{ related_topics|safe }}
+                    {% if related_topics is defined %}
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Topic keywords</th>
+                                <th scope="col">Number of co-citations</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in related_topics %}
+                                <tr>
+                                    <th scope="row">{{ loop.index }}</th>
+                                    <td>{{ row[0] }}</td>
+                                    <td>{{ row[1] }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% endif %}
                 </div>
             </div>
 
@@ -126,26 +145,64 @@
                 </div>
                 <div class="card-body">
                     {% if citing_papers is defined %}
-                    Valuable Citing Papers
-                    {{ citing_papers }}
-                    <table class="table">
-                        {% for row in citing_papers %}
+                    <span class="card-subtitle">Valuable References</span>
+                    <table class="table table-striped">
+                        <thead>
                             <tr>
-                                <td>{{ row[0] }}</td>
-                                <td>{{ row[1] }}</td>
+                                <th scope="col">#</th>
+                                <th scope="col">Title</th>
                             </tr>
-                        {% endfor %}
+                        </thead>
+                        <tbody>
+                            {% for paper in citing_papers %}
+                                <tr>
+                                    <th scope="row">{{ loop.index }}</th>
+                                    <td>{{ paper }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
                     </table>
                     {% endif %}
+
+                    {% if cited_papers is defined %}
+                    <span class="card-subtitle">Valuable Citations</span>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Title</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for paper in cited_papers %}
+                                <tr>
+                                    <th scope="row">{{ loop.index }}</th>
+                                    <td>{{ paper }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% endif %}
+
                     {% if cocited_papers is defined %}
                     <span class="card-subtitle">Valuable Co-cited Papers</span>
-                    <table class="table">
-                        {% for row in cocited_papers %}
+                    <table class="table table-striped">
+                        <thead>
                             <tr>
-                                <td>{{ row[0] }}</td>
-                                <td>{{ row[1] }}</td>
+                                <th scope="col">#</th>
+                                <th scope="col">Title</th>
+                                <th scope="col">Number of co-citations</th>
                             </tr>
-                        {% endfor %}
+                        </thead>
+                        <tbody>
+                            {% for row in cocited_papers %}
+                                <tr>
+                                    <th scope="row">{{ loop.index }}</th>
+                                    <td>{{ row[0] }}</td>
+                                    <td>{{ row[1] }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
                     </table>
                     {% endif %}
                 </div>

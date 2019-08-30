@@ -519,6 +519,9 @@ class KeyPaperAnalyzer:
 
         # Restore subtopic descriptions
         self.df_kwd = pd.read_json(fields['df_kwd'])
+        self.df_kwd['kwd'] = self.df_kwd['kwd'].str.split(',').apply(list)
+        self.df_kwd['kwd'] = self.df_kwd['kwd'].apply(lambda x: [el.split(':') for el in x])
+        self.df_kwd['kwd'] = self.df_kwd['kwd'].apply(lambda x: [(el[0], float(el[1])) for el in x])
 
         # Restore citation and co-citation graphs
         self.CG = json_graph.node_link_graph(fields['cg'])

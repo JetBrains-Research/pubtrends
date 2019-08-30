@@ -89,7 +89,7 @@ def process():
                                            subpage="result", JOBID=jobid, version=PUBTRENDS_CONFIG.version,
                                            args={'key': "terms", 'value': quote(terms), 'jobid': jobid})
                 else:
-                    return render_template('process.html', search_string=terms,
+                    return render_template('process.html', search_string=f"Paper analysis at {source}",
                                            subpage="paper", JOBID=jobid, version=PUBTRENDS_CONFIG.version,
                                            args={'source': source, 'id': analysis_type, 'jobid': jobid})
 
