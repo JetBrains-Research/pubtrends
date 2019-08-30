@@ -79,21 +79,21 @@ def process():
                 terms += f' at {source}'
                 return render_template('process.html', search_string=terms,
                                        subpage="result", args={'terms': quote(terms), 'jobid': jobid},
-                                       JOBID=jobid, version=PUBTRENDS_CONFIG.version)
+                                       version=PUBTRENDS_CONFIG.version)
             elif key and value:
                 return render_template('process.html', search_string=f'{key}: {value}',
                                        subpage="search", args={'source': source, 'jobid': jobid},
-                                       JOBID=jobid, version=PUBTRENDS_CONFIG.version)
+                                       version=PUBTRENDS_CONFIG.version)
             else:
                 if analysis_type in ['detailed', 'expanded']:
                     terms = f"{analysis_type} analysis of the previous query at {source}"
 
                     return render_template('process.html', search_string=terms,
-                                           subpage="result", JOBID=jobid, version=PUBTRENDS_CONFIG.version,
+                                           subpage="result", version=PUBTRENDS_CONFIG.version,
                                            args={'key': "terms", 'value': quote(terms), 'jobid': jobid})
                 else:
                     return render_template('process.html', search_string=f"Paper analysis at {source}",
-                                           subpage="paper", JOBID=jobid, version=PUBTRENDS_CONFIG.version,
+                                           subpage="paper", version=PUBTRENDS_CONFIG.version,
                                            args={'source': source, 'id': analysis_type, 'jobid': jobid})
 
     return render_template_string("Something went wrong...")
