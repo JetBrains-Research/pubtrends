@@ -92,7 +92,7 @@ class PubmedLoader(Loader):
             self.logger.debug('Creating pmids table for request with index.', current=current, task=task)
 
         load_query = '''
-        SELECT CAST(P.pmid AS TEXT), P.title, P.aux, P.abstract, date_part('year', P.date) AS year, P.mesh
+        SELECT CAST(P.pmid AS TEXT), P.title, P.aux, P.abstract, date_part('year', P.date) AS year
         FROM PMPublications P
         JOIN TEMP_PMIDS AS T ON (P.pmid = T.pmid);
         '''
@@ -100,7 +100,7 @@ class PubmedLoader(Loader):
         with self.conn.cursor() as cursor:
             cursor.execute(load_query)
             pub_df = pd.DataFrame(cursor.fetchall(),
-                                  columns=['id', 'title', 'aux', 'abstract', 'year', 'mesh'],
+                                  columns=['id', 'title', 'aux', 'abstract', 'year'],
                                   dtype=object)
 
         if np.any(pub_df[['id', 'title']].isna()):
