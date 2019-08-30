@@ -32,7 +32,6 @@ class KeyPaperAnalyzer:
             self.source = 'Semantic Scholar'
         elif isinstance(self.loader, ArxivLoader):
             self.source = 'arxiv'
-            self.source = 'Semantic Scholar'
         elif not test:
             raise TypeError("loader should be either PubmedLoader or SemanticScholarLoader")
 

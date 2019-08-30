@@ -53,9 +53,6 @@ def tokenize(text, terms=None):
                          word not in stop_words and is_noun_or_adj(pos)]
 
     lemmatizer = WordNetLemmatizer()
-    tokens = list(filter(lambda t: len(t) >= 3, [lemmatizer.lemmatize(w, pos=get_wordnet_pos(pos))
-                                                 for w, pos in words_of_interest]))
-    return tokens
     lemmatized = [lemmatizer.lemmatize(w, pos=get_wordnet_pos(pos)) for w, pos in words_of_interest]
 
     stemmer = SnowballStemmer('english')
