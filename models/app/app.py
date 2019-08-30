@@ -70,13 +70,13 @@ def process():
         jobid = request.values.get('jobid')
         terms = request.args.get('terms')
         analysis_type = request.values.get('analysis_type')
-        source = request.args.get('source')
+        source = request.values.get('source')
         key = request.args.get('key')
         value = request.args.get('value')
 
         if jobid:
             if terms:
-                terms += f'at {source}'
+                terms += f' at {source}'
                 return render_template('process.html', search_string=terms,
                                        subpage="result", args={'terms': quote(terms), 'jobid': jobid},
                                        JOBID=jobid, version=PUBTRENDS_CONFIG.version)
@@ -181,7 +181,8 @@ def index():
             # Submit Celery task for topic analysis
             job = analyze_topic_async.delay(source, terms=terms, id_list=id_list,
                                             zoom=int(zoom), sort=sort, amount=amount)
-            return redirect(url_for('.process', terms=terms, analysis_type=analysis_type, jobid=job.id))
+            return redirect(url_for('.process', terms=terms, analysis_type=analysis_type,
+                                    source=source, jobid=job.id))
         elif len(value) > 0:
             # Submit Celery task for paper analysis
             job = find_paper_async.delay(source, key, value)
