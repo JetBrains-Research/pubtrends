@@ -52,8 +52,8 @@
             <div class="sidebar-sticky">
                 <ul class="nav flex-column mt-3">
                     <li class="nav-item">
-                        <a class="nav-link" href="#general">
-                            <img src="{{ url_for('static', filename='home.svg') }}"/>&nbsp;General
+                        <a class="nav-link" href="#paper">
+                            <img src="{{ url_for('static', filename='home.svg') }}"/>&nbsp;Paper
                         </a>
                     </li>
                     <li class="nav-item">
@@ -78,7 +78,9 @@
         <!-- Main content -->
         <main class="col-12 col-md-auto col-xl-10 justify-content-between" role="main">
             <div class="card mt-3">
-                <span id="general"></span>
+                <div class="card-title" id="paper">
+                    <h1 class="card-header">Paper</h1>
+                </div>
                 <div class="card-body">
                     <div class="row justify-content-between info">
                         <span class="col citation">{{ citation }}</span>
