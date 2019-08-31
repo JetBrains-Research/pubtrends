@@ -50,7 +50,17 @@
                         $('.progress-bar').css('width', response.progress + '%').attr('aria-valuenow', response.progress);
                         $('.progress-bar-label').text(response.progress + '%');
                         if (response.state === 'SUCCESS') {
-                            window.location.replace("/result?terms={{url_search_string}}&jobid={{JOBID}}");
+                            // Join arg-value pairs for URL
+                            var args = {{ args|safe }};
+                            var args_list = [];
+                            for (var key in args) {
+                                args_list.push(`${key}=${args[key]}`);
+                            }
+
+                            // Build href for given subpage and args
+                            var subpage = '{{ SUBPAGE }}';
+                            var href = `/${subpage}?${args_list.join('&')}`;
+                            window.location.replace(href);
                         } else {
                             $('#log').html(response.log);
                             setTimeout(poll_progress, TIMEOUT);
@@ -98,7 +108,7 @@
 <div class="container">
     <nav class="navbar navbar-light bg-light justify-content-between">
         <nav class="navbar navbar-light bg-light justify-content-between">
-            <span class="navbar-brand"><a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>{{search_string}}</span>
+            <span class="navbar-brand"><a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>{{SEARCH_STRING}}</span>
         </nav>
         <div class="col-auto">
             <button class="btn btn-link" type="reset" onclick="cancel()">&#10006;&nbsp;Cancel</button>
@@ -116,7 +126,7 @@
     </div>
 </div>
 <footer>
-    <p>version {{ version }}<br/>
+    <p>version {{ VERSION }}<br/>
         &copy;2019 <a href="https://research.jetbrains.org/groups/biolabs"
                       title="JetBrains Research BioLabs"
                       target="_blank">JetBrains Research</a></p>
