@@ -58,7 +58,7 @@
                             }
 
                             // Build href for given subpage and args
-                            var subpage = '{{ subpage }}';
+                            var subpage = '{{ SUBPAGE }}';
                             var href = `/${subpage}?${args_list.join('&')}`;
                             window.location.replace(href);
                         } else {
@@ -108,7 +108,7 @@
 <div class="container">
     <nav class="navbar navbar-light bg-light justify-content-between">
         <nav class="navbar navbar-light bg-light justify-content-between">
-            <span class="navbar-brand"><a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>{{search_string}}</span>
+            <span class="navbar-brand"><a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>{{SEARCH_STRING}}</span>
         </nav>
         <div class="col-auto">
             <button class="btn btn-link" type="reset" onclick="cancel()">&#10006;&nbsp;Cancel</button>
@@ -126,7 +126,7 @@
     </div>
 </div>
 <footer>
-    <p>version {{ version }}<br/>
+    <p>version {{ VERSION }}<br/>
         &copy;2019 <a href="https://research.jetbrains.org/groups/biolabs"
                       title="JetBrains Research BioLabs"
                       target="_blank">JetBrains Research</a></p>

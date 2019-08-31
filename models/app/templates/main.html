@@ -95,8 +95,8 @@
                                         </div>
                                         <select class="form-control" aria-describedby="amount-addon"
                                                 name="amount">
-                                            {% for amount in amounts %}
-                                            {% if amount == default_amount %}
+                                            {% for amount in AMOUNTS %}
+                                            {% if amount == DEFAULT_AMOUNT %}
                                             <option selected>{{ amount }}</option>
                                             {% else %}
                                             <option>{{ amount }}</option>
@@ -150,7 +150,7 @@
     </div>
 </div>
 <footer>
-    <p>version {{ version }}<br/>
+    <p>version {{ VERSION }}<br/>
         &copy;2019 <a href="https://research.jetbrains.org/groups/biolabs"
                       title="JetBrains Research BioLabs"
                       target="_blank">JetBrains Research</a></p>

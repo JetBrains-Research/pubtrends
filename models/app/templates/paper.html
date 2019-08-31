@@ -53,22 +53,22 @@
                 <ul class="nav flex-column mt-3">
                     <li class="nav-item">
                         <a class="nav-link" href="#general">
-                            General
+                            <img src="{{ url_for('static', filename='home.svg') }}"/>&nbsp;General
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#citation-dynamics">
-                            Citation Dynamics
+                            <img src="{{ url_for('static', filename='bar-chart-2.svg') }}"/>&nbsp;Citation Dynamics
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#related-topics">
-                            Related Topics
+                            <img src="{{ url_for('static', filename='tag.svg') }}"/>&nbsp;Related Topics
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#related-papers">
-                            Related Papers
+                            <img src="{{ url_for('static', filename='columns.svg') }}"/>&nbsp;Related Papers
                         </a>
                     </li>
                 </ul>
@@ -211,7 +211,7 @@
     </div>
 </div>
 <footer>
-    <p>version {{ version }}<br/>
+    <p>version {{ VERSION }}<br/>
         &copy;2019 <a href="https://research.jetbrains.org/groups/biolabs"
                       title="JetBrains Research BioLabs"
                       target="_blank">JetBrains Research</a></p>
