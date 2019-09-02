@@ -126,8 +126,9 @@ def get_subtopic_descriptions(df, comps, size=100):
     kwd = {}
     for idx in range(n_comps):
         max_cnt = max(most_common[idx].values())
-        idfs[idx] = {k: (0.5 + 0.5 * v / max_cnt) *  # augmented frequency to avoid document length bias
-                        np.log(n_comps / sum([k in mcoc for mcoc in most_common])) \
+        # augmented frequency to avoid document length bias
+        idfs[idx] = {k: (0.5 + 0.5 * v / max_cnt) *
+                     np.log(n_comps / sum([k in mcoc for mcoc in most_common])) \
                      for k, v in most_common[idx].items()}
         kwd[idx] = ','.join([f'{k}:{(max(most_common[idx][k], 1e-3)):.3f}'
                              for k, _v in list(sorted(idfs[idx].items(),
