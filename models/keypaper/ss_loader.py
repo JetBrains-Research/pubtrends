@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from .loader import Loader
-from .utils import crc32
+from .utils import crc32, extract_authors
 
 
 class SemanticScholarLoader(Loader):

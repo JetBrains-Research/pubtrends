@@ -2,6 +2,7 @@ import binascii
 import html
 import logging
 import re
+import sys
 from collections import Counter
 from string import Template
 
@@ -9,9 +10,10 @@ import nltk
 import numpy as np
 import pandas as pd
 from nltk.corpus import stopwords, wordnet
-from nltk.stem import WordNetLemmatizer
+from nltk.stem import WordNetLemmatizer, SnowballStemmer
 from nltk.tokenize import word_tokenize
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.decomposition import LatentDirichletAllocation
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 
 nltk.download('stopwords')
 nltk.download('punkt')
@@ -53,9 +55,22 @@ def tokenize(text, terms=None):
                          word not in stop_words and is_noun_or_adj(pos)]
 
     lemmatizer = WordNetLemmatizer()
-    tokens = list(filter(lambda t: len(t) >= 3, [lemmatizer.lemmatize(w, pos=get_wordnet_pos(pos))
-                                                 for w, pos in words_of_interest]))
-    return tokens
+    lemmatized = list(filter(lambda t: len(t) >= 3, [lemmatizer.lemmatize(w, pos=get_wordnet_pos(pos))
+                                                     for w, pos in words_of_interest]))
+
+    stemmer = SnowballStemmer('english')
+    stemmed = [(stemmer.stem(word), word) for word in lemmatized]
+
+    # Substitute each stem with the shortest similar word
+    stems_mapping = {}
+    for stem, word in stemmed:
+        if stem in stems_mapping:
+            if len(stems_mapping[stem]) > len(word):
+                stems_mapping[stem] = word
+        else:
+            stems_mapping[stem] = word
+
+    return [stems_mapping[stem] for stem, _ in stemmed]
 
 
 def get_ngrams(text, n=1):
@@ -113,8 +128,9 @@ def get_subtopic_descriptions(df, comps, size=100):
     kwd = {}
     for idx in range(n_comps):
         max_cnt = max(most_common[idx].values())
-        idfs[idx] = {k: (0.5 + 0.5 * v / max_cnt) *  # augmented frequency to avoid document length bias
-                     np.log(n_comps / sum([k in mcoc for mcoc in most_common])) \
+        # augmented frequency to avoid document length bias
+        idfs[idx] = {k: (0.5 + 0.5 * v / max_cnt) *
+                     np.log(n_comps / sum([k in mcoc for mcoc in most_common]))
                      for k, v in most_common[idx].items()}
         kwd[idx] = ','.join([f'{k}:{(max(most_common[idx][k], 1e-3)):.3f}'
                              for k, _v in list(sorted(idfs[idx].items(),
@@ -222,3 +238,37 @@ def to_32_bit_int(n):
     if n >= (1 << 31):
         return -(1 << 32) + n
     return n
+
+
+def build_corpus(df):
+    logging.info(f'Building corpus from {len(df)} articles')
+    corpus = [f'{title} {abstract}'
+              for title, abstract in zip(df['title'].values, df['abstract'].values)]
+    logging.info(f'Corpus size: {sys.getsizeof(corpus)} bytes')
+    return corpus
+
+
+def vectorize(corpus, terms=None, n_words=1000):
+    logging.info(f'Counting word usage in the corpus, using only {n_words} most frequent words')
+    vectorizer = CountVectorizer(tokenizer=lambda t: tokenize(t, terms), max_features=n_words)
+    counts = vectorizer.fit_transform(corpus)
+    logging.info(f'Output shape: {counts.shape}')
+    return counts, vectorizer
+
+
+def lda_subtopics(counts, n_topics=10):
+    logging.info(f'Performing LDA subtopic analysis')
+    lda = LatentDirichletAllocation(n_components=n_topics, random_state=0)
+    topics = lda.fit_transform(counts)
+
+    logging.info('Done')
+    return topics, lda
+
+
+def explain_lda_subtopics(lda, vectorizer, n_top_words=20):
+    feature_names = vectorizer.get_feature_names()
+    explanations = {}
+    for i, topic in enumerate(lda.components_):
+        explanations[i] = [(topic[i], feature_names[i]) for i in topic.argsort()[:-n_top_words - 1:-1]]
+
+    return explanations
