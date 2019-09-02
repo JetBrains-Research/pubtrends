@@ -4,7 +4,7 @@ import re
 import numpy as np
 import psycopg2 as pg_driver
 
-from models.keypaper.utils import extract_authors
+from .utils import extract_authors
 
 
 class Loader:

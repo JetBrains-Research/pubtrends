@@ -4,6 +4,7 @@ import community
 import networkx as nx
 import numpy as np
 import pandas as pd
+from networkx.readwrite import json_graph
 
 from .pm_loader import PubmedLoader
 from .progress_logger import ProgressLogger
@@ -13,7 +14,7 @@ from .utils import get_subtopic_descriptions, get_tfidf_words, split_df_list
 
 class KeyPaperAnalyzer:
     SEED = 20190723
-    TOTAL_STEPS = 15
+    TOTAL_STEPS = 16
     EXPERIMENTAL_STEPS = 2
 
     def __init__(self, loader, config, test=False):
@@ -56,8 +57,9 @@ class KeyPaperAnalyzer:
                 # Load data about publications with given ids
                 self.terms = search_query
                 self.ids = id_list
-                if zoom == 'out':
-                    self.ids = self.loader.expand(id_list, current=1, task=task)
+                if zoom:
+                    for _ in range(zoom):
+                        self.ids = self.loader.expand(self.ids, current=1, task=task)
                 self.pub_df = self.loader.search_with_given_ids(self.ids, current=2, task=task)
                 self.n_papers = len(self.ids)
 
@@ -84,33 +86,54 @@ class KeyPaperAnalyzer:
             self.components, self.comp_other, self.pm, self.pmcomp_sizes = self.subtopic_analysis(
                 self.df, self.CG, current=9, task=task
             )
-            self.df = self.merge_comps(self.df, self.pm)
+            self.df = self.merge_col(self.df, self.pm, col='comp')
             self.df_kwd = self.subtopic_descriptions(self.df, current=10, task=task)
 
+            # Perform PageRank analysis
+            self.pr = self.pagerank(self.G, current=11, task=task)
+            self.df = self.merge_col(self.df, self.pr, col='pagerank')
+
             # Find interesting papers
-            self.top_cited_papers, self.top_cited_df = self.find_top_cited_papers(self.df, current=11, task=task)
+            self.top_cited_papers, self.top_cited_df = self.find_top_cited_papers(self.df, current=12, task=task)
 
             self.max_gain_papers, self.max_gain_df = self.find_max_gain_papers(self.df, self.citation_years,
-                                                                               current=12, task=task)
+                                                                               current=13, task=task)
 
             self.max_rel_gain_papers, self.max_rel_gain_df = self.find_max_relative_gain_papers(
                 self.df, self.citation_years, current=13, task=task
             )
 
             # Find top journals
-            self.journal_stats = self.popular_journals(self.df, current=14, task=task)
+            self.journal_stats = self.popular_journals(self.df, current=15, task=task)
 
             # Find top authors
-            self.author_stats = self.popular_authors(self.df, current=15, task=task)
+            self.author_stats = self.popular_authors(self.df, current=16, task=task)
 
             # Experimental features, can be turned off in 'config.properties'
             if self.run_experimental:
                 # Perform subtopic evolution analysis and get subtopic descriptions
                 self.evolution_df, self.evolution_year_range = self.subtopic_evolution_analysis(self.cocit_df,
-                                                                                                current=16, task=task)
+                                                                                                current=17, task=task)
                 self.evolution_kwds = self.subtopic_evolution_descriptions(
-                    self.df, self.evolution_df, self.evolution_year_range, self.terms, current=17, task=task
+                    self.df, self.evolution_df, self.evolution_year_range, self.terms, current=18, task=task
                 )
+
+            return self.logger.stream.getvalue()
+        finally:
+            self.loader.close_connection()
+            self.logger.remove_handler()
+
+    def launch_paper(self, key, value, task=None):
+        """
+        Launcher for analysis of certain paper specified by key - value pair.
+        :param key: search key, one of 'title', 'doi', 'pmid'
+        :param value: value corresponding to the key
+        :return full log
+        """
+
+        try:
+            # Search article with this key and value
+            self.ids = self.loader.find(key, value, current=1, task=task)
 
             return self.logger.stream.getvalue()
         finally:
@@ -232,13 +255,13 @@ class KeyPaperAnalyzer:
         return components, comp_other, pm, pmcomp_sizes
 
     @staticmethod
-    def merge_comps(df, pm):
+    def merge_col(df, data, col):
         # Added 'comp' column containing the ID of component
-        df_comp = pd.Series(pm).reset_index().rename(columns={'index': 'id', 0: 'comp'})
+        df_comp = pd.Series(data).reset_index().rename(columns={'index': 'id', 0: col})
         df_comp['id'] = df_comp['id'].astype(str)
         df_merged = pd.merge(df, df_comp,
                              on='id', how='outer')
-        df_merged['comp'] = df_merged['comp'].fillna(-1).apply(int)
+        df_merged[col] = df_merged[col].fillna(-1).apply(int)
 
         return df_merged
 
@@ -474,3 +497,43 @@ class KeyPaperAnalyzer:
     def get_most_cited_papers_for_comps(df, n):
         ids = df[df['comp'] >= 0].sort_values(by='total', ascending=False).groupby('comp')['id']
         return ids.apply(list).apply(lambda x: x[:n]).to_dict()
+
+    def dump(self):
+        """
+        Dump valuable fields of KeyPaperAnalyzer to JSON-serializable dict. Use 'load' to restore analyzer.
+        """
+        return {'cg': json_graph.node_link_data(self.CG),
+                'df': self.df.to_json(),
+                'df_kwd': self.df_kwd.to_json(),
+                'g': json_graph.node_link_data(self.G)}
+
+    def load(self, fields):
+        """
+        Load valuable fields of KeyPaperAnalyzer from JSON-serializable dict. Use 'dump' to dump analyzer.
+        """
+        # Restore main dataframe
+        self.df = pd.read_json(fields['df'])
+        self.df['id'] = self.df['id'].apply(str)
+
+        mapping = {}
+        for col in self.df.columns:
+            try:
+                mapping[col] = int(col)
+            except ValueError:
+                mapping[col] = col
+        self.df = self.df.rename(columns=mapping)
+
+        # Restore subtopic descriptions
+        self.df_kwd = pd.read_json(fields['df_kwd'])
+        self.df_kwd['kwd'] = self.df_kwd['kwd'].str.split(',').apply(list)
+        self.df_kwd['kwd'] = self.df_kwd['kwd'].apply(lambda x: [el.split(':') for el in x])
+        self.df_kwd['kwd'] = self.df_kwd['kwd'].apply(lambda x: [(el[0], float(el[1])) for el in x])
+
+        # Restore citation and co-citation graphs
+        self.CG = json_graph.node_link_graph(fields['cg'])
+        self.G = json_graph.node_link_graph(fields['g'])
+
+    def pagerank(self, G, current=0, task=None):
+        self.logger.info('Performing PageRank analysis', current=current, task=task)
+        # Apply PageRank algorithm with damping factor of 0.5
+        return nx.pagerank(G, alpha=0.5, tol=1e-9)
