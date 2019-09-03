@@ -2,14 +2,13 @@ import html
 import json
 from urllib.parse import quote
 
-import flask
 from celery.result import AsyncResult
 from flask import (
-    Flask, request, redirect,
+    Flask, request, redirect, url_for,
     render_template, render_template_string
 )
 
-from models.celery.tasks import celery, analyze_async
+from models.celery.tasks import celery, find_paper_async, analyze_topic_async, prepare_paper_data
 from models.keypaper.config import PubtrendsConfig
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
@@ -56,10 +55,11 @@ def result():
     terms = request.args.get('terms')
     if jobid:
         job = AsyncResult(jobid, app=celery)
+        data, _ = job.result
         if job.state == 'SUCCESS':
-            return render_template('result.html', search_string=terms,
-                                   version=PUBTRENDS_CONFIG.version,
-                                   **job.result)
+            return render_template('result.html', SEARCH_STRING=terms,
+                                   VERSION=PUBTRENDS_CONFIG.version,
+                                   **data)
 
     return render_template_string("Something went wrong...")
 
@@ -71,15 +71,69 @@ def process():
         terms = request.args.get('terms')
         analysis_type = request.values.get('analysis_type')
         source = request.values.get('source')
-        if jobid:
-            if not terms:
-                terms = f"{analysis_type} analysis of the previous query"
-            terms += f" at {source}"
+        key = request.args.get('key')
+        value = request.args.get('value')
 
-            return render_template('process.html', search_string=terms,
-                                   url_search_string=quote(terms),
-                                   source=source, JOBID=jobid,
-                                   version=PUBTRENDS_CONFIG.version)
+        if jobid:
+            if terms:
+                terms += f' at {source}'
+                return render_template('process.html',
+                                       args={'terms': quote(terms), 'jobid': jobid},
+                                       SEARCH_STRING=terms, SUBPAGE="result",
+                                       JOBID=jobid, VERSION=PUBTRENDS_CONFIG.version)
+            elif key and value:
+                return render_template('process.html',
+                                       args={'source': source, 'jobid': jobid},
+                                       SEARCH_STRING=f'{key}: {value}', SUBPAGE="search",
+                                       JOBID=jobid, VERSION=PUBTRENDS_CONFIG.version)
+            else:
+                if analysis_type in ['detailed', 'expanded']:
+                    terms = f"{analysis_type} analysis of the previous query at {source}"
+
+                    return render_template('process.html',
+                                           args={'key': "terms", 'value': quote(terms), 'jobid': jobid},
+                                           SEARCH_STRING=terms, SUBPAGE="result",
+                                           JOBID=jobid, VERSION=PUBTRENDS_CONFIG.version)
+                else:
+                    return render_template('process.html',
+                                           args={'source': source, 'id': analysis_type, 'jobid': jobid},
+                                           SEARCH_STRING=f"Paper analysis at {source}", SUBPAGE="paper",
+                                           JOBID=jobid, VERSION=PUBTRENDS_CONFIG.version)
+
+    return render_template_string("Something went wrong...")
+
+
+@app.route('/search')
+def search():
+    jobid = request.values.get('jobid')
+    source = request.values.get('source')
+    if jobid:
+        find_job = AsyncResult(jobid, app=celery)
+
+        if find_job.state == 'SUCCESS':
+            ids = find_job.result
+            if len(ids) == 1:
+                job = analyze_topic_async.delay(source, id_list=ids, zoom=2)
+                return redirect(url_for('.process', terms=None, analysis_type=ids[0],
+                                        source=source, jobid=job.id))
+            elif len(ids) == 0:
+                return render_template_string('Found no papers matching specified key - value pair')
+            else:
+                return render_template_string('Found multiple papers matching your search')
+
+
+@app.route('/paper')
+def paper():
+    jobid = request.values.get('jobid')
+    source = request.args.get('source')
+    pid = request.args.get('id')
+    if jobid:
+        job = AsyncResult(jobid, app=celery)
+        _, data = job.result
+
+        if job.state == 'SUCCESS':
+            return render_template('paper.html', **prepare_paper_data(data, source, pid),
+                                   VERSION=PUBTRENDS_CONFIG.version)
 
     return render_template_string("Something went wrong...")
 
@@ -109,29 +163,38 @@ def cancel():
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        terms, id_list, zoom = '', '', ''
+        terms, id_list, zoom, key, value, analysis_type = '', '', 0, '', '', ''
         source = request.form.get('source')
+
         if 'terms' in request.form:
             terms = request.form.get('terms')
-            analysis_type = ''
         elif 'id_list' in request.form:
             id_list = request.form.get('id_list').split(',')
             zoom = request.form.get('zoom')
-            analysis_type = 'expanded' if zoom == 'out' else 'detailed'
+            analysis_type = 'expanded' if int(zoom) > 0 else 'detailed'
+        elif 'key' in request.form and 'value' in request.form:
+            key = request.form.get('key')
+            value = request.form.get('value')
         else:
-            raise Exception("Request should contain either terms or list of ids")
+            raise Exception("Request contains no parameters")
 
         sort = request.form.get('sort')
         amount = request.form.get('amount')
-        if len(terms) > 0 or id_list:
-            # Submit Celery task
-            job = analyze_async.delay(source, terms=terms, id_list=id_list, zoom=zoom, sort=sort, amount=amount)
-            return redirect(flask.url_for('.process', terms=terms, analysis_type=analysis_type,
-                                          source=source, jobid=job.id))
 
-    return render_template('main.html', version=PUBTRENDS_CONFIG.version,
-                           amounts=PUBTRENDS_CONFIG.show_max_articles_options,
-                           default_amount=PUBTRENDS_CONFIG.show_max_articles_default_value)
+        if len(terms) > 0 or id_list:
+            # Submit Celery task for topic analysis
+            job = analyze_topic_async.delay(source, terms=terms, id_list=id_list,
+                                            zoom=int(zoom), sort=sort, amount=amount)
+            return redirect(url_for('.process', terms=terms, analysis_type=analysis_type,
+                                    source=source, jobid=job.id))
+        elif len(value) > 0:
+            # Submit Celery task for paper analysis
+            job = find_paper_async.delay(source, key, value)
+            return redirect(url_for('.process', source=source, key=key, value=value, jobid=job.id))
+
+    return render_template('main.html', VERSION=PUBTRENDS_CONFIG.version,
+                           AMOUNTS=PUBTRENDS_CONFIG.show_max_articles_options,
+                           DEFAULT_AMOUNT=PUBTRENDS_CONFIG.show_max_articles_default_value)
 
 
 def get_app():
