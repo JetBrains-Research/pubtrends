@@ -229,6 +229,35 @@ def extract_authors(authors_list):
     return ', '.join(filter(None, map(lambda authors: html.unescape(authors['name']), authors_list)))
 
 
+def lda_subtopics(df, n_words, n_topics):
+    logging.info(f'Building corpus from {len(df)} articles')
+    corpus = [f'{title} {abstract}'
+              for title, abstract in zip(df['title'].values, df['abstract'].values)]
+    logging.info(f'Corpus size: {sys.getsizeof(corpus)} bytes')
+
+    logging.info(f'Counting word usage in the corpus, using only {n_words} most frequent words')
+    vectorizer = CountVectorizer(tokenizer=tokenize, max_features=n_words)
+    tfidf = vectorizer.fit_transform(corpus)
+    logging.info(f'Output shape: {tfidf.shape}')
+
+    logging.info(f'Performing LDA subtopic analysis')
+    lda = LatentDirichletAllocation(n_components=n_topics, random_state=0)
+    lda.fit(tfidf)
+
+    topics = lda.transform(tfidf)
+    logging.info('Done')
+    return topics, lda, vectorizer
+
+
+def explain_lda_subtopics(lda, vectorizer, n_top_words):
+    feature_names = vectorizer.get_feature_names()
+    explanations = {}
+    for i, topic in enumerate(lda.components_):
+        explanations[i] = [(topic[i], feature_names[i]) for i in topic.argsort()[:-n_top_words - 1:-1]]
+
+    return explanations
+
+
 def crc32(hex_string):
     n = binascii.crc32(bytes.fromhex(hex_string))
     return to_32_bit_int(n)

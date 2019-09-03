@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from networkx.readwrite import json_graph
 
+from .arxiv_loader import ArxivLoader
 from .pm_loader import PubmedLoader
 from .progress_logger import ProgressLogger
 from .ss_loader import SemanticScholarLoader
@@ -30,6 +31,8 @@ class KeyPaperAnalyzer:
             self.source = 'Pubmed'
         elif isinstance(self.loader, SemanticScholarLoader):
             self.source = 'Semantic Scholar'
+        elif isinstance(self.loader, ArxivLoader):
+            self.source = 'arxiv'
         elif not test:
             raise TypeError("loader should be either PubmedLoader or SemanticScholarLoader")
 
