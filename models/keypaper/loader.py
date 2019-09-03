@@ -36,7 +36,8 @@ class Loader:
     @staticmethod
     def process_publications_dataframe(publications_df):
         publications_df = publications_df.fillna(value={'abstract': ''})
-        publications_df['year'] = publications_df['year'].apply(lambda year: int(year) if year else np.nan)
+        publications_df['year'] = publications_df['year'].apply(lambda year: int(year) if
+            year and np.isfinite(year) else np.nan)
         publications_df['authors'] = publications_df['aux'].apply(lambda aux: extract_authors(aux['authors']))
         publications_df['journal'] = publications_df['aux'].apply(lambda aux: html.unescape(aux['journal']['name']))
         publications_df['title'] = publications_df['title'].apply(lambda title: html.unescape(title))

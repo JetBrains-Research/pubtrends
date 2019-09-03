@@ -2,8 +2,8 @@ from .analysis import KeyPaperAnalyzer
 
 
 class ArxivAnalyzer(KeyPaperAnalyzer):
-    def __init__(self, loader):
-        super(ArxivAnalyzer, self).__init__(loader)
+    def __init__(self, loader, config):
+        super(ArxivAnalyzer, self).__init__(loader, config)
 
     def launch(self, *terms, task=None, analyze=True):
         """:return full log"""
