@@ -4,8 +4,8 @@ from collections import Iterable
 import numpy as np
 import pandas as pd
 
+from models.keypaper.utils import crc32
 from .loader import Loader
-from .utils import extract_authors
 
 
 class SemanticScholarLoader(Loader):
