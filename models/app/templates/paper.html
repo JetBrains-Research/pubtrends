@@ -83,17 +83,17 @@
                 </div>
                 <div class="card-body">
                     <div class="row justify-content-between info">
-                        <span class="col citation">{{ citation }}</span>
+                        <span class="col citation"><h5>{{ citation }}</h5></span>
                         <span class="col link">
                             <a class="float-right" href="{{ url }}" target="_blank">Open in {{ source }}</a>
                         </span>
                     </div>
                     <div class="mt-2">
                         <h1 class="card-title title"><b>{{ title }}</b></h1>
-                        <p>{{ authors }}</p>
+                        <em>{{ authors }}</em>
                         {% if abstract is defined %}
                         <h2 class="card-subtitle mt-3"><b>Abstract</b></h2>
-                            <p class="mt-2">{{ abstract }}</p>
+                        <p class="mt-2">{{ abstract }}</p>
                         {% endif %}
                     </div>
                 </div>
@@ -118,23 +118,29 @@
                     <h1 class="card-header">Related Topics</h1>
                 </div>
                 <div class="card-body">
+                    <p>
+                        This section demonstrates relationships of the paper with other sub-topics in the field.<br>
+                        Table below show number of co-cited papers with respect to different topics.<br>
+                        Generally, the more interdisciplinary paper is, the more interconnections with several topics it
+                        has.
+                    </p>
                     {% if related_topics is defined %}
-                    <table class="table table-striped">
+                    <table class="table table-sm table-bordered table-striped">
                         <thead>
-                            <tr>
-                                <th scope="col">#</th>
-                                <th scope="col">Topic keywords</th>
-                                <th scope="col">Number of co-citations</th>
-                            </tr>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Topic keywords</th>
+                            <th scope="col">Number of co-citations</th>
+                        </tr>
                         </thead>
                         <tbody>
-                            {% for row in related_topics %}
-                                <tr>
-                                    <th scope="row">{{ loop.index }}</th>
-                                    <td>{{ row[0] }}</td>
-                                    <td>{{ row[1] }}</td>
-                                </tr>
-                            {% endfor %}
+                        {% for row in related_topics %}
+                        <tr>
+                            <th scope="row">{{ loop.index }}</th>
+                            <td>{{ row[0] }}</td>
+                            <td>{{ row[1] }}</td>
+                        </tr>
+                        {% endfor %}
                         </tbody>
                     </table>
                     {% endif %}
@@ -146,64 +152,78 @@
                     <h1 class="card-header">Related Papers</h1>
                 </div>
                 <div class="card-body">
+
                     {% if citing_papers is defined %}
-                    <span class="card-subtitle">Valuable References</span>
-                    <table class="table table-striped">
+                    <h4>Valuable References</h4>
+                    <p>
+                        This section represents papers, which are referenced from the paper of interest,<br>
+                        ranked by <em>PageRank</em> algorithm applied to citations graph. <br>
+                        Most important nodes (papers) of citations graph get highest pagerank value.
+                    </p>
+                    <table class="table table-sm table-bordered table-striped">
                         <thead>
-                            <tr>
-                                <th scope="col">#</th>
-                                <th scope="col">Title</th>
-                            </tr>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Title</th>
+                        </tr>
                         </thead>
                         <tbody>
-                            {% for paper in citing_papers %}
-                                <tr>
-                                    <th scope="row">{{ loop.index }}</th>
-                                    <td>{{ paper }}</td>
-                                </tr>
-                            {% endfor %}
+                        {% for paper in citing_papers %}
+                        <tr>
+                            <th scope="row">{{ loop.index }}</th>
+                            <td>{{ paper }}</td>
+                        </tr>
+                        {% endfor %}
                         </tbody>
                     </table>
                     {% endif %}
 
                     {% if cited_papers is defined %}
-                    <span class="card-subtitle">Valuable Citations</span>
-                    <table class="table table-striped">
+                    <h4>Valuable Citations</h4>
+                    <p>
+                        This section represents papers, which has the paper of interest among references,<br>
+                        ranked by <em>PageRank</em> algorithm applied to citations graph.
+                    </p>
+                    <table class="table table-sm table-bordered table-striped">
                         <thead>
-                            <tr>
-                                <th scope="col">#</th>
-                                <th scope="col">Title</th>
-                            </tr>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Title</th>
+                        </tr>
                         </thead>
                         <tbody>
-                            {% for paper in cited_papers %}
-                                <tr>
-                                    <th scope="row">{{ loop.index }}</th>
-                                    <td>{{ paper }}</td>
-                                </tr>
-                            {% endfor %}
+                        {% for paper in cited_papers %}
+                        <tr>
+                            <th scope="row">{{ loop.index }}</th>
+                            <td>{{ paper }}</td>
+                        </tr>
+                        {% endfor %}
                         </tbody>
                     </table>
                     {% endif %}
 
                     {% if cocited_papers is defined %}
-                    <span class="card-subtitle">Valuable Co-cited Papers</span>
-                    <table class="table table-striped">
+                    <h4>Valuable Co-cited Papers</h4>
+                    <p>
+                        This section represents papers, which are co-cited with the paper of interest,<br>
+                        ranked by <em>PageRank</em> algorithm applied to citations graph.
+                    </p>
+                    <table class="table table-sm table-bordered table-striped">
                         <thead>
-                            <tr>
-                                <th scope="col">#</th>
-                                <th scope="col">Title</th>
-                                <th scope="col">Number of co-citations</th>
-                            </tr>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Title</th>
+                            <th scope="col">Number of co-citations</th>
+                        </tr>
                         </thead>
                         <tbody>
-                            {% for row in cocited_papers %}
-                                <tr>
-                                    <th scope="row">{{ loop.index }}</th>
-                                    <td>{{ row[0] }}</td>
-                                    <td>{{ row[1] }}</td>
-                                </tr>
-                            {% endfor %}
+                        {% for row in cocited_papers %}
+                        <tr>
+                            <th scope="row">{{ loop.index }}</th>
+                            <td>{{ row[0] }}</td>
+                            <td>{{ row[1] }}</td>
+                        </tr>
+                        {% endfor %}
                         </tbody>
                     </table>
                     {% endif %}
