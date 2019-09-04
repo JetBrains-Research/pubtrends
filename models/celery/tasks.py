@@ -62,8 +62,8 @@ def analyze_topic_async(source, terms=None, id_list=None, zoom=None, sort='Most 
         'component_ratio': [components(plotter.component_ratio())],
         'papers_stats': [components(plotter.papers_statistics())],
         'clusters_info_message': html.unescape(plotter.clusters_info_message),
-        'author_statistics': [components(plotter.author_statistics())],
-        'journal_statistics': [components(plotter.journal_statistics())]
+        'author_statistics': plotter.author_statistics(),
+        'journal_statistics': plotter.journal_statistics()
     }
 
     # Experimental features

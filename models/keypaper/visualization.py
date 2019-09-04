@@ -480,53 +480,18 @@ class Plotter:
         return hv.render(topic_evolution, backend='bokeh')
 
     def author_statistics(self):
-        data = dict(
-            author=self.analyzer.author_stats['author'],
-            sum=self.analyzer.author_stats['sum'],
-            subtopics=self.analyzer.author_stats.apply(
-                lambda row: self._to_colored_circle(row['comp'], row['counts'], row['sum']), axis=1)
-        )
-
-        template = """<div> <%= subtopics %> </div>"""
-        formatter = HTMLTemplateFormatter(template=template)
-
-        source = ColumnDataSource(data)
-        source.add(RangeIndex(start=1, stop=self.analyzer.author_stats.shape[0], step=1), 'index')
-
-        columns = [
-            TableColumn(field="index", title="#", width=20),
-            TableColumn(field="author", title="Author", width=500),
-            TableColumn(field="sum", title="Number of papers", width=100),
-            TableColumn(field="subtopics", title="Subtopics", formatter=formatter, width=160, sortable=False),
-        ]
-
-        author_stats = DataTable(source=source, columns=columns, width=760, index_position=None)
-
-        return author_stats
+        author = self.analyzer.author_stats['author']
+        sum = self.analyzer.author_stats['sum']
+        subtopics = self.analyzer.author_stats.apply(
+            lambda row: self._to_colored_circle(row['comp'], row['counts'], row['sum']), axis=1)
+        return list(zip(author, sum, subtopics))
 
     def journal_statistics(self):
-        data = dict(
-            journal=self.analyzer.journal_stats['journal'],
-            sum=self.analyzer.journal_stats['sum'],
-            subtopics=self.analyzer.journal_stats.apply(
-                lambda row: self._to_colored_circle(row['comp'], row['counts'], row['sum']), axis=1)
-        )
-
-        template = """<div> <%= subtopics %> </div>"""
-        formatter = HTMLTemplateFormatter(template=template)
-
-        source = ColumnDataSource(data)
-        source.add(RangeIndex(start=1, stop=self.analyzer.journal_stats.shape[0], step=1), 'index')
-
-        columns = [
-            TableColumn(field="index", title="#", width=20),
-            TableColumn(field="journal", title="Journal", width=500),
-            TableColumn(field="sum", title='Number of papers', width=100),
-            TableColumn(field="subtopics", title='Subtopics', formatter=formatter, width=160, sortable=False),
-        ]
-
-        journal_stats = DataTable(source=source, columns=columns, width=760, index_position=None)
-        return journal_stats
+        journal = self.analyzer.journal_stats['journal']
+        sum = self.analyzer.journal_stats['sum']
+        subtopics = self.analyzer.journal_stats.apply(
+            lambda row: self._to_colored_circle(row['comp'], row['counts'], row['sum']), axis=1)
+        return list(zip(journal, sum, subtopics))
 
     def _to_colored_circle(self, components, counts, sum):
         # html code to generate circles corresponding to the 3 most popular subtopics

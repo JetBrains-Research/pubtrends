@@ -252,12 +252,26 @@
                         these papers.<br>
                         The subtopic circles are arranged according to the number of papers, in descending order.
                     </p>
-                    <div>
-                        {% for script, div in author_statistics %}
-                        {{ script|safe }}
-                        {{ div|safe }}
+                    <table class="table table-sm table-bordered table-striped">
+                        <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Author</th>
+                            <th scope="col">Number of papers</th>
+                            <th scope="col">Subtopics</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for row in author_statistics %}
+                        <tr>
+                            <th scope="row">{{ loop.index }}</th>
+                            <td>{{ row[0] }}</td>
+                            <td>{{ row[1] }}</td>
+                            <td>{{ row[2]|safe }}</td>
+                        </tr>
                         {% endfor %}
-                    </div>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -272,12 +286,26 @@
                         these papers.<br>
                         The subtopic circles are arranged according to the number of papers, in descending order.
                     </p>
-                    <div>
-                        {% for script, div in journal_statistics %}
-                        {{ script|safe }}
-                        {{ div|safe }}
+                    <table class="table table-sm table-bordered table-striped">
+                        <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Journal</th>
+                            <th scope="col">Number of papers</th>
+                            <th scope="col">Subtopics</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for row in journal_statistics %}
+                        <tr>
+                            <th scope="row">{{ loop.index }}</th>
+                            <td>{{ row[0] }}</td>
+                            <td>{{ row[1] }}</td>
+                            <td>{{ row[2]|safe }}</td>
+                        </tr>
                         {% endfor %}
-                    </div>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
