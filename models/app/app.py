@@ -57,8 +57,8 @@ def result():
         job = AsyncResult(jobid, app=celery)
         data, _ = job.result
         if job.state == 'SUCCESS':
-            return render_template('result.html', SEARCH_STRING=terms,
-                                   VERSION=PUBTRENDS_CONFIG.version,
+            return render_template('result.html', search_string=terms,
+                                   version=PUBTRENDS_CONFIG.version,
                                    **data)
 
     return render_template_string("Something went wrong...")
@@ -79,26 +79,26 @@ def process():
                 terms += f' at {source}'
                 return render_template('process.html',
                                        args={'terms': quote(terms), 'jobid': jobid},
-                                       SEARCH_STRING=terms, SUBPAGE="result",
-                                       JOBID=jobid, VERSION=PUBTRENDS_CONFIG.version)
+                                       search_string=terms, subpage="result",
+                                       jobid=jobid, version=PUBTRENDS_CONFIG.version)
             elif key and value:
                 return render_template('process.html',
                                        args={'source': source, 'jobid': jobid},
-                                       SEARCH_STRING=f'{key}: {value}', SUBPAGE="search",
-                                       JOBID=jobid, VERSION=PUBTRENDS_CONFIG.version)
+                                       search_string=f'{key}: {value}', subpage="search",
+                                       jobid=jobid, version=PUBTRENDS_CONFIG.version)
             else:
                 if analysis_type in ['detailed', 'expanded']:
                     terms = f"{analysis_type} analysis of the previous query at {source}"
 
                     return render_template('process.html',
                                            args={'key': "terms", 'value': quote(terms), 'jobid': jobid},
-                                           SEARCH_STRING=terms, SUBPAGE="result",
-                                           JOBID=jobid, VERSION=PUBTRENDS_CONFIG.version)
+                                           search_string=terms, subpage="result",
+                                           jobid=jobid, version=PUBTRENDS_CONFIG.version)
                 else:
                     return render_template('process.html',
                                            args={'source': source, 'id': analysis_type, 'jobid': jobid},
-                                           SEARCH_STRING=f"Paper analysis at {source}", SUBPAGE="paper",
-                                           JOBID=jobid, VERSION=PUBTRENDS_CONFIG.version)
+                                           search_string=f"Paper analysis at {source}", subpage="paper",
+                                           jobid=jobid, version=PUBTRENDS_CONFIG.version)
 
     return render_template_string("Something went wrong...")
 
@@ -133,7 +133,7 @@ def paper():
 
         if job.state == 'SUCCESS':
             return render_template('paper.html', **prepare_paper_data(data, source, pid),
-                                   VERSION=PUBTRENDS_CONFIG.version)
+                                   version=PUBTRENDS_CONFIG.version)
 
     return render_template_string("Something went wrong...")
 
@@ -192,9 +192,9 @@ def index():
             job = find_paper_async.delay(source, key, value)
             return redirect(url_for('.process', source=source, key=key, value=value, jobid=job.id))
 
-    return render_template('main.html', VERSION=PUBTRENDS_CONFIG.version,
-                           AMOUNTS=PUBTRENDS_CONFIG.show_max_articles_options,
-                           DEFAULT_AMOUNT=PUBTRENDS_CONFIG.show_max_articles_default_value)
+    return render_template('main.html', version=PUBTRENDS_CONFIG.version,
+                           amounts=PUBTRENDS_CONFIG.show_max_articles_options,
+                           default_amount=PUBTRENDS_CONFIG.show_max_articles_default_value)
 
 
 def get_app():

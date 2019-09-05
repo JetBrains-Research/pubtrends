@@ -33,7 +33,7 @@
             if (cancelled) {
                 return;
             }
-            $.ajax("{{url_for('.progress', jobid=JOBID)}}", {
+            $.ajax("{{url_for('.progress', jobid=jobid)}}", {
                 dataType: "json", success: function (response) {
                     console.log(response);
                     if (response.state === 'FAILURE') {
@@ -58,7 +58,7 @@
                             }
 
                             // Build href for given subpage and args
-                            var subpage = '{{ SUBPAGE }}';
+                            var subpage = '{{ subpage }}';
                             var href = `/${subpage}?${args_list.join('&')}`;
                             window.location.replace(href);
                         } else {
@@ -80,7 +80,7 @@
 
         function cancel() {
             cancelled = true;
-            $.ajax("{{url_for('.cancel', jobid=JOBID)}}", {
+            $.ajax("{{url_for('.cancel', jobid=jobid)}}", {
                 dataType: "json", success: function (response) {
                     console.log(response);
                      if (response.state === 'CANCELLED') {
@@ -108,7 +108,7 @@
 <div class="container">
     <nav class="navbar navbar-light bg-light justify-content-between">
         <nav class="navbar navbar-light bg-light justify-content-between">
-            <span class="navbar-brand"><a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>{{SEARCH_STRING}}</span>
+            <span class="navbar-brand"><a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>{{search_string}}</span>
         </nav>
         <div class="col-auto">
             <button class="btn btn-link" type="reset" onclick="cancel()">&#10006;&nbsp;Cancel</button>
@@ -126,7 +126,7 @@
     </div>
 </div>
 <footer>
-    <p>version {{ VERSION }}<br/>
+    <p>version {{ version }}<br/>
         &copy;2019 <a href="https://research.jetbrains.org/groups/biolabs"
                       title="JetBrains Research BioLabs"
                       target="_blank">JetBrains Research</a></p>
