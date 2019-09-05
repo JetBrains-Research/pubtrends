@@ -28,6 +28,8 @@
         const MAX_RETRIES = 20;
         let retries = 0;
         let cancelled = false;
+        let last_progress;
+        let last_log_message;
 
         function poll_progress() {
             if (cancelled) {
@@ -47,8 +49,11 @@
                     } else if (response.state !== undefined) {
                         $('#status').html('Analyzing...');
                         $('#progress').show();
-                        $('.progress-bar').css('width', response.progress + '%').attr('aria-valuenow', response.progress);
-                        $('.progress-bar-label').text(response.progress + '%');
+                        if (last_progress !== response.progress) {
+                            $('.progress-bar').css('width', response.progress + '%').attr('aria-valuenow', response.progress);
+                            $('.progress-bar-label').text(response.progress + '%');
+                            last_progress = response.progress;
+                        }
                         if (response.state === 'SUCCESS') {
                             // Join arg-value pairs for URL
                             var args = {{ args|safe }};
@@ -62,7 +67,10 @@
                             var href = `/${subpage}?${args_list.join('&')}`;
                             window.location.replace(href);
                         } else {
-                            $('#log').html(response.log);
+                            if (last_log_message !== response.log) {
+                                $('#log').html(response.log);
+                                last_log_message = response.log;
+                            }
                             setTimeout(poll_progress, TIMEOUT);
                         }
                     } else {
