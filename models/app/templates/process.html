@@ -114,13 +114,9 @@
 <body>
 
 <div class="container">
-    <nav class="navbar navbar-light bg-light justify-content-between">
-        <nav class="navbar navbar-light bg-light justify-content-between">
-            <span class="navbar-brand"><a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>{{search_string}}</span>
-        </nav>
-        <div class="col-auto">
-            <button class="btn btn-link" type="reset" onclick="cancel()">&#10006;&nbsp;Cancel</button>
-        </div>
+    <nav class="navbar navbar-light bg-light justify-content-between mt-3">
+        <span class="navbar-brand"><a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>{{search_string}}</span>
+        <button class="btn btn-lg btn-link" type="reset" onclick="cancel()">&#10006;&nbsp;Cancel</button>
     </nav>
     <div id="progress" class="progress">
         <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
