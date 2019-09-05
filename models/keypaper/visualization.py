@@ -2,6 +2,7 @@ import logging
 from string import Template
 
 import holoviews as hv
+import json
 import numpy as np
 from bokeh.colors import RGB
 from bokeh.core.properties import value
@@ -82,9 +83,12 @@ class Plotter:
 
     @staticmethod
     def zoom_callback(source, db, zoom):
+        # IMPORTANT: we want this code to contain only single quotes code
+        # to work correctly within embedded Javascript
+        data = json.dumps({k: v.tolist() for k, v in source.data.items()}).replace('"', "'")
         # submit list of ids and database name to the main page using invisible form
-        return CustomJS(args=dict(source=source, db=db, zoom=zoom), code="""
-        var data = source.data, url='/';
+        return f"""
+        var data = {data}, url='/';
         var form = document.createElement('form');
         document.body.appendChild(form);
         form.method = 'post';
@@ -100,17 +104,17 @@ class Plotter:
         var input = document.createElement('input');
         input.type = 'hidden';
         input.name = 'source';
-        input.value = db;
+        input.value = '{db}';
         form.appendChild(input);
 
         var input = document.createElement('input');
         input.type = 'hidden';
         input.name = 'zoom';
-        input.value = zoom;
+        input.value = '{zoom}';
         form.appendChild(input);
 
         form.submit();
-        """)
+        """
 
     def chord_diagram_components(self):
         logging.info('Visualizing components with Chord diagram')
@@ -242,7 +246,7 @@ class Plotter:
 
         return p
 
-    def subtopic_timeline_graphs(self):
+    def subtopics_infos_and_zoom_in_callbacks(self):
         logging.info('Per component detailed info visualization')
 
         # Prepare layouts
@@ -284,11 +288,9 @@ class Plotter:
 
             desc.image_rgba(image=[img], x=[0], y=[0], dw=[10], dh=[10])
 
-            zoom_in_button = Button(label="+ Zoom into subtopic", button_type="default", width=100)
-            zoom_in_button.js_on_event(ButtonClick, self.zoom_callback(ColumnDataSource(comp_source[['id']]),
-                                                                       self.analyzer.source, zoom=0))
-
-            result[c] = column(zoom_in_button, row(desc, plot))
+            zoom_in_callback = \
+                self.zoom_callback(ColumnDataSource(comp_source[['id']]), self.analyzer.source, zoom=0)
+            result[c] = (row(desc, plot), zoom_in_callback)
 
         return result
 
@@ -401,7 +403,7 @@ class Plotter:
 
         return p
 
-    def papers_statistics(self):
+    def papers_statistics_and_zoom_out_callback(self):
         ds_stats = PlotPreprocessor.papers_statistics_data(self.analyzer.df)
 
         year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
@@ -441,11 +443,10 @@ class Plotter:
         view[:, :, 3] = 255
 
         desc.image_rgba(image=[img], x=[0], y=[0], dw=[10], dh=[10])
-        zoom_out_button = Button(label="— Zoom out to related papers",
-                                 button_type="default")
-        zoom_out_button.js_on_event(ButtonClick, self.zoom_callback(ColumnDataSource(self.analyzer.df[['id']]),
-                                                                    self.analyzer.source, zoom=1))
-        return column(row(desc, p), zoom_out_button)
+        zoom_out_callback = \
+            self.zoom_callback(ColumnDataSource(self.analyzer.df[['id']]), self.analyzer.source, zoom=1)
+
+        return row(desc, p), zoom_out_callback
 
     def subtopic_evolution(self):
         """

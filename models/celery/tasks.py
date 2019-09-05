@@ -46,6 +46,7 @@ def analyze_topic_async(source, terms=None, id_list=None, zoom=None, sort='Most 
     plotter = Plotter(analyzer=analyzer)
 
     # Order is important here!
+    paper_statistics, zoom_out_callback = plotter.papers_statistics_and_zoom_out_callback()
     result = {
         'log': html.unescape(log),
         'experimental': PUBTRENDS_CONFIG.run_experimental,
@@ -55,12 +56,15 @@ def analyze_topic_async(source, terms=None, id_list=None, zoom=None, sort='Most 
         'comp_other': analyzer.comp_other,
         'cocitations_clusters': [components(plotter.cocitations_clustering())],
         'component_size_summary': [components(plotter.component_size_summary())],
-        'subtopic_timeline_graphs': [components(p) for p in plotter.subtopic_timeline_graphs()],
+        'subtopics_infos_and_zoom_in_callbacks':
+            [(components(p), zoom_in_callback) for
+             (p, zoom_in_callback) in plotter.subtopics_infos_and_zoom_in_callbacks()],
         'top_cited_papers': [components(plotter.top_cited_papers())],
         'max_gain_papers': [components(plotter.max_gain_papers())],
         'max_relative_gain_papers': [components(plotter.max_relative_gain_papers())],
         'component_ratio': [components(plotter.component_ratio())],
-        'papers_stats': [components(plotter.papers_statistics())],
+        'papers_stats': [components(paper_statistics)],
+        'papers_zoom_out_callback': zoom_out_callback,
         'clusters_info_message': html.unescape(plotter.clusters_info_message),
         'author_statistics': plotter.author_statistics(),
         'journal_statistics': plotter.journal_statistics()
