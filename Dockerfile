@@ -18,15 +18,9 @@ LABEL email = "os@jetbrains.com"
 
 USER root
 
-# Update all the packages
+# Update all the packages, install Redis and cleanup
 RUN apt-get update --fix-missing \
-    && apt-get install -y curl bzip2 gnupg2 wget ca-certificates
-
-# Install Postgresql 11, Redis and cleanup
-RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
-    && sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ bionic-pgdg main" >> /etc/apt/sources.list.d/pgdg.list' \
-    && apt-get update && apt-get install --no-install-recommends -y postgresql postgresql-contrib \
-    && apt-get install --no-install-recommends -y redis-server \
+    && apt-get install --no-install-recommends -y curl ca-certificates redis-server \
     && apt-get clean \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
@@ -34,7 +28,7 @@ RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-k
 # Make new user
 RUN groupadd -r pubtrends && useradd -ms /bin/bash -g pubtrends user
 
-# Install Conda and create pubtrends conda env
+# Install Conda locally and create pubtrends conda env
 USER user
 RUN curl --location https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh --output ~/miniconda.sh \
     && /bin/bash ~/miniconda.sh -b \
@@ -53,37 +47,8 @@ RUN conda init bash \
     && conda clean -afy \
     && rm /home/user/environment.yml
 
-# Create Postgresql cluster
-USER root
-RUN chmod -R a+w /var/run/postgresql
-
-USER user
-# trust authentification method for testing purposes only!
-RUN /usr/lib/postgresql/11/bin/initdb -D /home/user/postgres -A trust -U user
-
-## Adjust PostgreSQL configuration so that remote connections to the database are possible.
-RUN echo "host all all 0.0.0.0/0 md5" >> /home/user/postgres/pg_hba.conf \
-    && echo "listen_addresses='*'" >> /home/user/postgres/postgresql.conf
-
-# Expose the PostgreSQL port
-EXPOSE 5432
-
-# Create a PostgreSQL role named `biolabs` with `password` as the password and
-# then create a database `pubtrends_test` owned by the `biolabs` role.
-RUN /usr/lib/postgresql/11/bin/pg_ctl -D /home/user/postgres start \
-    && /usr/lib/postgresql/11/bin/createdb -O user user \
-    && psql --command "CREATE ROLE biolabs WITH PASSWORD 'password';" \
-    && psql --command "ALTER ROLE biolabs WITH LOGIN;" \
-    && psql --command "CREATE DATABASE pubtrends_test OWNER biolabs;" \
-    # Stop db
-    && /usr/lib/postgresql/11/bin/pg_ctl -D /home/user/postgres stop
-
 # Tests project configuration
 COPY config.properties /home/user/config.properties
 RUN mkdir -p ~/.pubtrends \
-    && cat ~/config.properties | sed 's/5433/5432/g' > ~/.pubtrends/config.properties \
+    && cat ~/config.properties > ~/.pubtrends/config.properties \
     && rm /home/user/config.properties
-
-# Use `-d` param to launch container as daemon with Postgresql running
-CMD /usr/lib/postgresql/11/bin/pg_ctl -D /home/user/postgres start \
-    && sleep infinity

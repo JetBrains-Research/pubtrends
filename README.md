@@ -164,9 +164,10 @@ Launch Gunicorn serving Flask app, Redis and Celery in containers by the command
 
 ## Testing
 
-1. Start Docker image with Postgres for tests
+1. Start official Postgresql docker [image](https://hub.docker.com/_/postgres/)
     ```
-    docker run --name pg-docker -p 5433:5432 -v $(pwd):/pubtrends:ro -d biolabs/pubtrends
+    docker run --rm --name pg-docker -e POSTGRES_USER=biolabs -e POSTGRES_PASSWORD=password \
+    -e POSTGRES_DB=pubtrends_test -d -p 5433:5432 postgres
     ```
 
     Check access:
@@ -183,10 +184,15 @@ Launch Gunicorn serving Flask app, Redis and Celery in containers by the command
 3. Python tests with codestyle check
 
     ```
-    docker run -v $(pwd):/pubtrends:ro -t biolabs/pubtrends /bin/bash \
-    -c "/usr/lib/postgresql/11/bin/pg_ctl -D /home/user/postgres start; \
-    source activate pubtrends; cd /pubtrends; python -m pytest --codestyle models"
+    docker run --add-host="localhost:<MACHINE_IP>" -v $(pwd):/pubtrends:ro -t biolabs/pubtrends /bin/bash \
+    -c "source activate pubtrends; cd /pubtrends; python -m pytest --codestyle models"
     ```
+
+4. Stop Postgresql docker container
+   
+   ```
+   docker container stop pg-docker
+   ```
    
 # Authors
 
