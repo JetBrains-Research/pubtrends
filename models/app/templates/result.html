@@ -144,9 +144,9 @@
                     </div>
                     <p>
                         Explore related papers by taking into account all the referencing and citing relationships for papers of interest.<br>
-                        <stong>WARNING</stong>: number of papers can increase exponentially, analysis can be slow!
+                        <strong>WARNING</strong>: number of papers can increase exponentially, analysis can be slow!
                     </p>
-                    <button type="button" class="btn btn-light btn-lg btn-block"
+                    <button type="button" class="btn btn-light"
                             onclick="(function(){ {{ papers_zoom_out_callback|safe }} })();">
                         <img src="{{ url_for('static', filename='zoom-out.svg') }}" alt="-"/>&nbsp;Zoom out to related papers
                     </button>
