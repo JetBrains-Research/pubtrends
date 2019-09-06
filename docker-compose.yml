@@ -15,21 +15,6 @@ services:
       dockerfile: models/celery/Dockerfile
     depends_on:
       - redis
-    deploy:
-      resources:
-        limits:
-          cpus: '4'
-          memory: 2048M
-        reservations:
-          cpus: '2'
-          memory: 1024M
   redis:
     image: redis
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 50M
-        reservations:
-          cpus: '0.25'
-          memory: 20M
+
