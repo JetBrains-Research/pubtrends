@@ -166,7 +166,7 @@ Launch Gunicorn serving Flask app, Redis and Celery in containers by the command
 
 1. Start Docker image with Postgres for tests
     ```
-    docker run --name pg-docker -p 5433:5432 -v $(pwd):/pubtrends:ro -d biolabs/pubtrends
+    docker run --rm --name pg-docker -p 5433:5432 -v $(pwd):/pubtrends:ro -d biolabs/pubtrends
     ```
 
     Check access:
