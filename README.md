@@ -151,7 +151,7 @@ Several front-ends are supported.
 
 ### Deployment
 
-Launch Gunicorn serving Flask app, Redis and Celery in containers by the command:
+Launch Gunicorn serving Flask app on HTTP port 80, Redis and Celery in containers by the command:
     
     ```
     # start
