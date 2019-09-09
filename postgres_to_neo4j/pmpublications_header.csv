@@ -1,1 +1,2 @@
-pmid:ID, date, title, abstract, type, keywords, mesh, doi, aux
+pmid:ID(Pubmed-ID), date:date, title:string, :abstract:string, :type:string, :keywords:string, :mesh:string, :doi:string, :aux, :LABEL
+
