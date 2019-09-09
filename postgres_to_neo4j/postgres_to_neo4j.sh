@@ -12,5 +12,5 @@ docker run --volume=/home/user/work/pubtrends:/pubtrends  \
 
 # inside container
 neo4j-admin import -ignore-missing-nodes=true --mode csv --multiline-fields \
-  --nodes="/pubtrends/pmpublications_header.csv,/pubtrends/pmpublications.csv" \
+  --nodes:Publications="/pubtrends/pmpublications_header.csv,/pubtrends/pmpublications.csv" \
   --relationships:References="/pubtrends/pmcitations_header.csv,/pubtrends/pmcitations.csv"
