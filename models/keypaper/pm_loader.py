@@ -77,14 +77,13 @@ class PubmedLoader(Loader):
             WITH [{','.join([f"'{id}'" for id in self.ids])}] AS pmids 
             MATCH (p:PMPublication) 
             WHERE p.pmid IN pmids 
-            RETURN p.pmid as pmid, p.title as title, p.abstract as abstract, p.date.year as year, p.aux as aux
+            RETURN p.pmid as id, p.title as title, p.abstract as abstract, p.date.year as year, p.aux as aux
         '''
 
-        pub_df = pd.DataFrame(columns=['id', 'title', 'abstract', 'year', 'aux'], dtype=object)
         with self.neo4jdriver.session() as session:
-            for r in session.run(query):
-                pub_df.loc[len(pub_df)] = \
-                    (r['pmid'], r['title'], r['abstract'], int(r['year']), json.loads(r['aux']))
+            pub_df = pd.DataFrame(session.run(query).data())
+        # Parse aux
+        pub_df['aux'] = [json.loads(v) for v in pub_df['aux']]
 
         # pub_df.dropna(subset=['id', 'title'], inplace=True)
         if np.any(pub_df[['id', 'title']].isna()):
@@ -112,10 +111,8 @@ class PubmedLoader(Loader):
             RETURN in.pmid AS id, out.date.year AS year, COUNT(*) AS count;
         '''
 
-        cit_stats_df_from_query = pd.DataFrame(columns=['id', 'year', 'count'])
         with self.neo4jdriver.session() as session:
-            for r in session.run(query):
-                cit_stats_df_from_query.loc[len(cit_stats_df_from_query)] = (r['id'], int(r['year']), int(r['count']))
+            cit_stats_df_from_query = pd.DataFrame(session.run(query).data())
 
         self.logger.debug('Done loading citation stats', current=current, task=task)
 
@@ -143,10 +140,8 @@ class PubmedLoader(Loader):
             ORDER BY id_out, id_in;
         '''
 
-        cit_df = pd.DataFrame(columns=['id_out', 'id_in'])
         with self.neo4jdriver.session() as session:
-            for r in session.run(query):
-                cit_df.loc[len(cit_df)] = (r['id_out'], r['id_in'])
+            cit_df = pd.DataFrame(session.run(query).data())
 
         if np.any(cit_df.isna()):
             raise ValueError('Citation must have id_out and id_in')
