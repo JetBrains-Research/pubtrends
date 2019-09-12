@@ -1,5 +1,6 @@
 import json
 import html
+import re
 
 from collections import Iterable
 
@@ -15,27 +16,44 @@ class PubmedLoader(Loader):
 
     def find(self, key, value, current=0, task=None):
         self.logger.info(f"Searching for a publication with {key} '{value}'", current=current, task=task)
-        query = f'''
-            MATCH (p:PMPublication) 
-            WHERE p.{key} = {repr(value)}
-            RETURN p.pmid AS pmid; 
-        '''
+
+        # Use dedicated text index to search title.
+        if key == 'title':
+
+            query = f'''
+                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", '"{re.sub('"', '', value.strip())}"') 
+                YIELD node
+                MATCH (p:PMPublication) 
+                WHERE p.pmid = node.pmid AND p.title = '{value}'
+                RETURN p.pmid AS pmid; 
+            '''
+        else:
+            query = f'''
+                MATCH (p:PMPublication) 
+                WHERE p.{key} = {repr(value)}
+                RETURN p.pmid AS pmid; 
+            '''
+
         with self.neo4jdriver.session() as session:
             return [r['pmid'] for r in session.run(query)]
 
     def search(self, terms, limit=None, sort=None, current=0, task=None):
         self.logger.info(html.escape(f'Searching publications matching <{terms}>'), current=current, task=task)
-        if ' or ' not in terms.lower() and ' and ' not in terms.lower():
-            terms_str = ' AND '.join([f"'{t}'" for t in terms.strip().split(' ')])
+        terms_str = re.sub('[^0-9a-zA-Z"\\-\\?\\*~ ]', '', terms.strip())
+        tl = terms_str.lower()
+        if '"' in tl or ' or ' in tl or ' and ' in tl or '?' in tl or '*' in tl or '~' in tl:
+            self.logger.info(html.escape('Special syntax detected, passing to search as is.'),
+                             current=current, task=task)
+            terms_str = "'" + re.sub('"', '\\"', terms_str) + "'"
         else:
-            terms_str = '\'' + terms.strip() + '\''
+            terms_str = '"' + ' AND '.join([f"'{t}'" for t in re.sub('"', '', terms_str).split(' ')]) + '"'
 
         if not limit:
             limit = self.max_number_of_articles
 
         if sort == 'relevance':
             query = f'''
-                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", "{terms_str}") 
+                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", {terms_str}) 
                 YIELD node, score
                 RETURN node.pmid as pmid 
                 ORDER BY score DESC 
@@ -43,7 +61,7 @@ class PubmedLoader(Loader):
                 '''
         elif sort == 'citations':
             query = f'''
-                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", "{terms_str}") YIELD node
+                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", {terms_str}) YIELD node
                 MATCH ()-[r:PMReferenced]->(in:PMPublication) 
                 WHERE in.pmid = node.pmid 
                 WITH node, COUNT(r) AS cnt 
@@ -53,7 +71,7 @@ class PubmedLoader(Loader):
                 '''
         elif sort == 'year':
             query = f'''
-                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", "{terms_str}") YIELD node
+                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", {terms_str}) YIELD node
                 RETURN node.pmid as pmid 
                 ORDER BY node.date DESC 
                 LIMIT {limit};
