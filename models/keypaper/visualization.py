@@ -21,6 +21,7 @@ from bokeh.palettes import Category20
 from bokeh.plotting import figure
 from bokeh.transform import factor_cmap
 from holoviews import dim
+from holoviews import opts
 from matplotlib import pyplot as plt
 from pandas import RangeIndex
 from wordcloud import WordCloud
@@ -245,6 +246,27 @@ class Plotter:
         p.legend.orientation = "horizontal"
 
         return p
+
+    def component_size_summary_violin(self):
+        logging.info('Summary component detailed info visualization on violin plot')
+
+        min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
+        components, data = PlotPreprocessor.component_size_summary_data(
+            self.analyzer.df, self.analyzer.components, min_year, max_year
+        )
+        labels = []
+        values = []
+        for c in components:
+            vs = data[c]
+            expanded_vs = []
+            for i, y in enumerate(range(min_year, max_year + 1)):
+                expanded_vs.extend([y for _ in range(vs[i])])
+            labels.extend([c for _ in range(len(expanded_vs))])
+            values.extend(expanded_vs)
+
+        violin = hv.Violin((labels, values), 'Topic', 'Publications year')
+        violin.opts(width=960, height=300, violin_fill_color=dim('Topic').str(), cmap='tab20')
+        return hv.render(violin, backend='bokeh')
 
     def subtopics_infos_and_zoom_in_callbacks(self):
         logging.info('Per component detailed info visualization')

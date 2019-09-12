@@ -246,6 +246,15 @@
                         {{ div|safe }}
                         {% endfor %}
                     </div>
+                    <br>
+                    <p>Violin plots demonstrate averaged publication time on given topic.</p>
+                    <div>
+                        {% for script, div in component_size_summary_violin %}
+                        {{ script|safe }}
+                        {{ div|safe }}
+                        {% endfor %}
+                    </div>
+
                 </div>
             </div>
 
