@@ -44,8 +44,7 @@ class KeyPaperAnalyzer:
                 # Search articles relevant to the terms
                 special_symbols = re.compile('\\W+')
                 self.terms = [term.strip() for term in re.sub(special_symbols, ' ', search_query).split()]
-                self.ids, temp_table_created = self.loader.search(search_query, limit=limit, sort=sort,
-                                                                  current=1, task=task)
+                self.ids = self.loader.search(search_query, limit=limit, sort=sort, current=1, task=task)
                 self.n_papers = len(self.ids)
 
                 # Nothing found
@@ -53,7 +52,7 @@ class KeyPaperAnalyzer:
                     raise RuntimeError("Nothing found")
 
                 # Load data about publications
-                self.pub_df = self.loader.load_publications(temp_table_created=temp_table_created, current=2, task=task)
+                self.pub_df = self.loader.load_publications(current=2, task=task)
                 if len(self.pub_df) == 0:
                     raise RuntimeError("Nothing found in DB")
             elif id_list:

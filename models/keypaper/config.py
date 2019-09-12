@@ -23,7 +23,10 @@ class PubtrendsConfig:
         self.user = params['username' if not test else 'test_username']
         self.password = params['password' if not test else 'test_password']
 
-        self.pm_entrez_email = params['pm_entrez_email']
+        self.neo4jurl = params['neo4jurl' if not test else 'test_neo4jurl']
+        self.neo4juser = params['neo4jusername' if not test else 'test_neo4jusername']
+        self.neo4jpassword = params['neo4jpassword' if not test else 'test_neo4jpassword']
+
         self.run_experimental = params.getboolean('run_experimental')
 
         self.max_number_of_articles = params.getint('max_number_of_articles')

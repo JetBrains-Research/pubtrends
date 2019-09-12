@@ -4,6 +4,7 @@ import re
 import numpy as np
 import psycopg2 as pg_driver
 
+from neo4j import GraphDatabase
 from .utils import extract_authors
 
 
@@ -12,13 +13,17 @@ class Loader:
 
     def __init__(self, pubtrends_config, connect=True):
         self.conn = None
-
         if connect:
             connection_string = f"""
                 dbname={pubtrends_config.dbname} user={pubtrends_config.user} password={pubtrends_config.password} \
                 host={pubtrends_config.host} port={pubtrends_config.port}
             """.strip()
             self.conn = pg_driver.connect(connection_string)
+
+        self.neo4jdriver = None
+        if connect:
+            self.neo4jdriver = GraphDatabase.driver(f'bolt://{pubtrends_config.neo4jurl}',
+                                                    auth=(pubtrends_config.neo4juser, pubtrends_config.neo4jpassword))
 
         self.logger = None
 
@@ -29,6 +34,8 @@ class Loader:
     def close_connection(self):
         if self.conn:
             self.conn.close()
+        if self.neo4jdriver:
+            self.neo4jdriver.close()
 
     def set_logger(self, logger):
         self.logger = logger

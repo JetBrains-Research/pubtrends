@@ -1,123 +1,95 @@
+import json
 import html
-import re
+
 from collections import Iterable
 
 import numpy as np
 import pandas as pd
-from Bio import Entrez
 
 from .loader import Loader
-from .utils import extract_authors
 
 
 class PubmedLoader(Loader):
     def __init__(self, pubtrends_config):
         super(PubmedLoader, self).__init__(pubtrends_config)
-        Entrez.email = pubtrends_config.pm_entrez_email
 
     def find(self, key, value, current=0, task=None):
         self.logger.info(f"Searching for a publication with {key} '{value}'", current=current, task=task)
-        query = f"""
-        SELECT pmid FROM PMPublications
-        WHERE {key} = {repr(value)};
-        """
-
-        with self.conn.cursor() as cursor:
-            cursor.execute(query)
-            result = cursor.fetchall()
-
-        return [row[0] for row in result]
+        query = f'''
+            MATCH (p:PMPublication) 
+            WHERE p.{key} = {repr(value)}
+            RETURN p.pmid AS pmid; 
+        '''
+        with self.neo4jdriver.session() as session:
+            return [r['pmid'] for r in session.run(query)]
 
     def search(self, terms, limit=None, sort=None, current=0, task=None):
-        """
-        This function uses Pubmed API to find papers relevant to the given terms
-        :param terms: query string compliant with Pubmed API syntax
-        :param limit: max amount of papers to use
-        :param sort: order by 'citations', 'relevance' or 'year'
-        :param current: progress value
-        :param task: celery task
-        :return: ids of relevant papers
-        """
-        # Return everything possible if limit is not set or need to sort by citations
-        query_limit = str(limit) if limit and sort != 'citations' else '50000000'
+        self.logger.info(html.escape(f'Searching publications matching <{terms}>'), current=current, task=task)
+        if ' or ' not in terms.lower() and ' and ' not in terms.lower():
+            terms_str = ' AND '.join([f"'{t}'" for t in terms.strip().split(' ')])
+        else:
+            terms_str = '\'' + terms.strip() + '\''
+
         if not limit:
             limit = self.max_number_of_articles
 
-        # Set sort method for query
-        query_sort = sort if sort == 'relevance' else None
+        if sort == 'relevance':
+            query = f'''
+                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", "{terms_str}") 
+                YIELD node, score
+                RETURN node.pmid as pmid 
+                ORDER BY score DESC 
+                LIMIT {limit};
+                '''
+        elif sort == 'citations':
+            query = f'''
+                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", "{terms_str}") YIELD node
+                MATCH ()-[r:PMReferenced]->(in:PMPublication) 
+                WHERE in.pmid = node.pmid 
+                WITH node, COUNT(r) AS cnt 
+                RETURN node.pmid as pmid 
+                ORDER BY cnt DESC 
+                LIMIT {limit};
+                '''
+        elif sort == 'year':
+            query = f'''
+                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", "{terms_str}") YIELD node
+                RETURN node.pmid as pmid 
+                ORDER BY node.date DESC 
+                LIMIT {limit};
+                '''
+        else:
+            raise ValueError(f'sort can be either citations, relevance or year, got {sort}')
 
-        handle = Entrez.esearch(db='pubmed', retmax=query_limit,
-                                retmode='xml', term=terms, sort=query_sort)
-        self.ids = Entrez.read(handle)['IdList']
+        with self.neo4jdriver.session() as session:
+            # Duplicate rows may occur if crawler was stopped while parsing
+            self.ids = list(set([r['pmid'] for r in session.run(query)]))
 
-        self.logger.info(html.escape(f'Found {len(self.ids)} publications matching <{terms}>'), current=current,
+        self.logger.info(f'Found {len(self.ids)} publications in the local database', current=current,
                          task=task)
+        return self.ids
 
-        self.ids, temp_table_created = self.sort_results(self.ids, limit, sort, current, task)
-        self.values = ', '.join(['({})'.format(i) for i in sorted(self.ids)])
-        return self.ids, temp_table_created
-
-    def sort_results(self, ids, limit, sort, current=0, task=None):
-        # Pubmed can return the most recent or the most relevant papers
-        # Results need to be changed only if sorting by citations number
-        if sort == 'citations' and len(ids) > int(limit):
-            self.logger.info(f'Selecting {limit} most cited articles', current=current, task=task)
-
-            values = ', '.join(['({})'.format(i) for i in sorted(ids)])
-            query = re.sub(Loader.VALUES_REGEX, values, f"""
-                    DROP TABLE IF EXISTS TEMP_PMIDS;
-                    WITH vals(pmid) AS (VALUES $VALUES$)
-                    SELECT pmid, COUNT(1) AS count INTO temporary table TEMP_PMIDS
-                    FROM vals V
-                    LEFT JOIN PMCitations C
-                    ON C.pmid_in = V.pmid
-                    GROUP BY V.pmid
-                    ORDER BY count DESC NULLS LAST
-                    LIMIT {limit};
-                    DROP INDEX IF EXISTS temp_pmids_unique_index;
-                    CREATE UNIQUE INDEX temp_pmids_unique_index ON TEMP_PMIDS USING btree (pmid);
-                    SELECT pmid, count FROM temp_pmids;
-                    """)
-            self.logger.debug('Creating pmids table for request with index.', current=current, task=task)
-
-            with self.conn.cursor() as cursor:
-                cursor.execute(query)
-                ids = [row[0] for row in cursor.fetchall()]
-
-            return ids, True
-
-        return ids, False
-
-    def load_publications(self, temp_table_created=False, current=0, task=None):
+    def load_publications(self, current=0, task=None):
         self.logger.info('Loading publication data', current=current, task=task)
 
-        if not temp_table_created:
-            query = re.sub(Loader.VALUES_REGEX, self.values, '''
-            DROP TABLE IF EXISTS TEMP_PMIDS;
-            WITH vals(pmid) AS (VALUES $VALUES$)
-            SELECT pmid INTO temporary table TEMP_PMIDS FROM vals;
-            DROP INDEX IF EXISTS temp_pmids_unique_index;
-            CREATE UNIQUE INDEX temp_pmids_unique_index ON TEMP_PMIDS USING btree (pmid);
-            ''')
-
-            with self.conn.cursor() as cursor:
-                cursor.execute(query)
-            self.logger.debug('Creating pmids table for request with index.', current=current, task=task)
-
-        load_query = '''
-        SELECT CAST(P.pmid AS TEXT), P.title, P.aux, P.abstract, date_part('year', P.date) AS year
-        FROM PMPublications P
-        JOIN TEMP_PMIDS AS T ON (P.pmid = T.pmid);
+        # TODO[shpynov] transferring huge list of ids can be a problem
+        query = f'''
+            WITH [{','.join([f"'{id}'" for id in self.ids])}] AS pmids 
+            MATCH (p:PMPublication) 
+            WHERE p.pmid IN pmids 
+            RETURN p.pmid as pmid, p.title as title, p.abstract as abstract, p.date.year as year, p.aux as aux
         '''
 
-        with self.conn.cursor() as cursor:
-            cursor.execute(load_query)
-            pub_df = pd.DataFrame(cursor.fetchall(),
-                                  columns=['id', 'title', 'aux', 'abstract', 'year'],
-                                  dtype=object)
+        pub_df = pd.DataFrame(columns=['id', 'title', 'abstract', 'year', 'aux'], dtype=object)
+        with self.neo4jdriver.session() as session:
+            for r in session.run(query):
+                pub_df.loc[len(pub_df)] = \
+                    (r['pmid'], r['title'], r['abstract'], int(r['year']), json.loads(r['aux']))
 
+        # pub_df.dropna(subset=['id', 'title'], inplace=True)
         if np.any(pub_df[['id', 'title']].isna()):
             raise ValueError('Paper must have PMID and title')
+
         pub_df = Loader.process_publications_dataframe(pub_df)
 
         self.logger.debug(f'Found {len(pub_df)} publications in the local database', current=current, task=task)
@@ -126,27 +98,26 @@ class PubmedLoader(Loader):
     def search_with_given_ids(self, ids, current=0, task=None):
         self.ids = ids
         self.values = ', '.join(['({})'.format(i) for i in self.ids])
-        return self.load_publications()
+        return self.load_publications(current=current, task=task)
 
     def load_citation_stats(self, current=0, task=None):
-        self.logger.info('Loading citations statistics: searching for correct citations over 168 million of citations',
+        self.logger.info('Loading citations statistics among millions of citations',
                          current=current, task=task)
 
-        query = re.sub(Loader.VALUES_REGEX, self.values, '''
-        SELECT CAST(C.pmid_in AS TEXT) AS pmid, date_part('year', P.date) AS year, COUNT(1) AS count
-        FROM PMCitations C
-        JOIN (VALUES $VALUES$) AS CT(pmid) ON (C.pmid_in = CT.pmid)
-        JOIN PMPublications P
-        ON C.pmid_out = P.pmid
-        WHERE date IS NOT NULL
-        GROUP BY C.pmid_in, date_part('year', P.date);
-        ''')
+        # TODO[shpynov] transferring huge list of ids can be a problem
+        query = f'''
+            WITH [{','.join([f"'{id}'" for id in self.ids])}] AS pmids 
+            MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication) 
+            WHERE in.pmid IN pmids 
+            RETURN in.pmid AS id, out.date.year AS year, COUNT(*) AS count;
+        '''
 
-        with self.conn.cursor() as cursor:
-            cursor.execute(query)
-            self.logger.debug('Done loading citation stats', current=current, task=task)
-            cit_stats_df_from_query = pd.DataFrame(cursor.fetchall(),
-                                                   columns=['id', 'year', 'count'])
+        cit_stats_df_from_query = pd.DataFrame(columns=['id', 'year', 'count'])
+        with self.neo4jdriver.session() as session:
+            for r in session.run(query):
+                cit_stats_df_from_query.loc[len(cit_stats_df_from_query)] = (r['id'], int(r['year']), int(r['count']))
+
+        self.logger.debug('Done loading citation stats', current=current, task=task)
 
         if np.any(cit_stats_df_from_query.isna()):
             raise ValueError('NaN values are not allowed in citation stats DataFrame')
@@ -160,19 +131,22 @@ class PubmedLoader(Loader):
         return cit_stats_df_from_query
 
     def load_citations(self, current=0, task=None):
+        """ Loading INNER citations graph, where all the nodes are inside query of interest """
         self.logger.info('Started loading citations', current=current, task=task)
 
-        query = re.sub(Loader.VALUES_REGEX, self.values, '''
-        SELECT CAST(C.pmid_out AS TEXT), CAST(C.pmid_in AS TEXT)
-        FROM PMCitations C
-        JOIN (VALUES $VALUES$) AS CT(pmid) ON (C.pmid_in = CT.pmid)
-        JOIN (VALUES $VALUES$) AS CT2(pmid) ON (C.pmid_out = CT2.pmid);
-        ''')
+        # TODO[shpynov] transferring huge list of ids can be a problem
+        query = f'''
+            WITH [{','.join([f"'{id}'" for id in self.ids])}] AS pmids 
+            MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication) 
+            WHERE in.pmid IN pmids AND out.pmid IN pmids  
+            RETURN out.pmid AS id_out, in.pmid AS id_in
+            ORDER BY id_out, id_in;
+        '''
 
-        with self.conn.cursor() as cursor:
-            cursor.execute(query)
-
-            cit_df = pd.DataFrame(cursor.fetchall(), columns=['id_out', 'id_in'])
+        cit_df = pd.DataFrame(columns=['id_out', 'id_in'])
+        with self.neo4jdriver.session() as session:
+            for r in session.run(query):
+                cit_df.loc[len(cit_df)] = (r['id_out'], r['id_in'])
 
         if np.any(cit_df.isna()):
             raise ValueError('Citation must have id_out and id_in')
@@ -185,30 +159,20 @@ class PubmedLoader(Loader):
         self.logger.info('Calculating co-citations for selected papers', current=current, task=task)
 
         # Use unfolding to pairs on the client side instead of DataBase
-        query = '''
-        with Z as (select pmid_out, CAST(pmid_in AS TEXT)
-            from PMCitations
-            -- Hack to make Postgres use index!
-            where pmid_in
-            between (select min(pmid) from TEMP_PMIDS) and (select max(pmid) from TEMP_PMIDS)
-            and pmid_in in (select pmid from TEMP_PMIDS)),
-        X as (select pmid_out, array_agg(pmid_in) as cited_list
-            from Z
-            group by pmid_out
-            having count(*) >= 2)
-        select CAST(X.pmid_out AS TEXT), date_part('year', P.date) AS year, X.cited_list from
-            X join PMPublications P
-            on pmid_out = P.pmid;
+        # TODO[shpynov] transferring huge list of ids can be a problem
+        query = f'''
+            WITH [{','.join([f"'{id}'" for id in self.ids])}] AS pmids 
+            MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication) 
+            WHERE in.pmid IN pmids 
+            RETURN out.pmid AS citing, COLLECT(in.pmid) AS cited, out.date.year AS year;
         '''
 
-        with self.conn.cursor() as cursor:
-            cursor.execute(query)
-
+        with self.neo4jdriver.session() as session:
             cocit_data = []
             lines = 0
-            for row in cursor:
+            for r in session.run(query):
                 lines += 1
-                citing, year, cited = row
+                citing, year, cited = r['citing'], r['year'], r['cited']
                 for i in range(len(cited)):
                     for j in range(i + 1, len(cited)):
                         cocit_data.append((citing, cited[i], cited[j], year))
@@ -227,37 +191,27 @@ class PubmedLoader(Loader):
     def expand(self, ids, current=0, task=None):
         if isinstance(ids, Iterable):
             self.logger.info('Expanding current topic', current=current, task=task)
-            values = ', '.join(['({})'.format(i) for i in sorted(ids)])
 
-            query = re.sub(Loader.VALUES_REGEX, values, '''
-                DROP TABLE IF EXISTS TEMP_PMIDS;
-                WITH vals(pmid) AS (VALUES $VALUES$)
-                SELECT pmid INTO temporary table TEMP_PMIDS FROM vals;
-                DROP INDEX IF EXISTS temp_pmids_unique_index;
-                CREATE UNIQUE INDEX temp_pmids_unique_index ON TEMP_PMIDS USING btree (pmid);
-
-                SELECT C.pmid_out, ARRAY_AGG(C.pmid_in)
-                FROM pmcitations C
-                JOIN temp_pmids T
-                ON C.pmid_out = T.pmid OR C.pmid_in = T.pmid
-                GROUP BY C.pmid_out;
-                ''')
+            # TODO[shpynov] transferring huge list of ids can be a problem
+            query = f'''
+                WITH [{','.join([f"'{id}'" for id in ids])}] AS pmids 
+                MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication) 
+                WHERE in.pmid IN pmids OR in.pmid IN pmids
+                RETURN out.pmid AS citing, COLLECT(in.pmid) AS cited;
+            '''
         elif isinstance(ids, int):
             query = f'''
-                SELECT C.pmid_out, ARRAY_AGG(C.pmid_in)
-                FROM pmcitations C
-                WHERE C.pmid_out = {ids} OR C.pmid_in = {ids}
-                GROUP BY C.pmid_out;
-                '''
+                MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication) 
+                WHERE in.pmid = '{ids}' OR in.pmid = '{ids}'
+                RETURN out.pmid AS citing, COLLECT(in.pmid) AS cited;
+            '''
         else:
             raise TypeError('ids should be either int or Iterable')
 
         expanded = set()
-        with self.conn.cursor() as cursor:
-            cursor.execute(query)
-
-            for row in cursor.fetchall():
-                citing, cited = row
+        with self.neo4jdriver.session() as session:
+            for r in session.run(query):
+                citing, cited = r['citing'], r['cited']
                 expanded.add(citing)
                 expanded |= set(cited)
 

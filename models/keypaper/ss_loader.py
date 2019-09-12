@@ -131,7 +131,7 @@ class SemanticScholarLoader(Loader):
         return self.pub_df
 
     def load_citation_stats(self, current=0, task=None):
-        self.logger.info('Loading citations statistics: searching for correct citations over 150 million of citations',
+        self.logger.info('Loading citations statistics among millions of citations',
                          current=current, task=task)
 
         query = f'''
@@ -172,8 +172,7 @@ class SemanticScholarLoader(Loader):
                     FROM SSCitations C
                     JOIN (VALUES {self.values}) AS CT(crc32id, ssid)
                     ON (C.crc32id_in = CT.crc32id AND C.id_in = CT.ssid)
-                    WHERE C.crc32id_in
-                    between (SELECT MIN(crc32id) FROM temp_ssids)
+                    WHERE C.crc32id_in between (SELECT MIN(crc32id) FROM temp_ssids)
                     AND (select max(crc32id) FROM temp_ssids);
                     '''
 
@@ -182,6 +181,7 @@ class SemanticScholarLoader(Loader):
             citations = pd.DataFrame(cursor.fetchall(),
                                      columns=['id_out', 'id_in'], dtype=object)
 
+        # TODO[shpynov] we can make it on DB side
         citations = citations[citations['id_out'].isin(self.ids)]
 
         if np.any(citations.isna()):
