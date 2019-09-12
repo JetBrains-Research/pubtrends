@@ -63,6 +63,7 @@ def analyze_topic_async(source, terms=None, id_list=None, zoom=None, sort='Most 
         'top_cited_papers': [components(plotter.top_cited_papers())],
         'max_gain_papers': [components(plotter.max_gain_papers())],
         'max_relative_gain_papers': [components(plotter.max_relative_gain_papers())],
+        'component_sizes': plotter.component_sizes(),
         'component_ratio': [components(plotter.component_ratio())],
         'papers_stats': [components(paper_statistics)],
         'papers_zoom_out_callback': zoom_out_callback,

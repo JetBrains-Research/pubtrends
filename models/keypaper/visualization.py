@@ -316,6 +316,11 @@ class Plotter:
 
         return result
 
+    def component_sizes(self):
+        assigned_comps = self.analyzer.df[self.analyzer.df['comp'] >= 0]
+        d = dict(assigned_comps.groupby('comp')['id'].count())
+        return [int(d[k]) for k in range(len(d))]
+
     def component_ratio(self):
         comps, source = PlotPreprocessor.component_ratio_data(
             self.analyzer.df, self.comp_palette
