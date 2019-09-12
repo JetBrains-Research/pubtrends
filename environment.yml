@@ -26,3 +26,4 @@ dependencies:
   - pip
   - pip:
     - scholarmetrics==0.2.1
+    - neo4j==1.7.4
