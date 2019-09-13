@@ -12,6 +12,7 @@ class Loader:
     VALUES_REGEX = re.compile(r'\$VALUES\$')
 
     def __init__(self, pubtrends_config, connect=True):
+        self.pubtrends_config = pubtrends_config
         self.conn = None
         # if connect:
         #     connection_string = f"""

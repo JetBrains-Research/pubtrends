@@ -37,19 +37,38 @@ class PubmedLoader(Loader):
         with self.neo4jdriver.session() as session:
             return [r['pmid'] for r in session.run(query)]
 
-    def search(self, terms, limit=None, sort=None, current=0, task=None):
-        self.logger.info(html.escape(f'Searching publications matching <{terms}>'), current=current, task=task)
-        terms_str = re.sub('[^0-9a-zA-Z"\\-\\?\\*~ ]', '', terms.strip())
-        tl = terms_str.lower()
-        if '"' in tl or ' or ' in tl or ' and ' in tl or '?' in tl or '*' in tl or '~' in tl:
-            self.logger.info(html.escape('Special syntax detected, passing to search as is.'),
-                             current=current, task=task)
-            terms_str = "'" + re.sub('"', '\\"', terms_str) + "'"
+    def preprocess_search_string(self, terms):
+        terms_str = re.sub('[^0-9a-zA-Z"\\- ]', '', terms.strip())
+        words = re.sub('"', '', terms_str).split(' ')
+        if len(words) < self.pubtrends_config.min_search_words:
+            raise Exception(f'Please use more specific query with >= {self.pubtrends_config.min_search_words} words')
+        # Looking for complete phrase
+        if re.match('"[^"]+"', terms_str):
+            terms_str = '"' + re.sub('"', '', terms_str) + '"'
         else:
-            terms_str = '"' + ' AND '.join([f"'{t}'" for t in re.sub('"', '', terms_str).split(' ')]) + '"'
+            terms_str = '"' + ' AND '.join([f"'{w}'" for w in words]) + '"'
+        return terms_str
+
+    def search(self, terms, limit=None, sort=None, current=0, task=None):
+        terms_str = self.preprocess_search_string(terms)
+
+        if sort == 'relevance':
+            sort_msg = 'most relevant'
+        elif sort == 'citations':
+            sort_msg = 'most cited'
+        elif sort == 'year':
+            sort_msg = 'most recent'
+        else:
+            raise ValueError(f'sort can be either citations, relevance or year, got {sort}')
 
         if not limit:
+            limit_message = ''
             limit = self.max_number_of_articles
+        else:
+            limit_message = f'{limit} '
+
+        self.logger.info(html.escape(f'Searching {limit_message}{sort_msg} publications matching <{terms}>'),
+                         current=current, task=task)
 
         if sort == 'relevance':
             query = f'''
