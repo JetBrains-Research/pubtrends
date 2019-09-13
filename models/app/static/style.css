@@ -16,3 +16,18 @@ span.error-message {
 .content {
     margin-top: 10px;
 }
+
+.inline {
+    display: inline;
+}
+
+.link-button {
+    background: none;
+    border: none;
+    color: black;
+    text-decoration: underline;
+    cursor: pointer;
+}
+.link-button:focus {
+    outline: none;
+}

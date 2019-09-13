@@ -16,7 +16,7 @@
             integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
             crossorigin="anonymous"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
-    <!--    <link rel="stylesheet" href="../static/style.css" />-->
+<!--        <link rel="stylesheet" href="../static/style.css" />-->
 </head>
 <body>
 <div class="container">
@@ -147,6 +147,21 @@
                 </div>
             </div>
         </div>
+    </div>
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        <form method="post" action="" class="inline">
+            <input type="hidden" name="source" value="Pubmed">
+            <input type="hidden" name="sort" value="Most Cited">
+            <input type="hidden" name="amount" value="1000">
+            <strong>The service is in development!</strong> Please use concrete requests like like
+            <button type="submit" name="terms" value="dna methylation clock" class="link-button">
+                dna methylation clock
+            </button> and be patient.
+        </form>
+
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
     </div>
 </div>
 <footer>
