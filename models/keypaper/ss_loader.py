@@ -13,6 +13,8 @@ class SemanticScholarLoader(Loader):
         super(SemanticScholarLoader, self).__init__(pubtrends_config)
 
     def search(self, terms, limit=None, sort=None, current=0, task=None):
+        raise Exception('Semantic Scholar is not supported yet.')
+
         self.logger.info(html.escape(f'Searching publications matching <{terms}>'), current=current, task=task)
         terms_str = '\'' + terms + '\''
         if not limit:
