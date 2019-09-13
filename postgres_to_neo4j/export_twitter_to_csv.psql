@@ -1,2 +1,5 @@
-\COPY (SELECT pmid, date, title, abstract, type, keywords, mesh, doi, aux from pmpublications p) to 'pmpublications.csv' with csv;
+\COPY (SELECT pmid, date, title, abstract, type, keywords, mesh, doi, aux from pmpublications) to 'pmpublications.csv' with csv;
 \COPY (SELECT pmid_out, pmid_in FROM pmcitations) to 'pmcitations.csv' with csv;
+
+\COPY (SELECT ssid, pmid, title, abstract, year, doi, source, keywords, aux from sspublications) to 'sspublications.csv' with csv;
+\COPY (SELECT id_out, id_in FROM sscitations) to 'sscitations.csv' with csv;

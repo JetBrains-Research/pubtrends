@@ -22,12 +22,22 @@ Configure Neo4j
     
 * Launch batch import procedure (within Docker container)
 
+Pubmed:
+
     ```
     neo4j-admin import -ignore-missing-nodes=true --mode csv --multiline-fields \
         --nodes:PMPublication="/pubtrends/pmpublications_header.csv,/pubtrends/pmpublications.csv" \
         --relationships:PMReferenced="/pubtrends/pmcitations_header.csv,/pubtrends/pmcitations.csv"
     ```
   
+Semantic Scholar:
+
+    ```
+    neo4j-admin import -ignore-missing-nodes=true --mode csv --multiline-fields \
+        --nodes:SSPublication="/pubtrends/sspublications_header.csv,/pubtrends/sspublications.csv" \
+        --relationships:SSReferenced="/pubtrends/sscitations_header.csv,/pubtrends/sscitations.csv"
+    ```
+    
 * Launch Neo4j database as a service
     
     ```
