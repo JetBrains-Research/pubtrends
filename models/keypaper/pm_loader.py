@@ -44,7 +44,7 @@ class PubmedLoader(Loader):
             raise Exception(f'Please use more specific query with >= {self.pubtrends_config.min_search_words} words')
         # Looking for complete phrase
         if re.match('"[^"]+"', terms_str):
-            terms_str = '"' + re.sub('"', '', terms_str) + '"'
+            terms_str = '\'"' + re.sub('"', '', terms_str) + '"\''
         else:
             terms_str = '"' + ' AND '.join([f"'{w}'" for w in words]) + '"'
         return terms_str
