@@ -21,7 +21,7 @@ class TestSemanticScholarLoader(unittest.TestCase):
         cls.loader = SemanticScholarLoader(pubtrends_config=PubtrendsConfig(test=True))
         cls.loader.set_logger(logging.getLogger(__name__))
 
-        mock_database_loader = MockDatabaseLoader(PubtrendsConfig(test=True))
+        mock_database_loader = MockDatabaseLoader()
         mock_database_loader.init_semantic_scholar_database()
         mock_database_loader.insert_semantic_scholar_publications(required_articles + extra_articles)
         mock_database_loader.insert_semantic_scholar_citations(required_citations + extra_citations)

@@ -1,5 +1,4 @@
 import logging
-import re
 import unittest
 
 import numpy as np
@@ -15,19 +14,18 @@ from models.test.pm_articles import REQUIRED_ARTICLES, ARTICLES, EXPECTED_PUB_DF
 
 
 class TestPubmedLoader(unittest.TestCase):
-    VALUES_REGEX = re.compile(r'\$VALUES\$')
     loader = PubmedLoader(pubtrends_config=PubtrendsConfig(test=True))
 
     @classmethod
     def setUpClass(cls):
         cls.loader.set_logger(logging.getLogger(__name__))
 
-        # Entrez search is not tested, imitating search results
-        cls.ids = list(map(lambda article: article.pmid, REQUIRED_ARTICLES))
+        # Text search is not tested, imitating search results
+        cls.ids = cls.loader.ids = list(map(lambda article: article.pmid, REQUIRED_ARTICLES))
         cls.loader.values = ', '.join(['({})'.format(i) for i in sorted(cls.ids)])
 
         # Reset and load data to the test database
-        mock_database_loader = MockDatabaseLoader(PubtrendsConfig(test=True))
+        mock_database_loader = MockDatabaseLoader()
         mock_database_loader.init_pubmed_database()
         mock_database_loader.insert_pubmed_publications(ARTICLES)
         mock_database_loader.insert_pubmed_citations(CITATIONS)
@@ -74,49 +72,39 @@ class TestPubmedLoader(unittest.TestCase):
         self.assertListEqual(actual, expected, msg='Wrong journals extracted')
 
     def test_load_publications_data_frame(self):
-        assert_frame_equal(self.pub_df, EXPECTED_PUB_DF, 'Wrong publication data')
+        assert_frame_equal(self.pub_df, EXPECTED_PUB_DF, 'Wrong publication data', check_like=True)
 
     @parameterized.expand([
-        ('limit 5, most recent', [1, 2, 3, 4, 5], 5, 'year', [1, 2, 3, 4, 5], False),
-        ('limit 5, most relevant', [1, 2, 3, 4, 5], 5, 'relevance', [1, 2, 3, 4, 5], False),
-        ('limit 5, most relevant', [7, 8, 5, 3, 4, 6, 2, 1, 10, 9], 5, 'citations', [4, 3, 1, 5, 2], True),
+        ('Article', 1, 'year', ['5']),
+        ('Abstract',  5, 'relevance', ['2', '3']),
+        ('Article', 1, 'citations', ['4']),
     ])
-    def test_sort_results(self, name, ids, limit, sort, expected_ids, expected_temp_table_created):
-        ids, temp_table_created = self.loader.sort_results(ids, limit=limit, sort=sort)
-
-        self.assertListEqual(ids, expected_ids, 'Wrong IDs of papers')
-        self.assertEqual(temp_table_created, expected_temp_table_created, 'Wrong status of temp table')
-
-    def test_load_citation_stats_null_year_is_ignored(self):
-        expected_ignored_citations = []
-        for id_out, id_in in CITATIONS:
-            if ARTICLES[int(id_out) - 1].date is None:
-                expected_ignored_citations.append((id_out, id_in))
-
-        ignored_diff = len(CITATIONS) - int(self.cit_stats_df['count'].sum())
-        self.assertEqual(len(expected_ignored_citations), ignored_diff,
-                         'Error with citations from articles with date NULL')
+    def test_search(self, terms, limit, sort, expected_ids):
+        # Use sorted to avoid ambiguity
+        ids = sorted(self.loader.search(terms, limit=limit, sort=sort))
+        self.assertListEqual(ids, sorted(expected_ids), 'Wrong IDs of papers')
 
     def test_load_citation_stats_data_frame(self):
         # Sort to compare with expected
-        self.cit_stats_df = self.cit_stats_df.sort_values(by=['id', 'year']).reset_index(drop=True)
-        assert_frame_equal(self.cit_stats_df, EXPECTED_CIT_STATS_DF, 'Wrong citation stats data')
+        actual = self.cit_stats_df.sort_values(by=['id', 'year']).reset_index(drop=True)
+        assert_frame_equal(EXPECTED_CIT_STATS_DF, actual, 'Wrong citation stats data', check_like=True)
 
     def test_load_citations_count(self):
         self.assertEqual(len(self.cit_df), len(INNER_CITATIONS), 'Wrong number of citations')
 
     def test_load_citations_data_frame(self):
-        assert_frame_equal(self.cit_df, EXPECTED_CIT_DF, 'Wrong citation data')
+        assert_frame_equal(self.cit_df, EXPECTED_CIT_DF, 'Wrong citation data', check_like=True)
 
     def test_load_cocitations_data_frame(self):
-        # Sort to compare with expected
-        self.cocit_df = self.cocit_df.sort_values(by=['citing', 'cited_1', 'cited_2']).reset_index(drop=True)
-        assert_frame_equal(self.cocit_df, EXPECTED_COCIT_DF, 'Wrong co-citation data')
+        expected = EXPECTED_COCIT_DF.sort_values(by=['citing', 'cited_1', 'cited_2']).reset_index(drop=True)
+        actual = self.cocit_df.sort_values(by=['citing', 'cited_1', 'cited_2']).reset_index(drop=True)
+        # Sort for comparison
+        assert_frame_equal(expected, actual, 'Wrong co-citation data', check_like=True)
 
     def test_search_with_given_ids(self):
         ids_list = list(map(lambda article: article.pmid, PART_OF_ARTICLES))
         assert_frame_equal(EXPECTED_PUB_DF_GIVEN_IDS, self.loader.search_with_given_ids(ids_list),
-                           "Wrong publications extracted")
+                           "Wrong publications extracted", check_like=True)
 
     def test_expand(self):
         expected = EXPANDED_IDS

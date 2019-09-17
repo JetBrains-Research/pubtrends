@@ -29,7 +29,7 @@ class PubtrendsConfig:
 
         self.run_experimental = params.getboolean('run_experimental')
 
-        self.min_search_words = params.getint('min_search_words')
+        self.min_search_words = params.getint('min_search_words') if not test else 0
         self.max_number_of_articles = params.getint('max_number_of_articles')
         self.max_number_of_citations = params.getint('max_number_of_citations')
         self.max_number_of_cocitations = params.getint('max_number_of_cocitations')

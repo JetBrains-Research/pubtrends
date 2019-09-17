@@ -20,19 +20,41 @@ USER root
 
 # Update all the packages
 RUN apt-get update --fix-missing \
-    && apt-get install -y curl bzip2 gnupg2 wget ca-certificates
+    && apt-get install -y curl bzip2 gnupg2 wget ca-certificates sudo
 
-# Install Postgresql 11, Redis and cleanup
+# Install Redis
+RUN apt-get install --no-install-recommends -y redis-server
+
+# Install neo4j
+RUN wget --quiet --no-check-certificate -O - https://debian.neo4j.org/neotechnology.gpg.key | apt-key add - \
+    && echo 'deb http://debian.neo4j.org/repo stable/' > /etc/apt/sources.list.d/neo4j.list \
+    && apt-get update && apt-get install --no-install-recommends -y neo4j
+
+# Configure neo4j
+RUN sed -i "s/#dbms.connectors.default_listen_address=0.0.0.0/dbms.connectors.default_listen_address=0.0.0.0/g" /etc/neo4j/neo4j.conf \
+    && sed -i "s/#dbms.security.allow_csv_import_from_file_urls=true/dbms.security.allow_csv_import_from_file_urls=true/g" /etc/neo4j/neo4j.conf \
+    && sed -i "s#dbms.directories.import=/var/lib/neo4j/import#dbms.directories.import=/pubtrends#g" /etc/neo4j/neo4j.conf
+# Initial password for neo4j user
+RUN neo4j-admin set-initial-password password
+# Expose Neo4j bolt port
+EXPOSE 7687
+# Expose Neo4j http interface
+EXPOSE 7474
+
+# Install Postgresql 11
 RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
     && sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ bionic-pgdg main" >> /etc/apt/sources.list.d/pgdg.list' \
-    && apt-get update && apt-get install --no-install-recommends -y postgresql postgresql-contrib \
-    && apt-get install --no-install-recommends -y redis-server \
-    && apt-get clean \
+    && apt-get update && apt-get install --no-install-recommends -y postgresql postgresql-contrib
+
+# Clean apt
+RUN apt-get clean \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Make new user
-RUN groupadd -r pubtrends && useradd -ms /bin/bash -g pubtrends user
+RUN groupadd -r pubtrends && useradd -ms /bin/bash -g pubtrends user && usermod -aG sudo user
+# Sudo without password
+RUN echo "user     ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 # Install Conda and create pubtrends conda env
 USER user
@@ -43,8 +65,9 @@ ENV PATH /home/user/miniconda3/bin:$PATH
 # Fix shell for conda
 USER root
 RUN ln -snf /bin/bash /bin/sh
-USER user
 
+USER user
+# Create pubtrends conda env
 COPY environment.yml /home/user/environment.yml
 RUN conda init bash \
     && conda env create -f /home/user/environment.yml \
@@ -53,7 +76,7 @@ RUN conda init bash \
     && conda clean -afy \
     && rm /home/user/environment.yml
 
-# Create Postgresql cluster
+# Configure Postgresql configuration
 USER root
 RUN chmod -R a+w /var/run/postgresql
 
@@ -84,6 +107,5 @@ RUN mkdir -p ~/.pubtrends \
     && cat ~/config.properties | sed 's/5433/5432/g' > ~/.pubtrends/config.properties \
     && rm /home/user/config.properties
 
-# Use `-d` param to launch container as daemon with Postgresql running
-CMD /usr/lib/postgresql/11/bin/pg_ctl -D /home/user/postgres start \
-    && sleep infinity
+# Use `-d` param to launch container as daemon
+CMD /usr/lib/postgresql/11/bin/pg_ctl -D /home/user/postgres start && sudo neo4j start && sleep infinity

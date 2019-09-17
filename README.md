@@ -164,15 +164,18 @@ Launch Gunicorn serving Flask app on HTTP port 80, Redis and Celery in container
 
 ## Testing
 
-1. Start Docker image with Postgres for tests
+1. Start Docker image with Postgres and Neo4j for tests
     ```
-    docker run --rm --name pg-docker -p 5433:5432 -v $(pwd):/pubtrends:ro -d biolabs/pubtrends
+    docker run --rm --name pubtrends-docker docker run --publish=5433:5432 --publish=7474:7474 --publish=7687:7687 --volume=$(pwd):/pubtrends -d -t biolabs/pubtrends
     ```
 
-    Check access:
+    Check access to Postgresql:
     ```
     psql postgresql://biolabs:password@localhost:5433/pubtrends_test
     ```
+   
+   Check access to Neo4j web browser: `http://localhost:7474`
+   
 
 2. Kotlin tests
 

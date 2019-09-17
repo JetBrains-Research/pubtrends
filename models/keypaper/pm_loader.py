@@ -1,4 +1,3 @@
-import json
 import html
 import re
 
@@ -113,14 +112,16 @@ class PubmedLoader(Loader):
         query = f'''
             WITH [{','.join([f"'{id}'" for id in self.ids])}] AS pmids 
             MATCH (p:PMPublication) 
-            WHERE p.pmid IN pmids 
+            WHERE p.pmid IN pmids
             RETURN p.pmid as id, p.title as title, p.abstract as abstract, p.date.year as year, p.aux as aux
+            ORDER BY id
         '''
 
         with self.neo4jdriver.session() as session:
             pub_df = pd.DataFrame(session.run(query).data())
+
         # Parse aux
-        pub_df['aux'] = [json.loads(v) for v in pub_df['aux']]
+        Loader.parse_aux(pub_df)
 
         # pub_df.dropna(subset=['id', 'title'], inplace=True)
         if np.any(pub_df[['id', 'title']].isna()):
@@ -204,7 +205,7 @@ class PubmedLoader(Loader):
             lines = 0
             for r in session.run(query):
                 lines += 1
-                citing, year, cited = r['citing'], r['year'], r['cited']
+                citing, year, cited = r['citing'], r['year'], sorted(r['cited'])
                 for i in range(len(cited)):
                     for j in range(i + 1, len(cited)):
                         cocit_data.append((citing, cited[i], cited[j], year))
@@ -228,7 +229,7 @@ class PubmedLoader(Loader):
             query = f'''
                 WITH [{','.join([f"'{id}'" for id in ids])}] AS pmids 
                 MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication) 
-                WHERE in.pmid IN pmids OR in.pmid IN pmids
+                WHERE in.pmid IN pmids OR out.pmid IN pmids
                 RETURN out.pmid AS citing, COLLECT(in.pmid) AS cited;
             '''
         elif isinstance(ids, int):
