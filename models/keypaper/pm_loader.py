@@ -20,17 +20,17 @@ class PubmedLoader(Loader):
         if key == 'title':
 
             query = f'''
-                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", '"{re.sub('"', '', value.strip())}"') 
+                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", '"{re.sub('"', '', value.strip())}"')
                 YIELD node
-                MATCH (p:PMPublication) 
+                MATCH (p:PMPublication)
                 WHERE p.pmid = node.pmid AND p.title = '{value}'
-                RETURN p.pmid AS pmid; 
+                RETURN p.pmid AS pmid;
             '''
         else:
             query = f'''
-                MATCH (p:PMPublication) 
+                MATCH (p:PMPublication)
                 WHERE p.{key} = {repr(value)}
-                RETURN p.pmid AS pmid; 
+                RETURN p.pmid AS pmid;
             '''
 
         with self.neo4jdriver.session() as session:
@@ -71,27 +71,27 @@ class PubmedLoader(Loader):
 
         if sort == 'relevance':
             query = f'''
-                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", {terms_str}) 
+                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", {terms_str})
                 YIELD node, score
-                RETURN node.pmid as pmid 
-                ORDER BY score DESC 
+                RETURN node.pmid as pmid
+                ORDER BY score DESC
                 LIMIT {limit};
                 '''
         elif sort == 'citations':
             query = f'''
                 CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", {terms_str}) YIELD node
-                MATCH ()-[r:PMReferenced]->(in:PMPublication) 
-                WHERE in.pmid = node.pmid 
-                WITH node, COUNT(r) AS cnt 
-                RETURN node.pmid as pmid 
-                ORDER BY cnt DESC 
+                MATCH ()-[r:PMReferenced]->(in:PMPublication)
+                WHERE in.pmid = node.pmid
+                WITH node, COUNT(r) AS cnt
+                RETURN node.pmid as pmid
+                ORDER BY cnt DESC
                 LIMIT {limit};
                 '''
         elif sort == 'year':
             query = f'''
                 CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", {terms_str}) YIELD node
-                RETURN node.pmid as pmid 
-                ORDER BY node.date DESC 
+                RETURN node.pmid as pmid
+                ORDER BY node.date DESC
                 LIMIT {limit};
                 '''
         else:
@@ -110,8 +110,8 @@ class PubmedLoader(Loader):
 
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
-            WITH [{','.join([f"'{id}'" for id in self.ids])}] AS pmids 
-            MATCH (p:PMPublication) 
+            WITH [{','.join([f"'{id}'" for id in self.ids])}] AS pmids
+            MATCH (p:PMPublication)
             WHERE p.pmid IN pmids
             RETURN p.pmid as id, p.title as title, p.abstract as abstract, p.date.year as year, p.aux as aux
             ORDER BY id
@@ -143,9 +143,9 @@ class PubmedLoader(Loader):
 
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
-            WITH [{','.join([f"'{id}'" for id in self.ids])}] AS pmids 
-            MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication) 
-            WHERE in.pmid IN pmids 
+            WITH [{','.join([f"'{id}'" for id in self.ids])}] AS pmids
+            MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
+            WHERE in.pmid IN pmids
             RETURN in.pmid AS id, out.date.year AS year, COUNT(*) AS count;
         '''
 
@@ -171,9 +171,9 @@ class PubmedLoader(Loader):
 
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
-            WITH [{','.join([f"'{id}'" for id in self.ids])}] AS pmids 
-            MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication) 
-            WHERE in.pmid IN pmids AND out.pmid IN pmids  
+            WITH [{','.join([f"'{id}'" for id in self.ids])}] AS pmids
+            MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
+            WHERE in.pmid IN pmids AND out.pmid IN pmids
             RETURN out.pmid AS id_out, in.pmid AS id_in
             ORDER BY id_out, id_in;
         '''
@@ -194,9 +194,9 @@ class PubmedLoader(Loader):
         # Use unfolding to pairs on the client side instead of DataBase
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
-            WITH [{','.join([f"'{id}'" for id in self.ids])}] AS pmids 
-            MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication) 
-            WHERE in.pmid IN pmids 
+            WITH [{','.join([f"'{id}'" for id in self.ids])}] AS pmids
+            MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
+            WHERE in.pmid IN pmids
             RETURN out.pmid AS citing, COLLECT(in.pmid) AS cited, out.date.year AS year;
         '''
 
@@ -227,14 +227,14 @@ class PubmedLoader(Loader):
 
             # TODO[shpynov] transferring huge list of ids can be a problem
             query = f'''
-                WITH [{','.join([f"'{id}'" for id in ids])}] AS pmids 
-                MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication) 
+                WITH [{','.join([f"'{id}'" for id in ids])}] AS pmids
+                MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
                 WHERE in.pmid IN pmids OR out.pmid IN pmids
                 RETURN out.pmid AS citing, COLLECT(in.pmid) AS cited;
             '''
         elif isinstance(ids, int):
             query = f'''
-                MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication) 
+                MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
                 WHERE in.pmid = '{ids}' OR in.pmid = '{ids}'
                 RETURN out.pmid AS citing, COLLECT(in.pmid) AS cited;
             '''

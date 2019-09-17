@@ -20,7 +20,8 @@ class MockDatabaseLoader(Loader):
             if len(list(filter(lambda i: i['description'] == 'INDEX ON :PMPublication(pmid)', indexes))) > 0:
                 session.run('DROP INDEX ON :PMPublication(pmid)')
 
-            if len(list(filter(lambda i: i['description'] == 'INDEX ON NODE:PMPublication(title, abstract)', indexes))) > 0:
+            if len(list(filter(lambda i: i['description'] == 'INDEX ON NODE:PMPublication(title, abstract)',
+                               indexes))) > 0:
                 session.run('CALL db.index.fulltext.drop("pmTitlesAndAbstracts")')
 
         with self.neo4jdriver.session() as session:
@@ -36,12 +37,12 @@ class MockDatabaseLoader(Loader):
 
             query = f'''
                 LOAD CSV FROM "file://{re.sub(self.project_dir, '', file.name)}" AS line
-                WITH line, [x IN split(line[4], "-") | toInteger(x)] AS parts 
-                WITH line, CASE WHEN line[4] = '' THEN NULL 
+                WITH line, [x IN split(line[4], "-") | toInteger(x)] AS parts
+                WITH line, CASE WHEN line[4] = '' THEN NULL
                 ELSE datetime({{year: parts[0], month: parts[1], day: parts[2]}})
                 END AS date_or_null
-                CREATE (:PMPublication {{ pmid: line[0], title: line[1], aux: line[2], abstract: line[3], 
-                    date: date_or_null, 
+                CREATE (:PMPublication {{ pmid: line[0], title: line[1], aux: line[2], abstract: line[3],
+                    date: date_or_null,
                     authors: line[5], journal: line[6] }})
                 '''
             with self.neo4jdriver.session() as session:
@@ -53,7 +54,8 @@ class MockDatabaseLoader(Loader):
 
             # Init full text search index
             with self.neo4jdriver.session() as session:
-                session.run('CALL db.index.fulltext.createNodeIndex("pmTitlesAndAbstracts",["PMPublication"],["title", "abstract"])')
+                session.run('CALL db.index.fulltext.createNodeIndex'
+                            '("pmTitlesAndAbstracts",["PMPublication"],["title", "abstract"])')
 
     def insert_pubmed_citations(self, citations):
         with tempfile.NamedTemporaryFile(dir=self.project_dir, prefix='cits', suffix='.csv', delete=True) as file:

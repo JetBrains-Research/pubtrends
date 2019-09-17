@@ -76,7 +76,7 @@ class TestPubmedLoader(unittest.TestCase):
 
     @parameterized.expand([
         ('Article', 1, 'year', ['5']),
-        ('Abstract',  5, 'relevance', ['2', '3']),
+        ('Abstract', 5, 'relevance', ['2', '3']),
         ('Article', 1, 'citations', ['4']),
     ])
     def test_search(self, terms, limit, sort, expected_ids):
