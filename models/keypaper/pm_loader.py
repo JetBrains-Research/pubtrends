@@ -36,18 +36,6 @@ class PubmedLoader(Loader):
         with self.neo4jdriver.session() as session:
             return [r['pmid'] for r in session.run(query)]
 
-    def preprocess_search_string(self, terms):
-        terms_str = re.sub('[^0-9a-zA-Z"\\- ]', '', terms.strip())
-        words = re.sub('"', '', terms_str).split(' ')
-        if len(words) < self.pubtrends_config.min_search_words:
-            raise Exception(f'Please use more specific query with >= {self.pubtrends_config.min_search_words} words')
-        # Looking for complete phrase
-        if re.match('"[^"]+"', terms_str):
-            terms_str = '\'"' + re.sub('"', '', terms_str) + '"\''
-        else:
-            terms_str = '"' + ' AND '.join([f"'{w}'" for w in words]) + '"'
-        return terms_str
-
     def search(self, terms, limit=None, sort=None, current=0, task=None):
         terms_str = self.preprocess_search_string(terms)
 

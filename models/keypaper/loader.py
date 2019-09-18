@@ -1,5 +1,6 @@
 import html
 import json
+import re
 
 import numpy as np
 import psycopg2 as pg_driver
@@ -44,6 +45,19 @@ class Loader:
     def parse_aux(df):
         df['aux'] = [json.loads(v) for v in df['aux']]
         return df
+
+    @staticmethod
+    def preprocess_search_string(terms, min_search_words):
+        terms_str = re.sub('[^0-9a-zA-Z"\\- ]', '', terms.strip())
+        words = re.sub('"', '', terms_str).split(' ')
+        if len(words) < min_search_words:
+            raise Exception(f'Please use more specific query with >= {min_search_words} words')
+        # Looking for complete phrase
+        if re.match('"[^"]+"', terms_str):
+            terms_str = '\'"' + re.sub('"', '', terms_str) + '"\''
+        else:
+            terms_str = '"' + ' AND '.join([f"'{w}'" for w in words]) + '"'
+        return terms_str
 
     @staticmethod
     def process_publications_dataframe(publications_df):
