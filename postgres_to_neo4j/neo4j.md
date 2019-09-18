@@ -11,6 +11,13 @@ Configure Neo4j
     psql postgres://user:password@host:5432/pubtrends -f export_twitter_to_csv.psql;
 
     ```
+  
+Data should be post processed:
+    
+    ```
+    cat pmpublications.tsv | sed "s#\"\"#'#g" | sed 's#"##g' > pmpublications_quotes.tsv
+    cat sspublications.tsv | sed "s#\"\"#'#g" | sed 's#"##g' > sspublications_quotes.tsv
+    ```  
 
 * Connect into Neo4j Docker container interactively 
 
@@ -25,17 +32,24 @@ Configure Neo4j
 Pubmed:
 
     ```
-    neo4j-admin import -ignore-missing-nodes=true --mode csv --multiline-fields \
-        --nodes:PMPublication="/pubtrends/pmpublications_header.csv,/pubtrends/pmpublications.csv" \
-        --relationships:PMReferenced="/pubtrends/pmcitations_header.csv,/pubtrends/pmcitations.csv"
+    neo4j-admin import -ignore-missing-nodes=true --mode csv --delimiter='\t' --multiline-fields \
+        --nodes:PMPublication="/pubtrends/pmpublications_header.tsv,/pubtrends/pmpublications.tsv" \
+        --relationships:PMReferenced="/pubtrends/pmcitations_header.tsv,/pubtrends/pmcitations.tsv"
     ```
   
 Semantic Scholar:
 
     ```
-    neo4j-admin import -ignore-missing-nodes=true --mode csv --multiline-fields \
-        --nodes:SSPublication="/pubtrends/sspublications_header.csv,/pubtrends/sspublications.csv" \
-        --relationships:SSReferenced="/pubtrends/sscitations_header.csv,/pubtrends/sscitations.csv"
+    neo4j-admin import -ignore-missing-nodes=true --mode csv --delimiter='\t' --multiline-fields \
+        --nodes:SSPublication="/pubtrends/sspublications_header.tsv,/pubtrends/sspublications.tsv" \
+        --relationships:SSReferenced="/pubtrends/sscitations_header.tsv,/pubtrends/sscitations.tsv"
+    ```
+Load into neo4j:
+
+    ```
+    LOAD CSV FROM "file:///sspublications_quotes.tsv" AS line FIELDTERMINATOR '\t'
+    CREATE (:SSPublication {ssid: line[0], pmid: line[1], title: line[2], abstract: line[3], 
+                            year:toInteger(line[4]), source: line[5], keywords: line[6], aux: line[7]})
     ```
     
 * Launch Neo4j database as a service
@@ -60,7 +74,8 @@ Playground with Pubmed
 * Lookup publications by "DNA methylation clock" Entrez query (partly) 
     
     ```
-    WITH ['16999817', '16717091', '16683245', '16582617', '16314580', '15975143', '15941485', '15860628', '15790588', '15779908', '14577056', '11820819', '11032969', '1943146', '1722018', '2777259', '2857475'] AS pmids 
+    WITH ['16999817', '16717091', '16683245', '16582617', '16314580', '15975143', '15941485', '15860628', '15790588', 
+          '15779908', '14577056', '11820819', '11032969', '1943146', '1722018', '2777259', '2857475'] AS pmids 
     MATCH (p:PMPublication) 
     WHERE p.pmid IN pmids 
     RETURN p
