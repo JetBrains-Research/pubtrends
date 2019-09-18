@@ -37,7 +37,7 @@ class PubmedLoader(Loader):
             return [r['pmid'] for r in session.run(query)]
 
     def search(self, terms, limit=None, sort=None, current=0, task=None):
-        terms_str = self.preprocess_search_string(terms)
+        terms_str = self.preprocess_search_string(terms, self.pubtrends_config.min_search_words)
 
         if sort == 'relevance':
             sort_msg = 'most relevant'
