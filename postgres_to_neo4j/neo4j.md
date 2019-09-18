@@ -47,9 +47,18 @@ Semantic Scholar:
 Load into neo4j:
 
     ```
+    USING PERIODIC COMMIT
     LOAD CSV FROM "file:///sspublications_quotes.tsv" AS line FIELDTERMINATOR '\t'
     CREATE (:SSPublication {ssid: line[0], pmid: line[1], title: line[2], abstract: line[3], 
                             year:toInteger(line[4]), source: line[5], keywords: line[6], aux: line[7]})
+    ```
+    
+    ```
+    USING PERIODIC COMMIT
+    LOAD CSV FROM "file:///sscitations.tsv" AS line AS line FIELDTERMINATOR '\t'
+    MATCH (out:SSPublication),(in:SSPublication)
+    WHERE out.ssid = line[0] AND in.ssid = line[1]
+    CREATE (out)-[r:SSReferenced]->(in)
     ```
     
 * Launch Neo4j database as a service
