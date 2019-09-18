@@ -17,7 +17,6 @@ apply plugin: 'checkstyle'
 project(':') {
     repositories {
         jcenter()
-        maven { url 'https://jitpack.io' }
     }
 
     apply plugin: 'kotlin'
@@ -33,7 +32,6 @@ project(':') {
         compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
         compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
         compile 'org.jetbrains.kotlinx:kotlinx-support-jdk8:0.1'
-        compile 'log4j:log4j:1.2.+'
         compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
         compile "org.jetbrains.exposed:exposed:0.10.5"
         compile "org.postgresql:postgresql:42.2.2"
@@ -43,9 +41,12 @@ project(':') {
         compile 'com.opencsv:opencsv:4.6'
         compile 'com.google.code.gson:gson:2.2.4'
         compile 'net.sf.jopt-simple:jopt-simple:5.0.4'
+        compile 'org.neo4j.driver:neo4j-java-driver:1.7.5'
 
         compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.9'
         compile group: 'commons-codec', name: 'commons-codec', version: '1.9'
+        compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.12.1'
+        compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.12.1'
 
         testCompile 'junit:junit:4.+'
         testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
