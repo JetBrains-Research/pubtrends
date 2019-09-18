@@ -55,6 +55,19 @@ class Loader:
         return terms_str
 
     @staticmethod
+    def preprocess_search_string(terms, min_search_words):
+        terms_str = re.sub('[^0-9a-zA-Z"\\- ]', '', terms.strip())
+        words = re.sub('"', '', terms_str).split(' ')
+        if len(words) < min_search_words:
+            raise Exception(f'Please use more specific query with >= {min_search_words} words')
+        # Looking for complete phrase
+        if re.match('"[^"]+"', terms_str):
+            terms_str = '\'"' + re.sub('"', '', terms_str) + '"\''
+        else:
+            terms_str = '"' + ' AND '.join([f"'{w}'" for w in words]) + '"'
+        return terms_str
+
+    @staticmethod
     def process_publications_dataframe(publications_df):
         # Semantic Scholar stores aux in jsonb format, no json parsing required
         publications_df['aux'] = publications_df['aux'].apply(
