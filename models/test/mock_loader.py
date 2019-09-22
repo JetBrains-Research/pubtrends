@@ -46,15 +46,15 @@ class MockLoader(Loader):
     def search(self, terms, limit=None, sort=None, current=None, task=None):
         return [1, 2, 3, 4, 5], True
 
-    def load_publications(self, temp_table_created=True, current=None, task=None):
+    def load_publications(self, ids=None, temp_table_created=True, current=None, task=None):
         return pd.DataFrame(PUBLICATION_DATA, columns=['id', 'year', 'title', 'abstract', 'authors', 'journal'])
 
-    def load_citation_stats(self, current=None, task=None):
+    def load_citation_stats(self, ids=None, current=None, task=None):
         return pd.DataFrame(CITATION_STATS_DATA, columns=['id', 'year', 'count'])
 
-    def load_citations(self, current=None, task=None):
+    def load_citations(self, ids=None, current=None, task=None):
         return pd.DataFrame(CITATION_DATA, columns=['id_out', 'id_in'])
 
-    def load_cocitations(self, current=None, task=None):
+    def load_cocitations(self, ids=None, current=None, task=None):
         cocit_df = pd.DataFrame(COCITATION_DATA, columns=['citing', 'cited_1', 'cited_2', 'year'])
         return cocit_df

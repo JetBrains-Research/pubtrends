@@ -52,7 +52,7 @@ class KeyPaperAnalyzer:
                     raise RuntimeError("Nothing found")
 
                 # Load data about publications
-                self.pub_df = self.loader.load_publications(current=2, task=task)
+                self.pub_df = self.loader.load_publications(self.ids, current=2, task=task)
                 if len(self.pub_df) == 0:
                     raise RuntimeError("Nothing found in DB")
             elif id_list:
@@ -62,10 +62,10 @@ class KeyPaperAnalyzer:
                 if zoom:
                     for _ in range(zoom):
                         self.ids = self.loader.expand(self.ids, current=1, task=task)
-                self.pub_df = self.loader.search_with_given_ids(self.ids, current=2, task=task)
+                self.pub_df = self.loader.load_publications(self.ids, current=2, task=task)
                 self.n_papers = len(self.ids)
 
-            cit_stats_df_from_query = self.loader.load_citation_stats(current=3, task=task)
+            cit_stats_df_from_query = self.loader.load_citation_stats(self.ids, current=3, task=task)
             self.cit_stats_df = self.build_cit_stats_df(cit_stats_df_from_query, self.n_papers, current=4, task=task)
             if len(self.cit_stats_df) == 0:
                 raise RuntimeError("No citations of papers were found")
@@ -75,10 +75,10 @@ class KeyPaperAnalyzer:
             if len(self.df) == 0:
                 raise RuntimeError("Failed to merge publications and citations")
 
-            self.cit_df = self.loader.load_citations(current=5, task=task)
+            self.cit_df = self.loader.load_citations(self.ids, current=5, task=task)
             self.G = self.build_citation_graph(self.cit_df, current=6, task=task)
 
-            self.cocit_df = self.loader.load_cocitations(current=7, task=task)
+            self.cocit_df = self.loader.load_cocitations(self.ids, current=7, task=task)
             cocit_grouped_df = self.build_cocit_grouped_df(self.cocit_df)
             self.CG = self.build_cocitation_graph(cocit_grouped_df, current=8, task=task, add_citation_edges=True)
             if len(self.CG.nodes()) == 0:

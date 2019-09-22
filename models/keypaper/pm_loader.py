@@ -87,18 +87,18 @@ class PubmedLoader(Loader):
 
         with self.neo4jdriver.session() as session:
             # Duplicate rows may occur if crawler was stopped while parsing
-            self.ids = list(set([r['pmid'] for r in session.run(query)]))
+            ids = list(set([r['pmid'] for r in session.run(query)]))
 
-        self.logger.info(f'Found {len(self.ids)} publications in the local database', current=current,
+        self.logger.info(f'Found {len(ids)} publications in the local database', current=current,
                          task=task)
-        return self.ids
+        return ids
 
-    def load_publications(self, current=0, task=None):
+    def load_publications(self, ids, current=0, task=None):
         self.logger.info('Loading publication data', current=current, task=task)
 
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
-            WITH [{','.join([f"'{id}'" for id in self.ids])}] AS pmids
+            WITH [{','.join([f"'{id}'" for id in ids])}] AS pmids
             MATCH (p:PMPublication)
             WHERE p.pmid IN pmids
             RETURN p.pmid as id, p.title as title, p.abstract as abstract, p.date.year as year, p.aux as aux
@@ -120,18 +120,13 @@ class PubmedLoader(Loader):
         self.logger.debug(f'Found {len(pub_df)} publications in the local database', current=current, task=task)
         return pub_df
 
-    def search_with_given_ids(self, ids, current=0, task=None):
-        self.ids = ids
-        self.values = ', '.join(['({})'.format(i) for i in self.ids])
-        return self.load_publications(current=current, task=task)
-
-    def load_citation_stats(self, current=0, task=None):
+    def load_citation_stats(self, ids, current=0, task=None):
         self.logger.info('Loading citations statistics among millions of citations',
                          current=current, task=task)
 
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
-            WITH [{','.join([f"'{id}'" for id in self.ids])}] AS pmids
+            WITH [{','.join([f"'{id}'" for id in ids])}] AS pmids
             MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
             WHERE in.pmid IN pmids
             RETURN in.pmid AS id, out.date.year AS year, COUNT(*) AS count;
@@ -153,13 +148,13 @@ class PubmedLoader(Loader):
 
         return cit_stats_df_from_query
 
-    def load_citations(self, current=0, task=None):
+    def load_citations(self, ids, current=0, task=None):
         """ Loading INNER citations graph, where all the nodes are inside query of interest """
         self.logger.info('Started loading citations', current=current, task=task)
 
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
-            WITH [{','.join([f"'{id}'" for id in self.ids])}] AS pmids
+            WITH [{','.join([f"'{id}'" for id in ids])}] AS pmids
             MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
             WHERE in.pmid IN pmids AND out.pmid IN pmids
             RETURN out.pmid AS id_out, in.pmid AS id_in
@@ -176,13 +171,13 @@ class PubmedLoader(Loader):
 
         return cit_df
 
-    def load_cocitations(self, current=0, task=None):
+    def load_cocitations(self, ids, current=0, task=None):
         self.logger.info('Calculating co-citations for selected papers', current=current, task=task)
 
         # Use unfolding to pairs on the client side instead of DataBase
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
-            WITH [{','.join([f"'{id}'" for id in self.ids])}] AS pmids
+            WITH [{','.join([f"'{id}'" for id in ids])}] AS pmids
             MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
             WHERE in.pmid IN pmids
             RETURN out.pmid AS citing, COLLECT(in.pmid) AS cited, out.date.year AS year;

@@ -9,7 +9,7 @@ from models.keypaper.config import PubtrendsConfig
 from models.keypaper.ss_loader import SemanticScholarLoader
 from models.test.mock_database_loader import MockDatabaseLoader
 from models.test.ss_articles import required_articles, extra_articles, required_citations, cit_stats_df, \
-    pub_df, cit_df, extra_citations, raw_cocitations_df, part_of_articles, pub_df_given_ids, expanded_articles
+    cit_df, extra_citations, raw_cocitations_df, part_of_articles, expanded_articles
 
 
 class TestSemanticScholarLoader(unittest.TestCase):
@@ -28,7 +28,8 @@ class TestSemanticScholarLoader(unittest.TestCase):
         cls._load_publications()
 
         cls.citations_stats = cls._load_citations_stats()
-        cls.citations = cls.loader.load_citations()
+        # TODO rework this
+        cls.citations = cls.loader.load_citations(cls.loader.ids)
         cls.cocitations_df = cls._load_cocitations()
 
     @classmethod
@@ -46,21 +47,15 @@ class TestSemanticScholarLoader(unittest.TestCase):
             cls.loader.conn.commit()
 
         cls.loader.ids = list(map(lambda article: article.ssid, required_articles))
-        cls.loader.crc32ids = list(map(lambda article: article.crc32id, required_articles))
-        cls.loader.values = ', '.join(
-            ['({0}, \'{1}\')'.format(i, j) for (i, j) in
-             zip(cls.loader.crc32ids, cls.loader.ids)])
-
-        cls.loader.pub_df = pub_df
 
     @classmethod
     def _load_citations_stats(cls):
-        cit_stats_df_from_query = cls.loader.load_citation_stats()
+        cit_stats_df_from_query = cls.loader.load_citation_stats(cls.loader.ids)
         return cit_stats_df_from_query.sort_values(by=['id', 'year']).reset_index(drop=True)
 
     @classmethod
     def _load_cocitations(cls):
-        cocitations = cls.loader.load_cocitations()
+        cocitations = cls.loader.load_cocitations(ids=None)
         return cocitations.sort_values(by=['citing', 'cited_1', 'cited_2']).reset_index(drop=True)
 
     @parameterized.expand([
@@ -77,7 +72,7 @@ class TestSemanticScholarLoader(unittest.TestCase):
     def test_search(self, name, limit, sort, expected):
         ids, _ = self.loader.search('find search', limit=limit, sort=sort)
 
-        self.assertListEqual(ids, expected)
+        self.assertListEqual(ids, expected, name)
 
     def test_citations_stats_rows(self):
         expected_rows = cit_stats_df.shape[0]
@@ -113,13 +108,6 @@ class TestSemanticScholarLoader(unittest.TestCase):
         expected_cocit_df = raw_cocitations_df
         actual = self.cocitations_df
         assert_frame_equal(expected_cocit_df, actual, "Co-citations dataframe is incorrect")
-
-    def test_search_with_given_ids(self):
-        initial_columns = ['abstract', 'aux', 'crc32id', 'id', 'title', 'year']
-        ids_list = list(map(lambda article: article.ssid, part_of_articles))
-        expected = pub_df_given_ids
-        actual_pub_given_ids = self.loader.search_with_given_ids(ids_list)
-        assert_frame_equal(expected, actual_pub_given_ids[initial_columns], "Wrong publications extracted")
 
     def test_expand(self):
         ids = list(map(lambda article: article.ssid, part_of_articles))

@@ -31,10 +31,10 @@ class TestPubmedLoader(unittest.TestCase):
         mock_database_loader.insert_pubmed_citations(CITATIONS)
 
         # Get data via PubmedLoader methods
-        cls.pub_df = cls.loader.load_publications()
-        cls.cit_stats_df = cls.loader.load_citation_stats()
-        cls.cit_df = cls.loader.load_citations()
-        cls.cocit_df = cls.loader.load_cocitations()
+        cls.pub_df = cls.loader.load_publications(cls.ids)
+        cls.cit_stats_df = cls.loader.load_citation_stats(cls.ids)
+        cls.cit_df = cls.loader.load_citations(cls.ids)
+        cls.cocit_df = cls.loader.load_cocitations(cls.ids)
 
     @staticmethod
     def get_row(df, article):
@@ -103,7 +103,7 @@ class TestPubmedLoader(unittest.TestCase):
 
     def test_search_with_given_ids(self):
         ids_list = list(map(lambda article: article.pmid, PART_OF_ARTICLES))
-        assert_frame_equal(EXPECTED_PUB_DF_GIVEN_IDS, self.loader.search_with_given_ids(ids_list),
+        assert_frame_equal(EXPECTED_PUB_DF_GIVEN_IDS, self.loader.load_publications(ids_list),
                            "Wrong publications extracted", check_like=True)
 
     def test_expand(self):
