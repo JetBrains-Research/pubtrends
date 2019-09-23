@@ -43,9 +43,20 @@ data class PubmedArticle(
             "Abstract Text" to abstractText,
             "DOI" to doi,
             "Keywords" to keywordList.joinToString(separator = ",", prefix = "\"", postfix = "\""),
-            "MesH" to meshHeadingList.joinToString(separator = ",", prefix = "\"", postfix = "\""),
+            "MeSH" to meshHeadingList.joinToString(separator = ",", prefix = "\"", postfix = "\""),
             "Citations" to citationList.joinToString(separator = ",", prefix = "\"", postfix = "\""),
             "Other information" to auxInfo.toString()
+        )
+    }
+
+    fun toNeo4j(): Map<String, String> {
+        return mapOf(
+                "pmid" to pmid.toString(),
+                "date" to (date?.toString() ?: ""),
+                "title" to title,
+                "type" to type.name,
+                "abstract" to abstractText,
+                "doi" to doi
         )
     }
 }

@@ -58,7 +58,7 @@ project(':') {
         // Continue execution even if tests for some of the sub-projects failed.
         ignoreFailures = true
         maxParallelForks = Runtime.runtime.availableProcessors()
-        maxHeapSize = "1024m"
+        maxHeapSize = "512m"
 
         testLogging.showStandardStreams = true
     }
@@ -69,7 +69,7 @@ project(':') {
 
     version = 'dev'
     mainClassName = "org.jetbrains.bio.pubtrends.Main"
-    applicationDefaultJvmArgs = ["-Xmx32G"]
+    applicationDefaultJvmArgs = ["-Xmx1G"]
 
     shadowJar {
         baseName = 'pubtrends'
