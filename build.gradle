@@ -69,7 +69,7 @@ project(':') {
 
     version = 'dev'
     mainClassName = "org.jetbrains.bio.pubtrends.Main"
-    applicationDefaultJvmArgs = ["-Xmx512m"]
+    applicationDefaultJvmArgs = ["-Xmx1G"]
 
     shadowJar {
         baseName = 'pubtrends'
