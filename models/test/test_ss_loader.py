@@ -1,5 +1,4 @@
 import logging
-import re
 import unittest
 
 from pandas.util.testing import assert_frame_equal
@@ -29,19 +28,9 @@ class TestSemanticScholarLoader(unittest.TestCase):
 
         # Get data via SemanticScholar methods
         cls.pub_df = cls.loader.load_publications(cls.ids)
-        cls.cit_stats_df = cls._load_citations_stats(cls.ids)
+        cls.cit_stats_df = cls.loader.load_citation_stats(cls.ids)
         cls.cit_df = cls.loader.load_citations(cls.ids)
-        cls.cocit_df = cls._load_cocitations(cls.ids)
-
-    @classmethod
-    def _load_citations_stats(cls, ids):
-        cit_stats_df_from_query = cls.loader.load_citation_stats(ids)
-        return cit_stats_df_from_query.sort_values(by=['id', 'year']).reset_index(drop=True)
-
-    @classmethod
-    def _load_cocitations(cls, ids):
-        cocitations = cls.loader.load_cocitations(ids)
-        return cocitations.sort_values(by=['citing', 'cited_1', 'cited_2']).reset_index(drop=True)
+        cls.cocit_df = cls.loader.load_cocitations(cls.ids)
 
     @parameterized.expand([
         ('limit 3, most recent', 3, 'year', ['5a63b4199bb58992882b0bf60bc1b1b3f392e5a5',
@@ -65,7 +54,9 @@ class TestSemanticScholarLoader(unittest.TestCase):
         self.assertEqual(expected_rows, actual_rows, "Number of rows in citations statistics is incorrect")
 
     def test_load_citation_stats_data_frame(self):
-        assert_frame_equal(self.cit_stats_df, cit_stats_df, "Citations statistics is incorrect")
+        assert_frame_equal(self.cit_stats_df.sort_values(by=['id', 'year']).reset_index(drop=True),
+                           cit_stats_df,
+                           "Citations statistics is incorrect")
 
     def test_load_citation_stats_null_year_is_ignored(self):
         expected_ignored_citations = 0
@@ -91,7 +82,7 @@ class TestSemanticScholarLoader(unittest.TestCase):
 
     def test_load_cocitations_data_frame(self):
         expected_cocit_df = raw_cocitations_df
-        actual = self.cocit_df
+        actual = self.cocit_df.sort_values(by=['citing', 'cited_1', 'cited_2']).reset_index(drop=True)
         assert_frame_equal(expected_cocit_df, actual, "Co-citations dataframe is incorrect")
 
     def test_expand(self):
