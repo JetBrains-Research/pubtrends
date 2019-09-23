@@ -51,8 +51,8 @@ class Neo4jDatabaseHandler(
     override fun store(articles: List<PubmedArticle>) {
         val articleParameters = mapOf("articles" to articles.map { it.toNeo4j() })
         val articleCitations = articles.map { it.citationList.toSet().map { cit -> it.pmid to cit } }.flatten()
-        val citationParameters = mapOf("citations" to articleCitations.map {
-            ref -> mapOf("pmid_out" to ref.first, "pmid_in" to ref.second)
+        val citationParameters = mapOf("citations" to articleCitations.map { ref ->
+            mapOf("pmid_out" to ref.first, "pmid_in" to ref.second)
         })
         driver.session().use {
             // Create new or update existing Publication nodes
