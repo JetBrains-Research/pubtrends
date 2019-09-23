@@ -192,7 +192,7 @@ Launch Gunicorn serving Flask app on HTTP port 80, Redis and Celery in container
     ```
     docker run --rm --volume=$(pwd):/pubtrends -t biolabs/pubtrends /bin/bash -c \
     "/usr/lib/postgresql/11/bin/pg_ctl -D /home/user/postgres start; sudo neo4j start; sleep 10s; \
-    source activate pubtrends; cd /pubtrends; python -m pytest --codestyle models;"    
+    source activate pubtrends; cd /pubtrends; python -m pytest --codestyle models;"
     ```
    
 # Authors
