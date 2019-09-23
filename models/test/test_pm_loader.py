@@ -21,8 +21,7 @@ class TestPubmedLoader(unittest.TestCase):
         cls.loader.set_logger(logging.getLogger(__name__))
 
         # Text search is not tested, imitating search results
-        cls.ids = cls.loader.ids = list(map(lambda article: article.pmid, REQUIRED_ARTICLES))
-        cls.loader.values = ', '.join(['({})'.format(i) for i in sorted(cls.ids)])
+        cls.ids = list(map(lambda article: article.pmid, REQUIRED_ARTICLES))
 
         # Reset and load data to the test database
         mock_database_loader = MockDatabaseLoader()

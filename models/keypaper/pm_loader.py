@@ -111,7 +111,6 @@ class PubmedLoader(Loader):
         # Parse aux
         Loader.parse_aux(pub_df)
 
-        # pub_df.dropna(subset=['id', 'title'], inplace=True)
         if np.any(pub_df[['id', 'title']].isna()):
             raise ValueError('Paper must have PMID and title')
 
