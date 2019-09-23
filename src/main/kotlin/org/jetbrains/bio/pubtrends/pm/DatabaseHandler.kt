@@ -6,6 +6,7 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.statements.StatementContext
 import org.jetbrains.exposed.sql.statements.expandArgs
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.io.Closeable
 
 open class PostgresqlDatabaseHandler(
     url: String,
@@ -15,7 +16,7 @@ open class PostgresqlDatabaseHandler(
     password: String,
     private val resetDatabase: Boolean
 
-) : AbstractDBHandler {
+) : AbstractDBHandler, Closeable {
     companion object Log4jSqlLogger : SqlLogger {
         private val logger = LogManager.getLogger(Log4jSqlLogger::class)
 
@@ -102,4 +103,10 @@ open class PostgresqlDatabaseHandler(
             }
         }
     }
+
+    /**
+     * Dummy function in order to implement Closeable interface.
+     * No actions are needed in fact, Exposed should manage the connection pool.
+     */
+    override fun close() { }
 }
