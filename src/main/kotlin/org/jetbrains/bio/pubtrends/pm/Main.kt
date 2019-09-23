@@ -110,7 +110,6 @@ fun main(args: Array<String>) {
                 }
             }
 
-            dbHandler.close()
             logger.info("Done crawling.")
         }
     }
