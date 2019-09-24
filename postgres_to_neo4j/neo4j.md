@@ -12,13 +12,6 @@ Configure Neo4j
 
     ```
   
-Data should be post processed:
-    
-    ```
-    cat pmpublications.tsv | sed "s#\"\"#'#g" | sed 's#"##g' > pmpublications_quotes.tsv
-    cat sspublications.tsv | sed "s#\"\"#'#g" | sed 's#"##g' > sspublications_quotes.tsv
-    ```  
-
 * Connect into Neo4j Docker container interactively 
 
     ```
