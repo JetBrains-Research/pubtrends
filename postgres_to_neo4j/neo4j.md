@@ -8,7 +8,7 @@ Configure Neo4j
 * Export data from PostgreSQL to csv format
 
     ```
-    psql postgres://user:password@host:5432/pubtrends -f export_twitter_to_csv.psql;
+    psql postgres://user:password@host:5432/pubtrends -f export_to_csv.psql;
 
     ```
   
