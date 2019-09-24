@@ -2,5 +2,5 @@
 \COPY (SELECT pmid_out, pmid_in FROM pmcitations) to 'pmcitations.tsv' WITH csv DELIMITER E'\t';
 
 # use tabs, because text may contain lots of commas
-\COPY (SELECT ssid, pmid, title, abstract, year, doi, source, keywords, aux from sspublications) to 'sspublications.tsv' WITH csv DELIMITER E'\t';
+\COPY (SELECT ssid, pmid, regexp_replace(title, E'[\\n\\r\\t]+', ' ', 'g'), regexp_replace(abstract, E'[\\n\\r\\t]+', ' ', 'g'), year, doi, source, keywords, aux from sspublications) to 'sspublications.tsv' WITH csv DELIMITER E'\t';
 \COPY (SELECT id_out, id_in FROM sscitations) to 'sscitations.tsv' WITH csv DELIMITER E'\t';
