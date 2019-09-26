@@ -11,7 +11,7 @@ class ParserTest {
     companion object {
         private val dbHandler = MockDBHandler()
         private val parser = PubmedXMLParser(dbHandler, 0, 1000)
-        private val testXMLFileName = "articlesForParserTest.xml"
+        private const val testXMLFileName = "articlesForParserTest.xml"
 
         init {
             this::class.java.classLoader.getResourceAsStream(testXMLFileName)?.let {
@@ -23,7 +23,7 @@ class ParserTest {
             }
         }
 
-        private val articleMap = parser.articleList.associate { Pair(it.pmid, it) }
+        private val articleMap = parser.articleList.associateBy { it.pmid }
 
         @AfterClass
         @JvmStatic
@@ -159,19 +159,19 @@ class ParserTest {
     @Test
     fun testParseDatabankNames() {
         assertEquals(Articles.articles[420880]?.auxInfo?.databanks?.map { it.name },
-            articleMap[420880]?.auxInfo?.databanks?.map { it.name })
+                articleMap[420880]?.auxInfo?.databanks?.map { it.name })
     }
 
     @Test
     fun testParseAccessionNumberCount() {
         assertEquals(Articles.articles[420880]?.auxInfo?.databanks?.map { it.accessionNumber.size },
-            articleMap[420880]?.auxInfo?.databanks?.map { it.accessionNumber.size })
+                articleMap[420880]?.auxInfo?.databanks?.map { it.accessionNumber.size })
     }
 
     @Test
     fun testParseAccessionNumbers() {
         assertEquals(Articles.articles[420880]?.auxInfo?.databanks?.map { it.accessionNumber },
-            articleMap[420880]?.auxInfo?.databanks?.map { it.accessionNumber })
+                articleMap[420880]?.auxInfo?.databanks?.map { it.accessionNumber })
     }
 
     @Test
@@ -182,27 +182,33 @@ class ParserTest {
     @Test
     fun testParseAuthorCount() {
         assertEquals(
-            Articles.articles[29456534]?.auxInfo?.authors?.size,
-            articleMap[29456534]?.auxInfo?.authors?.size
+                Articles.articles[29456534]?.auxInfo?.authors?.size,
+                articleMap[29456534]?.auxInfo?.authors?.size
         )
     }
 
     @Test
     fun testParseAuthorNames() {
         assertEquals(Articles.articles[29456534]?.auxInfo?.authors?.map { it.name },
-            articleMap[29456534]?.auxInfo?.authors?.map { it.name })
+                articleMap[29456534]?.auxInfo?.authors?.map { it.name })
+    }
+
+    @Test
+    fun testParseAuthorCollectiveName() {
+        assertEquals(Articles.articles[621131]?.auxInfo?.authors?.map { it.name },
+                articleMap[621131]?.auxInfo?.authors?.map { it.name })
     }
 
     @Test
     fun testParseAuthorAffiliationCount() {
         assertEquals(Articles.articles[29456534]?.auxInfo?.authors?.map { it.affiliation.size },
-            articleMap[29456534]?.auxInfo?.authors?.map { it.affiliation.size })
+                articleMap[29456534]?.auxInfo?.authors?.map { it.affiliation.size })
     }
 
     @Test
     fun testParseAuthorAffiliations() {
         assertEquals(Articles.articles[29456534]?.auxInfo?.authors?.map { it.affiliation },
-            articleMap[29456534]?.auxInfo?.authors?.map { it.affiliation })
+                articleMap[29456534]?.auxInfo?.authors?.map { it.affiliation })
     }
 
     @Test
