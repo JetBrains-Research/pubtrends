@@ -3,7 +3,9 @@ package org.jetbrains.bio.pubtrends.pm
 import org.apache.logging.log4j.LogManager
 import org.joda.time.DateTime
 import org.joda.time.IllegalFieldValueException
-import java.io.*
+import java.io.BufferedInputStream
+import java.io.File
+import java.io.FileInputStream
 import java.util.zip.GZIPInputStream
 import javax.xml.namespace.QName
 import javax.xml.stream.XMLEventReader
@@ -43,6 +45,7 @@ class PubmedXMLParser(
         const val AUTHOR_TAG = "$MEDLINE_CITATION_TAG/Article/AuthorList/Author"
         const val AUTHOR_LASTNAME_TAG = "$AUTHOR_TAG/LastName"
         const val AUTHOR_INITIALS_TAG = "$AUTHOR_TAG/Initials"
+        const val AUTHOR_COLLECTIVE_NAME_TAG = "$AUTHOR_TAG/CollectiveName"
         const val AUTHOR_AFFILIATION_TAG = "$AUTHOR_TAG/AffiliationInfo/Affiliation"
 
         const val CITATION_PMID_TAG = "$PUBMED_DATA_TAG/ReferenceList/Reference/ArticleIdList/ArticleId"
@@ -344,6 +347,9 @@ class PubmedXMLParser(
                     }
                     fullName == AUTHOR_INITIALS_TAG -> {
                         authorName += " ${dataElement.data}"
+                    }
+                    fullName == AUTHOR_COLLECTIVE_NAME_TAG -> {
+                        authorName = dataElement.data
                     }
                     fullName == AUTHOR_AFFILIATION_TAG -> {
                         authorAffiliations.add(dataElement.data.trim(' ', '.'))
