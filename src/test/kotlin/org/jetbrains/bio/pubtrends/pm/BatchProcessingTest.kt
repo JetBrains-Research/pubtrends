@@ -12,7 +12,6 @@ class BatchProcessingTest(private val batchSize : Int) {
     fun testBatchSize() {
         val parser = PubmedXMLParser(dbHandler, 0, batchSize)
 
-        val testXMLFileName = "articlesForParserTest.xml"
         this::class.java.classLoader.getResourceAsStream(testXMLFileName)?.let {
             val file = createTempFile()
             file.outputStream().use {out ->
@@ -21,20 +20,22 @@ class BatchProcessingTest(private val batchSize : Int) {
             parser.parse(file.absolutePath)
         }
 
-        assertEquals(12, dbHandler.articlesStored)
+        assertEquals(articlesCount, dbHandler.articlesStored)
         dbHandler.articlesStored = 0
     }
 
     companion object {
         private val dbHandler = MockDBHandler(batch = true)
+        const val testXMLFileName = "articlesForParserTest.xml"
+        val articlesCount = Articles.articles.size
 
         @Parameterized.Parameters(name = "batchSize={0}")
         @JvmStatic fun data() = listOf(
                 0,  // default value - save all at once
-                3,  // 12 % 3 = 0
-                5,  // 12 % 5 != 0
-                12, // equal to the amount of articles
-                20  // more than amount of articles
+                1,  // count % 1 = 0
+                articlesCount - 1,  // count % (count - 1) != 0
+                articlesCount, // equal to the amount of articles
+                2 * articlesCount  // more than amount of articles
         )
     }
 }
