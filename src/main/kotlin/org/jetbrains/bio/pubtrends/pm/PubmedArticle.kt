@@ -56,7 +56,8 @@ data class PubmedArticle(
                 "title" to title.replace('\n', ' '),
                 "type" to type.name,
                 "abstract" to abstractText.replace('\n', ' '),
-                "doi" to doi
+                "doi" to doi,
+                "language" to auxInfo.language
         )
     }
 }
