@@ -6,7 +6,7 @@ A tool for analysis of trends & pivotal points in the scientific literature.
 ## Prerequisites
 
 * JDK 8+
-* PostgreSQL 11+
+* PostgreSQL 11+ (or neo4j 3.5.9 with APOC 3.5.0.4)
 * Conda
 * Python 3.6+
 * Docker
@@ -68,6 +68,16 @@ Ensure that file contains correct information about the database (url, port, DB 
    ```
    host all all 0.0.0.0/0 md5
    ```
+   
+6. If neo4j is used, install APOC extension:
+
+   * Download the [latest release](https://github.com/neo4j-contrib/neo4j-apoc-procedures/releases/tag/3.5.0.4) of APOC
+   * Move the binary JAR into your `$NEO4J_HOME/plugins` folder
+   * Add `apoc.*` at the end of `dbms.security.procedures.unrestricted=` line of `$NEO4J_HOME/conf/neo4j.conf` to allow 
+   usage of the procedures.
+   
+   Full information including instructions for usage with Docker can be found 
+   [here](https://github.com/neo4j-contrib/neo4j-apoc-procedures/tree/3.5.0.4).  
    
 ## Build
 

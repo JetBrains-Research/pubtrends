@@ -39,7 +39,8 @@ class Neo4jDatabaseHandler(
      */
     private fun reset() {
         driver.session().use {
-            it.run("MATCH (n) DETACH DELETE n;", TRANSACTION_CONFIG)
+            it.run("CALL apoc.periodic.iterate(\"MATCH (n) RETURN n\", " +
+                    "\"DETACH DELETE n\", {batchSize: 10000});", TRANSACTION_CONFIG)
         }
     }
 
@@ -57,8 +58,8 @@ class Neo4jDatabaseHandler(
         val citationParameters = mapOf("citations" to articleCitations.map { ref ->
             mapOf("pmid_out" to ref.first, "pmid_in" to ref.second)
         })
-        val journalParameters = mapOf("journals" to articleJournal.map {
-            pub -> mapOf("pmid" to pub.key, "name" to pub.value)
+        val journalParameters = mapOf("journals" to articleJournal.map { pub ->
+            mapOf("pmid" to pub.key, "name" to pub.value)
         })
         driver.session().use {
             // Create new or update existing Publication nodes
