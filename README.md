@@ -194,6 +194,5 @@ See [AUTHORS.md](AUTHORS.md) for a list of authors and contributors.
 
 # Materials
 
-* Project presentation at [Computer Science Center](https://my.compscicenter.ru/media/projects/2019-spring/758/presentations/participants.pdf)
-* Project [workflow](https://docs.google.com/presentation/d/1rIVxEmpJhQWfFXsIWMwg9vZsKSTDEv7Whxe39EuJn60/edit#slide=id.p)
+* Latest project [presentation](https://docs.google.com/presentation/d/131qvkEnzzmpx7-I0rz1om6TG7bMBtYwU9T1JNteRIEs/edit?usp=sharing)
 * JetBrains Research BioLabs [homepage](https://research.jetbrains.org/groups/biolabs)
