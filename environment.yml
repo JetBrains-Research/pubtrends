@@ -6,7 +6,6 @@ channels:
   - bokeh
 dependencies:
   - bokeh=1.3.4
-  - biopython=1.73
   - celery=4.4.0rc1
   - ipywidgets=7.5.0
   - holoviews=1.12.3
