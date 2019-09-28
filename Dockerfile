@@ -30,10 +30,15 @@ RUN wget --quiet --no-check-certificate -O - https://debian.neo4j.org/neotechnol
     && echo 'deb http://debian.neo4j.org/repo stable/' > /etc/apt/sources.list.d/neo4j.list \
     && apt-get update && apt-get install --no-install-recommends -y neo4j
 
+# Install neo4j APOC library
+RUN wget --quiet --no-check-certificate -P /var/lib/neo4j/plugins \
+    https://github.com/neo4j-contrib/neo4j-apoc-procedures/releases/download/3.5.0.4/apoc-3.5.0.4-all.jar
+
 # Configure neo4j
 RUN sed -i "s/#dbms.connectors.default_listen_address=0.0.0.0/dbms.connectors.default_listen_address=0.0.0.0/g" /etc/neo4j/neo4j.conf \
     && sed -i "s/#dbms.security.allow_csv_import_from_file_urls=true/dbms.security.allow_csv_import_from_file_urls=true/g" /etc/neo4j/neo4j.conf \
-    && sed -i "s#dbms.directories.import=/var/lib/neo4j/import#dbms.directories.import=/pubtrends#g" /etc/neo4j/neo4j.conf
+    && sed -i "s#dbms.directories.import=/var/lib/neo4j/import#dbms.directories.import=/pubtrends#g" /etc/neo4j/neo4j.conf \
+    && sed -i "s/#dbms.security.procedures.unrestricted=my.extensions.example,my.procedures.*/dbms.security.procedures.unrestricted=apoc.*/g" /etc/neo4j/neo4j.conf
 # Initial password for neo4j user
 RUN neo4j-admin set-initial-password password
 # Expose Neo4j bolt port

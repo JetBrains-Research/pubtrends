@@ -177,7 +177,7 @@ Launch Gunicorn serving Flask app on HTTP port 80, Redis and Celery in container
 1. Start Docker image with Postgres and Neo4j for tests
 
     ```
-    docker run --rm --name pubtrends-docker docker run \
+    docker run --rm --name pubtrends-docker \
     --publish=5433:5432 --publish=7474:7474 --publish=7687:7687 \
     --volume=$(pwd):/pubtrends -d -t biolabs/pubtrends
     ```
