@@ -505,6 +505,17 @@ class PubmedXMLParser(
     private fun storeArticles() {
         logger.info("Storing articles ${articlesStored + 1}-${articlesStored + articleList.size}...")
 
+        // Count objects to estimate neo4j load
+        val articles = articleList.size
+        val authorSet = articleList.map { it.auxInfo.authors }.flatten().toSet()
+        val authors = authorSet.size
+        val journals = articleList.map { it.auxInfo.journal.name }.toSet().size
+        val affiliations = authorSet.map { it.affiliation }.flatten().toSet().size
+        val databanks = articleList.map { it.auxInfo.databanks }.flatten().toSet().size
+
+        logger.info("$articles articles, $authors authors, $journals journals, " +
+                "$affiliations affiliations, $databanks databanks")
+
         dbHandler.store(articleList)
         articlesStored += articleList.size
     }
