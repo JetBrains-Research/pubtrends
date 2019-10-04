@@ -157,15 +157,11 @@ class ParserTest {
     }
 
     @Test
-    fun testParseDatabankNames() {
+    fun testParseDatabanks() {
         assertEquals(Articles.articles[420880]?.auxInfo?.databanks?.map { it.name },
                 articleMap[420880]?.auxInfo?.databanks?.map { it.name })
-    }
-
-    @Test
-    fun testParseAccessionNumberCount() {
-        assertEquals(Articles.articles[420880]?.auxInfo?.databanks?.map { it.accessionNumber.size },
-                articleMap[420880]?.auxInfo?.databanks?.map { it.accessionNumber.size })
+        assertEquals(Articles.articles[420880]?.auxInfo?.databanks?.map { it.accessionNumber },
+                articleMap[420880]?.auxInfo?.databanks?.map { it.accessionNumber })
     }
 
     @Test
