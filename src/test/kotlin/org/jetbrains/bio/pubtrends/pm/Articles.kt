@@ -19,11 +19,27 @@ object Articles {
                             databanks = listOf(
                                     DatabankEntry(
                                             name = "GENBANK",
-                                            accessionNumber = listOf("AF321191", "AF321192")
+                                            accessionNumber = "AF321191"
+                                    ),
+                                    DatabankEntry(
+                                            name = "GENBANK",
+                                            accessionNumber = "AF321192"
                                     ),
                                     DatabankEntry(
                                             name = "OMIM",
-                                            accessionNumber = listOf("118200", "145900", "162500", "605253")
+                                            accessionNumber = "118200"
+                                    ),
+                                    DatabankEntry(
+                                            name = "OMIM",
+                                            accessionNumber = "145900"
+                                    ),
+                                    DatabankEntry(
+                                            name = "OMIM",
+                                            accessionNumber = "162500"
+                                    ),
+                                    DatabankEntry(
+                                            name = "OMIM",
+                                            accessionNumber = "605253"
                                     )
                             ),
                             journal = Journal("Biokhimiia (Moscow, Russia)"),

@@ -11,7 +11,7 @@ data class Journal(val name: String = "")
 
 data class DatabankEntry(
         val name: String = "",
-        val accessionNumber: List<String> = listOf()
+        val accessionNumber: String = ""
 )
 
 data class ArticleAuxInfo(
