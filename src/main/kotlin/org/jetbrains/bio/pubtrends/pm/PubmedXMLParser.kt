@@ -124,7 +124,7 @@ class PubmedXMLParser(
 
         val databanks = mutableListOf<DatabankEntry>()
         var databankName = ""
-        val databankAccessionNumbers = mutableListOf<String>()
+        var accessionNumber = ""
 
         val keywordList = mutableListOf<String>()
         val citationList = mutableListOf<Int>()
@@ -182,7 +182,6 @@ class PubmedXMLParser(
 
                         databanks.clear()
                         databankName = ""
-                        databankAccessionNumbers.clear()
 
                         keywordList.clear()
                         citationList.clear()
@@ -214,7 +213,6 @@ class PubmedXMLParser(
                     // Databanks
                     DATABANK_TAG -> {
                         databankName = ""
-                        databankAccessionNumbers.clear()
                     }
 
                     // DOI
@@ -326,7 +324,7 @@ class PubmedXMLParser(
                         databankName = dataElement.data
                     }
                     fullName == ACCESSION_NUMBER_TAG -> {
-                        databankAccessionNumbers.add(dataElement.data)
+                        accessionNumber = dataElement.data
                     }
 
                     // MeSH
@@ -447,10 +445,10 @@ class PubmedXMLParser(
                     }
 
                     // Databanks
-                    DATABANK_TAG -> {
+                    ACCESSION_NUMBER_TAG -> {
                         databanks.add(
                                 DatabankEntry(
-                                        databankName, databankAccessionNumbers.toList()
+                                        databankName, accessionNumber
                                 )
                         )
                     }
