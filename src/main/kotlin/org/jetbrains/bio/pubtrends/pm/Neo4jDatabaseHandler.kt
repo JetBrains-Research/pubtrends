@@ -6,7 +6,7 @@ import org.neo4j.driver.v1.TransactionConfig
 import java.io.Closeable
 import java.time.Duration
 
-class Neo4jDatabaseHandler(
+open class Neo4jDatabaseHandler(
         url: String,
         port: Int,
         user: String,
@@ -43,7 +43,7 @@ class Neo4jDatabaseHandler(
     /**
      * This function can be used to wipe contents of the database.
      */
-    private fun reset() {
+    internal fun reset() {
         driver.session().use {
             it.run("CALL apoc.periodic.iterate(\"MATCH (n) RETURN n\", " +
                     "\"DETACH DELETE n\", {batchSize: $DELETE_BATCH_SIZE});", RESET_TRANSACTION_CONFIG)
