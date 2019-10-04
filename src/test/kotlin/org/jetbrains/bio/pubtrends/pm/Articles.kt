@@ -289,6 +289,21 @@ object Articles {
                             16136655, 21935414, 18024004, 16683862, 21865245, 22367748, 18923393, 22920560, 18715673, 19582169,
                             21148394, 20525591, 21424613, 24726347, 20843846, 22105867, 21616882, 18692373, 18705878, 9866200,
                             11752195, 20807414, 20626842, 17726520, 17846036, 18451057, 20520714, 21289104
+                    ),
+                    auxInfo = ArticleAuxInfo(
+                            authors = listOf(
+                                    Author(
+                                            name = "Matari NH",
+                                            affiliation = listOf()
+                                    ),
+                                    Author(
+                                            name = "Blair JE",
+                                            affiliation = listOf(
+                                                    "Department of Biology, Franklin & Marshall College, " +
+                                                            "Lancaster, PA, USA. jaime.blair@fandm.edu"
+                                            )
+                                    )
+                            )
                     )
             ),
 

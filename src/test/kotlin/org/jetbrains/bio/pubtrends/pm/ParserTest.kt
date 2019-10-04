@@ -208,6 +208,12 @@ class ParserTest {
     }
 
     @Test
+    fun testParseAuthorAffiliationsWithInnerXMLTags() {
+        assertEquals(Articles.articles[24884411]?.auxInfo?.authors?.map { it.affiliation },
+                articleMap[24884411]?.auxInfo?.authors?.map { it.affiliation })
+    }
+
+    @Test
     fun testParseJournal() {
         assertEquals(Articles.articles[420880]?.auxInfo?.journal?.name, articleMap[420880]?.auxInfo?.journal?.name)
     }
