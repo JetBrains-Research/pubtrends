@@ -117,6 +117,7 @@ class PubmedXMLParser(
         var day = 1
         var title = ""
         var abstractText = ""
+        var affiliation = ""
 
         val authors = mutableListOf<Author>()
         var authorName = ""
@@ -141,6 +142,7 @@ class PubmedXMLParser(
         var isAbstractStructured = false
         var isArticleTitleParsed = false
         var isAbstractTextParsed = false
+        var isAuthorAffiliationParsed = false
         var isCitationPMIDFound = false
         var isDOIFound = false
 
@@ -166,6 +168,7 @@ class PubmedXMLParser(
                         isAbstractStructured = false
                         isArticleTitleParsed = false
                         isAbstractTextParsed = false
+                        isAuthorAffiliationParsed = false
                         isCitationPMIDFound = false
                         isDOIFound = false
 
@@ -175,6 +178,7 @@ class PubmedXMLParser(
                         day = 1
                         title = ""
                         abstractText = ""
+                        affiliation = ""
 
                         authors.clear()
                         authorName = ""
@@ -195,6 +199,9 @@ class PubmedXMLParser(
                     AUTHOR_TAG -> {
                         authorName = ""
                         authorAffiliations.clear()
+                    }
+                    AUTHOR_AFFILIATION_TAG -> {
+                        affiliation = ""
                     }
                     ABSTRACT_TAG -> {
                         if (startElement.attributes.hasNext()) {
@@ -349,8 +356,13 @@ class PubmedXMLParser(
                     fullName == AUTHOR_COLLECTIVE_NAME_TAG -> {
                         authorName = dataElement.data
                     }
+
+                    // Affiliations
+                    isAuthorAffiliationParsed -> {
+                        affiliation += dataElement.data
+                    }
                     fullName == AUTHOR_AFFILIATION_TAG -> {
-                        authorAffiliations.add(dataElement.data.trim(' ', '.'))
+                        affiliation += dataElement.data
                     }
 
                     // Other information - journal title, language, DOI, publication type
@@ -434,6 +446,9 @@ class PubmedXMLParser(
                                         authorName, authorAffiliations.toList()
                                 )
                         )
+                    }
+                    AUTHOR_AFFILIATION_TAG -> {
+                        authorAffiliations.add(affiliation.trim(' ', '.'))
                     }
 
                     // Fix title & abstract
