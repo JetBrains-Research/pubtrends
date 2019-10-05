@@ -2588,6 +2588,97 @@
             </ArticleIdList>
         </PubmedData>
     </PubmedArticle>
+    <PubmedArticle>
+        <MedlineCitation Status="MEDLINE" Owner="NLM">
+            <PMID Version="1">27560010</PMID>
+            <DateCompleted>
+                <Year>2017</Year>
+                <Month>01</Month>
+                <Day>30</Day>
+            </DateCompleted>
+            <DateRevised>
+                <Year>2017</Year>
+                <Month>01</Month>
+                <Day>30</Day>
+            </DateRevised>
+            <Article PubModel="Print">
+                <Journal>
+                    <ISSN IssnType="Electronic">1532-3145</ISSN>
+                    <JournalIssue CitedMedium="Internet">
+                        <Volume>40</Volume>
+                        <Issue>5</Issue>
+                        <PubDate>
+                            <MedlineDate>2016 Sep-Oct</MedlineDate>
+                        </PubDate>
+                    </JournalIssue>
+                    <Title>Journal of computer assisted tomography</Title>
+                    <ISOAbbreviation>J Comput Assist Tomogr</ISOAbbreviation>
+                </Journal>
+                <ArticleTitle>Dynamic Contrast-Enhanced Magnetic Resonance Imaging With Gadolinium Ethoxybenzyl Diethylenetriamine Pentaacetic Acid for Quantitative Assessment of Vascular Effects on Hepatocellular-Carcinoma Lesions Treated by Transarterial Chemoembolization or Radiofrequency Ablation.</ArticleTitle>
+                <Pagination>
+                    <MedlinePgn>692-700</MedlinePgn>
+                </Pagination>
+                <ELocationID EIdType="doi" ValidYN="Y">10.1097/RCT.0000000000000427</ELocationID>
+                <Abstract>
+                    <AbstractText Label="PURPOSE" NlmCategory="OBJECTIVE">The aim of this study was to investigate the role of dynamic contrast-enhanced magnetic resonance imaging (MRI) in evaluation of blood flow changes related to transarterial chemoembolization (TACE) and radiofrequency ablation (RFA) procedures in patients with hepatocellular carcinoma (HCC) lesions.</AbstractText>
+                    <AbstractText Label="METHODS" NlmCategory="METHODS">Fifty-four patients, with biopsy-proven HCC, who underwent TACE or RFA, were evaluated, 1 month after treatment, with upper abdominal MRI examination. Multiplanar T2-weighted, T1-weighted, and dynamic contrast-enhanced sequences were acquired. Dedicated perfusion software (T1 Perfusion Package, Viewforum; Philips Medical Systems, The Netherlands) was used to generate color permeability maps. After placing regions of interest in normal hepatic parenchyma, in successfully treated lesions, and in area of recurrence, the following perfusion parameters were calculated and statistically analyzed: relative arterial, venous, and late enhancement; maximum enhancement; maximum relative enhancement, and time to peak.</AbstractText>
+                    <AbstractText Label="RESULTS" NlmCategory="RESULTS">Twenty-one of 54 patients had residual disease, and perfusion parameters values measured within tumor tissue were: relative arterial enhancement median, 42%; relative venous enhancement median, 69%; relative late enhancement median, 57.7%; maximum enhancement median, 749.6%; maximum relative enhancement median, 69%; time to peak median, 81.1 seconds. As for all the evaluated parameters, a significant difference (P &lt; 0.05) was found between residual viable tumor tissue and effective treated lesions.</AbstractText>
+                    <AbstractText Label="CONCLUSIONS" NlmCategory="CONCLUSIONS">Dynamic contrast-enhanced MRI represents a complementary noninvasive tool that may offer quantitative and qualitative information about HCC lesions treated with TACE and RFA.</AbstractText>
+                </Abstract>
+                <AuthorList CompleteYN="Y">
+                    <Author ValidYN="Y">
+                        <LastName>Ippolito</LastName>
+                        <ForeName>Davide</ForeName>
+                        <Initials>D</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>From the *School of Medicine, University of Milano-Bicocca, Milan; and †Department of Diagnostic Radiology, H. S. Gerardo; ‡Department of Interventional Radiology, San Gerardo Hospital, Monza, Milan, Italy.</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
+                </AuthorList>
+                <Language>eng</Language>
+                <PublicationTypeList>
+                    <PublicationType UI="D018848">Controlled Clinical Trial</PublicationType>
+                    <PublicationType UI="D016428">Journal Article</PublicationType>
+                </PublicationTypeList>
+            </Article>
+            <MedlineJournalInfo>
+                <Country>United States</Country>
+                <MedlineTA>J Comput Assist Tomogr</MedlineTA>
+                <NlmUniqueID>7703942</NlmUniqueID>
+                <ISSNLinking>0363-8715</ISSNLinking>
+            </MedlineJournalInfo>
+        </MedlineCitation>
+        <PubmedData>
+            <History>
+                <PubMedPubDate PubStatus="entrez">
+                    <Year>2016</Year>
+                    <Month>8</Month>
+                    <Day>26</Day>
+                    <Hour>6</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="pubmed">
+                    <Year>2016</Year>
+                    <Month>8</Month>
+                    <Day>26</Day>
+                    <Hour>6</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="medline">
+                    <Year>2017</Year>
+                    <Month>1</Month>
+                    <Day>31</Day>
+                    <Hour>6</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+            </History>
+            <PublicationStatus>ppublish</PublicationStatus>
+            <ArticleIdList>
+                <ArticleId IdType="pubmed">27560010</ArticleId>
+                <ArticleId IdType="doi">10.1097/RCT.0000000000000427</ArticleId>
+            </ArticleIdList>
+        </PubmedData>
+    </PubmedArticle>
     <DeleteCitation>
         <PMID Version="1">12345</PMID>
         <PMID Version="1">23456</PMID>
