@@ -329,6 +329,23 @@ object Articles {
                                     )
                             )
                     )
+            ),
+
+            27560010 to PubmedArticle(
+                    pmid = 27560010,
+                    auxInfo = ArticleAuxInfo(
+                            authors = listOf(
+                                    Author(
+                                            name = "Ippolito D",
+                                            affiliation = listOf(
+                                                    "From the *School of Medicine, University of Milano-Bicocca, Milan",
+                                                    "and †Department of Diagnostic Radiology, H. S. Gerardo",
+                                                    "‡Department of Interventional Radiology, San Gerardo Hospital, " +
+                                                            "Monza, Milan, Italy"
+                                            )
+                                    )
+                            )
+                    )
             )
     )
 }
