@@ -208,6 +208,17 @@ class ParserTest {
     }
 
     @Test
+    fun testParseAuthorAffiliationsIgnoreEmpty() {
+        assertTrue(Articles.articles[24884411]?.auxInfo?.authors?.first()?.affiliation?.isEmpty()!!)
+    }
+
+    @Test
+    fun testParseAuthorAffiliationsSplitMultiple() {
+        assertEquals(Articles.articles[27560010]?.auxInfo?.authors?.map { it.affiliation },
+                articleMap[27560010]?.auxInfo?.authors?.map { it.affiliation })
+    }
+
+    @Test
     fun testParseAuthorAffiliationsWithInnerXMLTags() {
         assertEquals(Articles.articles[24884411]?.auxInfo?.authors?.map { it.affiliation },
                 articleMap[24884411]?.auxInfo?.authors?.map { it.affiliation })

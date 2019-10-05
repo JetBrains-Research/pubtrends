@@ -448,7 +448,12 @@ class PubmedXMLParser(
                         )
                     }
                     AUTHOR_AFFILIATION_TAG -> {
-                        authorAffiliations.add(affiliation.trim(' ', '.'))
+                        affiliation = affiliation.trim(' ', '.')
+                        if (affiliation != "") {
+                            affiliation.split(';').forEach {
+                                authorAffiliations.add(it.trim(' ', '.'))
+                            }
+                        }
                     }
 
                     // Fix title & abstract
