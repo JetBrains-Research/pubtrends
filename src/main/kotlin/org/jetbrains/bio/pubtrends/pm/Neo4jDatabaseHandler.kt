@@ -2,9 +2,7 @@ package org.jetbrains.bio.pubtrends.pm
 
 import org.neo4j.driver.v1.AuthTokens
 import org.neo4j.driver.v1.GraphDatabase
-import org.neo4j.driver.v1.TransactionConfig
 import java.io.Closeable
-import java.time.Duration
 
 open class Neo4jDatabaseHandler(
         url: String,
@@ -15,8 +13,8 @@ open class Neo4jDatabaseHandler(
 ) : AbstractDBHandler, Closeable {
 
     companion object {
-        val TRANSACTION_CONFIG = TransactionConfig.builder().withTimeout(Duration.ofSeconds(300)).build()!!
-        val RESET_TRANSACTION_CONFIG = TransactionConfig.builder().withTimeout(Duration.ofMinutes(300)).build()!!
+//        val TRANSACTION_CONFIG = TransactionConfig.builder().withTimeout(Duration.ofSeconds(300)).build()!!
+//        val RESET_TRANSACTION_CONFIG = TransactionConfig.builder().withTimeout(Duration.ofMinutes(300)).build()!!
         const val PUBLICATION_LABEL = "Publication"
         const val AUTHOR_LABEL = "Author"
         const val AFFILIATION_LABEL = "Affiliation"
@@ -27,7 +25,11 @@ open class Neo4jDatabaseHandler(
         const val WORKS_LABEL = "WORKS_IN"
         const val AUTHORED_LABEL = "AUTHORED"
         const val PUBLISHED_LABEL = "PUBLISHED_IN"
+
         const val DELETE_BATCH_SIZE = 10000
+
+        // Limit length in order to prevent issues with index construction
+        const val MAX_AFFILIATION_LENGTH = 256
     }
 
     // Driver objects should be created with application-wide lifetime
@@ -46,7 +48,7 @@ open class Neo4jDatabaseHandler(
     internal fun reset() {
         driver.session().use {
             it.run("CALL apoc.periodic.iterate(\"MATCH (n) RETURN n\", " +
-                    "\"DETACH DELETE n\", {batchSize: $DELETE_BATCH_SIZE});", RESET_TRANSACTION_CONFIG)
+                    "\"DETACH DELETE n\", {batchSize: $DELETE_BATCH_SIZE});")
         }
     }
 
@@ -67,7 +69,7 @@ open class Neo4jDatabaseHandler(
         val articleDatabanks = articles.map { it.auxInfo.databanks.map { db -> it.pmid to db }}.flatten()
         val articleJournal = articles.associate { Pair(it.pmid, it.auxInfo.journal.name) }
         val authorAffiliations = articles.map { it.auxInfo.authors }.flatten().toSet().map {
-            it.affiliation.map { aff -> it.name to aff }
+            it.affiliation.map { aff -> it.name to aff.take(MAX_AFFILIATION_LENGTH) }
         }.flatten()
 
         // Prepare query parameters
@@ -103,42 +105,42 @@ open class Neo4jDatabaseHandler(
                     "WITH n, data " +
                     "CALL apoc.create.addLabels(id(n), [data.type]) YIELD node " +
                     "RETURN node;",
-                    articleParameters, TRANSACTION_CONFIG)
+                    articleParameters)
 
             // Add citation relationships AND create new Publication nodes with pmid only if missing
             it.run("UNWIND {citations} AS cit " +
                     "MATCH (n_out:$PUBLICATION_LABEL { pmid: toInteger(cit.pmid_out) }) " +
                     "MERGE (n_in:$PUBLICATION_LABEL { pmid: toInteger(cit.pmid_in) }) " +
                     "MERGE (n_out)-[:$CITES_LABEL]->(n_in);",
-                    citationParameters, TRANSACTION_CONFIG)
+                    citationParameters)
 
             // Add authoring relationships AND create new Author nodes if missing
             it.run("UNWIND {authors} AS auth " +
                     "MATCH (p:$PUBLICATION_LABEL { pmid: toInteger(auth.pmid) }) " +
                     "MERGE (a:$AUTHOR_LABEL { name: auth.name }) " +
                     "MERGE (a)-[:$AUTHORED_LABEL]->(p);",
-                    authorParameters, TRANSACTION_CONFIG)
+                    authorParameters)
 
             // Add working relationships AND create new Affiliation nodes if missing
             it.run("UNWIND {affiliations} AS aff " +
                     "MATCH (author:$AUTHOR_LABEL { name: aff.name }) " +
                     "MERGE (affiliation:$AFFILIATION_LABEL { name: aff.affiliation }) " +
                     "MERGE (author)-[:$WORKS_LABEL]->(affiliation);",
-                    affiliationParameters, TRANSACTION_CONFIG)
+                    affiliationParameters)
 
             // Add publishing relationships AND create new Journal nodes if missing
             it.run("UNWIND {journals} AS pub " +
                     "MATCH (n:$PUBLICATION_LABEL { pmid: toInteger(pub.pmid) }) " +
                     "MERGE (j:$JOURNAL_LABEL { name: pub.name }) " +
                     "MERGE (n)-[:$PUBLISHED_LABEL]->(j);",
-                    journalParameters, TRANSACTION_CONFIG)
+                    journalParameters)
 
             // Add using relationships AND create new Databank nodes if missing
             it.run("UNWIND {databanks} AS db " +
                     "MATCH (p:$PUBLICATION_LABEL { pmid: toInteger(db.pmid) }) " +
                     "MERGE (d:$DATABANK_LABEL { name: db.name, accessionNumber: db.accessionNumber }) " +
                     "MERGE (p)-[:$USES_LABEL]->(d);",
-                    databanksParameters, TRANSACTION_CONFIG)
+                    databanksParameters)
         }
     }
 
@@ -152,7 +154,7 @@ open class Neo4jDatabaseHandler(
         driver.session().use {
             it.run("UNWIND {pmids} AS pmid\n" +
                     "MATCH (n:Publication {pmid: pmid})\n" +
-                    "DETACH DELETE n;", deleteParameters, TRANSACTION_CONFIG)
+                    "DETACH DELETE n;", deleteParameters)
         }
     }
 

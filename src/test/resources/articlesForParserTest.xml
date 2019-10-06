@@ -2428,6 +2428,14 @@
                             <Affiliation>From the *School of Medicine, University of Milano-Bicocca, Milan; and †Department of Diagnostic Radiology, H. S. Gerardo; ‡Department of Interventional Radiology, San Gerardo Hospital, Monza, Milan, Italy.</Affiliation>
                         </AffiliationInfo>
                     </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Ippolito</LastName>
+                        <ForeName>Davide</ForeName>
+                        <Initials>D</Initials>
+                        <AffiliationInfo>
+                            <Affiliation>Clermont-Ferrand University Hospital, Clermont-Ferrand, France (n = 67) Clermont-Ferrand University Hospital, Clermont-Ferrand, France (n = 67) Toulouse University Hospital, Toulouse, France (n = 66) Assistance Publique- Hôpitaux de Marseille, Marseille, France (n = 64)</Affiliation>
+                        </AffiliationInfo>
+                    </Author>
                 </AuthorList>
                 <Language>eng</Language>
                 <PublicationTypeList>
