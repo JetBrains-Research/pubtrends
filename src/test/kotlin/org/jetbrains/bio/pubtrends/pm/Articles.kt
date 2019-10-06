@@ -343,6 +343,14 @@ object Articles {
                                                     "‡Department of Interventional Radiology, San Gerardo Hospital, " +
                                                             "Monza, Milan, Italy"
                                             )
+                                    ),
+                                    Author(
+                                            name = "Ippolito D",
+                                            affiliation = listOf(
+                                                    "Clermont-Ferrand University Hospital, Clermont-Ferrand, France",
+                                                    "Toulouse University Hospital, Toulouse, France",
+                                                    "Assistance Publique- Hôpitaux de Marseille, Marseille, France"
+                                            )
                                     )
                             )
                     )
