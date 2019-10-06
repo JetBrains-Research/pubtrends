@@ -448,10 +448,16 @@ class PubmedXMLParser(
                         )
                     }
                     AUTHOR_AFFILIATION_TAG -> {
-                        affiliation = affiliation.trim(' ', '.')
+                        // Affiliation parsing can be painful in some cases
+                        // Currently affiliation is split by ; and (n = N) tokens,
+                        // some more tokens may be introduced later
+                        // Empty or "." affiliations are ignored
+                        val regex = "\\(n = \\d+\\)|;".toRegex()
                         if (affiliation != "") {
-                            affiliation.split(';').forEach {
-                                authorAffiliations.add(it.trim(' ', '.'))
+                            affiliation.split(regex).map { it.trim(' ', '.') }.toSet().forEach {
+                                if (it.isNotEmpty()) {
+                                    authorAffiliations.add(it)
+                                }
                             }
                         }
                     }
