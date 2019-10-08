@@ -247,9 +247,9 @@
                         {% endfor %}
                     </div>
                     <br>
-                    <p>Violin plots demonstrate averaged publication time on given topic.</p>
+                    <p>Each boxplot demonstrates summary publication year for given topic.</p>
                     <div>
-                        {% for script, div in component_size_summary_violin %}
+                        {% for script, div in component_years_summary_boxplots %}
                         {{ script|safe }}
                         {{ div|safe }}
                         {% endfor %}

@@ -247,8 +247,8 @@ class Plotter:
 
         return p
 
-    def component_size_summary_violin(self):
-        logging.info('Summary component detailed info visualization on violin plot')
+    def component_years_summary_boxplots(self):
+        logging.info('Summary component year detailed info visualization on boxplot')
 
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
         components, data = PlotPreprocessor.component_size_summary_data(
@@ -263,10 +263,9 @@ class Plotter:
                 expanded_vs.extend([y for _ in range(vs[i])])
             labels.extend([c for _ in range(len(expanded_vs))])
             values.extend(expanded_vs)
-
-        violin = hv.Violin((labels, values), 'Topic', 'Publications year')
-        violin.opts(width=960, height=300, violin_fill_color=dim('Topic').str(), cmap='tab20')
-        return hv.render(violin, backend='bokeh')
+        boxwhisker = hv.BoxWhisker((labels, values), 'Topic', 'Publications year')
+        boxwhisker.opts(width=960, height=300, box_fill_color=dim('Topic').str(), cmap='tab20')
+        return hv.render(boxwhisker, backend='bokeh')
 
     def subtopics_infos_and_zoom_in_callbacks(self):
         logging.info('Per component detailed info visualization')

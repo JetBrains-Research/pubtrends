@@ -56,7 +56,7 @@ def analyze_topic_async(source, terms=None, id_list=None, zoom=None, sort='Most 
         'comp_other': analyzer.comp_other,
         'cocitations_clusters': [components(plotter.cocitations_clustering())],
         'component_size_summary': [components(plotter.component_size_summary())],
-        'component_size_summary_violin': [components(plotter.component_size_summary_violin())],
+        'component_years_summary_boxplots': [components(plotter.component_years_summary_boxplots())],
         'subtopics_infos_and_zoom_in_callbacks':
             [(components(p), zoom_in_callback) for
              (p, zoom_in_callback) in plotter.subtopics_infos_and_zoom_in_callbacks()],
