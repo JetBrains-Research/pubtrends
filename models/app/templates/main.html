@@ -148,14 +148,15 @@
             </div>
         </div>
     </div>
+    {% if development_alert %}
     <div class="alert alert-warning alert-dismissible fade show" role="alert">
         <form method="post" action="" class="inline">
             <input type="hidden" name="source" value="Pubmed">
             <input type="hidden" name="sort" value="Most Cited">
             <input type="hidden" name="amount" value="1000">
             <strong>The service is in development!</strong> Please use concrete requests like
-            <button type="submit" name="terms" value="dna methylation clock" class="link-button">
-                dna methylation clock
+            <button type="submit" name="terms" value="{{ development_alert_terms }}" class="link-button">
+                {{ development_alert_terms }}
             </button> and be patient.
         </form>
 
@@ -163,6 +164,7 @@
             <span aria-hidden="true">&times;</span>
         </button>
     </div>
+    {% endif %}
 </div>
 <footer>
     <p>version {{ version }}<br/>

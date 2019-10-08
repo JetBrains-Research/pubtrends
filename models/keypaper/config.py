@@ -28,6 +28,8 @@ class PubtrendsConfig:
         self.neo4jpassword = params['neo4jpassword' if not test else 'test_neo4jpassword']
 
         self.run_experimental = params.getboolean('run_experimental')
+        self.development_alert = params.getboolean('development_alert')
+        self.development_alert_terms = params['development_alert_terms']
 
         self.min_search_words = params.getint('min_search_words') if not test else 0
         self.max_number_of_articles = params.getint('max_number_of_articles')
