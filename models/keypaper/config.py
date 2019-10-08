@@ -27,15 +27,14 @@ class PubtrendsConfig:
         self.neo4juser = params['neo4jusername' if not test else 'test_neo4jusername']
         self.neo4jpassword = params['neo4jpassword' if not test else 'test_neo4jpassword']
 
-        self.run_experimental = params.getboolean('run_experimental')
-        self.development_alert = params.getboolean('development_alert')
-        self.development_alert_terms = params['development_alert_terms']
+        self.experimental = params.getboolean('experimental')
+        self.development = params.getboolean('development')
+        self.search_example_terms = [terms.strip() for terms in params['search_example_terms'].split(',')]
 
         self.min_search_words = params.getint('min_search_words') if not test else 0
         self.max_number_of_articles = params.getint('max_number_of_articles')
         self.max_number_of_citations = params.getint('max_number_of_citations')
         self.max_number_of_cocitations = params.getint('max_number_of_cocitations')
 
-        self.show_max_articles_options = [opt.strip() for opt in
-                                          params['show_max_articles_options'].split(',')]
+        self.show_max_articles_options = [opt.strip() for opt in params['show_max_articles_options'].split(',')]
         self.show_max_articles_default_value = params['show_max_articles_default_value'].strip()

@@ -49,7 +49,7 @@ def analyze_topic_async(source, terms=None, id_list=None, zoom=None, sort='Most 
     paper_statistics, zoom_out_callback = plotter.papers_statistics_and_zoom_out_callback()
     result = {
         'log': html.unescape(log),
-        'run_experimental': PUBTRENDS_CONFIG.run_experimental,
+        'experimental': PUBTRENDS_CONFIG.experimental,
         'n_papers': analyzer.n_papers,
         'n_citations': int(analyzer.df['total'].sum()),
         'n_subtopics': len(analyzer.components),
@@ -73,7 +73,7 @@ def analyze_topic_async(source, terms=None, id_list=None, zoom=None, sort='Most 
     }
 
     # Experimental features
-    if PUBTRENDS_CONFIG.run_experimental:
+    if PUBTRENDS_CONFIG.experimental:
         subtopic_evolution = plotter.subtopic_evolution()
         # Pass subtopic evolution only if not None
         if subtopic_evolution:

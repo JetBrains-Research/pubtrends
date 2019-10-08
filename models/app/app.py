@@ -1,5 +1,6 @@
 import html
 import json
+import random
 from urllib.parse import quote
 
 from celery.result import AsyncResult
@@ -196,8 +197,8 @@ def index():
                            version=PUBTRENDS_CONFIG.version,
                            amounts=PUBTRENDS_CONFIG.show_max_articles_options,
                            default_amount=PUBTRENDS_CONFIG.show_max_articles_default_value,
-                           development_alert=PUBTRENDS_CONFIG.development_alert,
-                           development_alert_terms=PUBTRENDS_CONFIG.development_alert_terms)
+                           development=PUBTRENDS_CONFIG.development,
+                           search_example_terms=random.choice(PUBTRENDS_CONFIG.search_example_terms))
 
 
 def get_app():

@@ -19,9 +19,9 @@ class KeyPaperAnalyzer:
     EXPERIMENTAL_STEPS = 2
 
     def __init__(self, loader, config, test=False):
-        self.run_experimental = config.run_experimental
-        self.logger = ProgressLogger(KeyPaperAnalyzer.TOTAL_STEPS + (KeyPaperAnalyzer.EXPERIMENTAL_STEPS
-                                                                     if self.run_experimental else 0))
+        self.experimental = config.experimental
+        self.logger = ProgressLogger(KeyPaperAnalyzer.TOTAL_STEPS +
+                                     (KeyPaperAnalyzer.EXPERIMENTAL_STEPS if self.experimental else 0))
 
         self.loader = loader
         loader.set_logger(self.logger)
@@ -112,7 +112,7 @@ class KeyPaperAnalyzer:
             self.author_stats = self.popular_authors(self.df, current=16, task=task)
 
             # Experimental features, can be turned off in 'config.properties'
-            if self.run_experimental:
+            if self.experimental:
                 # Perform subtopic evolution analysis and get subtopic descriptions
                 self.evolution_df, self.evolution_year_range = self.subtopic_evolution_analysis(self.cocit_df,
                                                                                                 current=17, task=task)
