@@ -231,7 +231,7 @@ class KeyPaperAnalyzer:
         return CG
 
     def subtopic_analysis(self, df, cocitation_graph, current=0, task=None):
-        self.logger.info(f'Louvain community clustering of co-citation graph', current=current, task=task)
+        self.logger.info(f'Extracting subtopics from co-citation graph', current=current, task=task)
         connected_components = nx.number_connected_components(cocitation_graph)
         self.logger.debug(f'Co-citation graph has {connected_components} connected components',
                           current=current, task=task)

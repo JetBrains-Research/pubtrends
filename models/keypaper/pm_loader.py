@@ -142,7 +142,7 @@ class PubmedLoader(Loader):
         cit_stats_df_from_query['year'] = cit_stats_df_from_query['year'].apply(int)
         cit_stats_df_from_query['count'] = cit_stats_df_from_query['count'].apply(int)
 
-        self.logger.info(f'Found {cit_stats_df_from_query.shape[0]} lines of citations statistics',
+        self.logger.info(f'Found {cit_stats_df_from_query.shape[0]} records of citations by year',
                          current=current, task=task)
 
         return cit_stats_df_from_query
