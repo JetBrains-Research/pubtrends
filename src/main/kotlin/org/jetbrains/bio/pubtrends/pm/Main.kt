@@ -2,11 +2,9 @@ package org.jetbrains.bio.pubtrends.pm
 
 import joptsimple.OptionParser
 import org.apache.logging.log4j.LogManager
+import org.jetbrains.bio.pubtrends.Config
 import java.io.BufferedReader
 import java.io.FileReader
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
 import java.util.*
 import kotlin.system.exitProcess
 
@@ -30,22 +28,8 @@ fun main(args: Array<String>) {
             exitProcess(0)
         }
 
-        // Configure settings folder
-        val settingsRoot: Path = Paths.get(System.getProperty("user.home", ""), ".pubtrends")
-        check(Files.exists(settingsRoot)) {
-            "$settingsRoot should have been created by log4j"
-        }
-        logger.info("Settings folder $settingsRoot")
-
-        val configPath: Path = settingsRoot.resolve("config.properties")
-        if (Files.notExists(configPath)) {
-            logger.error("Config file not found, please modify and copy config.properties to $configPath")
-            exitProcess(1)
-        }
-
-        val config = Properties().apply {
-            load(BufferedReader(FileReader(configPath.toFile())))
-        }
+        // Load configuration file
+        val (config, configPath, settingsRoot) = Config.load()
         logger.info("Config\n" + BufferedReader(FileReader(configPath.toFile())).use {
             it.readLines().joinToString("\n")
         })
