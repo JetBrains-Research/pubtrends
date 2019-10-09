@@ -35,10 +35,10 @@ class Plotter:
         self.analyzer = analyzer
 
         if self.analyzer:
-            self.comp_palette = []
             n_comps = len(self.analyzer.components)
-            for color in Category20[20][:n_comps]:
-                self.comp_palette.append(RGB(*PlotPreprocessor.hex2rgb(color)))
+            if n_comps > 20:
+                raise ValueError(f'Too big number of components {n_comps}')
+            self.comp_palette = [RGB(*PlotPreprocessor.hex2rgb(c)) for c in Category20[20][:n_comps]]
 
     @staticmethod
     def paper_callback(source, db):
