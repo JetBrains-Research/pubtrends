@@ -246,7 +246,9 @@ class PlotPreprocessor:
     def papers_statistics_data(df):
         cols = ['year', 'id', 'title', 'authors']
         df_stats = df[cols].groupby(['year']).size().reset_index(name='counts')
-        return ColumnDataSource(df_stats)
+        years_df = pd.DataFrame({'year': np.arange(np.min(df_stats['year']), np.max(df_stats['year']) + 1, 1)})
+        return ColumnDataSource(pd.merge(left=years_df, left_on='year',
+                                         right=df_stats, right_on='year', how='left').fillna(0))
 
     @staticmethod
     def article_citation_dynamics_data(df, pid):

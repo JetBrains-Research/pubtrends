@@ -61,8 +61,8 @@ class TestPlotPreprocessor(unittest.TestCase):
     def test_paper_statistics_data(self):
         ds = PlotPreprocessor.papers_statistics_data(self.analyzer.df)
 
-        expected_years = [2005, 2008, 2009, 2011, 2013, 2016, 2017, 2018, 2019]
-        expected_counts = [1, 1, 1, 1, 1, 1, 6, 2, 2]
+        expected_years = [2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019]
+        expected_counts = [1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 6, 2, 2]
 
         self.assertEqual(list(ds.data['year']), expected_years, 'Wrong list of years')
         self.assertEqual(list(ds.data['counts']), expected_counts, 'Wrong list of paper counts')

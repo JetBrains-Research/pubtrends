@@ -1,29 +1,25 @@
+import json
 import logging
 from string import Template
 
 import holoviews as hv
-import json
 import numpy as np
 from bokeh.colors import RGB
 from bokeh.core.properties import value
-from bokeh.events import ButtonClick
 from bokeh.layouts import row, column
-from bokeh.models import ColumnDataSource, CustomJS, HTMLTemplateFormatter, NodesAndLinkedEdges, TapTool
+from bokeh.models import ColumnDataSource, CustomJS, NodesAndLinkedEdges, TapTool
 from bokeh.models import GraphRenderer, StaticLayoutProvider
 # Tools used: hover,pan,tap,wheel_zoom,box_zoom,reset,save
 from bokeh.models import HoverTool, PanTool, WheelZoomTool, BoxZoomTool, ResetTool, SaveTool
 from bokeh.models import LinearColorMapper, PrintfTickFormatter, ColorBar
 from bokeh.models import NumeralTickFormatter
 from bokeh.models import Plot, Range1d, MultiLine, Circle
-from bokeh.models.widgets import Button
-from bokeh.models.widgets.tables import DataTable, TableColumn
+from bokeh.models.widgets.tables import DataTable
 from bokeh.palettes import Category20
 from bokeh.plotting import figure
 from bokeh.transform import factor_cmap
 from holoviews import dim
-from holoviews import opts
 from matplotlib import pyplot as plt
-from pandas import RangeIndex
 from wordcloud import WordCloud
 
 from .utils import LOCAL_BASE_URL, get_word_cloud_data, \
