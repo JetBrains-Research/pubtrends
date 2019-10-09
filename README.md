@@ -172,14 +172,8 @@ Launch Gunicorn serving Flask app on HTTP port 80, Redis and Celery in container
     --volume=$(pwd):/pubtrends -d -t biolabs/pubtrends
     ```
 
-    Check access to Postgresql
-
-    ```
-    psql postgresql://biolabs:password@localhost:5433/pubtrends_test
-    ```
-   
+    Check access to Postgresql: `psql postgresql://biolabs:password@localhost:5433/pubtrends_test`
     Check access to Neo4j web browser: `http://localhost:7474`
-   
 
 2. Kotlin tests
 
@@ -188,6 +182,12 @@ Launch Gunicorn serving Flask app on HTTP port 80, Redis and Celery in container
     ```
 
 3. Python tests with codestyle check
+    
+    ```
+    source activate pubtrends; python -m pytest --codestyle models
+    ```
+
+4. Python tests with codestyle check within Docker
 
     ```
     docker run --rm --volume=$(pwd):/pubtrends -t biolabs/pubtrends /bin/bash -c \
