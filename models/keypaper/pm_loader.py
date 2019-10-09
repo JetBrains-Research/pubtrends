@@ -101,15 +101,13 @@ class PubmedLoader(Loader):
             WITH [{','.join([f"'{id}'" for id in ids])}] AS pmids
             MATCH (p:PMPublication)
             WHERE p.pmid IN pmids
-            RETURN p.pmid as id, p.title as title, p.abstract as abstract, p.date.year as year, p.aux as aux
+            RETURN p.pmid as id, p.title as title, p.abstract as abstract, 
+                p.date.year as year, p.type as type, p.aux as aux
             ORDER BY id
         '''
 
         with self.neo4jdriver.session() as session:
             pub_df = pd.DataFrame(session.run(query).data())
-
-        # Parse aux
-        Loader.parse_aux(pub_df)
 
         if np.any(pub_df[['id', 'title']].isna()):
             raise ValueError('Paper must have PMID and title')

@@ -42,11 +42,6 @@ class Loader:
         self.logger = logger
 
     @staticmethod
-    def parse_aux(df):
-        df['aux'] = [json.loads(v) for v in df['aux']]
-        return df
-
-    @staticmethod
     def preprocess_search_string(terms, min_search_words):
         terms_str = re.sub('[^0-9a-zA-Z"\\- ]', '', terms.strip())
         words = re.sub('"', '', terms_str).split(' ')
@@ -61,6 +56,10 @@ class Loader:
 
     @staticmethod
     def process_publications_dataframe(publications_df):
+        # Semantic Scholar stores aux in jsonb format, no json parsing required
+        publications_df['aux'] = publications_df['aux'].apply(
+            lambda aux: json.loads(aux) if type(aux) is str else aux
+        )
         publications_df = publications_df.fillna(value={'abstract': ''})
         publications_df['year'] = publications_df['year'].apply(
             lambda year: int(year) if year and np.isfinite(year) else np.nan
@@ -68,6 +67,8 @@ class Loader:
         publications_df['authors'] = publications_df['aux'].apply(lambda aux: extract_authors(aux['authors']))
         publications_df['journal'] = publications_df['aux'].apply(lambda aux: html.unescape(aux['journal']['name']))
         publications_df['title'] = publications_df['title'].apply(lambda title: html.unescape(title))
+
+        # Semantic Scholar specific hack
         if 'crc32id' in publications_df:
             publications_df['crc32id'] = publications_df['crc32id'].apply(int)
         return publications_df

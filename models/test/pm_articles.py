@@ -1,10 +1,9 @@
 import json
+import pandas as pd
+
 from dataclasses import dataclass, field
 from datetime import date
 from typing import List
-
-import numpy as np
-import pandas as pd
 
 from models.keypaper.loader import Loader
 
@@ -42,6 +41,7 @@ class PubmedArticle:
     title: str
     aux: AuxInfo = AuxInfo()
     abstract: str = None
+    type: str = 'Article'
     date: date = date(1970, 1, 1)
 
     def authors(self) -> str:
@@ -59,16 +59,15 @@ class PubmedArticle:
         return field if field else 'null'
 
     def __str__(self):
-        return f"({self.pmid}, {self.title}, {json.dumps(self.aux.to_dict())}, " \
-            f"{self.null(self.abstract)}, {self.null(self.date)})"
+        return ', '.join(self.to_list())
 
     def to_list(self):
         return [str(self.pmid), self.title, json.dumps(self.aux.to_dict()), self.abstract if self.abstract else '',
-                str(self.date), self.authors(), self.journal()]
+                str(self.date), self.type, self.authors(), self.journal()]
 
     def to_list_year(self):
         return [str(self.pmid), self.title, json.dumps(self.aux.to_dict()), self.abstract if self.abstract else '',
-                int(self.date.year), self.authors(), self.journal()]
+                int(self.date.year), self.type, self.authors(), self.journal()]
 
 
 REQUIRED_ARTICLES = [
@@ -92,7 +91,7 @@ REQUIRED_ARTICLES = [
                   aux=AuxInfo(
                       authors=[Author(name='Green R'), Author(name='Geller R'), Author(name='Doe J')],
                       journal=Journal(name='Nature'))),
-    PubmedArticle(6, 'Article Title 6')
+    PubmedArticle(6, 'Article Title 6', type='Review')
 ]
 
 EXTRA_ARTICLES = [
@@ -133,9 +132,9 @@ COCITATIONS = [
     ['9', '4', '5', 1970], ['10', '4', '5', 1970]
 ]
 
-EXPECTED_PUB_DF = Loader.parse_aux(
+EXPECTED_PUB_DF = Loader.process_publications_dataframe(
     pd.DataFrame([article.to_list_year() for article in REQUIRED_ARTICLES],
-                 columns=['id', 'title', 'aux', 'abstract', 'year', 'authors', 'journal']))
+                 columns=['id', 'title', 'aux', 'abstract', 'year', 'type', 'authors', 'journal']))
 
 EXPECTED_CIT_STATS_DF = pd.DataFrame(CITATION_STATS, columns=['id', 'year', 'count']).sort_values(
     by=['id', 'year']
@@ -145,6 +144,6 @@ EXPECTED_CIT_DF = pd.DataFrame(INNER_CITATIONS, columns=['id_out', 'id_in'])
 
 EXPECTED_COCIT_DF = pd.DataFrame(COCITATIONS, columns=['citing', 'cited_1', 'cited_2', 'year'])
 
-EXPECTED_PUB_DF_GIVEN_IDS = Loader.parse_aux(
+EXPECTED_PUB_DF_GIVEN_IDS = Loader.process_publications_dataframe(
     pd.DataFrame([article.to_list_year() for article in PART_OF_ARTICLES],
-                 columns=['id', 'title', 'aux', 'abstract', 'year', 'authors', 'journal']))
+                 columns=['id', 'title', 'aux', 'abstract', 'year', 'type', 'authors', 'journal']))

@@ -1,5 +1,4 @@
 import csv
-import json
 import tempfile
 import re
 
@@ -43,7 +42,8 @@ class MockDatabaseLoader(Loader):
                 END AS date_or_null
                 CREATE (:PMPublication {{ pmid: line[0], title: line[1], aux: line[2], abstract: line[3],
                     date: date_or_null,
-                    authors: line[5], journal: line[6] }})
+                    type: line[5],
+                    authors: line[6], journal: line[7] }})
                 '''
             with self.neo4jdriver.session() as session:
                 session.run(query)
