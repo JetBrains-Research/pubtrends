@@ -21,6 +21,7 @@ from bokeh.palettes import Category20
 from bokeh.plotting import figure
 from bokeh.transform import factor_cmap
 from holoviews import dim
+from holoviews import opts
 from matplotlib import pyplot as plt
 from pandas import RangeIndex
 from wordcloud import WordCloud
@@ -246,6 +247,26 @@ class Plotter:
 
         return p
 
+    def component_years_summary_boxplots(self):
+        logging.info('Summary component year detailed info visualization on boxplot')
+
+        min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
+        components, data = PlotPreprocessor.component_size_summary_data(
+            self.analyzer.df, self.analyzer.components, min_year, max_year
+        )
+        labels = []
+        values = []
+        for c in components:
+            vs = data[c]
+            expanded_vs = []
+            for i, y in enumerate(range(min_year, max_year + 1)):
+                expanded_vs.extend([y for _ in range(vs[i])])
+            labels.extend([c for _ in range(len(expanded_vs))])
+            values.extend(expanded_vs)
+        boxwhisker = hv.BoxWhisker((labels, values), 'Topic', 'Publications year')
+        boxwhisker.opts(width=960, height=300, box_fill_color=dim('Topic').str(), cmap='tab20')
+        return hv.render(boxwhisker, backend='bokeh')
+
     def subtopics_infos_and_zoom_in_callbacks(self):
         logging.info('Per component detailed info visualization')
 
@@ -293,6 +314,11 @@ class Plotter:
             result[c] = (row(desc, plot), zoom_in_callback)
 
         return result
+
+    def component_sizes(self):
+        assigned_comps = self.analyzer.df[self.analyzer.df['comp'] >= 0]
+        d = dict(assigned_comps.groupby('comp')['id'].count())
+        return [int(d[k]) for k in range(len(d))]
 
     def component_ratio(self):
         comps, source = PlotPreprocessor.component_ratio_data(

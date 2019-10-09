@@ -19,11 +19,11 @@ class ArxivAnalyzer(KeyPaperAnalyzer):
                 raise RuntimeError("Nothing found")
 
             # Load data about publications, citations and co-citations
-            self.pub_df = self.loader.load_publications(current=2, task=task)
+            self.pub_df = self.loader.load_publications(self.ids, current=2, task=task)
             if len(self.pub_df) == 0:
                 raise RuntimeError("Nothing found in DB")
 
-            cit_stats_df_from_query = self.loader.load_citation_stats(current=3, task=task)
+            cit_stats_df_from_query = self.loader.load_citation_stats(self.ids, current=3, task=task)
             self.cit_stats_df = self.build_cit_stats_df(cit_stats_df_from_query, self.n_papers, current=4, task=task)
             if len(self.cit_stats_df) == 0:
                 raise RuntimeError("No citations of papers were found")
@@ -33,7 +33,7 @@ class ArxivAnalyzer(KeyPaperAnalyzer):
             if len(self.df) == 0:
                 raise RuntimeError("Failed to merge publications and citations")
 
-            self.cit_df = self.loader.load_citations(current=5, task=task)
+            self.cit_df = self.loader.load_citations(self.ids, current=5, task=task)
 
             return self.logger.stream.getvalue()
         finally:

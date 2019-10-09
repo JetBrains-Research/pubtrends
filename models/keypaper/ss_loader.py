@@ -5,12 +5,16 @@ import numpy as np
 import pandas as pd
 
 from .loader import Loader
-from .utils import crc32, extract_authors
+from .utils import crc32
 
 
 class SemanticScholarLoader(Loader):
     def __init__(self, pubtrends_config):
         super(SemanticScholarLoader, self).__init__(pubtrends_config)
+
+    @staticmethod
+    def ids2values(ids):
+        return ', '.join(['({0}, \'{1}\')'.format(i, j) for (i, j) in zip(map(crc32, ids), ids)])
 
     def search(self, terms, limit=None, sort=None, current=0, task=None):
         self.logger.info(html.escape(f'Searching publications matching <{terms}>'), current=current, task=task)
@@ -18,10 +22,10 @@ class SemanticScholarLoader(Loader):
         if not limit:
             limit = self.max_number_of_articles
 
-        columns = ['id', 'crc32id', 'pmid', 'title', 'abstract', 'year', 'aux']
+        columns = ['id', 'crc32id', 'pmid']
         if sort == 'relevance':
             query = f'''
-                SELECT P.ssid, P.crc32id, P.pmid, P.title, P.abstract, P.year, P.aux, ts_rank_cd(P.tsv, query) AS rank
+                SELECT P.ssid, P.crc32id, P.pmid, ts_rank_cd(P.tsv, query) AS rank
                 FROM SSPublications P, websearch_to_tsquery('english', {terms_str}) query
                 WHERE tsv @@ query
                 ORDER BY rank DESC
@@ -30,7 +34,7 @@ class SemanticScholarLoader(Loader):
             columns.append('ts_rank')
         elif sort == 'citations':
             query = f'''
-                SELECT P.ssid, P.crc32id, P.pmid, P.title, P.abstract, P.year, P.aux, COUNT(1) AS count
+                SELECT P.ssid, P.crc32id, P.pmid, COUNT(1) AS count
                 FROM SSPublications P
                 LEFT JOIN SSCitations C
                 ON C.crc32id_in = P.crc32id AND C.id_in = P.ssid
@@ -42,7 +46,7 @@ class SemanticScholarLoader(Loader):
             columns.append('citations')
         elif sort == 'year':
             query = f'''
-                SELECT ssid, crc32id, pmid, title, abstract, year, aux
+                SELECT ssid, crc32id, pmid
                 FROM SSPublications P
                 WHERE tsv @@ websearch_to_tsquery('english', {terms_str})
                 ORDER BY year DESC NULLS LAST
@@ -53,29 +57,24 @@ class SemanticScholarLoader(Loader):
 
         with self.conn.cursor() as cursor:
             cursor.execute(query)
-            self.pub_df = pd.DataFrame(cursor.fetchall(),
-                                       columns=columns,
-                                       dtype=object)
+            pub_df = pd.DataFrame(cursor.fetchall(), columns=columns, dtype=object)
 
         # Duplicate rows may occur if crawler was stopped while parsing Semantic Scholar archive
-        self.pub_df.drop_duplicates(subset='id', inplace=True)
-        self.pub_df = self.pub_df[pd.isnull(self.pub_df.pmid)]
-        self.pub_df.drop(columns=['pmid'], inplace=True)
+        pub_df.drop_duplicates(subset='id', inplace=True)
+        # IMPORTANT Remove Pubmed ids from account
+        pub_df = pub_df[pd.isnull(pub_df.pmid)]
 
-        self.logger.info(f'Found {len(self.pub_df)} publications in the local database', current=current,
+        self.logger.info(f'Found {len(pub_df)} publications in the local database', current=current,
                          task=task)
 
-        self.ids = list(self.pub_df['id'].values)
-        crc32ids = list(self.pub_df['crc32id'].values)
-        self.values = ', '.join(['({0}, \'{1}\')'.format(i, j) for (i, j) in zip(crc32ids, self.ids)])
-        return self.ids, False
+        return (list(pub_df['id'].values)), False
 
-    def load_publications(self, temp_table_created=False, current=0, task=None):
+    def load_publications(self, ids, temp_table_created=False, current=0, task=None):
         if not temp_table_created:
             self.logger.info('Loading publication data', current=current, task=task)
             query = f'''
                     DROP TABLE IF EXISTS temp_ssids;
-                    WITH vals(crc32id, ssid) AS (VALUES {self.values})
+                    WITH vals(crc32id, ssid) AS (VALUES {SemanticScholarLoader.ids2values(ids)})
                     SELECT crc32id, ssid INTO table temp_ssids FROM vals;
                     DROP INDEX IF EXISTS temp_ssids_index;
                     CREATE INDEX temp_ssids_index ON temp_ssids USING btree (crc32id);
@@ -86,58 +85,29 @@ class SemanticScholarLoader(Loader):
 
             self.logger.debug('Created table for request with index.', current=current, task=task)
 
-        if np.any(self.pub_df[['id', 'crc32id', 'title']].isna()):
-            raise ValueError('Paper must have ID and title')
-
-        self.pub_df = Loader.process_publications_dataframe(self.pub_df)
-
-        return self.pub_df
-
-    def search_with_given_ids(self, ids, current=0, task=None):
-        self.logger.info('Searching publication data', current=current, task=task)
-        self.ids = ids
-        crc32ids = list(map(crc32, self.ids))
-        self.values = ', '.join(['({0}, \'{1}\')'.format(i, j) for (i, j) in zip(crc32ids, self.ids)])
-        query_fill_temp_ids = f'''
-                DROP TABLE IF EXISTS temp_ssids;
-                WITH vals(crc32id, ssid) AS (VALUES {self.values})
-                SELECT crc32id, ssid INTO table temp_ssids FROM vals;
-                DROP INDEX IF EXISTS temp_ssids_index;
-                CREATE INDEX temp_ssids_index ON temp_ssids USING btree (crc32id);
+        columns = ['id', 'crc32id', 'title', 'abstract', 'year', 'aux']
+        query = f'''
+                SELECT P.ssid, P.crc32id, P.title, P.abstract, P.year, P.aux
+                FROM SSPublications P
+                LEFT JOIN temp_ssids TS
+                ON P.crc32id = TS.crc32id AND P.ssid = TS.ssid;
                 '''
-
         with self.conn.cursor() as cursor:
-            cursor.execute(query_fill_temp_ids)
+            cursor.execute(query)
+            pub_df = pd.DataFrame(cursor.fetchall(), columns=columns, dtype=object)
 
-        query_load_publications = f'''
-        SELECT DISTINCT ON (P.ssid) P.ssid, P.crc32id, P.title, P.abstract, P.year, P.aux
-        FROM SSPublications P
-        JOIN temp_ssids AS T ON (P.crc32id = T.crc32id AND P.ssid = T.ssid);
-        '''
-
-        with self.conn.cursor() as cursor:
-            cursor.execute(query_load_publications)
-            self.pub_df = pd.DataFrame(cursor.fetchall(),
-                                       columns=['id', 'crc32id', 'title', 'abstract', 'year', 'aux'],
-                                       dtype=object)
-
-        if np.any(self.pub_df[['id', 'crc32id', 'title']].isna()):
+        if np.any(pub_df[['id', 'crc32id', 'title']].isna()):
             raise ValueError('Paper must have ID and title')
 
-        self.pub_df = Loader.process_publications_dataframe(self.pub_df)
-        self.logger.info(f'Found {len(self.pub_df)} publications in the local database', current=current,
-                         task=task)
+        return Loader.process_publications_dataframe(pub_df)
 
-        return self.pub_df
-
-    def load_citation_stats(self, current=0, task=None):
-        self.logger.info('Loading citations statistics: searching for correct citations over 150 million of citations',
+    def load_citation_stats(self, ids, current=0, task=None):
+        self.logger.info('Loading citations statistics among millions of citations',
                          current=current, task=task)
-
         query = f'''
            SELECT C.id_in AS ssid, P.year, COUNT(1) AS count
                 FROM SSCitations C
-                JOIN (VALUES {self.values}) AS CT(crc32id, ssid)
+                JOIN (VALUES {SemanticScholarLoader.ids2values(ids)}) AS CT(crc32id, ssid)
                   ON (C.crc32id_in = CT.crc32id AND C.id_in = CT.ssid)
                 JOIN SSPublications P
                   ON C.crc32id_out = P.crc32id AND C.id_out = P.ssid
@@ -159,21 +129,20 @@ class SemanticScholarLoader(Loader):
         cit_stats_df_from_query['year'] = cit_stats_df_from_query['year'].apply(int)
         cit_stats_df_from_query['count'] = cit_stats_df_from_query['count'].apply(int)
 
-        self.logger.info(f'Found {cit_stats_df_from_query.shape[0]} lines of citations statistics',
+        self.logger.info(f'Found {cit_stats_df_from_query.shape[0]} records of citations by year',
                          current=current, task=task)
 
         return cit_stats_df_from_query
 
-    def load_citations(self, current=0, task=None):
+    def load_citations(self, ids, current=0, task=None):
         self.logger.info('Loading citations data', current=current, task=task)
         self.logger.debug('Started loading raw information about citations', current=current, task=task)
 
         query = f'''SELECT C.id_out, C.id_in
                     FROM SSCitations C
-                    JOIN (VALUES {self.values}) AS CT(crc32id, ssid)
+                    JOIN (VALUES {SemanticScholarLoader.ids2values(ids)}) AS CT(crc32id, ssid)
                     ON (C.crc32id_in = CT.crc32id AND C.id_in = CT.ssid)
-                    WHERE C.crc32id_in
-                    between (SELECT MIN(crc32id) FROM temp_ssids)
+                    WHERE C.crc32id_in between (SELECT MIN(crc32id) FROM temp_ssids)
                     AND (select max(crc32id) FROM temp_ssids);
                     '''
 
@@ -182,7 +151,8 @@ class SemanticScholarLoader(Loader):
             citations = pd.DataFrame(cursor.fetchall(),
                                      columns=['id_out', 'id_in'], dtype=object)
 
-        citations = citations[citations['id_out'].isin(self.ids)]
+        # TODO[shpynov] we can make it on DB side
+        citations = citations[citations['id_out'].isin(ids)]
 
         if np.any(citations.isna()):
             raise ValueError('Citation must have id_out and id_in')
@@ -191,7 +161,7 @@ class SemanticScholarLoader(Loader):
 
         return citations
 
-    def load_cocitations(self, current=0, task=None):
+    def load_cocitations(self, ids, current=0, task=None):
         self.logger.info('Calculating co-citations for selected papers', current=current, task=task)
 
         query = f'''

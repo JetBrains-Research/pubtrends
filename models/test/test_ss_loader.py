@@ -1,5 +1,4 @@
 import logging
-import re
 import unittest
 
 from pandas.util.testing import assert_frame_equal
@@ -9,59 +8,29 @@ from models.keypaper.config import PubtrendsConfig
 from models.keypaper.ss_loader import SemanticScholarLoader
 from models.test.mock_database_loader import MockDatabaseLoader
 from models.test.ss_articles import required_articles, extra_articles, required_citations, cit_stats_df, \
-    pub_df, cit_df, extra_citations, raw_cocitations_df, part_of_articles, pub_df_given_ids, expanded_articles
+    cit_df, extra_citations, raw_cocitations_df, part_of_articles, expanded_articles
 
 
 class TestSemanticScholarLoader(unittest.TestCase):
-    VALUES_REGEX = re.compile(r'\$VALUES\$')
-    loader = None
+    loader = SemanticScholarLoader(pubtrends_config=PubtrendsConfig(test=True))
 
     @classmethod
     def setUpClass(cls):
-        cls.loader = SemanticScholarLoader(pubtrends_config=PubtrendsConfig(test=True))
         cls.loader.set_logger(logging.getLogger(__name__))
 
-        mock_database_loader = MockDatabaseLoader(PubtrendsConfig(test=True))
+        # Text search is not tested, imitating search results
+        cls.ids = list(map(lambda article: article.ssid, required_articles))
+
+        mock_database_loader = MockDatabaseLoader()
         mock_database_loader.init_semantic_scholar_database()
         mock_database_loader.insert_semantic_scholar_publications(required_articles + extra_articles)
         mock_database_loader.insert_semantic_scholar_citations(required_citations + extra_citations)
-        cls._load_publications()
 
-        cls.citations_stats = cls._load_citations_stats()
-        cls.citations = cls.loader.load_citations()
-        cls.cocitations_df = cls._load_cocitations()
-
-    @classmethod
-    def _load_publications(cls):
-        values = ', '.join(map(lambda article: article.indexes(), required_articles))
-        query = re.sub(cls.VALUES_REGEX, values, '''
-                DROP TABLE IF EXISTS temp_ssids;
-                WITH vals(ssid, crc32id) AS (VALUES $VALUES$)
-                SELECT crc32id, ssid INTO temporary table temp_ssids FROM vals;
-                DROP INDEX IF EXISTS temp_ssids_index;
-                CREATE INDEX temp_ssids_index ON temp_ssids USING btree (crc32id);''')
-
-        with cls.loader.conn.cursor() as cursor:
-            cursor.execute(query)
-            cls.loader.conn.commit()
-
-        cls.loader.ids = list(map(lambda article: article.ssid, required_articles))
-        cls.loader.crc32ids = list(map(lambda article: article.crc32id, required_articles))
-        cls.loader.values = ', '.join(
-            ['({0}, \'{1}\')'.format(i, j) for (i, j) in
-             zip(cls.loader.crc32ids, cls.loader.ids)])
-
-        cls.loader.pub_df = pub_df
-
-    @classmethod
-    def _load_citations_stats(cls):
-        cit_stats_df_from_query = cls.loader.load_citation_stats()
-        return cit_stats_df_from_query.sort_values(by=['id', 'year']).reset_index(drop=True)
-
-    @classmethod
-    def _load_cocitations(cls):
-        cocitations = cls.loader.load_cocitations()
-        return cocitations.sort_values(by=['citing', 'cited_1', 'cited_2']).reset_index(drop=True)
+        # Get data via SemanticScholar methods
+        cls.pub_df = cls.loader.load_publications(cls.ids)
+        cls.cit_stats_df = cls.loader.load_citation_stats(cls.ids)
+        cls.cit_df = cls.loader.load_citations(cls.ids)
+        cls.cocit_df = cls.loader.load_cocitations(cls.ids)
 
     @parameterized.expand([
         ('limit 3, most recent', 3, 'year', ['5a63b4199bb58992882b0bf60bc1b1b3f392e5a5',
@@ -77,15 +46,17 @@ class TestSemanticScholarLoader(unittest.TestCase):
     def test_search(self, name, limit, sort, expected):
         ids, _ = self.loader.search('find search', limit=limit, sort=sort)
 
-        self.assertListEqual(ids, expected)
+        self.assertListEqual(ids, expected, name)
 
     def test_citations_stats_rows(self):
         expected_rows = cit_stats_df.shape[0]
-        actual_rows = self.citations_stats.shape[0]
+        actual_rows = self.cit_stats_df.shape[0]
         self.assertEqual(expected_rows, actual_rows, "Number of rows in citations statistics is incorrect")
 
     def test_load_citation_stats_data_frame(self):
-        assert_frame_equal(self.citations_stats, cit_stats_df, "Citations statistics is incorrect")
+        assert_frame_equal(self.cit_stats_df.sort_values(by=['id', 'year']).reset_index(drop=True),
+                           cit_stats_df,
+                           "Citations statistics is incorrect")
 
     def test_load_citation_stats_null_year_is_ignored(self):
         expected_ignored_citations = 0
@@ -99,27 +70,20 @@ class TestSemanticScholarLoader(unittest.TestCase):
                          'Error with citations from articles with year NULL')
 
     def test_load_citations_count(self):
-        self.assertEqual(len(self.citations), len(required_citations), 'Wrong number of citations')
+        self.assertEqual(len(self.cit_df), len(required_citations), 'Wrong number of citations')
 
     def test_load_citations_data_frame(self):
-        assert_frame_equal(self.citations, cit_df, 'Wrong citation data')
+        assert_frame_equal(self.cit_df, cit_df, 'Wrong citation data')
 
     def test_load_cocitations_count(self):
         expected_rows = raw_cocitations_df.shape[0]
-        actual_rows = self.cocitations_df.shape[0]
+        actual_rows = self.cocit_df.shape[0]
         self.assertEqual(expected_rows, actual_rows, "Number of rows in co-citations dataframe is incorrect")
 
     def test_load_cocitations_data_frame(self):
         expected_cocit_df = raw_cocitations_df
-        actual = self.cocitations_df
+        actual = self.cocit_df.sort_values(by=['citing', 'cited_1', 'cited_2']).reset_index(drop=True)
         assert_frame_equal(expected_cocit_df, actual, "Co-citations dataframe is incorrect")
-
-    def test_search_with_given_ids(self):
-        initial_columns = ['abstract', 'aux', 'crc32id', 'id', 'title', 'year']
-        ids_list = list(map(lambda article: article.ssid, part_of_articles))
-        expected = pub_df_given_ids
-        actual_pub_given_ids = self.loader.search_with_given_ids(ids_list)
-        assert_frame_equal(expected, actual_pub_given_ids[initial_columns], "Wrong publications extracted")
 
     def test_expand(self):
         ids = list(map(lambda article: article.ssid, part_of_articles))

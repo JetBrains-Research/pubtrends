@@ -19,9 +19,9 @@ class KeyPaperAnalyzer:
     EXPERIMENTAL_STEPS = 2
 
     def __init__(self, loader, config, test=False):
-        self.run_experimental = config.run_experimental
-        self.logger = ProgressLogger(KeyPaperAnalyzer.TOTAL_STEPS + (KeyPaperAnalyzer.EXPERIMENTAL_STEPS
-                                                                     if self.run_experimental else 0))
+        self.experimental = config.experimental
+        self.logger = ProgressLogger(KeyPaperAnalyzer.TOTAL_STEPS +
+                                     (KeyPaperAnalyzer.EXPERIMENTAL_STEPS if self.experimental else 0))
 
         self.loader = loader
         loader.set_logger(self.logger)
@@ -44,8 +44,7 @@ class KeyPaperAnalyzer:
                 # Search articles relevant to the terms
                 special_symbols = re.compile('\\W+')
                 self.terms = [term.strip() for term in re.sub(special_symbols, ' ', search_query).split()]
-                self.ids, temp_table_created = self.loader.search(search_query, limit=limit, sort=sort,
-                                                                  current=1, task=task)
+                self.ids = self.loader.search(search_query, limit=limit, sort=sort, current=1, task=task)
                 self.n_papers = len(self.ids)
 
                 # Nothing found
@@ -53,7 +52,7 @@ class KeyPaperAnalyzer:
                     raise RuntimeError("Nothing found")
 
                 # Load data about publications
-                self.pub_df = self.loader.load_publications(temp_table_created=temp_table_created, current=2, task=task)
+                self.pub_df = self.loader.load_publications(self.ids, current=2, task=task)
                 if len(self.pub_df) == 0:
                     raise RuntimeError("Nothing found in DB")
             elif id_list:
@@ -63,10 +62,10 @@ class KeyPaperAnalyzer:
                 if zoom:
                     for _ in range(zoom):
                         self.ids = self.loader.expand(self.ids, current=1, task=task)
-                self.pub_df = self.loader.search_with_given_ids(self.ids, current=2, task=task)
+                self.pub_df = self.loader.load_publications(self.ids, current=2, task=task)
                 self.n_papers = len(self.ids)
 
-            cit_stats_df_from_query = self.loader.load_citation_stats(current=3, task=task)
+            cit_stats_df_from_query = self.loader.load_citation_stats(self.ids, current=3, task=task)
             self.cit_stats_df = self.build_cit_stats_df(cit_stats_df_from_query, self.n_papers, current=4, task=task)
             if len(self.cit_stats_df) == 0:
                 raise RuntimeError("No citations of papers were found")
@@ -76,10 +75,10 @@ class KeyPaperAnalyzer:
             if len(self.df) == 0:
                 raise RuntimeError("Failed to merge publications and citations")
 
-            self.cit_df = self.loader.load_citations(current=5, task=task)
+            self.cit_df = self.loader.load_citations(self.ids, current=5, task=task)
             self.G = self.build_citation_graph(self.cit_df, current=6, task=task)
 
-            self.cocit_df = self.loader.load_cocitations(current=7, task=task)
+            self.cocit_df = self.loader.load_cocitations(self.ids, current=7, task=task)
             cocit_grouped_df = self.build_cocit_grouped_df(self.cocit_df)
             self.CG = self.build_cocitation_graph(cocit_grouped_df, current=8, task=task, add_citation_edges=True)
             if len(self.CG.nodes()) == 0:
@@ -113,7 +112,7 @@ class KeyPaperAnalyzer:
             self.author_stats = self.popular_authors(self.df, current=16, task=task)
 
             # Experimental features, can be turned off in 'config.properties'
-            if self.run_experimental:
+            if self.experimental:
                 # Perform subtopic evolution analysis and get subtopic descriptions
                 self.evolution_df, self.evolution_year_range = self.subtopic_evolution_analysis(self.cocit_df,
                                                                                                 current=17, task=task)
@@ -232,7 +231,7 @@ class KeyPaperAnalyzer:
         return CG
 
     def subtopic_analysis(self, df, cocitation_graph, current=0, task=None):
-        self.logger.info(f'Louvain community clustering of co-citation graph', current=current, task=task)
+        self.logger.info(f'Extracting subtopics from co-citation graph', current=current, task=task)
         connected_components = nx.number_connected_components(cocitation_graph)
         self.logger.debug(f'Co-citation graph has {connected_components} connected components',
                           current=current, task=task)

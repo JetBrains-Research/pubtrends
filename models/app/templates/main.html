@@ -16,7 +16,7 @@
             integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
             crossorigin="anonymous"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
-    <!--    <link rel="stylesheet" href="../static/style.css" />-->
+<!--        <link rel="stylesheet" href="../static/style.css" />-->
 </head>
 <body>
 <div class="container">
@@ -55,7 +55,7 @@
                                         </div>
                                         <input class="form-control form-control-borderless" type="search"
                                                name="terms"
-                                               placeholder="Enter keywords" aria-describedby="query-addon"
+                                               placeholder="Enter keywords, &quot;&quot; for phrase search" aria-describedby="query-addon"
                                                autofocus>
                                     </div>
                                     &nbsp;&nbsp;&nbsp;
@@ -74,7 +74,7 @@
                                         <select class="form-control" name="source"
                                                 aria-describedby="source-addon">
                                             <option>Pubmed</option>
-                                            <option>Semantic Scholar</option>
+<!--                                            <option>Semantic Scholar</option>-->
                                         </select>
                                     </div>
                                     &nbsp;&nbsp;&nbsp;
@@ -125,14 +125,14 @@
                                     &nbsp;&nbsp;
                                     <div class="col">
                                         <input class="form-control form-control-borderless" type="search" name="value"
-                                               placeholder="Enter keywords" aria-describedby="query-addon" autofocus
+                                               placeholder="Enter paper details" aria-describedby="query-addon" autofocus
                                                required>
                                     </div>
                                     &nbsp;&nbsp;
                                     <div class="col-auto">
                                         <select class="form-control" name="source">
                                             <option selected>Pubmed</option>
-                                            <option>Semantic Scholar</option>
+<!--                                            <option>Semantic Scholar</option>-->
                                         </select>
                                     </div>
                                     &nbsp;&nbsp;
@@ -147,6 +147,25 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="alert {% if development %} alert-warning {% else %} alert-info {% endif %} alert-dismissible fade show"
+         role="alert">
+        <form method="post" action="" class="inline">
+            <input type="hidden" name="source" value="Pubmed">
+            <input type="hidden" name="sort" value="Most Cited">
+            <input type="hidden" name="amount" value="1000">
+            {% if development %}
+                <strong>The service is in development!</strong>
+            {% endif %}
+            Please use specific requests like
+            <button type="submit" name="terms" value="{{ search_example_terms }}" class="link-button">
+                {{ search_example_terms }}
+            </button> and be patient.
+        </form>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
     </div>
 </div>
 <footer>

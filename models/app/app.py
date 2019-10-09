@@ -1,5 +1,6 @@
 import html
 import json
+import random
 from urllib.parse import quote
 
 from celery.result import AsyncResult
@@ -192,9 +193,12 @@ def index():
             job = find_paper_async.delay(source, key, value)
             return redirect(url_for('.process', source=source, key=key, value=value, jobid=job.id))
 
-    return render_template('main.html', version=PUBTRENDS_CONFIG.version,
+    return render_template('main.html',
+                           version=PUBTRENDS_CONFIG.version,
                            amounts=PUBTRENDS_CONFIG.show_max_articles_options,
-                           default_amount=PUBTRENDS_CONFIG.show_max_articles_default_value)
+                           default_amount=PUBTRENDS_CONFIG.show_max_articles_default_value,
+                           development=PUBTRENDS_CONFIG.development,
+                           search_example_terms=random.choice(PUBTRENDS_CONFIG.search_example_terms))
 
 
 def get_app():
