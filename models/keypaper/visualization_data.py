@@ -223,7 +223,7 @@ class PlotPreprocessor:
 
     @staticmethod
     def article_view_data_source(df, min_year, max_year, width=760):
-        df_local = df[['id', 'title', 'year', 'total', 'authors', 'comp']].copy()
+        df_local = df[['id', 'title', 'year', 'type', 'total', 'authors', 'comp']].copy()
 
         # Size is based on the citations number, at least 1
         df_local['size'] = 1 + np.log(df['total'] + 1)

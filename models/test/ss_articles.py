@@ -10,12 +10,12 @@ class Article:
     crc32id: int
     title: str
     year: int = None
+    type: str = 'Article'
 
     def to_db_publication(self):
         empty_json = '{"journal": {"name": ""}, "authors": []}'
-        return "('{0}', {1}, '{2}', {3}, '', '{4}')".format(self.ssid, self.crc32id, self.title,
-                                                            self.year if self.year else 'null',
-                                                            empty_json)
+        return f"('{self.ssid}', {self.crc32id}, '{self.title}', " \
+               f"{self.year if self.year else 'null'}, '', '{self.type}', '{empty_json}')"
 
     def indexes(self):
         return "('{0}', {1})".format(self.ssid, self.crc32id)
@@ -27,6 +27,7 @@ class Article:
             'title': self.title,
             'year': self.year,
             'abstract': '',
+            'type': self.type,
             'aux': {"journal": {"name": ""}, "authors": []}
         }
 
@@ -66,7 +67,8 @@ article9 = Article('89ffce2b5da6669f63c99ff6398b312389c357dc', -1190899769,
 
 article10 = Article('390f6fbb1f25bfbc53232e8248c581cdcc1fb9e9', -751585733,
                     'Article 10 is here',
-                    year=2017)
+                    year=2017,
+                    type='Review')
 
 required_articles = [article1, article2, article3, article4, article6, article7, article8, article9,
                      article10]

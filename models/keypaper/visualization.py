@@ -39,6 +39,14 @@ class Plotter:
             if n_comps > 20:
                 raise ValueError(f'Too big number of components {n_comps}')
             self.comp_palette = [RGB(*PlotPreprocessor.hex2rgb(c)) for c in Category20[20][:n_comps]]
+            self.comp_colors = dict(enumerate(self.comp_palette))
+
+            n_pub_types = len(self.analyzer.pub_types)
+            pub_types_cmap = plt.cm.get_cmap('jet', n_pub_types)
+            self.pub_types_colors_map = dict(
+                zip(self.analyzer.pub_types,
+                    [RGB(*[round(c * 255) for c in pub_types_cmap(i)[:3]]) for i in range(n_pub_types)]))
+
 
     @staticmethod
     def paper_callback(source, db):
@@ -268,25 +276,24 @@ class Plotter:
 
         # Prepare layouts
         n_comps = len(self.analyzer.components)
-        self.colors = dict(enumerate(self.comp_palette))
-        ds = [None] * n_comps
-        result = [None] * n_comps
+        result = []
 
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
         for c in range(n_comps):
             comp_source = self.analyzer.df[self.analyzer.df['comp'] == c]
-            ds[c] = PlotPreprocessor.article_view_data_source(comp_source,
-                                                              min_year, max_year, width=700)
-            plot = self.__serve_scatter_article_layout(source=ds[c],
+            ds = PlotPreprocessor.article_view_data_source(comp_source, min_year, max_year, width=700)
+            # Add type coloring
+            ds.add([self.pub_types_colors_map[t] for t in comp_source['type']], 'color')
+            plot = self.__serve_scatter_article_layout(source=ds,
                                                        year_range=[min_year, max_year],
                                                        title="Publications", width=760)
-
-            plot.circle(x='year', y='total', fill_alpha=0.5, source=ds[c], size='size',
-                        line_color=self.colors[c], fill_color=self.colors[c])
+            plot.circle(x='year', y='total', fill_alpha=0.5, source=ds, size='size',
+                        line_color='color', fill_color='color', legend='type')
+            plot.legend.location = "top_left"
 
             # Word cloud description of subtopic by titles and abstracts
             kwds = get_word_cloud_data(self.analyzer.df_kwd, c)
-            color = (self.colors[c].r, self.colors[c].g, self.colors[c].b)
+            color = (self.comp_colors[c].r, self.comp_colors[c].g, self.comp_colors[c].b)
             wc = WordCloud(background_color="white", width=200, height=400,
                            color_func=lambda *args, **kwargs: color,
                            max_words=20, max_font_size=40)
@@ -307,7 +314,7 @@ class Plotter:
 
             zoom_in_callback = \
                 self.zoom_callback(ColumnDataSource(comp_source[['id']]), self.analyzer.source, zoom=0)
-            result[c] = (row(desc, plot), zoom_in_callback)
+            result.append((row(desc, plot), zoom_in_callback))
 
         return result
 
@@ -341,14 +348,17 @@ class Plotter:
         ds = PlotPreprocessor.article_view_data_source(
             self.analyzer.top_cited_df, min_year, max_year, width=700
         )
+        # Add type coloring
+        ds.add([self.pub_types_colors_map[t] for t in self.analyzer.top_cited_df['type']], 'color')
+        
         plot = self.__serve_scatter_article_layout(source=ds,
                                                    year_range=[min_year, max_year],
                                                    title=f'{len(self.analyzer.top_cited_df)} top cited papers',
                                                    width=960)
 
-        plot.circle(x='year', y='total', fill_alpha=0.5, source=ds,
-                    size='size', line_color='blue')
-
+        plot.circle(x='year', y='total', fill_alpha=0.5, source=ds, size='size',
+                    line_color='color', fill_color='color', legend='type')
+        plot.legend.location = "top_left"
         return plot
 
     def max_gain_papers(self):
@@ -520,7 +530,7 @@ class Plotter:
         # html code to generate circles corresponding to the 3 most popular subtopics
         top = 3
         return ' '.join(
-            map(lambda topic: f'''<a class="fas fa-circle" style="color:{self.colors[topic[0]]}"
+            map(lambda topic: f'''<a class="fas fa-circle" style="color:{self.comp_colors[topic[0]]}"
                                      href="#subtopic-{topic[0] + 1}"></a>
                                   <span class="bk" style="color:black">{int(topic[1] / sum * 100)}%</span> ''',
                 zip(components[:top], counts[:top])))
@@ -555,6 +565,7 @@ class Plotter:
         p.hover.tooltips = self._html_tooltips([
             ("Author(s)", '@authors'),
             ("Year", '@year'),
+            ("Type", '@type'),
             ("Cited by", '@total paper(s) total')])
         p.js_on_event('tap', self.paper_callback(source, self.analyzer.source))
 

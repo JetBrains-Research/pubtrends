@@ -39,7 +39,7 @@ class SemanticScholarLoader(Loader):
                 LEFT JOIN SSCitations C
                 ON C.crc32id_in = P.crc32id AND C.id_in = P.ssid
                 WHERE tsv @@ websearch_to_tsquery('english', {terms_str})
-                GROUP BY P.ssid, P.crc32id, P.pmid, P.title, P.abstract, P.year, P.aux
+                GROUP BY P.ssid, P.crc32id, P.pmid
                 ORDER BY count DESC NULLS LAST
                 LIMIT {limit};
                 '''
@@ -85,9 +85,9 @@ class SemanticScholarLoader(Loader):
 
             self.logger.debug('Created table for request with index.', current=current, task=task)
 
-        columns = ['id', 'crc32id', 'title', 'abstract', 'year', 'aux']
+        columns = ['id', 'crc32id', 'title', 'abstract', 'year', 'type', 'aux']
         query = f'''
-                SELECT P.ssid, P.crc32id, P.title, P.abstract, P.year, P.aux
+                SELECT P.ssid, P.crc32id, P.title, P.abstract, P.year, P.type, P.aux
                 FROM SSPublications P
                 LEFT JOIN temp_ssids TS
                 ON P.crc32id = TS.crc32id AND P.ssid = TS.ssid;

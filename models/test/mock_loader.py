@@ -3,11 +3,11 @@ import pandas as pd
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.loader import Loader
 
-PUBLICATION_DATA = [['1', 1963, 'Article 1', None, 'Geller R, Geller M, Bing Ch', 'Nature'],
-                    ['2', 1965, 'Article 2', 'abstract', 'Buffay Ph, Geller M, Doe J', 'Science'],
-                    ['3', 1967, 'Article 3', 'otherabstract', 'Doe J, Buffay Ph', 'Nature'],
-                    ['4', 1968, 'Article 4', None, 'Doe J, Geller R', 'Science'],
-                    ['5', 1975, 'Article 5', None, 'Green R, Geller R, Doe J', 'Nature']]
+PUBLICATION_DATA = [['1', 1963, 'Article 1', None, 'Article', 'Geller R, Geller M, Bing Ch', 'Nature'],
+                    ['2', 1965, 'Article 2', 'abstract', 'Article', 'Buffay Ph, Geller M, Doe J', 'Science'],
+                    ['3', 1967, 'Article 3', 'otherabstract', 'Article', 'Doe J, Buffay Ph', 'Nature'],
+                    ['4', 1968, 'Article 4', None, 'Article', 'Doe J, Geller R', 'Science'],
+                    ['5', 1975, 'Article 5', None, 'Review', 'Green R, Geller R, Doe J', 'Nature']]
 
 CITATION_STATS_DATA = [['1', 1972, 2], ['1', 1974, 15],
                        ['2', 1974, 1],
@@ -47,7 +47,7 @@ class MockLoader(Loader):
         return [1, 2, 3, 4, 5], True
 
     def load_publications(self, ids=None, temp_table_created=True, current=None, task=None):
-        return pd.DataFrame(PUBLICATION_DATA, columns=['id', 'year', 'title', 'abstract', 'authors', 'journal'])
+        return pd.DataFrame(PUBLICATION_DATA, columns=['id', 'year', 'title', 'abstract', 'type', 'authors', 'journal'])
 
     def load_citation_stats(self, ids=None, current=None, task=None):
         return pd.DataFrame(CITATION_STATS_DATA, columns=['id', 'year', 'count'])

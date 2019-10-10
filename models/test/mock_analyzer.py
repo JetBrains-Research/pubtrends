@@ -14,6 +14,7 @@ class MockAnalyzer:
         # Load DataFrame and convert id to str
         self.df = pd.read_csv(DF_CSV)
         self.df['id'] = self.df['id'].astype(str)
+        self.pub_types = ['Article', 'Review']
 
         self.min_year = 2005
         self.max_year = 2019
