@@ -69,7 +69,7 @@ class TestPlotPreprocessor(unittest.TestCase):
 
     def test_chord_diagram_data(self):
         layout, node_data_source, edge_data_source = PlotPreprocessor.chord_diagram_data(
-            self.analyzer.CG, self.analyzer.df, self.analyzer.pm, self.analyzer.comp_other, self.plotter.comp_palette
+            self.analyzer.CG, self.analyzer.df, self.analyzer.partition, self.analyzer.comp_other, self.plotter.comp_palette
         )
 
         expected_nodes = self.analyzer.CG.nodes()
@@ -132,7 +132,7 @@ class TestPlotPreprocessor(unittest.TestCase):
             return np.logical_and(cluster_edges['comp_x'] == str(i), cluster_edges['comp_y'] == str(j))
 
         cluster_edges, clusters = PlotPreprocessor.heatmap_clusters_data(
-            self.analyzer.CG, self.analyzer.df, self.analyzer.pmcomp_sizes
+            self.analyzer.CG, self.analyzer.df, self.analyzer.comp_sizes
         )
 
         self.assertListEqual(clusters, ['1', '2', '3'], 'Wrong clusters')

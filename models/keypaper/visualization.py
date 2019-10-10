@@ -125,7 +125,7 @@ class Plotter:
         logging.info('Visualizing components with Chord diagram')
 
         layout, node_data_source, edge_data_source = PlotPreprocessor.chord_diagram_data(
-            self.analyzer.CG, self.analyzer.df, self.analyzer.pm, self.analyzer.comp_other, self.comp_palette
+            self.analyzer.CG, self.analyzer.df, self.analyzer.partition, self.analyzer.comp_other, self.comp_palette
         )
 
         plot = Plot(plot_width=800, plot_height=800,
@@ -174,7 +174,7 @@ class Plotter:
         logging.info('Visualizing components with heatmap')
 
         cluster_edges, clusters = PlotPreprocessor.heatmap_clusters_data(
-            self.analyzer.CG, self.analyzer.df, self.analyzer.pmcomp_sizes
+            self.analyzer.CG, self.analyzer.df, self.analyzer.comp_sizes
         )
 
         step = 30
