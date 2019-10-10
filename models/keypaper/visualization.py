@@ -349,7 +349,7 @@ class Plotter:
         )
         # Add type coloring
         ds.add([self.pub_types_colors_map[t] for t in self.analyzer.top_cited_df['type']], 'color')
-        
+
         plot = self.__serve_scatter_article_layout(source=ds,
                                                    year_range=[min_year, max_year],
                                                    title=f'{len(self.analyzer.top_cited_df)} top cited papers',
