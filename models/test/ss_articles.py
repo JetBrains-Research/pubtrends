@@ -18,7 +18,7 @@ class Article:
                f"{self.year if self.year else 'null'}, '', '{self.type}', '{empty_json}')"
 
     def indexes(self):
-        return "('{0}', {1})".format(self.ssid, self.crc32id)
+        return f"('{self.ssid}', {self.crc32id})"
 
     def to_dict(self):
         return {

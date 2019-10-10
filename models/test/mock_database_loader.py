@@ -123,8 +123,8 @@ class MockDatabaseLoader(Loader):
 
     def insert_semantic_scholar_citations(self, citations):
         citations_str = ', '.join(
-            "('{0}', {1}, '{2}', {3})".format(citation[0].ssid, citation[0].crc32id,
-                                              citation[1].ssid, citation[1].crc32id) for citation in citations)
+            f"('{citation[0].ssid}', {citation[0].crc32id}, '{citation[1].ssid}', {citation[1].crc32id})"
+            for citation in citations)
 
         query = f'insert into sscitations (id_out, crc32id_out, id_in, crc32id_in) values {citations_str};'
 

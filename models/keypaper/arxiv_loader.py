@@ -37,5 +37,5 @@ class ArxivLoader(SemanticScholarLoader):
 
         self.ids = self.pub_df['id']
         crc32ids = self.pub_df['crc32id']
-        self.values = ', '.join(['({0}, \'{1}\')'.format(i, j) for (i, j) in zip(crc32ids, self.ids)])
+        self.values = ', '.join([f'({i}, \'{j}\')' for (i, j) in zip(crc32ids, self.ids)])
         return self.ids

@@ -14,7 +14,7 @@ class SemanticScholarLoader(Loader):
 
     @staticmethod
     def ids2values(ids):
-        return ', '.join(['({0}, \'{1}\')'.format(i, j) for (i, j) in zip(map(crc32, ids), ids)])
+        return ', '.join([f'({i}, \'{j}\')' for (i, j) in zip(map(crc32, ids), ids)])
 
     def search(self, terms, limit=None, sort=None, current=0, task=None):
         self.logger.info(html.escape(f'Searching publications matching <{terms}>'), current=current, task=task)
@@ -209,8 +209,7 @@ class SemanticScholarLoader(Loader):
     def expand(self, ids, current=0, task=None):
         if isinstance(ids, Iterable):
             self.logger.info('Expanding current topic', current=current, task=task)
-            crc32ids = list(map(crc32, ids))
-            values = ', '.join(['({0}, \'{1}\')'.format(i, j) for (i, j) in zip(crc32ids, ids)])
+            values = SemanticScholarLoader.ids2values(ids)
 
             query = f'''
                 DROP TABLE IF EXISTS TEMP_SSIDS;
