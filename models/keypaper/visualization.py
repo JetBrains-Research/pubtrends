@@ -23,7 +23,7 @@ from matplotlib import pyplot as plt
 from wordcloud import WordCloud
 
 from .utils import LOCAL_BASE_URL, get_word_cloud_data, \
-    get_most_common_ngrams, cut_authors_list
+    get_most_common_ngrams, cut_authors_list, ZOOM_OUT, ZOOM_IN
 from .visualization_data import PlotPreprocessor
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
@@ -86,13 +86,10 @@ class Plotter:
         """)
 
     @staticmethod
-    def zoom_callback(source, db, zoom):
-        # IMPORTANT: we want this code to contain only single quotes code
-        # to work correctly within embedded Javascript
-        data = json.dumps({k: v.tolist() for k, v in source.data.items()}).replace('"', "'")
+    def zoom_callback(id_list, source, zoom):
         # submit list of ids and database name to the main page using invisible form
         return f"""
-        var data = {data}, url='/';
+        var ids = {json.dumps(id_list)}, url='/';
         var form = document.createElement('form');
         document.body.appendChild(form);
         form.method = 'post';
@@ -102,13 +99,13 @@ class Plotter:
         var input = document.createElement('input');
         input.type = 'hidden';
         input.name = 'id_list';
-        input.value = data['id'];
+        input.value = ids;
         form.appendChild(input);
 
         var input = document.createElement('input');
         input.type = 'hidden';
         input.name = 'source';
-        input.value = '{db}';
+        input.value = '{source}';
         form.appendChild(input);
 
         var input = document.createElement('input');
@@ -311,8 +308,8 @@ class Plotter:
 
             desc.image_rgba(image=[img], x=[0], y=[0], dw=[10], dh=[10])
 
-            zoom_in_callback = \
-                self.zoom_callback(ColumnDataSource(comp_source[['id']]), self.analyzer.source, zoom=0)
+            # Create Zoom In callback
+            zoom_in_callback = self.zoom_callback(comp_source['id'], self.analyzer.source, zoom=ZOOM_IN)
             result.append((row(desc, plot), zoom_in_callback))
 
         return result
@@ -474,8 +471,9 @@ class Plotter:
         view[:, :, 3] = 255
 
         desc.image_rgba(image=[img], x=[0], y=[0], dw=[10], dh=[10])
-        zoom_out_callback = \
-            self.zoom_callback(ColumnDataSource(self.analyzer.df[['id']]), self.analyzer.source, zoom=1)
+
+        # Create Zoom Out callback
+        zoom_out_callback = self.zoom_callback(self.analyzer.df['id'], self.analyzer.source, zoom=ZOOM_OUT)
 
         return row(desc, p), zoom_out_callback
 

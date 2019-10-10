@@ -1,6 +1,8 @@
 import html
 import json
 import random
+import logging
+
 from urllib.parse import quote
 
 from celery.result import AsyncResult
@@ -9,8 +11,10 @@ from flask import (
     render_template, render_template_string
 )
 
-from models.celery.tasks import celery, find_paper_async, analyze_topic_async, prepare_paper_data
+from models.celery.tasks import celery, find_paper_async, analyze_topic_async
 from models.keypaper.config import PubtrendsConfig
+from models.keypaper.paper import prepare_paper_data
+from models.keypaper.utils import zoom_name, DOUBLE_ZOOM_OUT
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
@@ -89,7 +93,7 @@ def process():
                                        jobid=jobid, version=PUBTRENDS_CONFIG.version)
             else:
                 if analysis_type in ['detailed', 'expanded']:
-                    terms = f"{analysis_type} analysis of the previous query at {source}"
+                    terms = f"{analysis_type} analysis of {terms} at {source}"
 
                     return render_template('process.html',
                                            args={'key': "terms", 'value': quote(terms), 'jobid': jobid},
@@ -113,8 +117,9 @@ def search():
 
         if find_job.state == 'SUCCESS':
             ids = find_job.result
+            logging.debug('/search single paper analysis')
             if len(ids) == 1:
-                job = analyze_topic_async.delay(source, id_list=ids, zoom=2)
+                job = analyze_topic_async.delay(source, id_list=ids, zoom=DOUBLE_ZOOM_OUT)
                 return redirect(url_for('.process', terms=None, analysis_type=ids[0],
                                         source=source, jobid=job.id))
             elif len(ids) == 0:
@@ -163,42 +168,43 @@ def cancel():
 # Index page
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    if request.method == 'POST':
-        terms, id_list, zoom, key, value, analysis_type = '', '', 0, '', '', ''
-        source = request.form.get('source')
+    logging.debug('/ serving landing page')
+    if request.method == 'GET':
+        return render_template('main.html',
+                               version=PUBTRENDS_CONFIG.version,
+                               amounts=PUBTRENDS_CONFIG.show_max_articles_options,
+                               default_amount=PUBTRENDS_CONFIG.show_max_articles_default_value,
+                               development=PUBTRENDS_CONFIG.development,
+                               search_example_terms=random.choice(PUBTRENDS_CONFIG.search_example_terms))
 
-        if 'terms' in request.form:
-            terms = request.form.get('terms')
-        elif 'id_list' in request.form:
-            id_list = request.form.get('id_list').split(',')
-            zoom = request.form.get('zoom')
-            analysis_type = 'expanded' if int(zoom) > 0 else 'detailed'
-        elif 'key' in request.form and 'value' in request.form:
-            key = request.form.get('key')
-            value = request.form.get('value')
-        else:
-            raise Exception("Request contains no parameters")
+    logging.debug('/ search activity')
+    # Common keys
+    source = request.form.get('source')  # Pubmed or Semantic Scholar
+    sort = request.form.get('sort')      # Sort order
+    amount = request.form.get('amount')  # Amount
+    terms = request.form.get('terms') if 'terms' in request.form else None
 
-        sort = request.form.get('sort')
-        amount = request.form.get('amount')
+    if 'id_list' in request.form:
+        logging.debug(f'/ zoom')
+        id_list = request.form.get('id_list').split(',')
+        zoom = request.form.get('zoom')
+        analysis_type = zoom_name(zoom)
+        job = analyze_topic_async.delay(source, terms=terms, id_list=id_list, zoom=int(zoom), sort=sort, amount=amount)
+        return redirect(url_for('.process', terms=terms, analysis_type=analysis_type, source=source, jobid=job.id))
 
-        if len(terms) > 0 or id_list:
-            # Submit Celery task for topic analysis
-            job = analyze_topic_async.delay(source, terms=terms, id_list=id_list,
-                                            zoom=int(zoom), sort=sort, amount=amount)
-            return redirect(url_for('.process', terms=terms, analysis_type=analysis_type,
-                                    source=source, jobid=job.id))
-        elif len(value) > 0:
-            # Submit Celery task for paper analysis
-            job = find_paper_async.delay(source, key, value)
-            return redirect(url_for('.process', source=source, key=key, value=value, jobid=job.id))
+    elif 'key' in request.form and 'value' in request.form:
+        logging.debug(f'/ paper search')
+        key = request.form.get('key')
+        value = request.form.get('value')
+        job = find_paper_async.delay(source, key, value)
+        return redirect(url_for('.process', source=source, key=key, value=value, jobid=job.id))
 
-    return render_template('main.html',
-                           version=PUBTRENDS_CONFIG.version,
-                           amounts=PUBTRENDS_CONFIG.show_max_articles_options,
-                           default_amount=PUBTRENDS_CONFIG.show_max_articles_default_value,
-                           development=PUBTRENDS_CONFIG.development,
-                           search_example_terms=random.choice(PUBTRENDS_CONFIG.search_example_terms))
+    elif terms:
+        logging.debug(f'/ regular search')
+        job = analyze_topic_async.delay(source, terms=terms, sort=sort, amount=amount)
+        return redirect(url_for('.process', terms=terms, source=source, jobid=job.id))
+
+    raise Exception("Request contains no parameters")
 
 
 def get_app():

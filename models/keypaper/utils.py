@@ -24,6 +24,22 @@ LOCAL_BASE_URL = Template('/paper?source=$source&id=')
 PUBMED_ARTICLE_BASE_URL = 'https://www.ncbi.nlm.nih.gov/pubmed/?term='
 SEMANTIC_SCHOLAR_BASE_URL = 'https://www.semanticscholar.org/paper/'
 
+# IMPORTANT:
+# KeyPaperAnalyzer.launch() performs "zoom - 1" expand operations if id_list is given.
+# This allows to perform single zoom out in case of regular zoom out action and
+# double in case of single paper analysis.
+ZOOM_IN = 0
+ZOOM_OUT = 1
+DOUBLE_ZOOM_OUT = 2
+
+
+def zoom_name(zoom):
+    if int(zoom) == ZOOM_IN:
+        return 'detailed'
+    elif int(zoom) == ZOOM_OUT:
+        return 'expanded'
+    raise ValueError(f'Illegal zoom key value: {zoom}')
+
 
 def get_wordnet_pos(treebank_tag):
     """Convert pos_tag output to WordNetLemmatizer tags."""
