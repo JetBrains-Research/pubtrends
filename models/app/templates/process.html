@@ -24,7 +24,7 @@
     <script>
         "use strict";
 
-        const TIMEOUT = 1000;
+        const TIMEOUT = 2000;
         const MAX_RETRIES = 20;
         let retries = 0;
         let cancelled = false;
@@ -94,20 +94,20 @@
                      if (response.state === 'CANCELLED') {
                         $('#status').html(response.message);
                         $('#log').empty();
-                        setTimeout(function() { window.location.replace("/"); }, 2000);
+                        setTimeout(function() { window.location.replace("/"); }, TIMEOUT);
                     } else if (response.state === 'FAILURE') {
                         $('#progress').hide();
                         $('#status').html("<h1>Error</h1>"+
                             `<span class="error-message"> ${response.message} </span>`);
                         $('#log').empty();
-                        setTimeout(function() { window.location.replace("/"); }, 2000);
+                        setTimeout(function() { window.location.replace("/"); }, TIMEOUT);
                     }
                 }
             });
         }
 
         $(function () {
-            poll_progress();
+            setTimeout(poll_progress, TIMEOUT);
         });
     </script>
 </head>
