@@ -1,15 +1,8 @@
 import unittest
 
-import numpy as np
 from parameterized import parameterized
 
-from models.keypaper.analysis import KeyPaperAnalyzer
-from models.keypaper.config import PubtrendsConfig
 from models.keypaper.loader import Loader
-from models.keypaper.pm_loader import PubmedLoader
-from models.keypaper.ss_loader import SemanticScholarLoader
-from models.test.mock_loader import MockLoader, COCITATION_GRAPH_EDGES, COCITATION_GRAPH_NODES, \
-    CITATION_YEARS, EXPECTED_MAX_GAIN, EXPECTED_MAX_RELATIVE_GAIN, CITATION_GRAPH_NODES, CITATION_GRAPH_EDGES
 
 
 class TestLoader(unittest.TestCase):

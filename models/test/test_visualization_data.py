@@ -74,7 +74,6 @@ class TestPlotPreprocessor(unittest.TestCase):
         )
 
         expected_nodes = self.analyzer.CG.nodes()
-        expected_edges = self.analyzer.CG.edges()
         data = node_data_source.data
 
         self.assertCountEqual(list(layout.keys()), expected_nodes, 'Wrong nodes in layout')
