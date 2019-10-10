@@ -241,7 +241,6 @@ class KeyPaperAnalyzer:
 
         # Graph clustering via Louvain community algorithm
         partition = community.best_partition(cocitation_graph, random_state=KeyPaperAnalyzer.SEED)
-        print(partition)
         self.logger.debug(f'Found {len(set(partition.values()))} components', current=current, task=task)
 
         # Calculate modularity for partition
