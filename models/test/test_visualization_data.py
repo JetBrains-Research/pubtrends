@@ -69,7 +69,8 @@ class TestPlotPreprocessor(unittest.TestCase):
 
     def test_chord_diagram_data(self):
         layout, node_data_source, edge_data_source = PlotPreprocessor.chord_diagram_data(
-            self.analyzer.CG, self.analyzer.df, self.analyzer.partition, self.analyzer.comp_other, self.plotter.comp_palette
+            self.analyzer.CG, self.analyzer.df,
+            self.analyzer.partition, self.analyzer.comp_other, self.plotter.comp_palette
         )
 
         expected_nodes = self.analyzer.CG.nodes()

@@ -101,7 +101,7 @@ class PubmedLoader(Loader):
             WITH [{','.join([f"'{id}'" for id in ids])}] AS pmids
             MATCH (p:PMPublication)
             WHERE p.pmid IN pmids
-            RETURN p.pmid as id, p.title as title, p.abstract as abstract, 
+            RETURN p.pmid as id, p.title as title, p.abstract as abstract,
                 p.date.year as year, p.type as type, p.aux as aux
             ORDER BY id
         '''

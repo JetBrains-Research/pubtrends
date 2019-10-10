@@ -47,7 +47,6 @@ class Plotter:
                 zip(self.analyzer.pub_types,
                     [RGB(*[round(c * 255) for c in pub_types_cmap(i)[:3]]) for i in range(n_pub_types)]))
 
-
     @staticmethod
     def paper_callback(source, db):
         if db in ['Semantic Scholar', 'Pubmed']:
