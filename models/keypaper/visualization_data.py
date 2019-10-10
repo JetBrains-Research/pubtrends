@@ -229,7 +229,7 @@ class PlotPreprocessor:
         df_local['size'] = 1 + np.log(df['total'] + 1)
 
         # Calculate max size of circles to avoid overlapping along x-axis
-        max_radius_screen_units = width / (max_year - min_year + 1)
+        max_radius_screen_units = width / max(max_year - min_year + 1, 30)
         size_scaling_coefficient = max_radius_screen_units / df_local['size'].max()
         df_local['size'] = df_local['size'] * size_scaling_coefficient
 
