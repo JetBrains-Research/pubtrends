@@ -85,7 +85,10 @@
                     <div class="row justify-content-between info">
                         <span class="col citation"><h5>{{ citation }}</h5></span>
                         <span class="col link">
-                            <a class="float-right" href="{{ url }}">Open in {{ source }}</a>
+                            <a class="float-right" href="{{ url }}">
+                                <img src="{{ url_for('static', filename='external-link.svg') }}"/>
+                                Open in {{ source }}
+                            </a>
                         </span>
                     </div>
                     <div class="mt-2">
@@ -168,10 +171,15 @@
                         </tr>
                         </thead>
                         <tbody>
-                        {% for paper in citing_papers %}
+                        {% for id, title, url in citing_papers %}
                         <tr>
                             <th scope="row">{{ loop.index }}</th>
-                            <td>{{ paper }}</td>
+                            <td>
+                                {{ title }}
+                                <a class="float-right" href="{{ url }}" title="Open in {{ source }}">
+                                    <img src="{{ url_for('static', filename='external-link.svg') }}"/>
+                                </a>
+                            </td>
                         </tr>
                         {% endfor %}
                         </tbody>
@@ -192,10 +200,15 @@
                         </tr>
                         </thead>
                         <tbody>
-                        {% for paper in cited_papers %}
+                        {% for id, title, url in cited_papers %}
                         <tr>
                             <th scope="row">{{ loop.index }}</th>
-                            <td>{{ paper }}</td>
+                            <td>
+                                {{ title }}
+                                <a class="float-right" href="{{ url }}" title="Open in {{ source }}">
+                                    <img src="{{ url_for('static', filename='external-link.svg') }}"/>
+                                </a>
+                            </td>
                         </tr>
                         {% endfor %}
                         </tbody>
@@ -213,15 +226,20 @@
                         <tr>
                             <th scope="col">#</th>
                             <th scope="col">Title</th>
-                            <th scope="col">Number of co-citations</th>
+                            <th scope="col">Weight</th>
                         </tr>
                         </thead>
                         <tbody>
-                        {% for row in cocited_papers %}
+                        {% for id, title, url, cw in cocited_papers %}
                         <tr>
                             <th scope="row">{{ loop.index }}</th>
-                            <td>{{ row[0] }}</td>
-                            <td>{{ row[1] }}</td>
+                            <td>
+                                {{ title }}
+                                <a class="float-right" href="{{ url }}" title="Open in {{ source }}">
+                                    <img src="{{ url_for('static', filename='external-link.svg') }}"/>
+                                </a>
+                            </td>
+                            <td>{{ cw }}</td>
                         </tr>
                         {% endfor %}
                         </tbody>

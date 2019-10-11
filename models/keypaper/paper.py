@@ -11,19 +11,19 @@ from models.keypaper.visualization import Plotter
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
 
-def get_top_papers(papers, df, key, n=10):
-    citing_papers = map(lambda v: (df[df['id'] == v]['title'].values[0],
-                                   df[df['id'] == v][key].values[0]), list(papers))
-    return [el[0] for el in sorted(citing_papers, key=lambda x: x[1], reverse=True)[:n]]
+def get_top_papers_id_title(papers, df, key, n=10):
+    citing_papers = map(lambda v: (df[df['id'] == v], df[df['id'] == v][key].values[0]), list(papers))
+    return [(el[0]['id'].values[0], el[0]['title'].values[0])
+            for el in sorted(citing_papers, key=lambda x: x[1], reverse=True)[:n]]
 
 
 def prepare_paper_data(data, source, pid):
     if source == 'Pubmed':
         loader = PubmedLoader(PUBTRENDS_CONFIG)
-        url = PUBMED_ARTICLE_BASE_URL + pid
+        url_prefix = PUBMED_ARTICLE_BASE_URL
     elif source == 'Semantic Scholar':
         loader = SemanticScholarLoader(PUBTRENDS_CONFIG)
-        url = SEMANTIC_SCHOLAR_BASE_URL + pid
+        url_prefix = SEMANTIC_SCHOLAR_BASE_URL
     else:
         raise ValueError(f"Unknown source {source}")
 
@@ -71,12 +71,13 @@ def prepare_paper_data(data, source, pid):
     # citations (papers that cite current), and co-citations
     # Citations graph is limited by only the nodes in pub_df, so not all the nodes might present
     if analyzer.G.has_node(pid):
-        top_references = get_top_papers(analyzer.G.successors(pid), analyzer.df, key='pagerank')
-        top_citations = get_top_papers(analyzer.G.predecessors(pid), analyzer.df, key='pagerank')
+        top_references = get_top_papers_id_title(analyzer.G.successors(pid), analyzer.df, key='pagerank')
+        top_citations = get_top_papers_id_title(analyzer.G.predecessors(pid), analyzer.df, key='pagerank')
     else:
         top_references = top_citations = []
 
-    cocited_papers = map(lambda v: (analyzer.df[analyzer.df['id'] == v]['title'].values[0],
+    cocited_papers = map(lambda v: (analyzer.df[analyzer.df['id'] == v]['id'].values[0],
+                                    analyzer.df[analyzer.df['id'] == v]['title'].values[0],
                                     analyzer.CG.edges[pid, v]['weight']), list(analyzer.CG[pid]))
     top10_cocited_papers = sorted(cocited_papers, key=lambda x: x[1], reverse=True)[:10]
 
@@ -85,11 +86,11 @@ def prepare_paper_data(data, source, pid):
         'trimmed_title': trimmed_title,
         'authors': sel['authors'].values[0],
         'citation': citation,
-        'url': url,
+        'url': url_prefix + pid,
         'source': source,
         'citation_dynamics': [components(plotter.article_citation_dynamics(analyzer.df, str(pid)))],
         'related_topics': related_topics,
-        'cocited_papers': top10_cocited_papers
+        'cocited_papers': [(pid, title, url_prefix + pid, cw) for pid, title, cw in top10_cocited_papers]
     }
 
     abstract = sel['abstract'].values[0]
@@ -97,9 +98,9 @@ def prepare_paper_data(data, source, pid):
         result['abstract'] = abstract
 
     if len(top_references) > 0:
-        result['citing_papers'] = top_references
+        result['citing_papers'] = [(pid, title, url_prefix + pid) for pid, title in top_references]
 
     if len(top_citations) > 0:
-        result['cited_papers'] = top_citations
+        result['cited_papers'] = [(pid, title, url_prefix + pid) for pid, title in top_citations]
 
     return result
