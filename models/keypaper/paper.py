@@ -67,14 +67,18 @@ def prepare_paper_data(data, source, pid):
                                                 :10]]), el[1]),
                          sorted(related_topics.items(), key=lambda el: el[1], reverse=True))
 
-    # Determine top references (papers that are cited by current), citations (papers that cite current),
-    # and co-citations
-    top_references = get_top_papers(analyzer.G.successors(pid), analyzer.df, key='pagerank')
-    top_citations = get_top_papers(analyzer.G.predecessors(pid), analyzer.df, key='pagerank')
+    # Determine top references (papers that are cited by current),
+    # citations (papers that cite current), and co-citations
+    # Citations graph is limited by only the nodes in pub_df, so not all the nodes might present
+    if analyzer.G.has_node(pid):
+        top_references = get_top_papers(analyzer.G.successors(pid), analyzer.df, key='pagerank')
+        top_citations = get_top_papers(analyzer.G.predecessors(pid), analyzer.df, key='pagerank')
+    else:
+        top_references = top_citations = []
 
     cocited_papers = map(lambda v: (analyzer.df[analyzer.df['id'] == v]['title'].values[0],
                                     analyzer.CG.edges[pid, v]['weight']), list(analyzer.CG[pid]))
-    top_cocited_papers = sorted(cocited_papers, key=lambda x: x[1], reverse=True)[:10]
+    top10_cocited_papers = sorted(cocited_papers, key=lambda x: x[1], reverse=True)[:10]
 
     result = {
         'title': title,
@@ -85,7 +89,7 @@ def prepare_paper_data(data, source, pid):
         'source': source,
         'citation_dynamics': [components(plotter.article_citation_dynamics(analyzer.df, str(pid)))],
         'related_topics': related_topics,
-        'cocited_papers': top_cocited_papers
+        'cocited_papers': top10_cocited_papers
     }
 
     abstract = sel['abstract'].values[0]
