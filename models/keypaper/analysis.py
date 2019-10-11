@@ -1,12 +1,10 @@
-import re
-
 import community
 import networkx as nx
 import numpy as np
 import pandas as pd
 from networkx.readwrite import json_graph
 
-from .arxiv_loader import ArxivLoader
+from models.prediction.arxiv_loader import ArxivLoader
 from .pm_loader import PubmedLoader
 from .progress_logger import ProgressLogger
 from .ss_loader import SemanticScholarLoader
@@ -19,6 +17,7 @@ class KeyPaperAnalyzer:
     EXPERIMENTAL_STEPS = 2
 
     def __init__(self, loader, config, test=False):
+        self.config = config
         self.experimental = config.experimental
         self.logger = ProgressLogger(KeyPaperAnalyzer.TOTAL_STEPS +
                                      (KeyPaperAnalyzer.EXPERIMENTAL_STEPS if self.experimental else 0))
@@ -36,114 +35,86 @@ class KeyPaperAnalyzer:
         elif not test:
             raise TypeError("loader should be either PubmedLoader or SemanticScholarLoader")
 
-    def launch(self, search_query=None, id_list=None, zoom=None, limit=None, sort=None, task=None):
+    def log(self):
+        return self.logger.stream.getvalue()
+
+    def teardown(self):
+        self.logger.remove_handler()
+
+    def search_terms(self, query, limit=None, sort=None, task=None):
+        # Search articles relevant to the terms
+        ids = self.loader.search(query, limit=limit, sort=sort, current=1, task=task)
+        if len(ids) == 0:
+            raise RuntimeError(f"Nothing found in DB for search query: {query}")
+        # Load data about publications
+        pub_df = self.loader.load_publications(ids, current=2, task=task)
+        if len(pub_df) == 0:
+            raise RuntimeError(f"Nothing found in DB for ids: {ids}")
+        return ids, pub_df
+
+    def process_id_list(self, id_list, zoom, task=None):
+        # Load data about publications with given ids
+        ids = id_list
+        if len(ids) == 0:
+            raise RuntimeError(f"Nothing found in DB for empty ids list")
+        for _ in range(zoom):
+            ids = self.loader.expand(ids, current=1, task=task)
+        # Load data about publications
+        pub_df = self.loader.load_publications(ids, current=2, task=task)
+        if len(pub_df) == 0:
+            raise RuntimeError(f"Nothing found in DB for ids: {ids}")
+        return ids, pub_df
+
+    def analyze_papers(self, ids, pub_df, query, task=None):
         """:return full log"""
-
-        try:
-            if search_query:
-                # Search articles relevant to the terms
-                special_symbols = re.compile('\\W+')
-                self.terms = [term.strip() for term in re.sub(special_symbols, ' ', search_query).split()]
-                self.ids = self.loader.search(search_query, limit=limit, sort=sort, current=1, task=task)
-                self.n_papers = len(self.ids)
-
-                # Nothing found
-                if self.n_papers == 0:
-                    raise RuntimeError("Nothing found")
-
-                # Load data about publications
-                self.pub_df = self.loader.load_publications(self.ids, current=2, task=task)
-                if len(self.pub_df) == 0:
-                    raise RuntimeError("Nothing found in DB")
-            elif id_list:
-                # Load data about publications with given ids
-                self.terms = search_query
-                self.ids = id_list
-                if zoom:
-                    for _ in range(zoom):
-                        self.ids = self.loader.expand(self.ids, current=1, task=task)
-                self.pub_df = self.loader.load_publications(self.ids, current=2, task=task)
-                self.n_papers = len(self.ids)
-
-            self.pub_types = list(set(self.pub_df['type']))
-
-            cit_stats_df_from_query = self.loader.load_citation_stats(self.ids, current=3, task=task)
-            self.cit_stats_df = self.build_cit_stats_df(cit_stats_df_from_query, self.n_papers, current=4, task=task)
-            if len(self.cit_stats_df) == 0:
-                raise RuntimeError("No citations of papers were found")
-
-            self.df, self.min_year, self.max_year, self.citation_years = self.merge_citation_stats(self.pub_df,
-                                                                                                   self.cit_stats_df)
-            if len(self.df) == 0:
-                raise RuntimeError("Failed to merge publications and citations")
-
-            self.cit_df = self.loader.load_citations(self.ids, current=5, task=task)
-            self.G = self.build_citation_graph(self.cit_df, current=6, task=task)
-
-            self.cocit_df = self.loader.load_cocitations(self.ids, current=7, task=task)
-            cocit_grouped_df = self.build_cocit_grouped_df(self.cocit_df)
-            self.CG = self.build_cocitation_graph(cocit_grouped_df, current=8, task=task, add_citation_edges=True)
-            if len(self.CG.nodes()) == 0:
-                raise RuntimeError("Failed to build co-citations graph")
-
-            # Perform subtopic analysis and get subtopic descriptions
-            self.components, self.comp_other, self.partition, self.comp_sizes = self.subtopic_analysis(
-                self.CG, current=9, task=task
+        self.ids = ids
+        self.pub_df = pub_df
+        self.query = query
+        self.n_papers = len(self.ids)
+        self.pub_types = list(set(self.pub_df['type']))
+        cit_stats_df_from_query = self.loader.load_citation_stats(self.ids, current=3, task=task)
+        self.cit_stats_df = self.build_cit_stats_df(cit_stats_df_from_query, self.n_papers, current=4, task=task)
+        if len(self.cit_stats_df) == 0:
+            raise RuntimeError("No citations of papers were found")
+        self.df, self.min_year, self.max_year, self.citation_years = self.merge_citation_stats(self.pub_df,
+                                                                                               self.cit_stats_df)
+        if len(self.df) == 0:
+            raise RuntimeError("Failed to merge publications and citations")
+        self.cit_df = self.loader.load_citations(self.ids, current=5, task=task)
+        self.G = self.build_citation_graph(self.cit_df, current=6, task=task)
+        self.cocit_df = self.loader.load_cocitations(self.ids, current=7, task=task)
+        cocit_grouped_df = self.build_cocit_grouped_df(self.cocit_df)
+        self.CG = self.build_cocitation_graph(cocit_grouped_df, current=8, task=task, add_citation_edges=True)
+        if len(self.CG.nodes()) == 0:
+            raise RuntimeError("Failed to build co-citations graph")
+        # Perform subtopic analysis and get subtopic descriptions
+        self.components, self.comp_other, self.partition, self.comp_sizes = self.subtopic_analysis(
+            self.CG, current=9, task=task
+        )
+        self.df = self.merge_col(self.df, self.partition, col='comp')
+        self.df_kwd = self.subtopic_descriptions(self.df, current=10, task=task)
+        # Perform PageRank analysis
+        self.pr = self.pagerank(self.G, current=11, task=task)
+        self.df = self.merge_col(self.df, self.pr, col='pagerank')
+        # Find interesting papers
+        self.top_cited_papers, self.top_cited_df = self.find_top_cited_papers(self.df, current=12, task=task)
+        self.max_gain_papers, self.max_gain_df = self.find_max_gain_papers(self.df, self.citation_years,
+                                                                           current=13, task=task)
+        self.max_rel_gain_papers, self.max_rel_gain_df = self.find_max_relative_gain_papers(
+            self.df, self.citation_years, current=13, task=task
+        )
+        # Find top journals
+        self.journal_stats = self.popular_journals(self.df, current=15, task=task)
+        # Find top authors
+        self.author_stats = self.popular_authors(self.df, current=16, task=task)
+        # Experimental features, can be turned off in 'config.properties'
+        if self.experimental:
+            # Perform subtopic evolution analysis and get subtopic descriptions
+            self.evolution_df, self.evolution_year_range = self.subtopic_evolution_analysis(self.cocit_df,
+                                                                                            current=17, task=task)
+            self.evolution_kwds = self.subtopic_evolution_descriptions(
+                self.df, self.evolution_df, self.evolution_year_range, self.query, current=18, task=task
             )
-
-            self.df = self.merge_col(self.df, self.partition, col='comp')
-            self.df_kwd = self.subtopic_descriptions(self.df, current=10, task=task)
-
-            # Perform PageRank analysis
-            self.pr = self.pagerank(self.G, current=11, task=task)
-            self.df = self.merge_col(self.df, self.pr, col='pagerank')
-
-            # Find interesting papers
-            self.top_cited_papers, self.top_cited_df = self.find_top_cited_papers(self.df, current=12, task=task)
-
-            self.max_gain_papers, self.max_gain_df = self.find_max_gain_papers(self.df, self.citation_years,
-                                                                               current=13, task=task)
-
-            self.max_rel_gain_papers, self.max_rel_gain_df = self.find_max_relative_gain_papers(
-                self.df, self.citation_years, current=13, task=task
-            )
-
-            # Find top journals
-            self.journal_stats = self.popular_journals(self.df, current=15, task=task)
-
-            # Find top authors
-            self.author_stats = self.popular_authors(self.df, current=16, task=task)
-
-            # Experimental features, can be turned off in 'config.properties'
-            if self.experimental:
-                # Perform subtopic evolution analysis and get subtopic descriptions
-                self.evolution_df, self.evolution_year_range = self.subtopic_evolution_analysis(self.cocit_df,
-                                                                                                current=17, task=task)
-                self.evolution_kwds = self.subtopic_evolution_descriptions(
-                    self.df, self.evolution_df, self.evolution_year_range, self.terms, current=18, task=task
-                )
-
-            return self.logger.stream.getvalue()
-        finally:
-            self.loader.close_connection()
-            self.logger.remove_handler()
-
-    def launch_paper(self, key, value, task=None):
-        """
-        Launcher for analysis of certain paper specified by key - value pair.
-        :param key: search key, one of 'title', 'doi', 'pmid'
-        :param value: value corresponding to the key
-        :return full log
-        """
-
-        try:
-            # Search article with this key and value
-            self.ids = self.loader.find(key, value, current=1, task=task)
-
-            return self.logger.stream.getvalue()
-        finally:
-            self.loader.close_connection()
-            self.logger.remove_handler()
 
     def build_cit_stats_df(self, cit_stats_df_from_query, n_papers, current=None, task=None):
         # Get citation stats with columns 'id', year_1, ..., year_N and fill NaN with 0
@@ -280,7 +251,7 @@ class KeyPaperAnalyzer:
             self.logger.debug(f'{k}: {v}', current=current, task=task)
         df_kwd = pd.Series(kwds).reset_index()
         df_kwd = df_kwd.rename(columns={'index': 'comp', 0: 'kwd'})
-        self.logger.debug('Done\n', current=current, task=task)
+        self.logger.debug('Done with n-grams', current=current, task=task)
         return df_kwd
 
     def find_top_cited_papers(self, df, max_papers=50, threshold=0.1, min_papers=1, current=0, task=None):
@@ -387,7 +358,7 @@ class KeyPaperAnalyzer:
         evolution_df['id'] = evolution_df['id'].astype(str)
         return evolution_df, year_range
 
-    def subtopic_evolution_descriptions(self, df, evolution_df, year_range, terms,
+    def subtopic_evolution_descriptions(self, df, evolution_df, year_range, query,
                                         n=200, keywords=15, current=0, task=None):
         # Subtopic evolution failed, no need to generate keywords
         if evolution_df is None or not year_range:
@@ -403,7 +374,7 @@ class KeyPaperAnalyzer:
                 if isinstance(col, (int, float)):
                     evolution_df[col] = evolution_df[col].apply(int)
                     comps = evolution_df.groupby(col)['id'].apply(list).to_dict()
-                    evolution_kwds[col] = get_tfidf_words(df, comps, terms, size=keywords)
+                    evolution_kwds[col] = get_tfidf_words(df, comps, query, size=keywords)
 
         return evolution_kwds
 

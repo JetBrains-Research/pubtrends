@@ -3,15 +3,15 @@ import html
 import numpy as np
 import pandas as pd
 
-from .ss_loader import SemanticScholarLoader
-from .utils import extract_authors
+from models.keypaper.ss_loader import SemanticScholarLoader
+from models.keypaper.utils import extract_authors
 
 
 class ArxivLoader(SemanticScholarLoader):
     def __init__(self, pubtrends_config):
         super(ArxivLoader, self).__init__(pubtrends_config)
 
-    def search(self, *terms, current=0, task=None):
+    def search(self, *query, current=0, task=None):
         query = f'''
         SELECT DISTINCT ON(ssid) ssid, crc32id, title, abstract, year, aux FROM SSPublications P
         WHERE source = 'Arxiv' limit {self.max_number_of_articles};

@@ -17,7 +17,8 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.analyzer = KeyPaperAnalyzer(MockLoader(), TestKeyPaperAnalyzer.PUBTRENDS_CONFIG, test=True)
-        cls.analyzer.launch(search_query='query')
+        ids, pub_df = cls.analyzer.search_terms(query='query')
+        cls.analyzer.analyze_papers(ids, pub_df, 'query')
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.ids)
         cls.analyzer.G = cls.analyzer.build_citation_graph(cls.analyzer.cit_df)
 

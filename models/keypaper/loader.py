@@ -6,7 +6,7 @@ import numpy as np
 import psycopg2 as pg_driver
 
 from neo4j import GraphDatabase
-from .utils import extract_authors
+from models.keypaper.utils import extract_authors
 
 
 class Loader:

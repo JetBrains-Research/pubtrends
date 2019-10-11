@@ -6,6 +6,7 @@ import pandas as pd
 
 from .loader import Loader
 from .utils import crc32
+from models.keypaper.utils import SORT_MOST_CITED, SORT_MOST_RECENT, SORT_MOST_RELEVANT
 
 
 class SemanticScholarLoader(Loader):
@@ -16,44 +17,50 @@ class SemanticScholarLoader(Loader):
     def ids2values(ids):
         return ', '.join([f'({i}, \'{j}\')' for (i, j) in zip(map(crc32, ids), ids)])
 
-    def search(self, terms, limit=None, sort=None, current=0, task=None):
-        self.logger.info(html.escape(f'Searching publications matching <{terms}>'), current=current, task=task)
-        terms_str = '\'' + terms + '\''
+    def search(self, query, limit=None, sort=None, current=0, task=None):
+        self.logger.info(html.escape(f'Searching publications matching <{query}>'), current=current, task=task)
+        query_str = '\'' + query + '\''
         if not limit:
+            limit_message = ''
             limit = self.max_number_of_articles
+        else:
+            limit_message = f'{limit} '
 
         columns = ['id', 'crc32id', 'pmid']
-        if sort == 'relevance':
+        self.logger.info(html.escape(f'Searching {limit_message}{sort.lower()} publications matching <{query}>'),
+                         current=current, task=task)
+
+        if sort == SORT_MOST_RELEVANT:
             query = f'''
                 SELECT P.ssid, P.crc32id, P.pmid, ts_rank_cd(P.tsv, query) AS rank
-                FROM SSPublications P, websearch_to_tsquery('english', {terms_str}) query
+                FROM SSPublications P, websearch_to_tsquery('english', {query_str}) query
                 WHERE tsv @@ query
                 ORDER BY rank DESC
                 LIMIT {limit};
                 '''
             columns.append('ts_rank')
-        elif sort == 'citations':
+        elif sort == SORT_MOST_CITED:
             query = f'''
                 SELECT P.ssid, P.crc32id, P.pmid, COUNT(1) AS count
                 FROM SSPublications P
                 LEFT JOIN SSCitations C
                 ON C.crc32id_in = P.crc32id AND C.id_in = P.ssid
-                WHERE tsv @@ websearch_to_tsquery('english', {terms_str})
+                WHERE tsv @@ websearch_to_tsquery('english', {query_str})
                 GROUP BY P.ssid, P.crc32id, P.pmid
                 ORDER BY count DESC NULLS LAST
                 LIMIT {limit};
                 '''
             columns.append('citations')
-        elif sort == 'year':
+        elif sort == SORT_MOST_RECENT:
             query = f'''
                 SELECT ssid, crc32id, pmid
                 FROM SSPublications P
-                WHERE tsv @@ websearch_to_tsquery('english', {terms_str})
+                WHERE tsv @@ websearch_to_tsquery('english', {query_str})
                 ORDER BY year DESC NULLS LAST
                 LIMIT {limit};
                 '''
         else:
-            raise ValueError('sort can be either citations, relevance or year')
+            raise ValueError(f'Illegal sort method: {sort}')
 
         with self.conn.cursor() as cursor:
             cursor.execute(query)

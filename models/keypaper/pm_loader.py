@@ -6,7 +6,8 @@ from collections import Iterable
 import numpy as np
 import pandas as pd
 
-from .loader import Loader
+from models.keypaper.utils import SORT_MOST_CITED, SORT_MOST_RECENT, SORT_MOST_RELEVANT
+from models.keypaper.loader import Loader
 
 
 class PubmedLoader(Loader):
@@ -36,17 +37,8 @@ class PubmedLoader(Loader):
         with self.neo4jdriver.session() as session:
             return [r['pmid'] for r in session.run(query)]
 
-    def search(self, terms, limit=None, sort=None, current=0, task=None):
-        terms_str = self.preprocess_search_string(terms, self.pubtrends_config.min_search_words)
-
-        if sort == 'relevance':
-            sort_msg = 'most relevant'
-        elif sort == 'citations':
-            sort_msg = 'most cited'
-        elif sort == 'year':
-            sort_msg = 'most recent'
-        else:
-            raise ValueError(f'sort can be either citations, relevance or year, got {sort}')
+    def search(self, query, limit=None, sort=None, current=0, task=None):
+        query_str = self.preprocess_search_string(query, self.pubtrends_config.min_search_words)
 
         if not limit:
             limit_message = ''
@@ -54,20 +46,20 @@ class PubmedLoader(Loader):
         else:
             limit_message = f'{limit} '
 
-        self.logger.info(html.escape(f'Searching {limit_message}{sort_msg} publications matching <{terms}>'),
+        self.logger.info(html.escape(f'Searching {limit_message}{sort.lower()} publications matching <{query}>'),
                          current=current, task=task)
 
-        if sort == 'relevance':
+        if sort == SORT_MOST_RELEVANT:
             query = f'''
-                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", {terms_str})
+                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", {query_str})
                 YIELD node, score
                 RETURN node.pmid as pmid
                 ORDER BY score DESC
                 LIMIT {limit};
                 '''
-        elif sort == 'citations':
+        elif sort == SORT_MOST_CITED:
             query = f'''
-                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", {terms_str}) YIELD node
+                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", {query_str}) YIELD node
                 MATCH ()-[r:PMReferenced]->(in:PMPublication)
                 WHERE in.pmid = node.pmid
                 WITH node, COUNT(r) AS cnt
@@ -75,15 +67,15 @@ class PubmedLoader(Loader):
                 ORDER BY cnt DESC
                 LIMIT {limit};
                 '''
-        elif sort == 'year':
+        elif sort == SORT_MOST_RECENT:
             query = f'''
-                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", {terms_str}) YIELD node
+                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", {query_str}) YIELD node
                 RETURN node.pmid as pmid
                 ORDER BY node.date DESC
                 LIMIT {limit};
                 '''
         else:
-            raise ValueError(f'sort can be either citations, relevance or year, got {sort}')
+            raise ValueError(f'Illegal sort method: {sort}')
 
         with self.neo4jdriver.session() as session:
             # Duplicate rows may occur if crawler was stopped while parsing

@@ -7,6 +7,7 @@ from parameterized import parameterized
 
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.pm_loader import PubmedLoader
+from models.keypaper.utils import SORT_MOST_RECENT, SORT_MOST_RELEVANT, SORT_MOST_CITED
 from models.test.mock_database_loader import MockDatabaseLoader
 from models.test.pm_articles import REQUIRED_ARTICLES, ARTICLES, EXPECTED_PUB_DF, \
     INNER_CITATIONS, CITATIONS, EXPECTED_CIT_DF, EXPECTED_COCIT_DF, EXPECTED_CIT_STATS_DF, \
@@ -74,13 +75,13 @@ class TestPubmedLoader(unittest.TestCase):
         assert_frame_equal(self.pub_df, EXPECTED_PUB_DF, 'Wrong publication data', check_like=True)
 
     @parameterized.expand([
-        ('Article', 1, 'year', ['5']),
-        ('Abstract', 5, 'relevance', ['2', '3']),
-        ('Article', 1, 'citations', ['4']),
+        ('Article', 1, SORT_MOST_RECENT, ['5']),
+        ('Abstract', 5, SORT_MOST_RELEVANT, ['2', '3']),
+        ('Article', 1, SORT_MOST_CITED, ['4']),
     ])
-    def test_search(self, terms, limit, sort, expected_ids):
+    def test_search(self, query, limit, sort, expected_ids):
         # Use sorted to avoid ambiguity
-        ids = sorted(self.loader.search(terms, limit=limit, sort=sort))
+        ids = sorted(self.loader.search(query, limit=limit, sort=sort))
         self.assertListEqual(ids, sorted(expected_ids), 'Wrong IDs of papers')
 
     def test_load_citation_stats_data_frame(self):

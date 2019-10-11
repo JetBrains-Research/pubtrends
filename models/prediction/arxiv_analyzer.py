@@ -1,4 +1,4 @@
-from .analysis import KeyPaperAnalyzer
+from models.keypaper.analysis import KeyPaperAnalyzer
 
 
 class ArxivAnalyzer(KeyPaperAnalyzer):

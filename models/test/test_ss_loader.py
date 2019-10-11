@@ -6,6 +6,7 @@ from parameterized import parameterized
 
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.ss_loader import SemanticScholarLoader
+from models.keypaper.utils import SORT_MOST_RECENT, SORT_MOST_CITED, SORT_MOST_RELEVANT
 from models.test.mock_database_loader import MockDatabaseLoader
 from models.test.ss_articles import required_articles, extra_articles, required_citations, cit_stats_df, \
     cit_df, extra_citations, raw_cocitations_df, part_of_articles, expanded_articles
@@ -33,15 +34,15 @@ class TestSemanticScholarLoader(unittest.TestCase):
         cls.cocit_df = cls.loader.load_cocitations(cls.ids)
 
     @parameterized.expand([
-        ('limit 3, most recent', 3, 'year', ['5a63b4199bb58992882b0bf60bc1b1b3f392e5a5',
-                                             '5451b1ef43678d473575bdfa7016d024146f2b53',
-                                             'cad767094c2c4fff5206793fd8674a10e7fba3fe']),
-        ('limit 3, most cited', 3, 'citations', ['3cf82f53a52867aaade081324dff65dd35b5b7eb',
-                                                 'e7cdbddc7af4b6138227139d714df28e2090bd5f',
-                                                 '5451b1ef43678d473575bdfa7016d024146f2b53']),
-        ('limit 3, most relevant', 3, 'relevance', ['cad767094c2c4fff5206793fd8674a10e7fba3fe',
-                                                    'e7cdbddc7af4b6138227139d714df28e2090bd5f',
-                                                    '3cf82f53a52867aaade081324dff65dd35b5b7eb']),
+        ('limit 3, most recent', 3, SORT_MOST_RECENT, ['5a63b4199bb58992882b0bf60bc1b1b3f392e5a5',
+                                                       '5451b1ef43678d473575bdfa7016d024146f2b53',
+                                                       'cad767094c2c4fff5206793fd8674a10e7fba3fe']),
+        ('limit 3, most cited', 3, SORT_MOST_CITED, ['3cf82f53a52867aaade081324dff65dd35b5b7eb',
+                                                     'e7cdbddc7af4b6138227139d714df28e2090bd5f',
+                                                     '5451b1ef43678d473575bdfa7016d024146f2b53']),
+        ('limit 3, most relevant', 3, SORT_MOST_RELEVANT, ['cad767094c2c4fff5206793fd8674a10e7fba3fe',
+                                                           'e7cdbddc7af4b6138227139d714df28e2090bd5f',
+                                                           '3cf82f53a52867aaade081324dff65dd35b5b7eb']),
     ])
     def test_search(self, name, limit, sort, expected):
         ids, _ = self.loader.search('find search', limit=limit, sort=sort)

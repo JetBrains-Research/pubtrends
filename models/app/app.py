@@ -11,10 +11,10 @@ from flask import (
     render_template, render_template_string
 )
 
-from models.celery.tasks import celery, find_paper_async, analyze_topic_async
+from models.celery.tasks import celery, find_paper_async, task_analyze_search_terms, analyze_id_list
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.paper import prepare_paper_data
-from models.keypaper.utils import zoom_name, DOUBLE_ZOOM_OUT
+from models.keypaper.utils import zoom_name, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
@@ -57,12 +57,12 @@ def progress():
 @app.route('/result')
 def result():
     jobid = request.values.get('jobid')
-    terms = request.args.get('terms')
+    query = request.args.get('query')
     if jobid:
         job = AsyncResult(jobid, app=celery)
         data, _ = job.result
         if job.state == 'SUCCESS':
-            return render_template('result.html', search_string=terms,
+            return render_template('result.html', search_string=query,
                                    version=PUBTRENDS_CONFIG.version,
                                    **data)
 
@@ -73,54 +73,64 @@ def result():
 def process():
     if len(request.args) > 0:
         jobid = request.values.get('jobid')
-        terms = request.args.get('terms')
+
+        if not jobid:
+            return render_template_string("Something went wrong...")
+
+        query = request.args.get('query')
         analysis_type = request.values.get('analysis_type')
         source = request.values.get('source')
         key = request.args.get('key')
         value = request.args.get('value')
 
-        if jobid:
-            if terms:
-                terms += f' at {source}'
-                return render_template('process.html',
-                                       args={'terms': quote(terms), 'jobid': jobid},
-                                       search_string=terms, subpage="result",
-                                       jobid=jobid, version=PUBTRENDS_CONFIG.version)
-            elif key and value:
-                return render_template('process.html',
-                                       args={'source': source, 'jobid': jobid},
-                                       search_string=f'{key}: {value}', subpage="search",
-                                       jobid=jobid, version=PUBTRENDS_CONFIG.version)
-            else:
-                if analysis_type in ['detailed', 'expanded']:
-                    terms = f"{analysis_type} analysis of {terms} at {source}"
+        if key and value:
+            logging.debug('/process key:value search')
+            return render_template('process.html',
+                                   args={'source': source, 'query': quote(f'Paper {key}: {value}'), 'jobid': jobid},
+                                   search_string=f'Paper {key}: {value}',
+                                   subpage="process_paper",  # redirect in case of success
+                                   jobid=jobid, version=PUBTRENDS_CONFIG.version)
 
-                    return render_template('process.html',
-                                           args={'key': "terms", 'value': quote(terms), 'jobid': jobid},
-                                           search_string=terms, subpage="result",
-                                           jobid=jobid, version=PUBTRENDS_CONFIG.version)
-                else:
-                    return render_template('process.html',
-                                           args={'source': source, 'id': analysis_type, 'jobid': jobid},
-                                           search_string=f"Paper analysis at {source}", subpage="paper",
-                                           jobid=jobid, version=PUBTRENDS_CONFIG.version)
+        elif analysis_type in [ZOOM_IN_TITLE, ZOOM_IN_TITLE]:
+            logging.debug('/process zoom processing')
+            query = f"{analysis_type} analysis of {query} at {source}"
+            return render_template('process.html',
+                                   args={'query': quote(query), 'jobid': jobid},
+                                   search_string=query, subpage="result",  # redirect in case of success
+                                   jobid=jobid, version=PUBTRENDS_CONFIG.version)
+
+        elif analysis_type == PAPER_ANALYSIS_TITLE:
+            logging.debug('/process paper analysis')
+            return render_template('process.html',
+                                   args={'source': source, 'jobid': jobid},
+                                   search_string=query,
+                                   subpage="paper",  # redirect in case of success
+                                   jobid=jobid, version=PUBTRENDS_CONFIG.version)
+        elif query:
+            logging.debug('/process regular search')
+            query = f'{query} at {source}'
+            return render_template('process.html',
+                                   args={'query': quote(query), 'jobid': jobid},
+                                   search_string=query,
+                                   subpage="result",  # redirect in case of success
+                                   jobid=jobid, version=PUBTRENDS_CONFIG.version)
 
     return render_template_string("Something went wrong...")
 
 
-@app.route('/search')
-def search():
+@app.route('/process_paper')
+def process_paper():
     jobid = request.values.get('jobid')
     source = request.values.get('source')
+    query = request.values.get('query')
     if jobid:
-        find_job = AsyncResult(jobid, app=celery)
-
-        if find_job.state == 'SUCCESS':
-            ids = find_job.result
-            logging.debug('/search single paper analysis')
+        job = AsyncResult(jobid, app=celery)
+        if job.state == 'SUCCESS':
+            ids = job.result
+            logging.debug('/process_paper single paper analysis')
             if len(ids) == 1:
-                job = analyze_topic_async.delay(source, id_list=ids, zoom=DOUBLE_ZOOM_OUT)
-                return redirect(url_for('.process', terms=None, analysis_type=ids[0],
+                job = analyze_id_list.delay(source, id_list=ids, zoom=PAPER_ANALYSIS, query=query)
+                return redirect(url_for('.process', query=query, analysis_type=PAPER_ANALYSIS_TITLE,
                                         source=source, jobid=job.id))
             elif len(ids) == 0:
                 return render_template_string('Found no papers matching specified key - value pair')
@@ -166,45 +176,63 @@ def cancel():
 
 
 # Index page
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/')
 def index():
-    logging.debug('/ serving landing page')
-    if request.method == 'GET':
-        return render_template('main.html',
-                               version=PUBTRENDS_CONFIG.version,
-                               amounts=PUBTRENDS_CONFIG.show_max_articles_options,
-                               default_amount=PUBTRENDS_CONFIG.show_max_articles_default_value,
-                               development=PUBTRENDS_CONFIG.development,
-                               search_example_terms=random.choice(PUBTRENDS_CONFIG.search_example_terms))
+    logging.debug('/ landing page')
+    return render_template('main.html',
+                           version=PUBTRENDS_CONFIG.version,
+                           limits=PUBTRENDS_CONFIG.show_max_articles_options,
+                           default_limit=PUBTRENDS_CONFIG.show_max_articles_default_value,
+                           development=PUBTRENDS_CONFIG.development,
+                           search_example_terms=random.choice(PUBTRENDS_CONFIG.search_example_terms))
 
-    logging.debug('/ search activity')
-    # Common keys
+
+@app.route('/search_terms', methods=['POST'])
+def search_terms():
+    logging.debug('/search_terms')
+    query = request.form.get('query')    # Original search query
     source = request.form.get('source')  # Pubmed or Semantic Scholar
     sort = request.form.get('sort')      # Sort order
-    amount = request.form.get('amount')  # Amount
-    terms = request.form.get('terms') if 'terms' in request.form else None
+    limit = request.form.get('limit')    # Limit
 
-    if 'id_list' in request.form:
-        logging.debug(f'/ zoom')
-        id_list = request.form.get('id_list').split(',')
-        zoom = request.form.get('zoom')
-        analysis_type = zoom_name(zoom)
-        job = analyze_topic_async.delay(source, terms=terms, id_list=id_list, zoom=int(zoom), sort=sort, amount=amount)
-        return redirect(url_for('.process', terms=terms, analysis_type=analysis_type, source=source, jobid=job.id))
+    if query:
+        logging.debug(f'/ regular search')
+        job = task_analyze_search_terms.delay(source, query=query, limit=limit, sort=sort)
+        return redirect(url_for('.process', query=query, source=source, jobid=job.id))
 
-    elif 'key' in request.form and 'value' in request.form:
+    raise Exception(f"Request does not contain necessary params: {request}")
+
+
+@app.route('/search_paper', methods=['POST'])
+def search_paper():
+    logging.debug('/search_paper')
+    source = request.form.get('source')  # Pubmed or Semantic Scholar
+
+    if 'key' in request.form and 'value' in request.form:
         logging.debug(f'/ paper search')
         key = request.form.get('key')
         value = request.form.get('value')
         job = find_paper_async.delay(source, key, value)
         return redirect(url_for('.process', source=source, key=key, value=value, jobid=job.id))
 
-    elif terms:
-        logging.debug(f'/ regular search')
-        job = analyze_topic_async.delay(source, terms=terms, sort=sort, amount=amount)
-        return redirect(url_for('.process', terms=terms, source=source, jobid=job.id))
+    raise Exception(f"Request does not contain necessary params: {request}")
 
-    raise Exception("Request contains no parameters")
+
+@app.route('/process_ids', methods=['POST'])
+def process_ids():
+    logging.debug('/process_ids')
+    source = request.form.get('source')  # Pubmed or Semantic Scholar
+    query = request.form.get('query')    # Original search query
+
+    if 'id_list' in request.form:
+        logging.debug(f'/ zoom')
+        id_list = request.form.get('id_list').split(',')
+        zoom = request.form.get('zoom')
+        analysis_type = zoom_name(zoom)
+        job = analyze_id_list.delay(source, id_list=id_list, zoom=int(zoom), query=query)
+        return redirect(url_for('.process', query=query, analysis_type=analysis_type, source=source, jobid=job.id))
+
+    raise Exception(f"Request does not contain necessary params: {request}")
 
 
 def get_app():

@@ -47,14 +47,13 @@
                         <!-- Form for topic analysis -->
                         <div class="tab-pane fade show active" id="topic" role="tabpanel"
                              aria-labelledby="topic-tab">
-                            <form method="POST">
+                            <form action="search_terms" method="POST">
                                 <div class="row no-gutters align-items-center mb-3">
                                     <div class="col input-group">
                                         <div class="input-group-prepend">
                                             <span class="input-group-text" id="query-addon">Query</span>
                                         </div>
-                                        <input class="form-control form-control-borderless" type="search"
-                                               name="terms"
+                                        <input class="form-control form-control-borderless" type="search" name="query"
                                                placeholder="Enter keywords, &quot;&quot; for phrase search" aria-describedby="query-addon"
                                                autofocus>
                                     </div>
@@ -94,12 +93,12 @@
                                             <span class="input-group-text" id="amount-addon">Show</span>
                                         </div>
                                         <select class="form-control" aria-describedby="amount-addon"
-                                                name="amount">
-                                            {% for amount in amounts %}
-                                            {% if amount == default_amount %}
-                                            <option selected>{{ amount }}</option>
+                                                name="limit">
+                                            {% for limit in limits %}
+                                            {% if limit == default_limit %}
+                                            <option selected>{{ limit }}</option>
                                             {% else %}
-                                            <option>{{ amount }}</option>
+                                            <option>{{ limit }}</option>
                                             {% endif %}
                                             {% endfor %}
                                         </select>
@@ -113,7 +112,7 @@
 
                         <!-- Form for paper analysis -->
                         <div class="tab-pane fade" id="paper" role="tabpanel" aria-labelledby="paper-tab">
-                            <form method="POST">
+                            <form action="search_paper" method="POST">
                                 <div class="row no-gutters align-items-center">
                                     <div class="col-auto">
                                         <select class="form-control" name="key">
@@ -154,12 +153,12 @@
         <form method="post" action="" class="inline">
             <input type="hidden" name="source" value="Pubmed">
             <input type="hidden" name="sort" value="Most Cited">
-            <input type="hidden" name="amount" value="1000">
+            <input type="hidden" name="limit" value="1000">
             {% if development %}
                 <strong>The service is in development!</strong>
             {% endif %}
             Please use specific requests like
-            <button type="submit" name="terms" value="{{ search_example_terms }}" class="link-button">
+            <button type="submit" name="query" value="{{ search_example_terms }}" class="link-button">
                 {{ search_example_terms }}
             </button> and be patient.
         </form>

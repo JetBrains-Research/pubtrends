@@ -24,20 +24,29 @@ LOCAL_BASE_URL = Template('/paper?source=$source&id=')
 PUBMED_ARTICLE_BASE_URL = 'https://www.ncbi.nlm.nih.gov/pubmed/?term='
 SEMANTIC_SCHOLAR_BASE_URL = 'https://www.semanticscholar.org/paper/'
 
-# IMPORTANT:
+# IMPORTANT
 # KeyPaperAnalyzer.launch() performs "zoom - 1" expand operations if id_list is given.
-# This allows to perform single zoom out in case of regular zoom out action and
-# double in case of single paper analysis.
+# This allows to perform zoom out in case of regular zoom out action and double in case of single paper analysis.
 ZOOM_IN = 0
 ZOOM_OUT = 1
-DOUBLE_ZOOM_OUT = 2
+PAPER_ANALYSIS = 2
+
+ZOOM_IN_TITLE = 'detailed'
+ZOOM_OUT_TITLE = 'expanded'
+PAPER_ANALYSIS_TITLE = 'paper-analysis'
+
+SORT_MOST_CITED = 'Most Cited'
+SORT_MOST_RELEVANT = 'Most Relevant'
+SORT_MOST_RECENT = 'Mose Recent'
 
 
 def zoom_name(zoom):
     if int(zoom) == ZOOM_IN:
-        return 'detailed'
+        return ZOOM_IN_TITLE
     elif int(zoom) == ZOOM_OUT:
-        return 'expanded'
+        return ZOOM_OUT_TITLE
+    elif int(zoom) == PAPER_ANALYSIS:
+        return PAPER_ANALYSIS_TITLE
     raise ValueError(f'Illegal zoom key value: {zoom}')
 
 
@@ -55,14 +64,17 @@ def get_wordnet_pos(treebank_tag):
         return ''
 
 
-def tokenize(text, terms=None):
-    is_noun_or_adj = lambda pos: pos[:2] == 'NN' or pos == 'JJ'
+def is_noun_or_adj(pos):
+    return pos[:2] == 'NN' or pos == 'JJ'
+
+
+def tokenize(text, query=None):
     special_symbols_regex = re.compile(r'[^a-zA-Z0-9\- ]*')
     text = text.lower()
 
     # Filter out search terms
-    if terms is not None:
-        for term in terms:
+    if query is not None:
+        for term in query.split(' '):
             text = text.replace(term.lower(), '')
 
     tokenized = word_tokenize(re.sub(special_symbols_regex, '', text))
@@ -165,7 +177,7 @@ def get_word_cloud_data(df_kwd, c):
     return kwds
 
 
-def get_tfidf_words(df, comps, terms, size=5):
+def get_tfidf_words(df, comps, query, size=5):
     corpus = []
 
     for comp, article_ids in comps.items():
@@ -182,7 +194,7 @@ def get_tfidf_words(df, comps, terms, size=5):
                     raise ValueError('Empty selection by id')
             corpus.append(comp_corpus)
 
-    vectorizer = TfidfVectorizer(tokenizer=lambda text: tokenize(text, terms=terms), stop_words='english')
+    vectorizer = TfidfVectorizer(tokenizer=lambda text: tokenize(text, query=query), stop_words='english')
     tfidf = vectorizer.fit_transform(corpus)
 
     words = vectorizer.get_feature_names()

@@ -1,3 +1,4 @@
+import html
 import json
 import logging
 from string import Template
@@ -6,6 +7,7 @@ import holoviews as hv
 import numpy as np
 from bokeh.colors import RGB
 from bokeh.core.properties import value
+from bokeh.embed import components
 from bokeh.layouts import row, column
 from bokeh.models import ColumnDataSource, CustomJS, NodesAndLinkedEdges, TapTool
 from bokeh.models import GraphRenderer, StaticLayoutProvider
@@ -23,11 +25,49 @@ from matplotlib import pyplot as plt
 from wordcloud import WordCloud
 
 from .utils import LOCAL_BASE_URL, get_word_cloud_data, \
-    get_most_common_ngrams, cut_authors_list, ZOOM_OUT, ZOOM_IN
+    get_most_common_ngrams, cut_authors_list, ZOOM_OUT, ZOOM_IN, zoom_name
 from .visualization_data import PlotPreprocessor
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
 hv.extension('bokeh')
+
+
+def visualize_analysis(analyzer):
+    # Initialize plotter after completion of analysis
+    plotter = Plotter(analyzer=analyzer)
+    # Order is important here!
+    paper_statistics, zoom_out_callback = plotter.papers_statistics_and_zoom_out_callback()
+    result = {
+        'log': html.unescape(analyzer.log()),
+        'experimental': analyzer.config.experimental,
+        'n_papers': analyzer.n_papers,
+        'n_citations': int(analyzer.df['total'].sum()),
+        'n_subtopics': len(analyzer.components),
+        'comp_other': analyzer.comp_other,
+        'cocitations_clusters': [components(plotter.cocitations_clustering())],
+        'component_size_summary': [components(plotter.component_size_summary())],
+        'component_years_summary_boxplots': [components(plotter.component_years_summary_boxplots())],
+        'subtopics_infos_and_zoom_in_callbacks':
+            [(components(p), zoom_in_callback) for
+             (p, zoom_in_callback) in plotter.subtopics_infos_and_zoom_in_callbacks()],
+        'top_cited_papers': [components(plotter.top_cited_papers())],
+        'max_gain_papers': [components(plotter.max_gain_papers())],
+        'max_relative_gain_papers': [components(plotter.max_relative_gain_papers())],
+        'component_sizes': plotter.component_sizes(),
+        'component_ratio': [components(plotter.component_ratio())],
+        'papers_stats': [components(paper_statistics)],
+        'papers_zoom_out_callback': zoom_out_callback,
+        'clusters_info_message': html.unescape(plotter.clusters_info_message),
+        'author_statistics': plotter.author_statistics(),
+        'journal_statistics': plotter.journal_statistics()
+    }
+    # Experimental features
+    if analyzer.config.experimental:
+        subtopic_evolution = plotter.subtopic_evolution()
+        # Pass subtopic evolution only if not None
+        if subtopic_evolution:
+            result['subtopic_evolution'] = [components(subtopic_evolution)]
+    return result
 
 
 class Plotter:
@@ -86,20 +126,22 @@ class Plotter:
         """)
 
     @staticmethod
-    def zoom_callback(id_list, source, zoom):
+    def zoom_callback(id_list, source, zoom, query):
+        # check zoom value
+        zoom_name(zoom)
         # submit list of ids and database name to the main page using invisible form
+        # IMPORTANT: no double quotes!
         return f"""
-        var ids = {json.dumps(id_list)}, url='/';
         var form = document.createElement('form');
         document.body.appendChild(form);
         form.method = 'post';
-        form.action = url;
+        form.action = '/process_ids';
         form.target = '_blank'
 
         var input = document.createElement('input');
         input.type = 'hidden';
         input.name = 'id_list';
-        input.value = ids;
+        input.value = {json.dumps(id_list).replace('"', "'")};
         form.appendChild(input);
 
         var input = document.createElement('input');
@@ -112,6 +154,12 @@ class Plotter:
         input.type = 'hidden';
         input.name = 'zoom';
         input.value = '{zoom}';
+        form.appendChild(input);
+
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'query';
+        input.value = {json.dumps(query).replace('"', "'")};
         form.appendChild(input);
 
         form.submit();
@@ -309,7 +357,9 @@ class Plotter:
             desc.image_rgba(image=[img], x=[0], y=[0], dw=[10], dh=[10])
 
             # Create Zoom In callback
-            zoom_in_callback = self.zoom_callback(comp_source['id'], self.analyzer.source, zoom=ZOOM_IN)
+            zoom_in_callback = self.zoom_callback(list(comp_source['id']), self.analyzer.source,
+                                                  zoom=ZOOM_IN,
+                                                  query=self.analyzer.query)
             result.append((row(desc, plot), zoom_in_callback))
 
         return result
@@ -473,7 +523,8 @@ class Plotter:
         desc.image_rgba(image=[img], x=[0], y=[0], dw=[10], dh=[10])
 
         # Create Zoom Out callback
-        zoom_out_callback = self.zoom_callback(self.analyzer.df['id'], self.analyzer.source, zoom=ZOOM_OUT)
+        zoom_out_callback = self.zoom_callback(list(self.analyzer.df['id']), self.analyzer.source,
+                                               zoom=ZOOM_OUT, query=self.analyzer.query)
 
         return row(desc, p), zoom_out_callback
 
