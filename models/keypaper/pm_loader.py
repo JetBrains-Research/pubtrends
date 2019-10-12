@@ -194,6 +194,7 @@ class PubmedLoader(Loader):
         return cocit_df
 
     def expand(self, ids, current=0, task=None):
+        expanded = set(ids)
         if isinstance(ids, Iterable):
             self.logger.info('Expanding current topic', current=current, task=task)
 
@@ -201,24 +202,25 @@ class PubmedLoader(Loader):
             query = f'''
                 WITH [{','.join([f"'{id}'" for id in ids])}] AS pmids
                 MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
-                WHERE in.pmid IN pmids OR out.pmid IN pmids
-                RETURN out.pmid AS citing, COLLECT(in.pmid) AS cited;
+                WHERE in.pmid IN pmids
+                RETURN COLLECT(out.pmid) AS expanded;
             '''
-        elif isinstance(ids, int):
-            query = f'''
-                MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
-                WHERE in.pmid = '{ids}' OR out.pmid = '{ids}'
-                RETURN out.pmid AS citing, COLLECT(in.pmid) AS cited;
-            '''
-        else:
-            raise TypeError('ids should be either int or Iterable')
+            with self.neo4jdriver.session() as session:
+                for r in session.run(query):
+                    expanded |= set(r['expanded'])
 
-        expanded = set()
-        with self.neo4jdriver.session() as session:
-            for r in session.run(query):
-                citing, cited = r['citing'], r['cited']
-                expanded.add(citing)
-                expanded |= set(cited)
+            query = f'''
+                WITH [{','.join([f"'{id}'" for id in ids])}] AS pmids
+                MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
+                WHERE out.pmid IN pmids
+                RETURN COLLECT(in.pmid) AS expanded;
+            '''
+            with self.neo4jdriver.session() as session:
+                for r in session.run(query):
+                    expanded |= set(r['expanded'])
+
+        else:
+            raise TypeError('ids should be Iterable')
 
         self.logger.info(f'Found {len(expanded)} papers', current=current, task=task)
         return expanded
