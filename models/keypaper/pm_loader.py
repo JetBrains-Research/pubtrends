@@ -207,7 +207,7 @@ class PubmedLoader(Loader):
         elif isinstance(ids, int):
             query = f'''
                 MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
-                WHERE in.pmid = '{ids}' OR in.pmid = '{ids}'
+                WHERE in.pmid = '{ids}' OR out.pmid = '{ids}'
                 RETURN out.pmid AS citing, COLLECT(in.pmid) AS cited;
             '''
         else:
