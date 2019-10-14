@@ -320,13 +320,15 @@ class Plotter:
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
         for c in range(n_comps):
             comp_source = self.analyzer.df[self.analyzer.df['comp'] == c]
-            ds = PlotPreprocessor.article_view_data_source(comp_source, min_year, max_year, width=700)
+            ds = PlotPreprocessor.article_view_data_source(
+                comp_source, min_year, max_year, True, width=700
+            )
             # Add type coloring
             ds.add([self.pub_types_colors_map[t] for t in comp_source['type']], 'color')
             plot = self.__serve_scatter_article_layout(source=ds,
                                                        year_range=[min_year, max_year],
                                                        title="Publications", width=760)
-            plot.circle(x='year', y='total', fill_alpha=0.5, source=ds, size='size',
+            plot.circle(x='year', y='total_fixed', fill_alpha=0.5, source=ds, size='size',
                         line_color='color', fill_color='color', legend='type')
             plot.legend.location = "top_left"
 
@@ -387,7 +389,7 @@ class Plotter:
     def top_cited_papers(self):
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
         ds = PlotPreprocessor.article_view_data_source(
-            self.analyzer.top_cited_df, min_year, max_year, width=700
+            self.analyzer.top_cited_df, min_year, max_year, False, width=700
         )
         # Add type coloring
         ds.add([self.pub_types_colors_map[t] for t in self.analyzer.top_cited_df['type']], 'color')
@@ -397,7 +399,7 @@ class Plotter:
                                                    title=f'{len(self.analyzer.top_cited_df)} top cited papers',
                                                    width=960)
 
-        plot.circle(x='year', y='total', fill_alpha=0.5, source=ds, size='size',
+        plot.circle(x='year', y='total_fixed', fill_alpha=0.5, source=ds, size='size',
                     line_color='color', fill_color='color', legend='type')
         plot.legend.location = "top_left"
         return plot
