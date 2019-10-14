@@ -100,12 +100,14 @@ class Plotter:
             var tokens = window.location.href.split('&');
             var jobid = tokens[tokens.length - 1];
 
-            if (selected.length == 1) {
-                // only consider case where one glyph is selected by user
-                selected_id = data['id'][selected[0]]
+            // Max amount of papers to be opened
+            var MAX_AMOUNT = 5;
+
+            if (selected.length < MAX_AMOUNT) {
                 for (var i = 0; i < data['id'].length; ++i){
-                    if (data['id'][i] == selected_id) {
+                    if (selected.includes(data['id'][i])) {
                         window.open(base + data['id'][i] + '&' + jobid);
+                        
                         // avoid opening multiple tabs with the same article
                         break;
                     }
