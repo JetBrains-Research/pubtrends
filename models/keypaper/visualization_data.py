@@ -222,23 +222,42 @@ class PlotPreprocessor:
         return columns, source
 
     @staticmethod
-    def article_view_data_source(df, min_year, max_year, width=760):
-        df_local = df[['id', 'title', 'year', 'type', 'total', 'authors', 'comp']].copy()
+    def article_view_data_source(df, min_year, max_year, components_split, width=760):
+        columns = ['id', 'title', 'year', 'type', 'total', 'authors', 'comp']
+        df_local = df[columns].copy()
+
+        # Replace NaN values with Undefined for tooltips
+        df_local['year'] = df_local['year'].replace(np.nan, "Undefined")
+
+        # Correction of same year / total
+        df_local['count'] = 1  # Temporarily column to count clashes
+        if components_split:
+            df_counts = df_local[['comp', 'year', 'total', 'count']].groupby(['comp', 'year', 'total']).sum()
+        else:
+            df_counts = df_local[['year', 'total', 'count']].groupby(['year', 'total']).sum()
+        df_counts['delta'] = 0
+        dft = pd.DataFrame(columns=columns + ['total_fixed'])
+        for _, r in df_local.iterrows():
+            id, title, year, type, total, authors, comp, _ = r  # Ignore count
+            if components_split:
+                cd = df_counts.loc[(comp, year, total)]
+            else:
+                cd = df_counts.loc[(year, total)]
+            c, d = cd['count'], cd['delta']
+            dft.loc[len(dft)] = (id, title, year, type, total, authors, comp, total + (d - int(c / 2)) / float(c))
+            cd['delta'] += 1  # Increase delta
+        df_local = dft
 
         # Size is based on the citations number, at least 1
-        df_local['size'] = 1 + np.log(df['total'] + 1)
+        df_local['size'] = 1 + np.log(df_local['total'] + 1)
 
         # Calculate max size of circles to avoid overlapping along x-axis
         max_radius_screen_units = width / max(max_year - min_year + 1, 30)
         size_scaling_coefficient = max_radius_screen_units / df_local['size'].max()
         df_local['size'] = df_local['size'] * size_scaling_coefficient
 
-        # Replace NaN values with Undefined for tooltips
-        df_local['year'] = df_local['year'].replace(np.nan, "Undefined")
-
+        # Split authors
         df_local['authors'] = df_local['authors'].apply(lambda authors: cut_authors_list(authors))
-
-        df_local['comp'] = df_local['comp']
 
         return ColumnDataSource(df_local)
 

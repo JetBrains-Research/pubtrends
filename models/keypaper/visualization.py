@@ -100,16 +100,11 @@ class Plotter:
             var tokens = window.location.href.split('&');
             var jobid = tokens[tokens.length - 1];
 
-            if (selected.length == 1) {
-                // only consider case where one glyph is selected by user
-                selected_id = data['id'][selected[0]]
-                for (var i = 0; i < data['id'].length; ++i){
-                    if (data['id'][i] == selected_id) {
-                        window.open(base + data['id'][i] + '&' + jobid);
-                        // avoid opening multiple tabs with the same article
-                        break;
-                    }
-                }
+            // Max amount of papers to be opened, others will be ignored
+            var MAX_AMOUNT = 3;
+
+            for (var i = 0; i < Math.min(MAX_AMOUNT, selected.length); i++){
+                window.open(base + data['id'][selected[i]] + '&' + jobid, "_blank");
             }
         """)
 
@@ -325,13 +320,15 @@ class Plotter:
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
         for c in range(n_comps):
             comp_source = self.analyzer.df[self.analyzer.df['comp'] == c]
-            ds = PlotPreprocessor.article_view_data_source(comp_source, min_year, max_year, width=700)
+            ds = PlotPreprocessor.article_view_data_source(
+                comp_source, min_year, max_year, True, width=700
+            )
             # Add type coloring
             ds.add([self.pub_types_colors_map[t] for t in comp_source['type']], 'color')
             plot = self.__serve_scatter_article_layout(source=ds,
                                                        year_range=[min_year, max_year],
                                                        title="Publications", width=760)
-            plot.circle(x='year', y='total', fill_alpha=0.5, source=ds, size='size',
+            plot.circle(x='year', y='total_fixed', fill_alpha=0.5, source=ds, size='size',
                         line_color='color', fill_color='color', legend='type')
             plot.legend.location = "top_left"
 
@@ -392,7 +389,7 @@ class Plotter:
     def top_cited_papers(self):
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
         ds = PlotPreprocessor.article_view_data_source(
-            self.analyzer.top_cited_df, min_year, max_year, width=700
+            self.analyzer.top_cited_df, min_year, max_year, False, width=700
         )
         # Add type coloring
         ds.add([self.pub_types_colors_map[t] for t in self.analyzer.top_cited_df['type']], 'color')
@@ -402,7 +399,7 @@ class Plotter:
                                                    title=f'{len(self.analyzer.top_cited_df)} top cited papers',
                                                    width=960)
 
-        plot.circle(x='year', y='total', fill_alpha=0.5, source=ds, size='size',
+        plot.circle(x='year', y='total_fixed', fill_alpha=0.5, source=ds, size='size',
                     line_color='color', fill_color='color', legend='type')
         plot.legend.location = "top_left"
         return plot

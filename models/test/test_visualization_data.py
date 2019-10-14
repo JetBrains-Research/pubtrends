@@ -112,11 +112,31 @@ class TestPlotPreprocessor(unittest.TestCase):
 
         self.assertEqual(edges_found, len(edges), 'Some edges from co-citation graph are missing')
 
+    def test_article_view_data_sourceSplit(self):
+        width = 760
+        lbefore = len(set(zip(self.analyzer.df['year'], self.analyzer.df['total'])))
+        ds = PlotPreprocessor.article_view_data_source(
+            self.analyzer.df, self.analyzer.min_year, self.analyzer.max_year, True, width=width
+        )
+        lafter = len(set(zip(ds.data['year'], ds.data['total'])))
+        self.assertGreaterEqual(lafter, lbefore)
+
+        self.assertFalse(np.any(ds.data['year'] == np.nan), 'NaN values in `year` column')
+        self.assertFalse(np.any(ds.data['size'] == np.nan), 'NaN values in `size` column')
+
+        max_size = np.max(ds.data['size'])
+        max_width = max_size * (self.analyzer.max_year - self.analyzer.min_year + 1)
+        self.assertLessEqual(max_width, width, 'Horizontal overlap')
+
     def test_article_view_data_source(self):
         width = 760
+        lbefore = len(set(zip(self.analyzer.df['year'], self.analyzer.df['total'])))
         ds = PlotPreprocessor.article_view_data_source(
-            self.analyzer.df, self.analyzer.min_year, self.analyzer.max_year, width=width
+            self.analyzer.df, self.analyzer.min_year, self.analyzer.max_year, False, width=width
         )
+
+        lafter = len(set(zip(ds.data['year'], ds.data['total'])))
+        self.assertGreaterEqual(lafter, lbefore)
 
         self.assertFalse(np.any(ds.data['year'] == np.nan), 'NaN values in `year` column')
         self.assertFalse(np.any(ds.data['size'] == np.nan), 'NaN values in `size` column')
