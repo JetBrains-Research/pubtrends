@@ -100,18 +100,11 @@ class Plotter:
             var tokens = window.location.href.split('&');
             var jobid = tokens[tokens.length - 1];
 
-            // Max amount of papers to be opened
-            var MAX_AMOUNT = 5;
+            // Max amount of papers to be opened, others will be ignored
+            var MAX_AMOUNT = 3;
 
-            if (selected.length <= MAX_AMOUNT) {
-                for (var i = 0; i < data['id'].length; ++i){
-                    if (selected.includes(data['id'][i])) {
-                        window.open(base + data['id'][i] + '&' + jobid);
-                        
-                        // avoid opening multiple tabs with the same article
-                        break;
-                    }
-                }
+            for (var i = 0; i < Math.min(MAX_AMOUNT, selected.length); i++){
+                window.open(base + data['id'][selected[i]] + '&' + jobid, "_blank");
             }
         """)
 
