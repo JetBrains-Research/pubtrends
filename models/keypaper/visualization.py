@@ -103,7 +103,7 @@ class Plotter:
             // Max amount of papers to be opened
             var MAX_AMOUNT = 5;
 
-            if (selected.length < MAX_AMOUNT) {
+            if (selected.length <= MAX_AMOUNT) {
                 for (var i = 0; i < data['id'].length; ++i){
                     if (selected.includes(data['id'][i])) {
                         window.open(base + data['id'][i] + '&' + jobid);
