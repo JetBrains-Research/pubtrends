@@ -347,7 +347,7 @@
                                 <img src="{{ url_for('static', filename='zoom-in.svg') }}"  alt="+"/>&nbsp;Zoom into
                             </button>
                         </h2>
-                        Size: {{ component_sizes[loop.index - 1] }}
+                        Number of papers: {{ component_sizes[loop.index - 1] }}
                         <div id="subtopic-{{ loop.index }}">
                             {{ script|safe }}
                             {{ div|safe }}
