@@ -13,7 +13,7 @@ from flask import (
 
 from models.celery.tasks import celery, find_paper_async, task_analyze_search_terms, analyze_id_list
 from models.keypaper.config import PubtrendsConfig
-from models.keypaper.paper import prepare_paper_data
+from models.keypaper.paper import prepare_paper_data, prepare_papers_data
 from models.keypaper.utils import zoom_name, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
@@ -154,6 +154,26 @@ def paper():
     return render_template_string("Something went wrong...")
 
 
+@app.route('/papers')
+def show_ids():
+    jobid = request.values.get('jobid')
+    source = request.args.get('source')
+    comp = request.args.get('comp')
+    if comp is not None:
+        comp = int(comp) - 1  # Component was exposed so it was 1-based
+    if jobid:
+        job = AsyncResult(jobid, app=celery)
+        _, data = job.result
+
+        if job.state == 'SUCCESS':
+            return render_template('papers.html',
+                                   version=PUBTRENDS_CONFIG.version,
+                                   source=source,
+                                   papers=prepare_papers_data(data, source, comp))
+
+    raise Exception(f"Request does not contain necessary params: {request}")
+
+
 @app.route('/cancel')
 def cancel():
     if len(request.args) > 0:
@@ -195,7 +215,7 @@ def search_terms():
     sort = request.form.get('sort')      # Sort order
     limit = request.form.get('limit')    # Limit
 
-    if query:
+    if query and source and sort:
         logging.debug(f'/ regular search')
         job = task_analyze_search_terms.delay(source, query=query, limit=limit, sort=sort)
         return redirect(url_for('.process', query=query, source=source, jobid=job.id))
@@ -208,7 +228,7 @@ def search_paper():
     logging.debug('/search_paper')
     source = request.form.get('source')  # Pubmed or Semantic Scholar
 
-    if 'key' in request.form and 'value' in request.form:
+    if source and 'key' in request.form and 'value' in request.form:
         logging.debug(f'/ paper search')
         key = request.form.get('key')
         value = request.form.get('value')
@@ -224,8 +244,7 @@ def process_ids():
     source = request.form.get('source')  # Pubmed or Semantic Scholar
     query = request.form.get('query')    # Original search query
 
-    if 'id_list' in request.form:
-        logging.debug(f'/ zoom')
+    if source and query and 'id_list' in request.form:
         id_list = request.form.get('id_list').split(',')
         zoom = request.form.get('zoom')
         analysis_type = zoom_name(zoom)

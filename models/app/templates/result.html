@@ -141,6 +141,10 @@
                         {{ script|safe }}
                         {{ div|safe }}
                         {% endfor %}
+                        <button type="button" class="btn btn-light"
+                                onclick="(function(){ {{ papers_callback|safe }} })();">
+                            <img src="{{ url_for('static', filename='list.svg') }}"  alt="+"/>&nbsp;Show as list
+                        </button>
                     </div>
                 </div>
             </div>
@@ -336,13 +340,17 @@
                         Year reflects publication year of the original paper.
                     </p>
                     <div>
-                        {% for (script, div), zoom_in_callback in subtopics_infos_and_zoom_in_callbacks %}
+                        {% for (script, div), zoom_in_callback, papers_topic_callback in subtopics_infos_and_callbacks %}
                         <h2 class="card-subtitle">
                             <hr>
                             Subtopic {{ loop.index }}
                             {% if loop.index0 == comp_other %}
                             - OTHER
                             {% endif %}
+                            <button type="button" class="btn btn-light"
+                                    onclick="(function(){ {{ papers_topic_callback|safe }} })();">
+                                <img src="{{ url_for('static', filename='list.svg') }}"  alt="+"/>&nbsp;Show as list
+                            </button>
                             <button type="button" class="btn btn-light"
                                     onclick="(function(){ {{ zoom_in_callback|safe }} })();">
                                 <img src="{{ url_for('static', filename='zoom-in.svg') }}"  alt="+"/>&nbsp;Zoom into

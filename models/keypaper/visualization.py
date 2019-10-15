@@ -36,7 +36,7 @@ def visualize_analysis(analyzer):
     # Initialize plotter after completion of analysis
     plotter = Plotter(analyzer=analyzer)
     # Order is important here!
-    paper_statistics, zoom_out_callback = plotter.papers_statistics_and_zoom_out_callback()
+    paper_statistics, zoom_out_callback, papers_callback = plotter.papers_statistics_and_callbacks()
     result = {
         'log': html.unescape(analyzer.log()),
         'experimental': analyzer.config.experimental,
@@ -47,9 +47,9 @@ def visualize_analysis(analyzer):
         'cocitations_clusters': [components(plotter.cocitations_clustering())],
         'component_size_summary': [components(plotter.component_size_summary())],
         'component_years_summary_boxplots': [components(plotter.component_years_summary_boxplots())],
-        'subtopics_infos_and_zoom_in_callbacks':
-            [(components(p), zoom_in_callback) for
-             (p, zoom_in_callback) in plotter.subtopics_infos_and_zoom_in_callbacks()],
+        'subtopics_infos_and_callbacks':
+            [(components(p), zoom_in_callback, papers_callback) for
+             (p, zoom_in_callback, papers_callback) in plotter.subtopics_infos_and_callbacks()],
         'top_cited_papers': [components(plotter.top_cited_papers())],
         'max_gain_papers': [components(plotter.max_gain_papers())],
         'max_relative_gain_papers': [components(plotter.max_relative_gain_papers())],
@@ -57,6 +57,7 @@ def visualize_analysis(analyzer):
         'component_ratio': [components(plotter.component_ratio())],
         'papers_stats': [components(paper_statistics)],
         'papers_zoom_out_callback': zoom_out_callback,
+        'papers_callback': papers_callback,
         'clusters_info_message': html.unescape(plotter.clusters_info_message),
         'author_statistics': plotter.author_statistics(),
         'journal_statistics': plotter.journal_statistics()
@@ -88,13 +89,13 @@ class Plotter:
                     [RGB(*[round(c * 255) for c in pub_types_cmap(i)[:3]]) for i in range(n_pub_types)]))
 
     @staticmethod
-    def paper_callback(source, db):
-        if db in ['Semantic Scholar', 'Pubmed']:
-            base = LOCAL_BASE_URL.substitute(source=db)
+    def paper_callback(ds, source):
+        if source in ['Semantic Scholar', 'Pubmed']:
+            base = LOCAL_BASE_URL.substitute(source=source)
         else:
-            raise ValueError("Wrong value of db")
-        return CustomJS(args=dict(source=source, base=base), code="""
-            var data = source.data, selected = source.selected.indices;
+            raise ValueError(f"Wrong value of source: {source}")
+        return CustomJS(args=dict(ds=ds, base=base), code="""
+            var data = ds.data, selected = ds.selected.indices;
 
             // Decode jobid from URL, which is supposed to be last
             var tokens = window.location.href.split('&');
@@ -104,9 +105,25 @@ class Plotter:
             var MAX_AMOUNT = 3;
 
             for (var i = 0; i < Math.min(MAX_AMOUNT, selected.length); i++){
-                window.open(base + data['id'][selected[i]] + '&' + jobid, "_blank");
+                window.open(base + data['id'][selected[i]] + '&' + jobid, '_blank');
             }
         """)
+
+    @staticmethod
+    def papers_callback(source, comp=None):
+        if source in ['Semantic Scholar', 'Pubmed']:
+            base = f'/papers?source={source}'
+        else:
+            raise ValueError(f"Wrong value of source: {source}")
+        if comp is not None:
+            base += f'&comp={comp + 1}'  # Component number is exposed, so make it 1-based
+        return f"""
+            // Decode jobid from URL, which is supposed to be last
+            var tokens = window.location.href.split('&');
+            var jobid = tokens[tokens.length - 1];
+
+            window.open('{base}' + '&' + jobid, '_blank');
+        """
 
     @staticmethod
     def subtopic_callback(source):
@@ -310,7 +327,7 @@ class Plotter:
         boxwhisker.opts(width=960, height=300, box_fill_color=dim('Topic').str(), cmap='tab20')
         return hv.render(boxwhisker, backend='bokeh')
 
-    def subtopics_infos_and_zoom_in_callbacks(self):
+    def subtopics_infos_and_callbacks(self):
         logging.info('Per component detailed info visualization')
 
         # Prepare layouts
@@ -325,7 +342,7 @@ class Plotter:
             )
             # Add type coloring
             ds.add([self.pub_types_colors_map[t] for t in comp_source['type']], 'color')
-            plot = self.__serve_scatter_article_layout(source=ds,
+            plot = self.__serve_scatter_article_layout(ds=ds,
                                                        year_range=[min_year, max_year],
                                                        title="Publications", width=760)
             plot.circle(x='year', y='total_fixed', fill_alpha=0.5, source=ds, size='size',
@@ -354,10 +371,14 @@ class Plotter:
             desc.image_rgba(image=[img], x=[0], y=[0], dw=[10], dh=[10])
 
             # Create Zoom In callback
-            zoom_in_callback = self.zoom_callback(list(comp_source['id']), self.analyzer.source,
+            id_list = list(comp_source['id'])
+            zoom_in_callback = self.zoom_callback(id_list, self.analyzer.source,
                                                   zoom=ZOOM_IN,
                                                   query=self.analyzer.query)
-            result.append((row(desc, plot), zoom_in_callback))
+
+            papers_callback = self.papers_callback(self.analyzer.source, c)
+
+            result.append((row(desc, plot), zoom_in_callback, papers_callback))
 
         return result
 
@@ -394,7 +415,7 @@ class Plotter:
         # Add type coloring
         ds.add([self.pub_types_colors_map[t] for t in self.analyzer.top_cited_df['type']], 'color')
 
-        plot = self.__serve_scatter_article_layout(source=ds,
+        plot = self.__serve_scatter_article_layout(ds=ds,
                                                    year_range=[min_year, max_year],
                                                    title=f'{len(self.analyzer.top_cited_df)} top cited papers',
                                                    width=960)
@@ -478,7 +499,7 @@ class Plotter:
 
         return p
 
-    def papers_statistics_and_zoom_out_callback(self):
+    def papers_statistics_and_callbacks(self):
         ds_stats = PlotPreprocessor.papers_statistics_data(self.analyzer.df)
 
         year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
@@ -520,10 +541,13 @@ class Plotter:
         desc.image_rgba(image=[img], x=[0], y=[0], dw=[10], dh=[10])
 
         # Create Zoom Out callback
-        zoom_out_callback = self.zoom_callback(list(self.analyzer.df['id']), self.analyzer.source,
+        id_list = list(self.analyzer.df['id'])
+        zoom_out_callback = self.zoom_callback(id_list, self.analyzer.source,
                                                zoom=ZOOM_OUT, query=self.analyzer.query)
 
-        return row(desc, p), zoom_out_callback
+        papers_callback = self.papers_callback(self.analyzer.source)
+
+        return row(desc, p), zoom_out_callback, papers_callback
 
     def subtopic_evolution(self):
         """
@@ -597,7 +621,7 @@ class Plotter:
                                        size=np.log(df['total']) * size_scaling_coefficient))
         return d
 
-    def __serve_scatter_article_layout(self, source, year_range, title, width=960):
+    def __serve_scatter_article_layout(self, ds, year_range, title, width=960):
         min_year, max_year = year_range
         p = figure(tools=TOOLS, toolbar_location="above",
                    plot_width=width, plot_height=400,
@@ -612,7 +636,7 @@ class Plotter:
             ("Year", '@year'),
             ("Type", '@type'),
             ("Cited by", '@total paper(s) total')])
-        p.js_on_event('tap', self.paper_callback(source, self.analyzer.source))
+        p.js_on_event('tap', self.paper_callback(ds, self.analyzer.source))
 
         return p
 
