@@ -50,12 +50,13 @@
             <tr>
                 <th scope="col">#</th>
                 <th scope="col">Title</th>
+                <th scope="col">Authors</th>
                 <th scope="col">Journal</th>
                 <th scope="col">Year</th>
             </tr>
             </thead>
             <tbody>
-            {% for id, title, url, journal, year in papers %}
+            {% for id, title, authors, url, journal, year in papers %}
             <tr>
                 <th scope="row">{{ loop.index }}</th>
                 <td>
@@ -64,6 +65,7 @@
                         <img src="{{ url_for('static', filename='external-link.svg') }}"/>
                     </a>
                 </td>
+                <td>{{ authors }}</td>
                 <td>{{ journal }}</td>
                 <td>{{ year }}</td>
             </tr>

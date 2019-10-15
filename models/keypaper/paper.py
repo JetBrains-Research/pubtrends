@@ -5,7 +5,7 @@ from models.keypaper.analysis import KeyPaperAnalyzer
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.pm_loader import PubmedLoader
 from models.keypaper.ss_loader import SemanticScholarLoader
-from models.keypaper.utils import PUBMED_ARTICLE_BASE_URL, SEMANTIC_SCHOLAR_BASE_URL
+from models.keypaper.utils import PUBMED_ARTICLE_BASE_URL, SEMANTIC_SCHOLAR_BASE_URL, cut_authors_list
 from models.keypaper.visualization import Plotter
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
@@ -130,10 +130,11 @@ def prepare_papers_data(data, source, comp):
     for pid in id_df['id']:
         sel = analyzer.df[analyzer.df['id'] == pid]
         title = sel['title'].values[0]
+        authors = cut_authors_list(sel['authors'].values[0], limit=2)  # Take only first/last author
         trimmed_title = f'{title[:max_title_length]}...' if len(title) > max_title_length else title
         journal = sel['journal'].values[0]
         year = sel['year'].values[0]
-        result.append((pid, trimmed_title, url_prefix + pid, journal, year))
+        result.append((pid, trimmed_title, authors, url_prefix + pid, journal, year))
 
     # Return list sorted by year
     return sorted(result, key=lambda t: t[4], reverse=True)
