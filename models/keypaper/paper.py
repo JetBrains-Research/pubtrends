@@ -137,4 +137,4 @@ def prepare_papers_data(data, source, comp):
         result.append((pid, trimmed_title, authors, url_prefix + pid, journal, year))
 
     # Return list sorted by year
-    return sorted(result, key=lambda t: t[4], reverse=True)
+    return sorted(result, key=lambda t: t[5], reverse=True)
