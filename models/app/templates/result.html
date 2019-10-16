@@ -72,6 +72,11 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" href="#publications">
+                            <img src="{{ url_for('static', filename='columns.svg') }}"/>&nbsp;Publications
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="#authors">
                             <img src="{{ url_for('static', filename='users.svg') }}"/>&nbsp;Authors
                         </a>
@@ -79,11 +84,6 @@
                     <li class="nav-item">
                         <a class="nav-link" href="#journals">
                             <img src="{{ url_for('static', filename='book-open.svg') }}"/>&nbsp;Journals
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#publications">
-                            <img src="{{ url_for('static', filename='columns.svg') }}"/>&nbsp;Publications
                         </a>
                     </li>
                     {% if experimental %}
@@ -262,6 +262,52 @@
             </div>
 
             <div class="card mt-3">
+                <div class="card-title" id="publications">
+                    <h1 class="card-header">Publications</h1>
+                </div>
+                <div class="card-body">
+                    <p>
+                        Learn more about subtopics - most cited papers over time are shown for each topic.<br>
+                        Papers are sorted descending by citations number overall from bottom to top.<br>
+                        Year reflects publication year of the original paper.
+                    </p>
+                    <div>
+                        {% for (script, div), zoom_in_callback, papers_topic_callback in subtopics_infos_and_callbacks %}
+                        <h2 class="card-subtitle">
+                            <hr>
+                            Subtopic {{ loop.index }}
+                            {% if loop.index0 == comp_other %}
+                            - OTHER
+                            {% endif %}
+                            <button type="button" class="btn btn-light"
+                                    onclick="(function(){ {{ papers_topic_callback|safe }} })();">
+                                <img src="{{ url_for('static', filename='list.svg') }}"  alt="+"/>&nbsp;Show as list
+                            </button>
+                            <button type="button" class="btn btn-light"
+                                    onclick="(function(){ {{ zoom_in_callback|safe }} })();">
+                                <img src="{{ url_for('static', filename='zoom-in.svg') }}"  alt="+"/>&nbsp;Zoom into
+                            </button>
+                        </h2>
+                        Number of papers: {{ component_sizes[loop.index - 1] }}
+                        <div id="subtopic-{{ loop.index }}">
+                            {{ script|safe }}
+                            {{ div|safe }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <hr>
+                    <p>
+                        Explore related papers by taking into account all the referencing and citing relationships for papers of interest.<br>
+                        <strong>WARNING</strong>: number of papers can increase exponentially, analysis can be slow!
+                    </p>
+                    <button type="button" class="btn btn-light"
+                            onclick="(function(){ {{ papers_zoom_out_callback|safe }} })();">
+                        <img src="{{ url_for('static', filename='zoom-out.svg') }}" alt="-"/>&nbsp;Zoom out to related papers
+                    </button>
+                </div>
+            </div>
+
+            <div class="card mt-3">
                 <div class="card-title" id="authors">
                     <h1 class="card-header">Authors</h1>
                 </div>
@@ -329,52 +375,6 @@
                 </div>
             </div>
 
-            <div class="card mt-3">
-                <div class="card-title" id="publications">
-                    <h1 class="card-header">Publications</h1>
-                </div>
-                <div class="card-body">
-                    <p>
-                        Learn more about subtopics - most cited papers over time are shown for each topic.<br>
-                        Papers are sorted descending by citations number overall from bottom to top.<br>
-                        Year reflects publication year of the original paper.
-                    </p>
-                    <div>
-                        {% for (script, div), zoom_in_callback, papers_topic_callback in subtopics_infos_and_callbacks %}
-                        <h2 class="card-subtitle">
-                            <hr>
-                            Subtopic {{ loop.index }}
-                            {% if loop.index0 == comp_other %}
-                            - OTHER
-                            {% endif %}
-                            <button type="button" class="btn btn-light"
-                                    onclick="(function(){ {{ papers_topic_callback|safe }} })();">
-                                <img src="{{ url_for('static', filename='list.svg') }}"  alt="+"/>&nbsp;Show as list
-                            </button>
-                            <button type="button" class="btn btn-light"
-                                    onclick="(function(){ {{ zoom_in_callback|safe }} })();">
-                                <img src="{{ url_for('static', filename='zoom-in.svg') }}"  alt="+"/>&nbsp;Zoom into
-                            </button>
-                        </h2>
-                        Number of papers: {{ component_sizes[loop.index - 1] }}
-                        <div id="subtopic-{{ loop.index }}">
-                            {{ script|safe }}
-                            {{ div|safe }}
-                        </div>
-                        {% endfor %}
-                    </div>
-                    <hr>
-                    <p>
-                        Explore related papers by taking into account all the referencing and citing relationships for papers of interest.<br>
-                        <strong>WARNING</strong>: number of papers can increase exponentially, analysis can be slow!
-                    </p>
-                    <button type="button" class="btn btn-light"
-                            onclick="(function(){ {{ papers_zoom_out_callback|safe }} })();">
-                        <img src="{{ url_for('static', filename='zoom-out.svg') }}" alt="-"/>&nbsp;Zoom out to related papers
-                    </button>
-                </div>
-            </div>
-
             {% if experimental %}
             <div class="card mt-3">
                 <div class="card-title" id="evolution">
@@ -402,7 +402,7 @@
                 </div>
             </div>
             {% endif %}
-
+            
             <div class="card mt-3">
                 <div class="card-title" id="log">
                     <h1 class="card-header">Log</h1>
