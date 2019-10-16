@@ -425,7 +425,7 @@ class KeyPaperAnalyzer:
 
         return sorted_partition_merged, other
 
-    def popular_journals(self, df, n=20, current=0, task=None):
+    def popular_journals(self, df, n=50, current=0, task=None):
         self.logger.info("Finding popular journals", current=current, task=task)
         journal_stats = df.groupby(['journal', 'comp']).size().reset_index(name='counts')
         # drop papers with undefined subtopic
@@ -445,7 +445,7 @@ class KeyPaperAnalyzer:
 
         return journal_stats.head(n=n)
 
-    def popular_authors(self, df, n=20, current=0, task=None):
+    def popular_authors(self, df, n=50, current=0, task=None):
         self.logger.info("Finding popular authors", current=current, task=task)
 
         author_stats = df[['authors', 'comp']].copy()

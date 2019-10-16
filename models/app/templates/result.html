@@ -25,10 +25,22 @@
           rel="stylesheet" type="text/css">
     <link href="https://cdn.pydata.org/bokeh/release/bokeh-widgets-1.2.0.min.css"
           rel="stylesheet" type="text/css">
+    <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.20/js/dataTables.bootstrap4.min.js"></script>
+    <link href="https://cdn.datatables.net/1.10.20/css/dataTables.bootstrap4.min.css"
+          rel="stylesheet" type="text/css">
+
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
     <!--     <link rel="stylesheet" href="../static/style.css"/> -->
     <link rel="stylesheet" href="{{ url_for('static', filename='result.css') }}">
     <!--    <link rel="stylesheet" href="../static/result.css"/>-->
+    <script>
+        "use strict";
+        $(document).ready(function() {
+            $('#authors-table').DataTable();
+            $('#journals-table').DataTable();
+        } );
+    </script>
 </head>
 <body>
 
@@ -315,7 +327,7 @@
                         these papers.<br>
                         The subtopic circles are arranged according to the number of papers, in descending order.
                     </p>
-                    <table class="table table-sm table-bordered table-striped">
+                    <table id="authors-table" class="table table-sm table-bordered table-striped">
                         <thead>
                         <tr>
                             <th scope="col">#</th>
@@ -349,7 +361,7 @@
                         these papers.<br>
                         The subtopic circles are arranged according to the number of papers, in descending order.
                     </p>
-                    <table class="table table-sm table-bordered table-striped">
+                    <table id="journals-table" class="table table-sm table-bordered table-striped">
                         <thead>
                         <tr>
                             <th scope="col">#</th>

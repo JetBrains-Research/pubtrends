@@ -300,3 +300,7 @@ def explain_lda_subtopics(lda, vectorizer, n_top_words=20):
         explanations[i] = [(topic[i], feature_names[i]) for i in topic.argsort()[:-n_top_words - 1:-1]]
 
     return explanations
+
+
+def trim(string, max_length):
+    return f'{string[:max_length]}...' if len(string) > max_length else string

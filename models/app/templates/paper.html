@@ -25,10 +25,32 @@
           rel="stylesheet" type="text/css">
     <link href="https://cdn.pydata.org/bokeh/release/bokeh-widgets-1.2.0.min.css"
           rel="stylesheet" type="text/css">
+    <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.20/js/dataTables.bootstrap4.min.js"></script>
+    <link href="https://cdn.datatables.net/1.10.20/css/dataTables.bootstrap4.min.css"
+          rel="stylesheet" type="text/css">
+
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
     <!--     <link rel="stylesheet" href="../static/style.css"/> -->
     <link rel="stylesheet" href="{{ url_for('static', filename='paper.css') }}"/>
     <!--     <link rel="stylesheet" href="../static/paper.css"/> -->
+    <script>
+        "use strict";
+        $(document).ready(function() {
+            {% if related_topics is defined %}
+                $('#related_topics').DataTable();
+            {% endif %}
+            {% if citing_papers is defined %}
+                $('#citing_papers').DataTable();
+            {% endif %}
+            {% if cited_papers is defined %}
+                $('#cited_papers').DataTable();
+            {% endif %}
+            {% if cocited_papers is defined %}
+                $('#cocited_papers').DataTable();
+            {% endif %}
+        } );
+    </script>
 </head>
 <body>
 
@@ -125,7 +147,7 @@
                         has.
                     </p>
                     {% if related_topics is defined %}
-                    <table class="table table-sm table-bordered table-striped">
+                    <table id="related_topics" class="table table-sm table-bordered table-striped">
                         <thead>
                         <tr>
                             <th scope="col">#</th>
@@ -160,7 +182,7 @@
                         ranked by <em>PageRank</em> algorithm applied to citations graph. <br>
                         Most important nodes (papers) of citations graph get highest pagerank value.
                     </p>
-                    <table class="table table-sm table-bordered table-striped">
+                    <table id="citing_papers" class="table table-sm table-bordered table-striped">
                         <thead>
                         <tr>
                             <th scope="col">#</th>
@@ -181,6 +203,7 @@
                         {% endfor %}
                         </tbody>
                     </table>
+                    <br>
                     {% endif %}
 
                     {% if cited_papers is defined %}
@@ -189,7 +212,7 @@
                         This section represents papers, which has the paper of interest among references,<br>
                         ranked by <em>PageRank</em> algorithm applied to citations graph.
                     </p>
-                    <table class="table table-sm table-bordered table-striped">
+                    <table id="cited_papers" class="table table-sm table-bordered table-striped">
                         <thead>
                         <tr>
                             <th scope="col">#</th>
@@ -210,6 +233,7 @@
                         {% endfor %}
                         </tbody>
                     </table>
+                    <br>
                     {% endif %}
 
                     {% if cocited_papers is defined %}
@@ -218,7 +242,7 @@
                         This section represents papers, which are co-cited with the paper of interest,<br>
                         ranked by <em>PageRank</em> algorithm applied to citations graph.
                     </p>
-                    <table class="table table-sm table-bordered table-striped">
+                    <table id="cocited_papers" class="table table-sm table-bordered table-striped">
                         <thead>
                         <tr>
                             <th scope="col">#</th>
