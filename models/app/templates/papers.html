@@ -21,6 +21,10 @@
             crossorigin="anonymous"></script>
     <script src="https://cdn.pydata.org/bokeh/release/bokeh-1.2.0.min.js"></script>
     <script src="https://cdn.pydata.org/bokeh/release/bokeh-widgets-1.2.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.20/js/dataTables.bootstrap4.min.js"></script>
+    <link href="https://cdn.datatables.net/1.10.20/css/dataTables.bootstrap4.min.css"
+          rel="stylesheet" type="text/css">
 
     <link href="https://cdn.pydata.org/bokeh/release/bokeh-1.2.0.min.css"
           rel="stylesheet" type="text/css">
@@ -30,6 +34,12 @@
     <!--     <link rel="stylesheet" href="../static/style.css"/> -->
     <link rel="stylesheet" href="{{ url_for('static', filename='paper.css') }}"/>
     <!--     <link rel="stylesheet" href="../static/paper.css"/> -->
+    <script>
+        "use strict";
+        $(document).ready(function() {
+            $('#papers').DataTable();
+        } );
+    </script>
 </head>
 <body>
 
