@@ -11,7 +11,7 @@ from flask import (
     render_template, render_template_string
 )
 
-from models.celery.tasks import celery, find_paper_async, task_analyze_search_terms, analyze_id_list
+from models.celery.tasks import celery, find_paper_async, analyze_search_terms, analyze_id_list
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.paper import prepare_paper_data, prepare_papers_data
 from models.keypaper.utils import zoom_name, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE
@@ -21,8 +21,8 @@ PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 app = Flask(__name__)
 
 
-@app.route('/progress')
-def progress():
+@app.route('/status')
+def status():
     jobid = request.values.get('jobid')
     if jobid:
         job = AsyncResult(jobid, app=celery)
@@ -217,7 +217,7 @@ def search_terms():
 
     if query and source and sort:
         logging.debug(f'/ regular search')
-        job = task_analyze_search_terms.delay(source, query=query, limit=limit, sort=sort)
+        job = analyze_search_terms.delay(source, query=query, limit=limit, sort=sort)
         return redirect(url_for('.process', query=query, source=source, jobid=job.id))
 
     raise Exception(f"Request does not contain necessary params: {request}")

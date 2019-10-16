@@ -19,8 +19,8 @@ celery = Celery("tasks", backend=CELERY_RESULT_BACKEND, broker=CELERY_BROKER_URL
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
 
-@celery.task(name='task_analyze_search_terms')
-def task_analyze_search_terms(source, query, sort=None, limit=None):
+@celery.task(name='analyze_search_terms')
+def analyze_search_terms(source, query, sort=None, limit=None):
     loader = get_loader(source, PUBTRENDS_CONFIG)
     analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
     try:

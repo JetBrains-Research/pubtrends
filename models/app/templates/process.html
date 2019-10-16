@@ -31,11 +31,11 @@
         let last_progress;
         let last_log_message;
 
-        function poll_progress() {
+        function check_status() {
             if (cancelled) {
                 return;
             }
-            $.ajax("{{url_for('.progress', jobid=jobid)}}", {
+            $.ajax("{{url_for('.status', jobid=jobid)}}", {
                 dataType: "json", success: function (response) {
                     console.log(response);
                     if (response.state === 'FAILURE') {
@@ -45,7 +45,7 @@
                         $('#log').html(response.log);
                     } else if (response.state === 'PENDING') {
                         $('#status').html(response.message);
-                        setTimeout(poll_progress, TIMEOUT);
+                        setTimeout(check_status, TIMEOUT);
                     } else if (response.state !== undefined) {
                         $('#status').html('Analyzing...');
                         $('#progress').show();
@@ -71,7 +71,7 @@
                                 $('#log').html(response.log);
                                 last_log_message = response.log;
                             }
-                            setTimeout(poll_progress, TIMEOUT);
+                            setTimeout(check_status, TIMEOUT);
                         }
                     } else {
                         retries += 1;
@@ -79,7 +79,7 @@
                             $('#progress').hide();
                             $('#status').html("<h1>Error</h1>Failed to fetch results.");
                         } else {
-                            setTimeout(poll_progress, TIMEOUT);
+                            setTimeout(check_status, TIMEOUT);
                         }
                     }
                 }
@@ -107,7 +107,7 @@
         }
 
         $(function () {
-            setTimeout(poll_progress, TIMEOUT);
+            setTimeout(check_status, TIMEOUT);
         });
     </script>
 </head>
