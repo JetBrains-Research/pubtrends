@@ -414,9 +414,12 @@
             
             <div class="card mt-3">
                 <div class="card-title" id="log">
-                    <h1 class="card-header">Log</h1>
+                    <h1 class="card-header"><a data-toggle="collapse" href="#collapseLog" role="button" aria-expanded="false"
+                                               aria-controls="collapseCocitations">
+                        Log
+                    </a></h1>
                 </div>
-                <div class="card-body">
+                <div id="collapseLog" class="card-body collapse">
                     <pre>{{log}}</pre>
                 </div>
             </div>
