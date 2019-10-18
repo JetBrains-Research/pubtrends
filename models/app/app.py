@@ -68,7 +68,7 @@ def result():
     jobid = request.values.get('jobid')
     query = request.args.get('query')
     if jobid:
-        job = get_or_cancel_task(jobid)
+        job = complete_task(jobid)
         if job and job.state == 'SUCCESS':
             data, _ = job.result
             return render_template('result.html', search_string=query,
@@ -134,14 +134,14 @@ def process_paper():
     query = request.values.get('query')
     if jobid:
         job = get_or_cancel_task(jobid)
-        if job.state == 'SUCCESS':
-            ids = job.result
+        if job and job.state == 'SUCCESS':
+            id_list = job.result
             logging.debug('/process_paper single paper analysis')
-            if len(ids) == 1:
-                job = analyze_id_list.delay(source, id_list=ids, zoom=PAPER_ANALYSIS, query=query)
+            if len(id_list) == 1:
+                job = analyze_id_list.delay(source, id_list=id_list, zoom=PAPER_ANALYSIS, query=query)
                 return redirect(url_for('.process', query=query, analysis_type=PAPER_ANALYSIS_TITLE,
                                         source=source, jobid=job.id))
-            elif len(ids) == 0:
+            elif len(id_list) == 0:
                 return render_template_string('Found no papers matching specified key - value pair')
             else:
                 return render_template_string('Found multiple papers matching your search')
