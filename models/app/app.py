@@ -91,6 +91,7 @@ def process():
         source = request.values.get('source')
         key = request.args.get('key')
         value = request.args.get('value')
+        id = request.args.get('id')
 
         if key and value:
             logging.debug('/process key:value search')
@@ -111,7 +112,7 @@ def process():
         elif analysis_type == PAPER_ANALYSIS_TITLE:
             logging.debug('/process paper analysis')
             return render_template('process.html',
-                                   args={'source': source, 'jobid': jobid},
+                                   args={'source': source, 'jobid': jobid, 'id': id},
                                    search_string=query,
                                    subpage="paper",  # redirect in case of success
                                    jobid=jobid, version=PUBTRENDS_CONFIG.version)
@@ -140,7 +141,7 @@ def process_paper():
             if len(id_list) == 1:
                 job = analyze_id_list.delay(source, id_list=id_list, zoom=PAPER_ANALYSIS, query=query)
                 return redirect(url_for('.process', query=query, analysis_type=PAPER_ANALYSIS_TITLE,
-                                        source=source, jobid=job.id))
+                                        id=id_list[0], source=source, jobid=job.id))
             elif len(id_list) == 0:
                 return render_template_string('Found no papers matching specified key - value pair')
             else:
