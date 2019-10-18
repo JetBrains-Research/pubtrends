@@ -5,10 +5,22 @@ from models.keypaper.analysis import KeyPaperAnalyzer
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.pm_loader import PubmedLoader
 from models.keypaper.ss_loader import SemanticScholarLoader
-from models.keypaper.utils import PUBMED_ARTICLE_BASE_URL, SEMANTIC_SCHOLAR_BASE_URL, cut_authors_list, trim
+from models.keypaper.utils import cut_authors_list, trim, PUBMED_ARTICLE_BASE_URL, SEMANTIC_SCHOLAR_BASE_URL
 from models.keypaper.visualization import Plotter
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
+
+
+def get_loader_and_url_prefix(source, config):
+    if source == 'Pubmed':
+        loader = PubmedLoader(config)
+        url_prefix = PUBMED_ARTICLE_BASE_URL
+    elif source == 'Semantic Scholar':
+        loader = SemanticScholarLoader(config)
+        url_prefix = SEMANTIC_SCHOLAR_BASE_URL
+    else:
+        raise ValueError(f"Unknown source {source}")
+    return loader, url_prefix
 
 
 def get_top_papers_id_title(papers, df, key, n=50):
@@ -18,15 +30,7 @@ def get_top_papers_id_title(papers, df, key, n=50):
 
 
 def prepare_paper_data(data, source, pid):
-    if source == 'Pubmed':
-        loader = PubmedLoader(PUBTRENDS_CONFIG)
-        url_prefix = PUBMED_ARTICLE_BASE_URL
-    elif source == 'Semantic Scholar':
-        loader = SemanticScholarLoader(PUBTRENDS_CONFIG)
-        url_prefix = SEMANTIC_SCHOLAR_BASE_URL
-    else:
-        raise ValueError(f"Unknown source {source}")
-
+    loader, url_prefix = get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
     analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
     analyzer.load(data)
 
@@ -103,15 +107,7 @@ def prepare_paper_data(data, source, pid):
 
 
 def prepare_papers_data(data, source, comp):
-    if source == 'Pubmed':
-        loader = PubmedLoader(PUBTRENDS_CONFIG)
-        url_prefix = PUBMED_ARTICLE_BASE_URL
-    elif source == 'Semantic Scholar':
-        loader = SemanticScholarLoader(PUBTRENDS_CONFIG)
-        url_prefix = SEMANTIC_SCHOLAR_BASE_URL
-    else:
-        raise ValueError(f"Unknown source {source}")
-
+    loader, url_prefix = get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
     analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
     analyzer.load(data)
 

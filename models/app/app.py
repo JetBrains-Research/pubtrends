@@ -1,20 +1,21 @@
 import html
 import json
-import random
 import logging
-
+import random
 from urllib.parse import quote
 
-from celery.result import AsyncResult
 from flask import (
     Flask, request, redirect, url_for,
     render_template, render_template_string
 )
 
 from models.celery.tasks import celery, find_paper_async, analyze_search_terms, analyze_id_list
+from models.celery.tasks_cache import get_or_cancel_task, complete_task
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.paper import prepare_paper_data, prepare_papers_data
 from models.keypaper.utils import zoom_name, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE
+
+# logging.basicConfig(level=logging.NOTSET)
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
@@ -25,7 +26,12 @@ app = Flask(__name__)
 def status():
     jobid = request.values.get('jobid')
     if jobid:
-        job = AsyncResult(jobid, app=celery)
+        job = get_or_cancel_task(jobid)
+        if job is None:
+            return json.dumps({
+                'state': 'FAILURE',
+                'message': f'Unknown search id {jobid}'
+            })
         if job.state == 'PROGRESS':
             return json.dumps({
                 'state': job.state,
@@ -33,6 +39,8 @@ def status():
                 'progress': int(100.0 * job.result['current'] / job.result['total'])
             })
         elif job.state == 'SUCCESS':
+            # Mark job as complete to avoid time expiration
+            complete_task(jobid)
             return json.dumps({
                 'state': job.state,
                 'progress': 100
@@ -43,9 +51,10 @@ def status():
                 'message': html.unescape(str(job.result).replace('\\n', '\n').replace('\\t', '\t')[2:-2])
             })
         elif job.state == 'PENDING':
-            return json.dumps({'state': job.state,
-                               'message': 'Task is in queue, please wait...',
-                               })
+            return json.dumps({
+                'state': job.state,
+                'message': 'Task is in queue, please wait...'
+            })
 
     # no jobid
     return json.dumps({
@@ -59,9 +68,9 @@ def result():
     jobid = request.values.get('jobid')
     query = request.args.get('query')
     if jobid:
-        job = AsyncResult(jobid, app=celery)
-        data, _ = job.result
-        if job.state == 'SUCCESS':
+        job = get_or_cancel_task(jobid)
+        if job and job.state == 'SUCCESS':
+            data, _ = job.result
             return render_template('result.html', search_string=query,
                                    version=PUBTRENDS_CONFIG.version,
                                    **data)
@@ -124,7 +133,7 @@ def process_paper():
     source = request.values.get('source')
     query = request.values.get('query')
     if jobid:
-        job = AsyncResult(jobid, app=celery)
+        job = get_or_cancel_task(jobid)
         if job.state == 'SUCCESS':
             ids = job.result
             logging.debug('/process_paper single paper analysis')
@@ -144,10 +153,9 @@ def paper():
     source = request.args.get('source')
     pid = request.args.get('id')
     if jobid:
-        job = AsyncResult(jobid, app=celery)
-        _, data = job.result
-
-        if job.state == 'SUCCESS':
+        job = complete_task(jobid)
+        if job and job.state == 'SUCCESS':
+            _, data = job.result
             return render_template('paper.html', **prepare_paper_data(data, source, pid),
                                    version=PUBTRENDS_CONFIG.version)
 
@@ -162,10 +170,9 @@ def show_ids():
     if comp is not None:
         comp = int(comp) - 1  # Component was exposed so it was 1-based
     if jobid:
-        job = AsyncResult(jobid, app=celery)
-        _, data = job.result
-
-        if job.state == 'SUCCESS':
+        job = complete_task(jobid)
+        if job and job.state == 'SUCCESS':
+            _, data = job.result
             return render_template('papers.html',
                                    version=PUBTRENDS_CONFIG.version,
                                    source=source,
@@ -210,10 +217,10 @@ def index():
 @app.route('/search_terms', methods=['POST'])
 def search_terms():
     logging.debug('/search_terms')
-    query = request.form.get('query')    # Original search query
+    query = request.form.get('query')  # Original search query
     source = request.form.get('source')  # Pubmed or Semantic Scholar
-    sort = request.form.get('sort')      # Sort order
-    limit = request.form.get('limit')    # Limit
+    sort = request.form.get('sort')  # Sort order
+    limit = request.form.get('limit')  # Limit
 
     if query and source and sort:
         logging.debug(f'/ regular search')
@@ -242,7 +249,7 @@ def search_paper():
 def process_ids():
     logging.debug('/process_ids')
     source = request.form.get('source')  # Pubmed or Semantic Scholar
-    query = request.form.get('query')    # Original search query
+    query = request.form.get('query')  # Original search query
 
     if source and query and 'id_list' in request.form:
         id_list = request.form.get('id_list').split(',')
