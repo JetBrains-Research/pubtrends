@@ -25,7 +25,7 @@ from matplotlib import pyplot as plt
 from wordcloud import WordCloud
 
 from .utils import LOCAL_BASE_URL, get_word_cloud_data, \
-    get_most_common_ngrams, cut_authors_list, ZOOM_OUT, ZOOM_IN, zoom_name
+    get_most_common_ngrams, cut_authors_list, ZOOM_OUT, ZOOM_IN, zoom_name, trim
 from .visualization_data import PlotPreprocessor
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
@@ -586,14 +586,14 @@ class Plotter:
         sum = self.analyzer.author_stats['sum']
         subtopics = self.analyzer.author_stats.apply(
             lambda row: self._to_colored_circle(row['comp'], row['counts'], row['sum']), axis=1)
-        return list(zip(author, sum, subtopics))
+        return list(zip(map(lambda a: trim(a, 100), author), sum, subtopics))
 
     def journal_statistics(self):
         journal = self.analyzer.journal_stats['journal']
         sum = self.analyzer.journal_stats['sum']
         subtopics = self.analyzer.journal_stats.apply(
             lambda row: self._to_colored_circle(row['comp'], row['counts'], row['sum']), axis=1)
-        return list(zip(journal, sum, subtopics))
+        return list(zip(map(lambda j: trim(j, 100), journal), sum, subtopics))
 
     def _to_colored_circle(self, components, counts, sum):
         # html code to generate circles corresponding to the 3 most popular subtopics

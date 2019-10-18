@@ -13,7 +13,7 @@ from models.celery.tasks import celery, find_paper_async, analyze_search_terms, 
 from models.celery.tasks_cache import get_or_cancel_task, complete_task
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.paper import prepare_paper_data, prepare_papers_data
-from models.keypaper.utils import zoom_name, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE
+from models.keypaper.utils import zoom_name, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE, trim
 
 # logging.basicConfig(level=logging.NOTSET)
 
@@ -95,9 +95,10 @@ def process():
 
         if key and value:
             logging.debug('/process key:value search')
+            query = f'Paper {key}: {value}'
             return render_template('process.html',
-                                   args={'source': source, 'query': quote(f'Paper {key}: {value}'), 'jobid': jobid},
-                                   search_string=f'Paper {key}: {value}',
+                                   args={'source': source, 'query': quote(query), 'jobid': jobid},
+                                   search_string=trim(query, 90),
                                    subpage="process_paper",  # redirect in case of success
                                    jobid=jobid, version=PUBTRENDS_CONFIG.version)
 
@@ -106,14 +107,14 @@ def process():
             query = f"{analysis_type} analysis of {query} at {source}"
             return render_template('process.html',
                                    args={'query': quote(query), 'jobid': jobid},
-                                   search_string=query, subpage="result",  # redirect in case of success
+                                   search_string=trim(query, 90), subpage="result",  # redirect in case of success
                                    jobid=jobid, version=PUBTRENDS_CONFIG.version)
 
         elif analysis_type == PAPER_ANALYSIS_TITLE:
             logging.debug('/process paper analysis')
             return render_template('process.html',
                                    args={'source': source, 'jobid': jobid, 'id': id},
-                                   search_string=query,
+                                   search_string=trim(query, 90),
                                    subpage="paper",  # redirect in case of success
                                    jobid=jobid, version=PUBTRENDS_CONFIG.version)
         elif query:
@@ -121,7 +122,7 @@ def process():
             query = f'{query} at {source}'
             return render_template('process.html',
                                    args={'query': quote(query), 'jobid': jobid},
-                                   search_string=query,
+                                   search_string=trim(query, 90),
                                    subpage="result",  # redirect in case of success
                                    jobid=jobid, version=PUBTRENDS_CONFIG.version)
 
