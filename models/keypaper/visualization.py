@@ -96,15 +96,14 @@ class Plotter:
         return CustomJS(args=dict(ds=ds, base=base), code="""
             var data = ds.data, selected = ds.selected.indices;
 
-            // Decode jobid from URL, which is supposed to be last
-            var tokens = window.location.href.split('&');
-            var jobid = tokens[tokens.length - 1];
-
+            // Decode jobid from URL
+            const jobid = new URL(window.location).searchParams.get('jobid');
+            
             // Max amount of papers to be opened, others will be ignored
             var MAX_AMOUNT = 3;
 
             for (var i = 0; i < Math.min(MAX_AMOUNT, selected.length); i++){
-                window.open(base + data['id'][selected[i]] + '&' + jobid, '_blank');
+                window.open(base + data['id'][selected[i]] + '&jobid=' + jobid, '_blank');
             }
         """)
 
