@@ -98,7 +98,7 @@ class Plotter:
 
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
-            
+
             // Max amount of papers to be opened, others will be ignored
             var MAX_AMOUNT = 3;
 
