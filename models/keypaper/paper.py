@@ -129,8 +129,10 @@ def prepare_papers_data(data, source, comp=None, words=None, author=None, journa
     for _, row in df.iterrows():
         pid, title, abstract, authors, journal, year \
             = row['id'], row['title'], row['abstract'], row['authors'], row['journal'], row['year']
-        authors = cut_authors_list(journal, limit=2)  # Take only first/last author
-        result.append((pid, (trim(title, 200)), authors, url_prefix + pid, trim(journal, 50), year))
+        authors = cut_authors_list(authors, limit=2)  # Take only first/last author
+        tpl = (pid, (trim(title, 200)), authors, url_prefix + pid, trim(journal, 50), year)
+        print(tpl)
+        result.append(tpl)
 
     # Return list sorted by year
     return sorted(result, key=lambda t: t[5], reverse=True)

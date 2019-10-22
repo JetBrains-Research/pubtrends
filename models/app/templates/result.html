@@ -42,7 +42,7 @@
         } );
 
 
-        function papers_callback(comp=null, words=null, author=null, journal=null) {
+        function papers_callback_impl(comp, words, author, journal) {
             const url = '/papers?source={{source}}';
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
@@ -61,6 +61,23 @@
             }
             window.open(url + args + '&jobid=' + jobid, '_blank');
         }
+
+        function papers_callback() {
+            papers_callback_impl(null, null, null, null)
+        }
+        function papers_callback_component(comp) {
+            papers_callback_impl(comp, null, null, null)
+        }
+        function papers_callback_words() {
+            papers_callback_impl(null, words, null, null)
+        }
+        function papers_callback_author(author) {
+            papers_callback_impl(null, null, author, null)
+        }
+        function papers_callback_journal(journal) {
+            papers_callback_impl(null, null, null, journal)
+        }
+
     </script>
 </head>
 <body>
@@ -310,7 +327,7 @@
                             - OTHER
                             {% endif %}
                             <button type="button" class="btn btn-light"
-                                    onclick="(function(){ papers_callback(comp={{ loop.index }}); })();">
+                                    onclick="(function(){ papers_callback_component({{ loop.index }}); })();">
                                 <img src="{{ url_for('static', filename='list.svg') }}"  alt="+"/>&nbsp;Show as list
                             </button>
                             <button type="button" class="btn btn-light"
@@ -353,7 +370,7 @@
                         <tr>
                             <th scope="col">#</th>
                             <th scope="col">Author</th>
-                            <th scope="col">Number of papers</th>
+                            <th scope="col">Papers</th>
                             <th scope="col">Subtopics</th>
                         </tr>
                         </thead>
@@ -362,7 +379,9 @@
                         <tr>
                             <th scope="row">{{ loop.index }}</th>
                             <td>{{ row[0] }}</td>
-                            <td>{{ row[1] }}</td>
+                            <td><button type="button" class="btn btn-link" onclick="(function(){
+                                papers_callback_author('{{ row[0] }}');
+                            })();">{{ row[1] }}</button></td>
                             <td>{{ row[2]|safe }}</td>
                         </tr>
                         {% endfor %}
@@ -387,7 +406,7 @@
                         <tr>
                             <th scope="col">#</th>
                             <th scope="col">Journal</th>
-                            <th scope="col">Number of papers</th>
+                            <th scope="col">Papers</th>
                             <th scope="col">Subtopics</th>
                         </tr>
                         </thead>
@@ -396,7 +415,9 @@
                         <tr>
                             <th scope="row">{{ loop.index }}</th>
                             <td>{{ row[0] }}</td>
-                            <td>{{ row[1] }}</td>
+                            <td><button type="button" class="btn btn-link" onclick="(function(){
+                                papers_callback_journal('{{ row[0] }}');
+                            })();">{{ row[1] }}</button></td>
                             <td>{{ row[2]|safe }}</td>
                         </tr>
                         {% endfor %}
