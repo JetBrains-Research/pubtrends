@@ -106,22 +106,30 @@ def prepare_paper_data(data, source, pid):
     return result
 
 
-def prepare_papers_data(data, source, comp):
+def prepare_papers_data(data, source, comp=None, words=None, author=None, journal=None):
     loader, url_prefix = get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
     analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
     analyzer.load(data)
 
-    result = []
+    df = analyzer.df.copy()
+    # Filter by component
     if comp is not None:
-        id_df = analyzer.df.loc[analyzer.df['comp'].astype(int) == comp]
-    else:
-        id_df = analyzer.df
-    for pid in id_df['id']:
-        sel = analyzer.df[analyzer.df['id'] == pid]
-        title = sel['title'].values[0]
-        authors = cut_authors_list(sel['authors'].values[0], limit=2)  # Take only first/last author
-        journal = sel['journal'].values[0]
-        year = sel['year'].values[0]
+        df = df.loc[df['comp'].astype(int) == comp]
+    # Filter by words
+    if words is not None and len(words) > 0:
+        df = df.loc[[all([w in title for w in words]) for title in df['title']]]
+    # Filter by author
+    if author is not None:
+        df = df.loc[[author in authors for authors in df['authors']]]
+    # Filter by journal
+    if journal is not None:
+        df = df.loc[df['journal'] == journal]
+
+    result = []
+    for _, row in df.iterrows():
+        pid, title, abstract, authors, journal, year \
+            = row['id'], row['title'], row['abstract'], row['authors'], row['journal'], row['year']
+        authors = cut_authors_list(journal, limit=2)  # Take only first/last author
         result.append((pid, (trim(title, 200)), authors, url_prefix + pid, trim(journal, 50), year))
 
     # Return list sorted by year

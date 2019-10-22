@@ -56,15 +56,14 @@
                         }
                         if (response.state === 'SUCCESS') {
                             // Join arg-value pairs for URL
-                            var args = {{ args|safe }};
+                            var args = {{ redirect_args|safe }};
                             var args_list = [];
                             for (var key in args) {
                                 args_list.push(`${key}=${args[key]}`);
                             }
 
-                            // Build href for given subpage and args
-                            var subpage = '{{ subpage }}';
-                            var href = `/${subpage}?${args_list.join('&')}`;
+                            // Build href for given redirect page and args
+                            var href = `/{{ redirect_page }}?${args_list.join('&')}`;
                             window.location.replace(href);
                         } else {
                             if (last_log_message !== response.log) {
@@ -115,7 +114,7 @@
 
 <div class="container">
     <nav class="navbar navbar-light bg-light justify-content-between mt-3">
-        <span class="navbar-brand"><a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>{{search_string}}</span>
+        <span class="navbar-brand"><a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>{{query}} at {{source}}</span>
         <button class="btn btn-lg btn-link" type="reset" onclick="cancel()">&#10006;&nbsp;Cancel</button>
     </nav>
     <div id="progress" class="progress">

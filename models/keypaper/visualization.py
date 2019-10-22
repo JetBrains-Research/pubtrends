@@ -36,7 +36,7 @@ def visualize_analysis(analyzer):
     # Initialize plotter after completion of analysis
     plotter = Plotter(analyzer=analyzer)
     # Order is important here!
-    paper_statistics, zoom_out_callback, papers_callback = plotter.papers_statistics_and_callbacks()
+    paper_statistics, zoom_out_callback = plotter.papers_statistics_and_callbacks()
     result = {
         'log': html.unescape(analyzer.log()),
         'experimental': analyzer.config.experimental,
@@ -48,8 +48,8 @@ def visualize_analysis(analyzer):
         'component_size_summary': [components(plotter.component_size_summary())],
         'component_years_summary_boxplots': [components(plotter.component_years_summary_boxplots())],
         'subtopics_infos_and_callbacks':
-            [(components(p), zoom_in_callback, papers_callback) for
-             (p, zoom_in_callback, papers_callback) in plotter.subtopics_infos_and_callbacks()],
+            [(components(p), zoom_in_callback) for
+             (p, zoom_in_callback) in plotter.subtopics_infos_and_callbacks()],
         'top_cited_papers': [components(plotter.top_cited_papers())],
         'max_gain_papers': [components(plotter.max_gain_papers())],
         'max_relative_gain_papers': [components(plotter.max_relative_gain_papers())],
@@ -57,7 +57,6 @@ def visualize_analysis(analyzer):
         'component_ratio': [components(plotter.component_ratio())],
         'papers_stats': [components(paper_statistics)],
         'papers_zoom_out_callback': zoom_out_callback,
-        'papers_callback': papers_callback,
         'clusters_info_message': html.unescape(plotter.clusters_info_message),
         'author_statistics': plotter.author_statistics(),
         'journal_statistics': plotter.journal_statistics()
@@ -108,22 +107,6 @@ class Plotter:
                 window.open(base + data['id'][selected[i]] + '&' + jobid, '_blank');
             }
         """)
-
-    @staticmethod
-    def papers_callback(source, comp=None):
-        if source in ['Semantic Scholar', 'Pubmed']:
-            base = f'/papers?source={source}'
-        else:
-            raise ValueError(f"Wrong value of source: {source}")
-        if comp is not None:
-            base += f'&comp={comp + 1}'  # Component number is exposed, so make it 1-based
-        return f"""
-            // Decode jobid from URL, which is supposed to be last
-            var tokens = window.location.href.split('&');
-            var jobid = tokens[tokens.length - 1];
-
-            window.open('{base}' + '&' + jobid, '_blank');
-        """
 
     @staticmethod
     def subtopic_callback(source):
@@ -376,9 +359,7 @@ class Plotter:
                                                   zoom=ZOOM_IN,
                                                   query=self.analyzer.query)
 
-            papers_callback = self.papers_callback(self.analyzer.source, c)
-
-            result.append((row(desc, plot), zoom_in_callback, papers_callback))
+            result.append((row(desc, plot), zoom_in_callback))
 
         return result
 
@@ -545,9 +526,7 @@ class Plotter:
         zoom_out_callback = self.zoom_callback(id_list, self.analyzer.source,
                                                zoom=ZOOM_OUT, query=self.analyzer.query)
 
-        papers_callback = self.papers_callback(self.analyzer.source)
-
-        return row(desc, p), zoom_out_callback, papers_callback
+        return row(desc, p), zoom_out_callback
 
     def subtopic_evolution(self):
         """

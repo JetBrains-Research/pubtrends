@@ -40,6 +40,27 @@
             $('#authors-table').DataTable();
             $('#journals-table').DataTable();
         } );
+
+
+        function papers_callback(comp=null, words=null, author=null, journal=null) {
+            const url = '/papers?source={{source}}';
+            // Decode jobid from URL
+            const jobid = new URL(window.location).searchParams.get('jobid');
+            let args = '';
+            if (comp != null) {
+                args += '&comp=' + comp
+            }
+            if (words != null) {
+                args += '&words=' + words.join(',')
+            }
+            if (author != null) {
+                args += '&author=' + author
+            }
+            if (journal != null) {
+                args += '&journal=' + journal
+            }
+            window.open(url + args + '&jobid=' + jobid, '_blank');
+        }
     </script>
 </head>
 <body>
@@ -50,7 +71,7 @@
         <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
     </span>
     <span class="search-string">
-        {{ search_string }}
+        {{ query }} at {{ source }}
     </span>
 </nav>
 
@@ -151,7 +172,7 @@
                         {{ div|safe }}
                         {% endfor %}
                         <button type="button" class="btn btn-light"
-                                onclick="(function(){ {{ papers_callback|safe }} })();">
+                                onclick="(function(){ papers_callback() })();">
                             <img src="{{ url_for('static', filename='list.svg') }}"  alt="+"/>&nbsp;Show as list
                         </button>
                     </div>
@@ -281,7 +302,7 @@
                         Year reflects publication year of the original paper.
                     </p>
                     <div>
-                        {% for (script, div), zoom_in_callback, papers_topic_callback in subtopics_infos_and_callbacks %}
+                        {% for (script, div), zoom_in_callback in subtopics_infos_and_callbacks %}
                         <h2 class="card-subtitle">
                             <hr>
                             Subtopic {{ loop.index }}
@@ -289,7 +310,7 @@
                             - OTHER
                             {% endif %}
                             <button type="button" class="btn btn-light"
-                                    onclick="(function(){ {{ papers_topic_callback|safe }} })();">
+                                    onclick="(function(){ papers_callback(comp={{ loop.index }}); })();">
                                 <img src="{{ url_for('static', filename='list.svg') }}"  alt="+"/>&nbsp;Show as list
                             </button>
                             <button type="button" class="btn btn-light"

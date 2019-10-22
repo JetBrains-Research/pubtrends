@@ -67,11 +67,14 @@ def status():
 def result():
     jobid = request.values.get('jobid')
     query = request.args.get('query')
+    source = request.args.get('source')
     if jobid:
         job = complete_task(jobid)
         if job and job.state == 'SUCCESS':
             data, _ = job.result
-            return render_template('result.html', search_string=query,
+            return render_template('result.html',
+                                   query=query,
+                                   source=source,
                                    version=PUBTRENDS_CONFIG.version,
                                    **data)
 
@@ -97,33 +100,33 @@ def process():
             logging.debug('/process key:value search')
             query = f'Paper {key}: {value}'
             return render_template('process.html',
-                                   args={'source': source, 'query': quote(query), 'jobid': jobid},
-                                   search_string=trim(query, 90),
-                                   subpage="process_paper",  # redirect in case of success
+                                   redirect_args={'query': quote(query), 'source': source, 'jobid': jobid},
+                                   query=trim(query, 90), source=source,
+                                   redirect_page="process_paper",  # redirect in case of success
                                    jobid=jobid, version=PUBTRENDS_CONFIG.version)
 
         elif analysis_type in [ZOOM_IN_TITLE, ZOOM_IN_TITLE]:
             logging.debug('/process zoom processing')
-            query = f"{analysis_type} analysis of {query} at {source}"
+            query = f"{analysis_type} analysis of {query}"
             return render_template('process.html',
-                                   args={'query': quote(query), 'jobid': jobid},
-                                   search_string=trim(query, 90), subpage="result",  # redirect in case of success
+                                   redirect_args={'query': quote(query), 'source': source, 'jobid': jobid},
+                                   query=trim(query, 90), source=source,
+                                   redirect_page="result",  # redirect in case of success
                                    jobid=jobid, version=PUBTRENDS_CONFIG.version)
 
         elif analysis_type == PAPER_ANALYSIS_TITLE:
             logging.debug('/process paper analysis')
             return render_template('process.html',
-                                   args={'source': source, 'jobid': jobid, 'id': id},
-                                   search_string=trim(query, 90),
-                                   subpage="paper",  # redirect in case of success
+                                   redirect_args={'source': source, 'jobid': jobid, 'id': id},
+                                   query=trim(query, 90), source=source,
+                                   redirect_page="paper",  # redirect in case of success
                                    jobid=jobid, version=PUBTRENDS_CONFIG.version)
         elif query:
             logging.debug('/process regular search')
-            query = f'{query} at {source}'
             return render_template('process.html',
-                                   args={'query': quote(query), 'jobid': jobid},
-                                   search_string=trim(query, 90),
-                                   subpage="result",  # redirect in case of success
+                                   redirect_args={'query': quote(query), 'source': source, 'jobid': jobid},
+                                   query=trim(query, 90), source=source,
+                                   redirect_page="result",  # redirect in case of success
                                    jobid=jobid, version=PUBTRENDS_CONFIG.version)
 
     return render_template_string("Something went wrong...")
@@ -167,10 +170,15 @@ def paper():
 @app.route('/papers')
 def show_ids():
     jobid = request.values.get('jobid')
-    source = request.args.get('source')
+    source = request.args.get('source')  # Pubmed or Semantic Scholar
     comp = request.args.get('comp')
     if comp is not None:
         comp = int(comp) - 1  # Component was exposed so it was 1-based
+    words = request.args.get('words')
+    if words is not None:
+        words = words.split(',')
+    author = request.args.get('author')
+    journal = request.args.get('journal')
     if jobid:
         job = complete_task(jobid)
         if job and job.state == 'SUCCESS':
@@ -178,7 +186,7 @@ def show_ids():
             return render_template('papers.html',
                                    version=PUBTRENDS_CONFIG.version,
                                    source=source,
-                                   papers=prepare_papers_data(data, source, comp))
+                                   papers=prepare_papers_data(data, source, comp, words, author, journal))
 
     raise Exception(f"Request does not contain necessary params: {request}")
 
