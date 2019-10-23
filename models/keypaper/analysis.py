@@ -242,8 +242,8 @@ class KeyPaperAnalyzer:
         return df_merged
 
     def subtopic_descriptions(self, df, n=200, current=0, task=None):
-        # Get n-gram descriptions for subtopics
-        self.logger.debug(f'Getting n-gram descriptions for subtopics using top {n} cited papers',
+        # Get descriptions for subtopics
+        self.logger.debug(f'Getting descriptions for subtopics using top {n} cited papers',
                           current=current, task=task)
         comps = self.get_most_cited_papers_for_comps(df, n=n)
         kwds = get_subtopic_descriptions(df, comps)
@@ -251,7 +251,6 @@ class KeyPaperAnalyzer:
             self.logger.debug(f'{k}: {v}', current=current, task=task)
         df_kwd = pd.Series(kwds).reset_index()
         df_kwd = df_kwd.rename(columns={'index': 'comp', 0: 'kwd'})
-        self.logger.debug('Done with n-grams', current=current, task=task)
         return df_kwd
 
     def find_top_cited_papers(self, df, max_papers=50, threshold=0.1, min_papers=1, current=0, task=None):

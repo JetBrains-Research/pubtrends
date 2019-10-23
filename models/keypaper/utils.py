@@ -83,8 +83,8 @@ def tokenize(text, query=None):
                          word not in stop_words and is_noun_or_adj(pos)]
 
     lemmatizer = WordNetLemmatizer()
-    lemmatized = list(filter(lambda t: len(t) >= 3, [lemmatizer.lemmatize(w, pos=get_wordnet_pos(pos))
-                                                     for w, pos in words_of_interest]))
+    lemmatized = filter(lambda t: len(t) >= 3,
+                        [lemmatizer.lemmatize(w, pos=get_wordnet_pos(pos)) for w, pos in words_of_interest])
 
     stemmer = SnowballStemmer('english')
     stemmed = [(stemmer.stem(word), word) for word in lemmatized]
@@ -101,53 +101,36 @@ def tokenize(text, query=None):
     return [stems_mapping[stem] for stem, _ in stemmed]
 
 
-def get_ngrams(text, n=1):
-    """1/2/3-grams computation for string"""
-    tokens = tokenize(text)
-    ngrams = list(tokens)
-    if n > 1:
-        for t1, t2 in zip(tokens[:-1], tokens[1:]):
-            ngrams.append(t1 + ' ' + t2)
-    if n > 2:
-        for t1, t2, t3 in zip(tokens[:-2], tokens[1:-1], tokens[2:]):
-            ngrams.append(t1 + ' ' + t2 + ' ' + t3)
-    return ngrams
-
-
-def get_most_common_ngrams(titles, abstracts, number=500):
+def get_most_common_tokens(texts, fraction=0.1):
     """
-    :param titles: list of titles for articles in a component
-    :param abstracts: list of abstracts
-    :param number: amount of most common ngrams
-    :return: dictionary {ngram : frequency}
+    :param texts: list of texts for articles in a component
+    :param fraction: fraction of most common tokens
+    :return: dictionary {token: frequency}
     """
-    ngrams_counter = Counter()
-    for text in titles:
+    counter = Counter()
+    for text in texts:
         if isinstance(text, str):
-            for ngram in get_ngrams(text):
-                # More weight for titles
-                ngrams_counter[ngram] += 1.5
-    for text in abstracts:
-        if isinstance(text, str):
-            for ngram in get_ngrams(text):
-                ngrams_counter[ngram] += 1
+            for token in set(tokenize(text)):
+                counter[token] += 1
     most_common = {}
-    for ngram, cnt in ngrams_counter.most_common(number):
-        most_common[ngram] = cnt / len(ngrams_counter)
+    tokens = len(counter)
+    for token, cnt in counter.most_common(tokens if tokens <= 200 else int(tokens * fraction)):
+        most_common[token] = cnt / tokens
     return most_common
 
 
-def get_subtopic_descriptions(df, comps, size=100):
+def get_subtopic_descriptions(df, comps, size=20):
     """
-    Create TF-IDF based description on n-grams
-    :param comps: dictionary {component : [list of ids]}
+    Create TF-IDF based description on tokens
+    :param comps: dictionary {component: description}
+    :param size: number of tokens with highest TF-IDF values
     """
-    logging.info('Computing most common n-grams')
+    logging.info('Computing most common topics')
     n_comps = len(set(comps.keys()))
     most_common = [None] * n_comps
     for idx, comp in comps.items():
         df_comp = df[df['id'].isin(comp)]
-        most_common[idx] = get_most_common_ngrams(df_comp['title'], df_comp['abstract'])
+        most_common[idx] = get_most_common_tokens(df_comp['title'] + ' ' + df_comp['abstract'])
 
     logging.info('Compute Augmented Term Frequency - Inverse Document Frequency')
     # The tf–idf is the product of two statistics, term frequency and inverse document frequency.
@@ -167,12 +150,12 @@ def get_subtopic_descriptions(df, comps, size=100):
     return kwd
 
 
-def get_word_cloud_data(df_kwd, c):
-    """Parse TF-IDF based ngramms from text"""
+def get_topic_word_cloud_data(df_kwd, c):
+    """Parse TF-IDF based tokens from text"""
     kwds = {}
     for pair in list(df_kwd[df_kwd['comp'] == c]['kwd'])[0].split(','):
-        ngram, count = pair.split(':')
-        for word in ngram.split(' '):
+        token, count = pair.split(':')
+        for word in token.split(' '):
             kwds[word] = float(count) + kwds.get(word, 0)
     return kwds
 

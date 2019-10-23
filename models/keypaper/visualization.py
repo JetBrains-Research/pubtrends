@@ -24,8 +24,8 @@ from holoviews import dim
 from matplotlib import pyplot as plt
 from wordcloud import WordCloud
 
-from .utils import LOCAL_BASE_URL, get_word_cloud_data, \
-    get_most_common_ngrams, cut_authors_list, ZOOM_OUT, ZOOM_IN, zoom_name, trim
+from .utils import LOCAL_BASE_URL, get_topic_word_cloud_data, \
+    get_most_common_tokens, cut_authors_list, ZOOM_OUT, ZOOM_IN, zoom_name, trim
 from .visualization_data import PlotPreprocessor
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
@@ -340,7 +340,7 @@ class Plotter:
             plot.legend.location = "top_left"
 
             # Word cloud description of subtopic by titles and abstracts
-            kwds = get_word_cloud_data(self.analyzer.df_kwd, c)
+            kwds = get_topic_word_cloud_data(self.analyzer.df_kwd, c)
             color = (self.comp_colors[c].r, self.comp_colors[c].g, self.comp_colors[c].b)
             wc = WordCloud(background_color="white", width=160, height=340,
                            color_func=lambda *args, **kwargs: color,
@@ -493,9 +493,9 @@ class Plotter:
         p.varea(x='year', y1='bottom', y2='counts', fill_alpha=0.5, source=ds_stats)
 
         kwds = {}
-        for ngram, count in get_most_common_ngrams(self.analyzer.top_cited_df['title'],
+        for token, count in get_most_common_tokens(self.analyzer.top_cited_df['title'] + ' ' +
                                                    self.analyzer.top_cited_df['abstract']).items():
-            for word in ngram.split(' '):
+            for word in token.split(' '):
                 kwds[word] = float(count) + kwds.get(word, 0)
         wc = WordCloud(background_color="white", width=160, height=340,
                        color_func=lambda *args, **kwargs: 'black',
