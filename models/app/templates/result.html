@@ -156,7 +156,7 @@
             const jobid = new URL(window.location).searchParams.get('jobid');
             const href = '/papers?source={{source}}&word=' + word + '&jobid=' + jobid;
 
-            addWord(href, word, y, x, size, vertical, color);
+            addWord(href, word, y + 20, x + 20, size, vertical, color);
         }
     }
 
@@ -279,7 +279,8 @@
                     </div>
                     <div class="row">
                         <div class="col-2">
-                            <canvas id="papers_word_cloud" width="200" height="360" style="border:1px solid #eee;">
+                            <strong>Word cloud</strong>
+                            <canvas id="papers_word_cloud" width="200" height="380" style="border:1px solid #eee;">
                                 Canvas is not supported in your browser.
                             </canvas>
                         </div>
@@ -441,7 +442,8 @@
                         Number of papers: {{ component_sizes[loop.index - 1] }}
                         <div class="row">
                             <div class="col-2">
-                                <canvas id="topic_word_cloud_{{ loop.index }}" width="200" height="360" style="border:1px solid #eee;">
+                                <strong>Word cloud</strong>
+                                <canvas id="topic_word_cloud_{{ loop.index }}" width="200" height="380" style="border:1px solid #eee;">
                                     Canvas is not supported in your browser.
                                 </canvas>
                             </div>
