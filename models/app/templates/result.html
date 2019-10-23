@@ -169,7 +169,6 @@
 
             {% for (script, div), word_cloud, zoom_in_callback in subtopics_info_and_word_cloud_and_callback %}
                  words = JSON.parse('{{ word_cloud }}'.replace(/&#34;/g, '"').replace(/&amp;/g, '&'));
-                 console.info(words);
                  process_word_cloud('topic_word_cloud_{{ loop.index }}', words);
             {% endfor %}
         } );
