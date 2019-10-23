@@ -21,6 +21,15 @@ class TestPlotPreprocessor(unittest.TestCase):
     def test_hex2rgb(self, color, expected):
         self.assertEqual(PlotPreprocessor.hex2rgb(color), expected)
 
+    @parameterized.expand([
+        ([145, 200, 47], '#91c82f'),
+        ([143, 254, 9], '#8ffe09'),
+        ('red', '#ff0000'),
+        ('blue', '0000ff')
+    ])
+    def test_color2hex(self, color, expected):
+        self.assertEqual(PlotPreprocessor.color2hex(color), expected)
+
     def test_component_size_summary(self):
         components, data = PlotPreprocessor.component_size_summary_data(
             self.analyzer.df, self.analyzer.components, self.analyzer.min_year, self.analyzer.max_year

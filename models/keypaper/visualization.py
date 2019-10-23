@@ -36,7 +36,7 @@ def visualize_analysis(analyzer):
     # Initialize plotter after completion of analysis
     plotter = Plotter(analyzer=analyzer)
     # Order is important here!
-    paper_statistics, zoom_out_callback = plotter.papers_statistics_and_callbacks()
+    paper_statistics, word_cloud, zoom_out_callback = plotter.papers_statistics_and_word_cloud_and_callback()
     result = {
         'log': html.unescape(analyzer.log()),
         'experimental': analyzer.config.experimental,
@@ -47,15 +47,16 @@ def visualize_analysis(analyzer):
         'cocitations_clusters': [components(plotter.cocitations_clustering())],
         'component_size_summary': [components(plotter.component_size_summary())],
         'component_years_summary_boxplots': [components(plotter.component_years_summary_boxplots())],
-        'subtopics_infos_and_callbacks':
-            [(components(p), zoom_in_callback) for
-             (p, zoom_in_callback) in plotter.subtopics_infos_and_callbacks()],
+        'subtopics_info_and_word_cloud_and_callback':
+            [(components(p), word_cloud_prepare(wc), zoom_in_callback) for
+             (p, wc, zoom_in_callback) in plotter.subtopics_info_and_word_cloud_and_callback()],
         'top_cited_papers': [components(plotter.top_cited_papers())],
         'max_gain_papers': [components(plotter.max_gain_papers())],
         'max_relative_gain_papers': [components(plotter.max_relative_gain_papers())],
         'component_sizes': plotter.component_sizes(),
         'component_ratio': [components(plotter.component_ratio())],
         'papers_stats': [components(paper_statistics)],
+        'papers_word_cloud': word_cloud_prepare(word_cloud),
         'papers_zoom_out_callback': zoom_out_callback,
         'clusters_info_message': html.unescape(plotter.clusters_info_message),
         'author_statistics': plotter.author_statistics(),
@@ -68,6 +69,13 @@ def visualize_analysis(analyzer):
         if subtopic_evolution:
             result['subtopic_evolution'] = [components(subtopic_evolution)]
     return result
+
+
+def word_cloud_prepare(wc):
+    return json.dumps([(word, int(position[0]), int(position[1]),
+                        int(font_size), orientation is not None,
+                        PlotPreprocessor.color2hex(color))
+                       for (word, count), font_size, position, orientation, color in wc.layout_])
 
 
 class Plotter:
@@ -309,7 +317,7 @@ class Plotter:
         boxwhisker.opts(width=960, height=300, box_fill_color=dim('Topic').str(), cmap='tab20')
         return hv.render(boxwhisker, backend='bokeh')
 
-    def subtopics_infos_and_callbacks(self):
+    def subtopics_info_and_word_cloud_and_callback(self):
         logging.info('Per component detailed info visualization')
 
         # Prepare layouts
@@ -334,23 +342,10 @@ class Plotter:
             # Word cloud description of subtopic by titles and abstracts
             kwds = get_word_cloud_data(self.analyzer.df_kwd, c)
             color = (self.comp_colors[c].r, self.comp_colors[c].g, self.comp_colors[c].b)
-            wc = WordCloud(background_color="white", width=200, height=400,
+            wc = WordCloud(background_color="white", width=200, height=360,
                            color_func=lambda *args, **kwargs: color,
                            max_words=20, max_font_size=40)
             wc.generate_from_frequencies(kwds)
-
-            image = wc.to_array()
-            desc = figure(title="Word Cloud", toolbar_location="above",
-                          plot_width=200, plot_height=400,
-                          x_range=[0, 10], y_range=[0, 10], tools=[])
-            desc.axis.visible = False
-
-            img = np.empty((400, 200), dtype=np.uint32)
-            view = img.view(dtype=np.uint8).reshape((400, 200, 4))
-            view[:, :, 0:3] = image[::-1, :, :]
-            view[:, :, 3] = 255
-
-            desc.image_rgba(image=[img], x=[0], y=[0], dw=[10], dh=[10])
 
             # Create Zoom In callback
             id_list = list(comp_source['id'])
@@ -358,7 +353,7 @@ class Plotter:
                                                   zoom=ZOOM_IN,
                                                   query=self.analyzer.query)
 
-            result.append((row(desc, plot), zoom_in_callback))
+            result.append((plot, wc, zoom_in_callback))
 
         return result
 
@@ -479,7 +474,7 @@ class Plotter:
 
         return p
 
-    def papers_statistics_and_callbacks(self):
+    def papers_statistics_and_word_cloud_and_callback(self):
         ds_stats = PlotPreprocessor.papers_statistics_data(self.analyzer.df)
 
         year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
@@ -502,30 +497,17 @@ class Plotter:
                                                    self.analyzer.top_cited_df['abstract']).items():
             for word in ngram.split(' '):
                 kwds[word] = float(count) + kwds.get(word, 0)
-        wc = WordCloud(background_color="white", width=200, height=400,
+        wc = WordCloud(background_color="white", width=200, height=360,
                        color_func=lambda *args, **kwargs: 'black',
                        max_words=20, max_font_size=40)
         wc.generate_from_frequencies(kwds)
-
-        image = wc.to_array()
-        desc = figure(title="Word Cloud", toolbar_location="above",
-                      plot_width=200, plot_height=400,
-                      x_range=[0, 10], y_range=[0, 10], tools=[])
-        desc.axis.visible = False
-
-        img = np.empty((400, 200), dtype=np.uint32)
-        view = img.view(dtype=np.uint8).reshape((400, 200, 4))
-        view[:, :, 0:3] = image[::-1, :, :]
-        view[:, :, 3] = 255
-
-        desc.image_rgba(image=[img], x=[0], y=[0], dw=[10], dh=[10])
 
         # Create Zoom Out callback
         id_list = list(self.analyzer.df['id'])
         zoom_out_callback = self.zoom_callback(id_list, self.analyzer.source,
                                                zoom=ZOOM_OUT, query=self.analyzer.query)
 
-        return row(desc, p), zoom_out_callback
+        return p, wc, zoom_out_callback
 
     def subtopic_evolution(self):
         """

@@ -4,6 +4,7 @@ from itertools import product as cart_product
 import numpy as np
 import pandas as pd
 from bokeh.models import ColumnDataSource, TableColumn
+from matplotlib import colors
 
 from .utils import cut_authors_list
 
@@ -13,6 +14,15 @@ class PlotPreprocessor:
     @staticmethod
     def hex2rgb(color):
         return [int(color[pos:pos + 2], 16) for pos in range(1, 7, 2)]
+
+    @staticmethod
+    def color2hex(color):
+        if isinstance(color, str):
+            r, g, b, _ = colors.to_rgba(color)
+            r, g, b = r * 255, g * 255, b * 255
+        else:
+            r, g, b = color
+        return "#{0:02x}{1:02x}{2:02x}".format(int(r), int(g), int(b))
 
     @staticmethod
     def chord_diagram_data(cocitation_graph, df, comps, comp_other, palette):

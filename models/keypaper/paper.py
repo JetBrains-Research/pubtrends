@@ -1,11 +1,12 @@
 import numpy as np
 from bokeh.embed import components
+from nltk.tokenize import word_tokenize
 
 from models.keypaper.analysis import KeyPaperAnalyzer
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.pm_loader import PubmedLoader
 from models.keypaper.ss_loader import SemanticScholarLoader
-from models.keypaper.utils import cut_authors_list, trim, PUBMED_ARTICLE_BASE_URL, SEMANTIC_SCHOLAR_BASE_URL
+from models.keypaper.utils import cut_authors_list, trim, PUBMED_ARTICLE_BASE_URL, SEMANTIC_SCHOLAR_BASE_URL, tokenize
 from models.keypaper.visualization import Plotter
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
@@ -106,7 +107,7 @@ def prepare_paper_data(data, source, pid):
     return result
 
 
-def prepare_papers_data(data, source, comp=None, words=None, author=None, journal=None):
+def prepare_papers_data(data, source, comp=None, word=None, author=None, journal=None):
     loader, url_prefix = get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
     analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
     analyzer.load(data)
@@ -116,8 +117,9 @@ def prepare_papers_data(data, source, comp=None, words=None, author=None, journa
     if comp is not None:
         df = df.loc[df['comp'].astype(int) == comp]
     # Filter by words
-    if words is not None and len(words) > 0:
-        df = df.loc[[all([w in title for w in words]) for title in df['title']]]
+    if word is not None:
+        tokens = tokenize(word)
+        df = df.loc[[any([token in f'{t} {a}' for token in tokens]) for (t, a) in zip(df['title'], df['abstract'])]]
     # Filter by author
     if author is not None:
         df = df.loc[[author in authors for authors in df['authors']]]

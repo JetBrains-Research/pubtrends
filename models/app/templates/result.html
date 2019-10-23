@@ -36,11 +36,6 @@
     <!--    <link rel="stylesheet" href="../static/result.css"/>-->
     <script>
         "use strict";
-        $(document).ready(function() {
-            $('#authors-table').DataTable();
-            $('#journals-table').DataTable();
-        } );
-
 
         function papers_callback_impl(comp, words, author, journal) {
             const url = '/papers?source={{source}}';
@@ -78,6 +73,106 @@
             papers_callback_impl(null, null, null, journal)
         }
 
+    function process_word_cloud(id, words) {
+        var canvas = document.getElementById(id)
+        var ctx = canvas.getContext("2d");
+
+        var links = []; // Links information
+        var hover = ""; // Href of the link which cursor points at
+        ctx.textBaseline = "top"; // Makes left top point a start point for rendering text
+
+        function addWord(href, title, x, y, size, vertical, color) {
+
+            ctx.fillStyle = color;
+            ctx.font = size.toString() + "px Arial Bold";
+
+            var linkWidth = ctx.measureText(title).width,
+                linkHeight = parseInt(ctx.font); // Get lineheight out of fontsize
+
+            if (vertical) {
+                ctx.save();
+                ctx.translate(x, y + linkWidth);
+                ctx.rotate(-Math.PI/2);
+                ctx.fillText(title, 0, 0);
+                ctx.restore();
+            } else {
+                ctx.fillText(title, x, y);
+            }
+
+            // Add mouse listeners
+            canvas.addEventListener("mousemove", onMouseMove, false);
+            canvas.addEventListener("click", onClick, false);
+
+            // Add link params to array for hover processing
+            if (vertical) {
+                [linkWidth, linkHeight] = [linkHeight, linkWidth];
+                links.push([x, y, linkWidth, linkHeight, href]);
+            } else {
+                links.push([x, y, linkWidth, linkHeight, href]);
+            }
+        }
+
+        function onMouseMove(ev) {
+            var x, y;
+
+            // Get the mouse position relative to the canvas element
+            if (ev.layerX || ev.layerX == 0) { // For Firefox
+                x = ev.layerX;
+                y = ev.layerY;
+            }
+
+            // Link hover
+            for (var i = links.length - 1; i >= 0; i--) {
+                var params = links[i];
+                var linkX = params[0],
+                    linkY = params[1],
+                    linkWidth = params[2],
+                    linkHeight = params[3],
+                    linkHref = params[4];
+
+                // Check if cursor is in the link area
+                if (x >= linkX && x <= (linkX + linkWidth) && y >= linkY && y <= (linkY + linkHeight)){
+                    document.body.style.cursor = "pointer";
+                    hover = linkHref;
+                    break;
+                } else {
+                    document.body.style.cursor = "";
+                    hover = "";
+                }
+            };
+        }
+
+        // Link click
+        function onClick(e) {
+            if (hover){
+                window.open(hover); // Use this to open in new tab
+            }
+        }
+        for (var i = 0; i < words.length; i++) {
+            var w = words[i];
+            var word=w[0], x=w[1], y=w[2], size=w[3], vertical=w[4], color=w[5];
+
+            // Decode jobid from URL
+            const jobid = new URL(window.location).searchParams.get('jobid');
+            const href = '/papers?source={{source}}&word=' + word + '&jobid=' + jobid;
+
+            addWord(href, word, y, x, size, vertical, color);
+        }
+    }
+
+        $(document).ready(function() {
+            $('#authors-table').DataTable();
+            $('#journals-table').DataTable();
+
+            var words = JSON.parse('{{ papers_word_cloud }}'.replace(/&#34;/g, '"').replace(/&amp;/g, '&'));
+            process_word_cloud('papers_word_cloud', words);
+
+            {% for (script, div), word_cloud, zoom_in_callback in subtopics_info_and_word_cloud_and_callback %}
+                 words = JSON.parse('{{ word_cloud }}'.replace(/&#34;/g, '"').replace(/&amp;/g, '&'));
+                 console.info(words);
+                 process_word_cloud('topic_word_cloud_{{ loop.index }}', words);
+            {% endfor %}
+        } );
     </script>
 </head>
 <body>
@@ -182,12 +277,20 @@
                             </div>
                         </div>
                     </div>
-
+                    <div class="row">
+                        <div class="col-2">
+                            <canvas id="papers_word_cloud" width="200" height="360" style="border:1px solid #eee;">
+                                Canvas is not supported in your browser.
+                            </canvas>
+                        </div>
+                        <div class="col-6">
+                            {% for script, div in papers_stats %}
+                            {{ script|safe }}
+                            {{ div|safe }}
+                            {% endfor %}
+                        </div>
+                    </div>
                     <div>
-                        {% for script, div in papers_stats %}
-                        {{ script|safe }}
-                        {{ div|safe }}
-                        {% endfor %}
                         <button type="button" class="btn btn-light"
                                 onclick="(function(){ papers_callback() })();">
                             <img src="{{ url_for('static', filename='list.svg') }}"  alt="+"/>&nbsp;Show as list
@@ -319,8 +422,8 @@
                         Year reflects publication year of the original paper.
                     </p>
                     <div>
-                        {% for (script, div), zoom_in_callback in subtopics_infos_and_callbacks %}
-                        <h2 class="card-subtitle">
+                        {% for (script, div), word_cloud, zoom_in_callback in subtopics_info_and_word_cloud_and_callback %}
+                        <h2 id="subtopic-{{ loop.index }}" class="card-subtitle">
                             <hr>
                             Subtopic {{ loop.index }}
                             {% if loop.index0 == comp_other %}
@@ -336,9 +439,16 @@
                             </button>
                         </h2>
                         Number of papers: {{ component_sizes[loop.index - 1] }}
-                        <div id="subtopic-{{ loop.index }}">
-                            {{ script|safe }}
-                            {{ div|safe }}
+                        <div class="row">
+                            <div class="col-2">
+                                <canvas id="topic_word_cloud_{{ loop.index }}" width="200" height="360" style="border:1px solid #eee;">
+                                    Canvas is not supported in your browser.
+                                </canvas>
+                            </div>
+                            <div class="col-6">
+                                {{ script|safe }}
+                                {{ div|safe }}
+                            </div>
                         </div>
                         {% endfor %}
                     </div>

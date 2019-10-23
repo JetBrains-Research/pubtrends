@@ -174,9 +174,7 @@ def show_ids():
     comp = request.args.get('comp')
     if comp is not None:
         comp = int(comp) - 1  # Component was exposed so it was 1-based
-    words = request.args.get('words')
-    if words is not None:
-        words = words.split(',')
+    word = request.args.get('word')
     author = request.args.get('author')
     journal = request.args.get('journal')
     if jobid:
@@ -186,7 +184,7 @@ def show_ids():
             return render_template('papers.html',
                                    version=PUBTRENDS_CONFIG.version,
                                    source=source,
-                                   papers=prepare_papers_data(data, source, comp, words, author, journal))
+                                   papers=prepare_papers_data(data, source, comp, word, author, journal))
 
     raise Exception(f"Request does not contain necessary params: {request}")
 
