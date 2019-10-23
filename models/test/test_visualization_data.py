@@ -25,7 +25,7 @@ class TestPlotPreprocessor(unittest.TestCase):
         ([145, 200, 47], '#91c82f'),
         ([143, 254, 9], '#8ffe09'),
         ('red', '#ff0000'),
-        ('blue', '0000ff')
+        ('blue', '#0000ff')
     ])
     def test_color2hex(self, color, expected):
         self.assertEqual(PlotPreprocessor.color2hex(color), expected)
