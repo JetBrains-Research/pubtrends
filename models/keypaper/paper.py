@@ -119,7 +119,7 @@ def prepare_papers_data(data, source, comp=None, word=None, author=None, journal
     # Filter by words
     if word is not None:
         tokens = tokenize(word)
-        df = df.loc[[any([token in f'{t} {a}' for token in tokens]) for (t, a) in zip(df['title'], df['abstract'])]]
+        df = df.loc[[any([token in f'{t} {a}'.lower() for token in tokens]) for (t, a) in zip(df['title'], df['abstract'])]]
     # Filter by author
     if author is not None:
         df = df.loc[[author in authors for authors in df['authors']]]
