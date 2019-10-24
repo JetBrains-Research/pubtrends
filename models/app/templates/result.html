@@ -82,16 +82,16 @@
         const ctx = canvas.getContext("2d");
         // Make canvas visible
         canvas.style.width = "200px";
-        canvas.style.height = "380px";
+        canvas.style.height = "360px";
 
         // Retina/HiDPI fix
         if (isHighDensity()) {
             canvas.width = 400;
-            canvas.height = 760;
+            canvas.height = 720;
             ctx.scale(2, 2);
         } else {
             canvas.width = 200;
-            canvas.height = 380;
+            canvas.height = 360;
         }
 
         const links = []; // Links information
