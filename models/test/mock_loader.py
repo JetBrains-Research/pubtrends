@@ -56,5 +56,38 @@ class MockLoader(Loader):
         return pd.DataFrame(CITATION_DATA, columns=['id_out', 'id_in'])
 
     def load_cocitations(self, ids=None, current=None, task=None):
-        cocit_df = pd.DataFrame(COCITATION_DATA, columns=['citing', 'cited_1', 'cited_2', 'year'])
-        return cocit_df
+        return pd.DataFrame(COCITATION_DATA, columns=['citing', 'cited_1', 'cited_2', 'year'])
+
+
+class MockLoaderSingle(Loader):
+
+    def __init__(self):
+        config = PubtrendsConfig(test=True)
+        super(MockLoaderSingle, self).__init__(config, connect=False)
+
+    def search(self, terms, limit=None, sort=None, current=None, task=None):
+        return [1, 2], True
+
+    def load_publications(self, ids=None, temp_table_created=True, current=None, task=None):
+        return pd.DataFrame(PUBLICATION_DATA[0:1],
+                            columns=['id', 'year', 'title', 'abstract', 'type', 'authors', 'journal'])
+
+    def load_citation_stats(self, ids=None, current=None, task=None):
+        return pd.DataFrame([['1', 1972, 2], ['1', 1974, 15]],
+                            columns=['id', 'year', 'count'])
+
+    def load_citations(self, ids=None, current=None, task=None):
+        return pd.DataFrame([], columns=['id_out', 'id_in'])
+
+    def load_cocitations(self, ids=None, current=None, task=None):
+        return pd.DataFrame([], columns=['citing', 'cited_1', 'cited_2', 'year'])
+
+
+class MockLoaderEmpty(Loader):
+
+    def __init__(self):
+        config = PubtrendsConfig(test=True)
+        super(MockLoaderEmpty, self).__init__(config, connect=False)
+
+    def search(self, terms, limit=None, sort=None, current=None, task=None):
+        return [], True

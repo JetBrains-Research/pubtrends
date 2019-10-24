@@ -33,7 +33,7 @@ def get_top_papers_id_title(papers, df, key, n=50):
 def prepare_paper_data(data, source, pid):
     loader, url_prefix = get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
     analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
-    analyzer.load(data)
+    analyzer.init(data)
 
     plotter = Plotter()
 
@@ -57,12 +57,13 @@ def prepare_paper_data(data, source, pid):
 
     # Estimate related topics for the paper
     related_topics = {}
-    for v in analyzer.CG[pid]:
-        c = analyzer.df[analyzer.df['id'] == v]['comp'].values[0]
-        if c in related_topics:
-            related_topics[c] += 1
-        else:
-            related_topics[c] = 1
+    if analyzer.CG.nodes():
+        for v in analyzer.CG[pid]:
+            c = analyzer.df[analyzer.df['id'] == v]['comp'].values[0]
+            if c in related_topics:
+                related_topics[c] += 1
+            else:
+                related_topics[c] = 1
     related_topics = map(lambda el: (', '.join([w[0] for w in
                                                 analyzer.df_kwd[analyzer.df_kwd['comp'] == el[0]]['kwd'].values[0][
                                                 :10]]), el[1]),
@@ -77,10 +78,13 @@ def prepare_paper_data(data, source, pid):
     else:
         top_references = top_citations = []
 
-    cocited_papers = map(lambda v: (analyzer.df[analyzer.df['id'] == v]['id'].values[0],
-                                    analyzer.df[analyzer.df['id'] == v]['title'].values[0],
-                                    analyzer.CG.edges[pid, v]['weight']), list(analyzer.CG[pid]))
-    top_cocited_papers = sorted(cocited_papers, key=lambda x: x[1], reverse=True)[:50]
+    if analyzer.CG.nodes():
+        cocited_papers = map(lambda v: (analyzer.df[analyzer.df['id'] == v]['id'].values[0],
+                                        analyzer.df[analyzer.df['id'] == v]['title'].values[0],
+                                        analyzer.CG.edges[pid, v]['weight']), list(analyzer.CG[pid]))
+        top_cocited_papers = sorted(cocited_papers, key=lambda x: x[1], reverse=True)[:50]
+    else:
+        top_cocited_papers = []
 
     result = {
         'title': title,
@@ -110,7 +114,7 @@ def prepare_paper_data(data, source, pid):
 def prepare_papers_data(data, source, comp=None, word=None, author=None, journal=None):
     loader, url_prefix = get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
     analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
-    analyzer.load(data)
+    analyzer.init(data)
 
     df = analyzer.df.copy()
     # Filter by component

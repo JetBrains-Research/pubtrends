@@ -210,6 +210,7 @@
                             <img src="{{ url_for('static', filename='home.svg') }}"/>&nbsp;Overview
                         </a>
                     </li>
+                    {% if topics_analyzed %}
                     <li class="nav-item">
                         <a class="nav-link" href="#highlights">
                             <img src="{{ url_for('static', filename='bar-chart-2.svg') }}"/>&nbsp;Highlights
@@ -230,6 +231,7 @@
                             <img src="{{ url_for('static', filename='columns.svg') }}"/>&nbsp;Publications
                         </a>
                     </li>
+                    {% endif %}
                     <li class="nav-item">
                         <a class="nav-link" href="#authors">
                             <img src="{{ url_for('static', filename='users.svg') }}"/>&nbsp;Authors
@@ -357,6 +359,7 @@
                 </div>
             </div>
 
+            {% if topics_analyzed %}
             <div class="card mt-3">
                 <div class="card-title" id="topics">
                     <h1 class="card-header">Topics</h1>
@@ -477,6 +480,7 @@
                     </button>
                 </div>
             </div>
+            {% endif %}
 
             <div class="card mt-3">
                 <div class="card-title" id="authors">

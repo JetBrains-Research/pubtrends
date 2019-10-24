@@ -259,7 +259,8 @@ class PlotPreprocessor:
         df_local = dft
 
         # Size is based on the citations number, at least 1
-        df_local['size'] = 1 + np.log(df_local['total'] + 1)
+        # Use list here to correctly process single element df
+        df_local['size'] = 1 + np.log(list(df_local['total'] + 1))
 
         # Calculate max size of circles to avoid overlapping along x-axis
         max_radius_screen_units = width / max(max_year - min_year + 1, 30)

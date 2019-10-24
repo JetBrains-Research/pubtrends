@@ -37,38 +37,58 @@ def visualize_analysis(analyzer):
     plotter = Plotter(analyzer=analyzer)
     # Order is important here!
     paper_statistics, word_cloud, zoom_out_callback = plotter.papers_statistics_and_word_cloud_and_callback()
-    result = {
-        'log': html.unescape(analyzer.log()),
-        'experimental': analyzer.config.experimental,
-        'n_papers': analyzer.n_papers,
-        'n_citations': int(analyzer.df['total'].sum()),
-        'n_subtopics': len(analyzer.components),
-        'comp_other': analyzer.comp_other,
-        'cocitations_clusters': [components(plotter.cocitations_clustering())],
-        'component_size_summary': [components(plotter.component_size_summary())],
-        'component_years_summary_boxplots': [components(plotter.component_years_summary_boxplots())],
-        'subtopics_info_and_word_cloud_and_callback':
-            [(components(p), word_cloud_prepare(wc), zoom_in_callback) for
-             (p, wc, zoom_in_callback) in plotter.subtopics_info_and_word_cloud_and_callback()],
-        'top_cited_papers': [components(plotter.top_cited_papers())],
-        'max_gain_papers': [components(plotter.max_gain_papers())],
-        'max_relative_gain_papers': [components(plotter.max_relative_gain_papers())],
-        'component_sizes': plotter.component_sizes(),
-        'component_ratio': [components(plotter.component_ratio())],
-        'papers_stats': [components(paper_statistics)],
-        'papers_word_cloud': word_cloud_prepare(word_cloud),
-        'papers_zoom_out_callback': zoom_out_callback,
-        'clusters_info_message': html.unescape(plotter.clusters_info_message),
-        'author_statistics': plotter.author_statistics(),
-        'journal_statistics': plotter.journal_statistics()
-    }
-    # Experimental features
-    if analyzer.config.experimental:
-        subtopic_evolution = plotter.subtopic_evolution()
-        # Pass subtopic evolution only if not None
-        if subtopic_evolution:
-            result['subtopic_evolution'] = [components(subtopic_evolution)]
-    return result
+    if analyzer.CG.nodes():
+        result = {
+            'log': html.unescape(analyzer.log()),
+            'topics_analyzed': True,
+            'n_papers': analyzer.n_papers,
+            'n_citations': int(analyzer.df['total'].sum()),
+            'n_subtopics': len(analyzer.components),
+            'comp_other': analyzer.comp_other,
+            'cocitations_clusters': [components(plotter.cocitations_clustering())],
+            'component_size_summary': [components(plotter.component_size_summary())],
+            'component_years_summary_boxplots': [components(plotter.component_years_summary_boxplots())],
+            'subtopics_info_and_word_cloud_and_callback':
+                [(components(p), word_cloud_prepare(wc), zoom_in_callback) for
+                 (p, wc, zoom_in_callback) in plotter.subtopics_info_and_word_cloud_and_callback()],
+            'top_cited_papers': [components(plotter.top_cited_papers())],
+            'max_gain_papers': [components(plotter.max_gain_papers())],
+            'max_relative_gain_papers': [components(plotter.max_relative_gain_papers())],
+            'component_sizes': plotter.component_sizes(),
+            'component_ratio': [components(plotter.component_ratio())],
+            'papers_stats': [components(paper_statistics)],
+            'papers_word_cloud': word_cloud_prepare(word_cloud),
+            'papers_zoom_out_callback': zoom_out_callback,
+            'clusters_info_message': html.unescape(plotter.clusters_info_message),
+            'author_statistics': plotter.author_statistics(),
+            'journal_statistics': plotter.journal_statistics(),
+            'experimental': analyzer.config.experimental,
+        }
+        # Experimental features
+        if analyzer.config.experimental:
+            subtopic_evolution = plotter.subtopic_evolution()
+            # Pass subtopic evolution only if not None
+            if subtopic_evolution:
+                result['subtopic_evolution'] = [components(subtopic_evolution)]
+        return result
+
+    else:
+        return {
+            'log': html.unescape(analyzer.log()),
+            'topics_analyzed': False,
+            'n_papers': analyzer.n_papers,
+            'n_citations': int(analyzer.df['total'].sum()),
+            'n_subtopics': 0,
+            'top_cited_papers': [components(plotter.top_cited_papers())],
+            'max_gain_papers': [components(plotter.max_gain_papers())],
+            'max_relative_gain_papers': [components(plotter.max_relative_gain_papers())],
+            'papers_stats': [components(paper_statistics)],
+            'papers_word_cloud': word_cloud_prepare(word_cloud),
+            'papers_zoom_out_callback': zoom_out_callback,
+            'author_statistics': plotter.author_statistics(),
+            'journal_statistics': plotter.journal_statistics(),
+            'experimental': False,
+        }
 
 
 def word_cloud_prepare(wc):
@@ -83,11 +103,12 @@ class Plotter:
         self.analyzer = analyzer
 
         if self.analyzer:
-            n_comps = len(self.analyzer.components)
-            if n_comps > 20:
-                raise ValueError(f'Too big number of components {n_comps}')
-            self.comp_palette = [RGB(*PlotPreprocessor.hex2rgb(c)) for c in Category20[20][:n_comps]]
-            self.comp_colors = dict(enumerate(self.comp_palette))
+            if self.analyzer.CG.nodes():
+                n_comps = len(self.analyzer.components)
+                if n_comps > 20:
+                    raise ValueError(f'Too big number of components {n_comps}')
+                self.comp_palette = [RGB(*PlotPreprocessor.hex2rgb(c)) for c in Category20[20][:n_comps]]
+                self.comp_colors = dict(enumerate(self.comp_palette))
 
             n_pub_types = len(self.analyzer.pub_types)
             pub_types_cmap = plt.cm.get_cmap('jet', n_pub_types)
@@ -485,13 +506,17 @@ class Plotter:
         p.yaxis.axis_label = 'Amount of papers'
         p.hover.tooltips = [("Amount", '@counts'), ("Year", '@year')]
 
-        # NOTE: VBar is invisible (alpha=0) to provide tooltips, as in self.component_size_summary()
-        p.vbar(x='year', width=0.8, top='counts', fill_alpha=0, line_alpha=0, source=ds_stats)
+        if self.analyzer.min_year != self.analyzer.max_year:
+            # NOTE: VBar is invisible (alpha=0) to provide tooltips, as in self.component_size_summary()
+            p.vbar(x='year', width=0.8, top='counts', fill_alpha=0, line_alpha=0, source=ds_stats)
+            # VArea is actually displayed
+            ds_stats.data['bottom'] = [0] * len(ds_stats.data['year'])
+            p.varea(x='year', y1='bottom', y2='counts', fill_alpha=0.5, source=ds_stats)
+        else:
+            # NOTE: VBar is invisible (alpha=0) to provide tooltips, as in self.component_size_summary()
+            p.vbar(x='year', width=0.8, top='counts', source=ds_stats)
 
-        # VArea is actually displayed
-        ds_stats.data['bottom'] = [0] * len(ds_stats.data['year'])
-        p.varea(x='year', y1='bottom', y2='counts', fill_alpha=0.5, source=ds_stats)
-
+        # Build word cloud
         kwds = {}
         for token, count in get_most_common_tokens(self.analyzer.top_cited_df['title'] + ' ' +
                                                    self.analyzer.top_cited_df['abstract']).items():
@@ -544,20 +569,25 @@ class Plotter:
     def author_statistics(self):
         author = self.analyzer.author_stats['author']
         sum = self.analyzer.author_stats['sum']
-        subtopics = self.analyzer.author_stats.apply(
-            lambda row: self._to_colored_circle(row['comp'], row['counts'], row['sum']), axis=1)
+        if self.analyzer.CG.nodes():
+            subtopics = self.analyzer.author_stats.apply(
+                lambda row: self._to_colored_circle(row['comp'], row['counts'], row['sum']), axis=1)
+        else:
+            subtopics = [' '] * len(self.analyzer.author_stats)  # Ignore subtopics
         return list(zip(map(lambda a: trim(a, 100), author), sum, subtopics))
 
     def journal_statistics(self):
         journal = self.analyzer.journal_stats['journal']
         sum = self.analyzer.journal_stats['sum']
-        subtopics = self.analyzer.journal_stats.apply(
-            lambda row: self._to_colored_circle(row['comp'], row['counts'], row['sum']), axis=1)
+        if self.analyzer.CG.nodes():
+            subtopics = self.analyzer.journal_stats.apply(
+                lambda row: self._to_colored_circle(row['comp'], row['counts'], row['sum']), axis=1)
+        else:
+            subtopics = [' '] * len(self.analyzer.journal_stats)  # Ignore subtopics
         return list(zip(map(lambda j: trim(j, 100), journal), sum, subtopics))
 
-    def _to_colored_circle(self, components, counts, sum):
-        # html code to generate circles corresponding to the 3 most popular subtopics
-        top = 3
+    def _to_colored_circle(self, components, counts, sum, top=3):
+        # html code to generate circles corresponding to the most popular subtopics
         return ' '.join(
             map(lambda topic: f'''<a class="fas fa-circle" style="color:{self.comp_colors[topic[0]]}"
                                      href="#subtopic-{topic[0] + 1}"></a>

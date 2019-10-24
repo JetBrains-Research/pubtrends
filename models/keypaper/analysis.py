@@ -85,17 +85,23 @@ class KeyPaperAnalyzer:
         self.cocit_df = self.loader.load_cocitations(self.ids, current=7, task=task)
         cocit_grouped_df = self.build_cocit_grouped_df(self.cocit_df)
         self.CG = self.build_cocitation_graph(cocit_grouped_df, current=8, task=task, add_citation_edges=True)
+
         if len(self.CG.nodes()) == 0:
-            raise RuntimeError("Failed to build co-citations graph")
-        # Perform subtopic analysis and get subtopic descriptions
-        self.components, self.comp_other, self.partition, self.comp_sizes = self.subtopic_analysis(
-            self.CG, current=9, task=task
-        )
-        self.df = self.merge_col(self.df, self.partition, col='comp')
-        self.df_kwd = self.subtopic_descriptions(self.df, current=10, task=task)
-        # Perform PageRank analysis
-        self.pr = self.pagerank(self.G, current=11, task=task)
-        self.df = self.merge_col(self.df, self.pr, col='pagerank')
+            self.logger.debug("Co-citations graph is empty", current=9, task=task)
+            self.logger.info("Not enough papers to process topics analysis", current=9, task=task)
+            self.df['comp'] = 0  # Technical value for top authors and papers analysis
+            self.df_kwd = pd.DataFrame({'comp': [0], 'kwd': ['']})
+        else:
+            # Perform subtopic analysis and get subtopic descriptions
+            self.components, self.comp_other, self.partition, self.comp_sizes = self.subtopic_analysis(
+                self.CG, current=9, task=task
+            )
+            self.df = self.merge_col(self.df, self.partition, col='comp')
+            self.df_kwd = self.subtopic_descriptions(self.df, current=10, task=task)
+            # Perform PageRank analysis
+            self.pr = self.pagerank(self.G, current=11, task=task)
+            self.df = self.merge_col(self.df, self.pr, col='pagerank')
+
         # Find interesting papers
         self.top_cited_papers, self.top_cited_df = self.find_top_cited_papers(self.df, current=12, task=task)
         self.max_gain_papers, self.max_gain_df = self.find_max_gain_papers(self.df, self.citation_years,
@@ -107,6 +113,7 @@ class KeyPaperAnalyzer:
         self.journal_stats = self.popular_journals(self.df, current=15, task=task)
         # Find top authors
         self.author_stats = self.popular_authors(self.df, current=16, task=task)
+
         # Experimental features, can be turned off in 'config.properties'
         if self.experimental:
             # Perform subtopic evolution analysis and get subtopic descriptions
@@ -483,31 +490,42 @@ class KeyPaperAnalyzer:
                 'df_kwd': self.df_kwd.to_json(),
                 'g': json_graph.node_link_data(self.G)}
 
-    def load(self, fields):
+    @staticmethod
+    def load(fields):
         """
         Load valuable fields of KeyPaperAnalyzer from JSON-serializable dict. Use 'dump' to dump analyzer.
         """
         # Restore main dataframe
-        self.df = pd.read_json(fields['df'])
-        self.df['id'] = self.df['id'].apply(str)
+        df = pd.read_json(fields['df'])
+        df['id'] = df['id'].apply(str)
 
         mapping = {}
-        for col in self.df.columns:
+        for col in df.columns:
             try:
                 mapping[col] = int(col)
             except ValueError:
                 mapping[col] = col
-        self.df = self.df.rename(columns=mapping)
+        df = df.rename(columns=mapping)
 
         # Restore subtopic descriptions
-        self.df_kwd = pd.read_json(fields['df_kwd'])
-        self.df_kwd['kwd'] = self.df_kwd['kwd'].str.split(',').apply(list)
-        self.df_kwd['kwd'] = self.df_kwd['kwd'].apply(lambda x: [el.split(':') for el in x])
-        self.df_kwd['kwd'] = self.df_kwd['kwd'].apply(lambda x: [(el[0], float(el[1])) for el in x])
+        df_kwd = pd.read_json(fields['df_kwd'])
+
+        # Extra filter is applied to overcome split behaviour problem: split('') = [''] problem
+        df_kwd['kwd'] = [kwd.split(',') if kwd != '' else [] for kwd in df_kwd['kwd']]
+        df_kwd['kwd'] = df_kwd['kwd'].apply(lambda x: [el.split(':') for el in x])
+        df_kwd['kwd'] = df_kwd['kwd'].apply(lambda x: [(el[0], float(el[1])) for el in x])
 
         # Restore citation and co-citation graphs
-        self.CG = json_graph.node_link_graph(fields['cg'])
-        self.G = json_graph.node_link_graph(fields['g'])
+        CG = json_graph.node_link_graph(fields['cg'])
+        G = json_graph.node_link_graph(fields['g'])
+        return {'cg': CG,
+                'df': df,
+                'df_kwd': df_kwd,
+                'g': G}
+
+    def init(self, fields):
+        loaded = KeyPaperAnalyzer.load(fields)
+        self.df, self.df_kwd, self.G, self.CG = loaded['df'], loaded['df_kwd'], loaded['G'], loaded['CG']
 
     def pagerank(self, G, current=0, task=None):
         self.logger.info('Performing PageRank analysis', current=current, task=task)

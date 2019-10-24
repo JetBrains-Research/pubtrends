@@ -1,6 +1,7 @@
 import unittest
 
 import numpy as np
+from networkx.readwrite import json_graph
 from parameterized import parameterized
 
 from models.keypaper.analysis import KeyPaperAnalyzer
