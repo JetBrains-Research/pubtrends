@@ -363,9 +363,9 @@ class Plotter:
             # Word cloud description of subtopic by titles and abstracts
             kwds = get_topic_word_cloud_data(self.analyzer.df_kwd, c)
             color = (self.comp_colors[c].r, self.comp_colors[c].g, self.comp_colors[c].b)
-            wc = WordCloud(background_color="white", width=160, height=320,
+            wc = WordCloud(background_color="white", width=180, height=320,
                            color_func=lambda *args, **kwargs: color,
-                           max_words=20, min_font_size=15, max_font_size=40)
+                           max_words=20, min_font_size=10, max_font_size=30)
             wc.generate_from_frequencies(kwds)
 
             # Create Zoom In callback
@@ -522,9 +522,9 @@ class Plotter:
                                                    self.analyzer.top_cited_df['abstract']).items():
             for word in token.split(' '):
                 kwds[word] = float(count) + kwds.get(word, 0)
-        wc = WordCloud(background_color="white", width=160, height=320,
+        wc = WordCloud(background_color="white", width=180, height=320,
                        color_func=lambda *args, **kwargs: 'black',
-                       max_words=20, min_font_size=15, max_font_size=40)
+                       max_words=20, min_font_size=10, max_font_size=30)
         wc.generate_from_frequencies(kwds)
 
         # Create Zoom Out callback

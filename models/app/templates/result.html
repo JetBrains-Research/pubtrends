@@ -81,16 +81,16 @@
         const canvas = document.getElementById(id);
         const ctx = canvas.getContext("2d");
         // Make canvas visible
-        canvas.style.width = "200px";
+        canvas.style.width = "220px";
         canvas.style.height = "360px";
 
         // Retina/HiDPI fix
         if (isHighDensity()) {
-            canvas.width = 400;
+            canvas.width = 440;
             canvas.height = 720;
             ctx.scale(2, 2);
         } else {
-            canvas.width = 200;
+            canvas.width = 220;
             canvas.height = 360;
         }
 
