@@ -14,13 +14,12 @@ from nltk.stem import WordNetLemmatizer, SnowballStemmer
 from nltk.tokenize import word_tokenize
 from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
+from threading import Lock
 
 nltk.download('stopwords')
 nltk.download('punkt')
 nltk.download('averaged_perceptron_tagger')
 nltk.download('wordnet')
-
-from threading import Lock
 
 # Lock to support multithreading for NLTK
 # See https://github.com/nltk/nltk/issues/1576
@@ -61,7 +60,7 @@ def get_wordnet_pos(treebank_tag):
     """Convert pos_tag output to WordNetLemmatizer tags."""
     stopwords_lock.acquire()
     if treebank_tag.startswith('J'):
-        result =  wordnet.ADJ
+        result = wordnet.ADJ
     elif treebank_tag.startswith('V'):
         result = wordnet.VERB
     elif treebank_tag.startswith('N'):
