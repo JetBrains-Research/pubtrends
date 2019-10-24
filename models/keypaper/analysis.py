@@ -525,7 +525,7 @@ class KeyPaperAnalyzer:
 
     def init(self, fields):
         loaded = KeyPaperAnalyzer.load(fields)
-        self.df, self.df_kwd, self.G, self.CG = loaded['df'], loaded['df_kwd'], loaded['G'], loaded['CG']
+        self.df, self.df_kwd, self.G, self.CG = loaded['df'], loaded['df_kwd'], loaded['g'], loaded['cg']
 
     def pagerank(self, G, current=0, task=None):
         self.logger.info('Performing PageRank analysis', current=current, task=task)
