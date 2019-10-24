@@ -9,7 +9,7 @@ from models.celery.tasks import celery
 
 
 MAX_PENDING_TASKS = 50  # Max allowed pending tasks
-PENDING_TASKS_TIMEOUT = 30  # Seconds, pending task will be revoked after no polling activity
+PENDING_TASKS_TIMEOUT = 60  # Seconds, pending task will be revoked after no polling activity
 MAX_COMPLETED_TASKS = 1000  # Max completed tasks to store
 
 
