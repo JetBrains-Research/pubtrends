@@ -344,7 +344,7 @@ class Plotter:
             color = (self.comp_colors[c].r, self.comp_colors[c].g, self.comp_colors[c].b)
             wc = WordCloud(background_color="white", width=160, height=340,
                            color_func=lambda *args, **kwargs: color,
-                           max_words=20, max_font_size=40)
+                           max_words=20, min_font_size=15, max_font_size=40)
             wc.generate_from_frequencies(kwds)
 
             # Create Zoom In callback
@@ -499,7 +499,7 @@ class Plotter:
                 kwds[word] = float(count) + kwds.get(word, 0)
         wc = WordCloud(background_color="white", width=160, height=340,
                        color_func=lambda *args, **kwargs: 'black',
-                       max_words=20, max_font_size=40)
+                       max_words=20, min_font_size=15, max_font_size=40)
         wc.generate_from_frequencies(kwds)
 
         # Create Zoom Out callback
