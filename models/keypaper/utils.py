@@ -20,6 +20,13 @@ nltk.download('punkt')
 nltk.download('averaged_perceptron_tagger')
 nltk.download('wordnet')
 
+from threading import Lock
+
+# Lock to support multithreading for NLTK
+# See https://github.com/nltk/nltk/issues/1576
+stopwords_lock = Lock()
+wordnet_lock = Lock()
+
 LOCAL_BASE_URL = Template('/paper?source=$source&id=')
 PUBMED_ARTICLE_BASE_URL = 'https://www.ncbi.nlm.nih.gov/pubmed/?term='
 SEMANTIC_SCHOLAR_BASE_URL = 'https://www.semanticscholar.org/paper/'
@@ -52,16 +59,19 @@ def zoom_name(zoom):
 
 def get_wordnet_pos(treebank_tag):
     """Convert pos_tag output to WordNetLemmatizer tags."""
+    stopwords_lock.acquire()
     if treebank_tag.startswith('J'):
-        return wordnet.ADJ
+        result =  wordnet.ADJ
     elif treebank_tag.startswith('V'):
-        return wordnet.VERB
+        result = wordnet.VERB
     elif treebank_tag.startswith('N'):
-        return wordnet.NOUN
+        result = wordnet.NOUN
     elif treebank_tag.startswith('R'):
-        return wordnet.ADV
+        result = wordnet.ADV
     else:
-        return ''
+        result = ''
+    stopwords_lock.release()
+    return result
 
 
 def is_noun_or_adj(pos):
@@ -78,7 +88,11 @@ def tokenize(text, query=None):
             text = text.replace(term.lower(), '')
 
     tokenized = word_tokenize(re.sub(special_symbols_regex, '', text))
+
+    stopwords_lock.acquire()
     stop_words = set(stopwords.words('english'))
+    stopwords_lock.release()
+
     words_of_interest = [(word, pos) for word, pos in nltk.pos_tag(tokenized) if
                          word not in stop_words and is_noun_or_adj(pos)]
 
