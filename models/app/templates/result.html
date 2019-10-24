@@ -81,14 +81,17 @@
         const canvas = document.getElementById(id);
         const ctx = canvas.getContext("2d");
         // Make canvas visible
-        canvas.width = 400;
-        canvas.height = 760;
+        canvas.style.width = "200px";
+        canvas.style.height = "380px";
 
         // Retina/HiDPI fix
         if (isHighDensity()) {
-            canvas.style.width = "200px";
-            canvas.style.height = "380px";
+            canvas.width = 400;
+            canvas.height = 760;
             ctx.scale(2, 2);
+        } else {
+            canvas.width = 200;
+            canvas.height = 380;
         }
 
         const links = []; // Links information
