@@ -38,7 +38,7 @@
         "use strict";
 
         function papers_callback_impl(key, value) {
-            const url = '/papers?source={{source}}';
+            const url = '/papers?query={{query}}&source={{source}}';
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
             var args = '';
