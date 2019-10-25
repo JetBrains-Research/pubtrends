@@ -45,6 +45,8 @@ SORT_MOST_CITED = 'Most Cited'
 SORT_MOST_RELEVANT = 'Most Relevant'
 SORT_MOST_RECENT = 'Mose Recent'
 
+log = logging.getLogger(__name__)
+
 
 def zoom_name(zoom):
     if int(zoom) == ZOOM_IN:
@@ -138,14 +140,14 @@ def get_subtopic_descriptions(df, comps, size=20):
     :param comps: dictionary {component: description}
     :param size: number of tokens with highest TF-IDF values
     """
-    logging.info('Computing most common terms')
+    log.info('Computing most common terms')
     n_comps = len(set(comps.keys()))
     most_common = [None] * n_comps
     for idx, comp in comps.items():
         df_comp = df[df['id'].isin(comp)]
         most_common[idx] = get_most_common_tokens(df_comp['title'] + ' ' + df_comp['abstract'])
 
-    logging.info('Compute Augmented Term Frequency - Inverse Document Frequency')
+    log.info('Compute Augmented Term Frequency - Inverse Document Frequency')
     # The tf–idf is the product of two statistics, term frequency and inverse document frequency.
     # This provides greater weight to values that occur in fewer documents.
     idfs = {}
@@ -265,27 +267,27 @@ def to_32_bit_int(n):
 
 
 def build_corpus(df):
-    logging.info(f'Building corpus from {len(df)} articles')
+    log.info(f'Building corpus from {len(df)} articles')
     corpus = [f'{title} {abstract}'
               for title, abstract in zip(df['title'].values, df['abstract'].values)]
-    logging.info(f'Corpus size: {sys.getsizeof(corpus)} bytes')
+    log.info(f'Corpus size: {sys.getsizeof(corpus)} bytes')
     return corpus
 
 
 def vectorize(corpus, terms=None, n_words=1000):
-    logging.info(f'Counting word usage in the corpus, using only {n_words} most frequent words')
+    log.info(f'Counting word usage in the corpus, using only {n_words} most frequent words')
     vectorizer = CountVectorizer(tokenizer=lambda t: tokenize(t, terms), max_features=n_words)
     counts = vectorizer.fit_transform(corpus)
-    logging.info(f'Output shape: {counts.shape}')
+    log.info(f'Output shape: {counts.shape}')
     return counts, vectorizer
 
 
 def lda_subtopics(counts, n_topics=10):
-    logging.info(f'Performing LDA subtopic analysis')
+    log.info(f'Performing LDA subtopic analysis')
     lda = LatentDirichletAllocation(n_components=n_topics, random_state=0)
     topics = lda.fit_transform(counts)
 
-    logging.info('Done')
+    log.info('Done')
     return topics, lda
 
 

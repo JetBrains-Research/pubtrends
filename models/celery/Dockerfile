@@ -20,4 +20,5 @@ RUN source activate pubtrends && python models/keypaper/utils.py
 RUN cp config.properties ~/.pubtrends/config.properties
 
 # Launch celery workers
-ENTRYPOINT source activate pubtrends && celery -A models.celery.tasks worker -c 5 --loglevel=info
+ENTRYPOINT source activate pubtrends \
+    && celery -A models.celery.tasks worker -c 5 --loglevel=info --logfile=/logs/celery.log

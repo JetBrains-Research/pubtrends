@@ -31,6 +31,8 @@ from .visualization_data import PlotPreprocessor
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
 hv.extension('bokeh')
 
+log = logging.getLogger(__name__)
+
 
 def visualize_analysis(analyzer):
     # Initialize plotter after completion of analysis
@@ -189,7 +191,7 @@ class Plotter:
         """
 
     def chord_diagram_components(self):
-        logging.info('Visualizing components with Chord diagram')
+        log.info('Visualizing components with Chord diagram')
 
         layout, node_data_source, edge_data_source = PlotPreprocessor.chord_diagram_data(
             self.analyzer.CG, self.analyzer.df, self.analyzer.partition, self.analyzer.comp_other, self.comp_palette
@@ -238,7 +240,7 @@ class Plotter:
         return plot
 
     def heatmap_clusters(self):
-        logging.info('Visualizing components with heatmap')
+        log.info('Visualizing components with heatmap')
 
         cluster_edges, clusters = PlotPreprocessor.heatmap_clusters_data(
             self.analyzer.CG, self.analyzer.df, self.analyzer.comp_sizes
@@ -288,7 +290,7 @@ class Plotter:
         return self.chord_diagram_components()
 
     def component_size_summary(self):
-        logging.info('Summary component detailed info visualization')
+        log.info('Summary component detailed info visualization')
 
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
         components, data = PlotPreprocessor.component_size_summary_data(
@@ -319,7 +321,7 @@ class Plotter:
         return p
 
     def component_years_summary_boxplots(self):
-        logging.info('Summary component year detailed info visualization on boxplot')
+        log.info('Summary component year detailed info visualization on boxplot')
 
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
         components, data = PlotPreprocessor.component_size_summary_data(
@@ -339,7 +341,7 @@ class Plotter:
         return hv.render(boxwhisker, backend='bokeh')
 
     def subtopics_info_and_word_cloud_and_callback(self):
-        logging.info('Per component detailed info visualization')
+        log.info('Per component detailed info visualization')
 
         # Prepare layouts
         n_comps = len(self.analyzer.components)
@@ -422,7 +424,7 @@ class Plotter:
         return plot
 
     def max_gain_papers(self):
-        logging.info('Different colors encode different papers')
+        log.info('Different colors encode different papers')
         cols = ['year', 'id', 'title', 'authors', 'paper_year', 'count']
         max_gain_df = self.analyzer.max_gain_df[cols].replace(np.nan, "Undefined")
         max_gain_df['authors'] = max_gain_df['authors'].apply(lambda authors: cut_authors_list(authors))
@@ -450,9 +452,9 @@ class Plotter:
         return p
 
     def max_relative_gain_papers(self):
-        logging.info('Top papers in relative gain for each year')
-        logging.info('Relative gain (year) = Citation Gain (year) / Citations before year')
-        logging.info('Different colors encode different papers')
+        log.info('Top papers in relative gain for each year')
+        log.info('Relative gain (year) = Citation Gain (year) / Citations before year')
+        log.info('Different colors encode different papers')
         cols = ['year', 'id', 'title', 'authors', 'paper_year', 'rel_gain']
         max_rel_gain_df = self.analyzer.max_rel_gain_df[cols].replace(np.nan, "Undefined")
         max_rel_gain_df['authors'] = max_rel_gain_df['authors'].apply(lambda authors: cut_authors_list(authors))

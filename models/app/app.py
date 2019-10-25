@@ -15,11 +15,16 @@ from models.keypaper.config import PubtrendsConfig
 from models.keypaper.paper import prepare_paper_data, prepare_papers_data
 from models.keypaper.utils import zoom_name, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE, trim
 
-# logging.basicConfig(level=logging.NOTSET)
-
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
 app = Flask(__name__)
+
+# Check to see if our Flask application is being run directly or through Gunicorn,
+# and then set your Flask application logger’s handlers to the same as Gunicorn’s.
+if __name__ != '__main__':
+    gunicorn_logger = logging.getLogger('gunicorn.error')
+    app.logger.handlers = gunicorn_logger.handlers
+    app.logger.setLevel(gunicorn_logger.level)
 
 
 @app.route('/status')
@@ -287,6 +292,5 @@ def process_ids():
 def get_app():
     return app
 
-# # With debug=True, Flask server will auto-reload on changes
 # if __name__ == '__main__':
 #     app.run(host='0.0.0.0', debug=True, extra_files=['templates/'])

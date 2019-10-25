@@ -9,12 +9,16 @@ services:
       - "80:8000"
     depends_on:
       - redis
+    volumes:
+      - ./logs:/logs
   worker:
     build:
       context: .
       dockerfile: models/celery/Dockerfile
     depends_on:
       - redis
+    volumes:
+      - ./logs:/logs
   redis:
     image: redis
 
