@@ -171,12 +171,24 @@ def paper():
 def show_ids():
     jobid = request.values.get('jobid')
     source = request.args.get('source')  # Pubmed or Semantic Scholar
+    search_string = ''
     comp = request.args.get('comp')
     if comp is not None:
+        search_string += f'topic: {comp} '
         comp = int(comp) - 1  # Component was exposed so it was 1-based
+
     word = request.args.get('word')
+    if word is not None:
+        search_string += f'word: {word} '
+
     author = request.args.get('author')
+    if author is not None:
+        search_string += f'author: {author} '
+
     journal = request.args.get('journal')
+    if journal is not None:
+        search_string += f'journal: {journal} '
+
     if jobid:
         job = complete_task(jobid)
         if job and job.state == 'SUCCESS':
@@ -184,6 +196,7 @@ def show_ids():
             return render_template('papers.html',
                                    version=PUBTRENDS_CONFIG.version,
                                    source=source,
+                                   search_string=search_string,
                                    papers=prepare_papers_data(data, source, comp, word, author, journal))
 
     raise Exception(f"Request does not contain necessary params: {request}")
