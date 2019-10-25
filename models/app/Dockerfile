@@ -30,4 +30,4 @@ RUN cp config.properties ~/.pubtrends/config.properties
 
 # run the app server
 CMD echo $PUBTRENDS_VERSION \
-    && source activate pubtrends && gunicorn --bind 0.0.0.0:8000 --workers 3 "models.app.app:get_app()"
+    && source activate pubtrends && gunicorn --bind 0.0.0.0:8000 --workers 5 "models.app.app:get_app()"
