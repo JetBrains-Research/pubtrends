@@ -138,7 +138,7 @@ def get_subtopic_descriptions(df, comps, size=20):
     :param comps: dictionary {component: description}
     :param size: number of tokens with highest TF-IDF values
     """
-    logging.info('Computing most common topics')
+    logging.info('Computing most common terms')
     n_comps = len(set(comps.keys()))
     most_common = [None] * n_comps
     for idx, comp in comps.items():
