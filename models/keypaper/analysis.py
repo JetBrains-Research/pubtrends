@@ -58,6 +58,9 @@ class KeyPaperAnalyzer:
         if len(ids) == 0:
             raise RuntimeError(f"Nothing found in DB for empty ids list")
         for _ in range(zoom):
+            if len(ids) > 100:
+                self.logger.info('Too many related papers, stop references expanding', current=1, task=task)
+                break
             ids = self.loader.expand(ids, current=1, task=task)
         # Load data about publications
         pub_df = self.loader.load_publications(ids, current=2, task=task)
