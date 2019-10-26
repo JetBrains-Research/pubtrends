@@ -1,6 +1,7 @@
 package org.jetbrains.bio.pubtrends.pm
 
 import org.jetbrains.bio.pubtrends.Config
+import org.jetbrains.bio.pubtrends.EmbeddedNeo4jInstance
 import org.junit.AfterClass
 import org.junit.Test
 import java.io.File
@@ -9,6 +10,10 @@ import kotlin.test.assertTrue
 
 class Neo4jDBHandlerTest {
     companion object {
+        init {
+            EmbeddedNeo4jInstance.load()
+        }
+
         // Load configuration file
         private val config = Config.config
 
