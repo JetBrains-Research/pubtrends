@@ -38,7 +38,9 @@
         "use strict";
 
         function papers_callback_impl(key, value) {
-            const url = '/papers?query={{query}}&source={{source}}';
+            // Query may contain double quotes, fix it.
+            const query_fixed = '{{ query }}'.replace(/&#34;/g, '"');
+            const url = '/papers?query=' + query_fixed + '&source={{source}}';
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
             var args = '';
