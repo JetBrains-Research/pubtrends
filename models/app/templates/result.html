@@ -118,10 +118,6 @@
                 ctx.fillText(word, x, y);
             }
 
-            // Add mouse listeners
-            canvas.addEventListener("mousemove", onMouseMove, false);
-            canvas.addEventListener("click", onClick, false);
-
             // Add link params to array for hover processing
             if (vertical) {
                 [linkWidth, linkHeight] = [linkHeight, linkWidth];
@@ -173,6 +169,10 @@
             // Add word with small shift, coordinates changed!
             addWord(word, y + 20, x + 20, size, vertical, color);
         }
+
+        // Add mouse listeners
+        canvas.addEventListener("mousemove", onMouseMove, false);
+        canvas.addEventListener("click", onClick, false);
     }
 
         $(document).ready(function() {
