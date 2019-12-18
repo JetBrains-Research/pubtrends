@@ -78,6 +78,7 @@ project(':') {
     shadowJar {
         baseName = 'pubtrends'
         classifier = ''
+        zip64 true
     }
 
     jar {

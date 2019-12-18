@@ -41,60 +41,59 @@ fun main(args: Array<String>) {
             logger.warn("RESETTING DATABASE")
         }
 
-        logger.info("Init database connection")
-        val dbHandler = Neo4jDatabaseHandler(
-            config["neo4jurl"].toString(),
-            config["neo4jport"].toString().toInt(),
-            config["neo4jusername"].toString(),
-            config["neo4jpassword"].toString(),
-            resetDatabase
-        )
+        var retry = 1
+        var waitTime: Long = 1
+        var isUpdateRequired = true
+        logger.info("Retrying downloading after any problems.")
+        while (isUpdateRequired) {
+            try {
+                logger.info("Init database connection")
+                val dbHandler = Neo4jDatabaseHandler(
+                        config["neo4jurl"].toString(),
+                        config["neo4jport"].toString().toInt(),
+                        config["neo4jusername"].toString(),
+                        config["neo4jpassword"].toString(),
+                        resetDatabase
+                )
 
-        dbHandler.use {
-            logger.info("Init Pubmed processor")
-            val pubmedXMLParser =
-                    PubmedXMLParser(
-                            dbHandler,
-                            config["pm_parser_limit"].toString().toInt(),
-                            config["pm_batch_size"].toString().toInt()
-                    )
+                dbHandler.use {
+                    logger.info("Init Pubmed processor")
+                    val pubmedXMLParser =
+                            PubmedXMLParser(
+                                    dbHandler,
+                                    config["pm_parser_limit"].toString().toInt(),
+                                    config["pm_batch_size"].toString().toInt()
+                            )
 
-            logger.info("Init crawler")
-            val crawlerTSV = settingsRoot.resolve("pubmed_last.tsv")
-            val statsTSV = settingsRoot.resolve("pubmed_stats.tsv")
-            val collectStats = config["pm_collect_stats"].toString().toBoolean()
-            val pubmedCrawler = PubmedCrawler(pubmedXMLParser, collectStats, statsTSV, crawlerTSV)
+                    logger.info("Init crawler")
+                    val crawlerTSV = settingsRoot.resolve("pubmed_last.tsv")
+                    val statsTSV = settingsRoot.resolve("pubmed_stats.tsv")
+                    val collectStats = config["pm_collect_stats"].toString().toBoolean()
+                    val pubmedCrawler = PubmedCrawler(pubmedXMLParser, collectStats, statsTSV, crawlerTSV)
 
-            val lastIdCmd = if (options.has("lastId")) options.valueOf("lastId").toString().toInt() else null
+                    val lastIdCmd = if (options.has("lastId")) options.valueOf("lastId").toString().toInt() else null
 
-            var retry = 1
-            var waitTime: Long = 1
-            var isUpdateRequired = true
-            logger.info("Retrying downloading after any problems.")
-            while (isUpdateRequired) {
-                try {
-                    if (retry == 1) {
-                        isUpdateRequired = pubmedCrawler.update(lastIdCmd)
+                    isUpdateRequired = if (retry == 1) {
+                        pubmedCrawler.update(lastIdCmd)
                     } else {
-                        isUpdateRequired = pubmedCrawler.update(null)
+                        pubmedCrawler.update(null)
                     }
                     waitTime = 1
-                } catch (e: PubmedCrawlerException) {
-                    logger.error(e)
-                    isUpdateRequired = true
+                }
+            } catch (e: PubmedCrawlerException) {
+                logger.error(e)
+                isUpdateRequired = true
 
-                    logger.info("Waiting for $waitTime seconds...")
-                    Thread.sleep(waitTime * 1000)
-                    logger.info("Retry #$retry")
-                    retry += 1
+                logger.info("Waiting for $waitTime seconds...")
+                Thread.sleep(waitTime * 1000)
+                logger.info("Retry #$retry")
+                retry += 1
 
-                    if (waitTime < 1024) {
-                        waitTime *= 2
-                    }
+                if (waitTime < 1024) {
+                    waitTime *= 2
                 }
             }
-
-            logger.info("Done crawling.")
         }
+        logger.info("Done crawling.")
     }
 }
