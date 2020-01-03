@@ -197,6 +197,6 @@ Launch Gunicorn serving Flask app on HTTP port 80, Redis and Celery in container
 See [AUTHORS.md](AUTHORS.md) for a list of authors and contributors.
 
 # Materials
+* Project architecture [presentation](https://docs.google.com/presentation/d/131qvkEnzzmpx7-I0rz1om6TG7bMBtYwU9T1JNteRIEs/edit?usp=sharing) - summer 2019. 
+* Review generation [presentation](https://my.compscicenter.ru/media/projects/2019-autumn/844/presentations/participants.pdf) - fall 2019.
 
-* Latest project [presentation](https://docs.google.com/presentation/d/131qvkEnzzmpx7-I0rz1om6TG7bMBtYwU9T1JNteRIEs/edit?usp=sharing)
-* JetBrains Research BioLabs [homepage](https://research.jetbrains.org/groups/biolabs)
