@@ -6,11 +6,9 @@ A tool for analysis of trends & pivotal points in the scientific literature.
 ## Prerequisites
 
 * JDK 8+
-* PostgreSQL 11+
 * Conda
 * Python 3.6+
 * Docker
-* Redis
 
 ## Configuration
 
@@ -24,64 +22,25 @@ Ensure that file contains correct information about the database (url, port, DB 
     conda activate pubtrends
     ```
 
-3. Launch Postgres. 
-
-    Mac OS
-    ```
-    # start
-    pg_ctl -D /usr/local/var/postgres -l /usr/local/var/postgres/server.log start
-    # stop
-    pg_ctl -D /usr/local/var/postgres stop -s -m fast
-    ```
-    Ubuntu
-    ```
-    # start
-    service postgresql start
-    # start
-    service postgresql stop 
-    ```
-
-4. Run `psql` to create a user and databases
-
-   ```
-   CREATE ROLE biolabs WITH PASSWORD 'password';
-   ALTER ROLE biolabs WITH LOGIN;
-   CREATE DATABASE pubtrends OWNER biolabs;
-   ```
-   Create testing database if you don't want to use Docker based Postgresql for tests
-   ```
-   CREATE DATABASE pubtrends_test OWNER biolabs;
-   ```
-   
-5. Configure PostgreSQL. **NOTE**: production service should be configured more securely!
-
-   * Configure `work_mem` to support search query sorted by citations in `postgresql.conf`. \
-   Experimentally, this amount is sufficient to search term 'computer' in Semantic Scholar sorted by citations count. 
-   ```
-   work_mem = '2048MB';   
-   ```
-   * Configure DB to accept connections in `postgresql.conf`
-   ```
-   listen_addresses='*'
-   ```
-   * Configure password access in `pg_hba.conf`
-   ```
-   host all all 0.0.0.0/0 md5
-   ```
-   
-## Build
-
-1. Use the following command to test and build the project:
-
-   ```
-   ./gradlew clean test shadowJar
-   ```
-
-2. Build `biolabs/pubtrends` Docker image (available on Docker hub).
+3. Build `biolabs/pubtrends` Docker image (available on Docker hub).
     ```
     docker build -t biolabs/pubtrends .
     ```
 
+4. Launch Neo4j and PostgreSQL dev docker image.
+    ```
+    docker run --rm --name pubtrends-docker \
+    --publish=5433:5432 --publish=7474:7474 --publish=7687:7687 \
+    --volume=$(pwd):/pubtrends -d -t biolabs/pubtrends
+    ```
+   
+## Build
+
+Use the following command to test and build the project:
+
+   ```
+   ./gradlew clean test shadowJar
+   ```
 
 ## Papers processing
  
@@ -149,7 +108,14 @@ Several front-ends are supported.
 ### Deployment
 
 Launch Gunicorn serving Flask app on HTTP port 80, Redis and Celery in containers by the command:
-    
+
+1. Launch Neo4j docker image.
+    ```
+    docker run --publish=7474:7474 --publish=7687:7687 \
+        --volume=$HOME/neo4j/data:/data --volume=$HOME/neo4j/logs:/logs neo4j:3.5
+    ```
+
+2. Launch docker-compose config
     ```
     # start
     docker-compose up -d --build
