@@ -3,7 +3,9 @@ package org.jetbrains.bio.pubtrends.pm
 import org.apache.logging.log4j.LogManager
 import org.joda.time.DateTime
 import org.joda.time.IllegalFieldValueException
-import java.io.*
+import java.io.BufferedInputStream
+import java.io.File
+import java.io.FileInputStream
 import java.util.zip.GZIPInputStream
 import javax.xml.namespace.QName
 import javax.xml.stream.XMLEventReader
@@ -43,6 +45,7 @@ class PubmedXMLParser(
         const val AUTHOR_TAG = "$MEDLINE_CITATION_TAG/Article/AuthorList/Author"
         const val AUTHOR_LASTNAME_TAG = "$AUTHOR_TAG/LastName"
         const val AUTHOR_INITIALS_TAG = "$AUTHOR_TAG/Initials"
+        const val AUTHOR_COLLECTIVE_NAME_TAG = "$AUTHOR_TAG/CollectiveName"
         const val AUTHOR_AFFILIATION_TAG = "$AUTHOR_TAG/AffiliationInfo/Affiliation"
 
         const val CITATION_PMID_TAG = "$PUBMED_DATA_TAG/ReferenceList/Reference/ArticleIdList/ArticleId"
@@ -114,6 +117,7 @@ class PubmedXMLParser(
         var day = 1
         var title = ""
         var abstractText = ""
+        var affiliation = ""
 
         val authors = mutableListOf<Author>()
         var authorName = ""
@@ -121,7 +125,7 @@ class PubmedXMLParser(
 
         val databanks = mutableListOf<DatabankEntry>()
         var databankName = ""
-        val databankAccessionNumbers = mutableListOf<String>()
+        var accessionNumber = ""
 
         val keywordList = mutableListOf<String>()
         val citationList = mutableListOf<Int>()
@@ -138,6 +142,7 @@ class PubmedXMLParser(
         var isAbstractStructured = false
         var isArticleTitleParsed = false
         var isAbstractTextParsed = false
+        var isAuthorAffiliationParsed = false
         var isCitationPMIDFound = false
         var isDOIFound = false
 
@@ -163,6 +168,7 @@ class PubmedXMLParser(
                         isAbstractStructured = false
                         isArticleTitleParsed = false
                         isAbstractTextParsed = false
+                        isAuthorAffiliationParsed = false
                         isCitationPMIDFound = false
                         isDOIFound = false
 
@@ -172,6 +178,7 @@ class PubmedXMLParser(
                         day = 1
                         title = ""
                         abstractText = ""
+                        affiliation = ""
 
                         authors.clear()
                         authorName = ""
@@ -179,7 +186,6 @@ class PubmedXMLParser(
 
                         databanks.clear()
                         databankName = ""
-                        databankAccessionNumbers.clear()
 
                         keywordList.clear()
                         citationList.clear()
@@ -193,6 +199,9 @@ class PubmedXMLParser(
                     AUTHOR_TAG -> {
                         authorName = ""
                         authorAffiliations.clear()
+                    }
+                    AUTHOR_AFFILIATION_TAG -> {
+                        affiliation = ""
                     }
                     ABSTRACT_TAG -> {
                         if (startElement.attributes.hasNext()) {
@@ -211,7 +220,6 @@ class PubmedXMLParser(
                     // Databanks
                     DATABANK_TAG -> {
                         databankName = ""
-                        databankAccessionNumbers.clear()
                     }
 
                     // DOI
@@ -323,7 +331,7 @@ class PubmedXMLParser(
                         databankName = dataElement.data
                     }
                     fullName == ACCESSION_NUMBER_TAG -> {
-                        databankAccessionNumbers.add(dataElement.data)
+                        accessionNumber = dataElement.data
                     }
 
                     // MeSH
@@ -345,8 +353,16 @@ class PubmedXMLParser(
                     fullName == AUTHOR_INITIALS_TAG -> {
                         authorName += " ${dataElement.data}"
                     }
+                    fullName == AUTHOR_COLLECTIVE_NAME_TAG -> {
+                        authorName = dataElement.data
+                    }
+
+                    // Affiliations
+                    isAuthorAffiliationParsed -> {
+                        affiliation += dataElement.data
+                    }
                     fullName == AUTHOR_AFFILIATION_TAG -> {
-                        authorAffiliations.add(dataElement.data.trim(' ', '.'))
+                        affiliation += dataElement.data
                     }
 
                     // Other information - journal title, language, DOI, publication type
@@ -431,6 +447,20 @@ class PubmedXMLParser(
                                 )
                         )
                     }
+                    AUTHOR_AFFILIATION_TAG -> {
+                        // Affiliation parsing can be painful in some cases
+                        // Currently affiliation is split by ; and (n = N) tokens,
+                        // some more tokens may be introduced later
+                        // Empty or "." affiliations are ignored
+                        val regex = "\\(n = \\d+\\)|;".toRegex()
+                        if (affiliation != "") {
+                            affiliation.split(regex).map { it.trim(' ', '.') }.toSet().forEach {
+                                if (it.isNotEmpty()) {
+                                    authorAffiliations.add(it)
+                                }
+                            }
+                        }
+                    }
 
                     // Fix title & abstract
                     ABSTRACT_TAG -> {
@@ -441,10 +471,10 @@ class PubmedXMLParser(
                     }
 
                     // Databanks
-                    DATABANK_TAG -> {
+                    ACCESSION_NUMBER_TAG -> {
                         databanks.add(
                                 DatabankEntry(
-                                        databankName, databankAccessionNumbers.toList()
+                                        databankName, accessionNumber
                                 )
                         )
                     }
@@ -498,6 +528,17 @@ class PubmedXMLParser(
 
     private fun storeArticles() {
         logger.info("Storing articles ${articlesStored + 1}-${articlesStored + articleList.size}...")
+
+        // Count objects to estimate neo4j load
+        val articles = articleList.size
+        val authorSet = articleList.map { it.auxInfo.authors }.flatten().toSet()
+        val authors = authorSet.size
+        val journals = articleList.map { it.auxInfo.journal.name }.toSet().size
+        val affiliations = authorSet.map { it.affiliation }.flatten().toSet().size
+        val databanks = articleList.map { it.auxInfo.databanks }.flatten().toSet().size
+
+        logger.info("$articles articles, $authors authors, $journals journals, " +
+                "$affiliations affiliations, $databanks databanks")
 
         dbHandler.store(articleList)
         articlesStored += articleList.size

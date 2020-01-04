@@ -1,25 +1,28 @@
 package org.jetbrains.bio.pubtrends.pm
 
 import org.jetbrains.bio.pubtrends.Config
+import org.jetbrains.bio.pubtrends.EmbeddedNeo4jInstance
 import org.junit.AfterClass
-import org.junit.BeforeClass
 import org.junit.Test
 import java.io.File
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class DBHandlerTest {
+class Neo4jDBHandlerTest {
     companion object {
+        init {
+            EmbeddedNeo4jInstance.load()
+        }
+
         // Load configuration file
         private val config = Config.config
 
-        private val dbHandler = TestDBHandler(
-            config["test_url"].toString(),
-            config["test_port"].toString().toInt(),
-            config["test_database"].toString(),
-            config["test_username"].toString(),
-            config["test_password"].toString(),
-            resetDatabase = true
+        private val dbHandler = TestNeo4jDBHandler(
+                config["test_neo4jurl"].toString(),
+                config["test_neo4jport"].toString().toInt(),
+                config["test_neo4jusername"].toString(),
+                config["test_neo4jpassword"].toString(),
+                resetDatabase = true
         )
         private val parser = PubmedXMLParser(dbHandler, 0, 1000)
 
@@ -36,15 +39,18 @@ class DBHandlerTest {
             return ""
         }
 
-        @BeforeClass
-        @JvmStatic
-        fun setUp() {
+        init {
             val path = parserFileSetup(path)
             check(path != "") {
                 "Failed to load test file: $path"
             }
             parser.parse(path)
         }
+
+        val articles = parser.articleList
+        val articlePMIDs = articles.map { it.pmid }
+        val articleReferencePMIDs = articles.flatMap { it.citationList }
+        val totalArticles = (articlePMIDs + articleReferencePMIDs).sorted()
 
         @AfterClass
         @JvmStatic
@@ -57,11 +63,11 @@ class DBHandlerTest {
 
     @Test
     fun testStoreArticlesCount() {
-        assertEquals(parser.articleList.size, dbHandler.articlesCount)
+        assertEquals(totalArticles.size, dbHandler.articlesCount)
     }
 
     @Test
     fun testStoreArticlePMIDs() {
-        assertEquals(parser.articleList.map { it.pmid }, dbHandler.articlesPMIDList)
+        assertEquals(totalArticles, dbHandler.articlesPMIDList)
     }
 }
