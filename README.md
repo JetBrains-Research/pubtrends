@@ -118,6 +118,11 @@ Launch crawler to download and keep up-to-date Pubmed database:
    from article pack `pubmed20n{lastId+1}.xml` 
    * `resetDatabase` - clear current contents of the database (for development)
 
+NOTE: use the following Neo4j Cypher command to build full text search index:
+    ```
+    CALL db.index.fulltext.createNodeIndex("pmTitleAbstractMesh", ["Publication"],["title", "abstract", "mesh"]);
+    ```
+
 ### Semantic Scholar
 
 1. Add `<PATH_TO_SEMANTIC_SCHOLAR_ARCHIVE>` to `.pubtrends/config.properties`     
