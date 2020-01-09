@@ -1,39 +1,17 @@
 package org.jetbrains.bio.pubtrends.pm
 
+import org.jetbrains.bio.pubtrends.Config
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.Test
-import java.io.BufferedReader
 import java.io.File
-import java.io.FileReader
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
-import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class DBHandlerTest {
     companion object {
-        private val settingsRoot: Path = Paths.get(System.getProperty("user.home", ""), ".pubtrends")
-
-        init {
-            check(Files.exists(settingsRoot)) {
-                "$settingsRoot should have been created by log4j"
-            }
-        }
-
-        private val configPath: Path = settingsRoot.resolve("config.properties")
-
-        init {
-            check(Files.exists(configPath)) {
-                "Config file not found, please modify and copy config.properties to $configPath"
-            }
-        }
-
-        private val config = Properties().apply {
-            load(BufferedReader(FileReader(configPath.toFile())))
-        }
+        // Load configuration file
+        private val config = Config.config
 
         private val dbHandler = TestDBHandler(
             config["test_url"].toString(),

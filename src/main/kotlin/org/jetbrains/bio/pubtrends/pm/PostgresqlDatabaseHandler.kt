@@ -7,6 +7,10 @@ import org.jetbrains.exposed.sql.statements.StatementContext
 import org.jetbrains.exposed.sql.statements.expandArgs
 import org.jetbrains.exposed.sql.transactions.transaction
 
+/**
+ * This is a handler to load Pubmed data into PostgreSQL.
+ * See [Neo4jDatabaseHandler] for Neo4j processing code.
+ */
 open class PostgresqlDatabaseHandler(
     url: String,
     port: Int,

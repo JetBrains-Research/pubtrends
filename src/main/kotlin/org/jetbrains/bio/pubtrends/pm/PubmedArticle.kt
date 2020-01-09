@@ -1,5 +1,7 @@
 package org.jetbrains.bio.pubtrends.pm
 
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import org.joda.time.DateTime
 
 data class Author(
@@ -46,6 +48,17 @@ data class PubmedArticle(
             "MesH" to meshHeadingList.joinToString(separator = ",", prefix = "\"", postfix = "\""),
             "Citations" to citationList.joinToString(separator = ",", prefix = "\"", postfix = "\""),
             "Other information" to auxInfo.toString()
+        )
+    }
+
+    fun toNeo4j(): Map<String, String> {
+        return mapOf(
+                "pmid" to pmid.toString(),
+                "title" to title.replace('\n', ' '),
+                "abstract" to abstractText.replace('\n', ' '),
+                "date" to (date?.toString() ?: ""),
+                "type" to type.name,
+                "aux" to GsonBuilder().create().toJson(auxInfo)
         )
     }
 }

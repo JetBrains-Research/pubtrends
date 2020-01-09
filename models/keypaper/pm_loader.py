@@ -2,7 +2,7 @@ import html
 import re
 
 from collections import Iterable
-
+import logging
 import numpy as np
 import pandas as pd
 
@@ -33,6 +33,7 @@ class PubmedLoader(Loader):
                 WHERE p.{key} = {repr(value)}
                 RETURN p.pmid AS pmid;
             '''
+        self.logger.debug(f'Find query\n{query}', current=current, task=task)
 
         with self.neo4jdriver.session() as session:
             return [r['pmid'] for r in session.run(query)]
@@ -76,6 +77,7 @@ class PubmedLoader(Loader):
                 '''
         else:
             raise ValueError(f'Illegal sort method: {sort}')
+        self.logger.debug(f'Search query\n{query}', current=current, task=task)
 
         with self.neo4jdriver.session() as session:
             # Duplicate rows may occur if crawler was stopped while parsing
@@ -97,9 +99,12 @@ class PubmedLoader(Loader):
                 p.date.year as year, p.type as type, p.aux as aux
             ORDER BY id
         '''
+        self.logger.debug(f'Load publications query\n{query}', current=current, task=task)
 
         with self.neo4jdriver.session() as session:
             pub_df = pd.DataFrame(session.run(query).data())
+            if len(pub_df) == 0:
+                logging.warn(f'Failed to load publications.')
 
         if np.any(pub_df[['id', 'title']].isna()):
             raise ValueError('Paper must have PMID and title')
@@ -110,8 +115,7 @@ class PubmedLoader(Loader):
         return pub_df
 
     def load_citation_stats(self, ids, current=0, task=None):
-        self.logger.info('Loading citations statistics among millions of citations',
-                         current=current, task=task)
+        self.logger.info('Loading citations statistics', current=current, task=task)
 
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
@@ -120,9 +124,12 @@ class PubmedLoader(Loader):
             WHERE in.pmid IN pmids
             RETURN in.pmid AS id, out.date.year AS year, COUNT(*) AS count;
         '''
+        self.logger.debug(f'Load citations statistics query\n{query}', current=current, task=task)
 
         with self.neo4jdriver.session() as session:
             cit_stats_df_from_query = pd.DataFrame(session.run(query).data())
+            if len(cit_stats_df_from_query) == 0:
+                logging.warn(f'Failed to load citations statistics.')
 
         self.logger.debug('Done loading citation stats', current=current, task=task)
 
@@ -149,9 +156,12 @@ class PubmedLoader(Loader):
             RETURN out.pmid AS id_out, in.pmid AS id_in
             ORDER BY id_out, id_in;
         '''
+        self.logger.debug(f'Load citations query\n{query}', current=current, task=task)
 
         with self.neo4jdriver.session() as session:
             cit_df = pd.DataFrame(session.run(query).data())
+            if len(cit_df) == 0:
+                logging.warn(f'Failed to load citations.')
 
         if np.any(cit_df.isna()):
             raise ValueError('Citation must have id_out and id_in')
@@ -161,7 +171,7 @@ class PubmedLoader(Loader):
         return cit_df
 
     def load_cocitations(self, ids, current=0, task=None):
-        self.logger.info('Calculating co-citations for selected papers', current=current, task=task)
+        self.logger.info('Calculating co-citations for papers', current=current, task=task)
 
         # Use unfolding to pairs on the client side instead of DataBase
         # TODO[shpynov] transferring huge list of ids can be a problem
@@ -171,6 +181,7 @@ class PubmedLoader(Loader):
             WHERE in.pmid IN pmids
             RETURN out.pmid AS citing, COLLECT(in.pmid) AS cited, out.date.year AS year;
         '''
+        self.logger.debug(f'Load co-citations query\n{query}', current=current, task=task)
 
         with self.neo4jdriver.session() as session:
             cocit_data = []
@@ -205,6 +216,7 @@ class PubmedLoader(Loader):
                 WHERE in.pmid IN pmids
                 RETURN COLLECT(out.pmid) AS expanded;
             '''
+            self.logger.debug(f'Expand in query\n{query}', current=current, task=task)
             with self.neo4jdriver.session() as session:
                 for r in session.run(query):
                     expanded |= set(r['expanded'])
@@ -215,6 +227,7 @@ class PubmedLoader(Loader):
                 WHERE out.pmid IN pmids
                 RETURN COLLECT(in.pmid) AS expanded;
             '''
+            self.logger.debug(f'Expand out query\n{query}', current=current, task=task)
             with self.neo4jdriver.session() as session:
                 for r in session.run(query):
                     expanded |= set(r['expanded'])
@@ -222,5 +235,5 @@ class PubmedLoader(Loader):
         else:
             raise TypeError('ids should be Iterable')
 
-        self.logger.info(f'Found {len(expanded)} papers', current=current, task=task)
+        self.logger.debug(f'Found {len(expanded)} papers', current=current, task=task)
         return expanded

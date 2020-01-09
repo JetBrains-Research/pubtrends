@@ -14,7 +14,8 @@ class Loader:
     def __init__(self, pubtrends_config, connect=True):
         self.pubtrends_config = pubtrends_config
         self.conn = None
-        if connect:
+        if connect and int(pubtrends_config.port) != 0:
+            # TODO[shpynov] Remove this simple check that port is configured after removing postgresql support
             connection_string = f"""
                 dbname={pubtrends_config.dbname} user={pubtrends_config.user} password={pubtrends_config.password} \
                 host={pubtrends_config.host} port={pubtrends_config.port}

@@ -8,7 +8,7 @@ from parameterized import parameterized
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.pm_loader import PubmedLoader
 from models.keypaper.utils import SORT_MOST_RECENT, SORT_MOST_RELEVANT, SORT_MOST_CITED
-from models.test.mock_database_loader import MockDatabaseLoader
+from models.test.pm_test_database_loader import PMTestDatabaseLoader
 from models.test.pm_articles import REQUIRED_ARTICLES, ARTICLES, EXPECTED_PUB_DF, \
     INNER_CITATIONS, CITATIONS, EXPECTED_CIT_DF, EXPECTED_COCIT_DF, EXPECTED_CIT_STATS_DF, \
     EXPANDED_IDS, PART_OF_ARTICLES, EXPECTED_PUB_DF_GIVEN_IDS
@@ -25,10 +25,10 @@ class TestPubmedLoader(unittest.TestCase):
         cls.ids = list(map(lambda article: article.pmid, REQUIRED_ARTICLES))
 
         # Reset and load data to the test database
-        mock_database_loader = MockDatabaseLoader()
-        mock_database_loader.init_pubmed_database()
-        mock_database_loader.insert_pubmed_publications(ARTICLES)
-        mock_database_loader.insert_pubmed_citations(CITATIONS)
+        test_database_loader = PMTestDatabaseLoader()
+        test_database_loader.init_pubmed_database()
+        test_database_loader.insert_pubmed_publications(ARTICLES)
+        test_database_loader.insert_pubmed_citations(CITATIONS)
 
         # Get data via PubmedLoader methods
         cls.pub_df = cls.loader.load_publications(cls.ids)

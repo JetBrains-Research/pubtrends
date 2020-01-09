@@ -20,7 +20,7 @@ class ProgressLogger:
 
     def debug(self, message, current, state='PROGRESS', task=None):
         if message:
-            self.logger.debug(message)
+            self.logger.debug(f'DEBUG {message}')
 
         self.update_state(current, state=state, task=task)
 

@@ -7,7 +7,7 @@ from parameterized import parameterized
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.ss_loader import SemanticScholarLoader
 from models.keypaper.utils import SORT_MOST_RECENT, SORT_MOST_CITED, SORT_MOST_RELEVANT
-from models.test.mock_database_loader import MockDatabaseLoader
+from models.test.ss_test_database_loader import SSTestDatabaseLoader
 from models.test.ss_articles import required_articles, extra_articles, required_citations, cit_stats_df, \
     cit_df, extra_citations, raw_cocitations_df, part_of_articles, expanded_articles
 
@@ -22,10 +22,10 @@ class TestSemanticScholarLoader(unittest.TestCase):
         # Text search is not tested, imitating search results
         cls.ids = list(map(lambda article: article.ssid, required_articles))
 
-        mock_database_loader = MockDatabaseLoader()
-        mock_database_loader.init_semantic_scholar_database()
-        mock_database_loader.insert_semantic_scholar_publications(required_articles + extra_articles)
-        mock_database_loader.insert_semantic_scholar_citations(required_citations + extra_citations)
+        test_database_loader = SSTestDatabaseLoader()
+        test_database_loader.init_semantic_scholar_database()
+        test_database_loader.insert_semantic_scholar_publications(required_articles + extra_articles)
+        test_database_loader.insert_semantic_scholar_citations(required_citations + extra_citations)
 
         # Get data via SemanticScholar methods
         cls.pub_df = cls.loader.load_publications(cls.ids)
