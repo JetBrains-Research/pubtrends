@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 from models.keypaper.utils import SORT_MOST_CITED, SORT_MOST_RECENT, SORT_MOST_RELEVANT
+from models.keypaper.utils import preprocess_search_query
 from models.keypaper.loader import Loader
 
 
@@ -39,7 +40,7 @@ class PubmedLoader(Loader):
             return [r['pmid'] for r in session.run(query)]
 
     def search(self, query, limit=None, sort=None, current=0, task=None):
-        query_str = self.preprocess_search_string(query, self.pubtrends_config.min_search_words)
+        query_str = preprocess_search_query(query, self.pubtrends_config.min_search_words)
 
         if not limit:
             limit_message = ''

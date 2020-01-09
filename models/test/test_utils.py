@@ -4,7 +4,7 @@ import pandas as pd
 from pandas.util.testing import assert_frame_equal
 from parameterized import parameterized
 
-from models.keypaper.utils import tokenize, cut_authors_list, split_df_list, crc32
+from models.keypaper.utils import tokenize, cut_authors_list, split_df_list, crc32, preprocess_search_query
 
 
 class TestUtils(unittest.TestCase):
@@ -55,3 +55,26 @@ class TestUtils(unittest.TestCase):
     ])
     def test_crc32(self, ssid, crc32id, case):
         self.assertEqual(crc32(ssid), crc32id, f"Hashed id is wrong ({case} case)")
+
+    @parameterized.expand([
+        ('FooBar', '"\'FooBar\'"'),
+        ('Foo Bar', '"\'Foo\' AND \'Bar\'"'),
+        ('"Foo Bar"', '\'"Foo Bar"\''),
+        ('Foo-Bar', '"\'Foo-Bar\'"'),
+        ('&^Foo-Bar', '"\'Foo-Bar\'"'),
+    ])
+    def test_preprocess_search_valid_source(self, terms, expected):
+        self.assertEqual(expected, preprocess_search_query(terms, 0))
+
+    def test_preprocess_search_too_many_words(self):
+        self.assertEqual('"\'Foo\'"', preprocess_search_query('Foo', 1))
+        with self.assertRaises(Exception):
+            preprocess_search_query('Foo', 2)
+
+    def test_preprocess_search_illegal_string(self):
+        with self.assertRaises(Exception):
+            preprocess_search_query('"Foo" Bar"', 2)
+        with self.assertRaises(Exception):
+            preprocess_search_query('&&&', 2)
+
+
