@@ -20,5 +20,5 @@ services:
     volumes:
       - ./logs:/logs
   redis:
-    image: redis
+    image: redis:5.0
 
