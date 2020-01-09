@@ -206,11 +206,11 @@ class ParserTest {
         assertEquals(Articles.articles[29456534]?.auxInfo?.authors?.map { it.affiliation },
                 articleMap[29456534]?.auxInfo?.authors?.map { it.affiliation })
     }
-
-    @Test
-    fun testParseAuthorAffiliationsIgnoreEmpty() {
-        assertTrue(Articles.articles[24884411]?.auxInfo?.authors?.first()?.affiliation?.isEmpty()!!)
-    }
+// TODO revert once switching to full Pubmed Neo4j model
+//    @Test
+//    fun testParseAuthorAffiliationsIgnoreEmpty() {
+//        assertTrue(Articles.articles[24884411]?.auxInfo?.authors?.first()?.affiliation?.isEmpty()!!)
+//    }
 
     @Test
     fun testParseAuthorAffiliationsSplitMultiple() {
@@ -218,11 +218,12 @@ class ParserTest {
                 articleMap[27560010]?.auxInfo?.authors?.map { it.affiliation })
     }
 
-    @Test
-    fun testParseAuthorAffiliationsWithInnerXMLTags() {
-        assertEquals(Articles.articles[24884411]?.auxInfo?.authors?.map { it.affiliation },
-                articleMap[24884411]?.auxInfo?.authors?.map { it.affiliation })
-    }
+// TODO revert once switching to full Pubmed Neo4j model
+//    @Test
+//    fun testParseAuthorAffiliationsWithInnerXMLTags() {
+//        assertEquals(Articles.articles[24884411]?.auxInfo?.authors?.map { it.affiliation },
+//                articleMap[24884411]?.auxInfo?.authors?.map { it.affiliation })
+//    }
 
     @Test
     fun testParseJournal() {
