@@ -11,7 +11,7 @@ A tool for analysis of trends & pivotal points in the scientific literature.
 * Docker
 * PostgreSQL 11+ (Optional, can be used in Docker)
 * Neo4j 3.5+ with APOC 3.5.0.4 (Optional, can be used in Docker)
-* Redis (Optional, can be used in Docker)
+* Redis 5.0 (Optional, can be used in Docker)
 
 ## Configuration
 
@@ -156,7 +156,7 @@ Please ensure that you have Database configured, up and running.
 
 1. Start Redis
     ```
-    docker run redis
+    docker run redis:5.0
     ```
 2. Start Celery worker queue
     ```

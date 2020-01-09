@@ -22,9 +22,6 @@ USER root
 RUN apt-get update --fix-missing \
     && apt-get install -y curl bzip2 gnupg2 wget ca-certificates sudo
 
-# Install Redis
-RUN apt-get install --no-install-recommends -y redis-server
-
 # Install neo4j
 RUN wget --quiet --no-check-certificate -O - https://debian.neo4j.org/neotechnology.gpg.key | apt-key add - \
     && echo 'deb http://debian.neo4j.org/repo stable/' > /etc/apt/sources.list.d/neo4j.list \
