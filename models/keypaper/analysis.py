@@ -45,7 +45,7 @@ class KeyPaperAnalyzer:
         # Search articles relevant to the terms
         ids = self.loader.search(query, limit=limit, sort=sort, current=1, task=task)
         if len(ids) == 0:
-            raise RuntimeError(f"Nothing found in DB for search query: {query}")
+            raise RuntimeError(f"Nothing found for search query: {query}")
         # Load data about publications
         pub_df = self.loader.load_publications(ids, current=2, task=task)
         if len(pub_df) == 0:
