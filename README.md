@@ -227,8 +227,9 @@ Please ensure that you have configured and prepared the database(s).
         --volume=$HOME/neo4j/plugins:/plugins \
         neo4j:3.5
     ```
+3. Build ready for deployment package with script `dist.sh`.
 
-3. Build and launch docker-compose config file
+4. Launch pubtrends with docker-compose.
     ```
     # start
     docker-compose up -d --build
