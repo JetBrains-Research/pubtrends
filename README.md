@@ -130,9 +130,9 @@ Launch crawler to download and keep up-to-date Pubmed database:
    Or full archive 
    ```
    cd <PATH_TO_SEMANTIC_SCHOLAR_ARCHIVE>
-   wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/manifest.txt
+   wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2020-01-01/manifest.txt
    cat manifest.txt | grep corpus | while read -r url; do 
-      wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/$url;
+      wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2020-01-01/$url;
       java -cp build/libs/pubtrends-dev.jar org.jetbrains.bio.pubtrends.ss.MainKt --fillDatabase
       rm $(echo $url | sed -E 's#^.*/##g');
    done
