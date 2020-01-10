@@ -38,7 +38,6 @@ data class SemanticScholarArticle(val ssid: String,
                 "title" to title.replace('\n', ' '),
                 "abstract" to abstract?.replace('\n', ' '),
                 "date" to DateTime(year?:1970, 1, 1, 12, 0).toString(),
-                "type" to (if (aux.venue.isNotEmpty()) "Conference" else "Paper"),
                 "aux" to GsonBuilder().create().toJson(aux)
         )
 

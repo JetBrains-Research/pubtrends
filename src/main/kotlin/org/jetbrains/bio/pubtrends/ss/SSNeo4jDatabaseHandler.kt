@@ -96,18 +96,14 @@ ON CREATE SET
     n.title = data.title,
     n.abstract = data.abstract,
     n.date = datetime(data.date),
-    n.type = data.type,
     n.aux = data.aux
 ON MATCH SET 
     n.pmid = data.pmid,
     n.title = data.title,
     n.abstract = data.abstract,
     n.date = datetime(data.date),
-    n.type = data.type,
     n.aux = data.aux
-WITH n, data 
-CALL apoc.create.addLabels(id(n), [data.type]) YIELD node 
-RETURN node;
+RETURN n;
 """.trimIndent(),
                     articleParameters)
 
