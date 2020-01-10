@@ -2,7 +2,7 @@ package org.jetbrains.bio.pubtrends.pm
 
 import org.joda.time.DateTime
 
-object Articles {
+object PubmedArticles {
     val articles = mapOf(
         420880 to PubmedArticle(
             pmid = 420880,

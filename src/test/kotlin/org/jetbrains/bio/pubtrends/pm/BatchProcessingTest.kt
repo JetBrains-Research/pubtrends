@@ -1,5 +1,6 @@
 package org.jetbrains.bio.pubtrends.pm
 
+import org.jetbrains.bio.pubtrends.MockDBHandler
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -25,9 +26,9 @@ class BatchProcessingTest(private val batchSize : Int) {
     }
 
     companion object {
-        private val dbHandler = MockDBHandler(batch = true)
+        private val dbHandler = MockDBHandler<PubmedArticle>(batch = true)
         const val testXMLFileName = "articlesForParserTest.xml"
-        val articlesCount = Articles.articles.size
+        val articlesCount = PubmedArticles.articles.size
 
         @Parameterized.Parameters(name = "batchSize={0}")
         @JvmStatic fun data() = listOf(

@@ -1,6 +1,7 @@
 package org.jetbrains.bio.pubtrends.pm
 
 import org.apache.logging.log4j.LogManager
+import org.jetbrains.bio.pubtrends.AbstractDBHandler
 import org.joda.time.DateTime
 import org.joda.time.IllegalFieldValueException
 import java.io.*
@@ -12,7 +13,7 @@ import javax.xml.stream.XMLStreamException
 
 
 class PubmedXMLParser(
-        private val dbHandler: AbstractDBHandler,
+        private val dbHandler: AbstractDBHandler<PubmedArticle>,
         private val parserLimit: Int,
         private val batchSize: Int = 0
 ) {

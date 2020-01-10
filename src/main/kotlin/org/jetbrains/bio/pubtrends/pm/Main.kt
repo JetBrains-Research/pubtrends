@@ -36,7 +36,7 @@ fun main(args: Array<String>) {
         })
 
         logger.info("Init Neo4j database connection")
-        val dbHandler = Neo4jDatabaseHandler(
+        val dbHandler = PMNeo4jDatabaseHandler(
                 config["neo4jurl"].toString(),
                 config["neo4jport"].toString().toInt(),
                 config["neo4jusername"].toString(),

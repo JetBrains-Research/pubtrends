@@ -1,27 +1,20 @@
 package org.jetbrains.bio.pubtrends.ss
 
+import org.jetbrains.bio.pubtrends.MockDBHandler
 import org.junit.Test
+import java.io.File
 import kotlin.test.assertEquals
 
 class SSParserTest {
-    companion object {
-        private const val testJSONFileName = "articlesSemanticScholar.json.gz"
-        private lateinit var parser: ArchiveParser
+    private val dbHandler = MockDBHandler<SemanticScholarArticle>()
+    private val parsedArticles = dbHandler.articles
 
-        init {
-            this::class.java.classLoader.getResourceAsStream(testJSONFileName).use {
-                val file = createTempFile()
-                file.outputStream().use { out ->
-                    it.copyTo(out)
-                }
-                parser = ArchiveParser(file, 1000, addToDatabase = false, curFile = 1, filesAmount = 1)
-                parser.parse()
-
-            }
-        }
-
-        val parsedArticles = parser.currentArticles
+    init {
+        @Suppress("RECEIVER_NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
+        val file = File(this::class.java.classLoader.getResource("articlesSemanticScholar.json.gz").toURI().path)
+        ArchiveParser(dbHandler, file, 1000).parse()
     }
+
 
     @Test
     fun testParseArticlesCount() {
@@ -134,7 +127,7 @@ class SSParserTest {
 
     @Test
     fun testParseAuthorName() {
-        (0..4).forEach() {
+        (0..4).forEach {
             assertEquals(SemanticScholarArticles.articles[it].aux.authors.map { author -> author.name },
                     parsedArticles[it].aux.authors.map { author -> author.name })
         }
@@ -142,7 +135,7 @@ class SSParserTest {
 
     @Test
     fun testParseJournalName() {
-        (0..4).forEach() {
+        (0..4).forEach {
             assertEquals(SemanticScholarArticles.articles[it].aux.journal.name,
                     parsedArticles[it].aux.journal.name)
         }
@@ -150,7 +143,7 @@ class SSParserTest {
 
     @Test
     fun testParseJournalVolume() {
-        (0..4).forEach() {
+        (0..4).forEach {
             assertEquals(SemanticScholarArticles.articles[it].aux.journal.volume,
                     parsedArticles[it].aux.journal.volume)
         }
@@ -158,7 +151,7 @@ class SSParserTest {
 
     @Test
     fun testParseJournalPages() {
-        (0..4).forEach() {
+        (0..4).forEach {
             assertEquals(SemanticScholarArticles.articles[it].aux.journal.pages,
                     parsedArticles[it].aux.journal.pages)
         }
@@ -166,7 +159,7 @@ class SSParserTest {
 
     @Test
     fun testParseVenue() {
-        (0..4).forEach() {
+        (0..4).forEach {
             assertEquals(SemanticScholarArticles.articles[it].aux.venue,
                     parsedArticles[it].aux.venue)
         }
@@ -174,7 +167,7 @@ class SSParserTest {
 
     @Test
     fun testParseLinks() {
-        (0..4).forEach() {
+        (0..4).forEach {
             assertEquals(SemanticScholarArticles.articles[it].aux.links,
                     parsedArticles[it].aux.links)
         }

@@ -124,29 +124,25 @@ Launch crawler to download and keep up-to-date Pubmed database:
 
 ### Optional: Semantic Scholar
 
-1. Add `<PATH_TO_SEMANTIC_SCHOLAR_ARCHIVE>` to `.pubtrends/config.properties`     
 
-2. Download Sample from [Semantic Scholar](https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/sample-S2-records.gz)
-   Or full archive 
+Download Sample from [Semantic Scholar](https://www.semanticscholar.org/) or full archive. 
    ```
-   cd <PATH_TO_SEMANTIC_SCHOLAR_ARCHIVE>
    wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2020-01-01/manifest.txt
-   cat manifest.txt | grep corpus | while read -r url; do 
-      wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2020-01-01/$url;
-      java -cp build/libs/pubtrends-dev.jar org.jetbrains.bio.pubtrends.ss.MainKt --fillDatabase
-      rm $(echo $url | sed -E 's#^.*/##g');
+   echo "" > complete.txt
+   cat manifest.txt | grep corpus | while read -r file; do 
+      if [[ -z $(grep "$file" complete.txt) ]]; then
+         echo "$file" >> complete.txt
+         wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2020-01-01/$file;
+
+         java -cp build/libs/pubtrends-dev.jar org.jetbrains.bio.pubtrends.ss.MainKt --fillDatabase $(pwd)/$file
+         rm $file;
+      fi;
    done
    ```
 
-3. Build Semantic Scholar Indexes
-    ```
-    java -cp build/libs/pubtrends-dev.jar org.jetbrains.bio.pubtrends.ss.MainKt --createIndex
-    ```
-   
    Command line options supported:
    * `resetDatabase` - clear current contents of the database (useful for development) 
-   * `fillDatabase` - create and fill database with Semantic Scholar data
-   * `createIndex` - create index for already created tables
+   * `fillDatabase` - create and fill database with Semantic Scholar data from file
 
 
 ## Development

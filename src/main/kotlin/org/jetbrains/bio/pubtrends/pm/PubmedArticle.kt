@@ -58,6 +58,7 @@ data class PubmedArticle(
         )
     }
 
+    // pmid:ID(Pubmed-ID)	date:date	title	abstract	type	keywords	mesh	doi	aux
     fun toNeo4j(): Map<String, String> {
         return mapOf(
                 "pmid" to pmid.toString(),

@@ -1,26 +1,32 @@
 package org.jetbrains.bio.pubtrends.ss
 
 import joptsimple.OptionParser
+import joptsimple.ValueConversionException
+import joptsimple.ValueConverter
 import org.apache.logging.log4j.LogManager
 import org.jetbrains.bio.pubtrends.Config
-import org.jetbrains.exposed.exceptions.ExposedSQLException
-import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.StdOutSqlLogger
-import org.jetbrains.exposed.sql.addLogger
-import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.BufferedReader
-import java.io.BufferedWriter
+import java.io.File
 import java.io.FileReader
-import java.io.FileWriter
-import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
-import java.util.stream.Collectors
 import kotlin.system.exitProcess
 
-private val SEMANTIC_SCHOLAR_NAME_REGEX = "s2-corpus-(\\d\\d)\\.gz".toRegex()
+fun exists() = object : ValueConverter<Path> {
+    @Throws(ValueConversionException::class)
+    override fun convert(value: String): Path {
+        val path = Paths.get(value).toAbsolutePath()
+        if (!path.toFile().exists()) {
+            throw ValueConversionException("Path $path does not exists")
+        }
+        return path
+    }
 
-private fun semanticScholarFileToId(name: String): Int = name.removeSurrounding("s2-corpus-", ".gz").toInt()
+    override fun valueType() = Path::class.java
+
+    override fun valuePattern(): String? = null
+}
+
 
 fun main(args: Array<String>) {
     val logger = LogManager.getLogger("Pubtrends")
@@ -28,7 +34,8 @@ fun main(args: Array<String>) {
     with(OptionParser()) {
         accepts("resetDatabase", "Reset Database")
         accepts("fillDatabase", "Create and fill database with articles")
-        accepts("createIndex", "Create Gin Index")
+                .withRequiredArg()
+                .withValuesConvertedBy(exists())
 
         acceptsAll(listOf("h", "?", "help"), "Show help").forHelp()
 
@@ -40,137 +47,34 @@ fun main(args: Array<String>) {
         }
 
         // Load configuration file
-        val (config, configPath, settingsRoot) = Config.load()
+        val (config, configPath, _) = Config.load()
         logger.info("Config\n" + BufferedReader(FileReader(configPath.toFile())).use {
             it.readLines().joinToString("\n")
         })
 
 
-        logger.info("Init database connection")
+        logger.info("Init Neo4j database connection")
+        val dbHandler = SSNeo4jDatabaseHandler(
+                config["neo4jurl"].toString(),
+                config["neo4jport"].toString().toInt(),
+                config["neo4jusername"].toString(),
+                config["neo4jpassword"].toString()
+        )
 
-        val url = config["url"].toString()
-        val port = config["port"].toString().toInt()
-        val database = config["database"].toString()
-        val user = config["username"].toString()
-        val password = config["password"].toString()
-
-        Database.connect(
-                url = "jdbc:postgresql://$url:$port/$database",
-                driver = "org.postgresql.Driver",
-                user = user,
-                password = password)
-
-        if (options.has("resetDatabase")) {
-            logger.info("Resetting database...")
-
-            transaction {
-                addLogger(StdOutSqlLogger)
-
-                SchemaUtils.drop(SSPublications, SSCitations)
-                try {
-                    exec("DROP TYPE Source;")
-                } catch (e: ExposedSQLException) {
-                    logger.info("Type Source doesn't exist, skipping")
-                }
-            }
-        }
-
-        if (options.has("fillDatabase")) {
-            logger.info("Create tables for Semantic Scholar Database")
-            transaction {
-                try {
-                    exec("CREATE TYPE Source AS ENUM ('Nature', 'Arxiv');")
-                } catch (e: ExposedSQLException) {
-                    logger.info("Type Source already exists, skipping")
-                }
+        dbHandler.use {
+            if (options.has("resetDatabase")) {
+                logger.info("Resetting database")
+                dbHandler.resetDatabase()
             }
 
-            transaction {
-                addLogger(StdOutSqlLogger)
-
-                SchemaUtils.create(SSPublications, SSCitations)
-            }
-
-            logger.info("Parse archive to database")
-
-            val ssTSV = settingsRoot.resolve("semantic_scholar_last.tsv")
-            var lastSSId = -1
-            if (Files.exists(ssTSV)) {
-                BufferedReader(FileReader(ssTSV.toFile())).use {
-                    val chunks = it.readLine().split("\t")
-                    when {
-                        chunks.size == 2 && chunks[0] == "lastSSId" -> {
-                            lastSSId = chunks[1].toInt()
-                        }
-                    }
-                }
-            }
-
-            // Replace '~' with '/home/<username>' if path starts with '~'
-            val archivePath = config["ss_archive_folder_path"].toString()
-                .replace("^~".toRegex(), System.getProperty("user.home"))
-            logger.info("Last id: $lastSSId")
-            logger.info("Archive path: $archivePath")
-            val files = Files.list(Paths.get(archivePath))
-                    .map { it.toFile() }
-                    .filter { SEMANTIC_SCHOLAR_NAME_REGEX.matches(it.name) }
-                    .filter { semanticScholarFileToId(it.name) > lastSSId }
-                    .sorted()
-                    .collect(Collectors.toList())
-            logger.info("Files: ${files.joinToString(",") { it.name }}")
-            val filesAmount = files.toList().size
-
-            files.forEachIndexed{index, file ->
-                val id = SEMANTIC_SCHOLAR_NAME_REGEX.matchEntire(file.name)!!.groups[1]!!.value
+            if (options.has("fillDatabase")) {
+                val file = File(options.valueOf("fillDatabase").toString())
                 logger.info("Started parsing articles $file")
-                ArchiveParser(file, config["pm_batch_size"].toString().toInt(), curFile = index + 1, filesAmount = filesAmount).parse()
-                logger.info("Finished parsing articles $file")
-                BufferedWriter(FileWriter(ssTSV.toFile())).use { br ->
-                    br.write("lastSSId\t$id")
-                }
+                // TODO ss_batch_size?
+                ArchiveParser(dbHandler, file, config["pm_batch_size"].toString().toInt()).parse()
+                logger.info("Finished parsing articles")
             }
         }
 
-        if (options.has("createIndex")) {
-            val min = Int.MIN_VALUE
-            val max = Int.MAX_VALUE
-            val batchSize = 1048576
-            val numberOfBatches = (Int.MAX_VALUE.toLong() - Int.MIN_VALUE.toLong()) / batchSize + 1
-            var curBatch = 1
-
-            transaction {
-                addLogger(StdOutSqlLogger)
-
-                try {
-                    exec("alter table sspublications add column if not exists tsv tsvector;")
-                } catch (e: ExposedSQLException) {
-                    logger.error("Database isn't filled, please launch Semantic Scholar Processor with option 'fillDatabase' at first")
-                    exitProcess(1)
-                }
-            }
-
-            var curStart = min.toLong()
-            while (curStart <= max) {
-                val curEnd = minOf(curStart + batchSize, max.toLong())
-                transaction {
-                    exec("""
-                    update sspublications
-                    set tsv = to_tsvector('english', coalesce(title,'') || coalesce(abstract,''))
-                    where crc32id between $curStart and $curEnd;
-                    commit;
-                    """)
-                    logger.info("Added $curBatch/$numberOfBatches batches to tsvector")
-                }
-                curStart += batchSize
-                curBatch++
-            }
-
-            logger.info("Creating gin index...")
-            transaction {
-                addLogger(StdOutSqlLogger)
-                val sqlIndexCreation = "create index if not exists pub_gin_index on sspublications using GIN(tsv);"
-                exec(sqlIndexCreation)
-            }
-        }
     }
 }

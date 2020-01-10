@@ -2,29 +2,23 @@ package org.jetbrains.bio.pubtrends.ss
 
 import com.google.gson.*
 import com.google.gson.reflect.TypeToken
-import org.apache.commons.codec.binary.Hex
 import org.apache.logging.log4j.LogManager
-import org.jetbrains.exposed.sql.batchInsert
-import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.bio.pubtrends.AbstractDBHandler
 import java.io.File
 import java.util.*
-import java.util.zip.CRC32
 import java.util.zip.GZIPInputStream
 
 
 class ArchiveParser(
+        private val dbHandler: AbstractDBHandler<SemanticScholarArticle>,
         private val archiveFileGz: File,
-        private var batchSize: Int,
-        private val addToDatabase: Boolean = true,
-        private val curFile: Int,
-        private val filesAmount: Int
+        private var batchSize: Int
 ) {
-    val currentArticles: MutableList<SemanticScholarArticle> = mutableListOf()
+    private val currentBatch = arrayListOf<SemanticScholarArticle>()
     private var batchIndex = 0
 
     companion object {
         private val logger = LogManager.getLogger(ArchiveParser::class)
-        private val crc32: CRC32 = CRC32()
     }
 
 
@@ -94,59 +88,28 @@ class ArchiveParser(
     }
 
     private fun storeBatch() {
-        addArticles(currentArticles)
-        currentArticles.clear()
+        dbHandler.store(currentBatch)
+        currentBatch.clear()
         batchIndex++
         val progress = 100 * batchIndex.toDouble() / batchSize
-        logger.info("Finished batch $batchIndex adding ($archiveFileGz) ($progress% done of $curFile/$filesAmount file)")
+        logger.info("Finished batch $batchIndex adding ($archiveFileGz) $progress%")
     }
 
     private fun handleEndDocument() {
-        if (currentArticles.isNotEmpty() && addToDatabase) {
+        if (currentBatch.isNotEmpty()) {
             storeBatch()
         }
     }
 
     private fun addArticleToBatch(article: SemanticScholarArticle) {
-        currentArticles.add(article)
+        currentBatch.add(article)
 
-        if (currentArticles.size == batchSize && addToDatabase) {
+        if (currentBatch.size == batchSize) {
             storeBatch()
         }
     }
 
-    private fun addArticles(articles: List<SemanticScholarArticle>) {
-        val citationsList = articles.map { it.citationList.distinct().map { cit -> it.ssid to cit } }.flatten()
-
-        transaction {
-            SSPublications.batchInsert(articles, ignore = true) { article ->
-                this[SSPublications.ssid] = article.ssid
-                this[SSPublications.pmid] = article.pmid
-                this[SSPublications.abstract] = article.abstract
-                this[SSPublications.keywords] = article.keywords
-                this[SSPublications.title] = article.title
-                this[SSPublications.year] = article.year
-                this[SSPublications.doi] = article.doi
-                this[SSPublications.sourceEnum] = article.source
-                this[SSPublications.aux] = article.aux
-                this[SSPublications.crc32id] = crc32id(article.ssid)
-            }
-
-            SSCitations.batchInsert(citationsList, ignore = true) { citation ->
-                this[SSCitations.id_out] = citation.first
-                this[SSCitations.id_in] = citation.second
-                this[SSCitations.crc32id_out] = crc32id(citation.first)
-                this[SSCitations.crc32id_in] = crc32id(citation.second)
-            }
-        }
-    }
-
-    private fun crc32id(ssid: String): Int {
-        crc32.reset()
-        crc32.update(Hex.decodeHex(ssid.toCharArray()))
-        return crc32.value.toInt()
-    }
-
+    // TODO[shpynov] are there other options?
     private fun getSource(journal: Journal, venue: String, pdfUrls: List<String>): PublicationSource? {
         if (venue.equals("arxiv", ignoreCase = true) || pdfUrls.any { it.contains("arxiv.org", ignoreCase = true) }) {
             return PublicationSource.Arxiv
@@ -197,8 +160,7 @@ class ArchiveParser(
         try {
             jsonObject = JsonParser().parse(line).asJsonObject
         } catch (e: JsonSyntaxException) {
-            println(line)
-            logger.info("Parsing current article caused an error (probably something wrong with encoding), skipping article")
+            logger.error("Error parsing line, skipping article\n$line")
         }
 
         return jsonObject
