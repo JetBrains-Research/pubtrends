@@ -1,6 +1,5 @@
 package org.jetbrains.bio.pubtrends.pm
 
-import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import org.joda.time.DateTime
 
@@ -22,6 +21,14 @@ data class ArticleAuxInfo(
     val journal: Journal = Journal(),
     val language: String = ""
 )
+
+enum class PublicationType {
+    ClinicalTrial,
+    Dataset,
+    TechnicalReport,
+    Review,
+    Article
+}
 
 data class PubmedArticle(
     val pmid: Int = 0,
