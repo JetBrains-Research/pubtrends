@@ -31,6 +31,10 @@ Ensure that file contains correct information about the database(s) (url, port, 
     ```
 
 4. Configure Neo4j and install APOC extension.
+    * Prepare folders
+    ```
+    mkdir -p $HOME/neo4j/data $HOME/neo4j/conf $HOME/neo4j/logs $HOME/neo4j/plugins
+    ```
     * Launch Neo4j docker image to create config file.
     ```
     docker run --publish=7474:7474 --publish=7687:7687 \
@@ -44,9 +48,7 @@ Ensure that file contains correct information about the database(s) (url, port, 
    * Place the binary JAR into your `$HOME/neo4j/plugins` folder
    * Add line `dbms.security.procedures.unrestricted=apoc.*` to the end of config file
     `$HOME/neo4j/conf/neo4j.conf` to allow usage of the procedures.
-   
-   Full information including instructions for usage with Docker can be found 
-   [here](https://github.com/neo4j-contrib/neo4j-apoc-procedures/tree/3.5.0.4).  
+   * Open Neo4j web browser to change default password (neo4j) to a strong one.
 
 5. Optional: configure PostgreSQL.
     * Launch PostgreSQL.
