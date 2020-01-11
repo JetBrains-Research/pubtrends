@@ -76,5 +76,3 @@ class TestUtils(unittest.TestCase):
             preprocess_search_query('"Foo" Bar"', 2)
         with self.assertRaises(Exception):
             preprocess_search_query('&&&', 2)
-
-
