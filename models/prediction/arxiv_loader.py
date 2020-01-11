@@ -32,8 +32,8 @@ class ArxivLoader(SemanticScholarLoader):
         self.pub_df['journal'] = self.pub_df['aux'].apply(lambda aux: html.unescape(aux['journal']['name']))
         self.pub_df['title'] = self.pub_df['title'].apply(lambda title: html.unescape(title))
 
-        self.logger.info(f'Found {len(self.pub_df)} publications in the local database', current=current,
-                         task=task)
+        self.progress.info(f'Found {len(self.pub_df)} publications in the local database', current=current,
+                           task=task)
 
         self.ids = self.pub_df['id']
         crc32ids = self.pub_df['crc32id']

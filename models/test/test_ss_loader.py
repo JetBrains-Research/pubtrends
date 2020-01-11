@@ -7,8 +7,8 @@ from parameterized import parameterized
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.ss_loader import SemanticScholarLoader
 from models.keypaper.utils import SORT_MOST_RECENT, SORT_MOST_CITED, SORT_MOST_RELEVANT
-from models.test.ss_test_database_loader import SSTestDatabaseLoader
-from models.test.ss_articles import required_articles, extra_articles, required_citations, cit_stats_df, \
+from models.test.ss_database_supplier import SSTestDatabaseSupplier
+from models.test.ss_database_articles import required_articles, extra_articles, required_citations, cit_stats_df, \
     cit_df, extra_citations, raw_cocitations_df, part_of_articles, expanded_articles
 
 
@@ -17,12 +17,12 @@ class TestSemanticScholarLoader(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.loader.set_logger(logging.getLogger(__name__))
+        cls.loader.set_progress_logger(logging.getLogger(__name__))
 
         # Text search is not tested, imitating search results
         cls.ids = list(map(lambda article: article.ssid, required_articles))
 
-        test_database_loader = SSTestDatabaseLoader()
+        test_database_loader = SSTestDatabaseSupplier()
         test_database_loader.init_semantic_scholar_database()
         test_database_loader.insert_semantic_scholar_publications(required_articles + extra_articles)
         test_database_loader.insert_semantic_scholar_citations(required_citations + extra_citations)

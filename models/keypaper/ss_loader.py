@@ -10,6 +10,7 @@ from models.keypaper.utils import SORT_MOST_CITED, SORT_MOST_RECENT, SORT_MOST_R
 
 
 class SemanticScholarLoader(Loader):
+
     def __init__(self, pubtrends_config):
         super(SemanticScholarLoader, self).__init__(pubtrends_config)
 
@@ -17,8 +18,11 @@ class SemanticScholarLoader(Loader):
     def ids2values(ids):
         return ', '.join([f'({i}, \'{j}\')' for (i, j) in zip(map(crc32, ids), ids)])
 
+    def find(self, key, value, current=0, task=None):
+        raise Exception('Not supported yet')
+
     def search(self, query, limit=None, sort=None, current=0, task=None):
-        self.logger.info(html.escape(f'Searching publications matching <{query}>'), current=current, task=task)
+        self.progress.info(html.escape(f'Searching publications matching <{query}>'), current=current, task=task)
         query_str = '\'' + query + '\''
         if not limit:
             limit_message = ''
@@ -27,8 +31,8 @@ class SemanticScholarLoader(Loader):
             limit_message = f'{limit} '
 
         columns = ['id', 'crc32id', 'pmid']
-        self.logger.info(html.escape(f'Searching {limit_message}{sort.lower()} publications matching <{query}>'),
-                         current=current, task=task)
+        self.progress.info(html.escape(f'Searching {limit_message}{sort.lower()} publications matching <{query}>'),
+                           current=current, task=task)
 
         if sort == SORT_MOST_RELEVANT:
             query = f'''
@@ -71,14 +75,14 @@ class SemanticScholarLoader(Loader):
         # IMPORTANT Remove Pubmed ids from account
         pub_df = pub_df[pd.isnull(pub_df.pmid)]
 
-        self.logger.info(f'Found {len(pub_df)} publications in the local database', current=current,
-                         task=task)
+        self.progress.info(f'Found {len(pub_df)} publications in the local database', current=current,
+                           task=task)
 
         return (list(pub_df['id'].values)), False
 
     def load_publications(self, ids, temp_table_created=False, current=0, task=None):
         if not temp_table_created:
-            self.logger.info('Loading publication data', current=current, task=task)
+            self.progress.info('Loading publication data', current=current, task=task)
             query = f'''
                     DROP TABLE IF EXISTS temp_ssids;
                     WITH vals(crc32id, ssid) AS (VALUES {SemanticScholarLoader.ids2values(ids)})
@@ -90,7 +94,7 @@ class SemanticScholarLoader(Loader):
             with self.conn.cursor() as cursor:
                 cursor.execute(query)
 
-            self.logger.debug('Created table for request with index.', current=current, task=task)
+            self.progress.debug('Created table for request with index.', current=current, task=task)
 
         columns = ['id', 'crc32id', 'title', 'abstract', 'year', 'type', 'aux']
         query = f'''
@@ -109,8 +113,8 @@ class SemanticScholarLoader(Loader):
         return Loader.process_publications_dataframe(pub_df)
 
     def load_citation_stats(self, ids, current=0, task=None):
-        self.logger.info('Loading citations statistics among millions of citations',
-                         current=current, task=task)
+        self.progress.info('Loading citations statistics among millions of citations',
+                           current=current, task=task)
         query = f'''
            SELECT C.id_in AS ssid, P.year, COUNT(1) AS count
                 FROM SSCitations C
@@ -136,14 +140,14 @@ class SemanticScholarLoader(Loader):
         cit_stats_df_from_query['year'] = cit_stats_df_from_query['year'].apply(int)
         cit_stats_df_from_query['count'] = cit_stats_df_from_query['count'].apply(int)
 
-        self.logger.info(f'Found {cit_stats_df_from_query.shape[0]} records of citations by year',
-                         current=current, task=task)
+        self.progress.info(f'Found {cit_stats_df_from_query.shape[0]} records of citations by year',
+                           current=current, task=task)
 
         return cit_stats_df_from_query
 
     def load_citations(self, ids, current=0, task=None):
-        self.logger.info('Loading citations data', current=current, task=task)
-        self.logger.debug('Started loading raw information about citations', current=current, task=task)
+        self.progress.info('Loading citations data', current=current, task=task)
+        self.progress.debug('Started loading raw information about citations', current=current, task=task)
 
         query = f'''SELECT C.id_out, C.id_in
                     FROM SSCitations C
@@ -164,12 +168,12 @@ class SemanticScholarLoader(Loader):
         if np.any(citations.isna()):
             raise ValueError('Citation must have id_out and id_in')
 
-        self.logger.info(f'Found {len(citations)} citations', current=current, task=task)
+        self.progress.info(f'Found {len(citations)} citations', current=current, task=task)
 
         return citations
 
     def load_cocitations(self, ids, current=0, task=None):
-        self.logger.info('Calculating co-citations for selected papers', current=current, task=task)
+        self.progress.info('Calculating co-citations for selected papers', current=current, task=task)
 
         query = f'''
                 with Z as (select id_out, id_in, crc32id_out, crc32id_in
@@ -208,14 +212,14 @@ class SemanticScholarLoader(Loader):
             raise ValueError('NaN values are not allowed in ids of co-citation DataFrame')
         cocit_df['year'] = cocit_df['year'].apply(lambda x: int(x) if x else np.nan)
 
-        self.logger.debug(f'Loaded {lines} lines of citing info', current=current, task=task)
-        self.logger.info(f'Found {len(cocit_df)} co-cited pairs of papers', current=current, task=task)
+        self.progress.debug(f'Loaded {lines} lines of citing info', current=current, task=task)
+        self.progress.info(f'Found {len(cocit_df)} co-cited pairs of papers', current=current, task=task)
 
         return cocit_df
 
     def expand(self, ids, current=0, task=None):
         if isinstance(ids, Iterable):
-            self.logger.info('Expanding current topic', current=current, task=task)
+            self.progress.info('Expanding current topic', current=current, task=task)
             values = SemanticScholarLoader.ids2values(ids)
 
             query = f'''
@@ -253,5 +257,5 @@ class SemanticScholarLoader(Loader):
                 expanded.add(citing)
                 expanded |= set(cited)
 
-        self.logger.info(f'Found {len(expanded)} papers', current=current, task=task)
+        self.progress.info(f'Found {len(expanded)} papers', current=current, task=task)
         return expanded

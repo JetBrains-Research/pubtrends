@@ -4,8 +4,8 @@ import networkx as nx
 
 from models.keypaper.analysis import KeyPaperAnalyzer
 from models.keypaper.config import PubtrendsConfig
-from models.test.mock_loader import MockLoader
-from models.test.ss_articles import expected_graph, cocitations_df, expected_cocit_and_cit_graph
+from models.test.mock_loaders import MockLoader
+from models.test.ss_database_articles import expected_graph, cocitations_df, expected_cocit_and_cit_graph
 
 
 class TestBuildGraph(unittest.TestCase):

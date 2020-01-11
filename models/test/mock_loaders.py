@@ -43,6 +43,12 @@ class MockLoader(Loader):
         config = PubtrendsConfig(test=True)
         super(MockLoader, self).__init__(config, connect=False)
 
+    def find(self, key, value, current=0, task=None):
+        raise Exception('Not implemented')
+
+    def expand(self, ids, current=0, task=None):
+        raise Exception('Not implemented')
+
     def search(self, terms, limit=None, sort=None, current=None, task=None):
         return [1, 2, 3, 4, 5], True
 
@@ -64,6 +70,12 @@ class MockLoaderSingle(Loader):
     def __init__(self):
         config = PubtrendsConfig(test=True)
         super(MockLoaderSingle, self).__init__(config, connect=False)
+
+    def find(self, key, value, current=0, task=None):
+        raise Exception('Not implemented')
+
+    def expand(self, ids, current=0, task=None):
+        raise Exception('Not implemented')
 
     def search(self, terms, limit=None, sort=None, current=None, task=None):
         return [1, 2], True
@@ -91,3 +103,21 @@ class MockLoaderEmpty(Loader):
 
     def search(self, terms, limit=None, sort=None, current=None, task=None):
         return [], True
+
+    def find(self, key, value, current=0, task=None):
+        raise Exception('Not implemented')
+
+    def load_publications(self, ids, current=0, task=None):
+        raise Exception('Not implemented')
+
+    def load_citation_stats(self, ids, current=0, task=None):
+        raise Exception('Not implemented')
+
+    def load_citations(self, ids, current=0, task=None):
+        raise Exception('Not implemented')
+
+    def load_cocitations(self, ids, current=0, task=None):
+        raise Exception('Not implemented')
+
+    def expand(self, ids, current=0, task=None):
+        raise Exception('Not implemented')

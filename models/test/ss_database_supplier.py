@@ -1,16 +1,12 @@
-import csv
-import tempfile
-import re
-
 from models.keypaper.config import PubtrendsConfig
-from models.keypaper.loader import Loader
+from models.keypaper.connector import Connector
 
 
-class SSTestDatabaseLoader(Loader):
+class SSTestDatabaseSupplier(Connector):
 
     def __init__(self):
         config = PubtrendsConfig(test=True)
-        super(SSTestDatabaseLoader, self).__init__(config)
+        super(SSTestDatabaseSupplier, self).__init__(config)
         self.project_dir = __file__.replace('/models/test/ss_test_database_loader.py', '')
 
     def init_semantic_scholar_database(self):

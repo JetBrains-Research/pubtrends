@@ -23,7 +23,7 @@ class KeyPaperAnalyzer:
                                      (KeyPaperAnalyzer.EXPERIMENTAL_STEPS if self.experimental else 0))
 
         self.loader = loader
-        loader.set_logger(self.logger)
+        loader.set_progress_logger(self.logger)
 
         # Determine source to provide correct URLs to articles
         if isinstance(self.loader, PubmedLoader):

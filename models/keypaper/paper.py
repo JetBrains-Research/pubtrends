@@ -1,6 +1,5 @@
 import numpy as np
 from bokeh.embed import components
-from nltk.tokenize import word_tokenize
 
 from models.keypaper.analysis import KeyPaperAnalyzer
 from models.keypaper.config import PubtrendsConfig

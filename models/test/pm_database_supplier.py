@@ -1,17 +1,17 @@
 import csv
-import tempfile
 import re
+import tempfile
 
 from models.keypaper.config import PubtrendsConfig
-from models.keypaper.loader import Loader
+from models.keypaper.connector import Connector
 
 
-class PMTestDatabaseLoader(Loader):
+class PMTestDatabaseSupplier(Connector):
 
     def __init__(self):
         config = PubtrendsConfig(test=True)
-        super(PMTestDatabaseLoader, self).__init__(config)
-        self.project_dir = __file__.replace('/models/test/pm_test_database_loader.py', '')
+        super(PMTestDatabaseSupplier, self).__init__(config)
+        self.project_dir = __file__.replace('/models/test/pm_database_supplier.py', '')
 
     def init_pubmed_database(self):
         with self.neo4jdriver.session() as session:

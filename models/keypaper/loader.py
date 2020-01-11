@@ -1,46 +1,78 @@
 import html
 import json
-import re
+from abc import abstractmethod, ABCMeta
 
 import numpy as np
-import psycopg2 as pg_driver
 
-from neo4j import GraphDatabase
+from models.keypaper.connector import Connector
 from models.keypaper.utils import extract_authors
 
 
-class Loader:
+class Loader(Connector, metaclass=ABCMeta):
 
     def __init__(self, pubtrends_config, connect=True):
+        super(Loader, self).__init__(pubtrends_config, connect)
         self.pubtrends_config = pubtrends_config
-        self.conn = None
-        if connect and int(pubtrends_config.port) != 0:
-            # TODO[shpynov] Remove this simple check that port is configured after removing postgresql support
-            connection_string = f"""
-                dbname={pubtrends_config.dbname} user={pubtrends_config.user} password={pubtrends_config.password} \
-                host={pubtrends_config.host} port={pubtrends_config.port}
-            """.strip()
-            self.conn = pg_driver.connect(connection_string)
-
-        self.neo4jdriver = None
-        if connect:
-            self.neo4jdriver = GraphDatabase.driver(f'bolt://{pubtrends_config.neo4jurl}',
-                                                    auth=(pubtrends_config.neo4juser, pubtrends_config.neo4jpassword))
-
-        self.logger = None
-
         self.max_number_of_articles = pubtrends_config.max_number_of_articles
         self.max_number_of_citations = pubtrends_config.max_number_of_citations
         self.max_number_of_cocitations = pubtrends_config.max_number_of_cocitations
+        self.progress = None
 
-    def close_connection(self):
-        if self.conn:
-            self.conn.close()
-        if self.neo4jdriver:
-            self.neo4jdriver.close()
+    def set_progress_logger(self, pl):
+        self.progress = pl
 
-    def set_logger(self, logger):
-        self.logger = logger
+    @abstractmethod
+    def find(self, key, value, current=0, task=None):
+        """
+        Searches single or multiple paper(s) for give search key, value.
+        :return: list of ids, i.e. list[String].
+        """
+        pass
+
+    @abstractmethod
+    def search(self, query, limit=None, sort=None, current=0, task=None):
+        """
+        Searches publications by given query.
+        :return: list of ids, i.e. list[String].
+        """
+        pass
+
+    @abstractmethod
+    def load_publications(self, ids, current=0, task=None):
+        """
+        Loads publications for given ids.
+        :return: dataframe[id, title, abstract, year, type, aux]
+        """
+
+    @abstractmethod
+    def load_citation_stats(self, ids, current=0, task=None):
+        """
+        Loads all the citations stats for each of given ids.
+        :return: dataframe[id, year, count]
+        """
+        pass
+
+    @abstractmethod
+    def load_citations(self, ids, current=0, task=None):
+        """
+        Loading INNER citations graph, where all the nodes are inside query of interest.
+        :return: dataframe[id_out, id_in]
+        """
+        pass
+
+    @abstractmethod
+    def load_cocitations(self, ids, current=0, task=None):
+        """
+        Loading co-citations graph.
+        :return: dataframe[citing, cited_1, cited_2, year]
+        """
+
+    @abstractmethod
+    def expand(self, ids, current=0, task=None):
+        """
+        Expands list of ids doing one or two steps of breadth first search along citations graph.
+        :return: list of ids, i.e. list[String].
+        """
 
     @staticmethod
     def process_publications_dataframe(publications_df):

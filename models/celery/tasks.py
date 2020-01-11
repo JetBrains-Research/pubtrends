@@ -55,7 +55,7 @@ def analyze_id_list(source, id_list, zoom, query):
 @celery.task(name='find_paper_async')
 def find_paper_async(source, key, value):
     loader = get_loader(source, PUBTRENDS_CONFIG)
-    loader.set_logger(ProgressLogger(total=1))
+    loader.set_progress_logger(ProgressLogger(total=1))
     try:
         return loader.find(key, value)
     finally:
