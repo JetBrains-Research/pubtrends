@@ -401,27 +401,22 @@ class PubmedXMLParser(
                         }
 
                         abstractText = abstractText.trim()
-                        articleList.add(
-                                PubmedArticle(
-                                        pmid = pmid,
-                                        date = date,
-                                        title = title,
-                                        abstractText = abstractText,
-                                        keywordList = keywordList.toList(),
-                                        citationList = citationList.toList(),
-                                        meshHeadingList = meshHeadingList.toList(),
-                                        type = type,
-                                        doi = doi,
-                                        auxInfo = ArticleAuxInfo(
-                                                authors.toList(), databanks.toList(), Journal(journalName), language
-                                        )
+                        val pubmedArticle = PubmedArticle(
+                                pmid = pmid,
+                                date = date,
+                                title = title,
+                                abstractText = abstractText,
+                                keywordList = keywordList.toList(),
+                                citationList = citationList.toList(),
+                                meshHeadingList = meshHeadingList.toList(),
+                                type = type,
+                                doi = doi,
+                                auxInfo = ArticleAuxInfo(
+                                        authors.toList(), databanks.toList(), Journal(journalName), language
                                 )
                         )
-
-                        logger.debug("Found new article")
-                        articleList.last().description().forEach {
-                            logger.debug("${it.key}: ${it.value}")
-                        }
+                        logger.debug("Found new article: $pubmedArticle")
+                        articleList.add(pubmedArticle)
                     }
 
                     // Add author to the list of authors

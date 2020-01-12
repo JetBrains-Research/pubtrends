@@ -1,5 +1,6 @@
 package org.jetbrains.bio.pubtrends.pm
 
+import com.google.gson.GsonBuilder
 import org.jetbrains.bio.pubtrends.AbstractDBHandler
 import org.neo4j.driver.v1.AuthTokens
 import org.neo4j.driver.v1.GraphDatabase
@@ -81,7 +82,16 @@ CALL db.index.fulltext.createNodeIndex("${"pmTitlesAndAbstracts"}", ["PMPublicat
 
     override fun store(articles: List<PubmedArticle>) {
         // Prepare queries parameters
-        val articleParameters = mapOf("articles" to articles.map { it.toNeo4j() })
+        val articleParameters = mapOf("articles" to articles.map {
+            mapOf(
+                    "pmid" to it.pmid.toString(),
+                    "title" to it.title.replace('\n', ' '),
+                    "abstract" to it.abstractText.replace('\n', ' '),
+                    "date" to (it.date?.toString() ?: ""),
+                    "type" to it.type.name,
+                    "aux" to GsonBuilder().create().toJson(it.auxInfo)
+            )
+        })
         val citationParameters = mapOf("citations" to articles.flatMap {
             it.citationList.toSet().map {
                 cit -> mapOf("pmid_out" to it.pmid, "pmid_in" to cit) }

@@ -40,33 +40,4 @@ data class PubmedArticle(
     val meshHeadingList: List<String> = listOf(),
     val type: PublicationType = PublicationType.Article,
     val doi: String = "",
-    val auxInfo: ArticleAuxInfo = ArticleAuxInfo()
-) {
-
-    fun description(): Map<String, String> {
-        return mapOf(
-            "PMID" to pmid.toString(),
-            "Year" to (date?.toString() ?: "undefined"),
-            "Title" to title,
-            "Type" to type.name,
-            "Abstract Text" to abstractText,
-            "DOI" to doi,
-            "Keywords" to keywordList.joinToString(separator = ",", prefix = "\"", postfix = "\""),
-            "MesH" to meshHeadingList.joinToString(separator = ",", prefix = "\"", postfix = "\""),
-            "Citations" to citationList.joinToString(separator = ",", prefix = "\"", postfix = "\""),
-            "Other information" to auxInfo.toString()
-        )
-    }
-
-    // pmid:ID(Pubmed-ID)	date:date	title	abstract	type	keywords	mesh	doi	aux
-    fun toNeo4j(): Map<String, String> {
-        return mapOf(
-                "pmid" to pmid.toString(),
-                "title" to title.replace('\n', ' '),
-                "abstract" to abstractText.replace('\n', ' '),
-                "date" to (date?.toString() ?: ""),
-                "type" to type.name,
-                "aux" to GsonBuilder().create().toJson(auxInfo)
-        )
-    }
-}
+    val auxInfo: ArticleAuxInfo = ArticleAuxInfo())
