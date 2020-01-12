@@ -1,7 +1,9 @@
 package org.jetbrains.bio.pubtrends.pm
 
+import org.apache.logging.log4j.LogManager
 import org.neo4j.driver.v1.AuthTokens
 import org.neo4j.driver.v1.GraphDatabase
+import org.neo4j.driver.v1.exceptions.ServiceUnavailableException
 import java.io.Closeable
 
 open class Neo4jDatabaseHandler(
@@ -13,8 +15,8 @@ open class Neo4jDatabaseHandler(
 ) : AbstractDBHandler, Closeable {
 
     companion object {
-//        val TRANSACTION_CONFIG = TransactionConfig.builder().withTimeout(Duration.ofSeconds(300)).build()!!
-//        val RESET_TRANSACTION_CONFIG = TransactionConfig.builder().withTimeout(Duration.ofMinutes(300)).build()!!
+        private val logger = LogManager.getLogger(Neo4jDatabaseHandler::class)
+
         const val PUBLICATION_LABEL = "Publication"
         const val AUTHOR_LABEL = "Author"
         const val AFFILIATION_LABEL = "Affiliation"
@@ -26,20 +28,46 @@ open class Neo4jDatabaseHandler(
         const val AUTHORED_LABEL = "AUTHORED"
         const val PUBLISHED_LABEL = "PUBLISHED_IN"
 
+        const val FULLTEXT_INDEX_NAME = "pmTitlesAndAbstracts"
         const val DELETE_BATCH_SIZE = 10000
 
         // Limit length in order to prevent issues with index construction
         const val MAX_AFFILIATION_LENGTH = 256
+
+        const val PRIMARY_KEY_INDEXES_COUNT = 5
     }
 
     // Driver objects should be created with application-wide lifetime
     private val driver = GraphDatabase.driver("bolt://$url:$port", AuthTokens.basic(user, password))
 
+    // Reset flag
+    var resetSucceeded = false
+
     init {
-        if (resetDatabase) {
-            reset()
+        try {
+            if (resetDatabase) {
+                reset()
+            }
+
+            val existingIndexes = driver.session().use { session ->
+                session.run("CALL db.indexes() YIELD indexName").list().map {
+                    it["indexName"].asString()
+                }
+            }
+
+            val primaryKeyIndexesCount = existingIndexes.filter { it != FULLTEXT_INDEX_NAME }.count()
+            if (primaryKeyIndexesCount < PRIMARY_KEY_INDEXES_COUNT) {
+                initIndexes()
+            }
+
+            val fulltextIndexExists = existingIndexes.any { it == FULLTEXT_INDEX_NAME }
+            if (!fulltextIndexExists) {
+                initFulltextIndex()
+            }
+        } catch (e: ServiceUnavailableException) {
+            logger.error("Failed to initialize neo4j database")
+            throw PubmedCrawlerException(e)
         }
-        initIndexes()
     }
 
     /**
@@ -47,18 +75,36 @@ open class Neo4jDatabaseHandler(
      */
     internal fun reset() {
         driver.session().use {
+            // Drop all indexes
+            it.run("CALL apoc.schema.assert({}, {}, true);")
+
+            // Wipe database - might cause OOM on neo4j side during large wipes
             it.run("CALL apoc.periodic.iterate(\"MATCH (n) RETURN n\", " +
                     "\"DETACH DELETE n\", {batchSize: $DELETE_BATCH_SIZE});")
+            resetSucceeded = true
         }
     }
 
+    /**
+     * Create indexes for primary keys.
+     */
     private fun initIndexes() {
         driver.session().use {
             it.run("CREATE INDEX ON :$PUBLICATION_LABEL(pmid);")
             it.run("CREATE INDEX ON :$JOURNAL_LABEL(name);")
             it.run("CREATE INDEX ON :$AUTHOR_LABEL(name);")
             it.run("CREATE INDEX ON :$AFFILIATION_LABEL(name);")
-            it.run("CREATE INDEX ON :$DATABANK_LABEL(name, accessionNumber)")
+            it.run("CREATE INDEX ON :$DATABANK_LABEL(name, accessionNumber);")
+        }
+    }
+
+    /**
+     * Create index for fulltext search.
+     */
+    private fun initFulltextIndex() {
+        driver.session().use {
+            it.run("CALL db.index.fulltext.createNodeIndex(\"$FULLTEXT_INDEX_NAME\"," +
+                    "[\"$PUBLICATION_LABEL\"], [\"title\", \"abstract\", \"mesh\"]);")
         }
     }
 
@@ -66,7 +112,7 @@ open class Neo4jDatabaseHandler(
         // Extract relationships
         val articleCitations = articles.map { it.citationList.toSet().map { cit -> it.pmid to cit } }.flatten()
         val articleAuthors = articles.map { it.auxInfo.authors.map { author -> author.name to it.pmid } }.flatten()
-        val articleDatabanks = articles.map { it.auxInfo.databanks.map { db -> it.pmid to db }}.flatten()
+        val articleDatabanks = articles.map { it.auxInfo.databanks.map { db -> it.pmid to db } }.flatten()
         val articleJournal = articles.associate { Pair(it.pmid, it.auxInfo.journal.name) }
         val authorAffiliations = articles.map { it.auxInfo.authors }.flatten().toSet().map {
             it.affiliation.map { aff -> it.name to aff.take(MAX_AFFILIATION_LENGTH) }

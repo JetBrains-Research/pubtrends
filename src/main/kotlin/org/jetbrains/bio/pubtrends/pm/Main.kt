@@ -36,7 +36,7 @@ fun main(args: Array<String>) {
 
         logger.info("Crawling...")
 
-        val resetDatabase = options.has("resetDatabase")
+        var resetDatabase = options.has("resetDatabase")
         if (resetDatabase) {
             logger.warn("RESETTING DATABASE")
         }
@@ -55,6 +55,10 @@ fun main(args: Array<String>) {
                         config["neo4jpassword"].toString(),
                         resetDatabase
                 )
+                // Avoid resetting database during further retries
+                if (dbHandler.resetSucceeded) {
+                    resetDatabase = false
+                }
 
                 dbHandler.use {
                     logger.info("Init Pubmed processor")
