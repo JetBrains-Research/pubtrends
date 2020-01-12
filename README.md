@@ -131,11 +131,10 @@ Download Sample from [Semantic Scholar](https://www.semanticscholar.org/) or ful
    echo "" > complete.txt
    cat manifest.txt | grep corpus | while read -r file; do 
       if [[ -z $(grep "$file" complete.txt) ]]; then
-         echo "$file" >> complete.txt
          wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2020-01-01/$file;
-
          java -cp build/libs/pubtrends-dev.jar org.jetbrains.bio.pubtrends.ss.MainKt --fillDatabase $(pwd)/$file
          rm $file;
+         echo "$file" >> complete.txt
       fi;
    done
    ```
