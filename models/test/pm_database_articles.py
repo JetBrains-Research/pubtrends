@@ -62,11 +62,11 @@ class PubmedArticle:
         return ', '.join(self.to_list())
 
     def to_list(self):
-        return [str(self.pmid), self.title, json.dumps(self.aux.to_dict()), self.abstract if self.abstract else '',
+        return [self.pmid, self.title, json.dumps(self.aux.to_dict()), self.abstract if self.abstract else '',
                 str(self.date), self.type, self.authors(), self.journal()]
 
     def to_list_year(self):
-        return [str(self.pmid), self.title, json.dumps(self.aux.to_dict()), self.abstract if self.abstract else '',
+        return [self.pmid, self.title, json.dumps(self.aux.to_dict()), self.abstract if self.abstract else '',
                 int(self.date.year), self.type, self.authors(), self.journal()]
 
 

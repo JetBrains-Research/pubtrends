@@ -40,7 +40,7 @@ class PMTestDatabaseSupplier(Connector):
                 WITH line, CASE WHEN line[4] = '' THEN NULL
                 ELSE datetime({{year: parts[0], month: parts[1], day: parts[2]}})
                 END AS date_or_null
-                CREATE (:PMPublication {{ pmid: line[0], title: line[1], aux: line[2], abstract: line[3],
+                CREATE (:PMPublication {{ pmid: toInteger(line[0]), title: line[1], aux: line[2], abstract: line[3],
                     date: date_or_null,
                     type: line[5],
                     authors: line[6], journal: line[7] }})
@@ -67,7 +67,7 @@ class PMTestDatabaseSupplier(Connector):
             query = f'''
                 LOAD CSV FROM "file://{re.sub(self.project_dir, '', file.name)}" AS line
                 MATCH (out:PMPublication),(in:PMPublication)
-                WHERE out.pmid = line[0] AND in.pmid = line[1]
+                WHERE out.pmid = toInteger(line[0]) AND in.pmid = toInteger(line[1])
                 CREATE (out)-[r:PMReferenced]->(in)
                 '''
             with self.neo4jdriver.session() as session:

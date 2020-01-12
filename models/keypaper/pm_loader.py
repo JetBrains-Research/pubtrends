@@ -37,7 +37,7 @@ class PubmedLoader(Loader):
         self.progress.debug(f'Find query\n{query}', current=current, task=task)
 
         with self.neo4jdriver.session() as session:
-            return [r['pmid'] for r in session.run(query)]
+            return [str(r['pmid']) for r in session.run(query)]
 
     def search(self, query, limit=None, sort=None, current=0, task=None):
         query_str = preprocess_search_query(query, self.pubtrends_config.min_search_words)
@@ -81,8 +81,7 @@ class PubmedLoader(Loader):
         self.progress.debug(f'Search query\n{query}', current=current, task=task)
 
         with self.neo4jdriver.session() as session:
-            # Duplicate rows may occur if crawler was stopped while parsing
-            ids = list(set([r['pmid'] for r in session.run(query)]))
+            ids = [str(r['pmid']) for r in session.run(query)]
 
         self.progress.info(f'Found {len(ids)} publications in the local database', current=current,
                            task=task)
@@ -93,7 +92,7 @@ class PubmedLoader(Loader):
 
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
-            WITH [{','.join([f"'{id}'" for id in ids])}] AS pmids
+            WITH [{','.join([str(id) for id in ids])}] AS pmids
             MATCH (p:PMPublication)
             WHERE p.pmid IN pmids
             RETURN p.pmid as id, p.title as title, p.abstract as abstract,
@@ -120,7 +119,7 @@ class PubmedLoader(Loader):
 
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
-            WITH [{','.join([f"'{id}'" for id in ids])}] AS pmids
+            WITH [{','.join([str(id) for id in ids])}] AS pmids
             MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
             WHERE in.pmid IN pmids
             RETURN in.pmid AS id, out.date.year AS year, COUNT(*) AS count;
@@ -128,22 +127,22 @@ class PubmedLoader(Loader):
         self.progress.debug(f'Load citations statistics query\n{query}', current=current, task=task)
 
         with self.neo4jdriver.session() as session:
-            cit_stats_df_from_query = pd.DataFrame(session.run(query).data())
-            if len(cit_stats_df_from_query) == 0:
+            cit_stats_df = pd.DataFrame(session.run(query).data())
+            if len(cit_stats_df) == 0:
                 logging.warn(f'Failed to load citations statistics.')
 
         self.progress.debug('Done loading citation stats', current=current, task=task)
 
-        if np.any(cit_stats_df_from_query.isna()):
+        if np.any(cit_stats_df.isna()):
             raise ValueError('NaN values are not allowed in citation stats DataFrame')
+        cit_stats_df['id'] = cit_stats_df['id'].apply(str)
+        cit_stats_df['year'] = cit_stats_df['year'].apply(int)
+        cit_stats_df['count'] = cit_stats_df['count'].apply(int)
 
-        cit_stats_df_from_query['year'] = cit_stats_df_from_query['year'].apply(int)
-        cit_stats_df_from_query['count'] = cit_stats_df_from_query['count'].apply(int)
-
-        self.progress.info(f'Found {cit_stats_df_from_query.shape[0]} records of citations by year',
+        self.progress.info(f'Found {cit_stats_df.shape[0]} records of citations by year',
                            current=current, task=task)
 
-        return cit_stats_df_from_query
+        return cit_stats_df
 
     def load_citations(self, ids, current=0, task=None):
         """ Loading INNER citations graph, where all the nodes are inside query of interest """
@@ -151,7 +150,7 @@ class PubmedLoader(Loader):
 
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
-            WITH [{','.join([f"'{id}'" for id in ids])}] AS pmids
+            WITH [{','.join([str(id) for id in ids])}] AS pmids
             MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
             WHERE in.pmid IN pmids AND out.pmid IN pmids
             RETURN out.pmid AS id_out, in.pmid AS id_in
@@ -169,6 +168,8 @@ class PubmedLoader(Loader):
 
         self.progress.info(f'Found {len(cit_df)} citations', current=current, task=task)
 
+        cit_df['id_out'] = cit_df['id_out'].apply(str)
+        cit_df['id_in'] = cit_df['id_in'].apply(str)
         return cit_df
 
     def load_cocitations(self, ids, current=0, task=None):
@@ -177,7 +178,7 @@ class PubmedLoader(Loader):
         # Use unfolding to pairs on the client side instead of DataBase
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
-            WITH [{','.join([f"'{id}'" for id in ids])}] AS pmids
+            WITH [{','.join([str(id) for id in ids])}] AS pmids
             MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
             WHERE in.pmid IN pmids
             RETURN out.pmid AS citing, COLLECT(in.pmid) AS cited, out.date.year AS year;
@@ -194,10 +195,14 @@ class PubmedLoader(Loader):
                     for j in range(i + 1, len(cited)):
                         cocit_data.append((citing, cited[i], cited[j], year))
 
-        cocit_df = pd.DataFrame(cocit_data, columns=['citing', 'cited_1', 'cited_2', 'year'], dtype=object)
+        cocit_df = pd.DataFrame(cocit_data, columns=['citing', 'cited_1', 'cited_2', 'year'])
 
         if np.any(cocit_df[['citing', 'cited_1', 'cited_2']].isna()):
             raise ValueError('NaN values are not allowed in co-citation DataFrame')
+
+        cocit_df['citing'] = cocit_df['citing'].apply(str)
+        cocit_df['cited_1'] = cocit_df['cited_1'].apply(str)
+        cocit_df['cited_2'] = cocit_df['cited_2'].apply(str)
         cocit_df['year'] = cocit_df['year'].apply(lambda x: int(x) if x else np.nan)
 
         self.progress.debug(f'Loaded {lines} lines of citing info', current=current, task=task)
@@ -212,7 +217,7 @@ class PubmedLoader(Loader):
 
             # TODO[shpynov] transferring huge list of ids can be a problem
             query = f'''
-                WITH [{','.join([f"'{id}'" for id in ids])}] AS pmids
+                WITH [{','.join(ids)}] AS pmids
                 MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
                 WHERE in.pmid IN pmids
                 RETURN COLLECT(out.pmid) AS expanded;
@@ -220,10 +225,10 @@ class PubmedLoader(Loader):
             self.progress.debug(f'Expand in query\n{query}', current=current, task=task)
             with self.neo4jdriver.session() as session:
                 for r in session.run(query):
-                    expanded |= set(r['expanded'])
+                    expanded |= set([str(i) for i in r['expanded']])
 
             query = f'''
-                WITH [{','.join([f"'{id}'" for id in ids])}] AS pmids
+                WITH [{','.join(ids)}] AS pmids
                 MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
                 WHERE out.pmid IN pmids
                 RETURN COLLECT(in.pmid) AS expanded;
@@ -231,7 +236,7 @@ class PubmedLoader(Loader):
             self.progress.debug(f'Expand out query\n{query}', current=current, task=task)
             with self.neo4jdriver.session() as session:
                 for r in session.run(query):
-                    expanded |= set(r['expanded'])
+                    expanded |= set([str(i) for i in r['expanded']])
 
         else:
             raise TypeError('ids should be Iterable')

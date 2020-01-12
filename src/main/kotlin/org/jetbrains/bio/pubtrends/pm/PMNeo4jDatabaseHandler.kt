@@ -84,15 +84,13 @@ CALL db.index.fulltext.createNodeIndex("${"pmTitlesAndAbstracts"}", ["PMPublicat
         val articleParameters = mapOf("articles" to articles.map { it.toNeo4j() })
         val citationParameters = mapOf("citations" to articles.flatMap {
             it.citationList.toSet().map {
-                cit -> mapOf("pmid_out" to it.pmid.toString(), "pmid_in" to cit.toString()) }
-                // NOTE: use toString on indexes here to preserve compatibility between PM and SS
+                cit -> mapOf("pmid_out" to it.pmid, "pmid_in" to cit) }
         })
 
         driver.session().use {
-            // NOTE: don't use toInteger(pmid) for indexes here to preserve compatibility between PM and SS
             it.run("""
 UNWIND {articles} AS data 
-MERGE (n:PMPublication { pmid: data.pmid }) 
+MERGE (n:PMPublication { pmid: toInteger(data.pmid) }) 
 ON CREATE SET 
     n.title = data.title,
     n.abstract = data.abstract,
@@ -112,11 +110,10 @@ RETURN node;
                     articleParameters)
 
             // Add citation relationships AND create new Publication nodes with pmid only if missing
-            // NOTE: don't use toInteger(pmid) for indexes here to preserve compatibility between PM and SS
             it.run("""
 UNWIND {citations} AS cit 
-MATCH (n_out:PMPublication { pmid: cit.pmid_out })
-MERGE (n_in:PMPublication { pmid: cit.pmid_in })
+MATCH (n_out:PMPublication { pmid: toInteger(cit.pmid_out) })
+MERGE (n_in:PMPublication { pmid: toInteger(cit.pmid_in) })
 MERGE (n_out)-[:PMReferenced]->(n_in);
 """.trimIndent(),
                     citationParameters)
@@ -133,7 +130,7 @@ MERGE (n_out)-[:PMReferenced]->(n_in);
         val deleteParameters = mapOf("pmids" to ids)
         driver.session().use {
             it.run("UNWIND {pmids} AS pmid\n" +
-                    "MATCH (n:PMPublication {pmid: pmid})\n" +
+                    "MATCH (n:PMPublication {pmid: toInteger(pmid)})\n" +
                     "DETACH DELETE n;", deleteParameters)
         }
     }

@@ -25,7 +25,7 @@ class Loader(Connector, metaclass=ABCMeta):
     def find(self, key, value, current=0, task=None):
         """
         Searches single or multiple paper(s) for give search key, value.
-        :return: list of ids, i.e. list[String].
+        :return: list of ids, i.e. list(String).
         """
         pass
 
@@ -33,7 +33,7 @@ class Loader(Connector, metaclass=ABCMeta):
     def search(self, query, limit=None, sort=None, current=0, task=None):
         """
         Searches publications by given query.
-        :return: list of ids, i.e. list[String].
+        :return: list of ids, i.e. list(String).
         """
         pass
 
@@ -41,14 +41,14 @@ class Loader(Connector, metaclass=ABCMeta):
     def load_publications(self, ids, current=0, task=None):
         """
         Loads publications for given ids.
-        :return: dataframe[id, title, abstract, year, type, aux]
+        :return: dataframe[id(String), title, abstract, year, type, aux]
         """
 
     @abstractmethod
     def load_citation_stats(self, ids, current=0, task=None):
         """
         Loads all the citations stats for each of given ids.
-        :return: dataframe[id, year, count]
+        :return: dataframe[id(String), year, count]
         """
         pass
 
@@ -56,7 +56,7 @@ class Loader(Connector, metaclass=ABCMeta):
     def load_citations(self, ids, current=0, task=None):
         """
         Loading INNER citations graph, where all the nodes are inside query of interest.
-        :return: dataframe[id_out, id_in]
+        :return: dataframe[id_out(String), id_in(String)]
         """
         pass
 
@@ -64,31 +64,33 @@ class Loader(Connector, metaclass=ABCMeta):
     def load_cocitations(self, ids, current=0, task=None):
         """
         Loading co-citations graph.
-        :return: dataframe[citing, cited_1, cited_2, year]
+        :return: dataframe[citing(String), cited_1(String), cited_2(String), year]
         """
 
     @abstractmethod
     def expand(self, ids, current=0, task=None):
         """
         Expands list of ids doing one or two steps of breadth first search along citations graph.
-        :return: list of ids, i.e. list[String].
+        :return: list of ids, i.e. list(String).
         """
 
     @staticmethod
-    def process_publications_dataframe(publications_df):
+    def process_publications_dataframe(pub_df):
+        # Switch to string ids
+        pub_df['id'] = pub_df['id'].apply(str)
         # Semantic Scholar stores aux in jsonb format, no json parsing required
-        publications_df['aux'] = publications_df['aux'].apply(
+        pub_df['aux'] = pub_df['aux'].apply(
             lambda aux: json.loads(aux) if type(aux) is str else aux
         )
-        publications_df = publications_df.fillna(value={'abstract': ''})
-        publications_df['year'] = publications_df['year'].apply(
+        pub_df = pub_df.fillna(value={'abstract': ''})
+        pub_df['year'] = pub_df['year'].apply(
             lambda year: int(year) if year and np.isfinite(year) else np.nan
         )
-        publications_df['authors'] = publications_df['aux'].apply(lambda aux: extract_authors(aux['authors']))
-        publications_df['journal'] = publications_df['aux'].apply(lambda aux: html.unescape(aux['journal']['name']))
-        publications_df['title'] = publications_df['title'].apply(lambda title: html.unescape(title))
+        pub_df['authors'] = pub_df['aux'].apply(lambda aux: extract_authors(aux['authors']))
+        pub_df['journal'] = pub_df['aux'].apply(lambda aux: html.unescape(aux['journal']['name']))
+        pub_df['title'] = pub_df['title'].apply(lambda title: html.unescape(title))
 
         # Semantic Scholar specific hack
-        if 'crc32id' in publications_df:
-            publications_df['crc32id'] = publications_df['crc32id'].apply(int)
-        return publications_df
+        if 'crc32id' in pub_df:
+            pub_df['crc32id'] = pub_df['crc32id'].apply(int)
+        return pub_df
