@@ -7,63 +7,63 @@ class SSTestDatabaseSupplier(Connector):
     def __init__(self):
         config = PubtrendsConfig(test=True)
         super(SSTestDatabaseSupplier, self).__init__(config)
-        self.project_dir = __file__.replace('/models/test/ss_test_database_loader.py', '')
+        self.project_dir = __file__.replace('/models/test/ss_database_supplier.py', '')
 
     def init_semantic_scholar_database(self):
-        query_citations = '''
-                    drop table if exists sscitations;
-                    create table sscitations (
-                        crc32id_out integer,
-                        crc32id_in  integer,
-                        id_out      varchar(40) not null,
-                        id_in       varchar(40) not null
-                    );
-                    create index if not exists sscitations_crc32id_out_crc32id_in_index
-                    on sscitations (crc32id_out, crc32id_in);
-                    '''
+        with self.neo4jdriver.session() as session:
+            indexes = session.run('CALL db.indexes()').data()
+            if len(list(filter(lambda i: i['description'] == 'INDEX ON :SSPublication(crc32id)', indexes))) > 0:
+                session.run('DROP INDEX ON :SSPublication(crc32id)')
 
-        query_publications = '''
-                    drop table if exists sspublications;
-                    create table sspublications(
-                        ssid    varchar(40) not null,
-                        crc32id integer     not null,
-                        pmid    integer,
-                        title   varchar(1023),
-                        year    integer,
-                        abstract text,
-                        type    varchar(20),
-                        aux     jsonb
-                    );
-                    create index if not exists sspublications_crc32id_index
-                    on sspublications (crc32id);
-                    '''
+            if len(list(filter(lambda i: i['description'] == 'INDEX ON NODE:SSPublication(title, abstract)',
+                               indexes))) > 0:
+                session.run('CALL db.index.fulltext.drop("ssTitlesAndAbstracts")')
 
-        with self.conn.cursor() as cursor:
-            cursor.execute(query_citations)
-            cursor.execute(query_publications)
-            self.conn.commit()
+        with self.neo4jdriver.session() as session:
+            session.run('MATCH ()-[r:SSReferenced]->() DELETE r;')
+            session.run('MATCH (p:SSPublication) DELETE p;')
 
     def insert_semantic_scholar_publications(self, articles):
-        articles_str = ', '.join(
-            map(lambda article: article.to_db_publication(), articles))
+        query = '''
+UNWIND {articles} AS data
+MERGE (n:SSPublication { crc32id: toInteger(data.crc32id), ssid: data.id })
+ON CREATE SET
+    n.pmid = data.pmid,
+    n.title = data.title,
+    n.abstract = data.abstract,
+    n.date = datetime({year: data.year, month: 1, day: 1}),
+    n.aux = data.aux
+ON MATCH SET
+    n.pmid = data.pmid,
+    n.title = data.title,
+    n.abstract = data.abstract,
+    n.date = datetime({year: data.year, month: 1, day: 1}),
+    n.aux = data.aux
+RETURN n;
+'''
+        with self.neo4jdriver.session() as session:
+            session.run(query, articles=[a.to_dict() for a in articles])
 
-        query = f'''
-            insert into sspublications(ssid, crc32id, title, year, abstract, type, aux) values {articles_str};
-            alter table sspublications add column tsv TSVECTOR;
-            create index sspublications_tsv on sspublications using gin(tsv);
-            update sspublications set tsv = to_tsvector(COALESCE(title, ''));
-            '''
-        with self.conn.cursor() as cursor:
-            cursor.execute(query)
-            self.conn.commit()
+        # Init index by crc32id
+        with self.neo4jdriver.session() as session:
+            session.run('CREATE INDEX ON :SSPublication(crc32id)')
+
+        # Init full text search index
+        with self.neo4jdriver.session() as session:
+            session.run('''
+CALL db.index.fulltext.createNodeIndex("ssTitlesAndAbstracts", ["SSPublication"], ["title", "abstract"])
+''')
 
     def insert_semantic_scholar_citations(self, citations):
-        citations_str = ', '.join(
-            f"('{citation[0].ssid}', {citation[0].crc32id}, '{citation[1].ssid}', {citation[1].crc32id})"
-            for citation in citations)
-
-        query = f'insert into sscitations (id_out, crc32id_out, id_in, crc32id_in) values {citations_str};'
-
-        with self.conn.cursor() as cursor:
-            cursor.execute(query)
-            self.conn.commit()
+        query = '''
+UNWIND {citations} AS cit
+MATCH (n_out:SSPublication { crc32id: toInteger(cit.crc32id_out), ssid: cit.ssid_out })
+MERGE (n_in:SSPublication { crc32id: toInteger(cit.crc32id_in), ssid: cit.ssid_in })
+MERGE (n_out)-[:SSReferenced]->(n_in);
+'''
+        with self.neo4jdriver.session() as session:
+            session.run(query, citations=[{
+                'crc32id_out': c[0].crc32id,
+                'crc32id_in': c[1].crc32id,
+                "ssid_out": c[0].ssid,
+                "ssid_in": c[1].ssid} for c in citations])

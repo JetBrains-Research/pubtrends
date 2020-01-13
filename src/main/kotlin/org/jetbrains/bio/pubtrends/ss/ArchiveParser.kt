@@ -6,6 +6,7 @@ import org.apache.logging.log4j.LogManager
 import org.jetbrains.bio.pubtrends.AbstractDBHandler
 import java.io.File
 import java.util.*
+import java.util.zip.CRC32
 import java.util.zip.GZIPInputStream
 
 

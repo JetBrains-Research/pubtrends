@@ -2,7 +2,6 @@ import html
 import re
 
 from collections import Iterable
-import logging
 import numpy as np
 import pandas as pd
 
@@ -104,7 +103,7 @@ class PubmedLoader(Loader):
         with self.neo4jdriver.session() as session:
             pub_df = pd.DataFrame(session.run(query).data())
             if len(pub_df) == 0:
-                logging.warn(f'Failed to load publications.')
+                self.progress.error(f'Failed to load publications.')
 
         if np.any(pub_df[['id', 'title']].isna()):
             raise ValueError('Paper must have PMID and title')
@@ -129,7 +128,7 @@ class PubmedLoader(Loader):
         with self.neo4jdriver.session() as session:
             cit_stats_df = pd.DataFrame(session.run(query).data())
             if len(cit_stats_df) == 0:
-                logging.warn(f'Failed to load citations statistics.')
+                self.progress.error(f'Failed to load citations statistics.')
 
         self.progress.debug('Done loading citation stats', current=current, task=task)
 
@@ -161,7 +160,7 @@ class PubmedLoader(Loader):
         with self.neo4jdriver.session() as session:
             cit_df = pd.DataFrame(session.run(query).data())
             if len(cit_df) == 0:
-                logging.warn(f'Failed to load citations.')
+                self.progress.error(f'Failed to load citations.')
 
         if np.any(cit_df.isna()):
             raise ValueError('Citation must have id_out and id_in')

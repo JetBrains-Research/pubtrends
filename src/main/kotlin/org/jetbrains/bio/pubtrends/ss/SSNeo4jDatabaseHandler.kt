@@ -1,14 +1,15 @@
 package org.jetbrains.bio.pubtrends.ss
 
+import com.google.gson.GsonBuilder
 import org.jetbrains.bio.pubtrends.AbstractDBHandler
+import org.joda.time.DateTime
 import org.neo4j.driver.v1.AuthTokens
 import org.neo4j.driver.v1.GraphDatabase
 import java.io.Closeable
 
 /**
- * This is a handler to ensure loading the same data structure as stored in PostgreSQL.
- * See ss_loader.py for loading code.
- * TODO[shpynov]: this class shares some code with pm_test_database_loader.py. Consider refactoring.
+* See ss_database_supplier.py and ss_loader.py for (up)loading code.
+* TODO[shpynov] Consider refactoring.
  */
 open class SSNeo4jDatabaseHandler(
         url: String,
@@ -53,15 +54,15 @@ CALL apoc.periodic.iterate("MATCH (p:SSPublication) RETURN p",
     private fun processIndexes(createOrDelete: Boolean) {
         driver.session().use { session ->
 
-            // index by ssid
+            // index by crc32id
             val indexes = session.run("CALL db.indexes()").list()
             if (indexes.any { it["description"].toString().trim('"') ==
-                            "INDEX ON :SSPublication(ssid)" }) {
+                            "INDEX ON :SSPublication(crc32id)" }) {
                 if (!createOrDelete) {
-                    session.run("DROP INDEX ON :SSPublication(ssid)")
+                    session.run("DROP INDEX ON :SSPublication(crc32id)")
                 }
             } else if (createOrDelete) {
-                session.run("CREATE INDEX ON :SSPublication(ssid)")
+                session.run("CREATE INDEX ON :SSPublication(crc32id)")
             }
             // full text search index
             if (indexes.any { it["description"].toString().trim('"') ==
@@ -81,16 +82,31 @@ CALL db.index.fulltext.createNodeIndex("ssTitlesAndAbstracts", ["SSPublication"]
 
     override fun store(articles: List<SemanticScholarArticle>) {
         // Prepare queries parameters
-        val articleParameters = mapOf("articles" to articles.map { it.toNeo4j() })
+        val articleParameters = mapOf("articles" to articles.map {
+            mapOf(
+                    "ssid" to it.ssid,
+                    "crc32id" to crc32id(it.ssid).toString(), // Lookup index
+                    "pmid" to it.pmid?.toString(),
+                    "title" to it.title.replace('\n', ' '),
+                    "abstract" to it.abstract?.replace('\n', ' '),
+                    "date" to DateTime(it.year ?:1970, 1, 1, 12, 0).toString(),
+                    "aux" to GsonBuilder().create().toJson(it.aux)
+            )
+        })
         val citationParameters = mapOf("citations" to articles.flatMap {
             it.citationList.toSet().map {
-                cit -> mapOf("ssid_out" to it.ssid, "ssid_in" to cit) }
+                cit -> mapOf(
+                    "ssid_out" to it.ssid,
+                    "crc32id_out" to crc32id(it.ssid).toString(),
+                    "ssid_in" to cit,
+                    "crc32id_in" to crc32id(cit).toString())
+            }
         })
 
         driver.session().use {
             it.run("""
 UNWIND {articles} AS data 
-MERGE (n:SSPublication { ssid: data.ssid }) 
+MERGE (n:SSPublication { crc32id: toInteger(data.crc32id), ssid: data.ssid }) 
 ON CREATE SET 
     n.pmid = data.pmid,
     n.title = data.title,
@@ -108,11 +124,10 @@ RETURN n;
                     articleParameters)
 
             // Add citation relationships AND create new Publication nodes with ssid only if missing
-            // NOTE: don't use toInteger(ssid) for indexes here to preserve compatibility between PM and SS
             it.run("""
 UNWIND {citations} AS cit 
-MATCH (n_out:SSPublication { ssid: cit.ssid_out })
-MERGE (n_in:SSPublication { ssid: cit.ssid_in })
+MATCH (n_out:SSPublication { crc32id: toInteger(cit.crc32id_out), ssid: cit.ssid_out })
+MERGE (n_in:SSPublication { crc32id: toInteger(cit.crc32id_in), ssid: cit.ssid_in })
 MERGE (n_out)-[:SSReferenced]->(n_in);
 """.trimIndent(),
                     citationParameters)

@@ -37,10 +37,10 @@ fun main(args: Array<String>) {
 
         logger.info("Init Neo4j database connection")
         val dbHandler = PMNeo4jDatabaseHandler(
-                config["neo4jurl"].toString(),
-                config["neo4jport"].toString().toInt(),
-                config["neo4jusername"].toString(),
-                config["neo4jpassword"].toString()
+                config["url"].toString(),
+                config["port"].toString().toInt(),
+                config["username"].toString(),
+                config["password"].toString()
         )
         val pubmedLastIdFile = settingsRoot.resolve("pubmed_last.tsv")
         val pubmedStatsFile = settingsRoot.resolve("pubmed_stats.tsv")

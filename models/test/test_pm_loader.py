@@ -25,10 +25,10 @@ class TestPubmedLoader(unittest.TestCase):
         cls.ids = list(map(lambda article: article.pmid, REQUIRED_ARTICLES))
 
         # Reset and load data to the test database
-        test_database_loader = PMTestDatabaseSupplier()
-        test_database_loader.init_pubmed_database()
-        test_database_loader.insert_pubmed_publications(ARTICLES)
-        test_database_loader.insert_pubmed_citations(CITATIONS)
+        supplier = PMTestDatabaseSupplier()
+        supplier.init_pubmed_database()
+        supplier.insert_pubmed_publications(ARTICLES)
+        supplier.insert_pubmed_citations(CITATIONS)
 
         # Get data via PubmedLoader methods
         cls.pub_df = cls.loader.load_publications(cls.ids)
@@ -81,8 +81,8 @@ class TestPubmedLoader(unittest.TestCase):
     ])
     def test_search(self, query, limit, sort, expected_ids):
         # Use sorted to avoid ambiguity
-        ids = sorted(self.loader.search(query, limit=limit, sort=sort))
-        self.assertListEqual(ids, sorted(expected_ids), 'Wrong IDs of papers')
+        ids = self.loader.search(query, limit=limit, sort=sort)
+        self.assertListEqual(sorted(expected_ids), sorted(ids), 'Wrong IDs of papers')
 
     def test_load_citation_stats_data_frame(self):
         # Sort to compare with expected

@@ -7,9 +7,8 @@ import org.neo4j.driver.v1.GraphDatabase
 import java.io.Closeable
 
 /**
- * This is a handler to ensure loading the same data structure as stored in PostgreSQL.
- * See pm_loader.py for loading code.
- * TODO[shpynov]: this class shares some code with pm_test_database_loader.py. Consider refactoring.
+ * See pm_database_supplier.py and pm_loader.py for (up)loading code.
+* TODO[shpynov] Consider refactoring.
  */
 open class PMNeo4jDatabaseHandler(
         url: String,

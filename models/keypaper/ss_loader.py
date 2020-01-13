@@ -1,12 +1,13 @@
 import html
+import re
 from collections import Iterable
 
 import numpy as np
 import pandas as pd
 
-from .loader import Loader
-from .utils import crc32
 from models.keypaper.utils import SORT_MOST_CITED, SORT_MOST_RECENT, SORT_MOST_RELEVANT
+from .loader import Loader
+from .utils import crc32, preprocess_search_query
 
 
 class SemanticScholarLoader(Loader):
@@ -14,202 +15,203 @@ class SemanticScholarLoader(Loader):
     def __init__(self, pubtrends_config):
         super(SemanticScholarLoader, self).__init__(pubtrends_config)
 
-    @staticmethod
-    def ids2values(ids):
-        return ', '.join([f'({i}, \'{j}\')' for (i, j) in zip(map(crc32, ids), ids)])
-
     def find(self, key, value, current=0, task=None):
-        raise Exception('Not supported yet')
+        self.progress.info(f"Searching for a publication with {key} '{value}'", current=current, task=task)
+
+        # Use dedicated text index to search title.
+        if key == 'title':
+            query = f'''
+                CALL db.index.fulltext.queryNodes("ssTitlesAndAbstracts", '"{re.sub('"', '', value.strip())}"')
+                YIELD node
+                MATCH (p:SSPublication)
+                WHERE p.ssid = node.ssid AND p.title = '{value}'
+                RETURN p.ssid AS ssid;
+            '''
+        else:
+            query = f'''
+                MATCH (p:SSPublication)
+                WHERE p.{key} = {repr(value)}
+                RETURN p.ssid AS ssid;
+            '''
+        self.progress.debug(f'Find query\n{query}', current=current, task=task)
+
+        with self.neo4jdriver.session() as session:
+            return [str(r['ssid']) for r in session.run(query)]
 
     def search(self, query, limit=None, sort=None, current=0, task=None):
-        self.progress.info(html.escape(f'Searching publications matching <{query}>'), current=current, task=task)
-        query_str = '\'' + query + '\''
+        query_str = preprocess_search_query(query, self.pubtrends_config.min_search_words)
+
         if not limit:
             limit_message = ''
             limit = self.max_number_of_articles
         else:
             limit_message = f'{limit} '
 
-        columns = ['id', 'crc32id', 'pmid']
         self.progress.info(html.escape(f'Searching {limit_message}{sort.lower()} publications matching <{query}>'),
                            current=current, task=task)
 
         if sort == SORT_MOST_RELEVANT:
             query = f'''
-                SELECT P.ssid, P.crc32id, P.pmid, ts_rank_cd(P.tsv, query) AS rank
-                FROM SSPublications P, websearch_to_tsquery('english', {query_str}) query
-                WHERE tsv @@ query
-                ORDER BY rank DESC
+                CALL db.index.fulltext.queryNodes("ssTitlesAndAbstracts", {query_str})
+                YIELD node, score
+                RETURN node.ssid as ssid
+                ORDER BY score DESC
                 LIMIT {limit};
                 '''
-            columns.append('ts_rank')
         elif sort == SORT_MOST_CITED:
             query = f'''
-                SELECT P.ssid, P.crc32id, P.pmid, COUNT(1) AS count
-                FROM SSPublications P
-                LEFT JOIN SSCitations C
-                ON C.crc32id_in = P.crc32id AND C.id_in = P.ssid
-                WHERE tsv @@ websearch_to_tsquery('english', {query_str})
-                GROUP BY P.ssid, P.crc32id, P.pmid
-                ORDER BY count DESC NULLS LAST
+                CALL db.index.fulltext.queryNodes("ssTitlesAndAbstracts", {query_str}) YIELD node
+                MATCH ()-[r:SSReferenced]->(in:SSPublication)
+                WHERE in.crc32id = node.crc32id AND in.ssid = node.ssid
+                WITH node, COUNT(r) AS cnt
+                RETURN node.ssid as ssid
+                ORDER BY cnt DESC
                 LIMIT {limit};
                 '''
-            columns.append('citations')
         elif sort == SORT_MOST_RECENT:
             query = f'''
-                SELECT ssid, crc32id, pmid
-                FROM SSPublications P
-                WHERE tsv @@ websearch_to_tsquery('english', {query_str})
-                ORDER BY year DESC NULLS LAST
+                CALL db.index.fulltext.queryNodes("ssTitlesAndAbstracts", {query_str}) YIELD node
+                RETURN node.ssid as ssid
+                ORDER BY node.date DESC
                 LIMIT {limit};
                 '''
         else:
             raise ValueError(f'Illegal sort method: {sort}')
+        self.progress.debug(f'Search query\n{query}', current=current, task=task)
 
-        with self.conn.cursor() as cursor:
-            cursor.execute(query)
-            pub_df = pd.DataFrame(cursor.fetchall(), columns=columns, dtype=object)
+        with self.neo4jdriver.session() as session:
+            ids = [str(r['ssid']) for r in session.run(query)]
 
-        # Duplicate rows may occur if crawler was stopped while parsing Semantic Scholar archive
-        pub_df.drop_duplicates(subset='id', inplace=True)
-        # IMPORTANT Remove Pubmed ids from account
-        pub_df = pub_df[pd.isnull(pub_df.pmid)]
-
-        self.progress.info(f'Found {len(pub_df)} publications in the local database', current=current,
+        self.progress.info(f'Found {len(ids)} publications in the local database', current=current,
                            task=task)
+        return ids
 
-        return (list(pub_df['id'].values)), False
+    def load_publications(self, ids, current=0, task=None):
+        self.progress.info('Loading publication data', current=current, task=task)
 
-    def load_publications(self, ids, temp_table_created=False, current=0, task=None):
-        if not temp_table_created:
-            self.progress.info('Loading publication data', current=current, task=task)
-            query = f'''
-                    DROP TABLE IF EXISTS temp_ssids;
-                    WITH vals(crc32id, ssid) AS (VALUES {SemanticScholarLoader.ids2values(ids)})
-                    SELECT crc32id, ssid INTO table temp_ssids FROM vals;
-                    DROP INDEX IF EXISTS temp_ssids_index;
-                    CREATE INDEX temp_ssids_index ON temp_ssids USING btree (crc32id);
-                    '''
-
-            with self.conn.cursor() as cursor:
-                cursor.execute(query)
-
-            self.progress.debug('Created table for request with index.', current=current, task=task)
-
-        columns = ['id', 'crc32id', 'title', 'abstract', 'year', 'type', 'aux']
+        # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
-                SELECT P.ssid, P.crc32id, P.title, P.abstract, P.year, P.type, P.aux
-                FROM SSPublications P
-                LEFT JOIN temp_ssids TS
-                ON P.crc32id = TS.crc32id AND P.ssid = TS.ssid;
-                '''
-        with self.conn.cursor() as cursor:
-            cursor.execute(query)
-            pub_df = pd.DataFrame(cursor.fetchall(), columns=columns, dtype=object)
+            WITH [{','.join([f'"{id}"' for id in ids])}] AS ssids,
+                 [{','.join([str(crc32(id)) for id in ids])}] AS crc32ids
+            MATCH (p:SSPublication)
+            WHERE p.crc32id in crc32ids AND p.ssid IN ssids
+            RETURN p.ssid as id, p.crc32id as crc32id, p.pmid as pmid, p.title as title, p.abstract as abstract,
+                p.date.year as year, p.type as type, p.aux as aux
+            ORDER BY id
+        '''
+        self.progress.debug(f'Load publications query\n{query}', current=current, task=task)
 
-        if np.any(pub_df[['id', 'crc32id', 'title']].isna()):
-            raise ValueError('Paper must have ID and title')
+        with self.neo4jdriver.session() as session:
+            pub_df = pd.DataFrame(session.run(query).data())
+            if len(pub_df) == 0:
+                self.progress.error(f'Failed to load publications.')
 
-        return Loader.process_publications_dataframe(pub_df)
+        if np.any(pub_df[['id', 'title']].isna()):
+            raise ValueError('Paper must have PMID and title')
+
+        pub_df = Loader.process_publications_dataframe(pub_df)
+
+        self.progress.debug(f'Found {len(pub_df)} publications in the local database', current=current, task=task)
+        return pub_df
 
     def load_citation_stats(self, ids, current=0, task=None):
-        self.progress.info('Loading citations statistics among millions of citations',
-                           current=current, task=task)
+        self.progress.info('Loading citations statistics', current=current, task=task)
+
+        # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
-           SELECT C.id_in AS ssid, P.year, COUNT(1) AS count
-                FROM SSCitations C
-                JOIN (VALUES {SemanticScholarLoader.ids2values(ids)}) AS CT(crc32id, ssid)
-                  ON (C.crc32id_in = CT.crc32id AND C.id_in = CT.ssid)
-                JOIN SSPublications P
-                  ON C.crc32id_out = P.crc32id AND C.id_out = P.ssid
-                WHERE C.crc32id_in
-                between (SELECT MIN(crc32id) FROM temp_ssids)
-                  AND (select max(crc32id) FROM temp_ssids)
-                AND P.year > 0
-                GROUP BY C.id_in, P.year;
-            '''
+            WITH [{','.join([f'"{id}"' for id in ids])}] AS ssids,
+                 [{','.join([str(crc32(id)) for id in ids])}] AS crc32ids
+            MATCH (out:SSPublication)-[:SSReferenced]->(in:SSPublication)
+            WHERE in.crc32id in crc32ids AND in.ssid IN ssids
+            RETURN in.ssid AS id, out.date.year AS year, COUNT(*) AS count;
+        '''
+        self.progress.debug(f'Load citations statistics query\n{query}', current=current, task=task)
 
-        with self.conn.cursor() as cursor:
-            cursor.execute(query)
-            cit_stats_df_from_query = pd.DataFrame(cursor.fetchall(),
-                                                   columns=['id', 'year', 'count'], dtype=object)
+        with self.neo4jdriver.session() as session:
+            cit_stats_df = pd.DataFrame(session.run(query).data())
+            if len(cit_stats_df) == 0:
+                self.progress.error(f'Failed to load citations statistics.')
 
-        if np.any(cit_stats_df_from_query.isna()):
+        self.progress.debug('Done loading citation stats', current=current, task=task)
+
+        if np.any(cit_stats_df.isna()):
+            print("QUERY")
+            print(query)
+            print("CIT_STATS_DF")
+            print(cit_stats_df)
             raise ValueError('NaN values are not allowed in citation stats DataFrame')
 
-        cit_stats_df_from_query['year'] = cit_stats_df_from_query['year'].apply(int)
-        cit_stats_df_from_query['count'] = cit_stats_df_from_query['count'].apply(int)
+        cit_stats_df['count'] = cit_stats_df['count'].apply(int)
+        cit_stats_df['id'] = cit_stats_df['id'].apply(str)
+        cit_stats_df['year'] = cit_stats_df['year'].apply(int)
 
-        self.progress.info(f'Found {cit_stats_df_from_query.shape[0]} records of citations by year',
+        self.progress.info(f'Found {cit_stats_df.shape[0]} records of citations by year',
                            current=current, task=task)
 
-        return cit_stats_df_from_query
+        return cit_stats_df
 
     def load_citations(self, ids, current=0, task=None):
-        self.progress.info('Loading citations data', current=current, task=task)
-        self.progress.debug('Started loading raw information about citations', current=current, task=task)
+        """ Loading INNER citations graph, where all the nodes are inside query of interest """
+        self.progress.info('Started loading citations', current=current, task=task)
 
-        query = f'''SELECT C.id_out, C.id_in
-                    FROM SSCitations C
-                    JOIN (VALUES {SemanticScholarLoader.ids2values(ids)}) AS CT(crc32id, ssid)
-                    ON (C.crc32id_in = CT.crc32id AND C.id_in = CT.ssid)
-                    WHERE C.crc32id_in between (SELECT MIN(crc32id) FROM temp_ssids)
-                    AND (select max(crc32id) FROM temp_ssids);
-                    '''
+        # TODO[shpynov] transferring huge list of ids can be a problem
+        query = f'''
+            WITH [{','.join([f'"{id}"' for id in ids])}] AS ssids,
+                 [{','.join([str(crc32(id)) for id in ids])}] AS crc32ids
+            MATCH (out:SSPublication)-[:SSReferenced]->(in:SSPublication)
+            WHERE in.crc32id in crc32ids AND in.ssid IN ssids AND
+                  out.crc32id in crc32ids AND out.ssid IN ssids
+            RETURN out.ssid AS id_out, in.ssid AS id_in
+            ORDER BY id_out, id_in;
+        '''
+        self.progress.debug(f'Load citations query\n{query}', current=current, task=task)
 
-        with self.conn.cursor() as cursor:
-            cursor.execute(query)
-            citations = pd.DataFrame(cursor.fetchall(),
-                                     columns=['id_out', 'id_in'], dtype=object)
+        with self.neo4jdriver.session() as session:
+            cit_df = pd.DataFrame(session.run(query).data())
+            if len(cit_df) == 0:
+                self.progress.error(f'Failed to load citations.')
 
-        # TODO[shpynov] we can make it on DB side
-        citations = citations[citations['id_out'].isin(ids)]
-
-        if np.any(citations.isna()):
+        if np.any(cit_df.isna()):
             raise ValueError('Citation must have id_out and id_in')
 
-        self.progress.info(f'Found {len(citations)} citations', current=current, task=task)
+        self.progress.info(f'Found {len(cit_df)} citations', current=current, task=task)
 
-        return citations
+        cit_df['id_in'] = cit_df['id_in'].apply(str)
+        cit_df['id_out'] = cit_df['id_out'].apply(str)
+        return cit_df
 
     def load_cocitations(self, ids, current=0, task=None):
-        self.progress.info('Calculating co-citations for selected papers', current=current, task=task)
+        self.progress.info('Calculating co-citations for papers', current=current, task=task)
 
+        # Use unfolding to pairs on the client side instead of DataBase
+        # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
-                with Z as (select id_out, id_in, crc32id_out, crc32id_in
-                    from SSCitations
-                    where crc32id_in between (select min(crc32id) from temp_ssids)
-                        and (select max(crc32id) from temp_ssids)
-                        and (crc32id_in, id_in) in (select crc32id, ssid
-                                                    from temp_ssids)),
+            WITH [{','.join([f'"{id}"' for id in ids])}] AS ssids,
+                 [{','.join([str(crc32(id)) for id in ids])}] AS crc32ids
+            MATCH (out:SSPublication)-[:SSReferenced]->(in:SSPublication)
+            WHERE in.crc32id in crc32ids AND in.ssid IN ssids
+            RETURN out.ssid AS citing, COLLECT(in.ssid) AS cited, out.date.year AS year;
+        '''
+        self.progress.debug(f'Load co-citations query\n{query}', current=current, task=task)
 
-                    X as (select id_out, array_agg(id_in) as cited_list,
-                                 min(crc32id_out) as crc32id_out
-                          from Z
-                          group by id_out
-                          having count(*) >= 2)
-
-                select X.id_out, P.year, X.cited_list
-                from X
-                    join SSPublications P
-                        on crc32id_out = P.crc32id and id_out = P.ssid;
-                '''
-
-        with self.conn.cursor() as cursor:
-            cursor.execute(query)
-
+        with self.neo4jdriver.session() as session:
             cocit_data = []
             lines = 0
-            for row in cursor:
+            for r in session.run(query):
                 lines += 1
-                citing, year, cited = row
+                citing, year, cited = r['citing'], r['year'], sorted(r['cited'])
                 for i in range(len(cited)):
                     for j in range(i + 1, len(cited)):
                         cocit_data.append((citing, cited[i], cited[j], year))
-            cocit_df = pd.DataFrame(cocit_data, columns=['citing', 'cited_1', 'cited_2', 'year'], dtype=object)
+
+        cocit_df = pd.DataFrame(cocit_data, columns=['citing', 'cited_1', 'cited_2', 'year'])
 
         if np.any(cocit_df[['citing', 'cited_1', 'cited_2']].isna()):
-            raise ValueError('NaN values are not allowed in ids of co-citation DataFrame')
+            raise ValueError('NaN values are not allowed in co-citation DataFrame')
+
+        cocit_df['citing'] = cocit_df['citing'].apply(str)
+        cocit_df['cited_1'] = cocit_df['cited_1'].apply(str)
+        cocit_df['cited_2'] = cocit_df['cited_2'].apply(str)
         cocit_df['year'] = cocit_df['year'].apply(lambda x: int(x) if x else np.nan)
 
         self.progress.debug(f'Loaded {lines} lines of citing info', current=current, task=task)
@@ -218,44 +220,36 @@ class SemanticScholarLoader(Loader):
         return cocit_df
 
     def expand(self, ids, current=0, task=None):
+        expanded = set(ids)
         if isinstance(ids, Iterable):
             self.progress.info('Expanding current topic', current=current, task=task)
-            values = SemanticScholarLoader.ids2values(ids)
+
+            # TODO[shpynov] transferring huge list of ids can be a problem
+            query = f'''
+            WITH [{','.join([f'"{id}"' for id in ids])}] AS ssids,
+                 [{','.join([str(crc32(id)) for id in ids])}] AS crc32ids
+                MATCH (out:SSPublication)-[:SSReferenced]->(in:SSPublication)
+                WHERE in.crc32id IN crc32ids AND in.ssid in ssids
+                RETURN COLLECT(out.ssid) AS expanded;
+            '''
+            self.progress.debug(f'Expand in query\n{query}', current=current, task=task)
+            with self.neo4jdriver.session() as session:
+                for r in session.run(query):
+                    expanded |= set(r['expanded'])
 
             query = f'''
-                DROP TABLE IF EXISTS TEMP_SSIDS;
-                WITH vals(crc32id, ssid) AS (VALUES {values})
-                SELECT crc32id, ssid INTO table TEMP_SSIDS FROM vals;
-                DROP INDEX IF EXISTS temp_ssids_unique_index;
-                CREATE UNIQUE INDEX temp_ssids_unique_index ON TEMP_SSIDS USING btree (crc32id);
-
-                SELECT C.id_out, ARRAY_AGG(C.id_in)
-                FROM sscitations C
-                JOIN temp_ssids T
-                ON (C.crc32id_out = T.crc32id OR C.crc32id_in = T.crc32id)
-                AND (C.id_out = T.ssid OR C.id_in = T.ssid)
-                GROUP BY C.id_out;
-                '''
-        elif isinstance(ids, int):
-            crc32id = crc32(ids)
-            query = f'''
-                SELECT C.id_out, ARRAY_AGG(C.id_in)
-                FROM sscitations C
-                WHERE (C.crc32id_out = {crc32id} OR C.crc32id_in = {crc32id})
-                AND (C.id_out = {ids} OR C.id_in = {ids})
-                GROUP BY C.id_out;
-                '''
+            WITH [{','.join([f'"{id}"' for id in ids])}] AS ssids,
+                 [{','.join([str(crc32(id)) for id in ids])}] AS crc32ids
+                MATCH (out:SSPublication)-[:SSReferenced]->(in:SSPublication)
+                WHERE out.crc32id IN crc32ids AND out.ssid in ssids
+                RETURN COLLECT(in.ssid) AS expanded;
+            '''
+            self.progress.debug(f'Expand out query\n{query}', current=current, task=task)
+            with self.neo4jdriver.session() as session:
+                for r in session.run(query):
+                    expanded |= set(r['expanded'])
         else:
-            raise TypeError('ids should be either int or Iterable')
+            raise TypeError('ids should be Iterable')
 
-        expanded = set()
-        with self.conn.cursor() as cursor:
-            cursor.execute(query)
-
-            for row in cursor.fetchall():
-                citing, cited = row
-                expanded.add(citing)
-                expanded |= set(cited)
-
-        self.progress.info(f'Found {len(expanded)} papers', current=current, task=task)
+        self.progress.debug(f'Found {len(expanded)} papers', current=current, task=task)
         return expanded
