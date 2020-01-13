@@ -104,7 +104,7 @@ class SemanticScholarLoader(Loader):
         with self.neo4jdriver.session() as session:
             pub_df = pd.DataFrame(session.run(query).data())
             if len(pub_df) == 0:
-                self.progress.debug(f'Failed to load publications.')
+                self.progress.debug(f'Failed to load publications.', current=current, task=task)
 
         if np.any(pub_df[['id', 'title']].isna()):
             raise ValueError('Paper must have PMID and title')
@@ -130,7 +130,7 @@ class SemanticScholarLoader(Loader):
         with self.neo4jdriver.session() as session:
             cit_stats_df = pd.DataFrame(session.run(query).data())
             if len(cit_stats_df) == 0:
-                self.progress.debug(f'Failed to load citations statistics.')
+                self.progress.debug(f'Failed to load citations statistics.', current=current, task=task)
 
         self.progress.debug('Done loading citation stats', current=current, task=task)
 
@@ -165,7 +165,7 @@ class SemanticScholarLoader(Loader):
         with self.neo4jdriver.session() as session:
             cit_df = pd.DataFrame(session.run(query).data())
             if len(cit_df) == 0:
-                self.progress.debug(f'Failed to load citations.')
+                self.progress.debug(f'Failed to load citations.', current=current, task=task)
 
         if np.any(cit_df.isna()):
             raise ValueError('Citation must have id_out and id_in')
