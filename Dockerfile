@@ -75,9 +75,8 @@ RUN conda init bash \
     && conda clean -afy \
     && rm /home/user/environment.yml
 
-# Tests project configuration
+# Create project configuration dir
 RUN mkdir -p /home/user/.pubtrends
-COPY config.properties /home/user/.pubtrends/
 
 # Use `-d` param to launch container as daemon
 CMD sudo neo4j start && sleep infinity
