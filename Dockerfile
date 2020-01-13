@@ -36,17 +36,14 @@ RUN sed -i "s/#dbms.connectors.default_listen_address=0.0.0.0/dbms.connectors.de
     && sed -i "s/#dbms.security.allow_csv_import_from_file_urls=true/dbms.security.allow_csv_import_from_file_urls=true/g" /etc/neo4j/neo4j.conf \
     && sed -i "s#dbms.directories.import=/var/lib/neo4j/import#dbms.directories.import=/pubtrends#g" /etc/neo4j/neo4j.conf \
     && sed -i "s/#dbms.security.procedures.unrestricted=my.extensions.example,my.procedures.*/dbms.security.procedures.unrestricted=apoc.*/g" /etc/neo4j/neo4j.conf
+
 # Initial password for neo4j user
 RUN neo4j-admin set-initial-password password
+
 # Expose Neo4j bolt port
 EXPOSE 7687
 # Expose Neo4j http interface
 EXPOSE 7474
-
-# Install Postgresql 11
-RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
-    && sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ bionic-pgdg main" >> /etc/apt/sources.list.d/pgdg.list' \
-    && apt-get update && apt-get install --no-install-recommends -y postgresql postgresql-contrib
 
 # Clean apt
 RUN apt-get clean \
@@ -78,36 +75,9 @@ RUN conda init bash \
     && conda clean -afy \
     && rm /home/user/environment.yml
 
-# Configure Postgresql configuration
-USER root
-RUN chmod -R a+w /var/run/postgresql
-
-USER user
-# trust authentification method for testing purposes only!
-RUN /usr/lib/postgresql/11/bin/initdb -D /home/user/postgres -A trust -U user
-
-## Adjust PostgreSQL configuration so that remote connections to the database are possible.
-RUN echo "host all all 0.0.0.0/0 md5" >> /home/user/postgres/pg_hba.conf \
-    && echo "listen_addresses='*'" >> /home/user/postgres/postgresql.conf
-
-# Expose the PostgreSQL port
-EXPOSE 5432
-
-# Create a PostgreSQL role named `biolabs` with `password` as the password and
-# then create a database `pubtrends_test` owned by the `biolabs` role.
-RUN /usr/lib/postgresql/11/bin/pg_ctl -D /home/user/postgres start \
-    && /usr/lib/postgresql/11/bin/createdb -O user user \
-    && psql --command "CREATE ROLE biolabs WITH PASSWORD 'password';" \
-    && psql --command "ALTER ROLE biolabs WITH LOGIN;" \
-    && psql --command "CREATE DATABASE pubtrends_test OWNER biolabs;" \
-    # Stop db
-    && /usr/lib/postgresql/11/bin/pg_ctl -D /home/user/postgres stop
-
 # Tests project configuration
-COPY config.properties /home/user/config.properties
-RUN mkdir -p ~/.pubtrends \
-    && cat ~/config.properties | sed 's/5433/5432/g' > ~/.pubtrends/config.properties \
-    && rm /home/user/config.properties
+RUN mkdir -p /home/user/.pubtrends
+COPY config.properties /home/user/.pubtrends/
 
 # Use `-d` param to launch container as daemon
-CMD /usr/lib/postgresql/11/bin/pg_ctl -D /home/user/postgres start && sudo neo4j start && sleep infinity
+CMD sudo neo4j start && sleep infinity

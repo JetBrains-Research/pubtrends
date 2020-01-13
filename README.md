@@ -9,7 +9,6 @@ A tool for analysis of trends & pivotal points in the scientific literature.
 * Conda
 * Python 3.6+
 * Docker
-* PostgreSQL 11+ (Optional, can be used in Docker)
 * Neo4j 3.5+ with APOC 3.5.0.4 (Optional, can be used in Docker)
 * Redis 5.0 (Optional, can be used in Docker)
 
@@ -50,50 +49,6 @@ Ensure that file contains correct information about the database(s) (url, port, 
     `$HOME/neo4j/conf/neo4j.conf` to allow usage of the procedures.
    * Open Neo4j web browser to change default password (neo4j) to a strong one.
 
-5. Optional: configure PostgreSQL.
-    * Launch PostgreSQL.
-     
-     Ubuntu
-     ```
-     # start
-     service postgresql start
-     # start
-     service postgresql stop 
-     ```
-     Mac OS
-     ```
-     # start
-     pg_ctl -D /usr/local/var/postgres -l /usr/local/var/postgres/server.log start
-     # stop
-     pg_ctl -D /usr/local/var/postgres stop -s -m fast
-     ```
-    * Run `psql` to create a user and databases
-   
-      ```
-      CREATE ROLE biolabs WITH PASSWORD 'password';
-      ALTER ROLE biolabs WITH LOGIN;
-      CREATE DATABASE pubtrends OWNER biolabs;
-      ```
-      Create testing database if you don't want to use Docker based Postgresql for tests
-      ```
-      CREATE DATABASE pubtrends_test OWNER biolabs;
-      ```
-      
-     * Configure `work_mem` to support search query sorted by citations in `postgresql.conf`. \
-      Experimentally, this amount is sufficient to search term 'computer' in Semantic Scholar sorted by citations count. 
-      ```
-      work_mem = '2048MB';   
-      ```
-     * Configure DB to accept connections in `postgresql.conf`. **NOTE**: production service should be configured more securely!
-      ```
-      listen_addresses='*'
-      ```
-     * Configure password access in `pg_hba.conf`
-      ```
-      host all all 0.0.0.0/0 md5
-      ```
-
-    Please refer to the `Dockerfile` for more details.
 
 ## Kotlin/Java Build
 
@@ -174,11 +129,10 @@ Please ensure that you have Database configured, up and running.
 1. Start Docker image with Postgres and Neo4j for tests (Kotlin and Python tests development)
     ```
     docker run --rm --name pubtrends-docker \
-    --publish=5433:5432 --publish=7474:7474 --publish=7687:7687 \
+    --publish=7474:7474 --publish=7687:7687 \
     --volume=$(pwd):/pubtrends -d -t biolabs/pubtrends
     ```
 
-    Check access to Postgresql: `psql postgresql://biolabs:password@localhost:5433/pubtrends_test`
     Check access to Neo4j web browser: `http://localhost:7474`
     NOTE: please don't forget to stop the container afterwards.
 
@@ -188,18 +142,18 @@ Please ensure that you have Database configured, up and running.
     ./gradlew clean test
     ```
 
-3. Python tests with codestyle check
+3. Python tests with codestyle check for development
     
     ```
-    source activate pubtrends; python -m pytest --codestyle models
+    source activate pubtrends; python -m pytest --pycodestyle models
     ```
 
 4. Python tests with codestyle check within Docker (please ignore point 1)
 
     ```
     docker run --rm --volume=$(pwd):/pubtrends -t biolabs/pubtrends /bin/bash -c \
-    "/usr/lib/postgresql/11/bin/pg_ctl -D /home/user/postgres start; sudo neo4j start; sleep 10s; \
-    source activate pubtrends; cd /pubtrends; python -m pytest --codestyle models;"
+    "sudo neo4j start; sleep 20s; \
+    cd /pubtrends; source activate pubtrends; python -m pytest --pycodestyle models"
     ```
 
 ## Deployment
