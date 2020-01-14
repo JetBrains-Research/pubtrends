@@ -116,7 +116,7 @@ Please ensure that you have Database configured, up and running.
     ```
 3. Start flask server at localhost:5000/
     ```
-    python models/flask-app.py
+    python -m models.flask-app
     ```    
 ### Jupyter Notebook
    ```
@@ -166,7 +166,8 @@ Deployment is done with docker-compose. It is configured to start three containe
 
 Please ensure that you have configured and prepared the database(s).
 
-1. Modify file `config.properties` with information about the database(s).
+1. Modify file `config.properties` with information about the database(s). 
+   File from the project folder is used in this case.
 
 2. Launch Neo4j database docker image.
     ```
