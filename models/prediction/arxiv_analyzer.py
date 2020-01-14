@@ -35,7 +35,7 @@ class ArxivAnalyzer(KeyPaperAnalyzer):
 
             self.cit_df = self.loader.load_citations(self.ids, current=5, task=task)
 
-            return self.logger.stream.getvalue()
+            return self.progress.stream.getvalue()
         finally:
             self.loader.close_connection()
-            self.logger.remove_handler()
+            self.progress.remove_handler()

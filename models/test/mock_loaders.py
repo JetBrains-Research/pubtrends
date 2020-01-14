@@ -43,25 +43,25 @@ class MockLoader(Loader):
         config = PubtrendsConfig(test=True)
         super(MockLoader, self).__init__(config, connect=False)
 
-    def find(self, key, value, current=0, task=None):
+    def find(self, key, value, current=1, task=None):
         raise Exception('Not implemented')
 
-    def expand(self, ids, current=0, task=None):
+    def expand(self, ids, current=1, task=None):
         raise Exception('Not implemented')
 
-    def search(self, terms, limit=None, sort=None, current=None, task=None):
+    def search(self, terms, limit=None, sort=None, current=1, task=None):
         return [1, 2, 3, 4, 5], True
 
-    def load_publications(self, ids=None, temp_table_created=True, current=None, task=None):
+    def load_publications(self, ids=None, current=1, task=None):
         return pd.DataFrame(PUBLICATION_DATA, columns=['id', 'year', 'title', 'abstract', 'type', 'authors', 'journal'])
 
-    def load_citation_stats(self, ids=None, current=None, task=None):
+    def load_citation_stats(self, ids=None, current=1, task=None):
         return pd.DataFrame(CITATION_STATS_DATA, columns=['id', 'year', 'count'])
 
-    def load_citations(self, ids=None, current=None, task=None):
+    def load_citations(self, ids=None, current=1, task=None):
         return pd.DataFrame(CITATION_DATA, columns=['id_out', 'id_in'])
 
-    def load_cocitations(self, ids=None, current=None, task=None):
+    def load_cocitations(self, ids=None, current=1, task=None):
         return pd.DataFrame(COCITATION_DATA, columns=['citing', 'cited_1', 'cited_2', 'year'])
 
 
@@ -71,27 +71,27 @@ class MockLoaderSingle(Loader):
         config = PubtrendsConfig(test=True)
         super(MockLoaderSingle, self).__init__(config, connect=False)
 
-    def find(self, key, value, current=0, task=None):
+    def find(self, key, value, current=1, task=None):
         raise Exception('Not implemented')
 
-    def expand(self, ids, current=0, task=None):
+    def expand(self, ids, current=1, task=None):
         raise Exception('Not implemented')
 
-    def search(self, terms, limit=None, sort=None, current=None, task=None):
+    def search(self, terms, limit=None, sort=None, current=1, task=None):
         return [1, 2], True
 
-    def load_publications(self, ids=None, temp_table_created=True, current=None, task=None):
+    def load_publications(self, ids=None, current=1, task=None):
         return pd.DataFrame(PUBLICATION_DATA[0:1],
                             columns=['id', 'year', 'title', 'abstract', 'type', 'authors', 'journal'])
 
-    def load_citation_stats(self, ids=None, current=None, task=None):
+    def load_citation_stats(self, ids=None, current=1, task=None):
         return pd.DataFrame([['1', 1972, 2], ['1', 1974, 15]],
                             columns=['id', 'year', 'count'])
 
-    def load_citations(self, ids=None, current=None, task=None):
+    def load_citations(self, ids=None, current=1, task=None):
         return pd.DataFrame([], columns=['id_out', 'id_in'])
 
-    def load_cocitations(self, ids=None, current=None, task=None):
+    def load_cocitations(self, ids=None, current=1, task=None):
         return pd.DataFrame([], columns=['citing', 'cited_1', 'cited_2', 'year'])
 
 
@@ -101,23 +101,23 @@ class MockLoaderEmpty(Loader):
         config = PubtrendsConfig(test=True)
         super(MockLoaderEmpty, self).__init__(config, connect=False)
 
-    def search(self, terms, limit=None, sort=None, current=None, task=None):
+    def search(self, terms, limit=None, sort=None, current=1, task=None):
         return [], True
 
-    def find(self, key, value, current=0, task=None):
+    def find(self, key, value, current=1, task=None):
         raise Exception('Not implemented')
 
-    def load_publications(self, ids, current=0, task=None):
+    def load_publications(self, ids, current=1, task=None):
         raise Exception('Not implemented')
 
-    def load_citation_stats(self, ids, current=0, task=None):
+    def load_citation_stats(self, ids, current=1, task=None):
         raise Exception('Not implemented')
 
-    def load_citations(self, ids, current=0, task=None):
+    def load_citations(self, ids, current=1, task=None):
         raise Exception('Not implemented')
 
-    def load_cocitations(self, ids, current=0, task=None):
+    def load_cocitations(self, ids, current=1, task=None):
         raise Exception('Not implemented')
 
-    def expand(self, ids, current=0, task=None):
+    def expand(self, ids, current=1, task=None):
         raise Exception('Not implemented')

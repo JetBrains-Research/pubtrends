@@ -22,7 +22,7 @@ class Loader(Connector, metaclass=ABCMeta):
         self.progress = pl
 
     @abstractmethod
-    def find(self, key, value, current=0, task=None):
+    def find(self, key, value, current=1, task=None):
         """
         Searches single or multiple paper(s) for give search key, value.
         :return: list of ids, i.e. list(String).
@@ -30,7 +30,7 @@ class Loader(Connector, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def search(self, query, limit=None, sort=None, current=0, task=None):
+    def search(self, query, limit=None, sort=None, current=1, task=None):
         """
         Searches publications by given query.
         :return: list of ids, i.e. list(String).
@@ -38,14 +38,14 @@ class Loader(Connector, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def load_publications(self, ids, current=0, task=None):
+    def load_publications(self, ids, current=1, task=None):
         """
         Loads publications for given ids.
         :return: dataframe[id(String), title, abstract, year, type, aux]
         """
 
     @abstractmethod
-    def load_citation_stats(self, ids, current=0, task=None):
+    def load_citation_stats(self, ids, current=1, task=None):
         """
         Loads all the citations stats for each of given ids.
         :return: dataframe[id(String), year, count]
@@ -53,7 +53,7 @@ class Loader(Connector, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def load_citations(self, ids, current=0, task=None):
+    def load_citations(self, ids, current=1, task=None):
         """
         Loading INNER citations graph, where all the nodes are inside query of interest.
         :return: dataframe[id_out(String), id_in(String)]
@@ -61,14 +61,14 @@ class Loader(Connector, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def load_cocitations(self, ids, current=0, task=None):
+    def load_cocitations(self, ids, current=1, task=None):
         """
         Loading co-citations graph.
         :return: dataframe[citing(String), cited_1(String), cited_2(String), year]
         """
 
     @abstractmethod
-    def expand(self, ids, current=0, task=None):
+    def expand(self, ids, current=1, task=None):
         """
         Expands list of ids doing one or two steps of breadth first search along citations graph.
         :return: list of ids, i.e. list(String).

@@ -13,17 +13,17 @@ from .utils import get_subtopic_descriptions, get_tfidf_words, split_df_list
 
 class KeyPaperAnalyzer:
     SEED = 20190723
-    TOTAL_STEPS = 16
+    TOTAL_STEPS = 17
     EXPERIMENTAL_STEPS = 2
 
     def __init__(self, loader, config, test=False):
         self.config = config
         self.experimental = config.experimental
-        self.logger = ProgressLogger(KeyPaperAnalyzer.TOTAL_STEPS +
-                                     (KeyPaperAnalyzer.EXPERIMENTAL_STEPS if self.experimental else 0))
+        self.progress = ProgressLogger(KeyPaperAnalyzer.TOTAL_STEPS +
+                                       (KeyPaperAnalyzer.EXPERIMENTAL_STEPS if self.experimental else 0))
 
         self.loader = loader
-        loader.set_progress_logger(self.logger)
+        loader.set_progress_logger(self.progress)
 
         # Determine source to provide correct URLs to articles
         if isinstance(self.loader, PubmedLoader):
@@ -36,10 +36,10 @@ class KeyPaperAnalyzer:
             raise TypeError("loader should be either PubmedLoader or SemanticScholarLoader")
 
     def log(self):
-        return self.logger.stream.getvalue()
+        return self.progress.stream.getvalue()
 
     def teardown(self):
-        self.logger.remove_handler()
+        self.progress.remove_handler()
 
     def search_terms(self, query, limit=None, sort=None, task=None):
         # Search articles relevant to the terms
@@ -59,7 +59,7 @@ class KeyPaperAnalyzer:
             raise RuntimeError(f"Nothing found in DB for empty ids list")
         for _ in range(zoom):
             if len(ids) > 100:
-                self.logger.info('Too many related papers, stop references expanding', current=1, task=task)
+                self.progress.info('Too many related papers, stop references expanding', current=1, task=task)
                 break
             ids = self.loader.expand(ids, current=1, task=task)
         # Load data about publications
@@ -90,8 +90,8 @@ class KeyPaperAnalyzer:
         self.CG = self.build_cocitation_graph(cocit_grouped_df, current=8, task=task, add_citation_edges=True)
 
         if len(self.CG.nodes()) == 0:
-            self.logger.debug("Co-citations graph is empty", current=9, task=task)
-            self.logger.info("Not enough papers to process topics analysis", current=9, task=task)
+            self.progress.debug("Co-citations graph is empty", current=9, task=task)
+            self.progress.info("Not enough papers to process topics analysis", current=9, task=task)
             self.df['comp'] = 0  # Technical value for top authors and papers analysis
             self.df_kwd = pd.DataFrame({'comp': [0], 'kwd': ['']})
         else:
@@ -125,6 +125,9 @@ class KeyPaperAnalyzer:
             self.evolution_kwds = self.subtopic_evolution_descriptions(
                 self.df, self.evolution_df, self.evolution_year_range, self.query, current=18, task=task
             )
+            self.progress.info('Done', current=19, task=task)
+        else:
+            self.progress.info('Done', current=17, task=task)
 
     def build_cit_stats_df(self, cit_stats_df_from_query, n_papers, current=None, task=None):
         # Get citation stats with columns 'id', year_1, ..., year_N and fill NaN with 0
@@ -140,22 +143,22 @@ class KeyPaperAnalyzer:
 
         cit_stats_df['total'] = cit_stats_df.iloc[:, 1:].sum(axis=1)
         cit_stats_df = cit_stats_df.sort_values(by='total', ascending=False)
-        self.logger.debug(f"Loaded citation stats for {len(cit_stats_df)} of {n_papers} papers.\n" +
-                          "Others may either have zero citations or be absent in the local database.",
-                          current=current, task=task)
+        self.progress.debug(f"Loaded citation stats for {len(cit_stats_df)} of {n_papers} papers.\n" +
+                            "Others may either have zero citations or be absent in the local database.",
+                            current=current, task=task)
 
         return cit_stats_df
 
     def build_cocit_grouped_df(self, cocit_df, current=0, task=None):
-        self.logger.debug(f'Aggregating co-citations', current=current, task=task)
+        self.progress.debug(f'Aggregating co-citations', current=current, task=task)
         cocit_grouped_df = cocit_df.groupby(['cited_1', 'cited_2', 'year']).count().reset_index()
         cocit_grouped_df = cocit_grouped_df.pivot_table(index=['cited_1', 'cited_2'],
                                                         columns=['year'], values=['citing']).reset_index()
         cocit_grouped_df = cocit_grouped_df.replace(np.nan, 0)
         cocit_grouped_df['total'] = cocit_grouped_df.iloc[:, 2:].sum(axis=1)
         cocit_grouped_df = cocit_grouped_df.sort_values(by='total', ascending=False)
-        self.logger.debug(f'Filtering top {self.loader.max_number_of_cocitations} of all the co-citations',
-                          current=current, task=task)
+        self.progress.debug(f'Filtering top {self.loader.max_number_of_cocitations} of all the co-citations',
+                            current=current, task=task)
         cocit_grouped_df = cocit_grouped_df.iloc[:min(self.loader.max_number_of_cocitations,
                                                       len(cocit_grouped_df)), :]
 
@@ -179,22 +182,22 @@ class KeyPaperAnalyzer:
         return df, min_year, max_year, citation_years
 
     def build_citation_graph(self, cit_df, current=0, task=None):
-        self.logger.info(f'Building citation graph', current=current, task=task)
+        self.progress.info(f'Building citation graph', current=current, task=task)
         G = nx.DiGraph()
         for index, row in cit_df.iterrows():
             v, u = row['id_out'], row['id_in']
             G.add_edge(v, u)
 
-        self.logger.info(f'Built citation graph - nodes {len(G.nodes())} edges {len(G.edges())}',
-                         current=current, task=task)
+        self.progress.info(f'Built citation graph - nodes {len(G.nodes())} edges {len(G.edges())}',
+                           current=current, task=task)
         return G
 
     def build_cocitation_graph(self, cocit_grouped_df, year=None, current=0, task=None, add_citation_edges=False,
                                citation_weight=0.3):
         if year:
-            self.logger.info(f'Building co-citations graph for {year} year', current=current, task=task)
+            self.progress.info(f'Building co-citations graph for {year} year', current=current, task=task)
         else:
-            self.logger.info(f'Building co-citations graph', current=current, task=task)
+            self.progress.info(f'Building co-citations graph', current=current, task=task)
         CG = nx.Graph()
 
         # NOTE: we use nodes id as String to avoid problems str keys in jsonify
@@ -210,24 +213,24 @@ class KeyPaperAnalyzer:
                 else:
                     CG.add_edge(u, v, weight=citation_weight)
 
-        self.logger.info(f'Built co-citations graph - nodes {len(CG.nodes())} edges {len(CG.edges())}',
-                         current=current, task=task)
+        self.progress.info(f'Built co-citations graph - nodes {len(CG.nodes())} edges {len(CG.edges())}',
+                           current=current, task=task)
         return CG
 
     def subtopic_analysis(self, cocitation_graph, current=0, task=None):
-        self.logger.info(f'Extracting subtopics from co-citation graph', current=current, task=task)
+        self.progress.info(f'Extracting subtopics from co-citation graph', current=current, task=task)
         connected_components = nx.number_connected_components(cocitation_graph)
-        self.logger.debug(f'Co-citation graph has {connected_components} connected components',
-                          current=current, task=task)
+        self.progress.debug(f'Co-citation graph has {connected_components} connected components',
+                            current=current, task=task)
 
         # Graph clustering via Louvain community algorithm
         partition = community.best_partition(cocitation_graph, random_state=KeyPaperAnalyzer.SEED)
-        self.logger.debug(f'Found {len(set(partition.values()))} components', current=current, task=task)
+        self.progress.debug(f'Found {len(set(partition.values()))} components', current=current, task=task)
 
         # Calculate modularity for partition
         modularity = community.modularity(partition, cocitation_graph)
-        self.logger.debug(f'Graph modularity (possible range is [-1, 1]): {modularity :.3f}',
-                          current=current, task=task)
+        self.progress.debug(f'Graph modularity (possible range is [-1, 1]): {modularity :.3f}',
+                            current=current, task=task)
 
         # Merge small components to 'Other'
         partition_merged, components_merged = self.merge_components(partition)
@@ -235,8 +238,8 @@ class KeyPaperAnalyzer:
         components = set(partition_merged.values())
         comp_sizes = {c: sum([partition_merged[node] == c for node in partition_merged.keys()]) for c in components}
         for k, v in comp_sizes.items():
-            self.logger.debug(f'Cluster {k}: {v} ({int(100 * v / len(partition_merged))}%)',
-                              current=current, task=task)
+            self.progress.debug(f'Cluster {k}: {v} ({int(100 * v / len(partition_merged))}%)',
+                                current=current, task=task)
 
         return components, comp_other, partition_merged, comp_sizes
 
@@ -253,18 +256,18 @@ class KeyPaperAnalyzer:
 
     def subtopic_descriptions(self, df, n=200, current=0, task=None):
         # Get descriptions for subtopics
-        self.logger.debug(f'Getting descriptions for subtopics using top {n} cited papers',
-                          current=current, task=task)
+        self.progress.debug(f'Getting descriptions for subtopics using top {n} cited papers',
+                            current=current, task=task)
         comps = self.get_most_cited_papers_for_comps(df, n=n)
         kwds = get_subtopic_descriptions(df, comps)
         for k, v in kwds.items():
-            self.logger.debug(f'{k}: {v}', current=current, task=task)
+            self.progress.debug(f'{k}: {v}', current=current, task=task)
         df_kwd = pd.Series(kwds).reset_index()
         df_kwd = df_kwd.rename(columns={'index': 'comp', 0: 'kwd'})
         return df_kwd
 
     def find_top_cited_papers(self, df, max_papers=50, threshold=0.1, min_papers=1, current=0, task=None):
-        self.logger.info(f'Identifying top cited papers overall', current=current, task=task)
+        self.progress.info(f'Identifying top cited papers overall', current=current, task=task)
         papers_to_show = max(min(max_papers, round(len(df) * threshold)), min_papers)
         top_cited_df = df.sort_values(by='total',
                                       ascending=False).iloc[:papers_to_show, :]
@@ -272,7 +275,7 @@ class KeyPaperAnalyzer:
         return top_cited_papers, top_cited_df
 
     def find_max_gain_papers(self, df, citation_years, current=0, task=None):
-        self.logger.info('Identifying papers with max citation gain for each year', current=current, task=task)
+        self.progress.info('Identifying papers with max citation gain for each year', current=current, task=task)
         max_gain_data = []
         for year in citation_years:
             max_gain = df[year].astype(int).max()
@@ -290,8 +293,8 @@ class KeyPaperAnalyzer:
         return max_gain_papers, max_gain_df
 
     def find_max_relative_gain_papers(self, df, citation_years, current=0, task=None):
-        self.logger.info('Identifying papers with max relative citation gain for each year', current=current,
-                         task=task)
+        self.progress.info('Identifying papers with max relative citation gain for each year', current=current,
+                           task=task)
         current_sum = pd.Series(np.zeros(len(df), ))
         df_rel = df.loc[:, ['id', 'title', 'authors', 'year']]
         for year in citation_years:
@@ -321,18 +324,18 @@ class KeyPaperAnalyzer:
 
         # Cannot analyze evolution
         if len(year_range) < 2:
-            self.logger.info(f'Year step is too big to analyze evovution of subtopics in {min_year} - {max_year}',
-                             current=current, task=task)
+            self.progress.info(f'Year step is too big to analyze evolution of subtopics in {min_year} - {max_year}',
+                               current=current, task=task)
             return None, None
 
-        self.logger.info(f'Studying evolution of subtopics in {min_year} - {max_year}',
-                         current=current, task=task)
+        self.progress.info(f'Studying evolution of subtopics in {min_year} - {max_year}',
+                           current=current, task=task)
 
         components_merged = {}
         cg = {}
 
-        self.logger.debug(f"Years when subtopics are studied: {', '.join([str(year) for year in year_range])}",
-                          current=current, task=task)
+        self.progress.debug(f"Years when subtopics are studied: {', '.join([str(year) for year in year_range])}",
+                            current=current, task=task)
 
         # Use results of subtopic analysis for current year, perform analysis for other years
         years_processed = 1
@@ -349,8 +352,8 @@ class KeyPaperAnalyzer:
                 evolution_series.append(pd.Series(p))
                 years_processed += 1
             else:
-                self.logger.debug(f'Total number of papers is less than {min_papers}, stopping.',
-                                  current=current, task=task)
+                self.progress.debug(f'Total number of papers is less than {min_papers}, stopping.',
+                                    current=current, task=task)
                 break
 
         year_range = year_range[:years_processed]
@@ -373,13 +376,13 @@ class KeyPaperAnalyzer:
         if evolution_df is None or not year_range:
             return None
 
-        self.logger.info(f'Generating descriptions for subtopics during evolution using top {n} cited papers',
-                         current=current, task=task)
+        self.progress.info(f'Generating descriptions for subtopics during evolution using top {n} cited papers',
+                           current=current, task=task)
         evolution_kwds = {}
         for col in evolution_df:
             if col in year_range:
-                self.logger.debug(f'Generating TF-IDF descriptions for year {col}',
-                                  current=current, task=task)
+                self.progress.debug(f'Generating TF-IDF descriptions for year {col}',
+                                    current=current, task=task)
                 if isinstance(col, (int, float)):
                     evolution_df[col] = evolution_df[col].apply(int)
                     comps = evolution_df.groupby(col)['id'].apply(list).to_dict()
@@ -388,15 +391,15 @@ class KeyPaperAnalyzer:
         return evolution_kwds
 
     def merge_components(self, partition, granularity=0.05, current=0, task=None):
-        self.logger.debug(f'Merging components smaller than {granularity} to "Other" component',
-                          current=current, task=task)
+        self.progress.debug(f'Merging components smaller than {granularity} to "Other" component',
+                            current=current, task=task)
         threshold = int(granularity * len(partition))
         components = set(partition.values())
         comp_sizes = {c: sum([partition[node] == c for node in partition.keys()]) for c in components}
         comp_to_merge = {com: comp_sizes[com] <= threshold for com in components}
         components_merged = sum(comp_to_merge.values())
         if components_merged > 1:
-            self.logger.debug(f'Reassigning components', current=current, task=task)
+            self.progress.debug(f'Reassigning components', current=current, task=task)
             partition_merged = {}
             new_comps = {}
             ci = 1  # Other component is 0.
@@ -408,23 +411,23 @@ class KeyPaperAnalyzer:
                     new_comps[v] = ci
                     ci += 1
                 partition_merged[k] = new_comps[v]
-            self.logger.debug(f'Processed {len(set(partition_merged.values()))} components',
-                              current=current, task=task)
+            self.progress.debug(f'Processed {len(set(partition_merged.values()))} components',
+                                current=current, task=task)
         else:
-            self.logger.debug(f'No need to reassign components',
-                              current=current, task=task)
+            self.progress.debug(f'No need to reassign components',
+                                current=current, task=task)
             partition_merged = partition
         return partition_merged, components_merged
 
     def sort_components(self, partition_merged, components_merged, current=0, task=None):
-        self.logger.debug('Sorting components by size descending', current=current, task=task)
+        self.progress.debug('Sorting components by size descending', current=current, task=task)
         components = set(partition_merged.values())
         comp_sizes = {c: sum([partition_merged[node] == c for node in partition_merged.keys()]) for c in components}
 
         argsort = lambda seq: sorted(range(len(seq)), key=seq.__getitem__, reverse=True)
         sorted_comps = list(argsort(list(comp_sizes.values())))
         mapping = dict(zip(sorted_comps, range(len(components))))
-        self.logger.debug(f'Mapping: {mapping}', current=current, task=task)
+        self.progress.debug(f'Mapping: {mapping}', current=current, task=task)
         sorted_partition_merged = {node: mapping[c] for node, c in partition_merged.items()}
 
         if components_merged:
@@ -435,7 +438,7 @@ class KeyPaperAnalyzer:
         return sorted_partition_merged, other
 
     def popular_journals(self, df, n=50, current=0, task=None):
-        self.logger.info("Finding popular journals", current=current, task=task)
+        self.progress.info("Finding popular journals", current=current, task=task)
         journal_stats = df.groupby(['journal', 'comp']).size().reset_index(name='counts')
         # drop papers with undefined subtopic
         journal_stats = journal_stats[journal_stats.comp != -1]
@@ -455,7 +458,7 @@ class KeyPaperAnalyzer:
         return journal_stats.head(n=n)
 
     def popular_authors(self, df, n=50, current=0, task=None):
-        self.logger.info("Finding popular authors", current=current, task=task)
+        self.progress.info("Finding popular authors", current=current, task=task)
 
         author_stats = df[['authors', 'comp']].copy()
         author_stats['authors'].replace({'': np.nan, -1: np.nan}, inplace=True)
@@ -531,6 +534,6 @@ class KeyPaperAnalyzer:
         self.df, self.df_kwd, self.G, self.CG = loaded['df'], loaded['df_kwd'], loaded['g'], loaded['cg']
 
     def pagerank(self, G, current=0, task=None):
-        self.logger.info('Performing PageRank analysis', current=current, task=task)
+        self.progress.info('Performing PageRank analysis', current=current, task=task)
         # Apply PageRank algorithm with damping factor of 0.5
         return nx.pagerank(G, alpha=0.5, tol=1e-9)

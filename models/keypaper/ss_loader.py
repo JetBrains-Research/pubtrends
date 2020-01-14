@@ -15,7 +15,7 @@ class SemanticScholarLoader(Loader):
     def __init__(self, pubtrends_config):
         super(SemanticScholarLoader, self).__init__(pubtrends_config)
 
-    def find(self, key, value, current=0, task=None):
+    def find(self, key, value, current=1, task=None):
         self.progress.info(f"Searching for a publication with {key} '{value}'", current=current, task=task)
 
         # Use dedicated text index to search title.
@@ -38,7 +38,7 @@ class SemanticScholarLoader(Loader):
         with self.neo4jdriver.session() as session:
             return [str(r['ssid']) for r in session.run(query)]
 
-    def search(self, query, limit=None, sort=None, current=0, task=None):
+    def search(self, query, limit=None, sort=None, current=1, task=None):
         query_str = preprocess_search_query(query, self.pubtrends_config.min_search_words)
 
         if not limit:
@@ -86,7 +86,7 @@ class SemanticScholarLoader(Loader):
                            task=task)
         return ids
 
-    def load_publications(self, ids, current=0, task=None):
+    def load_publications(self, ids, current=1, task=None):
         self.progress.info('Loading publication data', current=current, task=task)
 
         # TODO[shpynov] transferring huge list of ids can be a problem
@@ -114,7 +114,7 @@ class SemanticScholarLoader(Loader):
         self.progress.debug(f'Found {len(pub_df)} publications in the local database', current=current, task=task)
         return pub_df
 
-    def load_citation_stats(self, ids, current=0, task=None):
+    def load_citation_stats(self, ids, current=1, task=None):
         self.progress.info('Loading citations statistics', current=current, task=task)
 
         # TODO[shpynov] transferring huge list of ids can be a problem
@@ -146,7 +146,7 @@ class SemanticScholarLoader(Loader):
 
         return cit_stats_df
 
-    def load_citations(self, ids, current=0, task=None):
+    def load_citations(self, ids, current=1, task=None):
         """ Loading INNER citations graph, where all the nodes are inside query of interest """
         self.progress.info('Started loading citations', current=current, task=task)
 
@@ -176,7 +176,7 @@ class SemanticScholarLoader(Loader):
         cit_df['id_out'] = cit_df['id_out'].apply(str)
         return cit_df
 
-    def load_cocitations(self, ids, current=0, task=None):
+    def load_cocitations(self, ids, current=1, task=None):
         self.progress.info('Calculating co-citations for papers', current=current, task=task)
 
         # Use unfolding to pairs on the client side instead of DataBase
@@ -215,7 +215,7 @@ class SemanticScholarLoader(Loader):
 
         return cocit_df
 
-    def expand(self, ids, current=0, task=None):
+    def expand(self, ids, current=1, task=None):
         expanded = set(ids)
         if isinstance(ids, Iterable):
             self.progress.info('Expanding current topic', current=current, task=task)

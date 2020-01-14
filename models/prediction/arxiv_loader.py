@@ -11,7 +11,7 @@ class ArxivLoader(SemanticScholarLoader):
     def __init__(self, pubtrends_config):
         super(ArxivLoader, self).__init__(pubtrends_config)
 
-    def search(self, *query, current=0, task=None):
+    def search(self, *query, current=1, task=None):
         query = f'''
         SELECT DISTINCT ON(ssid) ssid, crc32id, title, abstract, year, aux FROM SSPublications P
         WHERE source = 'Arxiv' limit {self.max_number_of_articles};
