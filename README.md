@@ -180,7 +180,12 @@ Please ensure that you have configured and prepared the database(s).
     ```
 3. Build ready for deployment package with script `dist.sh`.
 
-4. Launch pubtrends with docker-compose.
+4. Create logs folder within deployment package folder
+   ```
+   mkdir logs
+   ```
+
+5. Launch pubtrends with docker-compose.
     ```
     # start
     docker-compose up -d --build
