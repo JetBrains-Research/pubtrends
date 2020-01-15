@@ -5,11 +5,10 @@ from celery.result import AsyncResult
 
 from models.celery.lru_ttl_cache_with_callback import lru_ttl_cache_with_callback
 from models.celery.tasks import celery
+from models.keypaper.config import PubtrendsConfig
 
 
-MAX_PENDING_TASKS = 50  # Max allowed pending tasks
-PENDING_TASKS_TIMEOUT = 60  # Seconds, pending task will be revoked after no polling activity
-MAX_COMPLETED_TASKS = 1000  # Max completed tasks to store
+PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
 
 def _celery_revoke_completed_task(jobid):
@@ -30,7 +29,7 @@ class LRUCacheRemoveCallback(LRUCache):
 
 
 # This cache is used to story already completed tasks
-_completed_tasks_cache = LRUCacheRemoveCallback(maxsize=MAX_COMPLETED_TASKS,
+_completed_tasks_cache = LRUCacheRemoveCallback(maxsize=PUBTRENDS_CONFIG.celery_max_completed_tasks,
                                                 remove_callback=_celery_revoke_completed_task)
 
 
@@ -64,8 +63,8 @@ def get_or_cancel_task(jobid):
     return _get_or_cancel_task(jobid)
 
 
-@lru_ttl_cache_with_callback(maxsize=MAX_PENDING_TASKS,
-                             timeout=PENDING_TASKS_TIMEOUT,
+@lru_ttl_cache_with_callback(maxsize=PUBTRENDS_CONFIG.celery_max_pending_tasks,
+                             timeout=PUBTRENDS_CONFIG.celery_pending_tasks_timeout,
                              remove_callback=_celery_revoke_pending_task)
 def _get_or_cancel_task(jobid):
     logging.debug(f'get_or_cancel_task new: {jobid}')

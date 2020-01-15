@@ -33,3 +33,10 @@ class PubtrendsConfig:
 
         self.show_max_articles_options = [opt.strip() for opt in params['show_max_articles_options'].split(',')]
         self.show_max_articles_default_value = params['show_max_articles_default_value'].strip()
+
+        # Max allowed pending tasks
+        self.celery_max_pending_tasks = params.getint('celery_max_pending_tasks')
+        # Seconds, pending task will be revoked after no polling activity
+        self.celery_pending_tasks_timeout = params.getint('celery_pending_tasks_timeout')
+        # Max completed tasks to store
+        self.celery_max_completed_tasks = params.getint('celery_max_completed_tasks')
