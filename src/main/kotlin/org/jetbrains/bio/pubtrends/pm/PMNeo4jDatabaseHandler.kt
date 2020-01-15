@@ -2,6 +2,7 @@ package org.jetbrains.bio.pubtrends.pm
 
 import com.google.gson.GsonBuilder
 import org.jetbrains.bio.pubtrends.AbstractDBHandler
+import org.jetbrains.bio.pubtrends.Neo4jConnector
 import org.neo4j.driver.v1.AuthTokens
 import org.neo4j.driver.v1.GraphDatabase
 import java.io.Closeable
@@ -11,23 +12,19 @@ import java.io.Closeable
 * TODO[shpynov] Consider refactoring.
  */
 open class PMNeo4jDatabaseHandler(
-        url: String,
+        host: String,
         port: Int,
         user: String,
         password: String
-) : AbstractDBHandler<PubmedArticle>, Closeable {
+) : Neo4jConnector(host, port, user, password), AbstractDBHandler<PubmedArticle> {
 
     companion object {
         const val DELETE_BATCH_SIZE = 10000
     }
 
-    // Driver objects should be created with application-wide lifetime
-    private val driver = GraphDatabase.driver("bolt://$url:$port", AuthTokens.basic(user, password))
-
     init {
         processIndexes(true)
     }
-
 
     /**
      * This function can be used to wipe contents of the database.

@@ -17,10 +17,10 @@ class PubtrendsConfig:
 
         self.version = params['version']
 
-        self.host = params['url' if not test else 'test_url']
-        self.port = params['port' if not test else 'test_port']
-        self.user = params['username' if not test else 'test_username']
-        self.password = params['password' if not test else 'test_password']
+        self.neo4jhost = params['neo4jhost' if not test else 'test_neo4jhost']
+        self.neo4jport = params['neo4jport' if not test else 'test_neo4jport']
+        self.neo4juser = params['neo4jusername' if not test else 'test_neo4jusername']
+        self.neo4jpassword = params['neo4jpassword' if not test else 'test_neo4jpassword']
 
         self.experimental = params.getboolean('experimental')
         self.development = params.getboolean('development')
