@@ -68,7 +68,7 @@ You can always inspect data structure in Neo4j web browser.
 Launch crawler to download and keep up-to-date Pubmed database:
 
    ```
-   java -cp build/libs/pubtrends-dev.jar org.jetbrains.bio.pubtrends.pm.MainKt --fillDatabase
+   java -cp build/libs/pubtrends-dev.jar org.jetbrains.bio.pubtrends.pm.PubmedLoader --fillDatabase
    ``` 
    
    Command line options supported:
@@ -87,7 +87,7 @@ Download Sample from [Semantic Scholar](https://www.semanticscholar.org/) or ful
    cat manifest.txt | grep corpus | while read -r file; do 
       if [[ -z $(grep "$file" complete.txt) ]]; then
          wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2020-01-01/$file;
-         java -cp build/libs/pubtrends-dev.jar org.jetbrains.bio.pubtrends.ss.MainKt --fillDatabase $(pwd)/$file
+         java -cp build/libs/pubtrends-dev.jar org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --fillDatabase $(pwd)/$file
          rm $file;
          echo "$file" >> complete.txt
       fi;
