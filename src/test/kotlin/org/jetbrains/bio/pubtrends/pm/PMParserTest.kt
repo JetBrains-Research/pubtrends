@@ -11,8 +11,8 @@ import kotlin.test.assertTrue
 class PMParserTest {
     companion object {
         private val dbHandler = MockDBHandler<PubmedArticle>()
-        private val parser = PubmedXMLParser(dbHandler, 0, 1000)
-        private const val testXMLFileName = "articlesForParserTest.xml"
+        private val parser = PubmedXMLParser(dbHandler, 1000)
+        private const val testXMLFileName = "articlesPubmed.xml"
 
         init {
             this::class.java.classLoader.getResourceAsStream(testXMLFileName)?.let {

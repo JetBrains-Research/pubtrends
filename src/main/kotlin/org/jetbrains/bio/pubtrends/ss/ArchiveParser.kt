@@ -5,16 +5,19 @@ import com.google.gson.reflect.TypeToken
 import org.apache.logging.log4j.LogManager
 import org.jetbrains.bio.pubtrends.AbstractDBHandler
 import java.io.File
+import java.nio.file.Path
 import java.util.*
-import java.util.zip.CRC32
 import java.util.zip.GZIPInputStream
 
 
 class ArchiveParser(
         private val dbHandler: AbstractDBHandler<SemanticScholarArticle>,
         private val archiveFileGz: File,
-        private var batchSize: Int
+        private var batchSize: Int,
+        private val collectStats: Boolean,
+        private val statsTSV: Path
 ) {
+
     private val currentBatch = arrayListOf<SemanticScholarArticle>()
     private var batchIndex = 0
 
@@ -22,6 +25,14 @@ class ArchiveParser(
         private val logger = LogManager.getLogger(ArchiveParser::class)
     }
 
+    init {
+        if (collectStats) {
+            logger.info("Collecting stats in $statsTSV")
+        }
+    }
+
+    // Stats about JSON tags
+    val tags = HashMap<String, Int>()
 
     fun parse() {
         var sc: Scanner
@@ -49,7 +60,6 @@ class ArchiveParser(
                 if (jsonObject == null) {
                     continue
                 }
-
                 val ssid = jsonObject.get("id")?.asString ?: continue
                 val title = jsonObject.get("title")?.asString ?: continue
 
@@ -83,6 +93,18 @@ class ArchiveParser(
                         citationList = citationList, aux = aux, source = source)
 
                 addArticleToBatch(curArticle)
+
+                if (collectStats) {
+                    jsonObject.entrySet().forEach { e ->
+                        tags[e.key] = (tags[e.key] ?: 0) + 1
+                    }
+                    for (i in citationList.indices) {
+                        tags["citation"] = (tags["citation"] ?: 0) + 1
+                    }
+                    for (i in authors.indices) {
+                        tags["author"] = (tags["author"] ?: 0) + 1
+                    }
+                }
             }
             handleEndDocument()
         }
@@ -99,6 +121,17 @@ class ArchiveParser(
     private fun handleEndDocument() {
         if (currentBatch.isNotEmpty()) {
             storeBatch()
+        }
+        if (collectStats) {
+            logger.info("Writing stats to $statsTSV")
+            statsTSV.toFile().outputStream().bufferedWriter().use {
+                it.write(archiveFileGz.path)
+                it.newLine()
+                tags.forEach { tag ->
+                    it.write("${tag.key}\t${tag.value}\n")
+                }
+                it.newLine()
+            }
         }
     }
 

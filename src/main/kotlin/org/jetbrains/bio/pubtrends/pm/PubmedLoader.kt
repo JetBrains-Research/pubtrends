@@ -65,14 +65,10 @@ object PubmedLoader {
                         try {
                             logger.info("Init Pubmed processor")
                             val pubmedXMLParser =
-                                    PubmedXMLParser(
-                                            dbHandler,
-                                            config["pm_parser_limit"].toString().toInt(),
-                                            config["pm_batch_size"].toString().toInt()
-                                    )
+                                    PubmedXMLParser(dbHandler, config["loader_batch_size"].toString().toInt())
 
                             logger.info("Init crawler")
-                            val collectStats = config["pm_collect_stats"].toString().toBoolean()
+                            val collectStats = config["loader_collect_stats"].toString().toBoolean()
                             val pubmedCrawler = PubmedCrawler(pubmedXMLParser, collectStats,
                                     pubmedStatsFile, pubmedLastIdFile)
 

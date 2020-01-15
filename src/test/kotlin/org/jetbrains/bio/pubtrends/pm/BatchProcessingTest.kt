@@ -11,7 +11,7 @@ class BatchProcessingTest(private val batchSize : Int) {
 
     @Test
     fun testBatchSize() {
-        val parser = PubmedXMLParser(dbHandler, 0, batchSize)
+        val parser = PubmedXMLParser(dbHandler, batchSize)
 
         this::class.java.classLoader.getResourceAsStream(testXMLFileName)?.let {
             val file = createTempFile()
@@ -27,7 +27,7 @@ class BatchProcessingTest(private val batchSize : Int) {
 
     companion object {
         private val dbHandler = MockDBHandler<PubmedArticle>(batch = true)
-        const val testXMLFileName = "articlesForParserTest.xml"
+        const val testXMLFileName = "articlesPubmed.xml"
         val articlesCount = PubmedArticles.articles.size
 
         @Parameterized.Parameters(name = "batchSize={0}")

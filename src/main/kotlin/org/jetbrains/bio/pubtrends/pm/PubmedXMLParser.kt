@@ -14,7 +14,6 @@ import javax.xml.stream.XMLStreamException
 
 class PubmedXMLParser(
         private val dbHandler: AbstractDBHandler<PubmedArticle>,
-        private val parserLimit: Int,
         private val batchSize: Int = 0
 ) {
     companion object {
@@ -460,11 +459,6 @@ class PubmedXMLParser(
                 if (localName != null) {
                     fullName = fullName.removeSuffix("/$localName")
                 }
-            }
-
-            // Stop parsing if found 'parserLimit' articles
-            if ((parserLimit > 0) && (articleCounter == parserLimit)) {
-                break
             }
 
             // Store articles if reached preferred size of the batch

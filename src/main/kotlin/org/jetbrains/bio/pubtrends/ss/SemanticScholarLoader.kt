@@ -33,7 +33,7 @@ object SemanticScholarLoader {
             }
 
             // Load configuration file
-            val (config, configPath, _) = Config.load()
+            val (config, configPath, settingsRoot) = Config.load()
             logger.info("Config\n" + BufferedReader(FileReader(configPath.toFile())).use {
                 it.readLines().joinToString("\n")
             })
@@ -54,10 +54,16 @@ object SemanticScholarLoader {
                 }
 
                 if (options.has("fillDatabase")) {
+                    val statsFile = settingsRoot.resolve("semantic_scholar_stats.tsv")
+                    val collectStats = config["loader_collect_stats"].toString().toBoolean()
+
                     val file = File(options.valueOf("fillDatabase").toString())
                     logger.info("Started parsing articles $file")
-                    // TODO ss_batch_size?
-                    ArchiveParser(dbHandler, file, config["pm_batch_size"].toString().toInt()).parse()
+                    ArchiveParser(dbHandler, file,
+                            config["loader_batch_size"].toString().toInt(),
+                            collectStats,
+                            statsFile
+                            ).parse()
                     logger.info("Finished parsing articles")
                 }
             }
