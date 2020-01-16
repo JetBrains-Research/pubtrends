@@ -120,7 +120,7 @@ class PubmedLoader(Loader):
         query = f'''
             WITH [{','.join([str(id) for id in ids])}] AS pmids
             MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
-            WHERE in.pmid IN pmids
+            WHERE in.pmid IN pmids AND out.date.year >= in.date.year
             RETURN in.pmid AS id, out.date.year AS year, COUNT(*) AS count;
         '''
         self.progress.debug(f'Load citations statistics query\n{query}', current=current, task=task)

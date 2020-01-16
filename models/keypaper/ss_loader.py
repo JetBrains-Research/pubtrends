@@ -122,7 +122,7 @@ class SemanticScholarLoader(Loader):
             WITH [{','.join([f'"{id}"' for id in ids])}] AS ssids,
                  [{','.join([str(crc32(id)) for id in ids])}] AS crc32ids
             MATCH (out:SSPublication)-[:SSReferenced]->(in:SSPublication)
-            WHERE in.crc32id in crc32ids AND in.ssid IN ssids
+            WHERE in.crc32id in crc32ids AND in.ssid IN ssids AND out.date.year >= in.date.year
             RETURN in.ssid AS id, out.date.year AS year, COUNT(*) AS count;
         '''
         self.progress.debug(f'Load citations statistics query\n{query}', current=current, task=task)
