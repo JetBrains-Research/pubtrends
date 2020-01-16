@@ -77,17 +77,10 @@ class KeyPaperAnalyzer:
         self.pub_types = list(set(self.pub_df['type']))
         cit_stats_df_from_query = self.loader.load_citation_stats(self.ids, current=3, task=task)
         self.cit_stats_df = self.build_cit_stats_df(cit_stats_df_from_query, self.n_papers, current=4, task=task)
-        print('cit_stats_df')
-        print(self.cit_stats_df.head())
         if len(self.cit_stats_df) == 0:
             raise RuntimeError("No citations of papers were found")
         self.df, self.min_year, self.max_year, self.citation_years = self.merge_citation_stats(self.pub_df,
                                                                                                self.cit_stats_df)
-        print("df")
-        print(self.df.head())
-        print("min-max", self.min_year, self.max_year)
-        print("citations_years")
-        print(self.citation_years)
         if len(self.df) == 0:
             raise RuntimeError("Failed to merge publications and citations")
         self.cit_df = self.loader.load_citations(self.ids, current=5, task=task)
@@ -111,9 +104,6 @@ class KeyPaperAnalyzer:
             # Perform PageRank analysis
             self.pr = self.pagerank(self.G, current=11, task=task)
             self.df = self.merge_col(self.df, self.pr, col='pagerank')
-
-        # Restore df sort order by year after merges
-        self.df.sort_values(by=['year'], inplace=True)
 
         # Find interesting papers
         self.top_cited_papers, self.top_cited_df = self.find_top_cited_papers(self.df, current=12, task=task)
@@ -288,19 +278,13 @@ class KeyPaperAnalyzer:
         self.progress.info('Identifying papers with max citation gain for each year', current=current, task=task)
         max_gain_data = []
         for year in citation_years:
-            print('year', year)
             max_gain = df[year].astype(int).max()
-            print('max_gain', max_gain)
-            print(list(df[year]))
             if max_gain > 0:
                 sel = df[df[year] == max_gain]
-                print(sel)
-                max_gain_article = [year, str(sel['id'].values[0]),
-                         sel['title'].values[0],
-                         sel['authors'].values[0],
-                         sel['year'].values[0], max_gain]
-                print(max_gain_article)
-                max_gain_data.append(max_gain_article)
+                max_gain_data.append([year, str(sel['id'].values[0]),
+                                      sel['title'].values[0],
+                                      sel['authors'].values[0],
+                                      sel['year'].values[0], max_gain])
 
         max_gain_df = pd.DataFrame(max_gain_data,
                                    columns=['year', 'id', 'title', 'authors',
