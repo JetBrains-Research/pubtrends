@@ -17,9 +17,11 @@ class PubmedLoader(Loader):
     def find(self, key, value, current=1, task=None):
         self.progress.info(f"Searching for a publication with {key} '{value}'", current=current, task=task)
 
+        if key == 'id':
+            key = 'pmid'
+
         # Use dedicated text index to search title.
         if key == 'title':
-
             query = f'''
                 CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", '"{re.sub('"', '', value.strip())}"')
                 YIELD node
