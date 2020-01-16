@@ -87,6 +87,7 @@ class TestPubmedLoader(unittest.TestCase):
     def test_load_citation_stats_data_frame(self):
         # Sort to compare with expected
         actual = self.cit_stats_df.sort_values(by=['id', 'year']).reset_index(drop=True)
+        print(actual)
         assert_frame_equal(EXPECTED_CIT_STATS_DF, actual, 'Wrong citation stats data', check_like=True)
 
     def test_load_citations_count(self):
