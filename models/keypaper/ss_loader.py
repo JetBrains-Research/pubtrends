@@ -113,6 +113,8 @@ class SemanticScholarLoader(Loader):
         pub_df = Loader.process_publications_dataframe(pub_df)
 
         self.progress.debug(f'Found {len(pub_df)} publications in the local database', current=current, task=task)
+        # Hack for missing type in SS, see https://github.com/JetBrains-Research/pubtrends/issues/200
+        pub_df['type'] = 'Article'
         return pub_df
 
     def load_citation_stats(self, ids, current=1, task=None):
