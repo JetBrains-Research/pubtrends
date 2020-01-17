@@ -255,7 +255,7 @@ def index():
                            limits=PUBTRENDS_CONFIG.show_max_articles_options,
                            default_limit=PUBTRENDS_CONFIG.show_max_articles_default_value,
                            development=PUBTRENDS_CONFIG.development,
-                           pm_enabled=PUBTRENDS_CONFIG.ss_enabled,
+                           pm_enabled=PUBTRENDS_CONFIG.pm_enabled,
                            ss_enabled=PUBTRENDS_CONFIG.ss_enabled,
                            search_example_source=search_example_source,
                            search_example_terms=search_example_terms)
