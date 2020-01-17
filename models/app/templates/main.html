@@ -183,8 +183,8 @@
         </div>
     </div>
 
-    <div class="alert alert-info alert-dismissible fade show"
-         role="alert" style="margin-top: 10px;">
+    <div class="alert {% if development %} alert-warning {% else %} alert-info {% endif %} alert-dismissible fade show"
+         role="alert" style="margin-top: 5px;">
         <form action="search_terms"  method="post" class="inline">
             <input type="hidden" name="source" value="{{ search_example_source }}">
             <input type="hidden" name="sort" value="Most Relevant">
