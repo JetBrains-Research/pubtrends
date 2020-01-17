@@ -110,7 +110,7 @@ def prepare_paper_data(data, source, pid):
     return result
 
 
-def prepare_papers_data(data, source, comp=None, word=None, author=None, journal=None):
+def prepare_papers_data(data, source, comp=None, word=None, author=None, journal=None, papers_list=None):
     loader, url_prefix = get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
     analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
     analyzer.init(data)
@@ -130,6 +130,13 @@ def prepare_papers_data(data, source, comp=None, word=None, author=None, journal
     # Filter by journal
     if journal is not None:
         df = df.loc[df['journal'] == journal]
+
+    if papers_list == 'top':
+        df = df.loc[[pid in analyzer.top_cited_papers for pid in df['id']]]
+    if papers_list == 'year':
+        df = df.loc[[pid in analyzer.max_gain_papers for pid in df['id']]]
+    if papers_list == 'hot':
+        df = df.loc[[pid in analyzer.max_rel_gain_papers for pid in df['id']]]
 
     result = []
     for _, row in df.iterrows():

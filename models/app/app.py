@@ -195,6 +195,14 @@ def show_ids():
     if journal is not None:
         search_string += f', journal: {journal}'
 
+    papers_list = request.args.get('papers_list')
+    if papers_list == 'top':
+        search_string += f', top papers'
+    if papers_list == 'year':
+        search_string += f', papers of the year'
+    if papers_list == 'hot':
+        search_string += f', hot papers'
+
     if jobid:
         job = complete_task(jobid)
         if job and job.state == 'SUCCESS':
@@ -204,7 +212,7 @@ def show_ids():
                                    source=source,
                                    query=query,
                                    search_string=search_string,
-                                   papers=prepare_papers_data(data, source, comp, word, author, journal))
+                                   papers=prepare_papers_data(data, source, comp, word, author, journal, papers_list))
 
     raise Exception(f"Request does not contain necessary params: {request}")
 

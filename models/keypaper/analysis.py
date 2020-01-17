@@ -492,10 +492,15 @@ class KeyPaperAnalyzer:
         """
         Dump valuable fields of KeyPaperAnalyzer to JSON-serializable dict. Use 'load' to restore analyzer.
         """
-        return {'cg': json_graph.node_link_data(self.CG),
-                'df': self.df.to_json(),
-                'df_kwd': self.df_kwd.to_json(),
-                'g': json_graph.node_link_data(self.G)}
+        return {
+            'cg': json_graph.node_link_data(self.CG),
+            'df': self.df.to_json(),
+            'df_kwd': self.df_kwd.to_json(),
+            'g': json_graph.node_link_data(self.G),
+            'top_cited_papers': list(self.top_cited_papers),
+            'max_gain_papers': list(self.max_gain_papers),
+            'max_rel_gain_papers': list(self.max_rel_gain_papers),
+        }
 
     @staticmethod
     def load(fields):
@@ -525,14 +530,27 @@ class KeyPaperAnalyzer:
         # Restore citation and co-citation graphs
         CG = json_graph.node_link_graph(fields['cg'])
         G = json_graph.node_link_graph(fields['g'])
-        return {'cg': CG,
-                'df': df,
-                'df_kwd': df_kwd,
-                'g': G}
+
+        top_cited_papers = set(fields['top_cited_papers'])
+        max_gain_papers = set(fields['max_gain_papers'])
+        max_rel_gain_papers = set(fields['max_rel_gain_papers'])
+
+        return {
+            'cg': CG,
+            'df': df,
+            'df_kwd': df_kwd,
+            'g': G,
+            'top_cited_papers': top_cited_papers,
+            'max_gain_papers': max_gain_papers,
+            'max_rel_gain_papers': max_rel_gain_papers
+        }
 
     def init(self, fields):
         loaded = KeyPaperAnalyzer.load(fields)
         self.df, self.df_kwd, self.G, self.CG = loaded['df'], loaded['df_kwd'], loaded['g'], loaded['cg']
+        self.top_cited_papers = loaded['top_cited_papers']
+        self.max_gain_papers = loaded['max_gain_papers']
+        self.max_rel_gain_papers = loaded['max_rel_gain_papers']
 
     def pagerank(self, G, current=0, task=None):
         self.progress.info('Performing PageRank analysis', current=current, task=task)

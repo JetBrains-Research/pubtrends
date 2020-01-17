@@ -65,7 +65,17 @@
         function papers_callback_journal(journal) {
             papers_callback_impl('journal', journal)
         }
-    /**
+        function papers_callback_top_papers() {
+            papers_callback_impl('papers_list', 'top')
+        }
+        function papers_callback_papers_of_the_year() {
+            papers_callback_impl('papers_list', 'year')
+        }
+        function papers_callback_hot_papers() {
+            papers_callback_impl('papers_list', 'hot')
+        }
+
+        /**
      * See for details
      * http://stackoverflow.com/questions/19689715/what-is-the-best-way-to-detect-retina-support-on-a-device-using-javascript
      */
@@ -326,6 +336,10 @@
                         Top 50 or 10% cited papers are shown among all the papers for given search query.<br>
                         Year reflects publication year of the original paper.
                     </p>
+                    <button type="button" class="btn btn-light"
+                            onclick="(function(){ papers_callback_top_papers() })();">
+                        <img src="{{ url_for('static', filename='list.svg') }}"  alt="+"/>&nbsp;Show as list
+                    </button>
                     <div>
                         {% for script, div in top_cited_papers %}
                         {{ script|safe }}
@@ -340,6 +354,10 @@
                         Number <i>V</i> means <i>+V</i> gain in citations.<br>
                         Different papers have different colors.
                     </p>
+                    <button type="button" class="btn btn-light"
+                            onclick="(function(){ papers_callback_papers_of_the_year() })();">
+                        <img src="{{ url_for('static', filename='list.svg') }}"  alt="+"/>&nbsp;Show as list
+                    </button>
                     <div>
                         {% for script, div in max_gain_papers %}
                         {{ script|safe }}
@@ -354,6 +372,10 @@
                         Number <i>V</i> means <i>*(1 + V)</i> gain in citations.<br>
                         Different papers have different colors.
                     </p>
+                    <button type="button" class="btn btn-light"
+                            onclick="(function(){ papers_callback_hot_papers() })();">
+                        <img src="{{ url_for('static', filename='list.svg') }}"  alt="+"/>&nbsp;Show as list
+                    </button>
                     <div>
                         {% for script, div in max_relative_gain_papers %}
                         {{ script|safe }}
