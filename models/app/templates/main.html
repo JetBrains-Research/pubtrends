@@ -16,18 +16,18 @@
             integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
             crossorigin="anonymous"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
-<!--        <link rel="stylesheet" href="../static/style.css" />-->
+    <!--        <link rel="stylesheet" href="../static/style.css" />-->
 
     <script>
         // Example starter JavaScript for disabling form submissions if there are invalid fields
-        (function() {
+        (function () {
             'use strict';
-            window.addEventListener('load', function() {
+            window.addEventListener('load', function () {
                 // Fetch all the forms we want to apply custom Bootstrap validation styles to
                 var forms = document.getElementsByClassName('needs-validation');
                 // Loop over them and prevent submission
-                var validation = Array.prototype.filter.call(forms, function(form) {
-                    form.addEventListener('submit', function(event) {
+                var validation = Array.prototype.filter.call(forms, function (form) {
+                    form.addEventListener('submit', function (event) {
                         if (form.checkValidity() === false) {
                             event.preventDefault();
                             event.stopPropagation();
@@ -47,7 +47,8 @@
             Discover science trends and topics faster
         </p>
         <p class="lead">
-            <a class="btn btn-light" href="https://research.jetbrains.org/groups/biolabs/projects?project_id=56" target="_blank" role="button">Learn more</a>
+            <a class="btn btn-light" href="https://research.jetbrains.org/groups/biolabs/projects?project_id=56"
+               target="_blank" role="button">Learn more</a>
         </p>
     </div>
 
@@ -78,7 +79,8 @@
                                             <span class="input-group-text" id="query-addon">Query</span>
                                         </div>
                                         <input class="form-control form-control-borderless" type="search" name="query"
-                                               placeholder="Enter keywords, &quot;&quot; for phrase search" aria-describedby="query-addon"
+                                               placeholder="Enter keywords, &quot;&quot; for phrase search"
+                                               aria-describedby="query-addon"
                                                autofocus required>
                                     </div>
                                     &nbsp;&nbsp;&nbsp;
@@ -154,7 +156,8 @@
                                     &nbsp;&nbsp;
                                     <div class="col">
                                         <input class="form-control form-control-borderless" type="search" name="value"
-                                               placeholder="Enter paper details" aria-describedby="query-addon" autofocus
+                                               placeholder="Enter paper details" aria-describedby="query-addon"
+                                               autofocus
                                                required>
                                     </div>
                                     &nbsp;&nbsp;
@@ -183,30 +186,25 @@
         </div>
     </div>
 
-    <div class="alert {% if development %} alert-warning {% else %} alert-info {% endif %} alert-dismissible fade show"
-         role="alert" style="margin-top: 5px;">
-        <form action="search_terms"  method="post" class="inline">
-            <input type="hidden" name="source" value="{{ search_example_source }}">
-            <input type="hidden" name="sort" value="Most Relevant">
-            <input type="hidden" name="limit" value="1000">
-            {% if development %}
-                <strong>The service is in development!</strong>
-            {% endif %}
-            Please use specific requests like
-            <button type="submit" name="query" value="{{ search_example_terms }}" class="link-button">
-                {{ search_example_terms }} at {{ search_example_source }}
-            </button> and be patient.
-        </form>
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
+    <form action="search_terms" method="post" class="inline">
+        <input type="hidden" name="source" value="{{ search_example_source }}">
+        <input type="hidden" name="sort" value="Most Relevant">
+        <input type="hidden" name="limit" value="1000">
+        {% if development %}
+        <strong>The service is in development!</strong>
+        {% endif %}
+        Try example search
+        <button type="submit" name="query" value="{{ search_example_terms }}" class="link-button">
+            {{ search_example_terms }} at {{ search_example_source }}
         </button>
-    </div>
+        and be patient.
+    </form>
 </div>
 <footer>
     <p>version {{ version }}<br/>
         &copy; 2019-2020 <a href="https://research.jetbrains.org/groups/biolabs"
-                      title="JetBrains Research BioLabs"
-                      target="_blank">JetBrains Research</a></p>
+                            title="JetBrains Research BioLabs"
+                            target="_blank">JetBrains Research</a></p>
 </footer>
 </body>
 </html>
