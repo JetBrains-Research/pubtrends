@@ -234,12 +234,31 @@ def cancel():
 @app.route('/')
 def index():
     logging.debug('/ landing page')
+
+    search_example_source = ''
+    search_example_terms = ''
+    sources = []
+    if PUBTRENDS_CONFIG.pm_enabled:
+        sources.append('pm')
+    if PUBTRENDS_CONFIG.ss_enabled:
+        sources.append('ss')
+    if len(sources):
+        if random.choice(sources) == 'pm':
+            search_example_source = 'Pubmed'
+            search_example_terms = random.choice(PUBTRENDS_CONFIG.pm_search_example_terms)
+        if random.choice(sources) == 'ss':
+            search_example_source = 'Semantic Scholar'
+            search_example_terms = random.choice(PUBTRENDS_CONFIG.ss_search_example_terms)
+
     return render_template('main.html',
                            version=PUBTRENDS_CONFIG.version,
                            limits=PUBTRENDS_CONFIG.show_max_articles_options,
                            default_limit=PUBTRENDS_CONFIG.show_max_articles_default_value,
                            development=PUBTRENDS_CONFIG.development,
-                           search_example_terms=random.choice(PUBTRENDS_CONFIG.search_example_terms))
+                           pm_enabled=PUBTRENDS_CONFIG.ss_enabled,
+                           ss_enabled=PUBTRENDS_CONFIG.ss_enabled,
+                           search_example_source=search_example_source,
+                           search_example_terms=search_example_terms)
 
 
 @app.route('/search_terms', methods=['POST'])

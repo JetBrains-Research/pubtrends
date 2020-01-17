@@ -97,8 +97,12 @@
                                         <select class="form-control" name="source"
                                                 aria-describedby="source-addon" required>
                                             <option selected disabled></option>
+                                            {% if pm_enabled %}
                                             <option>Pubmed</option>
+                                            {% endif %}
+                                            {% if ss_enabled %}
                                             <option>Semantic Scholar</option>
+                                            {% endif %}
                                         </select>
                                     </div>
                                     &nbsp;&nbsp;&nbsp;
@@ -157,8 +161,12 @@
                                     <div class="col-auto">
                                         <select class="form-control" name="source" required>
                                             <option selected disabled></option>
+                                            {% if pm_enabled %}
                                             <option>Pubmed</option>
+                                            {% endif %}
+                                            {% if ss_enabled %}
                                             <option>Semantic Scholar</option>
+                                            {% endif %}
                                         </select>
                                     </div>
                                     &nbsp;&nbsp;
@@ -175,18 +183,18 @@
         </div>
     </div>
 
-    <div class="alert {% if development %} alert-warning {% else %} alert-info {% endif %} alert-dismissible fade show"
-         role="alert">
+    <div class="alert alert-info alert-dismissible fade show"
+         role="alert" style="margin-top: 10px;">
         <form action="search_terms"  method="post" class="inline">
-            <input type="hidden" name="source" value="Pubmed">
-            <input type="hidden" name="sort" value="Most Cited">
+            <input type="hidden" name="source" value="{{ search_example_source }}">
+            <input type="hidden" name="sort" value="Most Relevant">
             <input type="hidden" name="limit" value="1000">
             {% if development %}
                 <strong>The service is in development!</strong>
             {% endif %}
             Please use specific requests like
             <button type="submit" name="query" value="{{ search_example_terms }}" class="link-button">
-                {{ search_example_terms }}
+                {{ search_example_terms }} at {{ search_example_source }}
             </button> and be patient.
         </form>
         <button type="button" class="close" data-dismiss="alert" aria-label="Close">
