@@ -293,7 +293,7 @@ class KeyPaperAnalyzer:
         return max_gain_papers, max_gain_df
 
     def find_max_relative_gain_papers(self, df, citation_years, current=0, task=None):
-        self.progress.info('Identifying papers with max relative citation gain for each year', current=current,
+        self.progress.info('Identifying papers with max relative citation gain % for each year', current=current,
                            task=task)
         current_sum = pd.Series(np.zeros(len(df), ))
         df_rel = df.loc[:, ['id', 'title', 'authors', 'year']]
@@ -304,7 +304,8 @@ class KeyPaperAnalyzer:
         max_rel_gain_data = []
         for year in citation_years:
             max_rel_gain = df_rel[year].max()
-            if max_rel_gain > 1e-6:
+            # Ignore less than 1 percent relative gain
+            if max_rel_gain >= 0.01:
                 sel = df_rel[df_rel[year] == max_rel_gain]
                 max_rel_gain_data.append([year, str(sel['id'].values[0]),
                                           sel['title'].values[0],

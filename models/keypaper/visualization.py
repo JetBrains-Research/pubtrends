@@ -438,17 +438,22 @@ class Plotter:
         year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
         p = figure(tools=TOOLS, toolbar_location="above",
                    plot_width=960, plot_height=300, x_range=year_range,
+                   y_axis_type="log",
                    title='Max gain of citations per year')
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Number of citations'
+        p.yaxis.formatter = NumeralTickFormatter(format='0,0')
         p.hover.tooltips = self._html_tooltips([
             ("Author(s)", '@authors'),
             ("Year", '@paper_year'),
             ("Cited by", '@count papers in @year')
         ])
         p.js_on_event('tap', self.paper_callback(ds_max, self.analyzer.source))
-        p.vbar(x='year', width=0.8, top='count', fill_alpha=0.5, source=ds_max, fill_color=colors,
-               line_color=colors)
+        # Use explicit bottom for log scale as workaround
+        # https://github.com/bokeh/bokeh/issues/6536
+        bottom = min(self.analyzer.max_gain_df['count']) - 0.01
+        p.vbar(x='year', width=0.8, top='count', bottom=bottom,
+               fill_alpha=0.5, source=ds_max, fill_color=colors, line_color=colors)
         return p
 
     def max_relative_gain_papers(self):
@@ -468,17 +473,21 @@ class Plotter:
         year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
         p = figure(tools=TOOLS, toolbar_location="above",
                    plot_width=960, plot_height=300, x_range=year_range,
+                   y_axis_type="log",
                    title='Max relative gain of citations per year')
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Relative Gain of Citations'
+        p.yaxis.formatter = NumeralTickFormatter(format='0,0')
         p.hover.tooltips = self._html_tooltips([
             ("Author(s)", '@authors'),
             ("Year", '@paper_year'),
             ("Relative Gain", '@rel_gain in @year')])
         p.js_on_event('tap', self.paper_callback(ds_max, self.analyzer.source))
-
-        p.vbar(x='year', width=0.8, top='rel_gain', fill_alpha=0.5, source=ds_max,
-               fill_color=colors, line_color=colors)
+        # Use explicit bottom for log scale as workaround
+        # https://github.com/bokeh/bokeh/issues/6536
+        bottom = min(self.analyzer.max_rel_gain_df['rel_gain']) - 0.01
+        p.vbar(x='year', width=0.8, top='rel_gain', bottom=bottom, source=ds_max,
+               fill_alpha=0.5, fill_color=colors, line_color=colors)
         return p
 
     @staticmethod
