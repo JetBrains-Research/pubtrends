@@ -33,7 +33,7 @@ rm -r dist
 mkdir -p dist
 tar -zcvf "dist/${PTV}.tar.gz" ${PTV}
 # Cleanup
-rm -f pubtrends
+rm -f ${PTV}
 
 # Move jar to dist if exists
 if [[ -f build/libs/pubtrends-dev.jar ]]; then
