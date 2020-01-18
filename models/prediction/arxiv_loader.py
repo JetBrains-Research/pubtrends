@@ -1,41 +1,59 @@
 import html
 
-import numpy as np
-import pandas as pd
-
 from models.keypaper.ss_loader import SemanticScholarLoader
-from models.keypaper.utils import extract_authors
+from models.keypaper.utils import preprocess_search_query, SORT_MOST_RELEVANT, SORT_MOST_CITED, \
+    SORT_MOST_RECENT
 
 
 class ArxivLoader(SemanticScholarLoader):
     def __init__(self, pubtrends_config):
         super(ArxivLoader, self).__init__(pubtrends_config)
 
-    def search(self, *query, current=1, task=None):
-        query = f'''
-        SELECT DISTINCT ON(ssid) ssid, crc32id, title, abstract, year, aux FROM SSPublications P
-        WHERE source = 'Arxiv' limit {self.max_number_of_articles};
-        '''
+    def search(self, query, limit=None, sort=None, current=1, task=None):
+        query_str = preprocess_search_query(query, self.pubtrends_config.min_search_words)
 
-        with self.conn.cursor() as cursor:
-            cursor.execute(query)
-            self.pub_df = pd.DataFrame(cursor.fetchall(),
-                                       columns=['id', 'crc32id', 'title', 'abstract', 'year', 'aux'],
-                                       dtype=object)
+        if not limit:
+            limit_message = ''
+            limit = self.max_number_of_articles
+        else:
+            limit_message = f'{limit} '
 
-        if np.any(self.pub_df[['id', 'crc32id', 'title']].isna()):
-            raise ValueError('Paper must have ID and title')
-        self.pub_df = self.pub_df.fillna(value={'abstract': ''})
+        self.progress.info(html.escape(f'Searching {limit_message}{sort.lower()} publications matching <{query}>'),
+                           current=current, task=task)
 
-        self.pub_df['year'] = self.pub_df['year'].apply(lambda year: int(year) if year else np.nan)
-        self.pub_df['authors'] = self.pub_df['aux'].apply(lambda aux: extract_authors(aux['authors']))
-        self.pub_df['journal'] = self.pub_df['aux'].apply(lambda aux: html.unescape(aux['journal']['name']))
-        self.pub_df['title'] = self.pub_df['title'].apply(lambda title: html.unescape(title))
+        if sort == SORT_MOST_RELEVANT:
+            query = f'''
+                CALL db.index.fulltext.queryNodes("ssTitlesAndAbstracts", {query_str}) YIELD node, score
+                WHERE node.source = 'Arxiv'
+                RETURN node.ssid as ssid
+                ORDER BY score DESC
+                LIMIT {limit};
+                '''
+        elif sort == SORT_MOST_CITED:
+            query = f'''
+                CALL db.index.fulltext.queryNodes("ssTitlesAndAbstracts", {query_str}) YIELD node
+                MATCH ()-[r:SSReferenced]->(in:SSPublication)
+                WHERE in.crc32id = node.crc32id AND in.ssid = node.ssid AND node.source = 'Arxiv'
+                WITH node, COUNT(r) AS cnt
+                RETURN node.ssid as ssid
+                ORDER BY cnt DESC
+                LIMIT {limit};
+                '''
+        elif sort == SORT_MOST_RECENT:
+            query = f'''
+                CALL db.index.fulltext.queryNodes("ssTitlesAndAbstracts", {query_str}) YIELD node
+                WHERE node.source = 'Arxiv'
+                RETURN node.ssid as ssid
+                ORDER BY node.date DESC
+                LIMIT {limit};
+                '''
+        else:
+            raise ValueError(f'Illegal sort method: {sort}')
+        self.progress.debug(f'Search query\n{query}', current=current, task=task)
 
-        self.progress.info(f'Found {len(self.pub_df)} publications in the local database', current=current,
+        with self.neo4jdriver.session() as session:
+            ids = [str(r['ssid']) for r in session.run(query)]
+
+        self.progress.info(f'Found {len(ids)} publications in the local database', current=current,
                            task=task)
-
-        self.ids = self.pub_df['id']
-        crc32ids = self.pub_df['crc32id']
-        self.values = ', '.join([f'({i}, \'{j}\')' for (i, j) in zip(crc32ids, self.ids)])
-        return self.ids
+        return ids
