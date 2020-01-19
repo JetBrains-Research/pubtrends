@@ -134,15 +134,15 @@ def get_most_common_tokens(texts, fraction=0.1):
     return most_common
 
 
-def get_subtopic_descriptions(df, comps_papers):
+def get_subtopic_descriptions(df, most_cited_papers_per_comp):
     """
     Create TF-IDF based description on tokens
-    :param comps_papers: dictionary {component: description}
+    :param most_cited_papers_per_comp: dictionary {component: description}
     """
     log.info('Computing most common terms')
-    n_comps = len(set(comps_papers.keys()))
+    n_comps = len(set(most_cited_papers_per_comp.keys()))
     most_common = [None] * n_comps
-    for comp, comp_papers in comps_papers.items():
+    for comp, comp_papers in most_cited_papers_per_comp.items():
         df_comp = df[df['id'].isin(comp_papers)]
         most_common[comp] = get_most_common_tokens(df_comp['title'] + ' ' + df_comp['abstract'])
 

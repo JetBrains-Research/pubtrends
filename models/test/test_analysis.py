@@ -139,10 +139,10 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
         ('with other', {1: 0, 2: 1, 3: 1, 4: 1, 5: 0, 6: 2}, True, ({1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 2}, 1))
     ])
     def test_sort_components(self, name, partition, components_merged, expected):
-        partition, other = self.analyzer.sort_components(partition, components_merged)
+        sort_order, partition, comp_other = self.analyzer.sort_components(partition, components_merged)
         expected_partition, expected_other = expected
-        self.assertEqual(partition, expected_partition)
-        self.assertEqual(other, expected_other)
+        self.assertEqual(partition, expected_partition, name)
+        self.assertEqual(comp_other, expected_other, name)
 
     def test_merge_citation_stats_paper_count(self):
         df, _, _, _ = self.analyzer.merge_citation_stats(self.analyzer.pub_df, self.analyzer.cit_stats_df)
@@ -178,7 +178,7 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
             self.assertIsNone(year_range, msg='Year range is not None when step is too large')
 
     def test_get_most_cited_papers_for_comps(self):
-        comps = self.analyzer.get_most_cited_papers_for_comps(self.analyzer.df, n=1)
+        comps = self.analyzer.get_most_cited_papers_for_comps(self.analyzer.df, self.analyzer.partition, n=1)
         self.assertDictEqual(comps, {0: ['3'], 1: ['1']})
 
 

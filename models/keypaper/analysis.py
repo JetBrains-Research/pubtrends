@@ -106,13 +106,18 @@ class KeyPaperAnalyzer:
             self.df_kwd = pd.DataFrame({'comp': [0], 'kwd': ['']})
         else:
             # Perform subtopic analysis and get subtopic descriptions
-            self.components, self.comp_other, self.partition, self.comp_sizes = self.subtopic_analysis(
-                self.CG, current=9, task=task
-            )
-            self.df = self.merge_col(self.df, self.partition, col='comp')
-            kwds, self.df_kwd = self.subtopic_descriptions(self.df, current=10, task=task)
+            partition, n_components_merged = self.subtopic_analysis(self.CG, current=9, task=task)
+            # Get description per component
+            kwds = self.subtopic_descriptions(self.df, partition, current=9, task=task)
             # Update non set components
-            self.fix_missing_component(kwds, current=10, task=task)
+            missing_comps = self.get_missing_components(self.df, partition, kwds, n_components_merged > 0,
+                                                        current=10, task=task)
+            self.partition, self.comp_other, self.components, self.comp_sizes, sort_order = self.update_components(
+                partition, n_components_merged, missing_comps, task
+            )
+            self.df_kwd = self.update_subtopic_descriptions_df(kwds, sort_order, 20, current=10, task=task)
+            # Update df with information for all papers
+            self.df = self.merge_col(self.df, self.partition, col='comp')
 
         # Perform PageRank analysis
         pr = self.pagerank(self.G, current=11, task=task)
@@ -207,7 +212,7 @@ class KeyPaperAnalyzer:
         return G
 
     def build_cocitation_graph(self, cocit_grouped_df, year=None, current=0, task=None, add_citation_edges=False,
-                               citation_weight=0.3):
+                               citation_weight=0.1):
         if year:
             self.progress.info(f'Building co-citations graph for {year} year', current=current, task=task)
         else:
@@ -247,32 +252,53 @@ class KeyPaperAnalyzer:
                             current=current, task=task)
 
         # Merge small components to 'Other'
-        partition_merged, n_components_merged = self.merge_components(partition_louvain)
-        # Sort components by size
-        partition, comp_other = self.sort_components(partition_merged, n_components_merged)
-        components = set(partition.values())
-        comp_sizes = {c: sum([partition[node] == c for node in partition.keys()]) for c in components}
-        for k, v in comp_sizes.items():
-            self.progress.debug(f'Cluster {k}: {v} ({int(100 * v / len(partition))}%)',
-                                current=current, task=task)
+        partition, n_components_merged = self.merge_components(partition_louvain)
+        return partition, n_components_merged
 
-        return components, comp_other, partition, comp_sizes
-
-    def fix_missing_component(self, kwds, n_words=100, current=0, task=None):
-        no_comp_df = self.df.loc[self.df['comp'] == -1]
-        self.progress.info(f'Assigning missing component for all publications', current=current, task=task)
-
-        for pid in no_comp_df['id']:
-            indx_pid = self.df['id'] == pid
+    def get_missing_components(self, df, partition, kwds, comps_merged, n_words=100, current=0, task=None):
+        no_comps = [pid for pid in df['id'] if pid not in partition]
+        self.progress.info(f'Assigning topics for all publications', current=current, task=task)
+        missing_comps = {}
+        for pid in no_comps:
+            indx_pid = df['id'] == pid
             pid_mcts = get_most_common_tokens(
-                self.df.loc[indx_pid]['title'] + ' ' + self.df.loc[indx_pid]['abstract'], 1.0)
+                df.loc[indx_pid]['title'] + ' ' + df.loc[indx_pid]['abstract'], 1.0)
             comps_counter = Counter()
             for c, ckwds in kwds.items():
                 comps_counter[c] += sum([pid_mcts.get(w, 0) * f for w, f in ckwds[:n_words]])
+                if comps_merged and c == 0:  # Other component marker
+                    comps_counter[c] += 1e-10
             match_comp = comps_counter.most_common(1)[0][0]  # Get component closest by text
-            self.df.loc[indx_pid, 'comp'] = match_comp
+            missing_comps[pid] = match_comp
 
-        self.progress.debug(f'Done assignment missing components', current=current, task=task)
+        self.progress.debug(f'Done assignment missing topics', current=current, task=task)
+        return missing_comps
+
+    def update_components(self, partition, n_components_merged, missing_comps, current=0, task=None):
+        # Sort components by size
+        sort_order, partition_full, comp_other = self.sort_components(
+            {**partition, **missing_comps},  # Merge two dictionaries
+            n_components_merged
+        )
+        self.progress.debug(f'Component OTHER: {comp_other}', current=current, task=task)
+        components = set(partition_full.values())
+        comp_sizes = {c: sum([partition_full[node] == c for node in partition_full.keys()])
+                      for c in components}
+        for k, v in comp_sizes.items():
+            self.progress.debug(f'Cluster {k}: {v} ({int(100 * v / len(partition_full))}%)',
+                                current=current, task=task)
+        return partition_full, comp_other, components, comp_sizes, sort_order
+
+    def update_subtopic_descriptions_df(self, kwds, sort_order, n_words=20, current=0, task=None):
+        # Update descriptions with components reordering
+        comps, ckwds = [], []
+        for k, v in kwds.items():
+            nc = sort_order[k]
+            comps.append(nc)
+            descr = ','.join([f'{w}:{max(1e-3, f):.3f}' for w, f in v[:n_words]])
+            ckwds.append(descr)
+            self.progress.debug(f'{nc}: {descr}', current=current, task=task)
+        return pd.DataFrame({'comp': comps, 'kwd': ckwds})
 
     @staticmethod
     def merge_col(df, data, col):
@@ -285,20 +311,12 @@ class KeyPaperAnalyzer:
 
         return df_merged
 
-    def subtopic_descriptions(self, df, n_papers=200, n_words=20, current=0, task=None):
+    def subtopic_descriptions(self, df, partition, n_papers=100, current=0, task=None):
         # Get descriptions for subtopics
-        self.progress.debug(f'Getting {n_words} words for subtopics using top {n_papers} cited papers',
+        self.progress.debug(f'Computing subtopics descriptions by top {n_papers} cited papers',
                             current=current, task=task)
-        most_cited_per_comp = self.get_most_cited_papers_for_comps(df, n=n_papers)
-        kwds = get_subtopic_descriptions(df, most_cited_per_comp)
-        comps, ckwds = [], []
-        for k, v in kwds.items():
-            comps.append(k)
-            descr = ','.join([f'{w}:{max(1e-3, f):.3f}' for w, f in v[:n_words]])
-            ckwds.append(descr)
-            self.progress.debug(f'{k}: {descr}', current=current, task=task)
-        df_kwd = pd.DataFrame({'comp': comps, 'kwd': ckwds})
-        return kwds, df_kwd
+        most_cited_per_comp = self.get_most_cited_papers_for_comps(df, partition, n=n_papers)
+        return get_subtopic_descriptions(df, most_cited_per_comp)
 
     def find_top_cited_papers(self, df, max_papers=50, threshold=0.1, min_papers=1, current=0, task=None):
         self.progress.info(f'Identifying top cited papers overall', current=current, task=task)
@@ -461,22 +479,20 @@ class KeyPaperAnalyzer:
         # Hack to sort map values by key
         keysort = lambda seq: sorted(range(len(seq)), key=seq.__getitem__, reverse=True)
         sorted_comps = list(keysort(list(comp_sizes.values())))
-        mapping = dict(zip(sorted_comps, range(len(components))))
-        self.progress.debug(f'Components reordering by size: {mapping}', current=current, task=task)
-        sorted_partition_merged = {node: mapping[c] for node, c in partition_merged.items()}
+        sort_order = dict(zip(sorted_comps, range(len(components))))
+        self.progress.debug(f'Components reordering by size: {sort_order}', current=current, task=task)
+        sorted_partition = {node: sort_order[c] for node, c in partition_merged.items()}
 
         if n_components_merged > 0:
-            other = sorted_comps.index(0)  # Other component is 0!
+            comp_other = sorted_comps.index(0)  # Other component is 0!
         else:
-            other = None
-        self.progress.debug(f'Other component: {other}', current=current, task=task)
-        return sorted_partition_merged, other
+            comp_other = None
+        self.progress.debug(f'Other component: {comp_other}', current=current, task=task)
+        return sort_order, sorted_partition, comp_other
 
     def popular_journals(self, df, n=50, current=0, task=None):
         self.progress.info("Finding popular journals", current=current, task=task)
         journal_stats = df.groupby(['journal', 'comp']).size().reset_index(name='counts')
-        # drop papers with undefined subtopic
-        journal_stats = journal_stats[journal_stats.comp != -1]
         journal_stats['journal'].replace('', np.nan, inplace=True)
         journal_stats.dropna(subset=['journal'], inplace=True)
 
@@ -503,9 +519,6 @@ class KeyPaperAnalyzer:
         author_stats.rename(columns={'authors': 'author'}, inplace=True)
 
         author_stats = author_stats.groupby(['author', 'comp']).size().reset_index(name='counts')
-        # drop papers with undefined subtopic
-        author_stats = author_stats[author_stats.comp != -1]
-
         author_stats.sort_values(by=['author', 'counts'], ascending=False, inplace=True)
 
         author_stats = author_stats.groupby('author').agg(
@@ -518,8 +531,11 @@ class KeyPaperAnalyzer:
         return author_stats.head(n=n)
 
     @staticmethod
-    def get_most_cited_papers_for_comps(df, n):
-        ids = df[df['comp'] >= 0].sort_values(by='total', ascending=False).groupby('comp')['id']
+    def get_most_cited_papers_for_comps(df, partition, n):
+        pdf = pd.DataFrame(partition.items(), columns=['id', 'comp'])
+        ids_comp_df = pd.merge(left=df[['id', 'total']], left_on='id',
+                               right=pdf, right_on='id', how='inner')
+        ids = ids_comp_df.sort_values(by='total', ascending=False).groupby('comp')['id']
         return ids.apply(list).apply(lambda x: x[:n]).to_dict()
 
     def dump(self):
