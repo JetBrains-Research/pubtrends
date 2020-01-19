@@ -154,8 +154,7 @@ def get_subtopic_descriptions(df, most_cited_papers_per_comp):
     for comp in range(n_comps):
         max_cnt = max(most_common[comp].values())
         # Augmented frequency to avoid document length bias
-        aug_tf_idf[comp] = {k: (0.5 + 0.5 * v / max_cnt) *
-                               np.log(n_comps / sum([k in mcoc for mcoc in most_common]))
+        aug_tf_idf[comp] = {k: (0.5 + 0.5 * v / max_cnt) * np.log(n_comps / sum([k in mcoc for mcoc in most_common]))
                             for k, v in most_common[comp].items()}
         kwds[comp] = [(k, most_common[comp][k]) for k, _v in
                       list(sorted(aug_tf_idf[comp].items(), key=lambda kv: kv[1], reverse=True))]
