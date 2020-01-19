@@ -438,7 +438,7 @@ class Plotter:
         year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
         p = figure(tools=TOOLS, toolbar_location="above",
                    plot_width=960, plot_height=300, x_range=year_range,
-                   y_axis_type="log",
+                   y_axis_type="log" if max(self.analyzer.max_gain_df['count']) > 100 else "linear",
                    title='Max gain of citations per year')
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Number of citations'
@@ -473,7 +473,7 @@ class Plotter:
         year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
         p = figure(tools=TOOLS, toolbar_location="above",
                    plot_width=960, plot_height=300, x_range=year_range,
-                   y_axis_type="log",
+                   y_axis_type="log" if max(self.analyzer.max_rel_gain_df['rel_gain']) > 100 else "linear",
                    title='Max relative gain of citations per year')
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Relative Gain of Citations'
