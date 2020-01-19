@@ -134,35 +134,32 @@ def get_most_common_tokens(texts, fraction=0.1):
     return most_common
 
 
-def get_subtopic_descriptions(df, comps, size=20):
+def get_subtopic_descriptions(df, comps_papers):
     """
     Create TF-IDF based description on tokens
-    :param comps: dictionary {component: description}
-    :param size: number of tokens with highest TF-IDF values
+    :param comps_papers: dictionary {component: description}
     """
     log.info('Computing most common terms')
-    n_comps = len(set(comps.keys()))
+    n_comps = len(set(comps_papers.keys()))
     most_common = [None] * n_comps
-    for idx, comp in comps.items():
-        df_comp = df[df['id'].isin(comp)]
-        most_common[idx] = get_most_common_tokens(df_comp['title'] + ' ' + df_comp['abstract'])
+    for comp, comp_papers in comps_papers.items():
+        df_comp = df[df['id'].isin(comp_papers)]
+        most_common[comp] = get_most_common_tokens(df_comp['title'] + ' ' + df_comp['abstract'])
 
     log.info('Compute Augmented Term Frequency - Inverse Document Frequency')
     # The tf–idf is the product of two statistics, term frequency and inverse document frequency.
     # This provides greater weight to values that occur in fewer documents.
-    idfs = {}
-    kwd = {}
-    for idx in range(n_comps):
-        max_cnt = max(most_common[idx].values())
-        # augmented frequency to avoid document length bias
-        idfs[idx] = {k: (0.5 + 0.5 * v / max_cnt) *
-                     np.log(n_comps / sum([k in mcoc for mcoc in most_common]))
-                     for k, v in most_common[idx].items()}
-        kwd[idx] = ','.join([f'{k}:{(max(most_common[idx][k], 1e-3)):.3f}'
-                             for k, _v in list(sorted(idfs[idx].items(),
-                                                      key=lambda kv: kv[1],
-                                                      reverse=True))[:size]])
-    return kwd
+    aug_tf_idf = {}
+    kwds = {}
+    for comp in range(n_comps):
+        max_cnt = max(most_common[comp].values())
+        # Augmented frequency to avoid document length bias
+        aug_tf_idf[comp] = {k: (0.5 + 0.5 * v / max_cnt) *
+                               np.log(n_comps / sum([k in mcoc for mcoc in most_common]))
+                            for k, v in most_common[comp].items()}
+        kwds[comp] = [(k, most_common[comp][k]) for k, _v in
+                      list(sorted(aug_tf_idf[comp].items(), key=lambda kv: kv[1], reverse=True))]
+    return kwds
 
 
 def get_topic_word_cloud_data(df_kwd, c):

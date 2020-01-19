@@ -128,7 +128,7 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
         ('do not merge one component', {1: 0, 2: 1, 3: 1, 4: 1, 5: 1}, 0.5, ({1: 0, 2: 1, 3: 1, 4: 1, 5: 1}, 0))
     ])
     def test_merge_components(self, name, partition, granularity, expected):
-        partition, merged = self.analyzer.merge_components(partition, granularity)
+        partition, n_components_merged = self.analyzer.merge_components(partition, granularity)
         expected_partition, expected_merged = expected
         self.assertEqual(partition, expected_partition)
 
