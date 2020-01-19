@@ -46,32 +46,28 @@ class KeyPaperAnalyzer:
         ids = self.loader.search(query, limit=limit, sort=sort, current=1, task=task)
         if len(ids) == 0:
             raise RuntimeError(f"Nothing found for search query: {query}")
-        # Load data about publications
-        pub_df = self.loader.load_publications(ids, current=2, task=task)
-        if len(pub_df) == 0:
-            raise RuntimeError(f"Nothing found in DB for ids: {ids}")
-        return ids, pub_df
+        return ids
 
-    def process_id_list(self, id_list, zoom, task=None):
-        # Load data about publications with given ids
+    def process_id_list(self, id_list, zoom, current=1, task=None):
+        # Zoom and load data about publications with given ids
         ids = id_list
         if len(ids) == 0:
             raise RuntimeError(f"Nothing found in DB for empty ids list")
         for _ in range(zoom):
-            if len(ids) > 100:
-                self.progress.info('Too many related papers, stop references expanding', current=1, task=task)
+            if len(ids) > self.config.max_number_to_expand:
+                self.progress.info('Too many related papers, stop references expanding',
+                                   current=current, task=task)
                 break
-            ids = self.loader.expand(ids, current=1, task=task)
-        # Load data about publications
-        pub_df = self.loader.load_publications(ids, current=2, task=task)
-        if len(pub_df) == 0:
-            raise RuntimeError(f"Nothing found in DB for ids: {ids}")
-        return ids, pub_df
+            ids = self.loader.expand(ids, current=current, task=task)
+        return ids
 
-    def analyze_papers(self, ids, pub_df, query, task=None):
+    def analyze_papers(self, ids, query, task=None):
         """:return full log"""
         self.ids = ids
-        self.pub_df = pub_df
+        # Load data about publications
+        self.pub_df = self.loader.load_publications(ids, current=2, task=task)
+        if len(self.pub_df) == 0:
+            raise RuntimeError(f"Nothing found in DB for ids: {ids}")
         self.query = query
         self.n_papers = len(self.ids)
         self.pub_types = list(set(self.pub_df['type']))
@@ -83,6 +79,8 @@ class KeyPaperAnalyzer:
                                                                                                self.cit_stats_df)
         if len(self.df) == 0:
             raise RuntimeError("Failed to merge publications and citations")
+
+        # cit_df contains only inner citations, i.e. both in, out are in the search query
         self.cit_df = self.loader.load_citations(self.ids, current=5, task=task)
         self.G = self.build_citation_graph(self.cit_df, current=6, task=task)
         self.cocit_df = self.loader.load_cocitations(self.ids, current=7, task=task)

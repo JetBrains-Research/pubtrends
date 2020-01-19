@@ -1,10 +1,6 @@
-import logging
 import os
 
-from cachetools.ttl import _Link
 from celery import Celery, current_task
-from cachetools import TTLCache, Cache, cached, LRUCache
-from celery.result import AsyncResult
 
 from models.keypaper.analysis import KeyPaperAnalyzer
 from models.keypaper.config import PubtrendsConfig
@@ -29,8 +25,8 @@ def analyze_search_terms(source, query, sort=None, limit=None):
     analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
     try:
         sort = sort or SORT_MOST_CITED
-        ids, pub_df = analyzer.search_terms(query, limit=limit, sort=sort, task=current_task)
-        analyzer.analyze_papers(ids, pub_df, query, current_task)
+        ids = analyzer.search_terms(query, limit=limit, sort=sort, task=current_task)
+        analyzer.analyze_papers(ids, query, current_task)
     finally:
         loader.close_connection()
         analyzer.teardown()
@@ -43,8 +39,8 @@ def analyze_id_list(source, id_list, zoom, query):
     loader = get_loader(source, PUBTRENDS_CONFIG)
     analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
     try:
-        ids, pub_df = analyzer.process_id_list(id_list, zoom, current_task)
-        analyzer.analyze_papers(ids, pub_df, query, current_task)
+        ids = analyzer.process_id_list(id_list, zoom, 1, current_task)
+        analyzer.analyze_papers(ids, query, current_task)
     finally:
         loader.close_connection()
         analyzer.teardown()

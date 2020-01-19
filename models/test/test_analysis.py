@@ -18,8 +18,8 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.analyzer = KeyPaperAnalyzer(MockLoader(), TestKeyPaperAnalyzer.PUBTRENDS_CONFIG, test=True)
-        ids, pub_df = cls.analyzer.search_terms(query='query')
-        cls.analyzer.analyze_papers(ids, pub_df, 'query')
+        ids = cls.analyzer.search_terms(query='query')
+        cls.analyzer.analyze_papers(ids, 'query')
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.ids)
         cls.analyzer.G = cls.analyzer.build_citation_graph(cls.analyzer.cit_df)
 
@@ -188,8 +188,8 @@ class TestKeyPaperAnalyzerSingle(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.analyzer = KeyPaperAnalyzer(MockLoaderSingle(), TestKeyPaperAnalyzerSingle.PUBTRENDS_CONFIG, test=True)
-        ids, pub_df = cls.analyzer.search_terms(query='query')
-        cls.analyzer.analyze_papers(ids, pub_df, 'query')
+        ids = cls.analyzer.search_terms(query='query')
+        cls.analyzer.analyze_papers(ids, 'query')
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.ids)
         cls.analyzer.G = cls.analyzer.build_citation_graph(cls.analyzer.cit_df)
 
@@ -260,11 +260,13 @@ class TestKeyPaperAnalyzerEmpty(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.analyzer = KeyPaperAnalyzer(MockLoaderEmpty(), TestKeyPaperAnalyzerEmpty.PUBTRENDS_CONFIG, test=True)
+        cls.analyzer = KeyPaperAnalyzer(MockLoaderEmpty(),
+                                        TestKeyPaperAnalyzerEmpty.PUBTRENDS_CONFIG, test=True)
 
     def test_setup(self):
         with self.assertRaises(Exception):
-            self.analyzer.search_terms(query='query')
+            ids = self.analyzer.search_terms(query='query')
+            self.analyzer.analyze_papers(ids, query='query', task=None)
 
 
 if __name__ == '__main__':
