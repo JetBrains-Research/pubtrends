@@ -123,7 +123,8 @@ class SemanticScholarLoader(Loader):
                  [{','.join([str(crc32(id)) for id in ids])}] AS crc32ids
             MATCH (out:SSPublication)-[:SSReferenced]->(in:SSPublication)
             WHERE in.crc32id in crc32ids AND in.ssid IN ssids AND out.date.year >= in.date.year
-            RETURN in.ssid AS id, out.date.year AS year, COUNT(*) AS count;
+            RETURN in.ssid AS id, out.date.year AS year, COUNT(*) AS count
+            LIMIT {self.max_number_of_citations};
         '''
 
         with self.neo4jdriver.session() as session:
@@ -184,7 +185,8 @@ class SemanticScholarLoader(Loader):
                  [{','.join([str(crc32(id)) for id in ids])}] AS crc32ids
             MATCH (out:SSPublication)-[:SSReferenced]->(in:SSPublication)
             WHERE in.crc32id in crc32ids AND in.ssid IN ssids
-            RETURN out.ssid AS citing, COLLECT(in.ssid) AS cited, out.date.year AS year;
+            RETURN out.ssid AS citing, COLLECT(in.ssid) AS cited, out.date.year AS year
+            LIMIT {self.max_number_of_cocitations};
         '''
 
         with self.neo4jdriver.session() as session:

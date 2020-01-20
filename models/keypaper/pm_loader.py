@@ -120,7 +120,8 @@ class PubmedLoader(Loader):
             WITH [{','.join([str(id) for id in ids])}] AS pmids
             MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
             WHERE in.pmid IN pmids AND out.date.year >= in.date.year
-            RETURN in.pmid AS id, out.date.year AS year, COUNT(*) AS count;
+            RETURN in.pmid AS id, out.date.year AS year, COUNT(*) AS count
+            LIMIT {self.max_number_of_citations};
         '''
 
         with self.neo4jdriver.session() as session:
@@ -151,7 +152,8 @@ class PubmedLoader(Loader):
             MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
             WHERE in.pmid IN pmids AND out.pmid IN pmids
             RETURN out.pmid AS id_out, in.pmid AS id_in
-            ORDER BY id_out, id_in;
+            ORDER BY id_out, id_in
+            LIMIT {self.max_number_of_cocitations};
         '''
 
         with self.neo4jdriver.session() as session:
