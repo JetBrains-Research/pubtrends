@@ -28,6 +28,10 @@ sed -E "s/version = [^\n]*/version = ${FULL_VERSION}/g" -i ${PTV}/config.propert
 cp docker-compose.yml ${PTV}/
 cp -r models ${PTV}/
 
+# Create folder for logs
+mkdir ${PTV}/logs
+chmod a+rwx ${PTV}/logs
+
 # Create distributive tar.gz
 rm -r dist
 mkdir -p dist
