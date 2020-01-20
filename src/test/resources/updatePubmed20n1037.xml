@@ -1,0 +1,57 @@
+<PubmedArticleSet>
+    <PubmedArticle>
+        <MedlineCitation Status="PubMed-not-MEDLINE" Owner="NLM">
+            <PMID Version="1">29391692</PMID>
+            <DateRevised>
+                <Year>2018</Year>
+                <Month>11</Month>
+                <Day>13</Day>
+            </DateRevised>
+            <Article PubModel="Print-Electronic">
+                <Journal>
+                    <ISSN IssnType="Print">0972-8988</ISSN>
+                    <JournalIssue CitedMedium="Print">
+                        <Volume>10</Volume>
+                        <Issue>12</Issue>
+                        <PubDate>
+                            <Year>2017</Year>
+                            <Month>Dec</Month>
+                        </PubDate>
+                    </JournalIssue>
+                    <Title>JOURNAL</Title>
+                </Journal>
+                <ArticleTitle>TITLE</ArticleTitle>
+                <ELocationID EIdType="doi" ValidYN="Y">10.14202/vetworld.2017.1493-1500</ELocationID>
+                <AuthorList CompleteYN="Y">
+                    <Author ValidYN="Y">
+                        <LastName>Ahmed</LastName>
+                        <ForeName>Sakil</ForeName>
+                    </Author>
+                </AuthorList>
+                <Language>eng</Language>
+                <PublicationTypeList>
+                    <PublicationType UI="D016428">Journal Article</PublicationType>
+                </PublicationTypeList>
+                <ArticleDate DateType="Electronic">
+                    <Year>2014</Year>
+                    <Month>12</Month>
+                    <Day>21</Day>
+                </ArticleDate>
+            </Article>
+        </MedlineCitation>
+        <PubmedData>
+            <ReferenceList>
+                <Reference>
+                    <Citation>Li Q., Weng J., Bennett G.L., Schwall R., Wang Z.F., Tabor T., Kim J., Hargrave S., Cuevas K.H. and Wilson S.E. (1996). Hepatocyte Growth Factor (HGF) and HGF receptor protein in lacrimal gland, tears, and cornea. Invest. Ophthalmol. Vis. Sci. 37, 727-739.</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">Li Q., Weng J., Bennett G.L., Schwall R., Wang Z.F., Tabor T., Kim J.,
+                            Hargrave S., Cuevas K.H. and Wilson S.E. (1996). Hepatocyte
+                            Growth Factor (HGF) and HGF receptor protein in lacrimal gland,
+                            tears, and cornea. Invest. Ophthalmol. Vis. Sci. 37, 727-739.</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+            </ReferenceList>
+        </PubmedData>
+    </PubmedArticle>
+</PubmedArticleSet>
+

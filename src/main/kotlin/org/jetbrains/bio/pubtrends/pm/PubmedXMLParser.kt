@@ -314,8 +314,14 @@ class PubmedXMLParser(
 
                     // Citations
                     (fullName == CITATION_PMID_TAG) && (isCitationPMIDFound) -> {
-                        citationList.add(dataElement.data.toInt())
-                        isCitationPMIDFound = false
+                        // Workaround for ftp://ftp.ncbi.nlm.nih.gov/pubmed/updatefiles/pubmed20n1037.xml.gz
+                        // See https://github.com/JetBrains-Research/pubtrends/issues/203
+                        try {
+                            citationList.add(dataElement.data.toInt())
+                            isCitationPMIDFound = false
+                        } catch (e: NumberFormatException) {
+                            logger.error("Failed to process $CITATION_PMID_TAG: ${dataElement.data}")
+                        }
                     }
 
                     // Databanks

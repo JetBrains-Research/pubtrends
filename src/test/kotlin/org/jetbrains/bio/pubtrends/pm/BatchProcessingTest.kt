@@ -12,15 +12,7 @@ class BatchProcessingTest(private val batchSize : Int) {
     @Test
     fun testBatchSize() {
         val parser = PubmedXMLParser(dbHandler, batchSize)
-
-        this::class.java.classLoader.getResourceAsStream(testXMLFileName)?.let {
-            val file = createTempFile()
-            file.outputStream().use {out ->
-                it.copyTo(out)
-            }
-            parser.parse(file.absolutePath)
-        }
-
+        parser.parse(this::class.java.classLoader.getResource(testXMLFileName).toURI().path)
         assertEquals(articlesCount, dbHandler.articlesStored)
         dbHandler.articlesStored = 0
     }

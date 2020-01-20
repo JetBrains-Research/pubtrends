@@ -15,13 +15,7 @@ class PMParserTest {
         private const val testXMLFileName = "articlesPubmed.xml"
 
         init {
-            this::class.java.classLoader.getResourceAsStream(testXMLFileName)?.let {
-                val file = createTempFile()
-                file.outputStream().use { out ->
-                    it.copyTo(out)
-                }
-                parser.parse(file.absolutePath)
-            }
+            parser.parse(this::class.java.classLoader.getResource(BatchProcessingTest.testXMLFileName).toURI().path)
         }
 
         private val articleMap = parser.articleList.associateBy { it.pmid }
