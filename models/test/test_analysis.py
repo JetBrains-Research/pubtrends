@@ -29,7 +29,7 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
     ])
     def test_valid_source(self, name, loader, test, expected):
         analyzer = KeyPaperAnalyzer(loader, TestKeyPaperAnalyzer.PUBTRENDS_CONFIG, test=test)
-        self.assertEqual(analyzer.source, expected)
+        self.assertEqual(analyzer.source, expected, name)
 
     def test_bad_source(self):
         with self.assertRaises(TypeError):
@@ -116,10 +116,10 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
         ('pick at least 1', 50, 0.1, ['3'])
     ])
     def test_find_top_cited_papers(self, name, max_papers, threshold, expected):
-        _, top_cited_df = self.analyzer.find_top_cited_papers(self.analyzer.df, max_papers=max_papers,
+        _, top_cited_df = self.analyzer.find_top_cited_papers(self.analyzer.df, n_papers=max_papers,
                                                               threshold=threshold)
         top_cited_papers = list(top_cited_df['id'].values)
-        self.assertListEqual(top_cited_papers, expected)
+        self.assertListEqual(top_cited_papers, expected, name)
 
     @parameterized.expand([
         ('granularity 0', {1: 0, 2: 1, 3: 2, 4: 3, 5: 4}, 0, ({1: 0, 2: 1, 3: 2, 4: 3, 5: 4}, 0)),
@@ -130,7 +130,7 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
     def test_merge_components(self, name, partition, granularity, expected):
         partition, n_components_merged = self.analyzer.merge_components(partition, granularity)
         expected_partition, expected_merged = expected
-        self.assertEqual(partition, expected_partition)
+        self.assertEqual(partition, expected_partition, name)
 
     @parameterized.expand([
         # Component sizes: {0: 1, 1: 3, 2: 2}, correct order - [1, 2, 0], no other
@@ -169,16 +169,16 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
         )
 
         if expect_none:
-            self.assertIsNone(evolution_df, msg='Evolution DataFrame is not None when step is too large')
+            self.assertIsNone(evolution_df, msg=f'Evolution DataFrame is not None when step is too large {name}')
 
         if expected_year_range:
-            self.assertListEqual(year_range, expected_year_range, msg='Wrong year range')
-            self.assertEqual(len(year_range), len(evolution_df.columns) - 2, msg='Wrong n_steps')
+            self.assertListEqual(year_range, expected_year_range, msg=f'Wrong year range {name}')
+            self.assertEqual(len(year_range), len(evolution_df.columns) - 2, msg=f'Wrong n_steps {name}')
         else:
-            self.assertIsNone(year_range, msg='Year range is not None when step is too large')
+            self.assertIsNone(year_range, msg=f'Year range is not None when step is too large {name}')
 
     def test_get_most_cited_papers_for_comps(self):
-        comps = self.analyzer.get_most_cited_papers_for_comps(self.analyzer.df, self.analyzer.partition, n=1)
+        comps = self.analyzer.get_most_cited_papers_for_comps(self.analyzer.df, self.analyzer.partition, 1)
         self.assertDictEqual(comps, {0: ['3'], 1: ['1']})
 
 

@@ -89,7 +89,7 @@ def visualize_analysis(analyzer):
             'papers_zoom_out_callback': zoom_out_callback,
             'author_statistics': plotter.author_statistics(),
             'journal_statistics': plotter.journal_statistics(),
-            'experimental': False,
+            'experimental': str(analyzer.config.experimental),
         }
 
 
