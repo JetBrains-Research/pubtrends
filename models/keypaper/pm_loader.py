@@ -35,7 +35,6 @@ class PubmedLoader(Loader):
                 WHERE p.{key} = {repr(value)}
                 RETURN p.pmid AS pmid;
             '''
-        self.progress.debug(f'Find query\n{query}', current=current, task=task)
 
         with self.neo4jdriver.session() as session:
             return [str(r['pmid']) for r in session.run(query)]
@@ -79,7 +78,6 @@ class PubmedLoader(Loader):
                 '''
         else:
             raise ValueError(f'Illegal sort method: {sort}')
-        self.progress.debug(f'Search query\n{query}', current=current, task=task)
 
         with self.neo4jdriver.session() as session:
             ids = [str(r['pmid']) for r in session.run(query)]
@@ -100,7 +98,6 @@ class PubmedLoader(Loader):
                 p.date.year as year, p.type as type, p.aux as aux
             ORDER BY id
         '''
-        self.progress.debug(f'Load publications query\n{query}', current=current, task=task)
 
         with self.neo4jdriver.session() as session:
             pub_df = pd.DataFrame(session.run(query).data())
@@ -125,7 +122,6 @@ class PubmedLoader(Loader):
             WHERE in.pmid IN pmids AND out.date.year >= in.date.year
             RETURN in.pmid AS id, out.date.year AS year, COUNT(*) AS count;
         '''
-        self.progress.debug(f'Load citations statistics query\n{query}', current=current, task=task)
 
         with self.neo4jdriver.session() as session:
             cit_stats_df = pd.DataFrame(session.run(query).data())
@@ -157,7 +153,6 @@ class PubmedLoader(Loader):
             RETURN out.pmid AS id_out, in.pmid AS id_in
             ORDER BY id_out, id_in;
         '''
-        self.progress.debug(f'Load citations query\n{query}', current=current, task=task)
 
         with self.neo4jdriver.session() as session:
             cit_df = pd.DataFrame(session.run(query).data())
@@ -184,7 +179,6 @@ class PubmedLoader(Loader):
             WHERE in.pmid IN pmids
             RETURN out.pmid AS citing, COLLECT(in.pmid) AS cited, out.date.year AS year;
         '''
-        self.progress.debug(f'Load co-citations query\n{query}', current=current, task=task)
 
         with self.neo4jdriver.session() as session:
             cocit_data = []
@@ -223,7 +217,6 @@ class PubmedLoader(Loader):
                 WHERE in.pmid IN pmids
                 RETURN COLLECT(out.pmid) AS expanded;
             '''
-            self.progress.debug(f'Expand in query\n{query}', current=current, task=task)
             with self.neo4jdriver.session() as session:
                 for r in session.run(query):
                     expanded |= set([str(i) for i in r['expanded']])
@@ -234,7 +227,6 @@ class PubmedLoader(Loader):
                 WHERE out.pmid IN pmids
                 RETURN COLLECT(in.pmid) AS expanded;
             '''
-            self.progress.debug(f'Expand out query\n{query}', current=current, task=task)
             with self.neo4jdriver.session() as session:
                 for r in session.run(query):
                     expanded |= set([str(i) for i in r['expanded']])

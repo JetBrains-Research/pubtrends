@@ -34,7 +34,6 @@ class SemanticScholarLoader(Loader):
                 WHERE p.{key} = {repr(value)}
                 RETURN p.ssid AS ssid;
             '''
-        self.progress.debug(f'Find query\n{query}', current=current, task=task)
 
         with self.neo4jdriver.session() as session:
             return [str(r['ssid']) for r in session.run(query)]
@@ -78,7 +77,6 @@ class SemanticScholarLoader(Loader):
                 '''
         else:
             raise ValueError(f'Illegal sort method: {sort}')
-        self.progress.debug(f'Search query\n{query}', current=current, task=task)
 
         with self.neo4jdriver.session() as session:
             ids = [str(r['ssid']) for r in session.run(query)]
@@ -100,7 +98,6 @@ class SemanticScholarLoader(Loader):
                 p.date.year as year, p.type as type, p.aux as aux
             ORDER BY id
         '''
-        self.progress.debug(f'Load publications query\n{query}', current=current, task=task)
 
         with self.neo4jdriver.session() as session:
             pub_df = pd.DataFrame(session.run(query).data())
@@ -128,7 +125,6 @@ class SemanticScholarLoader(Loader):
             WHERE in.crc32id in crc32ids AND in.ssid IN ssids AND out.date.year >= in.date.year
             RETURN in.ssid AS id, out.date.year AS year, COUNT(*) AS count;
         '''
-        self.progress.debug(f'Load citations statistics query\n{query}', current=current, task=task)
 
         with self.neo4jdriver.session() as session:
             cit_stats_df = pd.DataFrame(session.run(query).data())
@@ -163,7 +159,6 @@ class SemanticScholarLoader(Loader):
             RETURN out.ssid AS id_out, in.ssid AS id_in
             ORDER BY id_out, id_in;
         '''
-        self.progress.debug(f'Load citations query\n{query}', current=current, task=task)
 
         with self.neo4jdriver.session() as session:
             cit_df = pd.DataFrame(session.run(query).data())
@@ -191,7 +186,6 @@ class SemanticScholarLoader(Loader):
             WHERE in.crc32id in crc32ids AND in.ssid IN ssids
             RETURN out.ssid AS citing, COLLECT(in.ssid) AS cited, out.date.year AS year;
         '''
-        self.progress.debug(f'Load co-citations query\n{query}', current=current, task=task)
 
         with self.neo4jdriver.session() as session:
             cocit_data = []
@@ -231,7 +225,6 @@ class SemanticScholarLoader(Loader):
                 WHERE in.crc32id IN crc32ids AND in.ssid in ssids
                 RETURN COLLECT(out.ssid) AS expanded;
             '''
-            self.progress.debug(f'Expand in query\n{query}', current=current, task=task)
             with self.neo4jdriver.session() as session:
                 for r in session.run(query):
                     expanded |= set(r['expanded'])
@@ -243,7 +236,6 @@ class SemanticScholarLoader(Loader):
                 WHERE out.crc32id IN crc32ids AND out.ssid in ssids
                 RETURN COLLECT(in.ssid) AS expanded;
             '''
-            self.progress.debug(f'Expand out query\n{query}', current=current, task=task)
             with self.neo4jdriver.session() as session:
                 for r in session.run(query):
                     expanded |= set(r['expanded'])
