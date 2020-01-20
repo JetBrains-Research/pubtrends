@@ -34,10 +34,7 @@ object SemanticScholarLoader {
 
             // Load configuration file
             val (config, configPath, settingsRoot) = Config.load()
-            logger.info("Config\n" + BufferedReader(FileReader(configPath.toFile())).use {
-                it.readLines().joinToString("\n")
-            })
-
+            logger.info("Config path: $configPath")
 
             logger.info("Init Neo4j database connection")
             val dbHandler = SSNeo4jDatabaseHandler(
