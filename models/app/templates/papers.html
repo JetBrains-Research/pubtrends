@@ -71,10 +71,7 @@
             <tr>
                 <th scope="row">{{ loop.index }}</th>
                 <td>
-                    {{ title }}
-                    <a class="float-right" href="{{ url }}" title="Open in {{ source }}">
-                        <img src="{{ url_for('static', filename='external-link.svg') }}"/>
-                    </a>
+                    <a class="link" href="{{ url }}" title="Open in {{ source }}">{{ title }}</a>
                 </td>
                 <td>{{ authors }}</td>
                 <td>{{ journal }}</td>

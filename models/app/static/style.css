@@ -26,14 +26,15 @@ img.background {
     filter: progid:DXImageTransform.Microsoft.Blur(PixelRadius='4');
 }
 
-a.nav-link {
+.grey {
     color: #555555;
 }
 
-button.btn-link {
-    color: #555555;
+.link {
+    color: black;
+    text-decoration: underline;
+    text-decoration-color: #aaaaaa;
 }
-
 
 .unselectable {
     /* For Opera and <= IE9, we need to add unselectable="on" attribute onto each element */
@@ -50,11 +51,13 @@ footer {
     margin: 20px;
     font-size: 11pt;
     text-align: center;
-    color: #777;
+    color: #777777;
 }
 
 footer a {
-    color: #777;
+    color: #777777;
+    text-decoration: underline;
+    text-decoration-color: #aaaaaa;
 }
 
 span.error-message {
