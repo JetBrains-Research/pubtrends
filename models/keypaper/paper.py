@@ -10,6 +10,8 @@ from models.keypaper.visualization import Plotter
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
+MAX_TITLE_LENGTH = 200
+
 
 def get_loader_and_url_prefix(source, config):
     if source == 'Pubmed':
@@ -87,14 +89,14 @@ def prepare_paper_data(data, source, pid):
 
     result = {
         'title': title,
-        'trimmed_title': trim(title, 200),
+        'trimmed_title': trim(title, MAX_TITLE_LENGTH),
         'authors': sel['authors'].values[0],
         'citation': citation,
         'url': url_prefix + pid,
         'source': source,
         'citation_dynamics': [components(plotter.article_citation_dynamics(analyzer.df, str(pid)))],
         'related_topics': related_topics,
-        'cocited_papers': [(pid, trim(title, 200), url_prefix + pid, cw) for pid, title, cw in top_cocited_papers]
+        'cocited_papers': [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid, cw) for pid, title, cw in top_cocited_papers]
     }
 
     abstract = sel['abstract'].values[0]
@@ -102,10 +104,10 @@ def prepare_paper_data(data, source, pid):
         result['abstract'] = abstract
 
     if len(top_references) > 0:
-        result['citing_papers'] = [(pid, trim(title, 200), url_prefix + pid) for pid, title in top_references]
+        result['citing_papers'] = [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid) for pid, title in top_references]
 
     if len(top_citations) > 0:
-        result['cited_papers'] = [(pid, trim(title, 200), url_prefix + pid) for pid, title in top_citations]
+        result['cited_papers'] = [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid) for pid, title in top_citations]
 
     return result
 
@@ -143,7 +145,7 @@ def prepare_papers_data(data, source, comp=None, word=None, author=None, journal
         pid, title, abstract, authors, journal, year \
             = row['id'], row['title'], row['abstract'], row['authors'], row['journal'], row['year']
         authors = cut_authors_list(authors, limit=2)  # Take only first/last author
-        result.append((pid, (trim(title, 200)), authors, url_prefix + pid, trim(journal, 50), year))
+        result.append((pid, (trim(title, MAX_TITLE_LENGTH)), authors, url_prefix + pid, trim(journal, 50), year))
 
     # Return list sorted by year
     return sorted(result, key=lambda t: t[5], reverse=True)

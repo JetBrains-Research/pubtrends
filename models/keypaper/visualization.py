@@ -33,6 +33,9 @@ hv.extension('bokeh')
 
 log = logging.getLogger(__name__)
 
+MAX_AUTHOR_LENGTH = 100
+MAX_JOURNAL_LENGTH = 100
+MAX_LINEAR_AXIS = 100
 
 def visualize_analysis(analyzer):
     # Initialize plotter after completion of analysis
@@ -438,7 +441,7 @@ class Plotter:
         year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
         p = figure(tools=TOOLS, toolbar_location="above",
                    plot_width=960, plot_height=300, x_range=year_range,
-                   y_axis_type="log" if max(self.analyzer.max_gain_df['count']) > 100 else "linear",
+                   y_axis_type="log" if max(self.analyzer.max_gain_df['count']) > MAX_LINEAR_AXIS else "linear",
                    title='Max gain of citations per year')
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Number of citations'
@@ -473,7 +476,7 @@ class Plotter:
         year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
         p = figure(tools=TOOLS, toolbar_location="above",
                    plot_width=960, plot_height=300, x_range=year_range,
-                   y_axis_type="log" if max(self.analyzer.max_rel_gain_df['rel_gain']) > 100 else "linear",
+                   y_axis_type="log" if max(self.analyzer.max_rel_gain_df['rel_gain']) > MAX_LINEAR_AXIS else "linear",
                    title='Max relative gain of citations per year')
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Relative Gain of Citations'
@@ -585,7 +588,7 @@ class Plotter:
                 lambda row: self._to_colored_circle(row['comp'], row['counts'], row['sum']), axis=1)
         else:
             subtopics = [' '] * len(self.analyzer.author_stats)  # Ignore subtopics
-        return list(zip(map(lambda a: trim(a, 100), author), sum, subtopics))
+        return list(zip(map(lambda a: trim(a, MAX_AUTHOR_LENGTH), author), sum, subtopics))
 
     def journal_statistics(self):
         journal = self.analyzer.journal_stats['journal']
@@ -595,7 +598,7 @@ class Plotter:
                 lambda row: self._to_colored_circle(row['comp'], row['counts'], row['sum']), axis=1)
         else:
             subtopics = [' '] * len(self.analyzer.journal_stats)  # Ignore subtopics
-        return list(zip(map(lambda j: trim(j, 100), journal), sum, subtopics))
+        return list(zip(map(lambda j: trim(j, MAX_JOURNAL_LENGTH), journal), sum, subtopics))
 
     def _to_colored_circle(self, components, counts, sum, top=3):
         # html code to generate circles corresponding to the most popular subtopics

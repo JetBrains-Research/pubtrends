@@ -17,6 +17,8 @@ from models.keypaper.utils import zoom_name, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPE
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
+MAX_QUERY_LENGTH = 60
+
 app = Flask(__name__)
 
 # Check to see if our Flask application is being run directly or through Gunicorn,
@@ -106,7 +108,7 @@ def process():
             query = f'Paper {key}: {value}'
             return render_template('process.html',
                                    redirect_args={'query': quote(query), 'source': source, 'jobid': jobid},
-                                   query=trim(query, 90), source=source,
+                                   query=trim(query, MAX_QUERY_LENGTH), source=source,
                                    redirect_page="process_paper",  # redirect in case of success
                                    jobid=jobid, version=PUBTRENDS_CONFIG.version)
 
@@ -115,7 +117,7 @@ def process():
             query = f"{analysis_type} analysis of {query}"
             return render_template('process.html',
                                    redirect_args={'query': quote(query), 'source': source, 'jobid': jobid},
-                                   query=trim(query, 90), source=source,
+                                   query=trim(query, MAX_QUERY_LENGTH), source=source,
                                    redirect_page="result",  # redirect in case of success
                                    jobid=jobid, version=PUBTRENDS_CONFIG.version)
 
@@ -123,14 +125,14 @@ def process():
             logging.debug('/process paper analysis')
             return render_template('process.html',
                                    redirect_args={'source': source, 'jobid': jobid, 'id': id},
-                                   query=trim(query, 90), source=source,
+                                   query=trim(query, MAX_QUERY_LENGTH), source=source,
                                    redirect_page="paper",  # redirect in case of success
                                    jobid=jobid, version=PUBTRENDS_CONFIG.version)
         elif query:
             logging.debug('/process regular search')
             return render_template('process.html',
                                    redirect_args={'query': quote(query), 'source': source, 'jobid': jobid},
-                                   query=trim(query, 90), source=source,
+                                   query=trim(query, MAX_QUERY_LENGTH), source=source,
                                    redirect_page="result",  # redirect in case of success
                                    jobid=jobid, version=PUBTRENDS_CONFIG.version)
 
