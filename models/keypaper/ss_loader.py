@@ -25,7 +25,7 @@ class SemanticScholarLoader(Loader):
                 CALL db.index.fulltext.queryNodes("ssTitlesAndAbstracts", '"{re.sub('"', '', value.strip())}"')
                 YIELD node
                 MATCH (p:SSPublication)
-                WHERE p.ssid = node.ssid AND p.title = '{value}'
+                WHERE p.crc32id = node.crc32id AND p.ssid = node.ssid AND p.title = '{value}'
                 RETURN p.ssid AS ssid;
             '''
         else:
@@ -101,17 +101,18 @@ class SemanticScholarLoader(Loader):
 
         with self.neo4jdriver.session() as session:
             pub_df = pd.DataFrame(session.run(query).data())
-            if len(pub_df) == 0:
-                self.progress.debug(f'Failed to load publications.', current=current, task=task)
-
-        if np.any(pub_df[['id', 'title']].isna()):
-            raise ValueError('Paper must have PMID and title')
-
-        pub_df = Loader.process_publications_dataframe(pub_df)
-
-        self.progress.debug(f'Found {len(pub_df)} publications in the local database', current=current, task=task)
-        # Hack for missing type in SS, see https://github.com/JetBrains-Research/pubtrends/issues/200
-        pub_df['type'] = 'Article'
+        if len(pub_df) == 0:
+            self.progress.debug(f'Failed to load publications.', current=current, task=task)
+            pub_df = pd.DataFrame(columns=['id', 'crc32id', 'pmid', 'title', 'abstract', 'year', 'type', 'aux'])
+        else:
+            self.progress.debug(f'Found {len(pub_df)} publications in the local database', current=current, task=task)
+            if np.any(pub_df[['id', 'title']].isna()):
+                self.progress.debug('Detected paper(s) without ID or title', current=current, task=task)
+                pub_df.dropna(subset=['id', 'title'], inplace=True)
+                self.progress.debug(f'Correct publications {len(pub_df)}', current=current, task=task)
+            pub_df = Loader.process_publications_dataframe(pub_df)
+            # Hack for missing type in SS, see https://github.com/JetBrains-Research/pubtrends/issues/200
+            pub_df['type'] = 'Article'
         return pub_df
 
     def load_citation_stats(self, ids, current=1, task=None):
@@ -129,20 +130,19 @@ class SemanticScholarLoader(Loader):
 
         with self.neo4jdriver.session() as session:
             cit_stats_df = pd.DataFrame(session.run(query).data())
-            if len(cit_stats_df) == 0:
-                self.progress.debug(f'Failed to load citations statistics.', current=current, task=task)
 
-        self.progress.debug('Done loading citation stats', current=current, task=task)
+        if len(cit_stats_df) == 0:
+            self.progress.debug(f'Failed to load citations statistics.', current=current, task=task)
+            cit_stats_df = pd.DataFrame(columns=['id', 'year', 'count'])
+        else:
+            self.progress.info(f'Found {cit_stats_df.shape[0]} records of citations by year',
+                               current=current, task=task)
+            if np.any(cit_stats_df.isna()):
+                raise ValueError('NaN values are not allowed in citation stats DataFrame')
 
-        if np.any(cit_stats_df.isna()):
-            raise ValueError('NaN values are not allowed in citation stats DataFrame')
-
-        cit_stats_df['count'] = cit_stats_df['count'].apply(int)
-        cit_stats_df['id'] = cit_stats_df['id'].apply(str)
-        cit_stats_df['year'] = cit_stats_df['year'].apply(int)
-
-        self.progress.info(f'Found {cit_stats_df.shape[0]} records of citations by year',
-                           current=current, task=task)
+            cit_stats_df['count'] = cit_stats_df['count'].apply(int)
+            cit_stats_df['id'] = cit_stats_df['id'].apply(str)
+            cit_stats_df['year'] = cit_stats_df['year'].apply(int)
 
         return cit_stats_df
 
@@ -163,16 +163,18 @@ class SemanticScholarLoader(Loader):
 
         with self.neo4jdriver.session() as session:
             cit_df = pd.DataFrame(session.run(query).data())
-            if len(cit_df) == 0:
-                self.progress.debug(f'Failed to load citations.', current=current, task=task)
 
-        if np.any(cit_df.isna()):
-            raise ValueError('Citation must have id_out and id_in')
+        if len(cit_df) == 0:
+            self.progress.debug(f'Failed to load citations.', current=current, task=task)
+            cit_df = pd.DataFrame(columns=['id_in', 'id_out'])
+        else:
+            self.progress.info(f'Found {len(cit_df)} citations', current=current, task=task)
 
-        self.progress.info(f'Found {len(cit_df)} citations', current=current, task=task)
+            if np.any(cit_df.isna()):
+                raise ValueError('Citation must have id_out and id_in')
 
-        cit_df['id_in'] = cit_df['id_in'].apply(str)
-        cit_df['id_out'] = cit_df['id_out'].apply(str)
+            cit_df['id_in'] = cit_df['id_in'].apply(str)
+            cit_df['id_out'] = cit_df['id_out'].apply(str)
         return cit_df
 
     def load_cocitations(self, ids, current=1, task=None):
@@ -199,18 +201,23 @@ class SemanticScholarLoader(Loader):
                     for j in range(i + 1, len(cited)):
                         cocit_data.append((citing, cited[i], cited[j], year))
 
-        cocit_df = pd.DataFrame(cocit_data, columns=['citing', 'cited_1', 'cited_2', 'year'])
-
-        if np.any(cocit_df[['citing', 'cited_1', 'cited_2']].isna()):
-            raise ValueError('NaN values are not allowed in co-citation DataFrame')
-
-        cocit_df['citing'] = cocit_df['citing'].apply(str)
-        cocit_df['cited_1'] = cocit_df['cited_1'].apply(str)
-        cocit_df['cited_2'] = cocit_df['cited_2'].apply(str)
-        cocit_df['year'] = cocit_df['year'].apply(lambda x: int(x) if x else np.nan)
+        if len(cocit_data) == 0:
+            self.progress.debug(f'Failed to load cocitations.', current=current, task=task)
 
         self.progress.debug(f'Loaded {lines} lines of citing info', current=current, task=task)
-        self.progress.info(f'Found {len(cocit_df)} co-cited pairs of papers', current=current, task=task)
+        cocit_df = pd.DataFrame(cocit_data, columns=['citing', 'cited_1', 'cited_2', 'year'])
+        if len(cocit_data) == 0:
+            self.progress.debug(f'Failed to load cocitations.', current=current, task=task)
+        else:
+            self.progress.info(f'Found {len(cocit_df)} co-cited pairs of papers', current=current, task=task)
+
+            if np.any(cocit_df[['citing', 'cited_1', 'cited_2']].isna()):
+                raise ValueError('NaN values are not allowed in co-citation DataFrame')
+
+            cocit_df['citing'] = cocit_df['citing'].apply(str)
+            cocit_df['cited_1'] = cocit_df['cited_1'].apply(str)
+            cocit_df['cited_2'] = cocit_df['cited_2'].apply(str)
+            cocit_df['year'] = cocit_df['year'].apply(lambda x: int(x) if x else np.nan)
 
         return cocit_df
 
@@ -244,5 +251,5 @@ class SemanticScholarLoader(Loader):
         else:
             raise TypeError('ids should be Iterable')
 
-        self.progress.debug(f'Found {len(expanded)} papers', current=current, task=task)
+        self.progress.info(f'Found {len(expanded)} papers', current=current, task=task)
         return expanded
