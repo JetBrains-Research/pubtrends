@@ -60,7 +60,7 @@ Use the following command to test and build JAR package:
 
 ## Papers downloading and processing
 
-Neo4j and/or PostgreSQL should be configured and launched.
+Neo4j should be configured and launched.
 You can always inspect data structure in Neo4j web browser.
 
 ### Pubmed
@@ -126,7 +126,7 @@ Please ensure that you have Database configured, up and running.
 
 ## Testing
 
-1. Start Docker image with Postgres and Neo4j for tests (Kotlin and Python tests development)
+1. Start Docker image with Neo4j for tests (Kotlin and Python tests development)
     ```
     docker run --rm --name pubtrends-docker \
     --publish=7474:7474 --publish=7687:7687 \
