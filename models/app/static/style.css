@@ -1,8 +1,8 @@
 .jumbotron {
     padding: unset;
-    background:rgba(0,0,0,0.1);
-    border:1px solid rgba(0,0,0,0.1);
-    border-radius:3px;
+    background: rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
 }
 
 .jumbotron-content {
@@ -14,8 +14,8 @@
 
 .jumbotron-background {
     position: relative;
-    z-index:-1;
-    opacity:0.2;
+    z-index: -1;
+    opacity: 0.2;
 }
 
 img.background {
@@ -23,11 +23,27 @@ img.background {
     height: 320px;
     -webkit-filter: blur(4px);
     filter: blur(4px);
-    filter:progid:DXImageTransform.Microsoft.Blur(PixelRadius='4');
+    filter: progid:DXImageTransform.Microsoft.Blur(PixelRadius='4');
 }
 
 a.nav-link {
     color: #555555;
+}
+
+button.btn-link {
+    color: #555555;
+}
+
+
+.unselectable {
+    /* For Opera and <= IE9, we need to add unselectable="on" attribute onto each element */
+    /* Check this site for more details: http://help.dottoro.com/lhwdpnva.php */
+    -moz-user-select: none; /* These user-select properties are inheritable, used to prevent text selection */
+    -webkit-user-select: none;
+    -ms-user-select: none; /* From IE10 only */
+    user-select: none; /* Not valid CSS yet, as of July 2012 */
+    -webkit-user-drag: none; /* Prevents dragging of images/divs etc */
+    user-drag: none;
 }
 
 footer {
@@ -60,6 +76,7 @@ span.error-message {
     text-decoration: underline;
     cursor: pointer;
 }
+
 .link-button:focus {
     outline: none;
 }
