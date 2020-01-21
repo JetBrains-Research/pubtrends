@@ -20,12 +20,12 @@
             integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
             crossorigin="anonymous"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
-<!--        <link rel="stylesheet" href="../static/style.css"/>-->
+    <!--        <link rel="stylesheet" href="../static/style.css"/>-->
 
     <script>
         "use strict";
 
-        const TIMEOUT = 5000; // 5 seconds
+        const TIMEOUT = 2000; // 2 seconds
         const MAX_RETRIES = 20;
         let retries = 0;
         let cancelled = false;
@@ -41,7 +41,7 @@
                     console.log(response);
                     if (response.state === 'FAILURE') {
                         $('#progress').hide();
-                        $('#status').html("<h2>Error</h2>"+
+                        $('#status').html("<h2>Error</h2>" +
                             `<span class="error-message"> ${response.message} </span>`);
                         $('#log').html(response.log);
                     } else if (response.state === 'PENDING') {
@@ -91,16 +91,20 @@
             $.ajax("{{url_for('.cancel', jobid=jobid)}}", {
                 dataType: "json", success: function (response) {
                     console.log(response);
-                     if (response.state === 'CANCELLED') {
+                    if (response.state === 'CANCELLED') {
                         $('#status').html(response.message);
                         $('#log').empty();
-                        setTimeout(function() { window.location.replace("/"); }, TIMEOUT);
+                        setTimeout(function () {
+                            window.location.replace("/");
+                        }, TIMEOUT);
                     } else if (response.state === 'FAILURE') {
                         $('#progress').hide();
-                        $('#status').html("<h1>Error</h1>"+
+                        $('#status').html("<h1>Error</h1>" +
                             `<span class="error-message"> ${response.message} </span>`);
                         $('#log').empty();
-                        setTimeout(function() { window.location.replace("/"); }, TIMEOUT);
+                        setTimeout(function () {
+                            window.location.replace("/");
+                        }, TIMEOUT);
                     }
                 }
             });
@@ -115,7 +119,10 @@
 
 <div class="container">
     <nav class="navbar navbar-light bg-light justify-content-between mt-3">
-        <span class="navbar-brand"><a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>{{query}} at {{source}}</span>
+        <span class="navbar-brand">
+            <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
+            {{query}} at {{source}}
+        </span>
         <button class="btn btn-lg btn-link grey" type="reset" onclick="cancel()">&#10006;&nbsp;Cancel</button>
     </nav>
     <div id="progress" class="progress">
@@ -125,15 +132,15 @@
         </div>
     </div>
     <div class="content">
-        <div id="status">Waiting for content...</div>
+        <div class="h6" id="status">Waiting for content...</div>
         <pre id="log"></pre>
     </div>
 </div>
 <footer>
     <p>version {{ version }}<br/>
         &copy; 2019-2020 <a href="https://research.jetbrains.org/groups/biolabs"
-                      title="JetBrains Research BioLabs"
-                      target="_blank">JetBrains Research</a></p>
+                            title="JetBrains Research BioLabs"
+                            target="_blank">JetBrains Research</a></p>
 </footer>
 </body>
 </html>
