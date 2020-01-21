@@ -41,7 +41,7 @@
                     console.log(response);
                     if (response.state === 'FAILURE') {
                         $('#progress').hide();
-                        $('#status').html("<h1>Error</h1>"+
+                        $('#status').html("<h2>Error</h2>"+
                             `<span class="error-message"> ${response.message} </span>`);
                         $('#log').html(response.log);
                     } else if (response.state === 'PENDING') {
@@ -77,7 +77,7 @@
                         retries += 1;
                         if (retries > MAX_RETRIES) {
                             $('#progress').hide();
-                            $('#status').html("<h1>Error</h1>Failed to fetch results.");
+                            $('#status').html("<h2>Error</h2>Failed to fetch results.");
                         } else {
                             setTimeout(check_status, TIMEOUT);
                         }
@@ -125,8 +125,8 @@
         </div>
     </div>
     <div class="content">
-        <div class="h4" id="status">Waiting for content...</div>
-        <pre class="h7" id="log"></pre>
+        <div id="status">Waiting for content...</div>
+        <pre id="log"></pre>
     </div>
 </div>
 <footer>
