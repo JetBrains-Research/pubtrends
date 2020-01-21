@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>PubTrends - Publication Analysis Service</title>
+    <title>PubTrends - {{query}} at {{source}}{{ search_string }}
+    </title>
     <meta charset="utf-8">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
           integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
@@ -24,7 +25,7 @@
     <script>
         "use strict";
 
-        const TIMEOUT = 2000;
+        const TIMEOUT = 5000; // 5 seconds
         const MAX_RETRIES = 20;
         let retries = 0;
         let cancelled = false;
@@ -115,7 +116,7 @@
 <div class="container">
     <nav class="navbar navbar-light bg-light justify-content-between mt-3">
         <span class="navbar-brand"><a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>{{query}} at {{source}}</span>
-        <button class="btn btn-lg btn-link" type="reset" onclick="cancel()">&#10006;&nbsp;Cancel</button>
+        <button class="btn btn-lg btn-link grey" type="reset" onclick="cancel()">&#10006;&nbsp;Cancel</button>
     </nav>
     <div id="progress" class="progress">
         <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
