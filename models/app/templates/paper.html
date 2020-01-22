@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>PubTrends - Publication Analysis Service</title>
+    <title>PubTrends - {{ trimmed_title }}</title>
     <meta charset="utf-8">
     <link rel="stylesheet"
           href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
@@ -32,7 +32,7 @@
 
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
     <!--     <link rel="stylesheet" href="../static/style.css"/> -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='paper.css') }}"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='result.css') }}"/>
     <!--     <link rel="stylesheet" href="../static/paper.css"/> -->
     <script>
         "use strict";
@@ -55,39 +55,45 @@
 <body>
 
 <!-- Fixed navbar -->
-<nav class="navbar navbar-light bg-light justify-content-start fixed-top border-bottom">
-    <span class="navbar-brand col-sm-3 col-md-2 col-xl-2 mr-0">
-        <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
-    </span>
-    <span class="search-string">
-        {{ trimmed_title }}
-    </span>
+<nav class="navbar navbar-light bg-light fixed-top border-bottom">
+    <div class="row container-fluid">
+        <div class="col-md-2 col-xl-2 d-none d-md-block no-padding">
+            <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
+        </div>
+        <div class="col-md-10 col-xl-8 no-padding">
+            <span class="search-query">{{ trimmed_title }}</span>
+        </div>
+        <div class="d-none d-xl-block col-xl-2 no-padding"></div>
+    </div>
 </nav>
 
-<div class="container-fluid">
+<div class="container-fluid no-padding">
     <div class="row">
         <!-- Sticky sidebar -->
-        <nav class="col-md-2 col-xl-2 d-none d-md-block bg-light sidebar border-bottom">
+        <nav class="col-md-2 col-xl-2 sidebar d-md-block no-padding">
             <div class="sidebar-sticky">
-                <ul class="nav flex-column mt-3">
+                <ul class="nav flex-column">
                     <li class="nav-item">
                         <a class="nav-link" href="#paper">
-                            <img src="{{ url_for('static', filename='home.svg') }}"/>&nbsp;Paper
+                            <img class="nav-icon" src="{{ url_for('static', filename='home.svg') }}"/>&nbsp;Paper
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#citation-dynamics">
-                            <img src="{{ url_for('static', filename='bar-chart-2.svg') }}"/>&nbsp;Citation Dynamics
+                            <img class="nav-icon" src="{{ url_for('static', filename='bar-chart-2.svg') }}"/>&nbsp;Citation
+                            Dynamics
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#related-topics">
-                            <img src="{{ url_for('static', filename='tag.svg') }}"/>&nbsp;Related Topics
+                            <img class="nav-icon" src="{{ url_for('static', filename='tag.svg') }}"/>&nbsp;Related
+                            Topics
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#related-papers">
-                            <img src="{{ url_for('static', filename='columns.svg') }}"/>&nbsp;Related Papers
+                            <img class="nav-icon" src="{{ url_for('static', filename='columns.svg') }}"/>&nbsp;Related
+                            Papers
                         </a>
                     </li>
                 </ul>
@@ -95,26 +101,23 @@
         </nav>
 
         <!-- Main content -->
-        <main class="col-12 col-md-auto col-xl-10 justify-content-between" role="main">
+        <main class="col-md-10 col-xl-8 no-padding" role="main">
             <div class="card mt-3">
                 <div class="card-title" id="paper">
                     <h1 class="card-header">Paper</h1>
                 </div>
                 <div class="card-body">
-                    <div class="row justify-content-between info">
-                        <span class="col citation"><h5>{{ citation }}</h5></span>
-                        <span class="col link">
-                            <a class="float-right" href="{{ url }}">
-                                <img src="{{ url_for('static', filename='external-link.svg') }}"/>
-                                Open in {{ source }}
-                            </a>
-                        </span>
-                    </div>
-                    <div class="mt-2">
-                        <h1 class="card-title title"><b>{{ title }}</b></h1>
+                    <div>
+                        <a class="float-right link" href="{{ url }}">
+                            <img class="nav-icon" src="{{ url_for('static', filename='external-link.svg') }}"/>
+                            Open in {{ source }}
+                        </a>
+                        <h2 class="paper-title">{{ title }}</h2>
                         <em>{{ authors }}</em>
+                        <br>
+                        {{ citation }}
                         {% if abstract is defined %}
-                        <h2 class="card-subtitle mt-3"><b>Abstract</b></h2>
+                        <h5 class="card-subtitle mt-3">Abstract</h5>
                         <p class="mt-2">{{ abstract }}</p>
                         {% endif %}
                     </div>
@@ -194,9 +197,8 @@
                         <tr>
                             <th scope="row">{{ loop.index }}</th>
                             <td>
-                                {{ title }}
-                                <a class="float-right" href="{{ url }}" title="Open in {{ source }}">
-                                    <img src="{{ url_for('static', filename='external-link.svg') }}"/>
+                                <a class="link" href="{{ url }}" title="Open in {{ source }}">
+                                    {{ title }}
                                 </a>
                             </td>
                         </tr>
@@ -207,6 +209,7 @@
                     {% endif %}
 
                     {% if cited_papers is defined %}
+                    <hr>
                     <h4>Valuable Citations</h4>
                     <p>
                         This section represents papers, which has the paper of interest among references,<br>
@@ -224,9 +227,8 @@
                         <tr>
                             <th scope="row">{{ loop.index }}</th>
                             <td>
-                                {{ title }}
-                                <a class="float-right" href="{{ url }}" title="Open in {{ source }}">
-                                    <img src="{{ url_for('static', filename='external-link.svg') }}"/>
+                                <a class="link" href="{{ url }}" title="Open in {{ source }}">
+                                    {{ title }}
                                 </a>
                             </td>
                         </tr>
@@ -237,6 +239,7 @@
                     {% endif %}
 
                     {% if cocited_papers is defined %}
+                    <hr>
                     <h4>Valuable Co-cited Papers</h4>
                     <p>
                         This section represents papers, which are co-cited with the paper of interest,<br>
@@ -255,9 +258,8 @@
                         <tr>
                             <th scope="row">{{ loop.index }}</th>
                             <td>
-                                {{ title }}
-                                <a class="float-right" href="{{ url }}" title="Open in {{ source }}">
-                                    <img src="{{ url_for('static', filename='external-link.svg') }}"/>
+                                <a class="link" href="{{ url }}" title="Open in {{ source }}">
+                                    {{ title }}
                                 </a>
                             </td>
                             <td>{{ cw }}</td>
@@ -269,13 +271,16 @@
                 </div>
             </div>
         </main>
+
+        <!--Right alignment-->
+        <div class="d-none d-xl-block col-xl-2 no-padding"></div>
     </div>
 </div>
 <footer>
     <p>version {{ version }}<br/>
         &copy; 2019-2020 <a href="https://research.jetbrains.org/groups/biolabs"
-                      title="JetBrains Research BioLabs"
-                      target="_blank">JetBrains Research</a></p>
+                            title="JetBrains Research BioLabs"
+                            target="_blank">JetBrains Research</a></p>
 </footer>
 </body>
 </html>

@@ -49,12 +49,12 @@ def prepare_paper_data(data, source, pid):
         if year == np.nan:
             citation = ''
         else:
-            citation = f'Published in {int(float(year))}'
+            citation = f'{int(float(year))}'
     else:
         if year == np.nan:
             citation = journal
         else:
-            citation = f'{journal} ({int(float(year))})'
+            citation = f'{journal}, ({int(float(year))})'
 
     # Estimate related topics for the paper
     related_topics = {}
@@ -96,7 +96,8 @@ def prepare_paper_data(data, source, pid):
         'source': source,
         'citation_dynamics': [components(plotter.article_citation_dynamics(analyzer.df, str(pid)))],
         'related_topics': related_topics,
-        'cocited_papers': [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid, cw) for pid, title, cw in top_cocited_papers]
+        'cocited_papers': [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid, cw)
+                           for pid, title, cw in top_cocited_papers]
     }
 
     abstract = sel['abstract'].values[0]
@@ -104,10 +105,12 @@ def prepare_paper_data(data, source, pid):
         result['abstract'] = abstract
 
     if len(top_references) > 0:
-        result['citing_papers'] = [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid) for pid, title in top_references]
+        result['citing_papers'] = [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid)
+                                   for pid, title in top_references]
 
     if len(top_citations) > 0:
-        result['cited_papers'] = [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid) for pid, title in top_citations]
+        result['cited_papers'] = [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid)
+                                  for pid, title in top_citations]
 
     return result
 

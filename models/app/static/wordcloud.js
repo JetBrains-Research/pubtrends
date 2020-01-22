@@ -14,21 +14,21 @@ function isHighDensity() {
         (window.devicePixelRatio && window.devicePixelRatio > 1.3));
 }
 
-function process_word_cloud(id, words, callback) {
+function process_word_cloud(id, width, height, words, callback) {
     const canvas = document.getElementById(id);
     const ctx = canvas.getContext("2d");
     // Make canvas visible
-    canvas.style.width = "220px";
-    canvas.style.height = "360px";
+    canvas.style.width = width.toString() + "px";
+    canvas.style.height = height.toString() + "px";
 
     // Retina/HiDPI fix
     if (isHighDensity()) {
-        canvas.width = 440;
-        canvas.height = 720;
+        canvas.width = width * 2;
+        canvas.height = height * 2;
         ctx.scale(2, 2);
     } else {
-        canvas.width = 220;
-        canvas.height = 360;
+        canvas.width = width;
+        canvas.height = height;
     }
 
     const links = []; // Links information

@@ -1,11 +1,11 @@
 body {
-    padding-top: 65px;
+    padding-top: 55px;
 }
 
 /* Fixes link jumps to cards by the height of fixed navbar */
 :target {
-    padding-top: 75px;
-    margin-top: -75px;
+    padding-top: 71px;
+    margin-top: -71px;
 }
 
 .sidebar {
@@ -14,54 +14,52 @@ body {
     left: 0;
     z-index: 100; /* Behind the navbar */
     padding: 0;
-    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
-    border: bottom;
 }
 
 .sidebar-sticky {
     position: -webkit-sticky;
     position: sticky;
-    top: 65px; /* Height of navbar */
+    top: 55px; /* Height of navbar */
     padding-top: .5rem;
     overflow-x: hidden;
     overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
 }
 
 .sidebar .nav-link {
-    font-weight: 500;
+    font-weight: 400;
     color: #333;
+    font-size: 1rem;
+    margin-left: 10px;
 }
 
-.sidebar .nav-link .feather {
-    margin-right: 4px;
-    color: #999;
+.sidebar .nav-link:hover {
+    font-weight: 600;
 }
 
-.sidebar .nav-link.active {
-    color: #007bff;
-}
-
-.sidebar .nav-link:hover .feather,
-.sidebar .nav-link.active .feather {
-    color: inherit;
+.nav-icon {
+    height: 1.4rem;
 }
 
 .card-header {
-    font-size: 20pt;
-}
-
-.card-title {
-    font-size: 20pt;
+    font-size: 1.4rem;
 }
 
 .card-subtitle {
-    font-size: 18pt;
+    font-size: 1.3rem;
+}
+
+.paper-title {
+    font-size: 1.6rem;
 }
 
 .card-text {
-    font-size: 15pt;
+    font-size: 1.2rem;
 }
 
 .stats-number {
-    font-size: 30pt;
+    font-size: 2.5rem;
+}
+
+.info {
+    font-size: 1rem;
 }

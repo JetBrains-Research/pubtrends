@@ -82,11 +82,11 @@
             $('#journals-table').DataTable();
 
             var words = JSON.parse('{{ papers_word_cloud }}'.replace(/&#34;/g, '"').replace(/&amp;/g, '&'));
-            process_word_cloud('papers_word_cloud', words, papers_callback_word);
+            process_word_cloud('papers_word_cloud', 220, 335, words, papers_callback_word);
 
             {% for (script, div), word_cloud, zoom_in_callback in subtopics_info_and_word_cloud_and_callback %}
                  words = JSON.parse('{{ word_cloud }}'.replace(/&#34;/g, '"').replace(/&amp;/g, '&'));
-                 process_word_cloud('topic_word_cloud_{{ loop.index }}', words, papers_callback_word);
+                 process_word_cloud('topic_word_cloud_{{ loop.index }}', 220, 335, words, papers_callback_word);
             {% endfor %}
         } );
     </script>
@@ -94,43 +94,46 @@
 <body>
 
 <!-- Fixed navbar -->
-<nav class="navbar navbar-light bg-light justify-content-start fixed-top border-bottom">
-    <span class="navbar-brand">
-        <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
-        {{query}} at {{source}}
-    </span>
+<nav class="navbar navbar-light bg-light fixed-top border-bottom">
+    <div class="row container-fluid">
+        <div class="col-md-2 col-xl-2 d-none d-md-block no-padding">
+            <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
+        </div>
+        <div class="col-md-10 col-xl-8 no-padding"><span class="search-query">{{query}} at {{source}}</span></div>
+        <div class="d-none d-xl-block col-xl-2 no-padding"></div>
+    </div>
 </nav>
 
-<div class="container-fluid">
+<div class="container-fluid no-padding">
     <div class="row">
         <!-- Sticky sidebar -->
-        <nav class="col-md-2 col-xl-2 d-none d-md-block bg-light sidebar border-bottom">
+        <nav class="col-md-2 col-xl-2 sidebar d-md-block no-padding">
             <div class="sidebar-sticky">
-                <ul class="nav flex-column mt-3">
+                <ul class="nav flex-column">
                     <li class="nav-item">
                         <a class="nav-link" href="#overview">
-                            <img src="{{ url_for('static', filename='home.svg') }}"/>&nbsp;Overview
+                            <img class="nav-icon" src="{{ url_for('static', filename='home.svg') }}"/>&nbsp;Overview
                         </a>
                     </li>
                     {% if topics_analyzed %}
                     <li class="nav-item">
                         <a class="nav-link" href="#highlights">
-                            <img src="{{ url_for('static', filename='bar-chart-2.svg') }}"/>&nbsp;Highlights
+                            <img class="nav-icon" src="{{ url_for('static', filename='bar-chart-2.svg') }}"/>&nbsp;Highlights
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#topics">
-                            <img src="{{ url_for('static', filename='tag.svg') }}"/>&nbsp;Topics
+                            <img class="nav-icon" src="{{ url_for('static', filename='tag.svg') }}"/>&nbsp;Topics
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#trends">
-                            <img src="{{ url_for('static', filename='trending-up.svg') }}"/>&nbsp;Trends
+                            <img class="nav-icon" src="{{ url_for('static', filename='trending-up.svg') }}"/>&nbsp;Trends
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#publications">
-                            <img src="{{ url_for('static', filename='columns.svg') }}"/>&nbsp;Publications
+                            <img class="nav-icon" src="{{ url_for('static', filename='columns.svg') }}"/>&nbsp;Publications
                         </a>
                     </li>
                     {% endif %}
@@ -141,7 +144,7 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#journals">
-                            <img src="{{ url_for('static', filename='book-open.svg') }}"/>&nbsp;Journals
+                            <img class="nav-icon" src="{{ url_for('static', filename='book-open.svg') }}"/>&nbsp;Journals
                         </a>
                     </li>
                     {% if experimental %}
@@ -153,7 +156,7 @@
                     {% endif %}
                     <li class="nav-item">
                         <a class="nav-link" href="#log">
-                            <img src="{{ url_for('static', filename='align-justify.svg') }}"/>&nbsp;Log
+                            <img class="nav-icon" src="{{ url_for('static', filename='align-justify.svg') }}"/>&nbsp;Log
                         </a>
                     </li>
                 </ul>
@@ -161,7 +164,7 @@
         </nav>
 
         <!-- Main content -->
-        <main class="col-12 col-md-auto col-xl-10 justify-content-between" role="main">
+        <main class="col-md-10 col-xl-8 no-padding" role="main">
             <div class="card mt-3">
                 <div class="card-title" id="overview">
                     <h2 class="card-header">Overview</h2>
@@ -194,13 +197,14 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-2">
+                        <div class="col-3 no-padding-right">
                             <strong>Word cloud</strong>
+                            <br>
                             <canvas id="papers_word_cloud" width="0" height="0" style="border:1px solid #eee;">
                                 Canvas is not supported in your browser.
                             </canvas>
                         </div>
-                        <div class="col-6">
+                        <div class="col-9 no-padding-left">
                             {% for script, div in papers_stats %}
                             {{ script|safe }}
                             {{ div|safe }}
@@ -301,7 +305,7 @@
 
 
                     <a data-toggle="collapse" href="#collapseCocitations" role="button" aria-expanded="false"
-                       aria-controls="collapseCocitations">
+                       aria-controls="collapseCocitations" class="link">
                         Show co-citations graph clustering details
                     </a>
 
@@ -374,13 +378,14 @@
                         </h2>
                         Number of papers: {{ component_sizes[loop.index - 1] }}
                         <div class="row">
-                            <div class="col-2">
+                            <div class="col-3 no-padding-right">
                                 <strong>Word cloud</strong>
+                                <br>
                                 <canvas id="topic_word_cloud_{{ loop.index }}" width="0" height="0" style="border:1px solid #eee;">
                                     Canvas is not supported in your browser.
                                 </canvas>
                             </div>
-                            <div class="col-6">
+                            <div class="col-9 no-padding-left">
                                 {{ script|safe }}
                                 {{ div|safe }}
                             </div>
@@ -512,6 +517,9 @@
                 </div>
             </div>
         </main>
+
+        <!--Right alignment-->
+        <div class="d-none d-xl-block col-xl-2 no-padding"></div>
     </div>
 </div>
 <footer>
