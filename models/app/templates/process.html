@@ -99,7 +99,7 @@
                         }, TIMEOUT);
                     } else if (response.state === 'FAILURE') {
                         $('#progress').hide();
-                        $('#status').html("<h1>Error</h1>" +
+                        $('#status').html("<h2>Error</h2>" +
                             `<span class="error-message"> ${response.message} </span>`);
                         $('#log').empty();
                         setTimeout(function () {
