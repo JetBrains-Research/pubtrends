@@ -31,9 +31,9 @@
     <link href="https://cdn.pydata.org/bokeh/release/bokeh-widgets-1.2.0.min.css"
           rel="stylesheet" type="text/css">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1"/>
-    <!--     <link rel="stylesheet" href="../static/style.css"/> -->
+         <link rel="stylesheet" href="../static/style.css"/>
     <link rel="stylesheet" href="{{ url_for('static', filename='paper.css') }}?v=1"/>
-    <!--     <link rel="stylesheet" href="../static/paper.css"/> -->
+         <link rel="stylesheet" href="../static/paper.css"/>
     <script>
         "use strict";
         $(document).ready(function () {
@@ -45,16 +45,19 @@
 
 <!-- Fixed navbar -->
 <nav class="navbar navbar-light bg-light fixed-top border-bottom">
-    <div>
-        <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
-        <span class="search-query">{{query}} at {{source}}{{ search_string }}</span>
+    <div class="row container-fluid no-padding">
+        <div class="col-1 no-padding"></div>
+        <div class="col-11 no-padding">
+            <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
+            <span class="search-query">{{query}} at {{source}}{{ search_string }}</span>
+        </div>
     </div>
 </nav>
 
 <div class="container-fluid no-padding">
     <div class="row">
         <div class="col-md-1 col-xl-1 no-padding"></div>
-        <main class="col-md-10 col-xl-10 no-padding" role="main">
+        <main class="col-md-11 col-xl-10 no-padding" role="main">
             <div class="mt-3">
                 <table id="papers" class="table table-sm table-bordered table-striped">
                     <thead>
