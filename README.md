@@ -32,21 +32,19 @@ Ensure that file contains correct information about the database(s) (url, port, 
 4. Configure Neo4j and install APOC extension.
     * Prepare folders
     ```
-    mkdir -p $HOME/neo4j/data $HOME/neo4j/conf $HOME/neo4j/logs $HOME/neo4j/plugins
+    mkdir -p $HOME/neo4j/data $HOME/neo4j/logs $HOME/neo4j/plugins
     ```
     * Launch Neo4j docker image to create config file.
     ```
-    docker run --publish=7474:7474 --publish=7687:7687 \
+    docker run --name pubtrends-neo4j \
+        --publish=7474:7474 --publish=7687:7687 \
         --volume=$HOME/neo4j/data:/var/lib/neo4j/data \
-        --volume=$HOME/neo4j/conf:/var/lib/neo4j/conf \
         --volume=$HOME/neo4j/logs:/logs \
         --volume=$HOME/neo4j/plugins:/plugins \
         neo4j:3.5
     ```
    * Download the [latest release](https://github.com/neo4j-contrib/neo4j-apoc-procedures/releases/tag/3.5.0.4) of APOC
    * Place the binary JAR into your `$HOME/neo4j/plugins` folder
-   * Add line `dbms.security.procedures.unrestricted=apoc.*` to the end of config file
-    `$HOME/neo4j/conf/neo4j.conf` to allow usage of the procedures.
    * Open Neo4j web browser to change default password (neo4j) to a strong one.
 
 
@@ -169,15 +167,26 @@ Please ensure that you have configured and prepared the database(s).
 1. Modify file `config.properties` with information about the database(s). 
    File from the project folder is used in this case.
 
-2. Launch Neo4j database docker image.
+2. Launch Neo4j database docker image (you can omit lines prefixed by `--env`).
+
     ```
-    docker run --publish=7474:7474 --publish=7687:7687 \
+    docker run --name pubtrends-neo4j \
+        --publish=7474:7474 --publish=7687:7687 \
         --volume=$HOME/neo4j/data:/var/lib/neo4j/data \
-        --volume=$HOME/neo4j/conf:/var/lib/neo4j/conf \
         --volume=$HOME/neo4j/logs:/logs \
         --volume=$HOME/neo4j/plugins:/plugins \
+        --env NEO4J_dbms_memory_pagecache_size=<X>G \
+        --env NEO4J_dbms_memory_heap_initial__size=<X>G \
+        --env NEO4J_dbms_memory_heap_max__size=<X>G \
+        --env NEO4J_dbms_logs_query_parameter__logging__enabled=true \
+        --env NEO4J_dbms_logs_query_time__logging__enabled=true \
+        --env NEO4J_dbms_logs_query_allocation__logging__enabled=true \
+        --env NEO4J_dbms_logs_query_page__logging__enabled=true \
         neo4j:3.5
     ```
+    
+   See https://neo4j.com/developer/guide-performance-tuning/ for configuration details.
+   
 3. Build ready for deployment package with script `dist.sh`.
 
 4. Create logs folder within deployment package folder
