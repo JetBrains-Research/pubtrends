@@ -53,11 +53,6 @@ img.background {
     font-size: 1.1rem;
 }
 
-main {
-    padding-left: unset !important;
-    padding-right: unset !important;
-}
-
 .no-padding {
     padding-left: unset !important;
     padding-right: unset !important;

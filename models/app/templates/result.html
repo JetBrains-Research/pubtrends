@@ -96,18 +96,20 @@
 <!-- Fixed navbar -->
 <nav class="navbar navbar-light bg-light fixed-top border-bottom">
     <div class="row container-fluid">
-        <div class="col-md-2 col-xl-2 d-none d-md-block no-padding">
+        <div class="col-lg-1 col-xl-2 no-padding">
             <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
         </div>
-        <div class="col-md-10 col-xl-8 no-padding"><span class="search-query">{{query}} at {{source}}</span></div>
-        <div class="d-none d-xl-block col-xl-2 no-padding"></div>
+        <div class="col-lg-11 col-xl-8"><div class="content">
+            <span class="search-query">{{query}} at {{source}}</span>
+        </div></div>
+        <div class="d-none d-xl-block col-xl-2"></div>
     </div>
 </nav>
 
-<div class="container-fluid no-padding">
-    <div class="row">
+<div class="container-fluid">
+    <div class="row ">
         <!-- Sticky sidebar -->
-        <nav class="col-md-2 col-xl-2 sidebar d-md-block no-padding">
+        <nav class="d-none d-xl-block d-lg-block col-lg-1 col-xl-2 sidebar no-padding">
             <div class="sidebar-sticky">
                 <ul class="nav flex-column">
                     <li class="nav-item">
@@ -164,369 +166,371 @@
         </nav>
 
         <!-- Main content -->
-        <main class="col-md-10 col-xl-8 no-padding" role="main">
-            <div class="card mt-3">
-                <div class="card-title" id="overview">
-                    <h2 class="card-header">Overview</h2>
-                </div>
-                <div class="card-body">
-                    <div class="row mb-3">
-                        <div class="col-sm-4">
-                            <div class="card">
-                                <div class="card-body text-center">
-                                    <span class="stats-number"><b>{{ n_papers }}</b></span><br>
-                                    <span class="card-text">papers</span>
+        <main class="col-lg-11 col-xl-8" role="main">
+            <div class="content">
+                <div class="card mt-3">
+                    <div class="card-title" id="overview">
+                        <h2 class="card-header">Overview</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-sm-4">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <span class="stats-number"><b>{{ n_papers }}</b></span><br>
+                                        <span class="card-text">papers</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-4">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <span class="stats-number"><b>{{ n_citations }}</b></span><br>
+                                        <span class="card-text">citations</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-4">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <span class="stats-number"><b>{{ n_subtopics }}</b></span><br>
+                                        <span class="card-text">subtopics</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-sm-4">
-                            <div class="card">
-                                <div class="card-body text-center">
-                                    <span class="stats-number"><b>{{ n_citations }}</b></span><br>
-                                    <span class="card-text">citations</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-4">
-                            <div class="card">
-                                <div class="card-body text-center">
-                                    <span class="stats-number"><b>{{ n_subtopics }}</b></span><br>
-                                    <span class="card-text">subtopics</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-3 no-padding-right">
-                            <strong>Word cloud</strong>
-                            <br>
-                            <canvas id="papers_word_cloud" width="0" height="0" style="border:1px solid #eee;">
-                                Canvas is not supported in your browser.
-                            </canvas>
-                        </div>
-                        <div class="col-9 no-padding-left">
-                            {% for script, div in papers_stats %}
-                            {{ script|safe }}
-                            {{ div|safe }}
-                            {% endfor %}
-                        </div>
-                    </div>
-                    <div>
-                        <button type="button" class="btn btn-light"
-                                onclick="(function(){ papers_callback() })();">
-                            <img src="{{ url_for('static', filename='list.svg') }}"  alt="+"/>&nbsp;Show as list
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card mt-3">
-                <div class="card-title" id="highlights">
-                    <h1 class="card-header">Highlights</h1>
-                </div>
-                <div class="card-body">
-                    <h2 class="card-subtitle">Top Cited Papers Overall</h2>
-                    <p>
-                        Top 50 or 10% cited papers are shown among all the papers for given search query.<br>
-                        Year reflects publication year of the original paper.
-                    </p>
-                    <button type="button" class="btn btn-light"
-                            onclick="(function(){ papers_callback_top_papers() })();">
-                        <img src="{{ url_for('static', filename='list.svg') }}"  alt="+"/>&nbsp;Show as list
-                    </button>
-                    <div>
-                        {% for script, div in top_cited_papers %}
-                        {{ script|safe }}
-                        {{ div|safe }}
-                        {% endfor %}
-                    </div>
-                    <hr>
-
-                    <h2 class="card-subtitle">Top Cited Papers of the Year</h2>
-                    <p>
-                        For each year we show the paper which has the most significant number of citations in a given
-                        year.<br>
-                        Number <i>V</i> means <i>+V</i> gain in citations.<br>
-                        Different papers have different colors.
-                    </p>
-                    <button type="button" class="btn btn-light"
-                            onclick="(function(){ papers_callback_papers_of_the_year() })();">
-                        <img src="{{ url_for('static', filename='list.svg') }}"  alt="+"/>&nbsp;Show as list
-                    </button>
-                    <div>
-                        {% for script, div in max_gain_papers %}
-                        {{ script|safe }}
-                        {{ div|safe }}
-                        {% endfor %}
-                    </div>
-                    <hr>
-
-                    <h2 class="card-subtitle">Hot Papers</h2>
-                    <p>
-                        For each year we show a recent paper which has the biggest number of citation since the moment
-                        of publication.<br>
-                        Number <i>V</i> means <i>*(1 + V)</i> gain in citations.<br>
-                        Different papers have different colors.
-                    </p>
-                    <button type="button" class="btn btn-light"
-                            onclick="(function(){ papers_callback_hot_papers() })();">
-                        <img src="{{ url_for('static', filename='list.svg') }}"  alt="+"/>&nbsp;Show as list
-                    </button>
-                    <div>
-                        {% for script, div in max_relative_gain_papers %}
-                        {{ script|safe }}
-                        {{ div|safe }}
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-
-            {% if topics_analyzed %}
-            <div class="card mt-3">
-                <div class="card-title" id="topics">
-                    <h1 class="card-header">Topics</h1>
-                </div>
-                <div class="card-body">
-                    <p> Citations graph is used to find all the papers which are cited together or <em>co-cited</em> by
-                        other papers.<br>
-                        Co-citations graph is used to extract subtopics using <em>Louvain</em> algorithm for community
-                        detection.<br>
-                        Click on bars to get detailed information about keywords and publications for each subtopic.
-                        <br>
-                        <em>Note: subtopics are merged to "Other" if they contain less than 5% of publications of the
-                            field.</em>
-                    </p>
-                    <div>
-                        {% for script, div in component_ratio %}
-                        {{ script|safe }}
-                        {{ div|safe }}
-                        {% endfor %}
-                    </div>
-
-
-                    <a data-toggle="collapse" href="#collapseCocitations" role="button" aria-expanded="false"
-                       aria-controls="collapseCocitations" class="link">
-                        Show co-citations graph clustering details
-                    </a>
-
-                    <div class="collapse" id="collapseCocitations">
-                        <p> {{clusters_info_message}} </p>
-                        <div>
-                            {% for script, div in cocitations_clusters %}
-                            {{ script|safe }}
-                            {{ div|safe }}
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card mt-3">
-                <div class="card-title" id="trends">
-                    <h1 class="card-header">Trends</h1>
-                </div>
-                <div class="card-body">
-                    <h2 class="card-subtitle">Subtopics summary</h2>
-                    <p>
-                        Explore the evolution of trends - dynamics is shown for the timeline.<br>
-                        Colors are the same as in the previous diagram.
-                    </p>
-                    <div>
-                        {% for script, div in component_size_summary %}
-                        {{ script|safe }}
-                        {{ div|safe }}
-                        {% endfor %}
-                    </div>
-                    <br>
-                    <p>Each boxplot demonstrates summary publication year for given topic.</p>
-                    <div>
-                        {% for script, div in component_years_summary_boxplots %}
-                        {{ script|safe }}
-                        {{ div|safe }}
-                        {% endfor %}
-                    </div>
-
-                </div>
-            </div>
-
-            <div class="card mt-3">
-                <div class="card-title" id="publications">
-                    <h1 class="card-header">Publications</h1>
-                </div>
-                <div class="card-body">
-                    <p>
-                        Learn more about subtopics - most cited papers over time are shown for each topic.<br>
-                        Papers are sorted descending by citations number overall from bottom to top.<br>
-                        Year reflects publication year of the original paper.
-                    </p>
-                    <div>
-                        {% for (script, div), word_cloud, zoom_in_callback in subtopics_info_and_word_cloud_and_callback %}
-                        <h2 id="subtopic-{{ loop.index }}" class="card-subtitle">
-                            <hr>
-                            Subtopic {{ loop.index }}
-                            {% if loop.index0 == comp_other %}
-                            - OTHER
-                            {% endif %}
-                            <button type="button" class="btn btn-light"
-                                    onclick="(function(){ papers_callback_component({{ loop.index }}); })();">
-                                <img src="{{ url_for('static', filename='list.svg') }}"  alt="+"/>&nbsp;Show as list
-                            </button>
-                            <button type="button" class="btn btn-light"
-                                    onclick="(function(){ {{ zoom_in_callback|safe }} })();">
-                                <img src="{{ url_for('static', filename='zoom-in.svg') }}"  alt="+"/>&nbsp;Zoom into
-                            </button>
-                        </h2>
-                        Number of papers: {{ component_sizes[loop.index - 1] }}
                         <div class="row">
                             <div class="col-3 no-padding-right">
                                 <strong>Word cloud</strong>
                                 <br>
-                                <canvas id="topic_word_cloud_{{ loop.index }}" width="0" height="0" style="border:1px solid #eee;">
+                                <canvas id="papers_word_cloud" width="0" height="0" style="border:1px solid #eee;">
                                     Canvas is not supported in your browser.
                                 </canvas>
                             </div>
                             <div class="col-9 no-padding-left">
+                                {% for script, div in papers_stats %}
                                 {{ script|safe }}
                                 {{ div|safe }}
+                                {% endfor %}
                             </div>
                         </div>
-                        {% endfor %}
+                        <div>
+                            <button type="button" class="btn btn-light"
+                                    onclick="(function(){ papers_callback() })();">
+                                <img src="{{ url_for('static', filename='list.svg') }}"  alt="+"/>&nbsp;Show as list
+                            </button>
+                        </div>
                     </div>
-                    <hr>
-                    <p>
-                        Explore related papers by taking into account all the referencing and citing relationships for papers of interest.<br>
-                        <strong>WARNING</strong>: number of papers can increase exponentially, analysis can be slow!
-                    </p>
-                    <button type="button" class="btn btn-light"
-                            onclick="(function(){ {{ papers_zoom_out_callback|safe }} })();">
-                        <img src="{{ url_for('static', filename='zoom-out.svg') }}" alt="-"/>&nbsp;Zoom out to related papers
-                    </button>
                 </div>
-            </div>
-            {% endif %}
 
-            <div class="card mt-3">
-                <div class="card-title" id="authors">
-                    <h1 class="card-header">Authors</h1>
+                <div class="card mt-3">
+                    <div class="card-title" id="highlights">
+                        <h1 class="card-header">Highlights</h1>
+                    </div>
+                    <div class="card-body">
+                        <h2 class="card-subtitle">Top Cited Papers Overall</h2>
+                        <p>
+                            Top 50 or 10% cited papers are shown among all the papers for given search query.<br>
+                            Year reflects publication year of the original paper.
+                        </p>
+                        <button type="button" class="btn btn-light"
+                                onclick="(function(){ papers_callback_top_papers() })();">
+                            <img src="{{ url_for('static', filename='list.svg') }}"  alt="+"/>&nbsp;Show as list
+                        </button>
+                        <div>
+                            {% for script, div in top_cited_papers %}
+                            {{ script|safe }}
+                            {{ div|safe }}
+                            {% endfor %}
+                        </div>
+                        <hr>
+
+                        <h2 class="card-subtitle">Top Cited Papers of the Year</h2>
+                        <p>
+                            For each year we show the paper which has the most significant number of citations in a given
+                            year.<br>
+                            Number <i>V</i> means <i>+V</i> gain in citations.<br>
+                            Different papers have different colors.
+                        </p>
+                        <button type="button" class="btn btn-light"
+                                onclick="(function(){ papers_callback_papers_of_the_year() })();">
+                            <img src="{{ url_for('static', filename='list.svg') }}"  alt="+"/>&nbsp;Show as list
+                        </button>
+                        <div>
+                            {% for script, div in max_gain_papers %}
+                            {{ script|safe }}
+                            {{ div|safe }}
+                            {% endfor %}
+                        </div>
+                        <hr>
+
+                        <h2 class="card-subtitle">Hot Papers</h2>
+                        <p>
+                            For each year we show a recent paper which has the biggest number of citation since the moment
+                            of publication.<br>
+                            Number <i>V</i> means <i>*(1 + V)</i> gain in citations.<br>
+                            Different papers have different colors.
+                        </p>
+                        <button type="button" class="btn btn-light"
+                                onclick="(function(){ papers_callback_hot_papers() })();">
+                            <img src="{{ url_for('static', filename='list.svg') }}"  alt="+"/>&nbsp;Show as list
+                        </button>
+                        <div>
+                            {% for script, div in max_relative_gain_papers %}
+                            {{ script|safe }}
+                            {{ div|safe }}
+                            {% endfor %}
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <p>
-                        List of authors with the largest number of papers for given search query.<br>
-                        The colors of the circles in the subtopics column indicate top 3 most common subtopics among
-                        these papers.<br>
-                        The subtopic circles are arranged according to the number of papers, in descending order.
-                    </p>
-                    <table id="authors-table" class="table table-sm table-bordered table-striped">
-                        <thead>
-                        <tr>
-                            <th scope="col">#</th>
-                            <th scope="col">Author</th>
-                            <th scope="col">Papers</th>
-                            <th scope="col">Subtopics</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {% for row in author_statistics %}
-                        <tr>
-                            <th scope="row">{{ loop.index }}</th>
-                            <td>{{ row[0] }}</td>
-                            <td><button type="button" class="btn btn-link link" onclick="(function(){
+
+                {% if topics_analyzed %}
+                <div class="card mt-3">
+                    <div class="card-title" id="topics">
+                        <h1 class="card-header">Topics</h1>
+                    </div>
+                    <div class="card-body">
+                        <p> Citations graph is used to find all the papers which are cited together or <em>co-cited</em> by
+                            other papers.<br>
+                            Co-citations graph is used to extract subtopics using <em>Louvain</em> algorithm for community
+                            detection.<br>
+                            Click on bars to get detailed information about keywords and publications for each subtopic.
+                            <br>
+                            <em>Note: subtopics are merged to "Other" if they contain less than 5% of publications of the
+                                field.</em>
+                        </p>
+                        <div>
+                            {% for script, div in component_ratio %}
+                            {{ script|safe }}
+                            {{ div|safe }}
+                            {% endfor %}
+                        </div>
+
+
+                        <a data-toggle="collapse" href="#collapseCocitations" role="button" aria-expanded="false"
+                           aria-controls="collapseCocitations" class="link">
+                            Show co-citations graph clustering details
+                        </a>
+
+                        <div class="collapse" id="collapseCocitations">
+                            <p> {{clusters_info_message}} </p>
+                            <div>
+                                {% for script, div in cocitations_clusters %}
+                                {{ script|safe }}
+                                {{ div|safe }}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-title" id="trends">
+                        <h1 class="card-header">Trends</h1>
+                    </div>
+                    <div class="card-body">
+                        <h2 class="card-subtitle">Subtopics summary</h2>
+                        <p>
+                            Explore the evolution of trends - dynamics is shown for the timeline.<br>
+                            Colors are the same as in the previous diagram.
+                        </p>
+                        <div>
+                            {% for script, div in component_size_summary %}
+                            {{ script|safe }}
+                            {{ div|safe }}
+                            {% endfor %}
+                        </div>
+                        <br>
+                        <p>Each boxplot demonstrates summary publication year for given topic.</p>
+                        <div>
+                            {% for script, div in component_years_summary_boxplots %}
+                            {{ script|safe }}
+                            {{ div|safe }}
+                            {% endfor %}
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-title" id="publications">
+                        <h1 class="card-header">Publications</h1>
+                    </div>
+                    <div class="card-body">
+                        <p>
+                            Learn more about subtopics - most cited papers over time are shown for each topic.<br>
+                            Papers are sorted descending by citations number overall from bottom to top.<br>
+                            Year reflects publication year of the original paper.
+                        </p>
+                        <div>
+                            {% for (script, div), word_cloud, zoom_in_callback in subtopics_info_and_word_cloud_and_callback %}
+                            <h2 id="subtopic-{{ loop.index }}" class="card-subtitle">
+                                <hr>
+                                Subtopic {{ loop.index }}
+                                {% if loop.index0 == comp_other %}
+                                - OTHER
+                                {% endif %}
+                                <button type="button" class="btn btn-light"
+                                        onclick="(function(){ papers_callback_component({{ loop.index }}); })();">
+                                    <img src="{{ url_for('static', filename='list.svg') }}"  alt="+"/>&nbsp;Show as list
+                                </button>
+                                <button type="button" class="btn btn-light"
+                                        onclick="(function(){ {{ zoom_in_callback|safe }} })();">
+                                    <img src="{{ url_for('static', filename='zoom-in.svg') }}"  alt="+"/>&nbsp;Zoom into
+                                </button>
+                            </h2>
+                            Number of papers: {{ component_sizes[loop.index - 1] }}
+                            <div class="row">
+                                <div class="col-3 no-padding-right">
+                                    <strong>Word cloud</strong>
+                                    <br>
+                                    <canvas id="topic_word_cloud_{{ loop.index }}" width="0" height="0" style="border:1px solid #eee;">
+                                        Canvas is not supported in your browser.
+                                    </canvas>
+                                </div>
+                                <div class="col-9 no-padding-left">
+                                    {{ script|safe }}
+                                    {{ div|safe }}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <hr>
+                        <p>
+                            Explore related papers by taking into account all the referencing and citing relationships for papers of interest.<br>
+                            <strong>WARNING</strong>: number of papers can increase exponentially, analysis can be slow!
+                        </p>
+                        <button type="button" class="btn btn-light"
+                                onclick="(function(){ {{ papers_zoom_out_callback|safe }} })();">
+                            <img src="{{ url_for('static', filename='zoom-out.svg') }}" alt="-"/>&nbsp;Zoom out to related papers
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="card mt-3">
+                    <div class="card-title" id="authors">
+                        <h1 class="card-header">Authors</h1>
+                    </div>
+                    <div class="card-body">
+                        <p>
+                            List of authors with the largest number of papers for given search query.<br>
+                            The colors of the circles in the subtopics column indicate top 3 most common subtopics among
+                            these papers.<br>
+                            The subtopic circles are arranged according to the number of papers, in descending order.
+                        </p>
+                        <table id="authors-table" class="table table-sm table-bordered table-striped">
+                            <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Author</th>
+                                <th scope="col">Papers</th>
+                                <th scope="col">Subtopics</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for row in author_statistics %}
+                            <tr>
+                                <th scope="row">{{ loop.index }}</th>
+                                <td>{{ row[0] }}</td>
+                                <td><button type="button" class="btn btn-link link" onclick="(function(){
                                 papers_callback_author('{{ row[0] }}');
                             })();">{{ row[1] }}</button></td>
-                            <td>{{ row[2]|safe }}</td>
-                        </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="card mt-3">
-                <div class="card-title" id="journals">
-                    <h1 class="card-header">Journals</h1>
-                </div>
-                <div class="card-body">
-                    <p>
-                        List of journals with the largest number of papers for given search query.<br>
-                        The colors of the circles in the subtopics column indicate top 3 most common subtopics among
-                        these papers.<br>
-                        The subtopic circles are arranged according to the number of papers, in descending order.
-                    </p>
-                    <table id="journals-table" class="table table-sm table-bordered table-striped">
-                        <thead>
-                        <tr>
-                            <th scope="col">#</th>
-                            <th scope="col">Journal</th>
-                            <th scope="col">Papers</th>
-                            <th scope="col">Subtopics</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {% for row in journal_statistics %}
-                        <tr>
-                            <th scope="row">{{ loop.index }}</th>
-                            <td>{{ row[0] }}</td>
-                            <td><button type="button" class="btn btn-link link" onclick="(function(){
-                                papers_callback_journal('{{ row[0] }}');
-                            })();">{{ row[1] }}</button></td>
-                            <td>{{ row[2]|safe }}</td>
-                        </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            {% if experimental %}
-            <div class="card mt-3">
-                <div class="card-title" id="evolution">
-                    <h1 class="card-header">Experimental</h1>
-                </div>
-                <div class="card-body">
-                    <h2 class="card-subtitle">Subtopic Evolution</h2>
-                    <p>
-                        Topics extraction is performed longitudinally at several time points to detect merges and splits
-                        of clusters,<br>
-                        which can be related to new ideas. Clusters are described by several words with the highest<br>
-                        <em>TF-IDF</em> value, edge width reflects the number of papers which moved from one cluster to
-                        another.
-                    </p>
-                    <div>
-                        {% if subtopic_evolution is defined %}
-                        {% for script, div in subtopic_evolution %}
-                        {{ script|safe }}
-                        {{ div|safe }}
-                        {% endfor %}
-                        {% else %}
-                        Failed to analyze subtopic evolution because year step is too big.
-                        {% endif %}
+                                <td>{{ row[2]|safe }}</td>
+                            </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-            </div>
-            {% endif %}
 
-            <div class="card mt-3">
-                <div class="card-title" id="log">
-                    <h1 class="card-header"><a class="grey" data-toggle="collapse" href="#collapseLog" role="button" aria-expanded="false"
-                                               aria-controls="collapseCocitations">
-                        Log
-                    </a></h1>
+                <div class="card mt-3">
+                    <div class="card-title" id="journals">
+                        <h1 class="card-header">Journals</h1>
+                    </div>
+                    <div class="card-body">
+                        <p>
+                            List of journals with the largest number of papers for given search query.<br>
+                            The colors of the circles in the subtopics column indicate top 3 most common subtopics among
+                            these papers.<br>
+                            The subtopic circles are arranged according to the number of papers, in descending order.
+                        </p>
+                        <table id="journals-table" class="table table-sm table-bordered table-striped">
+                            <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Journal</th>
+                                <th scope="col">Papers</th>
+                                <th scope="col">Subtopics</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for row in journal_statistics %}
+                            <tr>
+                                <th scope="row">{{ loop.index }}</th>
+                                <td>{{ row[0] }}</td>
+                                <td><button type="button" class="btn btn-link link" onclick="(function(){
+                                papers_callback_journal('{{ row[0] }}');
+                            })();">{{ row[1] }}</button></td>
+                                <td>{{ row[2]|safe }}</td>
+                            </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-                <div id="collapseLog" class="card-body collapse">
-                    <pre>{{log}}</pre>
+
+                {% if experimental %}
+                <div class="card mt-3">
+                    <div class="card-title" id="evolution">
+                        <h1 class="card-header">Experimental</h1>
+                    </div>
+                    <div class="card-body">
+                        <h2 class="card-subtitle">Subtopic Evolution</h2>
+                        <p>
+                            Topics extraction is performed longitudinally at several time points to detect merges and splits
+                            of clusters,<br>
+                            which can be related to new ideas. Clusters are described by several words with the highest<br>
+                            <em>TF-IDF</em> value, edge width reflects the number of papers which moved from one cluster to
+                            another.
+                        </p>
+                        <div>
+                            {% if subtopic_evolution is defined %}
+                            {% for script, div in subtopic_evolution %}
+                            {{ script|safe }}
+                            {{ div|safe }}
+                            {% endfor %}
+                            {% else %}
+                            Failed to analyze subtopic evolution because year step is too big.
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="card mt-3">
+                    <div class="card-title" id="log">
+                        <h1 class="card-header"><a class="grey" data-toggle="collapse" href="#collapseLog" role="button" aria-expanded="false"
+                                                   aria-controls="collapseCocitations">
+                            Log
+                        </a></h1>
+                    </div>
+                    <div id="collapseLog" class="card-body collapse">
+                        <pre>{{log}}</pre>
+                    </div>
                 </div>
             </div>
         </main>
 
         <!--Right alignment-->
-        <div class="d-none d-xl-block col-xl-2 no-padding"></div>
+        <div class="d-none d-xl-block col-xl-2"></div>
     </div>
 </div>
 <footer>
     <p>version {{ version }}<br/>
         &copy; 2019-2020 <a href="https://research.jetbrains.org/groups/biolabs"
-                      title="JetBrains Research BioLabs"
-                      target="_blank">JetBrains Research</a></p>
+                            title="JetBrains Research BioLabs"
+                            target="_blank">JetBrains Research</a></p>
 </footer>
 </body>
 </html>

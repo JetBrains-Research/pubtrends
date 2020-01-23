@@ -20,7 +20,7 @@
             integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
             crossorigin="anonymous"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1"/>
-            <link rel="stylesheet" href="../static/style.css"/>
+<!--            <link rel="stylesheet" href="../static/style.css"/>-->
 
     <script>
         "use strict";
@@ -117,10 +117,10 @@
 </head>
 <body>
 
-<div class="container-fluid no-padding">
+<div class="container-fluid">
     <div class="row">
-        <div class="col-md-2 col-xl-2 no-padding"></div>
-        <div class="col-md-10 col-xl-8 no-padding">
+        <div class="d-none d-xl-block col-xl-2"></div>
+        <div class="col-xl-8">
             <nav class="navbar navbar-light bg-light justify-content-between mt-3">
                 <div>
                     <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
@@ -137,6 +137,7 @@
             <div class="h6 mt-3" id="status">Waiting for content...</div>
             <pre id="log"></pre>
         </div>
+        <div class="d-none d-xl-block col-xl-2"></div>
     </div>
 </div>
 <footer>
