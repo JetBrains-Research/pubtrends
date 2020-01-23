@@ -5,7 +5,7 @@ import org.joda.time.format.DateTimeFormat
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 
-class BiorxivScraper {
+class BiorxivScraper(private val parser: ReferenceParser) {
     companion object {
         private val logger = LogManager.getLogger(BiorxivScraper::class)
         private val formatter = DateTimeFormat.forPattern("yyyy-mm-dd")
@@ -55,6 +55,7 @@ class BiorxivScraper {
         val references = articlePage.extractMultipleMetaTagContent("citation_reference")
 
         logger.info("References\n$references")
+        parser.parse(references)
 
         return BiorxivArticle(biorxivId, version, date, title, abstract, authors, doi, pdfUrl)
     }

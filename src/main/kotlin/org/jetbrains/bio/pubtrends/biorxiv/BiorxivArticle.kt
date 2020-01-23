@@ -10,7 +10,8 @@ data class BiorxivArticle(
         val abstractText: String = "",
         val authors: List<String> = listOf(),
         val doi: String = "",
-        val pdfUrl: String = ""
+        val pdfUrl: String = "",
+        val referenceList: List<Int> = listOf()
 ) {
     fun toNeo4j(): Map<String, String> {
         return mapOf(
@@ -20,7 +21,8 @@ data class BiorxivArticle(
                 "abstract" to abstractText.replace('\n', ' '),
                 "date" to (date?.toString() ?: ""),
                 "doi" to doi,
-                "pdfUrl" to pdfUrl
+                "pdfUrl" to pdfUrl,
+                "references" to referenceList.joinToString { ", " }
         )
     }
 }

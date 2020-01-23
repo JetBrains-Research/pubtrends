@@ -1,6 +1,7 @@
 package org.jetbrains.bio.pubtrends.biorxiv
 
 import org.jetbrains.bio.pubtrends.AbstractDBHandler
+import org.jetbrains.bio.pubtrends.pm.PubmedArticle
 import org.neo4j.driver.v1.AuthTokens
 import org.neo4j.driver.v1.GraphDatabase
 import java.io.Closeable
@@ -118,6 +119,18 @@ RETURN n;
             it.run("UNWIND {ids} AS biorxivId\n" +
                     "MATCH (n:BiorxivPublication {biorxivId: biorxivId})\n" +
                     "DETACH DELETE n;", deleteParameters)
+        }
+    }
+
+    /**
+     * This function is used to get PMID for a reference scraped from bioRxiv website.
+     *
+     * @param reference: Reference pre-processed by `anystyle`
+     * @return PMID is found, 0 otherwise
+     */
+    fun getPMID(reference: PubmedArticle) : Int {
+        driver.session().use {
+            return 0
         }
     }
 
