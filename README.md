@@ -34,7 +34,9 @@ Ensure that file contains correct information about the database(s) (url, port, 
     ```
     mkdir -p $HOME/neo4j/data $HOME/neo4j/logs $HOME/neo4j/plugins
     ```
-    * Launch Neo4j docker image to create config file.
+   * Download the [latest release](https://github.com/neo4j-contrib/neo4j-apoc-procedures/releases/tag/3.5.0.4) of APOC
+   * Place the binary JAR into your `$HOME/neo4j/plugins` folder
+    * Launch Neo4j docker image.
     ```
     docker run --name pubtrends-neo4j \
         --publish=7474:7474 --publish=7687:7687 \
@@ -42,9 +44,7 @@ Ensure that file contains correct information about the database(s) (url, port, 
         --volume=$HOME/neo4j/logs:/logs \
         --volume=$HOME/neo4j/plugins:/plugins \
         neo4j:3.5
-    ```
-   * Download the [latest release](https://github.com/neo4j-contrib/neo4j-apoc-procedures/releases/tag/3.5.0.4) of APOC
-   * Place the binary JAR into your `$HOME/neo4j/plugins` folder
+    ```   
    * Open Neo4j web browser to change default password (neo4j) to a strong one.
 
 
