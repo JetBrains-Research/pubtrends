@@ -131,10 +131,21 @@ def prepare_papers_data(data, source, comp=None, word=None, author=None, journal
                      for (t, a) in zip(df['title'], df['abstract'])]]
     # Filter by author
     if author is not None:
-        df = df.loc[[author in authors for authors in df['authors']]]
+        # Check if string was trimmed
+        if author.endswith('...'):
+            author = author[:-3]
+            df = df.loc[[any([a.startswith(author) for a in authors]) for authors in df['authors']]]
+        else:
+            df = df.loc[[author in authors for authors in df['authors']]]
+
     # Filter by journal
     if journal is not None:
-        df = df.loc[df['journal'] == journal]
+        # Check if string was trimmed
+        if journal.endswith('...'):
+            journal = journal[:-3]
+            df = df.loc[[j.startswith(journal) for j in df['journal']]]
+        else:
+            df = df.loc[df['journal'] == journal]
 
     if papers_list == 'top':
         df = df.loc[[pid in analyzer.top_cited_papers for pid in df['id']]]
