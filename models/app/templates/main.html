@@ -18,6 +18,13 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1"/>
     <!--            <link rel="stylesheet" href="../static/style.css" />-->
 
+    <!-- IntroJS feature tour -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.9.3/introjs.css"
+          integrity="sha256-OYXGS5m4oWZAAqoAKpf7Y3bIdzdd9jBfly/xCavEpGw=" crossorigin="anonymous"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.9.3/intro.js"
+            integrity="sha256-SPZP/x8QDPEhRlpJjet4AD5X4ergPWcxjhMn73SwyOE="
+            crossorigin="anonymous"></script>
+
     <script>
         // Example starter JavaScript for disabling form submissions if there are invalid fields
         (function () {
@@ -53,6 +60,8 @@
                 Discover science trends and topics faster
             </p>
             <p class="lead">
+                <a id="tour-start" class="btn btn-light"
+                           href="javascript:void(0);" onclick="startIntro();">Take a tour</a>
                 <a class="btn btn-light"
                    href="https://research.jetbrains.org/groups/biolabs/projects?project_id=56"
                    target="_blank" role="button">Learn more</a>
@@ -61,7 +70,7 @@
     </div>
 
     <main class="card" role="main">
-        <div class="card-header">
+        <div id="step1" class="card-header">
             <ul class="nav nav-tabs card-header-tabs" id="tabs-list" role="tablist">
                 <li class="nav-item">
                     <a class="nav-link active grey" id="topic-tab" data-toggle="tab" href="#topic"
@@ -82,25 +91,25 @@
                      aria-labelledby="topic-tab">
                     <form action="search_terms" method="POST" class="needs-validation" novalidate>
                         <div class="row no-gutters align-items-center mb-3">
-                            <div class="col input-group">
+                            <div id="stepT1" class="col input-group">
                                 <div class="input-group-prepend">
                                     <span class="input-group-text" id="query-addon">Query</span>
                                 </div>
                                 <input class="form-control form-control-borderless" type="search"
-                                       name="query"
+                                       name="query" id="terms-input"
                                        placeholder="Enter keywords, &quot;&quot; for phrase search"
                                        aria-describedby="query-addon"
                                        autofocus required>
                             </div>
                             &nbsp;&nbsp;&nbsp;
                             <!--end of col-->
-                            <div class="col-auto">
+                            <div id="stepT3" class="col-auto">
                                 <button class="btn btn-success" type="submit">Search</button>
                             </div>
                             <!--end of col-->
                         </div>
 
-                        <div class="row no-gutters align-items-center">
+                        <div id="stepT2" class="row no-gutters align-items-center">
                             <div class="col input-group">
                                 <div class="input-group-prepend">
                                     <span class="input-group-text" id="source-addon">Source</span>
@@ -154,8 +163,8 @@
                 <div class="tab-pane fade" id="paper" role="tabpanel" aria-labelledby="paper-tab">
                     <form action="search_paper" method="POST" class="needs-validation" novalidate>
                         <div class="row no-gutters align-items-center">
-                            <div class="col-auto">
-                                <select class="form-control" name="key" required>
+                            <div id="stepP1" class="col-auto">
+                                <select id="paper-key" class="form-control" name="key" required>
                                     <option disabled></option>
                                     <option value="title">Title</option>
                                     <option value="doi">DOI</option>
@@ -163,9 +172,9 @@
                                 </select>
                             </div>
                             &nbsp;&nbsp;
-                            <div class="col">
+                            <div id="stepP2" class="col">
                                 <input class="form-control form-control-borderless" type="search"
-                                       name="value"
+                                       name="value" id="paper-input"
                                        placeholder="Enter paper details"
                                        aria-describedby="query-addon"
                                        autofocus
@@ -184,7 +193,7 @@
                             </div>
                             &nbsp;&nbsp;
                             <!--end of col-->
-                            <div class="col-auto">
+                            <div id="stepP3" class="col-auto">
                                 <button class="btn btn-success" type="submit">Search</button>
                             </div>
                         </div>
@@ -213,5 +222,87 @@
                             title="JetBrains Research BioLabs"
                             target="_blank">JetBrains Research</a></p>
 </footer>
+
+<script type="text/javascript">
+    var decodeHtmlEntity = function(str) {
+        return str.replace(/&#(\d+);/g, function(match, dec) {
+            return String.fromCharCode(dec);
+        });
+    };
+
+    function useTermsSuggestion(){
+        document.getElementById('terms-input').value = decodeHtmlEntity("{{ search_example_terms }}");
+    }
+
+    function startIntro(){
+        var intro = introJs();
+        intro.setOptions({
+            steps: [
+                {
+                    intro: "Welcome to PubTrends - a novel web-service for analysis of trends and " +
+                        "topics in the scientific literature! This quick tutorial will help you define " +
+                        "the first search."
+                },
+                {
+                    element: '#step1',
+                    intro: "First of all, you have two options - <em>Topic Analysis</em> and <em>Paper Analysis</em>. " +
+                        "Proceed with the <em>Topic Analysis</em> tab to study the research fields of your interest. " +
+                        "More information about the <em>Paper Analysis</em> tab can be found in later steps of " +
+                        "the tutorial."
+                },
+                {
+                    element: '#stepT1',
+                    intro: 'Enter keywords to define the research field (for example, ' +
+                        '<a href="javascript:void(0);" onclick="useTermsSuggestion();">' +
+                            '{{ search_example_terms }}' +
+                        '</a>).'
+                },
+                {
+                    element: '#stepT2',
+                    intro: "Select the advanced search options:" +
+                        "<ul>" +
+                            "<li><em>Source database</em>: currently, Pubmed is the only option.</li>" +
+                            "<li><em>Sorting criterion</em>: relevance, recency or number of citations.</li>" +
+                            "<li><em>The number of papers to show</em>: you can select up to 5000.</li>" +
+                        "</ul>"
+                },
+                {
+                    element: '#stepT3',
+                    intro: "Click the <em>Search</em> button to launch the search or proceed to the next step " +
+                        "for instructions about the <em>Paper Analysis</em> tab."
+                },
+                {
+                    element: '#step1',
+                    intro: "Now let's <b>switch</b> to the second tab - <em>Paper Analysis</em>. You can use it to study " +
+                        "the surrounding of a certain paper: its valuable references, citations and related " +
+                        "topics."
+                },
+                {
+                    element: '#stepP1',
+                    intro: "There are three ways to define the paper of interest: by <em>title</em>, " +
+                        "<em>DOI</em> or <em>PMID</em>. Select the most comfortable option and " +
+                        "proceed to the next step."
+                },
+                {
+                    element: '#stepP2',
+                    intro: "Enter the data to define the paper according to the option selected in the " +
+                        "previous step."
+                },
+                {
+                    element: '#stepP3',
+                    intro: "Click the <em>Search</em> button to launch the search. " +
+                        "Please be patient while the analysis is performed! When the results will load, " +
+                        "click the <em>Section overview</em> button to open the next part of the tutorial."
+                },
+            ]
+        });
+
+        intro.start();
+    }
+
+
+
+</script>
+
 </body>
 </html>
