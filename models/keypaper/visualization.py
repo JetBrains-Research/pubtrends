@@ -354,7 +354,8 @@ class Plotter:
             labels.extend([c for _ in range(len(expanded_vs))])
             values.extend(expanded_vs)
         boxwhisker = hv.BoxWhisker((labels, values), 'Subtopic', 'Publications year')
-        boxwhisker.opts(width=PLOT_WIDTH, height=SHORT_PLOT_HEIGHT, box_fill_color=dim('Topic').str(), cmap='tab20')
+        boxwhisker.opts(width=PLOT_WIDTH, height=SHORT_PLOT_HEIGHT,
+                        box_fill_color=dim('Subtopic').str(), cmap='tab20')
         return hv.render(boxwhisker, backend='bokeh')
 
     def subtopics_info_and_word_cloud_and_callback(self):
