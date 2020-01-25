@@ -30,6 +30,13 @@
     <link href="https://cdn.datatables.net/1.10.20/css/dataTables.bootstrap4.min.css"
           rel="stylesheet" type="text/css">
 
+    <!-- IntroJS feature tour -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.9.3/introjs.css"
+          integrity="sha256-OYXGS5m4oWZAAqoAKpf7Y3bIdzdd9jBfly/xCavEpGw=" crossorigin="anonymous"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.9.3/intro.js"
+            integrity="sha256-SPZP/x8QDPEhRlpJjet4AD5X4ergPWcxjhMn73SwyOE="
+            crossorigin="anonymous"></script>
+
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1"/>
     <!--     <link rel="stylesheet" href="../static/style.css"/> -->
     <link rel="stylesheet" href="{{ url_for('static', filename='result.css') }}?v=1">
@@ -99,10 +106,15 @@
         <div class="col-lg-1 col-xl-2 no-padding">
             <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
         </div>
-        <div class="col-lg-11 col-xl-8"><div class="content">
-            <span class="search-query">{{query}} at {{source}}</span>
-        </div></div>
-        <div class="d-none d-xl-block col-xl-2"></div>
+        <div class="col-lg-11 col-xl-8">
+            <div class="content">
+                <span class="search-query">{{query}} at {{source}}</span>
+            </div>
+        </div>
+        <div class="d-none d-xl-block col-xl-2 float-right">
+            <a id="tour-start" class="btn btn-secondary float-right"
+               href="javascript:void(0);" onclick="startIntro();">Section overview</a>
+        </div>
     </div>
 </nav>
 
@@ -110,7 +122,7 @@
     <div class="row ">
         <!-- Sticky sidebar -->
         <nav class="d-none d-xl-block d-lg-block col-lg-1 col-xl-2 sidebar no-padding">
-            <div class="sidebar-sticky">
+            <div class="sidebar-sticky" id="step1">
                 <ul class="nav flex-column">
                     <li class="nav-item row">
                         <a class="nav-link no-padding-right" href="#overview" title="Overview">
@@ -236,7 +248,7 @@
                         <div>
                             <button type="button" class="btn btn-light"
                                     onclick="(function(){ papers_callback() })();">
-                                <img src="{{ url_for('static', filename='list.svg') }}"  alt="+"/>&nbsp;Show as list
+                                <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
                             </button>
                         </div>
                     </div>
@@ -247,33 +259,35 @@
                         <h1 class="card-header">Highlights</h1>
                     </div>
                     <div class="card-body">
-                        <h2 class="card-subtitle">Top Cited Papers Overall</h2>
-                        <p>
-                            Top 50 or 10% cited papers are shown among all the papers for given search query.<br>
-                            Year reflects publication year of the original paper.
-                        </p>
-                        <button type="button" class="btn btn-light"
-                                onclick="(function(){ papers_callback_top_papers() })();">
-                            <img src="{{ url_for('static', filename='list.svg') }}"  alt="+"/>&nbsp;Show as list
-                        </button>
-                        <div>
-                            {% for script, div in top_cited_papers %}
-                            {{ script|safe }}
-                            {{ div|safe }}
-                            {% endfor %}
+                        <div id="step2">
+                            <h2 class="card-subtitle">Top Cited Papers Overall</h2>
+                            <p>
+                                Top 50 or 10% cited papers are shown among all the papers for given search query.<br>
+                                Year reflects publication year of the original paper.
+                            </p>
+                            <button type="button" class="btn btn-light"
+                                    onclick="(function(){ papers_callback_top_papers() })();">
+                                <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
+                            </button>
+                            <div>
+                                {% for script, div in top_cited_papers %}
+                                {{ script|safe }}
+                                {{ div|safe }}
+                                {% endfor %}
+                            </div>
                         </div>
                         <hr>
 
                         <h2 class="card-subtitle">Top Cited Papers of the Year</h2>
                         <p>
-                            For each year we show the paper which has the most significant number of citations in a given
-                            year.<br>
+                            For each year we show the paper which has the most significant number of citations in a
+                            given year.<br>
                             Number <i>V</i> means <i>+V</i> gain in citations.<br>
                             Different papers have different colors.
                         </p>
                         <button type="button" class="btn btn-light"
                                 onclick="(function(){ papers_callback_papers_of_the_year() })();">
-                            <img src="{{ url_for('static', filename='list.svg') }}"  alt="+"/>&nbsp;Show as list
+                            <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
                         </button>
                         <div>
                             {% for script, div in max_gain_papers %}
@@ -285,14 +299,14 @@
 
                         <h2 class="card-subtitle">Hot Papers</h2>
                         <p>
-                            For each year we show a recent paper which has the biggest number of citation since the moment
-                            of publication.<br>
+                            For each year we show a recent paper which has the biggest number of citation since the
+                            moment of publication.<br>
                             Number <i>V</i> means <i>*(1 + V)</i> gain in citations.<br>
                             Different papers have different colors.
                         </p>
                         <button type="button" class="btn btn-light"
                                 onclick="(function(){ papers_callback_hot_papers() })();">
-                            <img src="{{ url_for('static', filename='list.svg') }}"  alt="+"/>&nbsp;Show as list
+                            <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
                         </button>
                         <div>
                             {% for script, div in max_relative_gain_papers %}
@@ -309,14 +323,14 @@
                         <h1 class="card-header">Topics</h1>
                     </div>
                     <div class="card-body">
-                        <p> Citations graph is used to find all the papers which are cited together or <em>co-cited</em> by
-                            other papers.<br>
-                            Co-citations graph is used to extract subtopics using <em>Louvain</em> algorithm for community
-                            detection.<br>
+                        <p> Citations graph is used to find all the papers which are cited together or <em>co-cited</em>
+                            by other papers.<br>
+                            Co-citations graph is used to extract subtopics using <em>Louvain</em> algorithm for
+                            community detection.<br>
                             Click on bars to get detailed information about keywords and publications for each subtopic.
                             <br>
-                            <em>Note: subtopics are merged to "Other" if they contain less than 5% of publications of the
-                                field.</em>
+                            <em>Note: subtopics are merged to "Other" if they contain less than 5% of publications of
+                                the field.</em>
                         </p>
                         <div>
                             {% for script, div in component_ratio %}
@@ -383,40 +397,44 @@
                         </p>
                         <div>
                             {% for (script, div), word_cloud, zoom_in_callback in subtopics_info_and_word_cloud_and_callback %}
-                            <h2 id="subtopic-{{ loop.index }}" class="card-subtitle">
+                            <div id="subtopic-div-{{ loop.index }}">
                                 <hr>
-                                Subtopic {{ loop.index }}
-                                {% if loop.index0 == comp_other %}
-                                - OTHER
-                                {% endif %}
-                                <button type="button" class="btn btn-light"
-                                        onclick="(function(){ papers_callback_component({{ loop.index }}); })();">
-                                    <img src="{{ url_for('static', filename='list.svg') }}"  alt="+"/>&nbsp;Show as list
-                                </button>
-                                <button type="button" class="btn btn-light"
-                                        onclick="(function(){ {{ zoom_in_callback|safe }} })();">
-                                    <img src="{{ url_for('static', filename='zoom-in.svg') }}"  alt="+"/>&nbsp;Zoom into
-                                </button>
-                            </h2>
-                            Number of papers: {{ component_sizes[loop.index - 1] }}
-                            <div class="row">
-                                <div class="col-3 no-padding-right">
-                                    <strong>Word cloud</strong>
-                                    <br>
-                                    <canvas id="topic_word_cloud_{{ loop.index }}" width="0" height="0" style="border:1px solid #eee;">
-                                        Canvas is not supported in your browser.
-                                    </canvas>
-                                </div>
-                                <div class="col-9 no-padding-left">
-                                    {{ script|safe }}
-                                    {{ div|safe }}
+                                <h2 id="subtopic-{{ loop.index }}" class="card-subtitle">
+                                    Subtopic {{ loop.index }}
+                                    {% if loop.index0 == comp_other %}
+                                    - OTHER
+                                    {% endif %}
+                                    <button type="button" class="btn btn-light"
+                                            onclick="(function(){ papers_callback_component({{ loop.index }}); })();">
+                                        <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
+                                    </button>
+                                    <button type="button" class="btn btn-light"
+                                            onclick="(function(){ {{ zoom_in_callback|safe }} })();">
+                                        <img src="{{ url_for('static', filename='zoom-in.svg') }}" alt="+"/>&nbsp;Zoom into
+                                    </button>
+                                </h2>
+                                Number of papers: {{ component_sizes[loop.index - 1] }}
+                                <div class="row">
+                                    <div class="col-3 no-padding-right">
+                                        <strong>Word cloud</strong>
+                                        <br>
+                                        <canvas id="topic_word_cloud_{{ loop.index }}" width="0" height="0"
+                                                style="border:1px solid #eee;">
+                                            Canvas is not supported in your browser.
+                                        </canvas>
+                                    </div>
+                                    <div class="col-9 no-padding-left" id="topic_chart_{{ loop.index }}">
+                                        {{ script|safe }}
+                                        {{ div|safe }}
+                                    </div>
                                 </div>
                             </div>
                             {% endfor %}
                         </div>
                         <hr>
                         <p>
-                            Explore related papers by taking into account all the referencing and citing relationships for papers of interest.<br>
+                            Explore related papers by taking into account all the referencing and citing relationships
+                            for papers of interest.<br>
                             <strong>WARNING</strong>: number of papers can increase exponentially, analysis can be slow!
                         </p>
                         <button type="button" class="btn btn-light"
@@ -427,7 +445,7 @@
                 </div>
                 {% endif %}
 
-                <div class="card mt-3">
+                <div class="card mt-3" id="step7">
                     <div class="card-title" id="authors">
                         <h1 class="card-header">Authors</h1>
                     </div>
@@ -550,5 +568,59 @@
                             title="JetBrains Research BioLabs"
                             target="_blank">JetBrains Research</a></p>
 </footer>
+<script type="text/javascript">
+    function startIntro(){
+        var intro = introJs();
+        intro.setOptions({
+            steps: [
+                {
+                    element: '#step1',
+                    intro: "This page contains results of the analysis for the <em>{{query}} at " +
+                        "{{source}}</em> query. The results are split into sections, and you can " +
+                        "navigate between them by clicking corresponding links in this sidebar."
+                },
+                {
+                    element: '#step2',
+                    intro: "Sections contain various charts describing different aspects of the analyzed " +
+                        "research field. Check the descriptions to find out more information about charts, " +
+                        "notations and used algorithms."
+                },
+                {
+                    element: '#subtopic-div-1',
+                    intro: "One of the main features of PubTrends is subtopic analysis. Each subtopic is " +
+                        "described by a word cloud with several most used keywords and a chart with all " +
+                        "papers that belong to the subtopic."
+                },
+                {
+                    element: '#subtopic-1',
+                    intro: "Click <em>Show as list</em> to open the list of papers for the subtopic or " +
+                        "use the <em>Zoom into</em> button to run analysis for this particular subtopic."
+                },
+                {
+                    element: '#topic_word_cloud_1',
+                    intro: "Click on any keyword to open the list of papers with this keyword in a new tab."
+                },
+                {
+                    element: '#topic_chart_1',
+                    intro: "Hover over glyphs to check out tooltips that contain general information " +
+                        "about the papers. Click glyphs to open a page about corresponding paper in a " +
+                        "new tab."
+                },
+                {
+                    element: '#step7',
+                    intro: "Information about authors and journals with the largest number of papers " +
+                        "is organised in tables, which also show distribution over subtopics. You can " +
+                        "open all papers for a certain author or journal by clicking the corresponding " +
+                        "number of papers."
+                },
+                {
+                    intro: "That's all! Now you're ready to dive into scientific literature with PubTrends."
+                }
+            ]
+        });
+
+        intro.start();
+    }
+</script>
 </body>
 </html>
