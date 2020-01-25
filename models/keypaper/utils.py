@@ -5,6 +5,7 @@ import re
 import sys
 from collections import Counter
 from string import Template
+from threading import Lock
 
 import nltk
 import numpy as np
@@ -14,7 +15,6 @@ from nltk.stem import WordNetLemmatizer, SnowballStemmer
 from nltk.tokenize import word_tokenize
 from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
-from threading import Lock
 
 nltk.download('stopwords')
 nltk.download('punkt')
@@ -318,3 +318,9 @@ def preprocess_search_query(query, min_search_words):
         return '"' + ' AND '.join([f"'{w}'" for w in terms_str.split(' ')]) + '"'
     raise Exception(f'Illegal search string, please use search terms or '
                     f'all the query wrapped in "" for phrasal search')
+
+
+def preprocess_doi(line):
+    # Remove doi.org prefix if full URL was pasted, then strip unnecessary slashes
+    (_, _, doi) = line.partition('doi.org')
+    return doi.strip('/')
