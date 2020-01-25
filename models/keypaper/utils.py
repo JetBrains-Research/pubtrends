@@ -45,6 +45,8 @@ SORT_MOST_CITED = 'Most Cited'
 SORT_MOST_RELEVANT = 'Most Relevant'
 SORT_MOST_RECENT = 'Most Recent'
 
+TOKENIZE_SPEC_SYMBOLS = re.compile(r'[^a-zA-Z0-9\- ]*')
+
 log = logging.getLogger(__name__)
 
 
@@ -80,7 +82,6 @@ def is_noun_or_adj(pos):
 
 
 def tokenize(text, query=None):
-    special_symbols_regex = re.compile(r'[^a-zA-Z0-9\- ]*')
     text = text.lower()
 
     # Filter out search terms
@@ -88,7 +89,7 @@ def tokenize(text, query=None):
         for term in query.split(' '):
             text = text.replace(term.lower(), '')
 
-    tokenized = word_tokenize(re.sub(special_symbols_regex, '', text))
+    tokenized = word_tokenize(re.sub(TOKENIZE_SPEC_SYMBOLS, '', text))
 
     stopwords_lock.acquire()
     stop_words = set(stopwords.words('english'))
