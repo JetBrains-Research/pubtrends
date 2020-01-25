@@ -112,55 +112,74 @@
         <nav class="d-none d-xl-block d-lg-block col-lg-1 col-xl-2 sidebar no-padding">
             <div class="sidebar-sticky">
                 <ul class="nav flex-column">
-                    <li class="nav-item">
-                        <a class="nav-link" href="#overview">
-                            <img class="nav-icon" src="{{ url_for('static', filename='home.svg') }}"/>&nbsp;Overview
+                    <li class="nav-item row">
+                        <a class="nav-link no-padding-right" href="#overview" title="Overview">
+                            <img class="nav-icon" src="{{ url_for('static', filename='home.svg') }}"/>
+                        </a>
+                        <a class="nav-link d-none d-xl-block no-padding" href="#overview">
+                            Overview
                         </a>
                     </li>
                     {% if topics_analyzed %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="#highlights">
-                            <img class="nav-icon" src="{{ url_for('static', filename='bar-chart-2.svg') }}"/>&nbsp;Highlights
+                    <li class="nav-item row">
+                        <a class="nav-link no-padding-right" href="#highlights" title="Highlights">
+                            <img class="nav-icon" src="{{ url_for('static', filename='bar-chart-2.svg') }}"/>
+                        </a>
+                        <a class="nav-link d-none d-xl-block no-padding" href="#highlights">
+                            Highlights
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#topics">
-                            <img class="nav-icon" src="{{ url_for('static', filename='tag.svg') }}"/>&nbsp;Topics
+                    <li class="nav-item row">
+                        <a class="nav-link no-padding-right" href="#topics" title="Topics">
+                            <img class="nav-icon" src="{{ url_for('static', filename='tag.svg') }}"/>
+                        </a>
+                        <a class="nav-link d-none d-xl-block no-padding" href="#topics">
+                            Topics
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#trends">
-                            <img class="nav-icon" src="{{ url_for('static', filename='trending-up.svg') }}"/>&nbsp;Trends
+                    <li class="nav-item row">
+                        <a class="nav-link no-padding-right" href="#trends" title="Trends">
+                            <img class="nav-icon" src="{{ url_for('static', filename='trending-up.svg') }}"/>
+                        </a>
+                        <a class="nav-link d-none d-xl-block no-padding" href="#trends">
+                            Trends
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#publications">
-                            <img class="nav-icon" src="{{ url_for('static', filename='columns.svg') }}"/>&nbsp;Publications
+                    <li class="nav-item row">
+                        <a class="nav-link no-padding-right" href="#publications" title="Publications">
+                            <img class="nav-icon" src="{{ url_for('static', filename='columns.svg') }}"/>
+                        </a>
+                        <a class="nav-link d-none d-xl-block no-padding" href="#publications">
+                            Publications
                         </a>
                     </li>
                     {% endif %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="#authors">
-                            <img src="{{ url_for('static', filename='users.svg') }}"/>&nbsp;Authors
+                    <li class="nav-item row">
+                        <a class="nav-link no-padding-right" href="#authors" title="Authors">
+                            <img src="{{ url_for('static', filename='users.svg') }}"/>
+                        </a>
+                        <a class="nav-link d-none d-xl-block no-padding" href="#authors">
+                            Authors
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#journals">
-                            <img class="nav-icon" src="{{ url_for('static', filename='book-open.svg') }}"/>&nbsp;Journals
+                    <li class="nav-item row">
+                        <a class="nav-link no-padding-right" href="#journals" title="Journals">
+                            <img class="nav-icon" src="{{ url_for('static', filename='book-open.svg') }}"/>
+                        </a>
+                        <a class="nav-link d-none d-xl-block no-padding" href="#journals">
+                            Journals
                         </a>
                     </li>
                     {% if experimental %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="#evolution">
-                            <img src="{{ url_for('static', filename='flag.svg') }}"/>&nbsp;Experimental
+                    <li class="nav-item row">
+                        <a class="nav-link no-padding-right" href="#evolution" title="Evolution">
+                            <img src="{{ url_for('static', filename='flag.svg') }}"/>
+                        </a>
+                        <a class="nav-link d-none d-xl-block no-padding" href="#evolution">
+                            Experimental
                         </a>
                     </li>
                     {% endif %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="#log">
-                            <img class="nav-icon" src="{{ url_for('static', filename='align-justify.svg') }}"/>&nbsp;Log
-                        </a>
-                    </li>
                 </ul>
             </div>
         </nav>
@@ -508,13 +527,12 @@
                 </div>
                 {% endif %}
 
-                <div class="card mt-3">
-                    <div class="card-title" id="log">
-                        <h1 class="card-header"><a class="grey" data-toggle="collapse" href="#collapseLog" role="button" aria-expanded="false"
-                                                   aria-controls="collapseCocitations">
-                            Log
-                        </a></h1>
-                    </div>
+                <div class="mt-3 ml-3" id="log">
+                    <h5><a class="link" data-toggle="collapse" href="#collapseLog"
+                           role="button" aria-expanded="false"
+                           aria-controls="collapseCocitations">
+                        Logs
+                    </a></h5>
                     <div id="collapseLog" class="card-body collapse">
                         <pre>{{log}}</pre>
                     </div>

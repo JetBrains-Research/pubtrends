@@ -73,27 +73,36 @@
         <nav class="d-none d-xl-block d-lg-block col-lg-1 col-xl-2 sidebar no-padding">
         <div class="sidebar-sticky">
             <ul class="nav flex-column">
-                <li class="nav-item">
-                    <a class="nav-link" href="#paper">
-                        <img class="nav-icon" src="{{ url_for('static', filename='home.svg') }}"/>&nbsp;Paper
+                <li class="nav-item row">
+                    <a class="nav-link no-padding-right" href="#paper" title="Paper">
+                        <img class="nav-icon" src="{{ url_for('static', filename='home.svg') }}"/>
+                    </a>
+                    <a class="nav-link d-none d-xl-block no-padding" href="#paper">
+                        Paper
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#citation-dynamics">
-                        <img class="nav-icon" src="{{ url_for('static', filename='bar-chart-2.svg') }}"/>&nbsp;Citation
-                        Dynamics
+                <li class="nav-item row">
+                    <a class="nav-link no-padding-right" href="#citation-dynamics" title="Citation Dynamics">
+                        <img class="nav-icon" src="{{ url_for('static', filename='bar-chart-2.svg') }}"/>
+                    </a>
+                    <a class="nav-link d-none d-xl-block no-padding" href="#citation-dynamics">
+                        Citation Dynamics
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#related-topics">
-                        <img class="nav-icon" src="{{ url_for('static', filename='tag.svg') }}"/>&nbsp;Related
-                        Topics
+                <li class="nav-item row">
+                    <a class="nav-link no-padding-right" href="#related-topics" title="Related Topics">
+                        <img class="nav-icon" src="{{ url_for('static', filename='tag.svg') }}"/>
+                    </a>
+                    <a class="nav-link d-none d-xl-block no-padding" href="#related-topics">
+                        Related Topics
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#related-papers">
-                        <img class="nav-icon" src="{{ url_for('static', filename='columns.svg') }}"/>&nbsp;Related
-                        Papers
+                <li class="nav-item row">
+                    <a class="nav-link no-padding-right" href="#related-papers" title="Related Papers">
+                        <img class="nav-icon" src="{{ url_for('static', filename='columns.svg') }}"/>
+                    </a>
+                    <a class="nav-link d-none d-xl-block no-padding" href="#related-papers">
+                        Related Papers
                     </a>
                 </li>
             </ul>

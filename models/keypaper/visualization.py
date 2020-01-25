@@ -315,7 +315,7 @@ class Plotter:
         )
 
         p = figure(x_range=[min_year - 1, max_year + 1], plot_width=PLOT_WIDTH, plot_height=SHORT_PLOT_HEIGHT,
-                   title="Components by Year", toolbar_location="right", tools=TOOLS,
+                   title="Subtopics by Year", toolbar_location="right", tools=TOOLS,
                    tooltips=[('Subtopic', '$name'), ('Amount', '@$name')])
 
         # NOTE: VBar is invisible (alpha = 0) to provide tooltips on hover as stacked area does not support them
@@ -353,7 +353,7 @@ class Plotter:
                 expanded_vs.extend([y for _ in range(vs[i])])
             labels.extend([c for _ in range(len(expanded_vs))])
             values.extend(expanded_vs)
-        boxwhisker = hv.BoxWhisker((labels, values), 'Topic', 'Publications year')
+        boxwhisker = hv.BoxWhisker((labels, values), 'Subtopic', 'Publications year')
         boxwhisker.opts(width=PLOT_WIDTH, height=SHORT_PLOT_HEIGHT, box_fill_color=dim('Topic').str(), cmap='tab20')
         return hv.render(boxwhisker, backend='bokeh')
 
@@ -530,7 +530,7 @@ class Plotter:
         year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
         p = figure(tools=TOOLS, toolbar_location="above",
                    plot_width=PAPERS_PLOT_WIDTH, plot_height=PAPERS_PLOT_HEIGHT,
-                   x_range=year_range, title='Amount of papers per year')
+                   x_range=year_range, title='Papers per year')
         p.y_range.start = 0
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Amount of papers'

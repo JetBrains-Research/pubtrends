@@ -165,9 +165,9 @@ class KeyPaperAnalyzer:
             self.evolution_kwds = self.subtopic_evolution_descriptions(
                 self.df, self.evolution_df, self.evolution_year_range, self.query, current=18, task=task
             )
-            self.progress.info('Done.', current=19, task=task)
+            self.progress.info('Done', current=19, task=task)
         else:
-            self.progress.info('Done.', current=17, task=task)
+            self.progress.info('Done', current=17, task=task)
 
     def build_cit_stats_df(self, cit_stats_df_from_query, n_papers, current=None, task=None):
         # Get citation stats with columns 'id', year_1, ..., year_N and fill NaN with 0

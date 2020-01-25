@@ -28,8 +28,9 @@ body {
 .sidebar .nav-link {
     font-weight: 400;
     color: #333;
-    font-size: 1rem;
+    font-size: 1.1rem;
     margin-left: 10px;
+    vertical-align: middle
 }
 
 .sidebar .nav-link:hover {
@@ -44,6 +45,7 @@ body {
 
 .nav-icon {
     height: 1.4rem;
+    vertical-align: middle;
 }
 
 .card-header {

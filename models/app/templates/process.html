@@ -117,28 +117,22 @@
 </head>
 <body>
 
-<div class="container-fluid">
-    <div class="row">
-        <div class="d-none d-xl-block col-xl-2"></div>
-        <div class="col-xl-8">
-            <nav class="navbar navbar-light bg-light justify-content-between mt-3">
-                <div>
-                    <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
-                    <span class="search-query">{{query}} at {{source}}</span>
-                </div>
-                <button class="btn btn-lg btn-link grey" type="reset" onclick="cancel()">&#10006;&nbsp;Cancel</button>
-            </nav>
-            <div id="progress" class="progress">
-                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
-                     aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-                    <span class="progress-bar-label">0%</span>
-                </div>
-            </div>
-            <div class="h6 mt-3" id="status">Waiting for content...</div>
-            <pre id="log"></pre>
+<div class="container content-max">
+    <nav class="navbar navbar-light bg-light justify-content-between mt-3">
+        <div>
+            <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
+            <span class="search-query">{{query}} at {{source}}</span>
         </div>
-        <div class="d-none d-xl-block col-xl-2"></div>
+        <button class="btn btn-lg btn-link grey" type="reset" onclick="cancel()">&#10006;&nbsp;Cancel</button>
+    </nav>
+    <div id="progress" class="progress">
+        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+             aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+            <span class="progress-bar-label">0%</span>
+        </div>
     </div>
+    <div class="h6 mt-3 ml-3" id="status">Waiting for content...</div>
+    <pre class="ml-3" id="log"></pre>
 </div>
 <footer>
     <p>version {{ version }}<br/>
