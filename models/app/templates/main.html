@@ -91,7 +91,7 @@
                      aria-labelledby="topic-tab">
                     <form action="search_terms" method="POST" class="needs-validation" novalidate>
                         <div class="row no-gutters align-items-center mb-3">
-                            <div id="stepT1" class="col input-group">
+                            <div id="step2" class="col input-group">
                                 <div class="input-group-prepend">
                                     <span class="input-group-text" id="query-addon">Query</span>
                                 </div>
@@ -103,13 +103,13 @@
                             </div>
                             &nbsp;&nbsp;&nbsp;
                             <!--end of col-->
-                            <div id="stepT3" class="col-auto">
+                            <div id="step4" class="col-auto">
                                 <button class="btn btn-success" type="submit">Search</button>
                             </div>
                             <!--end of col-->
                         </div>
 
-                        <div id="stepT2" class="row no-gutters align-items-center">
+                        <div id="step3" class="row no-gutters align-items-center">
                             <div class="col input-group">
                                 <div class="input-group-prepend">
                                     <span class="input-group-text" id="source-addon">Source</span>
@@ -247,18 +247,17 @@
                     element: '#step1',
                     intro: "First of all, you have two options - <em>Topic Analysis</em> and <em>Paper Analysis</em>. " +
                         "Proceed with the <em>Topic Analysis</em> tab to study the research fields of your interest. " +
-                        "More information about the <em>Paper Analysis</em> tab can be found in later steps of " +
-                        "the tutorial."
+                        "Usage of the <em>Paper Analysis</em> tab is very similar."
                 },
                 {
-                    element: '#stepT1',
+                    element: '#step2',
                     intro: 'Enter keywords to define the research field (for example, ' +
                         '<a href="javascript:void(0);" onclick="useTermsSuggestion();">' +
                             '{{ search_example_terms }}' +
                         '</a>).'
                 },
                 {
-                    element: '#stepT2',
+                    element: '#step3',
                     intro: "Select the advanced search options:" +
                         "<ul>" +
                             "<li><em>Source database</em>: currently, Pubmed is the only option.</li>" +
@@ -267,33 +266,11 @@
                         "</ul>"
                 },
                 {
-                    element: '#stepT3',
-                    intro: "Click the <em>Search</em> button to launch the search or proceed to the next step " +
-                        "for instructions about the <em>Paper Analysis</em> tab."
-                },
-                {
-                    element: '#step1',
-                    intro: "Now let's <b>switch</b> to the second tab - <em>Paper Analysis</em>. You can use it to study " +
-                        "the surrounding of a certain paper: its valuable references, citations and related " +
-                        "topics."
-                },
-                {
-                    element: '#stepP1',
-                    intro: "There are three ways to define the paper of interest: by <em>title</em>, " +
-                        "<em>DOI</em> or <em>PMID</em>. Select the most comfortable option and " +
-                        "proceed to the next step."
-                },
-                {
-                    element: '#stepP2',
-                    intro: "Enter the data to define the paper according to the option selected in the " +
-                        "previous step."
-                },
-                {
-                    element: '#stepP3',
+                    element: '#step4',
                     intro: "Click the <em>Search</em> button to launch the search. " +
                         "Please be patient while the analysis is performed! When the results will load, " +
                         "click the <em>Section overview</em> button to open the next part of the tutorial."
-                },
+                }
             ]
         });
 
