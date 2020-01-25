@@ -6,6 +6,7 @@ import re
 import sys
 from collections import Counter
 from string import Template
+from threading import Lock
 
 import nltk
 import numpy as np
@@ -15,7 +16,6 @@ from nltk.stem import WordNetLemmatizer, SnowballStemmer
 from nltk.tokenize import word_tokenize
 from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
-from threading import Lock
 
 nltk.download('averaged_perceptron_tagger')  # required for nltk.pos_tag
 nltk.download('punkt')  # required for word_tokenize
@@ -337,3 +337,9 @@ def preprocess_search_query(query, min_search_words):
         return '"' + ' AND '.join([f"'{w}'" for w in words]) + '"'
     raise Exception(f'Illegal search query, please use search terms or '
                     f'all the query wrapped in "" for phrasal search. Query: {query}')
+
+
+def preprocess_doi(line):
+    # Remove doi.org prefix if full URL was pasted, then strip unnecessary slashes
+    (_, _, doi) = line.partition('doi.org')
+    return doi.strip('/')

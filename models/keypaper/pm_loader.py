@@ -1,14 +1,14 @@
 import html
 import logging
 import re
-
 from collections import Iterable
+
 import numpy as np
 import pandas as pd
 
-from models.keypaper.utils import SORT_MOST_CITED, SORT_MOST_RECENT, SORT_MOST_RELEVANT
-from models.keypaper.utils import preprocess_search_query
 from models.keypaper.loader import Loader
+from models.keypaper.utils import SORT_MOST_CITED, SORT_MOST_RECENT, SORT_MOST_RELEVANT
+from models.keypaper.utils import preprocess_search_query, preprocess_doi
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +22,16 @@ class PubmedLoader(Loader):
 
         if key == 'id':
             key = 'pmid'
+
+            # We use integer PMIDs in neo4j, if value is not a valid integer -> no match
+            try:
+                value = int(value)
+            except ValueError:
+                return []
+
+        # Preprocess DOI
+        if key == 'doi':
+            value = preprocess_doi(value)
 
         # Use dedicated text index to search title.
         if key == 'title':
