@@ -7,8 +7,9 @@ from models.keypaper.analysis import KeyPaperAnalyzer
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.pm_loader import PubmedLoader
 from models.keypaper.ss_loader import SemanticScholarLoader
-from models.keypaper.utils import cut_authors_list, trim, PUBMED_ARTICLE_BASE_URL, SEMANTIC_SCHOLAR_BASE_URL, tokenize, \
-    TOKENIZE_SPEC_SYMBOLS
+from models.keypaper.utils import (
+    cut_authors_list, trim,
+    PUBMED_ARTICLE_BASE_URL, SEMANTIC_SCHOLAR_BASE_URL, TOKENIZE_SPEC_SYMBOLS)
 from models.keypaper.visualization import Plotter
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
