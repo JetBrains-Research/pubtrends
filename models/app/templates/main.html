@@ -16,7 +16,14 @@
             integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
             crossorigin="anonymous"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1"/>
-    <!--            <link rel="stylesheet" href="../static/style.css" />-->
+                <link rel="stylesheet" href="../static/style.css" />
+
+    <!-- IntroJS feature tour -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.9.3/introjs.css"
+          integrity="sha256-OYXGS5m4oWZAAqoAKpf7Y3bIdzdd9jBfly/xCavEpGw=" crossorigin="anonymous"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.9.3/intro.js"
+            integrity="sha256-SPZP/x8QDPEhRlpJjet4AD5X4ergPWcxjhMn73SwyOE="
+            crossorigin="anonymous"></script>
 
     <script>
         // Example starter JavaScript for disabling form submissions if there are invalid fields
@@ -53,6 +60,8 @@
                 Discover science trends and topics faster
             </p>
             <p class="lead">
+                <a id="tour-start" class="btn btn-light"
+                           href="javascript:void(0);" onclick="startIntro();">Take a tour</a>
                 <a class="btn btn-light"
                    href="https://research.jetbrains.org/groups/biolabs/projects?project_id=56"
                    target="_blank" role="button">Learn more</a>
@@ -61,7 +70,7 @@
     </div>
 
     <main class="card" role="main">
-        <div class="card-header">
+        <div id="step1" class="card-header">
             <ul class="nav nav-tabs card-header-tabs" id="tabs-list" role="tablist">
                 <li class="nav-item">
                     <a class="nav-link active grey" id="topic-tab" data-toggle="tab" href="#topic"
@@ -82,25 +91,25 @@
                      aria-labelledby="topic-tab">
                     <form action="search_terms" method="POST" class="needs-validation" novalidate>
                         <div class="row no-gutters align-items-center mb-3">
-                            <div class="col input-group">
+                            <div id="step2" class="col input-group">
                                 <div class="input-group-prepend">
                                     <span class="input-group-text" id="query-addon">Query</span>
                                 </div>
                                 <input class="form-control form-control-borderless" type="search"
-                                       name="query"
+                                       name="query" id="terms-input"
                                        placeholder="Enter keywords, &quot;&quot; for phrase search"
                                        aria-describedby="query-addon"
                                        autofocus required>
                             </div>
                             &nbsp;&nbsp;&nbsp;
                             <!--end of col-->
-                            <div class="col-auto">
+                            <div id="step4" class="col-auto">
                                 <button class="btn btn-success" type="submit">Search</button>
                             </div>
                             <!--end of col-->
                         </div>
 
-                        <div class="row no-gutters align-items-center">
+                        <div id="step3" class="row no-gutters align-items-center">
                             <div class="col input-group">
                                 <div class="input-group-prepend">
                                     <span class="input-group-text" id="source-addon">Source</span>
@@ -154,8 +163,8 @@
                 <div class="tab-pane fade" id="paper" role="tabpanel" aria-labelledby="paper-tab">
                     <form action="search_paper" method="POST" class="needs-validation" novalidate>
                         <div class="row no-gutters align-items-center">
-                            <div class="col-auto">
-                                <select class="form-control" name="key" required>
+                            <div id="stepP1" class="col-auto">
+                                <select id="paper-key" class="form-control" name="key" required>
                                     <option disabled></option>
                                     <option value="title">Title</option>
                                     <option value="doi">DOI</option>
@@ -163,9 +172,9 @@
                                 </select>
                             </div>
                             &nbsp;&nbsp;
-                            <div class="col">
+                            <div id="stepP2" class="col">
                                 <input class="form-control form-control-borderless" type="search"
-                                       name="value"
+                                       name="value" id="paper-input"
                                        placeholder="Enter paper details"
                                        aria-describedby="query-addon"
                                        autofocus
@@ -184,7 +193,7 @@
                             </div>
                             &nbsp;&nbsp;
                             <!--end of col-->
-                            <div class="col-auto">
+                            <div id="stepP3" class="col-auto">
                                 <button class="btn btn-success" type="submit">Search</button>
                             </div>
                         </div>
@@ -213,5 +222,62 @@
                             title="JetBrains Research BioLabs"
                             target="_blank">JetBrains Research</a></p>
 </footer>
+
+<script type="text/javascript">
+    var decodeHtmlEntity = function(str) {
+        return str.replace(/&#(\d+);/g, function(match, dec) {
+            return String.fromCharCode(dec);
+        });
+    };
+
+    function useTermsSuggestion(){
+        document.getElementById('terms-input').value = decodeHtmlEntity("{{ search_example_terms }}");
+    }
+
+    function startIntro(){
+        var intro = introJs();
+        intro.setOptions({
+            steps: [
+                {
+                    intro: "Welcome to PubTrends!<br>" +
+                        "This quick tutorial will guide you through the features."
+                },
+                {
+                    element: '#step1',
+                    intro: "PubTrends provides two options:<br><em>Topic Analysis</em> and <em>Paper Analysis</em>.<br>" +
+                        "Proceed with the <em>Topic Analysis</em> tab to study the research topic of the interest. "
+                },
+                {
+                    element: '#step2',
+                    intro: 'Enter keywords to define the topic of interest, e.g. ' +
+                        '<a href="javascript:void(0);" onclick="useTermsSuggestion();">' +
+                            '{{ search_example_terms }}' +
+                        '</a>.'
+                },
+                {
+                    element: '#step3',
+                    intro: "You can additionally configure:" +
+                        "<ul>" +
+                            "<li><em>Source database</em>: currently, Pubmed is the only option.</li>" +
+                            "<li><em>Papers ranking criterion</em>: relevance, recency or number of citations.</li>" +
+                            "<li><em>The number of papers to show</em></li>" +
+                        "</ul>"
+                },
+                {
+                    element: '#step4',
+                    intro: "Click the <em>Search</em> button now!<br>" +
+                        "You will be redirected automatically to a results page once analysis is complete.<br>" +
+                        "Click <em>Report tour</em> button to continue tutorial and learn more about results."
+                }
+            ]
+        });
+
+        intro.start();
+    }
+
+
+
+</script>
+
 </body>
 </html>
