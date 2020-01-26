@@ -16,7 +16,7 @@
             integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
             crossorigin="anonymous"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1"/>
-    <!--            <link rel="stylesheet" href="../static/style.css" />-->
+                <link rel="stylesheet" href="../static/style.css" />
 
     <!-- IntroJS feature tour -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.9.3/introjs.css"
@@ -239,37 +239,35 @@
         intro.setOptions({
             steps: [
                 {
-                    intro: "Welcome to PubTrends - a novel web-service for analysis of trends and " +
-                        "topics in the scientific literature! This quick tutorial will help you define " +
-                        "the first search."
+                    intro: "Welcome to PubTrends!<br>" +
+                        "This quick tutorial will guide you through the features."
                 },
                 {
                     element: '#step1',
-                    intro: "First of all, you have two options - <em>Topic Analysis</em> and <em>Paper Analysis</em>. " +
-                        "Proceed with the <em>Topic Analysis</em> tab to study the research fields of your interest. " +
-                        "Usage of the <em>Paper Analysis</em> tab is very similar."
+                    intro: "PubTrends provides two options:<br><em>Topic Analysis</em> and <em>Paper Analysis</em>.<br>" +
+                        "Proceed with the <em>Topic Analysis</em> tab to study the research topic of the interest. "
                 },
                 {
                     element: '#step2',
-                    intro: 'Enter keywords to define the research field (for example, ' +
+                    intro: 'Enter keywords to define the topic of interest, e.g. ' +
                         '<a href="javascript:void(0);" onclick="useTermsSuggestion();">' +
                             '{{ search_example_terms }}' +
-                        '</a>).'
+                        '</a>.'
                 },
                 {
                     element: '#step3',
-                    intro: "Select the advanced search options:" +
+                    intro: "You can additionally configure:" +
                         "<ul>" +
                             "<li><em>Source database</em>: currently, Pubmed is the only option.</li>" +
-                            "<li><em>Sorting criterion</em>: relevance, recency or number of citations.</li>" +
-                            "<li><em>The number of papers to show</em>: you can select up to 5000.</li>" +
+                            "<li><em>Papers ranking criterion</em>: relevance, recency or number of citations.</li>" +
+                            "<li><em>The number of papers to show</em></li>" +
                         "</ul>"
                 },
                 {
                     element: '#step4',
-                    intro: "Click the <em>Search</em> button to launch the search. " +
-                        "Please be patient while the analysis is performed! When the results will load, " +
-                        "click the <em>Section overview</em> button to open the next part of the tutorial."
+                    intro: "Click the <em>Search</em> button now!<br>" +
+                        "You will be redirected automatically to a results page once analysis is complete.<br>" +
+                        "Click <em>Report tour</em> button to continue tutorial and learn more about results."
                 }
             ]
         });

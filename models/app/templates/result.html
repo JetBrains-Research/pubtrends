@@ -101,8 +101,8 @@
 <body>
 
 <!-- Fixed navbar -->
-<nav class="navbar navbar-light bg-light fixed-top border-bottom">
-    <div class="row container-fluid">
+<nav class="navbar navbar-light bg-light fixed-top border-bottom no-padding-right">
+    <div class="row container-fluid no-padding-right">
         <div class="col-lg-1 col-xl-2 no-padding">
             <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
         </div>
@@ -111,9 +111,9 @@
                 <span class="search-query">{{query}} at {{source}}</span>
             </div>
         </div>
-        <div class="d-none d-xl-block col-xl-2 float-right">
+        <div class="d-none d-xl-block col-xl-2 float-right no-padding-right">
             <a id="tour-start" class="btn btn-secondary float-right"
-               href="javascript:void(0);" onclick="startIntro();">Section overview</a>
+               href="javascript:void(0);" onclick="startIntro();">Report tour</a>
         </div>
     </div>
 </nav>
@@ -246,7 +246,7 @@
                             </div>
                         </div>
                         <div>
-                            <button type="button" class="btn btn-light"
+                            <button id="show_as_list" type="button" class="btn btn-light"
                                     onclick="(function(){ papers_callback() })();">
                                 <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
                             </button>
@@ -259,22 +259,20 @@
                         <h1 class="card-header">Highlights</h1>
                     </div>
                     <div class="card-body">
-                        <div id="step2">
-                            <h2 class="card-subtitle">Top Cited Papers Overall</h2>
-                            <p>
-                                Top 50 or 10% cited papers are shown among all the papers for given search query.<br>
-                                Year reflects publication year of the original paper.
-                            </p>
-                            <button type="button" class="btn btn-light"
-                                    onclick="(function(){ papers_callback_top_papers() })();">
-                                <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
-                            </button>
-                            <div>
-                                {% for script, div in top_cited_papers %}
-                                {{ script|safe }}
-                                {{ div|safe }}
-                                {% endfor %}
-                            </div>
+                        <h2 class="card-subtitle">Top Cited Papers Overall</h2>
+                        <p>
+                            Top 50 or 10% cited papers are shown among all the papers for given search query.<br>
+                            Year reflects publication year of the original paper.
+                        </p>
+                        <button type="button" class="btn btn-light"
+                                onclick="(function(){ papers_callback_top_papers() })();">
+                            <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
+                        </button>
+                        <div>
+                            {% for script, div in top_cited_papers %}
+                            {{ script|safe }}
+                            {{ div|safe }}
+                            {% endfor %}
                         </div>
                         <hr>
 
@@ -574,27 +572,50 @@
         intro.setOptions({
             steps: [
                 {
-                    element: '#step1',
-                    intro: "This page contains results of the analysis for the <em>{{query}} at " +
-                        "{{source}}</em> query. The results are split into sections, and you can " +
-                        "navigate between them by clicking corresponding links in this sidebar."
+                    intro: "This page is a report of the analysis for the <em>{{query}} at " +
+                        "{{source}}</em> query."
                 },
                 {
                     element: '#step2',
-                    intro: "Sections contain various charts describing different aspects of the analyzed " +
-                        "research field. Check the descriptions to find out more information about charts, " +
+                    intro: "This report is organised into sections - different aspects of analysis.<br>" +
+                        "Check descriptions to find out more information about charts, " +
                         "notations and used algorithms."
                 },
                 {
-                    element: '#subtopic-div-1',
-                    intro: "One of the main features of PubTrends is subtopic analysis. Each subtopic is " +
-                        "described by a word cloud with several most used keywords and a chart with all " +
-                        "papers that belong to the subtopic."
+                    element: '#overview',
+                    intro: "Report starts with a general information about the topic of interest. " +
+                        "It shows total number of papers, citations, and general information like overall " +
+                        "publications dynamics, and most common words in the field."
+                },
+                {
+                    element: '#show_as_list',
+                    intro: "Click <img src=\"{{ url_for('static', filename='list.svg') }}\" alt=\"+\"/> " +
+                        "<em>Show as list</em> anytime to open the list of papers in a separate window."
+                },
+                {
+                    element: '#highlights',
+                    intro: "Highlights section contains information about most notable papers. " +
+                        "Top cited papers, papers of the year, and hot papers are shown in a dedicated sections."
+                },
+                {
+                    element: '#subtopics-intro',
+                    intro: "One of the main features of PubTrends is subtopic analysis.<br>" +
+                        "Subtopic is a group of papers which share common ideas, describe common features, etc. " +
+                        "Find out the details about trends and papers in subtopics in the next steps."
+                },
+                {
+                    element: '#topics',
+                    intro: "Subtopics are extracted based on citations graph and text analysis. " +
+                        "Each subtopic is described by a word cloud with most used keywords and " +
+                        "a chart with all papers that belong to the subtopic."
                 },
                 {
                     element: '#subtopic-1',
-                    intro: "Click <em>Show as list</em> to open the list of papers for the subtopic or " +
-                        "use the <em>Zoom into</em> button to run analysis for this particular subtopic."
+                    intro: "This is the detailed information about subtopic 1. As usual, " +
+                        "click <img src=\"{{ url_for('static', filename='list.svg') }}\" alt=\"+\"/> " +
+                        "<em>Show as list</em> to open the list of papers for the subtopic or " +
+                        "use the <img src=\"{{ url_for('static', filename='zoom-in.svg') }}\" alt=\"+\"/> " +
+                        "<em>Zoom into</em> button to run analysis for this particular subtopic.<br>"
                 },
                 {
                     element: '#topic_word_cloud_1',
@@ -613,8 +634,8 @@
                         "open all papers for a certain author or journal by clicking the corresponding " +
                         "number of papers."
                 },
-                {
-                    intro: "That's all! Now you're ready to dive into scientific literature with PubTrends."
+                {   intro: "Congratulations!<br>" +
+                        "Now you're ready to dive into scientific literature with PubTrends."
                 }
             ]
         });
