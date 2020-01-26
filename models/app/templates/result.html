@@ -122,7 +122,7 @@
     <div class="row ">
         <!-- Sticky sidebar -->
         <nav class="d-none d-xl-block d-lg-block col-lg-1 col-xl-2 sidebar no-padding">
-            <div class="sidebar-sticky" id="step1">
+            <div class="sidebar-sticky" id="sidebar">
                 <ul class="nav flex-column">
                     <li class="nav-item row">
                         <a class="nav-link no-padding-right" href="#overview" title="Overview">
@@ -222,7 +222,7 @@
                                 </div>
                             </div>
                             <div class="col-sm-4">
-                                <div class="card">
+                                <div id="subtopics-number" class="card">
                                     <div class="card-body text-center">
                                         <span class="stats-number"><b>{{ n_subtopics }}</b></span><br>
                                         <span class="card-text">subtopics</span>
@@ -443,7 +443,7 @@
                 </div>
                 {% endif %}
 
-                <div class="card mt-3" id="step7">
+                <div class="card mt-3">
                     <div class="card-title" id="authors">
                         <h1 class="card-header">Authors</h1>
                     </div>
@@ -576,14 +576,14 @@
                         "{{source}}</em> query."
                 },
                 {
-                    element: '#step2',
-                    intro: "This report is organised into sections - different aspects of analysis.<br>" +
+                    element: '#sidebar',
+                    intro: "Results are organised into sections - different aspects of analysis.<br>" +
                         "Check descriptions to find out more information about charts, " +
                         "notations and used algorithms."
                 },
                 {
                     element: '#overview',
-                    intro: "Report starts with a general information about the topic of interest. " +
+                    intro: "The report starts with a general information about the topic of interest. " +
                         "It shows total number of papers, citations, and general information like overall " +
                         "publications dynamics, and most common words in the field."
                 },
@@ -598,8 +598,8 @@
                         "Top cited papers, papers of the year, and hot papers are shown in a dedicated sections."
                 },
                 {
-                    element: '#subtopics-intro',
-                    intro: "One of the main features of PubTrends is subtopic analysis.<br>" +
+                    element: '#subtopics-number',
+                    intro: "One of the main features of PubTrends is a subtopic analysis.<br>" +
                         "Subtopic is a group of papers which share common ideas, describe common features, etc. " +
                         "Find out the details about trends and papers in subtopics in the next steps."
                 },
@@ -628,9 +628,9 @@
                         "new tab."
                 },
                 {
-                    element: '#step7',
+                    element: '#authors',
                     intro: "Information about authors and journals with the largest number of papers " +
-                        "is organised in tables, which also show distribution over subtopics. You can " +
+                        "is organised into tables, which also show distribution over subtopics. You can " +
                         "open all papers for a certain author or journal by clicking the corresponding " +
                         "number of papers."
                 },
