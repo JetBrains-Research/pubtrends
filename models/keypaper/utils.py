@@ -301,16 +301,15 @@ def trim(string, max_length):
     return f'{string[:max_length]}...' if len(string) > max_length else string
 
 
-def preprocess_search_query(terms, min_search_words):
+def preprocess_search_query(query, min_search_words):
     ''' Preprocess searh string for Neo4j full text lookup '''
-    if len(terms) == 0:
-        raise Exception(f'Empty search string, please use search terms or '
-                        f'all the query wrapped in "" for phrasal search')
-    terms_str = re.sub('[^0-9a-zA-Z"\\-\\.+, ]', '', terms.strip())  # Remove unknown symbols
+    if len(query) == 0:
+        return None
+    terms_str = re.sub('[^0-9a-zA-Z"\\-\\.+, ]', '', query.strip())  # Remove unknown symbols
     if len(terms_str) == 0:
         raise Exception(f'Illegal character(s), only English letters, numbers, '
                         f'and +- signs are supported')
-    if len(terms.split(' ')) < min_search_words:
+    if len(query.split(' ')) < min_search_words:
         raise Exception(f'Please use more specific query with >= {min_search_words} words')
     # Looking for complete phrase
     if re.match('^"[^"]+"$', terms_str):

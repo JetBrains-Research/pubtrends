@@ -10,30 +10,16 @@ class ArxivLoader(SemanticScholarLoader):
         super(ArxivLoader, self).__init__(pubtrends_config)
 
     def search(self, query, limit=None, sort=None, current=1, task=None):
-        query_str = preprocess_search_query(query, self.pubtrends_config.min_search_words)
+        raise Exception('Use search_arxiv')
 
-        if not limit:
-            limit_message = ''
-            limit = self.max_number_of_articles
-        else:
-            limit_message = f'{limit} '
-
-        self.progress.info(html.escape(f'Searching {limit_message}{sort.lower()} publications matching <{query}>'),
+    def search_arxiv(self, limit, sort=None, current=1, task=None):
+        self.progress.info(html.escape(f'Searching {limit} {sort.lower()} publications'),
                            current=current, task=task)
 
-        if sort == SORT_MOST_RELEVANT:
+        if sort == SORT_MOST_CITED:
             query = f'''
-                CALL db.index.fulltext.queryNodes("ssTitlesAndAbstracts", {query_str}) YIELD node, score
-                WHERE node.source = 'Arxiv'
-                RETURN node.ssid as ssid
-                ORDER BY score DESC
-                LIMIT {limit};
-                '''
-        elif sort == SORT_MOST_CITED:
-            query = f'''
-                CALL db.index.fulltext.queryNodes("ssTitlesAndAbstracts", {query_str}) YIELD node
-                MATCH ()-[r:SSReferenced]->(in:SSPublication)
-                WHERE in.crc32id = node.crc32id AND in.ssid = node.ssid AND node.source = 'Arxiv'
+                MATCH ()-[r:SSReferenced]->(node:SSPublication)
+                WHERE toLower(node.aux) CONTAINS "arxiv"
                 WITH node, COUNT(r) AS cnt
                 RETURN node.ssid as ssid
                 ORDER BY cnt DESC
@@ -41,14 +27,20 @@ class ArxivLoader(SemanticScholarLoader):
                 '''
         elif sort == SORT_MOST_RECENT:
             query = f'''
-                CALL db.index.fulltext.queryNodes("ssTitlesAndAbstracts", {query_str}) YIELD node
-                WHERE node.source = 'Arxiv'
+                MATCH (node:SSPublication)
+                WHERE toLower(node.aux) CONTAINS "arxiv"
                 RETURN node.ssid as ssid
                 ORDER BY node.date DESC
                 LIMIT {limit};
                 '''
         else:
-            raise ValueError(f'Illegal sort method: {sort}')
+            query = f'''
+                MATCH (node:SSPublication)
+                WHERE toLower(node.aux) CONTAINS "arxiv"
+                RETURN node.ssid as ssid
+                LIMIT {limit};
+            '''
+
         self.progress.debug(f'Search query\n{query}', current=current, task=task)
 
         with self.neo4jdriver.session() as session:

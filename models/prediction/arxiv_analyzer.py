@@ -1,17 +1,17 @@
 from models.keypaper.analysis import KeyPaperAnalyzer
+from models.keypaper.utils import SORT_MOST_RELEVANT
 
 
 class ArxivAnalyzer(KeyPaperAnalyzer):
     def __init__(self, loader, config):
         super(ArxivAnalyzer, self).__init__(loader, config)
 
-    def launch(self, *terms, task=None, analyze=True):
+    def launch(self, limit=1000, task=None):
         """:return full log"""
 
         try:
             # Search articles relevant to the terms
-            self.terms = terms
-            self.ids = self.loader.search(*terms, current=1, task=task)
+            self.ids = self.loader.search_arxiv(limit=limit, sort=SORT_MOST_RELEVANT, current=1, task=task)
             self.n_papers = len(self.ids)
 
             # Nothing found
@@ -24,7 +24,8 @@ class ArxivAnalyzer(KeyPaperAnalyzer):
                 raise RuntimeError("Nothing found in DB")
 
             cit_stats_df_from_query = self.loader.load_citation_stats(self.ids, current=3, task=task)
-            self.cit_stats_df = self.build_cit_stats_df(cit_stats_df_from_query, self.n_papers, current=4, task=task)
+            self.cit_stats_df = self.build_cit_stats_df(cit_stats_df_from_query, self.n_papers,
+                                                        current=4, task=task)
             if len(self.cit_stats_df) == 0:
                 raise RuntimeError("No citations of papers were found")
 

@@ -3,11 +3,6 @@ package org.jetbrains.bio.pubtrends.ss
 import org.apache.commons.codec.binary.Hex
 import java.util.zip.CRC32
 
-enum class PublicationSource {
-    Nature,
-    Arxiv
-}
-
 data class Author(var name: String = "")
 
 data class Journal(var name: String = "", var volume: String = "", var pages: String = "")
@@ -27,7 +22,6 @@ data class SemanticScholarArticle(val ssid: String,
                                   val year: Int? = null,
                                   val doi: String? = null,
                                   val keywords: String? = null,
-                                  val source: PublicationSource? = null,
                                   val aux: ArticleAuxInfo = ArticleAuxInfo())
 
 

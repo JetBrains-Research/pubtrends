@@ -59,6 +59,9 @@ class KeyPaperAnalyzer:
 
     def search_terms(self, query, limit=None, sort=None, task=None):
         # Search articles relevant to the terms
+        if len(query) == 0:
+            raise Exception(f'Empty search string, please use search terms or '
+                            f'all the query wrapped in "" for phrasal search')
         ids = self.loader.search(query, limit=limit, sort=sort, current=1, task=task)
         if len(ids) == 0:
             raise RuntimeError(f"Nothing found for search query: {query}")

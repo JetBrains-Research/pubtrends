@@ -86,11 +86,10 @@ class ArchiveParser(
                 val links = extractLinks(jsonObject)
                 val venue = jsonObject.get("venue")?.asString ?: ""
                 val aux = ArticleAuxInfo(authors, journal, links, venue)
-                val source = getSource(journal, venue, links.pdfUrls)
 
                 curArticle = SemanticScholarArticle(ssid = ssid, title = title,
                         pmid = pmid, doi = doi, abstract = abstract, keywords = keywords, year = year,
-                        citationList = citationList, aux = aux, source = source)
+                        citationList = citationList, aux = aux)
 
                 addArticleToBatch(curArticle)
 
@@ -141,18 +140,6 @@ class ArchiveParser(
         if (currentBatch.size == batchSize) {
             storeBatch()
         }
-    }
-
-    // TODO[shpynov] are there other options?
-    private fun getSource(journal: Journal, venue: String, pdfUrls: List<String>): PublicationSource? {
-        if (venue.equals("arxiv", ignoreCase = true) || pdfUrls.any { it.contains("arxiv.org", ignoreCase = true) }) {
-            return PublicationSource.Arxiv
-        }
-        if (venue.equals("nature", ignoreCase = true) || journal.name.equals("nature", ignoreCase = true) ||
-                pdfUrls.any { it.contains("nature.com", ignoreCase = true) }) {
-            return PublicationSource.Nature
-        }
-        return null
     }
 
     private fun extractList(listJson: JsonElement?): List<String> {
