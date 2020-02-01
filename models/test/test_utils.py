@@ -4,7 +4,8 @@ import pandas as pd
 from pandas.util.testing import assert_frame_equal
 from parameterized import parameterized
 
-from models.keypaper.utils import tokenize, cut_authors_list, split_df_list, crc32, preprocess_search_query
+from models.keypaper.utils import tokenize, cut_authors_list, split_df_list, crc32, preprocess_search_query, \
+    preprocess_doi, preprocess_search_title
 
 
 class TestUtils(unittest.TestCase):
@@ -76,3 +77,19 @@ class TestUtils(unittest.TestCase):
             preprocess_search_query('"Foo" Bar"', 2)
         with self.assertRaises(Exception):
             preprocess_search_query('&&&', 2)
+
+    @parameterized.expand([
+        ('dx.doi.org prefix', 'http://dx.doi.org/10.1037/a0028240', '10.1037/a0028240'),
+        ('doi.org prefix', 'http://doi.org/10.3352/jeehp.2013.10.3', '10.3352/jeehp.2013.10.3'),
+        ('no changes', '10.1037/a0028240', '10.1037/a0028240')
+    ])
+    def test_preprocess_doi(self, case, doi, expected):
+        self.assertEqual(preprocess_doi(doi), expected, case)
+
+    @parameterized.expand([
+        ('lower case', "DNA methylation age", "dna methylation age"),
+        ('dot at the end', "DNA methylation age.", "dna methylation age"),
+        ('Title Case', "DNA Methylation Age", "dna methylation age")
+    ])
+    def test_preprocess_search_title(self, case, title, expected):
+        self.assertEqual(preprocess_search_title(title), expected, case)
