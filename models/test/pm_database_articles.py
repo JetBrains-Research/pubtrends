@@ -1,9 +1,9 @@
 import json
-import pandas as pd
-
 from dataclasses import dataclass, field
 from datetime import date
 from typing import List
+
+import pandas as pd
 
 from models.keypaper.loader import Loader
 
@@ -51,15 +51,25 @@ class PubmedArticle:
         return self.aux.journal.name
 
     @staticmethod
-    def null(field):
-        if isinstance(field, str):
-            field = repr(field)
-        elif isinstance(field, date):
-            field = repr(str(field))
-        return field if field else 'null'
+    def null(value):
+        if isinstance(value, str):
+            value = repr(value)
+        elif isinstance(value, date):
+            value = repr(str(value))
+        return value if value else 'null'
 
     def __str__(self):
         return ', '.join(self.to_list())
+
+    def to_dict(self):
+        return {
+            'pmid': self.pmid,
+            'title': self.title,
+            'date': self.date,
+            'abstract': self.abstract,
+            'type': self.type,
+            'aux': json.dumps(self.aux.to_dict())
+        }
 
     def to_list(self):
         return [self.pmid, self.title, json.dumps(self.aux.to_dict()), self.abstract if self.abstract else '',
