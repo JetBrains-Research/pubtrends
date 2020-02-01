@@ -27,7 +27,7 @@ class PubmedLoader(Loader):
             try:
                 value = int(value)
             except ValueError:
-                raise Exception("PMID should be an integer")
+                raise Exception("PMID should be a positive integer")
 
         # Preprocess DOI
         if key == 'doi':
