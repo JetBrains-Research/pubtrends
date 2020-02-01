@@ -302,7 +302,7 @@ def trim(string, max_length):
 
 
 def preprocess_search_query(terms, min_search_words):
-    ''' Preprocess searh string for Neo4j full text lookup '''
+    ''' Preprocess search string for Neo4j full text lookup '''
     if len(terms) == 0:
         raise Exception(f'Empty search string, please use search terms or '
                         f'all the query wrapped in "" for phrasal search')
@@ -322,6 +322,15 @@ def preprocess_search_query(terms, min_search_words):
 
 
 def preprocess_doi(line):
-    # Remove doi.org prefix if full URL was pasted, then strip unnecessary slashes
-    (_, _, doi) = line.partition('doi.org')
+    """
+    Removes doi.org prefix if full URL was pasted, then strips unnecessary slashes
+    """
+    (_, _, doi) = line.rpartition('doi.org')
     return doi.strip('/')
+
+
+def preprocess_search_title(line):
+    """
+    Title processing similar to PubmedXMLParser + case-insensitivity
+    """
+    return line.strip('.[]').lower()
