@@ -32,12 +32,14 @@ ON CREATE SET
     n.title = data.title,
     n.abstract = data.abstract,
     n.type = data.type,
+    n.doi = data.doi,
     n.aux = data.aux
 ON MATCH SET
     n.date = data.date,
     n.title = data.title,
     n.abstract = data.abstract,
     n.type = data.type,
+    n.doi = data.doi,
     n.aux = data.aux
 RETURN n;
 '''
