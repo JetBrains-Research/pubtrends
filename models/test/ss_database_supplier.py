@@ -32,12 +32,14 @@ ON CREATE SET
     n.title = data.title,
     n.abstract = data.abstract,
     n.date = datetime({year: data.year, month: 1, day: 1}),
+    n.doi = data.doi,
     n.aux = data.aux
 ON MATCH SET
     n.pmid = data.pmid,
     n.title = data.title,
     n.abstract = data.abstract,
     n.date = datetime({year: data.year, month: 1, day: 1}),
+    n.doi = data.doi,
     n.aux = data.aux
 RETURN n;
 '''
