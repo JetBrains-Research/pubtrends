@@ -101,18 +101,6 @@ class SSParserTest {
     }
 
     @Test
-    fun testParseArxivSource() {
-        assertEquals(SemanticScholarArticles.articles[4].source, PublicationSource.Arxiv)
-    }
-
-    @Test
-    fun testParseNullSource() {
-        listOf(0, 1, 2, 3).forEach {
-            assertEquals(null, parsedArticles[it].source)
-        }
-    }
-
-    @Test
     fun testParseKeywords() {
         listOf(1, 2).forEach {
             assertEquals(SemanticScholarArticles.articles[it].keywords, parsedArticles[it].keywords)
