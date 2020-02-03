@@ -8,7 +8,7 @@ import numpy as np
 from bokeh.colors import RGB
 from bokeh.core.properties import value
 from bokeh.embed import components
-from bokeh.layouts import row, column
+from bokeh.layouts import column
 from bokeh.models import ColumnDataSource, CustomJS, NodesAndLinkedEdges, TapTool
 from bokeh.models import GraphRenderer, StaticLayoutProvider
 # Tools used: hover,pan,tap,wheel_zoom,box_zoom,reset,save
@@ -379,6 +379,7 @@ class Plotter:
             plot.circle(x='year', y='total_fixed', fill_alpha=0.5, source=ds, size='size',
                         line_color='color', fill_color='color', legend='type')
             plot.legend.location = "top_left"
+            plot.legend.click_policy = "hide"
 
             # Word cloud description of subtopic by titles and abstracts
             kwds = get_topic_word_cloud_data(self.analyzer.df_kwd, c)
@@ -440,6 +441,7 @@ class Plotter:
         plot.circle(x='year', y='total_fixed', fill_alpha=0.5, source=ds, size='size',
                     line_color='color', fill_color='color', legend='type')
         plot.legend.location = "top_left"
+        plot.legend.click_policy = "hide"
         return plot
 
     def max_gain_papers(self):
