@@ -6,8 +6,7 @@ from collections import Iterable
 import numpy as np
 import pandas as pd
 
-from models.keypaper.utils import SORT_MOST_CITED, SORT_MOST_RECENT, SORT_MOST_RELEVANT, preprocess_doi, \
-    preprocess_search_title
+from models.keypaper.utils import SORT_MOST_CITED, SORT_MOST_RECENT, SORT_MOST_RELEVANT, preprocess_doi
 from .loader import Loader
 from .utils import crc32, preprocess_search_query
 
@@ -30,7 +29,6 @@ class SemanticScholarLoader(Loader):
 
         # Use dedicated text index to search title.
         if key == 'title':
-            value = preprocess_search_title(value)
             query = f'''
                 CALL db.index.fulltext.queryNodes("ssTitlesAndAbstracts", '"{re.sub('"', '', value.strip())}"')
                 YIELD node
