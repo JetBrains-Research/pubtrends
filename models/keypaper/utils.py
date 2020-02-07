@@ -81,12 +81,13 @@ def is_noun_or_adj(pos):
     return pos[:2] == 'NN' or pos == 'JJ'
 
 
-def tokenize(text, query=None):
+def tokenize(text, query=None, min_token_length=3):
     text = text.lower()
 
     # Filter out search terms
     if query is not None:
-        for term in query.split(' '):
+        # Whitespaces normalization, see #215
+        for term in re.sub('[ ]{2,}', ' ', query.strip()).split(' '):
             text = text.replace(term.lower(), '')
 
     tokenized = word_tokenize(re.sub(TOKENIZE_SPEC_SYMBOLS, '', text))
@@ -99,7 +100,7 @@ def tokenize(text, query=None):
                          word not in stop_words and is_noun_or_adj(pos)]
 
     lemmatizer = WordNetLemmatizer()
-    lemmatized = filter(lambda t: len(t) >= 3,
+    lemmatized = filter(lambda t: len(t) >= min_token_length,
                         [lemmatizer.lemmatize(w, pos=get_wordnet_pos(pos)) for w, pos in words_of_interest])
 
     stemmer = SnowballStemmer('english')
@@ -302,19 +303,25 @@ def trim(string, max_length):
 
 
 def preprocess_search_query(query, min_search_words):
-    ''' Preprocess searh string for Neo4j full text lookup '''
-    if len(query) == 0:
-        return None
-    terms_str = re.sub('[^0-9a-zA-Z"\\-\\.+, ]', '', query.strip())  # Remove unknown symbols
-    if len(terms_str) == 0:
-        raise Exception(f'Illegal character(s), only English letters, numbers, '
-                        f'and +- signs are supported')
-    if len(query.split(' ')) < min_search_words:
-        raise Exception(f'Please use more specific query with >= {min_search_words} words')
+    """ Preprocess search string for Neo4j full text lookup """
+    processed = re.sub('[ ]{2,}', ' ', query.strip())  # Whitespaces normalization, see #215
+    if len(processed) == 0:
+        raise Exception('Empty query')
+    processed = re.sub('[^0-9a-zA-Z"\\-\\.+, ]', '', processed)  # Remove unknown symbols
+    if len(processed) == 0:
+        raise Exception('Illegal character(s), only English letters, numbers, '
+                        f'and +- signs are supported. Query: {query}')
+    if len(processed.split(' ')) < min_search_words:
+        raise Exception(f'Please use more specific query with >= {min_search_words} words. Query: {query}')
     # Looking for complete phrase
-    if re.match('^"[^"]+"$', terms_str):
-        return '\'"' + re.sub('"', '', terms_str) + '"\''
-    elif re.match('^[^"]+$', terms_str):
-        return '"' + ' AND '.join([f"'{w}'" for w in terms_str.split(' ')]) + '"'
-    raise Exception(f'Illegal search string, please use search terms or '
-                    f'all the query wrapped in "" for phrasal search')
+    if re.match('^"[^"]+"$', processed):
+        return '\'"' + re.sub('"', '', processed) + '"\''
+    elif re.match('^[^"]+$', processed):
+        words = processed.split(' ')
+        stemmer = SnowballStemmer('english')
+        stems = set([stemmer.stem(word) for word in words])
+        if len(stems) < min_search_words:
+            raise Exception(f'Please use query with >= {min_search_words} different words. Query: {query}')
+        return '"' + ' AND '.join([f"'{w}'" for w in words]) + '"'
+    raise Exception(f'Illegal search query, please use search terms or '
+                    f'all the query wrapped in "" for phrasal search. Query: {query}')
