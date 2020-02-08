@@ -328,8 +328,8 @@ def preprocess_doi(line):
     return doi.strip('/')
 
 
-def preprocess_search_title(line):
+def preprocess_pubmed_search_title(line):
     """
-    Title processing similar to PubmedXMLParser + case-insensitivity
+    Title processing similar to PubmedXMLParser - special characters removal
     """
-    return line.strip('.[]').lower()
+    return line.strip('.[]')

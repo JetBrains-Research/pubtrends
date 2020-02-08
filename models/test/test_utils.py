@@ -5,7 +5,7 @@ from pandas.util.testing import assert_frame_equal
 from parameterized import parameterized
 
 from models.keypaper.utils import tokenize, cut_authors_list, split_df_list, crc32, preprocess_search_query, \
-    preprocess_doi, preprocess_search_title
+    preprocess_doi, preprocess_pubmed_search_title
 
 
 class TestUtils(unittest.TestCase):
@@ -86,10 +86,7 @@ class TestUtils(unittest.TestCase):
     def test_preprocess_doi(self, case, doi, expected):
         self.assertEqual(preprocess_doi(doi), expected, case)
 
-    @parameterized.expand([
-        ('lower case', "DNA methylation age", "dna methylation age"),
-        ('dot at the end', "DNA methylation age.", "dna methylation age"),
-        ('Title Case', "DNA Methylation Age", "dna methylation age")
-    ])
-    def test_preprocess_search_title(self, case, title, expected):
-        self.assertEqual(preprocess_search_title(title), expected, case)
+    def test_preprocess_pubmed_search_title(self):
+        title = '[DNA methylation age.]'
+        expected = 'DNA methylation age'
+        self.assertEqual(preprocess_pubmed_search_title(title), expected)
