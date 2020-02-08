@@ -16,15 +16,15 @@ from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from threading import Lock
 
+nltk.download('averaged_perceptron_tagger')  # required for nltk.pos_tag
+nltk.download('punkt')  # required for word_tokenize
 nltk.download('stopwords')
-nltk.download('punkt')
-nltk.download('averaged_perceptron_tagger')
 nltk.download('wordnet')
+STOP_WORDS_SET = set(stopwords.words('english'))
 
 # Lock to support multithreading for NLTK
 # See https://github.com/nltk/nltk/issues/1576
-stopwords_lock = Lock()
-wordnet_lock = Lock()
+NLTK_LOCK = Lock()
 
 LOCAL_BASE_URL = Template('/paper?source=$source&id=')
 PUBMED_ARTICLE_BASE_URL = 'https://www.ncbi.nlm.nih.gov/pubmed/?term='
@@ -62,7 +62,7 @@ def zoom_name(zoom):
 
 def get_wordnet_pos(treebank_tag):
     """Convert pos_tag output to WordNetLemmatizer tags."""
-    stopwords_lock.acquire()
+    NLTK_LOCK.acquire()
     if treebank_tag.startswith('J'):
         result = wordnet.ADJ
     elif treebank_tag.startswith('V'):
@@ -73,7 +73,7 @@ def get_wordnet_pos(treebank_tag):
         result = wordnet.ADV
     else:
         result = ''
-    stopwords_lock.release()
+    NLTK_LOCK.release()
     return result
 
 
@@ -92,12 +92,8 @@ def tokenize(text, query=None, min_token_length=3):
 
     tokenized = word_tokenize(re.sub(TOKENIZE_SPEC_SYMBOLS, '', text))
 
-    stopwords_lock.acquire()
-    stop_words = set(stopwords.words('english'))
-    stopwords_lock.release()
-
     words_of_interest = [(word, pos) for word, pos in nltk.pos_tag(tokenized) if
-                         word not in stop_words and is_noun_or_adj(pos)]
+                         word not in STOP_WORDS_SET and is_noun_or_adj(pos)]
 
     lemmatizer = WordNetLemmatizer()
     lemmatized = filter(lambda t: len(t) >= min_token_length,
