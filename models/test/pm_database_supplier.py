@@ -7,7 +7,6 @@ class PMTestDatabaseSupplier(Connector):
     def __init__(self):
         config = PubtrendsConfig(test=True)
         super(PMTestDatabaseSupplier, self).__init__(config)
-        self.project_dir = __file__.replace('/models/test/pm_database_supplier.py', '')
 
     def init_pubmed_database(self):
         with self.neo4jdriver.session() as session:

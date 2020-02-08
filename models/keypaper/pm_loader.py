@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from models.keypaper.loader import Loader
-from models.keypaper.utils import SORT_MOST_CITED, SORT_MOST_RECENT, SORT_MOST_RELEVANT, preprocess_search_title
+from models.keypaper.utils import SORT_MOST_CITED, SORT_MOST_RECENT, SORT_MOST_RELEVANT, preprocess_pubmed_search_title
 from models.keypaper.utils import preprocess_search_query, preprocess_doi
 
 logger = logging.getLogger(__name__)
@@ -35,12 +35,12 @@ class PubmedLoader(Loader):
 
         # Use dedicated text index to search title.
         if key == 'title':
-            value = preprocess_search_title(value)
+            value = preprocess_pubmed_search_title(value)
             query = f'''
                 CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", '"{re.sub('"', '', value.strip())}"')
                 YIELD node
                 MATCH (p:PMPublication)
-                WHERE p.pmid = node.pmid AND toLower(p.title) = '{value}'
+                WHERE p.pmid = node.pmid AND toLower(p.title) = '{value.lower()}'
                 RETURN p.pmid AS pmid;
             '''
         else:

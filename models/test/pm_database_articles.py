@@ -51,14 +51,6 @@ class PubmedArticle:
     def journal(self) -> str:
         return self.aux.journal.name
 
-    @staticmethod
-    def null(value):
-        if isinstance(value, str):
-            value = repr(value)
-        elif isinstance(value, date):
-            value = repr(str(value))
-        return value if value else 'null'
-
     def __str__(self):
         return ', '.join(self.to_list())
 
