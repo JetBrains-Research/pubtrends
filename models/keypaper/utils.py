@@ -1,5 +1,6 @@
 import binascii
 import html
+import itertools
 import logging
 import re
 import sys
@@ -13,7 +14,7 @@ from nltk.corpus import stopwords, wordnet
 from nltk.stem import WordNetLemmatizer, SnowballStemmer
 from nltk.tokenize import word_tokenize
 from sklearn.decomposition import LatentDirichletAllocation
-from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from threading import Lock
 
 nltk.download('averaged_perceptron_tagger')  # required for nltk.pos_tag
@@ -82,9 +83,12 @@ def is_noun_or_adj(pos):
 
 
 def tokenize(text, query=None, min_token_length=3):
+    if text is None:
+        return []
+
     text = text.lower()
 
-    # Filter out search terms
+    # Filter out search query
     if query is not None:
         # Whitespaces normalization, see #215
         for term in re.sub('[ ]{2,}', ' ', query.strip()).split(' '):
@@ -114,97 +118,99 @@ def tokenize(text, query=None, min_token_length=3):
     return [stems_mapping[stem] for stem, _ in stemmed]
 
 
-def get_most_common_tokens(texts, fraction=0.1):
+def get_frequent_tokens(df, query, fraction=0.1, min_tokens=20):
     """
-    :param texts: list of texts for articles in a component
+    Compute tokens weighted frequencies, favouring title
+    :param query: search query to exclude
     :param fraction: fraction of most common tokens
+    :param min_tokens: minimal number of tokens to return
     :return: dictionary {token: frequency}
     """
     counter = Counter()
-    for text in texts:
-        if isinstance(text, str):
-            for token in set(tokenize(text)):
-                counter[token] += 1
-    most_common = {}
+    for title in df['title']:
+        # Count only single occurrence
+        for token in set(tokenize(title, query)):
+            counter[token] += 2  # Weight for title
+    for abstract in df['abstract']:
+        # Count only single occurrence
+        for token in set(tokenize(abstract, query)):
+            counter[token] += 1  # Weight for abstract
+    result = {}
     tokens = len(counter)
-    for token, cnt in counter.most_common(tokens if tokens <= 200 else int(tokens * fraction)):
-        most_common[token] = cnt / tokens
-    return most_common
+    for token, cnt in counter.most_common(max(min_tokens, int(tokens * fraction))):
+        result[token] = cnt / tokens
+    return result
 
 
-def get_subtopic_descriptions(df, most_cited_papers_per_comp):
-    """
-    Create TF-IDF based description on tokens
-    :param most_cited_papers_per_comp: dictionary {component: description}
-    """
-    log.info('Computing most common terms')
-    n_comps = len(set(most_cited_papers_per_comp.keys()))
-    most_common = [None] * n_comps
-    for comp, comp_papers in most_cited_papers_per_comp.items():
-        df_comp = df[df['id'].isin(comp_papers)]
-        most_common[comp] = get_most_common_tokens(df_comp['title'] + ' ' + df_comp['abstract'])
-
-    log.info('Compute Augmented Term Frequency - Inverse Document Frequency')
-    # The tf–idf is the product of two statistics, term frequency and inverse document frequency.
-    # This provides greater weight to values that occur in fewer documents.
-    aug_tf_idf = {}
-    kwds = {}
-    for comp in range(n_comps):
-        max_cnt = max(most_common[comp].values())
-        # Augmented frequency to avoid document length bias
-        aug_tf_idf[comp] = {k: (0.5 + 0.5 * v / max_cnt) * np.log(n_comps / sum([k in mcoc for mcoc in most_common]))
-                            for k, v in most_common[comp].items()}
-        kwds[comp] = [(k, most_common[comp][k]) for k, _v in
-                      list(sorted(aug_tf_idf[comp].items(), key=lambda kv: kv[1], reverse=True))]
-    return kwds
-
-
-def get_topic_word_cloud_data(df_kwd, c):
+def get_topic_word_cloud_data(df_kwd, comp):
     """Parse TF-IDF based tokens from text"""
     kwds = {}
-    for pair in list(df_kwd[df_kwd['comp'] == c]['kwd'])[0].split(','):
-        token, count = pair.split(':')
+    for pair in list(df_kwd[df_kwd['comp'] == comp]['kwd'])[0].split(','):
+        token, value = pair.split(':')
         for word in token.split(' '):
-            kwds[word] = float(count) + kwds.get(word, 0)
+            kwds[word] = float(value) + kwds.get(word, 0)
     return kwds
 
 
-def get_tfidf_words(df, comps, query, size=5):
-    corpus = []
-
-    for comp, article_ids in comps.items():
-        # Generate descriptions only for meaningful components, avoid -1
-        if comp >= 0:
-            comp_corpus = ''
-            for article_id in article_ids:
-                sel = df[df['id'] == article_id]
-                if len(sel) > 0:
-                    title = sel['title'].astype(str).values[0]
-                    abstract = sel['abstract'].astype(str).values[0]
-                    comp_corpus += f'{title} {abstract}'
-                else:
-                    raise ValueError('Empty selection by id')
-            corpus.append(comp_corpus)
-
-    vectorizer = TfidfVectorizer(tokenizer=lambda text: tokenize(text, query=query), stop_words='english')
-    tfidf = vectorizer.fit_transform(corpus)
-
-    words = vectorizer.get_feature_names()
-    kwd = {}
-    for i in comps.keys():
+def get_tfidf(df, comps, query, n_words):
+    ngrams, tfidf = compute_tfidf(df, comps, query, n_words, n_gram=2)
+    result = {}
+    for comp in comps.keys():
         # Generate no keywords for '-1' component
-        if i < 0:
-            kwd[i] = ''
+        if comp == -1:
+            result[comp] = ''
             continue
 
-        # It might be faster to use np.argpartition instead of np.argsort
         # Sort indices by tfidf value
-        ind = np.argsort(tfidf[i, :].toarray(), axis=1)
+        # It might be faster to use np.argpartition instead of np.argsort
+        ind = np.argsort(tfidf[comp, :].toarray(), axis=1)
 
         # Take size indices with the largest tfidf
-        kwd[i] = list(map(lambda idx: words[idx], ind[0, -size:]))
+        result[comp] = list(itertools.chain.from_iterable(
+            [[(t, tfidf[comp, idx]) for t in ngrams[idx].split(' ')] for idx in ind[0, ::-1]])
+        )
+    return result
 
+
+def get_tfidf_words(df, comps, query, size, n_words):
+    tokens, tfidf = compute_tfidf(df, comps, query, n_words, other_comp=-1, ignore_other=True)
+    kwd = {}
+    for comp in comps.keys():
+        # Generate no keywords for '-1' component
+        if comp == -1:
+            kwd[comp] = ''
+            continue
+
+        # Sort indices by tfidf value
+        # It might be faster to use np.argpartition instead of np.argsort
+        ind = np.argsort(tfidf[comp, :].toarray(), axis=1)
+
+        # Take tokens with the largest tfidf
+        kwd[comp] = [tokens[idx] for idx in ind[0, -size:]]
     return kwd
+
+
+def compute_tfidf(df, comps, query, n_words, n_gram=1, other_comp=None, ignore_other=False):
+    corpus = []
+    for comp, article_ids in comps.items():
+        # -1 is OTHER component, not meaningful
+        if not (ignore_other and comp == other_comp):
+            df_comp = df[df['id'].isin(article_ids)]
+            # Artificially create weighted text, duplicating words in title
+            # See: get_frequent_tokens
+            # Important: As of Python 3.7 set from list preserves order, we can use ngrams
+            tokens = itertools.chain.from_iterable(
+                [list(set(tokenize(t, query))) * 2 for t in df_comp['title']] +
+                [list(set(tokenize(a, query))) for a in df_comp['abstract']])
+            corpus.append(' '.join(tokens))
+    vectorizer = CountVectorizer(max_df=0.8,
+                                 ngram_range=(1, n_gram),
+                                 max_features=n_words * len(comps))
+    counts = vectorizer.fit_transform(corpus)
+    tfidf_transformer = TfidfTransformer()
+    tfidf = tfidf_transformer.fit_transform(counts)
+    ngrams = vectorizer.get_feature_names()
+    return ngrams, tfidf
 
 
 def split_df_list(df, target_column, separator):
@@ -268,9 +274,9 @@ def build_corpus(df):
     return corpus
 
 
-def vectorize(corpus, terms=None, n_words=1000):
+def vectorize(corpus, query=None, n_words=1000):
     log.info(f'Counting word usage in the corpus, using only {n_words} most frequent words')
-    vectorizer = CountVectorizer(tokenizer=lambda t: tokenize(t, terms), max_features=n_words)
+    vectorizer = CountVectorizer(tokenizer=lambda t: tokenize(t, query), max_features=n_words)
     counts = vectorizer.fit_transform(corpus)
     log.info(f'Output shape: {counts.shape}')
     return counts, vectorizer

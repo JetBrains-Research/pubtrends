@@ -25,7 +25,7 @@ from matplotlib import pyplot as plt
 from wordcloud import WordCloud
 
 from .utils import LOCAL_BASE_URL, get_topic_word_cloud_data, \
-    get_most_common_tokens, cut_authors_list, ZOOM_OUT, ZOOM_IN, zoom_name, trim
+    get_frequent_tokens, cut_authors_list, ZOOM_OUT, ZOOM_IN, zoom_name, trim
 from .visualization_data import PlotPreprocessor
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
@@ -549,12 +549,8 @@ class Plotter:
             # NOTE: VBar is invisible (alpha=0) to provide tooltips, as in self.component_size_summary()
             p.vbar(x='year', width=0.8, top='counts', source=ds_stats)
 
-        # Build word cloud
-        kwds = {}
-        for token, count in get_most_common_tokens(self.analyzer.top_cited_df['title'] + ' ' +
-                                                   self.analyzer.top_cited_df['abstract']).items():
-            for word in token.split(' '):
-                kwds[word] = float(count) + kwds.get(word, 0)
+        # Build word cloud, size is proportional to token frequency
+        kwds = get_frequent_tokens(self.analyzer.top_cited_df, query=None)
         wc = WordCloud(background_color="white", width=WORD_CLOUD_WIDTH, height=WORD_CLOUD_HEIGHT,
                        color_func=lambda *args, **kwargs: 'black',
                        max_words=MAX_WORDS, min_font_size=10, max_font_size=30)
