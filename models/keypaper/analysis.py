@@ -134,13 +134,13 @@ class KeyPaperAnalyzer:
             self.partition, self.comp_other, self.components, self.comp_sizes, sort_order = self.update_components(
                 partition, n_components_merged, missing_comps, task
             )
+            self.df = self.merge_col(self.df, self.partition, col='comp')
             # Prepare information for word cloud
             kwds = [(sort_order[comp], ','.join([f'{t}:{max(1e-3, v):.3f}' for t, v in vs[:self.TOPIC_WORDS]]))
                     for comp, vs in tfidf_per_comp.items()]
             self.df_kwd = pd.DataFrame(kwds, columns=['comp', 'kwd'])
             self.progress.debug(f'Components description\n{self.df_kwd["kwd"]}', current=10, task=task)
             # Update df with information for all papers
-            self.df = self.merge_col(self.df, self.partition, col='comp')
 
         # Perform PageRank analysis
         pr = self.pagerank(self.G, current=11, task=task)

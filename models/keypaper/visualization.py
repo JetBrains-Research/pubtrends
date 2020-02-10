@@ -364,31 +364,31 @@ class Plotter:
         result = []
 
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
-        for c in range(n_comps):
-            comp_source = self.analyzer.df[self.analyzer.df['comp'] == c]
+        for comp in range(n_comps):
+            df_comp = self.analyzer.df[self.analyzer.df['comp'] == comp]
             ds = PlotPreprocessor.article_view_data_source(
-                comp_source, min_year, max_year, True, width=PAPERS_PLOT_WIDTH
+                df_comp, min_year, max_year, True, width=PAPERS_PLOT_WIDTH
             )
             # Add type coloring
-            ds.add([self.pub_types_colors_map[t] for t in comp_source['type']], 'color')
+            ds.add([self.pub_types_colors_map[t] for t in df_comp['type']], 'color')
             plot = self.__serve_scatter_article_layout(ds=ds,
                                                        year_range=[min_year, max_year],
                                                        title="Publications", width=PAPERS_PLOT_WIDTH)
-            plot.circle(x='year', y='total_fixed', fill_alpha=0.5, source=ds, size='size',
+            plot.circle(x='year', y='y', fill_alpha=0.5, source=ds, size='size',
                         line_color='color', fill_color='color', legend='type')
             plot.legend.location = "top_left"
             plot.legend.click_policy = "hide"
 
             # Word cloud description of subtopic by titles and abstracts
-            kwds = get_topic_word_cloud_data(self.analyzer.df_kwd, c)
-            color = (self.comp_colors[c].r, self.comp_colors[c].g, self.comp_colors[c].b)
+            kwds = get_topic_word_cloud_data(self.analyzer.df_kwd, comp)
+            color = (self.comp_colors[comp].r, self.comp_colors[comp].g, self.comp_colors[comp].b)
             wc = WordCloud(background_color="white", width=WORD_CLOUD_WIDTH, height=WORD_CLOUD_HEIGHT,
                            color_func=lambda *args, **kwargs: color,
                            max_words=MAX_WORDS, min_font_size=10, max_font_size=30)
             wc.generate_from_frequencies(kwds)
 
             # Create Zoom In callback
-            id_list = list(comp_source['id'])
+            id_list = list(df_comp['id'])
             zoom_in_callback = self.zoom_callback(id_list, self.analyzer.source,
                                                   zoom=ZOOM_IN,
                                                   query=self.analyzer.query)
@@ -436,7 +436,7 @@ class Plotter:
                                                    title=f'{len(self.analyzer.top_cited_df)} top cited papers',
                                                    width=PLOT_WIDTH)
 
-        plot.circle(x='year', y='total_fixed', fill_alpha=0.5, source=ds, size='size',
+        plot.circle(x='year', y='y', fill_alpha=0.5, source=ds, size='size',
                     line_color='color', fill_color='color', legend='type')
         plot.legend.location = "top_left"
         plot.legend.click_policy = "hide"
