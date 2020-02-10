@@ -58,7 +58,6 @@ def visualize_analysis(analyzer):
     paper_statistics, word_cloud, zoom_out_callback = plotter.papers_statistics_and_word_cloud_and_callback()
     if analyzer.CG.nodes():
         result = {
-            'log': html.unescape(analyzer.log()),
             'topics_analyzed': True,
             'n_papers': analyzer.n_papers,
             'n_citations': int(analyzer.df['total'].sum()),
@@ -93,7 +92,6 @@ def visualize_analysis(analyzer):
 
     else:
         return {
-            'log': html.unescape(analyzer.log()),
             'topics_analyzed': False,
             'n_papers': analyzer.n_papers,
             'n_citations': int(analyzer.df['total'].sum()),

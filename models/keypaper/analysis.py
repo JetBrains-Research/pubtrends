@@ -35,7 +35,8 @@ class KeyPaperAnalyzer:
     def __init__(self, loader, config, test=False):
         self.config = config
         self.experimental = config.experimental
-        self.progress = ProgressLogger(KeyPaperAnalyzer.TOTAL_STEPS +
+        # 1 - visualization step
+        self.progress = ProgressLogger(1 + KeyPaperAnalyzer.TOTAL_STEPS +
                                        (KeyPaperAnalyzer.EXPERIMENTAL_STEPS if self.experimental else 0))
 
         self.loader = loader
@@ -50,9 +51,6 @@ class KeyPaperAnalyzer:
             self.source = 'arxiv'
         elif not test:
             raise TypeError("loader should be either PubmedLoader or SemanticScholarLoader")
-
-    def log(self):
-        return self.progress.stream.getvalue()
 
     def teardown(self):
         self.progress.remove_handler()
@@ -169,9 +167,9 @@ class KeyPaperAnalyzer:
             self.evolution_kwds = self.subtopic_evolution_descriptions(
                 self.df, self.evolution_df, self.evolution_year_range, self.query, current=18, task=task
             )
-            self.progress.info('Done', current=19, task=task)
+            self.progress.info('Visualizing...', current=19, task=task)
         else:
-            self.progress.info('Done', current=17, task=task)
+            self.progress.info('Visualizing...', current=17, task=task)
 
     def build_cit_stats_df(self, cit_stats_df_from_query, n_papers, current=None, task=None):
         # Get citation stats with columns 'id', year_1, ..., year_N and fill NaN with 0

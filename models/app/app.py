@@ -78,11 +78,12 @@ def result():
     if jobid:
         job = complete_task(jobid)
         if job and job.state == 'SUCCESS':
-            data, _ = job.result
+            data, _, log = job.result
             return render_template('result.html',
                                    query=query,
                                    source=source,
                                    version=PUBTRENDS_CONFIG.version,
+                                   log=log,
                                    **data)
 
     return render_template_string("Something went wrong...")
@@ -167,7 +168,7 @@ def paper():
     if jobid:
         job = complete_task(jobid)
         if job and job.state == 'SUCCESS':
-            _, data = job.result
+            _, data, _ = job.result
             return render_template('paper.html', **prepare_paper_data(data, source, pid),
                                    version=PUBTRENDS_CONFIG.version)
 
@@ -208,7 +209,7 @@ def show_ids():
     if jobid:
         job = complete_task(jobid)
         if job and job.state == 'SUCCESS':
-            _, data = job.result
+            _, data, _ = job.result
             return render_template('papers.html',
                                    version=PUBTRENDS_CONFIG.version,
                                    source=source,

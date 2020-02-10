@@ -12,23 +12,29 @@ class ProgressLogger:
         self.logger.addHandler(self.handler)
         self.total = total
 
-    def info(self, message, current, state='PROGRESS', task=None):
+    def info(self, message, current, task=None):
         if message:
             self.logger.info(message)
 
-        self.update_state(current, state=state, task=task)
+        self.update_state(current, task=task)
 
-    def debug(self, message, current, state='PROGRESS', task=None):
+    def debug(self, message, current, task=None):
         if message:
             self.logger.debug(f'DEBUG {message}')
 
-        self.update_state(current, state=state, task=task)
+        self.update_state(current, task=task)
 
-    def update_state(self, current, state='PROGRESS', task=None):
+    def done(self, message='Done', task=None):
+        self.info(message, self.total, task)
+
+    def update_state(self, current, task=None):
         if task:
             self.handler.flush()
-            task.update_state(state=state,
+            task.update_state(state='PROGRESS',
                               meta={'current': current, 'total': self.total, 'log': self.stream.getvalue()})
 
     def remove_handler(self):
         self.logger.removeHandler(self.handler)
+
+    def log(self):
+        return self.stream.getvalue()
