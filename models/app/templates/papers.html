@@ -67,10 +67,11 @@
                         <th scope="col">Authors</th>
                         <th scope="col">Journal</th>
                         <th scope="col">Year</th>
+                        <th scope="col">Cited</th>
                     </tr>
                     </thead>
                     <tbody>
-                    {% for id, title, authors, url, journal, year in papers %}
+                    {% for id, title, authors, url, journal, year, total in papers %}
                     <tr>
                         <th scope="row">{{ loop.index }}</th>
                         <td>
@@ -79,6 +80,7 @@
                         <td>{{ authors }}</td>
                         <td>{{ journal }}</td>
                         <td>{{ year }}</td>
+                        <td>{{ total }}</td>
                     </tr>
                     {% endfor %}
                     </tbody>
