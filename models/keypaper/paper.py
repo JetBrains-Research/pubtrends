@@ -1,5 +1,3 @@
-import re
-
 import numpy as np
 from bokeh.embed import components
 
@@ -8,8 +6,8 @@ from models.keypaper.config import PubtrendsConfig
 from models.keypaper.pm_loader import PubmedLoader
 from models.keypaper.ss_loader import SemanticScholarLoader
 from models.keypaper.utils import (
-    cut_authors_list, trim,
-    PUBMED_ARTICLE_BASE_URL, SEMANTIC_SCHOLAR_BASE_URL, TOKENIZE_SPEC_SYMBOLS)
+    cut_authors_list, trim, preprocess_text,
+    PUBMED_ARTICLE_BASE_URL, SEMANTIC_SCHOLAR_BASE_URL)
 from models.keypaper.visualization import Plotter
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
@@ -130,7 +128,7 @@ def prepare_papers_data(data, source, comp=None, word=None, author=None, journal
         df = df.loc[df['comp'].astype(int) == comp]
     # Filter by word
     if word is not None:
-        df = df.loc[[word.lower() in re.sub(TOKENIZE_SPEC_SYMBOLS, '', f'{t} {a}'.lower())
+        df = df.loc[[word.lower() in preprocess_text(f'{t} {a}')
                      for (t, a) in zip(df['title'], df['abstract'])]]
     # Filter by author
     if author is not None:

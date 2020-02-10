@@ -46,7 +46,6 @@ SORT_MOST_CITED = 'Most Cited'
 SORT_MOST_RELEVANT = 'Most Relevant'
 SORT_MOST_RECENT = 'Most Recent'
 
-TOKENIZE_SPEC_SYMBOLS = re.compile(r'[^a-zA-Z0-9\- ]*')
 
 log = logging.getLogger(__name__)
 
@@ -82,19 +81,28 @@ def is_noun_or_adj(pos):
     return pos[:2] == 'NN' or pos == 'JJ'
 
 
+def preprocess_text(text):
+    text = text.lower()
+    # Replace non-ascii with space
+    text = re.sub(r'[^\x00-\x7F]+',' ', text)
+    text = text.replace('-', ' ')
+    text = re.sub('[^a-zA-Z0-9 ]*', '', text)
+    # Whitespaces normalization, see #215
+    text = re.sub('[ ]{2,}', ' ', text.strip())
+    return text
+
+
 def tokenize(text, query=None, min_token_length=3):
     if text is None:
         return []
-
-    text = text.lower()
+    text = preprocess_text(text)
 
     # Filter out search query
     if query is not None:
-        # Whitespaces normalization, see #215
-        for term in re.sub('[ ]{2,}', ' ', query.strip()).split(' '):
+        for term in preprocess_text(query).split(' '):
             text = text.replace(term.lower(), '')
 
-    tokenized = word_tokenize(re.sub(TOKENIZE_SPEC_SYMBOLS, '', text))
+    tokenized = word_tokenize(text)
 
     words_of_interest = [(word, pos) for word, pos in nltk.pos_tag(tokenized) if
                          word not in STOP_WORDS_SET and is_noun_or_adj(pos)]
