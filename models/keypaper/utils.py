@@ -84,7 +84,7 @@ def is_noun_or_adj(pos):
 def preprocess_text(text):
     text = text.lower()
     # Replace non-ascii with space
-    text = re.sub(r'[^\x00-\x7F]+',' ', text)
+    text = re.sub(r'[^\x00-\x7F]+', ' ', text)
     text = text.replace('-', ' ')
     text = re.sub('[^a-zA-Z0-9 ]*', '', text)
     # Whitespaces normalization, see #215
