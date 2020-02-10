@@ -31,6 +31,7 @@ def analyze_search_terms(source, query, sort=None, limit=None):
     finally:
         loader.close_connection()
 
+    analyzer.progress.info('Visualizing', current=analyzer.progress.total - 1, task=current_task)
     visualization = visualize_analysis(analyzer)
     dump = analyzer.dump()
     analyzer.progress.done(task=current_task)
@@ -48,6 +49,7 @@ def analyze_id_list(source, id_list, zoom, query):
     finally:
         loader.close_connection()
 
+    analyzer.progress.info('Visualizing', current=analyzer.progress.total - 1, task=current_task)
     visualization = visualize_analysis(analyzer)
     dump = analyzer.dump()
     analyzer.progress.done(task=current_task)
