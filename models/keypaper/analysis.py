@@ -9,7 +9,7 @@ from models.prediction.arxiv_loader import ArxivLoader
 from .pm_loader import PubmedLoader
 from .progress_logger import ProgressLogger
 from .ss_loader import SemanticScholarLoader
-from .utils import split_df_list, get_frequent_tokens, get_tfidf, get_tfidf_words
+from .utils import split_df_list, get_frequent_tokens, get_topics_description, get_tfidf_words
 
 
 class KeyPaperAnalyzer:
@@ -127,7 +127,7 @@ class KeyPaperAnalyzer:
             self.progress.debug(f'Computing subtopics descriptions by top cited papers', current=9, task=task)
             most_cited_per_comp = self.get_most_cited_papers_for_comps(self.df, partition)
             # Compute topics TF-IDF metrics
-            tfidf_per_comp = get_tfidf(self.df, most_cited_per_comp, query, self.TEXT_WORDS)
+            tfidf_per_comp = get_topics_description(self.df, most_cited_per_comp, query, self.TEXT_WORDS)
             # Update papers non assigned with components
             missing_comps = self.get_missing_components(self.df, partition, tfidf_per_comp, n_components_merged > 0,
                                                         current=10, task=task)

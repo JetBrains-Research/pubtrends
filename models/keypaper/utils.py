@@ -160,7 +160,11 @@ def get_topic_word_cloud_data(df_kwd, comp):
     return kwds
 
 
-def get_tfidf(df, comps, query, n_words):
+def get_topics_description(df, comps, query, n_words):
+    if len(comps) == 1:
+        most_frequent = get_frequent_tokens(df, query)
+        return {0: list(sorted(most_frequent.items(), key=lambda kv: kv[1], reverse=True))[:n_words]}
+
     ngrams, tfidf = compute_tfidf(df, comps, query, n_words, n_gram=2)
     result = {}
     for comp in comps.keys():
@@ -211,8 +215,7 @@ def compute_tfidf(df, comps, query, n_words, n_gram=1, other_comp=None, ignore_o
                 [list(set(tokenize(t, query))) * 2 for t in df_comp['title']] +
                 [list(set(tokenize(a, query))) for a in df_comp['abstract']])
             corpus.append(' '.join(tokens))
-    vectorizer = CountVectorizer(ngram_range=(1, n_gram),
-                                 max_features=n_words * len(comps))
+    vectorizer = CountVectorizer(min_df=0.01, max_df=0.8, ngram_range=(1, n_gram), max_features=n_words * len(comps))
     counts = vectorizer.fit_transform(corpus)
     tfidf_transformer = TfidfTransformer()
     tfidf = tfidf_transformer.fit_transform(counts)
