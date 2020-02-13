@@ -443,7 +443,7 @@ class KeyPaperAnalyzer:
                 if isinstance(col, (int, float)):
                     evolution_df[col] = evolution_df[col].apply(int)
                     comps = evolution_df.groupby(col)['id'].apply(list).to_dict()
-                    evolution_kwds[col] = get_tfidf_words(df, comps, query, size=keywords)
+                    evolution_kwds[col] = get_tfidf_words(df, comps, query, n_words=100, size=keywords)
 
         return evolution_kwds
 
