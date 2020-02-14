@@ -622,23 +622,6 @@ class Plotter:
                                   <span class="bk" style="color:black">{int(topic[1] / sum * 100)}%</span> ''',
                 zip(components[:top], counts[:top])))
 
-    def __build_data_source(self, df, width=PAPERS_PLOT_WIDTH):
-        # Sort papers from the same year with total number of citations as key, use rank as y-pos
-        ranks = df.groupby('year')['total'].rank(ascending=False, method='first')
-
-        # Calculate max size of circles to avoid overlapping along x-axis
-        min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
-        max_radius_screen_units = width / (max_year - min_year + 1)
-        size_scaling_coefficient = max_radius_screen_units / np.log(df['total']).max()
-
-        # NOTE: 'comp' column is used as string because GroupFilter supports
-        #       only categorical values (needed to color top cited papers by components)
-        d = ColumnDataSource(data=dict(id=df['id'], title=df['title'], authors=df['authors'],
-                                       year=df['year'].replace(np.nan, "Undefined"),
-                                       total=df['total'], comp=df['comp'].astype(str), pos=ranks,
-                                       size=np.log(df['total']) * size_scaling_coefficient))
-        return d
-
     def __serve_scatter_article_layout(self, ds, year_range, title, width=PLOT_WIDTH):
         min_year, max_year = year_range
         p = figure(tools=TOOLS, toolbar_location="above",
