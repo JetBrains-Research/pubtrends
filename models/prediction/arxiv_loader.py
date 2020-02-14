@@ -1,8 +1,10 @@
 import html
+import logging
 
 from models.keypaper.ss_loader import SemanticScholarLoader
-from models.keypaper.utils import preprocess_search_query, SORT_MOST_RELEVANT, SORT_MOST_CITED, \
-    SORT_MOST_RECENT
+from models.keypaper.utils import SORT_MOST_CITED, SORT_MOST_RECENT
+
+logger = logging.getLogger(__name__)
 
 
 class ArxivLoader(SemanticScholarLoader):
@@ -41,7 +43,7 @@ class ArxivLoader(SemanticScholarLoader):
                 LIMIT {limit};
             '''
 
-        self.progress.debug(f'Search query\n{query}', current=current, task=task)
+        logger.debug(f'Search query\n{query}')
 
         with self.neo4jdriver.session() as session:
             ids = [str(r['ssid']) for r in session.run(query)]

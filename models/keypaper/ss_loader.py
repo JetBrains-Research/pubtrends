@@ -1,4 +1,5 @@
 import html
+import logging
 import re
 from collections import Iterable
 
@@ -8,6 +9,8 @@ import pandas as pd
 from models.keypaper.utils import SORT_MOST_CITED, SORT_MOST_RECENT, SORT_MOST_RELEVANT
 from .loader import Loader
 from .utils import crc32, preprocess_search_query
+
+logger = logging.getLogger(__name__)
 
 
 class SemanticScholarLoader(Loader):
@@ -102,14 +105,14 @@ class SemanticScholarLoader(Loader):
         with self.neo4jdriver.session() as session:
             pub_df = pd.DataFrame(session.run(query).data())
         if len(pub_df) == 0:
-            self.progress.debug(f'Failed to load publications.', current=current, task=task)
+            logger.debug(f'Failed to load publications.')
             pub_df = pd.DataFrame(columns=['id', 'crc32id', 'pmid', 'title', 'abstract', 'year', 'type', 'aux'])
         else:
-            self.progress.debug(f'Found {len(pub_df)} publications in the local database', current=current, task=task)
+            logger.debug(f'Found {len(pub_df)} publications in the local database')
             if np.any(pub_df[['id', 'title']].isna()):
-                self.progress.debug('Detected paper(s) without ID or title', current=current, task=task)
+                logger.debug('Detected paper(s) without ID or title')
                 pub_df.dropna(subset=['id', 'title'], inplace=True)
-                self.progress.debug(f'Correct publications {len(pub_df)}', current=current, task=task)
+                logger.debug(f'Correct publications {len(pub_df)}')
             pub_df = Loader.process_publications_dataframe(pub_df)
             # Hack for missing type in SS, see https://github.com/JetBrains-Research/pubtrends/issues/200
             pub_df['type'] = 'Article'
@@ -132,7 +135,7 @@ class SemanticScholarLoader(Loader):
             cit_stats_df = pd.DataFrame(session.run(query).data())
 
         if len(cit_stats_df) == 0:
-            self.progress.debug(f'Failed to load citations statistics.', current=current, task=task)
+            logger.debug(f'Failed to load citations statistics.')
             cit_stats_df = pd.DataFrame(columns=['id', 'year', 'count'])
         else:
             self.progress.info(f'Found {cit_stats_df.shape[0]} records of citations by year',
@@ -165,7 +168,7 @@ class SemanticScholarLoader(Loader):
             cit_df = pd.DataFrame(session.run(query).data())
 
         if len(cit_df) == 0:
-            self.progress.debug(f'Failed to load citations.', current=current, task=task)
+            logger.debug(f'Failed to load citations.')
             cit_df = pd.DataFrame(columns=['id_in', 'id_out'])
         else:
             self.progress.info(f'Found {len(cit_df)} citations', current=current, task=task)
@@ -202,12 +205,12 @@ class SemanticScholarLoader(Loader):
                         cocit_data.append((citing, cited[i], cited[j], year))
 
         if len(cocit_data) == 0:
-            self.progress.debug(f'Failed to load cocitations.', current=current, task=task)
+            logger.debug(f'Failed to load cocitations.')
 
-        self.progress.debug(f'Loaded {lines} lines of citing info', current=current, task=task)
+        logger.debug(f'Loaded {lines} lines of citing info')
         cocit_df = pd.DataFrame(cocit_data, columns=['citing', 'cited_1', 'cited_2', 'year'])
         if len(cocit_data) == 0:
-            self.progress.debug(f'Failed to load cocitations.', current=current, task=task)
+            logger.debug(f'Failed to load cocitations.')
         else:
             self.progress.info(f'Found {len(cocit_df)} co-cited pairs of papers', current=current, task=task)
 

@@ -17,7 +17,7 @@ class TestSemanticScholarLoader(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.loader.set_progress_logger(logging.getLogger(__name__))
+        cls.loader.set_progress(logging.getLogger(__name__))
 
         # Text search is not tested, imitating search results
         cls.ids = list(map(lambda article: article.ssid, required_articles))

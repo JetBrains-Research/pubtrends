@@ -18,7 +18,7 @@ class Loader(Connector, metaclass=ABCMeta):
         self.max_number_of_cocitations = pubtrends_config.max_number_of_cocitations
         self.progress = None
 
-    def set_progress_logger(self, pl):
+    def set_progress(self, pl):
         self.progress = pl
 
     @abstractmethod

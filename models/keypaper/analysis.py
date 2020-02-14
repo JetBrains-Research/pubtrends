@@ -1,4 +1,5 @@
 import community
+import logging
 import networkx as nx
 import numpy as np
 import pandas as pd
@@ -7,9 +8,11 @@ from collections import Counter
 
 from models.prediction.arxiv_loader import ArxivLoader
 from .pm_loader import PubmedLoader
-from .progress_logger import ProgressLogger
+from .progress import Progress
 from .ss_loader import SemanticScholarLoader
 from .utils import split_df_list, get_frequent_tokens, get_topics_description, get_tfidf_words
+
+logger = logging.getLogger(__name__)
 
 
 class KeyPaperAnalyzer:
@@ -36,11 +39,11 @@ class KeyPaperAnalyzer:
         self.config = config
         self.experimental = config.experimental
         # 1 - visualization step
-        self.progress = ProgressLogger(1 + KeyPaperAnalyzer.TOTAL_STEPS +
-                                       (KeyPaperAnalyzer.EXPERIMENTAL_STEPS if self.experimental else 0))
+        self.progress = Progress(1 + KeyPaperAnalyzer.TOTAL_STEPS +
+                                 (KeyPaperAnalyzer.EXPERIMENTAL_STEPS if self.experimental else 0))
 
         self.loader = loader
-        loader.set_progress_logger(self.progress)
+        loader.set_progress(self.progress)
 
         # Determine source to provide correct URLs to articles
         if isinstance(self.loader, PubmedLoader):
@@ -116,7 +119,7 @@ class KeyPaperAnalyzer:
         self.CG = self.build_cocitation_graph(cocit_grouped_df, add_citation_edges=True, current=8, task=task)
 
         if len(self.CG.nodes()) == 0:
-            self.progress.debug("Co-citations graph is empty", current=9, task=task)
+            logger.debug("Co-citations graph is empty")
             self.progress.info("Not enough papers to process topics analysis", current=9, task=task)
             self.df['comp'] = 0  # Technical value for top authors and papers analysis
             self.df_kwd = pd.DataFrame({'comp': [0], 'kwd': ['']})
@@ -124,7 +127,7 @@ class KeyPaperAnalyzer:
             # Perform subtopic analysis and get subtopic descriptions
             partition, n_components_merged = self.subtopic_analysis(self.CG, current=9, task=task)
             # Get descriptions for subtopics
-            self.progress.debug(f'Computing subtopics descriptions by top cited papers', current=9, task=task)
+            logger.debug(f'Computing subtopics descriptions by top cited papers')
             most_cited_per_comp = self.get_most_cited_papers_for_comps(self.df, partition)
             # Compute topics TF-IDF metrics
             tfidf_per_comp = get_topics_description(self.df, most_cited_per_comp, query, self.TEXT_WORDS)
@@ -139,7 +142,7 @@ class KeyPaperAnalyzer:
             kwds = [(sort_order[comp], ','.join([f'{t}:{max(1e-3, v):.3f}' for t, v in vs[:self.TOPIC_WORDS]]))
                     for comp, vs in tfidf_per_comp.items()]
             self.df_kwd = pd.DataFrame(kwds, columns=['comp', 'kwd'])
-            self.progress.debug(f'Components description\n{self.df_kwd["kwd"]}', current=10, task=task)
+            logger.debug(f'Components description\n{self.df_kwd["kwd"]}')
             # Update df with information for all papers
 
         # Perform PageRank analysis
@@ -182,13 +185,12 @@ class KeyPaperAnalyzer:
 
         cit_stats_df['total'] = cit_stats_df.iloc[:, 1:].sum(axis=1)
         cit_stats_df = cit_stats_df.sort_values(by='total', ascending=False)
-        self.progress.debug(f'Loaded citation stats for {len(cit_stats_df)} of {n_papers} papers',
-                            current=current, task=task)
+        logger.debug(f'Loaded citation stats for {len(cit_stats_df)} of {n_papers} papers')
 
         return cit_stats_df
 
     def build_cocit_grouped_df(self, cocit_df, current=0, task=None):
-        self.progress.debug(f'Aggregating co-citations', current=current, task=task)
+        logger.debug(f'Aggregating co-citations')
         cocit_grouped_df = cocit_df.groupby(['cited_1', 'cited_2', 'year']).count().reset_index()
         cocit_grouped_df = cocit_grouped_df.pivot_table(index=['cited_1', 'cited_2'],
                                                         columns=['year'], values=['citing']).reset_index()
@@ -255,22 +257,20 @@ class KeyPaperAnalyzer:
     def subtopic_analysis(self, cocitation_graph, current=0, task=None):
         self.progress.info(f'Extracting subtopics from co-citation graph', current=current, task=task)
         connected_components = nx.number_connected_components(cocitation_graph)
-        self.progress.debug(f'Co-citation graph has {connected_components} connected components',
-                            current=current, task=task)
+        logger.debug(f'Co-citation graph has {connected_components} connected components')
 
         # Graph clustering via Louvain community algorithm
         partition_louvain = community.best_partition(cocitation_graph, random_state=KeyPaperAnalyzer.SEED)
-        self.progress.debug(f'Found {len(set(partition_louvain.values()))} components', current=current, task=task)
+        logger.debug(f'Found {len(set(partition_louvain.values()))} components')
 
         # Calculate modularity for partition
         modularity = community.modularity(partition_louvain, cocitation_graph)
-        self.progress.debug(f'Graph modularity (possible range is [-1, 1]): {modularity :.3f}',
-                            current=current, task=task)
+        logger.debug(f'Graph modularity (possible range is [-1, 1]): {modularity :.3f}')
 
         # Merge small components to 'Other'
         partition, n_components_merged = self.merge_components(partition_louvain)
         partition_counter = Counter(partition.values())
-        self.progress.debug(f'Merged components sizes {partition_counter}', current=current, task=task)
+        logger.debug(f'Merged components sizes {partition_counter}')
         return partition, n_components_merged
 
     def get_missing_components(self, df, partition, tfidf_per_comp, comps_merged, n_words=TEXT_WORDS,
@@ -292,8 +292,7 @@ class KeyPaperAnalyzer:
             # Get component closest by text (max dot product)
             missing_comps[pid] = comps_counter.most_common(1)[0][0]
         missing_comps_counter = Counter(missing_comps.values())
-        self.progress.debug(f'New assigned topics {missing_comps_counter}', current=current, task=task)
-        self.progress.debug(f'Done assignment missing topics', current=current, task=task)
+        logger.debug(f'Done assigned missing topics {missing_comps_counter}')
         return missing_comps
 
     def update_components(self, partition, n_components_merged, missing_comps, current=0, task=None):
@@ -306,8 +305,7 @@ class KeyPaperAnalyzer:
         comp_sizes = {c: sum([partition_full[node] == c for node in partition_full.keys()])
                       for c in components}
         for k, v in comp_sizes.items():
-            self.progress.debug(f'Cluster {k}: {v} ({int(100 * v / len(partition_full))}%)',
-                                current=current, task=task)
+            logger.debug(f'Cluster {k}: {v} ({int(100 * v / len(partition_full))}%)')
         return partition_full, comp_other, components, comp_sizes, sort_order
 
     @staticmethod
@@ -391,8 +389,7 @@ class KeyPaperAnalyzer:
         n_components_merged = {}
         cg = {}
 
-        self.progress.debug(f"Years when subtopics are studied: {', '.join([str(year) for year in year_range])}",
-                            current=current, task=task)
+        logger.debug(f"Subtopics evolution years: {', '.join([str(year) for year in year_range])}")
 
         # Use results of subtopic analysis for current year, perform analysis for other years
         years_processed = 1
@@ -409,8 +406,7 @@ class KeyPaperAnalyzer:
                 evolution_series.append(pd.Series(p))
                 years_processed += 1
             else:
-                self.progress.debug(f'Total number of papers is less than {min_papers}, stopping.',
-                                    current=current, task=task)
+                logger.debug(f'Total number of papers is less than {min_papers}, stopping.')
                 break
 
         year_range = year_range[:years_processed]
@@ -439,7 +435,7 @@ class KeyPaperAnalyzer:
         evolution_kwds = {}
         for col in evolution_df:
             if col in year_range:
-                self.progress.debug(f'Generating subtopics descriptions for year {col}', current=current, task=task)
+                logger.debug(f'Generating subtopics descriptions for year {col}')
                 if isinstance(col, (int, float)):
                     evolution_df[col] = evolution_df[col].apply(int)
                     comps = evolution_df.groupby(col)['id'].apply(list).to_dict()
@@ -448,15 +444,14 @@ class KeyPaperAnalyzer:
         return evolution_kwds
 
     def merge_components(self, partition, granularity=TOPIC_GRANULARITY, current=0, task=None):
-        self.progress.debug(f'Merging components smaller than {granularity} to "Other" component',
-                            current=current, task=task)
+        logger.debug(f'Merging components smaller than {granularity} to "Other" component')
         threshold = int(granularity * len(partition))
         components = set(partition.values())
         comp_sizes = {c: sum([partition[node] == c for node in partition.keys()]) for c in components}
         comp_to_merge = {com: comp_sizes[com] <= threshold for com in components}
         n_components_merged = sum(comp_to_merge.values())
         if n_components_merged > 1:
-            self.progress.debug(f'Reassigning components', current=current, task=task)
+            logger.debug(f'Reassigning components')
             partition_merged = {}
             new_comps = {}
             ci = 1  # Other component is 0.
@@ -468,29 +463,28 @@ class KeyPaperAnalyzer:
                     new_comps[v] = ci
                     ci += 1
                 partition_merged[k] = new_comps[v]
-            self.progress.debug(f'Got {len(set(partition_merged.values()))} components',
-                                current=current, task=task)
+            logger.debug(f'Got {len(set(partition_merged.values()))} components')
         else:
-            self.progress.debug(f'No need to reassign components', current=current, task=task)
+            logger.debug(f'No need to reassign components')
             partition_merged = partition
         return partition_merged, n_components_merged
 
     def sort_components(self, partition_merged, n_components_merged, current=0, task=None):
-        self.progress.debug('Sorting components by size descending', current=current, task=task)
+        logger.debug('Sorting components by size descending')
         components = set(partition_merged.values())
         comp_sizes = {c: sum([partition_merged[node] == c for node in partition_merged.keys()]) for c in components}
         # Hack to sort map values by key
         keysort = lambda seq: sorted(range(len(seq)), key=seq.__getitem__, reverse=True)
         sorted_comps = list(keysort(list(comp_sizes.values())))
         sort_order = dict(zip(sorted_comps, range(len(components))))
-        self.progress.debug(f'Components reordering by size: {sort_order}', current=current, task=task)
+        logger.debug(f'Components reordering by size: {sort_order}')
         sorted_partition = {node: sort_order[c] for node, c in partition_merged.items()}
 
         if n_components_merged > 0:
             comp_other = sorted_comps.index(0)  # Other component is 0!
         else:
             comp_other = None
-        self.progress.debug(f'Component OTHER: {comp_other}', current=current, task=task)
+        logger.debug(f'Component OTHER: {comp_other}')
         return sort_order, sorted_partition, comp_other
 
     def popular_journals(self, df, n=TOP_JOURNALS, current=0, task=None):

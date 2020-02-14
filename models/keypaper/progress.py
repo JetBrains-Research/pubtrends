@@ -2,7 +2,7 @@ import logging
 from io import StringIO
 
 
-class ProgressLogger:
+class Progress:
     def __init__(self, total):
         self.stream = StringIO()
         formatter = logging.Formatter('[%(asctime)s] %(message)s', "%H:%M:%S")
@@ -16,22 +16,13 @@ class ProgressLogger:
         if message:
             self.logger.info(message)
 
-        self.update_state(current, task=task)
-
-    def debug(self, message, current, task=None):
-        if message:
-            self.logger.debug(f'DEBUG {message}')
-
-        self.update_state(current, task=task)
-
-    def done(self, message='Done', task=None):
-        self.info(message, self.total, task)
-
-    def update_state(self, current, task=None):
         if task:
             self.handler.flush()
             task.update_state(state='PROGRESS',
                               meta={'current': current, 'total': self.total, 'log': self.stream.getvalue()})
+
+    def done(self, message='Done', task=None):
+        self.info(message, self.total, task)
 
     def remove_handler(self):
         self.logger.removeHandler(self.handler)

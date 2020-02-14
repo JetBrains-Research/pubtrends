@@ -6,7 +6,7 @@ from celery import Celery, current_task
 from models.keypaper.analysis import KeyPaperAnalyzer
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.pm_loader import PubmedLoader
-from models.keypaper.progress_logger import ProgressLogger
+from models.keypaper.progress import Progress
 from models.keypaper.ss_loader import SemanticScholarLoader
 from models.keypaper.utils import SORT_MOST_CITED
 from models.keypaper.visualization import visualize_analysis
@@ -60,8 +60,8 @@ def analyze_id_list(source, id_list, zoom, query):
 @celery.task(name='find_paper_async')
 def find_paper_async(source, key, value):
     loader = get_loader(source, PUBTRENDS_CONFIG)
-    progress = ProgressLogger(total=2)
-    loader.set_progress_logger(progress)
+    progress = Progress(total=2)
+    loader.set_progress(progress)
     try:
         result = loader.find(key, value)
         progress.info('Done', current=2)
