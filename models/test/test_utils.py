@@ -67,10 +67,18 @@ class TestUtils(unittest.TestCase):
     def test_preprocess_search_valid_source(self, terms, expected):
         self.assertEqual(expected, preprocess_search_query(terms, 0))
 
-    def test_preprocess_search_too_many_words(self):
+    def test_preprocess_search_too_few_words(self):
         self.assertEqual('"\'Foo\'"', preprocess_search_query('Foo', 1))
         with self.assertRaises(Exception):
             preprocess_search_query('Foo', 2)
+
+    def test_preprocess_search_too_few_words_whitespaces(self):
+        with self.assertRaises(Exception):
+            preprocess_search_query('Foo  ', 2)
+
+    def test_preprocess_search_too_few_words_stems(self):
+        with self.assertRaises(Exception):
+            preprocess_search_query('Humans Humanity', 2)
 
     def test_preprocess_search_illegal_string(self):
         with self.assertRaises(Exception):

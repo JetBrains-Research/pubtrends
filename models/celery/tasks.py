@@ -1,3 +1,4 @@
+import html
 import os
 
 from celery import Celery, current_task
@@ -29,9 +30,13 @@ def analyze_search_terms(source, query, sort=None, limit=None):
         analyzer.analyze_papers(ids, query, current_task)
     finally:
         loader.close_connection()
-        analyzer.teardown()
 
-    return visualize_analysis(analyzer), analyzer.dump()
+    analyzer.progress.info('Visualizing', current=analyzer.progress.total - 1, task=current_task)
+    visualization = visualize_analysis(analyzer)
+    dump = analyzer.dump()
+    analyzer.progress.done(task=current_task)
+    analyzer.teardown()
+    return visualization, dump, html.unescape(analyzer.progress.log())
 
 
 @celery.task(name='analyze_id_list')
@@ -43,9 +48,13 @@ def analyze_id_list(source, id_list, zoom, query):
         analyzer.analyze_papers(ids, query, current_task)
     finally:
         loader.close_connection()
-        analyzer.teardown()
 
-    return visualize_analysis(analyzer), analyzer.dump()
+    analyzer.progress.info('Visualizing', current=analyzer.progress.total - 1, task=current_task)
+    visualization = visualize_analysis(analyzer)
+    dump = analyzer.dump()
+    analyzer.progress.done(task=current_task)
+    analyzer.teardown()
+    return visualization, dump, html.unescape(analyzer.progress.log())
 
 
 @celery.task(name='find_paper_async')

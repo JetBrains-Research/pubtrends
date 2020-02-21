@@ -9,7 +9,7 @@ from models.prediction.arxiv_loader import ArxivLoader
 from .pm_loader import PubmedLoader
 from .progress_logger import ProgressLogger
 from .ss_loader import SemanticScholarLoader
-from .utils import get_subtopic_descriptions, get_tfidf_words, split_df_list, get_most_common_tokens
+from .utils import split_df_list, get_frequent_tokens, get_topics_description, get_tfidf_words
 
 
 class KeyPaperAnalyzer:
@@ -20,12 +20,12 @@ class KeyPaperAnalyzer:
     TOP_CITED_PAPERS = 50
     TOP_CITED_PAPERS_FRACTION = 0.1
 
-    CITATION_WEIGHT_IN_COCITATION_GRAPH = 0.1
+    CITATION_WEIGHT_IN_COCITATION_GRAPH = 0.01
 
     TOPIC_GRANULARITY = 0.05
     TOPIC_PAPERS = 50
     TOPIC_WORDS = 20
-    TOPIC_TEXT_MATCH_WORDS = 100
+    TEXT_WORDS = 100
 
     TOP_JOURNALS = 50
     TOP_AUTHORS = 50
@@ -35,7 +35,8 @@ class KeyPaperAnalyzer:
     def __init__(self, loader, config, test=False):
         self.config = config
         self.experimental = config.experimental
-        self.progress = ProgressLogger(KeyPaperAnalyzer.TOTAL_STEPS +
+        # 1 - visualization step
+        self.progress = ProgressLogger(1 + KeyPaperAnalyzer.TOTAL_STEPS +
                                        (KeyPaperAnalyzer.EXPERIMENTAL_STEPS if self.experimental else 0))
 
         self.loader = loader
@@ -50,9 +51,6 @@ class KeyPaperAnalyzer:
             self.source = 'arxiv'
         elif not test:
             raise TypeError("loader should be either PubmedLoader or SemanticScholarLoader")
-
-    def log(self):
-        return self.progress.stream.getvalue()
 
     def teardown(self):
         self.progress.remove_handler()
@@ -128,20 +126,21 @@ class KeyPaperAnalyzer:
             # Get descriptions for subtopics
             self.progress.debug(f'Computing subtopics descriptions by top cited papers', current=9, task=task)
             most_cited_per_comp = self.get_most_cited_papers_for_comps(self.df, partition)
-            kwds = get_subtopic_descriptions(self.df, most_cited_per_comp)
-            # Update non set components
-            missing_comps = self.get_missing_components(self.df, partition, kwds, n_components_merged > 0,
+            # Compute topics TF-IDF metrics
+            tfidf_per_comp = get_topics_description(self.df, most_cited_per_comp, query, self.TEXT_WORDS)
+            # Update papers non assigned with components
+            missing_comps = self.get_missing_components(self.df, partition, tfidf_per_comp, n_components_merged > 0,
                                                         current=10, task=task)
             self.partition, self.comp_other, self.components, self.comp_sizes, sort_order = self.update_components(
                 partition, n_components_merged, missing_comps, task
             )
-            # Update descriptions with components reordering
-            kwds_descr = [(sort_order[k], ','.join([f'{w}:{max(1e-3, f):.3f}' for w, f in v[:self.TOPIC_WORDS]]))
-                          for k, v in sorted(kwds.items(), key=lambda i: i[0])]
-            self.df_kwd = pd.DataFrame(kwds_descr, columns=['comp', 'kwd'])
+            self.df = self.merge_col(self.df, self.partition, col='comp')
+            # Prepare information for word cloud
+            kwds = [(sort_order[comp], ','.join([f'{t}:{max(1e-3, v):.3f}' for t, v in vs[:self.TOPIC_WORDS]]))
+                    for comp, vs in tfidf_per_comp.items()]
+            self.df_kwd = pd.DataFrame(kwds, columns=['comp', 'kwd'])
             self.progress.debug(f'Components description\n{self.df_kwd["kwd"]}', current=10, task=task)
             # Update df with information for all papers
-            self.df = self.merge_col(self.df, self.partition, col='comp')
 
         # Perform PageRank analysis
         pr = self.pagerank(self.G, current=11, task=task)
@@ -168,9 +167,6 @@ class KeyPaperAnalyzer:
             self.evolution_kwds = self.subtopic_evolution_descriptions(
                 self.df, self.evolution_df, self.evolution_year_range, self.query, current=18, task=task
             )
-            self.progress.info('Done', current=19, task=task)
-        else:
-            self.progress.info('Done', current=17, task=task)
 
     def build_cit_stats_df(self, cit_stats_df_from_query, n_papers, current=None, task=None):
         # Get citation stats with columns 'id', year_1, ..., year_N and fill NaN with 0
@@ -277,22 +273,24 @@ class KeyPaperAnalyzer:
         self.progress.debug(f'Merged components sizes {partition_counter}', current=current, task=task)
         return partition, n_components_merged
 
-    def get_missing_components(self, df, partition, kwds, comps_merged, n_words=TOPIC_TEXT_MATCH_WORDS,
+    def get_missing_components(self, df, partition, tfidf_per_comp, comps_merged, n_words=TEXT_WORDS,
                                current=0, task=None):
         no_comps = [pid for pid in df['id'] if pid not in partition]
         self.progress.info(f'Assigning topics for all publications', current=current, task=task)
         missing_comps = {}
         for pid in no_comps:
-            indx_pid = df['id'] == pid
-            pid_mcts = get_most_common_tokens(
-                df.loc[indx_pid]['title'] + ' ' + df.loc[indx_pid]['abstract'], 1.0)
+            df_pid = df.loc[df['id'] == pid]
+            # Get all the tokens for paper
+            pid_frequent_tokens = get_frequent_tokens(df_pid, self.query, 1.0)
             comps_counter = Counter()
-            for c, ckwds in kwds.items():
-                comps_counter[c] += sum([pid_mcts.get(w, 0) * f for w, f in ckwds[:n_words]])
-                if comps_merged and c == 0:  # Other component marker
-                    comps_counter[c] += 1e-10
-            match_comp = comps_counter.most_common(1)[0][0]  # Get component closest by text
-            missing_comps[pid] = match_comp
+            for comp, comp_tfidf in tfidf_per_comp.items():
+                # Compute dot product of tokens frequencies and TF-IDF for each component
+                comps_counter[comp] += sum([pid_frequent_tokens.get(token, 0) * tfidf
+                                            for token, tfidf in comp_tfidf[:n_words]])
+                if comps_merged and comp == 0:  # Other component marker
+                    comps_counter[comp] += 1e-10
+            # Get component closest by text (max dot product)
+            missing_comps[pid] = comps_counter.most_common(1)[0][0]
         missing_comps_counter = Counter(missing_comps.values())
         self.progress.debug(f'New assigned topics {missing_comps_counter}', current=current, task=task)
         self.progress.debug(f'Done assignment missing topics', current=current, task=task)
@@ -445,7 +443,7 @@ class KeyPaperAnalyzer:
                 if isinstance(col, (int, float)):
                     evolution_df[col] = evolution_df[col].apply(int)
                     comps = evolution_df.groupby(col)['id'].apply(list).to_dict()
-                    evolution_kwds[col] = get_tfidf_words(df, comps, query, size=keywords)
+                    evolution_kwds[col] = get_tfidf_words(df, comps, query, n_words=100, size=keywords)
 
         return evolution_kwds
 

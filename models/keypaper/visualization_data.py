@@ -246,7 +246,7 @@ class PlotPreprocessor:
         else:
             df_counts = df_local[['year', 'total', 'count']].groupby(['year', 'total']).sum()
         df_counts['delta'] = 0
-        dft = pd.DataFrame(columns=columns + ['total_fixed'])
+        dft = pd.DataFrame(columns=columns + ['y'])
         for _, r in df_local.iterrows():
             id, title, year, type, total, authors, comp, _ = r  # Ignore count
             if components_split:
@@ -254,7 +254,10 @@ class PlotPreprocessor:
             else:
                 cd = df_counts.loc[(year, total)]
             c, d = cd['count'], cd['delta']
-            dft.loc[len(dft)] = (id, title, year, type, total, authors, comp, total + (d - int(c / 2)) / float(c))
+            # Make papers with same year and citations have different y values
+            dft.loc[len(dft)] = (id, title, year, type, total, authors, comp,
+                                 # Fix to show not cited papers on log axis
+                                 max(1, total) + (d - int(c / 2)) / float(c))
             cd['delta'] += 1  # Increase delta
         df_local = dft
 

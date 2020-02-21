@@ -113,7 +113,7 @@ class PubmedLoader(Loader):
         with self.neo4jdriver.session() as session:
             pub_df = pd.DataFrame(session.run(query).data())
         if len(pub_df) == 0:
-            self.progress.debug(f'Failed to load publications.')
+            self.progress.debug(f'Failed to load publications.', current=current, task=task)
             pub_df = pd.DataFrame(columns=['id', 'title', 'abstract', 'year', 'type', 'aux'])
         else:
             self.progress.debug(f'Found {len(pub_df)} publications in the local database', current=current, task=task)
@@ -140,7 +140,7 @@ class PubmedLoader(Loader):
         with self.neo4jdriver.session() as session:
             cit_stats_df = pd.DataFrame(session.run(query).data())
         if len(cit_stats_df) == 0:
-            self.progress.debug(f'Failed to load citations statistics.')
+            self.progress.debug(f'Failed to load citations statistics.', current=current, task=task)
             cit_stats_df = pd.DataFrame(columns=['id', 'year', 'count'])
         else:
             self.progress.info(f'Found {cit_stats_df.shape[0]} records of citations by year',
@@ -170,7 +170,7 @@ class PubmedLoader(Loader):
         with self.neo4jdriver.session() as session:
             cit_df = pd.DataFrame(session.run(query).data())
         if len(cit_df) == 0:
-            self.progress.debug(f'Failed to load citations.')
+            self.progress.debug(f'Failed to load citations.', current=current, task=task)
             cit_df = pd.DataFrame(columns=['id_in', 'id_out'])
         else:
             self.progress.info(f'Found {len(cit_df)} citations', current=current, task=task)
