@@ -90,7 +90,8 @@ class KeyPaperAnalyzer:
         self.pub_df = self.loader.load_publications(ids, current=2, task=task)
         if len(self.pub_df) == 0:
             raise RuntimeError(f"Nothing found in DB for ids: {ids}")
-        self.n_papers = len(self.pub_df)
+        self.ids = set(self.pub_df['id'])  # Limit ids to existing papers only!
+        self.n_papers = len(self.ids)
         self.pub_types = list(set(self.pub_df['type']))
 
         # Load data about citations statistics (including outer papers)

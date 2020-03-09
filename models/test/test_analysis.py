@@ -255,6 +255,16 @@ class TestKeyPaperAnalyzerSingle(unittest.TestCase):
         self.assertEqual('{"comp":{"0":0},"kwd":{"0":""}}', dump['df_kwd'])
 
 
+class TestKeyPaperAnalyzerMissingPaper(unittest.TestCase):
+    PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
+
+    def test_missing_paper(self):
+        analyzer = KeyPaperAnalyzer(MockLoaderSingle(), TestKeyPaperAnalyzerSingle.PUBTRENDS_CONFIG, test=True)
+        good_ids = analyzer.search_terms(query='query')
+        analyzer.analyze_papers(list(good_ids) + ['non-existing-id'], 'query')
+        self.assertEqual(good_ids, analyzer.ids)
+
+
 class TestKeyPaperAnalyzerEmpty(unittest.TestCase):
     PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
 
