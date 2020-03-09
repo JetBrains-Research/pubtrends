@@ -319,7 +319,7 @@ def preprocess_search_query(query, min_search_words):
     processed = re.sub('[ ]{2,}', ' ', query.strip())  # Whitespaces normalization, see #215
     if len(processed) == 0:
         raise Exception('Empty query')
-    processed = re.sub('[^0-9a-zA-Z"\\-\\.+, ]', '', processed)  # Remove unknown symbols
+    processed = re.sub('[^0-9a-zA-Z\'"\\-\\.+, ]', '', processed)  # Remove unknown symbols
     if len(processed) == 0:
         raise Exception('Illegal character(s), only English letters, numbers, '
                         f'and +- signs are supported. Query: {query}')
@@ -329,7 +329,7 @@ def preprocess_search_query(query, min_search_words):
     if re.match('^"[^"]+"$', processed):
         return '\'"' + re.sub('"', '', processed) + '"\''
     elif re.match('^[^"]+$', processed):
-        words = processed.split(' ')
+        words = [re.sub("'s$", '', w) for w in processed.split(' ')]  # Fix apostrophes
         stemmer = SnowballStemmer('english')
         stems = set([stemmer.stem(word) for word in words])
         if len(stems) < min_search_words:

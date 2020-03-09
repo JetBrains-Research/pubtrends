@@ -62,6 +62,7 @@ class TestUtils(unittest.TestCase):
         ('"Foo Bar"', '\'"Foo Bar"\''),
         ('Foo-Bar', '"\'Foo-Bar\'"'),
         ('&^Foo-Bar', '"\'Foo-Bar\'"'),
+        ("Alzheimer's disease", '"\'Alzheimer\' AND \'disease\'"')
     ])
     def test_preprocess_search_valid_source(self, terms, expected):
         self.assertEqual(expected, preprocess_search_query(terms, 0))
