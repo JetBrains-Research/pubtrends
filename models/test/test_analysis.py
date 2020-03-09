@@ -260,9 +260,9 @@ class TestKeyPaperAnalyzerMissingPaper(unittest.TestCase):
 
     def test_missing_paper(self):
         analyzer = KeyPaperAnalyzer(MockLoaderSingle(), TestKeyPaperAnalyzerSingle.PUBTRENDS_CONFIG, test=True)
-        good_ids = analyzer.search_terms(query='query')
-        analyzer.analyze_papers(list(good_ids) + ['non-existing-id'], 'query')
-        self.assertEqual(good_ids, analyzer.ids)
+        good_ids = list(analyzer.search_terms(query='query'))
+        analyzer.analyze_papers(good_ids + ['non-existing-id'], 'query')
+        self.assertEqual(good_ids, list(analyzer.ids))
 
 
 class TestKeyPaperAnalyzerEmpty(unittest.TestCase):

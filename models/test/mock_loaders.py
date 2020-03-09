@@ -50,7 +50,7 @@ class MockLoader(Loader):
         raise Exception('Not implemented')
 
     def search(self, terms, limit=None, sort=None, current=1, task=None):
-        return [1, 2, 3, 4, 5], True
+        return ['1', '2', '3', '4', '5']
 
     def load_publications(self, ids=None, current=1, task=None):
         return pd.DataFrame(PUBLICATION_DATA, columns=['id', 'year', 'title', 'abstract', 'type', 'authors', 'journal'])
@@ -78,7 +78,7 @@ class MockLoaderSingle(Loader):
         raise Exception('Not implemented')
 
     def search(self, terms, limit=None, sort=None, current=1, task=None):
-        return [1, 2], True
+        return ['1']
 
     def load_publications(self, ids=None, current=1, task=None):
         return pd.DataFrame(PUBLICATION_DATA[0:1],
@@ -102,7 +102,7 @@ class MockLoaderEmpty(Loader):
         super(MockLoaderEmpty, self).__init__(config, connect=False)
 
     def search(self, terms, limit=None, sort=None, current=1, task=None):
-        return [], True
+        return []
 
     def find(self, key, value, current=1, task=None):
         raise Exception('Not implemented')
