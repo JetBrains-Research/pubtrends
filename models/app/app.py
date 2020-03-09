@@ -37,7 +37,7 @@ def status():
         if job is None:
             return json.dumps({
                 'state': 'FAILURE',
-                'message': f'Unknown search id {jobid}'
+                'message': f'Unknown task id {jobid}'
             })
         if job.state == 'PROGRESS':
             return json.dumps({
@@ -66,7 +66,7 @@ def status():
     # no jobid
     return json.dumps({
         'state': 'FAILURE',
-        'message': f'Unknown search id {jobid}'
+        'message': f'Unknown task id {jobid}'
     })
 
 
@@ -228,16 +228,16 @@ def cancel():
             celery.control.revoke(jobid, terminate=True)
             return json.dumps({
                 'state': 'CANCELLED',
-                'message': f'Successfully cancelled search {jobid}'
+                'message': f'Successfully cancelled task {jobid}'
             })
         else:
             return json.dumps({
                 'state': 'FAILURE',
-                'message': f'Failed to cancel search {jobid}'
+                'message': f'Failed to cancel task {jobid}'
             })
     return json.dumps({
         'state': 'FAILURE',
-        'message': f'Unknown search id'
+        'message': f'Unknown task id'
     })
 
 
