@@ -9,7 +9,7 @@ from models.keypaper.pm_loader import PubmedLoader
 from models.keypaper.ss_loader import SemanticScholarLoader
 from models.test.mock_loaders import MockLoader, COCITATION_GRAPH_EDGES, COCITATION_GRAPH_NODES, \
     CITATION_YEARS, EXPECTED_MAX_GAIN, EXPECTED_MAX_RELATIVE_GAIN, CITATION_GRAPH_NODES, CITATION_GRAPH_EDGES, \
-    MockLoaderEmpty, MockLoaderSingle
+    MockLoaderEmpty, MockLoaderSingle, BIBLIOGRAPHIC_COUPLING_GRAPH_NODES, BIBLIOGRAPHIC_COUPLING_DATA
 
 
 class TestKeyPaperAnalyzer(unittest.TestCase):
@@ -17,11 +17,13 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.analyzer = KeyPaperAnalyzer(MockLoader(), TestKeyPaperAnalyzer.PUBTRENDS_CONFIG, test=True)
+        loader = MockLoader()
+        cls.analyzer = KeyPaperAnalyzer(loader, TestKeyPaperAnalyzer.PUBTRENDS_CONFIG, test=True)
         ids = cls.analyzer.search_terms(query='query')
         cls.analyzer.analyze_papers(ids, 'query')
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.ids)
-        cls.analyzer.G = cls.analyzer.build_citation_graph(cls.analyzer.cit_df)
+        cls.analyzer.citations_graph = cls.analyzer.build_citation_graph(cls.analyzer.cit_df)
+        cls.analyzer.bibliographic_coupling_df = loader.load_bibliographic_coupling(cls.analyzer.ids)
 
     @parameterized.expand([
         ('Pubmed', PubmedLoader(PUBTRENDS_CONFIG), False, 'Pubmed'),
@@ -36,38 +38,74 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
             KeyPaperAnalyzer(MockLoader(), TestKeyPaperAnalyzer.PUBTRENDS_CONFIG, test=False)
 
     def test_build_citation_graph_nodes_count(self):
-        self.assertEqual(self.analyzer.G.number_of_nodes(), len(CITATION_GRAPH_NODES))
+        self.assertEqual(self.analyzer.citations_graph.number_of_nodes(), len(CITATION_GRAPH_NODES))
 
     def test_build_citation_graph_edges_count(self):
-        self.assertEqual(self.analyzer.G.number_of_edges(), len(CITATION_GRAPH_EDGES))
+        self.assertEqual(self.analyzer.citations_graph.number_of_edges(), len(CITATION_GRAPH_EDGES))
 
     def test_build_citation_graph_nodes(self):
-        self.assertCountEqual(list(self.analyzer.G.nodes()), CITATION_GRAPH_NODES)
+        self.assertCountEqual(list(self.analyzer.citations_graph.nodes()), CITATION_GRAPH_NODES)
 
     def test_build_citation_graph_edges(self):
-        self.assertCountEqual(list(self.analyzer.G.edges()), CITATION_GRAPH_EDGES)
-
-    def test_build_cocitation_graph_nodes_count(self):
-        CG = self.analyzer.build_cocitation_graph(self.analyzer.build_cocit_grouped_df(self.analyzer.cocit_df),
-                                                  add_citation_edges=False)
-        self.assertEqual(CG.number_of_nodes(), len(COCITATION_GRAPH_NODES))
-
-    def test_build_cocitation_graph_edges_count(self):
-        CG = self.analyzer.build_cocitation_graph(self.analyzer.build_cocit_grouped_df(self.analyzer.cocit_df),
-                                                  add_citation_edges=False)
-        self.assertEqual(CG.number_of_edges(), len(COCITATION_GRAPH_EDGES))
+        self.assertCountEqual(list(self.analyzer.citations_graph.edges()), CITATION_GRAPH_EDGES)
 
     def test_build_cocitation_graph_nodes(self):
-        CG = self.analyzer.build_cocitation_graph(self.analyzer.build_cocit_grouped_df(self.analyzer.cocit_df),
-                                                  add_citation_edges=False)
-        self.assertCountEqual(list(CG.nodes()), COCITATION_GRAPH_NODES)
+        # Don't add information to the graph
+        self.analyzer.RELATIONS_GRAPH_COCITATION = 1
+        self.analyzer.RELATIONS_GRAPH_BIBLIOGRAPHIC_COUPLING = 0
+        self.analyzer.RELATIONS_GRAPH_CITATION = 0
+        paper_relations_graph = self.analyzer.build_papers_relation_graph(
+            self.analyzer.citations_graph,
+            self.analyzer.build_cocit_grouped_df(self.analyzer.cocit_df),
+            self.analyzer.bibliographic_coupling_df
+        )
+
+        self.assertCountEqual(list(paper_relations_graph.nodes()), COCITATION_GRAPH_NODES)
 
     def test_build_cocitation_graph_edges(self):
-        CG = self.analyzer.build_cocitation_graph(self.analyzer.build_cocit_grouped_df(self.analyzer.cocit_df),
-                                                  add_citation_edges=False)
+        # Don't add information to the graph
+        self.analyzer.RELATIONS_GRAPH_COCITATION = 1
+        self.analyzer.RELATIONS_GRAPH_BIBLIOGRAPHIC_COUPLING = 0
+        self.analyzer.RELATIONS_GRAPH_CITATION = 0
+
+        paper_relations_graph = self.analyzer.build_papers_relation_graph(
+            self.analyzer.citations_graph,
+            self.analyzer.build_cocit_grouped_df(self.analyzer.cocit_df),
+            self.analyzer.bibliographic_coupling_df
+        )
+
         # Convert edge data to networkx format
         expected_edges = [(v, u, {'weight': w}) for v, u, w in COCITATION_GRAPH_EDGES]
-        self.assertCountEqual(list(CG.edges(data=True)), expected_edges)
+        self.assertCountEqual(list(paper_relations_graph.edges(data=True)), expected_edges)
+
+    def test_build_relations_graph_nodes(self):
+        # Don't add information to the graph
+        self.analyzer.RELATIONS_GRAPH_BIBLIOGRAPHIC_COUPLING = 1
+        self.analyzer.RELATIONS_GRAPH_COCITATION = 0
+        self.analyzer.RELATIONS_GRAPH_CITATION = 0
+        paper_relations_graph = self.analyzer.build_papers_relation_graph(
+            self.analyzer.citations_graph,
+            self.analyzer.build_cocit_grouped_df(self.analyzer.cocit_df),
+            self.analyzer.bibliographic_coupling_df
+        )
+
+        self.assertCountEqual(list(paper_relations_graph.nodes()), BIBLIOGRAPHIC_COUPLING_GRAPH_NODES)
+
+    def test_build_relations_graph_edges(self):
+        # Don't add information to the graph
+        self.analyzer.RELATIONS_GRAPH_BIBLIOGRAPHIC_COUPLING = 1
+        self.analyzer.RELATIONS_GRAPH_COCITATION = 0
+        self.analyzer.RELATIONS_GRAPH_CITATION = 0
+
+        paper_relations_graph = self.analyzer.build_papers_relation_graph(
+            self.analyzer.citations_graph,
+            self.analyzer.build_cocit_grouped_df(self.analyzer.cocit_df),
+            self.analyzer.bibliographic_coupling_df
+        )
+
+        # Convert edge data to networkx format
+        expected_edges = [(v, u, {'weight': w}) for v, u, w in BIBLIOGRAPHIC_COUPLING_DATA]
+        self.assertCountEqual(list(paper_relations_graph.edges(data=True)), expected_edges)
 
     def test_find_max_gain_papers_count(self):
         max_gain_count = len(list(self.analyzer.max_gain_df['year'].values))
@@ -97,13 +135,13 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
         self.assertEqual(len(self.analyzer.df), len(self.analyzer.pub_df))
 
     def test_subtopic_analysis_all_nodes_assigned(self):
-        nodes = self.analyzer.CG.nodes()
+        nodes = self.analyzer.paper_relations_graph.nodes()
         for row in self.analyzer.df.itertuples():
             if getattr(row, 'id') in nodes:
                 self.assertGreaterEqual(getattr(row, 'comp'), 0)
 
     def test_subtopic_analysis_missing_nodes_set_to_default(self):
-        nodes = self.analyzer.CG.nodes()
+        nodes = self.analyzer.paper_relations_graph.nodes()
         for row in self.analyzer.df.itertuples():
             if getattr(row, 'id') not in nodes:
                 self.assertEqual(getattr(row, 'comp'), -1)
@@ -191,19 +229,19 @@ class TestKeyPaperAnalyzerSingle(unittest.TestCase):
         ids = cls.analyzer.search_terms(query='query')
         cls.analyzer.analyze_papers(ids, 'query')
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.ids)
-        cls.analyzer.G = cls.analyzer.build_citation_graph(cls.analyzer.cit_df)
+        cls.analyzer.citations_graph = cls.analyzer.build_citation_graph(cls.analyzer.cit_df)
 
     def test_build_citation_graph_nodes_count(self):
-        self.assertEqual(self.analyzer.G.number_of_nodes(), 0)
+        self.assertEqual(self.analyzer.citations_graph.number_of_nodes(), 0)
 
     def test_build_citation_graph_edges_count(self):
-        self.assertEqual(self.analyzer.G.number_of_edges(), 0)
+        self.assertEqual(self.analyzer.citations_graph.number_of_edges(), 0)
 
     def test_build_citation_graph_nodes(self):
-        self.assertCountEqual(list(self.analyzer.G.nodes()), [])
+        self.assertCountEqual(list(self.analyzer.citations_graph.nodes()), [])
 
     def test_build_citation_graph_edges(self):
-        self.assertCountEqual(list(self.analyzer.G.edges()), [])
+        self.assertCountEqual(list(self.analyzer.citations_graph.edges()), [])
 
     def test_find_max_gain_papers_count(self):
         max_gain_count = len(list(self.analyzer.max_gain_df['year'].values))

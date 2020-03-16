@@ -10,12 +10,9 @@ from models.keypaper.utils import extract_authors
 
 class Loader(Connector, metaclass=ABCMeta):
 
-    def __init__(self, pubtrends_config, connect=True):
-        super(Loader, self).__init__(pubtrends_config, connect)
-        self.pubtrends_config = pubtrends_config
-        self.max_number_of_articles = pubtrends_config.max_number_of_articles
-        self.max_number_of_citations = pubtrends_config.max_number_of_citations
-        self.max_number_of_cocitations = pubtrends_config.max_number_of_cocitations
+    def __init__(self, config, connect=True):
+        super(Loader, self).__init__(config, connect)
+        self.config = config
         self.progress = None
 
     def set_progress(self, pl):
@@ -27,7 +24,6 @@ class Loader(Connector, metaclass=ABCMeta):
         Searches single or multiple paper(s) for give search key, value.
         :return: list of ids, i.e. list(String).
         """
-        pass
 
     @abstractmethod
     def search(self, query, limit=None, sort=None, current=1, task=None):
@@ -35,7 +31,6 @@ class Loader(Connector, metaclass=ABCMeta):
         Searches publications by given query.
         :return: list of ids, i.e. list(String).
         """
-        pass
 
     @abstractmethod
     def load_publications(self, ids, current=1, task=None):
@@ -50,7 +45,6 @@ class Loader(Connector, metaclass=ABCMeta):
         Loads all the citations stats for each of given ids.
         :return: dataframe[id(String), year, count]
         """
-        pass
 
     @abstractmethod
     def load_citations(self, ids, current=1, task=None):
@@ -58,13 +52,19 @@ class Loader(Connector, metaclass=ABCMeta):
         Loading INNER citations graph, where all the nodes are inside query of interest.
         :return: dataframe[id_out(String), id_in(String)]
         """
-        pass
 
     @abstractmethod
     def load_cocitations(self, ids, current=1, task=None):
         """
         Loading co-citations graph.
         :return: dataframe[citing(String), cited_1(String), cited_2(String), year]
+        """
+
+    @abstractmethod
+    def load_bibliographic_coupling(self, ids, current=1, task=None):
+        """
+        Loading bibliographic coupling graph.
+        :return: dataframe[citing_1(String), citing_2(String), total]
         """
 
     @abstractmethod

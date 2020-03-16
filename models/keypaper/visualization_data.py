@@ -1,9 +1,10 @@
 import math
-from itertools import product as cart_product
-
+import networkx as nx
 import numpy as np
 import pandas as pd
 from bokeh.models import ColumnDataSource, TableColumn
+from bokeh.palettes import Category20
+from itertools import product as cart_product
 from matplotlib import colors
 
 from .utils import cut_authors_list
@@ -25,11 +26,11 @@ class PlotPreprocessor:
         return "#{0:02x}{1:02x}{2:02x}".format(int(r), int(g), int(b))
 
     @staticmethod
-    def chord_diagram_data(cocitation_graph, df, comps, comp_other, palette):
-        # Co-citation graph nodes and weighted edges
-        nodes = list(cocitation_graph.nodes())
-        edges = list(cocitation_graph.edges())
-        weighted_edges = list(cocitation_graph.edges(data=True))
+    def chord_diagram_data(relations_graph, df, comps, comp_other, palette):
+        # Relations graph nodes and weighted edges
+        nodes = list(relations_graph.nodes())
+        edges = list(relations_graph.edges())
+        weighted_edges = list(relations_graph.edges(data=True))
 
         # Using merge left keeps order
         gdf = pd.merge(pd.Series(nodes, dtype=object).reset_index().rename(
@@ -291,3 +292,105 @@ class PlotPreprocessor:
         x = [col for col in df.columns if isinstance(col, (int, float)) and col >= year]
         y = list(sel[x].values[0])
         return ColumnDataSource(data=dict(x=x, y=y))
+
+    @staticmethod
+    def dump_citations_graph_cytoscape(df, citations_graph):
+        comp_colors = dict(enumerate(Category20[20]))
+
+        cgc = citations_graph.copy()
+
+        # Collect attributes for nodes
+        attrs = {}
+        for node in df['id']:
+            if not cgc.has_node(node):
+                cgc.add_node(node)
+
+            sel = df[df['id'] == node]
+            comp = int(sel['comp'].values[0])
+            attrs[node] = {
+                'title': sel['title'].values[0],
+                'authors': cut_authors_list(sel['authors'].values[0]),
+                'year': int(sel['year'].values[0]),
+                'cited': int(sel['total'].values[0]),
+                'size': 20 * np.log1p(int(sel['total'].values[0])) + 10,
+                'comp': comp + 1,  # For visualization consistency
+                'color': comp_colors[comp]}
+        nx.set_node_attributes(cgc, attrs)
+
+        # Group not connected nodes in groups by cluster
+        comp_groups = {}
+        cytoscape_data = nx.cytoscape_data(cgc)["elements"]
+        for node_cs in cytoscape_data['nodes']:
+            nid = node_cs['data']['id']
+            if cgc.degree(nid) == 0:
+                comp = node_cs['data']['comp']
+                if comp not in comp_groups:
+                    comp_group = {
+                        'group': 'nodes',
+                        'data': {
+                            'id': f'comp_group_{comp}',
+                            'comp': comp
+                        },
+                        'classes': 'group'
+                    }
+                    cytoscape_data['nodes'].append(comp_group)
+                node_cs['data']['parent'] = f'comp_group_{comp}'
+
+        return cytoscape_data
+
+    @staticmethod
+    def dump_structure_graph_cytoscape(df, relations_graph):
+        comp_colors = dict(enumerate(Category20[20]))
+
+        prgc = relations_graph.copy()
+
+        # Use min spanning tree for visualization
+        for (u, v, w) in relations_graph.edges.data('weight'):
+            prgc[u][v]['mweight'] = 1 / w
+        prgc = nx.minimum_spanning_tree(prgc, 'mweight')
+
+        # # We want to show 1000 edges or 10%, what is bigger
+        # if len(relations_graph.edges()) > 1000:
+        #     weights = [w for (_, _, w) in relations_graph.edges.data('weight')]
+        #     weight_cutoff = np.percentile(weights, min(100 - (100 * 1000 / len(weights)), 90))
+        #     # Prune papers relationships edges with small weight for visualization
+        #     for u, v in [(u, v) for (u, v, w) in relations_graph.edges.data('weight') if w < weight_cutoff]:
+        #         prgc.remove_edge(u, v)
+
+        # Collect attributes for nodes
+        attrs = {}
+        for node in df['id']:
+            if not prgc.has_node(node):
+                prgc.add_node(node)
+
+            sel = df[df['id'] == node]
+            comp = int(sel['comp'].values[0])
+            attrs[node] = {'title': sel['title'].values[0],
+                           'authors': cut_authors_list(sel['authors'].values[0]),
+                           'year': int(sel['year'].values[0]),
+                           'cited': int(sel['total'].values[0]),
+                           'comp': comp + 1,  # For visualization consistency
+                           'size': 10 * np.log1p(int(sel['total'].values[0])) + 5,
+                           'color': comp_colors[comp]}
+        nx.set_node_attributes(prgc, attrs)
+
+        # Group not connected nodes in groups by cluster
+        comp_groups = {}
+        cytoscape_data = nx.cytoscape_data(prgc)["elements"]
+        for node_cs in cytoscape_data['nodes']:
+            nid = node_cs['data']['id']
+            if prgc.degree(nid) == 0:
+                comp = node_cs['data']['comp']
+                if comp not in comp_groups:
+                    comp_group = {
+                        'group': 'nodes',
+                        'data': {
+                            'id': f'comp_group_{comp}',
+                            'comp': comp
+                        },
+                        'classes': 'group'
+                    }
+                    cytoscape_data['nodes'].append(comp_group)
+                node_cs['data']['parent'] = f'comp_group_{comp}'
+
+        return cytoscape_data

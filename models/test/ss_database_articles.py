@@ -119,6 +119,9 @@ cocitations = [[article7.ssid, article10.ssid, 1],
 cocitations_df = pd.DataFrame(cocitations, columns=['cited_1', 'cited_2', 'total'])\
     .sort_values(by=['cited_1', 'cited_2']).reset_index(drop=True)
 
+bibliographic_coupling_df = \
+    pd.DataFrame([], columns=['citing_1', 'citing_2', 'total'])
+
 expected_cocit_and_cit_graph = nx.Graph()
 expected_cocit_and_cit_graph.add_weighted_edges_from([(article7.ssid, article10.ssid, 1),
                                                       (article4.ssid, article3.ssid, 2),

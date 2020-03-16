@@ -11,9 +11,11 @@ from flask import (
 
 from models.celery.tasks import celery, find_paper_async, analyze_search_terms, analyze_id_list
 from models.celery.tasks_cache import get_or_cancel_task, complete_task
+from models.keypaper.analysis import KeyPaperAnalyzer
 from models.keypaper.config import PubtrendsConfig
-from models.keypaper.paper import prepare_paper_data, prepare_papers_data
+from models.keypaper.paper import prepare_paper_data, prepare_papers_data, get_loader_and_url_prefix
 from models.keypaper.utils import zoom_name, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE, trim
+from models.keypaper.visualization_data import PlotPreprocessor
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
@@ -171,6 +173,39 @@ def paper():
             _, data, _ = job.result
             return render_template('paper.html', **prepare_paper_data(data, source, pid),
                                    version=PUBTRENDS_CONFIG.version)
+
+    return render_template_string("Something went wrong...")
+
+
+@app.route('/graph')
+def graph():
+    jobid = request.values.get('jobid')
+    query = request.args.get('query')
+    source = request.args.get('source')
+    graph_type = request.args.get('type')
+    if jobid:
+        job = complete_task(jobid)
+        if job and job.state == 'SUCCESS':
+            _, data, _ = job.result
+            loader, url_prefix = get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
+            analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
+            analyzer.init(data)
+            if graph_type == "citations":
+                graph_cs = PlotPreprocessor.dump_citations_graph_cytoscape(analyzer.df, analyzer.citations_graph)
+                return render_template('graph.html',
+                                       version=PUBTRENDS_CONFIG.version,
+                                       source=source,
+                                       query=query,
+                                       citation_graph="true",
+                                       graph_cytoscape_json=json.dumps(graph_cs))
+            else:
+                graph_cs = PlotPreprocessor.dump_structure_graph_cytoscape(analyzer.df, analyzer.paper_relations_graph)
+                return render_template('graph.html',
+                                       version=PUBTRENDS_CONFIG.version,
+                                       source=source,
+                                       query=query,
+                                       citation_graph="false",
+                                       graph_cytoscape_json=json.dumps(graph_cs))
 
     return render_template_string("Something went wrong...")
 

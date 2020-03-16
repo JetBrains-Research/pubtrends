@@ -15,7 +15,7 @@ from models.test.pm_database_articles import REQUIRED_ARTICLES, ARTICLES, EXPECT
 
 
 class TestPubmedLoader(unittest.TestCase):
-    loader = PubmedLoader(pubtrends_config=PubtrendsConfig(test=True))
+    loader = PubmedLoader(config=PubtrendsConfig(test=True))
 
     @classmethod
     def setUpClass(cls):

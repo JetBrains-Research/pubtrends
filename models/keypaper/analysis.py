@@ -23,7 +23,9 @@ class KeyPaperAnalyzer:
     TOP_CITED_PAPERS = 50
     TOP_CITED_PAPERS_FRACTION = 0.1
 
-    CITATION_WEIGHT_IN_COCITATION_GRAPH = 0.01
+    RELATIONS_GRAPH_BIBLIOGRAPHIC_COUPLING = 1
+    RELATIONS_GRAPH_COCITATION = 1
+    RELATIONS_GRAPH_CITATION = 0.01
 
     TOPIC_GRANULARITY = 0.05
     TOPIC_PAPERS = 50
@@ -109,24 +111,29 @@ class KeyPaperAnalyzer:
         self.cit_df = self.loader.load_citations(self.ids, current=5, task=task)
 
         # Building inner citations graph for pagerank analysis
-        self.G = self.build_citation_graph(self.cit_df, current=6, task=task)
+        self.citations_graph = self.build_citation_graph(self.cit_df, current=6, task=task)
 
         # Loading data about cocitations
         self.cocit_df = self.loader.load_cocitations(self.ids, current=7, task=task)
-
-        # Building cocitation graph, including all the papers from citations graph
-        # IMPORTANT: not all the publications are still covered
         cocit_grouped_df = self.build_cocit_grouped_df(self.cocit_df)
-        self.CG = self.build_cocitation_graph(cocit_grouped_df, add_citation_edges=True, current=8, task=task)
 
-        if len(self.CG.nodes()) == 0:
-            logger.debug("Co-citations graph is empty")
+        # Loading data about bibliographic coupling
+        self.bibliographic_coupling_df = self.loader.load_bibliographic_coupling(self.ids, current=7, task=task)
+
+        # Building paper relations graph, including all the papers from citations graph
+        # IMPORTANT: not all the publications might be still covered
+        self.paper_relations_graph = self.build_papers_relation_graph(
+            self.citations_graph, cocit_grouped_df, self.bibliographic_coupling_df, current=8, task=task
+        )
+
+        if len(self.paper_relations_graph.nodes()) == 0:
+            logger.debug("Paper relations graph is empty")
             self.progress.info("Not enough papers to process topics analysis", current=9, task=task)
             self.df['comp'] = 0  # Technical value for top authors and papers analysis
             self.df_kwd = pd.DataFrame({'comp': [0], 'kwd': ['']})
         else:
             # Perform subtopic analysis and get subtopic descriptions
-            partition, n_components_merged = self.subtopic_analysis(self.CG, current=9, task=task)
+            partition, n_components_merged = self.subtopic_analysis(self.paper_relations_graph, current=9, task=task)
             # Get descriptions for subtopics
             logger.debug(f'Computing subtopics descriptions by top cited papers')
             most_cited_per_comp = self.get_most_cited_papers_for_comps(self.df, partition)
@@ -147,7 +154,7 @@ class KeyPaperAnalyzer:
             # Update df with information for all papers
 
         # Perform PageRank analysis
-        pr = self.pagerank(self.G, current=11, task=task)
+        pr = self.pagerank(self.citations_graph, current=11, task=task)
         self.df = self.merge_col(self.df, pr, col='pagerank')
 
         # Find interesting papers
@@ -225,38 +232,56 @@ class KeyPaperAnalyzer:
             v, u = row['id_out'], row['id_in']
             G.add_edge(v, u)
 
-        self.progress.info(f'Built citation graph - nodes {len(G.nodes())} edges {len(G.edges())}',
+        self.progress.info(f'Built citation graph - {len(G.nodes())} nodes and {len(G.edges())} edges',
                            current=current, task=task)
         return G
 
-    def build_cocitation_graph(self, cocit_grouped_df, year=None, add_citation_edges=False,
-                               citation_weight=CITATION_WEIGHT_IN_COCITATION_GRAPH,
-                               current=0, task=None):
-        if year:
-            self.progress.info(f'Building co-citations graph for {year} year', current=current, task=task)
-        else:
-            self.progress.info(f'Building co-citations graph', current=current, task=task)
-        CG = nx.Graph()
+    def build_papers_relation_graph(self, citations_graph, cocit_df, bibliographic_coupling_df, current=0, task=None):
+        """
+        Relationship graph is build using three citation-based method:
+        bibliographic coupling (BC), co-citation (CC) and direct citation (DC).
 
+        See paper: Which type of citation analysis generates the most accurate taxonomy of
+        scientific and technical knowledge? (https://arxiv.org/pdf/1511.05078.pdf)
+        ...bibliographic coupling (BC) was the most accurate,  followed by co-citation (CC).
+        Direct citation (DC) was a distant third among the three...
+        """
+        self.progress.info(f'Building paper relations graph', current=current, task=task)
+
+        result = nx.Graph()
         # NOTE: we use nodes id as String to avoid problems str keys in jsonify
         # during graph visualization
-        for el in cocit_grouped_df[['cited_1', 'cited_2', 'total']].values:
-            start, end, weight = el
-            CG.add_edge(str(start), str(end), weight=int(weight))
+        if self.RELATIONS_GRAPH_COCITATION > 0:
+            for el in cocit_df[['cited_1', 'cited_2', 'total']].values:
+                start, end, weight = str(el[0]), str(el[1]), float(el[2])
+                result.add_edge(start, end, weight=self.RELATIONS_GRAPH_COCITATION * weight)
 
-        if add_citation_edges:
-            for u, v in self.G.edges:
-                if CG.has_edge(u, v):
-                    CG.add_edge(u, v, weight=CG[u][v]['weight'] + citation_weight)
+        if self.RELATIONS_GRAPH_BIBLIOGRAPHIC_COUPLING > 0:
+            for el in bibliographic_coupling_df[['citing_1', 'citing_2', 'total']].values:
+                start, end, weight = str(el[0]), str(el[1]), float(el[2])
+                if result.has_edge(start, end):
+                    result.add_edge(
+                        start, end,
+                        weight=result[start][end]['weight'] + self.RELATIONS_GRAPH_BIBLIOGRAPHIC_COUPLING * weight
+                    )
                 else:
-                    CG.add_edge(u, v, weight=citation_weight)
+                    result.add_edge(start, end,
+                                    weight=self.RELATIONS_GRAPH_BIBLIOGRAPHIC_COUPLING * weight)
 
-        self.progress.info(f'Built co-citations graph - nodes {len(CG.nodes())} edges {len(CG.edges())}',
+        # Make paper relations graph connected, adding citations_graph edges
+        if self.RELATIONS_GRAPH_CITATION > 0:
+            for u, v in citations_graph.edges:
+                if result.has_edge(u, v):
+                    result.add_edge(u, v, weight=result[u][v]['weight'] + self.RELATIONS_GRAPH_CITATION)
+                else:
+                    result.add_edge(u, v, weight=self.RELATIONS_GRAPH_CITATION)
+
+        self.progress.info(f'Built paper relations graph - {len(result.nodes())} nodes and {len(result.edges())} edges',
                            current=current, task=task)
-        return CG
+        return result
 
     def subtopic_analysis(self, cocitation_graph, current=0, task=None):
-        self.progress.info(f'Extracting subtopics from co-citation graph', current=current, task=task)
+        self.progress.info(f'Extracting subtopics from paper relations graph', current=current, task=task)
         connected_components = nx.number_connected_components(cocitation_graph)
         logger.debug(f'Co-citation graph has {connected_components} connected components')
 
@@ -277,7 +302,7 @@ class KeyPaperAnalyzer:
     def get_missing_components(self, df, partition, tfidf_per_comp, comps_merged, n_words=TEXT_WORDS,
                                current=0, task=None):
         no_comps = [pid for pid in df['id'] if pid not in partition]
-        self.progress.info(f'Assigning topics for all publications', current=current, task=task)
+        self.progress.info(f'Assigning topics for publications based on text similarity', current=current, task=task)
         missing_comps = {}
         for pid in no_comps:
             df_pid = df.loc[df['id'] == pid]
@@ -293,7 +318,8 @@ class KeyPaperAnalyzer:
             # Get component closest by text (max dot product)
             missing_comps[pid] = comps_counter.most_common(1)[0][0]
         missing_comps_counter = Counter(missing_comps.values())
-        logger.debug(f'Done assigned missing topics {missing_comps_counter}')
+        self.progress.info(f'Assigned topics for {len(no_comps)} papers', current=current, task=task)
+        logger.debug(f'Assigned missing topics {missing_comps_counter}')
         return missing_comps
 
     def update_components(self, partition, n_components_merged, missing_comps, current=0, task=None):
@@ -388,7 +414,7 @@ class KeyPaperAnalyzer:
                            current=current, task=task)
 
         n_components_merged = {}
-        cg = {}
+        paper_relations_graph = {}
 
         logger.debug(f"Subtopics evolution years: {', '.join([str(year) for year in year_range])}")
 
@@ -398,11 +424,13 @@ class KeyPaperAnalyzer:
         for i, year in enumerate(year_range[1:]):
             # Use only co-citations earlier than year
             cocit_grouped_df = self.build_cocit_grouped_df(cocit_df[cocit_df['year'] <= year])
-            cg[year] = self.build_cocitation_graph(cocit_grouped_df, year=year, current=current, task=task)
+            paper_relations_graph[year] = self.build_papers_relation_graph(
+                self.citations_graph, cocit_grouped_df, self.bibliographic_coupling_df, current=current, task=task
+            )
 
-            if len(cg[year].nodes) >= min_papers:
+            if len(paper_relations_graph[year].nodes) >= min_papers:
                 p = {vertex: int(comp) for vertex, comp in
-                     community.best_partition(cg[year], random_state=KeyPaperAnalyzer.SEED).items()}
+                     community.best_partition(paper_relations_graph[year], random_state=KeyPaperAnalyzer.SEED).items()}
                 p, n_components_merged[year] = self.merge_components(p)
                 evolution_series.append(pd.Series(p))
                 years_processed += 1
@@ -541,10 +569,10 @@ class KeyPaperAnalyzer:
         Dump valuable fields of KeyPaperAnalyzer to JSON-serializable dict. Use 'load' to restore analyzer.
         """
         return {
-            'cg': json_graph.node_link_data(self.CG),
             'df': self.df.to_json(),
             'df_kwd': self.df_kwd.to_json(),
-            'g': json_graph.node_link_data(self.G),
+            'citations_graph': json_graph.node_link_data(self.citations_graph),
+            'paper_relations_graph': json_graph.node_link_data(self.paper_relations_graph),
             'top_cited_papers': list(self.top_cited_papers),
             'max_gain_papers': list(self.max_gain_papers),
             'max_rel_gain_papers': list(self.max_rel_gain_papers),
@@ -576,18 +604,18 @@ class KeyPaperAnalyzer:
         df_kwd['kwd'] = df_kwd['kwd'].apply(lambda x: [(el[0], float(el[1])) for el in x])
 
         # Restore citation and co-citation graphs
-        CG = json_graph.node_link_graph(fields['cg'])
-        G = json_graph.node_link_graph(fields['g'])
+        citations_graph = json_graph.node_link_graph(fields['citations_graph'])
+        paper_relations_graph = json_graph.node_link_graph(fields['paper_relations_graph'])
 
         top_cited_papers = set(fields['top_cited_papers'])
         max_gain_papers = set(fields['max_gain_papers'])
         max_rel_gain_papers = set(fields['max_rel_gain_papers'])
 
         return {
-            'cg': CG,
             'df': df,
             'df_kwd': df_kwd,
-            'g': G,
+            'citations_graph': citations_graph,
+            'paper_relations_graph': paper_relations_graph,
             'top_cited_papers': top_cited_papers,
             'max_gain_papers': max_gain_papers,
             'max_rel_gain_papers': max_rel_gain_papers
@@ -595,7 +623,10 @@ class KeyPaperAnalyzer:
 
     def init(self, fields):
         loaded = KeyPaperAnalyzer.load(fields)
-        self.df, self.df_kwd, self.G, self.CG = loaded['df'], loaded['df_kwd'], loaded['g'], loaded['cg']
+        self.df = loaded['df']
+        self.df_kwd = loaded['df_kwd']
+        self.citations_graph = loaded['citations_graph']
+        self.paper_relations_graph = loaded['paper_relations_graph']
         self.top_cited_papers = loaded['top_cited_papers']
         self.max_gain_papers = loaded['max_gain_papers']
         self.max_rel_gain_papers = loaded['max_rel_gain_papers']

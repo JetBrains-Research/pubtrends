@@ -8,8 +8,8 @@ logger = logging.getLogger(__name__)
 
 
 class ArxivLoader(SemanticScholarLoader):
-    def __init__(self, pubtrends_config):
-        super(ArxivLoader, self).__init__(pubtrends_config)
+    def __init__(self, config):
+        super(ArxivLoader, self).__init__(config)
 
     def search(self, query, limit=None, sort=None, current=1, task=None):
         raise Exception('Use search_arxiv')

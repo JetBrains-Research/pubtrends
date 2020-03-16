@@ -3,7 +3,7 @@ import json
 import networkx as nx
 import pandas as pd
 
-CG_GRAPHML = 'models/test/test_data/cg.graphml'
+RELATIONS_GRAPH_GRAPHML = 'models/test/test_data/paper_relations_graph.graphml'
 DF_CSV = 'models/test/test_data/df.csv'
 EVOLUTION_DF_CSV = 'models/test/test_data/evolution_df.csv'
 EVOLUTION_KEYWORDS_JSON = 'models/test/test_data/evolution_keywords.json'
@@ -20,9 +20,9 @@ class MockAnalyzer:
         self.max_year = 2019
 
         # Load co-citation graph and convert nodes to str
-        self.CG = nx.read_graphml(CG_GRAPHML)
-        mapping = {node: str(node) for node in self.CG.nodes()}
-        self.CG = nx.relabel_nodes(self.CG, mapping, copy=False)
+        self.paper_relations_graph = nx.read_graphml(RELATIONS_GRAPH_GRAPHML)
+        mapping = {node: str(node) for node in self.paper_relations_graph.nodes()}
+        self.paper_relations_graph = nx.relabel_nodes(self.paper_relations_graph, mapping, copy=False)
 
         self.components = [0, 1, 2]
         self.comp_other = 2

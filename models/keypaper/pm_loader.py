@@ -14,8 +14,8 @@ logger = logging.getLogger(__name__)
 
 
 class PubmedLoader(Loader):
-    def __init__(self, pubtrends_config):
-        super(PubmedLoader, self).__init__(pubtrends_config)
+    def __init__(self, config):
+        super(PubmedLoader, self).__init__(config)
 
     def find(self, key, value, current=1, task=None):
         self.progress.info(f"Searching for a publication with {key} '{value}'", current=current, task=task)
@@ -43,11 +43,11 @@ class PubmedLoader(Loader):
             return [str(r['pmid']) for r in session.run(query)]
 
     def search(self, query, limit=None, sort=None, current=1, task=None):
-        query_str = preprocess_search_query(query, self.pubtrends_config.min_search_words)
+        query_str = preprocess_search_query(query, self.config.min_search_words)
 
         if not limit:
             limit_message = ''
-            limit = self.max_number_of_articles
+            limit = self.config.max_number_of_articles
         else:
             limit_message = f'{limit} '
 
@@ -126,7 +126,7 @@ class PubmedLoader(Loader):
             MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
             WHERE in.pmid IN pmids AND out.date.year >= in.date.year
             RETURN in.pmid AS id, out.date.year AS year, COUNT(*) AS count
-            LIMIT {self.max_number_of_citations};
+            LIMIT {self.config.max_number_of_citations};
         '''
 
         with self.neo4jdriver.session() as session:
@@ -156,7 +156,7 @@ class PubmedLoader(Loader):
             WHERE in.pmid IN pmids AND out.pmid IN pmids
             RETURN out.pmid AS id_out, in.pmid AS id_in
             ORDER BY id_out, id_in
-            LIMIT {self.max_number_of_cocitations};
+            LIMIT {self.config.max_number_of_cocitations};
         '''
 
         with self.neo4jdriver.session() as session:
@@ -165,7 +165,7 @@ class PubmedLoader(Loader):
             logger.debug(f'Failed to load citations.')
             cit_df = pd.DataFrame(columns=['id_in', 'id_out'])
         else:
-            self.progress.info(f'Found {len(cit_df)} citations', current=current, task=task)
+            self.progress.info(f'Found {len(cit_df)} citations among papers', current=current, task=task)
             if np.any(cit_df.isna()):
                 raise ValueError('Citation must have id_out and id_in')
             cit_df['id_out'] = cit_df['id_out'].apply(str)
@@ -174,7 +174,7 @@ class PubmedLoader(Loader):
         return cit_df
 
     def load_cocitations(self, ids, current=1, task=None):
-        self.progress.info('Calculating co-citations for papers', current=current, task=task)
+        self.progress.info('Loading co-citations for papers', current=current, task=task)
 
         # Use unfolding to pairs on the client side instead of DataBase
         # TODO[shpynov] transferring huge list of ids can be a problem
@@ -195,7 +195,7 @@ class PubmedLoader(Loader):
                     for j in range(i + 1, len(cited)):
                         cocit_data.append((citing, cited[i], cited[j], year))
 
-        logger.debug(f'Loaded {lines} lines of citing info')
+        logger.debug(f'Loaded {lines} lines of co-citing info')
 
         cocit_df = pd.DataFrame(cocit_data, columns=['citing', 'cited_1', 'cited_2', 'year'])
         if len(cocit_data) == 0:
@@ -212,6 +212,34 @@ class PubmedLoader(Loader):
             cocit_df['year'] = cocit_df['year'].apply(lambda x: int(x) if x else np.nan)
 
         return cocit_df
+
+    def load_bibliographic_coupling(self, ids, current=1, task=None):
+        self.progress.info('Loading bibliographic coupling for papers', current=current, task=task)
+
+        # Use unfolding to pairs on the client side instead of DataBase
+        # TODO[shpynov] transferring huge list of ids can be a problem
+        query = f'''
+            WITH [{','.join([f'"{id}"' for id in ids])}] AS pmids
+            MATCH (out1:PMPublication),(out2:PMPublication)
+            WHERE NOT (out1.pmid = out2.pmid) AND out1.pmid IN pmids AND out2.pmid IN pmids
+            MATCH (out1:PMPublication)-[:PMReferenced]->(in:PMPublication),
+                  (out2:PMPublication)-[:PMReferenced]->(in:PMPublication)
+            RETURN out1.pmid AS citing_1, out2.pmid AS citing_2, COUNT(in) AS total
+            LIMIT {self.config.max_number_of_bibliographic_coupling};
+        '''
+
+        with self.neo4jdriver.session() as session:
+            bibliographic_coupling_df = pd.DataFrame(session.run(query).data())
+
+        if len(bibliographic_coupling_df) == 0:
+            logger.debug(f'Failed to load bibliographic coupling.')
+            bibliographic_coupling_df = pd.DataFrame(columns=['citing_1', 'citing_2', 'total'])
+        else:
+            self.progress.info(f'Found {len(bibliographic_coupling_df)} bibliographic coupling pairs',
+                               current=current, task=task)
+
+        bibliographic_coupling_df['total'] = bibliographic_coupling_df['total'].apply(int)
+        return bibliographic_coupling_df
 
     def expand(self, ids, current=1, task=None):
         expanded = set(ids)

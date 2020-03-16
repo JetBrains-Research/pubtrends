@@ -78,11 +78,11 @@ class TestPlotPreprocessor(unittest.TestCase):
 
     def test_chord_diagram_data(self):
         layout, node_data_source, edge_data_source = PlotPreprocessor.chord_diagram_data(
-            self.analyzer.CG, self.analyzer.df,
+            self.analyzer.paper_relations_graph, self.analyzer.df,
             self.analyzer.partition, self.analyzer.comp_other, self.plotter.comp_palette
         )
 
-        expected_nodes = self.analyzer.CG.nodes()
+        expected_nodes = self.analyzer.paper_relations_graph.nodes()
         data = node_data_source.data
 
         self.assertCountEqual(list(layout.keys()), expected_nodes, 'Wrong nodes in layout')
@@ -103,8 +103,8 @@ class TestPlotPreprocessor(unittest.TestCase):
             self.assertEqual(data['topic'][idx], expected_topic, f'Wrong topic for node {node}')
 
     def test_chord_diagram_layout(self):
-        nodes = self.analyzer.CG.nodes()
-        edges = self.analyzer.CG.edges()
+        nodes = self.analyzer.paper_relations_graph.nodes()
+        edges = self.analyzer.paper_relations_graph.edges()
 
         layout, xs, ys = PlotPreprocessor.chord_diagram_layout(nodes, edges)
 
@@ -161,7 +161,7 @@ class TestPlotPreprocessor(unittest.TestCase):
             return np.logical_and(cluster_edges['comp_x'] == str(i), cluster_edges['comp_y'] == str(j))
 
         cluster_edges, clusters = PlotPreprocessor.heatmap_clusters_data(
-            self.analyzer.CG, self.analyzer.df, self.analyzer.comp_sizes
+            self.analyzer.paper_relations_graph, self.analyzer.df, self.analyzer.comp_sizes
         )
 
         self.assertListEqual(clusters, ['1', '2', '3'], 'Wrong clusters')

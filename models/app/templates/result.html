@@ -84,6 +84,16 @@
             papers_callback_impl('papers_list', 'hot')
         }
 
+        function graph_callback(graphType) {
+            // Query may contain double quotes, fix it.
+            const query_fixed = '{{ query }}'.replace(/&#34;/g, '"');
+            const url = '/graph?query=' + query_fixed + '&source={{source}}';
+            // Decode jobid from URL
+            const jobid = new URL(window.location).searchParams.get('jobid');
+            window.open(url + '&type=' + graphType + '&jobid=' + jobid, '_blank');
+        }
+
+
         $(document).ready(function() {
             $('#authors-table').DataTable();
             $('#journals-table').DataTable();
@@ -246,10 +256,18 @@
                             </div>
                         </div>
                         <div>
-                            <button id="show_as_list" type="button" class="btn btn-light"
-                                    onclick="(function(){ papers_callback() })();">
-                                <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
-                            </button>
+                            <div class="row">
+                                <button id="show_as_list" type="button" class="col-auto btn btn-light"
+                                        onclick="(function(){ papers_callback() })();">
+                                    <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
+                                </button>
+                                <button id="show_citations_graph" type="button" class="ml-2 col-auto btn btn-light"
+                                        onclick="(function(){ graph_callback('citations') })();">
+                                    <img src="{{ url_for('static', filename='globe.svg') }}" alt="+"/>&nbsp;
+                                    Show citations graph
+                                </button>
+
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -321,9 +339,18 @@
                         <h1 class="card-header">Topics</h1>
                     </div>
                     <div class="card-body">
-                        <p> Citations graph is used to find all the papers which are cited together or <em>co-cited</em>
-                            by other papers. <br>
-                            This information is used for subtopics extraction.<br>
+                        <p>
+                            Three citation-based methods are used to detect structure within papers. <br>
+                            Similarity of the papers is computed based on <em>direct citations</em>, <em>co-citations</em>, and <em>bibliographic coupling</em>.<br>
+                            This information is used for subtopics extraction. Minimal spanning tree is available to explore.<br>
+                            <button id="show_structure_graph" type="button" class="col-auto btn btn-light"
+                                    onclick="(function(){ graph_callback('structure') })();">
+                                <img src="{{ url_for('static', filename='globe.svg') }}" alt="+"/>&nbsp;
+                                Show structure graph
+                            </button>
+                        </p>
+                        <hr>
+                        <p>
                             Click on bars to get detailed information about keywords and publications for each subtopic.
                             <br>
                             <em>Note: subtopics are merged to "Other" if they contain less than 5% of publications of
@@ -339,7 +366,7 @@
 
                         <a data-toggle="collapse" href="#collapseCocitations" role="button" aria-expanded="false"
                            aria-controls="collapseCocitations" class="link">
-                            Show co-citations graph clustering details
+                            Show topics relationships graph clustering details
                         </a>
 
                         <div class="collapse" id="collapseCocitations">
@@ -590,9 +617,19 @@
                         "<em>Show as list</em> anytime to open the list of papers in a separate window."
                 },
                 {
+                    element: '#show_citations_graph',
+                    intro: "Click <img src=\"{{ url_for('static', filename='globe.svg') }}\" alt=\"+\"/> " +
+                        "<em>Show citations graph</em> to explore citations graph among the papers."
+                },
+                {
                     element: '#highlights',
                     intro: "Highlights section contains information about most notable papers. " +
                         "Top cited papers, papers of the year, and hot papers are shown in a dedicated sections."
+                },
+                {
+                    element: '#show_structure_graph',
+                    intro: "Click <img src=\"{{ url_for('static', filename='globe.svg') }}\" alt=\"+\"/> " +
+                        "<em>Show structure graph</em> to explore overall papers similarity."
                 },
                 {
                     element: '#subtopics-number',

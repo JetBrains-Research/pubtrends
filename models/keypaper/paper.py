@@ -60,8 +60,8 @@ def prepare_paper_data(data, source, pid):
 
     # Estimate related topics for the paper
     related_topics = {}
-    if analyzer.CG.nodes():
-        for v in analyzer.CG[pid]:
+    if analyzer.paper_relations_graph.nodes():
+        for v in analyzer.paper_relations_graph[pid]:
             c = analyzer.df[analyzer.df['id'] == v]['comp'].values[0]
             if c in related_topics:
                 related_topics[c] += 1
@@ -75,16 +75,19 @@ def prepare_paper_data(data, source, pid):
     # Determine top references (papers that are cited by current),
     # citations (papers that cite current), and co-citations
     # Citations graph is limited by only the nodes in pub_df, so not all the nodes might present
-    if analyzer.G.has_node(pid):
-        top_references = get_top_papers_id_title(analyzer.G.successors(pid), analyzer.df, key='pagerank')
-        top_citations = get_top_papers_id_title(analyzer.G.predecessors(pid), analyzer.df, key='pagerank')
+    if analyzer.citations_graph.has_node(pid):
+        top_references = get_top_papers_id_title(analyzer.citations_graph.successors(pid), analyzer.df, key='pagerank')
+        top_citations = get_top_papers_id_title(analyzer.citations_graph.predecessors(pid), analyzer.df, key='pagerank')
     else:
         top_references = top_citations = []
 
-    if analyzer.CG.nodes():
-        cocited_papers = map(lambda v: (analyzer.df[analyzer.df['id'] == v]['id'].values[0],
-                                        analyzer.df[analyzer.df['id'] == v]['title'].values[0],
-                                        analyzer.CG.edges[pid, v]['weight']), list(analyzer.CG[pid]))
+    if analyzer.paper_relations_graph.nodes():
+        cocited_papers = map(
+            lambda v: (analyzer.df[analyzer.df['id'] == v]['id'].values[0],
+                       analyzer.df[analyzer.df['id'] == v]['title'].values[0],
+                       analyzer.paper_relations_graph.edges[pid, v]['weight']),
+            list(analyzer.paper_relations_graph[pid])
+        )
         top_cocited_papers = sorted(cocited_papers, key=lambda x: x[1], reverse=True)[:50]
     else:
         top_cocited_papers = []

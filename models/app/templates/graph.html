@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PubTrends - {{query}} at {{source}}</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet"
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
+          crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css"
+          integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt"
+          crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT"
+            crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+            integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+            crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+            integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+            crossorigin="anonymous"></script>
+
+    <!--Cytoscape.js-->
+    <script src="{{ url_for('static', filename='cytoscape.min-3.8.1.js') }}"></script>
+    <!--    <script src="cytoscape.min-3.8.1.js"></script>-->
+    <script src="{{ url_for('static', filename='cytoscape-cose-bilkent-4.0.0.js') }}"></script>
+    <!--    <script src="cytoscape-cose-bilkent-4.0.0.js"></script>-->
+
+    <!-- Tippy.js-->
+    <script src="https://unpkg.com/popper.js@1.14.7/dist/umd/popper.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape-popper@1.0.4/cytoscape-popper.min.js"></script>
+    <script src="https://unpkg.com/tippy.js@4.0.1/umd/index.all.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/tippy.js@4.0.1/index.css"/>
+
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1"/>
+    <!--     <link rel="stylesheet" href="../static/style.css"/> -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='result.css') }}?v=1"/>
+    <!--     <link rel="stylesheet" href="../static/result.css"/> -->
+    <script>
+        "use strict";
+
+        const CG_EDGE_STYLE = {
+            "width": 1,
+            "curve-style": "bezier",
+            "target-arrow-shape": "triangle",
+            "arrow-scale": 3
+        };
+
+        const PR_EDGE_STYLE = {
+            "width": function (edge) {
+                return Math.min(20, edge.data().weight / 5);
+            },
+            "curve-style": "haystack",
+        };
+
+        $(document).ready(function () {
+            document.getElementById('cy').innerHTML = "";
+            const citation_graph = {{ citation_graph }};
+            let edge_style;
+            if (citation_graph) {
+                edge_style = CG_EDGE_STYLE;
+            } else {
+                edge_style = PR_EDGE_STYLE;
+            }
+            const elements = JSON.parse({{ graph_cytoscape_json | tojson }});
+            let cy = window.cy = cytoscape({
+                container: document.getElementById('cy'),
+                layout: {
+                    name: 'cose-bilkent',
+                    idealEdgeLength: 300,
+                    animate: false
+                },
+                style: [
+                    {
+                        selector: "node",
+                        style: {
+                            "width": "data(size)",
+                            "height": "data(size)",
+                            "border-width": 1,
+                            "background-color": "data(color)",
+                            "border-color": "black",
+                        }
+                    },
+                    {
+                        selector: "node.group",
+                        style: {
+                            "background-opacity": 0.1,
+                            "border-opacity": 0.2,
+                        }
+                    },
+                    {
+                        selector: "edge",
+                        style: edge_style
+                    },
+                    {
+                        selector: 'edge.highlight',
+                        style: {"width": 10 }
+                    },
+                    {
+                        selector: 'edge.fade',
+                        style: {'opacity': '0.1'}
+                    }
+                ],
+                elements: elements
+            });
+
+            function makePopper(ele) {
+                let ref = ele.popperRef(); // used only for positioning
+
+                ele.tippy = tippy(ref, { // tippy options:
+                    content: () => {
+                        let content = document.createElement('div');
+                        let data = ele._private.data;
+                        if ('title' in data) {
+                            // Paper
+                            content.innerHTML = "<b>" + data['title'] + "</b><br>" +
+                                "Author(s): " + data['authors'] + "<br>" +
+                                "Year: " + data['year'] + "<br>" +
+                                "Cited: " + data['cited'] + "<br>" +
+                                "Topic: " + data['comp'];
+                        } else {
+                            // Group
+                            content.innerHTML = "Topic: " + data['comp'];
+                        }
+                        return content;
+                    },
+                    trigger: 'manual' // probably want manual mode
+                });
+            }
+
+            cy.ready(function () {
+                cy.nodes().forEach(function (ele) {
+                    makePopper(ele);
+                });
+            });
+
+            cy.nodes().unbind('mouseover');
+            cy.nodes().bind('mouseover', (event) => event.target.tippy.show());
+
+            cy.nodes().unbind('mouseout');
+            cy.nodes().bind('mouseout', (event) => event.target.tippy.hide());
+        });
+    </script>
+</head>
+
+<body>
+<!-- Fixed navbar -->
+<nav class="navbar navbar-light bg-light fixed-top border-bottom no-padding-right">
+    <div class="row container-fluid no-padding-right">
+        <div class="col-lg-11 col-xl-8 no-padding">
+            <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
+            <span class="search-query">{{query}} at {{source}}</span>
+        </div>
+    </div>
+</nav>
+<div class="container-fluid">
+    <div id="cy" class="mb-3" style="height: 800px;">Loading...</div>
+</div>
+<footer>
+    <p>version {{ version }}<br/>
+        &copy; 2019-2020 <a href="https://research.jetbrains.org/groups/biolabs"
+                            title="JetBrains Research BioLabs"
+                            target="_blank">JetBrains Research</a></p>
+</footer>
+</body>
+</html>

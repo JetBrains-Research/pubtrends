@@ -56,7 +56,7 @@ def visualize_analysis(analyzer):
     plotter = Plotter(analyzer=analyzer)
     # Order is important here!
     paper_statistics, word_cloud, zoom_out_callback = plotter.papers_statistics_and_word_cloud_and_callback()
-    if analyzer.CG.nodes():
+    if analyzer.paper_relations_graph.nodes():
         result = {
             'topics_analyzed': True,
             'n_papers': analyzer.n_papers,
@@ -120,7 +120,7 @@ class Plotter:
         self.analyzer = analyzer
 
         if self.analyzer:
-            if self.analyzer.CG.nodes():
+            if self.analyzer.paper_relations_graph.nodes():
                 n_comps = len(self.analyzer.components)
                 if n_comps > 20:
                     raise ValueError(f'Too big number of components {n_comps}')
@@ -209,7 +209,8 @@ class Plotter:
         log.info('Visualizing components with Chord diagram')
 
         layout, node_data_source, edge_data_source = PlotPreprocessor.chord_diagram_data(
-            self.analyzer.CG, self.analyzer.df, self.analyzer.partition, self.analyzer.comp_other, self.comp_palette
+            self.analyzer.paper_relations_graph, self.analyzer.df,
+            self.analyzer.partition, self.analyzer.comp_other, self.comp_palette
         )
 
         plot = Plot(plot_width=CHORD_DIAGRAM_SIZE, plot_height=CHORD_DIAGRAM_SIZE,
@@ -258,7 +259,7 @@ class Plotter:
         log.info('Visualizing components with heatmap')
 
         cluster_edges, clusters = PlotPreprocessor.heatmap_clusters_data(
-            self.analyzer.CG, self.analyzer.df, self.analyzer.comp_sizes
+            self.analyzer.paper_relations_graph, self.analyzer.df, self.analyzer.comp_sizes
         )
 
         step = 30
@@ -597,7 +598,7 @@ class Plotter:
     def author_statistics(self):
         author = self.analyzer.author_stats['author']
         sum = self.analyzer.author_stats['sum']
-        if self.analyzer.CG.nodes():
+        if self.analyzer.paper_relations_graph.nodes():
             subtopics = self.analyzer.author_stats.apply(
                 lambda row: self._to_colored_circle(row['comp'], row['counts'], row['sum']), axis=1)
         else:
@@ -607,7 +608,7 @@ class Plotter:
     def journal_statistics(self):
         journal = self.analyzer.journal_stats['journal']
         sum = self.analyzer.journal_stats['sum']
-        if self.analyzer.CG.nodes():
+        if self.analyzer.paper_relations_graph.nodes():
             subtopics = self.analyzer.journal_stats.apply(
                 lambda row: self._to_colored_circle(row['comp'], row['counts'], row['sum']), axis=1)
         else:
@@ -666,3 +667,6 @@ class Plotter:
                </div>
             '''
         return html_tooltips_str
+
+    def dump_citations_graph_cytoscape(self):
+        return PlotPreprocessor.dump_citations_graph_cytoscape(self.analyzer.df, self.analyzer.citations_graph)

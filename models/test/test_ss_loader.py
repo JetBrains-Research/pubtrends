@@ -13,7 +13,7 @@ from models.test.ss_database_articles import required_articles, extra_articles, 
 
 
 class TestSemanticScholarLoader(unittest.TestCase):
-    loader = SemanticScholarLoader(pubtrends_config=PubtrendsConfig(test=True))
+    loader = SemanticScholarLoader(config=PubtrendsConfig(test=True))
 
     @classmethod
     def setUpClass(cls):

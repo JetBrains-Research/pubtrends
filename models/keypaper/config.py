@@ -35,6 +35,7 @@ class PubtrendsConfig:
         self.max_number_of_articles = params.getint('max_number_of_articles')
         self.max_number_of_citations = params.getint('max_number_of_citations')
         self.max_number_of_cocitations = params.getint('max_number_of_cocitations')
+        self.max_number_of_bibliographic_coupling = params.getint('max_number_of_bibliographic_coupling')
         self.max_number_to_expand = params.getint('max_number_to_expand')
 
         self.show_max_articles_options = [opt.strip() for opt in params['show_max_articles_options'].split(',')]

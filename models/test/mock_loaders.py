@@ -33,13 +33,19 @@ COCITATION_YEARS = [1967, 1968, 1969]
 COCITATION_GRAPH_NODES = ['1', '2', '3', '4']
 COCITATION_GRAPH_EDGES = [('1', '2', 3), ('3', '4', 1)]
 
+BIBLIOGRAPHIC_COUPLING_GRAPH_NODES = ['3', '4', '5']
+BIBLIOGRAPHIC_COUPLING_DATA = [['3', '4', 2],
+                               ['3', '5', 2],
+                               ['4', '5', 2]]
+
+
 EXPECTED_MAX_GAIN = {1972: '3', 1974: '1'}
 EXPECTED_MAX_RELATIVE_GAIN = {1972: '3', 1974: '4'}
 
 
 class MockLoader(Loader):
 
-    def __init__(self):
+    def __init__(self, ids=None):
         config = PubtrendsConfig(test=True)
         super(MockLoader, self).__init__(config, connect=False)
 
@@ -63,6 +69,9 @@ class MockLoader(Loader):
 
     def load_cocitations(self, ids=None, current=1, task=None):
         return pd.DataFrame(COCITATION_DATA, columns=['citing', 'cited_1', 'cited_2', 'year'])
+
+    def load_bibliographic_coupling(self, ids=None, current=1, task=None):
+        return pd.DataFrame(BIBLIOGRAPHIC_COUPLING_DATA, columns=['citing_1', 'citing_2', 'total'])
 
 
 class MockLoaderSingle(Loader):
@@ -94,6 +103,9 @@ class MockLoaderSingle(Loader):
     def load_cocitations(self, ids=None, current=1, task=None):
         return pd.DataFrame([], columns=['citing', 'cited_1', 'cited_2', 'year'])
 
+    def load_bibliographic_coupling(self, ids=None, current=1, task=None):
+        return pd.DataFrame([], columns=['citing_1', 'citing_2', 'total'])
+
 
 class MockLoaderEmpty(Loader):
 
@@ -117,6 +129,9 @@ class MockLoaderEmpty(Loader):
         raise Exception('Not implemented')
 
     def load_cocitations(self, ids, current=1, task=None):
+        raise Exception('Not implemented')
+
+    def load_bibliographic_coupling(self, ids=None, current=1, task=None):
         raise Exception('Not implemented')
 
     def expand(self, ids, current=1, task=None):
