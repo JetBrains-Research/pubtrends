@@ -49,7 +49,7 @@
 
         const PR_EDGE_STYLE = {
             "width": function (edge) {
-                return Math.min(20, edge.data().weight / 5);
+                return Math.max(1, Math.min(20, edge.data().weight / 5));
             },
             "curve-style": "haystack",
         };
