@@ -30,7 +30,7 @@ class KeyPaperAnalyzer:
     TOPIC_GRANULARITY = 0.05
     TOPIC_PAPERS = 50
     TOPIC_WORDS = 20
-    TEXT_WORDS = 100
+    TEXT_WORDS = 1000
 
     TOP_JOURNALS = 50
     TOP_AUTHORS = 50
