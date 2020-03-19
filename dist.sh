@@ -2,7 +2,7 @@
 # Script for building tar.gz archive for deployment
 # author Oleg.Shpynov os@jetbrains.com
 
-version=0.2
+version=0.3
 build=development
 
 for ARGUMENT in "$@"; do
