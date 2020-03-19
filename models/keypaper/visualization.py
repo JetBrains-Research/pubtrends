@@ -215,7 +215,7 @@ class Plotter:
                                    low=cluster_edges.density.min(),
                                    high=cluster_edges.density.max())
 
-        p = figure(title="Similarity between clusters",
+        p = figure(title="Similarity between groups",
                    x_range=clusters, y_range=clusters,
                    x_axis_location="below", plot_width=PLOT_WIDTH, plot_height=PAPERS_PLOT_HEIGHT,
                    tools=TOOLS, toolbar_location='above',

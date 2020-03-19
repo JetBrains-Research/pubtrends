@@ -59,20 +59,22 @@ def prepare_paper_data(data, source, pid):
             citation = f'{journal}, ({int(float(year))})'
 
     # Estimate related topics for the paper
-    related_topics = {}
-    if analyzer.paper_relations_graph.nodes():
+    if analyzer.paper_relations_graph.nodes() and analyzer.paper_relations_graph.has_node(pid):
+        related_topics = {}
         for v in analyzer.paper_relations_graph[pid]:
             c = analyzer.df[analyzer.df['id'] == v]['comp'].values[0]
             if c in related_topics:
                 related_topics[c] += 1
             else:
                 related_topics[c] = 1
-    related_topics = map(
-        lambda el: (', '.join(
-            [w[0] for w in analyzer.df_kwd[analyzer.df_kwd['comp'] == el[0]]['kwd'].values[0][:10]]
-        ), el[1]),
-        sorted(related_topics.items(), key=lambda el: el[1], reverse=True)
-    )
+        related_topics = map(
+            lambda el: (', '.join(
+                [w[0] for w in analyzer.df_kwd[analyzer.df_kwd['comp'] == el[0]]['kwd'].values[0][:10]]
+            ), el[1]),
+            sorted(related_topics.items(), key=lambda el: el[1], reverse=True)
+        )
+    else:
+        related_topics = None
 
     # Determine top references (papers that are cited by current),
     # citations (papers that cite current), and co-citations
@@ -83,16 +85,17 @@ def prepare_paper_data(data, source, pid):
     else:
         top_references = top_citations = []
 
-    if analyzer.paper_relations_graph.nodes():
+    if analyzer.paper_relations_graph.nodes() and analyzer.paper_relations_graph.has_node(pid):
         related_papers = map(
             lambda v: (analyzer.df[analyzer.df['id'] == v]['id'].values[0],
                        analyzer.df[analyzer.df['id'] == v]['title'].values[0],
                        analyzer.paper_relations_graph.edges[pid, v]['weight']),
             list(analyzer.paper_relations_graph[pid])
         )
-        top_related_papers = sorted(related_papers, key=lambda x: x[2], reverse=True)[:50]
+        related_papers = [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid, cw)
+                          for pid, title, cw in sorted(related_papers, key=lambda x: x[2], reverse=True)[:50]]
     else:
-        top_related_papers = []
+        related_papers = None
 
     result = {
         'title': title,
@@ -102,10 +105,11 @@ def prepare_paper_data(data, source, pid):
         'url': url_prefix + pid,
         'source': source,
         'citation_dynamics': [components(plotter.article_citation_dynamics(analyzer.df, str(pid)))],
-        'related_topics': related_topics,
-        'related_papers': [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid, cw)
-                           for pid, title, cw in top_related_papers]
     }
+    if related_papers:
+        result['related_papers'] = related_papers
+    if related_topics:
+        result['related_topics'] = related_topics
 
     abstract = sel['abstract'].values[0]
     if abstract != '':
