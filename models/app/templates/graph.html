@@ -115,10 +115,10 @@
                         if ('title' in data) {  
                             // Paper
                             content.innerHTML = "<b>" + data['title'] + "</b><br>" +
-                                "Author(s): " + data['authors'] + "<br>" +
-                                "Year: " + data['year'] + "<br>" +
-                                "Cited: " + data['cited'] + "<br>" +
-                                "Topic: " + data['comp'];
+                                "<b>Author(s)</b> " + data['authors'] + "<br>" +
+                                "<b>Year</b> " + data['year'] + "<br>" +
+                                "<b>Cited</b> " + data['cited'] + "<br>" +
+                                "<b>Topic</b> " + data['comp'];
                         } else {
                             // Group
                             content.innerHTML = "Topic: " + data['comp'];
