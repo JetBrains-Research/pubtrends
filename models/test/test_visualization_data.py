@@ -76,51 +76,6 @@ class TestPlotPreprocessor(unittest.TestCase):
         self.assertEqual(list(ds.data['year']), expected_years, 'Wrong list of years')
         self.assertEqual(list(ds.data['counts']), expected_counts, 'Wrong list of paper counts')
 
-    def test_chord_diagram_data(self):
-        layout, node_data_source, edge_data_source = PlotPreprocessor.chord_diagram_data(
-            self.analyzer.paper_relations_graph, self.analyzer.df,
-            self.analyzer.partition, self.analyzer.comp_other, self.plotter.comp_palette
-        )
-
-        expected_nodes = self.analyzer.paper_relations_graph.nodes()
-        data = node_data_source.data
-
-        self.assertCountEqual(list(layout.keys()), expected_nodes, 'Wrong nodes in layout')
-        self.assertCountEqual(list(data['index']), expected_nodes,
-                              'Wrong order of nodes in data source')
-
-        # Check that the size of all nodes is defined and is positive
-        self.assertFalse(np.any(np.isnan(data['size'])))
-        self.assertTrue(np.all(data['size'] > 0))
-
-        # Check that data corresponds to correct nodes
-        for node in expected_nodes:
-            idx = list(data['index']).index(node)
-            comp = self.analyzer.df[self.analyzer.df['id'] == node]['comp'].values[0]
-            expected_topic = f'#{comp + 1} OTHER' if comp == self.analyzer.comp_other else f'#{comp + 1}'
-
-            self.assertEqual(data['colors'][idx], self.plotter.comp_palette[comp], f'Wrong color for node {node}')
-            self.assertEqual(data['topic'][idx], expected_topic, f'Wrong topic for node {node}')
-
-    def test_chord_diagram_layout(self):
-        nodes = self.analyzer.paper_relations_graph.nodes()
-        edges = self.analyzer.paper_relations_graph.edges()
-
-        layout, xs, ys = PlotPreprocessor.chord_diagram_layout(nodes, edges)
-
-        self.assertEqual(len(layout), len(nodes), 'Wrong number of nodes in layout')
-        self.assertCountEqual(layout.keys(), nodes, 'Wrong nodes in layout')
-
-        edges_found = 0
-        inverse_layout = {pos: node for node, pos in layout.items()}
-        for x, y in zip(xs, ys):
-            start_node = inverse_layout[(x[0], y[0])]
-            end_node = inverse_layout[(x[-1], y[-1])]
-            self.assertIn((start_node, end_node), list(edges), 'Wrong edge in layout')
-            edges_found += 1
-
-        self.assertEqual(edges_found, len(edges), 'Some edges from co-citation graph are missing')
-
     def test_article_view_data_sourceSplit(self):
         width = 760
         lbefore = len(set(zip(self.analyzer.df['year'], self.analyzer.df['total'])))
