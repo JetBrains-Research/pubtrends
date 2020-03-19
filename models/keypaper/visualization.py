@@ -1,4 +1,4 @@
-import html
+import json
 import json
 import logging
 from string import Template
@@ -9,13 +9,10 @@ from bokeh.colors import RGB
 from bokeh.core.properties import value
 from bokeh.embed import components
 from bokeh.layouts import column
-from bokeh.models import ColumnDataSource, CustomJS, NodesAndLinkedEdges, TapTool
-from bokeh.models import GraphRenderer, StaticLayoutProvider
+from bokeh.models import ColumnDataSource, CustomJS
 # Tools used: hover,pan,tap,wheel_zoom,box_zoom,reset,save
-from bokeh.models import HoverTool, PanTool, WheelZoomTool, BoxZoomTool, ResetTool, SaveTool
 from bokeh.models import LinearColorMapper, PrintfTickFormatter, ColorBar
 from bokeh.models import NumeralTickFormatter
-from bokeh.models import Plot, Range1d, MultiLine, Circle
 from bokeh.models.widgets.tables import DataTable
 from bokeh.palettes import Category20
 from bokeh.plotting import figure
@@ -63,7 +60,7 @@ def visualize_analysis(analyzer):
             'n_citations': int(analyzer.df['total'].sum()),
             'n_subtopics': len(analyzer.components),
             'comp_other': analyzer.comp_other,
-            'cocitations_clusters': [components(plotter.cocitations_clustering())],
+            'components_similarity': [components(plotter.heatmap_clusters())],
             'component_size_summary': [components(plotter.component_size_summary())],
             'component_years_summary_boxplots': [components(plotter.component_years_summary_boxplots())],
             'subtopics_info_and_word_cloud_and_callback':
@@ -77,7 +74,6 @@ def visualize_analysis(analyzer):
             'papers_stats': [components(paper_statistics)],
             'papers_word_cloud': word_cloud_prepare(word_cloud),
             'papers_zoom_out_callback': zoom_out_callback,
-            'clusters_info_message': html.unescape(plotter.clusters_info_message),
             'author_statistics': plotter.author_statistics(),
             'journal_statistics': plotter.journal_statistics(),
             'experimental': analyzer.config.experimental,
@@ -205,56 +201,6 @@ class Plotter:
         form.submit();
         """
 
-    def chord_diagram_components(self):
-        log.info('Visualizing components with Chord diagram')
-
-        layout, node_data_source, edge_data_source = PlotPreprocessor.chord_diagram_data(
-            self.analyzer.paper_relations_graph, self.analyzer.df,
-            self.analyzer.partition, self.analyzer.comp_other, self.comp_palette
-        )
-
-        plot = Plot(plot_width=CHORD_DIAGRAM_SIZE, plot_height=CHORD_DIAGRAM_SIZE,
-                    x_range=Range1d(-1.1, 1.1), y_range=Range1d(-1.1, 1.1))
-        plot.title.text = 'Co-citations graph'
-
-        graph = GraphRenderer()
-
-        # Data for nodes & edges
-        # Assignment `graph.node_renderer.data_source = node_data_source` leads to an empty graph, do not use it!
-        graph.node_renderer.data_source.data = node_data_source.data
-        graph.edge_renderer.data_source.data = edge_data_source.data
-
-        # Node layout
-        graph.layout_provider = StaticLayoutProvider(graph_layout=layout)
-
-        # Node rendering
-        graph.node_renderer.glyph = Circle(size='size', line_color='colors', fill_color='colors',
-                                           line_alpha=0.5, fill_alpha=0.8)
-        graph.node_renderer.selection_glyph = Circle(size='size', line_color='#91C82F', fill_color='#91C82F',
-                                                     line_alpha=0.5, fill_alpha=0.8)
-
-        # Edge rendering
-        graph.edge_renderer.glyph = MultiLine(line_color='edge_colors',
-                                              line_alpha='edge_alphas',
-                                              line_width='edge_weights')
-        graph.edge_renderer.selection_glyph = MultiLine(line_color='#91C82F',
-                                                        line_alpha=0.5,
-                                                        line_width='edge_weights')
-
-        graph.selection_policy = NodesAndLinkedEdges()
-
-        # Add tools to the plot
-        # hover,pan,tap,wheel_zoom,box_zoom,reset,save
-        plot.add_tools(HoverTool(tooltips=self._html_tooltips([
-            ("Author(s)", '@authors'),
-            ("Year", '@year'),
-            ("Cited by", '@total paper(s) total'),
-            ("Subtopic", '@topic')])),
-            PanTool(), TapTool(), WheelZoomTool(), BoxZoomTool(), ResetTool(), SaveTool())
-
-        plot.renderers.append(graph)
-        return plot
-
     def heatmap_clusters(self):
         log.info('Visualizing components with heatmap')
 
@@ -269,12 +215,13 @@ class Plotter:
                                    low=cluster_edges.density.min(),
                                    high=cluster_edges.density.max())
 
-        p = figure(title="Density between different clusters",
+        p = figure(title="Similarity between clusters",
                    x_range=clusters, y_range=clusters,
                    x_axis_location="below", plot_width=PLOT_WIDTH, plot_height=PAPERS_PLOT_HEIGHT,
                    tools=TOOLS, toolbar_location='above',
-                   tooltips=[('Subtopic 1', '#@comp_x'), ('Subtopic 2', '#@comp_y'),
-                             ('Density', '@density, @value co-citations')])
+                   tooltips=[('Subtopic 1', '#@comp_x'),
+                             ('Subtopic 2', '#@comp_y'),
+                             ('Density', '@density, @value')])
 
         p.grid.grid_line_color = None
         p.axis.axis_line_color = None
@@ -292,18 +239,6 @@ class Plotter:
                              label_standoff=11, border_line_color=None, location=(0, 0))
         p.add_layout(color_bar, 'right')
         return p
-
-    def cocitations_clustering(self, max_chord_diagram_size=500):
-        if len(self.analyzer.df) > max_chord_diagram_size:
-            self.clusters_info_message = """
-            Heatmap is used to show which subtopics are related to each other.
-            Density is based on co-citations between clusters and depends on the size of the clusters."""
-            return self.heatmap_clusters()
-
-        self.clusters_info_message = """
-        Chord diagram is used to show papers as graph nodes, and edges demonstrate co-citations.
-        Click on any node to highlight all incident edges."""
-        return self.chord_diagram_components()
 
     def component_size_summary(self):
         log.info('Summary component detailed info visualization')

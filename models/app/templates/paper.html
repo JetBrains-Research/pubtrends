@@ -46,8 +46,8 @@
             {% if cited_papers is defined %}
                 $('#cited_papers').DataTable();
             {% endif %}
-            {% if cocited_papers is defined %}
-                $('#cocited_papers').DataTable();
+            {% if related_papers is defined %}
+                $('#related_papers').DataTable();
             {% endif %}
         } );
     </script>
@@ -165,7 +165,7 @@
                         <tr>
                             <th scope="col">#</th>
                             <th scope="col">Topic keywords</th>
-                            <th scope="col">Number of co-citations</th>
+                            <th scope="col">Related papers</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -245,13 +245,13 @@
                     <br>
                     {% endif %}
 
-                    {% if cocited_papers is defined %}
+                    {% if related_papers is defined %}
                     <hr>
-                    <h4>Valuable Co-cited Papers</h4>
+                    <h4>Valuable Related Papers</h4>
                     <p>
-                        This section represents valuable papers, which are co-cited with the paper of interest.
+                        This section represents valuable papers, which are similar to the paper of interest.
                     </p>
-                    <table id="cocited_papers" class="table table-sm table-bordered table-striped">
+                    <table id="related_papers" class="table table-sm table-bordered table-striped">
                         <thead>
                         <tr>
                             <th scope="col">#</th>
@@ -260,7 +260,7 @@
                         </tr>
                         </thead>
                         <tbody>
-                        {% for id, title, url, cw in cocited_papers %}
+                        {% for id, title, url, cw in related_papers %}
                         <tr>
                             <th scope="row">{{ loop.index }}</th>
                             <td>

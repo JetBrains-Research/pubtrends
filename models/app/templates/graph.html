@@ -95,7 +95,7 @@
                     },
                     {
                         selector: 'edge.highlight',
-                        style: {"width": 10 }
+                        style: { "width": 10 }
                     },
                     {
                         selector: 'edge.fade',
@@ -112,7 +112,7 @@
                     content: () => {
                         let content = document.createElement('div');
                         let data = ele._private.data;
-                        if ('title' in data) {
+                        if ('title' in data) {  
                             // Paper
                             content.innerHTML = "<b>" + data['title'] + "</b><br>" +
                                 "Author(s): " + data['authors'] + "<br>" +
@@ -140,6 +140,16 @@
 
             cy.nodes().unbind('mouseout');
             cy.nodes().bind('mouseout', (event) => event.target.tippy.hide());
+
+            cy.nodes().on('click', function(event){
+                let data = event.target._private.data;
+                if ('title' in data) {
+                    event.stopPropagation();
+                    // Decode jobid from URL
+                    const jobid = new URL(window.location).searchParams.get('jobid');
+                    window.open('/paper?source={{source}}&id=' + data['id'] + '&jobid=' + jobid, '_blank');
+                }
+            });
         });
     </script>
 </head>

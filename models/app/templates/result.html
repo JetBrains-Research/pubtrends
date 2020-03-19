@@ -152,6 +152,14 @@
                         </a>
                     </li>
                     <li class="nav-item row">
+                        <a class="nav-link no-padding-right" href="#graphs" title="Graphs">
+                            <img class="nav-icon" src="{{ url_for('static', filename='globe.svg') }}"/>
+                        </a>
+                        <a class="nav-link d-none d-xl-block no-padding" href="#graphs">
+                            Graphs
+                        </a>
+                    </li>
+                    <li class="nav-item row">
                         <a class="nav-link no-padding-right" href="#topics" title="Topics">
                             <img class="nav-icon" src="{{ url_for('static', filename='tag.svg') }}"/>
                         </a>
@@ -256,18 +264,10 @@
                             </div>
                         </div>
                         <div>
-                            <div class="row">
-                                <button id="show_as_list" type="button" class="col-auto btn btn-light"
-                                        onclick="(function(){ papers_callback() })();">
-                                    <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
-                                </button>
-                                <button id="show_citations_graph" type="button" class="ml-2 col-auto btn btn-light"
-                                        onclick="(function(){ graph_callback('citations') })();">
-                                    <img src="{{ url_for('static', filename='globe.svg') }}" alt="+"/>&nbsp;
-                                    Show citations graph
-                                </button>
-
-                            </div>
+                            <button id="show_as_list" type="button" class="btn btn-light"
+                                    onclick="(function(){ papers_callback() })();">
+                                <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -335,22 +335,46 @@
 
                 {% if topics_analyzed %}
                 <div class="card mt-3">
+                    <div class="card-title" id="graphs">
+                        <h1 class="card-header">Graphs</h1>
+                    </div>
+                    <div class="card-body">
+                        <p>
+                            Citations graph allows to explore citations between papers of interest.<br>
+                            Nodes represent papers, the bigger size the more overall citations paper has overall.<br>
+                            Node color represent different topics. Citations are shown as edges. <br>
+                            <em>Note</em> that some papers may not have any citations within this group.<br>
+                        </p>
+                        <button id="show_citations_graph" type="button" class="ml-2 col-auto btn btn-light"
+                                onclick="(function(){ graph_callback('citations') })();">
+                            <img src="{{ url_for('static', filename='globe.svg') }}" alt="+"/>&nbsp;
+                            Show citations graph
+                        </button>
+                        <hr>
+                        <p>
+                            Three citation-based methods are used to detect structure within papers. <br>
+                            Similarity between papers is computed based on <em>direct citations</em>, <em>co-citations</em>, and <em>bibliographic coupling</em>.<br>
+                            Similarity graph is built with nodes representing papers, and edges representing similarity info.<br>
+                            Color and size of each node encodes topic and total citations quantity of the paper.<br>
+                            Edge width encodes paper similarity, the thicker the more similar pair of papers is.<br>
+                            Structure within a research field can be visualized as <em>minimal spanning tree</em> of the similarity graph.<br>
+                        </p>
+                        <button id="show_structure_graph" type="button" class="col-auto btn btn-light"
+                                onclick="(function(){ graph_callback('structure') })();">
+                            <img src="{{ url_for('static', filename='globe.svg') }}" alt="+"/>&nbsp;
+                            Show structure graph
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
                     <div class="card-title" id="topics">
                         <h1 class="card-header">Topics</h1>
                     </div>
                     <div class="card-body">
                         <p>
-                            Three citation-based methods are used to detect structure within papers. <br>
-                            Similarity of the papers is computed based on <em>direct citations</em>, <em>co-citations</em>, and <em>bibliographic coupling</em>.<br>
-                            This information is used for subtopics extraction. Minimal spanning tree is available to explore.<br>
-                            <button id="show_structure_graph" type="button" class="col-auto btn btn-light"
-                                    onclick="(function(){ graph_callback('structure') })();">
-                                <img src="{{ url_for('static', filename='globe.svg') }}" alt="+"/>&nbsp;
-                                Show structure graph
-                            </button>
-                        </p>
-                        <hr>
-                        <p>
+                            Similarity information is used for subtopics extraction. <br>
+                            Subtopic represent a group of papers, that share the same ideas, the same research objectives, etc. <br>
                             Click on bars to get detailed information about keywords and publications for each subtopic.
                             <br>
                             <em>Note: subtopics are merged to "Other" if they contain less than 5% of publications of
@@ -362,22 +386,15 @@
                             {{ div|safe }}
                             {% endfor %}
                         </div>
-
-
-                        <a data-toggle="collapse" href="#collapseCocitations" role="button" aria-expanded="false"
-                           aria-controls="collapseCocitations" class="link">
-                            Show topics relationships graph clustering details
-                        </a>
-
-                        <div class="collapse" id="collapseCocitations">
-                            <p> {{clusters_info_message}} </p>
-                            <div>
-                                {% for script, div in cocitations_clusters %}
-                                {{ script|safe }}
-                                {{ div|safe }}
-                                {% endfor %}
-                            </div>
-                        </div>
+                        <hr>
+                        <p>
+                            Similarity between different subtopics is a summary similarity between all the papers,<br>
+                            normalized to subtopic sizes - number of papers.
+                        </p>
+                        {% for script, div in components_similarity %}
+                        {{ script|safe }}
+                        {{ div|safe }}
+                        {% endfor %}
                     </div>
                 </div>
 
@@ -397,7 +414,7 @@
                             {{ div|safe }}
                             {% endfor %}
                         </div>
-                        <br>
+                        <hr>
                         <p>Each boxplot demonstrates summary publication year for given topic.</p>
                         <div>
                             {% for script, div in component_years_summary_boxplots %}
@@ -617,19 +634,13 @@
                         "<em>Show as list</em> anytime to open the list of papers in a separate window."
                 },
                 {
-                    element: '#show_citations_graph',
-                    intro: "Click <img src=\"{{ url_for('static', filename='globe.svg') }}\" alt=\"+\"/> " +
-                        "<em>Show citations graph</em> to explore citations graph among the papers."
-                },
-                {
                     element: '#highlights',
                     intro: "Highlights section contains information about most notable papers. " +
                         "Top cited papers, papers of the year, and hot papers are shown in a dedicated sections."
                 },
                 {
-                    element: '#show_structure_graph',
-                    intro: "Click <img src=\"{{ url_for('static', filename='globe.svg') }}\" alt=\"+\"/> " +
-                        "<em>Show structure graph</em> to explore overall papers similarity."
+                    element: '#graphs',
+                    intro: "Graphs section allows to explore citations graph and overall research field structure."
                 },
                 {
                     element: '#subtopics-number',

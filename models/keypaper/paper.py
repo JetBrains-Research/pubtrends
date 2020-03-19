@@ -67,10 +67,12 @@ def prepare_paper_data(data, source, pid):
                 related_topics[c] += 1
             else:
                 related_topics[c] = 1
-    related_topics = map(lambda el: (', '.join([w[0] for w in
-                                                analyzer.df_kwd[analyzer.df_kwd['comp'] == el[0]]['kwd'].values[0][
-                                                :10]]), el[1]),
-                         sorted(related_topics.items(), key=lambda el: el[1], reverse=True))
+    related_topics = map(
+        lambda el: (', '.join(
+            [w[0] for w in analyzer.df_kwd[analyzer.df_kwd['comp'] == el[0]]['kwd'].values[0][:10]]
+        ), el[1]),
+        sorted(related_topics.items(), key=lambda el: el[1], reverse=True)
+    )
 
     # Determine top references (papers that are cited by current),
     # citations (papers that cite current), and co-citations
@@ -82,15 +84,15 @@ def prepare_paper_data(data, source, pid):
         top_references = top_citations = []
 
     if analyzer.paper_relations_graph.nodes():
-        cocited_papers = map(
+        related_papers = map(
             lambda v: (analyzer.df[analyzer.df['id'] == v]['id'].values[0],
                        analyzer.df[analyzer.df['id'] == v]['title'].values[0],
                        analyzer.paper_relations_graph.edges[pid, v]['weight']),
             list(analyzer.paper_relations_graph[pid])
         )
-        top_cocited_papers = sorted(cocited_papers, key=lambda x: x[1], reverse=True)[:50]
+        top_related_papers = sorted(related_papers, key=lambda x: x[2], reverse=True)[:50]
     else:
-        top_cocited_papers = []
+        top_related_papers = []
 
     result = {
         'title': title,
@@ -101,8 +103,8 @@ def prepare_paper_data(data, source, pid):
         'source': source,
         'citation_dynamics': [components(plotter.article_citation_dynamics(analyzer.df, str(pid)))],
         'related_topics': related_topics,
-        'cocited_papers': [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid, cw)
-                           for pid, title, cw in top_cocited_papers]
+        'related_papers': [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid, cw)
+                           for pid, title, cw in top_related_papers]
     }
 
     abstract = sel['abstract'].values[0]
