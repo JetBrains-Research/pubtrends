@@ -1,3 +1,4 @@
+import logging
 import networkx as nx
 import numpy as np
 import pandas as pd
@@ -7,6 +8,8 @@ from itertools import product as cart_product
 from matplotlib import colors
 
 from .utils import cut_authors_list
+
+logger = logging.getLogger(__name__)
 
 
 class PlotPreprocessor:
@@ -217,11 +220,12 @@ class PlotPreprocessor:
 
     @staticmethod
     def dump_citations_graph_cytoscape(df, citations_graph):
+        logger.debug('Mapping citations graph to cytoscape JS')
         comp_colors = dict(enumerate(Category20[20]))
 
         cgc = citations_graph.copy()
 
-        # Collect attributes for nodes
+        logger.debug('Collect attributes for nodes')
         attrs = {}
         for node in df['id']:
             if not cgc.has_node(node):
@@ -240,8 +244,8 @@ class PlotPreprocessor:
             }
         nx.set_node_attributes(cgc, attrs)
 
-        # Group not connected nodes in groups by cluster
-        comp_groups = {}
+        logger.debug('Group not connected nodes in groups by cluster')
+        comp_groups = set()
         cytoscape_data = nx.cytoscape_data(cgc)["elements"]
         for node_cs in cytoscape_data['nodes']:
             nid = node_cs['data']['id']
@@ -256,31 +260,26 @@ class PlotPreprocessor:
                         },
                         'classes': 'group'
                     }
+                    comp_groups.add(comp)
                     cytoscape_data['nodes'].append(comp_group)
                 node_cs['data']['parent'] = f'comp_group_{comp}'
 
+        logger.debug('Done citations graph in cytoscape JS')
         return cytoscape_data
 
     @staticmethod
     def dump_structure_graph_cytoscape(df, relations_graph):
+        logger.debug('Mapping relations graph to cytoscape JS')
         comp_colors = dict(enumerate(Category20[20]))
 
         prgc = relations_graph.copy()
 
-        # Use min spanning tree for visualization
+        logger.debug('Computing min spanning tree for visualization')
         for (u, v, w) in relations_graph.edges.data('weight'):
             prgc[u][v]['mweight'] = 1 / w
         prgc = nx.minimum_spanning_tree(prgc, 'mweight')
 
-        # # We want to show 1000 edges or 10%, what is bigger
-        # if len(relations_graph.edges()) > 1000:
-        #     weights = [w for (_, _, w) in relations_graph.edges.data('weight')]
-        #     weight_cutoff = np.percentile(weights, min(100 - (100 * 1000 / len(weights)), 90))
-        #     # Prune papers relationships edges with small weight for visualization
-        #     for u, v in [(u, v) for (u, v, w) in relations_graph.edges.data('weight') if w < weight_cutoff]:
-        #         prgc.remove_edge(u, v)
-
-        # Collect attributes for nodes
+        logger.debug('Collect attributes for nodes')
         attrs = {}
         for node in df['id']:
             if not prgc.has_node(node):
@@ -298,13 +297,13 @@ class PlotPreprocessor:
                 'color': comp_colors[comp]
             }
         nx.set_node_attributes(prgc, attrs)
-
-        # Group not connected nodes in groups by cluster
-        comp_groups = {}
         cytoscape_data = nx.cytoscape_data(prgc)["elements"]
+
+        logger.debug('Group not connected nodes in groups by cluster')
+        comp_groups = set()
         for node_cs in cytoscape_data['nodes']:
             nid = node_cs['data']['id']
-            if prgc.degree(nid) == 0:
+            if not relations_graph.has_node(nid):  # No info in relationship graph
                 comp = node_cs['data']['comp']
                 if comp not in comp_groups:
                     comp_group = {
@@ -315,7 +314,9 @@ class PlotPreprocessor:
                         },
                         'classes': 'group'
                     }
+                    comp_groups.add(comp)
                     cytoscape_data['nodes'].append(comp_group)
                 node_cs['data']['parent'] = f'comp_group_{comp}'
 
+        logger.debug('Done relations graph to cytoscape JS')
         return cytoscape_data
