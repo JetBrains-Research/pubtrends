@@ -256,7 +256,8 @@ class PlotPreprocessor:
                         'group': 'nodes',
                         'data': {
                             'id': f'comp_group_{comp}',
-                            'comp': comp
+                            'comp': comp,
+                            'color': comp_colors[comp - 1]  # Fix previous + 1
                         },
                         'classes': 'group'
                     }

@@ -203,6 +203,7 @@ def graph():
             loader, url_prefix = get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
             analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
             analyzer.init(data)
+            min_year, max_year = int(analyzer.df['year'].min()), int(analyzer.df['year'].max())
             if graph_type == "citations":
                 graph_cs = PlotPreprocessor.dump_citations_graph_cytoscape(analyzer.df, analyzer.citations_graph)
                 return render_template('graph.html',
@@ -212,6 +213,8 @@ def graph():
                                        limit=limit,
                                        sort=sort,
                                        citation_graph="true",
+                                       min_year=min_year,
+                                       max_year=max_year,
                                        graph_cytoscape_json=json.dumps(graph_cs))
             else:
                 graph_cs = PlotPreprocessor.dump_structure_graph_cytoscape(analyzer.df, analyzer.paper_relations_graph)
@@ -222,6 +225,8 @@ def graph():
                                        limit=limit,
                                        sort=sort,
                                        citation_graph="false",
+                                       min_year=min_year,
+                                       max_year=max_year,
                                        graph_cytoscape_json=json.dumps(graph_cs))
 
     return render_template_string("Something went wrong...")
