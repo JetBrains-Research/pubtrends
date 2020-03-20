@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 
 from models.keypaper.loader import Loader
-from models.keypaper.utils import SORT_MOST_CITED, SORT_MOST_RECENT, SORT_MOST_RELEVANT, preprocess_pubmed_search_title
-from models.keypaper.utils import preprocess_search_query, preprocess_doi
+from models.keypaper.utils import SORT_MOST_CITED, SORT_MOST_RECENT, SORT_MOST_RELEVANT
+from models.keypaper.utils import preprocess_search_query, preprocess_doi, preprocess_pubmed_search_title
 
 
 class PubmedLoader(Loader):
@@ -15,6 +15,7 @@ class PubmedLoader(Loader):
         super(PubmedLoader, self).__init__(pubtrends_config)
 
     def find(self, key, value, current=1, task=None):
+        value = value.strip()
         self.progress.info(f"Searching for a publication with {key} '{value}'", current=current, task=task)
 
         if key == 'id':
