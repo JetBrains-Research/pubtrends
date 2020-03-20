@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>PubTrends - {{query}} at {{source}}{{ search_string }}</title>
+    <title>PubTrends - {{query}} at {{source}}{{ search_string }} {{limit}} {{sort}}</title>
     <meta charset="utf-8">
     <link rel="stylesheet"
           href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
@@ -49,7 +49,7 @@
         function papers_callback_impl(key, value) {
             // Query may contain double quotes, fix it.
             const query_fixed = '{{ query }}'.replace(/&#34;/g, '"');
-            const url = '/papers?query=' + query_fixed + '&source={{source}}';
+            const url = '/papers?query=' + query_fixed + '&source={{source}}&limit={{limit}}&sort={{sort}}';
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
             var args = '';
@@ -87,7 +87,7 @@
         function graph_callback(graphType) {
             // Query may contain double quotes, fix it.
             const query_fixed = '{{ query }}'.replace(/&#34;/g, '"');
-            const url = '/graph?query=' + query_fixed + '&source={{source}}';
+            const url = '/graph?query=' + query_fixed + '&source={{source}}&limit={{limit}}&sort={{sort}}';
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
             window.open(url + '&type=' + graphType + '&jobid=' + jobid, '_blank');
@@ -118,7 +118,7 @@
         </div>
         <div class="col-lg-11 col-xl-8">
             <div class="content">
-                <span class="search-query">{{query}} at {{source}}</span>
+                <span class="search-query">{{query}} at {{source}} {{limit}} {{sort}}</span>
             </div>
         </div>
         <div class="d-none d-xl-block col-xl-2 float-right no-padding-right">

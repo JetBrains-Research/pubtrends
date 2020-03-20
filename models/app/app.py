@@ -77,6 +77,8 @@ def result():
     jobid = request.values.get('jobid')
     query = request.args.get('query')
     source = request.args.get('source')
+    limit = request.args.get('limit')
+    sort = request.args.get('sort')
     if jobid:
         job = complete_task(jobid)
         if job and job.state == 'SUCCESS':
@@ -84,6 +86,8 @@ def result():
             return render_template('result.html',
                                    query=query,
                                    source=source,
+                                   limit=limit,
+                                   sort=sort,
                                    version=PUBTRENDS_CONFIG.version,
                                    log=log,
                                    **data)
@@ -133,9 +137,16 @@ def process():
                                    jobid=jobid, version=PUBTRENDS_CONFIG.version)
         elif query:
             logging.debug('/process regular search')
+            limit = request.args.get('limit')
+            sort = request.args.get('sort')
             return render_template('process.html',
-                                   redirect_args={'query': quote(query), 'source': source, 'jobid': jobid},
+                                   redirect_args={
+                                       'query': quote(query), 'source': source,
+                                       'limit': limit, 'sort': sort,
+                                       'jobid': jobid
+                                   },
                                    query=trim(query, MAX_QUERY_LENGTH), source=source,
+                                   limit=limit, sort=sort,
                                    redirect_page="result",  # redirect in case of success
                                    jobid=jobid, version=PUBTRENDS_CONFIG.version)
 
@@ -182,6 +193,8 @@ def graph():
     jobid = request.values.get('jobid')
     query = request.args.get('query')
     source = request.args.get('source')
+    limit = request.args.get('limit')
+    sort = request.args.get('sort')
     graph_type = request.args.get('type')
     if jobid:
         job = complete_task(jobid)
@@ -196,6 +209,8 @@ def graph():
                                        version=PUBTRENDS_CONFIG.version,
                                        source=source,
                                        query=query,
+                                       limit=limit,
+                                       sort=sort,
                                        citation_graph="true",
                                        graph_cytoscape_json=json.dumps(graph_cs))
             else:
@@ -204,6 +219,8 @@ def graph():
                                        version=PUBTRENDS_CONFIG.version,
                                        source=source,
                                        query=query,
+                                       limit=limit,
+                                       sort=sort,
                                        citation_graph="false",
                                        graph_cytoscape_json=json.dumps(graph_cs))
 
@@ -215,6 +232,8 @@ def show_ids():
     jobid = request.values.get('jobid')
     query = request.args.get('query')
     source = request.args.get('source')  # Pubmed or Semantic Scholar
+    limit = request.args.get('limit')
+    sort = request.args.get('sort')
     search_string = ''
     comp = request.args.get('comp')
     if comp is not None:
@@ -250,6 +269,8 @@ def show_ids():
                                    source=source,
                                    query=query,
                                    search_string=search_string,
+                                   limit=limit,
+                                   sort=sort,
                                    papers=prepare_papers_data(data, source, comp, word, author, journal, papers_list))
 
     raise Exception(f"Request does not contain necessary params: {request}")
@@ -318,7 +339,7 @@ def search_terms():
     if query and source and sort:
         logging.debug(f'/ regular search')
         job = analyze_search_terms.delay(source, query=query, limit=limit, sort=sort)
-        return redirect(url_for('.process', query=query, source=source, jobid=job.id))
+        return redirect(url_for('.process', query=query, source=source, limit=limit, sort=sort, jobid=job.id))
 
     raise Exception(f"Request does not contain necessary params: {request}")
 

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>PubTrends - {{query}} at {{source}}{{ search_string }}
+    <title>PubTrends - {{query}} at {{source}}{{ search_string }} {{limit}} {{sort}}
     </title>
     <meta charset="utf-8">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
@@ -121,7 +121,7 @@
     <nav class="navbar navbar-light bg-light justify-content-between mt-3">
         <div>
             <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
-            <span class="search-query">{{query}} at {{source}}</span>
+            <span class="search-query">{{query}} at {{source}} {{limit}} {{sort}}</span>
         </div>
         <button class="btn btn-lg btn-link grey" type="reset" onclick="cancel()">&#10006;&nbsp;Cancel</button>
     </nav>
