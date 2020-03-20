@@ -20,11 +20,12 @@
             integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
             crossorigin="anonymous"></script>
 
-    <!--Cytoscape.js-->
-    <script src="{{ url_for('static', filename='cytoscape.min-3.8.1.js') }}"></script>
-    <!--    <script src="cytoscape.min-3.8.1.js"></script>-->
-    <script src="{{ url_for('static', filename='cytoscape-cose-bilkent-4.0.0.js') }}"></script>
-    <!--    <script src="cytoscape-cose-bilkent-4.0.0.js"></script>-->
+    <script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
+    <script src="https://unpkg.com/numeric/numeric-1.2.6.js"></script>
+    <script src="https://unpkg.com/layout-base/layout-base.js"></script>
+    <script src="https://unpkg.com/cose-base/cose-base.js"></script>
+    <script src="https://unpkg.com/cytoscape-layout-utilities/cytoscape-layout-utilities.js"></script>
+    <script src="{{ url_for('static', filename='cytoscape-fcose.js') }}"></script>
 
     <!-- Tippy.js-->
     <script src="https://unpkg.com/popper.js@1.14.7/dist/umd/popper.js"></script>
@@ -41,9 +42,12 @@
         "use strict";
 
         const LAYOUT = {
-            name: 'cose-bilkent',
+            name: 'fcose',
             idealEdgeLength: 300,
-            animate: false
+            animationEasing: 'ease-out',
+            animate: true,
+            randomize: true,
+            packComponents: true,
         };
 
         const CG_EDGE_STYLE = {
@@ -55,7 +59,7 @@
 
         const PR_EDGE_STYLE = {
             "width": function (edge) {
-                return Math.max(1, Math.min(20, edge.data().weight / 5));
+                return Math.max(1, Math.min(15, edge.data().weight / 5));
             },
             "curve-style": "haystack",
         };
@@ -241,7 +245,7 @@
     </div>
 </nav>
 <div class="container-fluid">
-    <div id="cy" class="mb-3" style="height: 800px;">Loading...</div>
+    <div id="cy" class="mb-4" style="height: 680px; margin-bottom: 2rem">Loading...</div>
 </div>
 <footer>
     <p>version {{ version }}<br/>
