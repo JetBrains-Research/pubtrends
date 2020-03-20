@@ -18,7 +18,7 @@ class SemanticScholarLoader(Loader):
     def find(self, key, value, current=1, task=None):
         value = value.strip()
         self.progress.info(f"Searching for a publication with {key} '{value}'", current=current, task=task)
-        
+
         if key == 'id':
             key = 'ssid'
 

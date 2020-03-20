@@ -3,6 +3,7 @@ from models.keypaper.connector import Connector
 
 
 class PMTestDatabaseSupplier(Connector):
+    INDEX_FIELDS = ['pmid', 'doi']
 
     def __init__(self):
         config = PubtrendsConfig(test=True)
@@ -11,8 +12,9 @@ class PMTestDatabaseSupplier(Connector):
     def init_pubmed_database(self):
         with self.neo4jdriver.session() as session:
             indexes = session.run('CALL db.indexes()').data()
-            if len(list(filter(lambda i: i['description'] == 'INDEX ON :PMPublication(pmid)', indexes))) > 0:
-                session.run('DROP INDEX ON :PMPublication(pmid)')
+            for field in self.INDEX_FIELDS:
+                if len(list(filter(lambda i: i['description'] == f'INDEX ON :PMPublication({field})', indexes))) > 0:
+                    session.run(f'DROP INDEX ON :PMPublication({field})')
 
             if len(list(filter(lambda i: i['description'] == 'INDEX ON NODE:PMPublication(title, abstract)',
                                indexes))) > 0:
@@ -46,9 +48,10 @@ RETURN n;
         with self.neo4jdriver.session() as session:
             session.run(query, articles=[a.to_dict() for a in articles])
 
-        # Init index by pmid
-        with self.neo4jdriver.session() as session:
-            session.run('CREATE INDEX ON :PMPublication(pmid)')
+        # Init indexes by pmid and doi
+        for field in self.INDEX_FIELDS:
+            with self.neo4jdriver.session() as session:
+                session.run(f'CREATE INDEX ON :PMPublication({field})')
 
         # Init full text search index
         with self.neo4jdriver.session() as session:
