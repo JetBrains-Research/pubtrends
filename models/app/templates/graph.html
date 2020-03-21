@@ -184,7 +184,8 @@
                                 "<b>Topic</b> " + data['comp'];
                         } else if ('comp' in data) {
                             // Group
-                            content.innerHTML = "Topic: " + data['comp'];
+                            content.innerHTML = "Topic: " + data['comp'] + "<br>" +
+                                "These are the papers assigned to subtopics by text similarity.";
                         }
                         return content;
                     },
