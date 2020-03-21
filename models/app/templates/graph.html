@@ -43,7 +43,6 @@
 
         const LAYOUT = {
             name: 'fcose',
-            idealEdgeLength: 300,
             animationEasing: 'ease-out',
             animate: true,
             randomize: true,
@@ -54,12 +53,12 @@
             "width": 1,
             "curve-style": "bezier",
             "target-arrow-shape": "triangle",
-            "arrow-scale": 3
+            "arrow-scale": 1
         };
 
         const PR_EDGE_STYLE = {
             "width": function (edge) {
-                return Math.max(1, Math.min(15, edge.data().weight / 5));
+                return Math.max(1, Math.min(10, edge.data().weight / 10));
             },
             "curve-style": "haystack",
         };
@@ -94,6 +93,7 @@
         $(document).ready(function () {
             document.getElementById('cy').innerHTML = "";
             const citation_graph = {{ citation_graph }};
+            const subtopics_palette = JSON.parse({{ subtopics_palette_json | tojson }});
             const min_year = {{min_year}};
             const max_year = {{max_year}};
             let edge_style;
@@ -119,22 +119,34 @@
                     {
                         selector: "node.subtopic",
                         style: {
-                            "width": "data(size)",
-                            "height": "data(size)",
-                            "background-color": "data(color)",
+                            "width": function (node) {
+                                return 10 + 4 * Math.min(5, Math.floor(Math.log1p(node.data().cited)));
+                            },
+                            "height": function (node) {
+                                return 10 + 4 * Math.min(5, Math.floor(Math.log1p(node.data().cited)));
+                            },
+                            "background-color": function (node) {
+                                return subtopics_palette[node.data().comp - 1];
+                            },
                         }
                     },
                     {
                         selector: "node.year",
                         style: {
                             "width": function (node) {
-                                return 10 + Math.floor(50 * (node.data().year - min_year) / (max_year - min_year));
+                                const dy = (node.data().year - min_year) / (max_year - min_year);
+                                return 10 + Math.floor(20 * dy);
                             },
                             "height": function (node) {
-                                return 10 + Math.floor(50 * (node.data().year - min_year) / (max_year - min_year));
+                                const dy = (node.data().year - min_year) / (max_year - min_year);
+                                return 10 + Math.floor(20 * dy);
                             },
                             "background-color": function (node) {
-                                return rgbToHex(0, Math.floor(255 * (node.data().year - min_year) / (max_year - min_year)), 0);
+                                const dy = (node.data().year - min_year) / (max_year - min_year);
+                                if (dy < 0.5) {
+                                    return '#000000';
+                                }
+                                return rgbToHex(0, Math.floor(255 * 2 * (dy - 0.5)), 0);
                             },
                         }
                     },
@@ -149,14 +161,6 @@
                         selector: "edge",
                         style: edge_style
                     },
-                    {
-                        selector: 'edge.highlight',
-                        style: { "width": 10 }
-                    },
-                    {
-                        selector: 'edge.fade',
-                        style: { 'opacity': '0.1' }
-                    }
                 ],
                 elements: elements
             });
@@ -168,14 +172,17 @@
                     content: () => {
                         let content = document.createElement('div');
                         let data = ele.data();
-                        if ('title' in data) {  
+                        if ('weight' in data) {
+                            // Edge
+                            content.innerHTML = "<b>Similarity</b> " + data['weight'] + "<br>";
+                        } else if('title' in data) {
                             // Paper
                             content.innerHTML = "<b>" + data['title'] + "</b><br>" +
                                 "<b>Author(s)</b> " + data['authors'] + "<br>" +
                                 "<b>Year</b> " + data['year'] + "<br>" +
                                 "<b>Cited</b> " + data['cited'] + "<br>" +
                                 "<b>Topic</b> " + data['comp'];
-                        } else {
+                        } else if ('comp' in data) {
                             // Group
                             content.innerHTML = "Topic: " + data['comp'];
                         }
@@ -191,27 +198,35 @@
             });
 
             cy.ready(function () {
-                cy.nodes().forEach(function (ele) {
+                let popperElements;
+
+                if (citation_graph) {
+                    popperElements = cy.nodes();
+                } else {
+                    popperElements = cy.elements();
+                }
+                popperElements.forEach(function (ele) {
                     makePopper(ele);
                 });
+
+                popperElements.unbind('mouseover');
+                popperElements.bind('mouseover', (event) => event.target.tippy.show());
+
+                popperElements.unbind('mouseout');
+                popperElements.bind('mouseout', (event) => event.target.tippy.hide());
+
+                cy.nodes().on('click', function(event){
+                    let data = event.target.data();
+                    if ('title' in data) {
+                        event.stopPropagation();
+                        // Decode jobid from URL
+                        const jobid = new URL(window.location).searchParams.get('jobid');
+                        window.open('/paper?source={{source}}&id=' + data['id'] + '&jobid=' + jobid, '_blank');
+                    }
+                });
+
+                reset();
             });
-
-            cy.nodes().unbind('mouseover');
-            cy.nodes().bind('mouseover', (event) => event.target.tippy.show());
-
-            cy.nodes().unbind('mouseout');
-            cy.nodes().bind('mouseout', (event) => event.target.tippy.hide());
-
-            cy.nodes().on('click', function(event){
-                let data = event.target._private.data;
-                if ('title' in data) {
-                    event.stopPropagation();
-                    // Decode jobid from URL
-                    const jobid = new URL(window.location).searchParams.get('jobid');
-                    window.open('/paper?source={{source}}&id=' + data['id'] + '&jobid=' + jobid, '_blank');
-                }
-            });
-            reset();
         });
 
     </script>
@@ -228,16 +243,17 @@
         <div class="d-none d-xl-block col-xl-2 float-right row">
             <div class="row float-right mr-2">
                 <div class="dropdown">
-                    <button class="btn btn-secondary dropdown-toggle col-auto" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <button class="btn btn-secondary dropdown-toggle col-auto" type="button"
+                            id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         Style
                     </button>
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                        <a class="dropdown-item" onclick="showSubtopics();" href="javascript:void(0);">Subtopics</a>
+                        <a class="dropdown-item" onclick="showSubtopics();" href="javascript:void(0);">Subtopic</a>
                         <a class="dropdown-item" onclick="showYear();" href="javascript:void(0);">Year</a>
                     </div>
                 </div>
-                <a id="tour-start" class="btn btn-secondary col-auto ml-2"
-                   href="javascript:void(0);" onclick="reset();" content="Reset">
+                <a id="tour-start" class="btn btn-secondary col-auto ml-2" content="Reset"
+                   href="javascript:void(0);" onclick="reset();">
                     <img class="nav-icon" src="{{ url_for('static', filename='rotate-cw.svg') }}"/>
                 </a>
             </div>

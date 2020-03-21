@@ -206,28 +206,34 @@ def graph():
             min_year, max_year = int(analyzer.df['year'].min()), int(analyzer.df['year'].max())
             if graph_type == "citations":
                 graph_cs = PlotPreprocessor.dump_citations_graph_cytoscape(analyzer.df, analyzer.citations_graph)
-                return render_template('graph.html',
-                                       version=PUBTRENDS_CONFIG.version,
-                                       source=source,
-                                       query=query,
-                                       limit=limit,
-                                       sort=sort,
-                                       citation_graph="true",
-                                       min_year=min_year,
-                                       max_year=max_year,
-                                       graph_cytoscape_json=json.dumps(graph_cs))
+                return render_template(
+                    'graph.html',
+                    version=PUBTRENDS_CONFIG.version,
+                    source=source,
+                    query=query,
+                    limit=limit,
+                    sort=sort,
+                    citation_graph="true",
+                    min_year=min_year,
+                    max_year=max_year,
+                    subtopics_palette_json=json.dumps(PlotPreprocessor.subtopics_palette(analyzer.df)),
+                    graph_cytoscape_json=json.dumps(graph_cs)
+                )
             else:
                 graph_cs = PlotPreprocessor.dump_structure_graph_cytoscape(analyzer.df, analyzer.paper_relations_graph)
-                return render_template('graph.html',
-                                       version=PUBTRENDS_CONFIG.version,
-                                       source=source,
-                                       query=query,
-                                       limit=limit,
-                                       sort=sort,
-                                       citation_graph="false",
-                                       min_year=min_year,
-                                       max_year=max_year,
-                                       graph_cytoscape_json=json.dumps(graph_cs))
+                return render_template(
+                    'graph.html',
+                    version=PUBTRENDS_CONFIG.version,
+                    source=source,
+                    query=query,
+                    limit=limit,
+                    sort=sort,
+                    citation_graph="false",
+                    min_year=min_year,
+                    max_year=max_year,
+                    subtopics_palette_json=json.dumps(PlotPreprocessor.subtopics_palette(analyzer.df)),
+                    graph_cytoscape_json=json.dumps(graph_cs)
+                )
 
     return render_template_string("Something went wrong...")
 

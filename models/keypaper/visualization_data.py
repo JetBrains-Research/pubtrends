@@ -219,10 +219,12 @@ class PlotPreprocessor:
         return ColumnDataSource(data=dict(x=x, y=y))
 
     @staticmethod
+    def subtopics_palette(df):
+        return dict(enumerate(Category20[len(set(df['comp']))]))
+
+    @staticmethod
     def dump_citations_graph_cytoscape(df, citations_graph):
         logger.debug('Mapping citations graph to cytoscape JS')
-        comp_colors = dict(enumerate(Category20[20]))
-
         cgc = citations_graph.copy()
 
         logger.debug('Collect attributes for nodes')
@@ -238,9 +240,7 @@ class PlotPreprocessor:
                 'authors': cut_authors_list(sel['authors'].values[0]),
                 'year': int(sel['year'].values[0]),
                 'cited': int(sel['total'].values[0]),
-                'size': 20 * np.log1p(int(sel['total'].values[0])) + 10,
                 'comp': comp + 1,  # For visualization consistency
-                'color': comp_colors[comp]
             }
         nx.set_node_attributes(cgc, attrs)
 
@@ -257,7 +257,6 @@ class PlotPreprocessor:
                         'data': {
                             'id': f'comp_group_{comp}',
                             'comp': comp,
-                            'color': comp_colors[comp - 1]  # Fix previous + 1
                         },
                         'classes': 'group'
                     }
@@ -271,7 +270,6 @@ class PlotPreprocessor:
     @staticmethod
     def dump_structure_graph_cytoscape(df, relations_graph):
         logger.debug('Mapping relations graph to cytoscape JS')
-        comp_colors = dict(enumerate(Category20[20]))
 
         prgc = relations_graph.copy()
 
@@ -294,8 +292,6 @@ class PlotPreprocessor:
                 'year': int(sel['year'].values[0]),
                 'cited': int(sel['total'].values[0]),
                 'comp': comp + 1,  # For visualization consistency
-                'size': 10 * np.log1p(int(sel['total'].values[0])) + 5,
-                'color': comp_colors[comp]
             }
         nx.set_node_attributes(prgc, attrs)
         cytoscape_data = nx.cytoscape_data(prgc)["elements"]
