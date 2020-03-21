@@ -42,6 +42,8 @@ CALL apoc.periodic.iterate("MATCH ()-[r:SSReferenced]->() RETURN r",
 CALL apoc.periodic.iterate("MATCH (p:SSPublication) RETURN p", 
     "DETACH DELETE p", {batchSize: $DELETE_BATCH_SIZE});""".trimIndent())
         }
+
+        processIndexes(true)
     }
 
     /**
