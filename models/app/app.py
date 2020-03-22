@@ -248,28 +248,28 @@ def show_ids():
     search_string = ''
     comp = request.args.get('comp')
     if comp is not None:
-        search_string += f', topic: {comp}'
+        search_string += f'topic: {comp}'
         comp = int(comp) - 1  # Component was exposed so it was 1-based
 
     word = request.args.get('word')
     if word is not None:
-        search_string += f', word: {word}'
+        search_string += f'word: {word}'
 
     author = request.args.get('author')
     if author is not None:
-        search_string += f', author: {author}'
+        search_string += f'author: {author}'
 
     journal = request.args.get('journal')
     if journal is not None:
-        search_string += f', journal: {journal}'
+        search_string += f'journal: {journal}'
 
     papers_list = request.args.get('papers_list')
     if papers_list == 'top':
-        search_string += f', top papers'
+        search_string += f'Top Papers'
     if papers_list == 'year':
-        search_string += f', papers of the year'
+        search_string += f'Papers of the Year'
     if papers_list == 'hot':
-        search_string += f', hot papers'
+        search_string += f'Hot Papers'
 
     if jobid:
         job = complete_task(jobid)

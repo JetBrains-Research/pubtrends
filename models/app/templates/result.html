@@ -118,7 +118,11 @@
         </div>
         <div class="col-lg-11 col-xl-8">
             <div class="content">
-                <span class="search-query">{{query}} at {{source}} {{limit}} {{sort}}</span>
+                <ol class="breadcrumb bg-light search-query">
+                    <li class="breadcrumb-item">{{ source }}</li>
+                    <li class="breadcrumb-item"><strong>{{ query }}</strong></li>
+                    <li class="breadcrumb-item">{{ limit }} {{ sort }}</li>
+                </ol>
             </div>
         </div>
         <div class="d-none d-xl-block col-xl-2 float-right no-padding-right">

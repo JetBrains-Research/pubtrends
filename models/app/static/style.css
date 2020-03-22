@@ -109,3 +109,13 @@ span.error-message {
 .link-button:focus {
     outline: none;
 }
+
+ol.breadcrumb {
+    margin: 0px;
+    padding: 0px;
+}
+
+.breadcrumb-item + .breadcrumb-item:before {
+    content: ">";
+    transform: scale(.5, 1);
+}

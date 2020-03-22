@@ -237,11 +237,17 @@
 <!-- Fixed navbar -->
 <nav class="navbar navbar-light bg-light fixed-top border-bottom no-padding-right">
     <div class="row container-fluid no-padding-right">
-        <div class="col-lg-11 col-xl-8 no-padding">
+        <div class="col-lg-1 col-xl-1 no-padding">
             <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
-            <span class="search-query">{{query}} at {{source}} {{limit}} {{sort}}</span>
         </div>
-        <div class="d-none d-xl-block col-xl-2 float-right row">
+        <div class="col-lg-9 col-xl-9 no-padding">
+            <ol class="breadcrumb bg-light search-query">
+                <li class="breadcrumb-item">{{ source }}</li>
+                <li class="breadcrumb-item"><strong>{{ query }}</strong></li>
+                <li class="breadcrumb-item">{{ limit }} {{ sort }}</li>
+            </ol>
+        </div>
+        <div class="d-none d-lg-block d-xl-block col-lg-2 col-xl-2 float-right row">
             <div class="row float-right mr-2">
                 <div class="dropdown">
                     <button class="btn btn-secondary dropdown-toggle col-auto" type="button"
