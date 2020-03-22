@@ -173,7 +173,7 @@
                     content: () => {
                         let content = document.createElement('div');
                         let data = ele.data();
-                        if ('text' in data) {
+                        if ('cos' in data) {
                             content.innerHTML = "<b>Text distance</b> " + data['cos'] + "<br>" +
                                 "Similarity is a cosine distance between TF-IDF normalized titles and abstracts. <br>" +
                                 "The less value the more similar papers are.";
