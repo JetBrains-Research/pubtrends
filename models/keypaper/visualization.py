@@ -313,7 +313,6 @@ class Plotter:
             plot.circle(x='year', y='y', fill_alpha=0.5, source=ds, size='size',
                         line_color='color', fill_color='color', legend='type')
             plot.legend.location = "top_left"
-            plot.legend.click_policy = "hide"
 
             # Word cloud description of subtopic by titles and abstracts
             kwds = get_topic_word_cloud_data(self.analyzer.df_kwd, comp)
@@ -375,7 +374,6 @@ class Plotter:
         plot.circle(x='year', y='y', fill_alpha=0.5, source=ds, size='size',
                     line_color='color', fill_color='color', legend='type')
         plot.legend.location = "top_left"
-        plot.legend.click_policy = "hide"
         return plot
 
     def max_gain_papers(self):
