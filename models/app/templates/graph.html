@@ -53,14 +53,25 @@
             "width": 1,
             "curve-style": "bezier",
             "target-arrow-shape": "triangle",
-            "arrow-scale": 1
+            "arrow-scale": 1,
         };
 
         const PR_EDGE_STYLE = {
             "width": function (edge) {
-                return Math.max(1, Math.min(10, edge.data().weight / 10));
+                if ('cos' in edge.data()){
+                    return Math.max(1, Math.min(10, 1 / edge.data().cos))
+                } else {
+                    return Math.max(1, Math.min(10, edge.data().weight / 10));
+                }
             },
             "curve-style": "haystack",
+            "line-style": function (edge) {
+                if ('cos' in edge.data()){
+                    return "dashed";
+                } else {
+                    return "solid";
+                }
+            }
         };
 
         function rgbToHex(r, g, b) {
@@ -77,7 +88,6 @@
                     ele.classes('subtopic');
                 }
             });
-            reset();
         }
 
         function showYear(){
@@ -86,7 +96,6 @@
                     ele.classes('year');
                 }
             });
-            reset();
         }
 
 
@@ -110,8 +119,12 @@
                     {
                         selector: "node",
                         style: {
-                            "width": 10,
-                            "height": 10,
+                            "width": function (node) {
+                                return 10 + 5 * Math.min(10, Math.floor(Math.log1p(node.data().cited)));
+                            },
+                            "height": function (node) {
+                                return 10 + 5 * Math.min(10, Math.floor(Math.log1p(node.data().cited)));
+                            },
                             "border-width": 1,
                             "border-color": "black",
                         }
@@ -119,12 +132,6 @@
                     {
                         selector: "node.subtopic",
                         style: {
-                            "width": function (node) {
-                                return 10 + 4 * Math.min(5, Math.floor(Math.log1p(node.data().cited)));
-                            },
-                            "height": function (node) {
-                                return 10 + 4 * Math.min(5, Math.floor(Math.log1p(node.data().cited)));
-                            },
                             "background-color": function (node) {
                                 return subtopics_palette[node.data().comp - 1];
                             },
@@ -133,14 +140,6 @@
                     {
                         selector: "node.year",
                         style: {
-                            "width": function (node) {
-                                const dy = (node.data().year - min_year) / (max_year - min_year);
-                                return 10 + Math.floor(20 * dy);
-                            },
-                            "height": function (node) {
-                                const dy = (node.data().year - min_year) / (max_year - min_year);
-                                return 10 + Math.floor(20 * dy);
-                            },
                             "background-color": function (node) {
                                 const dy = (node.data().year - min_year) / (max_year - min_year);
                                 if (dy < 0.5) {
@@ -154,7 +153,9 @@
                         selector: "node.group",
                         style: {
                             "background-opacity": 0.1,
-                            "background-color": "#9b9b9b"
+                            "background-color": function (node) {
+                                return subtopics_palette[node.data().comp - 1];
+                            }
                         }
                     },
                     {
@@ -172,9 +173,16 @@
                     content: () => {
                         let content = document.createElement('div');
                         let data = ele.data();
-                        if ('weight' in data) {
-                            // Edge
-                            content.innerHTML = "<b>Similarity</b> " + data['weight'] + "<br>";
+                        if ('text' in data) {
+                            content.innerHTML = "<b>Text distance</b> " + data['cos'] + "<br>" +
+                                "Similarity is a cosine distance between TF-IDF normalized titles and abstracts. <br>" +
+                                "The less value the more similar papers are.";
+                        } else if ('weight' in data) {
+                            // Graph similarity
+                            content.innerHTML = "<b>Graph similarity</b> " + data['weight'] + "<br>" +
+                                "Similarity is computed based on three citations based methods: " +
+                                "<em>co-citation<em>, <em>bibliographic coupling</em> and <em>direct citation</em>." +
+                                "The bigger value the more similar papers are.";
                         } else if('title' in data) {
                             // Paper
                             content.innerHTML = "<b>" + data['title'] + "</b><br>" +
@@ -184,8 +192,9 @@
                                 "<b>Topic</b> " + data['comp'];
                         } else if ('comp' in data) {
                             // Group
-                            content.innerHTML = "Topic: " + data['comp'] + "<br>" +
-                                "These are the papers assigned to subtopics by text similarity.";
+                            content.innerHTML = "<b>Topic</b> " + data['comp'] + "<br>" +
+                                "These papers are not connected by citations.<br>" +
+                                "Text similarity was used to assign topics.";
                         }
                         return content;
                     },
@@ -252,7 +261,7 @@
                 <div class="dropdown">
                     <button class="btn btn-secondary dropdown-toggle col-auto" type="button"
                             id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        Style
+                        Color
                     </button>
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                         <a class="dropdown-item" onclick="showSubtopics();" href="javascript:void(0);">Subtopic</a>

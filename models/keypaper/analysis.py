@@ -6,6 +6,8 @@ import pandas as pd
 from networkx.readwrite import json_graph
 from collections import Counter
 
+from scipy.spatial.distance import cosine
+
 from models.prediction.arxiv_loader import ArxivLoader
 from .pm_loader import PubmedLoader
 from .progress import Progress
@@ -283,7 +285,7 @@ class KeyPaperAnalyzer:
     def subtopic_analysis(self, cocitation_graph, current=0, task=None):
         self.progress.info(f'Extracting subtopics from paper relations graph', current=current, task=task)
         connected_components = nx.number_connected_components(cocitation_graph)
-        logger.debug(f'Co-citation graph has {connected_components} connected components')
+        logger.debug(f'Relations graph has {connected_components} connected components')
 
         # Graph clustering via Louvain community algorithm
         partition_louvain = community.best_partition(cocitation_graph, random_state=KeyPaperAnalyzer.SEED)
@@ -310,9 +312,11 @@ class KeyPaperAnalyzer:
             pid_frequent_tokens = get_frequent_tokens(df_pid, self.query, 1.0)
             comps_counter = Counter()
             for comp, comp_tfidf in tfidf_per_comp.items():
-                # Compute dot product of tokens frequencies and TF-IDF for each component
-                comps_counter[comp] += sum([pid_frequent_tokens.get(token, 0) * tfidf
-                                            for token, tfidf in comp_tfidf[:n_words]])
+                # Compute cosine distance between frequent words in document and TF-IDFs for each component
+                comps_counter[comp] += cosine(
+                    [pid_frequent_tokens.get(t[0], 0) for t in comp_tfidf[:n_words]],
+                    [t[1] for t in comp_tfidf[:n_words]]
+                )
                 if comps_merged and comp == 0:  # Other component marker
                     comps_counter[comp] += 1e-10
             # Get component closest by text (max dot product)

@@ -1,13 +1,18 @@
 import logging
+
 import networkx as nx
 import numpy as np
 import pandas as pd
 from bokeh.models import ColumnDataSource, TableColumn
 from bokeh.palettes import Category20
 from itertools import product as cart_product
+from math import floor
 from matplotlib import colors
+from scipy.spatial.distance import cosine
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 
-from .utils import cut_authors_list
+from .analysis import KeyPaperAnalyzer
+from .utils import cut_authors_list, tokenize
 
 logger = logging.getLogger(__name__)
 
@@ -225,13 +230,13 @@ class PlotPreprocessor:
     @staticmethod
     def dump_citations_graph_cytoscape(df, citations_graph):
         logger.debug('Mapping citations graph to cytoscape JS')
-        cgc = citations_graph.copy()
+        graph = citations_graph.copy()
 
         logger.debug('Collect attributes for nodes')
         attrs = {}
         for node in df['id']:
-            if not cgc.has_node(node):
-                cgc.add_node(node)
+            if not graph.has_node(node):
+                graph.add_node(node)
 
             sel = df[df['id'] == node]
             comp = int(sel['comp'].values[0])
@@ -242,14 +247,14 @@ class PlotPreprocessor:
                 'cited': int(sel['total'].values[0]),
                 'comp': comp + 1,  # For visualization consistency
             }
-        nx.set_node_attributes(cgc, attrs)
+        nx.set_node_attributes(graph, attrs)
 
         logger.debug('Group not connected nodes in groups by cluster')
         comp_groups = set()
-        cytoscape_data = nx.cytoscape_data(cgc)["elements"]
+        cytoscape_data = nx.cytoscape_data(graph)["elements"]
         for node_cs in cytoscape_data['nodes']:
             nid = node_cs['data']['id']
-            if cgc.degree(nid) == 0:
+            if graph.degree(nid) == 0:
                 comp = node_cs['data']['comp']
                 if comp not in comp_groups:
                     comp_group = {
@@ -268,52 +273,56 @@ class PlotPreprocessor:
         return cytoscape_data
 
     @staticmethod
-    def dump_structure_graph_cytoscape(df, relations_graph):
-        logger.debug('Mapping relations graph to cytoscape JS')
+    def dump_structure_graph_cytoscape(df, relations_graph, n_words=1000, n_gram=1):
+        logger.info('Mapping relations graph to cytoscape JS')
 
-        prgc = relations_graph.copy()
-
-        logger.debug('Computing min spanning tree for visualization')
+        graph = relations_graph.copy()
         for (u, v, w) in relations_graph.edges.data('weight'):
-            prgc[u][v]['mweight'] = 1 / w
-        prgc = nx.minimum_spanning_tree(prgc, 'mweight')
+            graph[u][v]['distance'] = 1 / w
 
-        logger.debug('Collect attributes for nodes')
+        logger.info('Compute global TF-IDF')
+        corpus = [f'{t} {a}' for t, a in zip(df['title'], df['abstract'])]
+        comps = set(df['comp'])
+        vectorizer = CountVectorizer(max_df=0.8, ngram_range=(1, n_gram),
+                                     max_features=n_words * len(comps),
+                                     tokenizer=lambda t: tokenize(t))
+        counts = vectorizer.fit_transform(corpus)
+        tfidf_transformer = TfidfTransformer()
+        tfidf = tfidf_transformer.fit_transform(counts)
+        idx_map = {pid: i for i, pid in enumerate(df['id'])}
+
+        logger.info('Adding cosine based edges to graph between out-of-graph edges and components')
+        for comp in comps:
+            df_comp = df[df['comp'] == comp]
+            cit_ids = [pid for pid in df_comp['id'] if relations_graph.has_node(pid)]
+            text_ids = [pid for pid in df_comp['id'] if not relations_graph.has_node(pid)]
+
+            for cid, tid in cart_product(cit_ids, text_ids):
+                cos = cosine(tfidf[idx_map[cid]].toarray(), tfidf[idx_map[tid]].toarray())
+                if np.isfinite(cos):
+                    graph.add_edge(cid, tid, cos=floor(cos*1000)/1000, distance=cos)
+
+        logger.info('Computing min spanning tree')
+        mst = nx.minimum_spanning_tree(graph, 'distance')
+
+        logger.info('Cleanup')
+        for _, _, d in mst.edges(data=True):
+            del d["distance"]
+
+        logger.info('Collect attributes for nodes')
         attrs = {}
-        for node in df['id']:
-            if not prgc.has_node(node):
-                prgc.add_node(node)
-
-            sel = df[df['id'] == node]
-            comp = int(sel['comp'].values[0])
-            attrs[node] = {
-                'title': sel['title'].values[0],
-                'authors': cut_authors_list(sel['authors'].values[0]),
-                'year': int(sel['year'].values[0]),
-                'cited': int(sel['total'].values[0]),
+        for edge in df['id']:
+            df_pid = df[df['id'] == edge]
+            comp = int(df_pid['comp'].values[0])
+            attrs[edge] = {
+                'title': df_pid['title'].values[0],
+                'authors': cut_authors_list(df_pid['authors'].values[0]),
+                'year': int(df_pid['year'].values[0]),
+                'cited': int(df_pid['total'].values[0]),
                 'comp': comp + 1,  # For visualization consistency
             }
-        nx.set_node_attributes(prgc, attrs)
-        cytoscape_data = nx.cytoscape_data(prgc)["elements"]
+        nx.set_node_attributes(mst, attrs)
+        cytoscape_data = nx.cytoscape_data(mst)["elements"]
 
-        logger.debug('Group not connected nodes in groups by cluster')
-        comp_groups = set()
-        for node_cs in cytoscape_data['nodes']:
-            nid = node_cs['data']['id']
-            if not relations_graph.has_node(nid):  # No info in relationship graph
-                comp = node_cs['data']['comp']
-                if comp not in comp_groups:
-                    comp_group = {
-                        'group': 'nodes',
-                        'data': {
-                            'id': f'comp_group_{comp}',
-                            'comp': comp
-                        },
-                        'classes': 'group'
-                    }
-                    comp_groups.add(comp)
-                    cytoscape_data['nodes'].append(comp_group)
-                node_cs['data']['parent'] = f'comp_group_{comp}'
-
-        logger.debug('Done relations graph to cytoscape JS')
+        logger.info('Done relations graph to cytoscape JS')
         return cytoscape_data

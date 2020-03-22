@@ -128,21 +128,16 @@ def tokenize(text, query=None, min_token_length=3):
 
 def get_frequent_tokens(df, query, fraction=0.1, min_tokens=20):
     """
-    Compute tokens weighted frequencies, favouring title
+    Compute tokens weighted frequencies
     :param query: search query to exclude
     :param fraction: fraction of most common tokens
     :param min_tokens: minimal number of tokens to return
     :return: dictionary {token: frequency}
     """
     counter = Counter()
-    for title in df['title']:
-        # Count only single occurrence
-        for token in set(tokenize(title, query)):
-            counter[token] += 2  # Weight for title
-    for abstract in df['abstract']:
-        # Count only single occurrence
-        for token in set(tokenize(abstract, query)):
-            counter[token] += 1  # Weight for abstract
+    for text in df['title'] + ' ' + df['abstract']:
+        for token in tokenize(text, query):
+            counter[token] += 1
     result = {}
     tokens = len(counter)
     for token, cnt in counter.most_common(max(min_tokens, int(tokens * fraction))):
@@ -208,14 +203,10 @@ def compute_tfidf(df, comps, query, n_words, n_gram=1, other_comp=None, ignore_o
         # -1 is OTHER component, not meaningful
         if not (ignore_other and comp == other_comp):
             df_comp = df[df['id'].isin(article_ids)]
-            # Artificially create weighted text, duplicating words in title
-            # See: get_frequent_tokens
-            # Important: As of Python 3.7 set from list preserves order, we can use ngrams
-            tokens = itertools.chain.from_iterable(
-                [list(set(tokenize(t, query))) * 2 for t in df_comp['title']] +
-                [list(set(tokenize(a, query))) for a in df_comp['abstract']])
-            corpus.append(' '.join(tokens))
-    vectorizer = CountVectorizer(min_df=0.01, max_df=0.8, ngram_range=(1, n_gram), max_features=n_words * len(comps))
+            corpus.append(' '.join([f'{t} {a}' for t, a in zip(df_comp['title'], df_comp['abstract'])]))
+    vectorizer = CountVectorizer(min_df=0.01, max_df=0.8, ngram_range=(1, n_gram),
+                                 max_features=n_words * len(comps),
+                                 tokenizer=lambda t: tokenize(t, query))
     counts = vectorizer.fit_transform(corpus)
     tfidf_transformer = TfidfTransformer()
     tfidf = tfidf_transformer.fit_transform(counts)
