@@ -175,13 +175,13 @@
                         let data = ele.data();
                         if ('cos' in data) {
                             content.innerHTML = "<b>Text distance</b> " + data['cos'] + "<br>" +
-                                "Similarity is a cosine distance between TF-IDF normalized titles and abstracts. <br>" +
+                                "Similarity is a cosine distance between TF-IDF normalized titles and abstracts.<br>" +
                                 "The less value the more similar papers are.";
                         } else if ('weight' in data) {
                             // Graph similarity
                             content.innerHTML = "<b>Graph similarity</b> " + data['weight'] + "<br>" +
                                 "Similarity is computed based on three citations based methods: " +
-                                "<em>co-citation<em>, <em>bibliographic coupling</em> and <em>direct citation</em>." +
+                                "<em>co-citation<em>, <em>bibliographic coupling</em> and <em>direct citation</em>.<br>" +
                                 "The bigger value the more similar papers are.";
                         } else if('title' in data) {
                             // Paper
