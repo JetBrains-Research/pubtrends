@@ -338,13 +338,21 @@
                 "Papers without citations are grouped by topics."
         } else {
             description = "Structure graph represents overall similarity structure between papers.<br>" +
-                "Color encodes topic or publication year. Edge width encodes paper similarity, " +
-                "the thicker the more similar pair of papers is, edge color represents type<br>" +
-                "<em>Co-citation</em> " +
+                "Node color encodes paper topic or publication year.<br> " +
+                "Edge width shows papers similarity, the thicker the more similar papers are.<br>" +
+                "Edge color represents similarity type.<br>" +
                 '<svg width="16" height="16"><rect width="16" height="16" style="fill:#00c02f;"/></svg>' +
+                "&nbsp;<em>Co-citation</em> " +
                 "<br>" +
-                "<em>Bibliographic coupling</em>" +
-                '<svg width="16" height="16"><rect width="16" height="16" style="fill:#0000FF;"/></svg>'
+                '<svg width="16" height="16"><rect width="16" height="16" style="fill:#0000FF;"/></svg>' +
+                "&nbsp;<em>Bibliographic coupling</em>" +
+                "<br>" +
+                '<svg width="16" height="16"><rect width="16" height="16" style="fill:#888888;"/></svg>' +
+                "&nbsp;<em>Direct citation</em>" +
+                "<br>" +
+                '<svg width="16" height="16"><rect width="16" height="16" style="fill:#9b4e00;"/></svg>' +
+                "&nbsp;<em>Text similarity</em>"
+
             ;
         }
         intro.setOptions({
@@ -354,15 +362,15 @@
                 },
                 {
                     element: '#dropdownMenuButton',
-                    intro: 'Color can represent topic or publication year:<br>' +
+                    intro: 'Color can represent topic or publication year.<br>' +
                         '<svg width="16" height="16"><rect width="16" height="16" style="fill:#000000;"/></svg>' +
                         ' {{min_year}} - ' +
                         '<svg width="16" height="16"><rect width="16" height="16" style="fill:#00FF00;"/></svg> ' +
-                        '{{max_year}}.'
+                        '{{max_year}}'
                 },
                 {
                     element: '#reset',
-                    intro: "Reset layout to default."
+                    intro: "Reset graph layout to default."
                 }
             ]
         });
