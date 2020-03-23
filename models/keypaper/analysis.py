@@ -253,46 +253,45 @@ class KeyPaperAnalyzer:
         result = nx.Graph()
         # NOTE: we use nodes id as String to avoid problems str keys in jsonify
         # during graph visualization
-        if self.RELATIONS_GRAPH_COCITATION > 0:
-            for el in cocit_df[['cited_1', 'cited_2', 'total']].values:
-                start, end, weight = str(el[0]), str(el[1]), float(el[2])
-                result.add_edge(start, end, weight=self.RELATIONS_GRAPH_COCITATION * weight)
+        for el in cocit_df[['cited_1', 'cited_2', 'total']].values:
+            start, end, cocitation = str(el[0]), str(el[1]), float(el[2])
+            result.add_edge(start, end, cocitation=cocitation)
 
-        if self.RELATIONS_GRAPH_BIBLIOGRAPHIC_COUPLING > 0:
-            for el in bibliographic_coupling_df[['citing_1', 'citing_2', 'total']].values:
-                start, end, weight = str(el[0]), str(el[1]), float(el[2])
-                if result.has_edge(start, end):
-                    result.add_edge(
-                        start, end,
-                        weight=result[start][end]['weight'] + self.RELATIONS_GRAPH_BIBLIOGRAPHIC_COUPLING * weight
-                    )
-                else:
-                    result.add_edge(start, end,
-                                    weight=self.RELATIONS_GRAPH_BIBLIOGRAPHIC_COUPLING * weight)
+        for el in bibliographic_coupling_df[['citing_1', 'citing_2', 'total']].values:
+            start, end, bibcoupling = str(el[0]), str(el[1]), float(el[2])
+            if result.has_edge(start, end):
+                result[start][end]['bibcoupling'] = bibcoupling
+            else:
+                result.add_edge(start, end, bibcoupling=bibcoupling)
 
         # Make paper relations graph connected, adding citations_graph edges
-        if self.RELATIONS_GRAPH_CITATION > 0:
-            for u, v in citations_graph.edges:
-                if result.has_edge(u, v):
-                    result.add_edge(u, v, weight=result[u][v]['weight'] + self.RELATIONS_GRAPH_CITATION)
-                else:
-                    result.add_edge(u, v, weight=self.RELATIONS_GRAPH_CITATION)
+        for u, v in citations_graph.edges:
+            if result.has_edge(u, v):
+                result[u][v]['citation'] = 1
+            else:
+                result.add_edge(u, v, citation=1)
 
         self.progress.info(f'Built paper relations graph - {len(result.nodes())} nodes and {len(result.edges())} edges',
                            current=current, task=task)
         return result
 
-    def subtopic_analysis(self, cocitation_graph, current=0, task=None):
+    def subtopic_analysis(self, relations_graph, current=0, task=None):
         self.progress.info(f'Extracting subtopics from paper relations graph', current=current, task=task)
-        connected_components = nx.number_connected_components(cocitation_graph)
+        connected_components = nx.number_connected_components(relations_graph)
         logger.debug(f'Relations graph has {connected_components} connected components')
 
+        # Compute aggregated weight
+        for _, _, d in relations_graph.edges(data=True):
+            d['weight'] = self.RELATIONS_GRAPH_COCITATION * d.get('cocitation', 0) + \
+                self.RELATIONS_GRAPH_BIBLIOGRAPHIC_COUPLING * d.get('bibcoupling', 0) + \
+                self.RELATIONS_GRAPH_CITATION * d.get('citation', 0)
+
         # Graph clustering via Louvain community algorithm
-        partition_louvain = community.best_partition(cocitation_graph, random_state=KeyPaperAnalyzer.SEED)
+        partition_louvain = community.best_partition(relations_graph, random_state=KeyPaperAnalyzer.SEED)
         logger.debug(f'Found {len(set(partition_louvain.values()))} components')
 
         # Calculate modularity for partition
-        modularity = community.modularity(partition_louvain, cocitation_graph)
+        modularity = community.modularity(partition_louvain, relations_graph)
         logger.debug(f'Graph modularity (possible range is [-1, 1]): {modularity :.3f}')
 
         # Merge small components to 'Other'

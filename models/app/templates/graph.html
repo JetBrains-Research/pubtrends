@@ -54,6 +54,7 @@
             "curve-style": "bezier",
             "target-arrow-shape": "triangle",
             "arrow-scale": 1,
+            "line-color": "#888888"
         };
 
         const PR_EDGE_STYLE = {
@@ -71,6 +72,22 @@
                 } else {
                     return "solid";
                 }
+            },
+            "line-color": function (edge) {
+                let data = edge.data();
+                if ('cos' in data){
+                    return "#e16200";
+                }
+                const cocitation = data.cocitation;
+                const bibcoupling = data.bibcoupling;
+                const citation = data.citation;
+                if (cocitation >= bibcoupling && cocitation >= citation) {
+                    return "#00c02f"
+                }
+                if (bibcoupling >= cocitation && bibcoupling >= citation) {
+                    return "#0000ff"
+                }
+                return "#888888";
             }
         };
 
@@ -179,9 +196,23 @@
                                 "The less value the more similar papers are.";
                         } else if ('weight' in data) {
                             // Graph similarity
-                            content.innerHTML = "<b>Graph similarity</b> " + data['weight'] + "<br>" +
-                                "Similarity is computed based on three citations based methods: " +
-                                "<em>co-citation<em>, <em>bibliographic coupling</em> and <em>direct citation</em>.<br>" +
+                            let cocitation = 0;
+                            if ('cocitation' in data) {
+                                cocitation = data['cocitation'];
+                            }
+                            let bibcoupling = 0;
+                            if ('bibcoupling' in data) {
+                                bibcoupling = data['bibcoupling'];
+                            }
+                            let citation = 0;
+                            if ('citation' in data) {
+                                citation = data['citation'];
+                            }
+                            content.innerHTML = "<b>Citations similarity</b> " + data['weight'] + "<br>" +
+                                "Similarity is computed based on three citations based methods.<br>" +
+                                "<b>Co-citation</b> " + cocitation + "<br>" +
+                                "<b>Bibliographic coupling</b> " + bibcoupling + "<br>" +
+                                "<b>Citation</b> " + citation + "<br>" +
                                 "The bigger value the more similar papers are.";
                         } else if('title' in data) {
                             // Paper
