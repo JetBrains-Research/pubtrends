@@ -4,22 +4,22 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 from networkx.readwrite import json_graph
+from itertools import product as cart_product
 from collections import Counter
-
 from scipy.spatial.distance import cosine
-
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from models.prediction.arxiv_loader import ArxivLoader
 from .pm_loader import PubmedLoader
 from .progress import Progress
 from .ss_loader import SemanticScholarLoader
-from .utils import split_df_list, get_frequent_tokens, get_topics_description, get_tfidf_words
+from .utils import split_df_list, get_frequent_tokens, get_topics_description, get_tfidf_words, tokenize
 
 logger = logging.getLogger(__name__)
 
 
 class KeyPaperAnalyzer:
     SEED = 20190723
-    TOTAL_STEPS = 17
+    TOTAL_STEPS = 19  # 18 + 1 for visualization
     EXPERIMENTAL_STEPS = 2
 
     TOP_CITED_PAPERS = 50
@@ -120,22 +120,22 @@ class KeyPaperAnalyzer:
         cocit_grouped_df = self.build_cocit_grouped_df(self.cocit_df)
 
         # Loading data about bibliographic coupling
-        self.bibliographic_coupling_df = self.loader.load_bibliographic_coupling(self.ids, current=7, task=task)
+        self.bibliographic_coupling_df = self.loader.load_bibliographic_coupling(self.ids, current=8, task=task)
 
         # Building paper relations graph, including all the papers from citations graph
         # IMPORTANT: not all the publications might be still covered
         self.paper_relations_graph = self.build_papers_relation_graph(
-            self.citations_graph, cocit_grouped_df, self.bibliographic_coupling_df, current=8, task=task
+            self.citations_graph, cocit_grouped_df, self.bibliographic_coupling_df, current=9, task=task
         )
 
         if len(self.paper_relations_graph.nodes()) == 0:
             logger.debug("Paper relations graph is empty")
-            self.progress.info("Not enough papers to process topics analysis", current=9, task=task)
+            self.progress.info("Not enough papers to process topics analysis", current=10, task=task)
             self.df['comp'] = 0  # Technical value for top authors and papers analysis
             self.df_kwd = pd.DataFrame({'comp': [0], 'kwd': ['']})
         else:
             # Perform subtopic analysis and get subtopic descriptions
-            partition, n_components_merged = self.subtopic_analysis(self.paper_relations_graph, current=9, task=task)
+            partition, n_components_merged = self.subtopic_analysis(self.paper_relations_graph, current=10, task=task)
             # Get descriptions for subtopics
             logger.debug(f'Computing subtopics descriptions by top cited papers')
             most_cited_per_comp = self.get_most_cited_papers_for_comps(self.df, partition)
@@ -143,7 +143,7 @@ class KeyPaperAnalyzer:
             tfidf_per_comp = get_topics_description(self.df, most_cited_per_comp, query, self.TEXT_WORDS)
             # Update papers non assigned with components
             missing_comps = self.get_missing_components(self.df, partition, tfidf_per_comp, n_components_merged > 0,
-                                                        current=10, task=task)
+                                                        current=11, task=task)
             self.partition, self.comp_other, self.components, self.comp_sizes, sort_order = self.update_components(
                 partition, n_components_merged, missing_comps, task
             )
@@ -154,31 +154,34 @@ class KeyPaperAnalyzer:
             self.df_kwd = pd.DataFrame(kwds, columns=['comp', 'kwd'])
             logger.debug(f'Components description\n{self.df_kwd["kwd"]}')
             # Update df with information for all papers
+            self.structure_graph = self.build_structure_graph(self.df, self.paper_relations_graph,
+                                                              current=12, task=task)
+
 
         # Perform PageRank analysis
-        pr = self.pagerank(self.citations_graph, current=11, task=task)
+        pr = self.pagerank(self.citations_graph, current=13, task=task)
         self.df = self.merge_col(self.df, pr, col='pagerank')
 
         # Find interesting papers
-        self.top_cited_papers, self.top_cited_df = self.find_top_cited_papers(self.df, current=12, task=task)
+        self.top_cited_papers, self.top_cited_df = self.find_top_cited_papers(self.df, current=14, task=task)
         self.max_gain_papers, self.max_gain_df = self.find_max_gain_papers(self.df, self.citation_years,
-                                                                           current=13, task=task)
+                                                                           current=15, task=task)
         self.max_rel_gain_papers, self.max_rel_gain_df = self.find_max_relative_gain_papers(
-            self.df, self.citation_years, current=13, task=task
+            self.df, self.citation_years, current=16, task=task
         )
 
         # Find top journals
-        self.journal_stats = self.popular_journals(self.df, current=15, task=task)
+        self.journal_stats = self.popular_journals(self.df, current=17, task=task)
         # Find top authors
-        self.author_stats = self.popular_authors(self.df, current=16, task=task)
+        self.author_stats = self.popular_authors(self.df, current=18, task=task)
 
         # Experimental features, can be turned off in 'config.properties'
         if self.experimental:
             # Perform subtopic evolution analysis and get subtopic descriptions
             self.evolution_df, self.evolution_year_range = self.subtopic_evolution_analysis(self.cocit_df,
-                                                                                            current=17, task=task)
+                                                                                            current=19, task=task)
             self.evolution_kwds = self.subtopic_evolution_descriptions(
-                self.df, self.evolution_df, self.evolution_year_range, self.query, current=18, task=task
+                self.df, self.evolution_df, self.evolution_year_range, self.query, current=20, task=task
             )
 
     def build_cit_stats_df(self, cit_stats_df_from_query, n_papers, current=None, task=None):
@@ -337,6 +340,43 @@ class KeyPaperAnalyzer:
         for k, v in comp_sizes.items():
             logger.debug(f'Cluster {k}: {v} ({int(100 * v / len(partition_full))}%)')
         return partition_full, comp_other, components, comp_sizes, sort_order
+
+    def build_structure_graph(self, df, relations_graph, n_words=TEXT_WORDS, n_gram=1, current=0, task=None):
+        self.progress.info('Building structure graph', current=current, task=task)
+        graph = relations_graph.copy()
+        for (u, v, w) in relations_graph.edges.data('weight'):
+            graph[u][v]['distance'] = 1 / w
+
+        logger.debug('Compute global TF-IDF')
+        corpus = [f'{t} {a}' for t, a in zip(df['title'], df['abstract'])]
+        comps = set(df['comp'])
+        vectorizer = CountVectorizer(max_df=0.8, ngram_range=(1, n_gram),
+                                     max_features=n_words * len(comps),
+                                     tokenizer=lambda t: tokenize(t))
+        counts = vectorizer.fit_transform(corpus)
+        tfidf_transformer = TfidfTransformer()
+        tfidf = tfidf_transformer.fit_transform(counts)
+        idx_map = {pid: i for i, pid in enumerate(df['id'])}
+
+        logger.debug('Adding cosine based edges to graph between out-of-graph edges and components')
+        for comp in comps:
+            df_comp = df[df['comp'] == comp]
+            cit_ids = [pid for pid in df_comp['id'] if relations_graph.has_node(pid)]
+            text_ids = [pid for pid in df_comp['id'] if not relations_graph.has_node(pid)]
+
+            for cid, tid in cart_product(cit_ids, text_ids):
+                cos = cosine(tfidf[idx_map[cid]].toarray(), tfidf[idx_map[tid]].toarray())
+                if np.isfinite(cos):
+                    graph.add_edge(cid, tid, cos=cos, distance=cos)
+
+        logger.debug('Computing min spanning tree')
+        mst = nx.minimum_spanning_tree(graph, 'distance')
+
+        logger.info('Cleanup')
+        for _, _, d in mst.edges(data=True):
+            del d["distance"]
+
+        return mst
 
     @staticmethod
     def merge_col(df, data, col):
@@ -576,6 +616,7 @@ class KeyPaperAnalyzer:
             'df_kwd': self.df_kwd.to_json(),
             'citations_graph': json_graph.node_link_data(self.citations_graph),
             'paper_relations_graph': json_graph.node_link_data(self.paper_relations_graph),
+            'structure_graph': json_graph.node_link_data(self.structure_graph),
             'top_cited_papers': list(self.top_cited_papers),
             'max_gain_papers': list(self.max_gain_papers),
             'max_rel_gain_papers': list(self.max_rel_gain_papers),
@@ -606,9 +647,10 @@ class KeyPaperAnalyzer:
         df_kwd['kwd'] = df_kwd['kwd'].apply(lambda x: [el.split(':') for el in x])
         df_kwd['kwd'] = df_kwd['kwd'].apply(lambda x: [(el[0], float(el[1])) for el in x])
 
-        # Restore citation and co-citation graphs
+        # Restore citation and structure graphs
         citations_graph = json_graph.node_link_graph(fields['citations_graph'])
         paper_relations_graph = json_graph.node_link_graph(fields['paper_relations_graph'])
+        structure_graph = json_graph.node_link_graph(fields['structure_graph'])
 
         top_cited_papers = set(fields['top_cited_papers'])
         max_gain_papers = set(fields['max_gain_papers'])
@@ -619,6 +661,7 @@ class KeyPaperAnalyzer:
             'df_kwd': df_kwd,
             'citations_graph': citations_graph,
             'paper_relations_graph': paper_relations_graph,
+            'structure_graph': structure_graph,
             'top_cited_papers': top_cited_papers,
             'max_gain_papers': max_gain_papers,
             'max_rel_gain_papers': max_rel_gain_papers
@@ -630,6 +673,7 @@ class KeyPaperAnalyzer:
         self.df_kwd = loaded['df_kwd']
         self.citations_graph = loaded['citations_graph']
         self.paper_relations_graph = loaded['paper_relations_graph']
+        self.structure_graph = loaded['structure_graph']
         self.top_cited_papers = loaded['top_cited_papers']
         self.max_gain_papers = loaded['max_gain_papers']
         self.max_rel_gain_papers = loaded['max_rel_gain_papers']

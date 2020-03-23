@@ -220,7 +220,7 @@ def graph():
                     graph_cytoscape_json=json.dumps(graph_cs)
                 )
             else:
-                graph_cs = PlotPreprocessor.dump_structure_graph_cytoscape(analyzer.df, analyzer.paper_relations_graph)
+                graph_cs = PlotPreprocessor.dump_structure_graph_cytoscape(analyzer.df, analyzer.structure_graph)
                 return render_template(
                     'graph.html',
                     version=PUBTRENDS_CONFIG.version,

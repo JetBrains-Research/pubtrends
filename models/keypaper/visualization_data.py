@@ -6,13 +6,9 @@ import pandas as pd
 from bokeh.models import ColumnDataSource, TableColumn
 from bokeh.palettes import Category20
 from itertools import product as cart_product
-from math import floor
 from matplotlib import colors
-from scipy.spatial.distance import cosine
-from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 
-from .analysis import KeyPaperAnalyzer
-from .utils import cut_authors_list, tokenize
+from .utils import cut_authors_list
 
 logger = logging.getLogger(__name__)
 
@@ -260,54 +256,22 @@ class PlotPreprocessor:
                     comp_group = {
                         'group': 'nodes',
                         'data': {
-                            'id': f'comp_group_{comp}',
+                            'id': f'subtopic_{comp}',
                             'comp': comp,
                         },
                         'classes': 'group'
                     }
                     comp_groups.add(comp)
                     cytoscape_data['nodes'].append(comp_group)
-                node_cs['data']['parent'] = f'comp_group_{comp}'
+                node_cs['data']['parent'] = f'subtopic_{comp}'
 
         logger.debug('Done citations graph in cytoscape JS')
         return cytoscape_data
 
     @staticmethod
-    def dump_structure_graph_cytoscape(df, relations_graph, n_words=1000, n_gram=1):
+    def dump_structure_graph_cytoscape(df, structure_graph):
         logger.info('Mapping relations graph to cytoscape JS')
-
-        graph = relations_graph.copy()
-        for (u, v, w) in relations_graph.edges.data('weight'):
-            graph[u][v]['distance'] = 1 / w
-
-        logger.info('Compute global TF-IDF')
-        corpus = [f'{t} {a}' for t, a in zip(df['title'], df['abstract'])]
-        comps = set(df['comp'])
-        vectorizer = CountVectorizer(max_df=0.8, ngram_range=(1, n_gram),
-                                     max_features=n_words * len(comps),
-                                     tokenizer=lambda t: tokenize(t))
-        counts = vectorizer.fit_transform(corpus)
-        tfidf_transformer = TfidfTransformer()
-        tfidf = tfidf_transformer.fit_transform(counts)
-        idx_map = {pid: i for i, pid in enumerate(df['id'])}
-
-        logger.info('Adding cosine based edges to graph between out-of-graph edges and components')
-        for comp in comps:
-            df_comp = df[df['comp'] == comp]
-            cit_ids = [pid for pid in df_comp['id'] if relations_graph.has_node(pid)]
-            text_ids = [pid for pid in df_comp['id'] if not relations_graph.has_node(pid)]
-
-            for cid, tid in cart_product(cit_ids, text_ids):
-                cos = cosine(tfidf[idx_map[cid]].toarray(), tfidf[idx_map[tid]].toarray())
-                if np.isfinite(cos):
-                    graph.add_edge(cid, tid, cos=floor(cos*1000)/1000, distance=cos)
-
-        logger.info('Computing min spanning tree')
-        mst = nx.minimum_spanning_tree(graph, 'distance')
-
-        logger.info('Cleanup')
-        for _, _, d in mst.edges(data=True):
-            del d["distance"]
+        graph = structure_graph.copy()
 
         logger.info('Collect attributes for nodes')
         attrs = {}
@@ -321,8 +285,8 @@ class PlotPreprocessor:
                 'cited': int(df_pid['total'].values[0]),
                 'comp': comp + 1,  # For visualization consistency
             }
-        nx.set_node_attributes(mst, attrs)
-        cytoscape_data = nx.cytoscape_data(mst)["elements"]
+        nx.set_node_attributes(graph, attrs)
+        cytoscape_data = nx.cytoscape_data(graph)["elements"]
 
         logger.info('Done relations graph to cytoscape JS')
         return cytoscape_data
