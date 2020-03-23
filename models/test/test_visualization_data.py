@@ -113,7 +113,7 @@ class TestPlotPreprocessor(unittest.TestCase):
         cluster_edges, clusters = PlotPreprocessor.heatmap_clusters_data(
             self.analyzer.paper_relations_graph, self.analyzer.df, self.analyzer.comp_sizes
         )
-        
+
         # Find data for comp_x=i and comp_y=j in DataFrame
         def index(i, j):
             return np.logical_and(cluster_edges['comp_x'] == str(i), cluster_edges['comp_y'] == str(j))

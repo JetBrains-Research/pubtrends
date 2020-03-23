@@ -158,7 +158,6 @@ class KeyPaperAnalyzer:
             self.structure_graph = self.build_structure_graph(self.df, self.paper_relations_graph,
                                                               current=12, task=task)
 
-
         # Perform PageRank analysis
         pr = self.pagerank(self.citations_graph, current=13, task=task)
         self.df = self.merge_col(self.df, pr, col='pagerank')
