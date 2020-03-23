@@ -3,10 +3,10 @@ import json
 import networkx as nx
 import pandas as pd
 
-RELATIONS_GRAPH_GRAPHML = '/Users/oleg/work/pubtrends/models/test/test_data/paper_relations_graph.graphml'
-DF_CSV = '/Users/oleg/work/pubtrends/models/test/test_data/df.csv'
-EVOLUTION_DF_CSV = '/Users/oleg/work/pubtrends/models/test/test_data/evolution_df.csv'
-EVOLUTION_KEYWORDS_JSON = '/Users/oleg/work/pubtrends/models/test/test_data/evolution_keywords.json'
+RELATIONS_GRAPH_GRAPHML = 'models/test/test_data/paper_relations_graph.graphml'
+DF_CSV = 'models/test/test_data/df.csv'
+EVOLUTION_DF_CSV = 'models/test/test_data/evolution_df.csv'
+EVOLUTION_KEYWORDS_JSON = 'models/test/test_data/evolution_keywords.json'
 
 
 class MockAnalyzer:
