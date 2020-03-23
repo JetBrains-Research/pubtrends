@@ -334,11 +334,12 @@
         let description;
         if (citation_graph){
             description = "Citations graph shows citations among papers.<br>" +
-                "Papers are visualized as nodes, citations as edges. Color encodes topic or publication year.<br>" +
+                "Papers are visualized as nodes, citations as edges. " +
+                "Node size encodes citations count, color shows topic or publication year.<br>" +
                 "Papers without citations are grouped by topics."
         } else {
             description = "Structure graph represents overall similarity structure between papers.<br>" +
-                "Node color encodes paper topic or publication year.<br> " +
+                "Node size encodes paper citations count, color encodes topic or publication year.<br> " +
                 "Edge width shows papers similarity, the thicker the more similar papers are.<br>" +
                 "Edge color represents similarity type.<br>" +
                 '<svg width="16" height="16"><rect width="16" height="16" style="fill:#00c02f;"/></svg>' +
@@ -370,7 +371,7 @@
                 },
                 {
                     element: '#reset',
-                    intro: "Reset graph layout to default."
+                    intro: "Reset layout to default."
                 }
             ]
         });
