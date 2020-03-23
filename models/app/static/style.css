@@ -119,3 +119,8 @@ ol.breadcrumb {
     content: ">";
     transform: scale(.5, 1);
 }
+
+.vertical-center {
+    display: flex;
+    align-items: center;
+}

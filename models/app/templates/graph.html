@@ -38,6 +38,14 @@
     <!--     <link rel="stylesheet" href="../static/style.css"/> -->
     <link rel="stylesheet" href="{{ url_for('static', filename='result.css') }}?v=1"/>
     <!--     <link rel="stylesheet" href="../static/result.css"/> -->
+
+    <!-- IntroJS feature tour -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.9.3/introjs.css"
+          integrity="sha256-OYXGS5m4oWZAAqoAKpf7Y3bIdzdd9jBfly/xCavEpGw=" crossorigin="anonymous"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.9.3/intro.js"
+            integrity="sha256-SPZP/x8QDPEhRlpJjet4AD5X4ergPWcxjhMn73SwyOE="
+            crossorigin="anonymous"></script>
+
     <script>
         "use strict";
 
@@ -226,8 +234,7 @@
                         } else if ('comp' in data) {
                             // Group
                             content.innerHTML = "<b>Topic</b> " + data['comp'] + "<br>" +
-                                "These papers are not connected by citations.<br>" +
-                                "Text similarity was used to assign topics.";
+                                "These papers are not connected by citations."
                         }
                         return content;
                     },
@@ -279,38 +286,40 @@
 <!-- Fixed navbar -->
 <nav class="navbar navbar-light bg-light fixed-top border-bottom no-padding-right">
     <div class="row container-fluid no-padding-right">
-        <div class="col-lg-1 col-xl-1 no-padding">
+        <div class="col-lg-1 col-xl-2 no-padding">
             <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
         </div>
-        <div class="col-lg-9 col-xl-9 no-padding">
-            <ol class="breadcrumb bg-light search-query">
-                <li class="breadcrumb-item">{{ source }}</li>
-                <li class="breadcrumb-item"><strong>{{ query }}</strong></li>
-                <li class="breadcrumb-item">{{ limit }} {{ sort }}</li>
-            </ol>
-        </div>
-        <div class="d-none d-lg-block d-xl-block col-lg-2 col-xl-2 float-right row">
-            <div class="row float-right mr-2">
-                <div class="dropdown">
-                    <button class="btn btn-secondary dropdown-toggle col-auto" type="button"
-                            id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        Color
-                    </button>
-                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                        <a class="dropdown-item" onclick="showSubtopics();" href="javascript:void(0);">Subtopic</a>
-                        <a class="dropdown-item" onclick="showYear();" href="javascript:void(0);">Year</a>
+        <div class="col-lg-11 col-xl-10 no-padding">
+            <div class="row ml-3">
+                <ol class="breadcrumb bg-light search-query col-auto">
+                    <li class="breadcrumb-item vertical-center">{{ source }}</li>
+                    <li class="breadcrumb-item vertical-center"><strong>{{ query }}</strong></li>
+                    <li class="breadcrumb-item vertical-center">{{ limit }} {{ sort }}</li>
+                </ol>
+                <div class="col justify-content-end row">
+                    <div class="dropdown col-auto no-padding">
+                        <button class="btn btn-secondary dropdown-toggle" type="button"
+                                id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Color
+                        </button>
+                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                            <a class="dropdown-item" onclick="showSubtopics();" href="javascript:void(0);">Subtopic</a>
+                            <a class="dropdown-item" onclick="showYear();" href="javascript:void(0);">Year</a>
+                        </div>
                     </div>
+                    <a id="reset" class="btn btn-secondary col-auto ml-2" content="Reset"
+                       href="javascript:void(0);" onclick="reset();">
+                        <img class="nav-icon" src="{{ url_for('static', filename='rotate-cw.svg') }}"/>
+                    </a>
+                    <a class="btn btn-secondary col-auto ml-2 mr-3" content="About"
+                       href="javascript:void(0);" onclick="startIntro();">About</a>
                 </div>
-                <a id="tour-start" class="btn btn-secondary col-auto ml-2" content="Reset"
-                   href="javascript:void(0);" onclick="reset();">
-                    <img class="nav-icon" src="{{ url_for('static', filename='rotate-cw.svg') }}"/>
-                </a>
             </div>
         </div>
     </div>
 </nav>
 <div class="container-fluid">
-    <div id="cy" class="mb-4" style="height: 680px; margin-bottom: 2rem">Loading...</div>
+    <div id="cy" role="main" style="height: 680px; margin-bottom: 2rem">Loading...</div>
 </div>
 <footer>
     <p>version {{ version }}<br/>
@@ -318,5 +327,47 @@
                             title="JetBrains Research BioLabs"
                             target="_blank">JetBrains Research</a></p>
 </footer>
+<script type="text/javascript">
+    function startIntro(){
+        var intro = introJs();
+        const citation_graph = {{ citation_graph }};
+        let description;
+        if (citation_graph){
+            description = "Citations graph shows citations among papers.<br>" +
+                "Papers are visualized as nodes, citations as edges. Color encodes topic or publication year.<br>" +
+                "Papers without citations are grouped by topics."
+        } else {
+            description = "Structure graph represents overall similarity structure between papers.<br>" +
+                "Color encodes topic or publication year. Edge width encodes paper similarity, " +
+                "the thicker the more similar pair of papers is, edge color represents type<br>" +
+                "<em>Co-citation</em> " +
+                '<svg width="16" height="16"><rect width="16" height="16" style="fill:#00c02f;"/></svg>' +
+                "<br>" +
+                "<em>Bibliographic coupling</em>" +
+                '<svg width="16" height="16"><rect width="16" height="16" style="fill:#0000FF;"/></svg>'
+            ;
+        }
+        intro.setOptions({
+            steps: [
+                {
+                    intro: description
+                },
+                {
+                    element: '#dropdownMenuButton',
+                    intro: 'Color can represent topic or publication year:<br>' +
+                        '<svg width="16" height="16"><rect width="16" height="16" style="fill:#000000;"/></svg>' +
+                        ' {{min_year}} - ' +
+                        '<svg width="16" height="16"><rect width="16" height="16" style="fill:#00FF00;"/></svg> ' +
+                        '{{max_year}}.'
+                },
+                {
+                    element: '#reset',
+                    intro: "Reset layout to default."
+                }
+            ]
+        });
+        intro.start();
+    }
+</script>
 </body>
 </html>
