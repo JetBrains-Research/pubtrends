@@ -7,9 +7,9 @@ from models.keypaper.analysis import KeyPaperAnalyzer
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.pm_loader import PubmedLoader
 from models.keypaper.ss_loader import SemanticScholarLoader
-from models.test.mock_loaders import MockLoader, COCITATION_GRAPH_EDGES, COCITATION_GRAPH_NODES, \
+from models.test.mock_loaders import MockLoader, \
     CITATION_YEARS, EXPECTED_MAX_GAIN, EXPECTED_MAX_RELATIVE_GAIN, CITATION_GRAPH_NODES, CITATION_GRAPH_EDGES, \
-    MockLoaderEmpty, MockLoaderSingle, BIBLIOGRAPHIC_COUPLING_GRAPH_NODES, BIBLIOGRAPHIC_COUPLING_DATA
+    MockLoaderEmpty, MockLoaderSingle, RELATIONS_GRAPH_EDGES
 
 
 class TestKeyPaperAnalyzer(unittest.TestCase):
@@ -49,63 +49,13 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
     def test_build_citation_graph_edges(self):
         self.assertCountEqual(list(self.analyzer.citations_graph.edges()), CITATION_GRAPH_EDGES)
 
-    def test_build_cocitation_graph_nodes(self):
-        # Don't add information to the graph
-        self.analyzer.RELATIONS_GRAPH_COCITATION = 1
-        self.analyzer.RELATIONS_GRAPH_BIBLIOGRAPHIC_COUPLING = 0
-        self.analyzer.RELATIONS_GRAPH_CITATION = 0
-        paper_relations_graph = self.analyzer.build_papers_relation_graph(
-            self.analyzer.citations_graph,
-            self.analyzer.build_cocit_grouped_df(self.analyzer.cocit_df),
-            self.analyzer.bibliographic_coupling_df
-        )
-
-        self.assertCountEqual(list(paper_relations_graph.nodes()), COCITATION_GRAPH_NODES)
-
-    def test_build_cocitation_graph_edges(self):
-        # Don't add information to the graph
-        self.analyzer.RELATIONS_GRAPH_COCITATION = 1
-        self.analyzer.RELATIONS_GRAPH_BIBLIOGRAPHIC_COUPLING = 0
-        self.analyzer.RELATIONS_GRAPH_CITATION = 0
-
-        paper_relations_graph = self.analyzer.build_papers_relation_graph(
-            self.analyzer.citations_graph,
-            self.analyzer.build_cocit_grouped_df(self.analyzer.cocit_df),
-            self.analyzer.bibliographic_coupling_df
-        )
-
-        # Convert edge data to networkx format
-        expected_edges = [(v, u, {'weight': w}) for v, u, w in COCITATION_GRAPH_EDGES]
-        self.assertCountEqual(list(paper_relations_graph.edges(data=True)), expected_edges)
-
-    def test_build_relations_graph_nodes(self):
-        # Don't add information to the graph
-        self.analyzer.RELATIONS_GRAPH_BIBLIOGRAPHIC_COUPLING = 1
-        self.analyzer.RELATIONS_GRAPH_COCITATION = 0
-        self.analyzer.RELATIONS_GRAPH_CITATION = 0
-        paper_relations_graph = self.analyzer.build_papers_relation_graph(
-            self.analyzer.citations_graph,
-            self.analyzer.build_cocit_grouped_df(self.analyzer.cocit_df),
-            self.analyzer.bibliographic_coupling_df
-        )
-
-        self.assertCountEqual(list(paper_relations_graph.nodes()), BIBLIOGRAPHIC_COUPLING_GRAPH_NODES)
-
     def test_build_relations_graph_edges(self):
-        # Don't add information to the graph
-        self.analyzer.RELATIONS_GRAPH_BIBLIOGRAPHIC_COUPLING = 1
-        self.analyzer.RELATIONS_GRAPH_COCITATION = 0
-        self.analyzer.RELATIONS_GRAPH_CITATION = 0
-
         paper_relations_graph = self.analyzer.build_papers_relation_graph(
             self.analyzer.citations_graph,
             self.analyzer.build_cocit_grouped_df(self.analyzer.cocit_df),
             self.analyzer.bibliographic_coupling_df
         )
-
-        # Convert edge data to networkx format
-        expected_edges = [(v, u, {'weight': w}) for v, u, w in BIBLIOGRAPHIC_COUPLING_DATA]
-        self.assertCountEqual(list(paper_relations_graph.edges(data=True)), expected_edges)
+        self.assertCountEqual(list(paper_relations_graph.edges(data=True)), RELATIONS_GRAPH_EDGES)
 
     def test_find_max_gain_papers_count(self):
         max_gain_count = len(list(self.analyzer.max_gain_df['year'].values))

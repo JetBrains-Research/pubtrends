@@ -8,6 +8,7 @@ from bokeh.palettes import Category20
 from itertools import product as cart_product
 from matplotlib import colors
 
+from .analysis import KeyPaperAnalyzer
 from .utils import cut_authors_list
 
 logger = logging.getLogger(__name__)
@@ -29,17 +30,23 @@ class PlotPreprocessor:
         return "#{0:02x}{1:02x}{2:02x}".format(int(r), int(g), int(b))
 
     @staticmethod
-    def heatmap_clusters_data(cocitation_graph, df, comp_sizes):
+    def heatmap_clusters_data(relationship_graph, df, comp_sizes):
         # c + 1 is used to start numbering with 1
         clusters = list(map(str, [c + 1 for c in comp_sizes.keys()]))
         n_comps = len(clusters)
 
         # Load edge data to DataFrame
-        links = pd.DataFrame(cocitation_graph.edges(data=True), columns=['source', 'target', 'value'])
-        links['value'] = links['value'].apply(lambda data: data['weight'])
+        links_df = pd.DataFrame(columns=['source', 'target', 'value'])
+        for u, v, data in relationship_graph.edges(data=True):
+            links_df.loc[len(links_df)] = (
+                u, v,
+                data.get('cocitation', 0) * KeyPaperAnalyzer.RELATIONS_GRAPH_COCITATION +
+                data.get('bibcoupling', 0) * KeyPaperAnalyzer.RELATIONS_GRAPH_BIBLIOGRAPHIC_COUPLING +
+                data.get('citation', 0) * KeyPaperAnalyzer.RELATIONS_GRAPH_CITATION
+            )
 
         # Map each node to corresponding component
-        cluster_edges = links.merge(df[['id', 'comp']], how='left', left_on='source', right_on='id') \
+        cluster_edges = links_df.merge(df[['id', 'comp']], how='left', left_on='source', right_on='id') \
             .merge(df[['id', 'comp']], how='left', left_on='target', right_on='id')
 
         # Calculate connectivity matrix for components

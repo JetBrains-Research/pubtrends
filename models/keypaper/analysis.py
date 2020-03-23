@@ -133,6 +133,7 @@ class KeyPaperAnalyzer:
             self.progress.info("Not enough papers to process topics analysis", current=10, task=task)
             self.df['comp'] = 0  # Technical value for top authors and papers analysis
             self.df_kwd = pd.DataFrame({'comp': [0], 'kwd': ['']})
+            self.structure_graph = nx.Graph()
         else:
             # Perform subtopic analysis and get subtopic descriptions
             partition, n_components_merged = self.subtopic_analysis(self.paper_relations_graph, current=10, task=task)
@@ -153,7 +154,7 @@ class KeyPaperAnalyzer:
                     for comp, vs in tfidf_per_comp.items()]
             self.df_kwd = pd.DataFrame(kwds, columns=['comp', 'kwd'])
             logger.debug(f'Components description\n{self.df_kwd["kwd"]}')
-            # Update df with information for all papers
+            # Build structure graph
             self.structure_graph = self.build_structure_graph(self.df, self.paper_relations_graph,
                                                               current=12, task=task)
 
