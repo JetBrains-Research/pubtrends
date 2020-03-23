@@ -78,13 +78,22 @@
                 if ('cos' in data){
                     return "#e16200";
                 }
-                const cocitation = data.cocitation;
-                const bibcoupling = data.bibcoupling;
-                const citation = data.citation;
-                if (cocitation >= bibcoupling && cocitation >= citation) {
+                let cocitation = 0;
+                if ('cocitation' in data) {
+                    cocitation = data['cocitation'];
+                }
+                let bibcoupling = 0;
+                if ('bibcoupling' in data) {
+                    bibcoupling = data['bibcoupling'];
+                }
+                let citation = 0;
+                if ('citation' in data) {
+                    citation = data['citation'];
+                }
+                if (cocitation >= Math.max(bibcoupling, citation)) {
                     return "#00c02f"
                 }
-                if (bibcoupling >= cocitation && bibcoupling >= citation) {
+                if (bibcoupling >= Math.max(cocitation, citation)) {
                     return "#0000ff"
                 }
                 return "#888888";
