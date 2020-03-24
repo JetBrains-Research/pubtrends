@@ -15,8 +15,6 @@ class PubtrendsConfig:
             config_parser.read_string("[params]\n" + config_properties.read())
         params = config_parser['params']
 
-        self.version = params['version']
-
         self.neo4jhost = params['neo4jhost' if not test else 'test_neo4jhost']
         self.neo4jport = params['neo4jport' if not test else 'test_neo4jport']
         self.neo4juser = params['neo4jusername' if not test else 'test_neo4jusername']

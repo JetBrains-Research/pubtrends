@@ -15,6 +15,7 @@ from models.keypaper.analysis import KeyPaperAnalyzer
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.paper import prepare_paper_data, prepare_papers_data, get_loader_and_url_prefix
 from models.keypaper.utils import zoom_name, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE, trim
+from models.keypaper.version import VERSION
 from models.keypaper.visualization_data import PlotPreprocessor
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
@@ -88,7 +89,7 @@ def result():
                                    source=source,
                                    limit=limit,
                                    sort=sort,
-                                   version=PUBTRENDS_CONFIG.version,
+                                   version=VERSION,
                                    log=log,
                                    **data)
 
@@ -117,7 +118,7 @@ def process():
                                    redirect_args={'query': quote(query), 'source': source, 'jobid': jobid},
                                    query=trim(query, MAX_QUERY_LENGTH), source=source,
                                    redirect_page="process_paper",  # redirect in case of success
-                                   jobid=jobid, version=PUBTRENDS_CONFIG.version)
+                                   jobid=jobid, version=VERSION)
 
         elif analysis_type in [ZOOM_IN_TITLE, ZOOM_IN_TITLE]:
             logging.debug('/process zoom processing')
@@ -126,7 +127,7 @@ def process():
                                    redirect_args={'query': quote(query), 'source': source, 'jobid': jobid},
                                    query=trim(query, MAX_QUERY_LENGTH), source=source,
                                    redirect_page="result",  # redirect in case of success
-                                   jobid=jobid, version=PUBTRENDS_CONFIG.version)
+                                   jobid=jobid, version=VERSION)
 
         elif analysis_type == PAPER_ANALYSIS_TITLE:
             logging.debug('/process paper analysis')
@@ -134,7 +135,7 @@ def process():
                                    redirect_args={'source': source, 'jobid': jobid, 'id': id},
                                    query=trim(query, MAX_QUERY_LENGTH), source=source,
                                    redirect_page="paper",  # redirect in case of success
-                                   jobid=jobid, version=PUBTRENDS_CONFIG.version)
+                                   jobid=jobid, version=VERSION)
         elif query:
             logging.debug('/process regular search')
             limit = request.args.get('limit')
@@ -148,7 +149,7 @@ def process():
                                    query=trim(query, MAX_QUERY_LENGTH), source=source,
                                    limit=limit, sort=sort,
                                    redirect_page="result",  # redirect in case of success
-                                   jobid=jobid, version=PUBTRENDS_CONFIG.version)
+                                   jobid=jobid, version=VERSION)
 
     return render_template_string("Something went wrong...")
 
@@ -183,7 +184,7 @@ def paper():
         if job and job.state == 'SUCCESS':
             _, data, _ = job.result
             return render_template('paper.html', **prepare_paper_data(data, source, pid),
-                                   version=PUBTRENDS_CONFIG.version)
+                                   version=VERSION)
 
     return render_template_string("Something went wrong...")
 
@@ -208,7 +209,7 @@ def graph():
                 graph_cs = PlotPreprocessor.dump_citations_graph_cytoscape(analyzer.df, analyzer.citations_graph)
                 return render_template(
                     'graph.html',
-                    version=PUBTRENDS_CONFIG.version,
+                    version=VERSION,
                     source=source,
                     query=query,
                     limit=limit,
@@ -223,7 +224,7 @@ def graph():
                 graph_cs = PlotPreprocessor.dump_structure_graph_cytoscape(analyzer.df, analyzer.structure_graph)
                 return render_template(
                     'graph.html',
-                    version=PUBTRENDS_CONFIG.version,
+                    version=VERSION,
                     source=source,
                     query=query,
                     limit=limit,
@@ -276,7 +277,7 @@ def show_ids():
         if job and job.state == 'SUCCESS':
             _, data, _ = job.result
             return render_template('papers.html',
-                                   version=PUBTRENDS_CONFIG.version,
+                                   version=VERSION,
                                    source=source,
                                    query=query,
                                    search_string=search_string,
@@ -329,7 +330,7 @@ def index():
             search_example_terms = random.choice(PUBTRENDS_CONFIG.ss_search_example_terms)
 
     return render_template('main.html',
-                           version=PUBTRENDS_CONFIG.version,
+                           version=VERSION,
                            limits=PUBTRENDS_CONFIG.show_max_articles_options,
                            default_limit=PUBTRENDS_CONFIG.show_max_articles_default_value,
                            development=PUBTRENDS_CONFIG.development,
