@@ -77,7 +77,7 @@
             "line-color": function (edge) {
                 let data = edge.data();
                 if ('cos' in data){
-                    return "#9b4e00";
+                    return "#9b0200";
                 }
                 let cocitation = 0;
                 if ('cocitation' in data) {
@@ -92,7 +92,7 @@
                     citation = data['citation'];
                 }
                 if (cocitation >= Math.max(bibcoupling, citation)) {
-                    return "#00c02f"
+                    return "#c000ba"
                 }
                 if (bibcoupling >= Math.max(cocitation, citation)) {
                     return "#0000ff"
@@ -342,7 +342,7 @@
                 "Node size encodes paper citations count, color encodes topic or publication year.<br> " +
                 "Edge width shows papers similarity, the thicker the more similar papers are.<br>" +
                 "Edge color represents similarity type.<br>" +
-                '<svg width="16" height="16"><rect width="16" height="16" style="fill:#00c02f;"/></svg>' +
+                '<svg width="16" height="16"><rect width="16" height="16" style="fill:#c000ba;"/></svg>' +
                 "&nbsp;<em>Co-citation</em> " +
                 "<br>" +
                 '<svg width="16" height="16"><rect width="16" height="16" style="fill:#0000FF;"/></svg>' +
@@ -351,7 +351,7 @@
                 '<svg width="16" height="16"><rect width="16" height="16" style="fill:#888888;"/></svg>' +
                 "&nbsp;<em>Direct citation</em>" +
                 "<br>" +
-                '<svg width="16" height="16"><rect width="16" height="16" style="fill:#9b4e00;"/></svg>' +
+                '<svg width="16" height="16"><rect width="16" height="16" style="fill:#9b0200;"/></svg>' +
                 "&nbsp;<em>Text similarity</em>"
 
             ;
