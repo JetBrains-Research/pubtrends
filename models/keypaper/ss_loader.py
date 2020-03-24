@@ -46,7 +46,7 @@ class SemanticScholarLoader(Loader):
 
         if not limit:
             limit_message = ''
-            limit = self.max_number_of_articles
+            limit = self.config.max_number_of_articles
         else:
             limit_message = f'{limit} '
 
