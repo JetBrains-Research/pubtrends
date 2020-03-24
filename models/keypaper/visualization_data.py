@@ -46,8 +46,8 @@ class PlotPreprocessor:
             sources[i] = u
             targets[i] = v
             values[i] = data.get('cocitation', 0) * KeyPaperAnalyzer.RELATIONS_GRAPH_COCITATION + \
-                        data.get('bibcoupling', 0) * KeyPaperAnalyzer.RELATIONS_GRAPH_BIBLIOGRAPHIC_COUPLING + \
-                        data.get('citation', 0) * KeyPaperAnalyzer.RELATIONS_GRAPH_CITATION
+                data.get('bibcoupling', 0) * KeyPaperAnalyzer.RELATIONS_GRAPH_BIBLIOGRAPHIC_COUPLING + \
+                data.get('citation', 0) * KeyPaperAnalyzer.RELATIONS_GRAPH_CITATION
             i += 1
         links_df = pd.DataFrame(data={'source': sources, 'target': targets, 'value': values})
 
