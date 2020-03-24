@@ -97,7 +97,7 @@
                                 </div>
                                 <input class="form-control form-control-borderless" type="search"
                                        name="query" id="terms-input"
-                                       placeholder="Enter keywords, &quot;&quot; for phrase search"
+                                       placeholder="Use &quot;&quot; for phrase search and commas for alternatives"
                                        aria-describedby="query-addon"
                                        autofocus required>
                             </div>
@@ -253,8 +253,9 @@
                     element: '#step2',
                     intro: 'Enter keywords to define the topic of interest, e.g. ' +
                         '<a href="javascript:void(0);" onclick="useTermsSuggestion();">' +
-                            '{{ search_example_terms }}' +
-                        '</a>.'
+                        '{{ search_example_terms }}' +
+                        '</a>.<br>' +
+                        'Use &quot;&quot; for phrase search, alternatives should be delimited with commas.'
                 },
                 {
                     element: '#step3',
