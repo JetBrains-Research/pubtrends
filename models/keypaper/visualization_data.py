@@ -31,25 +31,31 @@ class PlotPreprocessor:
 
     @staticmethod
     def heatmap_clusters_data(relationship_graph, df, comp_sizes):
+        logger.debug('Computing heatmap clusters_data')
         # c + 1 is used to start numbering with 1
         clusters = list(map(str, [c + 1 for c in comp_sizes.keys()]))
         n_comps = len(clusters)
 
-        # Load edge data to DataFrame
-        links_df = pd.DataFrame(columns=['source', 'target', 'value'])
+        logger.debug('Load edge data to DataFrame')
+        edges = relationship_graph.size()
+        sources = [None] * edges
+        targets = [None] * edges
+        values = [0.0] * edges
+        i = 0
         for u, v, data in relationship_graph.edges(data=True):
-            links_df.loc[len(links_df)] = (
-                u, v,
-                data.get('cocitation', 0) * KeyPaperAnalyzer.RELATIONS_GRAPH_COCITATION +
-                data.get('bibcoupling', 0) * KeyPaperAnalyzer.RELATIONS_GRAPH_BIBLIOGRAPHIC_COUPLING +
-                data.get('citation', 0) * KeyPaperAnalyzer.RELATIONS_GRAPH_CITATION
-            )
+            sources[i] = u
+            targets[i] = v
+            values[i] = data.get('cocitation', 0) * KeyPaperAnalyzer.RELATIONS_GRAPH_COCITATION + \
+                        data.get('bibcoupling', 0) * KeyPaperAnalyzer.RELATIONS_GRAPH_BIBLIOGRAPHIC_COUPLING + \
+                        data.get('citation', 0) * KeyPaperAnalyzer.RELATIONS_GRAPH_CITATION
+            i += 1
+        links_df = pd.DataFrame(data={'source': sources, 'target': targets, 'value': values})
 
-        # Map each node to corresponding component
+        logger.debug('Map each node to corresponding component')
         cluster_edges = links_df.merge(df[['id', 'comp']], how='left', left_on='source', right_on='id') \
             .merge(df[['id', 'comp']], how='left', left_on='target', right_on='id')
 
-        # Calculate connectivity matrix for components
+        logger.debug('Calculate connectivity matrix for components')
         cluster_edges = cluster_edges.groupby(['comp_x', 'comp_y'])['value'].sum().reset_index()
         connectivity_matrix = [[0] * n_comps for _ in range(n_comps)]
         for index, row in cluster_edges.iterrows():
@@ -60,7 +66,8 @@ class PlotPreprocessor:
         cluster_edges = pd.DataFrame([{'comp_x': i, 'comp_y': j, 'value': connectivity_matrix[i][j]}
                                       for i, j in cart_product(range(n_comps), range(n_comps))])
 
-        # Density = number of co-citations between subtopics / (size of subtopic 1 * size of subtopic 2)
+        logger.debug('Density = value between subtopics / (size of subtopic 1 * size of subtopic 2)')
+
         def get_density(row):
             return row['value'] / (comp_sizes[row['comp_x']] * comp_sizes[row['comp_y']])
 
