@@ -259,13 +259,15 @@
                                 {% endfor %}
                             </div>
                         </div>
-                        <div>
-                            <div class="row">
-                                <button id="show_as_list" type="button" class="col-auto btn btn-light"
+                        <div class="row">
+                            <div class="col-auto">
+                                <button id="show_as_list" type="button" class="btn btn-light"
                                         onclick="(function(){ papers_callback() })();">
                                     <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
                                 </button>
-                                <button id="show_citations_graph" type="button" class="ml-2 col-auto btn btn-light"
+                            </div>
+                            <div class="col-auto no-padding-left">
+                                <button id="show_citations_graph" type="button" class="btn btn-light"
                                         onclick="(function(){ graph_callback('citations') })();">
                                     <img src="{{ url_for('static', filename='globe.svg') }}" alt="+"/>&nbsp;
                                     Show citations graph
