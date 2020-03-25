@@ -60,8 +60,8 @@ class TestUtils(unittest.TestCase):
         ('FooBar', 'FooBar'),
         ('Foo Bar', 'Foo AND Bar'),
         ('"Foo Bar"', '"Foo Bar"'),
-        ('Foo-Bar', 'Foo-Bar'),
-        ('&^Foo-Bar', 'Foo-Bar'),
+        ('Foo-Bar', '"Foo-Bar"'),
+        ('&^Foo-Bar', '"Foo-Bar"'),
         ("Alzheimer's disease", 'Alzheimer AND disease'),
         ('Foo, Bar', 'Foo OR Bar'),
         ('Foo, Bar Baz', 'Foo OR (Bar AND Baz)'),
@@ -84,11 +84,11 @@ class TestUtils(unittest.TestCase):
             preprocess_search_query('Humans Humanity', 2)
 
     def test_preprocess_search_dash_split(self):
-        self.assertEqual('Covid-19', preprocess_search_query('Covid-19', 2))
+        self.assertEqual('"Covid-19"', preprocess_search_query('Covid-19', 2))
 
     def test_preprocess_search_or(self):
         self.assertEqual(
-            'COVID-19 OR Coronavirus OR "Corona virus" OR 2019-nCoV OR SARS-CoV OR MERS-CoV OR '
+            '"COVID-19" OR Coronavirus OR "Corona virus" OR "2019-nCoV" OR "SARS-CoV" OR "MERS-CoV" OR '
             '"Severe Acute Respiratory Syndrome" OR "Middle East Respiratory Syndrome"',
             preprocess_search_query('COVID-19, Coronavirus, "Corona virus", 2019-nCoV, SARS-CoV, '
                                     'MERS-CoV, "Severe Acute Respiratory Syndrome", '

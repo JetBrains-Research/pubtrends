@@ -336,6 +336,6 @@ def preprocess_search_query(query, min_search_words):
         stems = set([stemmer.stem(word) for word in words])
         if len(stems) + len(processed.split('-')) - 1 < min_search_words:
             raise Exception(f'Please use query with >= {min_search_words} different words. Query: {query}')
-        return ' AND '.join(words)
+        return ' AND '.join([w if '-' not in w else f'"{w}"' for w in words])  # Dashed terms should be quoted
     raise Exception(f'Illegal search query, please use search terms or '
                     f'all the query wrapped in "" for phrasal search. Query: {query}')
