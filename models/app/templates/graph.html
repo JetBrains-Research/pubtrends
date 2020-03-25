@@ -130,6 +130,7 @@
             document.getElementById('cy').innerHTML = "";
             const citation_graph = {{ citation_graph }};
             const subtopics_palette = JSON.parse({{ subtopics_palette_json | tojson }});
+            const subtopics_description = JSON.parse({{subtopics_description_json | tojson }});
             const min_year = {{min_year}};
             const max_year = {{max_year}};
             let edge_style;
@@ -230,7 +231,8 @@
                                 "<b>Author(s)</b> " + data['authors'] + "<br>" +
                                 "<b>Year</b> " + data['year'] + "<br>" +
                                 "<b>Cited</b> " + data['cited'] + "<br>" +
-                                "<b>Topic</b> " + data['comp'];
+                                "<b>Topic</b> " + data['comp'] + "<br>" +
+                                "<em>" + subtopics_description[data['comp']] + "</em>";
                         } else if ('comp' in data) {
                             // Group
                             content.innerHTML = "<b>Topic</b> " + data['comp'] + "<br>" +

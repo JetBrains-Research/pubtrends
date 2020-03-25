@@ -205,6 +205,9 @@ def graph():
             analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
             analyzer.init(data)
             min_year, max_year = int(analyzer.df['year'].min()), int(analyzer.df['year'].max())
+            subtopics_tags = {comp + 1: ', '.join(
+                [w[0] for w in analyzer.df_kwd[analyzer.df_kwd['comp'] == comp]['kwd'].values[0][:10]]
+            ) for comp in sorted(set(analyzer.df['comp']))}
             if graph_type == "citations":
                 graph_cs = PlotPreprocessor.dump_citations_graph_cytoscape(analyzer.df, analyzer.citations_graph)
                 return render_template(
@@ -218,9 +221,10 @@ def graph():
                     min_year=min_year,
                     max_year=max_year,
                     subtopics_palette_json=json.dumps(PlotPreprocessor.subtopics_palette(analyzer.df)),
+                    subtopics_description_json=json.dumps(subtopics_tags),
                     graph_cytoscape_json=json.dumps(graph_cs)
                 )
-            else:
+            else: 
                 graph_cs = PlotPreprocessor.dump_structure_graph_cytoscape(analyzer.df, analyzer.structure_graph)
                 return render_template(
                     'graph.html',
@@ -233,6 +237,7 @@ def graph():
                     min_year=min_year,
                     max_year=max_year,
                     subtopics_palette_json=json.dumps(PlotPreprocessor.subtopics_palette(analyzer.df)),
+                    subtopics_description_json=json.dumps(subtopics_tags),
                     graph_cytoscape_json=json.dumps(graph_cs)
                 )
 

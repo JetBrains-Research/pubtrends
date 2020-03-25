@@ -155,12 +155,12 @@ def get_topic_word_cloud_data(df_kwd, comp):
     return kwds
 
 
-def get_topics_description(df, comps, query, n_words):
+def get_topics_description(df, comps, query, n_words, n_gram=2):
     if len(comps) == 1:
         most_frequent = get_frequent_tokens(df, query)
         return {0: list(sorted(most_frequent.items(), key=lambda kv: kv[1], reverse=True))[:n_words]}
 
-    ngrams, tfidf = compute_tfidf(df, comps, query, n_words, n_gram=2)
+    ngrams, tfidf = compute_tfidf(df, comps, query, n_words, n_gram=n_gram)
     result = {}
     for comp in comps.keys():
         # Generate no keywords for '-1' component
@@ -168,14 +168,12 @@ def get_topics_description(df, comps, query, n_words):
             result[comp] = ''
             continue
 
-        # Sort indices by tfidf value
-        # It might be faster to use np.argpartition instead of np.argsort
-        ind = np.argsort(tfidf[comp, :].toarray(), axis=1)
-
-        # Take size indices with the largest tfidf
-        result[comp] = list(itertools.chain.from_iterable(
-            [[(t, tfidf[comp, idx]) for t in ngrams[idx].split(' ')] for idx in ind[0, ::-1]])
-        )
+        # Take size indices with the largest tfidf first
+        counter = Counter()
+        for i, n in enumerate(ngrams):
+            for w in n.split(' '):
+                counter[w] += tfidf[comp, i]
+        result[comp] = counter.most_common(n_words)
     return result
 
 
