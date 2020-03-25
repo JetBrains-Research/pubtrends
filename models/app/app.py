@@ -224,7 +224,7 @@ def graph():
                     subtopics_description_json=json.dumps(subtopics_tags),
                     graph_cytoscape_json=json.dumps(graph_cs)
                 )
-            else: 
+            else:
                 graph_cs = PlotPreprocessor.dump_structure_graph_cytoscape(analyzer.df, analyzer.structure_graph)
                 return render_template(
                     'graph.html',
