@@ -57,19 +57,21 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(crc32(ssid), crc32id, f"Hashed id is wrong ({case} case)")
 
     @parameterized.expand([
-        ('FooBar', '"\'FooBar\'"'),
-        ('Foo Bar', '"\'Foo\' AND \'Bar\'"'),
-        ('"Foo Bar"', '\'"Foo Bar"\''),
-        ('Foo-Bar', '"\'Foo-Bar\'"'),
-        ('&^Foo-Bar', '"\'Foo-Bar\'"'),
-        ("Alzheimer's disease", '"\'Alzheimer\' AND \'disease\'"'),
-        ('Foo, Bar', '"(\'Foo\') OR (\'Bar\')"')
+        ('FooBar', 'FooBar'),
+        ('Foo Bar', 'Foo AND Bar'),
+        ('"Foo Bar"', '"Foo Bar"'),
+        ('Foo-Bar', 'Foo-Bar'),
+        ('&^Foo-Bar', 'Foo-Bar'),
+        ("Alzheimer's disease", 'Alzheimer AND disease'),
+        ('Foo, Bar', 'Foo OR Bar'),
+        ('Foo, Bar Baz', 'Foo OR (Bar AND Baz)'),
+        ('Foo, "Bar Baz"', 'Foo OR "Bar Baz"'),
     ])
     def test_preprocess_search_valid_source(self, terms, expected):
         self.assertEqual(expected, preprocess_search_query(terms, 0))
 
     def test_preprocess_search_too_few_words(self):
-        self.assertEqual('"\'Foo\'"', preprocess_search_query('Foo', 1))
+        self.assertEqual('Foo', preprocess_search_query('Foo', 1))
         with self.assertRaises(Exception):
             preprocess_search_query('Foo', 2)
 
@@ -82,15 +84,16 @@ class TestUtils(unittest.TestCase):
             preprocess_search_query('Humans Humanity', 2)
 
     def test_preprocess_search_dash_split(self):
-        self.assertEqual('"\'Covid-19\'"', preprocess_search_query('Covid-19', 2))
+        self.assertEqual('Covid-19', preprocess_search_query('Covid-19', 2))
 
     def test_preprocess_search_or(self):
         self.assertEqual(
-            '"("COVID-19") OR (\'Coronavirus\') OR ("Corona virus") OR ("2019-nCoV") OR ("SARS-CoV") OR ("MERS-CoV") '
-            'OR ("Severe Acute Respiratory Syndrome") OR ("Middle East Respiratory Syndrome")"',
-            preprocess_search_query('"COVID-19", Coronavirus, "Corona virus", "2019-nCoV", "SARS-CoV", '
-                                    '"MERS-CoV", "Severe Acute Respiratory Syndrome", '
-                                    '"Middle East Respiratory Syndrome"', 0))
+            'COVID-19 OR Coronavirus OR "Corona virus" OR 2019-nCoV OR SARS-CoV OR MERS-CoV OR '
+            '"Severe Acute Respiratory Syndrome" OR "Middle East Respiratory Syndrome"',
+            preprocess_search_query('COVID-19, Coronavirus, "Corona virus", 2019-nCoV, SARS-CoV, '
+                                    'MERS-CoV, "Severe Acute Respiratory Syndrome", '
+                                    '"Middle East Respiratory Syndrome"', 0)
+        )
 
     def test_preprocess_search_illegal_string(self):
         with self.assertRaises(Exception):

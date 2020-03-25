@@ -308,9 +308,16 @@ def trim(string, max_length):
 def preprocess_search_query(query, min_search_words):
     """ Preprocess search string for Neo4j full text lookup """
     if ',' in query:
-        return '"' + ' OR '.join(
-            [f'({preprocess_search_query(p.strip(), min_search_words)[1:-1]})' for p in query.split(',')]
-        ) + '"'
+        qor = ''
+        for p in query.split(','):
+            if len(qor) > 0:
+                qor += ' OR '
+            pp = preprocess_search_query(p.strip(), min_search_words)
+            if ' AND ' in pp:
+                qor += f'({pp})'
+            else:
+                qor += pp
+        return qor
     processed = re.sub('[ ]{2,}', ' ', query.strip())  # Whitespaces normalization, see #215
     if len(processed) == 0:
         raise Exception('Empty query')
@@ -322,13 +329,13 @@ def preprocess_search_query(query, min_search_words):
         raise Exception(f'Please use more specific query with >= {min_search_words} words. Query: {query}')
     # Looking for complete phrase
     if re.match('^"[^"]+"$', processed):
-        return '\'"' + re.sub('"', '', processed) + '"\''
+        return '"' + re.sub('"', '', processed) + '"'
     elif re.match('^[^"]+$', processed):
         words = [re.sub("'s$", '', w) for w in processed.split(' ')]  # Fix apostrophes
         stemmer = SnowballStemmer('english')
         stems = set([stemmer.stem(word) for word in words])
         if len(stems) + len(processed.split('-')) - 1 < min_search_words:
             raise Exception(f'Please use query with >= {min_search_words} different words. Query: {query}')
-        return '"' + ' AND '.join([f"'{w}'" for w in words]) + '"'
+        return ' AND '.join(words)
     raise Exception(f'Illegal search query, please use search terms or '
                     f'all the query wrapped in "" for phrasal search. Query: {query}')

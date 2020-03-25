@@ -51,12 +51,12 @@ class PubmedLoader(Loader):
         else:
             limit_message = f'{limit} '
 
-        self.progress.info(html.escape(f'Searching {limit_message}{sort.lower()} publications matching <{query}>'),
+        self.progress.info(html.escape(f'Searching {limit_message}{sort.lower()} publications matching \'{query}\''),
                            current=current, task=task)
 
         if sort == SORT_MOST_RELEVANT:
             query = f'''
-                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", {query_str})
+                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", '{query_str}')
                 YIELD node, score
                 RETURN node.pmid as pmid
                 ORDER BY score DESC
@@ -64,7 +64,7 @@ class PubmedLoader(Loader):
                 '''
         elif sort == SORT_MOST_CITED:
             query = f'''
-                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", {query_str}) YIELD node
+                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", '{query_str}') YIELD node
                 MATCH ()-[r:PMReferenced]->(in:PMPublication)
                 WHERE in.pmid = node.pmid
                 WITH node, COUNT(r) AS cnt
@@ -74,7 +74,7 @@ class PubmedLoader(Loader):
                 '''
         elif sort == SORT_MOST_RECENT:
             query = f'''
-                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", {query_str}) YIELD node
+                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", '{query_str}') YIELD node
                 RETURN node.pmid as pmid
                 ORDER BY node.date DESC
                 LIMIT {limit};
