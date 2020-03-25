@@ -368,6 +368,13 @@ class KeyPaperAnalyzer:
                 cos = cosine(tfidf[idx_map[cid]].toarray(), tfidf[idx_map[tid]].toarray())
                 if np.isfinite(cos):
                     graph.add_edge(cid, tid, cos=cos, distance=cos)
+            for (i, tid1), in enumerate(text_ids):
+                tid1_tfidf = tfidf[idx_map[tid1]].toarray()
+                for j in range(i + 1, len(text_ids)):
+                    tid2 = text_ids[j]
+                    cos = cosine(tid1_tfidf, tfidf[idx_map[tid2]].toarray())
+                    if np.isfinite(cos):
+                        graph.add_edge(tid1, tid2, cos=cos, distance=cos)
 
         logger.debug('Computing min spanning tree')
         mst = nx.minimum_spanning_tree(graph, 'distance')
