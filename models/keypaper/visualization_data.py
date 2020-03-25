@@ -235,7 +235,7 @@ class PlotPreprocessor:
 
     @staticmethod
     def subtopics_palette(df):
-        return dict(enumerate(Category20[len(set(df['comp']))]))
+        return dict(enumerate(Category20[20][:len(set(df['comp']))]))
 
     @staticmethod
     def dump_citations_graph_cytoscape(df, citations_graph):
