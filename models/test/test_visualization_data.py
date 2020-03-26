@@ -120,8 +120,8 @@ class TestPlotPreprocessor(unittest.TestCase):
 
         self.assertListEqual(clusters, ['1', '2', '3'], 'Wrong clusters')
 
-        expected_values = np.array([[36, 2, 0],
-                                    [2, 26, 0],
+        expected_values = np.array([[360, 20, 0],
+                                    [20, 233, 0],
                                     [0, 0, 0]])
 
         n_comps = len(self.analyzer.components)
@@ -131,8 +131,8 @@ class TestPlotPreprocessor(unittest.TestCase):
                                        expected_values[i, j], places=3,
                                        msg=f'Wrong value for comp_x {i} and comp_y {j}')
 
-        expected_densities = np.array([[1.0, 0.083, 0],
-                                       [0.083, 1.625, 0],
+        expected_densities = np.array([[10.0, 0.833, 0],
+                                       [0.833, 14.5625, 0],
                                        [0, 0, 0]])
 
         n_comps = len(self.analyzer.components)
