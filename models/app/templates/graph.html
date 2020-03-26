@@ -297,6 +297,15 @@
             }
         }
 
+        function result() {
+            // Query may contain double quotes, fix it.
+            const query_fixed = '{{ query }}'.replace(/&#34;/g, '"');
+            const url = '/result?query=' + query_fixed + '&source={{source}}&limit={{limit}}&sort={{sort}}';
+            // Decode jobid from URL
+            const jobid = new URL(window.location).searchParams.get('jobid');
+            window.open(url + '&jobid=' + jobid, '_blank');
+        }
+
     </script>
 </head>
 
@@ -311,13 +320,17 @@
             <div class="row ml-3">
                 <ol class="breadcrumb bg-light search-query col-auto">
                     <li class="breadcrumb-item vertical-center">{{ source }}</li>
-                    <li class="breadcrumb-item vertical-center"><strong>{{ query }}</strong></li>
+                    <li class="breadcrumb-item vertical-center">
+                        <a id="result" href="javascript:void(0);" class="link" onclick="result();"><strong>{{ query }}</strong></a>
+                    </li>
                     <li class="breadcrumb-item vertical-center">{{ limit }} {{ sort }}</li>
                 </ol>
                 <div class="col justify-content-end row">
-                    <input id="search-input" class="col-auto mr-2" type="search"
-                           placeholder="Search..." aria-label="Search for..."
-                           onkeypress="inputKey(event);">
+                    <div class="col-auto">
+                        <input id="search-input" type="text" class="form-control"
+                               placeholder="Search..." aria-label="Search for..."
+                               onkeypress="inputKey(event);">
+                    </div>
                     <div class="dropdown col-auto no-padding">
                         <button class="btn btn-secondary dropdown-toggle" type="button"
                                 id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -383,12 +396,20 @@
                     intro: description
                 },
                 {
+                    element: '#result',
+                    intro: "Open full analysis report.<br>" +
+                        "Learn more about topics, most cited papers, etc."
+                },
+                {
                     element: '#search-input',
-                    intro: 'Filter papers by text.<br> Hit <em>enter</em> to execute.'
+                    intro: 'Filter papers by text.<br>' +
+                        'Title, abstract and publication year are used in full text search.<br>' +
+                        'Hit <em>enter</em> to execute, empty input to reset.'
                 },
                 {
                     element: '#dropdownMenuButton',
-                    intro: 'Color can represent topic or publication year.<br>' +
+                    intro: 'Change graph colouring.<br>' +
+                        'Node color can represent topic of the paper or publication year.<br>' +
                         '<svg width="16" height="16"><rect width="16" height="16" style="fill:#000000;"/></svg>' +
                         ' {{min_year}} - ' +
                         '<svg width="16" height="16"><rect width="16" height="16" style="fill:#00FF00;"/></svg> ' +
@@ -396,8 +417,8 @@
                 },
                 {
                     element: '#reset',
-                    intro: "Reset layout to default."
-                }
+                    intro: "Reset graph layout."
+                },
             ]
         });
         intro.start();

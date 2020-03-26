@@ -39,6 +39,16 @@
         $(document).ready(function () {
             $('#papers').DataTable();
         });
+
+        function result() {
+            // Query may contain double quotes, fix it.
+            const query_fixed = '{{ query }}'.replace(/&#34;/g, '"');
+            const url = '/result?query=' + query_fixed + '&source={{source}}&limit={{limit}}&sort={{sort}}';
+            // Decode jobid from URL
+            const jobid = new URL(window.location).searchParams.get('jobid');
+            window.open(url + '&jobid=' + jobid, '_blank');
+        }
+
     </script>
 </head>
 <body>
@@ -53,7 +63,9 @@
         <div class="col-lg-10 col-xl-10 no-padding">
             <ol class="breadcrumb bg-light search-query">
                 <li class="breadcrumb-item">{{ source }}</li>
-                <li class="breadcrumb-item"><strong>{{ query }}</strong></li>
+                <li class="breadcrumb-item">
+                    <a href="javascript:void(0);" class="link" onclick="result();"><strong>{{ query }}</strong></a>
+                </li>
                 <li class="breadcrumb-item">{{ limit }} {{ sort }}</li>
                 {% if search_string %}
                     <li class="breadcrumb-item">{{ search_string }}</li>
