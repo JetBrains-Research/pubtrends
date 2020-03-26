@@ -281,6 +281,24 @@
             });
         });
 
+        function inputKey(event) {
+            if (event.keyCode === 13 || event.which === 13) {
+                const filter = $.trim($("#search-input").val()).toLowerCase();
+                window.cy.nodes().forEach(function (ele) {
+                    let data = ele.data();
+                    if ('title' in data) {
+                        if (filter === "" ||
+                            data['title'].toLowerCase().includes(filter) || data['abstract'].toLowerCase().includes(filter) ||
+                            data['authors'].toLowerCase().includes(filter) || data['year'].toString().includes(filter)) {
+                            ele.style("display", "element");
+                        } else {
+                            ele.style("display", "none");
+                        }
+                    }
+                });
+            }
+        }
+
     </script>
 </head>
 
@@ -299,6 +317,9 @@
                     <li class="breadcrumb-item vertical-center">{{ limit }} {{ sort }}</li>
                 </ol>
                 <div class="col justify-content-end row">
+                    <input id="search-input" class="col-auto mr-2" type="search"
+                           placeholder="Search..." aria-label="Search for..."
+                           onkeypress="inputKey(event);">
                     <div class="dropdown col-auto no-padding">
                         <button class="btn btn-secondary dropdown-toggle" type="button"
                                 id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -362,6 +383,10 @@
             steps: [
                 {
                     intro: description
+                },
+                {
+                    element: '#search-input',
+                    intro: 'Filter papers by text.<br> Hit <em>enter</em> to execute.'
                 },
                 {
                     element: '#dropdownMenuButton',

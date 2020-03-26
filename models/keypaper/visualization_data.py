@@ -252,6 +252,7 @@ class PlotPreprocessor:
             comp = int(sel['comp'].values[0])
             attrs[node] = {
                 'title': sel['title'].values[0],
+                'abstract': sel['abstract'].values[0],
                 'authors': cut_authors_list(sel['authors'].values[0]),
                 'year': int(sel['year'].values[0]),
                 'cited': int(sel['total'].values[0]),
@@ -290,13 +291,14 @@ class PlotPreprocessor:
         logger.info('Collect attributes for nodes')
         attrs = {}
         for edge in df['id']:
-            df_pid = df[df['id'] == edge]
-            comp = int(df_pid['comp'].values[0])
+            sel = df[df['id'] == edge]
+            comp = int(sel['comp'].values[0])
             attrs[edge] = {
-                'title': df_pid['title'].values[0],
-                'authors': cut_authors_list(df_pid['authors'].values[0]),
-                'year': int(df_pid['year'].values[0]),
-                'cited': int(df_pid['total'].values[0]),
+                'title': sel['title'].values[0],
+                'abstract': sel['abstract'].values[0],
+                'authors': cut_authors_list(sel['authors'].values[0]),
+                'year': int(sel['year'].values[0]),
+                'cited': int(sel['total'].values[0]),
                 'comp': comp + 1,  # For visualization consistency
             }
         nx.set_node_attributes(graph, attrs)
