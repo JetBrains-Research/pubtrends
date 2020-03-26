@@ -221,14 +221,14 @@
                         <div class="row mb-3">
                             <div class="col-sm-4">
                                 <div class="card">
-                                    <div class="card-body text-center">
+                                    <div id="n_papers" class="card-body text-center">
                                         <span class="stats-number"><b>{{ n_papers }}</b></span><br>
                                         <span class="card-text">papers</span>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-sm-4">
-                                <div class="card">
+                                <div id="n_citations" class="card">
                                     <div class="card-body text-center">
                                         <span class="stats-number"><b>{{ n_citations }}</b></span><br>
                                         <span class="card-text">citations</span>
@@ -236,10 +236,10 @@
                                 </div>
                             </div>
                             <div class="col-sm-4">
-                                <div id="subtopics-number" class="card">
+                                <div id="n_subtopics" class="card">
                                     <div class="card-body text-center">
                                         <span class="stats-number"><b>{{ n_subtopics }}</b></span><br>
-                                        <span class="card-text">subtopics</span>
+                                        <span class="card-text">topics</span>
                                     </div>
                                 </div>
                             </div>
@@ -359,11 +359,11 @@
                         </p>
                         <hr>
                         <p>
-                            Similarity information is used for subtopics extraction.<br>
+                            Similarity information is used for topics extraction.<br>
                             Bars represent number of papers within each topic.<br>
                             Click on bars to get detailed information about keywords and publications for each subtopic.
                             <br>
-                            <em>Note: subtopics are merged to "Other" if they contain less than 5% of publications of
+                            <em>Note: topics are merged to "Other" if they contain less than 5% of publications of
                                 the field.</em>
                         </p>
                         <div>
@@ -374,7 +374,7 @@
                         </div>
                         <hr>
                         <p>
-                            Similarity between different subtopics is a summary similarity between all the papers,<br>
+                            Similarity between different topics is a summary similarity between all the papers,<br>
                             normalized to subtopic sizes - number of papers.
                         </p>
                         {% for script, div in components_similarity %}
@@ -389,7 +389,7 @@
                         <h1 class="card-header">Trends</h1>
                     </div>
                     <div class="card-body">
-                        <h2 class="card-subtitle">Subtopics summary</h2>
+                        <h2 class="card-subtitle">Topics summary</h2>
                         <p>
                             Explore the evolution of trends - dynamics is shown for the timeline.<br>
                             Colors are the same as in the previous diagram.
@@ -418,7 +418,7 @@
                     </div>
                     <div class="card-body">
                         <p>
-                            Learn more about subtopics - most cited papers over time are shown for each topic.<br>
+                            Learn more about topics - most cited papers over time are shown for each topic.<br>
                             Papers are sorted descending by citations number overall from bottom to top.<br>
                             Year reflects publication year of the original paper.
                         </p>
@@ -479,7 +479,7 @@
                     <div class="card-body">
                         <p>
                             List of authors with the largest number of papers for given search query.<br>
-                            The colors of the circles in the subtopics column indicate top 3 most common subtopics among
+                            The colors of the circles in the topics column indicate top 3 most common topics among
                             these papers.<br>
                             The subtopic circles are arranged according to the number of papers, in descending order.
                         </p>
@@ -489,7 +489,7 @@
                                 <th scope="col">#</th>
                                 <th scope="col">Author</th>
                                 <th scope="col">Papers</th>
-                                <th scope="col">Subtopics</th>
+                                <th scope="col">Topics</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -515,7 +515,7 @@
                     <div class="card-body">
                         <p>
                             List of journals with the largest number of papers for given search query.<br>
-                            The colors of the circles in the subtopics column indicate top 3 most common subtopics among
+                            The colors of the circles in the topics column indicate top 3 most common topics among
                             these papers.<br>
                             The subtopic circles are arranged according to the number of papers, in descending order.
                         </p>
@@ -525,7 +525,7 @@
                                 <th scope="col">#</th>
                                 <th scope="col">Journal</th>
                                 <th scope="col">Papers</th>
-                                <th scope="col">Subtopics</th>
+                                <th scope="col">Topics</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -614,6 +614,18 @@
                         "publications dynamics, and most common words in the field."
                 },
                 {
+                    element: '#n_papers',
+                    intro: '{{n_papers}} papers were found and analyzed.'
+                },
+                {
+                    element: '#n_citations',
+                    intro: '{{n_citations}} is the summary number of all the citations of the papers.'
+                },
+                {
+                    element: '#n_subtopics',
+                    intro: "{{n_subtopics}} topics were found among the papers.<br>"
+                },
+                {
                     element: '#show_as_list',
                     intro: "Click <img src=\"{{ url_for('static', filename='list.svg') }}\" alt=\"+\"/> " +
                         "<em>Show as list</em> anytime to open the list of papers in a separate window."
@@ -634,16 +646,9 @@
                         "<em>Show structure graph</em> to explore overall papers similarity."
                 },
                 {
-                    element: '#subtopics-number',
-                    intro: "One of the main features of PubTrends is a subtopic analysis.<br>" +
-                        "Subtopic is a group of papers which share common ideas, describe common features, etc. " +
-                        "Find out the details about trends and papers in subtopics in the next steps."
-                },
-                {
                     element: '#topics',
-                    intro: "Subtopics are extracted based on citations graph and text analysis. " +
-                        "Each subtopic is described by a word cloud with most used keywords and " +
-                        "a chart with all papers that belong to the subtopic."
+                    intro: "Topic is a group of papers which share common ideas, describe common features, etc.<br>" +
+                        "Topics are extracted based on citations graph and text analysis."
                 },
                 {
                     element: '#subtopic-1',
@@ -666,7 +671,7 @@
                 {
                     element: '#authors',
                     intro: "Information about authors and journals with the largest number of papers " +
-                        "is organised into tables, which also show distribution over subtopics. You can " +
+                        "is organised into tables, which also show distribution over topics. You can " +
                         "open all papers for a certain author or journal by clicking the corresponding " +
                         "number of papers."
                 },
