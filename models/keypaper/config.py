@@ -21,7 +21,6 @@ class PubtrendsConfig:
         self.neo4jpassword = params['neo4jpassword' if not test else 'test_neo4jpassword']
 
         self.experimental = params.getboolean('experimental')
-        self.development = params.getboolean('development')
 
         self.pm_enabled = params.getboolean('pm_enabled')
         self.pm_search_example_terms = [terms.strip() for terms in params['pm_search_example_terms'].split(';')]

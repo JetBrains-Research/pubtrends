@@ -206,9 +206,7 @@
         <input type="hidden" name="source" value="{{ search_example_source }}">
         <input type="hidden" name="sort" value="Most Relevant">
         <input type="hidden" name="limit" value="1000">
-        {% if development %}
         <strong>The service is in development!</strong>
-        {% endif %}
         Try example search
         <button type="submit" name="query" value="{{ search_example_terms }}" class="link-button">
             {{ search_example_terms }} at {{ search_example_source }}
