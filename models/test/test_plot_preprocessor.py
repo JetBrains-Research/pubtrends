@@ -1,10 +1,10 @@
 import unittest
 
 import numpy as np
-from parameterized import parameterized
+from bokeh.models import ColumnDataSource
 
-from models.keypaper.visualization import Plotter
-from models.keypaper.visualization_data import PlotPreprocessor
+from models.keypaper.plot_preprocessor import PlotPreprocessor
+from models.keypaper.plotter import Plotter
 from models.test.mock_analyzer import MockAnalyzer
 
 
@@ -13,22 +13,6 @@ class TestPlotPreprocessor(unittest.TestCase):
     def setUp(self):
         self.analyzer = MockAnalyzer()
         self.plotter = Plotter(self.analyzer)
-
-    @parameterized.expand([
-        ('#91C82F', [145, 200, 47]),
-        ('#8ffe09', [143, 254, 9])
-    ])
-    def test_hex2rgb(self, color, expected):
-        self.assertEqual(PlotPreprocessor.hex2rgb(color), expected)
-
-    @parameterized.expand([
-        ([145, 200, 47], '#91c82f'),
-        ([143, 254, 9], '#8ffe09'),
-        ('red', '#ff0000'),
-        ('blue', '#0000ff')
-    ])
-    def test_color2hex(self, color, expected):
-        self.assertEqual(PlotPreprocessor.color2hex(color), expected)
 
     def test_component_size_summary(self):
         components, data = PlotPreprocessor.component_size_summary_data(
@@ -54,9 +38,9 @@ class TestPlotPreprocessor(unittest.TestCase):
             self.assertEqual(data[c], expected_components_data[c], f'Wrong component size list for component {c}')
 
     def test_component_ratio(self):
-        comps, source = PlotPreprocessor.component_ratio_data(
-            self.analyzer.df, self.plotter.comp_palette
-        )
+        comps, ratios = PlotPreprocessor.component_ratio_data(self.analyzer.df)
+        colors = [self.plotter.comp_palette[int(c) - 1] for c in comps]
+        source = ColumnDataSource(data=dict(comps=comps, ratios=ratios, colors=colors))
 
         expected_comps = ['3', '2', '1']
         expected_ratios = [9.090909, 36.363636, 54.545454]
@@ -68,7 +52,7 @@ class TestPlotPreprocessor(unittest.TestCase):
         self.assertEqual(source.data['colors'], expected_colors, 'Wrong list of component colors')
 
     def test_paper_statistics_data(self):
-        ds = PlotPreprocessor.papers_statistics_data(self.analyzer.df)
+        ds = ColumnDataSource(PlotPreprocessor.papers_statistics_data(self.analyzer.df))
 
         expected_years = [2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019]
         expected_counts = [1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 6, 2, 2]
@@ -79,9 +63,9 @@ class TestPlotPreprocessor(unittest.TestCase):
     def test_article_view_data_sourceSplit(self):
         width = 760
         lbefore = len(set(zip(self.analyzer.df['year'], self.analyzer.df['total'])))
-        ds = PlotPreprocessor.article_view_data_source(
+        ds = ColumnDataSource(PlotPreprocessor.article_view_data_source(
             self.analyzer.df, self.analyzer.min_year, self.analyzer.max_year, True, width=width
-        )
+        ))
         lafter = len(set(zip(ds.data['year'], ds.data['total'])))
         self.assertGreaterEqual(lafter, lbefore)
 
@@ -95,9 +79,9 @@ class TestPlotPreprocessor(unittest.TestCase):
     def test_article_view_data_source(self):
         width = 760
         lbefore = len(set(zip(self.analyzer.df['year'], self.analyzer.df['total'])))
-        ds = PlotPreprocessor.article_view_data_source(
+        ds = ColumnDataSource(PlotPreprocessor.article_view_data_source(
             self.analyzer.df, self.analyzer.min_year, self.analyzer.max_year, False, width=width
-        )
+        ))
 
         lafter = len(set(zip(ds.data['year'], ds.data['total'])))
         self.assertGreaterEqual(lafter, lbefore)
@@ -142,44 +126,3 @@ class TestPlotPreprocessor(unittest.TestCase):
                                        expected_densities[i, j], places=3,
                                        msg=f'Wrong density for comp_x {i} and comp_y {j}')
 
-    def test_subtopic_evolution_data(self):
-        edges, nodes_data = PlotPreprocessor.subtopic_evolution_data(
-            self.analyzer.evolution_df, self.analyzer.evolution_kwds, self.analyzer.n_steps
-        )
-
-        expected_edges = [('2014 -1', '2019 0', 1), ('2014 -1', '2019 1', 4),
-                          ('2014 0', '2019 0', 3), ('2014 1', '2019 1', 2)]
-        expected_nodes_data = [('2019 0', '2019 shiftwork, estrogen, pattern, disturbance, cell'),
-                               ('2019 1', '2019 study, analysis, association, time, cpg'),
-                               ('2014 -1', 'TBD'),
-                               ('2014 0', '2014 body, susceptibility, ieaa, risk, time'),
-                               ('2014 1', '2014 reaction, disturbance, pattern, study, rhythm')]
-
-        self.assertCountEqual(edges, expected_edges, 'Wrong Sankey diagram edges')
-        self.assertListEqual([el[0] for el in nodes_data], [el[0] for el in expected_nodes_data],
-                             'Wrong node order')
-        self.assertListEqual(nodes_data, expected_nodes_data, 'Wrong nodes data')
-
-    def test_subtopic_evolution_keywords(self):
-        _, source = PlotPreprocessor.subtopic_evolution_keywords_data(
-            self.analyzer.evolution_kwds
-        )
-
-        expected_keywords_data = {
-            'years': [2014, 2014, 2019, 2019],
-            'subtopics': [1, 2, 1, 2],
-            'keywords': [
-                'body, susceptibility, ieaa, risk, time, acceleration, gene, association, tumor, ageaccel, '
-                'development, tissue, blood, study, age',
-                'reaction, disturbance, pattern, study, rhythm, result, change, analysis, shiftwork, disruption, '
-                'per2, per1, promoter, expression, gene',
-                'shiftwork, estrogen, pattern, disturbance, cell, per2, disruption, night, analysis, study, rhythm, '
-                'per1, promoter, expression, gene',
-                'study, analysis, association, time, cpg, sample, development, ageaccel, type, blood, cell, '
-                'acceleration, risk, tissue, age'
-            ]
-        }
-
-        self.assertEqual(expected_keywords_data['years'], source.data['years'], 'Wrong years')
-        self.assertEqual(expected_keywords_data['subtopics'], source.data['subtopics'], 'Wrong subtopics')
-        self.assertEqual(expected_keywords_data['keywords'], source.data['keywords'], 'Wrong keywords')

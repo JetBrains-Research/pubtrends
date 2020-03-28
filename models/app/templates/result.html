@@ -196,7 +196,7 @@
                             Journals
                         </a>
                     </li>
-                    {% if experimental %}
+                    {% if experimental is defined %}
                     <li class="nav-item row">
                         <a class="nav-link no-padding-right" href="#evolution" title="Evolution">
                             <img src="{{ url_for('static', filename='flag.svg') }}"/>
@@ -544,7 +544,7 @@
                     </div>
                 </div>
 
-                {% if experimental %}
+                {% if experimental is defined %}
                 <div class="card mt-3">
                     <div class="card-title" id="evolution">
                         <h1 class="card-header">Experimental</h1>

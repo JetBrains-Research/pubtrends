@@ -1,21 +1,21 @@
-import binascii
 import html
-import itertools
 import logging
 import re
-import sys
 from collections import Counter
 from string import Template
+from threading import Lock
 
+import binascii
 import nltk
 import numpy as np
 import pandas as pd
+import sys
+from matplotlib import colors
 from nltk.corpus import stopwords, wordnet
 from nltk.stem import WordNetLemmatizer, SnowballStemmer
 from nltk.tokenize import word_tokenize
 from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
-from threading import Lock
 
 nltk.download('averaged_perceptron_tagger')  # required for nltk.pos_tag
 nltk.download('punkt')  # required for word_tokenize
@@ -337,3 +337,16 @@ def preprocess_search_query(query, min_search_words):
         return ' AND '.join([w if '-' not in w else f'"{w}"' for w in words])  # Dashed terms should be quoted
     raise Exception(f'Illegal search query, please use search terms or '
                     f'all the query wrapped in "" for phrasal search. Query: {query}')
+
+
+def hex2rgb(color):
+    return [int(color[pos:pos + 2], 16) for pos in range(1, 7, 2)]
+
+
+def rgb2hex(color):
+    if isinstance(color, str):
+        r, g, b, _ = colors.to_rgba(color)
+        r, g, b = r * 255, g * 255, b * 255
+    else:
+        r, g, b = color
+    return "#{0:02x}{1:02x}{2:02x}".format(int(r), int(g), int(b))

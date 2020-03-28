@@ -1,5 +1,4 @@
 import json
-import json
 import logging
 from string import Template
 
@@ -8,12 +7,10 @@ import numpy as np
 from bokeh.colors import RGB
 from bokeh.core.properties import value
 from bokeh.embed import components
-from bokeh.layouts import column
 from bokeh.models import ColumnDataSource, CustomJS
 # Tools used: hover,pan,tap,wheel_zoom,box_zoom,reset,save
 from bokeh.models import LinearColorMapper, PrintfTickFormatter, ColorBar
 from bokeh.models import NumeralTickFormatter
-from bokeh.models.widgets.tables import DataTable
 from bokeh.palettes import Category20
 from bokeh.plotting import figure
 from bokeh.transform import factor_cmap
@@ -21,9 +18,9 @@ from holoviews import dim
 from matplotlib import pyplot as plt
 from wordcloud import WordCloud
 
-from .utils import LOCAL_BASE_URL, get_topic_word_cloud_data, \
-    get_frequent_tokens, cut_authors_list, ZOOM_OUT, ZOOM_IN, zoom_name, trim
-from .visualization_data import PlotPreprocessor
+from models.keypaper.plot_preprocessor import PlotPreprocessor
+from models.keypaper.utils import LOCAL_BASE_URL, get_topic_word_cloud_data, \
+    get_frequent_tokens, cut_authors_list, ZOOM_OUT, ZOOM_IN, zoom_name, trim, hex2rgb, rgb2hex
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
 hv.extension('bokeh')
@@ -34,13 +31,11 @@ MAX_AUTHOR_LENGTH = 100
 MAX_JOURNAL_LENGTH = 100
 MAX_LINEAR_AXIS = 100
 
-CHORD_DIAGRAM_SIZE = 890
-
-PLOT_WIDTH = 890
+PLOT_WIDTH = 870
 SHORT_PLOT_HEIGHT = 300
 TALL_PLOT_HEIGHT = 600
 
-PAPERS_PLOT_WIDTH = 690
+PAPERS_PLOT_WIDTH = 670
 PAPERS_PLOT_HEIGHT = 400
 
 WORD_CLOUD_WIDTH = 200
@@ -54,7 +49,7 @@ def visualize_analysis(analyzer):
     # Order is important here!
     paper_statistics, word_cloud, zoom_out_callback = plotter.papers_statistics_and_word_cloud_and_callback()
     if analyzer.paper_relations_graph.nodes():
-        result = {
+        return {
             'topics_analyzed': True,
             'n_papers': analyzer.n_papers,
             'n_citations': int(analyzer.df['total'].sum()),
@@ -64,7 +59,7 @@ def visualize_analysis(analyzer):
             'component_size_summary': [components(plotter.component_size_summary())],
             'component_years_summary_boxplots': [components(plotter.component_years_summary_boxplots())],
             'subtopics_info_and_word_cloud_and_callback':
-                [(components(p), word_cloud_prepare(wc), zoom_in_callback) for
+                [(components(p), Plotter.word_cloud_prepare(wc), zoom_in_callback) for
                  (p, wc, zoom_in_callback) in plotter.subtopics_info_and_word_cloud_and_callback()],
             'top_cited_papers': [components(plotter.top_cited_papers())],
             'max_gain_papers': [components(plotter.max_gain_papers())],
@@ -72,20 +67,11 @@ def visualize_analysis(analyzer):
             'component_sizes': plotter.component_sizes(),
             'component_ratio': [components(plotter.component_ratio())],
             'papers_stats': [components(paper_statistics)],
-            'papers_word_cloud': word_cloud_prepare(word_cloud),
+            'papers_word_cloud': Plotter.word_cloud_prepare(word_cloud),
             'papers_zoom_out_callback': zoom_out_callback,
             'author_statistics': plotter.author_statistics(),
             'journal_statistics': plotter.journal_statistics(),
-            'experimental': analyzer.config.experimental,
         }
-        # Experimental features
-        if analyzer.config.experimental:
-            subtopic_evolution = plotter.subtopic_evolution()
-            # Pass subtopic evolution only if not None
-            if subtopic_evolution:
-                result['subtopic_evolution'] = [components(subtopic_evolution)]
-        return result
-
     else:
         return {
             'topics_analyzed': False,
@@ -96,19 +82,11 @@ def visualize_analysis(analyzer):
             'max_gain_papers': [components(plotter.max_gain_papers())],
             'max_relative_gain_papers': [components(plotter.max_relative_gain_papers())],
             'papers_stats': [components(paper_statistics)],
-            'papers_word_cloud': word_cloud_prepare(word_cloud),
+            'papers_word_cloud': Plotter.word_cloud_prepare(word_cloud),
             'papers_zoom_out_callback': zoom_out_callback,
             'author_statistics': plotter.author_statistics(),
             'journal_statistics': plotter.journal_statistics(),
-            'experimental': str(analyzer.config.experimental),
         }
-
-
-def word_cloud_prepare(wc):
-    return json.dumps([(word, int(position[0]), int(position[1]),
-                        int(font_size), orientation is not None,
-                        PlotPreprocessor.color2hex(color))
-                       for (word, count), font_size, position, orientation, color in wc.layout_])
 
 
 class Plotter:
@@ -120,7 +98,7 @@ class Plotter:
                 n_comps = len(self.analyzer.components)
                 if n_comps > 20:
                     raise ValueError(f'Too big number of components {n_comps}')
-                self.comp_palette = [RGB(*PlotPreprocessor.hex2rgb(c)) for c in Category20[20][:n_comps]]
+                self.comp_palette = [RGB(*hex2rgb(c)) for c in Category20[20][:n_comps]]
                 self.comp_colors = dict(enumerate(self.comp_palette))
 
             n_pub_types = len(self.analyzer.pub_types)
@@ -302,9 +280,9 @@ class Plotter:
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
         for comp in range(n_comps):
             df_comp = self.analyzer.df[self.analyzer.df['comp'] == comp]
-            ds = PlotPreprocessor.article_view_data_source(
+            ds = ColumnDataSource(PlotPreprocessor.article_view_data_source(
                 df_comp, min_year, max_year, True, width=PAPERS_PLOT_WIDTH
-            )
+            ))
             # Add type coloring
             ds.add([self.pub_types_colors_map[t] for t in df_comp['type']], 'color')
             plot = self.__serve_scatter_article_layout(ds=ds,
@@ -338,9 +316,9 @@ class Plotter:
         return [int(d[k]) for k in range(len(d))]
 
     def component_ratio(self):
-        comps, source = PlotPreprocessor.component_ratio_data(
-            self.analyzer.df, self.comp_palette
-        )
+        comps, ratios = PlotPreprocessor.component_ratio_data(self.analyzer.df)
+        colors = [self.comp_palette[int(c) - 1] for c in comps]
+        source = ColumnDataSource(data=dict(comps=comps, ratios=ratios, colors=colors))
 
         p = figure(plot_width=PLOT_WIDTH, plot_height=30 + 50 * len(comps),
                    toolbar_location="above", tools=TOOLS, y_range=comps)
@@ -360,9 +338,9 @@ class Plotter:
 
     def top_cited_papers(self):
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
-        ds = PlotPreprocessor.article_view_data_source(
+        ds = ColumnDataSource(PlotPreprocessor.article_view_data_source(
             self.analyzer.top_cited_df, min_year, max_year, False, width=PAPERS_PLOT_WIDTH
-        )
+        ))
         # Add type coloring
         ds.add([self.pub_types_colors_map[t] for t in self.analyzer.top_cited_df['type']], 'color')
 
@@ -445,7 +423,7 @@ class Plotter:
 
     @staticmethod
     def article_citation_dynamics(df, pid):
-        d = PlotPreprocessor.article_citation_dynamics_data(df, pid)
+        d = ColumnDataSource(PlotPreprocessor.article_citation_dynamics_data(df, pid))
 
         p = figure(tools=TOOLS, toolbar_location="above", plot_width=PLOT_WIDTH,
                    plot_height=SHORT_PLOT_HEIGHT, title="Number of Citations per Year")
@@ -460,7 +438,7 @@ class Plotter:
         return p
 
     def papers_statistics_and_word_cloud_and_callback(self):
-        ds_stats = PlotPreprocessor.papers_statistics_data(self.analyzer.df)
+        ds_stats = ColumnDataSource(PlotPreprocessor.papers_statistics_data(self.analyzer.df))
 
         year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
         p = figure(tools=TOOLS, toolbar_location="above",
@@ -494,39 +472,6 @@ class Plotter:
                                                zoom=ZOOM_OUT, query=self.analyzer.query)
 
         return p, wc, zoom_out_callback
-
-    def subtopic_evolution(self):
-        """
-        Sankey diagram of subtopic evolution
-        :return:
-            if self.analyzer.evolution_df is None: None, as no evolution can be observed in 1 step
-            if number of steps < 3: Sankey diagram
-            else: Sankey diagram + table with keywords
-        """
-        # Subtopic evolution analysis failed, one step is not enough to analyze evolution
-        if self.analyzer.evolution_df is None or not self.analyzer.evolution_kwds:
-            return None
-
-        n_steps = len(self.analyzer.evolution_df.columns) - 2
-
-        edges, nodes_data = PlotPreprocessor.subtopic_evolution_data(
-            self.analyzer.evolution_df, self.analyzer.evolution_kwds, n_steps
-        )
-
-        value_dim = hv.Dimension('Amount', unit=None)
-        nodes_ds = hv.Dataset(nodes_data, 'index', 'label')
-        topic_evolution = hv.Sankey((edges, nodes_ds), ['From', 'To'], vdims=value_dim)
-        topic_evolution.opts(labels='label', width=PLOT_WIDTH, height=TALL_PLOT_HEIGHT,
-                             show_values=False, cmap='tab20',
-                             edge_color=dim('To').str(), node_color=dim('index').str())
-
-        if n_steps > 3:
-            columns, source = PlotPreprocessor.subtopic_evolution_keywords_data(self.analyzer.evolution_kwds)
-            subtopic_keywords = DataTable(source=source, columns=columns, width=PLOT_WIDTH, index_position=None)
-
-            return column(hv.render(topic_evolution, backend='bokeh'), subtopic_keywords)
-
-        return hv.render(topic_evolution, backend='bokeh')
 
     def author_statistics(self):
         author = self.analyzer.author_stats['author']
@@ -603,3 +548,14 @@ class Plotter:
 
     def dump_citations_graph_cytoscape(self):
         return PlotPreprocessor.dump_citations_graph_cytoscape(self.analyzer.df, self.analyzer.citations_graph)
+
+    @staticmethod
+    def word_cloud_prepare(wc):
+        return json.dumps([(word, int(position[0]), int(position[1]),
+                            int(font_size), orientation is not None,
+                            rgb2hex(color))
+                           for (word, count), font_size, position, orientation, color in wc.layout_])
+
+    @staticmethod
+    def subtopics_palette(df):
+        return dict(enumerate(Category20[20][:len(set(df['comp']))]))

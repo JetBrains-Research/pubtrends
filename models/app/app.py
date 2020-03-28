@@ -9,14 +9,13 @@ from flask import (
     render_template, render_template_string
 )
 
-from models.celery.tasks import celery, find_paper_async, analyze_search_terms, analyze_id_list
+from models.celery.tasks import celery, find_paper_async, analyze_search_terms, analyze_id_list, get_analyzer
 from models.celery.tasks_cache import get_or_cancel_task, complete_task
-from models.keypaper.analysis import KeyPaperAnalyzer
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.paper import prepare_paper_data, prepare_papers_data, get_loader_and_url_prefix
+from models.keypaper.plot_preprocessor import PlotPreprocessor
 from models.keypaper.utils import zoom_name, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE, trim
 from models.keypaper.version import VERSION
-from models.keypaper.visualization_data import PlotPreprocessor
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
@@ -202,7 +201,7 @@ def graph():
         if job and job.state == 'SUCCESS':
             _, data, _ = job.result
             loader, url_prefix = get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
-            analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
+            analyzer = get_analyzer(loader, PUBTRENDS_CONFIG)
             analyzer.init(data)
             min_year, max_year = int(analyzer.df['year'].min()), int(analyzer.df['year'].max())
             subtopics_tags = {comp + 1: ', '.join(

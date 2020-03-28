@@ -3,13 +3,16 @@ import os
 
 from celery import Celery, current_task
 
-from models.keypaper.analysis import KeyPaperAnalyzer
+from models.keypaper.analyzer import KeyPaperAnalyzer
+from models.keypaper.analyzer_experimental import ExperimentalAnalyzer
 from models.keypaper.config import PubtrendsConfig
+from models.keypaper.plotter import visualize_analysis
+from models.keypaper.plotter_experimental import visualize_experimental_analysis
 from models.keypaper.pm_loader import PubmedLoader
 from models.keypaper.progress import Progress
 from models.keypaper.ss_loader import SemanticScholarLoader
 from models.keypaper.utils import SORT_MOST_CITED
-from models.keypaper.visualization import visualize_analysis
+from models.prediction.arxiv_loader import ArxivLoader
 
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379'),
 CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379')
@@ -23,7 +26,7 @@ PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 @celery.task(name='analyze_search_terms')
 def analyze_search_terms(source, query, sort=None, limit=None):
     loader = get_loader(source, PUBTRENDS_CONFIG)
-    analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
+    analyzer = get_analyzer(loader, PUBTRENDS_CONFIG)
     try:
         sort = sort or SORT_MOST_CITED
         ids = analyzer.search_terms(query, limit=limit, sort=sort, task=current_task)
@@ -32,7 +35,9 @@ def analyze_search_terms(source, query, sort=None, limit=None):
         loader.close_connection()
 
     analyzer.progress.info('Visualizing', current=analyzer.progress.total - 1, task=current_task)
-    visualization = visualize_analysis(analyzer)
+
+    visualization = visualize_analysis(analyzer) \
+        if not analyzer.config.experimental else visualize_experimental_analysis(analyzer)
     dump = analyzer.dump()
     analyzer.progress.done(task=current_task)
     analyzer.teardown()
@@ -42,7 +47,7 @@ def analyze_search_terms(source, query, sort=None, limit=None):
 @celery.task(name='analyze_id_list')
 def analyze_id_list(source, id_list, zoom, query):
     loader = get_loader(source, PUBTRENDS_CONFIG)
-    analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
+    analyzer = get_analyzer(loader, PUBTRENDS_CONFIG)
     try:
         ids = analyzer.process_id_list(id_list, zoom, 1, current_task)
         analyzer.analyze_papers(ids, query, current_task)
@@ -75,5 +80,14 @@ def get_loader(source, config):
         return PubmedLoader(config)
     elif source == 'Semantic Scholar':
         return SemanticScholarLoader(config)
+    elif source == 'Arxiv':
+        return ArxivLoader(config)
     else:
         raise ValueError(f"Unknown source {source}")
+
+
+def get_analyzer(loader, config):
+    if config.experimental:
+        return ExperimentalAnalyzer(loader, config)
+    else:
+        return KeyPaperAnalyzer(loader, config)

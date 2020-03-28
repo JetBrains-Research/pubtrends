@@ -1,14 +1,14 @@
 import numpy as np
 from bokeh.embed import components
 
-from models.keypaper.analysis import KeyPaperAnalyzer
+from models.keypaper.analyzer import KeyPaperAnalyzer
 from models.keypaper.config import PubtrendsConfig
+from models.keypaper.plotter import Plotter
 from models.keypaper.pm_loader import PubmedLoader
 from models.keypaper.ss_loader import SemanticScholarLoader
 from models.keypaper.utils import (
     cut_authors_list, trim, preprocess_text,
     PUBMED_ARTICLE_BASE_URL, SEMANTIC_SCHOLAR_BASE_URL)
-from models.keypaper.visualization import Plotter
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 

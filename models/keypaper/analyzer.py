@@ -1,26 +1,26 @@
-import community
 import logging
+from collections import Counter
+
+import community
 import networkx as nx
 import numpy as np
 import pandas as pd
-from networkx.readwrite import json_graph
 from itertools import product as cart_product
-from collections import Counter
+from networkx.readwrite import json_graph
 from scipy.spatial.distance import cosine
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+
+from models.keypaper.pm_loader import PubmedLoader
+from models.keypaper.progress import Progress
+from models.keypaper.ss_loader import SemanticScholarLoader
+from models.keypaper.utils import split_df_list, get_frequent_tokens, get_topics_description, tokenize
 from models.prediction.arxiv_loader import ArxivLoader
-from .pm_loader import PubmedLoader
-from .progress import Progress
-from .ss_loader import SemanticScholarLoader
-from .utils import split_df_list, get_frequent_tokens, get_topics_description, get_tfidf_words, tokenize
 
 logger = logging.getLogger(__name__)
 
 
 class KeyPaperAnalyzer:
     SEED = 20190723
-    TOTAL_STEPS = 19  # 18 + 1 for visualization
-    EXPERIMENTAL_STEPS = 2
 
     TOP_CITED_PAPERS = 50
     TOP_CITED_PAPERS_FRACTION = 0.1
@@ -37,14 +37,9 @@ class KeyPaperAnalyzer:
     TOP_JOURNALS = 50
     TOP_AUTHORS = 50
 
-    EVOLUTION_STEP = 10
-
     def __init__(self, loader, config, test=False):
         self.config = config
-        self.experimental = config.experimental
-        # 1 - visualization step
-        self.progress = Progress(1 + KeyPaperAnalyzer.TOTAL_STEPS +
-                                 (KeyPaperAnalyzer.EXPERIMENTAL_STEPS if self.experimental else 0))
+        self.progress = Progress(self.total_steps())
 
         self.loader = loader
         loader.set_progress(self.progress)
@@ -55,9 +50,12 @@ class KeyPaperAnalyzer:
         elif isinstance(self.loader, SemanticScholarLoader):
             self.source = 'Semantic Scholar'
         elif isinstance(self.loader, ArxivLoader):
-            self.source = 'arxiv'
+            self.source = 'Arxiv'
         elif not test:
-            raise TypeError("loader should be either PubmedLoader or SemanticScholarLoader")
+            raise TypeError(f'Unknown loader {self.loader}')
+
+    def total_steps(self):
+        return 19  # 18 + 1 for visualization
 
     def teardown(self):
         self.progress.remove_handler()
@@ -175,14 +173,6 @@ class KeyPaperAnalyzer:
         # Find top authors
         self.author_stats = self.popular_authors(self.df, current=18, task=task)
 
-        # Experimental features, can be turned off in 'config.properties'
-        if self.experimental:
-            # Perform subtopic evolution analysis and get subtopic descriptions
-            self.evolution_df, self.evolution_year_range = self.subtopic_evolution_analysis(self.cocit_df,
-                                                                                            current=19, task=task)
-            self.evolution_kwds = self.subtopic_evolution_descriptions(
-                self.df, self.evolution_df, self.evolution_year_range, self.query, current=20, task=task
-            )
 
     def build_cit_stats_df(self, cit_stats_df_from_query, n_papers, current=None, task=None):
         # Get citation stats with columns 'id', year_1, ..., year_N and fill NaN with 0
@@ -449,78 +439,6 @@ class KeyPaperAnalyzer:
         max_rel_gain_papers = set(max_rel_gain_df['id'].values)
         return max_rel_gain_papers, max_rel_gain_df
 
-    def subtopic_evolution_analysis(self, cocit_df, step=EVOLUTION_STEP, min_papers=0, current=0, task=None):
-        min_year = int(cocit_df['year'].min())
-        max_year = int(cocit_df['year'].max())
-        year_range = list(np.arange(max_year, min_year - 1, step=-step).astype(int))
-
-        # Cannot analyze evolution
-        if len(year_range) < 2:
-            self.progress.info(f'Year step is too big to analyze evolution of subtopics in {min_year} - {max_year}',
-                               current=current, task=task)
-            return None, None
-
-        self.progress.info(f'Studying evolution of subtopics in {min_year} - {max_year}',
-                           current=current, task=task)
-
-        n_components_merged = {}
-        paper_relations_graph = {}
-
-        logger.debug(f"Subtopics evolution years: {', '.join([str(year) for year in year_range])}")
-
-        # Use results of subtopic analysis for current year, perform analysis for other years
-        years_processed = 1
-        evolution_series = [pd.Series(self.partition)]
-        for i, year in enumerate(year_range[1:]):
-            # Use only co-citations earlier than year
-            cocit_grouped_df = self.build_cocit_grouped_df(cocit_df[cocit_df['year'] <= year])
-            paper_relations_graph[year] = self.build_papers_relation_graph(
-                self.citations_graph, cocit_grouped_df, self.bibliographic_coupling_df, current=current, task=task
-            )
-
-            if len(paper_relations_graph[year].nodes) >= min_papers:
-                p = {vertex: int(comp) for vertex, comp in
-                     community.best_partition(paper_relations_graph[year], random_state=KeyPaperAnalyzer.SEED).items()}
-                p, n_components_merged[year] = self.merge_components(p)
-                evolution_series.append(pd.Series(p))
-                years_processed += 1
-            else:
-                logger.debug(f'Total number of papers is less than {min_papers}, stopping.')
-                break
-
-        year_range = year_range[:years_processed]
-
-        evolution_df = pd.concat(evolution_series, axis=1).rename(
-            columns=dict(enumerate(year_range)))
-        evolution_df['current'] = evolution_df[max_year]
-        evolution_df = evolution_df[list(reversed(list(evolution_df.columns)))]
-
-        # Assign -1 to articles that do not belong to any cluster at some step
-        evolution_df = evolution_df.fillna(-1.0)
-
-        evolution_df = evolution_df.reset_index().rename(columns={'index': 'id'})
-        evolution_df['id'] = evolution_df['id'].astype(str)
-        return evolution_df, year_range
-
-    def subtopic_evolution_descriptions(self, df, evolution_df, year_range, query,
-                                        n_papers=TOPIC_PAPERS, keywords=TOPIC_WORDS,
-                                        current=0, task=None):
-        # Subtopic evolution failed, no need to generate keywords
-        if evolution_df is None or not year_range:
-            return None
-
-        self.progress.info('Generating evolution subtopics description by top cited papers',
-                           current=current, task=task)
-        evolution_kwds = {}
-        for col in evolution_df:
-            if col in year_range:
-                logger.debug(f'Generating subtopics descriptions for year {col}')
-                if isinstance(col, (int, float)):
-                    evolution_df[col] = evolution_df[col].apply(int)
-                    comps = evolution_df.groupby(col)['id'].apply(list).to_dict()
-                    evolution_kwds[col] = get_tfidf_words(df, comps, query, n_words=100, size=keywords)
-
-        return evolution_kwds
 
     def merge_components(self, partition, granularity=TOPIC_GRANULARITY, current=0, task=None):
         logger.debug(f'Merging components smaller than {granularity} to "Other" component')

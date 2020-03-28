@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 from parameterized import parameterized
 
-from models.keypaper.analysis import KeyPaperAnalyzer
+from models.keypaper.analyzer import KeyPaperAnalyzer
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.pm_loader import PubmedLoader
 from models.keypaper.ss_loader import SemanticScholarLoader
@@ -145,25 +145,6 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
     def test_merge_citation_stats_citation_years(self):
         _, _, _, citation_years = self.analyzer.merge_citation_stats(self.analyzer.pub_df, self.analyzer.cit_stats_df)
         self.assertCountEqual(citation_years, CITATION_YEARS)
-
-    @parameterized.expand([
-        ('too large step', 10, True, None),
-        ('2 steps', 5, False, [1975, 1970]),
-        ('5 steps', 2, False, [1975, 1973, 1971, 1969, 1967])
-    ])
-    def test_subtopic_evolution(self, name, step, expect_none, expected_year_range):
-        evolution_df, year_range = self.analyzer.subtopic_evolution_analysis(
-            self.analyzer.cocit_df, step=step
-        )
-
-        if expect_none:
-            self.assertIsNone(evolution_df, msg=f'Evolution DataFrame is not None when step is too large {name}')
-
-        if expected_year_range:
-            self.assertListEqual(year_range, expected_year_range, msg=f'Wrong year range {name}')
-            self.assertEqual(len(year_range), len(evolution_df.columns) - 2, msg=f'Wrong n_steps {name}')
-        else:
-            self.assertIsNone(year_range, msg=f'Year range is not None when step is too large {name}')
 
     def test_get_most_cited_papers_for_comps(self):
         comps = self.analyzer.get_most_cited_papers_for_comps(self.analyzer.df, self.analyzer.partition, 1)
