@@ -173,7 +173,6 @@ class KeyPaperAnalyzer:
         # Find top authors
         self.author_stats = self.popular_authors(self.df, current=18, task=task)
 
-
     def build_cit_stats_df(self, cit_stats_df_from_query, n_papers, current=None, task=None):
         # Get citation stats with columns 'id', year_1, ..., year_N and fill NaN with 0
         cit_stats_df = cit_stats_df_from_query.pivot(index='id', columns='year',
@@ -438,7 +437,6 @@ class KeyPaperAnalyzer:
                                                 'paper_year', 'rel_gain'])
         max_rel_gain_papers = set(max_rel_gain_df['id'].values)
         return max_rel_gain_papers, max_rel_gain_df
-
 
     def merge_components(self, partition, granularity=TOPIC_GRANULARITY, current=0, task=None):
         logger.debug(f'Merging components smaller than {granularity} to "Other" component')

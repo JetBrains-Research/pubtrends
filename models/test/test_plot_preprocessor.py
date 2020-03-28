@@ -125,4 +125,3 @@ class TestPlotPreprocessor(unittest.TestCase):
                 self.assertAlmostEqual(cluster_edges[index(i + 1, j + 1)]['density'].values[0],
                                        expected_densities[i, j], places=3,
                                        msg=f'Wrong density for comp_x {i} and comp_y {j}')
-

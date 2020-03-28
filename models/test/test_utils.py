@@ -117,4 +117,3 @@ class TestUtils(unittest.TestCase):
     ])
     def test_color2hex(self, color, expected):
         self.assertEqual(rgb2hex(color), expected)
-
