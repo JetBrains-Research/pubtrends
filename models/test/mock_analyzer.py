@@ -8,6 +8,7 @@ DF_CSV = 'models/test/test_data/df.csv'
 EVOLUTION_DF_CSV = 'models/test/test_data/evolution_df.csv'
 EVOLUTION_KEYWORDS_JSON = 'models/test/test_data/evolution_keywords.json'
 
+
 class MockAnalyzer:
     def __init__(self):
         # Load DataFrame and convert id to str
