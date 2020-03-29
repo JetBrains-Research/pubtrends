@@ -14,6 +14,7 @@ from models.celery.tasks_cache import get_or_cancel_task, complete_task
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.paper import prepare_paper_data, prepare_papers_data, get_loader_and_url_prefix
 from models.keypaper.plot_preprocessor import PlotPreprocessor
+from models.keypaper.plotter import Plotter
 from models.keypaper.utils import zoom_name, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE, trim
 from models.keypaper.version import VERSION
 
@@ -219,7 +220,7 @@ def graph():
                     citation_graph="true",
                     min_year=min_year,
                     max_year=max_year,
-                    subtopics_palette_json=json.dumps(PlotPreprocessor.subtopics_palette(analyzer.df)),
+                    subtopics_palette_json=json.dumps(Plotter.subtopics_palette(analyzer.df)),
                     subtopics_description_json=json.dumps(subtopics_tags),
                     graph_cytoscape_json=json.dumps(graph_cs)
                 )
@@ -235,7 +236,7 @@ def graph():
                     citation_graph="false",
                     min_year=min_year,
                     max_year=max_year,
-                    subtopics_palette_json=json.dumps(PlotPreprocessor.subtopics_palette(analyzer.df)),
+                    subtopics_palette_json=json.dumps(Plotter.subtopics_palette(analyzer.df)),
                     subtopics_description_json=json.dumps(subtopics_tags),
                     graph_cytoscape_json=json.dumps(graph_cs)
                 )
