@@ -95,7 +95,7 @@ class TestPlotPreprocessor(unittest.TestCase):
 
     def test_heatmap_clusters(self):
         cluster_edges, clusters = PlotPreprocessor.heatmap_clusters_data(
-            self.analyzer.paper_relations_graph, self.analyzer.df, self.analyzer.comp_sizes
+            self.analyzer.similarity_graph, self.analyzer.df, self.analyzer.comp_sizes
         )
 
         # Find data for comp_x=i and comp_y=j in DataFrame

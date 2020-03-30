@@ -3,11 +3,11 @@ import pandas as pd
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.loader import Loader
 
-PUBLICATION_DATA = [['1', 1963, 'Article 1', None, 'Article', 'Geller R, Geller M, Bing Ch', 'Nature'],
+PUBLICATION_DATA = [['1', 1963, 'Article 1', 'just a paper', 'Article', 'Geller R, Geller M, Bing Ch', 'Nature'],
                     ['2', 1965, 'Article 2', 'abstract', 'Article', 'Buffay Ph, Geller M, Doe J', 'Science'],
-                    ['3', 1967, 'Article 3', 'otherabstract', 'Article', 'Doe J, Buffay Ph', 'Nature'],
-                    ['4', 1968, 'Article 4', None, 'Article', 'Doe J, Geller R', 'Science'],
-                    ['5', 1975, 'Article 5', None, 'Review', 'Green R, Geller R, Doe J', 'Nature']]
+                    ['3', 1967, 'Article 3', 'other abstract', 'Article', 'Doe J, Buffay Ph', 'Nature'],
+                    ['4', 1968, 'Article 4', 'interesting paper', 'Article', 'Doe J, Geller R', 'Science'],
+                    ['5', 1975, 'Article 5', 'just a breakthrough', 'Review', 'Green R, Geller R, Doe J', 'Nature']]
 
 CITATION_STATS_DATA = [['1', 1972, 2], ['1', 1974, 15],
                        ['2', 1974, 1],

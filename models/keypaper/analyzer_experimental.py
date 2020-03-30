@@ -45,7 +45,7 @@ class ExperimentalAnalyzer(KeyPaperAnalyzer):
                            current=current, task=task)
 
         n_components_merged = {}
-        paper_relations_graph = {}
+        similarity_graph = {}
 
         logger.debug(f"Subtopics evolution years: {', '.join([str(year) for year in year_range])}")
 
@@ -55,13 +55,13 @@ class ExperimentalAnalyzer(KeyPaperAnalyzer):
         for i, year in enumerate(year_range[1:]):
             # Use only co-citations earlier than year
             cocit_grouped_df = self.build_cocit_grouped_df(cocit_df[cocit_df['year'] <= year])
-            paper_relations_graph[year] = self.build_papers_relation_graph(
+            similarity_graph[year] = self.build_similarity_graph(
                 self.citations_graph, cocit_grouped_df, self.bibliographic_coupling_df, current=current, task=task
             )
 
-            if len(paper_relations_graph[year].nodes) >= min_papers:
+            if len(similarity_graph[year].nodes) >= min_papers:
                 p = {vertex: int(comp) for vertex, comp in
-                     community.best_partition(paper_relations_graph[year], random_state=KeyPaperAnalyzer.SEED).items()}
+                     community.best_partition(similarity_graph[year], random_state=KeyPaperAnalyzer.SEED).items()}
                 p, n_components_merged[year] = self.merge_components(p)
                 evolution_series.append(pd.Series(p))
                 years_processed += 1

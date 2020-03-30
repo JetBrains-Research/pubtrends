@@ -150,7 +150,7 @@ Please ensure that you have Database configured, up and running.
 
     ```
     docker run --rm --volume=$(pwd):/pubtrends -t biolabs/pubtrends /bin/bash -c \
-    "sudo neo4j start; sleep 20s; \
+    "sudo neo4j start; sleep 30s; \
     cd /pubtrends; cp config.properties ~/.pubtrends; \
     source activate pubtrends; python -m pytest --pycodestyle models"
     ```

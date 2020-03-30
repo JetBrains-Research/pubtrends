@@ -67,16 +67,16 @@
 
         const PR_EDGE_STYLE = {
             "width": function (edge) {
-                if ('cos' in edge.data()){
-                    return Math.max(1, Math.min(10, 1 / edge.data().cos))
+                if ('cos_similarity' in edge.data()){
+                    return Math.max(1, edge.data().cos_similarity * 10)
                 } else {
-                    return Math.max(1, Math.min(10, edge.data().weight / 10));
+                    return Math.max(1, Math.min(10, edge.data().similarity / 10));
                 }
             },
             "curve-style": "haystack",
             "line-color": function (edge) {
                 let data = edge.data();
-                if ('cos' in data){
+                if ('cos_similarity' in data){
                     return "#9b0200";
                 }
                 let cocitation = 0;
@@ -201,11 +201,11 @@
                     content: () => {
                         let content = document.createElement('div');
                         let data = ele.data();
-                        if ('cos' in data) {
-                            content.innerHTML = "<b>Text distance</b> " + Number(data['cos']).toFixed(3) + "<br>" +
-                                "Similarity is a cosine distance between TF-IDF normalized titles and abstracts.<br>" +
-                                "The less value the more similar papers are.";
-                        } else if ('weight' in data) {
+                        if ('cos_similarity' in data) {
+                            content.innerHTML = "<b>Text similarity</b> " + Number(data['cos_similarity']).toFixed(3) + "<br>" +
+                                "Similarity is a cosine similarity between TF-IDF normalized titles and abstracts.<br>" +
+                                "The bigger value the more similar papers are.";
+                        } else if ('similarity' in data) {
                             // Graph similarity
                             let cocitation = 0;
                             if ('cocitation' in data) {
@@ -219,7 +219,7 @@
                             if ('citation' in data) {
                                 citation = data['citation'];
                             }
-                            content.innerHTML = "<b>Citations similarity</b> " + data['weight'] + "<br>" +
+                            content.innerHTML = "<b>Citations similarity</b> " + data['similarity'] + "<br>" +
                                 "Similarity is computed based on three citations based methods.<br>" +
                                 "<b>Co-citation</b> " + cocitation + "<br>" +
                                 "<b>Bibliographic coupling</b> " + bibcoupling + "<br>" +

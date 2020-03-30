@@ -12,7 +12,7 @@ from models.keypaper.plotter import Plotter, PLOT_WIDTH, TALL_PLOT_HEIGHT, visua
 def visualize_experimental_analysis(analyzer):
     result = visualize_analysis(analyzer)
     result['experimental'] = True  # Mark as experimental
-    if analyzer.paper_relations_graph.nodes():
+    if analyzer.similarity_graph.nodes():
         subtopic_evolution = ExperimentalPlotter(analyzer).subtopic_evolution()
         # Pass subtopic evolution only if not None
         if subtopic_evolution:

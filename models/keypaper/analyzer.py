@@ -9,6 +9,7 @@ from itertools import product as cart_product
 from networkx.readwrite import json_graph
 from scipy.spatial.distance import cosine
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from sklearn.metrics.pairwise import cosine_similarity
 
 from models.keypaper.pm_loader import PubmedLoader
 from models.keypaper.progress import Progress
@@ -25,9 +26,9 @@ class KeyPaperAnalyzer:
     TOP_CITED_PAPERS = 50
     TOP_CITED_PAPERS_FRACTION = 0.1
 
-    RELATIONS_GRAPH_COCITATION = 10
-    RELATIONS_GRAPH_BIBLIOGRAPHIC_COUPLING = 1
-    RELATIONS_GRAPH_CITATION = 0.1
+    SIMILARITY_COCITATION = 10
+    SIMILARITY_BIBLIOGRAPHIC_COUPLING = 1
+    SIMILARITY_CITATION = 0.1
 
     TOPIC_GRANULARITY = 0.05
     TOPIC_PAPERS = 50
@@ -120,21 +121,20 @@ class KeyPaperAnalyzer:
         # Loading data about bibliographic coupling
         self.bibliographic_coupling_df = self.loader.load_bibliographic_coupling(self.ids, current=8, task=task)
 
-        # Building paper relations graph, including all the papers from citations graph
         # IMPORTANT: not all the publications might be still covered
-        self.paper_relations_graph = self.build_papers_relation_graph(
+        self.similarity_graph = self.build_similarity_graph(
             self.citations_graph, cocit_grouped_df, self.bibliographic_coupling_df, current=9, task=task
         )
 
-        if len(self.paper_relations_graph.nodes()) == 0:
-            logger.debug("Paper relations graph is empty")
+        if len(self.similarity_graph.nodes()) == 0:
+            logger.debug("Paper similarity graph is empty")
             self.progress.info("Not enough papers to process topics analysis", current=10, task=task)
             self.df['comp'] = 0  # Technical value for top authors and papers analysis
             self.df_kwd = pd.DataFrame({'comp': [0], 'kwd': ['']})
             self.structure_graph = nx.Graph()
         else:
             # Perform subtopic analysis and get subtopic descriptions
-            partition, n_components_merged = self.subtopic_analysis(self.paper_relations_graph, current=10, task=task)
+            partition, n_components_merged = self.subtopic_analysis(self.similarity_graph, current=10, task=task)
             # Get descriptions for subtopics
             logger.debug(f'Computing subtopics descriptions by top cited papers')
             most_cited_per_comp = self.get_most_cited_papers_for_comps(self.df, partition)
@@ -153,7 +153,7 @@ class KeyPaperAnalyzer:
             self.df_kwd = pd.DataFrame(kwds, columns=['comp', 'kwd'])
             logger.debug(f'Components description\n{self.df_kwd["kwd"]}')
             # Build structure graph
-            self.structure_graph = self.build_structure_graph(self.df, self.paper_relations_graph,
+            self.structure_graph = self.build_structure_graph(self.df, self.similarity_graph,
                                                               current=12, task=task)
 
         # Perform PageRank analysis
@@ -230,9 +230,9 @@ class KeyPaperAnalyzer:
                            current=current, task=task)
         return G
 
-    def build_papers_relation_graph(self, citations_graph, cocit_df, bibliographic_coupling_df, current=0, task=None):
+    def build_similarity_graph(self, citations_graph, cocit_df, bibliographic_coupling_df, current=0, task=None):
         """
-        Relationship graph is build using three citation-based method:
+        Graph is build using three citation-based method:
         bibliographic coupling (BC), co-citation (CC) and direct citation (DC).
 
         See paper: Which type of citation analysis generates the most accurate taxonomy of
@@ -240,7 +240,7 @@ class KeyPaperAnalyzer:
         ...bibliographic coupling (BC) was the most accurate,  followed by co-citation (CC).
         Direct citation (DC) was a distant third among the three...
         """
-        self.progress.info(f'Building paper relations graph', current=current, task=task)
+        self.progress.info(f'Building papers similarity graph', current=current, task=task)
 
         result = nx.Graph()
         # NOTE: we use nodes id as String to avoid problems str keys in jsonify
@@ -256,34 +256,34 @@ class KeyPaperAnalyzer:
             else:
                 result.add_edge(start, end, bibcoupling=bibcoupling)
 
-        # Make paper relations graph connected, adding citations_graph edges
         for u, v in citations_graph.edges:
             if result.has_edge(u, v):
                 result[u][v]['citation'] = 1
             else:
                 result.add_edge(u, v, citation=1)
 
-        self.progress.info(f'Built paper relations graph - {len(result.nodes())} nodes and {len(result.edges())} edges',
+        self.progress.info(f'Built papers similarity graph - '
+                           f'{len(result.nodes())} nodes and {len(result.edges())} edges',
                            current=current, task=task)
         return result
 
-    def subtopic_analysis(self, relations_graph, current=0, task=None):
-        self.progress.info(f'Extracting subtopics from paper relations graph', current=current, task=task)
-        connected_components = nx.number_connected_components(relations_graph)
-        logger.debug(f'Relations graph has {connected_components} connected components')
+    def subtopic_analysis(self, similarity_graph, current=0, task=None):
+        self.progress.info(f'Extracting subtopics from paper similarity graph', current=current, task=task)
+        connected_components = nx.number_connected_components(similarity_graph)
+        logger.debug(f'Similarity graph has {connected_components} connected components')
 
         # Compute aggregated weight
-        for _, _, d in relations_graph.edges(data=True):
-            d['weight'] = self.RELATIONS_GRAPH_COCITATION * d.get('cocitation', 0) + \
-                self.RELATIONS_GRAPH_BIBLIOGRAPHIC_COUPLING * d.get('bibcoupling', 0) + \
-                self.RELATIONS_GRAPH_CITATION * d.get('citation', 0)
+        for _, _, d in similarity_graph.edges(data=True):
+            d['similarity'] = self.SIMILARITY_COCITATION * d.get('cocitation', 0) + \
+                self.SIMILARITY_BIBLIOGRAPHIC_COUPLING * d.get('bibcoupling', 0) + \
+                self.SIMILARITY_CITATION * d.get('citation', 0)
 
         # Graph clustering via Louvain community algorithm
-        partition_louvain = community.best_partition(relations_graph, random_state=KeyPaperAnalyzer.SEED)
+        partition_louvain = community.best_partition(similarity_graph, random_state=KeyPaperAnalyzer.SEED)
         logger.debug(f'Found {len(set(partition_louvain.values()))} components')
 
         # Calculate modularity for partition
-        modularity = community.modularity(partition_louvain, relations_graph)
+        modularity = community.modularity(partition_louvain, similarity_graph)
         logger.debug(f'Graph modularity (possible range is [-1, 1]): {modularity :.3f}')
 
         # Merge small components to 'Other'
@@ -304,10 +304,11 @@ class KeyPaperAnalyzer:
             comps_counter = Counter()
             for comp, comp_tfidf in tfidf_per_comp.items():
                 # Compute cosine distance between frequent words in document and TF-IDFs for each component
-                comps_counter[comp] += cosine(
+                cosine_distance = cosine(
                     [pid_frequent_tokens.get(t[0], 0) for t in comp_tfidf[:n_words]],
                     [t[1] for t in comp_tfidf[:n_words]]
                 )
+                comps_counter[comp] += 1 - cosine_distance  # The bigger similarity the better
                 if comps_merged and comp == 0:  # Other component marker
                     comps_counter[comp] += 1e-10
             # Get component closest by text (max dot product)
@@ -330,11 +331,11 @@ class KeyPaperAnalyzer:
             logger.debug(f'Cluster {k}: {v} ({int(100 * v / len(partition_full))}%)')
         return partition_full, comp_other, components, comp_sizes, sort_order
 
-    def build_structure_graph(self, df, relations_graph, n_words=TEXT_WORDS, n_gram=1, current=0, task=None):
+    def build_structure_graph(self, df, similarity_graph, n_words=TEXT_WORDS, n_gram=1, current=0, task=None):
         self.progress.info('Building structure graph', current=current, task=task)
-        graph = relations_graph.copy()
-        for (u, v, w) in relations_graph.edges.data('weight'):
-            graph[u][v]['distance'] = 1 / w
+        graph = similarity_graph.copy()
+        for (u, v, w) in similarity_graph.edges.data('similarity'):
+            graph[u][v]['distance'] = -w
 
         logger.debug('Compute global TF-IDF')
         corpus = [f'{t} {a}' for t, a in zip(df['title'], df['abstract'])]
@@ -345,32 +346,32 @@ class KeyPaperAnalyzer:
         counts = vectorizer.fit_transform(corpus)
         tfidf_transformer = TfidfTransformer()
         tfidf = tfidf_transformer.fit_transform(counts)
+        cos_distances = 1 - cosine_similarity(tfidf)
         idx_map = {pid: i for i, pid in enumerate(df['id'])}
 
         logger.debug('Adding cosine based edges to graph between out-of-graph edges and components')
         for comp in comps:
             df_comp = df[df['comp'] == comp]
-            cit_ids = [pid for pid in df_comp['id'] if relations_graph.has_node(pid)]
-            text_ids = [pid for pid in df_comp['id'] if not relations_graph.has_node(pid)]
+            cit_ids = [pid for pid in df_comp['id'] if similarity_graph.has_node(pid)]
+            text_ids = [pid for pid in df_comp['id'] if not similarity_graph.has_node(pid)]
 
             for cid, tid in cart_product(cit_ids, text_ids):
-                cos = cosine(tfidf[idx_map[cid]].toarray(), tfidf[idx_map[tid]].toarray())
-                if np.isfinite(cos):
-                    graph.add_edge(cid, tid, cos=cos, distance=cos)
+                cos_distance = cos_distances[idx_map[cid], idx_map[tid]]
+                if np.isfinite(cos_distance):
+                    graph.add_edge(cid, tid, cos_similarity=1 - cos_distance, distance=cos_distance)
             for i, tid1 in enumerate(text_ids):
-                tid1_tfidf = tfidf[idx_map[tid1]].toarray()
                 for j in range(i + 1, len(text_ids)):
                     tid2 = text_ids[j]
-                    cos = cosine(tid1_tfidf, tfidf[idx_map[tid2]].toarray())
-                    if np.isfinite(cos):
-                        graph.add_edge(tid1, tid2, cos=cos, distance=cos)
+                    cos_distance = cos_distances[idx_map[tid1], idx_map[tid2]]
+                    if np.isfinite(cos_distance):
+                        graph.add_edge(tid1, tid2, cos_similarity=1 - cos_distance, distance=cos_distance)
 
         logger.debug('Computing min spanning tree')
         mst = nx.minimum_spanning_tree(graph, 'distance')
 
         logger.info('Cleanup')
         for _, _, d in mst.edges(data=True):
-            del d["distance"]
+            del d['distance']
 
         return mst
 
@@ -538,7 +539,7 @@ class KeyPaperAnalyzer:
             'df': self.df.to_json(),
             'df_kwd': self.df_kwd.to_json(),
             'citations_graph': json_graph.node_link_data(self.citations_graph),
-            'paper_relations_graph': json_graph.node_link_data(self.paper_relations_graph),
+            'similarity_graph': json_graph.node_link_data(self.similarity_graph),
             'structure_graph': json_graph.node_link_data(self.structure_graph),
             'top_cited_papers': list(self.top_cited_papers),
             'max_gain_papers': list(self.max_gain_papers),
@@ -572,7 +573,7 @@ class KeyPaperAnalyzer:
 
         # Restore citation and structure graphs
         citations_graph = json_graph.node_link_graph(fields['citations_graph'])
-        paper_relations_graph = json_graph.node_link_graph(fields['paper_relations_graph'])
+        similarity_graph = json_graph.node_link_graph(fields['similarity_graph'])
         structure_graph = json_graph.node_link_graph(fields['structure_graph'])
 
         top_cited_papers = set(fields['top_cited_papers'])
@@ -583,7 +584,7 @@ class KeyPaperAnalyzer:
             'df': df,
             'df_kwd': df_kwd,
             'citations_graph': citations_graph,
-            'paper_relations_graph': paper_relations_graph,
+            'similarity_graph': similarity_graph,
             'structure_graph': structure_graph,
             'top_cited_papers': top_cited_papers,
             'max_gain_papers': max_gain_papers,
@@ -595,7 +596,7 @@ class KeyPaperAnalyzer:
         self.df = loaded['df']
         self.df_kwd = loaded['df_kwd']
         self.citations_graph = loaded['citations_graph']
-        self.paper_relations_graph = loaded['paper_relations_graph']
+        self.similarity_graph = loaded['similarity_graph']
         self.structure_graph = loaded['structure_graph']
         self.top_cited_papers = loaded['top_cited_papers']
         self.max_gain_papers = loaded['max_gain_papers']

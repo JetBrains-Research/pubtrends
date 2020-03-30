@@ -50,12 +50,12 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
         self.assertCountEqual(list(self.analyzer.citations_graph.edges()), CITATION_GRAPH_EDGES)
 
     def test_build_relations_graph_edges(self):
-        paper_relations_graph = self.analyzer.build_papers_relation_graph(
+        similarity_graph = self.analyzer.build_similarity_graph(
             self.analyzer.citations_graph,
             self.analyzer.build_cocit_grouped_df(self.analyzer.cocit_df),
             self.analyzer.bibliographic_coupling_df
         )
-        self.assertCountEqual(list(paper_relations_graph.edges(data=True)), RELATIONS_GRAPH_EDGES)
+        self.assertCountEqual(list(similarity_graph.edges(data=True)), RELATIONS_GRAPH_EDGES)
 
     def test_find_max_gain_papers_count(self):
         max_gain_count = len(list(self.analyzer.max_gain_df['year'].values))
@@ -85,13 +85,13 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
         self.assertEqual(len(self.analyzer.df), len(self.analyzer.pub_df))
 
     def test_subtopic_analysis_all_nodes_assigned(self):
-        nodes = self.analyzer.paper_relations_graph.nodes()
+        nodes = self.analyzer.similarity_graph.nodes()
         for row in self.analyzer.df.itertuples():
             if getattr(row, 'id') in nodes:
                 self.assertGreaterEqual(getattr(row, 'comp'), 0)
 
     def test_subtopic_analysis_missing_nodes_set_to_default(self):
-        nodes = self.analyzer.paper_relations_graph.nodes()
+        nodes = self.analyzer.similarity_graph.nodes()
         for row in self.analyzer.df.itertuples():
             if getattr(row, 'id') not in nodes:
                 self.assertEqual(getattr(row, 'comp'), -1)
@@ -148,7 +148,7 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
 
     def test_get_most_cited_papers_for_comps(self):
         comps = self.analyzer.get_most_cited_papers_for_comps(self.analyzer.df, self.analyzer.partition, 1)
-        self.assertDictEqual(comps, {0: ['3'], 1: ['1']})
+        self.assertDictEqual(comps, {0: ['3']})
 
 
 class TestKeyPaperAnalyzerSingle(unittest.TestCase):

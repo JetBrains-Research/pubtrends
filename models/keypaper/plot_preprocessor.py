@@ -14,24 +14,24 @@ logger = logging.getLogger(__name__)
 class PlotPreprocessor:
 
     @staticmethod
-    def heatmap_clusters_data(relationship_graph, df, comp_sizes):
+    def heatmap_clusters_data(similarity_graph, df, comp_sizes):
         logger.debug('Computing heatmap clusters_data')
         # c + 1 is used to start numbering with 1
         clusters = list(map(str, [c + 1 for c in comp_sizes.keys()]))
         n_comps = len(clusters)
 
         logger.debug('Load edge data to DataFrame')
-        edges = relationship_graph.size()
+        edges = similarity_graph.size()
         sources = [None] * edges
         targets = [None] * edges
         values = [0.0] * edges
         i = 0
-        for u, v, data in relationship_graph.edges(data=True):
+        for u, v, data in similarity_graph.edges(data=True):
             sources[i] = u
             targets[i] = v
-            values[i] = data.get('cocitation', 0) * KeyPaperAnalyzer.RELATIONS_GRAPH_COCITATION + \
-                data.get('bibcoupling', 0) * KeyPaperAnalyzer.RELATIONS_GRAPH_BIBLIOGRAPHIC_COUPLING + \
-                data.get('citation', 0) * KeyPaperAnalyzer.RELATIONS_GRAPH_CITATION
+            values[i] = data.get('cocitation', 0) * KeyPaperAnalyzer.SIMILARITY_COCITATION + \
+                data.get('bibcoupling', 0) * KeyPaperAnalyzer.SIMILARITY_BIBLIOGRAPHIC_COUPLING + \
+                data.get('citation', 0) * KeyPaperAnalyzer.SIMILARITY_CITATION
             i += 1
         links_df = pd.DataFrame(data={'source': sources, 'target': targets, 'value': values})
 
@@ -193,7 +193,7 @@ class PlotPreprocessor:
 
     @staticmethod
     def dump_structure_graph_cytoscape(df, structure_graph):
-        logger.info('Mapping relations graph to cytoscape JS')
+        logger.info('Mapping structure graph to cytoscape JS')
         graph = structure_graph.copy()
 
         logger.info('Collect attributes for nodes')
@@ -212,5 +212,5 @@ class PlotPreprocessor:
         nx.set_node_attributes(graph, attrs)
         cytoscape_data = nx.cytoscape_data(graph)["elements"]
 
-        logger.info('Done relations graph to cytoscape JS')
+        logger.info('Done structure graph to cytoscape JS')
         return cytoscape_data

@@ -48,7 +48,7 @@ def visualize_analysis(analyzer):
     plotter = Plotter(analyzer=analyzer)
     # Order is important here!
     paper_statistics, word_cloud, zoom_out_callback = plotter.papers_statistics_and_word_cloud_and_callback()
-    if analyzer.paper_relations_graph.nodes():
+    if analyzer.similarity_graph.nodes():
         return {
             'topics_analyzed': True,
             'n_papers': analyzer.n_papers,
@@ -94,7 +94,7 @@ class Plotter:
         self.analyzer = analyzer
 
         if self.analyzer:
-            if self.analyzer.paper_relations_graph.nodes():
+            if self.analyzer.similarity_graph.nodes():
                 n_comps = len(self.analyzer.components)
                 if n_comps > 20:
                     raise ValueError(f'Too big number of components {n_comps}')
@@ -183,7 +183,7 @@ class Plotter:
         log.info('Visualizing components with heatmap')
 
         cluster_edges, clusters = PlotPreprocessor.heatmap_clusters_data(
-            self.analyzer.paper_relations_graph, self.analyzer.df, self.analyzer.comp_sizes
+            self.analyzer.similarity_graph, self.analyzer.df, self.analyzer.comp_sizes
         )
 
         step = 30
@@ -476,7 +476,7 @@ class Plotter:
     def author_statistics(self):
         author = self.analyzer.author_stats['author']
         sum = self.analyzer.author_stats['sum']
-        if self.analyzer.paper_relations_graph.nodes():
+        if self.analyzer.similarity_graph.nodes():
             subtopics = self.analyzer.author_stats.apply(
                 lambda row: self._to_colored_circle(row['comp'], row['counts'], row['sum']), axis=1)
         else:
@@ -486,7 +486,7 @@ class Plotter:
     def journal_statistics(self):
         journal = self.analyzer.journal_stats['journal']
         sum = self.analyzer.journal_stats['sum']
-        if self.analyzer.paper_relations_graph.nodes():
+        if self.analyzer.similarity_graph.nodes():
             subtopics = self.analyzer.journal_stats.apply(
                 lambda row: self._to_colored_circle(row['comp'], row['counts'], row['sum']), axis=1)
         else:
