@@ -70,7 +70,7 @@
                 if ('cos_similarity' in edge.data()){
                     return Math.max(1, edge.data().cos_similarity * 10)
                 } else {
-                    return Math.max(1, Math.min(10, edge.data().similarity / 10));
+                    return Math.max(1, Math.min(10, Math.log1p(edge.data().similarity)));
                 }
             },
             "curve-style": "haystack",
