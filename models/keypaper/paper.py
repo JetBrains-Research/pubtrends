@@ -89,7 +89,7 @@ def prepare_paper_data(data, source, pid):
         related_papers = map(
             lambda v: (analyzer.df[analyzer.df['id'] == v]['id'].values[0],
                        analyzer.df[analyzer.df['id'] == v]['title'].values[0],
-                       analyzer.similarity_graph.edges[pid, v]['weight']),
+                       analyzer.similarity_graph.edges[pid, v]['similarity']),
             list(analyzer.similarity_graph[pid])
         )
         related_papers = [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid, cw)
