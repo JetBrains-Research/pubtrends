@@ -75,24 +75,27 @@ def status():
 
 @app.route('/result')
 def result():
-    jobid = request.values.get('jobid')
+    jobid = request.args.get('jobid')
     query = request.args.get('query')
     source = request.args.get('source')
     limit = request.args.get('limit')
     sort = request.args.get('sort')
-    if jobid:
+    if jobid and query and source and limit and sort:
         job = complete_task(jobid)
-        if job and job.state == 'SUCCESS':
-            data, _, log = job.result
-            return render_template('result.html',
-                                   query=trim(query, MAX_QUERY_LENGTH),
-                                   source=source,
-                                   limit=limit,
-                                   sort=sort,
-                                   version=VERSION,
-                                   log=log,
-                                   **data)
-
+        if job:
+            if job.state == 'SUCCESS':
+                data, _, log = job.result
+                return render_template('result.html',
+                                       query=trim(query, MAX_QUERY_LENGTH),
+                                       source=source,
+                                       limit=limit,
+                                       sort=sort,
+                                       version=VERSION,
+                                       log=log,
+                                       **data)
+            # No job or out-of-date job, restart it
+            if job.state == 'PENDING':
+                return search_terms_(request.args)
     return render_template_string("Something went wrong...")
 
 
@@ -347,15 +350,23 @@ def index():
 @app.route('/search_terms', methods=['POST'])
 def search_terms():
     logging.debug('/search_terms')
-    query = request.form.get('query')  # Original search query
-    source = request.form.get('source')  # Pubmed or Semantic Scholar
-    sort = request.form.get('sort')  # Sort order
-    limit = request.form.get('limit')  # Limit
+    return search_terms_(request.form)
 
-    if query and source and sort:
+
+def search_terms_(data):
+    query = data.get('query')  # Original search query
+    source = data.get('source')  # Pubmed or Semantic Scholar
+    sort = data.get('sort')  # Sort order
+    limit = data.get('limit')  # Limit
+    jobid = data.get('jobid')
+    if query and source and sort and limit:
         logging.debug(f'/ regular search')
-        job = analyze_search_terms.delay(source, query=query, limit=limit, sort=sort)
-        return redirect(url_for('.process', query=query, source=source, limit=limit, sort=sort, jobid=job.id))
+        if not jobid:
+            job = analyze_search_terms.delay(source, query=query, limit=limit, sort=sort)
+            jobid = job.id
+        else:
+            analyze_search_terms.apply_async(args=[source, query, sort, limit], task_id=jobid)
+        return redirect(url_for('.process', query=query, source=source, limit=limit, sort=sort, jobid=jobid))
 
     raise Exception(f"Request does not contain necessary params: {request}")
 
