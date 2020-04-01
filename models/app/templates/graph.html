@@ -122,6 +122,9 @@
         function showYear(){
             cy.nodes().forEach(function(ele){
                 if ('title' in ele.data()){
+                    if (ele.data().title === "Cytosine methylation and the fate of CpG dinucleotides in vertebrate genomes") {
+                        console.info("CHECK");
+                    }
                     ele.classes('year');
                 }
             });
@@ -175,12 +178,9 @@
                                 if (max_year > min_year) {
                                     dy = (node.data().year - min_year) / (max_year - min_year);
                                 } else {
-                                    dy = 1
+                                    dy = 1;
                                 }
-                                if (dy < 0.5) {
-                                    dy = 0;
-                                }
-                                return rgbToHex(0, Math.floor(255 * 2 * (dy - 0.5)), 0);
+                                return rgbToHex(0, Math.floor(255 * dy), 0);
                             },
                         }
                     },
@@ -227,14 +227,14 @@
                                 potential = data['potential'];
                             }
 
-                            content.innerHTML = "<b>Similarity</b> " + Number(data['similarity']).toFixed(2) + "<br>" +
+                            content.innerHTML = "<b>Similarity</b> " + Number(data['similarity']).toFixed(3) + "<br>" +
                                 "Computed based on citations-based methods<br> "+
                                 "and text similarity between papers.<br>" +
                                 "The bigger value the more similar papers are." + "<br>" +
                                 "<b>Co-citation</b> " + cocitation + "<br>" +
                                 "<b>Bibliographic coupling</b> " + bibcoupling + "<br>" +
                                 "<b>Citation</b> " + citation + "<br>" +
-                                "<b>Potential</b> " + Number(potential).toFixed(2) + "<br>";
+                                "<b>Text</b> " + Number(potential).toFixed(2) + "<br>";
                         } else if('title' in data) {
                             // Paper
                             const topic = data['topic'];
@@ -264,12 +264,11 @@
                     trigger: 'manual' // probably want manual mode
                 });
             }
-            cy.nodes().forEach(function(ele){
-                if ('title' in ele.data()){
-                    ele.classes('topic')
-                }
-            });
 
+            // Topic based colouring by default
+            showTopics();
+
+            // Add popups on hover
             cy.ready(function () {
                 let popperElements;
 
