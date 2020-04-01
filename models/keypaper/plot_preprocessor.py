@@ -149,13 +149,22 @@ class PlotPreprocessor:
     def dump_citations_graph_cytoscape(df, citations_graph):
         logger.debug('Mapping citations graph to cytoscape JS')
         graph = citations_graph.copy()
-
-        logger.debug('Collect attributes for nodes')
-        attrs = {}
+        # Put all the nodes into the graph
         for node in df['id']:
             if not graph.has_node(node):
                 graph.add_node(node)
+        return PlotPreprocessor.dump_to_cytoscape(df, graph)
 
+    @staticmethod
+    def dump_structure_graph_cytoscape(df, structure_graph):
+        logger.info('Mapping structure graph to cytoscape JS')
+        return PlotPreprocessor.dump_to_cytoscape(df, structure_graph.copy())
+
+    @staticmethod
+    def dump_to_cytoscape(df, graph):
+        logger.info('Collect attributes for nodes')
+        attrs = {}
+        for node in df['id']:
             sel = df[df['id'] == node]
             comp = int(sel['comp'].values[0])
             attrs[node] = {
@@ -168,7 +177,7 @@ class PlotPreprocessor:
             }
         nx.set_node_attributes(graph, attrs)
 
-        logger.debug('Group not connected nodes in groups by cluster')
+        logger.debug('Group not connected nodes into groups')
         comp_groups = set()
         cytoscape_data = nx.cytoscape_data(graph)["elements"]
         for node_cs in cytoscape_data['nodes']:
@@ -187,30 +196,5 @@ class PlotPreprocessor:
                     comp_groups.add(comp)
                     cytoscape_data['nodes'].append(comp_group)
                 node_cs['data']['parent'] = f'subtopic_{comp}'
-
-        logger.debug('Done citations graph in cytoscape JS')
-        return cytoscape_data
-
-    @staticmethod
-    def dump_structure_graph_cytoscape(df, structure_graph):
-        logger.info('Mapping structure graph to cytoscape JS')
-        graph = structure_graph.copy()
-
-        logger.info('Collect attributes for nodes')
-        attrs = {}
-        for edge in df['id']:
-            sel = df[df['id'] == edge]
-            comp = int(sel['comp'].values[0])
-            attrs[edge] = {
-                'title': sel['title'].values[0],
-                'abstract': sel['abstract'].values[0],
-                'authors': cut_authors_list(sel['authors'].values[0]),
-                'year': int(sel['year'].values[0]),
-                'cited': int(sel['total'].values[0]),
-                'comp': comp + 1,  # For visualization consistency
-            }
-        nx.set_node_attributes(graph, attrs)
-        cytoscape_data = nx.cytoscape_data(graph)["elements"]
-
-        logger.info('Done structure graph to cytoscape JS')
+        logger.info('Done dumping graph to cytoscape JS')
         return cytoscape_data

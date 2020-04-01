@@ -9,7 +9,7 @@ from models.keypaper.pm_loader import PubmedLoader
 from models.keypaper.ss_loader import SemanticScholarLoader
 from models.test.mock_loaders import MockLoader, \
     CITATION_YEARS, EXPECTED_MAX_GAIN, EXPECTED_MAX_RELATIVE_GAIN, CITATION_GRAPH_NODES, CITATION_GRAPH_EDGES, \
-    MockLoaderEmpty, MockLoaderSingle, RELATIONS_GRAPH_EDGES
+    MockLoaderEmpty, MockLoaderSingle, SIMILARITY_GRAPH_EDGES
 
 
 class TestKeyPaperAnalyzer(unittest.TestCase):
@@ -49,13 +49,14 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
     def test_build_citation_graph_edges(self):
         self.assertCountEqual(list(self.analyzer.citations_graph.edges()), CITATION_GRAPH_EDGES)
 
-    def test_build_relations_graph_edges(self):
+    def test_build_similarity_graph_edges(self):
         similarity_graph = self.analyzer.build_similarity_graph(
+            self.analyzer.df,
             self.analyzer.citations_graph,
             self.analyzer.build_cocit_grouped_df(self.analyzer.cocit_df),
             self.analyzer.bibliographic_coupling_df
         )
-        self.assertCountEqual(list(similarity_graph.edges(data=True)), RELATIONS_GRAPH_EDGES)
+        self.assertCountEqual(list(similarity_graph.edges(data=True)), SIMILARITY_GRAPH_EDGES)
 
     def test_find_max_gain_papers_count(self):
         max_gain_count = len(list(self.analyzer.max_gain_df['year'].values))
@@ -119,18 +120,6 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
         partition, n_components_merged = self.analyzer.merge_components(partition, granularity)
         expected_partition, expected_merged = expected
         self.assertEqual(partition, expected_partition, name)
-
-    @parameterized.expand([
-        # Component sizes: {0: 1, 1: 3, 2: 2}, correct order - [1, 2, 0], no other
-        ('no other', {1: 0, 2: 1, 3: 1, 4: 1, 5: 2, 6: 2}, False, ({1: 2, 2: 0, 3: 0, 4: 0, 5: 1, 6: 1}, None)),
-        # Component sizes: {0: 2, 1: 3, 2: 1}, correct order - [1, 0, 2], other = 1
-        ('with other', {1: 0, 2: 1, 3: 1, 4: 1, 5: 0, 6: 2}, True, ({1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 2}, 1))
-    ])
-    def test_sort_components(self, name, partition, components_merged, expected):
-        sort_order, partition, comp_other = self.analyzer.sort_components(partition, components_merged)
-        expected_partition, expected_other = expected
-        self.assertEqual(partition, expected_partition, name)
-        self.assertEqual(comp_other, expected_other, name)
 
     def test_merge_citation_stats_paper_count(self):
         df, _, _, _ = self.analyzer.merge_citation_stats(self.analyzer.pub_df, self.analyzer.cit_stats_df)
@@ -221,7 +210,7 @@ class TestKeyPaperAnalyzerSingle(unittest.TestCase):
 
     def test_dump(self):
         dump = self.analyzer.dump()
-        self.assertEqual('{"comp":{"0":0},"kwd":{"0":""}}', dump['df_kwd'])
+        self.assertEqual('{"comp":{"0":0},"kwd":{"0":"article:0.500,paper:0.500"}}', dump['df_kwd'])
 
 
 class TestKeyPaperAnalyzerMissingPaper(unittest.TestCase):

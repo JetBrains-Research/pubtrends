@@ -23,7 +23,7 @@ class ExperimentalAnalyzer(KeyPaperAnalyzer):
     def analyze_papers(self, ids, query, task=None):
         super().analyze_papers(ids, query, task)
 
-        # Perform subtopic evolution analysis and get subtopic descriptions
+        # Perform topic evolution analysis and get subtopic descriptions
         self.evolution_df, self.evolution_year_range = self.subtopic_evolution_analysis(self.cocit_df,
                                                                                         current=19, task=task)
         self.evolution_kwds = self.subtopic_evolution_descriptions(
@@ -56,7 +56,8 @@ class ExperimentalAnalyzer(KeyPaperAnalyzer):
             # Use only co-citations earlier than year
             cocit_grouped_df = self.build_cocit_grouped_df(cocit_df[cocit_df['year'] <= year])
             similarity_graph[year] = self.build_similarity_graph(
-                self.citations_graph, cocit_grouped_df, self.bibliographic_coupling_df, current=current, task=task
+                self.df, self.citations_graph, cocit_grouped_df, self.bibliographic_coupling_df,
+                current=current, task=task
             )
 
             if len(similarity_graph[year].nodes) >= min_papers:

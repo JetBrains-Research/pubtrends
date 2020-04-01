@@ -1,11 +1,12 @@
 import unittest
 
 import networkx as nx
+import pandas as pd
 
 from models.keypaper.analyzer import KeyPaperAnalyzer
 from models.keypaper.config import PubtrendsConfig
 from models.test.mock_loaders import MockLoader
-from models.test.ss_database_articles import expected_graph, cocitations_df, expected_cocit_and_cit_graph, \
+from models.test.ss_database_articles import citations_graph, cocitations_df, expected_cocit_and_cit_graph, \
     bibliographic_coupling_df
 
 
@@ -16,13 +17,14 @@ class TestBuildGraph(unittest.TestCase):
     def setUpClass(cls):
         loader = MockLoader()
         cls.analyzer = KeyPaperAnalyzer(loader, TestBuildGraph.PUBTRENDS_CONFIG, test=True)
-        cls.analyzer.citations_graph = expected_graph
+        cls.analyzer.citations_graph = citations_graph
         # Turn off bibliographic coupling for tests purposes
         cls.analyzer.SIMILARITY_BIBLIOGRAPHIC_COUPLING = 0
         cls.analyzer.SIMILARITY_COCITATION = 1
         cls.analyzer.SIMILARITY_CITATION = 0.01
         cls.analyzer.similarity_graph = cls.analyzer.build_similarity_graph(
-            expected_graph, cocitations_df, bibliographic_coupling_df
+            pd.DataFrame(columns=['id', 'title', 'abstract']),
+            citations_graph, cocitations_df, bibliographic_coupling_df
         )
 
     def test_cocitations_graph_nodes(self):

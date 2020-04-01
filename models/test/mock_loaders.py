@@ -36,16 +36,16 @@ BIBLIOGRAPHIC_COUPLING_DATA = [['3', '4', 2],
                                ['3', '5', 2],
                                ['4', '5', 2]]
 
-RELATIONS_GRAPH_EDGES = [('1', '2', {'cocitation': 3}),
-                         ('1', '4', {'citation': 1}),
-                         ('1', '3', {'citation': 1}),
-                         ('1', '5', {'citation': 1}),
-                         ('2', '4', {'citation': 1}),
-                         ('2', '3', {'citation': 1}),
-                         ('2', '5', {'citation': 1}),
-                         ('3', '4', {'cocitation': 1, 'bibcoupling': 2}),
-                         ('3', '5', {'bibcoupling': 2, 'citation': 1}),
-                         ('4', '5', {'bibcoupling': 2, 'citation': 1})]
+SIMILARITY_GRAPH_EDGES = [('1', '2', {'cocitation': 3}),
+                          ('1', '4', {'citation': 1}),
+                          ('1', '3', {'citation': 1}),
+                          ('1', '5', {'citation': 1}),
+                          ('2', '4', {'citation': 1}),
+                          ('2', '3', {'citation': 1}),
+                          ('2', '5', {'citation': 1}),
+                          ('3', '4', {'cocitation': 1, 'bibcoupling': 2}),
+                          ('3', '5', {'bibcoupling': 2, 'citation': 1}),
+                          ('4', '5', {'bibcoupling': 2, 'citation': 1})]
 
 
 EXPECTED_MAX_GAIN = {1972: '3', 1974: '1'}

@@ -62,23 +62,17 @@
             "curve-style": "bezier",
             "target-arrow-shape": "triangle",
             "arrow-scale": 1,
-            "line-color": "#888888"
+            "line-color": "#000000",
+            "opacity": 0.3
         };
 
         const PR_EDGE_STYLE = {
             "width": function (edge) {
-                if ('cos_similarity' in edge.data()){
-                    return Math.max(1, edge.data().cos_similarity * 10)
-                } else {
-                    return Math.max(1, Math.min(10, Math.log1p(edge.data().similarity)));
-                }
+                return Math.max(1, Math.min(10, Math.log1p(edge.data().similarity)));
             },
             "curve-style": "haystack",
             "line-color": function (edge) {
                 let data = edge.data();
-                if ('cos_similarity' in data){
-                    return "#9b0200";
-                }
                 let cocitation = 0;
                 if ('cocitation' in data) {
                     cocitation = data['cocitation'];
@@ -91,14 +85,22 @@
                 if ('citation' in data) {
                     citation = data['citation'];
                 }
-                if (cocitation >= Math.max(bibcoupling, citation)) {
-                    return "#c000ba"
+                let potential = 0;
+                if ('potential' in data) {
+                    potential = data['potential'];
                 }
-                if (bibcoupling >= Math.max(cocitation, citation)) {
-                    return "#0000ff"
+                if (cocitation >= Math.max(bibcoupling, citation, potential)) {
+                    return "#005DFF"
                 }
-                return "#888888";
-            }
+                if (bibcoupling >= Math.max(cocitation, citation, potential)) {
+                    return "#F500FF"
+                }
+                if (citation >= Math.max(cocitation, bibcoupling, potential)) {
+                    return "#9B0013";
+                }
+                return "#000000";
+            },
+            "opacity": 0.3
         };
 
         function rgbToHex(r, g, b) {
@@ -161,7 +163,7 @@
                         selector: "node.subtopic",
                         style: {
                             "background-color": function (node) {
-                                return subtopics_palette[node.data().comp - 1];
+                                return subtopics_palette[node.data().comp];
                             },
                         }
                     },
@@ -169,9 +171,14 @@
                         selector: "node.year",
                         style: {
                             "background-color": function (node) {
-                                const dy = (node.data().year - min_year) / (max_year - min_year);
+                                let dy;
+                                if (max_year > min_year) {
+                                    dy = (node.data().year - min_year) / (max_year - min_year);
+                                } else {
+                                    dy = 1
+                                }
                                 if (dy < 0.5) {
-                                    return '#000000';
+                                    dy = 0;
                                 }
                                 return rgbToHex(0, Math.floor(255 * 2 * (dy - 0.5)), 0);
                             },
@@ -182,7 +189,7 @@
                         style: {
                             "background-opacity": 0.1,
                             "background-color": function (node) {
-                                return subtopics_palette[node.data().comp - 1];
+                                return subtopics_palette[node.data().comp];
                             }
                         }
                     },
@@ -201,11 +208,7 @@
                     content: () => {
                         let content = document.createElement('div');
                         let data = ele.data();
-                        if ('cos_similarity' in data) {
-                            content.innerHTML = "<b>Text similarity</b> " + Number(data['cos_similarity']).toFixed(3) + "<br>" +
-                                "Similarity is a cosine similarity between TF-IDF normalized titles and abstracts.<br>" +
-                                "The bigger value the more similar papers are.";
-                        } else if ('similarity' in data) {
+                        if ('similarity' in data) {
                             // Graph similarity
                             let cocitation = 0;
                             if ('cocitation' in data) {
@@ -219,24 +222,42 @@
                             if ('citation' in data) {
                                 citation = data['citation'];
                             }
-                            content.innerHTML = "<b>Citations similarity</b> " + data['similarity'] + "<br>" +
-                                "Similarity is computed based on three citations based methods.<br>" +
+                            let potential = 0;
+                            if ('potential' in data) {
+                                potential = data['potential'];
+                            }
+
+                            content.innerHTML = "<b>Similarity</b> " + Number(data['similarity']).toFixed(2) + "<br>" +
+                                "Computed based on citations-based methods<br> "+
+                                "and text similarity between papers.<br>" +
+                                "The bigger value the more similar papers are." + "<br>" +
                                 "<b>Co-citation</b> " + cocitation + "<br>" +
                                 "<b>Bibliographic coupling</b> " + bibcoupling + "<br>" +
                                 "<b>Citation</b> " + citation + "<br>" +
-                                "The bigger value the more similar papers are.";
+                                "<b>Potential</b> " + Number(potential).toFixed(2) + "<br>";
                         } else if('title' in data) {
                             // Paper
+                            const comp = data['comp'];
+                            let other = '';
+                            if (comp === {{ subtopic_other }}) {
+                                other = 'OTHER';
+                            }
                             content.innerHTML = "<b>" + data['title'] + "</b><br>" +
                                 "<b>Author(s)</b> " + data['authors'] + "<br>" +
                                 "<b>Year</b> " + data['year'] + "<br>" +
                                 "<b>Cited</b> " + data['cited'] + "<br>" +
-                                "<b>Topic</b> " + data['comp'] + "<br>" +
-                                "<em>" + subtopics_description[data['comp']] + "</em>";
+                                "<b>Topic</b> " + (comp + 1) + " " + other + "<br>" +
+                                "<b>Tags</b> " + "<em>" + subtopics_description[comp] + "</em>";
                         } else if ('comp' in data) {
                             // Group
-                            content.innerHTML = "<b>Topic</b> " + data['comp'] + "<br>" +
-                                "These papers are not connected by citations."
+                            const comp = data['comp'];
+                            let other = '';
+                            if (comp === {{ subtopic_other }}) {
+                                other = 'OTHER';
+                            }
+                            content.innerHTML =  "<b>These papers are not connected.</b><br>" +
+                                "<b>Topic</b> " + (comp + 1) + " " + other + "<br>" +
+                                "<b>Tags</b> " + "<em>" + subtopics_description[comp] + "</em>";
                         }
                         return content;
                     },
@@ -376,18 +397,17 @@
                 "Node size encodes paper citations count, color encodes topic or publication year.<br> " +
                 "Edge width shows papers similarity, the thicker the more similar papers are.<br>" +
                 "Edge color represents similarity type.<br>" +
-                '<svg width="16" height="16"><rect width="16" height="16" style="fill:#c000ba;"/></svg>' +
-                "&nbsp;<em>Co-citation</em> " +
+                '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(0,93,255,0.3);"/></svg>' +
+                "&nbsp;<em>Co-citation</em>" +
                 "<br>" +
-                '<svg width="16" height="16"><rect width="16" height="16" style="fill:#0000FF;"/></svg>' +
-                "&nbsp;<em>Bibliographic coupling</em>" +
+                '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(245,0,255,0.3);"/></svg>' +
+                "&nbsp;<em>Bibliographic coupling</em> " +
                 "<br>" +
-                '<svg width="16" height="16"><rect width="16" height="16" style="fill:#888888;"/></svg>' +
+                '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(155,0,19,0.3);"/></svg>' +
                 "&nbsp;<em>Direct citation</em>" +
                 "<br>" +
-                '<svg width="16" height="16"><rect width="16" height="16" style="fill:#9b0200;"/></svg>' +
+                '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(0,0,0,0.3);"/></svg>' +
                 "&nbsp;<em>Text similarity</em>"
-
             ;
         }
         intro.setOptions({

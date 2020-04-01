@@ -474,32 +474,32 @@ class Plotter:
         return p, wc, zoom_out_callback
 
     def author_statistics(self):
-        author = self.analyzer.author_stats['author']
-        sum = self.analyzer.author_stats['sum']
+        authors = self.analyzer.author_stats['author']
+        sums = self.analyzer.author_stats['sum']
         if self.analyzer.similarity_graph.nodes():
             subtopics = self.analyzer.author_stats.apply(
                 lambda row: self._to_colored_circle(row['comp'], row['counts'], row['sum']), axis=1)
         else:
             subtopics = [' '] * len(self.analyzer.author_stats)  # Ignore subtopics
-        return list(zip(map(lambda a: trim(a, MAX_AUTHOR_LENGTH), author), sum, subtopics))
+        return list(zip([trim(a, MAX_AUTHOR_LENGTH) for a in authors], sums, subtopics))
 
     def journal_statistics(self):
-        journal = self.analyzer.journal_stats['journal']
-        sum = self.analyzer.journal_stats['sum']
+        journals = self.analyzer.journal_stats['journal']
+        sums = self.analyzer.journal_stats['sum']
         if self.analyzer.similarity_graph.nodes():
             subtopics = self.analyzer.journal_stats.apply(
                 lambda row: self._to_colored_circle(row['comp'], row['counts'], row['sum']), axis=1)
         else:
             subtopics = [' '] * len(self.analyzer.journal_stats)  # Ignore subtopics
-        return list(zip(map(lambda j: trim(j, MAX_JOURNAL_LENGTH), journal), sum, subtopics))
+        return list(zip([trim(j, MAX_JOURNAL_LENGTH) for j in journals], sums, subtopics))
 
     def _to_colored_circle(self, components, counts, sum, top=3):
         # html code to generate circles corresponding to the most popular subtopics
-        return ' '.join(
-            map(lambda topic: f'''<a class="fas fa-circle" style="color:{self.comp_colors[topic[0]]}"
-                                     href="#subtopic-{topic[0] + 1}"></a>
-                                  <span class="bk" style="color:black">{int(topic[1] / sum * 100)}%</span> ''',
-                zip(components[:top], counts[:top])))
+        return ' '.join([
+            f'<a class="fas fa-circle" style="color:{self.comp_colors[comp]}" href="#subtopic-{comp + 1}"></a>'
+            f'<span class="bk" style="color:black">{int(count / sum * 100)}%</span>'
+            for comp, count in zip(components[:top], counts[:top])
+        ])
 
     def __serve_scatter_article_layout(self, ds, year_range, title, width=PLOT_WIDTH):
         min_year, max_year = year_range

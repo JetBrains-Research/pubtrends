@@ -208,7 +208,7 @@ def graph():
             analyzer = get_analyzer(loader, PUBTRENDS_CONFIG)
             analyzer.init(data)
             min_year, max_year = int(analyzer.df['year'].min()), int(analyzer.df['year'].max())
-            subtopics_tags = {comp + 1: ', '.join(
+            subtopics_tags = {comp: ', '.join(
                 [w[0] for w in analyzer.df_kwd[analyzer.df_kwd['comp'] == comp]['kwd'].values[0][:10]]
             ) for comp in sorted(set(analyzer.df['comp']))}
             if graph_type == "citations":
@@ -223,6 +223,7 @@ def graph():
                     citation_graph="true",
                     min_year=min_year,
                     max_year=max_year,
+                    subtopic_other=analyzer.comp_other,
                     subtopics_palette_json=json.dumps(Plotter.subtopics_palette(analyzer.df)),
                     subtopics_description_json=json.dumps(subtopics_tags),
                     graph_cytoscape_json=json.dumps(graph_cs)
@@ -239,6 +240,7 @@ def graph():
                     citation_graph="false",
                     min_year=min_year,
                     max_year=max_year,
+                    subtopic_other=analyzer.comp_other,
                     subtopics_palette_json=json.dumps(Plotter.subtopics_palette(analyzer.df)),
                     subtopics_description_json=json.dumps(subtopics_tags),
                     graph_cytoscape_json=json.dumps(graph_cs)
