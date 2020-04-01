@@ -23,33 +23,33 @@ class ExperimentalAnalyzer(KeyPaperAnalyzer):
     def analyze_papers(self, ids, query, task=None):
         super().analyze_papers(ids, query, task)
 
-        # Perform topic evolution analysis and get subtopic descriptions
-        self.evolution_df, self.evolution_year_range = self.subtopic_evolution_analysis(self.cocit_df,
-                                                                                        current=19, task=task)
-        self.evolution_kwds = self.subtopic_evolution_descriptions(
+        # Perform topic evolution analysis and get topic descriptions
+        self.evolution_df, self.evolution_year_range = \
+            self.topic_evolution_analysis(self.cocit_df, current=19, task=task)
+        self.evolution_kwds = self.topic_evolution_descriptions(
             self.df, self.evolution_df, self.evolution_year_range, self.query, current=20, task=task
         )
 
-    def subtopic_evolution_analysis(self, cocit_df, step=EVOLUTION_STEP, min_papers=0, current=0, task=None):
+    def topic_evolution_analysis(self, cocit_df, step=EVOLUTION_STEP, min_papers=0, current=0, task=None):
         min_year = int(cocit_df['year'].min())
         max_year = int(cocit_df['year'].max())
         year_range = list(np.arange(max_year, min_year - 1, step=-step).astype(int))
 
         # Cannot analyze evolution
         if len(year_range) < 2:
-            self.progress.info(f'Year step is too big to analyze evolution of subtopics in {min_year} - {max_year}',
+            self.progress.info(f'Year step is too big to analyze evolution of topics in {min_year} - {max_year}',
                                current=current, task=task)
             return None, None
 
-        self.progress.info(f'Studying evolution of subtopics in {min_year} - {max_year}',
+        self.progress.info(f'Studying evolution of topics in {min_year} - {max_year}',
                            current=current, task=task)
 
         n_components_merged = {}
         similarity_graph = {}
 
-        logger.debug(f"Subtopics evolution years: {', '.join([str(year) for year in year_range])}")
+        logger.debug(f"Topics evolution years: {', '.join([str(year) for year in year_range])}")
 
-        # Use results of subtopic analysis for current year, perform analysis for other years
+        # Use results of topic analysis for current year, perform analysis for other years
         years_processed = 1
         evolution_series = [pd.Series(self.partition)]
         for i, year in enumerate(year_range[1:]):
@@ -84,19 +84,21 @@ class ExperimentalAnalyzer(KeyPaperAnalyzer):
         evolution_df['id'] = evolution_df['id'].astype(str)
         return evolution_df, year_range
 
-    def subtopic_evolution_descriptions(self, df, evolution_df, year_range, query,
-                                        keywords=KeyPaperAnalyzer.TOPIC_WORDS,
-                                        current=0, task=None):
-        # Subtopic evolution failed, no need to generate keywords
+    def topic_evolution_descriptions(
+            self, df, evolution_df, year_range, query,
+            keywords=KeyPaperAnalyzer.TOPIC_WORDS,
+            current=0, task=None
+    ):
+        # Topic evolution failed, no need to generate keywords
         if evolution_df is None or not year_range:
             return None
 
-        self.progress.info('Generating evolution subtopics description by top cited papers',
+        self.progress.info('Generating evolution topics description by top cited papers',
                            current=current, task=task)
         evolution_kwds = {}
         for col in evolution_df:
             if col in year_range:
-                logger.debug(f'Generating subtopics descriptions for year {col}')
+                logger.debug(f'Generating topics descriptions for year {col}')
                 if isinstance(col, (int, float)):
                     evolution_df[col] = evolution_df[col].apply(int)
                     comps = evolution_df.groupby(col)['id'].apply(list).to_dict()

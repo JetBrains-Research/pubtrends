@@ -50,7 +50,7 @@ class PlotPreprocessor:
         cluster_edges = pd.DataFrame([{'comp_x': i, 'comp_y': j, 'value': connectivity_matrix[i][j]}
                                       for i, j in cart_product(range(n_comps), range(n_comps))])
 
-        logger.debug('Density = value between subtopics / (size of subtopic 1 * size of subtopic 2)')
+        logger.debug('Density = value between topics / (size of topic 1 * size of topic 2)')
 
         def get_density(row):
             return row['value'] / (comp_sizes[row['comp_x']] * comp_sizes[row['comp_y']])
@@ -166,35 +166,35 @@ class PlotPreprocessor:
         attrs = {}
         for node in df['id']:
             sel = df[df['id'] == node]
-            comp = int(sel['comp'].values[0])
+            topic = int(sel['comp'].values[0])
             attrs[node] = {
                 'title': sel['title'].values[0],
                 'abstract': sel['abstract'].values[0],
                 'authors': cut_authors_list(sel['authors'].values[0]),
                 'year': int(sel['year'].values[0]),
                 'cited': int(sel['total'].values[0]),
-                'comp': comp + 1,  # For visualization consistency
+                'topic': topic
             }
         nx.set_node_attributes(graph, attrs)
 
         logger.debug('Group not connected nodes into groups')
-        comp_groups = set()
-        cytoscape_data = nx.cytoscape_data(graph)["elements"]
+        topic_groups = set()
+        cytoscape_data = nx.cytoscape_data(graph)['elements']
         for node_cs in cytoscape_data['nodes']:
             nid = node_cs['data']['id']
             if graph.degree(nid) == 0:
-                comp = node_cs['data']['comp']
-                if comp not in comp_groups:
-                    comp_group = {
+                topic = node_cs['data']['topic']
+                if topic not in topic_groups:
+                    topic_group = {
                         'group': 'nodes',
                         'data': {
-                            'id': f'subtopic_{comp}',
-                            'comp': comp,
+                            'id': f'topic_{topic}',
+                            'topic': topic,
                         },
                         'classes': 'group'
                     }
-                    comp_groups.add(comp)
-                    cytoscape_data['nodes'].append(comp_group)
-                node_cs['data']['parent'] = f'subtopic_{comp}'
+                    topic_groups.add(topic)
+                    cytoscape_data['nodes'].append(topic_group)
+                node_cs['data']['parent'] = f'topic_{topic}'
         logger.info('Done dumping graph to cytoscape JS')
         return cytoscape_data

@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 class ExperimentalPlotPreprocessor(PlotPreprocessor):
 
     @staticmethod
-    def subtopic_evolution_data(df, kwds, n_steps):
+    def topic_evolution_data(df, kwds, n_steps):
         def sort_nodes_key(node):
             y, c = node[0].split(' ')
             return int(y), -int(c)
@@ -44,7 +44,7 @@ class ExperimentalPlotPreprocessor(PlotPreprocessor):
                 if n_steps < 4:
                     label = f"{year} {', '.join(kwds[int(year)][int(c)][:5])}"
                 else:
-                    # Fix subtopic numbering to start with 1
+                    # Fix topic numbering to start with 1
                     label = f"{year} {int(c) + 1}"
             else:
                 label = "TBD"
@@ -54,19 +54,19 @@ class ExperimentalPlotPreprocessor(PlotPreprocessor):
         return edges, nodes_data
 
     @staticmethod
-    def subtopic_evolution_keywords_data(kwds):
+    def topic_evolution_keywords_data(kwds):
         years = []
-        subtopics = []
+        topics = []
         keywords = []
         for year, comps in kwds.items():
             for c, kwd in comps.items():
                 if c >= 0:
                     years.append(year)
-                    subtopics.append(c + 1)
+                    topics.append(c + 1)
                     keywords.append(', '.join(kwd))
         data = dict(
             years=years,
-            subtopics=subtopics,
+            topics=topics,
             keywords=keywords
         )
         source = ColumnDataSource(data)
@@ -74,7 +74,7 @@ class ExperimentalPlotPreprocessor(PlotPreprocessor):
         columns = [
             TableColumn(field="index", title="#", width=20),
             TableColumn(field="years", title="Year", width=50),
-            TableColumn(field="subtopics", title="Subtopic", width=50),
+            TableColumn(field="topics", title="Topic", width=50),
             TableColumn(field="keywords", title="Keywords", width=800),
         ]
         return columns, source

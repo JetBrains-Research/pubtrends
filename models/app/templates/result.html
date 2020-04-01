@@ -101,7 +101,7 @@
             var words = JSON.parse('{{ papers_word_cloud }}'.replace(/&#34;/g, '"').replace(/&amp;/g, '&'));
             process_word_cloud('papers_word_cloud', 220, 335, words, papers_callback_word);
 
-            {% for (script, div), word_cloud, zoom_in_callback in subtopics_info_and_word_cloud_and_callback %}
+            {% for (script, div), word_cloud, zoom_in_callback in topics_info_and_word_cloud_and_callback %}
                  words = JSON.parse('{{ word_cloud }}'.replace(/&#34;/g, '"').replace(/&amp;/g, '&'));
                  process_word_cloud('topic_word_cloud_{{ loop.index }}', 220, 335, words, papers_callback_word);
             {% endfor %}
@@ -236,9 +236,9 @@
                                 </div>
                             </div>
                             <div class="col-sm-4">
-                                <div id="n_subtopics" class="card">
+                                <div id="n_topics" class="card">
                                     <div class="card-body text-center">
-                                        <span class="stats-number"><b>{{ n_subtopics }}</b></span><br>
+                                        <span class="stats-number"><b>{{ n_topics }}</b></span><br>
                                         <span class="card-text">topics</span>
                                     </div>
                                 </div>
@@ -361,7 +361,7 @@
                         <p>
                             Similarity information is used for topics extraction.<br>
                             Bars represent number of papers within each topic.<br>
-                            Click on bars to get detailed information about keywords and publications for each subtopic.
+                            Click on bars to get detailed information about keywords and publications for each topic.
                             <br>
                             <em>Note: topics are merged to "Other" if they contain less than 5% of publications of
                                 the field.</em>
@@ -375,7 +375,7 @@
                         <hr>
                         <p>
                             Similarity between different topics is a summary similarity between all the papers,<br>
-                            normalized to subtopic sizes - number of papers.
+                            normalized to topic sizes - number of papers.
                         </p>
                         {% for script, div in components_similarity %}
                         {{ script|safe }}
@@ -423,11 +423,11 @@
                             Year reflects publication year of the original paper.
                         </p>
                         <div>
-                            {% for (script, div), word_cloud, zoom_in_callback in subtopics_info_and_word_cloud_and_callback %}
-                            <div id="subtopic-div-{{ loop.index }}">
+                            {% for (script, div), word_cloud, zoom_in_callback in topics_info_and_word_cloud_and_callback %}
+                            <div id="topic-div-{{ loop.index }}">
                                 <hr>
-                                <h2 id="subtopic-{{ loop.index }}" class="card-subtitle">
-                                    Subtopic {{ loop.index }}
+                                <h2 id="topic-{{ loop.index }}" class="card-subtitle">
+                                    Topic {{ loop.index }}
                                     {% if loop.index0 == comp_other %}
                                     - OTHER
                                     {% endif %}
@@ -481,7 +481,7 @@
                             List of authors with the largest number of papers for given search query.<br>
                             The colors of the circles in the topics column indicate top 3 most common topics among
                             these papers.<br>
-                            The subtopic circles are arranged according to the number of papers, in descending order.
+                            The topic circles are arranged according to the number of papers, in descending order.
                         </p>
                         <table id="authors-table" class="table table-sm table-bordered table-striped">
                             <thead>
@@ -517,7 +517,7 @@
                             List of journals with the largest number of papers for given search query.<br>
                             The colors of the circles in the topics column indicate top 3 most common topics among
                             these papers.<br>
-                            The subtopic circles are arranged according to the number of papers, in descending order.
+                            The topic circles are arranged according to the number of papers, in descending order.
                         </p>
                         <table id="journals-table" class="table table-sm table-bordered table-striped">
                             <thead>
@@ -550,7 +550,7 @@
                         <h1 class="card-header">Experimental</h1>
                     </div>
                     <div class="card-body">
-                        <h2 class="card-subtitle">Subtopic Evolution</h2>
+                        <h2 class="card-subtitle">Topic Evolution</h2>
                         <p>
                             Topics extraction is performed longitudinally at several time points to detect merges and splits
                             of clusters,<br>
@@ -559,13 +559,13 @@
                             another.
                         </p>
                         <div>
-                            {% if subtopic_evolution is defined %}
-                            {% for script, div in subtopic_evolution %}
+                            {% if topic_evolution is defined %}
+                            {% for script, div in topic_evolution %}
                             {{ script|safe }}
                             {{ div|safe }}
                             {% endfor %}
                             {% else %}
-                            Failed to analyze subtopic evolution because year step is too big.
+                            Failed to analyze topic evolution because year step is too big.
                             {% endif %}
                         </div>
                     </div>
@@ -622,8 +622,8 @@
                     intro: '{{n_citations}} is the summary number of all the citations of the papers.'
                 },
                 {
-                    element: '#n_subtopics',
-                    intro: "{{n_subtopics}} topics were found among the papers.<br>"
+                    element: '#n_topics',
+                    intro: "{{n_topics}} topics were found among the papers.<br>"
                 },
                 {
                     element: '#show_as_list',
@@ -651,12 +651,12 @@
                         "Topics are extracted based on citations graph and text analysis."
                 },
                 {
-                    element: '#subtopic-1',
-                    intro: "This is the detailed information about subtopic 1. As usual, " +
+                    element: '#topic-1',
+                    intro: "This is the detailed information about topic 1. As usual, " +
                         "click <img src=\"{{ url_for('static', filename='list.svg') }}\" alt=\"+\"/> " +
-                        "<em>Show as list</em> to open the list of papers for the subtopic or " +
+                        "<em>Show as list</em> to open the list of papers for the topic or " +
                         "use the <img src=\"{{ url_for('static', filename='zoom-in.svg') }}\" alt=\"+\"/> " +
-                        "<em>Zoom into</em> button to run analysis for this particular subtopic.<br>"
+                        "<em>Zoom into</em> button to run analysis for this particular topic.<br>"
                 },
                 {
                     element: '#topic_word_cloud_1',

@@ -135,11 +135,11 @@ class KeyPaperAnalyzer:
             self.df_kwd = pd.DataFrame({'comp': [0], 'kwd': ['']})
             self.structure_graph = nx.Graph()
         else:
-            # Perform subtopic analysis and get subtopic descriptions
+            # Perform topic analysis and get topic descriptions
             self.partition, self.comp_other, self.components, self.comp_sizes = \
                 self.topic_analysis(self.similarity_graph, current=10, task=task)
 
-            self.progress.info('Computing subtopics descriptions by top cited papers', current=11, task=task)
+            self.progress.info('Computing topics descriptions by top cited papers', current=11, task=task)
             most_cited_per_comp = self.get_most_cited_papers_for_comps(self.df, self.partition)
             self.df = self.merge_col(self.df, self.partition, col='comp')
 
@@ -302,7 +302,7 @@ class KeyPaperAnalyzer:
         return result
 
     def topic_analysis(self, similarity_graph, current=0, task=None):
-        self.progress.info(f'Extracting subtopics from paper similarity graph', current=current, task=task)
+        self.progress.info(f'Extracting topics from paper similarity graph', current=current, task=task)
         connected_components = nx.number_connected_components(similarity_graph)
         logger.debug(f'Relations graph has {connected_components} connected components')
 
@@ -544,7 +544,7 @@ class KeyPaperAnalyzer:
                 mapping[col] = col
         df = df.rename(columns=mapping)
 
-        # Restore subtopic descriptions
+        # Restore topic descriptions
         df_kwd = pd.read_json(fields['df_kwd'])
 
         # Extra filter is applied to overcome split behaviour problem: split('') = [''] problem

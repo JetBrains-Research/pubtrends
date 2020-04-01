@@ -15,7 +15,7 @@ from models.keypaper.config import PubtrendsConfig
 from models.keypaper.paper import prepare_paper_data, prepare_papers_data, get_loader_and_url_prefix
 from models.keypaper.plot_preprocessor import PlotPreprocessor
 from models.keypaper.plotter import Plotter
-from models.keypaper.utils import zoom_name, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE, trim
+from models.keypaper.utils import zoom_name, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE, trim, ZOOM_OUT_TITLE
 from models.keypaper.version import VERSION
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
@@ -80,7 +80,7 @@ def result():
     source = request.args.get('source')
     limit = request.args.get('limit')
     sort = request.args.get('sort')
-    if jobid and query and source and limit and sort:
+    if jobid and query and source and limit is not None and sort is not None:
         job = complete_task(jobid)
         if job:
             if job.state == 'SUCCESS':
@@ -118,24 +118,26 @@ def process():
             logging.debug('/process key:value search')
             query = f'Paper {key}: {value}'
             return render_template('process.html',
-                                   redirect_args={'query': quote(query), 'source': source, 'jobid': jobid},
+                                   redirect_args={'query': quote(query), 'source': source, 'jobid': jobid,
+                                                  'limit': '', 'sort': ''},
                                    query=trim(query, MAX_QUERY_LENGTH), source=source,
                                    redirect_page="process_paper",  # redirect in case of success
                                    jobid=jobid, version=VERSION)
 
-        elif analysis_type in [ZOOM_IN_TITLE, ZOOM_IN_TITLE]:
+        elif analysis_type in [ZOOM_IN_TITLE, ZOOM_OUT_TITLE]:
             logging.debug('/process zoom processing')
-            query = f"{analysis_type} analysis of {query}"
             return render_template('process.html',
-                                   redirect_args={'query': quote(query), 'source': source, 'jobid': jobid},
-                                   query=trim(query, MAX_QUERY_LENGTH), source=source,
+                                   redirect_args={'query': quote(query), 'source': source, 'jobid': jobid,
+                                                  'limit': analysis_type, 'sort': ''},
+                                   query=trim(query, MAX_QUERY_LENGTH), source=source, limit=analysis_type, sort='',
                                    redirect_page="result",  # redirect in case of success
                                    jobid=jobid, version=VERSION)
 
         elif analysis_type == PAPER_ANALYSIS_TITLE:
             logging.debug('/process paper analysis')
             return render_template('process.html',
-                                   redirect_args={'source': source, 'jobid': jobid, 'id': id},
+                                   redirect_args={'source': source, 'jobid': jobid, 'id': id,
+                                                  'limit': '', 'sort': ''},
                                    query=trim(query, MAX_QUERY_LENGTH), source=source,
                                    redirect_page="paper",  # redirect in case of success
                                    jobid=jobid, version=VERSION)
@@ -208,7 +210,7 @@ def graph():
             analyzer = get_analyzer(loader, PUBTRENDS_CONFIG)
             analyzer.init(data)
             min_year, max_year = int(analyzer.df['year'].min()), int(analyzer.df['year'].max())
-            subtopics_tags = {comp: ', '.join(
+            topics_tags = {comp: ', '.join(
                 [w[0] for w in analyzer.df_kwd[analyzer.df_kwd['comp'] == comp]['kwd'].values[0][:10]]
             ) for comp in sorted(set(analyzer.df['comp']))}
             if graph_type == "citations":
@@ -223,9 +225,9 @@ def graph():
                     citation_graph="true",
                     min_year=min_year,
                     max_year=max_year,
-                    subtopic_other=analyzer.comp_other,
-                    subtopics_palette_json=json.dumps(Plotter.subtopics_palette(analyzer.df)),
-                    subtopics_description_json=json.dumps(subtopics_tags),
+                    topic_other=analyzer.comp_other,
+                    topics_palette_json=json.dumps(Plotter.topics_palette(analyzer.df)),
+                    topics_description_json=json.dumps(topics_tags),
                     graph_cytoscape_json=json.dumps(graph_cs)
                 )
             else:
@@ -240,9 +242,9 @@ def graph():
                     citation_graph="false",
                     min_year=min_year,
                     max_year=max_year,
-                    subtopic_other=analyzer.comp_other,
-                    subtopics_palette_json=json.dumps(Plotter.subtopics_palette(analyzer.df)),
-                    subtopics_description_json=json.dumps(subtopics_tags),
+                    topic_other=analyzer.comp_other,
+                    topics_palette_json=json.dumps(Plotter.topics_palette(analyzer.df)),
+                    topics_description_json=json.dumps(topics_tags),
                     graph_cytoscape_json=json.dumps(graph_cs)
                 )
 

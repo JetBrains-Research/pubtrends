@@ -281,8 +281,8 @@ def vectorize(corpus, query=None, n_words=1000):
     return counts, vectorizer
 
 
-def lda_subtopics(counts, n_topics=10):
-    log.info(f'Performing LDA subtopic analysis')
+def lda_topics(counts, n_topics=10):
+    log.info(f'Performing LDA topic analysis')
     lda = LatentDirichletAllocation(n_components=n_topics, random_state=0)
     topics = lda.fit_transform(counts)
 
@@ -290,7 +290,7 @@ def lda_subtopics(counts, n_topics=10):
     return topics, lda
 
 
-def explain_lda_subtopics(lda, vectorizer, n_top_words=20):
+def explain_lda_topics(lda, vectorizer, n_top_words=20):
     feature_names = vectorizer.get_feature_names()
     explanations = {}
     for i, topic in enumerate(lda.components_):

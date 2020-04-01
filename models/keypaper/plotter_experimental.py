@@ -13,10 +13,10 @@ def visualize_experimental_analysis(analyzer):
     result = visualize_analysis(analyzer)
     result['experimental'] = True  # Mark as experimental
     if analyzer.similarity_graph.nodes():
-        subtopic_evolution = ExperimentalPlotter(analyzer).subtopic_evolution()
-        # Pass subtopic evolution only if not None
-        if subtopic_evolution:
-            result['subtopic_evolution'] = [components(subtopic_evolution)]
+        topic_evolution = ExperimentalPlotter(analyzer).topic_evolution()
+        # Pass topic evolution only if not None
+        if topic_evolution:
+            result['topic_evolution'] = [components(topic_evolution)]
     return result
 
 
@@ -24,21 +24,21 @@ class ExperimentalPlotter(Plotter):
     def __init__(self, analyzer=None):
         super().__init__(analyzer)
 
-    def subtopic_evolution(self):
+    def topic_evolution(self):
         """
-        Sankey diagram of subtopic evolution
+        Sankey diagram of topic evolution
         :return:
             if self.analyzer.evolution_df is None: None, as no evolution can be observed in 1 step
             if number of steps < 3: Sankey diagram
             else: Sankey diagram + table with keywords
         """
-        # Subtopic evolution analysis failed, one step is not enough to analyze evolution
+        # Topic evolution analysis failed, one step is not enough to analyze evolution
         if self.analyzer.evolution_df is None or not self.analyzer.evolution_kwds:
             return None
 
         n_steps = len(self.analyzer.evolution_df.columns) - 2
 
-        edges, nodes_data = ExperimentalPlotPreprocessor.subtopic_evolution_data(
+        edges, nodes_data = ExperimentalPlotPreprocessor.topic_evolution_data(
             self.analyzer.evolution_df, self.analyzer.evolution_kwds, n_steps
         )
 
@@ -50,11 +50,11 @@ class ExperimentalPlotter(Plotter):
                              edge_color=dim('To').str(), node_color=dim('index').str())
 
         if n_steps > 3:
-            columns, source = ExperimentalPlotPreprocessor.subtopic_evolution_keywords_data(
+            columns, source = ExperimentalPlotPreprocessor.topic_evolution_keywords_data(
                 self.analyzer.evolution_kwds
             )
-            subtopic_keywords = DataTable(source=source, columns=columns, width=PLOT_WIDTH, index_position=None)
+            topic_keywords = DataTable(source=source, columns=columns, width=PLOT_WIDTH, index_position=None)
 
-            return column(hv.render(topic_evolution, backend='bokeh'), subtopic_keywords)
+            return column(hv.render(topic_evolution, backend='bokeh'), topic_keywords)
 
         return hv.render(topic_evolution, backend='bokeh')

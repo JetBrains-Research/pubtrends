@@ -111,10 +111,10 @@
             window.cy.layout(LAYOUT).run();
         }
 
-        function showSubtopics(){
+        function showTopics(){
             cy.nodes().forEach(function(ele){
                 if ('title' in ele.data()){
-                    ele.classes('subtopic');
+                    ele.classes('topic');
                 }
             });
         }
@@ -131,8 +131,8 @@
         $(document).ready(function () {
             document.getElementById('cy').innerHTML = "";
             const citation_graph = {{ citation_graph }};
-            const subtopics_palette = JSON.parse({{ subtopics_palette_json | tojson }});
-            const subtopics_description = JSON.parse({{subtopics_description_json | tojson }});
+            const topics_palette = JSON.parse({{ topics_palette_json | tojson }});
+            const topics_description = JSON.parse({{topics_description_json | tojson }});
             const min_year = {{min_year}};
             const max_year = {{max_year}};
             let edge_style;
@@ -160,10 +160,10 @@
                         }
                     },
                     {
-                        selector: "node.subtopic",
+                        selector: "node.topic",
                         style: {
                             "background-color": function (node) {
-                                return subtopics_palette[node.data().comp];
+                                return topics_palette[node.data().topic];
                             },
                         }
                     },
@@ -189,7 +189,7 @@
                         style: {
                             "background-opacity": 0.1,
                             "background-color": function (node) {
-                                return subtopics_palette[node.data().comp];
+                                return topics_palette[node.data().topic];
                             }
                         }
                     },
@@ -237,27 +237,27 @@
                                 "<b>Potential</b> " + Number(potential).toFixed(2) + "<br>";
                         } else if('title' in data) {
                             // Paper
-                            const comp = data['comp'];
+                            const topic = data['topic'];
                             let other = '';
-                            if (comp === {{ subtopic_other }}) {
+                            if (topic === {{ topic_other }}) {
                                 other = 'OTHER';
                             }
                             content.innerHTML = "<b>" + data['title'] + "</b><br>" +
                                 "<b>Author(s)</b> " + data['authors'] + "<br>" +
                                 "<b>Year</b> " + data['year'] + "<br>" +
                                 "<b>Cited</b> " + data['cited'] + "<br>" +
-                                "<b>Topic</b> " + (comp + 1) + " " + other + "<br>" +
-                                "<b>Tags</b> " + "<em>" + subtopics_description[comp] + "</em>";
-                        } else if ('comp' in data) {
+                                "<b>Topic</b> " + (topic + 1) + " " + other + "<br>" +
+                                "<b>Tags</b> " + "<em>" + topics_description[topic] + "</em>";
+                        } else if ('topic' in data) {
                             // Group
-                            const comp = data['comp'];
+                            const topic = data['topic'];
                             let other = '';
-                            if (comp === {{ subtopic_other }}) {
+                            if (topic === {{ topic_other }}) {
                                 other = 'OTHER';
                             }
                             content.innerHTML =  "<b>These papers are not connected.</b><br>" +
-                                "<b>Topic</b> " + (comp + 1) + " " + other + "<br>" +
-                                "<b>Tags</b> " + "<em>" + subtopics_description[comp] + "</em>";
+                                "<b>Topic</b> " + (topic + 1) + " " + other + "<br>" +
+                                "<b>Tags</b> " + "<em>" + topics_description[topic] + "</em>";
                         }
                         return content;
                     },
@@ -266,7 +266,7 @@
             }
             cy.nodes().forEach(function(ele){
                 if ('title' in ele.data()){
-                    ele.classes('subtopic')
+                    ele.classes('topic')
                 }
             });
 
@@ -358,7 +358,7 @@
                             Color
                         </button>
                         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                            <a class="dropdown-item" onclick="showSubtopics();" href="javascript:void(0);">Subtopic</a>
+                            <a class="dropdown-item" onclick="showTopics();" href="javascript:void(0);">Topic</a>
                             <a class="dropdown-item" onclick="showYear();" href="javascript:void(0);">Year</a>
                         </div>
                     </div>

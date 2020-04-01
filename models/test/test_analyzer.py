@@ -85,13 +85,13 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
     def test_merge_comps_paper_count(self):
         self.assertEqual(len(self.analyzer.df), len(self.analyzer.pub_df))
 
-    def test_subtopic_analysis_all_nodes_assigned(self):
+    def test_topic_analysis_all_nodes_assigned(self):
         nodes = self.analyzer.similarity_graph.nodes()
         for row in self.analyzer.df.itertuples():
             if getattr(row, 'id') in nodes:
                 self.assertGreaterEqual(getattr(row, 'comp'), 0)
 
-    def test_subtopic_analysis_missing_nodes_set_to_default(self):
+    def test_topic_analysis_missing_nodes_set_to_default(self):
         nodes = self.analyzer.similarity_graph.nodes()
         for row in self.analyzer.df.itertuples():
             if getattr(row, 'id') not in nodes:

@@ -26,8 +26,8 @@ class TestExperimentalAnalyzer(unittest.TestCase):
         ('2 steps', 5, False, [1975, 1970]),
         ('5 steps', 2, False, [1975, 1973, 1971, 1969, 1967])
     ])
-    def test_subtopic_evolution(self, name, step, expect_none, expected_year_range):
-        evolution_df, year_range = self.analyzer.subtopic_evolution_analysis(
+    def test_topic_evolution(self, name, step, expect_none, expected_year_range):
+        evolution_df, year_range = self.analyzer.topic_evolution_analysis(
             self.analyzer.cocit_df, step=step
         )
 

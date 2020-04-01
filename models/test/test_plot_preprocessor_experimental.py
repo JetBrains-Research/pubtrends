@@ -11,8 +11,8 @@ class TestExperimentalPlotPreprocessor(unittest.TestCase):
         self.analyzer = MockAnalyzer()
         self.plotter = ExperimentalPlotter(self.analyzer)
 
-    def test_subtopic_evolution_data(self):
-        edges, nodes_data = ExperimentalPlotPreprocessor.subtopic_evolution_data(
+    def test_topic_evolution_data(self):
+        edges, nodes_data = ExperimentalPlotPreprocessor.topic_evolution_data(
             self.analyzer.evolution_df, self.analyzer.evolution_kwds, self.analyzer.n_steps
         )
 
@@ -29,14 +29,14 @@ class TestExperimentalPlotPreprocessor(unittest.TestCase):
                              'Wrong node order')
         self.assertListEqual(nodes_data, expected_nodes_data, 'Wrong nodes data')
 
-    def test_subtopic_evolution_keywords(self):
-        _, source = ExperimentalPlotPreprocessor.subtopic_evolution_keywords_data(
+    def test_topic_evolution_keywords(self):
+        _, source = ExperimentalPlotPreprocessor.topic_evolution_keywords_data(
             self.analyzer.evolution_kwds
         )
 
         expected_keywords_data = {
             'years': [2014, 2014, 2019, 2019],
-            'subtopics': [1, 2, 1, 2],
+            'topics': [1, 2, 1, 2],
             'keywords': [
                 'body, susceptibility, ieaa, risk, time, acceleration, gene, association, tumor, ageaccel, '
                 'development, tissue, blood, study, age',
@@ -50,5 +50,5 @@ class TestExperimentalPlotPreprocessor(unittest.TestCase):
         }
 
         self.assertEqual(expected_keywords_data['years'], source.data['years'], 'Wrong years')
-        self.assertEqual(expected_keywords_data['subtopics'], source.data['subtopics'], 'Wrong subtopics')
+        self.assertEqual(expected_keywords_data['topics'], source.data['topics'], 'Wrong topics')
         self.assertEqual(expected_keywords_data['keywords'], source.data['keywords'], 'Wrong keywords')
