@@ -137,7 +137,7 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
 
     def test_get_most_cited_papers_for_comps(self):
         comps = self.analyzer.get_most_cited_papers_for_comps(self.analyzer.df, self.analyzer.partition, 1)
-        self.assertDictEqual(comps, {0: ['3']})
+        self.assertDictEqual(comps, {0: ['3'], 1: ['1']})
 
 
 class TestKeyPaperAnalyzerSingle(unittest.TestCase):

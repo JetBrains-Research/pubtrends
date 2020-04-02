@@ -362,10 +362,11 @@ class KeyPaperAnalyzer:
 
     @staticmethod
     def get_similarity(d):
-        return KeyPaperAnalyzer.SIMILARITY_COCITATION * d.get('cocitation', 0) + \
-               KeyPaperAnalyzer.SIMILARITY_BIBLIOGRAPHIC_COUPLING * d.get('bibcoupling', 0) + \
-               KeyPaperAnalyzer.SIMILARITY_CITATION * d.get('citation', 0) + \
-               KeyPaperAnalyzer.SIMILARITY_POTENTIAL_CITATION * d.get('potential', 0)
+        return \
+            KeyPaperAnalyzer.SIMILARITY_COCITATION * d.get('cocitation', 0) + \
+            KeyPaperAnalyzer.SIMILARITY_BIBLIOGRAPHIC_COUPLING * d.get('bibcoupling', 0) + \
+            KeyPaperAnalyzer.SIMILARITY_CITATION * d.get('citation', 0) + \
+            KeyPaperAnalyzer.SIMILARITY_POTENTIAL_CITATION * d.get('potential', 0)
 
     @staticmethod
     def compute_tfidf(df, max_features, n_gram):
