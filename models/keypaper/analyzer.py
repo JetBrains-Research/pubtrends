@@ -308,11 +308,7 @@ class KeyPaperAnalyzer:
 
         logger.debug('Compute aggregated weight')
         for _, _, d in similarity_graph.edges(data=True):
-            d['similarity'] = \
-                self.SIMILARITY_COCITATION * d.get('cocitation', 0) + \
-                self.SIMILARITY_BIBLIOGRAPHIC_COUPLING * d.get('bibcoupling', 0) + \
-                self.SIMILARITY_CITATION * d.get('citation', 0) + \
-                self.SIMILARITY_POTENTIAL_CITATION * d.get('potential', 0)
+            d['similarity'] = KeyPaperAnalyzer.get_similarity(d)
 
         logger.debug('Graph clustering via Louvain community algorithm')
         partition_louvain = community.best_partition(similarity_graph, random_state=KeyPaperAnalyzer.SEED)
@@ -361,6 +357,13 @@ class KeyPaperAnalyzer:
             del d['distance']
 
         return mst
+
+    @staticmethod
+    def get_similarity(d):
+        return KeyPaperAnalyzer.SIMILARITY_COCITATION * d.get('cocitation', 0) + \
+               KeyPaperAnalyzer.SIMILARITY_BIBLIOGRAPHIC_COUPLING * d.get('bibcoupling', 0) + \
+               KeyPaperAnalyzer.SIMILARITY_CITATION * d.get('citation', 0) + \
+               KeyPaperAnalyzer.SIMILARITY_POTENTIAL_CITATION * d.get('potential', 0)
 
     @staticmethod
     def compute_tfidf(df, max_features, n_gram):

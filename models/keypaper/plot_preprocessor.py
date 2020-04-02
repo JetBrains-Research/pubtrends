@@ -29,11 +29,7 @@ class PlotPreprocessor:
         for u, v, data in similarity_graph.edges(data=True):
             sources[i] = u
             targets[i] = v
-            similarities[i] = \
-                data.get('cocitation', 0) * KeyPaperAnalyzer.SIMILARITY_COCITATION + \
-                data.get('bibcoupling', 0) * KeyPaperAnalyzer.SIMILARITY_BIBLIOGRAPHIC_COUPLING + \
-                data.get('citation', 0) * KeyPaperAnalyzer.SIMILARITY_CITATION + \
-                data.get('potential', 0) * KeyPaperAnalyzer.SIMILARITY_POTENTIAL_CITATION
+            similarities[i] = KeyPaperAnalyzer.get_similarity(data)
             i += 1
         similarity_df = pd.DataFrame(data={'source': sources, 'target': targets, 'similarity': similarities})
 
