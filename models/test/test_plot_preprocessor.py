@@ -93,35 +93,24 @@ class TestPlotPreprocessor(unittest.TestCase):
         max_width = max_size * (self.analyzer.max_year - self.analyzer.min_year + 1)
         self.assertLessEqual(max_width, width, 'Horizontal overlap')
 
-    def test_heatmap_clusters(self):
-        cluster_edges, clusters = PlotPreprocessor.heatmap_clusters_data(
+    def test_heatmap_topics_similarity(self):
+        similarity_df, topics = PlotPreprocessor.topics_similarity_data(
             self.analyzer.similarity_graph, self.analyzer.df, self.analyzer.comp_sizes
         )
 
         # Find data for comp_x=i and comp_y=j in DataFrame
         def index(i, j):
-            return np.logical_and(cluster_edges['comp_x'] == str(i), cluster_edges['comp_y'] == str(j))
+            return np.logical_and(similarity_df['comp_x'] == str(i), similarity_df['comp_y'] == str(j))
 
-        self.assertListEqual(clusters, ['1', '2', '3'], 'Wrong clusters')
+        self.assertListEqual(topics, ['1', '2', '3'], 'Wrong topics')
 
-        expected_values = np.array([[72, 4, 0],
-                                    [4, 49, 0],
+        expected_values = np.array([[9, 2, 0],
+                                    [2, 8.1667, 0],
                                     [0, 0, 0]])
 
         n_comps = len(self.analyzer.components)
         for i in range(n_comps):
             for j in range(n_comps):
-                self.assertAlmostEqual(cluster_edges[index(i + 1, j + 1)]['value'].values[0],
+                self.assertAlmostEqual(similarity_df[index(i + 1, j + 1)]['similarity'].values[0],
                                        expected_values[i, j], places=3,
-                                       msg=f'Wrong value for comp_x {i} and comp_y {j}')
-
-        expected_densities = np.array([[2.0, 0.1666, 0],
-                                       [0.1666, 3.0625, 0],
-                                       [0, 0, 0]])
-
-        n_comps = len(self.analyzer.components)
-        for i in range(n_comps):
-            for j in range(n_comps):
-                self.assertAlmostEqual(cluster_edges[index(i + 1, j + 1)]['density'].values[0],
-                                       expected_densities[i, j], places=3,
-                                       msg=f'Wrong density for comp_x {i} and comp_y {j}')
+                                       msg=f'Wrong similarities for comp_x {i} and comp_y {j}')

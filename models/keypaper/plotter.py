@@ -55,7 +55,7 @@ def visualize_analysis(analyzer):
             'n_citations': int(analyzer.df['total'].sum()),
             'n_topics': len(analyzer.components),
             'comp_other': analyzer.comp_other,
-            'components_similarity': [components(plotter.heatmap_clusters())],
+            'components_similarity': [components(plotter.heatmap_topics_similarity())],
             'component_size_summary': [components(plotter.component_size_summary())],
             'component_years_summary_boxplots': [components(plotter.component_years_summary_boxplots())],
             'topics_info_and_word_cloud_and_callback':
@@ -179,10 +179,10 @@ class Plotter:
         form.submit();
         """
 
-    def heatmap_clusters(self):
-        log.info('Visualizing components with heatmap')
+    def heatmap_topics_similarity(self):
+        log.info('Visualizing topics similarity with heatmap')
 
-        cluster_edges, clusters = PlotPreprocessor.heatmap_clusters_data(
+        similarity_df, topics = PlotPreprocessor.topics_similarity_data(
             self.analyzer.similarity_graph, self.analyzer.df, self.analyzer.comp_sizes
         )
 
@@ -190,16 +190,16 @@ class Plotter:
         cmap = plt.cm.get_cmap('PuBu', step)
         colors = [RGB(*[round(c * 255) for c in cmap(i)[:3]]) for i in range(step)]
         mapper = LinearColorMapper(palette=colors,
-                                   low=cluster_edges.density.min(),
-                                   high=cluster_edges.density.max())
+                                   low=similarity_df.similarity.min(),
+                                   high=similarity_df.similarity.max())
 
-        p = figure(title="Similarity between groups",
-                   x_range=clusters, y_range=clusters,
+        p = figure(title="Similarity between topics",
+                   x_range=topics, y_range=topics,
                    x_axis_location="below", plot_width=PLOT_WIDTH, plot_height=PAPERS_PLOT_HEIGHT,
                    tools=TOOLS, toolbar_location='above',
-                   tooltips=[('Topic 1', '#@comp_x'),
-                             ('Topic 2', '#@comp_y'),
-                             ('Density', '@density, @value')])
+                   tooltips=[('Topic 1', '@comp_x'),
+                             ('Topic 2', '@comp_y'),
+                             ('Similarity', '@similarity')])
 
         p.grid.grid_line_color = None
         p.axis.axis_line_color = None
@@ -208,8 +208,8 @@ class Plotter:
         p.axis.major_label_standoff = 0
 
         p.rect(x="comp_x", y="comp_y", width=1, height=1,
-               source=cluster_edges,
-               fill_color={'field': 'density', 'transform': mapper},
+               source=similarity_df,
+               fill_color={'field': 'similarity', 'transform': mapper},
                line_color=None)
 
         color_bar = ColorBar(color_mapper=mapper, major_label_text_font_size="10pt",

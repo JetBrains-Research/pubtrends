@@ -14,51 +14,48 @@ logger = logging.getLogger(__name__)
 class PlotPreprocessor:
 
     @staticmethod
-    def heatmap_clusters_data(similarity_graph, df, comp_sizes):
-        logger.debug('Computing heatmap clusters_data')
+    def topics_similarity_data(similarity_graph, df, comp_sizes):
+        logger.debug('Computing mean similarity of all edges between topics')
         # c + 1 is used to start numbering with 1
-        clusters = list(map(str, [c + 1 for c in comp_sizes.keys()]))
-        n_comps = len(clusters)
+        components = list(map(str, [c + 1 for c in comp_sizes.keys()]))
+        n_comps = len(components)
 
         logger.debug('Load edge data to DataFrame')
-        edges = similarity_graph.size()
+        edges = len(similarity_graph.edges)
         sources = [None] * edges
         targets = [None] * edges
-        values = [0.0] * edges
+        similarities = [0.0] * edges
         i = 0
         for u, v, data in similarity_graph.edges(data=True):
             sources[i] = u
             targets[i] = v
-            values[i] = data.get('cocitation', 0) * KeyPaperAnalyzer.SIMILARITY_COCITATION + \
+            similarities[i] = \
+                data.get('cocitation', 0) * KeyPaperAnalyzer.SIMILARITY_COCITATION + \
                 data.get('bibcoupling', 0) * KeyPaperAnalyzer.SIMILARITY_BIBLIOGRAPHIC_COUPLING + \
-                data.get('citation', 0) * KeyPaperAnalyzer.SIMILARITY_CITATION
+                data.get('citation', 0) * KeyPaperAnalyzer.SIMILARITY_CITATION + \
+                data.get('potential', 0) * KeyPaperAnalyzer.SIMILARITY_POTENTIAL_CITATION
             i += 1
-        links_df = pd.DataFrame(data={'source': sources, 'target': targets, 'value': values})
+        similarity_df = pd.DataFrame(data={'source': sources, 'target': targets, 'similarity': similarities})
 
-        logger.debug('Map each node to corresponding component')
-        cluster_edges = links_df.merge(df[['id', 'comp']], how='left', left_on='source', right_on='id') \
+        logger.debug('Assign each paper with corresponding component / topic')
+        similarity_topics_df = similarity_df.merge(df[['id', 'comp']], how='left', left_on='source', right_on='id') \
             .merge(df[['id', 'comp']], how='left', left_on='target', right_on='id')
 
-        logger.debug('Calculate connectivity matrix for components')
-        cluster_edges = cluster_edges.groupby(['comp_x', 'comp_y'])['value'].sum().reset_index()
-        connectivity_matrix = [[0] * n_comps for _ in range(n_comps)]
-        for index, row in cluster_edges.iterrows():
+        logger.debug('Calculate mean similarity between for topics')
+        mean_similarity_topics_df = \
+            similarity_topics_df.groupby(['comp_x', 'comp_y'])['similarity'].mean().reset_index()
+        similarity_matrix = [[0] * n_comps for _ in range(n_comps)]
+        for index, row in mean_similarity_topics_df.iterrows():
             cx, cy = int(row['comp_x']), int(row['comp_y'])
-            connectivity_matrix[cx][cy] += row['value']
-            if cx != cy:
-                connectivity_matrix[cy][cx] += row['value']
-        cluster_edges = pd.DataFrame([{'comp_x': i, 'comp_y': j, 'value': connectivity_matrix[i][j]}
-                                      for i, j in cart_product(range(n_comps), range(n_comps))])
+            similarity_matrix[cx][cy] = similarity_matrix[cy][cx] = row['similarity']
 
-        logger.debug('Density = value between topics / (size of topic 1 * size of topic 2)')
-
-        def get_density(row):
-            return row['value'] / (comp_sizes[row['comp_x']] * comp_sizes[row['comp_y']])
-
-        cluster_edges['density'] = cluster_edges.apply(lambda row: get_density(row), axis=1)
-        cluster_edges['comp_x'] = cluster_edges['comp_x'].apply(lambda x: x + 1).astype(str)
-        cluster_edges['comp_y'] = cluster_edges['comp_y'].apply(lambda x: x + 1).astype(str)
-        return cluster_edges, clusters
+        similarity_topics_df = pd.DataFrame([
+            {'comp_x': i, 'comp_y': j, 'similarity': similarity_matrix[i][j]}
+            for i, j in cart_product(range(n_comps), range(n_comps))
+        ])
+        similarity_topics_df['comp_x'] = similarity_topics_df['comp_x'].apply(lambda x: x + 1).astype(str)
+        similarity_topics_df['comp_y'] = similarity_topics_df['comp_y'].apply(lambda x: x + 1).astype(str)
+        return similarity_topics_df, components
 
     @staticmethod
     def component_ratio_data(df):

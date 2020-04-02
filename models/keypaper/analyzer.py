@@ -266,11 +266,11 @@ class KeyPaperAnalyzer:
         if len(df) >= 2:  # If we have any corpus
             self.progress.info(f'Citations based graph - {len(result.nodes())} nodes and {len(result.edges())} edges',
                                current=current, task=task)
+            self.progress.info(f'Processing possible citations based on text similarity',
+                               current=current, task=task)
             tfidf = self.compute_tfidf(df, self.TEXT_WORDS, n_gram=1)
             cos_similarities = cosine_similarity(tfidf)
             potential_citations = [PriorityQueue(maxsize=self.SIMILARITY_POTENTIAL_CITATION_N) for _ in range(len(df))]
-            self.progress.info(f'Processing possible citations based on text similarity',
-                               current=current, task=task)
 
             # Adding potential citations
             for i, pid1 in enumerate(df['id']):
@@ -308,7 +308,8 @@ class KeyPaperAnalyzer:
 
         logger.debug('Compute aggregated weight')
         for _, _, d in similarity_graph.edges(data=True):
-            d['similarity'] = self.SIMILARITY_COCITATION * d.get('cocitation', 0) + \
+            d['similarity'] = \
+                self.SIMILARITY_COCITATION * d.get('cocitation', 0) + \
                 self.SIMILARITY_BIBLIOGRAPHIC_COUPLING * d.get('bibcoupling', 0) + \
                 self.SIMILARITY_CITATION * d.get('citation', 0) + \
                 self.SIMILARITY_POTENTIAL_CITATION * d.get('potential', 0)
