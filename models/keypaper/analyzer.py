@@ -311,7 +311,9 @@ class KeyPaperAnalyzer:
             d['similarity'] = KeyPaperAnalyzer.get_similarity(d)
 
         logger.debug('Graph clustering via Louvain community algorithm')
-        partition_louvain = community.best_partition(similarity_graph, random_state=KeyPaperAnalyzer.SEED)
+        partition_louvain = community.best_partition(
+            similarity_graph, weight='similarity', random_state=KeyPaperAnalyzer.SEED
+        )
         logger.debug(f'Found {len(set(partition_louvain.values()))} components')
 
         if len(similarity_graph.edges) > 0:
