@@ -36,9 +36,10 @@ class KeyPaperAnalyzer:
     STRUCTURE_INTER_TOPICS_LINKS = 10  # Number of inter topics links
 
     TOPIC_GRANULARITY = 0.05
-    TOPIC_PAPERS = 50
+    TOPIC_PAPERS_MIN = 10
+    TOPIC_PAPERS_TFIDF = 50
     TOPIC_WORDS = 20
-    TEXT_WORDS = 1000
+    TFIDF_WORDS = 1000
 
     TOP_JOURNALS = 50
     TOP_AUTHORS = 50
@@ -148,7 +149,7 @@ class KeyPaperAnalyzer:
             self.df = self.merge_col(self.df, self.partition, col='comp')
 
             logger.debug('Prepare information for word cloud')
-            tfidf_per_comp = get_topics_description(self.df, most_cited_per_comp, query, self.TEXT_WORDS)
+            tfidf_per_comp = get_topics_description(self.df, most_cited_per_comp, query, self.TFIDF_WORDS)
             kwds = [(comp, ','.join([f'{t}:{max(1e-3, v):.3f}' for t, v in vs[:self.TOPIC_WORDS]]))
                     for comp, vs in tfidf_per_comp.items()]
             self.df_kwd = pd.DataFrame(kwds, columns=['comp', 'kwd'])
@@ -272,7 +273,7 @@ class KeyPaperAnalyzer:
                                current=current, task=task)
             self.progress.info(f'Processing possible citations based on text similarity',
                                current=current, task=task)
-            tfidf = self.compute_tfidf(df, self.TEXT_WORDS, n_gram=1)
+            tfidf = self.compute_tfidf(df, self.TFIDF_WORDS, n_gram=1)
             cos_similarities = cosine_similarity(tfidf)
             potential_citations = [PriorityQueue(maxsize=self.SIMILARITY_POTENTIAL_CITATION_N) for _ in range(len(df))]
 
@@ -564,9 +565,10 @@ class KeyPaperAnalyzer:
         max_rel_gain_papers = set(max_rel_gain_df['id'].values)
         return max_rel_gain_papers, max_rel_gain_df
 
-    def merge_components(self, partition, granularity=TOPIC_GRANULARITY, current=0, task=None):
-        logger.debug(f'Merging components smaller than {granularity} to "Other" component')
-        threshold = int(granularity * len(partition))
+    def merge_components(self, partition, granularity=TOPIC_GRANULARITY, papers_min=TOPIC_PAPERS_MIN,
+                         current=0, task=None):
+        logger.debug(f'Merging components smaller than {papers_min} or {granularity}% to "Other" component')
+        threshold = max(papers_min, int(granularity * len(partition)))
         components = set(partition.values())
         comp_sizes = {c: sum([partition[node] == c for node in partition.keys()]) for c in components}
         comp_to_merge = {com: comp_sizes[com] <= threshold for com in components}
@@ -631,7 +633,7 @@ class KeyPaperAnalyzer:
         return author_stats.head(n=n)
 
     @staticmethod
-    def get_most_cited_papers_for_comps(df, partition, n_papers=TOPIC_PAPERS):
+    def get_most_cited_papers_for_comps(df, partition, n_papers=TOPIC_PAPERS_TFIDF):
         pdf = pd.DataFrame(partition.items(), columns=['id', 'comp'])
         ids_comp_df = pd.merge(left=df[['id', 'total']], left_on='id',
                                right=pdf, right_on='id', how='inner')
