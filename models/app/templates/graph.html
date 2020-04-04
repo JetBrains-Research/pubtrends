@@ -1,447 +1,480 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>PubTrends - {{query}} at {{source}} {{limit}} {{sort}}</title>
-    <meta charset="utf-8">
-    <link rel="stylesheet"
-          href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
-          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
-          crossorigin="anonymous">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css"
-          integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt"
-          crossorigin="anonymous">
-    <script src="https://code.jquery.com/jquery-3.3.1.min.js"
-            integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT"
-            crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
-            integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
-            crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
-            integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
-            crossorigin="anonymous"></script>
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>PubTrends - {{query}} at {{source}} {{limit}} {{sort}}</title>
+        <meta charset="utf-8">
+        <link rel="stylesheet"
+              href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+              integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
+              crossorigin="anonymous">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css"
+              integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt"
+              crossorigin="anonymous">
+        <script src="https://code.jquery.com/jquery-3.3.1.min.js"
+                integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT"
+                crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+                integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+                crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+                integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+                crossorigin="anonymous"></script>
 
-    <script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
-    <script src="https://unpkg.com/numeric/numeric-1.2.6.js"></script>
-    <script src="https://unpkg.com/layout-base/layout-base.js"></script>
-    <script src="https://unpkg.com/cose-base/cose-base.js"></script>
-    <script src="https://unpkg.com/cytoscape-layout-utilities/cytoscape-layout-utilities.js"></script>
-    <script src="{{ url_for('static', filename='cytoscape-fcose.js') }}"></script>
+        <script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
+        <script src="https://unpkg.com/numeric/numeric-1.2.6.js"></script>
+        <script src="https://unpkg.com/layout-base/layout-base.js"></script>
+        <script src="https://unpkg.com/cose-base/cose-base.js"></script>
+        <script src="https://unpkg.com/cytoscape-layout-utilities/cytoscape-layout-utilities.js"></script>
+        <script src="{{ url_for('static', filename='cytoscape-fcose.js') }}"></script>
 
-    <!-- Tippy.js-->
-    <script src="https://unpkg.com/popper.js@1.14.7/dist/umd/popper.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/cytoscape-popper@1.0.4/cytoscape-popper.min.js"></script>
-    <script src="https://unpkg.com/tippy.js@4.0.1/umd/index.all.min.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/tippy.js@4.0.1/index.css"/>
+        <!-- Tippy.js-->
+        <script src="https://unpkg.com/popper.js@1.14.7/dist/umd/popper.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/cytoscape-popper@1.0.4/cytoscape-popper.min.js"></script>
+        <script src="https://unpkg.com/tippy.js@4.0.1/umd/index.all.min.js"></script>
+        <link rel="stylesheet" href="https://unpkg.com/tippy.js@4.0.1/index.css"/>
 
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1"/>
-    <!--     <link rel="stylesheet" href="../static/style.css"/> -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='result.css') }}?v=1"/>
-    <!--     <link rel="stylesheet" href="../static/result.css"/> -->
+        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1"/>
+        <!--     <link rel="stylesheet" href="../static/style.css"/> -->
+        <link rel="stylesheet" href="{{ url_for('static', filename='result.css') }}?v=1"/>
+        <!--     <link rel="stylesheet" href="../static/result.css"/> -->
 
-    <!-- IntroJS feature tour -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.9.3/introjs.css"
-          integrity="sha256-OYXGS5m4oWZAAqoAKpf7Y3bIdzdd9jBfly/xCavEpGw=" crossorigin="anonymous"/>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.9.3/intro.js"
-            integrity="sha256-SPZP/x8QDPEhRlpJjet4AD5X4ergPWcxjhMn73SwyOE="
-            crossorigin="anonymous"></script>
+        <!-- IntroJS feature tour -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.9.3/introjs.css"
+              integrity="sha256-OYXGS5m4oWZAAqoAKpf7Y3bIdzdd9jBfly/xCavEpGw=" crossorigin="anonymous"/>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.9.3/intro.js"
+                integrity="sha256-SPZP/x8QDPEhRlpJjet4AD5X4ergPWcxjhMn73SwyOE="
+                crossorigin="anonymous"></script>
 
-    <script>
-        "use strict";
+        <script>
+            "use strict";
 
-        const LAYOUT = {
-            name: 'fcose',
-            animationEasing: 'ease-out',
-            animate: true,
-            randomize: true,
-            packComponents: true,
-        };
+            const LAYOUT = {
+                name: 'fcose',
+                animationEasing: 'ease-out',
+                animate: true,
+                randomize: true,
+                packComponents: true,
+            };
 
-        const CG_EDGE_STYLE = {
-            "width": 1,
-            "curve-style": "bezier",
-            "target-arrow-shape": "triangle",
-            "arrow-scale": 1,
-            "line-color": "#000000",
-            "opacity": 0.3
-        };
+            const CG_EDGE_STYLE = {
+                "width": 1,
+                "curve-style": "bezier",
+                "target-arrow-shape": "triangle",
+                "arrow-scale": 1,
+                "line-color": "#000000",
+                "opacity": 0.3
+            };
 
-        const PR_EDGE_STYLE = {
-            "width": function (edge) {
-                return Math.max(1, Math.min(10, Math.log1p(edge.data().similarity)));
-            },
-            "curve-style": "haystack",
-            "line-color": function (edge) {
-                let data = edge.data();
-                let cocitation = 0;
-                if ('cocitation' in data) {
-                    cocitation = data['cocitation'];
-                }
-                let bibcoupling = 0;
-                if ('bibcoupling' in data) {
-                    bibcoupling = data['bibcoupling'];
-                }
-                let citation = 0;
-                if ('citation' in data) {
-                    citation = data['citation'];
-                }
-                let potential = 0;
-                if ('potential' in data) {
-                    potential = data['potential'];
-                }
-                if (cocitation >= Math.max(bibcoupling, citation, potential)) {
-                    return "#005DFF"
-                }
-                if (bibcoupling >= Math.max(cocitation, citation, potential)) {
-                    return "#F500FF"
-                }
-                if (citation >= Math.max(cocitation, bibcoupling, potential)) {
-                    return "#9B0013";
-                }
-                return "#000000";
-            },
-            "opacity": 0.3
-        };
-
-        function rgbToHex(r, g, b) {
-            return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
-        }
-
-        function reset() {
-            window.cy.layout(LAYOUT).run();
-        }
-
-        function showTopics(){
-            cy.nodes().forEach(function(ele){
-                if ('title' in ele.data()){
-                    ele.classes('topic');
-                }
-            });
-        }
-
-        function showYear(){
-            cy.nodes().forEach(function(ele){
-                if ('title' in ele.data()){
-                    if (ele.data().title === "Cytosine methylation and the fate of CpG dinucleotides in vertebrate genomes") {
-                        console.info("CHECK");
+            const PR_EDGE_STYLE = {
+                "width": function (edge) {
+                    let data = edge.data();
+                    if ('similarity' in data) {
+                        return Math.max(1, Math.min(10, Math.log1p(data.similarity)));
                     }
-                    ele.classes('year');
-                }
-            });
-        }
+                    return 0.3;
+                },
+                "curve-style": "haystack",
+                "line-color": function (edge) {
+                    let data = edge.data();
+                    let cocitation = 0;
+                    if ('cocitation' in data) {
+                        cocitation = data['cocitation'];
+                    }
+                    let bibcoupling = 0;
+                    if ('bibcoupling' in data) {
+                        bibcoupling = data['bibcoupling'];
+                    }
+                    let citation = 0;
+                    if ('citation' in data) {
+                        citation = data['citation'];
+                    }
+                    let potential = 0;
+                    if ('potential' in data) {
+                        potential = data['potential'];
+                    }
+                    if (cocitation > 0 && cocitation >= Math.max(bibcoupling, citation, potential)) {
+                        return "#005DFF"
+                    }
+                    if (bibcoupling > 0 && bibcoupling >= Math.max(cocitation, citation, potential)) {
+                        return "#F500FF"
+                    }
+                    if (citation > 0 && citation >= Math.max(cocitation, bibcoupling, potential)) {
+                        return "#9B0013";
+                    }
+                    return "#000000";
+                },
+                "opacity": 0.3
+            };
 
-
-        $(document).ready(function () {
-            document.getElementById('cy').innerHTML = "";
-            const citation_graph = {{ citation_graph }};
-            const topics_palette = JSON.parse({{ topics_palette_json | tojson }});
-            const topics_description = JSON.parse({{topics_description_json | tojson }});
-            const min_year = {{min_year}};
-            const max_year = {{max_year}};
-            let edge_style;
-            if (citation_graph) {
-                edge_style = CG_EDGE_STYLE;
-            } else {
-                edge_style = PR_EDGE_STYLE;
+            function rgbToHex(r, g, b) {
+                return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
             }
-            const elements = JSON.parse({{ graph_cytoscape_json | tojson }});
-            let cy = window.cy = cytoscape({
-                container: document.getElementById('cy'),
-                layout: LAYOUT,
-                style: [
-                    {
-                        selector: "node",
-                        style: {
-                            "width": function (node) {
-                                return 10 + 5 * Math.min(10, Math.floor(Math.log1p(node.data().cited)));
-                            },
-                            "height": function (node) {
-                                return 10 + 5 * Math.min(10, Math.floor(Math.log1p(node.data().cited)));
-                            },
-                            "border-width": 1,
-                            "border-color": "black",
-                        }
-                    },
-                    {
-                        selector: "node.topic",
-                        style: {
-                            "background-color": function (node) {
-                                return topics_palette[node.data().topic];
-                            },
-                        }
-                    },
-                    {
-                        selector: "node.year",
-                        style: {
-                            "background-color": function (node) {
-                                let dy;
-                                if (max_year > min_year) {
-                                    dy = (node.data().year - min_year) / (max_year - min_year);
-                                } else {
-                                    dy = 1;
-                                }
-                                return rgbToHex(0, Math.floor(255 * dy), 0);
-                            },
-                        }
-                    },
-                    {
-                        selector: "node.group",
-                        style: {
-                            "background-opacity": 0.1,
-                            "background-color": function (node) {
-                                return topics_palette[node.data().topic];
-                            }
-                        }
-                    },
-                    {
-                        selector: "edge",
-                        style: edge_style
-                    },
-                ],
-                elements: elements
-            });
 
-            function makePopper(ele) {
-                let ref = ele.popperRef(); // used only for positioning
+            function reset() {
+                window.cy.layout(LAYOUT).run();
+            }
 
-                ele.tippy = tippy(ref, { // tippy options:
-                    content: () => {
-                        let content = document.createElement('div');
-                        let data = ele.data();
-                        if ('similarity' in data) {
-                            // Graph similarity
-                            let cocitation = 0;
-                            if ('cocitation' in data) {
-                                cocitation = data['cocitation'];
-                            }
-                            let bibcoupling = 0;
-                            if ('bibcoupling' in data) {
-                                bibcoupling = data['bibcoupling'];
-                            }
-                            let citation = 0;
-                            if ('citation' in data) {
-                                citation = data['citation'];
-                            }
-                            let potential = 0;
-                            if ('potential' in data) {
-                                potential = data['potential'];
-                            }
-
-                            content.innerHTML = "<b>Similarity</b> " + Number(data['similarity']).toFixed(3) + "<br>" +
-                                "Computed based on citations-based methods<br> "+
-                                "and text similarity between papers.<br>" +
-                                "The bigger value the more similar papers are." + "<br>" +
-                                "<b>Co-citation</b> " + cocitation + "<br>" +
-                                "<b>Bibliographic coupling</b> " + bibcoupling + "<br>" +
-                                "<b>Citation</b> " + citation + "<br>" +
-                                "<b>Text</b> " + Number(potential).toFixed(2) + "<br>";
-                        } else if('title' in data) {
-                            // Paper
-                            const topic = data['topic'];
-                            let other = '';
-                            if (topic === {{ topic_other }}) {
-                                other = 'OTHER';
-                            }
-                            content.innerHTML = "<b>" + data['title'] + "</b><br>" +
-                                "<b>Author(s)</b> " + data['authors'] + "<br>" +
-                                "<b>Year</b> " + data['year'] + "<br>" +
-                                "<b>Cited</b> " + data['cited'] + "<br>" +
-                                "<b>Topic</b> " + (topic + 1) + " " + other + "<br>" +
-                                "<b>Tags</b> " + "<em>" + topics_description[topic] + "</em>";
-                        } else if ('topic' in data) {
-                            // Group
-                            const topic = data['topic'];
-                            let other = '';
-                            if (topic === {{ topic_other }}) {
-                                other = 'OTHER';
-                            }
-                            content.innerHTML =  "<b>These papers are not connected.</b><br>" +
-                                "<b>Topic</b> " + (topic + 1) + " " + other + "<br>" +
-                                "<b>Tags</b> " + "<em>" + topics_description[topic] + "</em>";
-                        }
-                        return content;
-                    },
-                    trigger: 'manual' // probably want manual mode
+            function showTopics(){
+                cy.nodes().forEach(function(ele){
+                    if ('title' in ele.data()){
+                        ele.classes('topic');
+                    }
                 });
             }
 
-            // Topic based colouring by default
-            showTopics();
+            function showYear(){
+                cy.nodes().forEach(function(ele){
+                    if ('title' in ele.data()){
+                        if (ele.data().title === "Cytosine methylation and the fate of CpG dinucleotides in vertebrate genomes") {
+                            console.info("CHECK");
+                        }
+                        ele.classes('year');
+                    }
+                });
+            }
 
-            // Add popups on hover
-            cy.ready(function () {
-                let popperElements;
 
+            $(document).ready(function () {
+                document.getElementById('cy').innerHTML = "";
+                const citation_graph = {{ citation_graph }};
+                const topics_palette = JSON.parse({{ topics_palette_json | tojson }});
+                const topics_description = JSON.parse({{topics_description_json | tojson }});
+                const min_year = {{min_year}};
+                const max_year = {{max_year}};
+                let edge_style;
                 if (citation_graph) {
-                    popperElements = cy.nodes();
+                    edge_style = CG_EDGE_STYLE;
                 } else {
-                    popperElements = cy.elements();
+                    edge_style = PR_EDGE_STYLE;
                 }
-                popperElements.forEach(function (ele) {
-                    makePopper(ele);
+                const elements = JSON.parse({{ graph_cytoscape_json | tojson }});
+                let cy = window.cy = cytoscape({
+                    container: document.getElementById('cy'),
+                    layout: LAYOUT,
+                    style: [
+                        {
+                            selector: "node",
+                            style: {
+                                "width": function (node) {
+                                    const data = node.data();
+                                    if ('cited' in data) {
+                                        return 10 + 5 * Math.min(10, Math.floor(Math.log1p(data.cited)));
+                                    } else {
+                                        return 5;
+                                    }
+                                },
+                                "height": function (node) {
+                                    const data = node.data();
+                                    if ('cited' in data) {
+                                        return 10 + 5 * Math.min(10, Math.floor(Math.log1p(data.cited)));
+                                    } else {
+                                        return 5;
+                                    }
+                                },
+                                "border-width": 1,
+                                "border-color": "black",
+                            }
+                        },
+                        {
+                            selector: "node.topic",
+                            style: {
+                                "background-color": function (node) {
+                                    let data = node.data();
+                                    if ('topic' in data) {
+                                        return topics_palette[data.topic];
+                                    } else {
+                                        return '#FFFFFF'
+                                    }
+                                },
+                            }
+                        },
+                        {
+                            selector: "node.year",
+                            style: {
+                                "background-color": function (node) {
+                                    let data = node.data();
+                                    if ('year' in data) {
+                                        let dy;
+                                        if (max_year > min_year) {
+                                            dy = (data.year - min_year) / (max_year - min_year);
+                                        } else {
+                                            dy = 1;
+                                        }
+                                        return rgbToHex(0, Math.floor(255 * dy), 0);
+                                    } else {
+                                        return "#FFFFFF"
+                                    }
+                                },
+                            }
+                        },
+                        {
+                            selector: "node.group",
+                            style: {
+                                "background-opacity": 0.1,
+                                "border-color": function (node) {
+                                    return topics_palette[node.data().topic];
+                                },
+                                "background-color": function (node) {
+                                    return topics_palette[node.data().topic];
+                                }
+                            }
+                        },
+                        {
+                            selector: "edge",
+                            style: edge_style
+                        },
+                    ],
+                    elements: elements
                 });
 
-                popperElements.unbind('mouseover');
-                popperElements.bind('mouseover', (event) => event.target.tippy.show());
+                function makePopper(ele) {
+                    let ref = ele.popperRef(); // used only for positioning
 
-                popperElements.unbind('mouseout');
-                popperElements.bind('mouseout', (event) => event.target.tippy.hide());
+                    ele.tippy = tippy(ref, { // tippy options:
+                        content: () => {
+                            let content = document.createElement('div');
+                            let data = ele.data();
+                            if ('similarity' in data) {
+                                // Graph similarity
+                                let cocitation = 0;
+                                if ('cocitation' in data) {
+                                    cocitation = data['cocitation'];
+                                }
+                                let bibcoupling = 0;
+                                if ('bibcoupling' in data) {
+                                    bibcoupling = data['bibcoupling'];
+                                }
+                                let citation = 0;
+                                if ('citation' in data) {
+                                    citation = data['citation'];
+                                }
+                                let potential = 0;
+                                if ('potential' in data) {
+                                    potential = data['potential'];
+                                }
 
-                cy.nodes().on('click', function(event){
-                    let data = event.target.data();
-                    if ('title' in data) {
-                        event.stopPropagation();
-                        // Decode jobid from URL
-                        const jobid = new URL(window.location).searchParams.get('jobid');
-                        window.open('/paper?source={{source}}&id=' + data['id'] + '&jobid=' + jobid, '_blank');
+                                content.innerHTML = "<b>Similarity</b> " + Number(data['similarity']).toFixed(3) + "<br>" +
+                                    "Computed based on citations-based methods<br> "+
+                                    "and text similarity between papers.<br>" +
+                                    "The bigger value the more similar papers are." + "<br>" +
+                                    "<b>Co-citation</b> " + cocitation + "<br>" +
+                                    "<b>Bibliographic coupling</b> " + bibcoupling + "<br>" +
+                                    "<b>Citation</b> " + citation + "<br>" +
+                                    "<b>Text</b> " + Number(potential).toFixed(2) + "<br>";
+                            } else if('title' in data) {
+                                // Paper
+                                const topic = data['topic'];
+                                let other = '';
+                                if (topic === {{ topic_other }}) {
+                                    other = 'OTHER';
+                                }
+                                content.innerHTML = "<b>" + data['title'] + "</b><br>" +
+                                    "<b>Author(s)</b> " + data['authors'] + "<br>" +
+                                    "<b>Year</b> " + data['year'] + "<br>" +
+                                    "<b>Cited</b> " + data['cited'] + "<br>" +
+                                    "<b>Topic</b> " + (topic + 1) + " " + other + "<br>" +
+                                    "<b>Tags</b> " + "<em>" + topics_description[topic] + "</em>";
+                            } else if ('topic' in data) {
+                                // Group
+                                const topic = data['topic'];
+                                let other = '';
+                                if (topic === {{ topic_other }}) {
+                                    other = 'OTHER';
+                                }
+                                content.innerHTML =  "<b>These papers are not connected.</b><br>" +
+                                    "<b>Topic</b> " + (topic + 1) + " " + other + "<br>" +
+                                    "<b>Tags</b> " + "<em>" + topics_description[topic] + "</em>";
+                            }
+                            return content;
+                        },
+                        trigger: 'manual' // probably want manual mode
+                    });
+                }
+
+                // Topic based colouring by default
+                showTopics();
+
+                function addPopper(popperElements) {
+                    popperElements.forEach(function (ele) {
+                        makePopper(ele);
+                    });
+
+                    popperElements.unbind('mouseover');
+                    popperElements.bind('mouseover', (event) => event.target.tippy.show());
+
+                    popperElements.unbind('mouseout');
+                    popperElements.bind('mouseout', (event) => event.target.tippy.hide());
+                }
+
+                // Add popups on hover
+                cy.ready(function () {
+                    if (citation_graph) {
+                        addPopper(cy.nodes());
+                    } else {
+                        addPopper(cy.nodes().filter(function (ele) {
+                            return 'topic' in ele.data();
+                        }));
+                        addPopper(cy.edges().filter(function (ele) {
+                            return 'similarity' in ele.data();
+                        }));
                     }
+
+                    cy.nodes().on('click', function(event){
+                        let data = event.target.data();
+                        if ('title' in data) {
+                            event.stopPropagation();
+                            // Decode jobid from URL
+                            const jobid = new URL(window.location).searchParams.get('jobid');
+                            window.open('/paper?source={{source}}&id=' + data['id'] + '&jobid=' + jobid, '_blank');
+                        }
+                    });
                 });
             });
-        });
 
-        function inputKey(event) {
-            if (event.keyCode === 13 || event.which === 13) {
-                const filter = $.trim($("#search-input").val()).toLowerCase();
-                window.cy.nodes().forEach(function (ele) {
-                    let data = ele.data();
-                    if ('title' in data) {
-                        if (filter === "" ||
-                            data['title'].toLowerCase().includes(filter) || data['abstract'].toLowerCase().includes(filter) ||
-                            data['authors'].toLowerCase().includes(filter) || data['year'].toString().includes(filter)) {
-                            ele.style("display", "element");
-                        } else {
-                            ele.style("display", "none");
+            function inputKey(event) {
+                if (event.keyCode === 13 || event.which === 13) {
+                    const filter = $.trim($("#search-input").val()).toLowerCase();
+                    window.cy.nodes().forEach(function (ele) {
+                        let data = ele.data();
+                        if ('title' in data) {
+                            if (filter === "" ||
+                                data['title'].toLowerCase().includes(filter) || data['abstract'].toLowerCase().includes(filter) ||
+                                data['authors'].toLowerCase().includes(filter) || data['year'].toString().includes(filter)) {
+                                ele.style("display", "element");
+                            } else {
+                                ele.style("display", "none");
+                            }
                         }
-                    }
-                });
+                    });
+                }
             }
-        }
 
-        function result() {
-            // Query may contain double quotes, fix it.
-            const query_fixed = '{{ query }}'.replace(/&#34;/g, '"');
-            const url = '/result?query=' + query_fixed + '&source={{source}}&limit={{limit}}&sort={{sort}}';
-            // Decode jobid from URL
-            const jobid = new URL(window.location).searchParams.get('jobid');
-            window.open(url + '&jobid=' + jobid, '_blank');
-        }
+            function result() {
+                // Query may contain double quotes, fix it.
+                const query_fixed = '{{ query }}'.replace(/&#34;/g, '"');
+                const url = '/result?query=' + query_fixed + '&source={{source}}&limit={{limit}}&sort={{sort}}';
+                // Decode jobid from URL
+                const jobid = new URL(window.location).searchParams.get('jobid');
+                window.open(url + '&jobid=' + jobid, '_blank');
+            }
 
-    </script>
-</head>
+        </script>
+    </head>
 
-<body>
-<!-- Fixed navbar -->
-<nav class="navbar navbar-light bg-light fixed-top border-bottom no-padding-right">
-    <div class="row container-fluid no-padding-right">
-        <div class="col-lg-1 col-xl-2 no-padding">
-            <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
-        </div>
-        <div class="col-lg-11 col-xl-10 no-padding">
-            <div class="row ml-3">
-                <ol class="breadcrumb bg-light search-query col-auto">
-                    <li class="breadcrumb-item vertical-center">{{ source }}</li>
-                    <li class="breadcrumb-item vertical-center">
-                        <a id="result" href="javascript:void(0);" class="link" onclick="result();"><strong>{{ query }}</strong></a>
-                    </li>
-                    <li class="breadcrumb-item vertical-center">{{ limit }} {{ sort }}</li>
-                </ol>
-                <div class="col justify-content-end row">
-                    <div class="col-auto">
-                        <input id="search-input" type="text" class="form-control"
-                               placeholder="Search..." aria-label="Search for..."
-                               onkeypress="inputKey(event);">
-                    </div>
-                    <div class="dropdown col-auto no-padding">
-                        <button class="btn btn-secondary dropdown-toggle" type="button"
-                                id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            Color
-                        </button>
-                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                            <a class="dropdown-item" onclick="showTopics();" href="javascript:void(0);">Topic</a>
-                            <a class="dropdown-item" onclick="showYear();" href="javascript:void(0);">Year</a>
+    <body>
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-light bg-light fixed-top border-bottom no-padding-right">
+        <div class="row container-fluid no-padding-right">
+            <div class="col-lg-1 col-xl-2 no-padding">
+                <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
+            </div>
+            <div class="col-lg-11 col-xl-10 no-padding">
+                <div class="row ml-3">
+                    <ol class="breadcrumb bg-light search-query col-auto">
+                        <li class="breadcrumb-item vertical-center">{{ source }}</li>
+                        <li class="breadcrumb-item vertical-center">
+                            <a id="result" href="javascript:void(0);" class="link" onclick="result();"><strong>{{ query }}</strong></a>
+                        </li>
+                        <li class="breadcrumb-item vertical-center">{{ limit }} {{ sort }}</li>
+                    </ol>
+                    <div class="col justify-content-end row">
+                        <div class="col-auto">
+                            <input id="search-input" type="text" class="form-control"
+                                   placeholder="Search..." aria-label="Search for..."
+                                   onkeypress="inputKey(event);">
                         </div>
+                        <div class="dropdown col-auto no-padding">
+                            <button class="btn btn-secondary dropdown-toggle" type="button"
+                                    id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                Color
+                            </button>
+                            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                <a class="dropdown-item" onclick="showTopics();" href="javascript:void(0);">Topic</a>
+                                <a class="dropdown-item" onclick="showYear();" href="javascript:void(0);">Year</a>
+                            </div>
+                        </div>
+                        <a id="reset" class="btn btn-secondary col-auto ml-2" content="Reset"
+                           href="javascript:void(0);" onclick="reset();">
+                            <img class="nav-icon" src="{{ url_for('static', filename='rotate-cw.svg') }}"/>
+                        </a>
+                        <a class="btn btn-secondary col-auto ml-2 mr-3" content="About"
+                           href="javascript:void(0);" onclick="startIntro();">About</a>
                     </div>
-                    <a id="reset" class="btn btn-secondary col-auto ml-2" content="Reset"
-                       href="javascript:void(0);" onclick="reset();">
-                        <img class="nav-icon" src="{{ url_for('static', filename='rotate-cw.svg') }}"/>
-                    </a>
-                    <a class="btn btn-secondary col-auto ml-2 mr-3" content="About"
-                       href="javascript:void(0);" onclick="startIntro();">About</a>
                 </div>
             </div>
         </div>
+    </nav>
+    <div class="container-fluid">
+        <div id="cy" role="main" style="height: 680px; margin-bottom: 2rem">Loading...</div>
     </div>
-</nav>
-<div class="container-fluid">
-    <div id="cy" role="main" style="height: 680px; margin-bottom: 2rem">Loading...</div>
-</div>
-<footer>
-    <p>version {{ version }}<br/>
-        &copy; 2019-2020 <a href="https://research.jetbrains.org/groups/biolabs"
-                            title="JetBrains Research BioLabs"
-                            target="_blank">JetBrains Research</a></p>
-</footer>
-<script type="text/javascript">
-    function startIntro(){
-        var intro = introJs();
-        const citation_graph = {{ citation_graph }};
-        let description;
-        if (citation_graph){
-            description = "Citations graph shows citations among papers.<br>" +
-                "Papers are visualized as nodes, citations as edges. " +
-                "Node size encodes citations count, color shows topic or publication year.<br>" +
-                "Papers without citations are grouped by topics."
-        } else {
-            description = "Structure graph represents overall similarity structure between papers.<br>" +
-                "Node size encodes paper citations count, color encodes topic or publication year.<br> " +
-                "Edge width shows papers similarity, the thicker the more similar papers are.<br>" +
-                "Edge color represents similarity type.<br>" +
-                '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(0,93,255,0.3);"/></svg>' +
-                "&nbsp;<em>Co-citation</em>" +
-                "<br>" +
-                '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(245,0,255,0.3);"/></svg>' +
-                "&nbsp;<em>Bibliographic coupling</em> " +
-                "<br>" +
-                '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(155,0,19,0.3);"/></svg>' +
-                "&nbsp;<em>Direct citation</em>" +
-                "<br>" +
-                '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(0,0,0,0.3);"/></svg>' +
-                "&nbsp;<em>Text similarity</em>"
-            ;
+    <footer>
+        <p>version {{ version }}<br/>
+            &copy; 2019-2020 <a href="https://research.jetbrains.org/groups/biolabs"
+                                title="JetBrains Research BioLabs"
+                                target="_blank">JetBrains Research</a></p>
+    </footer>
+    <script type="text/javascript">
+        function startIntro(){
+            var intro = introJs();
+            const citation_graph = {{ citation_graph }};
+            let description;
+            if (citation_graph){
+                description = "Citations graph shows citations among papers.<br>" +
+                    "Papers are visualized as nodes, citations as edges. " +
+                    "Node size encodes citations count, color shows topic or publication year.<br>" +
+                    "Papers without citations are grouped by topics."
+            } else {
+                description = "Structure graph represents hierachical structure of papers.<br>" +
+                    "Node size encodes paper citations count, color encodes topic or publication year.<br> " +
+                    "Edge width shows papers similarity, the thicker the more similar papers are.<br>" +
+                    "Edge color represents similarity type.<br>" +
+                    '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(0,93,255,0.3);"/></svg>' +
+                    "&nbsp;<em>Co-citation</em>" +
+                    "<br>" +
+                    '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(245,0,255,0.3);"/></svg>' +
+                    "&nbsp;<em>Bibliographic coupling</em> " +
+                    "<br>" +
+                    '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(155,0,19,0.3);"/></svg>' +
+                    "&nbsp;<em>Direct citation</em>" +
+                    "<br>" +
+                    '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(0,0,0,0.3);"/></svg>' +
+                    "&nbsp;<em>Text similarity</em>"
+                ;
+            }
+            intro.setOptions({
+                steps: [
+                    {
+                        intro: description
+                    },
+                    {
+                        element: '#result',
+                        intro: "Open full analysis report.<br>" +
+                            "Learn more about topics, most cited papers, etc."
+                    },
+                    {
+                        element: '#search-input',
+                        intro: 'Filter papers by text.<br>' +
+                            'Title, abstract and publication year are used in full text search.<br>' +
+                            'Hit <em>enter</em> to execute, empty input to reset.'
+                    },
+                    {
+                        element: '#dropdownMenuButton',
+                        intro: 'Change graph colouring.<br>' +
+                            'Node color can represent topic of the paper or publication year.<br>' +
+                            '<svg width="16" height="16"><rect width="16" height="16" style="fill:#000000;"/></svg>' +
+                            ' {{min_year}} - ' +
+                            '<svg width="16" height="16"><rect width="16" height="16" style="fill:#00FF00;"/></svg> ' +
+                            '{{max_year}}'
+                    },
+                    {
+                        element: '#reset',
+                        intro: "Reset graph layout."
+                    },
+                ]
+            });
+            intro.start();
         }
-        intro.setOptions({
-            steps: [
-                {
-                    intro: description
-                },
-                {
-                    element: '#result',
-                    intro: "Open full analysis report.<br>" +
-                        "Learn more about topics, most cited papers, etc."
-                },
-                {
-                    element: '#search-input',
-                    intro: 'Filter papers by text.<br>' +
-                        'Title, abstract and publication year are used in full text search.<br>' +
-                        'Hit <em>enter</em> to execute, empty input to reset.'
-                },
-                {
-                    element: '#dropdownMenuButton',
-                    intro: 'Change graph colouring.<br>' +
-                        'Node color can represent topic of the paper or publication year.<br>' +
-                        '<svg width="16" height="16"><rect width="16" height="16" style="fill:#000000;"/></svg>' +
-                        ' {{min_year}} - ' +
-                        '<svg width="16" height="16"><rect width="16" height="16" style="fill:#00FF00;"/></svg> ' +
-                        '{{max_year}}'
-                },
-                {
-                    element: '#reset',
-                    intro: "Reset graph layout."
-                },
-            ]
-        });
-        intro.start();
-    }
-</script>
-</body>
-</html>
+    </script>
+    </body>
+    </html>

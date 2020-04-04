@@ -1,10 +1,12 @@
 import logging
+import re
 from queue import PriorityQueue
 
 import community
 import networkx as nx
 import numpy as np
 import pandas as pd
+from math import floor
 from networkx.readwrite import json_graph
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -30,6 +32,8 @@ class KeyPaperAnalyzer:
     SIMILARITY_POTENTIAL_CITATION = 0.1
     SIMILARITY_POTENTIAL_MIN = 0.3  # Minimal cosine similarity for potential text citation
     SIMILARITY_POTENTIAL_CITATION_N = 10  # Max number of potential text citations for paper
+
+    STRUCTURE_INTER_TOPICS_LINKS = 10  # Number of inter topics links
 
     TOPIC_GRANULARITY = 0.05
     TOPIC_PAPERS = 50
@@ -150,7 +154,7 @@ class KeyPaperAnalyzer:
             self.df_kwd = pd.DataFrame(kwds, columns=['comp', 'kwd'])
             logger.debug(f'Components description\n{self.df_kwd["kwd"]}')
             # Build structure graph
-            self.structure_graph = self.build_structure_graph(self.similarity_graph,
+            self.structure_graph = self.build_structure_graph(self.df, self.similarity_graph,
                                                               current=12, task=task)
 
         # Perform PageRank analysis
@@ -345,20 +349,136 @@ class KeyPaperAnalyzer:
             logger.debug(f'Component {k}: {v} ({int(100 * v / len(partition))}%)')
         return sorted_partition, comp_other, components, sorted_comp_sizes
 
-    def build_structure_graph(self, similarity_graph, current=0, task=None):
+    def build_structure_graph(self, df, similarity_graph, current=0, task=None):
+        """
+        Structure graph is a hybrid visualization of all the papers.
+        It uses louvain community dendrogram as a structure.
+        For all the groups on the lowest level we show L-sparse subgraph.
+        After we add top similarity edges between different groups.
+        """
         self.progress.info('Building structure graph', current=current, task=task)
-        graph = similarity_graph.copy()
-        for (u, v, s) in similarity_graph.edges.data('similarity'):
-            graph[u][v]['distance'] = -s
+        dendrogram = community.generate_dendrogram(
+            similarity_graph, weight='similarity', random_state=KeyPaperAnalyzer.SEED
+        )
+        logger.debug('Processing louvain community dendrogram')
+        result = nx.Graph()
+        last_level = []
+        for i, dendrogram_level in enumerate(dendrogram):
+            if i == 0:
+                papers_level_pids = {}
+                for k, v in dendrogram_level.items():
+                    if v not in papers_level_pids:
+                        papers_level_pids[v] = set()
+                    papers_level_pids[v].add(k)
+                for v, pids in papers_level_pids.items():
+                    logger.debug('Add original edges for papers resolution sparse groups')
+                    group_sparse = KeyPaperAnalyzer.local_sparse(similarity_graph.subgraph(pids))
+                    for (pu, pv, d) in group_sparse.edges(data=True):
+                        result.add_edge(pu, pv, **d)
+                    # Add edge from top cited to v
+                    node_v = f'level_{len(dendrogram)}_{v}'
+                    # Connect nodes
+                    for node in group_sparse.nodes:
+                        if len(list(group_sparse.neighbors(node))) == 1:
+                            result.add_edge(node, node_v)
+                    top_cited = df.loc[df['id'].isin(pids)].sort_values(by='total', ascending=False).iloc[0]['id']
+                    result.add_edge(top_cited, node_v)
+            else:
+                for k, v in dendrogram_level.items():
+                    node_k = f'level_{len(dendrogram)-i+1}_{k}'
+                    node_v = f'level_{len(dendrogram)-i}_{v}'
+                    if result.has_node(node_k):
+                        result.add_edge(node_k, node_v)
+                        if i == len(dendrogram) - 1:
+                            last_level.append(node_v)
 
-        logger.debug('Computing min spanning tree')
-        mst = nx.minimum_spanning_tree(graph, 'distance')
+        root_node = f'root'
+        for n in last_level:
+            result.add_edge(n, root_node)
 
-        logger.info('Cleanup')
-        for _, _, d in mst.edges(data=True):
-            del d['distance']
+        logger.debug('Cleanup bypass hierarchical nodes')
+        ws = set()
+        for node in result.nodes:
+            if re.match('level_.*', node):
+                ws.add(node)
+        while len(ws) > 0:
+            nws = set()
+            for node in ws:
+                if result.has_node(node):
+                    neighbors = list(result.neighbors(node))
+                    if len(neighbors) == 2:
+                        n1, n2 = neighbors
+                        result.remove_edge(node, n1)
+                        result.remove_edge(node, n2)
+                        result.add_edge(n1, n2)
+                        result.remove_node(node)
+                        nws.add(n1)
+                        nws.add(n2)
+            ws = nws
 
-        return mst
+        logger.debug('Ensure all the papers are processed, separated ones will be placed to other component')
+        for pid in df['id']:
+            if not result.has_node(pid):
+                result.add_node(pid)
+
+        logger.debug('Add top similarity edges between topics')
+        sources = [None] * len(similarity_graph.edges)
+        targets = [None] * len(similarity_graph.edges)
+        similarities = [0.0] * len(similarity_graph.edges)
+        i = 0
+        for u, v, data in similarity_graph.edges(data=True):
+            sources[i] = u
+            targets[i] = v
+            similarities[i] = KeyPaperAnalyzer.get_similarity(data)
+            i += 1
+        similarity_df = pd.DataFrame(data={'source': sources, 'target': targets, 'similarity': similarities})
+
+        logger.debug('Assign each paper with corresponding component / topic')
+        similarity_topics_df = similarity_df.merge(df[['id', 'comp']], how='left', left_on='source', right_on='id') \
+            .merge(df[['id', 'comp']], how='left', left_on='target', right_on='id')
+
+        inter_topics = {}
+        for i, row in similarity_topics_df.iterrows():
+            pid1, c1, pid2, c2, similarity = row['id_x'], row['comp_x'], row['id_y'], row['comp_y'], row['similarity']
+            if c2 > c1:  # Swap
+                pidt, ct = pid1, c1
+                pid1, c1 = pid2, c2
+                pid2, c2 = pidt, ct
+            if (c1, c2) not in inter_topics:
+                pq = inter_topics[(c1, c2)] = PriorityQueue(maxsize=self.STRUCTURE_INTER_TOPICS_LINKS)
+            else:
+                pq = inter_topics[(c1, c2)]
+            if pq.full():
+                pq.get()  # Removes the element with lowest similarity
+            pq.put((similarity, pid1, pid2))
+        for pq in inter_topics.values():
+            while not pq.empty():
+                _, pid1, pid2 = pq.get()
+                # Add edge with full info
+                result.add_edge(pid1, pid2, **similarity_graph.edges[pid1, pid2])
+        return result
+
+    @staticmethod
+    def local_sparse(graph, e=0.5):
+        result = nx.Graph()
+        neighbours = {node: set(graph.neighbors(node)) for node in graph.nodes}
+        sim_queues = {node: PriorityQueue(maxsize=max(1, floor(pow(len(neighbours[node]), e))))
+                      for node in graph.nodes}
+        for (u, v, s) in graph.edges(data='similarity'):
+            qu = sim_queues[u]
+            if qu.full():
+                qu.get()  # Removes the element with lowest similarity
+            qu.put((s, v))
+            qv = sim_queues[v]
+            if qv.full():
+                qv.get()  # Removes the element with lowest similarity
+            qv.put((s, u))
+        for u, q in sim_queues.items():
+            while not q.empty():
+                s, v = q.get()
+                if not result.has_edge(u, v):
+                    result.add_edge(u, v, **graph.edges[u, v])
+        return result
 
     @staticmethod
     def get_similarity(d):
