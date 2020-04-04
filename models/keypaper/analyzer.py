@@ -384,12 +384,16 @@ class KeyPaperAnalyzer:
                             result.add_edge(node, node_v)
                     top_cited = df.loc[df['id'].isin(pids)].sort_values(by='total', ascending=False).iloc[0]['id']
                     result.add_edge(top_cited, node_v)
+                    # Connect to root
+                    if i == len(dendrogram) - 1:
+                        last_level.append(node_v)
             else:
                 for k, v in dendrogram_level.items():
                     node_k = f'level_{len(dendrogram)-i+1}_{k}'
                     node_v = f'level_{len(dendrogram)-i}_{v}'
                     if result.has_node(node_k):
                         result.add_edge(node_k, node_v)
+                        # Connect to root
                         if i == len(dendrogram) - 1:
                             last_level.append(node_v)
 
