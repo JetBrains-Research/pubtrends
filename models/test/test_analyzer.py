@@ -18,6 +18,7 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         loader = MockLoader()
+        KeyPaperAnalyzer.TOPIC_PAPERS_MIN = 0  # For tests, to reduce number of papers
         cls.analyzer = KeyPaperAnalyzer(loader, TestKeyPaperAnalyzer.PUBTRENDS_CONFIG, test=True)
         ids = cls.analyzer.search_terms(query='query')
         cls.analyzer.analyze_papers(ids, 'query')
@@ -117,7 +118,7 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
         ('do not merge one component', {1: 0, 2: 1, 3: 1, 4: 1, 5: 1}, 0.5, ({1: 0, 2: 1, 3: 1, 4: 1, 5: 1}, 0))
     ])
     def test_merge_components(self, name, partition, granularity, expected):
-        partition, n_components_merged = self.analyzer.merge_components(partition, granularity)
+        partition, n_components_merged = self.analyzer.merge_components(partition, granularity, 0)
         expected_partition, expected_merged = expected
         self.assertEqual(partition, expected_partition, name)
 

@@ -327,7 +327,9 @@ class KeyPaperAnalyzer:
             logger.debug(f'Graph modularity (possible range is [-1, 1]): {modularity :.3f}')
 
         # Merge small components to 'Other'
-        partition, n_components_merged = self.merge_components(partition_louvain)
+        partition, n_components_merged = KeyPaperAnalyzer.merge_components(
+            partition_louvain, KeyPaperAnalyzer.TOPIC_GRANULARITY, KeyPaperAnalyzer.TOPIC_PAPERS_MIN
+        )
 
         logger.debug('Sorting components by size descending')
         components = set(partition.values())
@@ -569,8 +571,8 @@ class KeyPaperAnalyzer:
         max_rel_gain_papers = set(max_rel_gain_df['id'].values)
         return max_rel_gain_papers, max_rel_gain_df
 
-    def merge_components(self, partition, granularity=TOPIC_GRANULARITY, papers_min=TOPIC_PAPERS_MIN,
-                         current=0, task=None):
+    @staticmethod
+    def merge_components(partition, granularity, papers_min):
         logger.debug(f'Merging components smaller than {papers_min} or {granularity}% to "Other" component')
         threshold = max(papers_min, int(granularity * len(partition)))
         components = set(partition.values())

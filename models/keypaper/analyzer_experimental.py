@@ -63,7 +63,9 @@ class ExperimentalAnalyzer(KeyPaperAnalyzer):
             if len(similarity_graph[year].nodes) >= min_papers:
                 p = {vertex: int(comp) for vertex, comp in
                      community.best_partition(similarity_graph[year], random_state=KeyPaperAnalyzer.SEED).items()}
-                p, n_components_merged[year] = self.merge_components(p)
+                p, n_components_merged[year] = KeyPaperAnalyzer.merge_components(
+                    p, KeyPaperAnalyzer.TOPIC_GRANULARITY, KeyPaperAnalyzer.TOPIC_PAPERS_MIN
+                )
                 evolution_series.append(pd.Series(p))
                 years_processed += 1
             else:
