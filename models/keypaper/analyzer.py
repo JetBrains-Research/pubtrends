@@ -29,9 +29,9 @@ class KeyPaperAnalyzer:
     SIMILARITY_COCITATION = 2
     SIMILARITY_BIBLIOGRAPHIC_COUPLING = 1
     SIMILARITY_CITATION = 0.5
-    SIMILARITY_POTENTIAL_CITATION = 0.1
-    SIMILARITY_POTENTIAL_MIN = 0.3  # Minimal cosine similarity for potential text citation
-    SIMILARITY_POTENTIAL_CITATION_N = 10  # Max number of potential text citations for paper
+    SIMILARITY_TEXT_CITATION = 0.1
+    SIMILARITY_TEXT_MIN = 0.3  # Minimal cosine similarity for potential text citation
+    SIMILARITY_TEXT_CITATION_N = 10  # Max number of potential text citations for paper
 
     STRUCTURE_INTER_TOPICS_LINKS = 10  # Number of inter topics links
 
@@ -275,29 +275,28 @@ class KeyPaperAnalyzer:
                                current=current, task=task)
             tfidf = self.compute_tfidf(df, self.TFIDF_WORDS, n_gram=1)
             cos_similarities = cosine_similarity(tfidf)
-            potential_citations = [PriorityQueue(maxsize=self.SIMILARITY_POTENTIAL_CITATION_N) for _ in range(len(df))]
+            text_citations = [PriorityQueue(maxsize=self.SIMILARITY_TEXT_CITATION_N) for _ in range(len(df))]
 
-            # Adding potential citations
+            # Adding text citations
             for i, pid1 in enumerate(df['id']):
-                potential_citations_i = potential_citations[i]
+                text_citations_i = text_citations[i]
                 for j in range(i + 1, len(df)):
                     similarity = cos_similarities[i, j]
-                    if np.isfinite(similarity) and similarity >= self.SIMILARITY_POTENTIAL_MIN:
-                        if potential_citations_i.full():
-                            potential_citations_i.get()  # Removes the element with lowest similarity
-                        potential_citations_i.put((similarity, j))
+                    if np.isfinite(similarity) and similarity >= self.SIMILARITY_TEXT_MIN:
+                        if text_citations_i.full():
+                            text_citations_i.get()  # Removes the element with lowest similarity
+                        text_citations_i.put((similarity, j))
 
             for i, pid1 in enumerate(df['id']):
-                potential_citations_i = potential_citations[i]
-                while not potential_citations_i.empty():
-                    similarity, j = potential_citations_i.get()
+                text_citations_i = text_citations[i]
+                while not text_citations_i.empty():
+                    similarity, j = text_citations_i.get()
                     pid2 = pids[j]
                     if result.has_edge(pid1, pid2):
                         pid1_pid2_edge = result[pid1][pid2]
-                        if 'citation' not in pid1_pid2_edge:  # Add potential citation if no citation present
-                            pid1_pid2_edge['potential'] = similarity
+                        pid1_pid2_edge['text'] = similarity
                     else:
-                        result.add_edge(pid1, pid2, potential=similarity)
+                        result.add_edge(pid1, pid2, text=similarity)
         # Ensure all the papers are in the graph, separated ones will be placed to other component
         for pid in pids:
             if not result.has_node(pid):
@@ -493,7 +492,7 @@ class KeyPaperAnalyzer:
             KeyPaperAnalyzer.SIMILARITY_COCITATION * d.get('cocitation', 0) + \
             KeyPaperAnalyzer.SIMILARITY_BIBLIOGRAPHIC_COUPLING * d.get('bibcoupling', 0) + \
             KeyPaperAnalyzer.SIMILARITY_CITATION * d.get('citation', 0) + \
-            KeyPaperAnalyzer.SIMILARITY_POTENTIAL_CITATION * d.get('potential', 0)
+            KeyPaperAnalyzer.SIMILARITY_TEXT_CITATION * d.get('text', 0)
 
     @staticmethod
     def compute_tfidf(df, max_features, n_gram):

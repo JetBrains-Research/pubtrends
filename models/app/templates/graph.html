@@ -89,17 +89,17 @@
                     if ('citation' in data) {
                         citation = data['citation'];
                     }
-                    let potential = 0;
-                    if ('potential' in data) {
-                        potential = data['potential'];
+                    let text = 0;
+                    if ('text' in data) {
+                        text = data['text'];
                     }
-                    if (cocitation > 0 && cocitation >= Math.max(bibcoupling, citation, potential)) {
+                    if (cocitation > 0 && cocitation >= Math.max(bibcoupling, citation, text)) {
                         return "#005DFF"
                     }
-                    if (bibcoupling > 0 && bibcoupling >= Math.max(cocitation, citation, potential)) {
+                    if (bibcoupling > 0 && bibcoupling >= Math.max(cocitation, citation, text)) {
                         return "#F500FF"
                     }
-                    if (citation > 0 && citation >= Math.max(cocitation, bibcoupling, potential)) {
+                    if (citation > 0 && citation >= Math.max(cocitation, bibcoupling, text)) {
                         return "#9B0013";
                     }
                     return "#000000";
@@ -249,9 +249,9 @@
                                 if ('citation' in data) {
                                     citation = data['citation'];
                                 }
-                                let potential = 0;
-                                if ('potential' in data) {
-                                    potential = data['potential'];
+                                let text = 0;
+                                if ('text' in data) {
+                                    text = data['text'];
                                 }
 
                                 content.innerHTML = "<b>Similarity</b> " + Number(data['similarity']).toFixed(3) + "<br>" +
@@ -261,7 +261,7 @@
                                     "<b>Co-citation</b> " + cocitation + "<br>" +
                                     "<b>Bibliographic coupling</b> " + bibcoupling + "<br>" +
                                     "<b>Citation</b> " + citation + "<br>" +
-                                    "<b>Text</b> " + Number(potential).toFixed(2) + "<br>";
+                                    "<b>Text</b> " + Number(text).toFixed(2) + "<br>";
                             } else if('title' in data) {
                                 // Paper
                                 const topic = data['topic'];
