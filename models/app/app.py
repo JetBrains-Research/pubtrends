@@ -225,7 +225,7 @@ def graph():
                     citation_graph="true",
                     min_year=min_year,
                     max_year=max_year,
-                    topic_other=analyzer.comp_other,
+                    topic_other=analyzer.comp_other or -1,
                     topics_palette_json=json.dumps(Plotter.topics_palette(analyzer.df)),
                     topics_description_json=json.dumps(topics_tags),
                     graph_cytoscape_json=json.dumps(graph_cs)
@@ -242,7 +242,7 @@ def graph():
                     citation_graph="false",
                     min_year=min_year,
                     max_year=max_year,
-                    topic_other=analyzer.comp_other,
+                    topic_other=analyzer.comp_other or -1,
                     topics_palette_json=json.dumps(Plotter.topics_palette(analyzer.df)),
                     topics_description_json=json.dumps(topics_tags),
                     graph_cytoscape_json=json.dumps(graph_cs)
