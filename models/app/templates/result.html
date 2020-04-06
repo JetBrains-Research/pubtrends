@@ -46,9 +46,10 @@
     <script>
         "use strict";
 
+        // Query may contain double quotes or ' fix it.
+        const query_fixed = '{{ query }}'.replace(/&#34;/g, '"').replace(/&#39;/g, '\'');
+
         function papers_callback_impl(key, value) {
-            // Query may contain double quotes, fix it.
-            const query_fixed = '{{ query }}'.replace(/&#34;/g, '"');
             const url = '/papers?query=' + query_fixed + '&source={{source}}&limit={{limit}}&sort={{sort}}';
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
@@ -85,8 +86,6 @@
         }
 
         function graph_callback(graphType) {
-            // Query may contain double quotes, fix it.
-            const query_fixed = '{{ query }}'.replace(/&#34;/g, '"');
             const url = '/graph?query=' + query_fixed + '&source={{source}}&limit={{limit}}&sort={{sort}}';
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
