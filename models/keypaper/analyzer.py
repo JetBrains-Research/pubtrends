@@ -446,6 +446,8 @@ class KeyPaperAnalyzer:
         inter_topics = {}
         for i, row in similarity_topics_df.iterrows():
             pid1, c1, pid2, c2, similarity = row['id_x'], row['comp_x'], row['id_y'], row['comp_y'], row['similarity']
+            if c1 == c2:
+                continue  # Ignore same group
             if c2 > c1:  # Swap
                 pidt, ct = pid1, c1
                 pid1, c1 = pid2, c2
