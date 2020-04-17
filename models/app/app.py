@@ -2,12 +2,11 @@ import html
 import json
 import logging
 import random
-from urllib.parse import quote
-
 from flask import (
     Flask, request, redirect, url_for,
     render_template, render_template_string
 )
+from urllib.parse import quote
 
 from models.celery.tasks import celery, find_paper_async, analyze_search_terms, analyze_id_list, get_analyzer
 from models.celery.tasks_cache import get_or_cancel_task, complete_task
@@ -82,21 +81,20 @@ def result():
     sort = request.args.get('sort')
     if jobid and query and source and limit is not None and sort is not None:
         job = complete_task(jobid)
-        if job:
-            if job.state == 'SUCCESS':
-                data, _, log = job.result
-                return render_template('result.html',
-                                       query=trim(query, MAX_QUERY_LENGTH),
-                                       source=source,
-                                       limit=limit,
-                                       sort=sort,
-                                       version=VERSION,
-                                       log=log,
-                                       **data)
-            # No job or out-of-date job, restart it
-            if job.state == 'PENDING':
-                return search_terms_(request.args)
-    return render_template_string("Something went wrong...")
+        if job and job.state == 'SUCCESS':
+            data, _, log = job.result
+            return render_template('result.html',
+                                   query=trim(query, MAX_QUERY_LENGTH),
+                                   source=source,
+                                   limit=limit,
+                                   sort=sort,
+                                   version=VERSION,
+                                   log=log,
+                                   **data)
+        # No job or out-of-date job, restart it
+        return search_terms_(request.args)
+    else:
+        return render_template_string("Something went wrong...")
 
 
 @app.route('/process')
