@@ -2,11 +2,12 @@ import html
 import json
 import logging
 import random
+from urllib.parse import quote
+
 from flask import (
     Flask, request, redirect, url_for,
     render_template, render_template_string
 )
-from urllib.parse import quote
 
 from models.celery.tasks import celery, find_paper_async, analyze_search_terms, analyze_id_list, get_analyzer
 from models.celery.tasks_cache import get_or_cancel_task, complete_task
@@ -68,7 +69,7 @@ def status():
     # no jobid
     return json.dumps({
         'state': 'FAILURE',
-        'message': f'Unknown task id {jobid}'
+        'message': f'No task id'
     })
 
 
