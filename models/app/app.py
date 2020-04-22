@@ -11,7 +11,7 @@ from flask import (
 )
 
 from models.celery.tasks import celery, find_paper_async, analyze_search_terms, analyze_id_list, get_analyzer
-from models.celery.tasks_cache import get_or_cancel_task, complete_task
+from models.celery.tasks_cache import get_or_cancel_task
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.paper import prepare_paper_data, prepare_papers_data, get_loader_and_url_prefix
 from models.keypaper.plot_preprocessor import PlotPreprocessor
