@@ -42,5 +42,3 @@ class PubtrendsConfig:
         self.celery_max_pending_tasks = params.getint('celery_max_pending_tasks')
         # Seconds, pending task will be revoked after no polling activity
         self.celery_pending_tasks_timeout = params.getint('celery_pending_tasks_timeout')
-        # Max completed tasks to store
-        self.celery_max_completed_tasks = params.getint('celery_max_completed_tasks')

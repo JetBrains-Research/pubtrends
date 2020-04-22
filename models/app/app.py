@@ -4,6 +4,7 @@ import logging
 import random
 from urllib.parse import quote
 
+from celery.result import AsyncResult
 from flask import (
     Flask, request, redirect, url_for,
     render_template, render_template_string
@@ -49,8 +50,6 @@ def status():
                 'progress': int(100.0 * job.result['current'] / job.result['total'])
             })
         elif job.state == 'SUCCESS':
-            # Mark job as complete to avoid time expiration
-            complete_task(jobid)
             return json.dumps({
                 'state': job.state,
                 'progress': 100
@@ -60,12 +59,21 @@ def status():
                 'state': job.state,
                 'message': html.unescape(str(job.result).replace('\\n', '\n').replace('\\t', '\t')[2:-2])
             })
+        elif job.state == 'STARTED':
+            return json.dumps({
+                'state': job.state,
+                'message': 'Task is starting, please wait...'
+            })
         elif job.state == 'PENDING':
             return json.dumps({
                 'state': job.state,
                 'message': 'Task is in queue, please wait...'
             })
-
+        else:
+            return json.dumps({
+                'state': 'FAILURE',
+                'message': f'Illegal task state {job.state}'
+            })
     # no jobid
     return json.dumps({
         'state': 'FAILURE',
@@ -81,7 +89,7 @@ def result():
     limit = request.args.get('limit')
     sort = request.args.get('sort')
     if jobid and query and source and limit is not None and sort is not None:
-        job = complete_task(jobid)
+        job = AsyncResult(jobid, app=celery)
         if job and job.state == 'SUCCESS':
             data, _, log = job.result
             return render_template('result.html',
@@ -184,7 +192,7 @@ def paper():
     source = request.args.get('source')
     pid = request.args.get('id')
     if jobid:
-        job = complete_task(jobid)
+        job = AsyncResult(jobid, app=celery)
         if job and job.state == 'SUCCESS':
             _, data, _ = job.result
             return render_template('paper.html', **prepare_paper_data(data, source, pid),
@@ -202,7 +210,7 @@ def graph():
     sort = request.args.get('sort')
     graph_type = request.args.get('type')
     if jobid:
-        job = complete_task(jobid)
+        job = AsyncResult(jobid, app=celery)
         if job and job.state == 'SUCCESS':
             _, data, _ = job.result
             loader, url_prefix = get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
@@ -284,7 +292,7 @@ def show_ids():
         search_string += f'Hot Papers'
 
     if jobid:
-        job = complete_task(jobid)
+        job = AsyncResult(jobid, app=celery)
         if job and job.state == 'SUCCESS':
             _, data, _ = job.result
             return render_template('papers.html',
