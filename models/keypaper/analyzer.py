@@ -580,7 +580,7 @@ class KeyPaperAnalyzer:
         comp_sizes = {c: sum([partition[node] == c for node in partition.keys()]) for c in components}
         comp_to_merge = {com: comp_sizes[com] <= threshold for com in components}
         n_components_merged = sum(comp_to_merge.values())
-        if n_components_merged > 1:
+        if n_components_merged >= 1:
             logger.debug(f'Reassigning components')
             partition_merged = {}
             new_comps = {}
