@@ -207,6 +207,11 @@ Please ensure that you have configured and prepared the database(s).
     docker-compose logs
     ```
 
+6. During updates or other construction works consider launching simple reporter.
+    ``` 
+   python -m http.server -d models/app/construction 80
+
+   ```
 
 # Authors
 
