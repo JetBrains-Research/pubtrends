@@ -209,8 +209,8 @@ Please ensure that you have configured and prepared the database(s).
 
 6. During updates or other construction works consider launching simple reporter.
     ``` 
-   python -m http.server -d models/app/construction 80
-
+   docker run --rm -p 80:8000 -v $(pwd)/models/app/construction:/construction \
+        -t biolabs/pubtrends /bin/bash -c "python -m http.server -d /construction 8000"
    ```
 
 # Authors
