@@ -46,9 +46,10 @@
     <script>
         "use strict";
 
+        // Query may contain double quotes or ' fix it.
+        const query_fixed = '{{ query }}'.replace(/&#34;/g, '"').replace(/&#39;/g, '\'');
+
         function papers_callback_impl(key, value) {
-            // Query may contain double quotes, fix it.
-            const query_fixed = '{{ query }}'.replace(/&#34;/g, '"');
             const url = '/papers?query=' + query_fixed + '&source={{source}}&limit={{limit}}&sort={{sort}}';
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
@@ -85,8 +86,6 @@
         }
 
         function graph_callback(graphType) {
-            // Query may contain double quotes, fix it.
-            const query_fixed = '{{ query }}'.replace(/&#34;/g, '"');
             const url = '/graph?query=' + query_fixed + '&source={{source}}&limit={{limit}}&sort={{sort}}';
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
@@ -101,7 +100,7 @@
             var words = JSON.parse('{{ papers_word_cloud }}'.replace(/&#34;/g, '"').replace(/&amp;/g, '&'));
             process_word_cloud('papers_word_cloud', 220, 335, words, papers_callback_word);
 
-            {% for (script, div), word_cloud, zoom_in_callback in subtopics_info_and_word_cloud_and_callback %}
+            {% for (script, div), word_cloud, zoom_in_callback in topics_info_and_word_cloud_and_callback %}
                  words = JSON.parse('{{ word_cloud }}'.replace(/&#34;/g, '"').replace(/&amp;/g, '&'));
                  process_word_cloud('topic_word_cloud_{{ loop.index }}', 220, 335, words, papers_callback_word);
             {% endfor %}
@@ -118,12 +117,16 @@
         </div>
         <div class="col-lg-11 col-xl-8">
             <div class="content">
-                <span class="search-query">{{query}} at {{source}} {{limit}} {{sort}}</span>
+                <ol class="breadcrumb bg-light search-query">
+                    <li class="breadcrumb-item">{{ source }}</li>
+                    <li class="breadcrumb-item"><strong>{{ query }}</strong></li>
+                    <li class="breadcrumb-item">{{ limit }} {{ sort }}</li>
+                </ol>
             </div>
         </div>
         <div class="d-none d-xl-block col-xl-2 float-right no-padding-right">
             <a id="tour-start" class="btn btn-secondary float-right"
-               href="javascript:void(0);" onclick="startIntro();">Report tour</a>
+               href="javascript:void(0);" onclick="startIntro();">About</a>
         </div>
     </div>
 </nav>
@@ -192,7 +195,7 @@
                             Journals
                         </a>
                     </li>
-                    {% if experimental %}
+                    {% if experimental is defined %}
                     <li class="nav-item row">
                         <a class="nav-link no-padding-right" href="#evolution" title="Evolution">
                             <img src="{{ url_for('static', filename='flag.svg') }}"/>
@@ -217,14 +220,14 @@
                         <div class="row mb-3">
                             <div class="col-sm-4">
                                 <div class="card">
-                                    <div class="card-body text-center">
+                                    <div id="n_papers" class="card-body text-center">
                                         <span class="stats-number"><b>{{ n_papers }}</b></span><br>
                                         <span class="card-text">papers</span>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-sm-4">
-                                <div class="card">
+                                <div id="n_citations" class="card">
                                     <div class="card-body text-center">
                                         <span class="stats-number"><b>{{ n_citations }}</b></span><br>
                                         <span class="card-text">citations</span>
@@ -232,10 +235,10 @@
                                 </div>
                             </div>
                             <div class="col-sm-4">
-                                <div id="subtopics-number" class="card">
+                                <div id="n_topics" class="card">
                                     <div class="card-body text-center">
-                                        <span class="stats-number"><b>{{ n_subtopics }}</b></span><br>
-                                        <span class="card-text">subtopics</span>
+                                        <span class="stats-number"><b>{{ n_topics }}</b></span><br>
+                                        <span class="card-text">topics</span>
                                     </div>
                                 </div>
                             </div>
@@ -255,13 +258,15 @@
                                 {% endfor %}
                             </div>
                         </div>
-                        <div>
-                            <div class="row">
-                                <button id="show_as_list" type="button" class="col-auto btn btn-light"
+                        <div class="row">
+                            <div class="col-auto">
+                                <button id="show_as_list" type="button" class="btn btn-light"
                                         onclick="(function(){ papers_callback() })();">
                                     <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
                                 </button>
-                                <button id="show_citations_graph" type="button" class="ml-2 col-auto btn btn-light"
+                            </div>
+                            <div class="col-auto no-padding-left">
+                                <button id="show_citations_graph" type="button" class="btn btn-light"
                                         onclick="(function(){ graph_callback('citations') })();">
                                     <img src="{{ url_for('static', filename='globe.svg') }}" alt="+"/>&nbsp;
                                     Show citations graph
@@ -339,11 +344,10 @@
                     </div>
                     <div class="card-body">
                         <p>
-                            Similarity between papers is computed based on <em>direct citations</em>,
-                            <em>co-citations</em>, and <em>bibliographic coupling</em>.<br>
-                            Similarity graph is built with nodes representing papers, and edges representing similarity info.<br>
-                            Edge width encodes paper similarity, the thicker the more similar pair of papers is.<br>
-                            Structure within a research field can be visualized as <em>minimal spanning tree</em> of the similarity graph.<br>
+                            Similarity between papers is computed based on <em>co-citations</em>,
+                            <em>bibliographic coupling</em>, <em>direct citations</em>,<br>
+                            and <em>potential</em> citations based on text similarity.<br>
+                            Structure within a research field can be visualized as a graph.<br>
                         </p>
                             <button id="show_structure_graph" type="button" class="col-auto btn btn-light"
                                     onclick="(function(){ graph_callback('structure') })();">
@@ -353,11 +357,11 @@
                         </p>
                         <hr>
                         <p>
-                            Similarity information is used for subtopics extraction.<br>
+                            Similarity information is used for topics extraction.<br>
                             Bars represent number of papers within each topic.<br>
-                            Click on bars to get detailed information about keywords and publications for each subtopic.
+                            Click on bars to get detailed information about keywords and publications for each topic.
                             <br>
-                            <em>Note: subtopics are merged to "Other" if they contain less than 5% of publications of
+                            <em>Note: topics are merged to "Other" if they contain less than 5% of publications of
                                 the field.</em>
                         </p>
                         <div>
@@ -368,8 +372,7 @@
                         </div>
                         <hr>
                         <p>
-                            Similarity between different subtopics is a summary similarity between all the papers,<br>
-                            normalized to subtopic sizes - number of papers.
+                            Similarity between topics is an average similarity between the papers.
                         </p>
                         {% for script, div in components_similarity %}
                         {{ script|safe }}
@@ -383,7 +386,7 @@
                         <h1 class="card-header">Trends</h1>
                     </div>
                     <div class="card-body">
-                        <h2 class="card-subtitle">Subtopics summary</h2>
+                        <h2 class="card-subtitle">Topics summary</h2>
                         <p>
                             Explore the evolution of trends - dynamics is shown for the timeline.<br>
                             Colors are the same as in the previous diagram.
@@ -412,16 +415,16 @@
                     </div>
                     <div class="card-body">
                         <p>
-                            Learn more about subtopics - most cited papers over time are shown for each topic.<br>
+                            Learn more about topics - most cited papers over time are shown for each topic.<br>
                             Papers are sorted descending by citations number overall from bottom to top.<br>
                             Year reflects publication year of the original paper.
                         </p>
                         <div>
-                            {% for (script, div), word_cloud, zoom_in_callback in subtopics_info_and_word_cloud_and_callback %}
-                            <div id="subtopic-div-{{ loop.index }}">
+                            {% for (script, div), word_cloud, zoom_in_callback in topics_info_and_word_cloud_and_callback %}
+                            <div id="topic-div-{{ loop.index }}">
                                 <hr>
-                                <h2 id="subtopic-{{ loop.index }}" class="card-subtitle">
-                                    Subtopic {{ loop.index }}
+                                <h2 id="topic-{{ loop.index }}" class="card-subtitle">
+                                    Topic {{ loop.index }}
                                     {% if loop.index0 == comp_other %}
                                     - OTHER
                                     {% endif %}
@@ -473,9 +476,9 @@
                     <div class="card-body">
                         <p>
                             List of authors with the largest number of papers for given search query.<br>
-                            The colors of the circles in the subtopics column indicate top 3 most common subtopics among
+                            The colors of the circles in the topics column indicate top 3 most common topics among
                             these papers.<br>
-                            The subtopic circles are arranged according to the number of papers, in descending order.
+                            The topic circles are arranged according to the number of papers, in descending order.
                         </p>
                         <table id="authors-table" class="table table-sm table-bordered table-striped">
                             <thead>
@@ -483,7 +486,7 @@
                                 <th scope="col">#</th>
                                 <th scope="col">Author</th>
                                 <th scope="col">Papers</th>
-                                <th scope="col">Subtopics</th>
+                                <th scope="col">Topics</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -509,9 +512,9 @@
                     <div class="card-body">
                         <p>
                             List of journals with the largest number of papers for given search query.<br>
-                            The colors of the circles in the subtopics column indicate top 3 most common subtopics among
+                            The colors of the circles in the topics column indicate top 3 most common topics among
                             these papers.<br>
-                            The subtopic circles are arranged according to the number of papers, in descending order.
+                            The topic circles are arranged according to the number of papers, in descending order.
                         </p>
                         <table id="journals-table" class="table table-sm table-bordered table-striped">
                             <thead>
@@ -519,7 +522,7 @@
                                 <th scope="col">#</th>
                                 <th scope="col">Journal</th>
                                 <th scope="col">Papers</th>
-                                <th scope="col">Subtopics</th>
+                                <th scope="col">Topics</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -538,13 +541,13 @@
                     </div>
                 </div>
 
-                {% if experimental %}
+                {% if experimental is defined %}
                 <div class="card mt-3">
                     <div class="card-title" id="evolution">
                         <h1 class="card-header">Experimental</h1>
                     </div>
                     <div class="card-body">
-                        <h2 class="card-subtitle">Subtopic Evolution</h2>
+                        <h2 class="card-subtitle">Topic Evolution</h2>
                         <p>
                             Topics extraction is performed longitudinally at several time points to detect merges and splits
                             of clusters,<br>
@@ -553,13 +556,13 @@
                             another.
                         </p>
                         <div>
-                            {% if subtopic_evolution is defined %}
-                            {% for script, div in subtopic_evolution %}
+                            {% if topic_evolution is defined %}
+                            {% for script, div in topic_evolution %}
                             {{ script|safe }}
                             {{ div|safe }}
                             {% endfor %}
                             {% else %}
-                            Failed to analyze subtopic evolution because year step is too big.
+                            Failed to analyze topic evolution because year step is too big.
                             {% endif %}
                         </div>
                     </div>
@@ -608,6 +611,18 @@
                         "publications dynamics, and most common words in the field."
                 },
                 {
+                    element: '#n_papers',
+                    intro: '{{n_papers}} papers were found and analyzed.'
+                },
+                {
+                    element: '#n_citations',
+                    intro: '{{n_citations}} is the summary number of all the citations of the papers.'
+                },
+                {
+                    element: '#n_topics',
+                    intro: "{{n_topics}} topics were found among the papers.<br>"
+                },
+                {
                     element: '#show_as_list',
                     intro: "Click <img src=\"{{ url_for('static', filename='list.svg') }}\" alt=\"+\"/> " +
                         "<em>Show as list</em> anytime to open the list of papers in a separate window."
@@ -628,24 +643,17 @@
                         "<em>Show structure graph</em> to explore overall papers similarity."
                 },
                 {
-                    element: '#subtopics-number',
-                    intro: "One of the main features of PubTrends is a subtopic analysis.<br>" +
-                        "Subtopic is a group of papers which share common ideas, describe common features, etc. " +
-                        "Find out the details about trends and papers in subtopics in the next steps."
-                },
-                {
                     element: '#topics',
-                    intro: "Subtopics are extracted based on citations graph and text analysis. " +
-                        "Each subtopic is described by a word cloud with most used keywords and " +
-                        "a chart with all papers that belong to the subtopic."
+                    intro: "Topic is a group of papers which share common ideas, describe common features, etc.<br>" +
+                        "Topics are extracted based on citations graph and text analysis."
                 },
                 {
-                    element: '#subtopic-1',
-                    intro: "This is the detailed information about subtopic 1. As usual, " +
+                    element: '#topic-1',
+                    intro: "This is the detailed information about topic 1. As usual, " +
                         "click <img src=\"{{ url_for('static', filename='list.svg') }}\" alt=\"+\"/> " +
-                        "<em>Show as list</em> to open the list of papers for the subtopic or " +
+                        "<em>Show as list</em> to open the list of papers for the topic or " +
                         "use the <img src=\"{{ url_for('static', filename='zoom-in.svg') }}\" alt=\"+\"/> " +
-                        "<em>Zoom into</em> button to run analysis for this particular subtopic.<br>"
+                        "<em>Zoom into</em> button to run analysis for this particular topic.<br>"
                 },
                 {
                     element: '#topic_word_cloud_1',
@@ -655,12 +663,12 @@
                     element: '#topic_chart_1',
                     intro: "Hover over glyphs to check out tooltips that contain general information " +
                         "about the papers. Click glyphs to open a page about corresponding paper in a " +
-                        "new tab. Click legend items to show/hide papers of certain type."
+                        "new tab."
                 },
                 {
                     element: '#authors',
                     intro: "Information about authors and journals with the largest number of papers " +
-                        "is organised into tables, which also show distribution over subtopics. You can " +
+                        "is organised into tables, which also show distribution over topics. You can " +
                         "open all papers for a certain author or journal by clicking the corresponding " +
                         "number of papers."
                 },

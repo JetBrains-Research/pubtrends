@@ -1,4 +1,4 @@
-from models.keypaper.analysis import KeyPaperAnalyzer
+from models.keypaper.analyzer import KeyPaperAnalyzer
 from models.keypaper.utils import SORT_MOST_RELEVANT
 
 

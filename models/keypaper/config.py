@@ -15,21 +15,18 @@ class PubtrendsConfig:
             config_parser.read_string("[params]\n" + config_properties.read())
         params = config_parser['params']
 
-        self.version = params['version']
-
         self.neo4jhost = params['neo4jhost' if not test else 'test_neo4jhost']
         self.neo4jport = params['neo4jport' if not test else 'test_neo4jport']
         self.neo4juser = params['neo4jusername' if not test else 'test_neo4jusername']
         self.neo4jpassword = params['neo4jpassword' if not test else 'test_neo4jpassword']
 
         self.experimental = params.getboolean('experimental')
-        self.development = params.getboolean('development')
 
         self.pm_enabled = params.getboolean('pm_enabled')
-        self.pm_search_example_terms = [terms.strip() for terms in params['pm_search_example_terms'].split(',')]
+        self.pm_search_example_terms = [terms.strip() for terms in params['pm_search_example_terms'].split(';')]
 
         self.ss_enabled = params.getboolean('ss_enabled')
-        self.ss_search_example_terms = [terms.strip() for terms in params['ss_search_example_terms'].split(',')]
+        self.ss_search_example_terms = [terms.strip() for terms in params['ss_search_example_terms'].split(';')]
 
         self.min_search_words = params.getint('min_search_words') if not test else 0
         self.max_number_of_articles = params.getint('max_number_of_articles')
@@ -45,5 +42,3 @@ class PubtrendsConfig:
         self.celery_max_pending_tasks = params.getint('celery_max_pending_tasks')
         # Seconds, pending task will be revoked after no polling activity
         self.celery_pending_tasks_timeout = params.getint('celery_pending_tasks_timeout')
-        # Max completed tasks to store
-        self.celery_max_completed_tasks = params.getint('celery_max_completed_tasks')

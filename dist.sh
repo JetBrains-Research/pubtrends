@@ -21,23 +21,25 @@ VERSION_BUILD="${version}.${build}"
 FULL_VERSION="${VERSION_BUILD} built on $(date +%F)"
 PTV=pubtrends-${VERSION_BUILD}
 
+# Copy sources
+mkdir -p "${PTV}"
+cp config.properties "${PTV}"/
+cp docker-compose.yml "${PTV}"/
+cp -r models "${PTV}"/
+
 # Update config version
-mkdir -p ${PTV}
-cp config.properties ${PTV}/
-sed -E "s/version = [^\n]*/version = ${FULL_VERSION}/g" -i ${PTV}/config.properties
-cp docker-compose.yml ${PTV}/
-cp -r models ${PTV}/
+sed -E "s/VERSION[^\n]*/VERSION = '${FULL_VERSION}'/g" -i "${PTV}"/models/keypaper/version.py
 
 # Create folder for logs
-mkdir ${PTV}/logs
-chmod a+rwx ${PTV}/logs
+mkdir "${PTV}"/logs
+chmod a+rwx "${PTV}"/logs
 
 # Create distributive tar.gz
 rm -r dist
 mkdir -p dist
-tar -zcvf "dist/${PTV}.tar.gz" ${PTV}
+tar -zcvf "dist/${PTV}.tar.gz" "${PTV}"
 # Cleanup
-rm -f ${PTV}
+rm -r "${PTV}"
 
 # Move jar to dist if exists
 if [[ -f build/libs/pubtrends-dev.jar ]]; then

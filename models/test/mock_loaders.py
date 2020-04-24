@@ -3,11 +3,11 @@ import pandas as pd
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.loader import Loader
 
-PUBLICATION_DATA = [['1', 1963, 'Article 1', None, 'Article', 'Geller R, Geller M, Bing Ch', 'Nature'],
+PUBLICATION_DATA = [['1', 1963, 'Article 1', 'just a paper', 'Article', 'Geller R, Geller M, Bing Ch', 'Nature'],
                     ['2', 1965, 'Article 2', 'abstract', 'Article', 'Buffay Ph, Geller M, Doe J', 'Science'],
-                    ['3', 1967, 'Article 3', 'otherabstract', 'Article', 'Doe J, Buffay Ph', 'Nature'],
-                    ['4', 1968, 'Article 4', None, 'Article', 'Doe J, Geller R', 'Science'],
-                    ['5', 1975, 'Article 5', None, 'Review', 'Green R, Geller R, Doe J', 'Nature']]
+                    ['3', 1967, 'Article 3', 'other abstract', 'Article', 'Doe J, Buffay Ph', 'Nature'],
+                    ['4', 1968, 'Article 4', 'interesting paper', 'Article', 'Doe J, Geller R', 'Science'],
+                    ['5', 1975, 'Article 5', 'just a breakthrough', 'Review', 'Green R, Geller R, Doe J', 'Nature']]
 
 CITATION_STATS_DATA = [['1', 1972, 2], ['1', 1974, 15],
                        ['2', 1974, 1],
@@ -30,13 +30,22 @@ COCITATION_GROUPED_DATA = [['1', '2', 1, 1, 1, 3],
                            ['3', '4', 0, 0, 1, 1]]
 COCITATION_YEARS = [1967, 1968, 1969]
 
-COCITATION_GRAPH_NODES = ['1', '2', '3', '4']
 COCITATION_GRAPH_EDGES = [('1', '2', 3), ('3', '4', 1)]
 
-BIBLIOGRAPHIC_COUPLING_GRAPH_NODES = ['3', '4', '5']
 BIBLIOGRAPHIC_COUPLING_DATA = [['3', '4', 2],
                                ['3', '5', 2],
                                ['4', '5', 2]]
+
+SIMILARITY_GRAPH_EDGES = [('1', '2', {'cocitation': 3}),
+                          ('1', '4', {'citation': 1, 'text': 0.6279137616509934}),
+                          ('1', '3', {'citation': 1}),
+                          ('1', '5', {'citation': 1}),
+                          ('2', '4', {'citation': 1}),
+                          ('2', '3', {'citation': 1, 'text': 1.0}),
+                          ('2', '5', {'citation': 1}),
+                          ('3', '4', {'cocitation': 1, 'bibcoupling': 2}),
+                          ('3', '5', {'bibcoupling': 2, 'citation': 1}),
+                          ('4', '5', {'bibcoupling': 2, 'citation': 1})]
 
 
 EXPECTED_MAX_GAIN = {1972: '3', 1974: '1'}

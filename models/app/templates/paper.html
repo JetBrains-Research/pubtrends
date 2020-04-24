@@ -50,6 +50,14 @@
                 $('#related_papers').DataTable();
             {% endif %}
         } );
+
+        function result() {
+            const url = '/result?query={{title}}&source={{source}}&limit=related&sort=papers';
+            // Decode jobid from URL
+            const jobid = new URL(window.location).searchParams.get('jobid');
+            window.open(url + '&jobid=' + jobid, '_blank');
+        }
+
     </script>
 </head>
 <body>
@@ -60,6 +68,14 @@
         <div class="col-lg-1 col-xl-2 no-padding">
             <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
         </div>
+        <div class="col-lg-11 col-xl-8">
+            <div class="content">
+                <a id="result" href="javascript:void(0);" class="ml-3 link vertical-center" onclick="result();">
+                    Explore related papers
+                </a>
+            </div>
+        </div>
+        <div class="d-none d-xl-block col-xl-2 float-right no-padding-right"></div>
     </div>
 </nav>
 
@@ -150,7 +166,7 @@
                 </div>
                 <div class="card-body">
                     <p>
-                        This section demonstrates relationships of the paper with other sub-topics in the field.<br>
+                        This section demonstrates similarity between the paper and other topics in the field.<br>
                         Table below show number of co-cited papers with respect to different topics.<br>
                         Generally, the more interdisciplinary paper is, the more interconnections with several topics it
                         has.
@@ -161,7 +177,7 @@
                         <tr>
                             <th scope="col">#</th>
                             <th scope="col">Topic keywords</th>
-                            <th scope="col">Related papers</th>
+                            <th scope="col">Similar papers</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -184,8 +200,8 @@
                 </div>
                 <div class="card-body">
                     <p>
-                        This section demonstrates relationships of the paper with other papers. <br>
-                        Relationships are computed based on citations, co-citations and bibliographic coupling.
+                        This section demonstrates similarity with other papers. <br>
+                        Similarity is computed based on citations, co-citations and bibliographic coupling.
                     </p>
 
                     {% if citing_papers is defined %}

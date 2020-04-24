@@ -1,14 +1,14 @@
 import numpy as np
 from bokeh.embed import components
 
-from models.keypaper.analysis import KeyPaperAnalyzer
+from models.keypaper.analyzer import KeyPaperAnalyzer
 from models.keypaper.config import PubtrendsConfig
+from models.keypaper.plotter import Plotter
 from models.keypaper.pm_loader import PubmedLoader
 from models.keypaper.ss_loader import SemanticScholarLoader
 from models.keypaper.utils import (
     cut_authors_list, trim, preprocess_text,
     PUBMED_ARTICLE_BASE_URL, SEMANTIC_SCHOLAR_BASE_URL)
-from models.keypaper.visualization import Plotter
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
@@ -59,9 +59,9 @@ def prepare_paper_data(data, source, pid):
             citation = f'{journal}, ({int(float(year))})'
 
     # Estimate related topics for the paper
-    if analyzer.paper_relations_graph.nodes() and analyzer.paper_relations_graph.has_node(pid):
+    if analyzer.similarity_graph.nodes() and analyzer.similarity_graph.has_node(pid):
         related_topics = {}
-        for v in analyzer.paper_relations_graph[pid]:
+        for v in analyzer.similarity_graph[pid]:
             c = analyzer.df[analyzer.df['id'] == v]['comp'].values[0]
             if c in related_topics:
                 related_topics[c] += 1
@@ -85,12 +85,12 @@ def prepare_paper_data(data, source, pid):
     else:
         top_references = top_citations = []
 
-    if analyzer.paper_relations_graph.nodes() and analyzer.paper_relations_graph.has_node(pid):
+    if analyzer.similarity_graph.nodes() and analyzer.similarity_graph.has_node(pid):
         related_papers = map(
             lambda v: (analyzer.df[analyzer.df['id'] == v]['id'].values[0],
                        analyzer.df[analyzer.df['id'] == v]['title'].values[0],
-                       analyzer.paper_relations_graph.edges[pid, v]['weight']),
-            list(analyzer.paper_relations_graph[pid])
+                       analyzer.similarity_graph.edges[pid, v]['similarity']),
+            list(analyzer.similarity_graph[pid])
         )
         related_papers = [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid, cw)
                           for pid, title, cw in sorted(related_papers, key=lambda x: x[2], reverse=True)[:50]]

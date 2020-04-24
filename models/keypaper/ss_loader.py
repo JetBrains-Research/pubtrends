@@ -53,16 +53,16 @@ class SemanticScholarLoader(Loader):
 
         if not limit:
             limit_message = ''
-            limit = self.max_number_of_articles
+            limit = self.config.max_number_of_articles
         else:
             limit_message = f'{limit} '
 
-        self.progress.info(html.escape(f'Searching {limit_message}{sort.lower()} publications matching <{query}>'),
+        self.progress.info(html.escape(f'Searching {limit_message}{sort.lower()} publications matching \'{query}\''),
                            current=current, task=task)
 
         if sort == SORT_MOST_RELEVANT:
             query = f'''
-                CALL db.index.fulltext.queryNodes("ssTitlesAndAbstracts", {query_str})
+                CALL db.index.fulltext.queryNodes("ssTitlesAndAbstracts", '{query_str}')
                 YIELD node, score
                 RETURN node.ssid as ssid
                 ORDER BY score DESC
@@ -70,7 +70,7 @@ class SemanticScholarLoader(Loader):
                 '''
         elif sort == SORT_MOST_CITED:
             query = f'''
-                CALL db.index.fulltext.queryNodes("ssTitlesAndAbstracts", {query_str}) YIELD node
+                CALL db.index.fulltext.queryNodes("ssTitlesAndAbstracts", '{query_str}') YIELD node
                 MATCH ()-[r:SSReferenced]->(in:SSPublication)
                 WHERE in.crc32id = node.crc32id AND in.ssid = node.ssid
                 WITH node, COUNT(r) AS cnt
@@ -80,7 +80,7 @@ class SemanticScholarLoader(Loader):
                 '''
         elif sort == SORT_MOST_RECENT:
             query = f'''
-                CALL db.index.fulltext.queryNodes("ssTitlesAndAbstracts", {query_str}) YIELD node
+                CALL db.index.fulltext.queryNodes("ssTitlesAndAbstracts", '{query_str}') YIELD node
                 RETURN node.ssid as ssid
                 ORDER BY node.date DESC
                 LIMIT {limit};

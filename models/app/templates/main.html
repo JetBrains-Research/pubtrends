@@ -57,7 +57,7 @@
         <div class="jumbotron-content mb-3">
             <h1>PubTrends</h1>
             <p class="lead">
-                Discover science trends and topics faster
+                Discover science topics and trends
             </p>
             <p class="lead">
                 <a id="tour-start" class="btn btn-light"
@@ -97,7 +97,7 @@
                                 </div>
                                 <input class="form-control form-control-borderless" type="search"
                                        name="query" id="terms-input"
-                                       placeholder="Enter keywords, &quot;&quot; for phrase search"
+                                       placeholder="Use &quot;&quot; for phrase search and commas for alternatives"
                                        aria-describedby="query-addon"
                                        autofocus required>
                             </div>
@@ -206,9 +206,7 @@
         <input type="hidden" name="source" value="{{ search_example_source }}">
         <input type="hidden" name="sort" value="Most Relevant">
         <input type="hidden" name="limit" value="1000">
-        {% if development %}
         <strong>The service is in development!</strong>
-        {% endif %}
         Try example search
         <button type="submit" name="query" value="{{ search_example_terms }}" class="link-button">
             {{ search_example_terms }} at {{ search_example_source }}
@@ -253,8 +251,9 @@
                     element: '#step2',
                     intro: 'Enter keywords to define the topic of interest, e.g. ' +
                         '<a href="javascript:void(0);" onclick="useTermsSuggestion();">' +
-                            '{{ search_example_terms }}' +
-                        '</a>.'
+                        '{{ search_example_terms }}' +
+                        '</a>.<br>' +
+                        'Use &quot;&quot; for phrase search, alternatives should be delimited with commas.'
                 },
                 {
                     element: '#step3',
@@ -269,16 +268,13 @@
                     element: '#step4',
                     intro: "Click the <em>Search</em> button now!<br>" +
                         "You will be redirected automatically to a results page once analysis is complete.<br>" +
-                        "Click <em>Report tour</em> button to continue the tutorial and learn about results."
+                        "Click <em>About</em> button to learn about results."
                 }
             ]
         });
 
         intro.start();
     }
-
-
-
 </script>
 
 </body>

@@ -3,13 +3,13 @@ import unittest
 import numpy as np
 from parameterized import parameterized
 
-from models.keypaper.analysis import KeyPaperAnalyzer
+from models.keypaper.analyzer import KeyPaperAnalyzer
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.pm_loader import PubmedLoader
 from models.keypaper.ss_loader import SemanticScholarLoader
-from models.test.mock_loaders import MockLoader, COCITATION_GRAPH_EDGES, COCITATION_GRAPH_NODES, \
+from models.test.mock_loaders import MockLoader, \
     CITATION_YEARS, EXPECTED_MAX_GAIN, EXPECTED_MAX_RELATIVE_GAIN, CITATION_GRAPH_NODES, CITATION_GRAPH_EDGES, \
-    MockLoaderEmpty, MockLoaderSingle, BIBLIOGRAPHIC_COUPLING_GRAPH_NODES, BIBLIOGRAPHIC_COUPLING_DATA
+    MockLoaderEmpty, MockLoaderSingle, SIMILARITY_GRAPH_EDGES
 
 
 class TestKeyPaperAnalyzer(unittest.TestCase):
@@ -18,6 +18,7 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         loader = MockLoader()
+        KeyPaperAnalyzer.TOPIC_PAPERS_MIN = 0  # For tests, to reduce number of papers
         cls.analyzer = KeyPaperAnalyzer(loader, TestKeyPaperAnalyzer.PUBTRENDS_CONFIG, test=True)
         ids = cls.analyzer.search_terms(query='query')
         cls.analyzer.analyze_papers(ids, 'query')
@@ -49,63 +50,14 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
     def test_build_citation_graph_edges(self):
         self.assertCountEqual(list(self.analyzer.citations_graph.edges()), CITATION_GRAPH_EDGES)
 
-    def test_build_cocitation_graph_nodes(self):
-        # Don't add information to the graph
-        self.analyzer.RELATIONS_GRAPH_COCITATION = 1
-        self.analyzer.RELATIONS_GRAPH_BIBLIOGRAPHIC_COUPLING = 0
-        self.analyzer.RELATIONS_GRAPH_CITATION = 0
-        paper_relations_graph = self.analyzer.build_papers_relation_graph(
+    def test_build_similarity_graph_edges(self):
+        similarity_graph = self.analyzer.build_similarity_graph(
+            self.analyzer.df,
             self.analyzer.citations_graph,
             self.analyzer.build_cocit_grouped_df(self.analyzer.cocit_df),
             self.analyzer.bibliographic_coupling_df
         )
-
-        self.assertCountEqual(list(paper_relations_graph.nodes()), COCITATION_GRAPH_NODES)
-
-    def test_build_cocitation_graph_edges(self):
-        # Don't add information to the graph
-        self.analyzer.RELATIONS_GRAPH_COCITATION = 1
-        self.analyzer.RELATIONS_GRAPH_BIBLIOGRAPHIC_COUPLING = 0
-        self.analyzer.RELATIONS_GRAPH_CITATION = 0
-
-        paper_relations_graph = self.analyzer.build_papers_relation_graph(
-            self.analyzer.citations_graph,
-            self.analyzer.build_cocit_grouped_df(self.analyzer.cocit_df),
-            self.analyzer.bibliographic_coupling_df
-        )
-
-        # Convert edge data to networkx format
-        expected_edges = [(v, u, {'weight': w}) for v, u, w in COCITATION_GRAPH_EDGES]
-        self.assertCountEqual(list(paper_relations_graph.edges(data=True)), expected_edges)
-
-    def test_build_relations_graph_nodes(self):
-        # Don't add information to the graph
-        self.analyzer.RELATIONS_GRAPH_BIBLIOGRAPHIC_COUPLING = 1
-        self.analyzer.RELATIONS_GRAPH_COCITATION = 0
-        self.analyzer.RELATIONS_GRAPH_CITATION = 0
-        paper_relations_graph = self.analyzer.build_papers_relation_graph(
-            self.analyzer.citations_graph,
-            self.analyzer.build_cocit_grouped_df(self.analyzer.cocit_df),
-            self.analyzer.bibliographic_coupling_df
-        )
-
-        self.assertCountEqual(list(paper_relations_graph.nodes()), BIBLIOGRAPHIC_COUPLING_GRAPH_NODES)
-
-    def test_build_relations_graph_edges(self):
-        # Don't add information to the graph
-        self.analyzer.RELATIONS_GRAPH_BIBLIOGRAPHIC_COUPLING = 1
-        self.analyzer.RELATIONS_GRAPH_COCITATION = 0
-        self.analyzer.RELATIONS_GRAPH_CITATION = 0
-
-        paper_relations_graph = self.analyzer.build_papers_relation_graph(
-            self.analyzer.citations_graph,
-            self.analyzer.build_cocit_grouped_df(self.analyzer.cocit_df),
-            self.analyzer.bibliographic_coupling_df
-        )
-
-        # Convert edge data to networkx format
-        expected_edges = [(v, u, {'weight': w}) for v, u, w in BIBLIOGRAPHIC_COUPLING_DATA]
-        self.assertCountEqual(list(paper_relations_graph.edges(data=True)), expected_edges)
+        self.assertCountEqual(list(similarity_graph.edges(data=True)), SIMILARITY_GRAPH_EDGES)
 
     def test_find_max_gain_papers_count(self):
         max_gain_count = len(list(self.analyzer.max_gain_df['year'].values))
@@ -134,14 +86,14 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
     def test_merge_comps_paper_count(self):
         self.assertEqual(len(self.analyzer.df), len(self.analyzer.pub_df))
 
-    def test_subtopic_analysis_all_nodes_assigned(self):
-        nodes = self.analyzer.paper_relations_graph.nodes()
+    def test_topic_analysis_all_nodes_assigned(self):
+        nodes = self.analyzer.similarity_graph.nodes()
         for row in self.analyzer.df.itertuples():
             if getattr(row, 'id') in nodes:
                 self.assertGreaterEqual(getattr(row, 'comp'), 0)
 
-    def test_subtopic_analysis_missing_nodes_set_to_default(self):
-        nodes = self.analyzer.paper_relations_graph.nodes()
+    def test_topic_analysis_missing_nodes_set_to_default(self):
+        nodes = self.analyzer.similarity_graph.nodes()
         for row in self.analyzer.df.itertuples():
             if getattr(row, 'id') not in nodes:
                 self.assertEqual(getattr(row, 'comp'), -1)
@@ -166,21 +118,9 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
         ('do not merge one component', {1: 0, 2: 1, 3: 1, 4: 1, 5: 1}, 0.5, ({1: 0, 2: 1, 3: 1, 4: 1, 5: 1}, 0))
     ])
     def test_merge_components(self, name, partition, granularity, expected):
-        partition, n_components_merged = self.analyzer.merge_components(partition, granularity)
+        partition, n_components_merged = self.analyzer.merge_components(partition, granularity, 0)
         expected_partition, expected_merged = expected
         self.assertEqual(partition, expected_partition, name)
-
-    @parameterized.expand([
-        # Component sizes: {0: 1, 1: 3, 2: 2}, correct order - [1, 2, 0], no other
-        ('no other', {1: 0, 2: 1, 3: 1, 4: 1, 5: 2, 6: 2}, False, ({1: 2, 2: 0, 3: 0, 4: 0, 5: 1, 6: 1}, None)),
-        # Component sizes: {0: 2, 1: 3, 2: 1}, correct order - [1, 0, 2], other = 1
-        ('with other', {1: 0, 2: 1, 3: 1, 4: 1, 5: 0, 6: 2}, True, ({1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 2}, 1))
-    ])
-    def test_sort_components(self, name, partition, components_merged, expected):
-        sort_order, partition, comp_other = self.analyzer.sort_components(partition, components_merged)
-        expected_partition, expected_other = expected
-        self.assertEqual(partition, expected_partition, name)
-        self.assertEqual(comp_other, expected_other, name)
 
     def test_merge_citation_stats_paper_count(self):
         df, _, _, _ = self.analyzer.merge_citation_stats(self.analyzer.pub_df, self.analyzer.cit_stats_df)
@@ -195,25 +135,6 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
     def test_merge_citation_stats_citation_years(self):
         _, _, _, citation_years = self.analyzer.merge_citation_stats(self.analyzer.pub_df, self.analyzer.cit_stats_df)
         self.assertCountEqual(citation_years, CITATION_YEARS)
-
-    @parameterized.expand([
-        ('too large step', 10, True, None),
-        ('2 steps', 5, False, [1975, 1970]),
-        ('5 steps', 2, False, [1975, 1973, 1971, 1969, 1967])
-    ])
-    def test_subtopic_evolution(self, name, step, expect_none, expected_year_range):
-        evolution_df, year_range = self.analyzer.subtopic_evolution_analysis(
-            self.analyzer.cocit_df, step=step
-        )
-
-        if expect_none:
-            self.assertIsNone(evolution_df, msg=f'Evolution DataFrame is not None when step is too large {name}')
-
-        if expected_year_range:
-            self.assertListEqual(year_range, expected_year_range, msg=f'Wrong year range {name}')
-            self.assertEqual(len(year_range), len(evolution_df.columns) - 2, msg=f'Wrong n_steps {name}')
-        else:
-            self.assertIsNone(year_range, msg=f'Year range is not None when step is too large {name}')
 
     def test_get_most_cited_papers_for_comps(self):
         comps = self.analyzer.get_most_cited_papers_for_comps(self.analyzer.df, self.analyzer.partition, 1)
@@ -290,7 +211,7 @@ class TestKeyPaperAnalyzerSingle(unittest.TestCase):
 
     def test_dump(self):
         dump = self.analyzer.dump()
-        self.assertEqual('{"comp":{"0":0},"kwd":{"0":""}}', dump['df_kwd'])
+        self.assertEqual('{"comp":{"0":0},"kwd":{"0":"article:0.500,paper:0.500"}}', dump['df_kwd'])
 
 
 class TestKeyPaperAnalyzerMissingPaper(unittest.TestCase):

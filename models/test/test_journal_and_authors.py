@@ -2,7 +2,7 @@ import unittest
 
 from pandas.util.testing import assert_frame_equal
 
-from models.keypaper.analysis import KeyPaperAnalyzer
+from models.keypaper.analyzer import KeyPaperAnalyzer
 from models.keypaper.config import PubtrendsConfig
 from models.test.articles_for_analysis_testing import df_authors_and_journals, author_df, journal_df
 from models.test.mock_loaders import MockLoader

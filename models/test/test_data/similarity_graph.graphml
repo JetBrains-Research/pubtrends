@@ -1,5 +1,9 @@
 <?xml version='1.0' encoding='utf-8'?>
 <graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd"><key attr.name="weight" attr.type="long" for="edge" id="d0"/>
+  <key attr.name="bibcoupling" attr.type="double" for="edge" id="d2" />
+  <key attr.name="citation" attr.type="long" for="edge" id="d1" />
+  <key attr.name="cocitation" attr.type="double" for="edge" id="d0" />
+
 <graph edgedefault="undirected"><node id="15790588"/>
 <node id="19296127"/>
 <node id="24138928"/>
@@ -11,7 +15,8 @@
 <node id="27346616"/>
 <node id="29235933"/>
 <edge source="15790588" target="19296127">
-  <data key="d0">15</data>
+  <data key="d0">12</data>
+  <data key="d2">3</data>
 </edge>
 <edge source="15790588" target="22080730">
   <data key="d0">6</data>

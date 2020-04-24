@@ -93,10 +93,10 @@ pub_df.abstract = ''
 expected_cit_df = pd.DataFrame([(article_out.ssid, article_in.ssid) for article_out, article_in in required_citations],
                                columns=['id_out', 'id_in']).sort_values(by=['id_out', 'id_in']).reset_index(drop=True)
 
-expected_graph = nx.DiGraph()
+citations_graph = nx.DiGraph()
 for citation in required_citations:
     u, v = citation
-    expected_graph.add_edge(u.ssid, v.ssid)
+    citations_graph.add_edge(u.ssid, v.ssid)
 
 expected_cgraph = nx.Graph()
 expected_cgraph.add_weighted_edges_from([(article7.ssid, article10.ssid, 1),

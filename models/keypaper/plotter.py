@@ -1,5 +1,4 @@
 import json
-import json
 import logging
 from string import Template
 
@@ -8,12 +7,10 @@ import numpy as np
 from bokeh.colors import RGB
 from bokeh.core.properties import value
 from bokeh.embed import components
-from bokeh.layouts import column
 from bokeh.models import ColumnDataSource, CustomJS
 # Tools used: hover,pan,tap,wheel_zoom,box_zoom,reset,save
 from bokeh.models import LinearColorMapper, PrintfTickFormatter, ColorBar
 from bokeh.models import NumeralTickFormatter
-from bokeh.models.widgets.tables import DataTable
 from bokeh.palettes import Category20
 from bokeh.plotting import figure
 from bokeh.transform import factor_cmap
@@ -21,9 +18,9 @@ from holoviews import dim
 from matplotlib import pyplot as plt
 from wordcloud import WordCloud
 
-from .utils import LOCAL_BASE_URL, get_topic_word_cloud_data, \
-    get_frequent_tokens, cut_authors_list, ZOOM_OUT, ZOOM_IN, zoom_name, trim
-from .visualization_data import PlotPreprocessor
+from models.keypaper.plot_preprocessor import PlotPreprocessor
+from models.keypaper.utils import LOCAL_BASE_URL, get_topic_word_cloud_data, \
+    get_frequent_tokens, cut_authors_list, ZOOM_OUT, ZOOM_IN, zoom_name, trim, hex2rgb, rgb2hex
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
 hv.extension('bokeh')
@@ -34,13 +31,11 @@ MAX_AUTHOR_LENGTH = 100
 MAX_JOURNAL_LENGTH = 100
 MAX_LINEAR_AXIS = 100
 
-CHORD_DIAGRAM_SIZE = 890
-
-PLOT_WIDTH = 890
+PLOT_WIDTH = 870
 SHORT_PLOT_HEIGHT = 300
 TALL_PLOT_HEIGHT = 600
 
-PAPERS_PLOT_WIDTH = 690
+PAPERS_PLOT_WIDTH = 670
 PAPERS_PLOT_HEIGHT = 400
 
 WORD_CLOUD_WIDTH = 200
@@ -53,62 +48,45 @@ def visualize_analysis(analyzer):
     plotter = Plotter(analyzer=analyzer)
     # Order is important here!
     paper_statistics, word_cloud, zoom_out_callback = plotter.papers_statistics_and_word_cloud_and_callback()
-    if analyzer.paper_relations_graph.nodes():
-        result = {
+    if analyzer.similarity_graph.nodes():
+        return {
             'topics_analyzed': True,
             'n_papers': analyzer.n_papers,
             'n_citations': int(analyzer.df['total'].sum()),
-            'n_subtopics': len(analyzer.components),
+            'n_topics': len(analyzer.components),
             'comp_other': analyzer.comp_other,
-            'components_similarity': [components(plotter.heatmap_clusters())],
+            'components_similarity': [components(plotter.heatmap_topics_similarity())],
             'component_size_summary': [components(plotter.component_size_summary())],
             'component_years_summary_boxplots': [components(plotter.component_years_summary_boxplots())],
-            'subtopics_info_and_word_cloud_and_callback':
-                [(components(p), word_cloud_prepare(wc), zoom_in_callback) for
-                 (p, wc, zoom_in_callback) in plotter.subtopics_info_and_word_cloud_and_callback()],
+            'topics_info_and_word_cloud_and_callback':
+                [(components(p), Plotter.word_cloud_prepare(wc), zoom_in_callback) for
+                 (p, wc, zoom_in_callback) in plotter.topics_info_and_word_cloud_and_callback()],
             'top_cited_papers': [components(plotter.top_cited_papers())],
             'max_gain_papers': [components(plotter.max_gain_papers())],
             'max_relative_gain_papers': [components(plotter.max_relative_gain_papers())],
             'component_sizes': plotter.component_sizes(),
             'component_ratio': [components(plotter.component_ratio())],
             'papers_stats': [components(paper_statistics)],
-            'papers_word_cloud': word_cloud_prepare(word_cloud),
+            'papers_word_cloud': Plotter.word_cloud_prepare(word_cloud),
             'papers_zoom_out_callback': zoom_out_callback,
             'author_statistics': plotter.author_statistics(),
             'journal_statistics': plotter.journal_statistics(),
-            'experimental': analyzer.config.experimental,
         }
-        # Experimental features
-        if analyzer.config.experimental:
-            subtopic_evolution = plotter.subtopic_evolution()
-            # Pass subtopic evolution only if not None
-            if subtopic_evolution:
-                result['subtopic_evolution'] = [components(subtopic_evolution)]
-        return result
-
     else:
         return {
             'topics_analyzed': False,
             'n_papers': analyzer.n_papers,
             'n_citations': int(analyzer.df['total'].sum()),
-            'n_subtopics': 0,
+            'n_topics': 0,
             'top_cited_papers': [components(plotter.top_cited_papers())],
             'max_gain_papers': [components(plotter.max_gain_papers())],
             'max_relative_gain_papers': [components(plotter.max_relative_gain_papers())],
             'papers_stats': [components(paper_statistics)],
-            'papers_word_cloud': word_cloud_prepare(word_cloud),
+            'papers_word_cloud': Plotter.word_cloud_prepare(word_cloud),
             'papers_zoom_out_callback': zoom_out_callback,
             'author_statistics': plotter.author_statistics(),
             'journal_statistics': plotter.journal_statistics(),
-            'experimental': str(analyzer.config.experimental),
         }
-
-
-def word_cloud_prepare(wc):
-    return json.dumps([(word, int(position[0]), int(position[1]),
-                        int(font_size), orientation is not None,
-                        PlotPreprocessor.color2hex(color))
-                       for (word, count), font_size, position, orientation, color in wc.layout_])
 
 
 class Plotter:
@@ -116,11 +94,11 @@ class Plotter:
         self.analyzer = analyzer
 
         if self.analyzer:
-            if self.analyzer.paper_relations_graph.nodes():
+            if self.analyzer.similarity_graph.nodes():
                 n_comps = len(self.analyzer.components)
                 if n_comps > 20:
                     raise ValueError(f'Too big number of components {n_comps}')
-                self.comp_palette = [RGB(*PlotPreprocessor.hex2rgb(c)) for c in Category20[20][:n_comps]]
+                self.comp_palette = [RGB(*hex2rgb(c)) for c in Category20[20][:n_comps]]
                 self.comp_colors = dict(enumerate(self.comp_palette))
 
             n_pub_types = len(self.analyzer.pub_types)
@@ -150,13 +128,13 @@ class Plotter:
         """)
 
     @staticmethod
-    def subtopic_callback(source):
+    def topic_callback(source):
         return CustomJS(args=dict(source=source), code="""
             var data = source.data, selected = source.selected.indices;
             if (selected.length == 1) {
                 // only consider case where one glyph is selected by user
                 selected_comp = data['comps'][selected[0]];
-                window.location.hash = '#subtopic-' + selected_comp;
+                window.location.hash = '#topic-' + selected_comp;
             }
             source.selected.indices = [];
         """)
@@ -201,27 +179,27 @@ class Plotter:
         form.submit();
         """
 
-    def heatmap_clusters(self):
-        log.info('Visualizing components with heatmap')
+    def heatmap_topics_similarity(self):
+        log.info('Visualizing topics similarity with heatmap')
 
-        cluster_edges, clusters = PlotPreprocessor.heatmap_clusters_data(
-            self.analyzer.paper_relations_graph, self.analyzer.df, self.analyzer.comp_sizes
+        similarity_df, topics = PlotPreprocessor.topics_similarity_data(
+            self.analyzer.similarity_graph, self.analyzer.df, self.analyzer.comp_sizes
         )
 
         step = 30
         cmap = plt.cm.get_cmap('PuBu', step)
         colors = [RGB(*[round(c * 255) for c in cmap(i)[:3]]) for i in range(step)]
         mapper = LinearColorMapper(palette=colors,
-                                   low=cluster_edges.density.min(),
-                                   high=cluster_edges.density.max())
+                                   low=similarity_df.similarity.min(),
+                                   high=similarity_df.similarity.max())
 
-        p = figure(title="Similarity between groups",
-                   x_range=clusters, y_range=clusters,
+        p = figure(title="Similarity between topics",
+                   x_range=topics, y_range=topics,
                    x_axis_location="below", plot_width=PLOT_WIDTH, plot_height=PAPERS_PLOT_HEIGHT,
                    tools=TOOLS, toolbar_location='above',
-                   tooltips=[('Subtopic 1', '#@comp_x'),
-                             ('Subtopic 2', '#@comp_y'),
-                             ('Density', '@density, @value')])
+                   tooltips=[('Topic 1', '@comp_x'),
+                             ('Topic 2', '@comp_y'),
+                             ('Similarity', '@similarity')])
 
         p.grid.grid_line_color = None
         p.axis.axis_line_color = None
@@ -230,8 +208,8 @@ class Plotter:
         p.axis.major_label_standoff = 0
 
         p.rect(x="comp_x", y="comp_y", width=1, height=1,
-               source=cluster_edges,
-               fill_color={'field': 'density', 'transform': mapper},
+               source=similarity_df,
+               fill_color={'field': 'similarity', 'transform': mapper},
                line_color=None)
 
         color_bar = ColorBar(color_mapper=mapper, major_label_text_font_size="10pt",
@@ -249,8 +227,8 @@ class Plotter:
         )
 
         p = figure(x_range=[min_year - 1, max_year + 1], plot_width=PLOT_WIDTH, plot_height=SHORT_PLOT_HEIGHT,
-                   title="Subtopics by Year", toolbar_location="right", tools=TOOLS,
-                   tooltips=[('Subtopic', '$name'), ('Amount', '@$name')])
+                   title="Topics by Year", toolbar_location="right", tools=TOOLS,
+                   tooltips=[('Topic', '$name'), ('Amount', '@$name')])
 
         # NOTE: VBar is invisible (alpha = 0) to provide tooltips on hover as stacked area does not support them
         p.vbar_stack(components, x='years', width=0.9, color=self.comp_palette, source=data, alpha=0,
@@ -287,12 +265,12 @@ class Plotter:
                 expanded_vs.extend([y for _ in range(vs[i])])
             labels.extend([c for _ in range(len(expanded_vs))])
             values.extend(expanded_vs)
-        boxwhisker = hv.BoxWhisker((labels, values), 'Subtopic', 'Publications year')
+        boxwhisker = hv.BoxWhisker((labels, values), 'Topic', 'Publications year')
         boxwhisker.opts(width=PLOT_WIDTH, height=SHORT_PLOT_HEIGHT,
-                        box_fill_color=dim('Subtopic').str(), cmap='tab20')
+                        box_fill_color=dim('Topic').str(), cmap='tab20')
         return hv.render(boxwhisker, backend='bokeh')
 
-    def subtopics_info_and_word_cloud_and_callback(self):
+    def topics_info_and_word_cloud_and_callback(self):
         log.info('Per component detailed info visualization')
 
         # Prepare layouts
@@ -302,9 +280,9 @@ class Plotter:
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
         for comp in range(n_comps):
             df_comp = self.analyzer.df[self.analyzer.df['comp'] == comp]
-            ds = PlotPreprocessor.article_view_data_source(
+            ds = ColumnDataSource(PlotPreprocessor.article_view_data_source(
                 df_comp, min_year, max_year, True, width=PAPERS_PLOT_WIDTH
-            )
+            ))
             # Add type coloring
             ds.add([self.pub_types_colors_map[t] for t in df_comp['type']], 'color')
             plot = self.__serve_scatter_article_layout(ds=ds,
@@ -313,9 +291,8 @@ class Plotter:
             plot.circle(x='year', y='y', fill_alpha=0.5, source=ds, size='size',
                         line_color='color', fill_color='color', legend='type')
             plot.legend.location = "top_left"
-            plot.legend.click_policy = "hide"
 
-            # Word cloud description of subtopic by titles and abstracts
+            # Word cloud description of topic by titles and abstracts
             kwds = get_topic_word_cloud_data(self.analyzer.df_kwd, comp)
             color = (self.comp_colors[comp].r, self.comp_colors[comp].g, self.comp_colors[comp].b)
             wc = WordCloud(background_color="white", width=WORD_CLOUD_WIDTH, height=WORD_CLOUD_HEIGHT,
@@ -339,31 +316,31 @@ class Plotter:
         return [int(d[k]) for k in range(len(d))]
 
     def component_ratio(self):
-        comps, source = PlotPreprocessor.component_ratio_data(
-            self.analyzer.df, self.comp_palette
-        )
+        comps, ratios = PlotPreprocessor.component_ratio_data(self.analyzer.df)
+        colors = [self.comp_palette[int(c) - 1] for c in comps]
+        source = ColumnDataSource(data=dict(comps=comps, ratios=ratios, colors=colors))
 
         p = figure(plot_width=PLOT_WIDTH, plot_height=30 + 50 * len(comps),
                    toolbar_location="above", tools=TOOLS, y_range=comps)
         p.hbar(y='comps', right='ratios', height=0.9, fill_alpha=0.5, color='colors', source=source)
-        p.hover.tooltips = [("Subtopic", '@comps'), ("Amount", '@ratios %')]
+        p.hover.tooltips = [("Topic", '@comps'), ("Amount", '@ratios %')]
 
         p.x_range.start = 0
         p.xaxis.axis_label = 'Percentage of papers'
-        p.yaxis.axis_label = 'Subtopic'
+        p.yaxis.axis_label = 'Topic'
         p.xgrid.grid_line_color = None
         p.ygrid.grid_line_color = None
         p.axis.minor_tick_line_color = None
         p.outline_line_color = None
-        p.js_on_event('tap', self.subtopic_callback(source))
+        p.js_on_event('tap', self.topic_callback(source))
 
         return p
 
     def top_cited_papers(self):
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
-        ds = PlotPreprocessor.article_view_data_source(
+        ds = ColumnDataSource(PlotPreprocessor.article_view_data_source(
             self.analyzer.top_cited_df, min_year, max_year, False, width=PAPERS_PLOT_WIDTH
-        )
+        ))
         # Add type coloring
         ds.add([self.pub_types_colors_map[t] for t in self.analyzer.top_cited_df['type']], 'color')
 
@@ -375,7 +352,6 @@ class Plotter:
         plot.circle(x='year', y='y', fill_alpha=0.5, source=ds, size='size',
                     line_color='color', fill_color='color', legend='type')
         plot.legend.location = "top_left"
-        plot.legend.click_policy = "hide"
         return plot
 
     def max_gain_papers(self):
@@ -447,7 +423,7 @@ class Plotter:
 
     @staticmethod
     def article_citation_dynamics(df, pid):
-        d = PlotPreprocessor.article_citation_dynamics_data(df, pid)
+        d = ColumnDataSource(PlotPreprocessor.article_citation_dynamics_data(df, pid))
 
         p = figure(tools=TOOLS, toolbar_location="above", plot_width=PLOT_WIDTH,
                    plot_height=SHORT_PLOT_HEIGHT, title="Number of Citations per Year")
@@ -462,7 +438,7 @@ class Plotter:
         return p
 
     def papers_statistics_and_word_cloud_and_callback(self):
-        ds_stats = PlotPreprocessor.papers_statistics_data(self.analyzer.df)
+        ds_stats = ColumnDataSource(PlotPreprocessor.papers_statistics_data(self.analyzer.df))
 
         year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
         p = figure(tools=TOOLS, toolbar_location="above",
@@ -497,66 +473,33 @@ class Plotter:
 
         return p, wc, zoom_out_callback
 
-    def subtopic_evolution(self):
-        """
-        Sankey diagram of subtopic evolution
-        :return:
-            if self.analyzer.evolution_df is None: None, as no evolution can be observed in 1 step
-            if number of steps < 3: Sankey diagram
-            else: Sankey diagram + table with keywords
-        """
-        # Subtopic evolution analysis failed, one step is not enough to analyze evolution
-        if self.analyzer.evolution_df is None or not self.analyzer.evolution_kwds:
-            return None
-
-        n_steps = len(self.analyzer.evolution_df.columns) - 2
-
-        edges, nodes_data = PlotPreprocessor.subtopic_evolution_data(
-            self.analyzer.evolution_df, self.analyzer.evolution_kwds, n_steps
-        )
-
-        value_dim = hv.Dimension('Amount', unit=None)
-        nodes_ds = hv.Dataset(nodes_data, 'index', 'label')
-        topic_evolution = hv.Sankey((edges, nodes_ds), ['From', 'To'], vdims=value_dim)
-        topic_evolution.opts(labels='label', width=PLOT_WIDTH, height=TALL_PLOT_HEIGHT,
-                             show_values=False, cmap='tab20',
-                             edge_color=dim('To').str(), node_color=dim('index').str())
-
-        if n_steps > 3:
-            columns, source = PlotPreprocessor.subtopic_evolution_keywords_data(self.analyzer.evolution_kwds)
-            subtopic_keywords = DataTable(source=source, columns=columns, width=PLOT_WIDTH, index_position=None)
-
-            return column(hv.render(topic_evolution, backend='bokeh'), subtopic_keywords)
-
-        return hv.render(topic_evolution, backend='bokeh')
-
     def author_statistics(self):
-        author = self.analyzer.author_stats['author']
-        sum = self.analyzer.author_stats['sum']
-        if self.analyzer.paper_relations_graph.nodes():
-            subtopics = self.analyzer.author_stats.apply(
+        authors = self.analyzer.author_stats['author']
+        sums = self.analyzer.author_stats['sum']
+        if self.analyzer.similarity_graph.nodes():
+            topics = self.analyzer.author_stats.apply(
                 lambda row: self._to_colored_circle(row['comp'], row['counts'], row['sum']), axis=1)
         else:
-            subtopics = [' '] * len(self.analyzer.author_stats)  # Ignore subtopics
-        return list(zip(map(lambda a: trim(a, MAX_AUTHOR_LENGTH), author), sum, subtopics))
+            topics = [' '] * len(self.analyzer.author_stats)  # Ignore topics
+        return list(zip([trim(a, MAX_AUTHOR_LENGTH) for a in authors], sums, topics))
 
     def journal_statistics(self):
-        journal = self.analyzer.journal_stats['journal']
-        sum = self.analyzer.journal_stats['sum']
-        if self.analyzer.paper_relations_graph.nodes():
-            subtopics = self.analyzer.journal_stats.apply(
+        journals = self.analyzer.journal_stats['journal']
+        sums = self.analyzer.journal_stats['sum']
+        if self.analyzer.similarity_graph.nodes():
+            topics = self.analyzer.journal_stats.apply(
                 lambda row: self._to_colored_circle(row['comp'], row['counts'], row['sum']), axis=1)
         else:
-            subtopics = [' '] * len(self.analyzer.journal_stats)  # Ignore subtopics
-        return list(zip(map(lambda j: trim(j, MAX_JOURNAL_LENGTH), journal), sum, subtopics))
+            topics = [' '] * len(self.analyzer.journal_stats)  # Ignore topics
+        return list(zip([trim(j, MAX_JOURNAL_LENGTH) for j in journals], sums, topics))
 
     def _to_colored_circle(self, components, counts, sum, top=3):
-        # html code to generate circles corresponding to the most popular subtopics
-        return ' '.join(
-            map(lambda topic: f'''<a class="fas fa-circle" style="color:{self.comp_colors[topic[0]]}"
-                                     href="#subtopic-{topic[0] + 1}"></a>
-                                  <span class="bk" style="color:black">{int(topic[1] / sum * 100)}%</span> ''',
-                zip(components[:top], counts[:top])))
+        # html code to generate circles corresponding to the most popular topics
+        return ' '.join([
+            f'<a class="fas fa-circle" style="color:{self.comp_colors[comp]}" href="#topic-{comp + 1}"></a>'
+            f'<span class="bk" style="color:black">{int(count / sum * 100)}%</span>'
+            for comp, count in zip(components[:top], counts[:top])
+        ])
 
     def __serve_scatter_article_layout(self, ds, year_range, title, width=PLOT_WIDTH):
         min_year, max_year = year_range
@@ -605,3 +548,14 @@ class Plotter:
 
     def dump_citations_graph_cytoscape(self):
         return PlotPreprocessor.dump_citations_graph_cytoscape(self.analyzer.df, self.analyzer.citations_graph)
+
+    @staticmethod
+    def word_cloud_prepare(wc):
+        return json.dumps([(word, int(position[0]), int(position[1]),
+                            int(font_size), orientation is not None,
+                            rgb2hex(color))
+                           for (word, count), font_size, position, orientation, color in wc.layout_])
+
+    @staticmethod
+    def topics_palette(df):
+        return dict(enumerate(Category20[20][:len(set(df['comp']))]))

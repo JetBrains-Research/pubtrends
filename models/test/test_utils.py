@@ -5,7 +5,8 @@ from pandas.util.testing import assert_frame_equal
 from parameterized import parameterized
 
 from models.keypaper.utils import tokenize, cut_authors_list, split_df_list, crc32, preprocess_search_query, \
-    preprocess_doi, preprocess_pubmed_search_title
+    preprocess_doi, preprocess_pubmed_search_title, hex2rgb, rgb2hex
+
 
 
 class TestUtils(unittest.TestCase):
@@ -58,18 +59,21 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(crc32(ssid), crc32id, f"Hashed id is wrong ({case} case)")
 
     @parameterized.expand([
-        ('FooBar', '"\'FooBar\'"'),
-        ('Foo Bar', '"\'Foo\' AND \'Bar\'"'),
-        ('"Foo Bar"', '\'"Foo Bar"\''),
-        ('Foo-Bar', '"\'Foo-Bar\'"'),
-        ('&^Foo-Bar', '"\'Foo-Bar\'"'),
-        ("Alzheimer's disease", '"\'Alzheimer\' AND \'disease\'"')
+        ('FooBar', 'FooBar'),
+        ('Foo Bar', 'Foo AND Bar'),
+        ('"Foo Bar"', '"Foo Bar"'),
+        ('Foo-Bar', '"Foo-Bar"'),
+        ('&^Foo-Bar', '"Foo-Bar"'),
+        ("Alzheimer's disease", 'Alzheimer AND disease'),
+        ('Foo, Bar', 'Foo OR Bar'),
+        ('Foo, Bar Baz', 'Foo OR (Bar AND Baz)'),
+        ('Foo, "Bar Baz"', 'Foo OR "Bar Baz"'),
     ])
     def test_preprocess_search_valid_source(self, terms, expected):
         self.assertEqual(expected, preprocess_search_query(terms, 0))
 
     def test_preprocess_search_too_few_words(self):
-        self.assertEqual('"\'Foo\'"', preprocess_search_query('Foo', 1))
+        self.assertEqual('Foo', preprocess_search_query('Foo', 1))
         with self.assertRaises(Exception):
             preprocess_search_query('Foo', 2)
 
@@ -80,6 +84,18 @@ class TestUtils(unittest.TestCase):
     def test_preprocess_search_too_few_words_stems(self):
         with self.assertRaises(Exception):
             preprocess_search_query('Humans Humanity', 2)
+
+    def test_preprocess_search_dash_split(self):
+        self.assertEqual('"Covid-19"', preprocess_search_query('Covid-19', 2))
+
+    def test_preprocess_search_or(self):
+        self.assertEqual(
+            '"COVID-19" OR Coronavirus OR "Corona virus" OR "2019-nCoV" OR "SARS-CoV" OR "MERS-CoV" OR '
+            '"Severe Acute Respiratory Syndrome" OR "Middle East Respiratory Syndrome"',
+            preprocess_search_query('COVID-19, Coronavirus, "Corona virus", 2019-nCoV, SARS-CoV, '
+                                    'MERS-CoV, "Severe Acute Respiratory Syndrome", '
+                                    '"Middle East Respiratory Syndrome"', 0)
+        )
 
     def test_preprocess_search_illegal_string(self):
         with self.assertRaises(Exception):
@@ -99,3 +115,17 @@ class TestUtils(unittest.TestCase):
         title = '[DNA methylation age.]'
         expected = 'DNA methylation age'
         self.assertEqual(preprocess_pubmed_search_title(title), expected)
+        ('#91C82F', [145, 200, 47]),
+        ('#8ffe09', [143, 254, 9])
+    ])
+    def test_hex2rgb(self, color, expected):
+        self.assertEqual(hex2rgb(color), expected)
+
+    @parameterized.expand([
+        ([145, 200, 47], '#91c82f'),
+        ([143, 254, 9], '#8ffe09'),
+        ('red', '#ff0000'),
+        ('blue', '#0000ff')
+    ])
+    def test_color2hex(self, color, expected):
+        self.assertEqual(rgb2hex(color), expected)

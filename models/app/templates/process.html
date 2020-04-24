@@ -25,8 +25,14 @@
     <script>
         "use strict";
 
+        window.onunload = function() {
+            if (confirm('Leave the page? Task will be cancelled.')) {
+                cancel();
+            }
+        };
+
         const TIMEOUT = 2000; // 2 seconds
-        const MAX_RETRIES = 20;
+        const MAX_RETRIES = 30;
         let retries = 0;
         let cancelled = false;
         let last_progress;
@@ -82,7 +88,13 @@
                             setTimeout(check_status, TIMEOUT);
                         }
                     }
-                }
+                },
+                error: function () {
+                    $('#progress').hide();
+                    $('#log').hide();
+                    $('#status').html("<h2>Error</h2>Server is not available.");
+                },
+                timeout: TIMEOUT * MAX_RETRIES
             });
         }
 
@@ -118,11 +130,13 @@
 <body>
 
 <div class="container content-max">
-    <nav class="navbar navbar-light bg-light justify-content-between mt-3">
-        <div>
-            <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
-            <span class="search-query">{{query}} at {{source}} {{limit}} {{sort}}</span>
-        </div>
+    <nav class="navbar navbar-light bg-light d-flex mt-3">
+        <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
+        <ol class="breadcrumb bg-light flex-grow-1 search-query">
+            <li class="breadcrumb-item">{{ source }}</li>
+            <li class="breadcrumb-item"><strong>{{ query }}</strong></li>
+            <li class="breadcrumb-item">{{ limit }} {{ sort }}</li>
+        </ol>
         <button class="btn btn-lg btn-link grey" type="reset" onclick="cancel()">&#10006;&nbsp;Cancel</button>
     </nav>
     <div id="progress" class="progress">

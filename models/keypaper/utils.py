@@ -1,16 +1,16 @@
-import binascii
 import html
-import itertools
 import logging
 import re
-import sys
 from collections import Counter
 from string import Template
 from threading import Lock
 
+import binascii
 import nltk
 import numpy as np
 import pandas as pd
+import sys
+from matplotlib import colors
 from nltk.corpus import stopwords, wordnet
 from nltk.stem import WordNetLemmatizer, SnowballStemmer
 from nltk.tokenize import word_tokenize
@@ -128,21 +128,16 @@ def tokenize(text, query=None, min_token_length=3):
 
 def get_frequent_tokens(df, query, fraction=0.1, min_tokens=20):
     """
-    Compute tokens weighted frequencies, favouring title
+    Compute tokens weighted frequencies
     :param query: search query to exclude
     :param fraction: fraction of most common tokens
     :param min_tokens: minimal number of tokens to return
     :return: dictionary {token: frequency}
     """
     counter = Counter()
-    for title in df['title']:
-        # Count only single occurrence
-        for token in set(tokenize(title, query)):
-            counter[token] += 2  # Weight for title
-    for abstract in df['abstract']:
-        # Count only single occurrence
-        for token in set(tokenize(abstract, query)):
-            counter[token] += 1  # Weight for abstract
+    for text in df['title'] + ' ' + df['abstract']:
+        for token in tokenize(text, query):
+            counter[token] += 1
     result = {}
     tokens = len(counter)
     for token, cnt in counter.most_common(max(min_tokens, int(tokens * fraction))):
@@ -160,12 +155,12 @@ def get_topic_word_cloud_data(df_kwd, comp):
     return kwds
 
 
-def get_topics_description(df, comps, query, n_words):
+def get_topics_description(df, comps, query, n_words, n_gram=2):
     if len(comps) == 1:
         most_frequent = get_frequent_tokens(df, query)
         return {0: list(sorted(most_frequent.items(), key=lambda kv: kv[1], reverse=True))[:n_words]}
 
-    ngrams, tfidf = compute_tfidf(df, comps, query, n_words, n_gram=2)
+    ngrams, tfidf = compute_tfidf(df, comps, query, n_words, n_gram=n_gram)
     result = {}
     for comp in comps.keys():
         # Generate no keywords for '-1' component
@@ -173,14 +168,12 @@ def get_topics_description(df, comps, query, n_words):
             result[comp] = ''
             continue
 
-        # Sort indices by tfidf value
-        # It might be faster to use np.argpartition instead of np.argsort
-        ind = np.argsort(tfidf[comp, :].toarray(), axis=1)
-
-        # Take size indices with the largest tfidf
-        result[comp] = list(itertools.chain.from_iterable(
-            [[(t, tfidf[comp, idx]) for t in ngrams[idx].split(' ')] for idx in ind[0, ::-1]])
-        )
+        # Take size indices with the largest tfidf first
+        counter = Counter()
+        for i, n in enumerate(ngrams):
+            for w in n.split(' '):
+                counter[w] += tfidf[comp, i]
+        result[comp] = counter.most_common(n_words)
     return result
 
 
@@ -208,14 +201,10 @@ def compute_tfidf(df, comps, query, n_words, n_gram=1, other_comp=None, ignore_o
         # -1 is OTHER component, not meaningful
         if not (ignore_other and comp == other_comp):
             df_comp = df[df['id'].isin(article_ids)]
-            # Artificially create weighted text, duplicating words in title
-            # See: get_frequent_tokens
-            # Important: As of Python 3.7 set from list preserves order, we can use ngrams
-            tokens = itertools.chain.from_iterable(
-                [list(set(tokenize(t, query))) * 2 for t in df_comp['title']] +
-                [list(set(tokenize(a, query))) for a in df_comp['abstract']])
-            corpus.append(' '.join(tokens))
-    vectorizer = CountVectorizer(min_df=0.01, max_df=0.8, ngram_range=(1, n_gram), max_features=n_words * len(comps))
+            corpus.append(' '.join([f'{t} {a}' for t, a in zip(df_comp['title'], df_comp['abstract'])]))
+    vectorizer = CountVectorizer(min_df=0.01, max_df=0.8, ngram_range=(1, n_gram),
+                                 max_features=n_words * len(comps),
+                                 tokenizer=lambda t: tokenize(t, query))
     counts = vectorizer.fit_transform(corpus)
     tfidf_transformer = TfidfTransformer()
     tfidf = tfidf_transformer.fit_transform(counts)
@@ -292,8 +281,8 @@ def vectorize(corpus, query=None, n_words=1000):
     return counts, vectorizer
 
 
-def lda_subtopics(counts, n_topics=10):
-    log.info(f'Performing LDA subtopic analysis')
+def lda_topics(counts, n_topics=10):
+    log.info(f'Performing LDA topic analysis')
     lda = LatentDirichletAllocation(n_components=n_topics, random_state=0)
     topics = lda.fit_transform(counts)
 
@@ -301,7 +290,7 @@ def lda_subtopics(counts, n_topics=10):
     return topics, lda
 
 
-def explain_lda_subtopics(lda, vectorizer, n_top_words=20):
+def explain_lda_topics(lda, vectorizer, n_top_words=20):
     feature_names = vectorizer.get_feature_names()
     explanations = {}
     for i, topic in enumerate(lda.components_):
@@ -316,27 +305,39 @@ def trim(string, max_length):
 
 def preprocess_search_query(query, min_search_words):
     """ Preprocess search string for Neo4j full text lookup """
+    if ',' in query:
+        qor = ''
+        for p in query.split(','):
+            if len(qor) > 0:
+                qor += ' OR '
+            pp = preprocess_search_query(p.strip(), min_search_words)
+            if ' AND ' in pp:
+                qor += f'({pp})'
+            else:
+                qor += pp
+        return qor
     processed = re.sub('[ ]{2,}', ' ', query.strip())  # Whitespaces normalization, see #215
     if len(processed) == 0:
         raise Exception('Empty query')
-    processed = re.sub('[^0-9a-zA-Z\'"\\-\\.+, ]', '', processed)  # Remove unknown symbols
+    processed = re.sub('[^0-9a-zA-Z\'"\\-\\.+ ]', '', processed)  # Remove unknown symbols
     if len(processed) == 0:
         raise Exception('Illegal character(s), only English letters, numbers, '
                         f'and +- signs are supported. Query: {query}')
-    if len(processed.split(' ')) < min_search_words:
+    if len(re.split('[ -]', processed)) < min_search_words:
         raise Exception(f'Please use more specific query with >= {min_search_words} words. Query: {query}')
     # Looking for complete phrase
     if re.match('^"[^"]+"$', processed):
-        return '\'"' + re.sub('"', '', processed) + '"\''
+        return '"' + re.sub('"', '', processed) + '"'
     elif re.match('^[^"]+$', processed):
         words = [re.sub("'s$", '', w) for w in processed.split(' ')]  # Fix apostrophes
         stemmer = SnowballStemmer('english')
         stems = set([stemmer.stem(word) for word in words])
-        if len(stems) < min_search_words:
+        if len(stems) + len(processed.split('-')) - 1 < min_search_words:
             raise Exception(f'Please use query with >= {min_search_words} different words. Query: {query}')
-        return '"' + ' AND '.join([f"'{w}'" for w in words]) + '"'
+        return ' AND '.join([w if '-' not in w else f'"{w}"' for w in words])  # Dashed terms should be quoted
     raise Exception(f'Illegal search query, please use search terms or '
                     f'all the query wrapped in "" for phrasal search. Query: {query}')
+
 
 
 def preprocess_doi(line):
@@ -352,3 +353,15 @@ def preprocess_pubmed_search_title(line):
     Title processing similar to PubmedXMLParser - special characters removal
     """
     return line.strip('.[]')
+
+def hex2rgb(color):
+    return [int(color[pos:pos + 2], 16) for pos in range(1, 7, 2)]
+
+
+def rgb2hex(color):
+    if isinstance(color, str):
+        r, g, b, _ = colors.to_rgba(color)
+        r, g, b = r * 255, g * 255, b * 255
+    else:
+        r, g, b = color
+    return "#{0:02x}{1:02x}{2:02x}".format(int(r), int(g), int(b))
