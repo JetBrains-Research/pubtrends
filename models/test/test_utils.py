@@ -8,7 +8,6 @@ from models.keypaper.utils import tokenize, cut_authors_list, split_df_list, crc
     preprocess_doi, preprocess_pubmed_search_title, hex2rgb, rgb2hex
 
 
-
 class TestUtils(unittest.TestCase):
     def test_tokenizer(self):
         text = """Very interesting article about elephants and donkeys.
@@ -115,9 +114,7 @@ class TestUtils(unittest.TestCase):
         title = '[DNA methylation age.]'
         expected = 'DNA methylation age'
         self.assertEqual(preprocess_pubmed_search_title(title), expected)
-        ('#91C82F', [145, 200, 47]),
-        ('#8ffe09', [143, 254, 9])
-    ])
+
     def test_hex2rgb(self, color, expected):
         self.assertEqual(hex2rgb(color), expected)
 
