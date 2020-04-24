@@ -339,7 +339,6 @@ def preprocess_search_query(query, min_search_words):
                     f'all the query wrapped in "" for phrasal search. Query: {query}')
 
 
-
 def preprocess_doi(line):
     """
     Removes doi.org prefix if full URL was pasted, then strips unnecessary slashes
@@ -353,6 +352,7 @@ def preprocess_pubmed_search_title(line):
     Title processing similar to PubmedXMLParser - special characters removal
     """
     return line.strip('.[]')
+
 
 def hex2rgb(color):
     return [int(color[pos:pos + 2], 16) for pos in range(1, 7, 2)]

@@ -115,6 +115,10 @@ class TestUtils(unittest.TestCase):
         expected = 'DNA methylation age'
         self.assertEqual(preprocess_pubmed_search_title(title), expected)
 
+    @parameterized.expand([
+        ('#91C82F', [145, 200, 47]),
+        ('#8ffe09', [143, 254, 9])
+    ])
     def test_hex2rgb(self, color, expected):
         self.assertEqual(hex2rgb(color), expected)
 
