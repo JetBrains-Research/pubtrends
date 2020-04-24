@@ -3,6 +3,7 @@ from models.keypaper.connector import Connector
 
 
 class SSTestDatabaseSupplier(Connector):
+    INDEX_FIELDS = ['crc32id', 'doi']
 
     def __init__(self):
         config = PubtrendsConfig(test=True)
@@ -12,8 +13,9 @@ class SSTestDatabaseSupplier(Connector):
     def init_semantic_scholar_database(self):
         with self.neo4jdriver.session() as session:
             indexes = session.run('CALL db.indexes()').data()
-            if len(list(filter(lambda i: i['description'] == 'INDEX ON :SSPublication(crc32id)', indexes))) > 0:
-                session.run('DROP INDEX ON :SSPublication(crc32id)')
+            for field in self.INDEX_FIELDS:
+                if len(list(filter(lambda i: i['description'] == f'INDEX ON :SSPublication({field})', indexes))) > 0:
+                    session.run(f'DROP INDEX ON :SSPublication({field})')
 
             if len(list(filter(lambda i: i['description'] == 'INDEX ON NODE:SSPublication(title, abstract)',
                                indexes))) > 0:
@@ -32,21 +34,24 @@ ON CREATE SET
     n.title = data.title,
     n.abstract = data.abstract,
     n.date = datetime({year: data.year, month: 1, day: 1}),
+    n.doi = data.doi,
     n.aux = data.aux
 ON MATCH SET
     n.pmid = data.pmid,
     n.title = data.title,
     n.abstract = data.abstract,
     n.date = datetime({year: data.year, month: 1, day: 1}),
+    n.doi = data.doi,
     n.aux = data.aux
 RETURN n;
 '''
         with self.neo4jdriver.session() as session:
             session.run(query, articles=[a.to_dict() for a in articles])
 
-        # Init index by crc32id
-        with self.neo4jdriver.session() as session:
-            session.run('CREATE INDEX ON :SSPublication(crc32id)')
+        # Init indexes by crc32id and doi
+        for field in self.INDEX_FIELDS:
+            with self.neo4jdriver.session() as session:
+                session.run(f'CREATE INDEX ON :SSPublication({field})')
 
         # Init full text search index
         with self.neo4jdriver.session() as session:

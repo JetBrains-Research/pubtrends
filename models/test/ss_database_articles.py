@@ -12,6 +12,7 @@ class Article:
     title: str
     year: int = 1970
     type: str = 'Article'
+    doi: str = ''
 
     def to_dict(self):
         assert self.crc32id is not None
@@ -23,13 +24,14 @@ class Article:
             'year': self.year,
             'abstract': '',
             'type': self.type,
+            'doi': self.doi,
             'aux': json.dumps({"journal": {"name": ""}, "authors": []})
         }
 
 
 article1 = Article('5451b1ef43678d473575bdfa7016d024146f2b53', -410264312,
                    'I can find this using full text search',
-                   year=1999)
+                   year=1999, doi='10.000/0000')
 
 article2 = Article('cad767094c2c4fff5206793fd8674a10e7fba3fe', 984465402,
                    'Can find using search',

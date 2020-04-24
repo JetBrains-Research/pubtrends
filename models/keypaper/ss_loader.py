@@ -6,7 +6,7 @@ from collections import Iterable
 import numpy as np
 import pandas as pd
 
-from models.keypaper.utils import SORT_MOST_CITED, SORT_MOST_RECENT, SORT_MOST_RELEVANT
+from models.keypaper.utils import SORT_MOST_CITED, SORT_MOST_RECENT, SORT_MOST_RELEVANT, preprocess_doi
 from .loader import Loader
 from .utils import crc32, preprocess_search_query
 
@@ -19,16 +19,23 @@ class SemanticScholarLoader(Loader):
         super(SemanticScholarLoader, self).__init__(config)
 
     def find(self, key, value, current=1, task=None):
+        value = value.strip()
         self.progress.info(f"Searching for a publication with {key} '{value}'", current=current, task=task)
+
         if key == 'id':
             key = 'ssid'
+
+        # Preprocess DOI
+        if key == 'doi':
+            value = preprocess_doi(value)
+
         # Use dedicated text index to search title.
         if key == 'title':
             query = f'''
                 CALL db.index.fulltext.queryNodes("ssTitlesAndAbstracts", '"{re.sub('"', '', value.strip())}"')
                 YIELD node
                 MATCH (p:SSPublication)
-                WHERE p.crc32id = node.crc32id AND p.ssid = node.ssid AND p.title = '{value}'
+                WHERE p.crc32id = node.crc32id AND p.ssid = node.ssid AND toLower(p.title) = '{value.lower()}'
                 RETURN p.ssid AS ssid;
             '''
         else:

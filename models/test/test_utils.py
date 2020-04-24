@@ -5,7 +5,8 @@ from pandas.util.testing import assert_frame_equal
 from parameterized import parameterized
 
 from models.keypaper.utils import tokenize, cut_authors_list, split_df_list, crc32, preprocess_search_query, \
-    hex2rgb, rgb2hex
+    preprocess_doi, preprocess_pubmed_search_title, hex2rgb, rgb2hex
+
 
 
 class TestUtils(unittest.TestCase):
@@ -103,6 +104,17 @@ class TestUtils(unittest.TestCase):
             preprocess_search_query('&&&', 2)
 
     @parameterized.expand([
+        ('dx.doi.org prefix', 'http://dx.doi.org/10.1037/a0028240', '10.1037/a0028240'),
+        ('doi.org prefix', 'http://doi.org/10.3352/jeehp.2013.10.3', '10.3352/jeehp.2013.10.3'),
+        ('no changes', '10.1037/a0028240', '10.1037/a0028240')
+    ])
+    def test_preprocess_doi(self, case, doi, expected):
+        self.assertEqual(preprocess_doi(doi), expected, case)
+
+    def test_preprocess_pubmed_search_title(self):
+        title = '[DNA methylation age.]'
+        expected = 'DNA methylation age'
+        self.assertEqual(preprocess_pubmed_search_title(title), expected)
         ('#91C82F', [145, 200, 47]),
         ('#8ffe09', [143, 254, 9])
     ])

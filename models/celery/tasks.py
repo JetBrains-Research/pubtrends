@@ -69,8 +69,13 @@ def find_paper_async(source, key, value):
     loader.set_progress(progress)
     try:
         result = loader.find(key, value)
-        progress.info('Done', current=2)
-        return result
+        if len(result) == 1:
+            progress.info('Done', current=2)
+            return result
+        elif len(result) == 0:
+            raise Exception('Found no papers matching specified key - value pair')
+        else:
+            raise Exception('Found multiple papers matching your search, please try to be more specific')
     finally:
         loader.close_connection()
 

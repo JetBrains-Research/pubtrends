@@ -8,10 +8,10 @@ from parameterized import parameterized
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.pm_loader import PubmedLoader
 from models.keypaper.utils import SORT_MOST_RECENT, SORT_MOST_RELEVANT, SORT_MOST_CITED
-from models.test.pm_database_supplier import PMTestDatabaseSupplier
 from models.test.pm_database_articles import REQUIRED_ARTICLES, ARTICLES, EXPECTED_PUB_DF, \
     INNER_CITATIONS, CITATIONS, EXPECTED_CIT_DF, EXPECTED_COCIT_DF, EXPECTED_CIT_STATS_DF, \
     EXPANDED_IDS, PART_OF_ARTICLES, EXPECTED_PUB_DF_GIVEN_IDS
+from models.test.pm_database_supplier import PMTestDatabaseSupplier
 
 
 class TestPubmedLoader(unittest.TestCase):
@@ -114,6 +114,36 @@ class TestPubmedLoader(unittest.TestCase):
         print(expected)
         print(actual)
         self.assertSequenceEqual(sorted(expected), sorted(actual), "Wrong list of expanded ids")
+
+    @parameterized.expand([
+        ('id search', 'id', '1', ['1']),
+        ('id search - with spaces', 'id', '  1  ', ['1']),
+        ('title search - lower case', 'title', 'article title 2', ['2']),
+        ('title search - special characters', 'title', '[article title 3.]', ['3']),
+        ('title search - Title Case', 'title', 'Article Title 4', ['4']),
+        ('title search - with spaces', 'title', '       Article Title 4        ', ['4']),
+        ('dx.doi.org search', 'doi', 'http://dx.doi.org/10.000/0000', ['1']),
+        ('doi.org search', 'doi', 'http://doi.org/10.000/0000', ['1']),
+        ('doi search', 'doi', '10.000/0000', ['1']),
+        ('doi with spaces', 'doi', '      10.000/0000       ', ['1']),
+    ])
+    def test_find_match(self, case, key, value, expected):
+        actual = self.loader.find(key, value)
+        self.assertListEqual(sorted(actual), sorted(expected), case)
+
+    @parameterized.expand([
+        ('no such id', 'id', '0'),
+        ('abstract words in query', 'title', 'abstract'),
+        ('no such title', 'title', 'Article Title 0'),
+        ('no such doi', 'doi', '10.000/0001')
+    ])
+    def test_find_no_match(self, case, key, value):
+        actual = self.loader.find(key, value)
+        self.assertTrue(len(actual) == 0, case)
+
+    def test_find_raise_pmid_not_integer(self):
+        with self.assertRaises(Exception):
+            self.loader.find('id', 'abc')
 
     @classmethod
     def tearDownClass(cls):

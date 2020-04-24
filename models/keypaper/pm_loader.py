@@ -1,14 +1,14 @@
 import html
 import logging
 import re
-
 from collections import Iterable
+
 import numpy as np
 import pandas as pd
 
-from models.keypaper.utils import SORT_MOST_CITED, SORT_MOST_RECENT, SORT_MOST_RELEVANT
-from models.keypaper.utils import preprocess_search_query
 from models.keypaper.loader import Loader
+from models.keypaper.utils import SORT_MOST_CITED, SORT_MOST_RECENT, SORT_MOST_RELEVANT
+from models.keypaper.utils import preprocess_search_query, preprocess_doi, preprocess_pubmed_search_title
 
 logger = logging.getLogger(__name__)
 
@@ -18,18 +18,30 @@ class PubmedLoader(Loader):
         super(PubmedLoader, self).__init__(config)
 
     def find(self, key, value, current=1, task=None):
+        value = value.strip()
         self.progress.info(f"Searching for a publication with {key} '{value}'", current=current, task=task)
 
         if key == 'id':
             key = 'pmid'
 
+            # We use integer PMIDs in neo4j, if value is not a valid integer -> no match
+            try:
+                value = int(value)
+            except ValueError:
+                raise Exception("PMID should be an integer")
+
+        # Preprocess DOI
+        if key == 'doi':
+            value = preprocess_doi(value)
+
         # Use dedicated text index to search title.
         if key == 'title':
+            value = preprocess_pubmed_search_title(value)
             query = f'''
                 CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", '"{re.sub('"', '', value.strip())}"')
                 YIELD node
                 MATCH (p:PMPublication)
-                WHERE p.pmid = node.pmid AND p.title = '{value}'
+                WHERE p.pmid = node.pmid AND toLower(p.title) = '{value.lower()}'
                 RETURN p.pmid AS pmid;
             '''
         else:

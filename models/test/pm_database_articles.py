@@ -1,9 +1,9 @@
 import json
-import pandas as pd
-
 from dataclasses import dataclass, field
 from datetime import date
 from typing import List
+
+import pandas as pd
 
 from models.keypaper.loader import Loader
 
@@ -42,6 +42,7 @@ class PubmedArticle:
     aux: AuxInfo = AuxInfo()
     abstract: str = None
     type: str = 'Article'
+    doi: str = ''
     date: date = date(1970, 1, 1)
 
     def authors(self) -> str:
@@ -50,16 +51,19 @@ class PubmedArticle:
     def journal(self) -> str:
         return self.aux.journal.name
 
-    @staticmethod
-    def null(field):
-        if isinstance(field, str):
-            field = repr(field)
-        elif isinstance(field, date):
-            field = repr(str(field))
-        return field if field else 'null'
-
     def __str__(self):
         return ', '.join(self.to_list())
+
+    def to_dict(self):
+        return {
+            'pmid': self.pmid,
+            'title': self.title,
+            'date': self.date,
+            'abstract': self.abstract,
+            'type': self.type,
+            'doi': self.doi,
+            'aux': json.dumps(self.aux.to_dict())
+        }
 
     def to_list(self):
         return [self.pmid, self.title, json.dumps(self.aux.to_dict()), self.abstract if self.abstract else '',
@@ -71,7 +75,7 @@ class PubmedArticle:
 
 
 REQUIRED_ARTICLES = [
-    PubmedArticle(1, 'Article Title 1', date=date(1963, 2, 1),
+    PubmedArticle(1, 'Article Title 1', date=date(1963, 2, 1), doi='10.000/0000',
                   aux=AuxInfo(
                       authors=[Author(name='Geller R'), Author(name='Geller M'), Author(name='Bing Ch')],
                       journal=Journal(name='Nature'))),

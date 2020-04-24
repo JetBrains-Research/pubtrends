@@ -42,6 +42,8 @@ CALL apoc.periodic.iterate("MATCH ()-[r:SSReferenced]->() RETURN r",
 CALL apoc.periodic.iterate("MATCH (p:SSPublication) RETURN p", 
     "DETACH DELETE p", {batchSize: $DELETE_BATCH_SIZE});""".trimIndent())
         }
+
+        processIndexes(true)
     }
 
     /**
@@ -50,16 +52,19 @@ CALL apoc.periodic.iterate("MATCH (p:SSPublication) RETURN p",
     private fun processIndexes(createOrDelete: Boolean) {
         driver.session().use { session ->
 
-            // index by crc32id
+            // indexes by crc32id and doi
             val indexes = session.run("CALL db.indexes()").list()
-            if (indexes.any { it["description"].toString().trim('"') ==
-                            "INDEX ON :SSPublication(crc32id)" }) {
-                if (!createOrDelete) {
-                    session.run("DROP INDEX ON :SSPublication(crc32id)")
+            listOf("crc32id", "doi").forEach {field ->
+                if (indexes.any { it["description"].toString().trim('"') ==
+                                "INDEX ON :SSPublication($field)" }) {
+                    if (!createOrDelete) {
+                        session.run("DROP INDEX ON :SSPublication($field)")
+                    }
+                } else if (createOrDelete) {
+                    session.run("CREATE INDEX ON :SSPublication($field)")
                 }
-            } else if (createOrDelete) {
-                session.run("CREATE INDEX ON :SSPublication(crc32id)")
             }
+
             // full text search index
             if (indexes.any { it["description"].toString().trim('"') ==
                             "INDEX ON NODE:SSPublication(title, abstract)" }) {

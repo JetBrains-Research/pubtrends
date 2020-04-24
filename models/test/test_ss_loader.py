@@ -7,9 +7,9 @@ from parameterized import parameterized
 from models.keypaper.config import PubtrendsConfig
 from models.keypaper.ss_loader import SemanticScholarLoader
 from models.keypaper.utils import SORT_MOST_RECENT, SORT_MOST_CITED, SORT_MOST_RELEVANT
-from models.test.ss_database_supplier import SSTestDatabaseSupplier
 from models.test.ss_database_articles import required_articles, extra_articles, required_citations, \
     expected_cit_stats_df, expected_cit_df, extra_citations, expected_cocit_df, part_of_articles, expanded_articles
+from models.test.ss_database_supplier import SSTestDatabaseSupplier
 
 
 class TestSemanticScholarLoader(unittest.TestCase):
@@ -82,6 +82,30 @@ class TestSemanticScholarLoader(unittest.TestCase):
         expected = list(map(lambda article: article.ssid, expanded_articles))
         actual = self.loader.expand(ids)
         self.assertSequenceEqual(sorted(expected), sorted(actual), "Wrong list of expanded ids")
+
+    @parameterized.expand([
+        ('id search', 'id', '5451b1ef43678d473575bdfa7016d024146f2b53', ['5451b1ef43678d473575bdfa7016d024146f2b53']),
+        ('id spaces', 'id', ' 5451b1ef43678d473575bdfa7016d024146f2b53 ', ['5451b1ef43678d473575bdfa7016d024146f2b53']),
+        ('title search - lower case', 'title', 'can find using search', ['cad767094c2c4fff5206793fd8674a10e7fba3fe']),
+        ('title search - Title Case', 'title', 'Can Find Using Search', ['cad767094c2c4fff5206793fd8674a10e7fba3fe']),
+        ('title search with spaces', 'title', ' Can Find Using Search ', ['cad767094c2c4fff5206793fd8674a10e7fba3fe']),
+        ('dx.doi.org search', 'doi', 'http://dx.doi.org/10.000/0000', ['5451b1ef43678d473575bdfa7016d024146f2b53']),
+        ('doi.org search', 'doi', 'http://doi.org/10.000/0000', ['5451b1ef43678d473575bdfa7016d024146f2b53']),
+        ('doi search', 'doi', '10.000/0000', ['5451b1ef43678d473575bdfa7016d024146f2b53']),
+        ('doi with spaces', 'doi', '     10.000/0000      ', ['5451b1ef43678d473575bdfa7016d024146f2b53']),
+    ])
+    def test_find_match(self, case, key, value, expected):
+        actual = self.loader.find(key, value)
+        self.assertListEqual(sorted(actual), sorted(expected), case)
+
+    @parameterized.expand([
+        ('no such id', 'id', '0'),
+        ('no such title', 'title', 'Article Title 0'),
+        ('no such doi', 'doi', '10.000/0001')
+    ])
+    def test_find_no_match(self, case, key, value):
+        actual = self.loader.find(key, value)
+        self.assertTrue(len(actual) == 0, case)
 
 
 if __name__ == "__main__":

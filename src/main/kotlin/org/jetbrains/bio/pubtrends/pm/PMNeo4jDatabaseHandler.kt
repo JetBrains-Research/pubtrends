@@ -3,8 +3,6 @@ package org.jetbrains.bio.pubtrends.pm
 import com.google.gson.GsonBuilder
 import org.jetbrains.bio.pubtrends.AbstractDBHandler
 import org.jetbrains.bio.pubtrends.Neo4jConnector
-import org.neo4j.driver.v1.AuthTokens
-import org.neo4j.driver.v1.GraphDatabase
 import java.io.Closeable
 
 /**
@@ -42,6 +40,8 @@ CALL apoc.periodic.iterate("MATCH ()-[r:PMReferenced]->() RETURN r",
 CALL apoc.periodic.iterate("MATCH (p:PMPublication) RETURN p", 
     "DETACH DELETE p", {batchSize: $DELETE_BATCH_SIZE});""".trimIndent())
         }
+
+        processIndexes(true)
     }
 
     /**
@@ -50,16 +50,19 @@ CALL apoc.periodic.iterate("MATCH (p:PMPublication) RETURN p",
     private fun processIndexes(createOrDelete: Boolean) {
         driver.session().use { session ->
 
-            // index by pmid
+            // indexes by pmid and doi
             val indexes = session.run("CALL db.indexes()").list()
-            if (indexes.any { it["description"].toString().trim('"') ==
-                            "INDEX ON :PMPublication(pmid)" }) {
-                if (!createOrDelete) {
-                    session.run("DROP INDEX ON :PMPublication(pmid)")
+            listOf("pmid", "doi").forEach {field ->
+                if (indexes.any { it["description"].toString().trim('"') ==
+                                "INDEX ON :PMPublication($field)" }) {
+                    if (!createOrDelete) {
+                        session.run("DROP INDEX ON :PMPublication($field)")
+                    }
+                } else if (createOrDelete) {
+                    session.run("CREATE INDEX ON :PMPublication($field)")
                 }
-            } else if (createOrDelete) {
-                session.run("CREATE INDEX ON :PMPublication(pmid)")
             }
+
             // full text search index
             if (indexes.any { it["description"].toString().trim('"') ==
                             "INDEX ON NODE:PMPublication(title, abstract)" }) {

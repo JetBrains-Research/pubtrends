@@ -176,14 +176,9 @@ def process_paper():
         if job and job.state == 'SUCCESS':
             id_list = job.result
             logging.debug('/process_paper single paper analysis')
-            if len(id_list) == 1:
-                job = analyze_id_list.delay(source, id_list=id_list, zoom=PAPER_ANALYSIS, query=query)
-                return redirect(url_for('.process', query=query, analysis_type=PAPER_ANALYSIS_TITLE,
-                                        id=id_list[0], source=source, jobid=job.id))
-            elif len(id_list) == 0:
-                return render_template_string('Found no papers matching specified key - value pair')
-            else:
-                return render_template_string('Found multiple papers matching your search')
+            job = analyze_id_list.delay(source, id_list=id_list, zoom=PAPER_ANALYSIS, query=query)
+            return redirect(url_for('.process', query=query, analysis_type=PAPER_ANALYSIS_TITLE,
+                                    id=id_list[0], source=source, jobid=job.id))
 
 
 @app.route('/paper')
