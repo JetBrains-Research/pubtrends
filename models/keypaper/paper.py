@@ -47,7 +47,9 @@ def prepare_paper_data(data, source, pid):
     journal = sel['journal'].values[0]
     year = sel['year'].values[0]
     topic = sel['comp'].values[0]
-    doi = sel['doi'].values[0] or ''
+    doi = str(sel['doi'].values[0])
+    if doi == 'None' or doi == 'nan':
+        doi = ''
 
     # Estimate related topics for the paper
     if analyzer.similarity_graph.nodes() and analyzer.similarity_graph.has_node(pid):
@@ -162,7 +164,9 @@ def prepare_papers_data(data, source, comp=None, word=None, author=None, journal
     for _, row in df.iterrows():
         pid, title, abstract, authors, journal, year, total, doi = \
             row['id'], row['title'], row['abstract'], row['authors'], row['journal'], \
-            row['year'], row['total'], row['doi'] or ''
+            row['year'], row['total'], str(row['doi'])
+        if doi == 'None' or doi == 'nan':
+            doi = ''
         authors = cut_authors_list(authors, limit=2)  # Take only first/last author
         result.append((pid, (trim(title, MAX_TITLE_LENGTH)), authors, url_prefix + pid, trim(journal, 50),
                        year, total, doi))
