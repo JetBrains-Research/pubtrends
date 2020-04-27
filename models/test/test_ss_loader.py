@@ -80,7 +80,7 @@ class TestSemanticScholarLoader(unittest.TestCase):
     def test_expand(self):
         ids = list(map(lambda article: article.ssid, part_of_articles))
         expected = list(map(lambda article: article.ssid, expanded_articles))
-        actual = self.loader.expand(ids)
+        actual = self.loader.expand(ids, 1000)
         self.assertSequenceEqual(sorted(expected), sorted(actual), "Wrong list of expanded ids")
 
     @parameterized.expand([
