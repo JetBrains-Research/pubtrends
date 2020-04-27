@@ -253,7 +253,8 @@ class PubmedLoader(Loader):
         bibliographic_coupling_df['total'] = bibliographic_coupling_df['total'].apply(int)
         return bibliographic_coupling_df
 
-    def expand(self, ids, current=1, task=None):
+    def expand(self, ids, limit, current=1, task=None):
+        max_to_expand = int((limit - len(ids)) / 2)
         expanded = set(ids)
         if isinstance(ids, Iterable):
             self.progress.info('Expanding current topic', current=current, task=task)
@@ -263,21 +264,21 @@ class PubmedLoader(Loader):
                 WITH [{','.join(ids)}] AS pmids
                 MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
                 WHERE in.pmid IN pmids
-                RETURN COLLECT(out.pmid) AS expanded;
+                RETURN out.pmid AS expanded
+                LIMIT {max_to_expand};
             '''
             with self.neo4jdriver.session() as session:
-                for r in session.run(query):
-                    expanded |= set([str(i) for i in r['expanded']])
+                expanded |= set([str(r['expanded']) for r in session.run(query)])
 
             query = f'''
                 WITH [{','.join(ids)}] AS pmids
                 MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
                 WHERE out.pmid IN pmids
-                RETURN COLLECT(in.pmid) AS expanded;
+                RETURN in.pmid AS expanded
+                LIMIT {max_to_expand};
             '''
             with self.neo4jdriver.session() as session:
-                for r in session.run(query):
-                    expanded |= set([str(i) for i in r['expanded']])
+                expanded |= set([str(r['expanded']) for r in session.run(query)])
 
         else:
             raise TypeError('ids should be Iterable')

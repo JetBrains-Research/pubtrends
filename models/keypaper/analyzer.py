@@ -87,7 +87,7 @@ class KeyPaperAnalyzer:
                 self.progress.info('Too many related papers, stop references expanding',
                                    current=current, task=task)
                 break
-            ids = self.loader.expand(ids, current=current, task=task)
+            ids = self.loader.expand(ids, self.config.max_number_to_expand, current=current, task=task)
         return ids
 
     def analyze_papers(self, ids, query, task=None):

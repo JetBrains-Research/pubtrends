@@ -68,7 +68,7 @@ class Loader(Connector, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def expand(self, ids, current=1, task=None):
+    def expand(self, ids, limit, current=1, task=None):
         """
         Expands list of ids doing one or two steps of breadth first search along citations graph.
         :return: list of ids, i.e. list(String).

@@ -262,7 +262,8 @@ class SemanticScholarLoader(Loader):
         bibliographic_coupling_df['total'] = bibliographic_coupling_df['total'].apply(int)
         return bibliographic_coupling_df
 
-    def expand(self, ids, current=1, task=None):
+    def expand(self, ids, limit, current=1, task=None):
+        max_to_expand = int((limit - len(ids)) / 2)
         expanded = set(ids)
         if isinstance(ids, Iterable):
             self.progress.info('Expanding current topic', current=current, task=task)
@@ -273,22 +274,22 @@ class SemanticScholarLoader(Loader):
                  [{','.join([str(crc32(id)) for id in ids])}] AS crc32ids
                 MATCH (out:SSPublication)-[:SSReferenced]->(in:SSPublication)
                 WHERE in.crc32id IN crc32ids AND in.ssid in ssids
-                RETURN COLLECT(out.ssid) AS expanded;
+                RETURN out.ssid AS expanded
+                LIMIT {max_to_expand};
             '''
             with self.neo4jdriver.session() as session:
-                for r in session.run(query):
-                    expanded |= set(r['expanded'])
+                expanded |= set([str(r['expanded']) for r in session.run(query)])
 
             query = f'''
             WITH [{','.join([f'"{id}"' for id in ids])}] AS ssids,
                  [{','.join([str(crc32(id)) for id in ids])}] AS crc32ids
                 MATCH (out:SSPublication)-[:SSReferenced]->(in:SSPublication)
                 WHERE out.crc32id IN crc32ids AND out.ssid in ssids
-                RETURN COLLECT(in.ssid) AS expanded;
+                RETURN in.ssid AS expanded
+                LIMIT {max_to_expand};
             '''
             with self.neo4jdriver.session() as session:
-                for r in session.run(query):
-                    expanded |= set(r['expanded'])
+                expanded |= set([str(r['expanded']) for r in session.run(query)])
         else:
             raise TypeError('ids should be Iterable')
 
