@@ -105,7 +105,7 @@ class SemanticScholarLoader(Loader):
             MATCH (p:SSPublication)
             WHERE p.crc32id in crc32ids AND p.ssid IN ssids
             RETURN p.ssid as id, p.crc32id as crc32id, p.pmid as pmid, p.title as title, p.abstract as abstract,
-                p.date.year as year, p.type as type, p.aux as aux
+                p.date.year as year, p.type as type, p.doi as doi, p.aux as aux
             ORDER BY id
         '''
 
@@ -113,7 +113,7 @@ class SemanticScholarLoader(Loader):
             pub_df = pd.DataFrame(session.run(query).data())
         if len(pub_df) == 0:
             logger.debug(f'Failed to load publications.')
-            pub_df = pd.DataFrame(columns=['id', 'crc32id', 'pmid', 'title', 'abstract', 'year', 'type', 'aux'])
+            pub_df = pd.DataFrame(columns=['id', 'crc32id', 'pmid', 'title', 'abstract', 'year', 'type', 'doi', 'aux'])
         else:
             logger.debug(f'Found {len(pub_df)} publications in the local database')
             if np.any(pub_df[['id', 'title']].isna()):

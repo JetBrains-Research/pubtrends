@@ -66,11 +66,13 @@ class PubmedArticle:
         }
 
     def to_list(self):
-        return [self.pmid, self.title, json.dumps(self.aux.to_dict()), self.abstract if self.abstract else '',
+        return [self.pmid, self.title, self.doi, json.dumps(self.aux.to_dict()),
+                self.abstract if self.abstract else '',
                 str(self.date), self.type, self.authors(), self.journal()]
 
     def to_list_year(self):
-        return [self.pmid, self.title, json.dumps(self.aux.to_dict()), self.abstract if self.abstract else '',
+        return [self.pmid, self.title, self.doi, json.dumps(self.aux.to_dict()),
+                self.abstract if self.abstract else '',
                 int(self.date.year), self.type, self.authors(), self.journal()]
 
 
@@ -138,7 +140,7 @@ COCITATIONS = [
 
 EXPECTED_PUB_DF = Loader.process_publications_dataframe(
     pd.DataFrame([article.to_list_year() for article in REQUIRED_ARTICLES],
-                 columns=['id', 'title', 'aux', 'abstract', 'year', 'type', 'authors', 'journal']))
+                 columns=['id', 'title', 'doi', 'aux', 'abstract', 'year', 'type', 'authors', 'journal']))
 
 EXPECTED_CIT_STATS_DF = pd.DataFrame(CITATION_STATS, columns=['id', 'year', 'count']).sort_values(
     by=['id', 'year']
@@ -150,4 +152,4 @@ EXPECTED_COCIT_DF = pd.DataFrame(COCITATIONS, columns=['citing', 'cited_1', 'cit
 
 EXPECTED_PUB_DF_GIVEN_IDS = Loader.process_publications_dataframe(
     pd.DataFrame([article.to_list_year() for article in PART_OF_ARTICLES],
-                 columns=['id', 'title', 'aux', 'abstract', 'year', 'type', 'authors', 'journal']))
+                 columns=['id', 'title', 'doi', 'aux', 'abstract', 'year', 'type', 'authors', 'journal']))
