@@ -89,10 +89,11 @@
                         <th scope="col">Journal</th>
                         <th scope="col">Year</th>
                         <th scope="col">Cited</th>
+                        <th scope="col">Doi</th>
                     </tr>
                     </thead>
                     <tbody>
-                    {% for id, title, authors, url, journal, year, total in papers %}
+                    {% for id, title, authors, url, journal, year, total, doi in papers %}
                     <tr>
                         <th scope="row">{{ loop.index }}</th>
                         <td>
@@ -101,6 +102,11 @@
                         <td>{{ authors }}</td>
                         <td>{{ journal }}</td>
                         <td>{{ year }}</td>
+                        <td>
+                            {% if doi != "" %}
+                                <a class="link" href="https://doi.org/{{doi}}">{{ doi }}</a>
+                            {% endif %}
+                        </td>
                         <td>{{ total }}</td>
                     </tr>
                     {% endfor %}

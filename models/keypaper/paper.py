@@ -43,20 +43,11 @@ def prepare_paper_data(data, source, pid):
     # Extract data for the current paper
     sel = analyzer.df[analyzer.df['id'] == pid]
     title = sel['title'].values[0]
+    authors = sel['authors'].values[0]
     journal = sel['journal'].values[0]
     year = sel['year'].values[0]
-
-    # Generate info about publication year and journal
-    if journal == '':
-        if year == np.nan:
-            citation = ''
-        else:
-            citation = f'{int(float(year))}'
-    else:
-        if year == np.nan:
-            citation = journal
-        else:
-            citation = f'{journal}, ({int(float(year))})'
+    topic = sel['comp'].values[0]
+    doi = sel['doi'].values[0] or ''
 
     # Estimate related topics for the paper
     if analyzer.similarity_graph.nodes() and analyzer.similarity_graph.has_node(pid):
@@ -100,8 +91,11 @@ def prepare_paper_data(data, source, pid):
     result = {
         'title': title,
         'trimmed_title': trim(title, MAX_TITLE_LENGTH),
-        'authors': sel['authors'].values[0],
-        'citation': citation,
+        'authors': authors,
+        'journal': journal,
+        'year': year,
+        'topic': topic,
+        'doi': doi,
         'url': url_prefix + pid,
         'source': source,
         'citation_dynamics': [components(plotter.article_citation_dynamics(analyzer.df, str(pid)))],
@@ -166,10 +160,12 @@ def prepare_papers_data(data, source, comp=None, word=None, author=None, journal
 
     result = []
     for _, row in df.iterrows():
-        pid, title, abstract, authors, journal, year, total = \
-            row['id'], row['title'], row['abstract'], row['authors'], row['journal'], row['year'], row['total']
+        pid, title, abstract, authors, journal, year, total, doi = \
+            row['id'], row['title'], row['abstract'], row['authors'], row['journal'], \
+            row['year'], row['total'], row['doi'] or ''
         authors = cut_authors_list(authors, limit=2)  # Take only first/last author
-        result.append((pid, (trim(title, MAX_TITLE_LENGTH)), authors, url_prefix + pid, trim(journal, 50), year, total))
+        result.append((pid, (trim(title, MAX_TITLE_LENGTH)), authors, url_prefix + pid, trim(journal, 50),
+                       year, total, doi))
 
     # Return list sorted by year
     return sorted(result, key=lambda t: t[5], reverse=True)

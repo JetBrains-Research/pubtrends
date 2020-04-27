@@ -110,7 +110,7 @@ class TestPubmedLoader(unittest.TestCase):
     def test_expand(self):
         expected = EXPANDED_IDS
         ids_list = list(map(lambda article: str(article.pmid), PART_OF_ARTICLES))
-        actual = self.loader.expand(ids_list)
+        actual = self.loader.expand(ids_list, 1000)
         print(expected)
         print(actual)
         self.assertSequenceEqual(sorted(expected), sorted(actual), "Wrong list of expanded ids")

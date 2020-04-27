@@ -135,12 +135,21 @@
                             Open in {{ source }}
                         </a>
                         <h2 class="paper-title">{{ title }}</h2>
-                        <em>{{ authors }}</em>
-                        <br>
-                        {{ citation }}
+                        <em>{{ authors }}</em><br>
+                        <!-- Generate info about publication year and journal-->
+                        {% if journal != "" %}
+                            {{journal}}
+                        {% endif %}
+                        {% if year != "None" %}
+                            {{year}}
+                        {% endif %}
+                        {% if doi != "" %}
+                            <br>
+                            <a class="link" href="https://doi.org/{{doi}}">doi:{{doi}}</a>
+                        {% endif %}
                         {% if abstract is defined %}
-                        <h5 class="card-subtitle mt-3">Abstract</h5>
-                        <p class="mt-2">{{ abstract }}</p>
+                            <h5 class="card-subtitle mt-3">Abstract</h5>
+                            <p class="mt-2">{{ abstract }}</p>
                         {% endif %}
                     </div>
                 </div>
@@ -172,6 +181,8 @@
                         has.
                     </p>
                     {% if related_topics is defined %}
+                    <p>Paper topic: {{topic + 1}}.</p>
+                    <br>
                     <table id="related_topics" class="table table-sm table-bordered table-striped">
                         <thead>
                         <tr>

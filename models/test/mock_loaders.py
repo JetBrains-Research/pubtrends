@@ -61,7 +61,7 @@ class MockLoader(Loader):
     def find(self, key, value, current=1, task=None):
         raise Exception('Not implemented')
 
-    def expand(self, ids, current=1, task=None):
+    def expand(self, ids, limit, current=1, task=None):
         raise Exception('Not implemented')
 
     def search(self, terms, limit=None, sort=None, current=1, task=None):
@@ -92,7 +92,7 @@ class MockLoaderSingle(Loader):
     def find(self, key, value, current=1, task=None):
         raise Exception('Not implemented')
 
-    def expand(self, ids, current=1, task=None):
+    def expand(self, ids, limit, current=1, task=None):
         raise Exception('Not implemented')
 
     def search(self, terms, limit=None, sort=None, current=1, task=None):
@@ -143,5 +143,5 @@ class MockLoaderEmpty(Loader):
     def load_bibliographic_coupling(self, ids=None, current=1, task=None):
         raise Exception('Not implemented')
 
-    def expand(self, ids, current=1, task=None):
+    def expand(self, ids, limit, current=1, task=None):
         raise Exception('Not implemented')
