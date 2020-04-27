@@ -3,10 +3,20 @@ Pubtrends changelog
 
 Here you can see the full list of changes between each release.
 
+Version 0.4
+-------------
+
+Released on April 27, 2020
+
+ - Search by DOI supported
+ - Show DOI information for single and multiple papers
+ - Fixes in papers expand
+
+
 Version 0.3
 -------------
 
-Released on Mar XX, 2020
+Released on Mar 20, 2020
 
  - Introduced cytoscape based views for citations / structure graphs
  - Hybrid citations based: citations based, co-citations and bibliographic coupling.
