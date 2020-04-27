@@ -3,7 +3,6 @@ package org.jetbrains.bio.pubtrends.pm
 import com.google.gson.GsonBuilder
 import org.jetbrains.bio.pubtrends.AbstractDBHandler
 import org.jetbrains.bio.pubtrends.Neo4jConnector
-import java.io.Closeable
 
 /**
  * See pm_database_supplier.py and pm_loader.py for (up)loading code.
@@ -88,6 +87,7 @@ CALL db.index.fulltext.createNodeIndex("${"pmTitlesAndAbstracts"}", ["PMPublicat
                     "abstract" to it.abstractText.replace('\n', ' '),
                     "date" to (it.date?.toString() ?: ""),
                     "type" to it.type.name,
+                    "doi" to it.doi,
                     "aux" to GsonBuilder().create().toJson(it.auxInfo)
             )
         })
@@ -105,12 +105,14 @@ ON CREATE SET
     n.abstract = data.abstract,
     n.date = datetime(data.date),
     n.type = data.type,
+    n.doi = data.doi,
     n.aux = data.aux
 ON MATCH SET 
     n.title = data.title,
     n.abstract = data.abstract,
     n.date = datetime(data.date),
     n.type = data.type,
+    n.doi = data.doi,
     n.aux = data.aux
 WITH n, data 
 CALL apoc.create.addLabels(id(n), [data.type]) YIELD node 

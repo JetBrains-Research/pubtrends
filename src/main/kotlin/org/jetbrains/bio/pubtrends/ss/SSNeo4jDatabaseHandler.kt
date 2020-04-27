@@ -4,7 +4,6 @@ import com.google.gson.GsonBuilder
 import org.jetbrains.bio.pubtrends.AbstractDBHandler
 import org.jetbrains.bio.pubtrends.Neo4jConnector
 import org.joda.time.DateTime
-import java.io.Closeable
 
 /**
 * See ss_database_supplier.py and ss_loader.py for (up)loading code.
@@ -91,6 +90,7 @@ CALL db.index.fulltext.createNodeIndex("ssTitlesAndAbstracts", ["SSPublication"]
                     "title" to it.title.replace('\n', ' '),
                     "abstract" to it.abstract?.replace('\n', ' '),
                     "date" to DateTime(it.year ?:1970, 1, 1, 12, 0).toString(),
+                    "doi" to it.doi,
                     "aux" to GsonBuilder().create().toJson(it.aux)
             )
         })
@@ -113,12 +113,14 @@ ON CREATE SET
     n.title = data.title,
     n.abstract = data.abstract,
     n.date = datetime(data.date),
+    n.doi = data.doi,
     n.aux = data.aux
 ON MATCH SET 
     n.pmid = data.pmid,
     n.title = data.title,
     n.abstract = data.abstract,
     n.date = datetime(data.date),
+    n.doi = data.doi,
     n.aux = data.aux
 RETURN n;
 """.trimIndent(),
