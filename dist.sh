@@ -25,10 +25,10 @@ PTV=pubtrends-${VERSION_BUILD}
 mkdir -p "${PTV}"
 cp config.properties "${PTV}"/
 cp docker-compose.yml "${PTV}"/
-cp -r models "${PTV}"/
+cp -r pysrc "${PTV}"/
 
 # Update config version
-sed -E "s/VERSION[^\n]*/VERSION = '${FULL_VERSION}'/g" -i "${PTV}"/models/keypaper/version.py
+sed -E "s/VERSION[^\n]*/VERSION = '${FULL_VERSION}'/g" -i "${PTV}"/pysrc/papers/version.py
 
 # Create folder for logs
 mkdir "${PTV}"/logs

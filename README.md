@@ -110,11 +110,11 @@ Please ensure that you have Database configured, up and running.
     ```
 2. Start Celery worker queue
     ```
-    celery -A models.celery.tasks worker -c 1 --loglevel=debug
+    celery -A pysrc.celery.tasks worker -c 1 --loglevel=debug
     ```
 3. Start flask server at localhost:5000/
     ```
-    python -m models.pubtrends_app
+    python -m pysrc.pubtrends_app
     ```    
 ### Jupyter Notebook
    ```
@@ -143,7 +143,7 @@ Please ensure that you have Database configured, up and running.
 3. Python tests with codestyle check for development
     
     ```
-    source activate pubtrends; python -m pytest --pycodestyle models
+    source activate pubtrends; python -m pytest --pycodestyle pysrc
     ```
 
 4. Python tests with codestyle check within Docker (please ignore point 1)
@@ -152,7 +152,7 @@ Please ensure that you have Database configured, up and running.
     docker run --rm --volume=$(pwd):/pubtrends -t biolabs/pubtrends /bin/bash -c \
     "sudo neo4j start; sleep 30s; \
     cd /pubtrends; cp config.properties ~/.pubtrends; \
-    source activate pubtrends; python -m pytest --pycodestyle models"
+    source activate pubtrends; python -m pytest --pycodestyle pysrc"
     ```
 
 ## Deployment
@@ -209,7 +209,7 @@ Please ensure that you have configured and prepared the database(s).
 
 6. During updates or other construction works consider launching simple reporter.
     ``` 
-   docker run --rm -p 80:8000 -v $(pwd)/models/app/construction:/construction \
+   docker run --rm -p 80:8000 -v $(pwd)/pysrc/app/construction:/construction \
         -t biolabs/pubtrends /bin/bash -c "python -m http.server -d /construction 8000"
    ```
 
