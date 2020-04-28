@@ -1,4 +1,3 @@
-import numpy as np
 from bokeh.embed import components
 
 from models.keypaper.analyzer import KeyPaperAnalyzer
@@ -46,7 +45,7 @@ def prepare_paper_data(data, source, pid):
     authors = sel['authors'].values[0]
     journal = sel['journal'].values[0]
     year = sel['year'].values[0]
-    topic = sel['comp'].values[0]
+    topic = sel['comp'].values[0] + 1
     doi = str(sel['doi'].values[0])
     if doi == 'None' or doi == 'nan':
         doi = ''
