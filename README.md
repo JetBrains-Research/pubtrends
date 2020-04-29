@@ -24,6 +24,9 @@ Ensure that file contains correct information about the database(s) (url, port, 
     conda activate pubtrends
     ```
 
+    Workaround for "image not found" error during neo4j pip install on newest Mac OS Sierra:
+    `conda install -y conda-forge::ncurses`
+
 3. Build `biolabs/pubtrends` Docker image (available on Docker hub).
     ```
     docker build -t biolabs/pubtrends .
