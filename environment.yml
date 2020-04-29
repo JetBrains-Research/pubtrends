@@ -7,7 +7,7 @@ channels:
 dependencies:
   - bokeh=2.0.2
   - cachetools=3.1.1
-  - celery=4.4.2
+  - celery=4.4.0
   - ipywidgets=7.5.1
   - holoviews=1.13.2
   - flask=1.1.2
