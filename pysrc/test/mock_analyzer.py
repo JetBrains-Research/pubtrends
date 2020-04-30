@@ -38,8 +38,8 @@ class MockAnalyzer:
             self.evolution_kwds = json.load(f)
 
         # Convert years and comp keys to int
-        for year in self.evolution_kwds.keys():
+        for year in list(self.evolution_kwds.keys()):
             self.evolution_kwds[int(year)] = self.evolution_kwds.pop(year)
-        for year in self.evolution_kwds.keys():
-            for c in self.evolution_kwds[year].keys():
-                self.evolution_kwds[year][int(c)] = self.evolution_kwds[year].pop(c)
+        for year, evolution_year in self.evolution_kwds.items():
+            for c in list(evolution_year.keys()):
+                evolution_year[int(c)] = evolution_year.pop(c)
