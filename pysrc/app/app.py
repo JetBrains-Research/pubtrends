@@ -1,5 +1,6 @@
 import html
 import json
+import hashlib
 import logging
 import random
 from urllib.parse import quote
@@ -350,7 +351,8 @@ def index():
                            pm_enabled=PUBTRENDS_CONFIG.pm_enabled,
                            ss_enabled=PUBTRENDS_CONFIG.ss_enabled,
                            search_example_source=search_example_source,
-                           search_example_terms=search_example_terms)
+                           search_example_terms=search_example_terms,
+                           search_example_terms_hash=hashlib.sha1(search_example_terms.encode('utf-8')).hexdigest())
 
 
 @app.route('/search_terms', methods=['POST'])
