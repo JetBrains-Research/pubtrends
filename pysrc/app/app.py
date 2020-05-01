@@ -1,10 +1,11 @@
-import html
-import json
 import hashlib
+import json
 import logging
-import random
+import os
 from urllib.parse import quote
 
+import html
+import random
 from celery.result import AsyncResult
 from flask import (
     Flask, request, redirect, url_for,
@@ -32,6 +33,23 @@ if __name__ != '__main__':
     gunicorn_logger = logging.getLogger('gunicorn.error')
     app.logger.handlers = gunicorn_logger.handlers
     app.logger.setLevel(gunicorn_logger.level)
+    if os.path.isdir('/logs'):
+        logfile = '/logs/pubtrends.log'
+    elif os.path.isdir(os.path.expanduser('~/.pubtrends/logs')):
+        logfile = os.path.expanduser('~/.pubtrends/logs') + '/pubtrends.log'
+    else:
+        raise RuntimeError('Failed to configure main log file')
+    logging.basicConfig(filename=logfile,
+                        filemode='a',
+                        format='[%(asctime)s] %(name)s %(levelname)s - %(message)s',
+                        datefmt='%H:%M:%S',
+                        level=gunicorn_logger.level)
+
+logger = logging.getLogger('app')
+
+
+def log_request(request):
+    return f'addr:{request.remote_addr} args:{json.dumps(request.args)}'
 
 
 @app.route('/status')
@@ -73,7 +91,7 @@ def status():
         else:
             return json.dumps({
                 'state': 'FAILURE',
-                'message': f'Illegal task state {job.state}'
+                'message': f'Illegal task state {job_state}'
             })
     # no jobid
     return json.dumps({
@@ -93,6 +111,7 @@ def result():
         job = AsyncResult(jobid, app=celery)
         if job and job.state == 'SUCCESS':
             data, _, log = job.result
+            logger.info(f'/result success {log_request(request)}')
             return render_template('result.html',
                                    query=trim(query, MAX_QUERY_LENGTH),
                                    source=source,
@@ -101,10 +120,11 @@ def result():
                                    version=VERSION,
                                    log=log,
                                    **data)
-        # No job or out-of-date job, restart it
+        logger.info(f'/result No job or out-of-date job, restart it {log_request(request)}')
         return search_terms_(request.args)
     else:
-        return render_template_string("Something went wrong...")
+        logger.error(f'/result error {log_request(request)}')
+        return render_template_string("Something went wrong..."), 400
 
 
 @app.route('/process')
@@ -123,7 +143,7 @@ def process():
         id = request.args.get('id')
 
         if key and value:
-            logging.debug('/process key:value search')
+            logger.info(f'/process key:value search {log_request(request)}')
             query = f'Paper {key}: {value}'
             return render_template('process.html',
                                    redirect_args={'query': quote(query), 'source': source, 'jobid': jobid,
@@ -133,7 +153,7 @@ def process():
                                    jobid=jobid, version=VERSION)
 
         elif analysis_type in [ZOOM_IN_TITLE, ZOOM_OUT_TITLE]:
-            logging.debug('/process zoom processing')
+            logger.info(f'/process zoom processing {log_request(request)}')
             return render_template('process.html',
                                    redirect_args={'query': quote(query), 'source': source, 'jobid': jobid,
                                                   'limit': analysis_type, 'sort': ''},
@@ -142,7 +162,7 @@ def process():
                                    jobid=jobid, version=VERSION)
 
         elif analysis_type == PAPER_ANALYSIS_TITLE:
-            logging.debug('/process paper analysis')
+            logger.info(f'/process paper analysis {log_request(request)}')
             return render_template('process.html',
                                    redirect_args={'source': source, 'jobid': jobid, 'id': id,
                                                   'limit': '', 'sort': ''},
@@ -150,7 +170,7 @@ def process():
                                    redirect_page="paper",  # redirect in case of success
                                    jobid=jobid, version=VERSION)
         elif query:
-            logging.debug('/process regular search')
+            logger.info(f'/process regular search {log_request(request)}')
             limit = request.args.get('limit')
             sort = request.args.get('sort')
             return render_template('process.html',
@@ -163,8 +183,8 @@ def process():
                                    limit=limit, sort=sort,
                                    redirect_page="result",  # redirect in case of success
                                    jobid=jobid, version=VERSION)
-
-    return render_template_string("Something went wrong...")
+    logger.error(f'/process error {log_request(request)}')
+    return render_template_string("Something went wrong..."), 400
 
 
 @app.route('/process_paper')
@@ -176,7 +196,7 @@ def process_paper():
         job = get_or_cancel_task(jobid)
         if job and job.state == 'SUCCESS':
             id_list = job.result
-            logging.debug('/process_paper single paper analysis')
+            logger.info(f'/process_paper single paper analysis {log_request(request)}')
             job = analyze_id_list.delay(source, id_list=id_list, zoom=PAPER_ANALYSIS, query=query)
             return redirect(url_for('.process', query=query, analysis_type=PAPER_ANALYSIS_TITLE,
                                     id=id_list[0], source=source, jobid=job.id))
@@ -191,10 +211,12 @@ def paper():
         job = AsyncResult(jobid, app=celery)
         if job and job.state == 'SUCCESS':
             _, data, _ = job.result
+            logger.info(f'/paper success {log_request(request)}')
             return render_template('paper.html', **prepare_paper_data(data, source, pid),
                                    version=VERSION)
 
-    return render_template_string("Something went wrong...")
+    logger.error(f'/paper error {log_request(request)}')
+    return render_template_string("Something went wrong..."), 400
 
 
 @app.route('/graph')
@@ -218,6 +240,7 @@ def graph():
             ) for comp in sorted(set(analyzer.df['comp']))}
             if graph_type == "citations":
                 graph_cs = PlotPreprocessor.dump_citations_graph_cytoscape(analyzer.df, analyzer.citations_graph)
+                logger.info(f'/graph success citations {log_request(request)}')
                 return render_template(
                     'graph.html',
                     version=VERSION,
@@ -235,6 +258,7 @@ def graph():
                 )
             else:
                 graph_cs = PlotPreprocessor.dump_structure_graph_cytoscape(analyzer.df, analyzer.structure_graph)
+                logger.info(f'/graph success structure {log_request(request)}')
                 return render_template(
                     'graph.html',
                     version=VERSION,
@@ -250,8 +274,8 @@ def graph():
                     topics_description_json=json.dumps(topics_tags),
                     graph_cytoscape_json=json.dumps(graph_cs)
                 )
-
-    return render_template_string("Something went wrong...")
+    logger.error(f'/graph error {log_request(request)}')
+    return render_template_string("Something went wrong..."), 400
 
 
 @app.route('/papers')
@@ -291,6 +315,7 @@ def show_ids():
         job = AsyncResult(jobid, app=celery)
         if job and job.state == 'SUCCESS':
             _, data, _ = job.result
+            logger.info(f'/papers success {log_request(request)}')
             return render_template('papers.html',
                                    version=VERSION,
                                    source=source,
@@ -299,8 +324,8 @@ def show_ids():
                                    limit=limit,
                                    sort=sort,
                                    papers=prepare_papers_data(data, source, comp, word, author, journal, papers_list))
-
-    raise Exception(f"Request does not contain necessary params: {request}")
+    logger.error(f'/papers error {log_request(request)}')
+    return render_template_string(f"Request does not contain necessary params: {request}"), 400
 
 
 @app.route('/cancel')
@@ -327,7 +352,7 @@ def cancel():
 # Index page
 @app.route('/')
 def index():
-    logging.debug('/ landing page')
+    logger.info(f'/ landing page {log_request(request)}')
 
     search_example_source = ''
     search_example_terms = ''
@@ -357,7 +382,6 @@ def index():
 
 @app.route('/search_terms', methods=['POST'])
 def search_terms():
-    logging.debug('/search_terms')
     return search_terms_(request.form)
 
 
@@ -368,35 +392,35 @@ def search_terms_(data):
     limit = data.get('limit')  # Limit
     jobid = data.get('jobid')
     if query and source and sort and limit:
-        logging.debug(f'/ regular search')
         if not jobid:
+            logger.info(f'/search_terms {log_request(request)}')
             job = analyze_search_terms.delay(source, query=query, limit=limit, sort=sort)
             jobid = job.id
         else:
+            logger.info(f'/search_terms with fixed jobid {log_request(request)}')
             analyze_search_terms.apply_async(args=[source, query, sort, limit], task_id=jobid)
         return redirect(url_for('.process', query=query, source=source, limit=limit, sort=sort, jobid=jobid))
-
-    raise Exception(f"Request does not contain necessary params: {request}")
+    logger.error(f'/search_terms error {log_request(request)}')
+    return render_template_string(f"Request does not contain necessary params: {request}"), 400
 
 
 @app.route('/search_paper', methods=['POST'])
 def search_paper():
-    logging.debug('/search_paper')
+    logger.info('/search_paper')
     source = request.form.get('source')  # Pubmed or Semantic Scholar
 
     if source and 'key' in request.form and 'value' in request.form:
-        logging.debug(f'/ paper search')
+        logger.info(f'/search_paper {log_request(request)}')
         key = request.form.get('key')
         value = request.form.get('value')
         job = find_paper_async.delay(source, key, value)
         return redirect(url_for('.process', source=source, key=key, value=value, jobid=job.id))
-
-    raise Exception(f"Request does not contain necessary params: {request}")
+    logger.error(f'/search_paper error {log_request(request)}')
+    return render_template_string(f"Request does not contain necessary params: {request}"), 400
 
 
 @app.route('/process_ids', methods=['POST'])
 def process_ids():
-    logging.debug('/process_ids')
     source = request.form.get('source')  # Pubmed or Semantic Scholar
     query = request.form.get('query')  # Original search query
 
@@ -405,13 +429,11 @@ def process_ids():
         zoom = request.form.get('zoom')
         analysis_type = zoom_name(zoom)
         job = analyze_id_list.delay(source, id_list=id_list, zoom=int(zoom), query=query)
+        logger.info(f'/process_ids {log_request(request)}')
         return redirect(url_for('.process', query=query, analysis_type=analysis_type, source=source, jobid=job.id))
-
-    raise Exception(f"Request does not contain necessary params: {request}")
+    logger.error(f'/process_ids error {log_request(request)}')
+    return render_template_string(f"Request does not contain necessary params: {request}"), 400
 
 
 def get_app():
     return app
-
-# if __name__ == '__main__':
-#     app.run(host='0.0.0.0', debug=True, extra_files=['templates/'])

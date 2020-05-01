@@ -150,12 +150,12 @@ class PlotPreprocessor:
 
     @staticmethod
     def dump_structure_graph_cytoscape(df, structure_graph):
-        logger.info('Mapping structure graph to cytoscape JS')
+        logger.debug('Mapping structure graph to cytoscape JS')
         return PlotPreprocessor.dump_to_cytoscape(df, structure_graph.copy())
 
     @staticmethod
     def dump_to_cytoscape(df, graph):
-        logger.info('Collect attributes for nodes')
+        logger.debug('Collect attributes for nodes')
         attrs = {}
         for node in df['id']:
             sel = df[df['id'] == node]
@@ -189,5 +189,5 @@ class PlotPreprocessor:
                     topic_groups.add(topic)
                     cytoscape_data['nodes'].append(topic_group)
                 node_cs['data']['parent'] = f'topic_{topic}'
-        logger.info('Done dumping graph to cytoscape JS')
+        logger.debug('Done dumping graph to cytoscape JS')
         return cytoscape_data

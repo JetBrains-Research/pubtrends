@@ -1,7 +1,8 @@
 import logging
-
-from multiprocessing import RLock
 from datetime import timedelta, datetime
+from multiprocessing import RLock
+
+logger = logging.getLogger(__name__)
 
 
 def lru_ttl_cache_with_callback(maxsize, timeout, remove_callback):
@@ -46,7 +47,7 @@ def _lru_ttl_cache_with_callback(user_function, maxsize, update_delta, remove_ca
         with lock:
             now = datetime.utcnow()
             if now >= next_update:
-                logging.debug('_lru_ttl_cache_with_callback: expire cleanup')
+                logger.debug('_lru_ttl_cache_with_callback: expire cleanup')
                 expire(now)
                 next_update = now + update_delta
 
@@ -60,14 +61,14 @@ def _lru_ttl_cache_with_callback(user_function, maxsize, update_delta, remove_ca
                 last[NEXT] = root[PREV] = link
                 link[PREV] = last
                 link[NEXT] = root
-                logging.debug(f'_lru_ttl_cache_with_callback: update timestamp for {key}')
+                logger.debug(f'_lru_ttl_cache_with_callback: update timestamp for {key}')
                 link[TIMESTAMP] = now
                 return result
 
             result = user_function(key)
-            logging.debug(f'_lru_ttl_cache_with_callback: new key {key}')
+            logger.debug(f'_lru_ttl_cache_with_callback: new key {key}')
             if full:
-                logging.debug('Full')
+                logger.debug('Full')
                 # Use the old root to store the new key and result.
                 oldroot = root
                 oldroot[KEY] = key
@@ -77,7 +78,7 @@ def _lru_ttl_cache_with_callback(user_function, maxsize, update_delta, remove_ca
                 root[KEY] = root[RESULT] = root[TIMESTAMP] = None
                 # Now update the cache dictionary.
                 del cache[oldkey]
-                logging.debug(f'_celery_tasks_cache: full remove {oldkey}')
+                logger.debug(f'_celery_tasks_cache: full remove {oldkey}')
                 remove_callback(oldkey)
 
                 # Save the potentially reentrant cache[key] assignment
@@ -109,7 +110,7 @@ def _lru_ttl_cache_with_callback(user_function, maxsize, update_delta, remove_ca
         while link_next is not root:
             if link_next[KEY] is not None and now > link_next[TIMESTAMP] + update_delta:
                 key = link_next[KEY]
-                logging.debug(f'_celery_tasks_cache: expired {key}')
+                logger.debug(f'_celery_tasks_cache: expired {key}')
                 del cache[key]
                 remove_callback(key)
                 link_next_next = link_next[NEXT]
