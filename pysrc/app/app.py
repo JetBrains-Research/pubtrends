@@ -41,8 +41,8 @@ if __name__ != '__main__':
         raise RuntimeError('Failed to configure main log file')
     logging.basicConfig(filename=logfile,
                         filemode='a',
-                        format='[%(asctime)s] %(name)s %(levelname)s - %(message)s',
-                        datefmt='%H:%M:%S',
+                        format='[%(asctime)s,%(msecs)03d: %(levelname)s/%(name)s] %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S',
                         level=gunicorn_logger.level)
 
 logger = logging.getLogger('app')
@@ -353,7 +353,7 @@ def cancel():
 # Index page
 @app.route('/')
 def index():
-    logger.info(f'/ landing page {log_request(request)}')
+    logger.info(f'/ {log_request(request)}')
 
     search_example_source = ''
     search_example_terms = ''
