@@ -4,15 +4,25 @@ import os
 
 class PubtrendsConfig:
     """
-    Main service configuration loaded from ~/.pubtrends/config.properties
+    Main service configuration
     """
 
-    def __init__(self, config_path='~/.pubtrends/config.properties', test=True):
+    CONFIG_PATHS = [
+        os.path.expanduser('~/.pubtrends/config.properties'),  # Local and development
+        '/config/config.properties'  # Docker deployment
+    ]
+
+    def __init__(self, test=True):
         config_parser = configparser.ConfigParser()
 
         # Add fake section [params] for ConfigParser to accept the file
-        with open(os.path.expanduser(config_path)) as config_properties:
-            config_parser.read_string("[params]\n" + config_properties.read())
+        for config_path in self.CONFIG_PATHS:
+            if os.path.exists(config_path):
+                with open(os.path.expanduser(config_path)) as f:
+                    config_parser.read_string("[params]\n" + f.read())
+                break
+        else:
+            raise RuntimeError(f'Configuration file not found among: {self.CONFIG_PATHS}')
         params = config_parser['params']
 
         self.neo4jhost = params['neo4jhost' if not test else 'test_neo4jhost']

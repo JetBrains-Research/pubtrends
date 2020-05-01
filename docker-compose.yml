@@ -10,7 +10,8 @@ services:
     depends_on:
       - redis
     volumes:
-      - ./logs:/logs
+      - ~/.pubtrends:/config:ro
+      - ~/.pubtrends/logs:/logs
   worker:
     build:
       context: .
@@ -18,7 +19,8 @@ services:
     depends_on:
       - redis
     volumes:
-      - ./logs:/logs
+      - ~/.pubtrends:/config:ro
+      - ~/.pubtrends/logs:/logs
   redis:
     image: redis:5.0
 
