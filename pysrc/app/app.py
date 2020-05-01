@@ -62,30 +62,31 @@ def status():
                 'state': 'FAILURE',
                 'message': f'Unknown task id {jobid}'
             })
-        if job.state == 'PROGRESS':
+        job_state, job_result = job.state, job.result
+        if job_state == 'PROGRESS':
             return json.dumps({
-                'state': job.state,
-                'log': job.result['log'],
-                'progress': int(100.0 * job.result['current'] / job.result['total'])
+                'state': job_state,
+                'log': job_result['log'],
+                'progress': int(100.0 * job_result['current'] / job_result['total'])
             })
-        elif job.state == 'SUCCESS':
+        elif job_state == 'SUCCESS':
             return json.dumps({
-                'state': job.state,
+                'state': job_state,
                 'progress': 100
             })
-        elif job.state == 'FAILURE':
+        elif job_state == 'FAILURE':
             return json.dumps({
-                'state': job.state,
-                'message': html.unescape(str(job.result).replace('\\n', '\n').replace('\\t', '\t')[2:-2])
+                'state': job_state,
+                'message': html.unescape(str(job_result).replace('\\n', '\n').replace('\\t', '\t')[2:-2])
             })
-        elif job.state == 'STARTED':
+        elif job_state == 'STARTED':
             return json.dumps({
-                'state': job.state,
+                'state': job_state,
                 'message': 'Task is starting, please wait...'
             })
-        elif job.state == 'PENDING':
+        elif job_state == 'PENDING':
             return json.dumps({
-                'state': job.state,
+                'state': job_state,
                 'message': 'Task is in queue, please wait...'
             })
         else:
