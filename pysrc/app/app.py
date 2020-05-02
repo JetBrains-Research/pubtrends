@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import random
+from threading import Lock
 from urllib.parse import quote
 
 import flask_admin
@@ -578,8 +579,12 @@ def get_app():
 
 
 # Build a sample db on the fly, if one does not exist yet.
+DB_LOCK = Lock()
+
+DB_LOCK.acquire()
 if not os.path.exists(DATABASE_PATH):
     build_users_db()
+DB_LOCK.release()
 
 
 # With debug=True, Flask server will auto-reload on changes
