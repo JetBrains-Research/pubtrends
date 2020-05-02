@@ -3,4 +3,3 @@ def prepare_stats_data():
         'summary': 'Здесь будет город заложён!'
     }
     return result
-
