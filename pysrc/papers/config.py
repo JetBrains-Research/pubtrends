@@ -7,16 +7,14 @@ class PubtrendsConfig:
     Main service configuration
     """
 
-    CONFIG_PATHS = [
-        os.path.expanduser('~/.pubtrends/config.properties'),  # Local and development
-        '/config/config.properties'  # Docker deployment
-    ]
+    # Deployment and development
+    CONFIG_PATHS = ['/config', os.path.expanduser('~/.pubtrends')]
 
     def __init__(self, test=True):
         config_parser = configparser.ConfigParser()
 
         # Add fake section [params] for ConfigParser to accept the file
-        for config_path in self.CONFIG_PATHS:
+        for config_path in [os.path.join(p, 'config.properties') for p in self.CONFIG_PATHS]:
             if os.path.exists(config_path):
                 with open(os.path.expanduser(config_path)) as f:
                     config_parser.read_string("[params]\n" + f.read())
