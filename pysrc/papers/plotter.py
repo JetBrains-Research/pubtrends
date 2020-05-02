@@ -7,7 +7,7 @@ import numpy as np
 from bokeh.colors import RGB
 from bokeh.core.properties import value
 from bokeh.embed import components
-from bokeh.models import ColumnDataSource, CustomJS
+from bokeh.models import ColumnDataSource, CustomJS, Legend, LegendItem
 # Tools used: hover,pan,tap,wheel_zoom,box_zoom,reset,save
 from bokeh.models import LinearColorMapper, PrintfTickFormatter, ColorBar
 from bokeh.models import NumeralTickFormatter
@@ -231,14 +231,20 @@ class Plotter:
                    tooltips=[('Topic', '$name'), ('Amount', '@$name')])
 
         # NOTE: VBar is invisible (alpha = 0) to provide tooltips on hover as stacked area does not support them
-        p.vbar_stack(components, x='years', width=0.9, color=self.comp_palette, source=data, alpha=0,
-                     legend=[f'{c} OTHER' if int(c) - 1 == self.analyzer.comp_other else value(c)
-                             for c in components])
+        p.vbar_stack(components, x='years', width=0.9, color=self.comp_palette, source=data, alpha=0)
 
         # VArea is actually displayed
-        p.varea_stack(stackers=components, x='years', color=self.comp_palette, source=data, alpha=0.5,
-                      legend=[f'{c} OTHER' if int(c) - 1 == self.analyzer.comp_other else value(c)
-                              for c in components])
+        p.varea_stack(stackers=components, x='years', color=self.comp_palette, source=data, alpha=0.5)
+
+        # these are a dummy glyphs to help draw the legend
+        dummy_for_legend = [p.line(x=[1, 1], y=[1, 1], line_width=15, color=c, name='dummy_for_legend')
+                            for c in self.comp_palette]
+        legend = Legend(items=[
+            LegendItem(label=f'{c} OTHER' if int(c) - 1 == self.analyzer.comp_other else value(c),
+                       renderers=[dummy_for_legend[i]],
+                       index=i) for i, c in enumerate(components)
+        ])
+        p.add_layout(legend)
 
         p.y_range.start = 0
         p.xgrid.grid_line_color = None
@@ -289,7 +295,7 @@ class Plotter:
                                                        year_range=[min_year, max_year],
                                                        title="Publications", width=PAPERS_PLOT_WIDTH)
             plot.circle(x='year', y='y', fill_alpha=0.5, source=ds, size='size',
-                        line_color='color', fill_color='color', legend='type')
+                        line_color='color', fill_color='color', legend_field='type')
             plot.legend.location = "top_left"
 
             # Word cloud description of topic by titles and abstracts
@@ -350,7 +356,7 @@ class Plotter:
                                                    width=PLOT_WIDTH)
 
         plot.circle(x='year', y='y', fill_alpha=0.5, source=ds, size='size',
-                    line_color='color', fill_color='color', legend='type')
+                    line_color='color', fill_color='color', legend_field='type')
         plot.legend.location = "top_left"
         return plot
 
