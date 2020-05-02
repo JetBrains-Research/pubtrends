@@ -360,8 +360,12 @@ def hex2rgb(color):
 
 def rgb2hex(color):
     if isinstance(color, str):
-        r, g, b, _ = colors.to_rgba(color)
-        r, g, b = r * 255, g * 255, b * 255
+        match = re.match('rgb\\((\\d+), (\\d+), (\\d+)\\)', color)
+        if match:
+            r, g, b = match.group(1), match.group(2), match.group(3)
+        else:
+            r, g, b, _ = colors.to_rgba(color)
+            r, g, b = r * 255, g * 255, b * 255
     else:
         r, g, b = color
     return "#{0:02x}{1:02x}{2:02x}".format(int(r), int(g), int(b))

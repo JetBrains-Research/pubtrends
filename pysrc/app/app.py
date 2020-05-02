@@ -506,7 +506,7 @@ security = Security(app, user_datastore)
 class AdminStatsView(BaseView):
     @expose('/')
     def index(self):
-        stats_data = prepare_stats_data()
+        stats_data = prepare_stats_data(logfile)
         return self.render('admin/stats.html', **stats_data)
 
     def is_accessible(self):
