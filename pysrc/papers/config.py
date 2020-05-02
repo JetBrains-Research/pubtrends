@@ -50,3 +50,6 @@ class PubtrendsConfig:
         self.celery_max_pending_tasks = params.getint('celery_max_pending_tasks')
         # Seconds, pending task will be revoked after no polling activity
         self.celery_pending_tasks_timeout = params.getint('celery_pending_tasks_timeout')
+
+        # TODO Admin password - should be a better way
+        self.admin_password = params['admin_password']

@@ -12,6 +12,7 @@ services:
     volumes:
       - ~/.pubtrends:/config:ro
       - ~/.pubtrends/logs:/logs
+      - ~/.pubtrends/database:/database
   worker:
     build:
       context: .

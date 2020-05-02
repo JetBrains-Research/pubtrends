@@ -6,8 +6,14 @@ import os
 import random
 from urllib.parse import quote
 
+import flask_admin
 from celery.result import AsyncResult
-from flask import Flask, url_for, redirect, render_template, request, render_template_string
+from flask import Flask, url_for, redirect, render_template, request, abort, render_template_string
+from flask_admin import helpers as admin_helpers, expose, BaseView
+from flask_security import Security, SQLAlchemyUserDatastore, \
+    UserMixin, RoleMixin, current_user
+from flask_security.utils import hash_password
+from flask_sqlalchemy import SQLAlchemy
 
 from pysrc.celery.tasks import celery, find_paper_async, analyze_search_terms, analyze_id_list, get_analyzer
 from pysrc.celery.tasks_cache import get_or_cancel_task
@@ -15,6 +21,7 @@ from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.paper import prepare_paper_data, prepare_papers_data, get_loader_and_url_prefix
 from pysrc.papers.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.plotter import Plotter
+from pysrc.papers.stats import prepare_stats_data
 from pysrc.papers.utils import zoom_name, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE, trim, ZOOM_OUT_TITLE
 from pysrc.papers.version import VERSION
 
@@ -440,8 +447,139 @@ def process_ids():
     return render_template_string(f"Request does not contain necessary params: {request}"), 400
 
 
+#######################
+# Admin functionality #
+#######################
+
+# Configure flask-admin and flask-sqlalchemy
+app.config.from_pyfile('config.py')
+
+# Deployment and development
+DATABASE_PATHS = ['/database', os.path.expanduser('~/.pubtrends/database')]
+for p in DATABASE_PATHS:
+    if os.path.isdir(p):
+        DATABASE_PATH = os.path.join(p, app.config['DATABASE_FILE'])
+        break
+else:
+    raise RuntimeError('Failed to configure service db path')
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + DATABASE_PATH
+db = SQLAlchemy(app)
+
+# Define models
+roles_users = db.Table(
+    'roles_users',
+    db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
+    db.Column('role_id', db.Integer(), db.ForeignKey('role.id'))
+)
+
+
+class Role(db.Model, RoleMixin):
+    id = db.Column(db.Integer(), primary_key=True)
+    name = db.Column(db.String(80), unique=True)
+    description = db.Column(db.String(255))
+
+    def __str__(self):
+        return self.name
+
+
+class User(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    first_name = db.Column(db.String(255))
+    last_name = db.Column(db.String(255))
+    email = db.Column(db.String(255), unique=True)
+    password = db.Column(db.String(255))
+    active = db.Column(db.Boolean())
+    confirmed_at = db.Column(db.DateTime())
+    roles = db.relationship('Role', secondary=roles_users,
+                            backref=db.backref('users', lazy='dynamic'))
+
+    def __str__(self):
+        return self.email
+
+
+# Setup Flask-Security
+user_datastore = SQLAlchemyUserDatastore(db, User, Role)
+security = Security(app, user_datastore)
+
+
+class AdminStatsView(BaseView):
+    @expose('/')
+    def index(self):
+        stats_data = prepare_stats_data()
+        return self.render('admin/stats.html', **stats_data)
+
+    def is_accessible(self):
+        return current_user.is_active and current_user.is_authenticated and current_user.has_role('admin')
+
+    def _handle_view(self, name, **kwargs):
+        """
+        Override builtin _handle_view in order to redirect users when a view is not accessible.
+        """
+        if not self.is_accessible():
+            if current_user.is_authenticated:
+                # permission denied
+                abort(403)
+            else:
+                # login
+                return redirect(url_for('security.login', next=request.url))
+
+
+# Create admin
+admin = flask_admin.Admin(
+    app,
+    'Pubtrends',
+    base_template='master.html',
+    template_mode='bootstrap3',
+)
+
+# Show only stats view
+admin.add_view(AdminStatsView(name='Statistics', endpoint='stats'))
+
+
+# define a context processor for merging flask-admin's template context into the
+# flask-security views.
+@security.context_processor
+def security_context_processor():
+    return dict(
+        admin_base_template=admin.base_template,
+        admin_view=admin.index_view,
+        h=admin_helpers,
+        get_url=url_for
+    )
+
+
+def build_users_db():
+    """
+    Populate a small db with some example entries.
+    """
+    db.drop_all()
+    db.create_all()
+
+    with app.app_context():
+        user_role = Role(name='user')
+        admin_role = Role(name='admin')
+        db.session.add(user_role)
+        db.session.add(admin_role)
+        db.session.commit()
+
+        user_datastore.create_user(
+            first_name='Admin',
+            email='admin',
+            password=hash_password(PUBTRENDS_CONFIG.admin_password),
+            roles=[user_role, admin_role]
+        )
+        db.session.commit()
+    return
+
+
 def get_app():
     return app
+
+
+# Build a sample db on the fly, if one does not exist yet.
+if not os.path.exists(DATABASE_PATH):
+    build_users_db()
 
 
 # With debug=True, Flask server will auto-reload on changes

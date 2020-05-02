@@ -47,7 +47,7 @@ SORT_MOST_RELEVANT = 'Most Relevant'
 SORT_MOST_RECENT = 'Most Recent'
 
 
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 def zoom_name(zoom):
@@ -266,27 +266,27 @@ def to_32_bit_int(n):
 
 
 def build_corpus(df):
-    logger.debug(f'Building corpus from {len(df)} articles')
+    log.info(f'Building corpus from {len(df)} articles')
     corpus = [f'{title} {abstract}'
               for title, abstract in zip(df['title'].values, df['abstract'].values)]
-    logger.debug(f'Corpus size: {sys.getsizeof(corpus)} bytes')
+    log.info(f'Corpus size: {sys.getsizeof(corpus)} bytes')
     return corpus
 
 
 def vectorize(corpus, query=None, n_words=1000):
-    logger.debug(f'Counting word usage in the corpus, using only {n_words} most frequent words')
+    log.info(f'Counting word usage in the corpus, using only {n_words} most frequent words')
     vectorizer = CountVectorizer(tokenizer=lambda t: tokenize(t, query), max_features=n_words)
     counts = vectorizer.fit_transform(corpus)
-    logger.debug(f'Output shape: {counts.shape}')
+    log.info(f'Output shape: {counts.shape}')
     return counts, vectorizer
 
 
 def lda_topics(counts, n_topics=10):
-    logger.debug(f'Performing LDA topic analysis')
+    log.info(f'Performing LDA topic analysis')
     lda = LatentDirichletAllocation(n_components=n_topics, random_state=0)
     topics = lda.fit_transform(counts)
 
-    logger.debug('Done')
+    log.info('Done')
     return topics, lda
 
 
