@@ -1,15 +1,15 @@
+import binascii
 import html
 import logging
 import re
+import sys
 from collections import Counter
 from string import Template
 from threading import Lock
 
-import binascii
 import nltk
 import numpy as np
 import pandas as pd
-import sys
 from matplotlib import colors
 from nltk.corpus import stopwords, wordnet
 from nltk.stem import WordNetLemmatizer, SnowballStemmer
@@ -47,7 +47,7 @@ SORT_MOST_RELEVANT = 'Most Relevant'
 SORT_MOST_RECENT = 'Most Recent'
 
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def zoom_name(zoom):
@@ -266,27 +266,27 @@ def to_32_bit_int(n):
 
 
 def build_corpus(df):
-    log.info(f'Building corpus from {len(df)} articles')
+    logger.debug(f'Building corpus from {len(df)} articles')
     corpus = [f'{title} {abstract}'
               for title, abstract in zip(df['title'].values, df['abstract'].values)]
-    log.info(f'Corpus size: {sys.getsizeof(corpus)} bytes')
+    logger.debug(f'Corpus size: {sys.getsizeof(corpus)} bytes')
     return corpus
 
 
 def vectorize(corpus, query=None, n_words=1000):
-    log.info(f'Counting word usage in the corpus, using only {n_words} most frequent words')
+    logger.debug(f'Counting word usage in the corpus, using only {n_words} most frequent words')
     vectorizer = CountVectorizer(tokenizer=lambda t: tokenize(t, query), max_features=n_words)
     counts = vectorizer.fit_transform(corpus)
-    log.info(f'Output shape: {counts.shape}')
+    logger.debug(f'Output shape: {counts.shape}')
     return counts, vectorizer
 
 
 def lda_topics(counts, n_topics=10):
-    log.info(f'Performing LDA topic analysis')
+    logger.debug(f'Performing LDA topic analysis')
     lda = LatentDirichletAllocation(n_components=n_topics, random_state=0)
     topics = lda.fit_transform(counts)
 
-    log.info('Done')
+    logger.debug('Done')
     return topics, lda
 
 

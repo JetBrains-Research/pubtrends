@@ -209,6 +209,8 @@ Please ensure that you have configured and prepared the database(s).
     # inpect logs
     docker-compose logs
     ```
+    
+    Log files will be created in `~/.pubtrends/logs`.
 
 6. During updates or other construction works consider launching simple reporter.
     ``` 

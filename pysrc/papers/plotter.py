@@ -25,7 +25,7 @@ from pysrc.papers.utils import LOCAL_BASE_URL, get_topic_word_cloud_data, \
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
 hv.extension('bokeh')
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 MAX_AUTHOR_LENGTH = 100
 MAX_JOURNAL_LENGTH = 100
@@ -180,7 +180,7 @@ class Plotter:
         """
 
     def heatmap_topics_similarity(self):
-        log.info('Visualizing topics similarity with heatmap')
+        logger.debug('Visualizing topics similarity with heatmap')
 
         similarity_df, topics = PlotPreprocessor.topics_similarity_data(
             self.analyzer.similarity_graph, self.analyzer.df, self.analyzer.comp_sizes
@@ -219,7 +219,7 @@ class Plotter:
         return p
 
     def component_size_summary(self):
-        log.info('Summary component detailed info visualization')
+        logger.debug('Summary component detailed info visualization')
 
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
         components, data = PlotPreprocessor.component_size_summary_data(
@@ -250,7 +250,7 @@ class Plotter:
         return p
 
     def component_years_summary_boxplots(self):
-        log.info('Summary component year detailed info visualization on boxplot')
+        logger.debug('Summary component year detailed info visualization on boxplot')
 
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
         components, data = PlotPreprocessor.component_size_summary_data(
@@ -271,7 +271,7 @@ class Plotter:
         return hv.render(boxwhisker, backend='bokeh')
 
     def topics_info_and_word_cloud_and_callback(self):
-        log.info('Per component detailed info visualization')
+        logger.debug('Per component detailed info visualization')
 
         # Prepare layouts
         n_comps = len(self.analyzer.components)
@@ -355,7 +355,7 @@ class Plotter:
         return plot
 
     def max_gain_papers(self):
-        log.info('Different colors encode different papers')
+        logger.debug('Different colors encode different papers')
         cols = ['year', 'id', 'title', 'authors', 'paper_year', 'count']
         max_gain_df = self.analyzer.max_gain_df[cols].replace(np.nan, "Undefined")
         max_gain_df['authors'] = max_gain_df['authors'].apply(lambda authors: cut_authors_list(authors))
@@ -388,9 +388,9 @@ class Plotter:
         return p
 
     def max_relative_gain_papers(self):
-        log.info('Top papers in relative gain for each year')
-        log.info('Relative gain (year) = Citation Gain (year) / Citations before year')
-        log.info('Different colors encode different papers')
+        logger.debug('Top papers in relative gain for each year')
+        logger.debug('Relative gain (year) = Citation Gain (year) / Citations before year')
+        logger.debug('Different colors encode different papers')
         cols = ['year', 'id', 'title', 'authors', 'paper_year', 'rel_gain']
         max_rel_gain_df = self.analyzer.max_rel_gain_df[cols].replace(np.nan, "Undefined")
         max_rel_gain_df['authors'] = max_rel_gain_df['authors'].apply(lambda authors: cut_authors_list(authors))

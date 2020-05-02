@@ -1,16 +1,13 @@
 import hashlib
+import html
 import json
 import logging
 import os
+import random
 from urllib.parse import quote
 
-import html
-import random
 from celery.result import AsyncResult
-from flask import (
-    Flask, request, redirect, url_for,
-    render_template, render_template_string
-)
+from flask import Flask, url_for, redirect, render_template, request, render_template_string
 
 from pysrc.celery.tasks import celery, find_paper_async, analyze_search_terms, analyze_id_list, get_analyzer
 from pysrc.celery.tasks_cache import get_or_cancel_task
@@ -27,29 +24,36 @@ MAX_QUERY_LENGTH = 60
 
 app = Flask(__name__)
 
+#####################
+# Configure logging #
+#####################
+
+# Deployment and development
+LOG_PATHS = ['/logs', os.path.expanduser('~/.pubtrends/logs')]
+for p in LOG_PATHS:
+    if os.path.isdir(p):
+        logfile = os.path.join(p, 'pubtrends.log')
+        break
+else:
+    raise RuntimeError('Failed to configure main log file')
+
+logging.basicConfig(filename=logfile,
+                    filemode='a',
+                    format='[%(asctime)s,%(msecs)03d: %(levelname)s/%(name)s] %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S',
+                    level=logging.INFO)
+
 # Check to see if our Flask application is being run directly or through Gunicorn,
-# and then set your Flask application logger’s handlers to the same as Gunicorn’s.
+# and then set your Flask application log level the same as Gunicorn’s.
 if __name__ != '__main__':
     gunicorn_logger = logging.getLogger('gunicorn.error')
-    app.logger.handlers = gunicorn_logger.handlers
     app.logger.setLevel(gunicorn_logger.level)
-    if os.path.isdir('/logs'):
-        logfile = '/logs/pubtrends.log'
-    elif os.path.isdir(os.path.expanduser('~/.pubtrends/logs')):
-        logfile = os.path.expanduser('~/.pubtrends/logs') + '/pubtrends.log'
-    else:
-        raise RuntimeError('Failed to configure main log file')
-    logging.basicConfig(filename=logfile,
-                        filemode='a',
-                        format='[%(asctime)s,%(msecs)03d: %(levelname)s/%(name)s] %(message)s',
-                        datefmt='%Y-%m-%d %H:%M:%S',
-                        level=gunicorn_logger.level)
 
-logger = logging.getLogger('app')
+logger = app.logger
 
 
-def log_request(request):
-    return f'addr:{request.remote_addr} args:{json.dumps(request.args)}'
+def log_request(r):
+    return f'addr:{r.remote_addr} args:{json.dumps(r.args)}'
 
 
 @app.route('/status')
@@ -438,3 +442,8 @@ def process_ids():
 
 def get_app():
     return app
+
+
+# With debug=True, Flask server will auto-reload on changes
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', debug=True, extra_files=['templates/'])
