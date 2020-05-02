@@ -41,7 +41,7 @@ def prepare_stats_data(logfile):
     total_visits = len(visits)
     result['total_visits'] = total_visits
     if total_visits:
-        p = prepare_timeseries(visits, 'Terms searches')
+        p = prepare_timeseries(visits, 'Visits')
         result['visits_plot'] = [components(p)]
 
     total_terms_searches = len(terms_searches)
@@ -53,7 +53,7 @@ def prepare_stats_data(logfile):
     total_paper_searches = len(paper_searches)
     result['total_paper_searches'] = total_paper_searches
     if total_paper_searches:
-        p = prepare_timeseries(paper_searches, 'Terms searches')
+        p = prepare_timeseries(paper_searches, 'Paper searches')
         result['paper_searches_plot'] = [components(p)]
 
     # Generate a word cloud image
