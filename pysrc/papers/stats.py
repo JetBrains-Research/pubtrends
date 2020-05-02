@@ -69,7 +69,7 @@ def prepare_timeseries(dates, title):
     df_by_month['date'] = [d.strftime("%m/%Y") for d in df_by_month.index]
     df_by_month.reset_index(drop=True, inplace=True)
     p = figure(plot_width=PLOT_WIDTH, plot_height=PLOT_HEIGHT, x_range=df_by_month['date'], tools=TOOLS,
-               title=title)
+               title=f'{title} per month')
     p.vbar(x='date', top='count', bottom=0, source=ColumnDataSource(df_by_month), line_width=3, width=0.8)
     p.hover.tooltips = [("Date", "@date"), ("Count", "@count")]
     return p
