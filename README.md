@@ -117,7 +117,7 @@ Please ensure that you have Database configured, up and running.
     ```
 3. Start flask server at localhost:5000/
     ```
-    python -m pysrc.pubtrends_app
+    python -m pysrc.app.app
     ```    
 ### Jupyter Notebook
    ```
