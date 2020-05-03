@@ -325,7 +325,6 @@ def show_ids():
     if papers_list == 'hot':
         search_string += f'Hot Papers'
 
-
     if jobid:
         job = AsyncResult(jobid, app=celery)
         if job and job.state == 'SUCCESS':
