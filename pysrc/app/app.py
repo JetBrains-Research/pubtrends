@@ -330,7 +330,7 @@ def show_ids():
         if job and job.state == 'SUCCESS':
             _, data, _ = job.result
             logger.info(f'/papers success {log_request(request)}')
-            export_name = re.sub('["\':,. ]', '_', f'{query}_{search_string}'.lower().strip('_'))
+            export_name = re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{query}_{search_string}'.lower().strip('_')))
             return render_template('papers.html',
                                    version=VERSION,
                                    source=source,
