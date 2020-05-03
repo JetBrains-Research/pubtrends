@@ -197,7 +197,13 @@ Please ensure that you have configured and prepared the database(s).
    mkdir logs
    ```
 
-5. Launch pubtrends with docker-compose.
+5. Create necessary folders for logs and service database.
+    ```
+    mkdir ~/.pubtrends/logs
+    mkdir ~/.pubtrends/database
+    ```
+ 
+6. Launch pubtrends with docker-compose.
     ```
     # start
     docker-compose up -d --build
@@ -209,10 +215,8 @@ Please ensure that you have configured and prepared the database(s).
     # inpect logs
     docker-compose logs
     ```
-    
-    Log files will be created in `~/.pubtrends/logs`.
 
-6. During updates or other construction works consider launching simple reporter.
+7. During updates or other construction works consider launching simple reporter.
     ``` 
    docker run --rm -p 80:8000 -v $(pwd)/pysrc/app/construction:/construction \
         -t biolabs/pubtrends /bin/bash -c "python -m http.server -d /construction 8000"
