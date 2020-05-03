@@ -6,7 +6,7 @@ from pysrc.papers.plotter import Plotter
 from pysrc.papers.pm_loader import PubmedLoader
 from pysrc.papers.ss_loader import SemanticScholarLoader
 from pysrc.papers.utils import (
-    cut_authors_list, trim, preprocess_text,
+    trim, preprocess_text,
     PUBMED_ARTICLE_BASE_URL, SEMANTIC_SCHOLAR_BASE_URL)
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
@@ -166,9 +166,8 @@ def prepare_papers_data(data, source, comp=None, word=None, author=None, journal
             row['year'], row['total'], str(row['doi'])
         if doi == 'None' or doi == 'nan':
             doi = ''
-        authors = cut_authors_list(authors, limit=2)  # Take only first/last author
-        result.append((pid, (trim(title, MAX_TITLE_LENGTH)), authors, url_prefix + pid, trim(journal, 50),
-                       year, total, doi))
+        # Don't trim or cut anything here, because this information can be exported
+        result.append((pid, title, authors.join(','), url_prefix + pid, journal, year, total, doi))
 
     # Return list sorted by year
     return sorted(result, key=lambda t: t[5], reverse=True)
