@@ -167,7 +167,7 @@ def prepare_papers_data(data, source, comp=None, word=None, author=None, journal
         if doi == 'None' or doi == 'nan':
             doi = ''
         # Don't trim or cut anything here, because this information can be exported
-        result.append((pid, title, authors.join(','), url_prefix + pid, journal, year, total, doi))
+        result.append((pid, title, authors, url_prefix + pid, journal, year, total, doi))
 
     # Return list sorted by year
     return sorted(result, key=lambda t: t[5], reverse=True)
