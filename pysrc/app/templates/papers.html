@@ -31,9 +31,12 @@
     <link href="https://cdn.pydata.org/bokeh/release/bokeh-widgets-1.2.0.min.css"
           rel="stylesheet" type="text/css">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1"/>
-<!--         <link rel="stylesheet" href="../static/style.css"/>-->
+    <!--         <link rel="stylesheet" href="../static/style.css"/>-->
     <link rel="stylesheet" href="{{ url_for('static', filename='result.css') }}?v=1"/>
-<!--         <link rel="stylesheet" href="../static/result.css"/>-->
+    <!--         <link rel="stylesheet" href="../static/result.css"/>-->
+    <script src="{{ url_for('static', filename='dataTableToCSV.js') }}"></script>
+    <!--         <script src="../static/dataTableToCSV.js"/>-->
+
     <script>
         "use strict";
         $(document).ready(function () {
@@ -68,7 +71,7 @@
                 </li>
                 <li class="breadcrumb-item">{{ limit }} {{ sort }}</li>
                 {% if search_string %}
-                    <li class="breadcrumb-item">{{ search_string }}</li>
+                <li class="breadcrumb-item">{{ search_string }}</li>
                 {% endif %}
             </ol>
         </div>
@@ -104,7 +107,7 @@
                         <td>{{ year }}</td>
                         <td>
                             {% if doi != "" %}
-                                <a class="link" href="https://doi.org/{{doi}}">{{ doi }}</a>
+                            <a class="link" href="https://doi.org/{{doi}}">{{ doi }}</a>
                             {% endif %}
                         </td>
                         <td>{{ total }}</td>
@@ -113,6 +116,9 @@
                     </tbody>
                 </table>
             </div>
+            <button type="button" class="mt-3 btn btn-primary"
+                    onclick="(function(){ dataTableToCSV($('#papers'), '{{ export_name }}'); })();">Export to CSV
+            </button>
         </main>
         <div class="d-none d-xl-block d-lg-block col-lg-1 col-xl-1 "></div>
     </div>

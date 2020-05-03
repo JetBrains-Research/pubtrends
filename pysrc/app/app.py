@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import random
+import re
 from threading import Lock
 from urllib.parse import quote
 
@@ -324,11 +325,13 @@ def show_ids():
     if papers_list == 'hot':
         search_string += f'Hot Papers'
 
+
     if jobid:
         job = AsyncResult(jobid, app=celery)
         if job and job.state == 'SUCCESS':
             _, data, _ = job.result
             logger.info(f'/papers success {log_request(request)}')
+            export_name = re.sub('["\':,. ]', '_', f'{query}_{search_string}'.lower().strip('_'))
             return render_template('papers.html',
                                    version=VERSION,
                                    source=source,
@@ -336,6 +339,7 @@ def show_ids():
                                    search_string=search_string,
                                    limit=limit,
                                    sort=sort,
+                                   export_name=export_name,
                                    papers=prepare_papers_data(data, source, comp, word, author, journal, papers_list))
     logger.error(f'/papers error {log_request(request)}')
     return render_template_string(f"Request does not contain necessary params: {request}"), 400
