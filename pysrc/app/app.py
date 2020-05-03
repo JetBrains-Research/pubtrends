@@ -508,7 +508,7 @@ class AdminStatsView(BaseView):
     @expose('/')
     def index(self):
         stats_data = prepare_stats_data(logfile)
-        return self.render('admin/stats.html', **stats_data)
+        return self.render('admin/stats.html', version=VERSION, **stats_data)
 
     def is_accessible(self):
         return current_user.is_active and current_user.is_authenticated and current_user.has_role('admin')

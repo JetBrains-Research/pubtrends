@@ -9,14 +9,20 @@
 <script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-2.0.2.min.js"
         crossorigin="anonymous"></script>
 <script src="{{ url_for('static', filename='wordcloud.js') }}"></script>
-<!--    <script src="../static/wordcloud.js"/>-->
-<script>
-    "use strict";
-    $(document).ready(function() {
-        var words = JSON.parse('{{ word_cloud }}'.replace(/&#34;/g, '"').replace(/&amp;/g, '&'));
-        process_word_cloud('word_cloud', 900, 600, words, null);
-    } );
-</script>
+<!--<script src="../static/wordcloud.js"/>-->
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1"/>
+<!--<link rel="stylesheet" href="../../static/style.css" />-->
+
+{% if word_cloud is defined %}
+    <script>
+        "use strict";
+        $(document).ready(function() {
+            var words = JSON.parse('{{ word_cloud }}'.replace(/&#34;/g, '"').replace(/&amp;/g, '&'));
+            process_word_cloud('word_cloud', 900, 600, words, null);
+        });
+    </script>
+{% endif %}
+
 {% endblock head %}
 {% block body %}
     {{ super() }}
@@ -47,10 +53,18 @@
             {{ div|safe }}
             {% endfor %}
         {% endif %}
-
-        <h3>Word cloud</h3>
-        <canvas id="word_cloud" width="0" height="0" style="border:1px solid #eee;">
-            Canvas is not supported in your browser.
-        </canvas>
+        {% if word_cloud is defined %}
+            <h3>Word cloud</h3>
+            <canvas id="word_cloud" width="0" height="0" style="border:1px solid #eee;">
+                Canvas is not supported in your browser.
+            </canvas>
+        {% endif %}
     </div>
+
+    <footer>
+        <p>version {{ version }}<br/>
+            &copy; 2019-2020 <a href="https://research.jetbrains.org/groups/biolabs"
+                                title="JetBrains Research BioLabs"
+                                target="_blank">JetBrains Research</a></p>
+    </footer>
 {% endblock body %}

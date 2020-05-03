@@ -58,8 +58,10 @@ def prepare_stats_data(logfile):
 
     # Generate a word cloud image
     text = ' '.join(terms).replace(',', ' ').replace('"', '')
-    wc = WordCloud(width=PLOT_WIDTH, height=WC_HEIGHT, background_color='white', max_font_size=100).generate(text)
-    result['word_cloud'] = Plotter.word_cloud_prepare(wc)
+    if text:  # Check that string is not empty
+        wc = WordCloud(width=PLOT_WIDTH, height=WC_HEIGHT, background_color='white', max_font_size=100).generate(text)
+        result['word_cloud'] = Plotter.word_cloud_prepare(wc)
+
     return result
 
 
