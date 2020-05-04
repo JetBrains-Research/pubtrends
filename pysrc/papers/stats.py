@@ -57,9 +57,10 @@ def prepare_stats_data(logfile):
         result['paper_searches_plot'] = [components(p)]
 
     # Generate a word cloud image
-    text = ' '.join(terms).replace(',', ' ').replace('"', '')
+    text = ' '.join(terms).replace(',', ' ').replace('[^a-zA-Z0-9]+', ' ')
     if text:  # Check that string is not empty
-        wc = WordCloud(width=PLOT_WIDTH, height=WC_HEIGHT, background_color='white', max_font_size=100).generate(text)
+        wc = WordCloud(collocations=False, width=PLOT_WIDTH - 40, height=WC_HEIGHT - 40,
+                       background_color='white', max_font_size=100).generate(text)
         result['word_cloud'] = Plotter.word_cloud_prepare(wc)
 
     return result
