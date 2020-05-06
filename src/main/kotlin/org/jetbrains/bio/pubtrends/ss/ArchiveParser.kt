@@ -113,8 +113,8 @@ class ArchiveParser(
         dbHandler.store(currentBatch)
         currentBatch.clear()
         batchIndex++
-        val progress = 10000 * batchIndex / batchSize
-        logger.info("Finished batch $batchIndex adding ($archiveFileGz) $progress%")
+        val progress = batchIndex * batchSize / 10000.0
+        logger.info("Finished batch $batchIndex adding ($archiveFileGz) ${progress.format(2)}%")
     }
 
     private fun handleEndDocument() {
@@ -189,3 +189,4 @@ class ArchiveParser(
 
 }
 
+fun Double.format(digits: Int) = ".${digits}f".format(this)
