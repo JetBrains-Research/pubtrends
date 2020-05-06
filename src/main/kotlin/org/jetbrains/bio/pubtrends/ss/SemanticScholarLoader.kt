@@ -22,6 +22,8 @@ object SemanticScholarLoader {
             accepts("fillDatabase", "Create and fill database with articles")
                     .withRequiredArg()
                     .withValuesConvertedBy(exists())
+            accepts("storeOnlyArxiv", "Store full metadata only for arXiv articles")
+            accepts("cleanUpOnlyArxiv", "Delete all non-arXiv articles with references")
 
             acceptsAll(listOf("h", "?", "help"), "Show help").forHelp()
 
@@ -36,12 +38,15 @@ object SemanticScholarLoader {
             val (config, configPath, settingsRoot) = Config.load()
             logger.info("Config path: $configPath")
 
+            val storeOnlyArxiv = options.has("storeOnlyArxiv")
+
             logger.info("Init Neo4j database connection")
             val dbHandler = SSNeo4jDatabaseHandler(
                     config["neo4jhost"].toString(),
                     config["neo4jport"].toString().toInt(),
                     config["neo4jusername"].toString(),
-                    config["neo4jpassword"].toString()
+                    config["neo4jpassword"].toString(),
+                    storeOnlyArxiv
             )
 
             dbHandler.use {
@@ -56,15 +61,23 @@ object SemanticScholarLoader {
 
                     val file = File(options.valueOf("fillDatabase").toString())
                     logger.info("Started parsing articles $file")
+                    if (storeOnlyArxiv) {
+                        logger.info("Only arXiv articles are stored with full metadata")
+                    }
                     ArchiveParser(dbHandler, file,
                             config["loader_batch_size"].toString().toInt(),
+                            storeOnlyArxiv,
                             collectStats,
                             statsFile
                             ).parse()
                     logger.info("Finished parsing articles")
                 }
-            }
 
+                if (options.has("cleanUpOnlyArxiv")) {
+                    logger.info("Removing all non-arXiv articles and references to them")
+                    dbHandler.cleanUpOnlyArxiv()
+                }
+            }
         }
     }
 }

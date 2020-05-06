@@ -14,6 +14,7 @@ class ArchiveParser(
         private val dbHandler: AbstractDBHandler<SemanticScholarArticle>,
         private val archiveFileGz: File,
         private var batchSize: Int,
+        private val storeOnlyArxiv: Boolean = false,
         private val collectStats: Boolean,
         private val statsTSV: Path
 ) {
@@ -91,7 +92,9 @@ class ArchiveParser(
                         pmid = pmid, doi = doi, abstract = abstract, keywords = keywords, year = year,
                         citationList = citationList, aux = aux)
 
-                addArticleToBatch(curArticle)
+                if (!storeOnlyArxiv || curArticle.isArxivArticle()) {
+                    addArticleToBatch(curArticle)
+                }
 
                 if (collectStats) {
                     jsonObject.entrySet().forEach { e ->
@@ -113,7 +116,7 @@ class ArchiveParser(
         dbHandler.store(currentBatch)
         currentBatch.clear()
         batchIndex++
-        val progress = batchIndex * batchSize / 10000.0
+        val progress = (batchIndex * batchSize).toDouble() / 10000.0
         logger.info("Finished batch $batchIndex adding ($archiveFileGz) ${progress.format(2)}%")
     }
 
@@ -189,4 +192,4 @@ class ArchiveParser(
 
 }
 
-fun Double.format(digits: Int) = ".${digits}f".format(this)
+fun Double.format(digits: Int) = "%.${digits}f".format(this)

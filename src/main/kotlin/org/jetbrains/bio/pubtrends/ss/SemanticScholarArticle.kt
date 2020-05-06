@@ -22,7 +22,11 @@ data class SemanticScholarArticle(val ssid: String,
                                   val year: Int? = null,
                                   val doi: String? = null,
                                   val keywords: String? = null,
-                                  val aux: ArticleAuxInfo = ArticleAuxInfo())
+                                  val aux: ArticleAuxInfo = ArticleAuxInfo()) {
+    fun isArxivArticle(): Boolean {
+        return aux.links.pdfUrls.any { it.contains("arxiv") }
+    }
+}
 
 
 private val crc32: CRC32 = CRC32()

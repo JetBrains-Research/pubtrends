@@ -13,7 +13,8 @@ open class SSNeo4jDatabaseHandler(
         host: String,
         port: Int,
         user: String,
-        password: String
+        password: String,
+        private var storeOnlyArxiv : Boolean = true
 ) : Neo4jConnector(host, port, user, password), AbstractDBHandler<SemanticScholarArticle> {
 
     companion object {
@@ -105,6 +106,9 @@ CALL db.index.fulltext.createNodeIndex("ssTitlesAndAbstracts", ["SSPublication"]
         })
 
         driver.session().use {
+            val setLabelsAndReturn = if (storeOnlyArxiv)
+                "WITH n, data CALL apoc.create.addLabels(id(n), [\"Arxiv\"]) YIELD node RETURN node;"
+            else "RETURN n;"
             it.run("""
 UNWIND {articles} AS data 
 MERGE (n:SSPublication { crc32id: toInteger(data.crc32id), ssid: data.ssid }) 
@@ -122,7 +126,7 @@ ON MATCH SET
     n.date = datetime(data.date),
     n.doi = data.doi,
     n.aux = data.aux
-RETURN n;
+$setLabelsAndReturn
 """.trimIndent(),
                     articleParameters)
 
@@ -142,4 +146,10 @@ MERGE (n_out)-[:SSReferenced]->(n_in);
         throw IllegalStateException("delete is not supported")
     }
 
+    fun cleanUpOnlyArxiv() {
+        driver.session().use {
+            it.run("""CALL apoc.periodic.iterate("MATCH (p) WHERE NOT "Arxiv" IN labels(p) RETURN p",
+            "DETACH DELETE p", {batchSize: $DELETE_BATCH_SIZE});""".trimIndent())
+        }
+    }
 }
