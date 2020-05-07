@@ -3,10 +3,9 @@ import json
 import re
 from queue import Queue
 
-import numpy as np
 import pandas as pd
 from bokeh.embed import components
-from bokeh.models import ColumnDataSource
+from bokeh.models import HoverTool
 from bokeh.plotting import figure
 from wordcloud import WordCloud
 
@@ -59,9 +58,9 @@ def prepare_stats_data(logfile):
         rs = recent_searches.get()
         args_map = json.loads(rs)
         query = args_map['query']
-        link = f'/result?{"&".join([f"{a}={v}" for a,v in args_map.items()])}'
+        link = f'/result?{"&".join([f"{a}={v}" for a, v in args_map.items()])}'
         recent_searches_query_links.append((query, link))
-    result['recent_searches'] = recent_searches_query_links
+    result['recent_searches'] = recent_searches_query_links[::-1]
 
     # Generate a word cloud image
     text = ' '.join(terms).replace(',', ' ').replace('[^a-zA-Z0-9]+', ' ')
@@ -74,12 +73,12 @@ def prepare_stats_data(logfile):
 
 
 def prepare_timeseries(dates, title):
-    df_terms_searches = pd.DataFrame({'count': np.ones(len(dates))}, index=dates)
-    df_by_month = df_terms_searches.resample('M').sum()
-    df_by_month['date'] = [d.strftime("%m/%Y") for d in df_by_month.index]
-    df_by_month.reset_index(drop=True, inplace=True)
-    p = figure(plot_width=PLOT_WIDTH, plot_height=PLOT_HEIGHT, x_range=df_by_month['date'], tools=TOOLS,
-               title=f'{title} per month')
-    p.vbar(x='date', top='count', bottom=0, source=ColumnDataSource(df_by_month), line_width=3, width=0.8)
-    p.hover.tooltips = [("Date", "@date"), ("Count", "@count")]
+    df_terms_searches = pd.DataFrame({'date': dates, 'count': 1})
+    df_terms_searches_grouped = df_terms_searches.groupby(pd.Grouper(key='date', freq='D')).sum()
+    p = figure(plot_width=PLOT_WIDTH, plot_height=PLOT_HEIGHT, tools=TOOLS,
+               x_axis_type='datetime', title=title)
+    p.line('date', 'count', source=df_terms_searches_grouped)
+    hover = p.select(dict(type=HoverTool))
+    hover.tooltips = [('Date', '@date{%F}'), ('Count', '@count')]
+    hover.formatters = {'@date': 'datetime'}
     return p
