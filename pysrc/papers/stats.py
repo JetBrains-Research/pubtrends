@@ -1,5 +1,7 @@
 import datetime
+import json
 import re
+from queue import Queue
 
 import numpy as np
 import pandas as pd
@@ -17,10 +19,11 @@ WC_HEIGHT = 600
 
 
 def prepare_stats_data(logfile):
-    visits = []
     terms_searches = []
     paper_searches = []
+    recent_searches = Queue(maxsize=10)
     terms = []
+
     for line in open(logfile).readlines():
         if 'INFO' not in line:
             continue
@@ -28,22 +31,17 @@ def prepare_stats_data(logfile):
         if search is None:
             continue
         date = datetime.datetime.strptime(search.group(0), '%Y-%m-%d %H:%M:%S,%f')
-        if '/ addr:' in line:
-            visits.append(date)
         if '/process regular search addr:' in line:
             terms_searches.append(date)
         if '/search_paper addr:' in line:
             paper_searches.append(date)
         if '/result success addr:' in line:
             terms.append(re.sub('(.*"query": ")|(", "source.*)', '', line.strip()))
+            if recent_searches.full():
+                recent_searches.get()
+            recent_searches.put(re.sub(".*args:", "", line.strip()))
 
     result = {}
-    total_visits = len(visits)
-    result['total_visits'] = total_visits
-    if total_visits:
-        p = prepare_timeseries(visits, 'Visits')
-        result['visits_plot'] = [components(p)]
-
     total_terms_searches = len(terms_searches)
     result['total_terms_searches'] = total_terms_searches
     if total_terms_searches:
@@ -55,6 +53,15 @@ def prepare_stats_data(logfile):
     if total_paper_searches:
         p = prepare_timeseries(paper_searches, 'Paper searches')
         result['paper_searches_plot'] = [components(p)]
+
+    recent_searches_query_links = []
+    while not recent_searches.empty():
+        rs = recent_searches.get()
+        args_map = json.loads(rs)
+        query = args_map['query']
+        link = f'/result?{"&".join([f"{a}={v}" for a,v in args_map.items()])}'
+        recent_searches_query_links.append((query, link))
+    result['recent_searches'] = recent_searches_query_links
 
     # Generate a word cloud image
     text = ' '.join(terms).replace(',', ' ').replace('[^a-zA-Z0-9]+', ' ')
