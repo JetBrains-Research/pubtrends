@@ -1,0 +1,12 @@
+{% extends 'admin/master.html' %}
+{% block body %}
+    {{ super() }}
+    <div class="container">
+        {% if not current_user.is_authenticated %}
+            <p>Please login to proceed.</p>
+            <a class="btn btn-primary" href="{{ url_for('security.login') }}">login</a>
+        {% else %}
+            <p>Welcome to pubtrends admin interface!</p>
+        {% endif %}
+    </div>
+{% endblock body %}

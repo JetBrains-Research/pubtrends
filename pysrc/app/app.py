@@ -1,21 +1,29 @@
+import hashlib
 import html
 import json
 import logging
+import os
 import random
+import re
+from threading import Lock
 from urllib.parse import quote
 
+import flask_admin
 from celery.result import AsyncResult
-from flask import (
-    Flask, request, redirect, url_for,
-    render_template, render_template_string
-)
+from flask import Flask, url_for, redirect, render_template, request, abort, render_template_string
+from flask_admin import helpers as admin_helpers, expose, BaseView
+from flask_security import Security, SQLAlchemyUserDatastore, \
+    UserMixin, RoleMixin, current_user
+from flask_security.utils import hash_password
+from flask_sqlalchemy import SQLAlchemy
 
 from pysrc.celery.tasks import celery, find_paper_async, analyze_search_terms, analyze_id_list, get_analyzer
 from pysrc.celery.tasks_cache import get_or_cancel_task
 from pysrc.papers.config import PubtrendsConfig
-from pysrc.papers.paper import prepare_paper_data, prepare_papers_data, get_loader_and_url_prefix
+from pysrc.papers.paper import prepare_review_data, prepare_paper_data, prepare_papers_data, get_loader_and_url_prefix
 from pysrc.papers.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.plotter import Plotter
+from pysrc.papers.stats import prepare_stats_data
 from pysrc.papers.utils import zoom_name, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE, trim, ZOOM_OUT_TITLE
 from pysrc.papers.version import VERSION
 
@@ -25,12 +33,36 @@ MAX_QUERY_LENGTH = 60
 
 app = Flask(__name__)
 
+#####################
+# Configure logging #
+#####################
+
+# Deployment and development
+LOG_PATHS = ['/logs', os.path.expanduser('~/.pubtrends/logs')]
+for p in LOG_PATHS:
+    if os.path.isdir(p):
+        logfile = os.path.join(p, 'pubtrends.log')
+        break
+else:
+    raise RuntimeError('Failed to configure main log file')
+
+logging.basicConfig(filename=logfile,
+                    filemode='a',
+                    format='[%(asctime)s,%(msecs)03d: %(levelname)s/%(name)s] %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S',
+                    level=logging.INFO)
+
 # Check to see if our Flask application is being run directly or through Gunicorn,
-# and then set your Flask application logger’s handlers to the same as Gunicorn’s.
+# and then set your Flask application log level the same as Gunicorn’s.
 if __name__ != '__main__':
     gunicorn_logger = logging.getLogger('gunicorn.error')
-    app.logger.handlers = gunicorn_logger.handlers
     app.logger.setLevel(gunicorn_logger.level)
+
+logger = app.logger
+
+
+def log_request(r):
+    return f'addr:{r.remote_addr} args:{json.dumps(r.args)}'
 
 
 @app.route('/status')
@@ -43,36 +75,37 @@ def status():
                 'state': 'FAILURE',
                 'message': f'Unknown task id {jobid}'
             })
-        if job.state == 'PROGRESS':
+        job_state, job_result = job.state, job.result
+        if job_state == 'PROGRESS':
             return json.dumps({
-                'state': job.state,
-                'log': job.result['log'],
-                'progress': int(100.0 * job.result['current'] / job.result['total'])
+                'state': job_state,
+                'log': job_result['log'],
+                'progress': int(100.0 * job_result['current'] / job_result['total'])
             })
-        elif job.state == 'SUCCESS':
+        elif job_state == 'SUCCESS':
             return json.dumps({
-                'state': job.state,
+                'state': job_state,
                 'progress': 100
             })
-        elif job.state == 'FAILURE':
+        elif job_state == 'FAILURE':
             return json.dumps({
-                'state': job.state,
-                'message': html.unescape(str(job.result).replace('\\n', '\n').replace('\\t', '\t')[2:-2])
+                'state': job_state,
+                'message': html.unescape(str(job_result).replace('\\n', '\n').replace('\\t', '\t')[2:-2])
             })
-        elif job.state == 'STARTED':
+        elif job_state == 'STARTED':
             return json.dumps({
-                'state': job.state,
+                'state': job_state,
                 'message': 'Task is starting, please wait...'
             })
-        elif job.state == 'PENDING':
+        elif job_state == 'PENDING':
             return json.dumps({
-                'state': job.state,
+                'state': job_state,
                 'message': 'Task is in queue, please wait...'
             })
         else:
             return json.dumps({
                 'state': 'FAILURE',
-                'message': f'Illegal task state {job.state}'
+                'message': f'Illegal task state {job_state}'
             })
     # no jobid
     return json.dumps({
@@ -92,6 +125,7 @@ def result():
         job = AsyncResult(jobid, app=celery)
         if job and job.state == 'SUCCESS':
             data, _, log = job.result
+            logger.info(f'/result success {log_request(request)}')
             return render_template('result.html',
                                    query=trim(query, MAX_QUERY_LENGTH),
                                    source=source,
@@ -100,11 +134,41 @@ def result():
                                    version=VERSION,
                                    log=log,
                                    **data)
+        logger.info(f'/result No job or out-of-date job, restart it {log_request(request)}')
+        return search_terms_(request.args)
+    else:
+        logger.error(f'/result error {log_request(request)}')
+        return render_template_string("Something went wrong..."), 400
+
+
+@app.route('/review')
+def review():
+    jobid = request.args.get('jobid')
+    query = request.args.get('query')
+    source = request.args.get('source')
+    limit = request.args.get('limit')
+    sort = request.args.get('sort')
+    num_papers = request.args.get('papers_number')
+    num_sents = request.args.get('sents_number')
+    if jobid:
+        job = AsyncResult(jobid, app=celery)
+        if job and job.state == 'SUCCESS':
+            _, data, _ = job.result
+            review_res = prepare_review_data(data, source, num_papers, num_sents)
+            export_name = re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{query}_review'.lower().strip('_')))
+            return render_template('review.html',
+                                   query=trim(query, MAX_QUERY_LENGTH),
+                                   source=source,
+                                   limit=limit,
+                                   sort=sort,
+                                   version=VERSION,
+                                   review_array=review_res,
+                                   export_name=export_name,
+                                   **data)
         # No job or out-of-date job, restart it
         return search_terms_(request.args)
     else:
         return render_template_string("Something went wrong...")
-
 
 @app.route('/process')
 def process():
@@ -122,7 +186,7 @@ def process():
         id = request.args.get('id')
 
         if key and value:
-            logging.debug('/process key:value search')
+            logger.info(f'/process key:value search {log_request(request)}')
             query = f'Paper {key}: {value}'
             return render_template('process.html',
                                    redirect_args={'query': quote(query), 'source': source, 'jobid': jobid,
@@ -132,7 +196,7 @@ def process():
                                    jobid=jobid, version=VERSION)
 
         elif analysis_type in [ZOOM_IN_TITLE, ZOOM_OUT_TITLE]:
-            logging.debug('/process zoom processing')
+            logger.info(f'/process zoom processing {log_request(request)}')
             return render_template('process.html',
                                    redirect_args={'query': quote(query), 'source': source, 'jobid': jobid,
                                                   'limit': analysis_type, 'sort': ''},
@@ -141,7 +205,7 @@ def process():
                                    jobid=jobid, version=VERSION)
 
         elif analysis_type == PAPER_ANALYSIS_TITLE:
-            logging.debug('/process paper analysis')
+            logger.info(f'/process paper analysis {log_request(request)}')
             return render_template('process.html',
                                    redirect_args={'source': source, 'jobid': jobid, 'id': id,
                                                   'limit': '', 'sort': ''},
@@ -149,7 +213,7 @@ def process():
                                    redirect_page="paper",  # redirect in case of success
                                    jobid=jobid, version=VERSION)
         elif query:
-            logging.debug('/process regular search')
+            logger.info(f'/process regular search {log_request(request)}')
             limit = request.args.get('limit')
             sort = request.args.get('sort')
             return render_template('process.html',
@@ -162,8 +226,8 @@ def process():
                                    limit=limit, sort=sort,
                                    redirect_page="result",  # redirect in case of success
                                    jobid=jobid, version=VERSION)
-
-    return render_template_string("Something went wrong...")
+    logger.error(f'/process error {log_request(request)}')
+    return render_template_string("Something went wrong..."), 400
 
 
 @app.route('/process_paper')
@@ -175,7 +239,7 @@ def process_paper():
         job = get_or_cancel_task(jobid)
         if job and job.state == 'SUCCESS':
             id_list = job.result
-            logging.debug('/process_paper single paper analysis')
+            logger.info(f'/process_paper single paper analysis {log_request(request)}')
             job = analyze_id_list.delay(source, id_list=id_list, zoom=PAPER_ANALYSIS, query=query)
             return redirect(url_for('.process', query=query, analysis_type=PAPER_ANALYSIS_TITLE,
                                     id=id_list[0], source=source, jobid=job.id))
@@ -190,10 +254,12 @@ def paper():
         job = AsyncResult(jobid, app=celery)
         if job and job.state == 'SUCCESS':
             _, data, _ = job.result
+            logger.info(f'/paper success {log_request(request)}')
             return render_template('paper.html', **prepare_paper_data(data, source, pid),
                                    version=VERSION)
 
-    return render_template_string("Something went wrong...")
+    logger.error(f'/paper error {log_request(request)}')
+    return render_template_string("Something went wrong..."), 400
 
 
 @app.route('/graph')
@@ -217,6 +283,7 @@ def graph():
             ) for comp in sorted(set(analyzer.df['comp']))}
             if graph_type == "citations":
                 graph_cs = PlotPreprocessor.dump_citations_graph_cytoscape(analyzer.df, analyzer.citations_graph)
+                logger.info(f'/graph success citations {log_request(request)}')
                 return render_template(
                     'graph.html',
                     version=VERSION,
@@ -234,6 +301,7 @@ def graph():
                 )
             else:
                 graph_cs = PlotPreprocessor.dump_structure_graph_cytoscape(analyzer.df, analyzer.structure_graph)
+                logger.info(f'/graph success structure {log_request(request)}')
                 return render_template(
                     'graph.html',
                     version=VERSION,
@@ -249,8 +317,8 @@ def graph():
                     topics_description_json=json.dumps(topics_tags),
                     graph_cytoscape_json=json.dumps(graph_cs)
                 )
-
-    return render_template_string("Something went wrong...")
+    logger.error(f'/graph error {log_request(request)}')
+    return render_template_string("Something went wrong..."), 400
 
 
 @app.route('/papers')
@@ -290,6 +358,8 @@ def show_ids():
         job = AsyncResult(jobid, app=celery)
         if job and job.state == 'SUCCESS':
             _, data, _ = job.result
+            logger.info(f'/papers success {log_request(request)}')
+            export_name = re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{query}_{search_string}'.lower().strip('_')))
             return render_template('papers.html',
                                    version=VERSION,
                                    source=source,
@@ -297,9 +367,10 @@ def show_ids():
                                    search_string=search_string,
                                    limit=limit,
                                    sort=sort,
+                                   export_name=export_name,
                                    papers=prepare_papers_data(data, source, comp, word, author, journal, papers_list))
-
-    raise Exception(f"Request does not contain necessary params: {request}")
+    logger.error(f'/papers error {log_request(request)}')
+    return render_template_string(f"Request does not contain necessary params: {request}"), 400
 
 
 @app.route('/cancel')
@@ -326,7 +397,7 @@ def cancel():
 # Index page
 @app.route('/')
 def index():
-    logging.debug('/ landing page')
+    logger.info(f'/ {log_request(request)}')
 
     search_example_source = ''
     search_example_terms = ''
@@ -350,12 +421,12 @@ def index():
                            pm_enabled=PUBTRENDS_CONFIG.pm_enabled,
                            ss_enabled=PUBTRENDS_CONFIG.ss_enabled,
                            search_example_source=search_example_source,
-                           search_example_terms=search_example_terms)
+                           search_example_terms=search_example_terms,
+                           search_example_terms_hash=hashlib.sha1(search_example_terms.encode('utf-8')).hexdigest())
 
 
 @app.route('/search_terms', methods=['POST'])
 def search_terms():
-    logging.debug('/search_terms')
     return search_terms_(request.form)
 
 
@@ -366,35 +437,35 @@ def search_terms_(data):
     limit = data.get('limit')  # Limit
     jobid = data.get('jobid')
     if query and source and sort and limit:
-        logging.debug(f'/ regular search')
         if not jobid:
+            logger.info(f'/search_terms {log_request(request)}')
             job = analyze_search_terms.delay(source, query=query, limit=limit, sort=sort)
             jobid = job.id
         else:
+            logger.info(f'/search_terms with fixed jobid {log_request(request)}')
             analyze_search_terms.apply_async(args=[source, query, sort, limit], task_id=jobid)
         return redirect(url_for('.process', query=query, source=source, limit=limit, sort=sort, jobid=jobid))
-
-    raise Exception(f"Request does not contain necessary params: {request}")
+    logger.error(f'/search_terms error {log_request(request)}')
+    return render_template_string(f"Request does not contain necessary params: {request}"), 400
 
 
 @app.route('/search_paper', methods=['POST'])
 def search_paper():
-    logging.debug('/search_paper')
+    logger.info('/search_paper')
     source = request.form.get('source')  # Pubmed or Semantic Scholar
 
     if source and 'key' in request.form and 'value' in request.form:
-        logging.debug(f'/ paper search')
+        logger.info(f'/search_paper {log_request(request)}')
         key = request.form.get('key')
         value = request.form.get('value')
         job = find_paper_async.delay(source, key, value)
         return redirect(url_for('.process', source=source, key=key, value=value, jobid=job.id))
-
-    raise Exception(f"Request does not contain necessary params: {request}")
+    logger.error(f'/search_paper error {log_request(request)}')
+    return render_template_string(f"Request does not contain necessary params: {request}"), 400
 
 
 @app.route('/process_ids', methods=['POST'])
 def process_ids():
-    logging.debug('/process_ids')
     source = request.form.get('source')  # Pubmed or Semantic Scholar
     query = request.form.get('query')  # Original search query
 
@@ -403,13 +474,151 @@ def process_ids():
         zoom = request.form.get('zoom')
         analysis_type = zoom_name(zoom)
         job = analyze_id_list.delay(source, id_list=id_list, zoom=int(zoom), query=query)
+        logger.info(f'/process_ids {log_request(request)}')
         return redirect(url_for('.process', query=query, analysis_type=analysis_type, source=source, jobid=job.id))
+    logger.error(f'/process_ids error {log_request(request)}')
+    return render_template_string(f"Request does not contain necessary params: {request}"), 400
 
-    raise Exception(f"Request does not contain necessary params: {request}")
+
+#######################
+# Admin functionality #
+#######################
+
+# Configure flask-admin and flask-sqlalchemy
+app.config.from_pyfile('config.py')
+
+# Deployment and development
+DATABASE_PATHS = ['/database', os.path.expanduser('~/.pubtrends/database')]
+for p in DATABASE_PATHS:
+    if os.path.isdir(p):
+        DATABASE_PATH = os.path.join(p, app.config['DATABASE_FILE'])
+        break
+else:
+    raise RuntimeError('Failed to configure service db path')
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + DATABASE_PATH
+db = SQLAlchemy(app)
+
+# Define models
+roles_users = db.Table(
+    'roles_users',
+    db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
+    db.Column('role_id', db.Integer(), db.ForeignKey('role.id'))
+)
+
+
+class Role(db.Model, RoleMixin):
+    id = db.Column(db.Integer(), primary_key=True)
+    name = db.Column(db.String(80), unique=True)
+    description = db.Column(db.String(255))
+
+    def __str__(self):
+        return self.name
+
+
+class User(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    first_name = db.Column(db.String(255))
+    last_name = db.Column(db.String(255))
+    email = db.Column(db.String(255), unique=True)
+    password = db.Column(db.String(255))
+    active = db.Column(db.Boolean())
+    confirmed_at = db.Column(db.DateTime())
+    roles = db.relationship('Role', secondary=roles_users,
+                            backref=db.backref('users', lazy='dynamic'))
+
+    def __str__(self):
+        return self.email
+
+
+# Setup Flask-Security
+user_datastore = SQLAlchemyUserDatastore(db, User, Role)
+security = Security(app, user_datastore)
+
+
+class AdminStatsView(BaseView):
+    @expose('/')
+    def index(self):
+        stats_data = prepare_stats_data(logfile)
+        return self.render('admin/stats.html', version=VERSION, **stats_data)
+
+    def is_accessible(self):
+        return current_user.is_active and current_user.is_authenticated and current_user.has_role('admin')
+
+    def _handle_view(self, name, **kwargs):
+        """
+        Override builtin _handle_view in order to redirect users when a view is not accessible.
+        """
+        if not self.is_accessible():
+            if current_user.is_authenticated:
+                # permission denied
+                abort(403)
+            else:
+                # login
+                return redirect(url_for('security.login', next=request.url))
+
+
+# Create admin
+admin = flask_admin.Admin(
+    app,
+    'Pubtrends',
+    base_template='master.html',
+    template_mode='bootstrap3',
+)
+
+# Show only stats view
+admin.add_view(AdminStatsView(name='Statistics', endpoint='stats'))
+
+
+# define a context processor for merging flask-admin's template context into the
+# flask-security views.
+@security.context_processor
+def security_context_processor():
+    return dict(
+        admin_base_template=admin.base_template,
+        admin_view=admin.index_view,
+        h=admin_helpers,
+        get_url=url_for
+    )
+
+
+def build_users_db():
+    """
+    Populate a small db with some example entries.
+    """
+    db.drop_all()
+    db.create_all()
+
+    with app.app_context():
+        user_role = Role(name='user')
+        admin_role = Role(name='admin')
+        db.session.add(user_role)
+        db.session.add(admin_role)
+        db.session.commit()
+
+        user_datastore.create_user(
+            first_name='Admin',
+            email='admin',
+            password=hash_password(PUBTRENDS_CONFIG.admin_password),
+            roles=[user_role, admin_role]
+        )
+        db.session.commit()
+    return
 
 
 def get_app():
     return app
 
-# if __name__ == '__main__':
-#     app.run(host='0.0.0.0', debug=True, extra_files=['templates/'])
+
+# Build a sample db on the fly, if one does not exist yet.
+DB_LOCK = Lock()
+
+DB_LOCK.acquire()
+if not os.path.exists(DATABASE_PATH):
+    build_users_db()
+DB_LOCK.release()
+
+
+# With debug=True, Flask server will auto-reload on changes
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', debug=True, extra_files=['templates/'])

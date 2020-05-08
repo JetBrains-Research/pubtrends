@@ -1,4 +1,5 @@
 from bokeh.embed import components
+import torch
 
 from pysrc.papers.analyzer import KeyPaperAnalyzer
 from pysrc.papers.config import PubtrendsConfig
@@ -6,8 +7,11 @@ from pysrc.papers.plotter import Plotter
 from pysrc.papers.pm_loader import PubmedLoader
 from pysrc.papers.ss_loader import SemanticScholarLoader
 from pysrc.papers.utils import (
-    cut_authors_list, trim, preprocess_text,
+    trim, preprocess_text,
     PUBMED_ARTICLE_BASE_URL, SEMANTIC_SCHOLAR_BASE_URL)
+from pysrc.review.utils import setup_single_gpu
+from pysrc.review.text import text_to_data
+from pysrc.review.model import load_model
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
@@ -31,6 +35,38 @@ def get_top_papers_id_title(papers, df, key, n=50):
     return [(el[0]['id'].values[0], el[0]['title'].values[0])
             for el in sorted(citing_papers, key=lambda x: x[1], reverse=True)[:n]]
 
+
+def prepare_review_data(data, source, num_papers, num_sents):
+    loader, url_prefix = get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
+    analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
+    analyzer.init(data)
+    
+    model = load_model("bert", "froze_all", 512)
+    model, device = setup_single_gpu(model)
+    model.eval()
+    
+    result = [] # order: topic, sent, pmid, url, score
+    
+    top_cited_papers, top_cited_df = analyzer.find_top_cited_papers(analyzer.df, n_papers=int(num_papers), 
+                                                                    threshold=1)
+    for id in top_cited_papers:
+        cur_paper = top_cited_df[top_cited_df['id'] == id]
+        data = text_to_data(cur_paper['abstract'].values[0], 512, model.tokenizer)
+        choose_from = []
+        for article_ids, article_mask, article_seg, magic, sents in data:
+            input_ids = torch.tensor([article_ids]).to(device)
+            input_mask = torch.tensor([article_mask]).to(device)
+            input_segment = torch.tensor([article_seg]).to(device)
+            draft_probs = model(
+                        input_ids, input_mask, input_segment,
+                    )
+            choose_from.extend(zip(sents[magic:], draft_probs.cpu().detach().numpy()[magic:]))
+        to_add = sorted(choose_from, key=lambda x: -x[1])[:int(num_sents)]
+        for sent, score in to_add:
+            result.append([cur_paper['comp'].values[0], sent, id, url_prefix + id, score])
+    
+    return result
+    
 
 def prepare_paper_data(data, source, pid):
     loader, url_prefix = get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
@@ -166,9 +202,8 @@ def prepare_papers_data(data, source, comp=None, word=None, author=None, journal
             row['year'], row['total'], str(row['doi'])
         if doi == 'None' or doi == 'nan':
             doi = ''
-        authors = cut_authors_list(authors, limit=2)  # Take only first/last author
-        result.append((pid, (trim(title, MAX_TITLE_LENGTH)), authors, url_prefix + pid, trim(journal, 50),
-                       year, total, doi))
+        # Don't trim or cut anything here, because this information can be exported
+        result.append((pid, title, authors, url_prefix + pid, journal, year, total, doi))
 
     # Return list sorted by year
     return sorted(result, key=lambda t: t[5], reverse=True)

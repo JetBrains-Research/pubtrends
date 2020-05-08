@@ -3,11 +3,11 @@ from io import StringIO
 
 
 class Progress:
+
     def __init__(self, total):
         self.stream = StringIO()
-        formatter = logging.Formatter('[%(asctime)s] %(message)s', "%H:%M:%S")
         self.handler = logging.StreamHandler(self.stream)
-        self.handler.setFormatter(formatter)
+        self.handler.setFormatter(logging.Formatter('[%(asctime)s] %(message)s', "%Y-%m-%d %H:%M:%S"))
         self.logger = logging.getLogger(__name__)
         self.logger.addHandler(self.handler)
         self.total = total

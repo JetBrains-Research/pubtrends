@@ -3,6 +3,17 @@ Pubtrends changelog
 
 Here you can see the full list of changes between each release.
 
+Version 0.5
+-------------
+
+Released on May 3, 2020
+
+ - Export to csv functionality for papers list
+ - Reworked logging and configuration files lookup
+ - Initial user management
+ - Admin interface with visits, searches statistics and requests word cloud
+
+
 Version 0.4
 -------------
 

@@ -24,6 +24,9 @@ Ensure that file contains correct information about the database(s) (url, port, 
     conda activate pubtrends
     ```
 
+    Workaround for "image not found" error during neo4j pip install on newest Mac OS Sierra:
+    `conda install -y conda-forge::ncurses`
+
 3. Build `biolabs/pubtrends` Docker image (available on Docker hub).
     ```
     docker build -t biolabs/pubtrends .
@@ -114,7 +117,7 @@ Please ensure that you have Database configured, up and running.
     ```
 3. Start flask server at localhost:5000/
     ```
-    python -m pysrc.pubtrends_app
+    python -m pysrc.app.app
     ```    
 ### Jupyter Notebook
    ```
@@ -151,7 +154,7 @@ Please ensure that you have Database configured, up and running.
     ```
     docker run --rm --volume=$(pwd):/pubtrends -t biolabs/pubtrends /bin/bash -c \
     "sudo neo4j start; sleep 30s; \
-    cd /pubtrends; cp config.properties ~/.pubtrends; \
+    cd /pubtrends; mkdir ~/.pubtrends; cp config.properties ~/.pubtrends; \
     source activate pubtrends; python -m pytest --pycodestyle pysrc"
     ```
 
@@ -194,7 +197,13 @@ Please ensure that you have configured and prepared the database(s).
    mkdir logs
    ```
 
-5. Launch pubtrends with docker-compose.
+5. Create necessary folders for logs and service database.
+    ```
+    mkdir ~/.pubtrends/logs
+    mkdir ~/.pubtrends/database
+    ```
+ 
+6. Launch pubtrends with docker-compose.
     ```
     # start
     docker-compose up -d --build
@@ -207,7 +216,7 @@ Please ensure that you have configured and prepared the database(s).
     docker-compose logs
     ```
 
-6. During updates or other construction works consider launching simple reporter.
+7. During updates or other construction works consider launching simple reporter.
     ``` 
    docker run --rm -p 80:8000 -v $(pwd)/pysrc/app/construction:/construction \
         -t biolabs/pubtrends /bin/bash -c "python -m http.server -d /construction 8000"

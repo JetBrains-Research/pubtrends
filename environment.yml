@@ -5,24 +5,28 @@ channels:
   - conda-forge
   - bokeh
 dependencies:
-  - bokeh=1.4.0
+  - bokeh=2.0.2
   - cachetools=3.1.1
-  - celery=4.4.0rc1
-  - ipywidgets=7.5.0
-  - holoviews=1.12.7
-  - flask=1.1.1
-  - matplotlib=3.1.1
+  - celery=4.4.0
+  - ipywidgets=7.5.1
+  - holoviews=1.13.2
+  - flask=1.1.2
+  - matplotlib=3.2.1
   - nltk=3.4.4
-  - pandas=0.24.2
-  - parameterized=0.6.1
-  - python=3.7.3
-  - pytest=5.0.1
-  - wordcloud=1.5.0
-  - networkx=2.3
+  - pandas=1.0.3
+  - parameterized=0.7.4
+  - python=3.8.2
+  - pytest=5.4.1
+  - wordcloud=1.6.0
+  - networkx=2.4
   - python-louvain=0.13
-  - scikit-learn=0.21.2
-  - catboost=0.16.5
+  - scikit-learn=0.22.1
+  - catboost=0.23
   - pip
   - pip:
-    - scholarmetrics==0.2.1
-    - neo4j==1.7.4
+      - scholarmetrics==0.2.1
+      - neo4j==1.7.6
+      - flask-admin==1.5.6
+      - flask-security==3.0.0
+      - flask-sqlalchemy==2.4.1
+      - email-validator==1.1.0

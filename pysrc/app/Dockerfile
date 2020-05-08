@@ -25,9 +25,6 @@ WORKDIR /home/user/
 # Download all the nltk resources
 RUN source activate pubtrends && python pysrc/papers/utils.py
 
-# Config file
-RUN cp config.properties ~/.pubtrends/config.properties
-
 # run the app server
 CMD echo $PUBTRENDS_VERSION \
     && source activate pubtrends \

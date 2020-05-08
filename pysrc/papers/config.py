@@ -4,15 +4,23 @@ import os
 
 class PubtrendsConfig:
     """
-    Main service configuration loaded from ~/.pubtrends/config.properties
+    Main service configuration
     """
 
-    def __init__(self, config_path='~/.pubtrends/config.properties', test=True):
+    # Deployment and development
+    CONFIG_PATHS = ['/config', os.path.expanduser('~/.pubtrends')]
+
+    def __init__(self, test=True):
         config_parser = configparser.ConfigParser()
 
         # Add fake section [params] for ConfigParser to accept the file
-        with open(os.path.expanduser(config_path)) as config_properties:
-            config_parser.read_string("[params]\n" + config_properties.read())
+        for config_path in [os.path.join(p, 'config.properties') for p in self.CONFIG_PATHS]:
+            if os.path.exists(config_path):
+                with open(os.path.expanduser(config_path)) as f:
+                    config_parser.read_string("[params]\n" + f.read())
+                break
+        else:
+            raise RuntimeError(f'Configuration file not found among: {self.CONFIG_PATHS}')
         params = config_parser['params']
 
         self.neo4jhost = params['neo4jhost' if not test else 'test_neo4jhost']
@@ -42,3 +50,6 @@ class PubtrendsConfig:
         self.celery_max_pending_tasks = params.getint('celery_max_pending_tasks')
         # Seconds, pending task will be revoked after no polling activity
         self.celery_pending_tasks_timeout = params.getint('celery_pending_tasks_timeout')
+
+        # TODO Admin password - should be a better way
+        self.admin_password = params['admin_password']

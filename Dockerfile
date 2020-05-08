@@ -10,8 +10,8 @@
 #
 # docker push biolabs/pubtrends
 
-# On Dockerhub, the new Ubuntu 18.04 LTS image is now the new Minimal Ubuntu 18.04 image.
-FROM ubuntu:18.04
+# On Dockerhub, the new Ubuntu 20.04 LTS image is now the new Minimal Ubuntu 18.04 image.
+FROM ubuntu:20.04
 
 LABEL author = "Oleg Shpynov"
 LABEL email = "os@jetbrains.com"
@@ -74,9 +74,6 @@ RUN conda init bash \
     && pip install teamcity-messages pytest-codestyle redis \
     && conda clean -afy \
     && rm /home/user/environment.yml
-
-# Create project configuration dir
-RUN mkdir -p /home/user/.pubtrends
 
 # Use `-d` param to launch container as daemon
 CMD sudo neo4j start && sleep infinity

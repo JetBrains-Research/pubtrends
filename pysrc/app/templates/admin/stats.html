@@ -1,0 +1,70 @@
+{% extends 'admin/master.html' %}
+{% block head %}
+    {{ super() }}
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"
+        integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT"
+        crossorigin="anonymous"></script>
+<script src="https://cdn.bokeh.org/bokeh/release/bokeh-2.0.2.min.js"
+        crossorigin="anonymous"></script>
+<script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-2.0.2.min.js"
+        crossorigin="anonymous"></script>
+<script src="{{ url_for('static', filename='wordcloud.js') }}"></script>
+<!--<script src="../static/wordcloud.js"/>-->
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1"/>
+<!--<link rel="stylesheet" href="../../static/style.css" />-->
+
+{% if word_cloud is defined %}
+    <script>
+        "use strict";
+        $(document).ready(function() {
+            var words = JSON.parse('{{ word_cloud }}'.replace(/&#34;/g, '"').replace(/&amp;/g, '&'));
+            process_word_cloud('word_cloud', 900, 600, words, null);
+        });
+    </script>
+{% endif %}
+
+{% endblock head %}
+{% block body %}
+    {{ super() }}
+    <div class="container">
+        <h3>Visits</h3>
+        Total: {{ total_visits }}
+        {% if total_visits > 0 %}
+            {% for script, div in visits_plot %}
+            {{ script|safe }}
+            {{ div|safe }}
+            {% endfor %}
+        {% endif %}
+
+        <h3>Terms searches</h3>
+        Total: {{ total_terms_searches }}
+        {% if total_terms_searches > 0 %}
+            {% for script, div in terms_searches_plot %}
+            {{ script|safe }}
+            {{ div|safe }}
+            {% endfor %}
+        {%  endif %}
+
+        <h3>Paper searches</h3>
+        Total: {{ total_paper_searches }}
+        {% if total_paper_searches > 0 %}
+            {% for script, div in paper_searches_plot %}
+            {{ script|safe }}
+            {{ div|safe }}
+            {% endfor %}
+        {% endif %}
+        {% if word_cloud is defined %}
+            <h3>Word cloud</h3>
+            <canvas id="word_cloud" width="0" height="0" style="border:1px solid #eee;">
+                Canvas is not supported in your browser.
+            </canvas>
+        {% endif %}
+    </div>
+
+    <footer>
+        <p>version {{ version }}<br/>
+            &copy; 2019-2020 <a href="https://research.jetbrains.org/groups/biolabs"
+                                title="JetBrains Research BioLabs"
+                                target="_blank">JetBrains Research</a></p>
+    </footer>
+{% endblock body %}

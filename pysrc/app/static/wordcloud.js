@@ -107,6 +107,8 @@ function process_word_cloud(id, width, height, words, callback) {
     }
 
     // Add mouse listeners
-    canvas.addEventListener("mousemove", onMouseMove, false);
-    canvas.addEventListener("click", onClick, false);
+    if (callback != null) {
+        canvas.addEventListener("mousemove", onMouseMove, false);
+        canvas.addEventListener("click", onClick, false);
+    }
 }

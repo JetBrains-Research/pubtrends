@@ -1,15 +1,15 @@
+import binascii
 import html
 import logging
 import re
+import sys
 from collections import Counter
 from string import Template
 from threading import Lock
 
-import binascii
 import nltk
 import numpy as np
 import pandas as pd
-import sys
 from matplotlib import colors
 from nltk.corpus import stopwords, wordnet
 from nltk.stem import WordNetLemmatizer, SnowballStemmer
@@ -360,8 +360,12 @@ def hex2rgb(color):
 
 def rgb2hex(color):
     if isinstance(color, str):
-        r, g, b, _ = colors.to_rgba(color)
-        r, g, b = r * 255, g * 255, b * 255
+        match = re.match('rgb\\((\\d+), (\\d+), (\\d+)\\)', color)
+        if match:
+            r, g, b = match.group(1), match.group(2), match.group(3)
+        else:
+            r, g, b, _ = colors.to_rgba(color)
+            r, g, b = r * 255, g * 255, b * 255
     else:
         r, g, b = color
     return "#{0:02x}{1:02x}{2:02x}".format(int(r), int(g), int(b))

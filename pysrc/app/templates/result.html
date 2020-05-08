@@ -19,12 +19,10 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
             integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
             crossorigin="anonymous"></script>
-    <script src="https://cdn.pydata.org/bokeh/release/bokeh-1.2.0.min.js"></script>
-    <script src="https://cdn.pydata.org/bokeh/release/bokeh-widgets-1.2.0.min.js"></script>
-    <link href="https://cdn.pydata.org/bokeh/release/bokeh-1.2.0.min.css"
-          rel="stylesheet" type="text/css">
-    <link href="https://cdn.pydata.org/bokeh/release/bokeh-widgets-1.2.0.min.css"
-          rel="stylesheet" type="text/css">
+    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-2.0.2.min.js"
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-2.0.2.min.js"
+            crossorigin="anonymous"></script>
     <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.10.20/js/dataTables.bootstrap4.min.js"></script>
     <link href="https://cdn.datatables.net/1.10.20/css/dataTables.bootstrap4.min.css"
@@ -90,6 +88,13 @@
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
             window.open(url + '&type=' + graphType + '&jobid=' + jobid, '_blank');
+        }
+        
+        function review_callback(papersNumber, sentsNumber) {
+            const url = '/review?query=' + query_fixed + '&source={{source}}&limit={{limit}}&sort={{sort}}';
+            // Decode jobid from URL
+            const jobid = new URL(window.location).searchParams.get('jobid');
+            window.open(url + '&papers_number=' + papersNumber + '&sents_number=' + sentsNumber + '&jobid=' + jobid, '_blank');
         }
 
 
@@ -193,6 +198,14 @@
                         </a>
                         <a class="nav-link d-none d-xl-block no-padding" href="#journals">
                             Journals
+                        </a>
+                    </li>
+                    <li class="nav-item row">
+                        <a class="nav-link no-padding-right" href="#review" title="Review">
+                            <img class="nav-icon" src="{{ url_for('static', filename='list.svg') }}"/>
+                        </a>
+                        <a class="nav-link d-none d-xl-block no-padding" href="#review">
+                            Review
                         </a>
                     </li>
                     {% if experimental is defined %}
@@ -538,6 +551,42 @@
                             {% endfor %}
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            
+                <div class="card mt-3">
+                    <div class="card-title" id="review">
+                        <h1 class="card-header">Review</h1>
+                    </div>
+                    <div class="card-body">
+                        <p>
+                            Generate a review for the chosen topic.<br>
+                        </p>
+                        <div class="row no-gutters align-items-center mb-3">
+                            <div class="col input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text" id="number-papers-addon">Number of papers</span>
+                                </div>
+                                <input class="form-control form-control-borderless" type="number"
+                                       name="number-papers" id="papers-input"
+                                       placeholder="10"
+                                       aria-describedby="number-papers-addon"
+                                       autofocus required>
+                            </div>
+                            <div class="col input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text" id="number-of-sents-addon">Sentences each</span>
+                                </div>
+                                <input class="form-control form-control-borderless" type="number"
+                                       name="number-of-sents" id="sents-input"
+                                       placeholder="1"
+                                       aria-describedby="number-of-sents-addon"
+                                       autofocus required>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-primary btn-block" onclick="(function(){
+                                review_callback(document.getElementById('papers-input').value,document.getElementById('sents-input').value);
+                            })();">Generate review</button>
                     </div>
                 </div>
 
