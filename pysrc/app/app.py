@@ -168,7 +168,8 @@ def review():
         # No job or out-of-date job, restart it
         return search_terms_(request.args)
     else:
-        return render_template_string("Something went wrong...")
+        logger.error(f'/result error {log_request(request)}')
+        return render_template_string("Something went wrong..."), 400
 
 @app.route('/process')
 def process():

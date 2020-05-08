@@ -1,10 +1,11 @@
 import datetime
+import json
 import re
+from queue import Queue
 
-import numpy as np
 import pandas as pd
 from bokeh.embed import components
-from bokeh.models import ColumnDataSource
+from bokeh.models import HoverTool
 from bokeh.plotting import figure
 from wordcloud import WordCloud
 
@@ -17,10 +18,11 @@ WC_HEIGHT = 600
 
 
 def prepare_stats_data(logfile):
-    visits = []
     terms_searches = []
     paper_searches = []
+    recent_searches = Queue(maxsize=10)
     terms = []
+
     for line in open(logfile).readlines():
         if 'INFO' not in line:
             continue
@@ -28,22 +30,17 @@ def prepare_stats_data(logfile):
         if search is None:
             continue
         date = datetime.datetime.strptime(search.group(0), '%Y-%m-%d %H:%M:%S,%f')
-        if '/ addr:' in line:
-            visits.append(date)
         if '/process regular search addr:' in line:
             terms_searches.append(date)
         if '/search_paper addr:' in line:
             paper_searches.append(date)
         if '/result success addr:' in line:
             terms.append(re.sub('(.*"query": ")|(", "source.*)', '', line.strip()))
+            if recent_searches.full():
+                recent_searches.get()
+            recent_searches.put(re.sub(".*args:", "", line.strip()))
 
     result = {}
-    total_visits = len(visits)
-    result['total_visits'] = total_visits
-    if total_visits:
-        p = prepare_timeseries(visits, 'Visits')
-        result['visits_plot'] = [components(p)]
-
     total_terms_searches = len(terms_searches)
     result['total_terms_searches'] = total_terms_searches
     if total_terms_searches:
@@ -56,6 +53,15 @@ def prepare_stats_data(logfile):
         p = prepare_timeseries(paper_searches, 'Paper searches')
         result['paper_searches_plot'] = [components(p)]
 
+    recent_searches_query_links = []
+    while not recent_searches.empty():
+        rs = recent_searches.get()
+        args_map = json.loads(rs)
+        query = args_map['query']
+        link = f'/result?{"&".join([f"{a}={v}" for a, v in args_map.items()])}'
+        recent_searches_query_links.append((query, link))
+    result['recent_searches'] = recent_searches_query_links[::-1]
+
     # Generate a word cloud image
     text = ' '.join(terms).replace(',', ' ').replace('[^a-zA-Z0-9]+', ' ')
     if text:  # Check that string is not empty
@@ -67,12 +73,12 @@ def prepare_stats_data(logfile):
 
 
 def prepare_timeseries(dates, title):
-    df_terms_searches = pd.DataFrame({'count': np.ones(len(dates))}, index=dates)
-    df_by_month = df_terms_searches.resample('M').sum()
-    df_by_month['date'] = [d.strftime("%m/%Y") for d in df_by_month.index]
-    df_by_month.reset_index(drop=True, inplace=True)
-    p = figure(plot_width=PLOT_WIDTH, plot_height=PLOT_HEIGHT, x_range=df_by_month['date'], tools=TOOLS,
-               title=f'{title} per month')
-    p.vbar(x='date', top='count', bottom=0, source=ColumnDataSource(df_by_month), line_width=3, width=0.8)
-    p.hover.tooltips = [("Date", "@date"), ("Count", "@count")]
+    df_terms_searches = pd.DataFrame({'date': dates, 'count': 1})
+    df_terms_searches_grouped = df_terms_searches.groupby(pd.Grouper(key='date', freq='D')).sum()
+    p = figure(plot_width=PLOT_WIDTH, plot_height=PLOT_HEIGHT, tools=TOOLS,
+               x_axis_type='datetime', title=title)
+    p.line('date', 'count', source=df_terms_searches_grouped)
+    hover = p.select(dict(type=HoverTool))
+    hover.tooltips = [('Date', '@date{%F}'), ('Count', '@count')]
+    hover.formatters = {'@date': 'datetime'}
     return p
