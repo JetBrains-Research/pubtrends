@@ -202,10 +202,15 @@
             </div>
         </div>
     </main>
-    <form action="search_terms" method="post" class="inline">
+    <!--
+    Use result and get method with fixed job id to preserve the results.
+    By design result starts computation in case when jobid is present.
+    -->
+    <form action="result" method="get" class="inline">
         <input type="hidden" name="source" value="{{ search_example_source }}">
         <input type="hidden" name="sort" value="Most Relevant">
         <input type="hidden" name="limit" value="1000">
+        <input type="hidden" name="jobid" value="{{ search_example_terms_hash }}">
         <strong>The service is in development!</strong>
         Try example search
         <button type="submit" name="query" value="{{ search_example_terms }}" class="link-button">
