@@ -32,13 +32,12 @@ def prepare_stats_data(logfile):
         date = datetime.datetime.strptime(search.group(0), '%Y-%m-%d %H:%M:%S,%f')
         if '/process regular search addr:' in line:
             terms_searches.append(date)
-        if '/search_paper addr:' in line:
-            paper_searches.append(date)
-        if '/result success addr:' in line:
-            terms.append(re.sub('(.*"query": ")|(", "source.*)', '', line.strip()))
             if recent_searches.full():
                 recent_searches.get()
+            terms.append(re.sub('(.*"query": ")|(", "source.*)', '', line.strip()))
             recent_searches.put(re.sub(".*args:", "", line.strip()))
+        if '/search_paper addr:' in line:
+            paper_searches.append(date)
 
     result = {}
     total_terms_searches = len(terms_searches)
