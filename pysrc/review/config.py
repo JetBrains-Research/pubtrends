@@ -1,3 +1,6 @@
+import torch
+from rouge import Rouge
+
 # model structure
 d_hidden = 768  # 768
 d_bert = 768  # 768
@@ -22,5 +25,10 @@ topk_k = 2
 topp_p = 0.7
 n_worst2writer = 20
 n_random2writer = 100
+
+# additional
+seed = 1234
+rouge_meter = Rouge()
+n_devices = torch.cuda.device_count()
 
 model_name = 'learn_simple_berta.pth'
