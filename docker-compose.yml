@@ -13,7 +13,7 @@ services:
       - ~/.pubtrends:/config:ro
       - ~/.pubtrends/logs:/logs
       - ~/.pubtrends/database:/database
-      - ~/.pubtrends/model:/model
+      - ~/.pubtrends/model:/model:ro
   worker:
     build:
       context: .
