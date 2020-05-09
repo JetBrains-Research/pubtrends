@@ -1,7 +1,5 @@
-from rouge import Rouge
-from pathlib import Path
 import torch
-
+from rouge import Rouge
 
 # model structure
 d_hidden = 768  # 768
@@ -33,5 +31,4 @@ seed = 1234
 rouge_meter = Rouge()
 n_devices = torch.cuda.device_count()
 
-base_path = Path(__file__).parent.absolute()
-weights_path = f"{base_path}/weights"
+model_name = 'learn_simple_berta.pth'

@@ -1,22 +1,32 @@
-import torch.nn as nn
-import torch
-import numpy as np
-from transformers import BertModel, RobertaModel
+import os
 from collections import namedtuple
+
+import numpy as np
+import torch
+import torch.nn as nn
+from transformers import BertModel, RobertaModel
 from transformers import BertTokenizer, RobertaTokenizer
 
 import pysrc.review.config as cfg
-from pysrc.review.utils import get_ids_mask
-
 
 SpecToken = namedtuple('SpecToken', ['tkn', 'idx'])
 ConvertToken2Id = lambda tokenizer, tkn: tokenizer.convert_tokens_to_ids([tkn])[0]
+
+# Deployment and development
+MODEL_PATHS = ['/model', os.path.expanduser('~/.pubtrends/model')]
 
 
 def load_model(model_type, froze_strategy, article_len, features=False):
     model = Summarizer(model_type, article_len, features)
     model.expand_posembs_ifneed()
-    model.load('learn_simple_berta')
+    # TODO: add model path to config properties
+    for model_path in [os.path.join(p, cfg.model_name) for p in MODEL_PATHS]:
+        if os.path.exists(model_path):
+            model.load(model_path)
+            break
+    else:
+        raise RuntimeError(f'Model file {cfg.model_name} not found among: {MODEL_PATHS}')
+
     model.froze_backbone(froze_strategy)
     model.unfroze_head()
     return model
@@ -129,10 +139,10 @@ class Summarizer(nn.Module):
         PAD = "<pad>"
         return backbone, tokenizer, BOS, EOS, PAD
 
-    def save(self, save_filename):
+    def save(self, model_path):
         """ Save model in filename
 
-        :param save_filename: str
+        :param model_path: str
         """
         if not self.features:
             state = {
@@ -146,11 +156,10 @@ class Summarizer(nn.Module):
                 'features_dict': self.features.state_dict(),
             }
             
-        torch.save(state, f"{cfg.weights_path}/{save_filename}.pth")
+        torch.save(state, model_path)
 
-    def load(self, load_filename):
-        path = f"{cfg.weights_path}/{load_filename}.pth"
-        state = torch.load(path, map_location=lambda storage, location: storage)
+    def load(self, model_path):
+        state = torch.load(model_path, map_location=lambda storage, location: storage)
         self.backbone.load_state_dict(state['encoder_dict'])
         self.decoder.load_state_dict(state['decoder_dict'])
         if self.features:
