@@ -45,10 +45,11 @@ def prepare_review_data(data, source, num_papers, num_sents):
     model, device = setup_single_gpu(model)
     model.eval()
     
-    result = [] # order: topic, sent, pmid, url, score
+    result = []
 
-    top_cited_papers, top_cited_df = analyzer.find_top_cited_papers(analyzer.df, n_papers=int(num_papers),
-                                                                    threshold=1)
+    top_cited_papers, top_cited_df = analyzer.find_top_cited_papers(
+        analyzer.df, n_papers=int(num_papers), threshold=1
+    )
     for id in top_cited_papers:
         cur_paper = top_cited_df[top_cited_df['id'] == id]
         title = cur_paper['title'].values[0]

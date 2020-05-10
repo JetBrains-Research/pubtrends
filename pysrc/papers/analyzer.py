@@ -1,12 +1,12 @@
 import logging
 import re
+from math import floor
 from queue import PriorityQueue
 
 import community
 import networkx as nx
 import numpy as np
 import pandas as pd
-from math import floor
 from networkx.readwrite import json_graph
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -524,9 +524,8 @@ class KeyPaperAnalyzer:
         self.progress.info(f'Identifying top cited papers', current=current, task=task)
         papers_to_show = max(min(n_papers, round(len(df) * threshold)), 1)
         top_cited_df = df.sort_values(by='total',
-                                      ascending=False).iloc[:papers_to_show, :]
-        top_cited_papers = set(top_cited_df['id'].values)
-        return top_cited_papers, top_cited_df
+                                      ascending=False).iloc[:papers_to_show, :].copy()
+        return list(top_cited_df['id'].values), top_cited_df
 
     def find_max_gain_papers(self, df, citation_years, current=0, task=None):
         self.progress.info('Identifying papers with max citation gain for each year', current=current, task=task)
@@ -543,8 +542,7 @@ class KeyPaperAnalyzer:
         max_gain_df = pd.DataFrame(max_gain_data,
                                    columns=['year', 'id', 'title', 'authors',
                                             'paper_year', 'count'])
-        max_gain_papers = set(max_gain_df['id'].values)
-        return max_gain_papers, max_gain_df
+        return list(max_gain_df['id'].values), max_gain_df
 
     def find_max_relative_gain_papers(self, df, citation_years, current=0, task=None):
         self.progress.info('Identifying papers with max relative citation gain % for each year', current=current,
@@ -569,8 +567,7 @@ class KeyPaperAnalyzer:
         max_rel_gain_df = pd.DataFrame(max_rel_gain_data,
                                        columns=['year', 'id', 'title', 'authors',
                                                 'paper_year', 'rel_gain'])
-        max_rel_gain_papers = set(max_rel_gain_df['id'].values)
-        return max_rel_gain_papers, max_rel_gain_df
+        return list(max_rel_gain_df['id'].values), max_rel_gain_df
 
     @staticmethod
     def merge_components(partition, granularity, papers_min):
@@ -658,9 +655,9 @@ class KeyPaperAnalyzer:
             'citations_graph': json_graph.node_link_data(self.citations_graph),
             'similarity_graph': json_graph.node_link_data(self.similarity_graph),
             'structure_graph': json_graph.node_link_data(self.structure_graph),
-            'top_cited_papers': list(self.top_cited_papers),
-            'max_gain_papers': list(self.max_gain_papers),
-            'max_rel_gain_papers': list(self.max_rel_gain_papers),
+            'top_cited_papers': self.top_cited_papers,
+            'max_gain_papers': self.max_gain_papers,
+            'max_rel_gain_papers': self.max_rel_gain_papers,
         }
 
     @staticmethod
@@ -693,9 +690,9 @@ class KeyPaperAnalyzer:
         similarity_graph = json_graph.node_link_graph(fields['similarity_graph'])
         structure_graph = json_graph.node_link_graph(fields['structure_graph'])
 
-        top_cited_papers = set(fields['top_cited_papers'])
-        max_gain_papers = set(fields['max_gain_papers'])
-        max_rel_gain_papers = set(fields['max_rel_gain_papers'])
+        top_cited_papers = fields['top_cited_papers']
+        max_gain_papers = fields['max_gain_papers']
+        max_rel_gain_papers = fields['max_rel_gain_papers']
 
         return {
             'df': df,
