@@ -161,23 +161,27 @@
                         <thead>
                         <tr>
                             <th scope="col">#</th>
-                            <th scope="col">Topic #</th>
+                            <th scope="col">Paper</th>
+                            <th scope="col">Year</th>
+                            <th scope="col">Cited</th>
+                            <th scope="col">Topic</th>
                             <th scope="col">Sentence</th>
-                            <th scope="col">PMID</th>
                             <th scope="col">Score</th>
                         </tr>
                         </thead>
                         <tbody>
-                        {% for topic, sent, pmid, url, score in review_array %}
+                        {% for title, year, cited, topic, sent, url, score in review_array %}
                         <tr>
                             <th scope="row">{{ loop.index }}</th>
-                            <td>{{ topic }}</td>
-                            <td>{{ sent }}</td>
                             <td>
-                            <a class="link" href="{{ url }}" title="Open in {{ source }}">
-                                    {{ pmid }}
+                                <a class="link" href="{{ url }}" title="Open in {{ source }}">
+                                    {{ title }}
                                 </a>
                             </td>
+                            <td>{{ year }}</td>
+                            <td>{{ cited }}</td>
+                            <td>{{ topic }}</td>
+                            <td>{{ sent }}</td>
                             <td>{{ score }}</td>
                         </tr>
                         {% endfor %}

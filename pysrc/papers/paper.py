@@ -1,5 +1,5 @@
-from bokeh.embed import components
 import torch
+from bokeh.embed import components
 
 from pysrc.papers.analyzer import KeyPaperAnalyzer
 from pysrc.papers.config import PubtrendsConfig
@@ -9,9 +9,9 @@ from pysrc.papers.ss_loader import SemanticScholarLoader
 from pysrc.papers.utils import (
     trim, preprocess_text,
     PUBMED_ARTICLE_BASE_URL, SEMANTIC_SCHOLAR_BASE_URL)
-from pysrc.review.utils import setup_single_gpu
-from pysrc.review.text import text_to_data
 from pysrc.review.model import load_model
+from pysrc.review.text import text_to_data
+from pysrc.review.utils import setup_single_gpu
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
@@ -46,12 +46,17 @@ def prepare_review_data(data, source, num_papers, num_sents):
     model.eval()
     
     result = [] # order: topic, sent, pmid, url, score
-    
-    top_cited_papers, top_cited_df = analyzer.find_top_cited_papers(analyzer.df, n_papers=int(num_papers), 
+
+    top_cited_papers, top_cited_df = analyzer.find_top_cited_papers(analyzer.df, n_papers=int(num_papers),
                                                                     threshold=1)
     for id in top_cited_papers:
         cur_paper = top_cited_df[top_cited_df['id'] == id]
-        data = text_to_data(cur_paper['abstract'].values[0], 512, model.tokenizer)
+        title = cur_paper['title'].values[0]
+        year = cur_paper['year'].values[0]
+        cited = cur_paper['total'].values[0]
+        abstract = cur_paper['abstract'].values[0]
+        topic = cur_paper['comp'].values[0] + 1
+        data = text_to_data(abstract, 512, model.tokenizer)
         choose_from = []
         for article_ids, article_mask, article_seg, magic, sents in data:
             input_ids = torch.tensor([article_ids]).to(device)
@@ -63,7 +68,7 @@ def prepare_review_data(data, source, num_papers, num_sents):
             choose_from.extend(zip(sents[magic:], draft_probs.cpu().detach().numpy()[magic:]))
         to_add = sorted(choose_from, key=lambda x: -x[1])[:int(num_sents)]
         for sent, score in to_add:
-            result.append([cur_paper['comp'].values[0], sent, id, url_prefix + id, score])
+            result.append([title, year, cited, topic, sent, url_prefix + id, score])
     
     return result
     
