@@ -57,7 +57,7 @@
                 return text;
             }
             // href text processing
-            if (/^<a .*<\/a>$/.test(text)) {
+            if (/^<a (.|\n)*<\/a>$/.test(text)) {
                 text = text.replace(/(<a [^>]*>)|(<\/a>)/g, "")
             }
             return '"' + text.trim().replace(/"/g, '""') + '"';
