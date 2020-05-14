@@ -4,6 +4,7 @@ channels:
   - anaconda
   - conda-forge
   - bokeh
+  - pytorch
 dependencies:
   - bokeh=2.0.2
   - cachetools=3.1.1
@@ -27,6 +28,7 @@ dependencies:
   - transformers
   - pip
   - pip:
+      - lazy==1.4
       - scholarmetrics==0.2.1
       - neo4j==1.7.6
       - flask-admin==1.5.6

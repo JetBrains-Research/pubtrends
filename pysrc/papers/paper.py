@@ -1,5 +1,8 @@
+import logging
+
 import torch
 from bokeh.embed import components
+from lazy import lazy
 
 from pysrc.papers.analyzer import KeyPaperAnalyzer
 from pysrc.papers.config import PubtrendsConfig
@@ -12,6 +15,8 @@ from pysrc.papers.utils import (
 from pysrc.review.model import load_model
 from pysrc.review.text import text_to_data
 from pysrc.review.utils import setup_single_gpu
+
+logger = logging.getLogger(__name__)
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
@@ -36,20 +41,36 @@ def get_top_papers_id_title(papers, df, key, n=50):
             for el in sorted(citing_papers, key=lambda x: x[1], reverse=True)[:n]]
 
 
+class ModelCache:
+    @lazy
+    def model_and_device(self):
+        logger.info('Loading BERT model')
+        model = load_model("bert", "froze_all", 512)
+        model, gpu = setup_single_gpu(model)
+        return model, gpu
+
+
+MODEL_CACHE = ModelCache()
+
+
 def prepare_review_data(data, source, num_papers, num_sents):
+    logger.info(f'Initializing analyzer for review')
     loader, url_prefix = get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
     analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
     analyzer.init(data)
-    
-    model = load_model("bert", "froze_all", 512)
-    model, device = setup_single_gpu(model)
+
+    logger.info('Requesting model and device')
+    model, device = MODEL_CACHE.model_and_device
+
+    logger.info('Configuring model for evaluation')
     model.eval()
-    
-    result = []
 
     top_cited_papers, top_cited_df = analyzer.find_top_cited_papers(
         analyzer.df, n_papers=int(num_papers), threshold=1
     )
+
+    logger.info(f'Processing abstracts for {len(top_cited_papers)} top cited papers')
+    result = []
     for id in top_cited_papers:
         cur_paper = top_cited_df[top_cited_df['id'] == id]
         title = cur_paper['title'].values[0]
@@ -70,9 +91,9 @@ def prepare_review_data(data, source, num_papers, num_sents):
         to_add = sorted(choose_from, key=lambda x: -x[1])[:int(num_sents)]
         for sent, score in to_add:
             result.append([title, year, cited, topic, sent, url_prefix + id, score])
-    
+    logger.info('Done review')
     return result
-    
+
 
 def prepare_paper_data(data, source, pid):
     loader, url_prefix = get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
