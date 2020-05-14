@@ -165,8 +165,6 @@ def review():
                                    review_array=review_res,
                                    export_name=export_name,
                                    **data)
-        # No job or out-of-date job, restart it
-        return search_terms_(request.args)
     else:
         logger.error(f'/result error {log_request(request)}')
         return render_template_string("Something went wrong..."), 400
