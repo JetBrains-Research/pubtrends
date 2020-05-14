@@ -28,6 +28,8 @@ dependencies:
   - transformers
   - pip
   - pip:
+      - gunicorn
+      - redis
       - lazy==1.4
       - scholarmetrics==0.2.1
       - neo4j==1.7.6
