@@ -1,3 +1,4 @@
+import logging
 import os
 from collections import namedtuple
 
@@ -14,6 +15,8 @@ ConvertToken2Id = lambda tokenizer, tkn: tokenizer.convert_tokens_to_ids([tkn])[
 
 # Deployment and development
 MODEL_PATHS = ['/model', os.path.expanduser('~/.pubtrends/model')]
+
+logger = logging.getLogger(__name__)
 
 
 def load_model(model_type, froze_strategy, article_len, features=False):
@@ -103,7 +106,7 @@ class Summarizer(nn.Module):
             print("OK")
             old_maxlen = self.backbone.config.max_position_embeddings
             old_w = self.backbone.embeddings.position_embeddings.weight
-            cfg.logger.log(f"Backbone pos embeddings expanded from {old_maxlen} upto {self.article_len}")
+            logger.log(f"Backbone pos embeddings expanded from {old_maxlen} upto {self.article_len}")
             self.backbone.embeddings.position_embeddings = \
                 nn.Embedding(self.article_len, self.backbone.config.hidden_size)
             self.backbone.embeddings.position_embeddings.weight[:old_maxlen].data.copy_(old_w)
