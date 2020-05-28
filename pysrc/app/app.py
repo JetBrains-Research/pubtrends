@@ -1,4 +1,4 @@
-import hashlib
+import html
 import html
 import json
 import logging
@@ -392,8 +392,7 @@ def index():
                            pm_enabled=PUBTRENDS_CONFIG.pm_enabled,
                            ss_enabled=PUBTRENDS_CONFIG.ss_enabled,
                            search_example_source=search_example_source,
-                           search_example_terms=search_example_terms,
-                           search_example_terms_hash=hashlib.sha1(search_example_terms.encode('utf-8')).hexdigest())
+                           search_example_terms=search_example_terms)
 
 
 @app.route('/search_terms', methods=['POST'])
