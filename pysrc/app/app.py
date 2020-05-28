@@ -90,7 +90,7 @@ def status():
         elif job_state == 'FAILURE':
             return json.dumps({
                 'state': job_state,
-                'message': html.unescape(str(job_result).replace('\\n', '\n').replace('\\t', '\t')[2:-2])
+                'message': html.escape(str(job_result).replace('\\n', '\n').replace('\\t', '\t'))
             })
         elif job_state == 'STARTED':
             return json.dumps({
