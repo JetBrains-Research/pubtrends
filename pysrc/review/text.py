@@ -1,11 +1,11 @@
 import nltk
 
+
 def split_text(text):
-    sents = nltk.tokenize.sent_tokenize(text)
-    return sents
+    return nltk.tokenize.sent_tokenize(text)
+
 
 def preprocess_text(text, max_len, tokenizer):
-
     sents = [[tokenizer.artBOS.tkn] + tokenizer.tokenize(sent) + [tokenizer.artEOS.tkn]
              for sent in text]
     ids, segments, segment_signature = [], [], 0
@@ -27,6 +27,7 @@ def preprocess_text(text, max_len, tokenizer):
 
     return ids, mask, segments, n_setns
 
+
 def text_to_data(text, max_len, tokenizer):
     text = split_text(text)
     total_sents = 0
@@ -38,6 +39,10 @@ def text_to_data(text, max_len, tokenizer):
         if magic + n_setns <= total_sents:
             total_sents += 1
             continue
-        data.append((article_ids, article_mask, article_segment, total_sents - magic, text[magic:magic+n_setns]))
+        data.append((article_ids, article_mask, article_segment, total_sents - magic, text[magic:magic + n_setns]))
         total_sents = magic + n_setns
     return data
+
+
+def convert_token_to_id(tokenizer, tkn):
+    return tokenizer.convert_tokens_to_ids([tkn])[0]

@@ -9,9 +9,9 @@ from transformers import BertModel, RobertaModel
 from transformers import BertTokenizer, RobertaTokenizer
 
 import pysrc.review.config as cfg
+from pysrc.review.text import convert_token_to_id
 
 SpecToken = namedtuple('SpecToken', ['tkn', 'idx'])
-ConvertToken2Id = lambda tokenizer, tkn: tokenizer.convert_tokens_to_ids([tkn])[0]
 
 # Deployment and development
 MODEL_PATHS = ['/model', os.path.expanduser('~/.pubtrends/model')]
@@ -53,7 +53,7 @@ class Summarizer(nn.Module):
             self.backbone, self.tokenizer, BOS, EOS, PAD = self.initialize_roberta()
         else:
             raise Exception(f"Wrong model_type argument: {model_type}")
-            
+
         if with_features:
             self.features = nn.Sequential(nn.Linear(num_features, 100),
                                           nn.ReLU(),
@@ -63,16 +63,16 @@ class Summarizer(nn.Module):
         else:
             self.features = None
 
-        self.PAD = SpecToken(PAD, ConvertToken2Id(self.tokenizer, PAD))
-        self.artBOS = SpecToken(BOS, ConvertToken2Id(self.tokenizer, BOS))
-        self.artEOS = SpecToken(EOS, ConvertToken2Id(self.tokenizer, EOS))
+        self.PAD = SpecToken(PAD, convert_token_to_id(self.tokenizer, PAD))
+        self.artBOS = SpecToken(BOS, convert_token_to_id(self.tokenizer, BOS))
+        self.artEOS = SpecToken(EOS, convert_token_to_id(self.tokenizer, EOS))
 
         # add special tokens tokenizer
         self.tokenizer.add_special_tokens({'additional_special_tokens': ["<sum>", "</sent>", "</sum>"]})
         self.vocab_size = len(self.tokenizer)
-        self.sumBOS = SpecToken("<sum>", ConvertToken2Id(self.tokenizer, "<sum>"))
-        self.sumEOS = SpecToken("</sent>", ConvertToken2Id(self.tokenizer, "</sent>"))
-        self.sumEOA = SpecToken("</sum>", ConvertToken2Id(self.tokenizer, "</sum>"))
+        self.sumBOS = SpecToken("<sum>", convert_token_to_id(self.tokenizer, "<sum>"))
+        self.sumEOS = SpecToken("</sent>", convert_token_to_id(self.tokenizer, "</sent>"))
+        self.sumEOA = SpecToken("</sum>", convert_token_to_id(self.tokenizer, "</sum>"))
         self.backbone.resize_token_embeddings(200 + self.vocab_size)
 
         # tokenizer
@@ -158,7 +158,7 @@ class Summarizer(nn.Module):
                 'decoder_dict': self.decoder.state_dict(),
                 'features_dict': self.features.state_dict(),
             }
-            
+
         torch.save(state, model_path)
 
     def load(self, model_path):
@@ -167,7 +167,7 @@ class Summarizer(nn.Module):
         self.decoder.load_state_dict(state['decoder_dict'])
         if self.features:
             self.features.load_state_dict(state['features_dict'])
-        
+
 
     def froze_backbone(self, froze_strategy):
 
@@ -221,7 +221,7 @@ class Summarizer(nn.Module):
         :return:
             logprobs | torch.Size([batch_size, summary_len, vocab_size])
         """
-        
+
         cls_mask = (input_ids == self.artBOS.idx)
 
         # position ids | torch.Size([batch_size, article_len])
@@ -231,7 +231,7 @@ class Summarizer(nn.Module):
             .repeat(len(input_ids), 1)
         # extract bert embeddings | torch.Size([batch_size, article_len, d_bert])
         enc_output = self.encoder(input_ids, input_mask, input_segment, pos_ids)
-        
+
         if self.features:
             temp_features = self.features(input_features)
             draft_logprobs = self.decoder(torch.cat([enc_output[cls_mask], temp_features], dim=-1))

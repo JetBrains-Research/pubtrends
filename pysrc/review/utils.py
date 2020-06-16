@@ -1,14 +1,11 @@
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import numpy as np
-import os
-import psutil
-import re
-import random
 import argparse
+import os
+import random
+import re
 
-import pysrc.review.config as cfg
+import numpy as np
+import psutil
+import torch
 
 
 def setup_single_gpu(model):
