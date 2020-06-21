@@ -1,12 +1,12 @@
 import logging
 import re
+from math import floor
 from queue import PriorityQueue
 
 import community
 import networkx as nx
 import numpy as np
 import pandas as pd
-from math import floor
 from networkx.readwrite import json_graph
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -373,19 +373,34 @@ class KeyPaperAnalyzer:
                         papers_level_pids[v] = set()
                     papers_level_pids[v].add(k)
                 for v, pids in papers_level_pids.items():
-                    logger.debug('Add original edges for papers resolution sparse groups')
+                    logger.debug(f'Processing louvain hierarchical group {v} with pids {pids}')
                     group_sparse = KeyPaperAnalyzer.local_sparse(similarity_graph.subgraph(pids))
+                    connected_components = [cc for cc in nx.connected_components(group_sparse)]
+                    logger.debug(f'Connected components {connected_components}')
+                    # Build a map node -> connected group
+                    connected_map = {}
+                    for ci, cc in enumerate(connected_components):
+                        for node in cc:
+                            connected_map[node] = ci
+                    logger.debug(f'Connected map {connected_map}')
+
+                    logger.debug('Adding edges within sparse graph')
                     for (pu, pv, d) in group_sparse.edges(data=True):
                         result.add_edge(pu, pv, **d)
-                    # Add edge from top cited to v
+
+                    logger.debug('Connecting top cited paper of each connected component to the hierarchy')
                     node_v = f'level_{len(dendrogram)}_{v}'
-                    # Connect nodes
-                    for node in group_sparse.nodes:
-                        if len(list(group_sparse.neighbors(node))) == 1:
+                    connected_set = set()
+                    for node in df.loc[df['id'].isin(pids)].sort_values(by='total', ascending=False)['id']:
+                        # Isolated nodes don't belong to any connected component or self-cited paper
+                        if node not in connected_map or len(list(group_sparse.neighbors(node))) == 1:
                             result.add_edge(node, node_v)
-                    top_cited = df.loc[df['id'].isin(pids)].sort_values(by='total', ascending=False).iloc[0]['id']
-                    result.add_edge(top_cited, node_v)
-                    # Connect to root
+                        else:
+                            ci = connected_map[node]
+                            if ci not in connected_set:
+                                result.add_edge(node, node_v)
+                                connected_set.add(ci)  # Mark connected component as connected to the hierarchy
+                    # Connect to root if necessary
                     if i == len(dendrogram) - 1:
                         last_level.append(node_v)
             else:
@@ -427,43 +442,6 @@ class KeyPaperAnalyzer:
             if not result.has_node(pid):
                 result.add_node(pid)
 
-        logger.debug('Add top similarity edges between topics')
-        sources = [None] * len(similarity_graph.edges)
-        targets = [None] * len(similarity_graph.edges)
-        similarities = [0.0] * len(similarity_graph.edges)
-        i = 0
-        for u, v, data in similarity_graph.edges(data=True):
-            sources[i] = u
-            targets[i] = v
-            similarities[i] = KeyPaperAnalyzer.get_similarity(data)
-            i += 1
-        similarity_df = pd.DataFrame(data={'source': sources, 'target': targets, 'similarity': similarities})
-
-        logger.debug('Assign each paper with corresponding component / topic')
-        similarity_topics_df = similarity_df.merge(df[['id', 'comp']], how='left', left_on='source', right_on='id') \
-            .merge(df[['id', 'comp']], how='left', left_on='target', right_on='id')
-
-        inter_topics = {}
-        for i, row in similarity_topics_df.iterrows():
-            pid1, c1, pid2, c2, similarity = row['id_x'], row['comp_x'], row['id_y'], row['comp_y'], row['similarity']
-            if c1 == c2:
-                continue  # Ignore same group
-            if c2 > c1:  # Swap
-                pidt, ct = pid1, c1
-                pid1, c1 = pid2, c2
-                pid2, c2 = pidt, ct
-            if (c1, c2) not in inter_topics:
-                pq = inter_topics[(c1, c2)] = PriorityQueue(maxsize=self.STRUCTURE_INTER_TOPICS_LINKS)
-            else:
-                pq = inter_topics[(c1, c2)]
-            if pq.full():
-                pq.get()  # Removes the element with lowest similarity
-            pq.put((similarity, pid1, pid2))
-        for pq in inter_topics.values():
-            while not pq.empty():
-                _, pid1, pid2 = pq.get()
-                # Add edge with full info
-                result.add_edge(pid1, pid2, **similarity_graph.edges[pid1, pid2])
         return result
 
     @staticmethod
