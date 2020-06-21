@@ -21,7 +21,7 @@ WORKDIR /home/user/
 
 # Install dependencies missing in biolabs/pubtrends
 RUN source activate pubtrends && \
-    pip install gunicorn redis lazy && \
+    pip install lazy && \
     conda install -c pytorch pytorch && \
     conda install -c conda-forge transformers && \
     conda install -c anaconda psutil
