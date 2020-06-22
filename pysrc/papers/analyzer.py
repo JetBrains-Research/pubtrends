@@ -555,7 +555,7 @@ class KeyPaperAnalyzer:
         comp_sizes = {c: sum([partition[node] == c for node in partition.keys()]) for c in components}
         sorted_comps = sorted(comp_sizes.keys(), key=lambda c: comp_sizes[c], reverse=True)
         if len(components) > max_components:
-            components_to_merge = set(sorted_comps[max_components-1:])
+            components_to_merge = set(sorted_comps[max_components - 1:])
             n_components_merged = len(components_to_merge)
             logger.debug(f'Reassigning components')
             partition_merged = {}
