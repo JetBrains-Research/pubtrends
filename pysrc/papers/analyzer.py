@@ -390,8 +390,8 @@ class KeyPaperAnalyzer:
                     node_v = f'level_{len(dendrogram)}_{v}'
                     connected_set = set()
                     for node in df.loc[df['id'].isin(pids)].sort_values(by='total', ascending=False)['id']:
-                        # Isolated nodes don't belong to any connected component or self-cited paper
-                        if node not in connected_map or len(list(group_sparse.neighbors(node))) == 1:
+                        # Isolated nodes don't belong to any connected component
+                        if node not in connected_map:
                             result.add_edge(node, node_v)
                         else:
                             ci = connected_map[node]
@@ -431,8 +431,10 @@ class KeyPaperAnalyzer:
                         result.remove_edge(node, n2)
                         result.add_edge(n1, n2)
                         result.remove_node(node)
-                        nws.add(n1)
-                        nws.add(n2)
+                        if re.match('level_.*', n1):
+                            nws.add(n1)
+                        if re.match('level_.*', n1):
+                            nws.add(n2)
             ws = nws
 
         logger.debug('Ensure all the papers are processed, separated ones will be placed to other component')
