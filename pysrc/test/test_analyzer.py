@@ -112,13 +112,12 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
         self.assertListEqual(top_cited_papers, expected, name)
 
     @parameterized.expand([
-        ('granularity 0', {1: 0, 2: 1, 3: 2, 4: 3, 5: 4}, 0, ({1: 0, 2: 1, 3: 2, 4: 3, 5: 4}, 0)),
-        ('granularity 1', {1: 0, 2: 1, 3: 2, 4: 3, 5: 4}, 1, ({1: 0, 2: 0, 3: 0, 4: 0, 5: 0}, 1)),
-        ('granularity 0.5', {1: 0, 2: 1, 3: 1, 4: 1, 5: 2}, 0.5, ({1: 0, 2: 1, 3: 1, 4: 1, 5: 0}, 1)),
-        ('do not merge one component', {1: 0, 2: 1, 3: 1, 4: 1, 5: 1}, 0.5, ({1: 0, 2: 1, 3: 1, 4: 1, 5: 1}, 0))
+        ('max 5', {1: 0, 2: 1, 3: 2, 4: 3, 5: 4}, 5, ({1: 0, 2: 1, 3: 2, 4: 3, 5: 4}, 0)),
+        ('max 4', {1: 0, 2: 1, 3: 2, 4: 3, 5: 4}, 4, ({1: 1, 2: 2, 3: 3, 4: 0, 5: 0}, 1)),
+        ('max 1', {1: 0, 2: 1, 3: 1, 4: 1, 5: 1}, 1, ({1: 0, 2: 0, 3: 0, 4: 0, 5: 0}, 5))
     ])
-    def test_merge_components(self, name, partition, granularity, expected):
-        partition, n_components_merged = self.analyzer.merge_components(partition, granularity, 0)
+    def test_merge_components(self, name, partition, max_components, expected):
+        partition, n_components_merged = self.analyzer.merge_components(partition, max_components=max_components)
         expected_partition, expected_merged = expected
         self.assertEqual(partition, expected_partition, name)
 

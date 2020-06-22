@@ -35,8 +35,6 @@ class KeyPaperAnalyzer:
 
     STRUCTURE_INTER_TOPICS_LINKS = 10  # Number of inter topics links
 
-    TOPIC_GRANULARITY = 0.05
-    TOPIC_PAPERS_MIN = 10
     TOPIC_PAPERS_TFIDF = 50
     TOPIC_WORDS = 20
     TFIDF_WORDS = 1000
@@ -319,16 +317,16 @@ class KeyPaperAnalyzer:
             similarity_graph, weight='similarity', random_state=KeyPaperAnalyzer.SEED
         )
         logger.debug(f'Found {len(set(partition_louvain.values()))} components')
-
+        components = set(partition_louvain.values())
+        comp_sizes = {c: sum([partition_louvain[node] == c for node in partition_louvain.keys()]) for c in components}
+        logger.debug(f'Components: {comp_sizes}')
         if len(similarity_graph.edges) > 0:
             logger.debug('Calculate modularity for partition')
             modularity = community.modularity(partition_louvain, similarity_graph)
             logger.debug(f'Graph modularity (possible range is [-1, 1]): {modularity :.3f}')
 
-        # Merge small components to 'Other'
-        partition, n_components_merged = KeyPaperAnalyzer.merge_components(
-            partition_louvain, KeyPaperAnalyzer.TOPIC_GRANULARITY, KeyPaperAnalyzer.TOPIC_PAPERS_MIN
-        )
+        # Merge small components to 'OTHER'
+        partition, n_components_merged = KeyPaperAnalyzer.merge_components(partition_louvain)
 
         logger.debug('Sorting components by size descending')
         components = set(partition.values())
@@ -551,31 +549,31 @@ class KeyPaperAnalyzer:
         return max_rel_gain_papers, max_rel_gain_df
 
     @staticmethod
-    def merge_components(partition, granularity, papers_min):
-        logger.debug(f'Merging components smaller than {papers_min} or {granularity}% to "Other" component')
-        threshold = max(papers_min, int(granularity * len(partition)))
+    def merge_components(partition, max_components=20):
+        logger.debug(f'Merging components to get max {max_components} components into to "Other" component')
         components = set(partition.values())
         comp_sizes = {c: sum([partition[node] == c for node in partition.keys()]) for c in components}
-        comp_to_merge = {com: comp_sizes[com] <= threshold for com in components}
-        n_components_merged = sum(comp_to_merge.values())
-        if n_components_merged >= 1:
+        sorted_comps = sorted(comp_sizes.keys(), key=lambda c: comp_sizes[c], reverse=True)
+        if len(components) > max_components:
+            components_to_merge = set(sorted_comps[max_components-1:])
+            n_components_merged = len(components_to_merge)
             logger.debug(f'Reassigning components')
             partition_merged = {}
             new_comps = {}
-            ci = 1  # Other component is 0.
-            for k, v in partition.items():
-                if comp_sizes[v] <= threshold:
-                    partition_merged[k] = 0  # Other
+            ci = 1  # Start with 1, OTHER component is 0
+            for node, comp in partition.items():
+                if comp in components_to_merge:
+                    partition_merged[node] = 0  # Other
                     continue
-                if v not in new_comps:
-                    new_comps[v] = ci
+                if comp not in new_comps:
+                    new_comps[comp] = ci
                     ci += 1
-                partition_merged[k] = new_comps[v]
+                partition_merged[node] = new_comps[comp]
             logger.debug(f'Got {len(set(partition_merged.values()))} components')
+            return partition_merged, n_components_merged
         else:
             logger.debug(f'No need to reassign components')
-            partition_merged = partition
-        return partition_merged, n_components_merged
+            return partition, 0
 
     def popular_journals(self, df, n=TOP_JOURNALS, current=0, task=None):
         self.progress.info("Finding popular journals", current=current, task=task)
