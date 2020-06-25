@@ -351,10 +351,11 @@ class KeyPaperAnalyzer:
 
     def build_structure_graph(self, df, similarity_graph, current=0, task=None):
         """
-        Structure graph is a hybrid visualization of all the papers.
+        Structure graph is a hierarchical visualization of all the papers.
         It uses louvain community dendrogram as a structure.
-        For all the groups on the lowest level we show L-sparse subgraph.
-        After we add top similarity edges between different groups.
+        * For all the groups on the lowest level we show L-sparse subgraph.
+        * Relax continuous (2 or more consequent) hierarchical nodes to remove clutter.
+        * Create dedicated group nodes for directly connected to the root nodes (improves OTHER visualization).
         """
         self.progress.info('Building structure graph', current=current, task=task)
         dendrogram = community.generate_dendrogram(
@@ -403,8 +404,8 @@ class KeyPaperAnalyzer:
                         last_level.append(node_v)
             else:
                 for k, v in dendrogram_level.items():
-                    node_k = f'level_{len(dendrogram)-i+1}_{k}'
-                    node_v = f'level_{len(dendrogram)-i}_{v}'
+                    node_k = f'level_{len(dendrogram) - i + 1}_{k}'
+                    node_v = f'level_{len(dendrogram) - i}_{v}'
                     if result.has_node(node_k):
                         result.add_edge(node_k, node_v)
                         # Connect to root
@@ -427,14 +428,33 @@ class KeyPaperAnalyzer:
                     neighbors = list(result.neighbors(node))
                     if len(neighbors) == 2:
                         n1, n2 = neighbors
-                        result.remove_edge(node, n1)
-                        result.remove_edge(node, n2)
-                        result.add_edge(n1, n2)
-                        result.remove_node(node)
-                        if re.match('level_.*', n1):
-                            nws.add(n1)
-                        if re.match('level_.*', n1):
-                            nws.add(n2)
+                        # Leave intermediate node for directly-connected nodes!
+                        if not (n1 == root_node and not re.match('level_.*', n2) or
+                                n2 == root_node and not re.match('level_.*', n1)):
+                            result.remove_edge(node, n1)
+                            result.remove_edge(node, n2)
+                            result.add_edge(n1, n2)
+                            result.remove_node(node)
+                            if re.match('level_.*', n1):
+                                nws.add(n1)
+                            if re.match('level_.*', n1):
+                                nws.add(n2)
+                        else:
+                            # Process special node for component
+                            if n1 == root_node:
+                                comp = int(df.loc[df['id'] == n2]['comp'].values[0])
+                            else:
+                                comp = int(df.loc[df['id'] == n1]['comp'].values[0])
+                            result.remove_edge(node, n1)
+                            result.remove_edge(node, n2)
+                            result.remove_node(node)
+                            comp_node = f'level_{comp}'
+                            if not result.has_node(comp_node):
+                                result.add_edge(root_node, comp_node)
+                            if n1 == root_node:
+                                result.add_edge(comp_node, n2)
+                            else:
+                                result.add_edge(comp_node, n1)
             ws = nws
 
         logger.debug('Ensure all the papers are processed, separated ones will be placed to other component')
