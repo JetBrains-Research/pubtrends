@@ -33,8 +33,8 @@ class KeyPaperAnalyzer:
     SIMILARITY_TEXT_MIN = 0.3  # Minimal cosine similarity for potential text citation
     SIMILARITY_TEXT_CITATION_N = 10  # Max number of potential text citations for paper
 
-    STRUCTURE_INTER_TOPICS_LINKS = 10  # Number of inter topics links
-
+    TOPIC_MIN_SIZE = 10
+    TOPICS_MAX_NUMBER = 20  # Should be <= 20 to comply with default color scheme tab20
     TOPIC_PAPERS_TFIDF = 50
     TOPIC_WORDS = 20
     TFIDF_WORDS = 1000
@@ -326,7 +326,8 @@ class KeyPaperAnalyzer:
             logger.debug(f'Graph modularity (possible range is [-1, 1]): {modularity :.3f}')
 
         # Merge small components to 'OTHER'
-        partition, n_components_merged = KeyPaperAnalyzer.merge_components(partition_louvain)
+        partition, n_components_merged = KeyPaperAnalyzer.merge_components(
+            partition_louvain, topic_min_size=self.TOPIC_MIN_SIZE, max_topics_number=self.TOPICS_MAX_NUMBER)
 
         logger.debug('Sorting components by size descending')
         components = set(partition.values())
@@ -571,13 +572,21 @@ class KeyPaperAnalyzer:
         return max_rel_gain_papers, max_rel_gain_df
 
     @staticmethod
-    def merge_components(partition, max_components=20):
-        logger.debug(f'Merging components to get max {max_components} components into to "Other" component')
+    def merge_components(partition, topic_min_size, max_topics_number):
+        logger.debug(f'Merging components to get max {max_topics_number} components into to "Other" component')
         components = set(partition.values())
         comp_sizes = {c: sum([partition[node] == c for node in partition.keys()]) for c in components}
         sorted_comps = sorted(comp_sizes.keys(), key=lambda c: comp_sizes[c], reverse=True)
-        if len(components) > max_components:
-            components_to_merge = set(sorted_comps[max_components - 1:])
+        # Limit max number of topics
+        if len(components) > max_topics_number:
+            components_to_merge = set(sorted_comps[max_topics_number - 1:])
+        else:
+            components_to_merge = set()
+        # Merge tiny topics
+        for c, csize in comp_sizes.items():
+            if csize < topic_min_size:
+                components_to_merge.add(c)
+        if components_to_merge:
             n_components_merged = len(components_to_merge)
             logger.debug(f'Reassigning components')
             partition_merged = {}

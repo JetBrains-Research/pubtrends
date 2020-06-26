@@ -18,9 +18,9 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         loader = MockLoader()
-        KeyPaperAnalyzer.TOPIC_PAPERS_MIN = 0  # For tests, to reduce number of papers
         cls.analyzer = KeyPaperAnalyzer(loader, TestKeyPaperAnalyzer.PUBTRENDS_CONFIG, test=True)
         ids = cls.analyzer.search_terms(query='query')
+        cls.analyzer.TOPIC_MIN_SIZE = 0  # Disable merging for tests
         cls.analyzer.analyze_papers(ids, 'query')
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.ids)
         cls.analyzer.citations_graph = cls.analyzer.build_citation_graph(cls.analyzer.cit_df)
@@ -112,13 +112,16 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
         self.assertListEqual(top_cited_papers, expected, name)
 
     @parameterized.expand([
-        ('max 5', {1: 0, 2: 1, 3: 2, 4: 3, 5: 4}, 5, ({1: 0, 2: 1, 3: 2, 4: 3, 5: 4}, 0)),
-        ('max 4', {1: 0, 2: 1, 3: 2, 4: 3, 5: 4}, 4, ({1: 1, 2: 2, 3: 3, 4: 0, 5: 0}, 1)),
-        ('max 1', {1: 0, 2: 1, 3: 1, 4: 1, 5: 1}, 1, ({1: 0, 2: 0, 3: 0, 4: 0, 5: 0}, 5))
+        ('5_0', {1: 0, 2: 1, 3: 2, 4: 3, 5: 4}, 5, 0, ({1: 0, 2: 1, 3: 2, 4: 3, 5: 4}, 0)),
+        ('4_0', {1: 0, 2: 1, 3: 2, 4: 3, 5: 4}, 4, 0, ({1: 1, 2: 2, 3: 3, 4: 0, 5: 0}, 2)),
+        ('1_0', {1: 0, 2: 1, 3: 1, 4: 1, 5: 1}, 1, 0, ({1: 0, 2: 0, 3: 0, 4: 0, 5: 0}, 2)),
+        ('5_10', {1: 0, 2: 1, 3: 2, 4: 3, 5: 4}, 1, 10, ({1: 0, 2: 0, 3: 0, 4: 0, 5: 0}, 5)),
     ])
-    def test_merge_components(self, name, partition, max_components, expected):
-        partition, n_components_merged = self.analyzer.merge_components(partition, max_components=max_components)
+    def test_merge_components(self, name, partition, max_topics_number, topic_min_size, expected):
+        partition, n_components_merged = self.analyzer.merge_components(
+            partition, topic_min_size=topic_min_size, max_topics_number=max_topics_number)
         expected_partition, expected_merged = expected
+        self.assertEqual(n_components_merged, expected_merged, name)
         self.assertEqual(partition, expected_partition, name)
 
     def test_merge_citation_stats_paper_count(self):
