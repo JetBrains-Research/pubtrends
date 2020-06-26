@@ -1,9 +1,9 @@
 import logging
+from itertools import product as cart_product
 
 import networkx as nx
 import numpy as np
 import pandas as pd
-from itertools import product as cart_product
 
 from pysrc.papers.analyzer import KeyPaperAnalyzer
 from pysrc.papers.utils import cut_authors_list
@@ -58,9 +58,7 @@ class PlotPreprocessor:
         assigned_comps = df[df['comp'] >= 0]
         comp_size = dict(assigned_comps.groupby('comp')['id'].count())
         total_papers = sum(assigned_comps['comp'] >= 0)
-
-        # comps are reversed to display in descending order
-        comps = list(reversed(list(comp_size.keys())))
+        comps = list(comp_size.keys())
         ratios = [100 * comp_size[c] / total_papers for c in comps]
 
         # c + 1 is used to start numbering from 1
