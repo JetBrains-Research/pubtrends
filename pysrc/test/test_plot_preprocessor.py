@@ -42,9 +42,9 @@ class TestPlotPreprocessor(unittest.TestCase):
         colors = [self.plotter.comp_palette[int(c) - 1] for c in comps]
         source = ColumnDataSource(data=dict(comps=comps, ratios=ratios, colors=colors))
 
-        expected_comps = ['3', '2', '1']
-        expected_ratios = [9.090909, 36.363636, 54.545454]
-        expected_colors = list(reversed(self.plotter.comp_palette))
+        expected_comps = ['1', '2', '3']
+        expected_ratios = [54.545454, 36.363636, 9.090909]
+        expected_colors = self.plotter.comp_palette
 
         self.assertEqual(comps, expected_comps, 'Wrong list of components')
         for ratio, expected in zip(source.data['ratios'], expected_ratios):

@@ -326,14 +326,13 @@ class Plotter:
         colors = [self.comp_palette[int(c) - 1] for c in comps]
         source = ColumnDataSource(data=dict(comps=comps, ratios=ratios, colors=colors))
 
-        p = figure(plot_width=PLOT_WIDTH, plot_height=30 + 50 * len(comps),
-                   toolbar_location="above", tools=TOOLS, y_range=comps)
-        p.hbar(y='comps', right='ratios', height=0.9, fill_alpha=0.5, color='colors', source=source)
+        p = figure(plot_width=PLOT_WIDTH, plot_height=SHORT_PLOT_HEIGHT,
+                   toolbar_location="above", tools=TOOLS, x_range=comps)
+        p.vbar(x='comps', top='ratios', width=0.8, fill_alpha=0.5, color='colors', source=source)
         p.hover.tooltips = [("Topic", '@comps'), ("Amount", '@ratios %')]
 
-        p.x_range.start = 0
-        p.xaxis.axis_label = 'Percentage of papers'
-        p.yaxis.axis_label = 'Topic'
+        p.xaxis.axis_label = 'Topic'
+        p.yaxis.axis_label = 'Percentage of papers'
         p.xgrid.grid_line_color = None
         p.ygrid.grid_line_color = None
         p.axis.minor_tick_line_color = None
