@@ -23,9 +23,6 @@ dependencies:
   - python-louvain=0.13
   - scikit-learn=0.22.1
   - catboost=0.23
-  - psutil
-  - pytorch
-  - transformers
   - pip
   - pip:
       - gunicorn
