@@ -10,6 +10,13 @@ ENV C_FORCE_ROOT true
 COPY . /home/user/
 WORKDIR /home/user/
 
+# Install dependencies missing in biolabs/pubtrends
+RUN source activate pubtrends && \
+    pip install gunicorn redis lazy && \
+    conda install -c pytorch pytorch && \
+    conda install -c conda-forge transformers && \
+    conda install -c anaconda psutil
+
 # Download all the nltk resources
 RUN source activate pubtrends && python pysrc/papers/utils.py
 
