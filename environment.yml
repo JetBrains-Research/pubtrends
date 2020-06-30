@@ -27,6 +27,7 @@ dependencies:
   - pip:
       - gunicorn
       - redis
+      - scholarmetrics==0.2.1
       - neo4j==1.7.6
       - flask-admin==1.5.6
       - flask-security==3.0.0
