@@ -248,7 +248,6 @@ def graph():
             loader, url_prefix = get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
             analyzer = get_analyzer(loader, PUBTRENDS_CONFIG)
             analyzer.init(data)
-            min_year, max_year = int(analyzer.df['year'].min()), int(analyzer.df['year'].max())
             topics_tags = {comp: ', '.join(
                 [w[0] for w in analyzer.df_kwd[analyzer.df_kwd['comp'] == comp]['kwd'].values[0][:10]]
             ) for comp in sorted(set(analyzer.df['comp']))}
@@ -263,8 +262,6 @@ def graph():
                     limit=limit,
                     sort=sort,
                     citation_graph="true",
-                    min_year=min_year,
-                    max_year=max_year,
                     topic_other=analyzer.comp_other or -1,
                     topics_palette_json=json.dumps(Plotter.topics_palette(analyzer.df)),
                     topics_description_json=json.dumps(topics_tags),
@@ -281,8 +278,6 @@ def graph():
                     limit=limit,
                     sort=sort,
                     citation_graph="false",
-                    min_year=min_year,
-                    max_year=max_year,
                     topic_other=analyzer.comp_other or -1,
                     topics_palette_json=json.dumps(Plotter.topics_palette(analyzer.df)),
                     topics_description_json=json.dumps(topics_tags),

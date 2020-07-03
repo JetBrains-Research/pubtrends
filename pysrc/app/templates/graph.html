@@ -123,12 +123,17 @@
                 });
             }
 
+            function showCited(){
+                cy.nodes().forEach(function(ele){
+                    if ('title' in ele.data()){
+                        ele.classes('cited');
+                    }
+                });
+            }
+
             function showYear(){
                 cy.nodes().forEach(function(ele){
                     if ('title' in ele.data()){
-                        if (ele.data().title === "Cytosine methylation and the fate of CpG dinucleotides in vertebrate genomes") {
-                            console.info("CHECK");
-                        }
                         ele.classes('year');
                     }
                 });
@@ -140,8 +145,6 @@
                 const citation_graph = {{ citation_graph }};
                 const topics_palette = JSON.parse({{ topics_palette_json | tojson }});
                 const topics_description = JSON.parse({{topics_description_json | tojson }});
-                const min_year = {{min_year}};
-                const max_year = {{max_year}};
                 let edge_style;
                 if (citation_graph) {
                     edge_style = CG_EDGE_STYLE;
@@ -149,6 +152,26 @@
                     edge_style = PR_EDGE_STYLE;
                 }
                 const elements = JSON.parse({{ graph_cytoscape_json | tojson }});
+
+                // Compute min/max params for palette
+                let min_year = 3000;
+                let max_year = 0;
+                let min_cited = 100000;
+                let max_cited = 0;
+                elements['nodes'].forEach(function (ele) {
+                    let data = ele['data'];
+                    if ('year' in data) {
+                        const year = data['year'];
+                        min_year = Math.min(year, min_year);
+                        max_year = Math.max(year, max_year);
+                    }
+                    if ('cited' in data) {
+                        const cited = data['cited'];
+                        min_cited = Math.min(cited, min_cited);
+                        max_cited = Math.max(cited, max_cited);
+                    }
+                });
+
                 let cy = window.cy = cytoscape({
                     container: document.getElementById('cy'),
                     layout: LAYOUT,
@@ -198,6 +221,25 @@
                                         let dy;
                                         if (max_year > min_year) {
                                             dy = (data.year - min_year) / (max_year - min_year);
+                                        } else {
+                                            dy = 1;
+                                        }
+                                        return rgbToHex(0, Math.floor(255 * dy), 0);
+                                    } else {
+                                        return "#FFFFFF"
+                                    }
+                                },
+                            }
+                        },
+                        {
+                            selector: "node.cited",
+                            style: {
+                                "background-color": function (node) {
+                                    let data = node.data();
+                                    if ('cited' in data) {
+                                        let dy;
+                                        if (max_cited > min_cited) {
+                                            dy = (data.cited - min_cited) / (max_cited - min_cited);
                                         } else {
                                             dy = 1;
                                         }
@@ -391,6 +433,7 @@
                             </button>
                             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                                 <a class="dropdown-item" onclick="showTopics();" href="javascript:void(0);">Topic</a>
+                                <a class="dropdown-item" onclick="showCited();" href="javascript:void(0);">Cited</a>
                                 <a class="dropdown-item" onclick="showYear();" href="javascript:void(0);">Year</a>
                             </div>
                         </div>
@@ -426,9 +469,9 @@
                     "Papers without citations are grouped by topics."
             } else {
                 description = "Structure graph represents hierachical structure of papers.<br>" +
-                    "Node size encodes paper citations count, color encodes topic or publication year.<br> " +
+                    "Node size shows paper citations count, color encodes topic, number of citations or publication year.<br> " +
                     "Edge width shows papers similarity, the thicker the more similar papers are.<br>" +
-                    "Edge color represents similarity type.<br>" +
+                    "Edge color - similarity type.<br>" +
                     '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(0,93,255,0.3);"/></svg>' +
                     "&nbsp;<em>Co-citation</em>" +
                     "<br>" +
@@ -461,11 +504,9 @@
                     {
                         element: '#dropdownMenuButton',
                         intro: 'Change graph colouring.<br>' +
-                            'Node color can represent topic of the paper or publication year.<br>' +
-                            '<svg width="16" height="16"><rect width="16" height="16" style="fill:#000000;"/></svg>' +
-                            ' {{min_year}} - ' +
-                            '<svg width="16" height="16"><rect width="16" height="16" style="fill:#00FF00;"/></svg> ' +
-                            '{{max_year}}'
+                            'Node color can represent topic of the paper, number of citations or publication year.<br>' +
+                            '<svg width="16" height="16"><rect width="16" height="16" style="fill:#000000;"/></svg> min - ' +
+                            '<svg width="16" height="16"><rect width="16" height="16" style="fill:#00FF00;"/></svg> max'
                     },
                     {
                         element: '#reset',
