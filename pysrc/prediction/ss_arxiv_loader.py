@@ -7,16 +7,16 @@ from pysrc.papers.utils import SORT_MOST_CITED, SORT_MOST_RECENT
 logger = logging.getLogger(__name__)
 
 
-class ArxivLoader(SemanticScholarLoader):
+class SSArxivLoader(SemanticScholarLoader):
     def __init__(self, config):
-        super(ArxivLoader, self).__init__(config)
+        super(SSArxivLoader, self).__init__(config)
 
     def search(self, query, limit=None, sort=None, current=1, task=None):
         raise Exception('Use search_arxiv')
 
-    def search_arxiv(self, limit, sort=None, current=1, task=None):
+    def search_arxiv(self, limit, sort='random'):
         self.progress.info(html.escape(f'Searching {limit} {sort.lower()} publications'),
-                           current=current, task=task)
+                           current=1, task=None)
 
         if sort == SORT_MOST_CITED:
             query = f'''
@@ -48,6 +48,6 @@ class ArxivLoader(SemanticScholarLoader):
         with self.neo4jdriver.session() as session:
             ids = [str(r['ssid']) for r in session.run(query)]
 
-        self.progress.info(f'Found {len(ids)} publications in the local database', current=current,
-                           task=task)
+        self.progress.info(f'Found {len(ids)} publications in the local database', current=1,
+                           task=None)
         return ids
