@@ -137,8 +137,8 @@ def result():
         logger.info(f'/result No job or out-of-date job, restart it {log_request(request)}')
         return search_terms_(request.args)
     else:
-        logger.error(f'/result error {log_request(request)}')
-        return render_template_string("Something went wrong..."), 400
+        logger.error(f'/result error wrong request {log_request(request)}')
+        return render_template_string("Wrong request..."), 400
 
 
 @app.route('/process')
@@ -147,7 +147,8 @@ def process():
         jobid = request.values.get('jobid')
 
         if not jobid:
-            return render_template_string("Something went wrong...")
+            logger.error(f'/process error wrong request {log_request(request)}')
+            return render_template_string("Wrong request...")
 
         query = request.args.get('query')
         analysis_type = request.values.get('analysis_type')
@@ -228,9 +229,11 @@ def paper():
             logger.info(f'/paper success {log_request(request)}')
             return render_template('paper.html', **prepare_paper_data(data, source, pid),
                                    version=VERSION)
-
-    logger.error(f'/paper error {log_request(request)}')
-    return render_template_string("Something went wrong..."), 400
+        logger.error(f'/paper error jobid {log_request(request)}')
+        return render_template_string("Out-of-date search, please search again..."), 400
+    else:
+        logger.error(f'/paper error wrong request {log_request(request)}')
+        return render_template_string("Wrong request..."), 400
 
 
 @app.route('/graph')
@@ -283,8 +286,11 @@ def graph():
                     topics_description_json=json.dumps(topics_tags),
                     graph_cytoscape_json=json.dumps(graph_cs)
                 )
-    logger.error(f'/graph error {log_request(request)}')
-    return render_template_string("Something went wrong..."), 400
+        logger.error(f'/graph error job id {log_request(request)}')
+        return render_template_string("Out-of-date search, please search again..."), 400
+    else:
+        logger.error(f'/graph error wrong request {log_request(request)}')
+        return render_template_string("Wrong request..."), 400
 
 
 @app.route('/papers')
