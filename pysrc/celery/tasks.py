@@ -12,7 +12,7 @@ from pysrc.papers.pm_loader import PubmedLoader
 from pysrc.papers.progress import Progress
 from pysrc.papers.ss_loader import SemanticScholarLoader
 from pysrc.papers.utils import SORT_MOST_CITED
-from pysrc.prediction.arxiv_loader import ArxivLoader
+from pysrc.prediction.ss_arxiv_loader import SSArxivLoader
 
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379'),
 CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379')
@@ -86,7 +86,7 @@ def get_loader(source, config):
     elif source == 'Semantic Scholar':
         return SemanticScholarLoader(config)
     elif source == 'Arxiv':
-        return ArxivLoader(config)
+        return SSArxivLoader(config)
     else:
         raise ValueError(f"Unknown source {source}")
 

@@ -107,15 +107,21 @@ Please ensure that you have Database configured, up and running.
 
 ### Web service
 
-1. Start Redis
+1. Create necessary folders for logs and service database.
+    ```
+    mkdir ~/.pubtrends/logs
+    mkdir ~/.pubtrends/database
+    ```
+
+2. Start Redis
     ```
     docker run redis:5.0
     ```
-2. Start Celery worker queue
+3. Start Celery worker queue
     ```
     celery -A pysrc.celery.tasks worker -c 1 --loglevel=debug
     ```
-3. Start flask server at localhost:5000/
+4. Start flask server at localhost:5000/
     ```
     python -m pysrc.app.app
     ```    
