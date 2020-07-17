@@ -3,6 +3,7 @@ package org.jetbrains.bio.pubtrends.pm
 import org.apache.logging.log4j.LogManager
 import org.jetbrains.bio.pubtrends.AbstractDBHandler
 import org.joda.time.DateTime
+import org.joda.time.DateTimeZone
 import org.joda.time.IllegalFieldValueException
 import java.io.*
 import java.util.zip.GZIPInputStream
@@ -400,9 +401,13 @@ class PubmedXMLParser(
 
                         // There is an issue when some local dates might be absent in other calendars
                         val date = try {
-                            if (year != null) DateTime(year, month, day, 12, 0) else null
+                            if (year != null)
+                                DateTime(year, month, day, 12, 0, DateTimeZone.UTC)
+                            else null
                         } catch (e: IllegalFieldValueException) {
-                            if (year != null) DateTime(year, 1, 1, 12, 0) else null
+                            if (year != null)
+                                DateTime(year, 1, 1, 12, 0, DateTimeZone.UTC)
+                            else null
                         }
 
                         abstractText = abstractText.trim()
