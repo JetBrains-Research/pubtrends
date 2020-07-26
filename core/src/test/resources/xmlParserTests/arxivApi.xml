@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <link href="http://arxiv.org/api/query?search_query%3D%26id_list%3D1507.00493%2C1604.08289%2C1608.08082%26start%3D0%26max_results%3D1000" rel="self" type="application/atom+xml"/>
+  <title type="html">ArXiv Query: search_query=&amp;id_list=1507.00493,1604.08289,1608.08082&amp;start=0&amp;max_results=1000</title>
+  <id>http://arxiv.org/api/e8kH50lU9vkO1rthiI+gctYClMQ</id>
+  <updated>2020-04-12T00:00:00-04:00</updated>
+  <opensearch:totalResults xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">3</opensearch:totalResults>
+  <opensearch:startIndex xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">0</opensearch:startIndex>
+  <opensearch:itemsPerPage xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">1000</opensearch:itemsPerPage>
+  <entry>
+    <id>http://arxiv.org/abs/1507.00493v3</id>
+    <updated>2020-02-26T07:42:08Z</updated>
+    <published>2015-07-02T09:51:27Z</published>
+    <title>Fibration and classification of smooth projective toric varieties of low
+  Picard number</title>
+    <summary>  In this paper we show that a smooth toric variety $X$ of Picard number $r\leq
+3$ always admits a nef primitive collection supported on a hyperplane admitting
+</summary>
+    <author>
+      <name>Michele Rossi</name>
+    </author>
+    <author>
+      <name>Lea Terracini</name>
+    </author>
+    <arxiv:doi xmlns:arxiv="http://arxiv.org/schemas/atom">10.1142/S0129167X20500433</arxiv:doi>
+    <link title="doi" href="http://dx.doi.org/10.1142/S0129167X20500433" rel="related"/>
+    <arxiv:comment xmlns:arxiv="http://arxiv.org/schemas/atom">26 pages; 7 figures. Final version for pubblication in International
+  Journal of Mathematics. Minor changes following referee's suggestions: in
+  particular the proof of Lemma 3.2 has been rewritten to making it clearer</arxiv:comment>
+    <link href="http://arxiv.org/abs/1507.00493v3" rel="alternate" type="text/html"/>
+    <link title="pdf" href="http://arxiv.org/pdf/1507.00493v3" rel="related" type="application/pdf"/>
+    <arxiv:primary_category xmlns:arxiv="http://arxiv.org/schemas/atom" term="math.AG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="math.AG" scheme="http://arxiv.org/schemas/atom"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/1604.08289v2</id>
+    <updated>2020-03-18T22:31:19Z</updated>
+    <published>2016-04-28T02:32:20Z</published>
+    <title>Construction of quantum states with special properties by projection
+  methods</title>
+    <summary>  We use projection methods to construct (global) quantum states with
+prescribed reduced (marginal)
+</summary>
+    <author>
+      <name>Xuefeng Duan</name>
+    </author>
+    <author>
+      <name>Chi-Kwong Li</name>
+    </author>
+    <author>
+      <name>Diane Christine Pelejo</name>
+    </author>
+    <link href="http://arxiv.org/abs/1604.08289v2" rel="alternate" type="text/html"/>
+    <arxiv:primary_category xmlns:arxiv="http://arxiv.org/schemas/atom" term="quant-ph" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="quant-ph" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="15B57, 81-08, 46N10, 81P45" scheme="http://arxiv.org/schemas/atom"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/1608.08082v6</id>
+    <updated>2020-03-19T02:05:14Z</updated>
+    <published>2016-08-25T16:04:49Z</published>
+    <title>On the Properties of Special Prime Number Sequences</title>
+    <summary>  In this paper, we analyze properties of special subsequences of prime numbers
+produced by the alternating sum of higher-order subsets of the primes.
+</summary>
+    <author>
+      <name>Michael P. May</name>
+    </author>
+    <arxiv:comment xmlns:arxiv="http://arxiv.org/schemas/atom">17 pages, 1 figure</arxiv:comment>
+    <link href="http://arxiv.org/abs/1608.08082v6" rel="alternate" type="text/html"/>
+    <link title="pdf" href="http://arxiv.org/pdf/1608.08082v6" rel="related" type="application/pdf"/>
+    <arxiv:primary_category xmlns:arxiv="http://arxiv.org/schemas/atom" term="math.GM" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="math.GM" scheme="http://arxiv.org/schemas/atom"/>
+  </entry>
+</feed> 

@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd">
+<responseDate>2020-03-27T08:34:04Z</responseDate>
+<request verb="ListRecords" from="2020-03-20" metadataPrefix="arXiv">http://export.arxiv.org/oai2</request>
+<ListRecords>
+<record>
+<header>
+ <identifier>oai:arXiv.org:0801.2407</identifier>
+ <datestamp>2020-03-25</datestamp>
+ <setSpec>physics:astro-ph</setSpec>
+</header>
+<metadata>
+ <arXiv xmlns="http://arxiv.org/OAI/arXiv/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://arxiv.org/OAI/arXiv/ http://arxiv.org/OAI/arXiv.xsd">
+ <created>2008-01-15</created><authors><author><keyname>Abel-Tiberini</keyname><forenames>Laetitia</forenames><suffix>II</suffix><affiliation>LAOG</affiliation></author><author><keyname>Labeye</keyname><forenames>Pierre</forenames><affiliation>CEA Leti</affiliation></author></authors><title>ABCD
+ABCD
+DEFG</title><categories>astro-ph</categories><comments>This is comment</comments><msc-class>55p35</msc-class><doi>10.1364/OE.15.018005</doi><abstract>This is abstract
+</abstract></arXiv>
+</metadata>
+</record>
+<record>
+<header>
+ <identifier>oai:arXiv.org:0909.2882</identifier>
+ <datestamp>2020-03-24</datestamp>
+ <setSpec>physics:nlin</setSpec>
+ <setSpec>physics:physics</setSpec>
+</header>
+<metadata>
+ <arXiv xmlns="http://arxiv.org/OAI/arXiv/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://arxiv.org/OAI/arXiv/ http://arxiv.org/OAI/arXiv.xsd">
+ <id>0909.2882</id><updated>2020-03-21</updated><authors><author><keyname>Hoover</keyname><forenames>Wm. G.</forenames></author><author><keyname>Hoover</keyname><forenames>Carol G.</forenames></author></authors><title>Shockwaves and Local Hydrodynamics; Failure of the Navier-Stokes
+  Equations</title><categories>physics.flu-dyn nlin.CD</categories><report-no>IGPG-07/03-2</report-no><comments>many
+  lines
+comment</comments><acm-class>56asdf</acm-class><doi>10.1142/9789814307543_0002</doi><license>http://arxiv.org/licenses/nonexclusive-distrib/1.0/</license><abstract>Big
+abstract aba-
+caba DABA-
+DABA
+</abstract></arXiv>
+</metadata>
+</record>
+<record>
+<header>
+ <identifier>oai:arXiv.org:0909.2882</identifier>
+ <datestamp>2020-03-24</datestamp>
+ <setSpec>physics:nlin</setSpec>
+ <setSpec>physics:physics</setSpec>
+</header>
+<metadata>
+ <arXiv xmlns="http://arxiv.org/OAI/arXiv/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://arxiv.org/OAI/arXiv/ http://arxiv.org/OAI/arXiv.xsd">
+ <id>0909.2882</id><created>2009-09-15</created><updated>2020-03-21</updated><authors><author><keyname>Hoover</keyname><forenames>Wm. G.</forenames></author><author><keyname>Hoover</keyname><forenames>Carol G.</forenames></author></authors><title>Shockwaves and Local Hydrodynamics; Failure of the Navier-Stokes
+  Equations</title><categories>physics.flu-dyn nlin.CD</categories><report-no>IGPG-07/03-2</report-no><comments>many
+  lines
+comment</comments><acm-class>56asdf</acm-class><doi>10.1142/9789814307543_0002</doi><license>http://arxiv.org/licenses/nonexclusive-distrib/1.0/</license></arXiv>
+</metadata>
+</record>
+<record>
+<header>
+ <identifier>oai:arXiv.org:0909.2882</identifier>
+ <datestamp>2020-03-24</datestamp>
+ <setSpec>physics:nlin</setSpec>
+ <setSpec>physics:physics</setSpec>
+</header>
+<metadata>
+ <arXiv xmlns="http://arxiv.org/OAI/arXiv/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://arxiv.org/OAI/arXiv/ http://arxiv.org/OAI/arXiv.xsd">
+ <id>0909.2882</id><created>2009-09-15</created><updated>2020-03-21</updated><authors><author><keyname>Hoover</keyname><forenames>Wm. G.</forenames></author><author><keyname>Hoover</keyname><forenames>Carol G.</forenames></author></authors><categories>physics.flu-dyn nlin.CD</categories><report-no>IGPG-07/03-2</report-no><comments>many
+  lines
+comment</comments><acm-class>56asdf</acm-class><doi>10.1142/9789814307543_0002</doi><license>http://arxiv.org/licenses/nonexclusive-distrib/1.0/</license><abstract>Big
+abstract aba-
+caba DABA-
+DABA
+</abstract></arXiv>
+</metadata>
+</record>
+<record>
+<header>
+ <setSpec>physics:nlin</setSpec>
+ <setSpec>physics:physics</setSpec>
+</header>
+<metadata>
+ <arXiv xmlns="http://arxiv.org/OAI/arXiv/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://arxiv.org/OAI/arXiv/ http://arxiv.org/OAI/arXiv.xsd">
+ <id>0909.2882</id><created>2009-09-15</created><updated>2020-03-21</updated><authors><author><keyname>Hoover</keyname><forenames>Wm. G.</forenames></author><author><keyname>Hoover</keyname><forenames>Carol G.</forenames></author></authors><title>Shockwaves and Local Hydrodynamics; Failure of the Navier-Stokes
+  Equations</title><categories>physics.flu-dyn nlin.CD</categories><report-no>IGPG-07/03-2</report-no><comments>many
+  lines
+comment</comments><acm-class>56asdf</acm-class><doi>10.1142/9789814307543_0002</doi><license>http://arxiv.org/licenses/nonexclusive-distrib/1.0/</license><abstract>Big
+abstract aba-
+caba DABA-
+DABA
+</abstract></arXiv>
+</metadata>
+</record>
+<record>
+<header>
+ <identifier>oai:arXiv.org:0909.2882</identifier>
+ <datestamp>2020-03-24</datestamp>
+ <setSpec>physics:nlin</setSpec>
+ <setSpec>physics:physics</setSpec>
+</header>
+<metadata>
+ <arXiv xmlns="http://arxiv.org/OAI/arXiv/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://arxiv.org/OAI/arXiv/ http://arxiv.org/OAI/arXiv.xsd">
+ <id>0909.2882</id><created>2009-09-15</created><updated>2020-03-21</updated><authors><author><keyname>Hoover</keyname><forenames>Wm. G.</forenames></author><author><keyname>Hoover</keyname><forenames>Carol G.</forenames></author></authors><title>Shockwaves and Local Hydrodynamics; Failure of the Navier-Stokes
+  Equations</title><categories>physics.flu-dyn nlin.CD</categories><report-no>IGPG-07/03-2</report-no><comments>many
+  lines
+comment</comments><acm-class>56asdf</acm-class><doi>10.1142/9789814307543_0002</doi><license>http://arxiv.org/licenses/nonexclusive-distrib/1.0/</license><abstract>Big
+abstract aba-
+caba DABA-
+DABA
+</abstract></arXiv>
+</metadata>
+</record>
+<resumptionToken cursor="0" completeListSize="7002">4342418|1001</resumptionToken>
+</ListRecords>
+</OAI-PMH>  

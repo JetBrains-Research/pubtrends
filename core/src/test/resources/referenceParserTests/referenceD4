@@ -1,0 +1,15 @@
+@d50@d[WORDREF] Reference 1 Line 1@d400@d
+@d50@dReference 1 Line 2@d300@d
+@d50@d[WORDREF] Reference 2 Line 1@d400@d
+@d50@dReference 2 [3] Line 2@d300@d
+@d50@d[WORDREF] Reference 3 Line 1@d400@d
+@d50@dReference 3 [ABACABA] Line 2@d300@d
+@d50@d[WORDREF] Reference 4 Line 1@d400@d
+@d50@d3. Reference 4 Line 2@d300@d
+@d530@dReference 4 Line 3@d700@d
+@d530@d[WORDREF] Reference 5 Line 1@d880@d
+@d530@dReference 5 Line 2@d790@d
+@d530@dJLSJDFKLSJDFLKSJDFLKS@d800@d
+@d530@dJLSJDFKLSJDFLKSJDFLKS@d800@d
+@d530@dJLSJDFKLSJDFLKSJDFLKS@d800@d
+@d530@dJLSJDFKLSJDFLKSJDFLKS@d800@d
