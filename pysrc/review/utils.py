@@ -6,12 +6,25 @@ import re
 import numpy as np
 import psutil
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+import pysrc.review.config as cfg
 
 
-def setup_single_gpu(model):
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    model = model.to(device)
-    return model, device
+class DummyWriter:
+
+    def __init__(self):
+        self.log_dir = cfg.tb_logdir
+
+    def add_scalar(self, *args, **kwargs):
+        pass
+
+    def add_text(self, *args, **kwargs):
+        pass
+
+    def close(self):
+        pass
 
 
 def init_seed(seed):
@@ -30,6 +43,174 @@ def str2bool(v):
         return False
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
+
+
+class GeLU(nn.Module):
+    def __init__(self):
+        super(GeLU, self).__init__()
+        self.const = np.sqrt(2 / np.pi)
+
+    def forward(self, x):
+        return 0.5 * x * (1 + torch.tanh(self.const * (x + 0.044715 * torch.pow(x, 3))))
+
+
+class DecoderLayer(nn.Module):
+    """
+    Represents one decoder layer of the transformer decoder
+    """
+
+    def __init__(self, d_hidden, n_heads):
+        """
+        init for decoder layer
+        :param d_hidden: hidden size | int % n_heads == 0
+        :param n_heads: number of multi-head attention heads | int
+        """
+        super(DecoderLayer, self).__init__()
+
+        self.dec_mha, self.encdec_mha = \
+            [MultiHeadAttention(d_hidden, n_heads) for _ in range(2)]
+        self.ff = FeedForward(d_hidden, cfg.d_ff, d_hidden)
+        self.dec_layernorm, self.encdec_layernorm = [nn.LayerNorm(d_hidden, eps=1e-6) for _ in range(2)]
+        self.dropout = nn.Dropout(cfg.dropout)
+
+    def forward(self, inpt):
+        """
+        forward pass for decoder layer
+        :param inpt: (x, enc_output, dec_mask, encdec_mask)
+            x: decoder input | torch.Size([batch_size, dec_len, d_hidden])
+            enc_output: encoder output | torch.Size([batch_size, enc_len, d_hidden])
+            dec_mask: torch.Size([batch_size, 1, dec_len, dec_len])
+            encdec_mask: torch.Size([batch_size, 1, 1, enc_len])
+        """
+
+        x, enc_output, dec_mask, encdec_mask = inpt
+        # layer normalization before decoder self attention | torch.Size([batch_size, dec_len, d_hidden])
+        x_norm = self.dec_layernorm(x)
+        # masked multi-head attention | torch.size([batch_size, dec_len, d_hidden])
+        y = self.dec_mha(x_norm, x_norm, x_norm, dec_mask)
+        # dropout and residual after self-attention | torch.size([batch_size, dec_len, d_hidden])
+        x = self.dropout(y) + x
+        # layer normalization before encoder-decoder attention | torch.size([batch_size, dec_len, d_hidden])
+        x_norm = self.encdec_layernorm(x)
+        # multi-head encoder-decoder attention | torch.Size([batch_size, dec_len, d_hidden])
+        y = self.encdec_mha(x_norm, enc_output, enc_output, encdec_mask)
+        # dropout and residual after encoder-decoder attention | torch.size([batch_size, dec_len, d_hidden])
+        x = self.dropout(y) + x
+        # feed-forward | torch.size([batch_size, dec_len, d_hidden])
+        x = self.ff(x)
+
+        return x, enc_output, dec_mask, encdec_mask
+
+
+class MultiHeadAttention(nn.Module):
+    """
+    Multi-head attention
+    """
+
+    def __init__(self, d_hidden, n_heads):
+        """
+        Multi-head init
+        :param d_hidden: Size of last dimension of keys/values/queries | int % n_heads == 0
+        :param n_heads: Number of attention heads | int
+        """
+        super(MultiHeadAttention, self).__init__()
+
+        self.query_scale = np.sqrt(d_hidden / n_heads)
+        self.n_heads = n_heads
+        self.q_linear, self.k_linear, self.v_linear = [nn.Linear(d_hidden, d_hidden) for _ in range(3)]
+        self.output_linear = nn.Linear(d_hidden, d_hidden)
+        self.dropout = nn.Dropout(cfg.dropout)
+
+        assert d_hidden % n_heads == 0, 'MH hidden dim must be divisible by n_heads'
+
+    def split_heads(self, x):
+        """
+        Split x such to add an extra num_heads dimension
+        :param x: torch.Size([batch_size, len, d_hidden])
+        :return: torch.Size([batch_size, n_heads, len, d_hidden // n_heads])
+        """
+
+        return x.view(x.size(0), x.size(1), self.n_heads, x.size(2) // self.n_heads).permute(0, 2, 1, 3)
+
+    def merge_heads(self, x):
+        """
+        Merge the extra num_heads into the last dimension
+        :param x: torch.Size([batch_size, n_heads, len, dim // n_heads])
+        :return: torch.Size([batch_size, len, dim])
+        """
+
+        return x.permute(0, 2, 1, 3).contiguous().view(x.size(0), x.size(2), x.size(3) * self.n_heads)
+
+    def forward(self, queries, keys, values, mask=None):
+        """
+        forward pass for Multi-Head Attention
+        :param queries: torch.size([batch_size, q_len, d_hidden])
+        :param keys: torch.size([batch_size, kv_len, d_hidden])
+        :param values: torch.size([batch_size, kv_len, d_hidden])
+        :param mask: torch.size([batch_size, 1, q_len, kv_len])
+        :return:
+        """
+
+        # linear for each component | torch.size([batch_size, len, d_hidden])
+        queries = self.q_linear(queries)
+        keys = self.k_linear(keys)
+        values = self.v_linear(values)
+        # Split into multiple heads | torch.size([batch_size, n_heads, len, d_hidden // n_heads])
+        queries = self.split_heads(queries)
+        keys = self.split_heads(keys)
+        values = self.split_heads(values)
+        # Combine queries and keys | torch.size([batch_size, n_heads, q_len, kv_len])
+        logits = torch.matmul(queries, keys.permute(0, 1, 3, 2)) / self.query_scale
+        # masking | torch.size([batch_size, n_heads, q_len, kv_len])
+        if mask is not None:
+            logits = logits.masked_fill(mask, -1e4 if cfg.amp_enabled else -1e20)
+        # Convert to probabilities | torch.size([batch_size, n_heads, q_len, kv_len])
+        weights = F.softmax(logits, dim=-1)
+        # Dropout | torch.size([batch_size, n_heads, q_len, kv_len])
+        weights = self.dropout(weights)
+        # Combine with values | torch.size([batch_size, n_heads, q_len, d_hidden // n_heads])
+        contexts = torch.matmul(weights, values)
+        # Merge heads | torch.size([batch_size, q_len, d_hidden])
+        contexts = self.merge_heads(contexts)
+        # Linear to get output | torch.size([batch_size, q_len, d_output])
+        outputs = self.output_linear(contexts)
+
+        return outputs
+
+
+class FeedForward(nn.Module):
+    """
+    Position wise Feed-Forward
+    """
+
+    def __init__(self, d_input, d_hidden, d_output):
+        """
+        Init for FeedForward net
+        :param d_input: input dimension | int
+        :param d_hidden: hidden dimension | int
+        :param d_output: output dimension | int
+        """
+        super(FeedForward, self).__init__()
+
+        assert d_input == d_output, 'Incorrect in/out sizes!'
+
+        self.layers = nn.Sequential(
+            nn.LayerNorm(d_input, eps=1e-6),
+            nn.Linear(d_input, d_hidden),
+            GeLU(),
+            nn.Dropout(cfg.dropout),
+            nn.Linear(d_hidden, d_output),
+            nn.Dropout(cfg.dropout),
+        )
+
+    def forward(self, x):
+        """
+        forward pass for FeedForward
+        :param x: torch.size([batch_size, len, d_input])
+        :return: torch.size([batch_size, len, d_output])
+        """
+
+        return self.layers(x) + x
 
 
 def compute_weights(net):

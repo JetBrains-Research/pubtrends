@@ -23,4 +23,12 @@ topp_p = 0.7
 n_worst2writer = 20
 n_random2writer = 100
 
-model_name = 'learn_simple_berta.pth'
+# additional
+seed = 1234
+
+base_path = "../summarization"
+data_path = f"{base_path}/data"
+weights_path = f"{base_path}/weights"
+log_filepath = f"{base_path}/logs/log.log"
+tb_logdir = f"{base_path}/logs/tb_runs"
+predicted_path = "summarized_texts"
