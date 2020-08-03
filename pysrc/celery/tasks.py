@@ -2,6 +2,7 @@ import html
 import os
 
 from celery import Celery, current_task
+from neobolt.exceptions import ServiceUnavailable
 
 from pysrc.papers.analyzer import KeyPaperAnalyzer
 from pysrc.papers.analyzer_experimental import ExperimentalAnalyzer
@@ -81,14 +82,17 @@ def find_paper_async(source, key, value):
 
 
 def get_loader(source, config):
-    if source == 'Pubmed':
-        return PubmedLoader(config)
-    elif source == 'Semantic Scholar':
-        return SemanticScholarLoader(config)
-    elif source == 'Arxiv':
-        return SSArxivLoader(config)
-    else:
-        raise ValueError(f"Unknown source {source}")
+    try:
+        if source == 'Pubmed':
+            return PubmedLoader(config)
+        elif source == 'Semantic Scholar':
+            return SemanticScholarLoader(config)
+        elif source == 'Arxiv':
+            return SSArxivLoader(config)
+        else:
+            raise ValueError(f"Unknown source {source}")
+    except ServiceUnavailable:
+        raise ConnectionError(f"Failed to establish connection to the neo4j storage")
 
 
 def get_analyzer(loader, config):
