@@ -51,10 +51,11 @@
 
             const LAYOUT = {
                 name: 'fcose',
-                animationEasing: 'ease-out',
-                animate: true,
-                randomize: true,
-                packComponents: true,
+                animate: false,
+                // Separation amount between nodes
+                nodeSeparation: 100,
+                // Maximum number of iterations to perform
+                numIter: 1000,
             };
 
             const CG_EDGE_STYLE = {
@@ -77,13 +78,13 @@
                 "curve-style": "haystack",
                 "line-color": function (edge) {
                     let data = edge.data();
-                    let cocitation = 0;
-                    if ('cocitation' in data) {
-                        cocitation = data['cocitation'];
-                    }
                     let bibcoupling = 0;
                     if ('bibcoupling' in data) {
                         bibcoupling = data['bibcoupling'];
+                    }
+                    let cocitation = 0;
+                    if ('cocitation' in data) {
+                        cocitation = data['cocitation'];
                     }
                     let citation = 0;
                     if ('citation' in data) {
@@ -93,11 +94,11 @@
                     if ('text' in data) {
                         text = data['text'];
                     }
+                    if (bibcoupling > 0 && bibcoupling >= Math.max(cocitation, citation, text)) {
+                        return "#80ff00"
+                    }
                     if (cocitation > 0 && cocitation >= Math.max(bibcoupling, citation, text)) {
                         return "#005DFF"
-                    }
-                    if (bibcoupling > 0 && bibcoupling >= Math.max(cocitation, citation, text)) {
-                        return "#F500FF"
                     }
                     if (citation > 0 && citation >= Math.max(cocitation, bibcoupling, text)) {
                         return "#9B0013";
@@ -279,13 +280,13 @@
                             let data = ele.data();
                             if ('similarity' in data) {
                                 // Graph similarity
-                                let cocitation = 0;
-                                if ('cocitation' in data) {
-                                    cocitation = data['cocitation'];
-                                }
                                 let bibcoupling = 0;
                                 if ('bibcoupling' in data) {
                                     bibcoupling = data['bibcoupling'];
+                                }
+                                let cocitation = 0;
+                                if ('cocitation' in data) {
+                                    cocitation = data['cocitation'];
                                 }
                                 let citation = 0;
                                 if ('citation' in data) {
@@ -300,8 +301,8 @@
                                     "Computed based on citations-based methods<br> "+
                                     "and text similarity between papers.<br>" +
                                     "The bigger value the more similar papers are." + "<br>" +
-                                    "<b>Co-citation</b> " + cocitation + "<br>" +
                                     "<b>Bibliographic coupling</b> " + bibcoupling + "<br>" +
+                                    "<b>Co-citation</b> " + cocitation + "<br>" +
                                     "<b>Citation</b> " + citation + "<br>" +
                                     "<b>Text</b> " + Number(text).toFixed(2) + "<br>";
                             } else if('title' in data) {
@@ -473,11 +474,11 @@
                     "Node size shows paper citations count, color encodes topic, number of citations or publication year.<br> " +
                     "Edge width shows papers similarity, the thicker the more similar papers are.<br>" +
                     "Edge color - similarity type.<br>" +
+                    '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(128,255,0,0.3);"/></svg>' +
+                    "&nbsp;<em>Bibliographic coupling</em> " +
+                    "<br>" +
                     '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(0,93,255,0.3);"/></svg>' +
                     "&nbsp;<em>Co-citation</em>" +
-                    "<br>" +
-                    '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(245,0,255,0.3);"/></svg>' +
-                    "&nbsp;<em>Bibliographic coupling</em> " +
                     "<br>" +
                     '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(155,0,19,0.3);"/></svg>' +
                     "&nbsp;<em>Direct citation</em>" +
