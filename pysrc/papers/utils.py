@@ -354,10 +354,6 @@ def preprocess_pubmed_search_title(line):
     return line.strip('.[]')
 
 
-def hex2rgb(color):
-    return [int(color[pos:pos + 2], 16) for pos in range(1, 7, 2)]
-
-
 def rgb2hex(color):
     if isinstance(color, str):
         match = re.match('rgb\\((\\d+), (\\d+), (\\d+)\\)', color)

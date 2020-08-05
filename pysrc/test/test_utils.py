@@ -5,7 +5,7 @@ from pandas.util.testing import assert_frame_equal
 from parameterized import parameterized
 
 from pysrc.papers.utils import tokenize, cut_authors_list, split_df_list, crc32, preprocess_search_query, \
-    preprocess_doi, preprocess_pubmed_search_title, hex2rgb, rgb2hex
+    preprocess_doi, preprocess_pubmed_search_title, rgb2hex
 
 
 class TestUtils(unittest.TestCase):
@@ -114,13 +114,6 @@ class TestUtils(unittest.TestCase):
         title = '[DNA methylation age.]'
         expected = 'DNA methylation age'
         self.assertEqual(preprocess_pubmed_search_title(title), expected)
-
-    @parameterized.expand([
-        ('#91C82F', [145, 200, 47]),
-        ('#8ffe09', [143, 254, 9])
-    ])
-    def test_hex2rgb(self, color, expected):
-        self.assertEqual(hex2rgb(color), expected)
 
     @parameterized.expand([
         ([145, 200, 47], '#91c82f'),

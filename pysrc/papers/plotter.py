@@ -11,7 +11,6 @@ from bokeh.models import ColumnDataSource, CustomJS, Legend, LegendItem
 # Tools used: hover,pan,tap,wheel_zoom,box_zoom,reset,save
 from bokeh.models import LinearColorMapper, PrintfTickFormatter, ColorBar
 from bokeh.models import NumeralTickFormatter
-from bokeh.palettes import Category20
 from bokeh.plotting import figure
 from bokeh.transform import factor_cmap
 from holoviews import dim
@@ -20,7 +19,7 @@ from wordcloud import WordCloud
 
 from pysrc.papers.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.utils import LOCAL_BASE_URL, get_topic_word_cloud_data, \
-    get_frequent_tokens, cut_authors_list, ZOOM_OUT, ZOOM_IN, zoom_name, trim, hex2rgb, rgb2hex
+    get_frequent_tokens, cut_authors_list, ZOOM_OUT, ZOOM_IN, zoom_name, trim, rgb2hex
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
 hv.extension('bokeh')
@@ -95,17 +94,14 @@ class Plotter:
 
         if self.analyzer:
             if self.analyzer.similarity_graph.nodes():
-                n_comps = len(self.analyzer.components)
-                if n_comps > 20:
-                    raise ValueError(f'Too big number of components {n_comps}')
-                self.comp_palette = [RGB(*hex2rgb(c)) for c in Category20[20][:n_comps]]
-                self.comp_colors = dict(enumerate(self.comp_palette))
+                self.comp_colors = Plotter.topics_palette_rgb(self.analyzer.df)
+                self.comp_palette = list(self.comp_colors.values())
 
             n_pub_types = len(self.analyzer.pub_types)
             pub_types_cmap = plt.cm.get_cmap('jet', n_pub_types)
             self.pub_types_colors_map = dict(
-                zip(self.analyzer.pub_types,
-                    [RGB(*[round(c * 255) for c in pub_types_cmap(i)[:3]]) for i in range(n_pub_types)]))
+                zip(self.analyzer.pub_types, [Plotter.color_to_rgb(pub_types_cmap(i)) for i in range(n_pub_types)])
+            )
 
     @staticmethod
     def paper_callback(ds, source):
@@ -273,7 +269,7 @@ class Plotter:
             values.extend(expanded_vs)
         boxwhisker = hv.BoxWhisker((labels, values), 'Topic', 'Publications year')
         boxwhisker.opts(width=PLOT_WIDTH, height=SHORT_PLOT_HEIGHT,
-                        box_fill_color=dim('Topic').str(), cmap='tab20')
+                        box_fill_color=dim('Topic').str(), cmap=Plotter.topics_colormap(len(components)))
         return hv.render(boxwhisker, backend='bokeh')
 
     def topics_info_and_word_cloud_and_callback(self):
@@ -367,9 +363,7 @@ class Plotter:
         ds_max = ColumnDataSource(max_gain_df)
 
         factors = self.analyzer.max_gain_df['id'].unique()
-        cmap = plt.cm.get_cmap('jet', len(factors))
-        palette = [RGB(*[round(c * 255) for c in cmap(i)[:3]]) for i in range(len(factors))]
-        colors = factor_cmap('id', palette=palette, factors=factors)
+        colors = self.factor_colormap(factors)
 
         year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
         p = figure(tools=TOOLS, toolbar_location="above",
@@ -402,9 +396,7 @@ class Plotter:
         ds_max = ColumnDataSource(max_rel_gain_df)
 
         factors = self.analyzer.max_rel_gain_df['id'].astype(str).unique()
-        cmap = plt.cm.get_cmap('jet', len(factors))
-        palette = [RGB(*[round(c * 255) for c in cmap(i)[:3]]) for i in range(len(factors))]
-        colors = factor_cmap('id', palette=palette, factors=factors)
+        colors = self.factor_colormap(factors)
 
         year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
         p = figure(tools=TOOLS, toolbar_location="above",
@@ -562,5 +554,30 @@ class Plotter:
                            for (word, count), font_size, position, orientation, color in wc.layout_])
 
     @staticmethod
+    def color_to_rgb(v):
+        return RGB(*[int(c * 255) for c in v[:3]])
+
+    @staticmethod
+    def factor_colormap(factors):
+        jetcmap = plt.cm.get_cmap('jet', len(factors))
+        palette = [Plotter.color_to_rgb(jetcmap(i)) for i in range(len(factors))]
+        colors = factor_cmap('id', palette=palette, factors=factors)
+        return colors
+
+    @staticmethod
+    def topics_palette_rgb(df):
+        n_comps = len(set(df['comp']))
+        topics_cmap = Plotter.topics_colormap(n_comps)
+        return dict([(i, Plotter.color_to_rgb(topics_cmap(i))) for i in range(n_comps)])
+
+    @staticmethod
+    def topics_colormap(n_comps):
+        if n_comps <= 20:
+            topics_cmap = plt.cm.get_cmap('tab20', n_comps)
+        else:
+            topics_cmap = plt.cm.get_cmap('jet', n_comps)
+        return topics_cmap
+
+    @staticmethod
     def topics_palette(df):
-        return dict(enumerate(Category20[20][:len(set(df['comp']))]))
+        return dict([(k, v.to_hex()) for k, v in Plotter.topics_palette_rgb(df).items()])
