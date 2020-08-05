@@ -63,7 +63,7 @@ class PubmedLoader(Loader):
         else:
             limit_message = f'{limit} '
 
-        self.progress.info(html.escape(f'Searching {limit_message}{sort.lower()} publications matching \'{query}\''),
+        self.progress.info(html.escape(f'Searching {limit_message}{sort.lower()} publications matching {query}'),
                            current=current, task=task)
 
         if sort == SORT_MOST_RELEVANT:
