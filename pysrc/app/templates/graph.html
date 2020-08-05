@@ -382,7 +382,8 @@
                         if ('title' in data) {
                             if (filter === "" ||
                                 data['title'].toLowerCase().includes(filter) || data['abstract'].toLowerCase().includes(filter) ||
-                                data['authors'].toLowerCase().includes(filter) || data['year'].toString().includes(filter)) {
+                                data['authors'].toLowerCase().includes(filter) || data['year'].toString().includes(filter) ||
+                                filter.startsWith("topic") && data['topic'].toString() === filter.substr(5).trim()) {
                                 ele.style("display", "element");
                             } else {
                                 ele.style("display", "none");
