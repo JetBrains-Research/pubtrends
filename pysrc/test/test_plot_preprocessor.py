@@ -44,12 +44,10 @@ class TestPlotPreprocessor(unittest.TestCase):
 
         expected_comps = ['1', '2', '3']
         expected_ratios = [54.545454, 36.363636, 9.090909]
-        expected_colors = self.plotter.comp_palette
 
         self.assertEqual(comps, expected_comps, 'Wrong list of components')
         for ratio, expected in zip(source.data['ratios'], expected_ratios):
             self.assertAlmostEqual(ratio, expected, places=3, msg='Wrong component ratio')
-        self.assertEqual(source.data['colors'], expected_colors, 'Wrong list of component colors')
 
     def test_paper_statistics_data(self):
         ds = ColumnDataSource(PlotPreprocessor.papers_statistics_data(self.analyzer.df))
@@ -104,8 +102,8 @@ class TestPlotPreprocessor(unittest.TestCase):
 
         self.assertListEqual(topics, ['1', '2', '3'], 'Wrong topics')
 
-        expected_values = np.array([[9, 2, 0],
-                                    [2, 8.1667, 0],
+        expected_values = np.array([[4.5, 1, 0],
+                                    [1, 8.833333333333334, 0],
                                     [0, 0, 0]])
 
         n_comps = len(self.analyzer.components)

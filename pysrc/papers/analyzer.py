@@ -27,15 +27,23 @@ class KeyPaperAnalyzer:
     TOP_CITED_PAPERS = 50
     TOP_CITED_PAPERS_FRACTION = 0.1
 
-    SIMILARITY_COCITATION = 2
-    SIMILARITY_BIBLIOGRAPHIC_COUPLING = 1
-    SIMILARITY_CITATION = 0.5
+    # ...bibliographic coupling (BC) was the most accurate,  followed by co-citation (CC).
+    # Direct citation (DC) was a distant third among the three...
+    SIMILARITY_BIBLIOGRAPHIC_COUPLING = 10
+    SIMILARITY_COCITATION = 1
     SIMILARITY_TEXT_CITATION = 0.1
-    SIMILARITY_TEXT_MIN = 0.3  # Minimal cosine similarity for potential text citation
-    SIMILARITY_TEXT_CITATION_N = 10  # Max number of potential text citations for paper
+    SIMILARITY_CITATION = 0.01
+
+    SIMILARITY_TEXT_MIN = 0.5  # Minimal cosine similarity for potential text citation
+    SIMILARITY_TEXT_CITATION_N = 20  # Max number of potential text citations for paper
+
+    # Reduce number of edges in smallest communities.
+    STRUCTURE_LOW_LEVEL_SPARSITY = 0.5
+    # Limit number of connections between topics.
+    STRUCTURE_BETWEEN_TOPICS_MAX = 10
 
     TOPIC_MIN_SIZE = 10
-    TOPICS_MAX_NUMBER = 20  # Should be <= 20 to comply with default color scheme tab20
+    TOPICS_MAX_NUMBER = 100
     TOPIC_PAPERS_TFIDF = 50
     TOPIC_WORDS = 20
     TFIDF_WORDS = 1000
@@ -318,9 +326,11 @@ class KeyPaperAnalyzer:
             d['similarity'] = KeyPaperAnalyzer.get_similarity(d)
 
         logger.debug('Graph clustering via Louvain community algorithm')
-        partition_louvain = community.best_partition(
+        dendrogram = community.generate_dendrogram(
             similarity_graph, weight='similarity', random_state=KeyPaperAnalyzer.SEED
         )
+        # Smallest communities
+        partition_louvain = dendrogram[0]
         logger.debug(f'Found {len(set(partition_louvain.values()))} components')
         components = set(partition_louvain.values())
         comp_sizes = {c: sum([partition_louvain[node] == c for node in partition_louvain.keys()]) for c in components}
@@ -360,6 +370,7 @@ class KeyPaperAnalyzer:
         Structure graph is a hierarchical visualization of all the papers.
         It uses louvain community dendrogram as a structure.
         * For all the groups on the lowest level we show L-sparse subgraph.
+        * Add top similarity connections between different topics to keep overall structure.
         * Relax continuous (2 or more consequent) hierarchical nodes to remove clutter.
         * Create dedicated group nodes for directly connected to the root nodes (improves OTHER visualization).
         """
@@ -370,8 +381,9 @@ class KeyPaperAnalyzer:
         logger.debug('Processing louvain community dendrogram')
         result = nx.Graph()
         last_level = []
+        topics_mean_similarities = {}  # Compute average similarity per component
         for i, dendrogram_level in enumerate(dendrogram):
-            if i == 0:
+            if i == 0:  # Smallest communities level, corresponds to topics
                 papers_level_pids = {}
                 for k, v in dendrogram_level.items():
                     if v not in papers_level_pids:
@@ -379,7 +391,8 @@ class KeyPaperAnalyzer:
                     papers_level_pids[v].add(k)
                 for v, pids in papers_level_pids.items():
                     logger.debug(f'Processing louvain hierarchical group {v} with pids {pids}')
-                    group_sparse = KeyPaperAnalyzer.local_sparse(similarity_graph.subgraph(pids))
+                    group_sparse = KeyPaperAnalyzer.local_sparse(similarity_graph.subgraph(pids),
+                                                                 e=self.STRUCTURE_LOW_LEVEL_SPARSITY)
                     connected_components = [cc for cc in nx.connected_components(group_sparse)]
                     logger.debug(f'Connected components {connected_components}')
                     # Build a map node -> connected group
@@ -389,9 +402,17 @@ class KeyPaperAnalyzer:
                             connected_map[node] = ci
                     logger.debug(f'Connected map {connected_map}')
 
-                    logger.debug('Adding edges within sparse graph')
+                    logger.debug('Processing edges within sparse graph')
+                    topic_similarity_sum = 0
+                    topic_similarity_n = 0
+                    topic_n = None
                     for (pu, pv, d) in group_sparse.edges(data=True):
                         result.add_edge(pu, pv, **d)
+                        if topic_n is None:
+                            topic_n = int(df.loc[df['id'] == pu]['comp'].values[0])
+                        topic_similarity_n += 1
+                        topic_similarity_sum += d['similarity']
+                    topics_mean_similarities[topic_n] = topic_similarity_sum / max(1, topic_similarity_n)
 
                     logger.debug('Connecting top cited paper of each connected component to the hierarchy')
                     node_v = f'level_{len(dendrogram)}_{v}'
@@ -468,10 +489,51 @@ class KeyPaperAnalyzer:
             if not result.has_node(pid):
                 result.add_node(pid)
 
+        logger.debug('Add top similarity edges between topics')
+        sources = [None] * len(similarity_graph.edges)
+        targets = [None] * len(similarity_graph.edges)
+        similarities = [0.0] * len(similarity_graph.edges)
+        i = 0
+        for u, v, data in similarity_graph.edges(data=True):
+            sources[i] = u
+            targets[i] = v
+            similarities[i] = KeyPaperAnalyzer.get_similarity(data)
+            i += 1
+        similarity_df = pd.DataFrame(data={'source': sources, 'target': targets, 'similarity': similarities})
+
+        logger.debug('Assign each paper with corresponding component / topic')
+        similarity_topics_df = similarity_df.merge(df[['id', 'comp']], how='left', left_on='source', right_on='id') \
+            .merge(df[['id', 'comp']], how='left', left_on='target', right_on='id')
+
+        inter_topics = {}
+        for i, row in similarity_topics_df.iterrows():
+            pid1, c1, pid2, c2, similarity = row['id_x'], row['comp_x'], row['id_y'], row['comp_y'], row['similarity']
+            if c1 == c2:
+                continue  # Ignore same group
+            if c2 > c1:  # Swap
+                pidt, ct = pid1, c1
+                pid1, c1 = pid2, c2
+                pid2, c2 = pidt, ct
+            # Ignore between components similarities less than average within groups
+            if similarity < (topics_mean_similarities[c1] + topics_mean_similarities[c2]) / 2:
+                continue
+            if (c1, c2) not in inter_topics:
+                pq = inter_topics[(c1, c2)] = PriorityQueue(maxsize=self.STRUCTURE_BETWEEN_TOPICS_MAX)
+            else:
+                pq = inter_topics[(c1, c2)]
+            if pq.full():
+                pq.get()  # Removes the element with lowest similarity
+            pq.put((similarity, pid1, pid2))
+        for pq in inter_topics.values():
+            while not pq.empty():
+                _, pid1, pid2 = pq.get()
+                # Add edge with full info
+                result.add_edge(pid1, pid2, **similarity_graph.edges[pid1, pid2])
         return result
 
     @staticmethod
-    def local_sparse(graph, e=0.5):
+    def local_sparse(graph, e):
+        assert 0 < e < 1, f'sparsity e parameter should be in 0..1'
         result = nx.Graph()
         neighbours = {node: set(graph.neighbors(node)) for node in graph.nodes}
         sim_queues = {node: PriorityQueue(maxsize=max(1, floor(pow(len(neighbours[node]), e))))
