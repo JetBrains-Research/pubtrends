@@ -269,7 +269,7 @@ class Plotter:
             values.extend(expanded_vs)
         boxwhisker = hv.BoxWhisker((labels, values), 'Topic', 'Publications year')
         boxwhisker.opts(width=PLOT_WIDTH, height=SHORT_PLOT_HEIGHT,
-                        box_fill_color=dim('Topic').str(), cmap=Plotter.topics_colormap(len(components)))
+                        box_fill_color=dim('Topic').str(), cmap=Plotter.factors_colormap(len(components)))
         return hv.render(boxwhisker, backend='bokeh')
 
     def topics_info_and_word_cloud_and_callback(self):
@@ -363,7 +363,7 @@ class Plotter:
         ds_max = ColumnDataSource(max_gain_df)
 
         factors = self.analyzer.max_gain_df['id'].unique()
-        colors = self.factor_colormap(factors)
+        colors = self.factor_colors(factors)
 
         year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
         p = figure(tools=TOOLS, toolbar_location="above",
@@ -396,7 +396,7 @@ class Plotter:
         ds_max = ColumnDataSource(max_rel_gain_df)
 
         factors = self.analyzer.max_rel_gain_df['id'].astype(str).unique()
-        colors = self.factor_colormap(factors)
+        colors = self.factor_colors(factors)
 
         year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
         p = figure(tools=TOOLS, toolbar_location="above",
@@ -558,25 +558,26 @@ class Plotter:
         return RGB(*[int(c * 255) for c in v[:3]])
 
     @staticmethod
-    def factor_colormap(factors):
-        jetcmap = plt.cm.get_cmap('jet', len(factors))
-        palette = [Plotter.color_to_rgb(jetcmap(i)) for i in range(len(factors))]
+    def factor_colors(factors):
+        cmap = Plotter.factors_colormap(len(factors))
+        palette = [Plotter.color_to_rgb(cmap(i)) for i in range(len(factors))]
         colors = factor_cmap('id', palette=palette, factors=factors)
         return colors
 
     @staticmethod
     def topics_palette_rgb(df):
         n_comps = len(set(df['comp']))
-        topics_cmap = Plotter.topics_colormap(n_comps)
-        return dict([(i, Plotter.color_to_rgb(topics_cmap(i))) for i in range(n_comps)])
+        cmap = Plotter.factors_colormap(n_comps)
+        return dict([(i, Plotter.color_to_rgb(cmap(i))) for i in range(n_comps)])
 
     @staticmethod
-    def topics_colormap(n_comps):
-        if n_comps <= 20:
-            topics_cmap = plt.cm.get_cmap('tab20', n_comps)
+    def factors_colormap(n):
+        if n <= 10:
+            return plt.cm.get_cmap('tab10', n)
+        if n <= 20:
+            return plt.cm.get_cmap('tab20', n)
         else:
-            topics_cmap = plt.cm.get_cmap('jet', n_comps)
-        return topics_cmap
+            return plt.cm.get_cmap('nipy_spectral', n)
 
     @staticmethod
     def topics_palette(df):
