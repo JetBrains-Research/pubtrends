@@ -268,11 +268,15 @@
                         },
                         {
                             selector: 'node.semitransp',
-                            style:{ 'opacity': '0.3' }
+                            style:{ 'opacity': 0.3 }
                         },
                         {
                             selector: "edge",
                             style: edge_style
+                        },
+                        {
+                            selector: 'edge.semitransp',
+                            style:{ 'opacity': '0.1 !important' }
                         },
                     ],
                     elements: elements
@@ -398,13 +402,14 @@
                         let sel = event.target;
                         if ('title' in sel.data()) {
                             cy.nodes().difference(sel.outgoers()).not(sel).addClass('semitransp');
+                            cy.edges().addClass('semitransp');
                             sel.addClass('highlight').outgoers().addClass('highlight');
                         }
                     });
                     cy.on('mouseout', 'node', function(event){
                         let sel = event.target;
                         if ('title' in sel.data()) {
-                            cy.nodes().removeClass('semitransp');
+                            cy.elements().removeClass('semitransp');
                             sel.removeClass('highlight').outgoers().removeClass('highlight');
                         }
                     });
