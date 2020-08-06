@@ -30,8 +30,8 @@
         <!-- Tippy.js-->
         <script src="https://unpkg.com/popper.js@1.14.7/dist/umd/popper.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/cytoscape-popper@1.0.4/cytoscape-popper.min.js"></script>
-        <script src="https://unpkg.com/tippy.js@4.0.1/umd/index.all.min.js"></script>
-        <link rel="stylesheet" href="https://unpkg.com/tippy.js@4.0.1/index.css"/>
+        <script src="https://unpkg.com/tippy.js@4.3.5/umd/index.all.min.js"></script>
+        <link rel="stylesheet" href="https://unpkg.com/tippy.js@4.3.5/index.css"/>
 
 
         <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1"/>
@@ -338,7 +338,7 @@
                             }
                             return content;
                         },
-                        trigger: 'manual' // probably want manual mode
+                        trigger: 'manual' // manual mode is required here, because of cytoscape
                     });
                 }
 
@@ -348,13 +348,27 @@
                 function addPopper(popperElements) {
                     popperElements.forEach(function (ele) {
                         makePopper(ele);
+                        ele.unbind('mouseover');
+                        // track hovered event to avoid too late tippy
+                        let inside = false;
+                        ele.bind('mouseover', (event) => {
+                            inside = true;
+                            // Show hover after two seconds
+                            setTimeout(
+                                function () {
+                                    if (inside) {
+                                        event.target.tippy.show();
+                                    }
+                                },
+                                2000
+                            );
+                        });
+                        ele.unbind('mouseout');
+                        ele.bind('mouseout', (event) => {
+                            inside = false;
+                            event.target.tippy.hide();
+                        })
                     });
-
-                    popperElements.unbind('mouseover');
-                    popperElements.bind('mouseover', (event) => event.target.tippy.show());
-
-                    popperElements.unbind('mouseout');
-                    popperElements.bind('mouseout', (event) => event.target.tippy.hide());
                 }
 
                 cy.ready(function () {
