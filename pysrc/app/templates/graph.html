@@ -401,16 +401,18 @@
                     cy.on('mouseover', 'node', function(event){
                         let sel = event.target;
                         if ('title' in sel.data()) {
-                            cy.nodes().difference(sel.outgoers()).not(sel).addClass('semitransp');
+                            let neighbors = sel.connectedEdges().connectedNodes().not(sel)
+                            cy.nodes().difference(neighbors).not(sel).addClass('semitransp');
                             cy.edges().addClass('semitransp');
-                            sel.addClass('highlight').outgoers().addClass('highlight');
+                            neighbors.addClass('highlight');
                         }
                     });
                     cy.on('mouseout', 'node', function(event){
                         let sel = event.target;
                         if ('title' in sel.data()) {
                             cy.elements().removeClass('semitransp');
-                            sel.removeClass('highlight').outgoers().removeClass('highlight');
+                            let neighbors = sel.connectedEdges().connectedNodes().not(sel)
+                            neighbors.removeClass('highlight');
                         }
                     });
                 });
