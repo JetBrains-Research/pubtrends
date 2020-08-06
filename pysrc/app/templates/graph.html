@@ -383,14 +383,14 @@
                     cy.on('mouseover', 'node', function(event){
                         let sel = event.target;
                         if ('title' in sel.data()) {
-                            cy.elements().difference(sel.outgoers()).not(sel).addClass('semitransp');
+                            cy.nodes().difference(sel.outgoers()).not(sel).addClass('semitransp');
                             sel.addClass('highlight').outgoers().addClass('highlight');
                         }
                     });
                     cy.on('mouseout', 'node', function(event){
                         let sel = event.target;
                         if ('title' in sel.data()) {
-                            cy.elements().removeClass('semitransp');
+                            cy.nodes().removeClass('semitransp');
                             sel.removeClass('highlight').outgoers().removeClass('highlight');
                         }
                     });
