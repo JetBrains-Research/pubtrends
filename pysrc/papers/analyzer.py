@@ -37,10 +37,10 @@ class KeyPaperAnalyzer:
     SIMILARITY_TEXT_MIN = 0.5  # Minimal cosine similarity for potential text citation
     SIMILARITY_TEXT_CITATION_N = 20  # Max number of potential text citations for paper
 
-    # Reduce number of edges in smallest communities.
+    # Reduce number of edges in smallest communities, i.e. topics
     STRUCTURE_LOW_LEVEL_SPARSITY = 0.5
-    # Limit number of connections between topics.
-    STRUCTURE_BETWEEN_TOPICS_MAX = 10
+    # Reduce number of edges between different topics to min number of inner edges * scale factor
+    STRUCTURE_BETWEEN_TOPICS_SPARSITY = 0.05
 
     TOPIC_MIN_SIZE = 10
     TOPICS_MAX_NUMBER = 100
@@ -381,7 +381,8 @@ class KeyPaperAnalyzer:
         logger.debug('Processing louvain community dendrogram')
         result = nx.Graph()
         last_level = []
-        topics_mean_similarities = {}  # Compute average similarity per component
+        topics_edges = {}  # Number of edges in locally sparsified graph for component
+        topics_mean_similarities = {}  # Average similarity per component
         for i, dendrogram_level in enumerate(dendrogram):
             if i == 0:  # Smallest communities level, corresponds to topics
                 papers_level_pids = {}
@@ -391,9 +392,9 @@ class KeyPaperAnalyzer:
                     papers_level_pids[v].add(k)
                 for v, pids in papers_level_pids.items():
                     logger.debug(f'Processing louvain hierarchical group {v} with pids {pids}')
-                    group_sparse = KeyPaperAnalyzer.local_sparse(similarity_graph.subgraph(pids),
+                    topic_sparse = KeyPaperAnalyzer.local_sparse(similarity_graph.subgraph(pids),
                                                                  e=self.STRUCTURE_LOW_LEVEL_SPARSITY)
-                    connected_components = [cc for cc in nx.connected_components(group_sparse)]
+                    connected_components = [cc for cc in nx.connected_components(topic_sparse)]
                     logger.debug(f'Connected components {connected_components}')
                     # Build a map node -> connected group
                     connected_map = {}
@@ -406,10 +407,11 @@ class KeyPaperAnalyzer:
                     topic_similarity_sum = 0
                     topic_similarity_n = 0
                     topic_n = None
-                    for (pu, pv, d) in group_sparse.edges(data=True):
+                    for (pu, pv, d) in topic_sparse.edges(data=True):
                         result.add_edge(pu, pv, **d)
                         if topic_n is None:
                             topic_n = int(df.loc[df['id'] == pu]['comp'].values[0])
+                            topics_edges[topic_n] = len(topic_sparse.edges)
                         topic_similarity_n += 1
                         topic_similarity_sum += d['similarity']
                     topics_mean_similarities[topic_n] = topic_similarity_sum / max(1, topic_similarity_n)
@@ -518,7 +520,9 @@ class KeyPaperAnalyzer:
             if similarity < (topics_mean_similarities[c1] + topics_mean_similarities[c2]) / 2:
                 continue
             if (c1, c2) not in inter_topics:
-                pq = inter_topics[(c1, c2)] = PriorityQueue(maxsize=self.STRUCTURE_BETWEEN_TOPICS_MAX)
+                # Do not add edges between topics more than minimum * scale factor
+                max_connections = int(min(topics_edges[c1], topics_edges[c2]) * self.STRUCTURE_BETWEEN_TOPICS_SPARSITY)
+                pq = inter_topics[(c1, c2)] = PriorityQueue(maxsize=max_connections)
             else:
                 pq = inter_topics[(c1, c2)]
             if pq.full():
