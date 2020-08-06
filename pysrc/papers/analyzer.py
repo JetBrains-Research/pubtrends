@@ -34,7 +34,7 @@ class KeyPaperAnalyzer:
     SIMILARITY_TEXT_CITATION = 0.1
     SIMILARITY_CITATION = 0.01
 
-    SIMILARITY_TEXT_MIN = 0.5  # Minimal cosine similarity for potential text citation
+    SIMILARITY_TEXT_MIN = 0.3  # Minimal cosine similarity for potential text citation
     SIMILARITY_TEXT_CITATION_N = 20  # Max number of potential text citations for paper
 
     # Reduce number of edges in smallest communities, i.e. topics
