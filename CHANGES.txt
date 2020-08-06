@@ -3,6 +3,17 @@ Pubtrends changelog
 
 Here you can see the full list of changes between each release.
 
+Version 0.6
+-------------
+
+Released on August 8, 2020
+
+ - Reworked topics extraction based on the smallest communities of Louvain algorithm
+ - Removed limitation of 20 topics
+ - Show highly similar papers between topics in structure graph
+ - Bugfixes
+
+
 Version 0.5
 -------------
 
