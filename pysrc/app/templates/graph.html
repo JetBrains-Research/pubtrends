@@ -19,7 +19,7 @@
         <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
                 integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
                 crossorigin="anonymous"></script>
-
+        <!-- Cytoscape -->
         <script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
         <script src="https://unpkg.com/numeric/numeric-1.2.6.js"></script>
         <script src="https://unpkg.com/layout-base/layout-base.js"></script>
@@ -52,10 +52,6 @@
             const LAYOUT = {
                 name: 'fcose',
                 animate: false,
-                // Separation amount between nodes
-                nodeSeparation: 100,
-                // Maximum number of iterations to perform
-                numIter: 1000,
             };
 
             const CG_EDGE_STYLE = {
@@ -264,6 +260,17 @@
                             }
                         },
                         {
+                            selector: 'node.highlight',
+                            style: {
+                                'border-width': '3px',
+                                'border-color': '#FFFFFF',
+                            }
+                        },
+                        {
+                            selector: 'node.semitransp',
+                            style:{ 'opacity': '0.3' }
+                        },
+                        {
                             selector: "edge",
                             style: edge_style
                         },
@@ -350,8 +357,8 @@
                     popperElements.bind('mouseout', (event) => event.target.tippy.hide());
                 }
 
-                // Add popups on hover
                 cy.ready(function () {
+                    // Add info popup on hover
                     if (citation_graph) {
                         addPopper(cy.nodes());
                     } else {
@@ -362,7 +369,7 @@
                             return 'similarity' in ele.data();
                         }));
                     }
-
+                    // Open paper details on click
                     cy.nodes().on('click', function(event){
                         let data = event.target.data();
                         if ('title' in data) {
@@ -370,6 +377,21 @@
                             // Decode jobid from URL
                             const jobid = new URL(window.location).searchParams.get('jobid');
                             window.open('/paper?source={{source}}&id=' + data['id'] + '&jobid=' + jobid, '_blank');
+                        }
+                    });
+                    // Highlight node and neighbours on hover
+                    cy.on('mouseover', 'node', function(event){
+                        let sel = event.target;
+                        if ('title' in sel.data()) {
+                            cy.elements().difference(sel.outgoers()).not(sel).addClass('semitransp');
+                            sel.addClass('highlight').outgoers().addClass('highlight');
+                        }
+                    });
+                    cy.on('mouseout', 'node', function(event){
+                        let sel = event.target;
+                        if ('title' in sel.data()) {
+                            cy.elements().removeClass('semitransp');
+                            sel.removeClass('highlight').outgoers().removeClass('highlight');
                         }
                     });
                 });
