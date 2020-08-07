@@ -536,12 +536,13 @@
             if (citation_graph){
                 description = "Citations graph shows citations among papers.<br>" +
                     "Papers are visualized as nodes, citations as edges. " +
-                    "Node size encodes citations count, color shows topic or publication year.<br>" +
+                    "Node size encodes citations count. See Color menu for node color options.<br>" +
                     "Papers without citations are grouped by topics."
             } else {
                 description = "Structure graph represents similarity among papers.<br>" +
-                    "Node size shows paper citations count, color encodes topic, number of citations or publication year.<br> " +
-                    "Edge width shows papers similarity, the thicker the more similar papers are.<br>" +
+                    "Papers are visualized as nodes, citations as edges. " +
+                    "Node size shows paper citations count, see Color menu for node colors options.<br> " +
+                    "Edge width shows papers similarity, the thicker the more similar papers are." +
                     "Edge color - similarity type.<br>" +
                     '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(128,255,0,0.3);"/></svg>' +
                     "&nbsp;<em>Bibliographic coupling</em> " +
@@ -570,6 +571,7 @@
                         element: '#search-input',
                         intro: 'Filter papers by text.<br>' +
                             'Title, abstract and publication year are used in full text search.<br>' +
+                            'Use <em>topic N</em> for topic filtering.<br>' +
                             'Hit <em>enter</em> to execute, empty input to reset.'
                     },
                     {
