@@ -159,8 +159,11 @@ class PlotPreprocessor:
         cytoscape_graph = PlotPreprocessor.dump_to_cytoscape(df, structure_graph.copy())
         logger.debug('Set centrality for structure graph')
         centrality = nx.algorithms.centrality.degree_centrality(structure_graph)
+        pids = set(df['id'])
         for node_cs in cytoscape_graph['nodes']:
-            node_cs['data']['centrality'] = centrality[node_cs['data']['id']]
+            nid = node_cs['data']['id']
+            if nid in pids:
+                node_cs['data']['centrality'] = centrality[nid]
         return cytoscape_graph
 
     @staticmethod
