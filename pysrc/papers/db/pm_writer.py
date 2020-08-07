@@ -2,12 +2,11 @@ from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.connector import Connector
 
 
-class PMTestDatabaseSupplier(Connector):
+class PubmedWriter(Connector):
     INDEX_FIELDS = ['pmid', 'doi']
 
-    def __init__(self):
-        config = PubtrendsConfig(test=True)
-        super(PMTestDatabaseSupplier, self).__init__(config)
+    def __init__(self, config=PubtrendsConfig(test=True)):
+        super(PubmedWriter, self).__init__(config)
 
     def init_pubmed_database(self):
         with self.neo4jdriver.session() as session:

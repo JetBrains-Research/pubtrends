@@ -6,12 +6,12 @@ from pandas.util.testing import assert_frame_equal
 from parameterized import parameterized
 
 from pysrc.papers.config import PubtrendsConfig
-from pysrc.papers.pm_loader import PubmedLoader
+from pysrc.papers.db.pm_loader import PubmedLoader
+from pysrc.papers.db.pm_writer import PubmedWriter
 from pysrc.papers.utils import SORT_MOST_RECENT, SORT_MOST_RELEVANT, SORT_MOST_CITED
-from pysrc.test.pm_database_articles import REQUIRED_ARTICLES, ARTICLES, EXPECTED_PUB_DF, \
-    INNER_CITATIONS, CITATIONS, EXPECTED_CIT_DF, EXPECTED_COCIT_DF, EXPECTED_CIT_STATS_DF, \
-    EXPANDED_IDS, PART_OF_ARTICLES, EXPECTED_PUB_DF_GIVEN_IDS
-from pysrc.test.pm_database_supplier import PMTestDatabaseSupplier
+from pysrc.test.db.pm_test_articles import REQUIRED_ARTICLES, ARTICLES, CITATIONS, EXPECTED_PUB_DF, \
+    EXPECTED_CIT_STATS_DF, INNER_CITATIONS, EXPECTED_CIT_DF, EXPECTED_COCIT_DF, EXPECTED_PUB_DF_GIVEN_IDS, \
+    PART_OF_ARTICLES, EXPANDED_IDS
 
 
 class TestPubmedLoader(unittest.TestCase):
@@ -25,10 +25,10 @@ class TestPubmedLoader(unittest.TestCase):
         cls.ids = list(map(lambda article: article.pmid, REQUIRED_ARTICLES))
 
         # Reset and load data to the test database
-        supplier = PMTestDatabaseSupplier()
-        supplier.init_pubmed_database()
-        supplier.insert_pubmed_publications(ARTICLES)
-        supplier.insert_pubmed_citations(CITATIONS)
+        writer = PubmedWriter()
+        writer.init_pubmed_database()
+        writer.insert_pubmed_publications(ARTICLES)
+        writer.insert_pubmed_citations(CITATIONS)
 
         # Get data via PubmedLoader methods
         cls.pub_df = cls.loader.load_publications(cls.ids)

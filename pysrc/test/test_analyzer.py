@@ -5,8 +5,8 @@ from parameterized import parameterized
 
 from pysrc.papers.analyzer import KeyPaperAnalyzer
 from pysrc.papers.config import PubtrendsConfig
-from pysrc.papers.pm_loader import PubmedLoader
-from pysrc.papers.ss_loader import SemanticScholarLoader
+from pysrc.papers.db.pm_loader import PubmedLoader
+from pysrc.papers.db.ss_loader import SemanticScholarLoader
 from pysrc.test.mock_loaders import MockLoader, \
     CITATION_YEARS, EXPECTED_MAX_GAIN, EXPECTED_MAX_RELATIVE_GAIN, CITATION_GRAPH_NODES, CITATION_GRAPH_EDGES, \
     MockLoaderEmpty, MockLoaderSingle, SIMILARITY_GRAPH_EDGES

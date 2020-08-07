@@ -1,7 +1,7 @@
 import pandas as pd
 
 from pysrc.papers.config import PubtrendsConfig
-from pysrc.papers.loader import Loader
+from pysrc.papers.db.loader import Loader
 
 PUBLICATION_DATA = [['1', 1963, 'Article 1', 'just a paper', 'Article', 'Geller R, Geller M, Bing Ch', 'Nature'],
                     ['2', 1965, 'Article 2', 'abstract', 'Article', 'Buffay Ph, Geller M, Doe J', 'Science'],

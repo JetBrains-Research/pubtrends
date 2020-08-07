@@ -1,7 +1,7 @@
 import html
 import logging
 
-from pysrc.papers.ss_loader import SemanticScholarLoader
+from pysrc.papers.db.ss_loader import SemanticScholarLoader
 from pysrc.papers.utils import SORT_MOST_CITED, SORT_MOST_RECENT
 
 logger = logging.getLogger(__name__)

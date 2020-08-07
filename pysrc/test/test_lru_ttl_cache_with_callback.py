@@ -1,13 +1,7 @@
 import unittest
-
-import pandas as pd
-from pandas.util.testing import assert_frame_equal
-from parameterized import parameterized
 from time import sleep
 
 from pysrc.celery.tasks_cache import lru_ttl_cache_with_callback
-from pysrc.papers.utils import tokenize, cut_authors_list, split_df_list, crc32
-
 
 removed = []
 

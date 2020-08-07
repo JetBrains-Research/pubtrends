@@ -6,9 +6,9 @@ from collections import Iterable
 import numpy as np
 import pandas as pd
 
-from pysrc.papers.utils import SORT_MOST_CITED, SORT_MOST_RECENT, SORT_MOST_RELEVANT, preprocess_doi
+from pysrc.papers.utils import SORT_MOST_CITED, SORT_MOST_RECENT, SORT_MOST_RELEVANT, preprocess_doi, \
+    preprocess_search_query, crc32
 from .loader import Loader
-from .utils import crc32, preprocess_search_query
 
 logger = logging.getLogger(__name__)
 

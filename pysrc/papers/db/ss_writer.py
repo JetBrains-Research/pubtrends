@@ -2,13 +2,11 @@ from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.connector import Connector
 
 
-class SSTestDatabaseSupplier(Connector):
+class SemanticScholarWriter(Connector):
     INDEX_FIELDS = ['crc32id', 'doi']
 
-    def __init__(self):
-        config = PubtrendsConfig(test=True)
-        super(SSTestDatabaseSupplier, self).__init__(config)
-        self.project_dir = __file__.replace('/pysrc/test/ss_database_supplier.py', '')
+    def __init__(self, config=PubtrendsConfig(test=True)):
+        super(SemanticScholarWriter, self).__init__(config)
 
     def init_semantic_scholar_database(self):
         with self.neo4jdriver.session() as session:

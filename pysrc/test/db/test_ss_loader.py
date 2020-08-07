@@ -5,11 +5,11 @@ from pandas.util.testing import assert_frame_equal
 from parameterized import parameterized
 
 from pysrc.papers.config import PubtrendsConfig
-from pysrc.papers.ss_loader import SemanticScholarLoader
+from pysrc.papers.db.ss_loader import SemanticScholarLoader
+from pysrc.papers.db.ss_writer import SemanticScholarWriter
 from pysrc.papers.utils import SORT_MOST_RECENT, SORT_MOST_CITED, SORT_MOST_RELEVANT
-from pysrc.test.ss_database_articles import required_articles, extra_articles, required_citations, \
-    expected_cit_stats_df, expected_cit_df, extra_citations, expected_cocit_df, part_of_articles, expanded_articles
-from pysrc.test.ss_database_supplier import SSTestDatabaseSupplier
+from pysrc.test.db.ss_test_articles import required_articles, extra_articles, required_citations, \
+    expected_cit_stats_df, expected_cit_df, expected_cocit_df, part_of_articles, expanded_articles, extra_citations
 
 
 class TestSemanticScholarLoader(unittest.TestCase):
@@ -22,7 +22,7 @@ class TestSemanticScholarLoader(unittest.TestCase):
         # Text search is not tested, imitating search results
         cls.ids = list(map(lambda article: article.ssid, required_articles))
 
-        supplier = SSTestDatabaseSupplier()
+        supplier = SemanticScholarWriter()
         supplier.init_semantic_scholar_database()
         supplier.insert_semantic_scholar_publications(required_articles + extra_articles)
         supplier.insert_semantic_scholar_citations(required_citations + extra_citations)

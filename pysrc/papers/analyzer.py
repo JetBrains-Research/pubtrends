@@ -11,9 +11,9 @@ from networkx.readwrite import json_graph
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
-from pysrc.papers.pm_loader import PubmedLoader
+from pysrc.papers.db.pm_loader import PubmedLoader
+from pysrc.papers.db.ss_loader import SemanticScholarLoader
 from pysrc.papers.progress import Progress
-from pysrc.papers.ss_loader import SemanticScholarLoader
 from pysrc.papers.utils import split_df_list, get_topics_description, tokenize
 from pysrc.prediction.ss_arxiv_loader import SSArxivLoader
 from pysrc.prediction.ss_pubmed_loader import SSPubmedLoader

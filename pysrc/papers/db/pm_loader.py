@@ -6,7 +6,7 @@ from collections import Iterable
 import numpy as np
 import pandas as pd
 
-from pysrc.papers.loader import Loader
+from pysrc.papers.db.loader import Loader
 from pysrc.papers.utils import SORT_MOST_CITED, SORT_MOST_RECENT, SORT_MOST_RELEVANT
 from pysrc.papers.utils import preprocess_search_query, preprocess_doi, preprocess_pubmed_search_title
 

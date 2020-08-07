@@ -7,11 +7,11 @@ from neobolt.exceptions import ServiceUnavailable
 from pysrc.papers.analyzer import KeyPaperAnalyzer
 from pysrc.papers.analyzer_experimental import ExperimentalAnalyzer
 from pysrc.papers.config import PubtrendsConfig
+from pysrc.papers.db.pm_loader import PubmedLoader
+from pysrc.papers.db.ss_loader import SemanticScholarLoader
 from pysrc.papers.plotter import visualize_analysis
 from pysrc.papers.plotter_experimental import visualize_experimental_analysis
-from pysrc.papers.pm_loader import PubmedLoader
 from pysrc.papers.progress import Progress
-from pysrc.papers.ss_loader import SemanticScholarLoader
 from pysrc.papers.utils import SORT_MOST_CITED
 from pysrc.prediction.ss_arxiv_loader import SSArxivLoader
 
