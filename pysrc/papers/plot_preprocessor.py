@@ -144,12 +144,24 @@ class PlotPreprocessor:
         for node in df['id']:
             if not graph.has_node(node):
                 graph.add_node(node)
-        return PlotPreprocessor.dump_to_cytoscape(df, graph)
+        cytoscape_graph = PlotPreprocessor.dump_to_cytoscape(df, graph)
+        logger.debug('Set pagerank for citations graph')
+        pids = set(df['id'])
+        for node_cs in cytoscape_graph['nodes']:
+            nid = node_cs['data']['id']
+            if nid in pids:
+                node_cs['data']['pagerank'] = float(df.loc[df['id'] == nid]['pagerank'].values[0])
+        return cytoscape_graph
 
     @staticmethod
     def dump_structure_graph_cytoscape(df, structure_graph):
         logger.debug('Mapping structure graph to cytoscape JS')
-        return PlotPreprocessor.dump_to_cytoscape(df, structure_graph.copy())
+        cytoscape_graph = PlotPreprocessor.dump_to_cytoscape(df, structure_graph.copy())
+        logger.debug('Set centrality for structure graph')
+        centrality = nx.algorithms.centrality.degree_centrality(structure_graph)
+        for node_cs in cytoscape_graph['nodes']:
+            node_cs['data']['centrality'] = centrality[node_cs['data']['id']]
+        return cytoscape_graph
 
     @staticmethod
     def dump_to_cytoscape(df, graph):

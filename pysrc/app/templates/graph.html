@@ -76,19 +76,19 @@
                     let data = edge.data();
                     let bibcoupling = 0;
                     if ('bibcoupling' in data) {
-                        bibcoupling = data['bibcoupling'];
+                        bibcoupling = data.bibcoupling;
                     }
                     let cocitation = 0;
                     if ('cocitation' in data) {
-                        cocitation = data['cocitation'];
+                        cocitation = data.cocitation;
                     }
                     let citation = 0;
                     if ('citation' in data) {
-                        citation = data['citation'];
+                        citation = data.citation;
                     }
                     let text = 0;
                     if ('text' in data) {
-                        text = data['text'];
+                        text = data.text;
                     }
                     if (bibcoupling > 0 && bibcoupling >= Math.max(cocitation, citation, text)) {
                         return "#80ff00"
@@ -136,6 +136,21 @@
                 });
             }
 
+            function showPagerank(){
+                cy.nodes().forEach(function(ele){
+                    if ('title' in ele.data()){
+                        ele.classes('pagerank');
+                    }
+                });
+            }
+
+            function showCentrality(){
+                cy.nodes().forEach(function(ele){
+                    if ('title' in ele.data()){
+                        ele.classes('centrality');
+                    }
+                });
+            }
 
             $(document).ready(function () {
                 document.getElementById('cy').innerHTML = "";
@@ -155,17 +170,27 @@
                 let max_year = 0;
                 let min_cited = 100000;
                 let max_cited = 0;
+                let min_pagerank = 100000;
+                let max_pagerank = -100000;
+                let min_centrality = 100000;
+                let max_centrality = -100000;
                 elements['nodes'].forEach(function (ele) {
                     let data = ele['data'];
                     if ('year' in data) {
-                        const year = data['year'];
-                        min_year = Math.min(year, min_year);
-                        max_year = Math.max(year, max_year);
+                        min_year = Math.min(data.year, min_year);
+                        max_year = Math.max(data.year, max_year);
                     }
                     if ('cited' in data) {
-                        const cited = data['cited'];
-                        min_cited = Math.min(cited, min_cited);
-                        max_cited = Math.max(cited, max_cited);
+                        min_cited = Math.min(data.cited, min_cited);
+                        max_cited = Math.max(data.cited, max_cited);
+                    }
+                    if ('pagerank' in data) {
+                        min_pagerank = Math.min(data.pagerank, min_pagerank);
+                        max_pagerank = Math.max(data.pagerank, max_pagerank);
+                    }
+                    if ('centrality' in data) {
+                        min_centrality = Math.min(data.centrality, min_centrality);
+                        max_centrality = Math.max(data.centrality, max_centrality);
                     }
                 });
 
@@ -223,6 +248,44 @@
                                             dy = 1;
                                         }
                                         return rgbToHex(0, Math.floor(255 * dy), 0);
+                                    } else {
+                                        return "#FFFFFF"
+                                    }
+                                },
+                            }
+                        },
+                        {
+                            selector: "node.pagerank",
+                            style: {
+                                "background-color": function (node) {
+                                    let data = node.data();
+                                    if ('pagerank' in data) {
+                                        let dp;
+                                        if (max_pagerank > min_pagerank) {
+                                            dp = (data.pagerank - min_pagerank) / (max_pagerank - min_pagerank);
+                                        } else {
+                                            dp = 1;
+                                        }
+                                        return rgbToHex(0, Math.floor(255 * dp), 0);
+                                    } else {
+                                        return "#FFFFFF"
+                                    }
+                                },
+                            }
+                        },
+                        {
+                            selector: "node.centrality",
+                            style: {
+                                "background-color": function (node) {
+                                    let data = node.data();
+                                    if ('centrality' in data) {
+                                        let dc;
+                                        if (max_centrality > min_centrality) {
+                                            dc = (data.centrality - min_centrality) / (max_centrality - min_centrality);
+                                        } else {
+                                            dc = 1;
+                                        }
+                                        return rgbToHex(0, Math.floor(255 * dc), 0);
                                     } else {
                                         return "#FFFFFF"
                                     }
@@ -304,22 +367,22 @@
                                 // Graph similarity
                                 let bibcoupling = 0;
                                 if ('bibcoupling' in data) {
-                                    bibcoupling = data['bibcoupling'];
+                                    bibcoupling = data.bibcoupling;
                                 }
                                 let cocitation = 0;
                                 if ('cocitation' in data) {
-                                    cocitation = data['cocitation'];
+                                    cocitation = data.cocitation;
                                 }
                                 let citation = 0;
                                 if ('citation' in data) {
-                                    citation = data['citation'];
+                                    citation = data.citation;
                                 }
                                 let text = 0;
                                 if ('text' in data) {
-                                    text = data['text'];
+                                    text = data.text;
                                 }
 
-                                content.innerHTML = "<b>Similarity</b> " + Number(data['similarity']).toFixed(3) + "<br>" +
+                                content.innerHTML = "<b>Similarity</b> " + Number(data.similarity).toFixed(3) + "<br>" +
                                     "Computed based on citations-based methods<br> "+
                                     "and text similarity between papers.<br>" +
                                     "The bigger value the more similar papers are." + "<br>" +
@@ -329,20 +392,26 @@
                                     "<b>Text</b> " + Number(text).toFixed(2) + "<br>";
                             } else if('title' in data) {
                                 // Paper
-                                const topic = data['topic'];
+                                const topic = data.topic;
                                 let other = '';
                                 if (topic === {{ topic_other }}) {
                                     other = 'OTHER';
                                 }
-                                content.innerHTML = "<b>" + data['title'] + "</b><br>" +
-                                    "<b>Author(s)</b> " + data['authors'] + "<br>" +
-                                    "<b>Year</b> " + data['year'] + "<br>" +
-                                    "<b>Cited</b> " + data['cited'] + "<br>" +
+                                content.innerHTML = "<b>" + data.title + "</b><br>" +
+                                    "<b>Author(s)</b> " + data.authors + "<br>" +
+                                    "<b>Year</b> " + data.year + "<br>" +
+                                    "<b>Cited</b> " + data.cited + "<br>" +
                                     "<b>Topic</b> " + (topic + 1) + " " + other + "<br>" +
-                                    "<b>Tags</b> " + "<em>" + topics_description[topic] + "</em>";
+                                    "<b>Tags</b> " + "<em>" + topics_description[topic] + "</em><br>" +
+                                    {% if citation_graph == 'true' %}
+                                        "<b>Pagerank</b> " + data.pagerank;
+                                    {% else %}
+                                        "<b>Centrality</b> " + Number(data.centrality).toFixed(3);
+                                    {% endif %}
+                                ;
                             } else if ('topic' in data) {
                                 // Group
-                                const topic = data['topic'];
+                                const topic = data.topic;
                                 let other = '';
                                 if (topic === {{ topic_other }}) {
                                     other = 'OTHER';
@@ -409,7 +478,7 @@
                             event.stopPropagation();
                             // Decode jobid from URL
                             const jobid = new URL(window.location).searchParams.get('jobid');
-                            window.open('/paper?source={{source}}&id=' + data['id'] + '&jobid=' + jobid, '_blank');
+                            window.open('/paper?source={{source}}&id=' + data.id + '&jobid=' + jobid, '_blank');
                         }
                     });
                     // Highlight node and neighbours on hover
@@ -451,9 +520,9 @@
                         let data = ele.data();
                         if ('title' in data) {
                             if (filter === "" ||
-                                data['title'].toLowerCase().includes(filter) || data['abstract'].toLowerCase().includes(filter) ||
-                                data['authors'].toLowerCase().includes(filter) || data['year'].toString().includes(filter) ||
-                                filter.startsWith("topic") && data['topic'].toString() === filter.substr(5).trim()) {
+                                data.title.toLowerCase().includes(filter) || data.abstract.toLowerCase().includes(filter) ||
+                                data.authors.toLowerCase().includes(filter) || data.year.toString().includes(filter) ||
+                                filter.startsWith("topic") && data.topic.toString() === filter.substr(5).trim()) {
                                 ele.style("display", "element");
                             } else {
                                 ele.style("display", "none");
@@ -506,6 +575,15 @@
                                 <a class="dropdown-item" onclick="showTopics();" href="javascript:void(0);">Topic</a>
                                 <a class="dropdown-item" onclick="showCited();" href="javascript:void(0);">Cited</a>
                                 <a class="dropdown-item" onclick="showYear();" href="javascript:void(0);">Year</a>
+                                {% if citation_graph == 'true' %}
+                                    <a class="dropdown-item" onclick="showPagerank();" href="javascript:void(0);">
+                                        Pagerank
+                                    </a>
+                                {% else %}
+                                    <a class="dropdown-item" onclick="showCentrality();" href="javascript:void(0);">
+                                        Centrality
+                                    </a>
+                                {% endif %}
                             </div>
                         </div>
                         <a id="reset" class="btn btn-secondary col-auto ml-2" content="Reset"
@@ -531,6 +609,7 @@
     <script type="text/javascript">
         function startIntro(){
             var intro = introJs();
+            // Boolean value if we are visualizing citations graph (true) of structure graph (false)
             const citation_graph = {{ citation_graph }};
             let description;
             if (citation_graph){
