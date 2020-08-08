@@ -18,7 +18,7 @@ from matplotlib import pyplot as plt
 from more_itertools import unique_everseen
 from wordcloud import WordCloud
 
-from pysrc.papers.plot_preprocessor import PlotPreprocessor
+from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.utils import LOCAL_BASE_URL, get_topic_word_cloud_data, \
     get_frequent_tokens, cut_authors_list, ZOOM_OUT, ZOOM_IN, zoom_name, trim, rgb2hex
 

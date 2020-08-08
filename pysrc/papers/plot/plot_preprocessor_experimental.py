@@ -3,7 +3,7 @@ import logging
 import pandas as pd
 from bokeh.models import ColumnDataSource, TableColumn
 
-from pysrc.papers.plot_preprocessor import PlotPreprocessor
+from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 
 logger = logging.getLogger(__name__)
 

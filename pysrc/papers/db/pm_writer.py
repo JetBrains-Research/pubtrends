@@ -1,5 +1,5 @@
 from pysrc.papers.config import PubtrendsConfig
-from pysrc.papers.connector import Connector
+from pysrc.papers.db.connector import Connector
 
 
 class PubmedWriter(Connector):

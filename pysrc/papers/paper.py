@@ -4,7 +4,7 @@ from pysrc.papers.analyzer import KeyPaperAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.pm_loader import PubmedLoader
 from pysrc.papers.db.ss_loader import SemanticScholarLoader
-from pysrc.papers.plotter import Plotter
+from pysrc.papers.plot.plotter import Plotter
 from pysrc.papers.utils import (
     trim, preprocess_text,
     PUBMED_ARTICLE_BASE_URL, SEMANTIC_SCHOLAR_BASE_URL)

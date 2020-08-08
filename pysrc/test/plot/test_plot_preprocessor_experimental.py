@@ -1,7 +1,7 @@
 import unittest
 
-from pysrc.papers.plot_preprocessor_experimental import ExperimentalPlotPreprocessor
-from pysrc.papers.plotter_experimental import ExperimentalPlotter
+from pysrc.papers.plot.plot_preprocessor_experimental import ExperimentalPlotPreprocessor
+from pysrc.papers.plot.plotter_experimental import ExperimentalPlotter
 from pysrc.test.mock_analyzer import MockAnalyzer
 
 

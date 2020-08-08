@@ -1,5 +1,4 @@
 import html
-import html
 import json
 import logging
 import os
@@ -21,8 +20,8 @@ from pysrc.celery.tasks import celery, find_paper_async, analyze_search_terms, a
 from pysrc.celery.tasks_cache import get_or_cancel_task
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.paper import prepare_paper_data, prepare_papers_data, get_loader_and_url_prefix
-from pysrc.papers.plot_preprocessor import PlotPreprocessor
-from pysrc.papers.plotter import Plotter
+from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
+from pysrc.papers.plot.plotter import Plotter
 from pysrc.papers.stats import prepare_stats_data
 from pysrc.papers.utils import zoom_name, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE, trim, ZOOM_OUT_TITLE
 from pysrc.papers.version import VERSION

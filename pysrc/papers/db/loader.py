@@ -4,7 +4,7 @@ from abc import abstractmethod, ABCMeta
 
 import numpy as np
 
-from pysrc.papers.connector import Connector
+from pysrc.papers.db.connector import Connector
 from pysrc.papers.utils import extract_authors
 
 

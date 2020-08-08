@@ -5,8 +5,8 @@ from bokeh.layouts import column
 from bokeh.models.widgets.tables import DataTable
 from holoviews import dim
 
-from pysrc.papers.plot_preprocessor_experimental import ExperimentalPlotPreprocessor
-from pysrc.papers.plotter import Plotter, PLOT_WIDTH, TALL_PLOT_HEIGHT, visualize_analysis
+from pysrc.papers.plot.plot_preprocessor_experimental import ExperimentalPlotPreprocessor
+from pysrc.papers.plot.plotter import Plotter, PLOT_WIDTH, TALL_PLOT_HEIGHT, visualize_analysis
 
 
 def visualize_experimental_analysis(analyzer):

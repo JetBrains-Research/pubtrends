@@ -3,8 +3,8 @@ import unittest
 import numpy as np
 from bokeh.models import ColumnDataSource
 
-from pysrc.papers.plot_preprocessor import PlotPreprocessor
-from pysrc.papers.plotter import Plotter
+from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
+from pysrc.papers.plot.plotter import Plotter
 from pysrc.test.mock_analyzer import MockAnalyzer
 
 
