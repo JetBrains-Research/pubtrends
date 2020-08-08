@@ -152,7 +152,7 @@ class KeyPaperAnalyzer:
             self.structure_graph = nx.Graph()
         else:
             # Perform topic analysis and get topic descriptions
-            self.partition, self.comp_other, self.components, self.comp_sizes = \
+            self.topics_dendrogram, self.partition, self.comp_other, self.components, self.comp_sizes = \
                 self.topic_analysis(self.similarity_graph, current=10, task=task)
 
             self.progress.info('Computing topics descriptions by top cited papers', current=11, task=task)
@@ -363,7 +363,25 @@ class KeyPaperAnalyzer:
 
         for k, v in sorted_comp_sizes.items():
             logger.debug(f'Component {k}: {v} ({int(100 * v / len(partition))}%)')
-        return sorted_partition, comp_other, components, sorted_comp_sizes
+
+        logger.debug('Update components dendrogram according to merged topics')
+        if len(dendrogram) >= 2:
+            rename_map = {}
+            for pid, v in partition_louvain.items():  # Pid -> smallest community
+                if v not in rename_map:
+                    rename_map[v] = sorted_partition[pid]
+            comp_level = {rename_map[k]: v for k, v in dendrogram[1].items() if k in rename_map}
+
+            logger.debug('Add artificial path for OTHER component')
+            if comp_other is not None:
+                comp_level[comp_other] = -1
+                for d in dendrogram[2:]:
+                    d[-1] = -1
+            comp_dendrogram = [comp_level] + dendrogram[2:]
+        else:
+            comp_dendrogram = []
+
+        return comp_dendrogram, sorted_partition, comp_other, components, sorted_comp_sizes
 
     def build_structure_graph(self, df, similarity_graph, current=0, task=None):
         """
@@ -736,6 +754,7 @@ class KeyPaperAnalyzer:
             'citations_graph': json_graph.node_link_data(self.citations_graph),
             'similarity_graph': json_graph.node_link_data(self.similarity_graph),
             'structure_graph': json_graph.node_link_data(self.structure_graph),
+            'topics_dendrogram': self.topics_dendrogram,
             'top_cited_papers': list(self.top_cited_papers),
             'max_gain_papers': list(self.max_gain_papers),
             'max_rel_gain_papers': list(self.max_rel_gain_papers),
@@ -770,6 +789,7 @@ class KeyPaperAnalyzer:
         citations_graph = json_graph.node_link_graph(fields['citations_graph'])
         similarity_graph = json_graph.node_link_graph(fields['similarity_graph'])
         structure_graph = json_graph.node_link_graph(fields['structure_graph'])
+        topics_dendrogram = fields['topics_dendrogram']
 
         top_cited_papers = set(fields['top_cited_papers'])
         max_gain_papers = set(fields['max_gain_papers'])
@@ -782,19 +802,23 @@ class KeyPaperAnalyzer:
             'citations_graph': citations_graph,
             'similarity_graph': similarity_graph,
             'structure_graph': structure_graph,
+            'topics_dendrogram': topics_dendrogram,
             'top_cited_papers': top_cited_papers,
             'max_gain_papers': max_gain_papers,
             'max_rel_gain_papers': max_rel_gain_papers
         }
 
     def init(self, fields):
+        logger.debug(f'Loading\n{fields}')
         loaded = KeyPaperAnalyzer.load(fields)
+        logger.debug(f'Loaded\n{loaded}')
         self.df = loaded['df']
         self.comp_other = loaded['comp_other']
         self.df_kwd = loaded['df_kwd']
         self.citations_graph = loaded['citations_graph']
         self.similarity_graph = loaded['similarity_graph']
         self.structure_graph = loaded['structure_graph']
+        self.topics_dendrogram = loaded['topics_dendrogram']
         self.top_cited_papers = loaded['top_cited_papers']
         self.max_gain_papers = loaded['max_gain_papers']
         self.max_rel_gain_papers = loaded['max_rel_gain_papers']

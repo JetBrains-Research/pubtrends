@@ -15,6 +15,7 @@ from bokeh.plotting import figure
 from bokeh.transform import factor_cmap
 from holoviews import dim
 from matplotlib import pyplot as plt
+from more_itertools import unique_everseen
 from wordcloud import WordCloud
 
 from pysrc.papers.plot_preprocessor import PlotPreprocessor
@@ -48,6 +49,7 @@ def visualize_analysis(analyzer):
     # Order is important here!
     paper_statistics, word_cloud, zoom_out_callback = plotter.papers_statistics_and_word_cloud_and_callback()
     if analyzer.similarity_graph.nodes():
+        topics_hierarchy = plotter.topics_hierarchy()
         return {
             'topics_analyzed': True,
             'n_papers': analyzer.n_papers,
@@ -70,6 +72,7 @@ def visualize_analysis(analyzer):
             'papers_zoom_out_callback': zoom_out_callback,
             'author_statistics': plotter.author_statistics(),
             'journal_statistics': plotter.journal_statistics(),
+            'topics_hierarchy': [components(topics_hierarchy)] if topics_hierarchy is not None else []
         }
     else:
         return {
@@ -545,6 +548,70 @@ class Plotter:
 
     def dump_citations_graph_cytoscape(self):
         return PlotPreprocessor.dump_citations_graph_cytoscape(self.analyzer.df, self.analyzer.citations_graph)
+
+    def topics_hierarchy(self):
+        """ Plot topics hierarchy ignoring OTHER topic"""
+        dendrogram = self.analyzer.topics_dendrogram
+        if len(dendrogram) == 0:
+            return None
+        w = len(set(dendrogram[0].keys())) * 10 + 10
+        dy = 3
+        hm = figure(x_range=[-10, w + 10],
+                    y_range=[-3, dy * (len(dendrogram) + 1)],
+                    width=PLOT_WIDTH, height=100 * (len(dendrogram) + 1), tools=[])
+
+        paths = []
+        for i, level in enumerate(dendrogram):
+            if i == 0:
+                for k in level.keys():
+                    paths.append([k])
+            # Edges
+            for k, v in level.items():
+                for p in paths:
+                    if p[i] == k:
+                        p.append(v)
+        # Add root as last item
+        for p in paths:
+            p.append(0)
+
+        # Radix sort or paths to ensure no overlaps
+        for i in range(0, len(dendrogram) + 1):
+            paths.sort(key=lambda p: p[i])
+
+        # Draw edges
+        for i in range(len(dendrogram) + 2):
+            if i == 0:  # Leaves
+                order = dict([(v, j) for j, v in enumerate(unique_everseen([p[i] for p in paths]))])
+                dx = int(w / (len(order) + 1))
+            else:  # Edges
+                new_order = dict([(v, j) for j, v in enumerate(unique_everseen([p[i] for p in paths]))])
+                new_dx = int(w / (len(new_order) + 1))
+                for p in paths:
+                    hm.line([(order[p[i - 1]] + 1) * dx, (new_order[p[i]] + 1) * new_dx],
+                            [(i - 1) * dy, i * dy], line_color='black')
+                order = new_order
+                dx = new_dx
+
+        # Draw leaves
+        topics_colors = Plotter.topics_palette_rgb(self.analyzer.df)
+        order = dict([(v, j) for j, v in enumerate(unique_everseen([p[0] for p in paths]))])
+        dx = int(w / (len(order) + 1))
+        for v, j in order.items():
+            hm.circle(x=(j + 1) * dx, y=0, size=15, line_color="black", fill_color=topics_colors[v])
+        hm.text(x=[(j + 1) * dx for _, j in order.items()],
+                y=[-1] * len(order),
+                text=[str(v + 1) for v, _ in order.items()],
+                text_baseline='middle', text_font_size='11pt')
+
+        hm.axis.major_tick_line_color = None
+        hm.axis.minor_tick_line_color = None
+        hm.axis.major_label_text_color = None
+        hm.axis.major_label_text_font_size = '0pt'
+        hm.axis.axis_line_color = None
+        hm.grid.grid_line_color = None
+        hm.outline_line_color = None
+
+        return hm
 
     @staticmethod
     def word_cloud_prepare(wc):

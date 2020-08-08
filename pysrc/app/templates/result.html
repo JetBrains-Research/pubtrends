@@ -345,21 +345,18 @@
                             Similarity between papers is computed based on <em>bibliographic coupling</em>,
                             <em>co-citations</em>, <em>direct citations</em>,<br>
                             and <em>potential</em> citations based on text similarity.<br>
-                            Structure within a research field can be visualized as a graph.<br>
-                        </p>
-                            <button id="show_structure_graph" type="button" class="col-auto btn btn-light"
-                                    onclick="(function(){ graph_callback('structure') })();">
-                                <img src="{{ url_for('static', filename='globe.svg') }}" alt="+"/>&nbsp;
-                                Show structure graph
-                            </button>
-                        </p>
+                            Clustering by similarity information is used for topics extraction.
                         <hr>
                         <p>
-                            Similarity information is used for topics extraction.<br>
-                            Bars represent number of papers within each topic.<br>
-                            Click on bars to get detailed information about keywords and publications for each topic.
-                            <br>
-                            <em>Note: small topics are merged to "Other" to limit total number.</em>
+                            Similarity between topics is an average similarity between the papers.
+                        </p>
+                        {% for script, div in components_similarity %}
+                        {{ script|safe }}
+                        {{ div|safe }}
+                        {% endfor %}
+                        <hr>
+                        <p>
+                            Topic sizes. <em>Note: small topics are merged to "Other".</em>
                         </p>
                         <div>
                             {% for script, div in component_ratio %}
@@ -369,12 +366,22 @@
                         </div>
                         <hr>
                         <p>
-                            Similarity between topics is an average similarity between the papers.
+                            Topics are organized hierarchically.
                         </p>
-                        {% for script, div in components_similarity %}
+                        {% for script, div in topics_hierarchy %}
                         {{ script|safe }}
                         {{ div|safe }}
                         {% endfor %}
+                        <hr>
+                        Structure within a research field can be visualized as a graph.<br>
+                        </p>
+                        <button id="show_structure_graph" type="button" class="col-auto btn btn-light"
+                                onclick="(function(){ graph_callback('structure') })();">
+                            <img src="{{ url_for('static', filename='globe.svg') }}" alt="+"/>&nbsp;
+                            Show structure graph
+                        </button>
+                        </p>
+
                     </div>
                 </div>
 
