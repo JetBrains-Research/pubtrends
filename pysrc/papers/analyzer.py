@@ -157,7 +157,7 @@ class KeyPaperAnalyzer:
 
             self.progress.info('Computing topics descriptions by top cited papers', current=11, task=task)
             most_cited_per_comp = self.get_most_cited_papers_for_comps(self.df, self.partition)
-            self.df = self.merge_col(self.df, self.partition, col='comp')
+            self.df = self.merge_col(self.df, self.partition, col='comp', na=-1)
 
             logger.debug('Prepare information for word cloud')
             tfidf_per_comp = get_topics_description(self.df, most_cited_per_comp, query, self.TFIDF_WORDS)
@@ -171,7 +171,7 @@ class KeyPaperAnalyzer:
 
         # Perform PageRank analysis
         pr = self.pagerank(self.citations_graph, current=13, task=task)
-        self.df = self.merge_col(self.df, pr, col='pagerank')
+        self.df = self.merge_col(self.df, pr, col='pagerank', na=0.0)
 
         # Find interesting papers
         self.top_cited_papers, self.top_cited_df = self.find_top_cited_papers(self.df, current=14, task=task)
@@ -597,14 +597,11 @@ class KeyPaperAnalyzer:
         return tfidf
 
     @staticmethod
-    def merge_col(df, data, col):
-        # Added 'comp' column containing the ID of component
-        df_comp = pd.Series(data).reset_index().rename(columns={'index': 'id', 0: col})
-        df_comp['id'] = df_comp['id'].astype(str)
-        df_merged = pd.merge(df, df_comp,
-                             on='id', how='outer')
-        df_merged[col] = df_merged[col].fillna(-1).apply(int)
-
+    def merge_col(df, data, col, na):
+        t = pd.Series(data).reset_index().rename(columns={'index': 'id', 0: col})
+        t['id'] = t['id'].astype(str)
+        df_merged = pd.merge(df, t, on='id', how='outer')
+        df_merged[col] = df_merged[col].fillna(na)
         return df_merged
 
     def find_top_cited_papers(self, df, n_papers=TOP_CITED_PAPERS, threshold=TOP_CITED_PAPERS_FRACTION,

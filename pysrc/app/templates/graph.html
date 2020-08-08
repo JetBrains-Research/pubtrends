@@ -404,7 +404,7 @@
                                     "<b>Topic</b> " + (topic + 1) + " " + other + "<br>" +
                                     "<b>Tags</b> " + "<em>" + topics_description[topic] + "</em><br>" +
                                     {% if citation_graph == 'true' %}
-                                        "<b>Pagerank</b> " + data.pagerank;
+                                        "<b>Pagerank</b> " + Number(data.pagerank).toFixed(3);
                                     {% else %}
                                         "<b>Centrality</b> " + Number(data.centrality).toFixed(3);
                                     {% endif %}
