@@ -598,7 +598,7 @@ class Plotter:
         dx = int(w / (len(order) + 1))
         for v, j in order.items():
             hm.circle(x=(j + 1) * dx, y=0, size=15, line_color="black", fill_color=topics_colors[v])
-        hm.text(x=[(j + 1) * dx for _, j in order.items()],
+        hm.text(x=[(j + 1) * dx - 1 for _, j in order.items()],
                 y=[-1] * len(order),
                 text=[str(v + 1) for v, _ in order.items()],
                 text_baseline='middle', text_font_size='11pt')
