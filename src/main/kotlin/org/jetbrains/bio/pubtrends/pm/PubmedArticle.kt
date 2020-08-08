@@ -1,6 +1,5 @@
 package org.jetbrains.bio.pubtrends.pm
 
-import com.google.gson.GsonBuilder
 import org.joda.time.DateTime
 
 data class Author(
@@ -16,10 +15,10 @@ data class DatabankEntry(
 )
 
 data class ArticleAuxInfo(
-    val authors: List<Author> = listOf(),
-    val databanks: List<DatabankEntry> = listOf(),
-    val journal: Journal = Journal(),
-    val language: String = ""
+        val authors: List<Author> = listOf(),
+        val databanks: List<DatabankEntry> = listOf(),
+        val journal: Journal = Journal(),
+        val language: String = ""
 )
 
 enum class PublicationType {
@@ -31,13 +30,13 @@ enum class PublicationType {
 }
 
 data class PubmedArticle(
-    val pmid: Int = 0,
-    val date: DateTime? = null,
-    val title: String = "",
-    val abstractText: String = "",
-    val keywordList: List<String> = listOf(),
-    val citationList: List<Int> = listOf(),
-    val meshHeadingList: List<String> = listOf(),
-    val type: PublicationType = PublicationType.Article,
-    val doi: String = "",
-    val auxInfo: ArticleAuxInfo = ArticleAuxInfo())
+        val pmid: Int = 0,
+        val date: DateTime? = null,
+        val title: String = "",
+        val abstractText: String = "",
+        val keywordList: List<String> = listOf(),
+        val citationList: List<Int> = listOf(),
+        val meshHeadingList: List<String> = listOf(),
+        val type: PublicationType = PublicationType.Article,
+        val doi: String = "",
+        val auxInfo: ArticleAuxInfo = ArticleAuxInfo())

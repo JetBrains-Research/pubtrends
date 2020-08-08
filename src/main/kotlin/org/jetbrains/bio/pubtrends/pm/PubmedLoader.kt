@@ -3,8 +3,7 @@ package org.jetbrains.bio.pubtrends.pm
 import joptsimple.OptionParser
 import org.apache.logging.log4j.LogManager
 import org.jetbrains.bio.pubtrends.Config
-import java.io.BufferedReader
-import java.io.FileReader
+import org.jetbrains.bio.pubtrends.db.PMNeo4JDatabaseWriter
 import java.nio.file.Files
 import kotlin.system.exitProcess
 
@@ -36,7 +35,7 @@ object PubmedLoader {
             logger.info("Config path: $configPath")
 
             logger.info("Init Neo4j database connection")
-            val dbHandler = PMNeo4jDatabaseHandler(
+            val dbHandler = PMNeo4JDatabaseWriter(
                     config["neo4jhost"].toString(),
                     config["neo4jport"].toString().toInt(),
                     config["neo4jusername"].toString(),

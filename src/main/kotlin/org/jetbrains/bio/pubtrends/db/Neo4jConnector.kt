@@ -1,9 +1,8 @@
-package org.jetbrains.bio.pubtrends
+package org.jetbrains.bio.pubtrends.db
 
 import org.neo4j.driver.v1.AuthTokens
 import org.neo4j.driver.v1.GraphDatabase
 import java.io.Closeable
-import java.lang.IllegalStateException
 
 abstract class Neo4jConnector(
         host: String,

@@ -1,11 +1,13 @@
 package org.jetbrains.bio.pubtrends.pm
 
 import org.apache.logging.log4j.LogManager
-import org.jetbrains.bio.pubtrends.AbstractDBHandler
+import org.jetbrains.bio.pubtrends.db.AbstractDBWriter
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
 import org.joda.time.IllegalFieldValueException
-import java.io.*
+import java.io.BufferedInputStream
+import java.io.File
+import java.io.FileInputStream
 import java.util.zip.GZIPInputStream
 import javax.xml.namespace.QName
 import javax.xml.stream.XMLEventReader
@@ -14,7 +16,7 @@ import javax.xml.stream.XMLStreamException
 
 
 class PubmedXMLParser(
-        private val dbHandler: AbstractDBHandler<PubmedArticle>,
+        private val dbWriter: AbstractDBWriter<PubmedArticle>,
         private val batchSize: Int = 0
 ) {
     companion object {
@@ -488,7 +490,7 @@ class PubmedXMLParser(
         if (deletedArticlePMIDList.size > 0) {
             logger.info("Deleting ${deletedArticlePMIDList.size} articles")
 
-            dbHandler.delete(deletedArticlePMIDList)
+            dbWriter.delete(deletedArticlePMIDList)
         }
 
         logger.info(
@@ -500,7 +502,7 @@ class PubmedXMLParser(
     private fun storeArticles() {
         logger.info("Storing articles ${articlesStored + 1}-${articlesStored + articleList.size}...")
 
-        dbHandler.store(articleList)
+        dbWriter.store(articleList)
         articlesStored += articleList.size
     }
 }

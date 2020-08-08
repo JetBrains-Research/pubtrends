@@ -1,19 +1,20 @@
-package org.jetbrains.bio.pubtrends.pm
+package org.jetbrains.bio.pubtrends.db
 
 import com.google.gson.GsonBuilder
-import org.jetbrains.bio.pubtrends.AbstractDBHandler
-import org.jetbrains.bio.pubtrends.Neo4jConnector
+import org.jetbrains.bio.pubtrends.ss.SemanticScholarArticle
+import org.jetbrains.bio.pubtrends.ss.crc32id
+import org.joda.time.DateTime
 
 /**
- * See pm_database_supplier.py and pm_loader.py for (up)loading code.
+* See ss_database_supplier.py and ss_loader.py for (up)loading code.
 * TODO[shpynov] Consider refactoring.
  */
-open class PMNeo4jDatabaseHandler(
+open class SSNeo4JDatabaseWriter(
         host: String,
         port: Int,
         user: String,
         password: String
-) : Neo4jConnector(host, port, user, password), AbstractDBHandler<PubmedArticle> {
+) : Neo4jConnector(host, port, user, password), AbstractDBWriter<SemanticScholarArticle> {
 
     companion object {
         const val DELETE_BATCH_SIZE = 10000
@@ -22,6 +23,7 @@ open class PMNeo4jDatabaseHandler(
     init {
         processIndexes(true)
     }
+
 
     /**
      * This function can be used to wipe contents of the database.
@@ -32,11 +34,11 @@ open class PMNeo4jDatabaseHandler(
         driver.session().use {
             // Clear references
             it.run("""
-CALL apoc.periodic.iterate("MATCH ()-[r:PMReferenced]->() RETURN r", 
+CALL apoc.periodic.iterate("MATCH ()-[r:SSReferenced]->() RETURN r", 
     "DETACH DELETE r", {batchSize: $DELETE_BATCH_SIZE});""".trimIndent())
             // Clear publications
             it.run("""
-CALL apoc.periodic.iterate("MATCH (p:PMPublication) RETURN p", 
+CALL apoc.periodic.iterate("MATCH (p:SSPublication) RETURN p", 
     "DETACH DELETE p", {batchSize: $DELETE_BATCH_SIZE});""".trimIndent())
         }
 
@@ -49,28 +51,28 @@ CALL apoc.periodic.iterate("MATCH (p:PMPublication) RETURN p",
     private fun processIndexes(createOrDelete: Boolean) {
         driver.session().use { session ->
 
-            // indexes by pmid and doi
+            // indexes by crc32id and doi
             val indexes = session.run("CALL db.indexes()").list()
-            listOf("pmid", "doi").forEach {field ->
+            listOf("crc32id", "doi").forEach {field ->
                 if (indexes.any { it["description"].toString().trim('"') ==
-                                "INDEX ON :PMPublication($field)" }) {
+                                "INDEX ON :SSPublication($field)" }) {
                     if (!createOrDelete) {
-                        session.run("DROP INDEX ON :PMPublication($field)")
+                        session.run("DROP INDEX ON :SSPublication($field)")
                     }
                 } else if (createOrDelete) {
-                    session.run("CREATE INDEX ON :PMPublication($field)")
+                    session.run("CREATE INDEX ON :SSPublication($field)")
                 }
             }
 
             // full text search index
             if (indexes.any { it["description"].toString().trim('"') ==
-                            "INDEX ON NODE:PMPublication(title, abstract)" }) {
+                            "INDEX ON NODE:SSPublication(title, abstract)" }) {
                 if (!createOrDelete) {
-                    session.run("CALL db.index.fulltext.drop(\"pmTitlesAndAbstracts\")")
+                    session.run("""CALL db.index.fulltext.drop("ssTitlesAndAbstracts")""")
                 }
             } else if (createOrDelete) {
                 session.run("""
-CALL db.index.fulltext.createNodeIndex("${"pmTitlesAndAbstracts"}", ["PMPublication"], ["title", "abstract"])
+CALL db.index.fulltext.createNodeIndex("ssTitlesAndAbstracts", ["SSPublication"], ["title", "abstract"])
 """.trimIndent())
 
             }
@@ -78,76 +80,66 @@ CALL db.index.fulltext.createNodeIndex("${"pmTitlesAndAbstracts"}", ["PMPublicat
     }
 
 
-    override fun store(articles: List<PubmedArticle>) {
+    override fun store(articles: List<SemanticScholarArticle>) {
         // Prepare queries parameters
         val articleParameters = mapOf("articles" to articles.map {
             mapOf(
-                    "pmid" to it.pmid.toString(),
+                    "ssid" to it.ssid,
+                    "crc32id" to crc32id(it.ssid).toString(), // Lookup index
+                    "pmid" to it.pmid?.toString(),
                     "title" to it.title.replace('\n', ' '),
-                    "abstract" to it.abstractText.replace('\n', ' '),
-                    "date" to (it.date?.toString() ?: ""),
-                    "type" to it.type.name,
+                    "abstract" to it.abstract?.replace('\n', ' '),
+                    "date" to DateTime(it.year ?:1970, 1, 1, 12, 0).toString(),
                     "doi" to it.doi,
-                    "aux" to GsonBuilder().create().toJson(it.auxInfo)
+                    "aux" to GsonBuilder().create().toJson(it.aux)
             )
         })
         val citationParameters = mapOf("citations" to articles.flatMap {
             it.citationList.toSet().map {
-                cit -> mapOf("pmid_out" to it.pmid, "pmid_in" to cit) }
+                cit -> mapOf(
+                    "ssid_out" to it.ssid,
+                    "crc32id_out" to crc32id(it.ssid).toString(),
+                    "ssid_in" to cit,
+                    "crc32id_in" to crc32id(cit).toString())
+            }
         })
 
         driver.session().use {
             it.run("""
 UNWIND {articles} AS data 
-MERGE (n:PMPublication { pmid: toInteger(data.pmid) }) 
+MERGE (n:SSPublication { crc32id: toInteger(data.crc32id), ssid: data.ssid }) 
 ON CREATE SET 
+    n.pmid = data.pmid,
     n.title = data.title,
     n.abstract = data.abstract,
     n.date = datetime(data.date),
-    n.type = data.type,
     n.doi = data.doi,
     n.aux = data.aux
 ON MATCH SET 
+    n.pmid = data.pmid,
     n.title = data.title,
     n.abstract = data.abstract,
     n.date = datetime(data.date),
-    n.type = data.type,
     n.doi = data.doi,
     n.aux = data.aux
-WITH n, data 
-CALL apoc.create.addLabels(id(n), [data.type]) YIELD node 
-RETURN node;
+RETURN n;
 """.trimIndent(),
                     articleParameters)
 
-            // Add citation relationships AND create new Publication nodes with pmid only if missing
+            // Add citation relationships AND create new Publication nodes with ssid only if missing
             it.run("""
 UNWIND {citations} AS cit 
-MATCH (n_out:PMPublication { pmid: toInteger(cit.pmid_out) })
-MERGE (n_in:PMPublication { pmid: toInteger(cit.pmid_in) })
-MERGE (n_out)-[:PMReferenced]->(n_in);
+MATCH (n_out:SSPublication { crc32id: toInteger(cit.crc32id_out), ssid: cit.ssid_out })
+MERGE (n_in:SSPublication { crc32id: toInteger(cit.crc32id_in), ssid: cit.ssid_in })
+MERGE (n_out)-[:SSReferenced]->(n_in);
 """.trimIndent(),
                     citationParameters)
 
         }
     }
 
-    /**
-     * This function is used to delete a list of publications with all their relationships.
-     *
-     * @param ids: list of PMIDs to be deleted
-     */
     override fun delete(ids: List<Int>) {
-        val deleteParameters = mapOf("pmids" to ids)
-        driver.session().use {
-            it.run("UNWIND {pmids} AS pmid\n" +
-                    "MATCH (n:PMPublication {pmid: toInteger(pmid)})\n" +
-                    "DETACH DELETE n;", deleteParameters)
-        }
-    }
-
-    override fun close() {
-        driver.close()
+        throw IllegalStateException("delete is not supported")
     }
 
 }
