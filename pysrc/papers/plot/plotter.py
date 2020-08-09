@@ -58,7 +58,7 @@ def visualize_analysis(analyzer):
             'comp_other': analyzer.comp_other,
             'components_similarity': [components(plotter.heatmap_topics_similarity())],
             'component_size_summary': [components(plotter.component_size_summary())],
-            'component_years_summary_boxplots': [components(plotter.component_years_summary_boxplots())],
+            'component_years_summary': [components(plotter.component_years_summary())],
             'topics_info_and_word_cloud_and_callback':
                 [(components(p), Plotter.word_cloud_prepare(wc), zoom_in_callback) for
                  (p, wc, zoom_in_callback) in plotter.topics_info_and_word_cloud_and_callback()],
@@ -254,8 +254,8 @@ class Plotter:
 
         return p
 
-    def component_years_summary_boxplots(self):
-        logger.debug('Summary component year detailed info visualization on boxplot')
+    def component_years_summary(self):
+        logger.debug('Summary component year detailed info visualization')
 
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
         components, data = PlotPreprocessor.component_size_summary_data(
@@ -270,10 +270,15 @@ class Plotter:
                 expanded_vs.extend([y for _ in range(vs[i])])
             labels.extend([c for _ in range(len(expanded_vs))])
             values.extend(expanded_vs)
-        boxwhisker = hv.BoxWhisker((labels, values), 'Topic', 'Publications year')
-        boxwhisker.opts(width=PLOT_WIDTH, height=SHORT_PLOT_HEIGHT,
-                        box_fill_color=dim('Topic').str(), cmap=Plotter.factors_colormap(len(components)))
-        return hv.render(boxwhisker, backend='bokeh')
+
+        # TODO[shpynov] Fix last x grid line later
+        grid_style = {'grid_line_color': 'lightgray', 'grid_line_width': 1}
+        violin = hv.Violin((labels, values), 'Topic', 'Publications year')
+        violin.opts(width=PLOT_WIDTH, height=SHORT_PLOT_HEIGHT,
+                    gridstyle=grid_style, show_grid=True,
+                    violin_fill_color=dim('Topic').str(),
+                    cmap=Plotter.factors_colormap(len(components)))
+        return hv.render(violin, backend='bokeh')
 
     def topics_info_and_word_cloud_and_callback(self):
         logger.debug('Per component detailed info visualization')

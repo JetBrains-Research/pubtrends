@@ -402,9 +402,9 @@
                             {% endfor %}
                         </div>
                         <hr>
-                        <p>Each boxplot demonstrates summary publication year for given topic.</p>
+                        <p>Summary publication year for topics.</p>
                         <div>
-                            {% for script, div in component_years_summary_boxplots %}
+                            {% for script, div in component_years_summary %}
                             {{ script|safe }}
                             {{ div|safe }}
                             {% endfor %}
