@@ -605,13 +605,14 @@
                                         Centrality
                                     </a>
                                 {% endif %}
+                                <hr>
                                 <div class="dropdown-item">
                                     <input type="checkbox" id="connectTopics" checked="true">
                                     <label for="connectTopics">Connect topics</label>
                                 </div>
-                                <a id="reset" class="dropdown-item btn btn-secondary col-auto ml-2" content="Reset"
+                                <a id="reset" class="dropdown-item" content="Reset"
                                    href="javascript:void(0);" onclick="reset();">
-                                    <img class="nav-icon" src="{{ url_for('static', filename='rotate-cw.svg') }}"/>
+                                    <img class="nav-icon" width="16px" src="{{ url_for('static', filename='rotate-cw.svg') }}"/>
                                     &nbsp;Reset
                                 </a>
                             </div>
