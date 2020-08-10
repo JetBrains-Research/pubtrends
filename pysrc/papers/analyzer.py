@@ -37,9 +37,9 @@ class KeyPaperAnalyzer:
     SIMILARITY_TEXT_CITATION_N = 20  # Max number of potential text citations for paper
 
     # Reduce number of edges in smallest communities, i.e. topics
-    STRUCTURE_LOW_LEVEL_SPARSITY = 0.3
+    STRUCTURE_LOW_LEVEL_SPARSITY = 0.5
     # Reduce number of edges between different topics to min number of inner edges * scale factor
-    STRUCTURE_BETWEEN_TOPICS_SPARSITY = 0.05
+    STRUCTURE_BETWEEN_TOPICS_SPARSITY = 0.1
 
     TOPIC_MIN_SIZE = 10
     TOPICS_MAX_NUMBER = 100
