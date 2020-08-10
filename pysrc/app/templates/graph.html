@@ -395,20 +395,21 @@
                                 const topic = data.topic;
                                 let other = '';
                                 if (topic === {{ topic_other }}) {
-                                    other = 'OTHER';
+                                    other = ' OTHER';
                                 }
                                 content.innerHTML = "<b>" + data.title + "</b><br>" +
                                     "<b>Author(s)</b> " + data.authors + "<br>" +
                                     "<b>Year</b> " + data.year + "<br>" +
                                     "<b>Cited</b> " + data.cited + "<br>" +
-                                    "<b>Topic</b> " + (topic + 1) + " " + other + "<br>" +
+                                    "<b>Topic</b> " + (topic + 1) + other + " " +
+                                    '<svg width="16" height="16"><rect width="16" height="16" ' +
+                                    'style="fill:' + topics_palette[topic] + '";/></svg><br>' +
                                     "<b>Tags</b> " + "<em>" + topics_description[topic] + "</em><br>" +
                                     {% if citation_graph == 'true' %}
                                         "<b>Pagerank</b> " + Number(data.pagerank).toFixed(3);
                                     {% else %}
                                         "<b>Centrality</b> " + Number(data.centrality).toFixed(3);
                                     {% endif %}
-                                ;
                             } else if ('topic' in data) {
                                 // Group
                                 const topic = data.topic;
