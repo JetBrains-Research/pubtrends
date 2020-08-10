@@ -152,7 +152,7 @@
                 });
             }
 
-            $(document).ready(function () {
+            $(window).on("load", function () {
                 document.getElementById('cy').innerHTML = "";
                 const citation_graph = {{ citation_graph }};
                 const topics_palette = JSON.parse({{ topics_palette_json | tojson }});
@@ -505,12 +505,35 @@
                         }
                     });
                 });
+
                 // Close all tippy
                 $(document).keyup(function(event) { // keyprocess doesn't handle escape key
                     if (event.keyCode === 27) { // Escape
                          tippys.forEach((e) => e.hide());
                     }
                 });
+
+                // Connections between topics
+                let topicsConnections = new Set();
+                cy.edges().forEach(function (ele) {
+                    let data = ele.data();
+                    let sourceData = cy.nodes().filter(ele => ele.data().id === data.source).first().data();
+                    let targetData = cy.nodes().filter(ele => ele.data().id === data.target).first().data();
+                    if ('topic' in sourceData && 'topic' in targetData && sourceData.topic !== targetData.topic) {
+                        topicsConnections.add(ele);
+                    }
+                });
+
+                $('#connectTopics').change(
+                    function() {
+                        if ($(this).is(':checked')) {
+                            topicsConnections.forEach(ele => cy.add(ele));
+                            reset();
+                        } else {
+                            cy.remove(cy.edges().filter(ele => topicsConnections.has(ele)));
+                            reset();
+                        }
+                    });
             });
 
             function inputKey(event) {
@@ -567,7 +590,7 @@
                         <div class="dropdown col-auto no-padding">
                             <button class="btn btn-secondary dropdown-toggle" type="button"
                                     id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                Color
+                                View
                             </button>
                             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                                 <a class="dropdown-item" onclick="showTopics();" href="javascript:void(0);">Topic</a>
@@ -582,12 +605,18 @@
                                         Centrality
                                     </a>
                                 {% endif %}
+                                <div class="dropdown-item">
+                                    <input type="checkbox" id="connectTopics" checked="true">
+                                    <label for="connectTopics">Connect topics</label>
+                                </div>
+                                <a id="reset" class="dropdown-item btn btn-secondary col-auto ml-2" content="Reset"
+                                   href="javascript:void(0);" onclick="reset();">
+                                    <img class="nav-icon" src="{{ url_for('static', filename='rotate-cw.svg') }}"/>
+                                    &nbsp;Reset
+                                </a>
                             </div>
                         </div>
-                        <a id="reset" class="btn btn-secondary col-auto ml-2" content="Reset"
-                           href="javascript:void(0);" onclick="reset();">
-                            <img class="nav-icon" src="{{ url_for('static', filename='rotate-cw.svg') }}"/>
-                        </a>
+
                         <a class="btn btn-secondary col-auto ml-2 mr-3" content="About"
                            href="javascript:void(0);" onclick="startIntro();">About</a>
                     </div>
@@ -653,15 +682,12 @@
                     },
                     {
                         element: '#dropdownMenuButton',
-                        intro: 'Change graph colouring.<br>' +
-                            'Node color can represent topic of the paper, number of citations or publication year.<br>' +
+                        intro: 'Change graph view.<br>' +
+                            'Colors can represent topics, number of citations, publication year, pagerank or centrality.<br>' +
                             '<svg width="16" height="16"><rect width="16" height="16" style="fill:#000000;"/></svg> min - ' +
-                            '<svg width="16" height="16"><rect width="16" height="16" style="fill:#00FF00;"/></svg> max'
-                    },
-                    {
-                        element: '#reset',
-                        intro: "Reset graph layout."
-                    },
+                            '<svg width="16" height="16"><rect width="16" height="16" style="fill:#00FF00;"/></svg> max<br>' +
+                            'Connect topics: whether edges between different topics are shown.'
+                    }
                 ]
             });
             intro.start();

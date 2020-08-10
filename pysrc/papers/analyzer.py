@@ -1,5 +1,4 @@
 import logging
-import re
 from math import floor
 from queue import PriorityQueue
 
@@ -385,126 +384,44 @@ class KeyPaperAnalyzer:
 
     def build_structure_graph(self, df, similarity_graph, current=0, task=None):
         """
-        Structure graph is a hierarchical visualization of all the papers.
-        It uses louvain community dendrogram as a structure.
-        * For all the groups on the lowest level we show L-sparse subgraph.
+        Structure graph is visualization of similarity connections.
+        It uses topics a structure.
+        * For all the topics we show locally sparse subgraph.
         * Add top similarity connections between different topics to keep overall structure.
-        * Relax continuous (2 or more consequent) hierarchical nodes to remove clutter.
-        * Create dedicated group nodes for directly connected to the root nodes (improves OTHER visualization).
         """
-        self.progress.info('Building structure graph', current=current, task=task)
-        dendrogram = community.generate_dendrogram(
-            similarity_graph, weight='similarity', random_state=KeyPaperAnalyzer.SEED
-        )
-        logger.debug('Processing louvain community dendrogram')
         result = nx.Graph()
-        last_level = []
-        topics_edges = {}  # Number of edges in locally sparsified graph for component
+        topics_edges = {}  # Number of edges in locally sparse graph for topic
         topics_mean_similarities = {}  # Average similarity per component
-        for i, dendrogram_level in enumerate(dendrogram):
-            if i == 0:  # Smallest communities level, corresponds to topics
-                papers_level_pids = {}
-                for k, v in dendrogram_level.items():
-                    if v not in papers_level_pids:
-                        papers_level_pids[v] = set()
-                    papers_level_pids[v].add(k)
-                for v, pids in papers_level_pids.items():
-                    logger.debug(f'Processing louvain hierarchical group {v} with pids {pids}')
-                    topic_sparse = KeyPaperAnalyzer.local_sparse(similarity_graph.subgraph(pids),
-                                                                 e=self.STRUCTURE_LOW_LEVEL_SPARSITY)
-                    connected_components = [cc for cc in nx.connected_components(topic_sparse)]
-                    logger.debug(f'Connected components {connected_components}')
-                    # Build a map node -> connected group
-                    connected_map = {}
-                    for ci, cc in enumerate(connected_components):
-                        for node in cc:
-                            connected_map[node] = ci
-                    logger.debug(f'Connected map {connected_map}')
 
-                    logger.debug('Processing edges within sparse graph')
-                    topic_similarity_sum = 0
-                    topic_similarity_n = 0
-                    topic_n = None
-                    for (pu, pv, d) in topic_sparse.edges(data=True):
-                        result.add_edge(pu, pv, **d)
-                        if topic_n is None:
-                            topic_n = int(df.loc[df['id'] == pu]['comp'].values[0])
-                            topics_edges[topic_n] = len(topic_sparse.edges)
-                        topic_similarity_n += 1
-                        topic_similarity_sum += d['similarity']
-                    topics_mean_similarities[topic_n] = topic_similarity_sum / max(1, topic_similarity_n)
+        logger.debug('Processing topics local sparse graphs')
+        for c in set(df['comp']):
+            comp_df = df.loc[df['comp'] == c]
+            logger.debug(f'Processing component {c}')
+            topic_sparse = KeyPaperAnalyzer.local_sparse(similarity_graph.subgraph(comp_df['id']),
+                                                         e=self.STRUCTURE_LOW_LEVEL_SPARSITY)
+            connected_components = [cc for cc in nx.connected_components(topic_sparse)]
+            logger.debug(f'Connected components {connected_components}')
+            # Build a map node -> connected group
+            connected_map = {}
+            for ci, cc in enumerate(connected_components):
+                for node in cc:
+                    connected_map[node] = ci
+            logger.debug(f'Connected map {connected_map}')
 
-                    logger.debug('Connecting top cited paper of each connected component to the hierarchy')
-                    node_v = f'level_{len(dendrogram)}_{v}'
-                    connected_set = set()
-                    for node in df.loc[df['id'].isin(pids)].sort_values(by='total', ascending=False)['id']:
-                        # Isolated nodes don't belong to any connected component
-                        if node not in connected_map:
-                            result.add_edge(node, node_v)
-                        else:
-                            ci = connected_map[node]
-                            if ci not in connected_set:
-                                result.add_edge(node, node_v)
-                                connected_set.add(ci)  # Mark connected component as connected to the hierarchy
-                    # Connect to root if necessary
-                    if i == len(dendrogram) - 1:
-                        last_level.append(node_v)
-            else:
-                for k, v in dendrogram_level.items():
-                    node_k = f'level_{len(dendrogram) - i + 1}_{k}'
-                    node_v = f'level_{len(dendrogram) - i}_{v}'
-                    if result.has_node(node_k):
-                        result.add_edge(node_k, node_v)
-                        # Connect to root
-                        if i == len(dendrogram) - 1:
-                            last_level.append(node_v)
+            logger.debug('Processing edges within sparse graph')
+            topic_similarity_sum = 0
+            topic_similarity_n = 0
+            topic_n = None
+            for (pu, pv, d) in topic_sparse.edges(data=True):
+                result.add_edge(pu, pv, **d)
+                if topic_n is None:
+                    topic_n = int(df.loc[df['id'] == pu]['comp'].values[0])
+                    topics_edges[topic_n] = len(topic_sparse.edges)
+                topic_similarity_n += 1
+                topic_similarity_sum += d['similarity']
+            topics_mean_similarities[topic_n] = topic_similarity_sum / max(1, topic_similarity_n)
 
-        root_node = f'root'
-        for n in last_level:
-            result.add_edge(n, root_node)
-
-        logger.debug('Cleanup bypass hierarchical nodes')
-        ws = set()
-        for node in result.nodes:
-            if re.match('level_.*', node):
-                ws.add(node)
-        while len(ws) > 0:
-            nws = set()
-            for node in ws:
-                if result.has_node(node):
-                    neighbors = list(result.neighbors(node))
-                    if len(neighbors) == 2:
-                        n1, n2 = neighbors
-                        # Leave intermediate node for directly-connected nodes!
-                        if not (n1 == root_node and not re.match('level_.*', n2) or
-                                n2 == root_node and not re.match('level_.*', n1)):
-                            result.remove_edge(node, n1)
-                            result.remove_edge(node, n2)
-                            result.add_edge(n1, n2)
-                            result.remove_node(node)
-                            if re.match('level_.*', n1):
-                                nws.add(n1)
-                            if re.match('level_.*', n1):
-                                nws.add(n2)
-                        else:
-                            # Process special node for component
-                            if n1 == root_node:
-                                comp = int(df.loc[df['id'] == n2]['comp'].values[0])
-                            else:
-                                comp = int(df.loc[df['id'] == n1]['comp'].values[0])
-                            result.remove_edge(node, n1)
-                            result.remove_edge(node, n2)
-                            result.remove_node(node)
-                            comp_node = f'level_{comp}'
-                            if not result.has_node(comp_node):
-                                result.add_edge(root_node, comp_node)
-                            if n1 == root_node:
-                                result.add_edge(comp_node, n2)
-                            else:
-                                result.add_edge(comp_node, n1)
-            ws = nws
-
-        logger.debug('Ensure all the papers are processed, separated ones will be placed to other component')
+        logger.debug('Ensure all the papers are processed')
         for pid in df['id']:
             if not result.has_node(pid):
                 result.add_node(pid)
