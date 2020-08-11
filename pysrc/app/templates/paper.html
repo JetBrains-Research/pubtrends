@@ -138,10 +138,6 @@
                 </div>
                 <div class="card-body">
                     <div>
-                        <a class="float-right link" href="{{ url }}">
-                            <img class="nav-icon" src="{{ url_for('static', filename='external-link.svg') }}"/>
-                            Open in {{ source }}
-                        </a>
                         <h2 class="paper-title">{{ title }}</h2>
                         <em>{{ authors }}</em><br>
                         <!-- Generate info about publication year and journal-->
@@ -155,6 +151,8 @@
                             <br>
                             <a class="link" href="https://doi.org/{{doi}}">doi:{{doi}}</a>
                         {% endif %}
+                        <br>
+                        <a class="link" href="{{ url }}">Open in {{ source }}</a>
                         {% if abstract is defined %}
                             <h5 class="card-subtitle mt-3">Abstract</h5>
                             <p class="mt-2">{{ abstract }}</p>
