@@ -353,7 +353,11 @@
                             }
                         },
                     ],
-                    elements: elements
+                    elements: elements,
+                    // interaction options
+                    minZoom: 1e-1,
+                    maxZoom: 1e1,
+                    boxSelectionEnabled: false,
                 });
 
                 function makePopper(ele) {
