@@ -28,6 +28,13 @@
     <link href="https://cdn.datatables.net/1.10.20/css/dataTables.bootstrap4.min.css"
           rel="stylesheet" type="text/css">
 
+    <!-- IntroJS feature tour -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.9.3/introjs.css"
+          integrity="sha256-OYXGS5m4oWZAAqoAKpf7Y3bIdzdd9jBfly/xCavEpGw=" crossorigin="anonymous"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.9.3/intro.js"
+            integrity="sha256-SPZP/x8QDPEhRlpJjet4AD5X4ergPWcxjhMn73SwyOE="
+            crossorigin="anonymous"></script>
+
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1"/>
     <!--     <link rel="stylesheet" href="../static/style.css"/> -->
     <link rel="stylesheet" href="{{ url_for('static', filename='result.css') }}?v=1"/>
@@ -61,8 +68,8 @@
 <body>
 
 <!-- Fixed navbar -->
-<nav class="navbar navbar-light bg-light fixed-top border-bottom">
-    <div class="row container-fluid">
+<nav class="navbar navbar-light bg-light fixed-top border-bottom no-padding-right">
+    <div class="row container-fluid no-padding-right">
         <div class="col-lg-1 col-xl-2 no-padding">
             <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
         </div>
@@ -73,7 +80,10 @@
                 </a>
             </div>
         </div>
-        <div class="d-none d-xl-block col-xl-2 float-right no-padding-right"></div>
+        <div class="d-none d-xl-block col-xl-2 float-right no-padding-right">
+            <a id="tour-start" class="btn btn-secondary float-right"
+               href="javascript:void(0);" onclick="startIntro();">About</a>
+        </div>
     </div>
 </nav>
 
@@ -314,5 +324,42 @@
                             title="JetBrains Research BioLabs"
                             target="_blank">JetBrains Research</a></p>
 </footer>
+<script type="text/javascript">
+    function startIntro(){
+        var intro = introJs();
+        intro.setOptions({
+            steps: [
+                {
+                    intro: "This is a paper detailed report.<br>" +
+                            "It contains citations dynamics and most valuable references.<br>"
+
+                },
+                {
+                    element: '#result',
+                    intro: "Open full analysis report.<br>" +
+                        "Learn more about topics, most cited papers, etc."
+                },
+                {
+                    element: '#paper',
+                    intro: 'Detailed information about the paper.<br>' +
+                        'Information about title, abstract, authors, journal and external references.'
+                },
+                {
+                    element: '#citation-dynamics',
+                    intro: 'Citations dynamics. Show all indexed citations of the paper.'
+                },
+                {
+                    element: '#related-topics',
+                    intro: 'Shows number of similar papers by topics.'
+                },
+                {
+                    element: '#related-papers',
+                    intro: 'This section demonstrates similarity with other papers.'
+                }
+            ]
+        });
+        intro.start();
+    }
+</script>
 </body>
 </html>
