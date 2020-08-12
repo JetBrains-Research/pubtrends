@@ -583,29 +583,34 @@ class Plotter:
         for i in range(0, len(dendrogram) + 1):
             paths.sort(key=lambda p: p[i])
 
-        # Draw edges
-        for i in range(len(dendrogram) + 2):
-            if i == 0:  # Leaves
-                order = dict([(v, j) for j, v in enumerate(unique_everseen([p[i] for p in paths]))])
-                dx = int(w / (len(order) + 1))
-            else:  # Edges
-                new_order = dict([(v, j) for j, v in enumerate(unique_everseen([p[i] for p in paths]))])
-                new_dx = int(w / (len(new_order) + 1))
-                for p in paths:
-                    hm.line([(order[p[i - 1]] + 1) * dx, (new_order[p[i]] + 1) * new_dx],
-                            [(i - 1) * dy, i * dy], line_color='black')
-                order = new_order
-                dx = new_dx
+        # Leaves coordinates
+        dx = int(w / (len(dendrogram[0]) + 1))
+        xs0 = dict([(v, (i + 1) * dx) for i, v in enumerate(unique_everseen([p[0] for p in paths]))])
+
+        # Draw dendrogram
+        xs = xs0.copy()
+        for i in range(1, len(dendrogram) + 2):
+            # Vertical lines
+            for _, x in xs.items():
+                hm.line([x, x], [(i - 1) * dy, i * dy], line_color='black')
+            new_xs = {}
+            for p in paths:
+                if p[i] not in new_xs:
+                    new_xs[p[i]] = []
+                new_xs[p[i]].append(xs[p[i - 1]])
+            for v, pxs in new_xs.items():
+                if len(pxs) > 1:  # Horizontal connections
+                    hm.line([pxs[0], pxs[-1]], [i * dy, i * dy], line_color='black')
+                new_xs[v] = np.mean(pxs)
+            xs = new_xs
 
         # Draw leaves
         topics_colors = Plotter.topics_palette_rgb(self.analyzer.df)
-        order = dict([(v, j) for j, v in enumerate(unique_everseen([p[0] for p in paths]))])
-        dx = int(w / (len(order) + 1))
-        for v, j in order.items():
-            hm.circle(x=(j + 1) * dx, y=0, size=15, line_color="black", fill_color=topics_colors[v])
-        hm.text(x=[(j + 1) * dx - 1 for _, j in order.items()],
-                y=[-1] * len(order),
-                text=[str(v + 1) for v, _ in order.items()],
+        for v, x in xs0.items():
+            hm.circle(x=x, y=0, size=15, line_color="black", fill_color=topics_colors[v])
+        hm.text(x=[x - 1 for _, x in xs0.items()],
+                y=[-1] * len(xs0),
+                text=[str(v + 1) for v, _ in xs0.items()],
                 text_baseline='middle', text_font_size='11pt')
 
         hm.axis.major_tick_line_color = None
