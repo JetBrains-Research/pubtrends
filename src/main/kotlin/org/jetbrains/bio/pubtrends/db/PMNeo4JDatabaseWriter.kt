@@ -2,30 +2,44 @@ package org.jetbrains.bio.pubtrends.db
 
 import com.google.gson.GsonBuilder
 import org.jetbrains.bio.pubtrends.pm.PubmedArticle
+import org.neo4j.driver.v1.AuthTokens
+import org.neo4j.driver.v1.Driver
+import org.neo4j.driver.v1.GraphDatabase
+import java.io.Closeable
 
 /**
  * See pm_database_supplier.py and pm_loader.py for (up)loading code.
-* TODO[shpynov] Consider refactoring.
+ * TODO[shpynov] Consider refactoring.
  */
 open class PMNeo4JDatabaseWriter(
         host: String,
         port: Int,
         user: String,
         password: String
-) : Neo4jConnector(host, port, user, password), AbstractDBWriter<PubmedArticle> {
+) : AbstractDBWriter<PubmedArticle>, Closeable {
 
     companion object {
         const val DELETE_BATCH_SIZE = 10000
     }
 
+    private val driver: Driver = GraphDatabase.driver(
+            "bolt://$host:$port", AuthTokens.basic(user, password)
+    ).apply {
+        session().use {
+            it.run("Match () Return 1 Limit 1")
+        }
+    }
+
     init {
+        // Driver objects should be created with application-wide lifetime
+
         processIndexes(true)
     }
 
     /**
      * This function can be used to wipe contents of the database.
      */
-    fun resetDatabase() {
+    override fun reset() {
         processIndexes(false)
 
         driver.session().use {
@@ -50,9 +64,11 @@ CALL apoc.periodic.iterate("MATCH (p:PMPublication) RETURN p",
 
             // indexes by pmid and doi
             val indexes = session.run("CALL db.indexes()").list()
-            listOf("pmid", "doi").forEach {field ->
-                if (indexes.any { it["description"].toString().trim('"') ==
-                                "INDEX ON :PMPublication($field)" }) {
+            listOf("pmid", "doi").forEach { field ->
+                if (indexes.any {
+                            it["description"].toString().trim('"') ==
+                                    "INDEX ON :PMPublication($field)"
+                        }) {
                     if (!createOrDelete) {
                         session.run("DROP INDEX ON :PMPublication($field)")
                     }
@@ -62,8 +78,10 @@ CALL apoc.periodic.iterate("MATCH (p:PMPublication) RETURN p",
             }
 
             // full text search index
-            if (indexes.any { it["description"].toString().trim('"') ==
-                            "INDEX ON NODE:PMPublication(title, abstract)" }) {
+            if (indexes.any {
+                        it["description"].toString().trim('"') ==
+                                "INDEX ON NODE:PMPublication(title, abstract)"
+                    }) {
                 if (!createOrDelete) {
                     session.run("CALL db.index.fulltext.drop(\"pmTitlesAndAbstracts\")")
                 }
@@ -91,8 +109,7 @@ CALL db.index.fulltext.createNodeIndex("${"pmTitlesAndAbstracts"}", ["PMPublicat
             )
         })
         val citationParameters = mapOf("citations" to articles.flatMap {
-            it.citationList.toSet().map {
-                cit -> mapOf("pmid_out" to it.pmid, "pmid_in" to cit) }
+            it.citationList.toSet().map { cit -> mapOf("pmid_out" to it.pmid, "pmid_in" to cit) }
         })
 
         driver.session().use {
@@ -136,7 +153,7 @@ MERGE (n_out)-[:PMReferenced]->(n_in);
      *
      * @param ids: list of PMIDs to be deleted
      */
-    override fun delete(ids: List<Int>) {
+    override fun delete(ids: List<String>) {
         val deleteParameters = mapOf("pmids" to ids)
         driver.session().use {
             it.run("UNWIND {pmids} AS pmid\n" +

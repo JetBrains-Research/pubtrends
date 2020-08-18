@@ -3,7 +3,7 @@ package org.jetbrains.bio.pubtrends.pm
 import joptsimple.OptionParser
 import org.apache.logging.log4j.LogManager
 import org.jetbrains.bio.pubtrends.Config
-import org.jetbrains.bio.pubtrends.db.PMNeo4JDatabaseWriter
+import org.jetbrains.bio.pubtrends.db.PMPostgresWriter
 import java.nio.file.Files
 import kotlin.system.exitProcess
 
@@ -35,11 +35,19 @@ object PubmedLoader {
             logger.info("Config path: $configPath")
 
             logger.info("Init Neo4j database connection")
-            val dbHandler = PMNeo4JDatabaseWriter(
-                    config["neo4jhost"].toString(),
-                    config["neo4jport"].toString().toInt(),
-                    config["neo4jusername"].toString(),
-                    config["neo4jpassword"].toString()
+//            val dbHandler = PMNeo4JDatabaseWriter(
+//                    config["neo4jhost"]!!.toString(),
+//                    config["neo4jport"]!!.toString().toInt(),
+//                    config["neo4jusername"]!!.toString(),
+//                    config["neo4jpassword"]!!.toString()
+//            )
+
+            val dbHandler = PMPostgresWriter(
+                    config["postgres_host"]!!.toString(),
+                    config["postgres_port"]!!.toString().toInt(),
+                    config["postgres_database"]!!.toString(),
+                    config["postgres_username"]!!.toString(),
+                    config["postgres_password"]!!.toString()
             )
             val pubmedLastIdFile = settingsRoot.resolve("pubmed_last.tsv")
             val pubmedStatsFile = settingsRoot.resolve("pubmed_stats.tsv")
@@ -47,7 +55,7 @@ object PubmedLoader {
             dbHandler.use {
                 if (options.has("resetDatabase")) {
                     logger.info("Resetting database")
-                    dbHandler.resetDatabase()
+                    dbHandler.reset()
                     Files.deleteIfExists(pubmedLastIdFile)
                     Files.deleteIfExists(pubmedStatsFile)
                 }

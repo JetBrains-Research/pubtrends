@@ -4,20 +4,32 @@ import com.google.gson.GsonBuilder
 import org.jetbrains.bio.pubtrends.ss.SemanticScholarArticle
 import org.jetbrains.bio.pubtrends.ss.crc32id
 import org.joda.time.DateTime
+import org.neo4j.driver.v1.AuthTokens
+import org.neo4j.driver.v1.Driver
+import org.neo4j.driver.v1.GraphDatabase
+import java.io.Closeable
 
 /**
-* See ss_database_supplier.py and ss_loader.py for (up)loading code.
-* TODO[shpynov] Consider refactoring.
+ * See ss_database_supplier.py and ss_loader.py for (up)loading code.
+ * TODO[shpynov] Consider refactoring.
  */
 open class SSNeo4JDatabaseWriter(
         host: String,
         port: Int,
         user: String,
         password: String
-) : Neo4jConnector(host, port, user, password), AbstractDBWriter<SemanticScholarArticle> {
+) : AbstractDBWriter<SemanticScholarArticle>, Closeable {
 
     companion object {
         const val DELETE_BATCH_SIZE = 10000
+    }
+
+    private val driver: Driver = GraphDatabase.driver(
+            "bolt://$host:$port", AuthTokens.basic(user, password)
+    ).apply {
+        session().use {
+            it.run("Match () Return 1 Limit 1")
+        }
     }
 
     init {
@@ -28,7 +40,7 @@ open class SSNeo4JDatabaseWriter(
     /**
      * This function can be used to wipe contents of the database.
      */
-    fun resetDatabase() {
+    override fun reset() {
         processIndexes(false)
 
         driver.session().use {
@@ -53,9 +65,11 @@ CALL apoc.periodic.iterate("MATCH (p:SSPublication) RETURN p",
 
             // indexes by crc32id and doi
             val indexes = session.run("CALL db.indexes()").list()
-            listOf("crc32id", "doi").forEach {field ->
-                if (indexes.any { it["description"].toString().trim('"') ==
-                                "INDEX ON :SSPublication($field)" }) {
+            listOf("crc32id", "doi").forEach { field ->
+                if (indexes.any {
+                            it["description"].toString().trim('"') ==
+                                    "INDEX ON :SSPublication($field)"
+                        }) {
                     if (!createOrDelete) {
                         session.run("DROP INDEX ON :SSPublication($field)")
                     }
@@ -65,8 +79,10 @@ CALL apoc.periodic.iterate("MATCH (p:SSPublication) RETURN p",
             }
 
             // full text search index
-            if (indexes.any { it["description"].toString().trim('"') ==
-                            "INDEX ON NODE:SSPublication(title, abstract)" }) {
+            if (indexes.any {
+                        it["description"].toString().trim('"') ==
+                                "INDEX ON NODE:SSPublication(title, abstract)"
+                    }) {
                 if (!createOrDelete) {
                     session.run("""CALL db.index.fulltext.drop("ssTitlesAndAbstracts")""")
                 }
@@ -89,18 +105,18 @@ CALL db.index.fulltext.createNodeIndex("ssTitlesAndAbstracts", ["SSPublication"]
                     "pmid" to it.pmid?.toString(),
                     "title" to it.title.replace('\n', ' '),
                     "abstract" to it.abstract?.replace('\n', ' '),
-                    "date" to DateTime(it.year ?:1970, 1, 1, 12, 0).toString(),
+                    "date" to DateTime(it.year ?: 1970, 1, 1, 12, 0).toString(),
                     "doi" to it.doi,
                     "aux" to GsonBuilder().create().toJson(it.aux)
             )
         })
         val citationParameters = mapOf("citations" to articles.flatMap {
-            it.citationList.toSet().map {
-                cit -> mapOf(
-                    "ssid_out" to it.ssid,
-                    "crc32id_out" to crc32id(it.ssid).toString(),
-                    "ssid_in" to cit,
-                    "crc32id_in" to crc32id(cit).toString())
+            it.citationList.toSet().map { cit ->
+                mapOf(
+                        "ssid_out" to it.ssid,
+                        "crc32id_out" to crc32id(it.ssid).toString(),
+                        "ssid_in" to cit,
+                        "crc32id_in" to crc32id(cit).toString())
             }
         })
 
@@ -138,8 +154,11 @@ MERGE (n_out)-[:SSReferenced]->(n_in);
         }
     }
 
-    override fun delete(ids: List<Int>) {
+    override fun delete(ids: List<String>) {
         throw IllegalStateException("delete is not supported")
     }
 
+    override fun close() {
+       driver.close()
+    }
 }

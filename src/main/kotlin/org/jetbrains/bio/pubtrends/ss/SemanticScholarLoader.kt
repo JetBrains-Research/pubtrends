@@ -46,7 +46,7 @@ object SemanticScholarLoader {
             dbHandler.use {
                 if (options.has("resetDatabase")) {
                     logger.info("Resetting database")
-                    dbHandler.resetDatabase()
+                    dbHandler.reset()
                 }
 
                 if (options.has("fillDatabase")) {

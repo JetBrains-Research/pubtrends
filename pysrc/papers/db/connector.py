@@ -1,21 +1,1 @@
-from neo4j import GraphDatabase
-
-
-class Connector:
-
-    def __init__(self, pubtrends_config, connect=True):
-        self.neo4jdriver = None
-        if connect:
-            self.neo4jdriver = GraphDatabase.driver(
-                f'bolt://{pubtrends_config.neo4jhost}:{pubtrends_config.neo4jport}',
-                auth=(pubtrends_config.neo4juser, pubtrends_config.neo4jpassword)
-            )
-            try:
-                with self.neo4jdriver.session() as session:
-                    session.run('Match () Return 1 Limit 1')
-            except Exception as e:
-                raise Exception(f'Failed to connect to neo4j database. Check config.')
-
-    def close_connection(self):
-        if self.neo4jdriver:
-            self.neo4jdriver.close()
+import psycopg2 as pg_driverfrom neo4j import GraphDatabaseclass Connector:    def __init__(self, pubtrends_config, connect=True):        self.neo4jdriver = None        self.pg_connection = None        if connect:            try:                self.neo4jdriver = GraphDatabase.driver(                    f'bolt://{pubtrends_config.neo4j_host}:{pubtrends_config.neo4j_port}',                    auth=(pubtrends_config.neo4j_user, pubtrends_config.neo4j_password)                )                with self.neo4jdriver.session() as session:                    session.run('Match () Return 1 Limit 1')            except Exception as e:                raise Exception(f'Failed to connect to neo4j database. Check config.')            try:                connection_string = f"""                    host={pubtrends_config.postgres_host}                     port={pubtrends_config.postgres_port}                    dbname={pubtrends_config.postgres_database}                     user={pubtrends_config.postgres_user}                     password={pubtrends_config.postgres_password}                """.strip()                self.pg_connection = pg_driver.connect(connection_string)            except Exception as e:                raise Exception(f'Failed to connect to postgres database. Check config.')    def close_connection(self):        if self.neo4jdriver:            self.neo4jdriver.close()        if self.pg_connection:            self.pg_connection.close()

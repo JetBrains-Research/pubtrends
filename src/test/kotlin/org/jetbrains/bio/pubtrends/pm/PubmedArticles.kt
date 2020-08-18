@@ -1,5 +1,6 @@
 package org.jetbrains.bio.pubtrends.pm
 
+import org.jetbrains.bio.pubtrends.db.PublicationType
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
 
