@@ -9,8 +9,9 @@ A tool for analysis of trends & pivotal points in the scientific literature.
 * Conda
 * Python 3.6+
 * Docker
-* Neo4j 3.5+ with APOC 3.5.0.4 (Optional, can be used in Docker)
-* Redis 5.0 (Optional, can be used in Docker)
+* Neo4j 3.5+ with APOC 3.5.0.4 (in Docker)
+* PostgreSQL 12 (in Docker)
+* Redis 5.0 (in Docker)
 
 ## Configuration
 
@@ -32,7 +33,7 @@ Ensure that file contains correct information about the database(s) (url, port, 
     docker build -t biolabs/pubtrends .
     ```
 
-4. Configure Neo4j and install APOC extension.
+4. Init Neo4j database and install APOC extension.
     * Prepare folders
     ```
     mkdir -p $HOME/neo4j/data $HOME/neo4j/logs $HOME/neo4j/plugins
@@ -46,11 +47,27 @@ Ensure that file contains correct information about the database(s) (url, port, 
         --volume=$HOME/neo4j/data:/var/lib/neo4j/data \
         --volume=$HOME/neo4j/logs:/logs \
         --volume=$HOME/neo4j/plugins:/plugins \
-        neo4j:3.5
+        -d neo4j:3.5
     ```   
    * Open Neo4j web browser to change default password (neo4j) to a strong one.
 
-
+5. Init PostgreSQL database.
+    
+    Launch Docker image:
+    ```
+    docker run --rm  --name pubtrends-postgres \
+        -e POSTGRES_USER=biolabs -e POSTGRES_PASSWORD=mysecretpassword \
+        -v ~/postgres/:/var/lib/postgresql/data \
+        -e PGDATA=/var/lib/postgresql/data/pgdata \
+        -p 5432:5432 \
+        -d postgres:12
+    ``` 
+   Create database:
+    ```
+    psql -h localhost -p 5432 -U biolabs
+    ALTER ROLE biolabs WITH LOGIN;
+    CREATE DATABASE pubtrends OWNER biolabs;
+    ```
 ## Kotlin/Java Build
 
 Use the following command to test and build JAR package:
@@ -61,8 +78,7 @@ Use the following command to test and build JAR package:
 
 ## Papers downloading and processing
 
-Neo4j should be configured and launched.
-You can always inspect data structure in Neo4j web browser.
+Neo4j / PostgreSQL should be configured and launched.
 
 ### Pubmed
 
@@ -159,7 +175,7 @@ Please ensure that you have Database configured, up and running.
 
     ```
     docker run --rm --volume=$(pwd):/pubtrends -t biolabs/pubtrends /bin/bash -c \
-    "sudo neo4j start; sleep 30s; \
+    "/usr/lib/postgresql/12/bin/pg_ctl -D /home/user/postgres start; sudo neo4j start; sleep 30s; \
     cd /pubtrends; mkdir ~/.pubtrends; cp config.properties ~/.pubtrends; \
     source activate pubtrends; python -m pytest --pycodestyle pysrc"
     ```
@@ -184,32 +200,35 @@ Please ensure that you have configured and prepared the database(s).
         --volume=$HOME/neo4j/data:/var/lib/neo4j/data \
         --volume=$HOME/neo4j/logs:/logs \
         --volume=$HOME/neo4j/plugins:/plugins \
-        --env NEO4J_dbms_memory_pagecache_size=<X>G \
-        --env NEO4J_dbms_memory_heap_initial__size=<X>G \
-        --env NEO4J_dbms_memory_heap_max__size=<X>G \
-        --env NEO4J_dbms_logs_query_parameter__logging__enabled=true \
-        --env NEO4J_dbms_logs_query_time__logging__enabled=true \
-        --env NEO4J_dbms_logs_query_allocation__logging__enabled=true \
-        --env NEO4J_dbms_logs_query_page__logging__enabled=true \
-        neo4j:3.5
+        -d neo4j:3.5
     ```
     
    See https://neo4j.com/developer/guide-performance-tuning/ for configuration details.
    
-3. Build ready for deployment package with script `dist.sh`.
+3. Start PostgreSQL server.
 
-4. Create logs folder within deployment package folder
+    ```
+    docker run --rm  --name pubtrends-postgres -p 5432:5432 -d postgres:12 \
+        -e POSTGRES_USER=biolabs -e POSTGRES_PASSWORD=mysecretpassword \
+        -e POSTGRES_DB=pubtrends \
+        -v ~/postgres/:/var/lib/postgresql/data \
+        -e PGDATA=/var/lib/postgresql/data/pgdata 
+    ```
+   
+4. Build ready for deployment package with script `dist.sh`.
+
+5. Create logs folder within deployment package folder
    ```
    mkdir logs
    ```
 
-5. Create necessary folders for logs and service database.
+6. Create necessary folders for logs and service database.
     ```
     mkdir ~/.pubtrends/logs
     mkdir ~/.pubtrends/database
     ```
  
-6. Launch pubtrends with docker-compose.
+7. Launch pubtrends with docker-compose.
     ```
     # start
     docker-compose up -d --build
@@ -222,7 +241,7 @@ Please ensure that you have configured and prepared the database(s).
     docker-compose logs
     ```
 
-7. During updates or other construction works consider launching simple reporter.
+8. During updates or other construction works consider launching simple reporter.
     ``` 
    docker run --rm -p 80:8000 -v $(pwd)/pysrc/app/construction:/construction \
         -t biolabs/pubtrends /bin/bash -c "python -m http.server -d /construction 8000"

@@ -27,9 +27,11 @@ class MockDBWriter<T>(private val batch: Boolean = false) : AbstractDBWriter<T> 
         }
     }
 
-    override fun delete(ids: List<Int>) {
+    override fun delete(ids: List<String>) {
         logger.info("Attempted to delete ${ids.size} articles")
         logger.info("Article IDs: ${ids.joinToString(separator = ", ")}")
         articlesDeleted = ids.size
     }
+
+    override fun reset() {}
 }

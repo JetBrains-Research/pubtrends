@@ -490,7 +490,7 @@ class PubmedXMLParser(
         if (deletedArticlePMIDList.size > 0) {
             logger.info("Deleting ${deletedArticlePMIDList.size} articles")
 
-            dbWriter.delete(deletedArticlePMIDList)
+            dbWriter.delete(deletedArticlePMIDList.map { it.toString() })
         }
 
         logger.info(

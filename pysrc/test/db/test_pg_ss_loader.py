@@ -3,14 +3,14 @@ import unittest
 from abc import ABCMeta
 
 from pysrc.papers.config import PubtrendsConfig
-from pysrc.papers.db.ss_loader import SemanticScholarLoader
-from pysrc.papers.db.ss_writer import SemanticScholarWriter
+from pysrc.papers.db.pg_ss_loader import SemanticScholarLoader
+from pysrc.papers.db.pg_ss_writer import SemanticScholarWriter
 from pysrc.test.db.ss_test_articles import required_articles, extra_articles, required_citations, \
     extra_citations
 
 
 class TestSemanticScholarLoader(unittest.TestCase, metaclass=ABCMeta):
-    loader = SemanticScholarLoader(config=PubtrendsConfig(test=True))
+    loader = SemanticScholarLoader(PubtrendsConfig(test=True))
 
     @classmethod
     def setUpClass(cls):
