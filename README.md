@@ -53,7 +53,7 @@ Ensure that file contains correct information about the database(s) (url, port, 
 
 5. Init PostgreSQL database.
     
-    Launch Docker image:
+    * Launch Docker image:
     ```
     docker run --rm  --name pubtrends-postgres \
         -e POSTGRES_USER=biolabs -e POSTGRES_PASSWORD=mysecretpassword \
@@ -62,12 +62,18 @@ Ensure that file contains correct information about the database(s) (url, port, 
         -p 5432:5432 \
         -d postgres:12
     ``` 
-   Create database:
+   * Create database:
     ```
     psql -h localhost -p 5432 -U biolabs
     ALTER ROLE biolabs WITH LOGIN;
     CREATE DATABASE pubtrends OWNER biolabs;
     ```
+    * Configure `work_mem` to support search query sorted by citations in `postgresql.conf`.
+      Experimentally, this amount is sufficient to search term 'computer' in Semantic Scholar sorted by citations count. 
+    ```
+    work_mem = '2048MB';   
+    ```
+   
 ## Kotlin/Java Build
 
 Use the following command to test and build JAR package:
