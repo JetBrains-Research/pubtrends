@@ -1,0 +1,129 @@
+-- Fetch default work_mem
+SHOW work_mem;
+
+-- Minimal work_mem to support search query sorted by citations
+SET work_mem = '2048MB';
+
+-- Show database size
+SELECT pg_size_pretty(pg_database_size('pubtrends'));
+
+analyse pmpublications;
+analyse pmcitations;
+
+SELECT COUNT(*)
+FROM PMPublications;
+
+SELECT COUNT(*)
+FROM PMCitations;
+
+select max(pmid)
+from PMpublications;
+
+-- Add TSV index
+alter table PMpublications
+    add column tsv tsvector;
+
+do
+$$
+    declare
+        n      int := 0;
+        max_id int := (select max(pmid)
+                       from PMpublications);
+    begin
+        while n <= max_id
+            loop
+                update PMpublications
+                set tsv = to_tsvector('english', coalesce(title, '') || coalesce(abstract, ''))
+                where pmid between n and n + 10000;
+                commit;
+                n := n + 10000;
+                raise notice '% ', n;
+            end loop;
+    end;
+$$;
+
+
+drop index pub_gin_index;
+create index pub_gin_index on pmpublications using GIN (tsv);
+
+-- Most popular terms
+select *
+from ts_stat($$SELECT tsv FROM PMpublications$$)
+order by ndoc desc
+limit 50;
+
+
+-- number of papers containing human
+SELECT COUNT(*)
+FROM PMPublications P
+WHERE tsv @@ websearch_to_tsquery('english', 'human');
+
+
+-- by relevance
+explain analyse
+SELECT pmid, title, abstract, date, aux
+FROM PMPublications P
+WHERE tsv @@ websearch_to_tsquery('english', 'human')
+ORDER BY date DESC NULLS LAST
+LIMIT 1000000;
+
+-- by year
+explain analyse
+SELECT pmid, title, abstract, date, aux
+FROM PMPublications P
+WHERE tsv @@ websearch_to_tsquery('english', 'computer')
+ORDER BY date DESC NULLS LAST
+LIMIT 1000000;
+
+-- by citations
+explain analyse
+SELECT pmid, title, abstract, date, aux, COUNT(1) AS count
+FROM PMPublications P
+         LEFT JOIN PMCitations C
+                   ON C.pmid_in = pmid
+WHERE tsv @@ websearch_to_tsquery('english', 'human')
+GROUP BY pmid
+ORDER BY count DESC NULLS LAST
+LIMIT 1000000;
+
+
+DROP TABLE IF EXISTS temp_pmids;
+WITH vals(pmid) AS (SELECT pmid
+                    FROM PMPublications P
+                    WHERE tsv @@ websearch_to_tsquery('english', 'human')
+                    ORDER BY date DESC NULLS LAST
+                    LIMIT 1000000)
+SELECT pmid
+INTO table temp_pmids
+FROM vals;
+DROP INDEX IF EXISTS temp_pmids_index;
+CREATE INDEX temp_pmids_index ON temp_pmids USING btree (pmid);
+
+-- Check that temp ids table is loaded
+select *
+from temp_pmids;
+
+-- Find co-cited papers, to be processed in linear time on call site
+explain analyse
+with X as (select pmid_out, pmid_in
+           from PMCitations
+           where pmid_in between (select min(pmid) from temp_pmids) and (select max(pmid) from temp_pmids)
+             and pmid_in in (select pmid from temp_pmids))
+
+select pmid_out, array_agg(pmid_in) as cited_list
+from X
+group by pmid_out
+having count(*) >= 2;
+
+-- Find bibliographic coupling papers, to be processed in linear time on callsite
+explain analyse
+with X as (select pmid_out, pmid_in
+            from PMCitations
+            where pmid_out between (select min(pmid) from temp_pmids) and (select max(pmid) from temp_pmids)
+              and pmid_out in (select pmid from temp_pmids))
+select pmid_in, array_agg(pmid_out) as citing_list
+from X
+group by pmid_in
+having count(*) >= 2;
+
+
