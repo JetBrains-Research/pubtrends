@@ -10,12 +10,6 @@ ENV C_FORCE_ROOT true
 COPY . /home/user/
 WORKDIR /home/user/
 
-# Updated pubtrends conda env
-RUN source activate pubtrends && pip install gunicorn redis
-
-# Download all the nltk resources
-RUN source activate pubtrends && python pysrc/papers/utils.py
-
 # Launch celery workers
 ENTRYPOINT source activate pubtrends \
-    && celery -A pysrc.celery.tasks worker -c 5 --loglevel=info --logfile=/logs/celery.log
+    && celery -A pysrc.celery.tasks worker -c 5 --loglevel=debug --logfile=/logs/celery.log

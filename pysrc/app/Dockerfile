@@ -19,12 +19,6 @@ EXPOSE 8000
 COPY . /home/user/
 WORKDIR /home/user/
 
-# Updated pubtrends conda env
-RUN source activate pubtrends && pip install gunicorn redis
-
-# Download all the nltk resources
-RUN source activate pubtrends && python pysrc/papers/utils.py
-
 # run the app server
 CMD echo $PUBTRENDS_VERSION \
     && source activate pubtrends \
