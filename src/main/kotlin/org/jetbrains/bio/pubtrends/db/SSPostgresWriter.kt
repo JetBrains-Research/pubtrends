@@ -36,14 +36,21 @@ open class SSPostgresWriter(
 
         transaction {
             addLogger(Log4jSqlLogger)
-            SchemaUtils.create(PMPublications, PMCitations)
+            SchemaUtils.create(SSPublications, SSCitations)
+            exec("ALTER TABLE SSPublications ADD COLUMN IF NOT EXISTS tsv TSVECTOR;")
+            exec(
+                    "CREATE INDEX IF NOT EXISTS " +
+                            "ss_title_abstract_index ON SSPublications using GIN (tsv);"
+            )
+
         }
     }
 
     override fun reset() {
         transaction {
             addLogger(Log4jSqlLogger)
-            SchemaUtils.drop(PMPublications, PMCitations)
+            SchemaUtils.drop(SSPublications, SSCitations)
+            exec("DROP INDEX IF EXISTS ss_title_abstract_index;")
         }
     }
 
@@ -69,6 +76,14 @@ open class SSPostgresWriter(
                 this[SSCitations.crc32id_out] = crc32id(citation.first)
                 this[SSCitations.crc32id_in] = crc32id(citation.second)
             }
+            // Update TSV vector
+            val vals = articles.map { it.ssid }.joinToString(",") { "('$it')" }
+            exec(
+                    "UPDATE SSPublications\n" +
+                            "SET tsv = to_tsvector('english', coalesce(title, '') || coalesce(abstract, ''))\n" +
+                            "WHERE ssid IN (VALUES $vals);"
+            )
+
         }
     }
 

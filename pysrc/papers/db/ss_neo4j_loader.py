@@ -6,29 +6,25 @@ from collections import Iterable
 import numpy as np
 import pandas as pd
 
-from pysrc.papers.db.loader import Loader
-from pysrc.papers.utils import SORT_MOST_CITED, SORT_MOST_RECENT, SORT_MOST_RELEVANT
-from pysrc.papers.utils import preprocess_search_query, preprocess_doi, preprocess_pubmed_search_title
+from pysrc.papers.utils import SORT_MOST_CITED, SORT_MOST_RECENT, SORT_MOST_RELEVANT, preprocess_doi, \
+    preprocess_search_query, crc32
+from .loader import Loader
+from .neo4j_connector import Neo4jConnector
 
 logger = logging.getLogger(__name__)
 
 
-class PubmedLoader(Loader):
+class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
+
     def __init__(self, config):
-        super(PubmedLoader, self).__init__(config)
+        super(SemanticScholarNeo4jLoader, self).__init__(config)
 
     def find(self, key, value, current=1, task=None):
         value = value.strip()
         self.progress.info(f"Searching for a publication with {key} '{value}'", current=current, task=task)
 
         if key == 'id':
-            key = 'pmid'
-
-            # We use integer PMIDs in neo4j, if value is not a valid integer -> no match
-            try:
-                value = int(value)
-            except ValueError:
-                raise Exception("PMID should be an integer")
+            key = 'ssid'
 
         # Preprocess DOI
         if key == 'doi':
@@ -36,23 +32,22 @@ class PubmedLoader(Loader):
 
         # Use dedicated text index to search title.
         if key == 'title':
-            value = preprocess_pubmed_search_title(value)
             query = f'''
-                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", '"{re.sub('"', '', value.strip())}"')
+                CALL db.index.fulltext.queryNodes("ssTitlesAndAbstracts", '"{re.sub('"', '', value.strip())}"')
                 YIELD node
-                MATCH (p:PMPublication)
-                WHERE p.pmid = node.pmid AND toLower(p.title) = '{value.lower()}'
-                RETURN p.pmid AS pmid;
+                MATCH (p:SSPublication)
+                WHERE p.crc32id = node.crc32id AND p.ssid = node.ssid AND toLower(p.title) = '{value.lower()}'
+                RETURN p.ssid AS ssid;
             '''
         else:
             query = f'''
-                MATCH (p:PMPublication)
+                MATCH (p:SSPublication)
                 WHERE p.{key} = {repr(value)}
-                RETURN p.pmid AS pmid;
+                RETURN p.ssid AS ssid;
             '''
 
         with self.neo4jdriver.session() as session:
-            return [str(r['pmid']) for r in session.run(query)]
+            return [str(r['ssid']) for r in session.run(query)]
 
     def search(self, query, limit=None, sort=None, current=1, task=None):
         query_str = preprocess_search_query(query, self.config.min_search_words)
@@ -68,26 +63,26 @@ class PubmedLoader(Loader):
 
         if sort == SORT_MOST_RELEVANT:
             query = f'''
-                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", '{query_str}')
+                CALL db.index.fulltext.queryNodes("ssTitlesAndAbstracts", '{query_str}')
                 YIELD node, score
-                RETURN node.pmid as pmid
+                RETURN node.ssid as ssid
                 ORDER BY score DESC
                 LIMIT {limit};
                 '''
         elif sort == SORT_MOST_CITED:
             query = f'''
-                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", '{query_str}') YIELD node
-                MATCH ()-[r:PMReferenced]->(in:PMPublication)
-                WHERE in.pmid = node.pmid
+                CALL db.index.fulltext.queryNodes("ssTitlesAndAbstracts", '{query_str}') YIELD node
+                MATCH ()-[r:SSReferenced]->(in:SSPublication)
+                WHERE in.crc32id = node.crc32id AND in.ssid = node.ssid
                 WITH node, COUNT(r) AS cnt
-                RETURN node.pmid as pmid
+                RETURN node.ssid as ssid
                 ORDER BY cnt DESC
                 LIMIT {limit};
                 '''
         elif sort == SORT_MOST_RECENT:
             query = f'''
-                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", '{query_str}') YIELD node
-                RETURN node.pmid as pmid
+                CALL db.index.fulltext.queryNodes("ssTitlesAndAbstracts", '{query_str}') YIELD node
+                RETURN node.ssid as ssid
                 ORDER BY node.date DESC
                 LIMIT {limit};
                 '''
@@ -95,7 +90,7 @@ class PubmedLoader(Loader):
             raise ValueError(f'Illegal sort method: {sort}')
 
         with self.neo4jdriver.session() as session:
-            ids = [str(r['pmid']) for r in session.run(query)]
+            ids = [str(r['ssid']) for r in session.run(query)]
 
         self.progress.info(f'Found {len(ids)} publications in the local database', current=current,
                            task=task)
@@ -106,10 +101,11 @@ class PubmedLoader(Loader):
 
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
-            WITH [{','.join([str(id) for id in ids])}] AS pmids
-            MATCH (p:PMPublication)
-            WHERE p.pmid IN pmids
-            RETURN p.pmid as id, p.title as title, p.abstract as abstract,
+            WITH [{','.join([f'"{id}"' for id in ids])}] AS ssids,
+                 [{','.join([str(crc32(id)) for id in ids])}] AS crc32ids
+            MATCH (p:SSPublication)
+            WHERE p.crc32id in crc32ids AND p.ssid IN ssids
+            RETURN p.ssid as id, p.crc32id as crc32id, p.pmid as pmid, p.title as title, p.abstract as abstract,
                 p.date.year as year, p.type as type, p.doi as doi, p.aux as aux
             ORDER BY id
         '''
@@ -118,7 +114,7 @@ class PubmedLoader(Loader):
             pub_df = pd.DataFrame(session.run(query).data())
         if len(pub_df) == 0:
             logger.debug(f'Failed to load publications.')
-            pub_df = pd.DataFrame(columns=['id', 'title', 'abstract', 'year', 'type', 'doi', 'aux'])
+            pub_df = pd.DataFrame(columns=['id', 'crc32id', 'pmid', 'title', 'abstract', 'year', 'type', 'doi', 'aux'])
         else:
             logger.debug(f'Found {len(pub_df)} publications in the local database')
             if np.any(pub_df[['id', 'title']].isna()):
@@ -126,7 +122,8 @@ class PubmedLoader(Loader):
                 pub_df.dropna(subset=['id', 'title'], inplace=True)
                 logger.debug(f'Correct publications {len(pub_df)}')
             pub_df = Loader.process_publications_dataframe(pub_df)
-
+            # Hack for missing type in SS, see https://github.com/JetBrains-Research/pubtrends/issues/200
+            pub_df['type'] = 'Article'
         return pub_df
 
     def load_citation_stats(self, ids, current=1, task=None):
@@ -134,15 +131,17 @@ class PubmedLoader(Loader):
 
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
-            WITH [{','.join([str(id) for id in ids])}] AS pmids
-            MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
-            WHERE in.pmid IN pmids AND out.date.year >= in.date.year
-            RETURN in.pmid AS id, out.date.year AS year, COUNT(*) AS count
+            WITH [{','.join([f'"{id}"' for id in ids])}] AS ssids,
+                 [{','.join([str(crc32(id)) for id in ids])}] AS crc32ids
+            MATCH (out:SSPublication)-[:SSReferenced]->(in:SSPublication)
+            WHERE in.crc32id in crc32ids AND in.ssid IN ssids AND out.date.year >= in.date.year
+            RETURN in.ssid AS id, out.date.year AS year, COUNT(*) AS count
             LIMIT {self.config.max_number_of_citations};
         '''
 
         with self.neo4jdriver.session() as session:
             cit_stats_df = pd.DataFrame(session.run(query).data())
+
         if len(cit_stats_df) == 0:
             logger.debug(f'Failed to load citations statistics.')
             cit_stats_df = pd.DataFrame(columns=['id', 'year', 'count'])
@@ -151,9 +150,10 @@ class PubmedLoader(Loader):
                                current=current, task=task)
             if np.any(cit_stats_df.isna()):
                 raise ValueError('NaN values are not allowed in citation stats DataFrame')
+
+            cit_stats_df['count'] = cit_stats_df['count'].apply(int)
             cit_stats_df['id'] = cit_stats_df['id'].apply(str)
             cit_stats_df['year'] = cit_stats_df['year'].apply(int)
-            cit_stats_df['count'] = cit_stats_df['count'].apply(int)
 
         return cit_stats_df
 
@@ -163,26 +163,29 @@ class PubmedLoader(Loader):
 
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
-            WITH [{','.join([str(id) for id in ids])}] AS pmids
-            MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
-            WHERE in.pmid IN pmids AND out.pmid IN pmids
-            RETURN out.pmid AS id_out, in.pmid AS id_in
-            ORDER BY id_out, id_in
-            LIMIT {self.config.max_number_of_cocitations};
+            WITH [{','.join([f'"{id}"' for id in ids])}] AS ssids,
+                 [{','.join([str(crc32(id)) for id in ids])}] AS crc32ids
+            MATCH (out:SSPublication)-[:SSReferenced]->(in:SSPublication)
+            WHERE in.crc32id in crc32ids AND in.ssid IN ssids AND
+                  out.crc32id in crc32ids AND out.ssid IN ssids
+            RETURN out.ssid AS id_out, in.ssid AS id_in
+            ORDER BY id_out, id_in;
         '''
 
         with self.neo4jdriver.session() as session:
             cit_df = pd.DataFrame(session.run(query).data())
+
         if len(cit_df) == 0:
             logger.debug(f'Failed to load citations.')
             cit_df = pd.DataFrame(columns=['id_in', 'id_out'])
         else:
             self.progress.info(f'Found {len(cit_df)} citations among papers', current=current, task=task)
+
             if np.any(cit_df.isna()):
                 raise ValueError('Citation must have id_out and id_in')
-            cit_df['id_out'] = cit_df['id_out'].apply(str)
-            cit_df['id_in'] = cit_df['id_in'].apply(str)
 
+            cit_df['id_in'] = cit_df['id_in'].apply(str)
+            cit_df['id_out'] = cit_df['id_out'].apply(str)
         return cit_df
 
     def load_cocitations(self, ids, current=1, task=None):
@@ -191,10 +194,12 @@ class PubmedLoader(Loader):
         # Use unfolding to pairs on the client side instead of DataBase
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
-            WITH [{','.join([str(id) for id in ids])}] AS pmids
-            MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
-            WHERE in.pmid IN pmids
-            RETURN out.pmid AS citing, COLLECT(in.pmid) AS cited, out.date.year AS year;
+            WITH [{','.join([f'"{id}"' for id in ids])}] AS ssids,
+                 [{','.join([str(crc32(id)) for id in ids])}] AS crc32ids
+            MATCH (out:SSPublication)-[:SSReferenced]->(in:SSPublication)
+            WHERE in.crc32id in crc32ids AND in.ssid IN ssids
+            RETURN out.ssid AS citing, COLLECT(in.ssid) AS cited, out.date.year AS year
+            LIMIT {self.config.max_number_of_cocitations};
         '''
 
         with self.neo4jdriver.session() as session:
@@ -207,8 +212,10 @@ class PubmedLoader(Loader):
                     for j in range(i + 1, len(cited)):
                         cocit_data.append((citing, cited[i], cited[j], year))
 
-        logger.debug(f'Loaded {lines} lines of co-citing info')
+        if len(cocit_data) == 0:
+            logger.debug(f'Failed to load cocitations.')
 
+        logger.debug(f'Loaded {lines} lines of co-citing info')
         cocit_df = pd.DataFrame(cocit_data, columns=['citing', 'cited_1', 'cited_2', 'year'])
         if len(cocit_data) == 0:
             logger.debug(f'Failed to load cocitations.')
@@ -231,12 +238,15 @@ class PubmedLoader(Loader):
         # Use unfolding to pairs on the client side instead of DataBase
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
-            WITH [{','.join([f'"{id}"' for id in ids])}] AS pmids
-            MATCH (out1:PMPublication),(out2:PMPublication)
-            WHERE NOT (out1.pmid = out2.pmid) AND out1.pmid IN pmids AND out2.pmid IN pmids
-            MATCH (out1:PMPublication)-[:PMReferenced]->(in:PMPublication),
-                  (out2:PMPublication)-[:PMReferenced]->(in:PMPublication)
-            RETURN out1.pmid AS citing_1, out2.pmid AS citing_2, COUNT(in) AS total
+            WITH [{','.join([f'"{id}"' for id in ids])}] AS ssids,
+                 [{','.join([str(crc32(id)) for id in ids])}] AS crc32ids
+            MATCH (out1:SSPublication),(out2:SSPublication)
+            WHERE NOT (out1.crc32id = out2.crc32id AND out1.ssid = out2.ssid) AND
+                out1.crc32id in crc32ids AND out1.ssid IN ssids AND
+                out2.crc32id in crc32ids AND out2.ssid IN ssids
+            MATCH (out1:SSPublication)-[:SSReferenced]->(in:SSPublication),
+                  (out2:SSPublication)-[:SSReferenced]->(in:SSPublication)
+            RETURN out1.ssid AS citing_1, out2.ssid AS citing_2, COUNT(in) AS total
             LIMIT {self.config.max_number_of_bibliographic_coupling};
         '''
 
@@ -261,25 +271,26 @@ class PubmedLoader(Loader):
 
             # TODO[shpynov] transferring huge list of ids can be a problem
             query = f'''
-                WITH [{','.join(ids)}] AS pmids
-                MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
-                WHERE in.pmid IN pmids
-                RETURN out.pmid AS expanded
+            WITH [{','.join([f'"{id}"' for id in ids])}] AS ssids,
+                 [{','.join([str(crc32(id)) for id in ids])}] AS crc32ids
+                MATCH (out:SSPublication)-[:SSReferenced]->(in:SSPublication)
+                WHERE in.crc32id IN crc32ids AND in.ssid in ssids
+                RETURN out.ssid AS expanded
                 LIMIT {max_to_expand};
             '''
             with self.neo4jdriver.session() as session:
                 expanded |= set([str(r['expanded']) for r in session.run(query)])
 
             query = f'''
-                WITH [{','.join(ids)}] AS pmids
-                MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
-                WHERE out.pmid IN pmids
-                RETURN in.pmid AS expanded
+            WITH [{','.join([f'"{id}"' for id in ids])}] AS ssids,
+                 [{','.join([str(crc32(id)) for id in ids])}] AS crc32ids
+                MATCH (out:SSPublication)-[:SSReferenced]->(in:SSPublication)
+                WHERE out.crc32id IN crc32ids AND out.ssid in ssids
+                RETURN in.ssid AS expanded
                 LIMIT {max_to_expand};
             '''
             with self.neo4jdriver.session() as session:
                 expanded |= set([str(r['expanded']) for r in session.run(query)])
-
         else:
             raise TypeError('ids should be Iterable')
 

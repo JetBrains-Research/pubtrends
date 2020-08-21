@@ -1,13 +1,13 @@
 import html
 import logging
 
-from pysrc.papers.db.ss_loader import SemanticScholarLoader
+from pysrc.papers.db.ss_neo4j_loader import SemanticScholarNeo4jLoader
 from pysrc.papers.utils import SORT_MOST_CITED, SORT_MOST_RECENT
 
 logger = logging.getLogger(__name__)
 
 
-class SSArxivLoader(SemanticScholarLoader):
+class SSArxivLoader(SemanticScholarNeo4jLoader):
     def __init__(self, config):
         super(SSArxivLoader, self).__init__(config)
 

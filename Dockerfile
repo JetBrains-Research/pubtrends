@@ -104,8 +104,5 @@ RUN /usr/lib/postgresql/12/bin/pg_ctl -D /home/user/postgres start \
 # Expose the PostgreSQL port
 EXPOSE 5432
 
-# Tests project configuration
-COPY config.properties /home/user/.pubtrends/
-
 # Use `-d` param to launch container as daemon
 CMD /usr/lib/postgresql/12/bin/pg_ctl -D /home/user/postgres start && sudo neo4j start && sleep infinity

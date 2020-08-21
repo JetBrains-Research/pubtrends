@@ -47,9 +47,6 @@ class PubmedArticle:
     def journal(self) -> str:
         return self.aux.journal.name
 
-    def __str__(self):
-        return ', '.join(self.to_list())
-
     def to_dict(self):
         return {
             'pmid': self.pmid,
@@ -60,11 +57,6 @@ class PubmedArticle:
             'doi': self.doi,
             'aux': json.dumps(self.aux.to_dict())
         }
-
-    def to_list(self):
-        return [self.pmid, self.title, self.doi, json.dumps(self.aux.to_dict()),
-                self.abstract if self.abstract else '',
-                str(self.date), self.type, self.authors(), self.journal()]
 
     def to_list_year(self):
         return [self.pmid, self.title, self.doi, json.dumps(self.aux.to_dict()),

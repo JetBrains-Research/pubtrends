@@ -4,15 +4,12 @@ from abc import abstractmethod, ABCMeta
 
 import numpy as np
 
-from pysrc.papers.db.connector import Connector
 from pysrc.papers.utils import extract_authors
 
 
-class Loader(Connector, metaclass=ABCMeta):
+class Loader(metaclass=ABCMeta):
 
-    def __init__(self, config, connect=True):
-        super(Loader, self).__init__(config, connect)
-        self.config = config
+    def __init__(self, ):
         self.progress = None
 
     def set_progress(self, pl):
