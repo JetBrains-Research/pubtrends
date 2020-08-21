@@ -10,12 +10,9 @@ from networkx.readwrite import json_graph
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
-from pysrc.papers.db.pm_loader import PubmedLoader
-from pysrc.papers.db.ss_loader import SemanticScholarLoader
+from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.progress import Progress
 from pysrc.papers.utils import split_df_list, get_topics_description, tokenize
-from pysrc.prediction.ss_arxiv_loader import SSArxivLoader
-from pysrc.prediction.ss_pubmed_loader import SSPubmedLoader
 
 logger = logging.getLogger(__name__)
 
@@ -56,20 +53,7 @@ class KeyPaperAnalyzer:
 
         self.loader = loader
         loader.set_progress(self.progress)
-
-        # Determine source to provide correct URLs to articles,
-        # see paper.py#get_loader_and_url_prefix
-        # TODO: Bad design, refactor
-        if isinstance(self.loader, PubmedLoader):
-            self.source = 'Pubmed'
-        elif isinstance(self.loader, SemanticScholarLoader):
-            self.source = 'Semantic Scholar'
-        elif isinstance(self.loader, SSArxivLoader):
-            self.source = 'SSArxiv'
-        elif isinstance(self.loader, SSPubmedLoader):
-            self.source = 'SSPubmed'
-        elif not test:
-            raise TypeError(f'Unknown loader {self.loader}')
+        self.source = Loaders.source(self.loader, test)
 
     def total_steps(self):
         return 19  # 18 + 1 for visualization

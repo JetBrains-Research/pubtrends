@@ -2,28 +2,14 @@ from bokeh.embed import components
 
 from pysrc.papers.analyzer import KeyPaperAnalyzer
 from pysrc.papers.config import PubtrendsConfig
-from pysrc.papers.db.pm_loader import PubmedLoader
-from pysrc.papers.db.ss_loader import SemanticScholarLoader
+from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.plot.plotter import Plotter
 from pysrc.papers.utils import (
-    trim, preprocess_text,
-    PUBMED_ARTICLE_BASE_URL, SEMANTIC_SCHOLAR_BASE_URL)
+    trim, preprocess_text)
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
 MAX_TITLE_LENGTH = 200
-
-
-def get_loader_and_url_prefix(source, config):
-    if source == 'Pubmed':
-        loader = PubmedLoader(config)
-        url_prefix = PUBMED_ARTICLE_BASE_URL
-    elif source == 'Semantic Scholar':
-        loader = SemanticScholarLoader(config)
-        url_prefix = SEMANTIC_SCHOLAR_BASE_URL
-    else:
-        raise ValueError(f"Unknown source {source}")
-    return loader, url_prefix
 
 
 def get_top_papers_id_title(papers, df, key, n=50):
@@ -33,7 +19,7 @@ def get_top_papers_id_title(papers, df, key, n=50):
 
 
 def prepare_paper_data(data, source, pid):
-    loader, url_prefix = get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
+    loader, url_prefix = Loaders.get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
     analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
     analyzer.init(data)
 
@@ -122,7 +108,7 @@ def prepare_paper_data(data, source, pid):
 
 
 def prepare_papers_data(data, source, comp=None, word=None, author=None, journal=None, papers_list=None):
-    loader, url_prefix = get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
+    loader, url_prefix = Loaders.get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
     analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
     analyzer.init(data)
 

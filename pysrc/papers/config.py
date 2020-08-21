@@ -25,12 +25,12 @@ class PubtrendsConfig:
 
         self.neo4j_host = params['neo4j_host' if not test else 'test_neo4j_host']
         self.neo4j_port = params['neo4j_port' if not test else 'test_neo4j_port']
-        self.neo4j_user = params['neo4j_username' if not test else 'test_neo4j_username']
+        self.neo4j_username = params['neo4j_username' if not test else 'test_neo4j_username']
         self.neo4j_password = params['neo4j_password' if not test else 'test_neo4j_password']
 
         self.postgres_host = params['postgres_host' if not test else 'test_postgres_host']
         self.postgres_port = params['postgres_port' if not test else 'test_postgres_port']
-        self.postgres_user = params['postgres_username' if not test else 'test_postgres_username']
+        self.postgres_username = params['postgres_username' if not test else 'test_postgres_username']
         self.postgres_password = params['postgres_password' if not test else 'test_postgres_password']
         self.postgres_database = params['postgres_database' if not test else 'test_postgres_database']
 

@@ -50,6 +50,11 @@ open class PMPostgresWriter(
             }
 
             SchemaUtils.create(PMPublications, PMCitations)
+            exec("ALTER TABLE PMPublications ADD COLUMN IF NOT EXISTS tsv TSVECTOR;")
+            exec(
+                    "CREATE INDEX IF NOT EXISTS " +
+                            "pm_title_abstract_index ON PMPublications using GIN (tsv);"
+            )
         }
     }
 
@@ -57,6 +62,7 @@ open class PMPostgresWriter(
         transaction {
             addLogger(Log4jSqlLogger)
             SchemaUtils.drop(PMPublications, PMCitations)
+            exec("DROP INDEX IF EXISTS pm_title_abstract_index;")
         }
     }
 
@@ -93,6 +99,14 @@ open class PMPostgresWriter(
                 this[PMCitations.pmidOut] = citation.first
                 this[PMCitations.pmidIn] = citation.second
             }
+
+            // Update TSV vector
+            val vals = articles.map { it.pmid }.joinToString(",") { "($it)" }
+            exec(
+                    "UPDATE PMPublications\n" +
+                            "SET tsv = to_tsvector('english', coalesce(title, '') || coalesce(abstract, ''))\n" +
+                            "WHERE pmid IN (VALUES $vals);"
+            )
         }
     }
 

@@ -2,18 +2,15 @@ import html
 import os
 
 from celery import Celery, current_task
-from neobolt.exceptions import ServiceUnavailable
 
 from pysrc.papers.analyzer import KeyPaperAnalyzer
 from pysrc.papers.analyzer_experimental import ExperimentalAnalyzer
 from pysrc.papers.config import PubtrendsConfig
-from pysrc.papers.db.pm_loader import PubmedLoader
-from pysrc.papers.db.ss_loader import SemanticScholarLoader
+from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.plot.plotter import visualize_analysis
 from pysrc.papers.plot.plotter_experimental import visualize_experimental_analysis
 from pysrc.papers.progress import Progress
 from pysrc.papers.utils import SORT_MOST_CITED
-from pysrc.prediction.ss_arxiv_loader import SSArxivLoader
 
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379'),
 CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379')
@@ -26,7 +23,7 @@ PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
 @celery.task(name='analyze_search_terms')
 def analyze_search_terms(source, query, sort=None, limit=None):
-    loader = get_loader(source, PUBTRENDS_CONFIG)
+    loader = Loaders.get_loader(source, PUBTRENDS_CONFIG)
     analyzer = get_analyzer(loader, PUBTRENDS_CONFIG)
     try:
         sort = sort or SORT_MOST_CITED
@@ -47,7 +44,7 @@ def analyze_search_terms(source, query, sort=None, limit=None):
 
 @celery.task(name='analyze_id_list')
 def analyze_id_list(source, id_list, zoom, query):
-    loader = get_loader(source, PUBTRENDS_CONFIG)
+    loader = Loaders.get_loader(source, PUBTRENDS_CONFIG)
     analyzer = get_analyzer(loader, PUBTRENDS_CONFIG)
     try:
         ids = analyzer.process_id_list(id_list, zoom, 1, current_task)
@@ -65,7 +62,7 @@ def analyze_id_list(source, id_list, zoom, query):
 
 @celery.task(name='find_paper_async')
 def find_paper_async(source, key, value):
-    loader = get_loader(source, PUBTRENDS_CONFIG)
+    loader = Loaders.get_loader(source, PUBTRENDS_CONFIG)
     progress = Progress(total=2)
     loader.set_progress(progress)
     try:
@@ -79,20 +76,6 @@ def find_paper_async(source, key, value):
             raise Exception('Found multiple papers matching your search, please try to be more specific')
     finally:
         loader.close_connection()
-
-
-def get_loader(source, config):
-    try:
-        if source == 'Pubmed':
-            return PubmedLoader(config)
-        elif source == 'Semantic Scholar':
-            return SemanticScholarLoader(config)
-        elif source == 'Arxiv':
-            return SSArxivLoader(config)
-        else:
-            raise ValueError(f"Unknown source {source}")
-    except ServiceUnavailable:
-        raise ConnectionError(f"Failed to establish connection to the neo4j storage")
 
 
 def get_analyzer(loader, config):

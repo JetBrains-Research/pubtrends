@@ -1,6 +1,5 @@
 import pandas as pd
 
-from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loader import Loader
 
 PUBLICATION_DATA = [['1', 1963, 'Article 1', 'just a paper', 'Article', 'Geller R, Geller M, Bing Ch', 'Nature'],
@@ -54,10 +53,6 @@ EXPECTED_MAX_RELATIVE_GAIN = {1972: '3', 1974: '4'}
 
 class MockLoader(Loader):
 
-    def __init__(self, ids=None):
-        config = PubtrendsConfig(test=True)
-        super(MockLoader, self).__init__(config, connect=False)
-
     def find(self, key, value, current=1, task=None):
         raise Exception('Not implemented')
 
@@ -84,10 +79,6 @@ class MockLoader(Loader):
 
 
 class MockLoaderSingle(Loader):
-
-    def __init__(self):
-        config = PubtrendsConfig(test=True)
-        super(MockLoaderSingle, self).__init__(config, connect=False)
 
     def find(self, key, value, current=1, task=None):
         raise Exception('Not implemented')
@@ -117,10 +108,6 @@ class MockLoaderSingle(Loader):
 
 
 class MockLoaderEmpty(Loader):
-
-    def __init__(self):
-        config = PubtrendsConfig(test=True)
-        super(MockLoaderEmpty, self).__init__(config, connect=False)
 
     def search(self, terms, limit=None, sort=None, current=1, task=None):
         return []

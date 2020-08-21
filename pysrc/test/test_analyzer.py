@@ -5,8 +5,6 @@ from parameterized import parameterized
 
 from pysrc.papers.analyzer import KeyPaperAnalyzer
 from pysrc.papers.config import PubtrendsConfig
-from pysrc.papers.db.pm_loader import PubmedLoader
-from pysrc.papers.db.ss_loader import SemanticScholarLoader
 from pysrc.test.mock_loaders import MockLoader, \
     CITATION_YEARS, EXPECTED_MAX_GAIN, EXPECTED_MAX_RELATIVE_GAIN, CITATION_GRAPH_NODES, CITATION_GRAPH_EDGES, \
     MockLoaderEmpty, MockLoaderSingle, SIMILARITY_GRAPH_EDGES
@@ -25,18 +23,6 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.ids)
         cls.analyzer.citations_graph = cls.analyzer.build_citation_graph(cls.analyzer.cit_df)
         cls.analyzer.bibliographic_coupling_df = loader.load_bibliographic_coupling(cls.analyzer.ids)
-
-    @parameterized.expand([
-        ('Pubmed', PubmedLoader(PUBTRENDS_CONFIG), False, 'Pubmed'),
-        ('Semantic Scholar', SemanticScholarLoader(PUBTRENDS_CONFIG), False, 'Semantic Scholar')
-    ])
-    def test_valid_source(self, name, loader, test, expected):
-        analyzer = KeyPaperAnalyzer(loader, TestKeyPaperAnalyzer.PUBTRENDS_CONFIG, test=test)
-        self.assertEqual(analyzer.source, expected, name)
-
-    def test_bad_source(self):
-        with self.assertRaises(TypeError):
-            KeyPaperAnalyzer(MockLoader(), TestKeyPaperAnalyzer.PUBTRENDS_CONFIG, test=False)
 
     def test_build_citation_graph_nodes_count(self):
         self.assertEqual(self.analyzer.citations_graph.number_of_nodes(), len(CITATION_GRAPH_NODES))

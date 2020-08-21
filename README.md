@@ -214,11 +214,12 @@ Please ensure that you have configured and prepared the database(s).
 3. Start PostgreSQL server.
 
     ```
-    docker run --rm  --name pubtrends-postgres -p 5432:5432 -d postgres:12 \
+    docker run --rm  --name pubtrends-postgres -p 5432:5432 \
         -e POSTGRES_USER=biolabs -e POSTGRES_PASSWORD=mysecretpassword \
         -e POSTGRES_DB=pubtrends \
         -v ~/postgres/:/var/lib/postgresql/data \
-        -e PGDATA=/var/lib/postgresql/data/pgdata 
+        -e PGDATA=/var/lib/postgresql/data/pgdata \
+        -d postgres:12 
     ```
    
 4. Build ready for deployment package with script `dist.sh`.

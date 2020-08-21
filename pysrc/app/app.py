@@ -19,7 +19,8 @@ from flask_sqlalchemy import SQLAlchemy
 from pysrc.celery.tasks import celery, find_paper_async, analyze_search_terms, analyze_id_list, get_analyzer
 from pysrc.celery.tasks_cache import get_or_cancel_task
 from pysrc.papers.config import PubtrendsConfig
-from pysrc.papers.paper import prepare_paper_data, prepare_papers_data, get_loader_and_url_prefix
+from pysrc.papers.db.loaders import Loaders
+from pysrc.papers.paper import prepare_paper_data, prepare_papers_data
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.plot.plotter import Plotter
 from pysrc.papers.stats import prepare_stats_data
@@ -247,7 +248,7 @@ def graph():
         job = AsyncResult(jobid, app=celery)
         if job and job.state == 'SUCCESS':
             _, data, _ = job.result
-            loader, url_prefix = get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
+            loader, url_prefix = Loaders.get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
             analyzer = get_analyzer(loader, PUBTRENDS_CONFIG)
             analyzer.init(data)
             topics_tags = {comp: ', '.join(

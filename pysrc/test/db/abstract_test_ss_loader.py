@@ -1,38 +1,51 @@
-import logging
-import unittest
-from abc import ABCMeta
+from abc import ABCMeta, abstractmethod
 
 from pandas.util.testing import assert_frame_equal
 from parameterized import parameterized
 
-from pysrc.papers.config import PubtrendsConfig
-from pysrc.papers.db.ss_loader import SemanticScholarLoader
-from pysrc.papers.db.ss_writer import SemanticScholarWriter
 from pysrc.papers.utils import SORT_MOST_RECENT, SORT_MOST_CITED, SORT_MOST_RELEVANT
-from pysrc.test.db.ss_test_articles import required_articles, extra_articles, required_citations, \
-    expected_cit_stats_df, expected_cit_df, expected_cocit_df, part_of_articles, expanded_articles, extra_citations
+from pysrc.test.db.ss_test_articles import required_citations, \
+    expected_cit_stats_df, expected_cit_df, expected_cocit_df, part_of_articles, expanded_articles
 
 
-class TestSemanticScholarLoader(unittest.TestCase, metaclass=ABCMeta):
-    loader = SemanticScholarLoader(config=PubtrendsConfig(test=True))
+class AbstractTestSemanticScholarLoader(metaclass=ABCMeta):
 
-    @classmethod
-    def setUpClass(cls):
-        cls.loader.set_progress(logging.getLogger(__name__))
+    # @classmethod
+    # def setUpClass(cls):
+    # TODO: example of initialization
+    #
+    #     cls.loader = Loader(config=PubtrendsConfig(test=True))
+    #     cls.loader.set_progress(logging.getLogger(__name__))
+    #
+    #     # Text search is not tested, imitating search results
+    #     cls.ids = list(map(lambda article: article.ssid, required_articles))
+    #
+    #     writer = Writer()
+    #     writer.init_database()
+    #     writer.insert_publications(required_articles + extra_articles)
+    #     writer.insert_citations(required_citations + extra_citations)
+    #
+    #     # Get data via loader methods
+    #     cls.pub_df = cls.loader.load_publications(cls.ids)
+    #     cls.cit_stats_df = cls.loader.load_citation_stats(cls.ids)
+    #     cls.cit_df = cls.loader.load_citations(cls.ids)
+    #     cls.cocit_df = cls.loader.load_cocitations(cls.ids)
 
-        # Text search is not tested, imitating search results
-        cls.ids = list(map(lambda article: article.ssid, required_articles))
+    @abstractmethod
+    def getLoader(self):
+        """:return Loader instance"""
 
-        writer = SemanticScholarWriter()
-        writer.init_semantic_scholar_database()
-        writer.insert_semantic_scholar_publications(required_articles + extra_articles)
-        writer.insert_semantic_scholar_citations(required_citations + extra_citations)
+    @abstractmethod
+    def getCitationsStatsDataframe(self):
+        """:return citations stats pandas dataframe"""
 
-        # Get data via SemanticScholar methods
-        cls.pub_df = cls.loader.load_publications(cls.ids)
-        cls.cit_stats_df = cls.loader.load_citation_stats(cls.ids)
-        cls.cit_df = cls.loader.load_citations(cls.ids)
-        cls.cocit_df = cls.loader.load_cocitations(cls.ids)
+    @abstractmethod
+    def getCitationsDataframe(self):
+        """:return citations dataframe"""
+
+    @abstractmethod
+    def getCoCitationsDataframe(self):
+        """:return co-citations dataframe"""
 
     @parameterized.expand([
         ('limit 3, most recent', 3, SORT_MOST_RECENT, ['5a63b4199bb58992882b0bf60bc1b1b3f392e5a5',
@@ -47,33 +60,33 @@ class TestSemanticScholarLoader(unittest.TestCase, metaclass=ABCMeta):
     ])
     def test_search(self, name, limit, sort, expected):
         # Use sorted to avoid ambiguity
-        ids = self.loader.search('find search', limit=limit, sort=sort)
+        ids = self.getLoader().search('find search', limit=limit, sort=sort)
         self.assertListEqual(sorted(expected), sorted(ids), name)
 
     def test_citations_stats_rows(self):
         expected_rows = expected_cit_stats_df.shape[0]
-        actual_rows = self.cit_stats_df.shape[0]
+        actual_rows = self.getCitationsStatsDataframe().shape[0]
         self.assertEqual(expected_rows, actual_rows, "Number of rows in citations statistics is incorrect")
 
     def test_load_citation_stats_data_frame(self):
         assert_frame_equal(expected_cit_stats_df,
-                           self.cit_stats_df.sort_values(by=['id', 'year']).reset_index(drop=True),
+                           self.getCitationsStatsDataframe().sort_values(by=['id', 'year']).reset_index(drop=True),
                            "Citations statistics is incorrect",
                            check_like=True)
 
     def test_load_citations_count(self):
-        self.assertEqual(len(required_citations), len(self.cit_df), 'Wrong number of citations')
+        self.assertEqual(len(required_citations), len(self.getCitationsDataframe()), 'Wrong number of citations')
 
     def test_load_citations_data_frame(self):
-        assert_frame_equal(expected_cit_df, self.cit_df, 'Wrong citation data', check_like=True)
+        assert_frame_equal(expected_cit_df, self.getCitationsDataframe(), 'Wrong citation data', check_like=True)
 
     def test_load_cocitations_count(self):
         expected_rows = expected_cocit_df.shape[0]
-        actual_rows = self.cocit_df.shape[0]
+        actual_rows = self.getCoCitationsDataframe().shape[0]
         self.assertEqual(expected_rows, actual_rows, "Number of rows in co-citations dataframe is incorrect")
 
     def test_load_cocitations_data_frame(self):
-        actual = self.cocit_df.sort_values(by=['citing', 'cited_1', 'cited_2']).reset_index(drop=True)
+        actual = self.getCoCitationsDataframe().sort_values(by=['citing', 'cited_1', 'cited_2']).reset_index(drop=True)
         print(expected_cocit_df)
         print(actual)
         assert_frame_equal(expected_cocit_df, actual, "Co-citations dataframe is incorrect", check_like=True)
@@ -81,7 +94,7 @@ class TestSemanticScholarLoader(unittest.TestCase, metaclass=ABCMeta):
     def test_expand(self):
         ids = list(map(lambda article: article.ssid, part_of_articles))
         expected = list(map(lambda article: article.ssid, expanded_articles))
-        actual = self.loader.expand(ids, 1000)
+        actual = self.getLoader().expand(ids, 1000)
         self.assertSequenceEqual(sorted(expected), sorted(actual), "Wrong list of expanded ids")
 
     @parameterized.expand([
@@ -96,7 +109,7 @@ class TestSemanticScholarLoader(unittest.TestCase, metaclass=ABCMeta):
         ('doi with spaces', 'doi', '     10.000/0000      ', ['5451b1ef43678d473575bdfa7016d024146f2b53']),
     ])
     def test_find_match(self, case, key, value, expected):
-        actual = self.loader.find(key, value)
+        actual = self.getLoader().find(key, value)
         self.assertListEqual(sorted(actual), sorted(expected), case)
 
     @parameterized.expand([
@@ -105,9 +118,5 @@ class TestSemanticScholarLoader(unittest.TestCase, metaclass=ABCMeta):
         ('no such doi', 'doi', '10.000/0001')
     ])
     def test_find_no_match(self, case, key, value):
-        actual = self.loader.find(key, value)
+        actual = self.getLoader().find(key, value)
         self.assertTrue(len(actual) == 0, case)
-
-
-if __name__ == "__main__":
-    unittest.main()
