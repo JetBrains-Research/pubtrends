@@ -80,7 +80,8 @@ open class SSPostgresWriter(
             val vals = articles.map { it.ssid }.joinToString(",") { "('$it')" }
             exec(
                     "UPDATE SSPublications\n" +
-                            "SET tsv = to_tsvector('english', coalesce(title, '') || coalesce(abstract, ''))\n" +
+                            "set tsv = setweight(to_tsvector('english', coalesce(title, '')), 'A') || \n" +
+                            "   setweight(to_tsvector('english', coalesce(abstract, '')), 'B')\n" +
                             "WHERE ssid IN (VALUES $vals);"
             )
 

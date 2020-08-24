@@ -104,7 +104,8 @@ open class PMPostgresWriter(
             val vals = articles.map { it.pmid }.joinToString(",") { "($it)" }
             exec(
                     "UPDATE PMPublications\n" +
-                            "SET tsv = to_tsvector('english', coalesce(title, '') || coalesce(abstract, ''))\n" +
+                            "set tsv = setweight(to_tsvector('english', coalesce(title, '')), 'A') || \n" +
+                            "   setweight(to_tsvector('english', coalesce(abstract, '')), 'B')\n" +
                             "WHERE pmid IN (VALUES $vals);"
             )
         }

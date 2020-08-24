@@ -4,8 +4,8 @@ import pandas as pd
 from pandas.util.testing import assert_frame_equal
 from parameterized import parameterized
 
-from pysrc.papers.utils import tokenize, cut_authors_list, split_df_list, crc32, preprocess_search_query, \
-    preprocess_doi, preprocess_pubmed_search_title, rgb2hex
+from pysrc.papers.utils import tokenize, cut_authors_list, split_df_list, crc32, \
+    preprocess_doi, preprocess_search_title, rgb2hex
 
 
 class TestUtils(unittest.TestCase):
@@ -58,51 +58,6 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(crc32(ssid), crc32id, f"Hashed id is wrong ({case} case)")
 
     @parameterized.expand([
-        ('FooBar', 'FooBar'),
-        ('Foo Bar', 'Foo AND Bar'),
-        ('"Foo Bar"', '"Foo Bar"'),
-        ('Foo-Bar', '"Foo-Bar"'),
-        ('&^Foo-Bar', '"Foo-Bar"'),
-        ("Alzheimer's disease", 'Alzheimer AND disease'),
-        ('Foo, Bar', 'Foo OR Bar'),
-        ('Foo, Bar Baz', 'Foo OR (Bar AND Baz)'),
-        ('Foo, "Bar Baz"', 'Foo OR "Bar Baz"'),
-    ])
-    def test_preprocess_search_valid_source(self, terms, expected):
-        self.assertEqual(expected, preprocess_search_query(terms, 0))
-
-    def test_preprocess_search_too_few_words(self):
-        self.assertEqual('Foo', preprocess_search_query('Foo', 1))
-        with self.assertRaises(Exception):
-            preprocess_search_query('Foo', 2)
-
-    def test_preprocess_search_too_few_words_whitespaces(self):
-        with self.assertRaises(Exception):
-            preprocess_search_query('Foo  ', 2)
-
-    def test_preprocess_search_too_few_words_stems(self):
-        with self.assertRaises(Exception):
-            preprocess_search_query('Humans Humanity', 2)
-
-    def test_preprocess_search_dash_split(self):
-        self.assertEqual('"Covid-19"', preprocess_search_query('Covid-19', 2))
-
-    def test_preprocess_search_or(self):
-        self.assertEqual(
-            '"COVID-19" OR Coronavirus OR "Corona virus" OR "2019-nCoV" OR "SARS-CoV" OR "MERS-CoV" OR '
-            '"Severe Acute Respiratory Syndrome" OR "Middle East Respiratory Syndrome"',
-            preprocess_search_query('COVID-19, Coronavirus, "Corona virus", 2019-nCoV, SARS-CoV, '
-                                    'MERS-CoV, "Severe Acute Respiratory Syndrome", '
-                                    '"Middle East Respiratory Syndrome"', 0)
-        )
-
-    def test_preprocess_search_illegal_string(self):
-        with self.assertRaises(Exception):
-            preprocess_search_query('"Foo" Bar"', 2)
-        with self.assertRaises(Exception):
-            preprocess_search_query('&&&', 2)
-
-    @parameterized.expand([
         ('dx.doi.org prefix', 'http://dx.doi.org/10.1037/a0028240', '10.1037/a0028240'),
         ('doi.org prefix', 'http://doi.org/10.3352/jeehp.2013.10.3', '10.3352/jeehp.2013.10.3'),
         ('no changes', '10.1037/a0028240', '10.1037/a0028240')
@@ -113,7 +68,7 @@ class TestUtils(unittest.TestCase):
     def test_preprocess_pubmed_search_title(self):
         title = '[DNA methylation age.]'
         expected = 'DNA methylation age'
-        self.assertEqual(preprocess_pubmed_search_title(title), expected)
+        self.assertEqual(preprocess_search_title(title), expected)
 
     @parameterized.expand([
         ([145, 200, 47], '#91c82f'),

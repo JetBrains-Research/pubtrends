@@ -8,8 +8,9 @@ import pandas as pd
 
 from pysrc.papers.db.loader import Loader
 from pysrc.papers.db.neo4j_connector import Neo4jConnector
+from pysrc.papers.db.neo4j_utils import preprocess_search_query_for_neo4j
 from pysrc.papers.utils import SORT_MOST_CITED, SORT_MOST_RECENT, SORT_MOST_RELEVANT
-from pysrc.papers.utils import preprocess_search_query, preprocess_doi, preprocess_pubmed_search_title
+from pysrc.papers.utils import preprocess_doi, preprocess_search_title
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
 
         # Use dedicated text index to search title.
         if key == 'title':
-            value = preprocess_pubmed_search_title(value)
+            value = preprocess_search_title(value)
             query = f'''
                 CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", '"{re.sub('"', '', value.strip())}"')
                 YIELD node
@@ -56,7 +57,7 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
             return [str(r['pmid']) for r in session.run(query)]
 
     def search(self, query, limit=None, sort=None, current=1, task=None):
-        query_str = preprocess_search_query(query, self.config.min_search_words)
+        query_str = preprocess_search_query_for_neo4j(query, self.config.min_search_words)
 
         if not limit:
             limit_message = ''
@@ -169,7 +170,7 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
             WHERE in.pmid IN pmids AND out.pmid IN pmids
             RETURN out.pmid AS id_out, in.pmid AS id_in
             ORDER BY id_out, id_in
-            LIMIT {self.config.max_number_of_cocitations};
+            LIMIT {self.config.max_number_of_citations};
         '''
 
         with self.neo4jdriver.session() as session:
@@ -195,7 +196,8 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
             WITH [{','.join([str(id) for id in ids])}] AS pmids
             MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
             WHERE in.pmid IN pmids
-            RETURN out.pmid AS citing, COLLECT(in.pmid) AS cited, out.date.year AS year;
+            RETURN out.pmid AS citing, COLLECT(in.pmid) AS cited, out.date.year AS year
+            LIMIT {self.config.max_number_of_cocitations};
         '''
 
         with self.neo4jdriver.session() as session:

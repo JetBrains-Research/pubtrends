@@ -14,7 +14,7 @@ class PubmedPostgresWriter(PostgresConnector):
         query_citations = '''
                     drop table if exists PMCitations;
                     create table PMCitations (
-                        pmid_out integer, 
+                        pmid_out integer,
                         pmid_in  integer
                     );
                     create index if not exists PMCitations_pmid_out_pmid_in_index
@@ -33,7 +33,6 @@ class PubmedPostgresWriter(PostgresConnector):
                         aux     jsonb
                     );
                     create index if not exists PMPublications_pmid_index on PMPublications (pmid);
-                    
                     ALTER TABLE PMPublications ADD COLUMN IF NOT EXISTS tsv TSVECTOR;
                     create index if not exists PMPublications_tsv on PMPublications using gin(tsv);
                     '''
@@ -53,8 +52,9 @@ class PubmedPostgresWriter(PostgresConnector):
 
         query = f'''
             insert into PMPublications(pmid, title, date, abstract, type, doi, aux) values {articles_vals};
-            update PMPublications 
-                set tsv = to_tsvector('english', coalesce(title, '') || coalesce(abstract, ''))
+            update PMPublications
+                set tsv = setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
+                    setweight(to_tsvector('english', coalesce(abstract, '')), 'B')
                 WHERE pmid IN (VALUES {ids_vals});
             '''
         with self.postgres_connection.cursor() as cursor:

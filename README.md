@@ -155,10 +155,10 @@ Please ensure that you have Database configured, up and running.
 
 ## Testing
 
-1. Start Docker image with Neo4j for tests (Kotlin and Python tests development)
+1. Start Docker image with Neo4j / Postgres for tests (Kotlin and Python development)
     ```
-    docker run --rm --name pubtrends-docker \
-    --publish=7474:7474 --publish=7687:7687 \
+    docker run --rm --name pubtrends-test \
+    --publish=7474:7474 --publish=7687:7687 --publish=5432:5432 \
     --volume=$(pwd):/pubtrends -d -t biolabs/pubtrends
     ```
 
@@ -174,7 +174,7 @@ Please ensure that you have Database configured, up and running.
 3. Python tests with codestyle check for development
     
     ```
-    source activate pubtrends; python -m pytest --pycodestyle pysrc
+    conda activate pubtrends; python -m pytest --pycodestyle pysrc
     ```
 
 4. Python tests with codestyle check within Docker (please ignore point 1)

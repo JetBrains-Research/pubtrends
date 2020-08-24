@@ -7,8 +7,9 @@ import pandas as pd
 
 from pysrc.papers.db.loader import Loader
 from pysrc.papers.db.postgres_connector import PostgresConnector
+from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres
 from pysrc.papers.utils import SORT_MOST_RELEVANT, SORT_MOST_CITED, SORT_MOST_RECENT, preprocess_doi, \
-    preprocess_pubmed_search_title
+    preprocess_search_title
 
 logger = logging.getLogger(__name__)
 
@@ -40,16 +41,16 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
         # Use dedicated text index to search title.
         if key == 'title':
-            value = preprocess_pubmed_search_title(value)
+            value = preprocess_search_title(value)
             query = f'''
                 SELECT pmid
-                FROM websearch_to_tsquery('english', '{value}') query, PMPublications P 
-                WHERE tsv @@ query AND title = '{value}';
+                FROM to_tsquery('english', \'''{value}\''') query, PMPublications P
+                WHERE tsv @@ query AND LOWER(title) = LOWER('{value}');
             '''
         else:
             query = f'''
                 SELECT pmid
-                FROM PMPublications P 
+                FROM PMPublications P
                 WHERE {key} = {repr(value)};
             '''
 
@@ -63,7 +64,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         return list(df['pmid'].astype(str))
 
     def search(self, query, limit=None, sort=None, current=0, task=None):
-        query_str = '\'' + query + '\''
+        query_str = preprocess_search_query_for_postgres(query, self.config.min_search_words)
         if not limit:
             limit_message = ''
             limit = self.config.max_number_of_articles
@@ -76,7 +77,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         if sort == SORT_MOST_RELEVANT:
             query = f'''
                 SELECT pmid
-                FROM websearch_to_tsquery('english', {query_str}) query, PMPublications P 
+                FROM to_tsquery('{query_str}') query, PMPublications P
                 WHERE tsv @@ query
                 ORDER BY ts_rank_cd(P.tsv, query) DESC
                 LIMIT {limit};
@@ -84,7 +85,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         elif sort == SORT_MOST_CITED:
             query = f'''
                 SELECT P.pmid as pmid
-                FROM websearch_to_tsquery('english', {query_str}) query, PMPublications P
+                FROM to_tsquery('{query_str}') query, PMPublications P
                     LEFT JOIN PMCitations C
                         ON C.pmid_in = P.pmid
                 WHERE tsv @@ query
@@ -95,7 +96,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         elif sort == SORT_MOST_RECENT:
             query = f'''
                 SELECT pmid
-                FROM websearch_to_tsquery('english', {query_str}) query, PMPublications P
+                FROM to_tsquery('{query_str}') query, PMPublications P
                 WHERE tsv @@ query
                 ORDER BY date DESC NULLS LAST
                 LIMIT {limit};
@@ -117,14 +118,14 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         vals = self.ids_to_vals(ids)
 
         query = f'''
-                SELECT P.pmid as id, title, abstract, date_part('year', date) as year, type, aux
+                SELECT P.pmid as id, title, abstract, date_part('year', date) as year, type, doi, aux
                 FROM PMPublications P
                 WHERE P.pmid IN (VALUES {vals});
                 '''
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(),
-                              columns=['id', 'title', 'abstract', 'year', 'type', 'aux'],
+                              columns=['id', 'title', 'abstract', 'year', 'type', 'doi', 'aux'],
                               dtype=object)
         if np.any(df[['id', 'title']].isna()):
             raise ValueError('Paper must have ID and title')
@@ -137,12 +138,15 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                            current=current, task=task)
         vals = self.ids_to_vals(ids)
         query = f'''
-           SELECT C.pmid_in AS id, date_part('year', date) as year, COUNT(1) AS count
+           SELECT C.pmid_in AS id, date_part('year', P_out.date) as year, COUNT(1) AS count
                 FROM PMCitations C
-                JOIN PMPublications P
-                  ON C.pmid_out = P.pmid
-                WHERE C.pmid_in IN (VALUES {vals}) 
-                GROUP BY C.pmid_in, year;
+                JOIN PMPublications P_out
+                  ON C.pmid_out = P_out.pmid
+                JOIN PMPublications P_in
+                  ON C.pmid_in = P_in.pmid
+                WHERE P_out.date >= P_in.date AND C.pmid_in IN (VALUES {vals})
+                GROUP BY C.pmid_in, year
+                LIMIT {self.config.max_number_of_citations};
             '''
 
         with self.postgres_connection.cursor() as cursor:
@@ -167,7 +171,9 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         vals = self.ids_to_vals(ids)
         query = f'''SELECT pmid_out as id_out, pmid_in as id_in
                     FROM PMCitations C
-                    WHERE pmid_in IN (VALUES {vals}) AND pmid_out IN (VALUES {vals}); 
+                    WHERE pmid_in IN (VALUES {vals}) AND pmid_out IN (VALUES {vals})
+                    ORDER BY id_out, id_in
+                    LIMIT {self.config.max_number_of_citations};
                     '''
 
         with self.postgres_connection.cursor() as cursor:
@@ -188,17 +194,18 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         vals = self.ids_to_vals(ids)
         query = f'''with X AS (SELECT pmid_out, pmid_in
                         FROM PMCitations
-                        WHERE pmid_in IN (VALUES {vals})), 
-                        
+                        WHERE pmid_in IN (VALUES {vals})),
+
                         Y AS (SELECT pmid_out, ARRAY_AGG(pmid_in) as cited_list
                         FROM X
                         GROUP BY pmid_out
                         HAVING COUNT(*) >= 2)
-                        
+
                         SELECT Y.pmid_out, date_part('year', P.date) as year, Y.cited_list
                         FROM Y
                         JOIN PMPublications P
-                        ON pmid_out = P.pmid and pmid_out = P.pmid;
+                        ON pmid_out = P.pmid and pmid_out = P.pmid
+                        LIMIT {self.config.max_number_of_cocitations};
                     '''
 
         with self.postgres_connection.cursor() as cursor:
@@ -208,10 +215,11 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
             lines = 0
             for row in cursor:
                 lines += 1
-                citing, year, cited = row
-                for i in range(len(cited)):
-                    for j in range(i + 1, len(cited)):
-                        data.append((str(citing), str(cited[i]), str(cited[j]), year))
+                citing, year, cited_list = row
+                cited_list.sort()
+                for i in range(len(cited_list)):
+                    for j in range(i + 1, len(cited_list)):
+                        data.append((str(citing), str(cited_list[i]), str(cited_list[j]), year))
             df = pd.DataFrame(data, columns=['citing', 'cited_1', 'cited_2', 'year'], dtype=object)
 
         if np.any(df[['citing', 'cited_1', 'cited_2']].isna()):
@@ -229,7 +237,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         if isinstance(ids, Iterable):
             self.progress.info('Expanding current topic', current=current, task=task)
             query = f'''
-                SELECT C.pmid_out AS pmid_inner, ARRAY_AGG(C.pmid_in) AS pmids_outter 
+                SELECT C.pmid_out AS pmid_inner, ARRAY_AGG(C.pmid_in) AS pmids_outter
                 FROM PMCitations C
                 WHERE C.pmid_out IN (VALUES {vals})
                 GROUP BY C.pmid_out
@@ -262,8 +270,8 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
             for row in cursor.fetchall():
                 inner, outer = row
-                expanded.add(inner)
-                expanded |= set(outer)
+                expanded.add(str(inner))
+                expanded |= set(map(lambda i: str(i), outer))
 
         self.progress.info(f'Found {len(expanded)} papers', current=current, task=task)
         return expanded
@@ -273,12 +281,13 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         vals = self.ids_to_vals(ids)
         query = f'''WITH X AS (SELECT pmid_out, pmid_in
                         FROM PMCitations
-                        WHERE pmid_out IN (VALUES {vals})) 
-                        
+                        WHERE pmid_out IN (VALUES {vals}))
+
                         SELECT pmid_in, ARRAY_AGG(pmid_out) as citing_list
                         FROM X
                         GROUP BY pmid_in
-                        HAVING COUNT(*) >= 2;
+                        HAVING COUNT(*) >= 2
+                        LIMIT {self.config.max_number_of_bibliographic_coupling};
                     '''
 
         with self.postgres_connection.cursor() as cursor:
@@ -288,10 +297,11 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
             lines = 0
             for row in cursor:
                 lines += 1
-                _, citing = row
-                for i in range(len(citing)):
-                    for j in range(i + 1, len(citing)):
-                        data.append((str(citing[i]), str(citing[j]), 1))
+                _, citing_list = row
+                citing_list.sort()
+                for i in range(len(citing_list)):
+                    for j in range(i + 1, len(citing_list)):
+                        data.append((str(citing_list[i]), str(citing_list[j]), 1))
             df = pd.DataFrame(data, columns=['citing_1', 'citing_2', 'total'], dtype=object)
             df = df.groupby(['citing_1', 'citing_2']).sum().reset_index()
 

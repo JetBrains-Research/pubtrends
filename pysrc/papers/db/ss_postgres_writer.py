@@ -37,7 +37,6 @@ class SemanticScholarPostgresWriter(PostgresConnector):
                         aux     jsonb
                     );
                     create index if not exists sspublications_crc32id_index on sspublications (crc32id);
-                    
                     ALTER TABLE SSPublications ADD COLUMN IF NOT EXISTS tsv TSVECTOR;
                     create index if not exists SSPublications_tsv on SSPublications using gin(tsv);
                     '''
@@ -52,12 +51,14 @@ class SemanticScholarPostgresWriter(PostgresConnector):
         # For some reason SemanticScholarArticle doesn't have abstract field
         articles_vals = ', '.join(
             str((a.ssid, a.crc32id, a.title, a.year, '', a.type,
-                 '', json.dumps({"journal": {"name": ""}, "authors": []})))
+                 a.doi or '', json.dumps({"journal": {"name": ""}, "authors": []})))
             for a in articles
         )
         query = f'''
             insert into sspublications(ssid, crc32id, title, year, abstract, type, doi, aux) values {articles_vals};
-            update sspublications set tsv = to_tsvector(COALESCE(title, '') || COALESCE(abstract, ''))
+            update sspublications
+            set tsv = setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
+                setweight(to_tsvector('english', coalesce(abstract, '')), 'B')
             WHERE ssid IN (VALUES {ids_vals});
             '''
         with self.postgres_connection.cursor() as cursor:
