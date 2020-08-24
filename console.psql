@@ -53,77 +53,65 @@ order by ndoc desc
 limit 50;
 
 
--- number of papers containing human
-SELECT COUNT(*)
+-- number of papers with text search ~360k in 9s
+SELECT P.title
 FROM PMPublications P
-WHERE tsv @@ websearch_to_tsquery('english', 'human');
+WHERE tsv @@ to_tsquery('human & aging & cell')
+LIMIT 10;
 
+-- Cache cleanup
+DISCARD ALL;
 
--- by relevance
+-- by relevance 1m29s
 explain analyse
-SELECT pmid, title, abstract, date, aux
+SELECT pmid--, title, abstract, date, aux
 FROM PMPublications P
-WHERE tsv @@ websearch_to_tsquery('english', 'human')
+WHERE tsv @@ websearch_to_tsquery('english', 'cell')
+ORDER BY ts_rank_cd(tsv, 'cell') DESC
+LIMIT 100;
+
+-- Cache cleanup
+DISCARD ALL;
+
+-- by year 2m4s
+explain analyse
+SELECT pmid--, title, abstract, date, aux
+FROM PMPublications P
+WHERE tsv @@ websearch_to_tsquery('english', 'cell')
 ORDER BY date DESC NULLS LAST
-LIMIT 1000000;
+LIMIT 100;
 
--- by year
-explain analyse
-SELECT pmid, title, abstract, date, aux
-FROM PMPublications P
-WHERE tsv @@ websearch_to_tsquery('english', 'computer')
-ORDER BY date DESC NULLS LAST
-LIMIT 1000000;
+-- Cache cleanup
+DISCARD ALL;
 
--- by citations
+-- by citations 1m50sec
 explain analyse
-SELECT pmid, title, abstract, date, aux, COUNT(1) AS count
+SELECT pmid,
+       COUNT(*) AS count--, title, abstract, date, aux
 FROM PMPublications P
          LEFT JOIN PMCitations C
                    ON C.pmid_in = pmid
-WHERE tsv @@ websearch_to_tsquery('english', 'human')
+WHERE tsv @@ websearch_to_tsquery('english', 'cell')
 GROUP BY pmid
 ORDER BY count DESC NULLS LAST
-LIMIT 1000000;
+LIMIT 100;
 
+SELECT P.pmid AS id
+FROM websearch_to_tsquery('english', 'cell') query,
+     PMPublications P
+         LEFT JOIN PMCitations C
+                   ON C.pmid_in = P.pmid
+WHERE tsv @@ query
+GROUP BY id
+ORDER BY COUNT(*) DESC NULLS LAST
+LIMIT 100;
 
-DROP TABLE IF EXISTS temp_pmids;
-WITH vals(pmid) AS (SELECT pmid
-                    FROM PMPublications P
-                    WHERE tsv @@ websearch_to_tsquery('english', 'human')
-                    ORDER BY date DESC NULLS LAST
-                    LIMIT 1000000)
 SELECT pmid
-INTO table temp_pmids
-FROM vals;
-DROP INDEX IF EXISTS temp_pmids_index;
-CREATE INDEX temp_pmids_index ON temp_pmids USING btree (pmid);
+FROM websearch_to_tsquery('english', 'human aging') query, PMPublications P
+WHERE tsv @@ query AND title = 'human aging';
 
--- Check that temp ids table is loaded
+-- Check top cited paper
 select *
-from temp_pmids;
-
--- Find co-cited papers, to be processed in linear time on call site
-explain analyse
-with X as (select pmid_out, pmid_in
-           from PMCitations
-           where pmid_in between (select min(pmid) from temp_pmids) and (select max(pmid) from temp_pmids)
-             and pmid_in in (select pmid from temp_pmids))
-
-select pmid_out, array_agg(pmid_in) as cited_list
-from X
-group by pmid_out
-having count(*) >= 2;
-
--- Find bibliographic coupling papers, to be processed in linear time on callsite
-explain analyse
-with X as (select pmid_out, pmid_in
-            from PMCitations
-            where pmid_out between (select min(pmid) from temp_pmids) and (select max(pmid) from temp_pmids)
-              and pmid_out in (select pmid from temp_pmids))
-select pmid_in, array_agg(pmid_out) as citing_list
-from X
-group by pmid_in
-having count(*) >= 2;
-
+from pmcitations
+where pmid_in = 2448875;
 

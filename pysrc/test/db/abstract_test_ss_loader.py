@@ -87,8 +87,6 @@ class AbstractTestSemanticScholarLoader(metaclass=ABCMeta):
 
     def test_load_cocitations_data_frame(self):
         actual = self.getCoCitationsDataframe().sort_values(by=['citing', 'cited_1', 'cited_2']).reset_index(drop=True)
-        print(expected_cocit_df)
-        print(actual)
         assert_frame_equal(expected_cocit_df, actual, "Co-citations dataframe is incorrect", check_like=True)
 
     def test_expand(self):

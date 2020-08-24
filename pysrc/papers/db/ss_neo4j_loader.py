@@ -6,10 +6,10 @@ from collections import Iterable
 import numpy as np
 import pandas as pd
 
-from pysrc.papers.utils import SORT_MOST_CITED, SORT_MOST_RECENT, SORT_MOST_RELEVANT, preprocess_doi, \
-    preprocess_search_query, crc32
+from pysrc.papers.utils import SORT_MOST_CITED, SORT_MOST_RECENT, SORT_MOST_RELEVANT, preprocess_doi, crc32
 from .loader import Loader
 from .neo4j_connector import Neo4jConnector
+from .neo4j_utils import preprocess_search_query_for_neo4j
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +50,7 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
             return [str(r['ssid']) for r in session.run(query)]
 
     def search(self, query, limit=None, sort=None, current=1, task=None):
-        query_str = preprocess_search_query(query, self.config.min_search_words)
+        query_str = preprocess_search_query_for_neo4j(query, self.config.min_search_words)
 
         if not limit:
             limit_message = ''
@@ -169,7 +169,8 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
             WHERE in.crc32id in crc32ids AND in.ssid IN ssids AND
                   out.crc32id in crc32ids AND out.ssid IN ssids
             RETURN out.ssid AS id_out, in.ssid AS id_in
-            ORDER BY id_out, id_in;
+            ORDER BY id_out, id_in
+            LIMIT {self.config.max_number_of_citations};
         '''
 
         with self.neo4jdriver.session() as session:
