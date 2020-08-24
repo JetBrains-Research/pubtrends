@@ -45,7 +45,7 @@ class Loaders:
             else:
                 raise ValueError(f"Unknown source {source}")
         else:
-            raise ValueError(f"No database configured")
+            raise ValueError("No database configured")
 
     @staticmethod
     def get_loader(source, config):

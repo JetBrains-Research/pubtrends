@@ -1,7 +1,7 @@
 import html
 import logging
 import re
-from collections import Iterable
+from collections.abc import Iterable
 
 import numpy as np
 import pandas as pd
@@ -119,7 +119,7 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
         with self.neo4jdriver.session() as session:
             pub_df = pd.DataFrame(session.run(query).data())
         if len(pub_df) == 0:
-            logger.debug(f'Failed to load publications.')
+            logger.debug('Failed to load publications.')
             pub_df = pd.DataFrame(columns=['id', 'title', 'abstract', 'year', 'type', 'doi', 'aux'])
         else:
             logger.debug(f'Found {len(pub_df)} publications in the local database')
@@ -146,7 +146,7 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
         with self.neo4jdriver.session() as session:
             cit_stats_df = pd.DataFrame(session.run(query).data())
         if len(cit_stats_df) == 0:
-            logger.debug(f'Failed to load citations statistics.')
+            logger.debug('Failed to load citations statistics.')
             cit_stats_df = pd.DataFrame(columns=['id', 'year', 'count'])
         else:
             self.progress.info(f'Found {cit_stats_df.shape[0]} records of citations by year',
@@ -176,7 +176,7 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
         with self.neo4jdriver.session() as session:
             cit_df = pd.DataFrame(session.run(query).data())
         if len(cit_df) == 0:
-            logger.debug(f'Failed to load citations.')
+            logger.debug('Failed to load citations.')
             cit_df = pd.DataFrame(columns=['id_in', 'id_out'])
         else:
             self.progress.info(f'Found {len(cit_df)} citations among papers', current=current, task=task)
@@ -214,7 +214,7 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
 
         cocit_df = pd.DataFrame(cocit_data, columns=['citing', 'cited_1', 'cited_2', 'year'])
         if len(cocit_data) == 0:
-            logger.debug(f'Failed to load cocitations.')
+            logger.debug('Failed to load cocitations.')
         else:
             self.progress.info(f'Found {len(cocit_df)} co-cited pairs of papers', current=current, task=task)
 
@@ -247,7 +247,7 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
             bibliographic_coupling_df = pd.DataFrame(session.run(query).data())
 
         if len(bibliographic_coupling_df) == 0:
-            logger.debug(f'Failed to load bibliographic coupling.')
+            logger.debug('Failed to load bibliographic coupling.')
             bibliographic_coupling_df = pd.DataFrame(columns=['citing_1', 'citing_2', 'total'])
         else:
             self.progress.info(f'Found {len(bibliographic_coupling_df)} bibliographic coupling pairs',

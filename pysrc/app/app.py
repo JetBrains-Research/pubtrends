@@ -110,7 +110,7 @@ def status():
     # no jobid
     return json.dumps({
         'state': 'FAILURE',
-        'message': f'No task id'
+        'message': 'No task id'
     })
 
 
@@ -320,11 +320,11 @@ def show_ids():
 
     papers_list = request.args.get('papers_list')
     if papers_list == 'top':
-        search_string += f'Top Papers'
+        search_string += 'Top Papers'
     if papers_list == 'year':
-        search_string += f'Papers of the Year'
+        search_string += 'Papers of the Year'
     if papers_list == 'hot':
-        search_string += f'Hot Papers'
+        search_string += 'Hot Papers'
 
     if jobid:
         job = AsyncResult(jobid, app=celery)
@@ -362,7 +362,7 @@ def cancel():
             })
     return json.dumps({
         'state': 'FAILURE',
-        'message': f'Unknown task id'
+        'message': 'Unknown task id'
     })
 
 
