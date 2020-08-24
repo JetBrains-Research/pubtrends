@@ -64,8 +64,8 @@ class KeyPaperAnalyzer:
     def search_terms(self, query, limit=None, sort=None, task=None):
         # Search articles relevant to the terms
         if len(query) == 0:
-            raise Exception(f'Empty search string, please use search terms or '
-                            f'all the query wrapped in "" for phrasal search')
+            raise Exception('Empty search string, please use search terms or '
+                            'all the query wrapped in "" for phrasal search')
         ids = self.loader.search(query, limit=limit, sort=sort, current=1, task=task)
         if len(ids) == 0:
             raise RuntimeError(f"Nothing found for search query: {query}")
@@ -75,7 +75,7 @@ class KeyPaperAnalyzer:
         # Zoom and load data about publications with given ids
         ids = id_list
         if len(ids) == 0:
-            raise RuntimeError(f"Nothing found in DB for empty ids list")
+            raise RuntimeError("Nothing found in DB for empty ids list")
         for _ in range(zoom):
             if len(ids) > self.config.max_number_to_expand:
                 self.progress.info('Too many related papers, stop references expanding',
@@ -188,7 +188,7 @@ class KeyPaperAnalyzer:
         return cit_stats_df
 
     def build_cocit_grouped_df(self, cocit_df, current=0, task=None):
-        logger.debug(f'Aggregating co-citations')
+        logger.debug('Aggregating co-citations')
         cocit_grouped_df = cocit_df.groupby(['cited_1', 'cited_2', 'year']).count().reset_index()
         cocit_grouped_df = cocit_grouped_df.pivot_table(index=['cited_1', 'cited_2'],
                                                         columns=['year'], values=['citing']).reset_index()
@@ -216,7 +216,7 @@ class KeyPaperAnalyzer:
         return df, min_year, max_year, citation_years
 
     def build_citation_graph(self, cit_df, current=0, task=None):
-        self.progress.info(f'Building citation graph', current=current, task=task)
+        self.progress.info('Building citation graph', current=current, task=task)
         G = nx.DiGraph()
         for index, row in cit_df.iterrows():
             v, u = row['id_out'], row['id_in']
@@ -239,7 +239,7 @@ class KeyPaperAnalyzer:
         Sugiyama, K., Kan, M.Y.:
         Exploiting potential citation papers in scholarly paper recommendation. In: JCDL (2013)
         """
-        self.progress.info(f'Building papers similarity graph', current=current, task=task)
+        self.progress.info('Building papers similarity graph', current=current, task=task)
 
         result = nx.Graph()
         # NOTE: we use nodes id as String to avoid problems str keys in jsonify
@@ -265,7 +265,7 @@ class KeyPaperAnalyzer:
         if len(df) >= 2:  # If we have any corpus
             self.progress.info(f'Citations based graph - {len(result.nodes())} nodes and {len(result.edges())} edges',
                                current=current, task=task)
-            self.progress.info(f'Processing possible citations based on text similarity',
+            self.progress.info('Processing possible citations based on text similarity',
                                current=current, task=task)
             tfidf = self.compute_tfidf(df, self.TFIDF_WORDS, n_gram=1)
             cos_similarities = cosine_similarity(tfidf)
@@ -300,7 +300,7 @@ class KeyPaperAnalyzer:
         return result
 
     def topic_analysis(self, similarity_graph, current=0, task=None):
-        self.progress.info(f'Extracting topics from paper similarity graph', current=current, task=task)
+        self.progress.info('Extracting topics from paper similarity graph', current=current, task=task)
         connected_components = nx.number_connected_components(similarity_graph)
         logger.debug(f'Relations graph has {connected_components} connected components')
 
@@ -456,7 +456,7 @@ class KeyPaperAnalyzer:
 
     @staticmethod
     def local_sparse(graph, e):
-        assert 0 < e < 1, f'sparsity e parameter should be in 0..1'
+        assert 0 < e < 1, f'sparsity parameter {e} should be in 0..1'
         result = nx.Graph()
         neighbours = {node: set(graph.neighbors(node)) for node in graph.nodes}
         sim_queues = {node: PriorityQueue(maxsize=max(1, floor(pow(len(neighbours[node]), e))))
@@ -507,7 +507,7 @@ class KeyPaperAnalyzer:
 
     def find_top_cited_papers(self, df, n_papers=TOP_CITED_PAPERS, threshold=TOP_CITED_PAPERS_FRACTION,
                               current=0, task=None):
-        self.progress.info(f'Identifying top cited papers', current=current, task=task)
+        self.progress.info('Identifying top cited papers', current=current, task=task)
         papers_to_show = max(min(n_papers, round(len(df) * threshold)), 1)
         top_cited_df = df.sort_values(by='total',
                                       ascending=False).iloc[:papers_to_show, :]
@@ -575,7 +575,7 @@ class KeyPaperAnalyzer:
                 components_to_merge.add(c)
         if components_to_merge:
             n_components_merged = len(components_to_merge)
-            logger.debug(f'Reassigning components')
+            logger.debug('Reassigning components')
             partition_merged = {}
             new_comps = {}
             ci = 1  # Start with 1, OTHER component is 0
@@ -590,7 +590,7 @@ class KeyPaperAnalyzer:
             logger.debug(f'Got {len(set(partition_merged.values()))} components')
             return partition_merged, n_components_merged
         else:
-            logger.debug(f'No need to reassign components')
+            logger.debug('No need to reassign components')
             return partition, 0
 
     def popular_journals(self, df, n=TOP_JOURNALS, current=0, task=None):

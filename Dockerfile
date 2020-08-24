@@ -75,7 +75,7 @@ COPY environment.yml /home/user/environment.yml
 RUN conda init bash \
     && conda env create -f /home/user/environment.yml \
     && source activate pubtrends \
-    && pip install teamcity-messages pytest-pycodestyle \
+    && pip install teamcity-messages pytest-flake8 \
     && conda clean -afy \
     && rm /home/user/environment.yml
 

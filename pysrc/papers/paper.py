@@ -147,8 +147,8 @@ def prepare_papers_data(data, source, comp=None, word=None, author=None, journal
 
     result = []
     for _, row in df.iterrows():
-        pid, title, abstract, authors, journal, year, total, doi, topic = \
-            row['id'], row['title'], row['abstract'], row['authors'], row['journal'], \
+        pid, title, authors, journal, year, total, doi, topic = \
+            row['id'], row['title'], row['authors'], row['journal'], \
             row['year'], row['total'], str(row['doi']), row['comp'] + 1
         if doi == 'None' or doi == 'nan':
             doi = ''

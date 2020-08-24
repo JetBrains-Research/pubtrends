@@ -282,7 +282,7 @@ def vectorize(corpus, query=None, n_words=1000):
 
 
 def lda_topics(counts, n_topics=10):
-    log.info(f'Performing LDA topic analysis')
+    log.info('Performing LDA topic analysis')
     lda = LatentDirichletAllocation(n_components=n_topics, random_state=0)
     topics = lda.fit_transform(counts)
 

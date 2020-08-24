@@ -174,7 +174,7 @@ Please ensure that you have Database configured, up and running.
 3. Python tests with codestyle check for development
     
     ```
-    conda activate pubtrends; python -m pytest --pycodestyle pysrc
+    conda activate pubtrends; pytest --flake8 pysrc
     ```
 
 4. Python tests with codestyle check within Docker (please ignore point 1)
@@ -183,7 +183,7 @@ Please ensure that you have Database configured, up and running.
     docker run --rm --volume=$(pwd):/pubtrends -t biolabs/pubtrends /bin/bash -c \
     "/usr/lib/postgresql/12/bin/pg_ctl -D /home/user/postgres start; sudo neo4j start; sleep 30s; \
     cd /pubtrends; mkdir ~/.pubtrends; cp config.properties ~/.pubtrends; \
-    source activate pubtrends; python -m pytest --pycodestyle pysrc"
+    source activate pubtrends; pytest --flake8 pysrc"
     ```
 
 ## Deployment
