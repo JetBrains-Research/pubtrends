@@ -7,7 +7,8 @@ import pandas as pd
 
 from pysrc.papers.db.loader import Loader
 from pysrc.papers.db.postgres_connector import PostgresConnector
-from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres
+from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres, \
+    process_bibliographic_coupling_postgres, process_cocitations_postgres
 from pysrc.papers.utils import SORT_MOST_RELEVANT, SORT_MOST_CITED, SORT_MOST_RECENT, preprocess_doi, \
     preprocess_search_title
 
@@ -210,7 +211,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df, lines = self.process_cocitations_postgres(cursor)
+            df, lines = process_cocitations_postgres(cursor)
 
         if np.any(df[['citing', 'cited_1', 'cited_2']].isna()):
             raise ValueError('NaN values are not allowed in ids of co-citation DataFrame')
@@ -225,32 +226,42 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         vals = self.ids_to_vals(ids)
         if isinstance(ids, Iterable):
             self.progress.info('Expanding current topic', current=current, task=task)
+            expanded = set()
+            # in citations expand
             query = f'''
                 SELECT C.pmid_out AS pmid_inner, ARRAY_AGG(C.pmid_in) AS pmids_outter
                 FROM PMCitations C
                 WHERE C.pmid_out IN (VALUES {vals})
                 GROUP BY C.pmid_out
-                UNION
+                LIMIT {max_to_expand};
+                '''
+            with self.postgres_connection.cursor() as cursor:
+                cursor.execute(query)
+                for row in cursor.fetchall():
+                    inner, outer = row
+                    expanded.add(str(inner))
+                    expanded |= set(map(lambda i: str(i), outer))
+
+            # out citations expand
+            query = f'''
                 SELECT C.pmid_in AS pmid_inner, ARRAY_AGG(C.pmid_out) AS pmids_outter
                 FROM PMCitations C
                 WHERE C.pmid_in IN (VALUES {vals})
                 GROUP BY C.pmid_in
                 LIMIT {max_to_expand};
                 '''
+
+            with self.postgres_connection.cursor() as cursor:
+                cursor.execute(query)
+                for row in cursor.fetchall():
+                    inner, outer = row
+                    expanded.add(str(inner))
+                    expanded |= set(map(lambda i: str(i), outer))
+
+            self.progress.info(f'Found {len(expanded)} papers', current=current, task=task)
+            return expanded
         else:
             raise TypeError('ids should be Iterable')
-
-        expanded = set()
-        with self.postgres_connection.cursor() as cursor:
-            cursor.execute(query)
-
-            for row in cursor.fetchall():
-                inner, outer = row
-                expanded.add(str(inner))
-                expanded |= set(map(lambda i: str(i), outer))
-
-        self.progress.info(f'Found {len(expanded)} papers', current=current, task=task)
-        return expanded
 
     def load_bibliographic_coupling(self, ids, current=1, task=None):
         self.progress.info('Processing bibliographic coupling for selected papers', current=current, task=task)
@@ -268,7 +279,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df, lines = self.process_bibliographic_coupling_postgres(cursor)
+            df, lines = process_bibliographic_coupling_postgres(cursor)
 
         logger.debug(f'Loaded {lines} lines of bibliographic coupling info')
         self.progress.info(f'Found {len(df)} bibliographic coupling pairs of papers',

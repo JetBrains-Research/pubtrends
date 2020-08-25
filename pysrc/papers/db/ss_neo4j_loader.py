@@ -208,10 +208,10 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
             lines = 0
             for r in session.run(query):
                 lines += 1
-                citing, year, cited = r['citing'], r['year'], sorted(r['cited'])
-                for i in range(len(cited)):
-                    for j in range(i + 1, len(cited)):
-                        cocit_data.append((citing, cited[i], cited[j], year))
+                citing, year, cited_list = r['citing'], r['year'], sorted(r['cited'])
+                for i in range(len(cited_list)):
+                    for j in range(i + 1, len(cited_list)):
+                        cocit_data.append((citing, cited_list[i], cited_list[j], year))
 
         logger.debug(f'Loaded {lines} lines of co-citing info')
         cocit_df = pd.DataFrame(cocit_data, columns=['citing', 'cited_1', 'cited_2', 'year'])

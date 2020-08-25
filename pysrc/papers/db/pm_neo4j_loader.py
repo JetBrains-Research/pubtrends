@@ -201,19 +201,19 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
         '''
 
         with self.neo4jdriver.session() as session:
-            cocit_data = []
+            data = []
             lines = 0
             for r in session.run(query):
                 lines += 1
-                citing, year, cited = r['citing'], r['year'], sorted(r['cited'])
-                for i in range(len(cited)):
-                    for j in range(i + 1, len(cited)):
-                        cocit_data.append((citing, cited[i], cited[j], year))
+                citing, year, cited_list = r['citing'], r['year'], sorted(r['cited'])
+                for i in range(len(cited_list)):
+                    for j in range(i + 1, len(cited_list)):
+                        data.append((citing, cited_list[i], cited_list[j], year))
+        cocit_df = pd.DataFrame(data, columns=['citing', 'cited_1', 'cited_2', 'year'])
 
         logger.debug(f'Loaded {lines} lines of co-citing info')
 
-        cocit_df = pd.DataFrame(cocit_data, columns=['citing', 'cited_1', 'cited_2', 'year'])
-        if len(cocit_data) == 0:
+        if len(data) == 0:
             logger.debug('Failed to load cocitations.')
         else:
             self.progress.info(f'Found {len(cocit_df)} co-cited pairs of papers', current=current, task=task)
