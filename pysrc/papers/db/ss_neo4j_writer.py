@@ -70,3 +70,6 @@ MERGE (n_out)-[:SSReferenced]->(n_in);
                 'crc32id_in': c[1].crc32id,
                 "ssid_out": c[0].ssid,
                 "ssid_in": c[1].ssid} for c in citations])
+
+    def delete(self, ids):
+        raise Exception('delete is not supported')

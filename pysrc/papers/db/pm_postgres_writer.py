@@ -1,13 +1,11 @@
 import json
 
-from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.postgres_connector import PostgresConnector
 
 
 class PubmedPostgresWriter(PostgresConnector):
 
-    def __init__(self):
-        config = PubtrendsConfig(test=True)
+    def __init__(self, config):
         super(PubmedPostgresWriter, self).__init__(config)
 
     def init_pubmed_database(self):
@@ -66,6 +64,18 @@ class PubmedPostgresWriter(PostgresConnector):
 
         query = f'insert into PMCitations (pmid_out, pmid_in) values {citations_vals};'
 
+        with self.postgres_connection.cursor() as cursor:
+            cursor.execute(query)
+            self.postgres_connection.commit()
+
+    def delete(self, ids):
+        ids_vals = ','.join(f'({i})' for i in ids)
+        query = f'''
+                DELETE FROM PMCitations
+                WHERE pmid_in IN (VALUES {ids_vals}) OR pmid_out IN (VALUES {ids_vals});
+                DELETE FROM PMPublications
+                WHERE pmid IN (VALUES {ids_vals});
+                '''
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             self.postgres_connection.commit()
