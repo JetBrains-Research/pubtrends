@@ -21,7 +21,8 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
 
     @staticmethod
     def ids2values(ids):
-        return ', '.join([f'({i}, \'{j}\')' for (i, j) in zip(map(crc32, ids), ids)])
+        ids = list(ids)  # In case of generator, avoid problems with zip and map
+        return ', '.join(f'({i}, \'{j}\')' for (i, j) in zip(map(crc32, ids), ids))
 
     def find(self, key, value, current=1, task=None):
         value = value.strip()

@@ -10,7 +10,8 @@ from pysrc.test.db.ss_test_articles import required_articles, extra_articles, re
 
 
 class TestSemanticScholarPostgresLoader(unittest.TestCase, AbstractTestSemanticScholarLoader):
-    loader = SemanticScholarPostgresLoader(PubtrendsConfig(test=True))
+    test_config = PubtrendsConfig(test=True)
+    loader = SemanticScholarPostgresLoader(test_config)
 
     @classmethod
     def setUpClass(cls):
@@ -20,7 +21,7 @@ class TestSemanticScholarPostgresLoader(unittest.TestCase, AbstractTestSemanticS
         # Text search is not tested, imitating search results
         cls.ids = list(map(lambda article: article.ssid, required_articles))
 
-        writer = SemanticScholarPostgresWriter()
+        writer = SemanticScholarPostgresWriter(TestSemanticScholarPostgresLoader.test_config)
         writer.init_semantic_scholar_database()
         writer.insert_semantic_scholar_publications(required_articles + extra_articles)
         writer.insert_semantic_scholar_citations(required_citations + extra_citations)

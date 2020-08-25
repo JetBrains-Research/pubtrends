@@ -1,11 +1,10 @@
-from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.neo4j_connector import Neo4jConnector
 
 
 class PubmedNeo4jWriter(Neo4jConnector):
     INDEX_FIELDS = ['pmid', 'doi']
 
-    def __init__(self, config=PubtrendsConfig(test=True)):
+    def __init__(self, config):
         super(PubmedNeo4jWriter, self).__init__(config)
 
     def init_pubmed_database(self):
@@ -68,3 +67,27 @@ MERGE (n_out)-[:PMReferenced]->(n_in);
             session.run(query, citations=[{
                 'pmid_out': int(c[0]),
                 'pmid_in': int(c[1])} for c in citations])
+
+    def delete(self, ids):
+        with self.neo4jdriver.session() as session:
+            query = '''
+                UNWIND {pmids} AS pmid
+                MATCH ()-[r:PMReferenced]->(in:PMPublication)
+                WHERE in.pmid = pmid
+                DETACH DELETE r;
+                '''
+            session.run(query, pmids=[int(i) for i in ids])
+
+            query = '''
+                UNWIND {pmids} AS pmid
+                MATCH (out:PMPublication)-[r:PMReferenced]->()
+                WHERE out.pmid = pmid
+                DETACH DELETE r;
+                '''
+            session.run(query, pmids=[int(i) for i in ids])
+            query = '''
+                UNWIND {pmids} AS pmid
+                MATCH (n:PMPublication {pmid: pmid})
+                DETACH DELETE n;
+                '''
+            session.run(query, pmids=[int(i) for i in ids])

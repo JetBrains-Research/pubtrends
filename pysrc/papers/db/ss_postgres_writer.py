@@ -1,13 +1,12 @@
 import json
 
-from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.postgres_connector import PostgresConnector
+from pysrc.papers.db.ss_postgres_loader import SemanticScholarPostgresLoader
 
 
 class SemanticScholarPostgresWriter(PostgresConnector):
 
-    def __init__(self):
-        config = PubtrendsConfig(test=True)
+    def __init__(self, config):
         super(SemanticScholarPostgresWriter, self).__init__(config)
 
     def init_semantic_scholar_database(self):
@@ -47,7 +46,6 @@ class SemanticScholarPostgresWriter(PostgresConnector):
             self.postgres_connection.commit()
 
     def insert_semantic_scholar_publications(self, articles):
-        ids_vals = ','.join(f"('{a.ssid}')" for a in articles)
         # For some reason SemanticScholarArticle doesn't have abstract field
         articles_vals = ', '.join(
             str((a.ssid, a.crc32id, a.title, a.year, '', a.type,
@@ -59,7 +57,7 @@ class SemanticScholarPostgresWriter(PostgresConnector):
             update sspublications
             set tsv = setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
                 setweight(to_tsvector('english', coalesce(abstract, '')), 'B')
-            WHERE ssid IN (VALUES {ids_vals});
+            WHERE (crc32id, ssid) in (VALUES {SemanticScholarPostgresLoader.ids2values(a.ssid for a in articles)});
             '''
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
@@ -75,3 +73,6 @@ class SemanticScholarPostgresWriter(PostgresConnector):
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             self.postgres_connection.commit()
+
+    def delete(self, ids):
+        raise Exception('delete is not supported')

@@ -101,8 +101,8 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
 
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
-            WITH [{','.join([f'"{id}"' for id in ids])}] AS ssids,
-                 [{','.join([str(crc32(id)) for id in ids])}] AS crc32ids
+            WITH [{','.join(f'"{id}"' for id in ids)}] AS ssids,
+                 [{','.join(str(crc32(id)) for id in ids)}] AS crc32ids
             MATCH (p:SSPublication)
             WHERE p.crc32id in crc32ids AND p.ssid IN ssids
             RETURN p.ssid as id, p.crc32id as crc32id, p.pmid as pmid, p.title as title, p.abstract as abstract,
@@ -131,8 +131,8 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
 
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
-            WITH [{','.join([f'"{id}"' for id in ids])}] AS ssids,
-                 [{','.join([str(crc32(id)) for id in ids])}] AS crc32ids
+            WITH [{','.join(f'"{id}"' for id in ids)}] AS ssids,
+                 [{','.join(str(crc32(id)) for id in ids)}] AS crc32ids
             MATCH (out:SSPublication)-[:SSReferenced]->(in:SSPublication)
             WHERE in.crc32id in crc32ids AND in.ssid IN ssids AND out.date.year >= in.date.year
             RETURN in.ssid AS id, out.date.year AS year, COUNT(*) AS count
@@ -163,8 +163,8 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
 
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
-            WITH [{','.join([f'"{id}"' for id in ids])}] AS ssids,
-                 [{','.join([str(crc32(id)) for id in ids])}] AS crc32ids
+            WITH [{','.join(f'"{id}"' for id in ids)}] AS ssids,
+                 [{','.join(str(crc32(id)) for id in ids)}] AS crc32ids
             MATCH (out:SSPublication)-[:SSReferenced]->(in:SSPublication)
             WHERE in.crc32id in crc32ids AND in.ssid IN ssids AND
                   out.crc32id in crc32ids AND out.ssid IN ssids
@@ -195,8 +195,8 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
         # Use unfolding to pairs on the client side instead of DataBase
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
-            WITH [{','.join([f'"{id}"' for id in ids])}] AS ssids,
-                 [{','.join([str(crc32(id)) for id in ids])}] AS crc32ids
+            WITH [{','.join(f'"{id}"' for id in ids)}] AS ssids,
+                 [{','.join(str(crc32(id)) for id in ids)}] AS crc32ids
             MATCH (out:SSPublication)-[:SSReferenced]->(in:SSPublication)
             WHERE in.crc32id in crc32ids AND in.ssid IN ssids
             RETURN out.ssid AS citing, COLLECT(in.ssid) AS cited, out.date.year AS year
@@ -236,8 +236,8 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
         # Use unfolding to pairs on the client side instead of DataBase
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
-            WITH [{','.join([f'"{id}"' for id in ids])}] AS ssids,
-                 [{','.join([str(crc32(id)) for id in ids])}] AS crc32ids
+            WITH [{','.join(f'"{id}"' for id in ids)}] AS ssids,
+                 [{','.join(str(crc32(id)) for id in ids)}] AS crc32ids
             MATCH (out1:SSPublication),(out2:SSPublication)
             WHERE NOT (out1.crc32id = out2.crc32id AND out1.ssid = out2.ssid) AND
                 out1.crc32id in crc32ids AND out1.ssid IN ssids AND
@@ -269,8 +269,8 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
 
             # TODO[shpynov] transferring huge list of ids can be a problem
             query = f'''
-            WITH [{','.join([f'"{id}"' for id in ids])}] AS ssids,
-                 [{','.join([str(crc32(id)) for id in ids])}] AS crc32ids
+            WITH [{','.join(f'"{id}"' for id in ids)}] AS ssids,
+                 [{','.join(str(crc32(id)) for id in ids)}] AS crc32ids
                 MATCH (out:SSPublication)-[:SSReferenced]->(in:SSPublication)
                 WHERE in.crc32id IN crc32ids AND in.ssid in ssids
                 RETURN out.ssid AS expanded
@@ -280,8 +280,8 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
                 expanded |= set([str(r['expanded']) for r in session.run(query)])
 
             query = f'''
-            WITH [{','.join([f'"{id}"' for id in ids])}] AS ssids,
-                 [{','.join([str(crc32(id)) for id in ids])}] AS crc32ids
+            WITH [{','.join(f'"{id}"' for id in ids)}] AS ssids,
+                 [{','.join(str(crc32(id)) for id in ids)}] AS crc32ids
                 MATCH (out:SSPublication)-[:SSReferenced]->(in:SSPublication)
                 WHERE out.crc32id IN crc32ids AND out.ssid in ssids
                 RETURN in.ssid AS expanded
