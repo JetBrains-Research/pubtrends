@@ -7,7 +7,8 @@ import pandas as pd
 
 from pysrc.papers.db.loader import Loader
 from pysrc.papers.db.postgres_connector import PostgresConnector
-from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres
+from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres, \
+    process_bibliographic_coupling_postgres, process_cocitations_postgres
 from pysrc.papers.utils import crc32, SORT_MOST_RELEVANT, SORT_MOST_CITED, SORT_MOST_RECENT, preprocess_doi, \
     preprocess_search_title
 
@@ -211,7 +212,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
 
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            cocit_df, lines = self.process_cocitations_postgres(cursor)
+            cocit_df, lines = process_cocitations_postgres(cursor)
 
         if np.any(cocit_df[['citing', 'cited_1', 'cited_2']].isna()):
             raise ValueError('NaN values are not allowed in ids of co-citation DataFrame')
@@ -224,34 +225,41 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
     def expand(self, ids, limit, current=1, task=None):
         if isinstance(ids, Iterable):
             self.progress.info('Expanding current topic', current=current, task=task)
-            max_to_expand = limit - len(ids)
-
+            expanded = set()
+            max_to_expand = (limit - len(ids)) / 2
+            # Inner citations
             query = f'''
                 SELECT C.ssid_out as id_inner, ARRAY_AGG(C.ssid_in) as ids_outer
                 FROM sscitations C
                 WHERE (C.crc32id_out, C.ssid_out) IN (VALUES  {SemanticScholarPostgresLoader.ids2values(ids)})
                 GROUP BY C.ssid_out
-                UNION
+                LIMIT {max_to_expand};
+                '''
+            with self.postgres_connection.cursor() as cursor:
+                cursor.execute(query)
+                for row in cursor.fetchall():
+                    citing, cited = row
+                    expanded.add(citing)
+                    expanded |= set(cited)
+            # Outer citations
+            query = f'''
                 SELECT C.ssid_in as id_inner, ARRAY_AGG(C.ssid_out) as ids_outer
                 FROM sscitations C
                 WHERE (C.crc32id_in, C.ssid_in) IN (VALUES  {SemanticScholarPostgresLoader.ids2values(ids)})
                 GROUP BY C.ssid_in
                 LIMIT {max_to_expand};
                 '''
+            with self.postgres_connection.cursor() as cursor:
+                cursor.execute(query)
+                for row in cursor.fetchall():
+                    citing, cited = row
+                    expanded.add(citing)
+                    expanded |= set(cited)
+
+            self.progress.info(f'Found {len(expanded)} papers', current=current, task=task)
+            return expanded
         else:
             raise TypeError('ids should be Iterable')
-
-        expanded = set()
-        with self.postgres_connection.cursor() as cursor:
-            cursor.execute(query)
-
-            for row in cursor.fetchall():
-                citing, cited = row
-                expanded.add(citing)
-                expanded |= set(cited)
-
-        self.progress.info(f'Found {len(expanded)} papers', current=current, task=task)
-        return expanded
 
     def load_bibliographic_coupling(self, ids, current=1, task=None):
         self.progress.info('Processing bibliographic coupling for selected papers', current=current, task=task)
@@ -267,7 +275,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
 
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df, lines = self.process_bibliographic_coupling_postgres(cursor)
+            df, lines = process_bibliographic_coupling_postgres(cursor)
 
         logger.debug(f'Loaded {lines} lines of bibliographic coupling info')
         self.progress.info(f'Found {len(df)} bibliographic coupling pairs of papers',
