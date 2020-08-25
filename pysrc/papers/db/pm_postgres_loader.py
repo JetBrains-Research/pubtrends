@@ -210,21 +210,10 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-
-            data = []
-            lines = 0
-            for row in cursor:
-                lines += 1
-                citing, year, cited_list = row
-                cited_list.sort()
-                for i in range(len(cited_list)):
-                    for j in range(i + 1, len(cited_list)):
-                        data.append((str(citing), str(cited_list[i]), str(cited_list[j]), year))
-            df = pd.DataFrame(data, columns=['citing', 'cited_1', 'cited_2', 'year'], dtype=object)
+            df, lines = self.process_cocitations_postgres(cursor)
 
         if np.any(df[['citing', 'cited_1', 'cited_2']].isna()):
             raise ValueError('NaN values are not allowed in ids of co-citation DataFrame')
-        df['year'] = df['year'].apply(lambda x: int(x) if x else np.nan)
 
         logger.debug(f'Loaded {lines} lines of citing info')
         self.progress.info(f'Found {len(df)} co-cited pairs of papers', current=current, task=task)
@@ -248,21 +237,8 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 GROUP BY C.pmid_in
                 LIMIT {max_to_expand};
                 '''
-        elif isinstance(ids, int):
-            query = f'''
-                SELECT C.pmid_out AS pmid_inner, ARRAY_AGG(C.pmid_in) AS pmids_outter
-                FROM PMCitations C
-                WHERE C.pmid_out = {ids}
-                GROUP BY C.pmid_out
-                UNION
-                SELECT C.pmid_in AS pmid_inner, ARRAY_AGG(C.pmid_out) AS pmids_outter
-                FROM PMCitations C
-                WHERE C.pmid_in = {ids}
-                GROUP BY C.pmid_in
-                LIMIT {max_to_expand};
-                '''
         else:
-            raise TypeError('ids should be either int or Iterable')
+            raise TypeError('ids should be Iterable')
 
         expanded = set()
         with self.postgres_connection.cursor() as cursor:
@@ -292,18 +268,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-
-            data = []
-            lines = 0
-            for row in cursor:
-                lines += 1
-                _, citing_list = row
-                citing_list.sort()
-                for i in range(len(citing_list)):
-                    for j in range(i + 1, len(citing_list)):
-                        data.append((str(citing_list[i]), str(citing_list[j]), 1))
-            df = pd.DataFrame(data, columns=['citing_1', 'citing_2', 'total'], dtype=object)
-            df = df.groupby(['citing_1', 'citing_2']).sum().reset_index()
+            df, lines = self.process_bibliographic_coupling_postgres(cursor)
 
         logger.debug(f'Loaded {lines} lines of bibliographic coupling info')
         self.progress.info(f'Found {len(df)} bibliographic coupling pairs of papers',
