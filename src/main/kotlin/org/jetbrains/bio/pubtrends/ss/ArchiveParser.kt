@@ -85,11 +85,11 @@ class ArchiveParser(
                 val journal = extractJournal(jsonObject)
                 val links = extractLinks(jsonObject)
                 val venue = jsonObject.get("venue")?.asString ?: ""
-                val aux = ArticleAuxInfo(authors, journal, links, venue)
+                val aux = Aux(authors, journal, links, venue)
 
                 curArticle = SemanticScholarArticle(ssid = ssid, title = title,
                         pmid = pmid, doi = doi, abstract = abstract, keywords = keywords, year = year,
-                        citationList = citationList, aux = aux)
+                        citations = citationList, aux = aux)
 
                 addArticleToBatch(curArticle)
 

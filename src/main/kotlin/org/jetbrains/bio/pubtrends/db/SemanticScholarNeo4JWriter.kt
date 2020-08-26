@@ -13,7 +13,7 @@ import java.io.Closeable
  * See ss_database_supplier.py and ss_loader.py for (up)loading code.
  * TODO[shpynov] Consider refactoring.
  */
-open class SSNeo4JDatabaseWriter(
+open class SemanticScholarNeo4JWriter(
         host: String,
         port: Int,
         user: String,
@@ -108,12 +108,13 @@ CALL db.index.fulltext.createNodeIndex("ssTitlesAndAbstracts", ["SSPublication"]
                     "title" to it.title.replace('\n', ' '),
                     "abstract" to it.abstract?.replace('\n', ' '),
                     "date" to DateTime(it.year ?: 1970, 1, 1, 12, 0).toString(),
+                    "keywords" to it.keywords,
                     "doi" to it.doi,
                     "aux" to GsonBuilder().create().toJson(it.aux)
             )
         })
         val citationParameters = mapOf("citations" to articles.flatMap {
-            it.citationList.toSet().map { cit ->
+            it.citations.toSet().map { cit ->
                 mapOf(
                         "ssid_out" to it.ssid,
                         "crc32id_out" to crc32id(it.ssid).toString(),
@@ -132,6 +133,7 @@ ON CREATE SET
     n.abstract = data.abstract,
     n.date = datetime(data.date),
     n.doi = data.doi,
+    n.keywords = data.keywords,
     n.aux = data.aux
 ON MATCH SET 
     n.pmid = data.pmid,
@@ -139,6 +141,7 @@ ON MATCH SET
     n.abstract = data.abstract,
     n.date = datetime(data.date),
     n.doi = data.doi,
+    n.keywords = data.keywords,
     n.aux = data.aux
 RETURN n;
 """.trimIndent(),

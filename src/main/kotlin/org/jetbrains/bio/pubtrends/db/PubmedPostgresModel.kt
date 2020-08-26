@@ -1,9 +1,12 @@
 package org.jetbrains.bio.pubtrends.db
 
-import org.jetbrains.bio.pubtrends.pm.ArticleAuxInfo
+import org.jetbrains.bio.pubtrends.pm.Aux
 import org.jetbrains.bio.pubtrends.pm.PublicationType
 import org.jetbrains.exposed.sql.Table
 
+/**
+ * ORM mapping for [PubmedArticle]
+ */
 object PMPublications : Table() {
     val pmid = integer("pmid").primaryKey()
     val date = date("date").nullable()
@@ -16,7 +19,7 @@ object PMPublications : Table() {
     val keywords = text("keywords").nullable()
     val mesh = text("mesh").nullable()
     val doi = text("doi").nullable()
-    val aux = jsonb("aux", ArticleAuxInfo::class.java, jsonMapper)
+    val aux = jsonb("aux", Aux::class.java, jsonMapper)
 }
 
 object PMCitations : Table() {

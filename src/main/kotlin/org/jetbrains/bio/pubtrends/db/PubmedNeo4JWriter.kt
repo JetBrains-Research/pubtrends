@@ -11,7 +11,7 @@ import java.io.Closeable
  * See pm_database_supplier.py and pm_loader.py for (up)loading code.
  * TODO[shpynov] Consider refactoring.
  */
-open class PMNeo4JDatabaseWriter(
+open class PubmedNeo4JWriter(
         host: String,
         port: Int,
         user: String,
@@ -91,7 +91,6 @@ CALL apoc.periodic.iterate("MATCH (p:PMPublication) RETURN p",
                 session.run("""
 CALL db.index.fulltext.createNodeIndex("${"pmTitlesAndAbstracts"}", ["PMPublication"], ["title", "abstract"])
 """.trimIndent())
-
             }
         }
     }
@@ -103,17 +102,17 @@ CALL db.index.fulltext.createNodeIndex("${"pmTitlesAndAbstracts"}", ["PMPublicat
             mapOf(
                     "pmid" to it.pmid.toString(),
                     "title" to it.title.replace('\n', ' '),
-                    "abstract" to it.abstractText.replace('\n', ' '),
+                    "abstract" to it.abstract.replace('\n', ' '),
                     "date" to (it.date?.toString() ?: ""),
                     "type" to it.type.name,
+                    "keywords" to it.keywords.joinToString(","),
+                    "mesh" to it.mesh.joinToString(","),
                     "doi" to it.doi,
-                    "aux" to GsonBuilder().create().toJson(it.auxInfo),
-                    "keywords" to it.keywordList.joinToString(","),
-                    "mesh" to it.meshHeadingList.joinToString(",")
+                    "aux" to GsonBuilder().create().toJson(it.aux)
             )
         })
         val citationParameters = mapOf("citations" to articles.flatMap {
-            it.citationList.toSet().map { cit -> mapOf("pmid_out" to it.pmid, "pmid_in" to cit) }
+            it.citations.toSet().map { cit -> mapOf("pmid_out" to it.pmid, "pmid_in" to cit) }
         })
 
         driver.session().use {

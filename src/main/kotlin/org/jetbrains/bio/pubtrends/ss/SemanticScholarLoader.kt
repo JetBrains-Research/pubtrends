@@ -5,7 +5,7 @@ import joptsimple.ValueConversionException
 import joptsimple.ValueConverter
 import org.apache.logging.log4j.LogManager
 import org.jetbrains.bio.pubtrends.Config
-import org.jetbrains.bio.pubtrends.db.SSNeo4JDatabaseWriter
+import org.jetbrains.bio.pubtrends.db.SemanticScholarNeo4JWriter
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -36,7 +36,7 @@ object SemanticScholarLoader {
             logger.info("Config path: $configPath")
 
             logger.info("Init Neo4j database connection")
-            val dbHandler = SSNeo4JDatabaseWriter(
+            val dbHandler = SemanticScholarNeo4JWriter(
                     config["neo4jhost"].toString(),
                     config["neo4jport"].toString().toInt(),
                     config["neo4jusername"].toString(),
