@@ -6,4 +6,6 @@ interface AbstractDBWriter<T> {
     fun delete(ids: List<String>)
 
     fun reset()
+
+    fun finish()
 }

@@ -2,11 +2,12 @@ from datetime import date
 
 import pandas as pd
 
+from pysrc.papers.db.article import AuxInfo, Author, Journal
 from pysrc.papers.db.loader import Loader
-from pysrc.papers.db.pm_article import PubmedArticle, AuxInfo, Author, Journal
+from pysrc.papers.db.pm_article import PubmedArticle
 
 REQUIRED_ARTICLES = [
-    PubmedArticle(1, 'Article Title 1', date=date(1963, 2, 1), doi='10.000/0000',
+    PubmedArticle(pmid=1, title='Article Title 1', date=date(1963, 2, 1), doi='10.000/0000',
                   aux=AuxInfo(
                       authors=[Author(name='Geller R'), Author(name='Geller M'), Author(name='Bing Ch')],
                       journal=Journal(name='Nature'))),
@@ -68,8 +69,9 @@ COCITATIONS = [
 ]
 
 EXPECTED_PUB_DF = Loader.process_publications_dataframe(
-    pd.DataFrame([article.to_list_year() for article in REQUIRED_ARTICLES],
-                 columns=['id', 'title', 'doi', 'aux', 'abstract', 'year', 'type', 'authors', 'journal']))
+    pd.DataFrame([article.to_list() for article in REQUIRED_ARTICLES],
+                 columns=['id', 'title', 'doi', 'aux', 'abstract', 'year', 'type', 'authors', 'journal',
+                          'keywords', 'mesh']))
 
 EXPECTED_CIT_STATS_DF = pd.DataFrame(CITATION_STATS, columns=['id', 'year', 'count']).sort_values(
     by=['id', 'year']
@@ -80,5 +82,6 @@ EXPECTED_CIT_DF = pd.DataFrame(INNER_CITATIONS, columns=['id_out', 'id_in'])
 EXPECTED_COCIT_DF = pd.DataFrame(COCITATIONS, columns=['citing', 'cited_1', 'cited_2', 'year'])
 
 EXPECTED_PUB_DF_GIVEN_IDS = Loader.process_publications_dataframe(
-    pd.DataFrame([article.to_list_year() for article in PART_OF_ARTICLES],
-                 columns=['id', 'title', 'doi', 'aux', 'abstract', 'year', 'type', 'authors', 'journal']))
+    pd.DataFrame([article.to_list() for article in PART_OF_ARTICLES],
+                 columns=['id', 'title', 'doi', 'aux', 'abstract', 'year', 'type', 'authors', 'journal',
+                          'keywords', 'mesh']))

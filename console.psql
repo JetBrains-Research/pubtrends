@@ -19,99 +19,110 @@ FROM PMCitations;
 select max(pmid)
 from PMpublications;
 
--- Add TSV index
-alter table PMpublications
-    add column tsv tsvector;
-
-do
-$$
-    declare
-        n      int := 0;
-        max_id int := (select max(pmid)
-                       from PMpublications);
-    begin
-        while n <= max_id
-            loop
-                update PMpublications
-                set tsv = to_tsvector('english', coalesce(title, '') || coalesce(abstract, ''))
-                where pmid between n and n + 10000;
-                commit;
-                n := n + 10000;
-                raise notice '% ', n;
-            end loop;
-    end;
-$$;
-
-
-drop index pub_gin_index;
-create index pub_gin_index on pmpublications using GIN (tsv);
-
 -- Most popular terms
 select *
 from ts_stat($$SELECT tsv FROM PMpublications$$)
 order by ndoc desc
 limit 50;
 
+-- Cache cleanup
+DISCARD ALL;
+VACUUM;
 
--- number of papers with text search ~360k in 9s
-SELECT P.title
+-- full text search 1m4s
+SELECT COUNT(*)
 FROM PMPublications P
-WHERE tsv @@ to_tsquery('human & aging & cell')
-LIMIT 10;
+WHERE tsv @@ to_tsquery('english', 'cell');
 
 -- Cache cleanup
 DISCARD ALL;
+VACUUM;
 
--- by relevance 1m29s
-explain analyse
-SELECT pmid--, title, abstract, date, aux
+-- by relevance 1m23s
+-- explain analyse
+SELECT pmid
 FROM PMPublications P
-WHERE tsv @@ websearch_to_tsquery('english', 'cell')
+WHERE tsv @@ to_tsquery('english', 'cell')
 ORDER BY ts_rank_cd(tsv, 'cell') DESC
-LIMIT 100;
+LIMIT 1000;
 
 -- Cache cleanup
 DISCARD ALL;
+VACUUM;
 
--- by year 2m4s
-explain analyse
-SELECT pmid--, title, abstract, date, aux
+-- by year 1m20s
+-- explain analyse
+SELECT pmid
 FROM PMPublications P
-WHERE tsv @@ websearch_to_tsquery('english', 'cell')
+WHERE tsv @@ to_tsquery('english', 'cell')
 ORDER BY date DESC NULLS LAST
-LIMIT 100;
+LIMIT 1000;
 
 -- Cache cleanup
 DISCARD ALL;
+VACUUM;
 
--- by citations 1m50sec
-explain analyse
-SELECT pmid,
-       COUNT(*) AS count--, title, abstract, date, aux
+-- by citations 2m50s
+-- explain analyse
+SELECT pmid
 FROM PMPublications P
          LEFT JOIN PMCitations C
                    ON C.pmid_in = pmid
-WHERE tsv @@ websearch_to_tsquery('english', 'cell')
+WHERE tsv @@ to_tsquery('english', 'cell')
 GROUP BY pmid
-ORDER BY count DESC NULLS LAST
-LIMIT 100;
-
-SELECT P.pmid AS id
-FROM websearch_to_tsquery('english', 'cell') query,
-     PMPublications P
-         LEFT JOIN PMCitations C
-                   ON C.pmid_in = P.pmid
-WHERE tsv @@ query
-GROUP BY id
 ORDER BY COUNT(*) DESC NULLS LAST
-LIMIT 100;
+LIMIT 1000;
 
-SELECT pmid
-FROM websearch_to_tsquery('english', 'human aging') query, PMPublications P
-WHERE tsv @@ query AND title = 'human aging';
 
--- Check top cited paper
-select *
+-- Cache cleanup
+DISCARD ALL;
+VACUUM;
+
+
+-- Create materialized view
+create materialized view matview_pmcitations as
+SELECT pmid, COUNT(*) AS count
+FROM PMPublications P
+         LEFT JOIN PMCitations C
+                   ON C.pmid_in = pmid
+GROUP BY pmid
+HAVING COUNT(*) >= 2;
+create index on matview_pmcitations (pmid);
+
+-- refresh all rows
+refresh materialized view matview_pmcitations;
+
+-- Cache cleanup
+DISCARD ALL;
+VACUUM;
+
+-- by citations with materialized view 1m27sec
+explain analyse
+SELECT P.pmid
+FROM PMPublications P
+         LEFT JOIN matview_pmcitations C
+                   ON P.pmid = C.pmid
+WHERE tsv @@ to_tsquery('english', 'cell')
+ORDER BY count DESC NULLS LAST
+LIMIT 1000;
+
+-- Cache cleanup
+DISCARD ALL;
+VACUUM;
+
+-- by citations with materialized view 1m22sec
+-- explain analyse
+WITH X as (SELECT P.pmid as pmid
+            FROM PMPublications P
+            WHERE tsv @@ to_tsquery('english', 'cell'))
+SELECT X.pmid FROM X
+LEFT JOIN matview_pmcitations C
+ON X.pmid = C.pmid
+ORDER BY count DESC NULLS LAST
+LIMIT 1000;
+
+
+select count(*)
 from pmcitations
-where pmid_in = 2448875;
+where pmid_in = 388356;
 

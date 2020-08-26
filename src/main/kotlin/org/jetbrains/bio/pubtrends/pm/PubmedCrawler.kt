@@ -6,7 +6,6 @@ import org.neo4j.driver.v1.exceptions.ServiceUnavailableException
 import java.io.*
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.zip.GZIPInputStream
 import javax.xml.stream.XMLStreamException
 
 class PubmedCrawlerException : Exception {
@@ -79,9 +78,9 @@ class PubmedCrawler(
                 return false
             }
             logger.info("Processing baseline")
-            downloadFiles(baselineFiles, 0, totalSize, isBaseline = true)
+            downloadAndProcessFiles(baselineFiles, 0, totalSize, isBaseline = true)
             logger.info("Processing updates")
-            downloadFiles(updateFiles, baselineSize, totalSize, isBaseline = false)
+            downloadAndProcessFiles(updateFiles, baselineSize, totalSize, isBaseline = false)
         } catch (e: IOException) {
             logger.error("Download failed: ${e.message}")
             throw PubmedCrawlerException(e)
@@ -109,7 +108,12 @@ class PubmedCrawler(
         return false
     }
 
-    private fun downloadFiles(files: List<String>, startProgress: Int, totalProgress: Int, isBaseline: Boolean) {
+    private fun downloadAndProcessFiles(
+            files: List<String>,
+            startProgress: Int,
+            totalProgress: Int,
+            isBaseline: Boolean
+    ) {
         val fileType = if (isBaseline) "baseline" else "update"
 
         files.forEachIndexed { idx, file ->
@@ -145,6 +149,7 @@ class PubmedCrawler(
                 it.write("lastId\t${PubmedFTPHandler.pubmedFileToId(file)}")
             }
         }
+        xmlParser.finish()
     }
 
     private fun deleteIfExists(name: String) {

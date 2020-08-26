@@ -85,13 +85,13 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 '''
         elif sort == SORT_MOST_CITED:
             query = f'''
-                SELECT P.pmid as pmid
-                FROM to_tsquery('{query_str}') query, PMPublications P
-                    LEFT JOIN PMCitations C
-                        ON C.pmid_in = P.pmid
-                WHERE tsv @@ query
-                GROUP BY pmid
-                ORDER BY COUNT(*) DESC NULLS LAST
+                WITH X as (SELECT P.pmid as pmid
+                            FROM PMPublications P
+                            WHERE tsv @@ to_tsquery('{query_str}'))
+                SELECT X.pmid as pmid FROM X
+                    LEFT JOIN matview_pmcitations C
+                    ON X.pmid = C.pmid
+                ORDER BY count DESC NULLS LAST
                 LIMIT {limit};
                 '''
         elif sort == SORT_MOST_RECENT:
@@ -117,16 +117,16 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
     def load_publications(self, ids, current=0, task=None):
         self.progress.info('Loading publication data', current=current, task=task)
         vals = self.ids_to_vals(ids)
-
         query = f'''
-                SELECT P.pmid as id, title, abstract, date_part('year', date) as year, type, doi, aux
+                SELECT P.pmid as id, title, abstract, date_part('year', date) as year, type,
+                    keywords, mesh, doi, aux
                 FROM PMPublications P
                 WHERE P.pmid IN (VALUES {vals});
                 '''
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(),
-                              columns=['id', 'title', 'abstract', 'year', 'type', 'doi', 'aux'],
+                              columns=['id', 'title', 'abstract', 'year', 'type', 'keywords', 'mesh', 'doi', 'aux'],
                               dtype=object)
         if np.any(df[['id', 'title']].isna()):
             raise ValueError('Paper must have ID and title')

@@ -32,17 +32,20 @@ ON CREATE SET
     n.abstract = data.abstract,
     n.type = data.type,
     n.doi = data.doi,
-    n.aux = data.aux
+    n.aux = data.aux,
+    n.keywords = data.keywords,
+    n.mesh = data.mesh
 ON MATCH SET
     n.date = data.date,
     n.title = data.title,
     n.abstract = data.abstract,
     n.type = data.type,
     n.doi = data.doi,
-    n.aux = data.aux
+    n.aux = data.aux,
+    n.keywords = data.keywords,
+    n.mesh = data.mesh
 RETURN n;
 '''
-
         with self.neo4jdriver.session() as session:
             session.run(query, articles=[a.to_dict() for a in articles])
 

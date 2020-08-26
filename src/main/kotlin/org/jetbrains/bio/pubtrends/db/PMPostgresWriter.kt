@@ -52,8 +52,21 @@ open class PMPostgresWriter(
             SchemaUtils.create(PMPublications, PMCitations)
             exec("ALTER TABLE PMPublications ADD COLUMN IF NOT EXISTS tsv TSVECTOR;")
             exec(
-                    "CREATE INDEX IF NOT EXISTS " +
-                            "pm_title_abstract_index ON PMPublications using GIN (tsv);"
+                    """
+                    CREATE INDEX IF NOT EXISTS
+                    pm_title_abstract_index ON PMPublications using GIN (tsv);
+                    """
+            )
+            exec(
+                    """
+                    create materialized view if not exists matview_pmcitations as
+                    SELECT pmid, COUNT(*) AS count
+                    FROM PMPublications P
+                    LEFT JOIN PMCitations C
+                        ON C.pmid_in = pmid
+                        GROUP BY pmid;
+                    create index if not exists PMCitation_matview_index on matview_pmcitations (pmid);
+                    """
             )
         }
     }
@@ -61,6 +74,12 @@ open class PMPostgresWriter(
     override fun reset() {
         transaction {
             addLogger(Log4jSqlLogger)
+            exec(
+                    """
+                    drop materialized view if exists matview_pmcitations;
+                    drop index if exists PMCitation_matview_index;
+                    """
+            )
             SchemaUtils.drop(PMPublications, PMCitations)
             exec("DROP INDEX IF EXISTS pm_title_abstract_index;")
         }
@@ -86,10 +105,8 @@ open class PMPostgresWriter(
                 if (article.abstractText != "") {
                     batch[abstract] = article.abstractText
                 }
-
-                batch[keywords] = article.keywordList.joinToString(separator = ", ")
-                batch[mesh] = article.meshHeadingList.joinToString(separator = ", ")
-
+                batch[keywords] = article.keywordList.joinToString(",")
+                batch[mesh] = article.meshHeadingList.joinToString(",")
                 batch[type] = article.type
                 batch[doi] = article.doi
                 batch[aux] = article.auxInfo
@@ -103,10 +120,12 @@ open class PMPostgresWriter(
             // Update TSV vector
             val vals = articles.map { it.pmid }.joinToString(",") { "($it)" }
             exec(
-                    "UPDATE PMPublications\n" +
-                            "set tsv = setweight(to_tsvector('english', coalesce(title, '')), 'A') || \n" +
-                            "   setweight(to_tsvector('english', coalesce(abstract, '')), 'B')\n" +
-                            "WHERE pmid IN (VALUES $vals);"
+                    """
+                    UPDATE PMPublications
+                    set tsv = setweight(to_tsvector('english', coalesce(title, '')), 'A') || 
+                                setweight(to_tsvector('english', coalesce(abstract, '')), 'B')
+                    WHERE pmid IN (VALUES $vals);
+                    """
             )
         }
     }
@@ -120,6 +139,13 @@ open class PMPostgresWriter(
             PMCitations.deleteWhere {
                 (PMCitations.pmidOut inList intIds) or (PMCitations.pmidIn inList intIds)
             }
+        }
+    }
+
+    override fun finish() {
+        transaction {
+            addLogger(Log4jSqlLogger)
+            exec("refresh materialized view matview_pmcitations;")
         }
     }
 

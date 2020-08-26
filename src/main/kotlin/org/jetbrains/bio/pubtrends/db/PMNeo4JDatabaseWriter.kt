@@ -56,6 +56,8 @@ CALL apoc.periodic.iterate("MATCH (p:PMPublication) RETURN p",
         processIndexes(true)
     }
 
+    override fun finish() {}
+
     /**
      * @param createOrDelete true to ensure indexes created, false to delete
      */
@@ -105,7 +107,9 @@ CALL db.index.fulltext.createNodeIndex("${"pmTitlesAndAbstracts"}", ["PMPublicat
                     "date" to (it.date?.toString() ?: ""),
                     "type" to it.type.name,
                     "doi" to it.doi,
-                    "aux" to GsonBuilder().create().toJson(it.auxInfo)
+                    "aux" to GsonBuilder().create().toJson(it.auxInfo),
+                    "keywords" to it.keywordList.joinToString(","),
+                    "mesh" to it.meshHeadingList.joinToString(",")
             )
         })
         val citationParameters = mapOf("citations" to articles.flatMap {
@@ -114,24 +118,28 @@ CALL db.index.fulltext.createNodeIndex("${"pmTitlesAndAbstracts"}", ["PMPublicat
 
         driver.session().use {
             it.run("""
-UNWIND {articles} AS data 
-MERGE (n:PMPublication { pmid: toInteger(data.pmid) }) 
-ON CREATE SET 
+UNWIND {articles} AS data
+MERGE (n:PMPublication { pmid: toInteger(data.pmid) })
+ON CREATE SET
     n.title = data.title,
     n.abstract = data.abstract,
     n.date = datetime(data.date),
     n.type = data.type,
     n.doi = data.doi,
-    n.aux = data.aux
-ON MATCH SET 
+    n.aux = data.aux,
+    n.keywords = data.keywords,
+    n.mesh = data.mesh
+ON MATCH SET
     n.title = data.title,
     n.abstract = data.abstract,
     n.date = datetime(data.date),
     n.type = data.type,
     n.doi = data.doi,
-    n.aux = data.aux
-WITH n, data 
-CALL apoc.create.addLabels(id(n), [data.type]) YIELD node 
+    n.aux = data.aux,
+    n.keywords = data.keywords,
+    n.mesh = data.mesh
+WITH n, data
+CALL apoc.create.addLabels(id(n), [data.type]) YIELD node
 RETURN node;
 """.trimIndent(),
                     articleParameters)

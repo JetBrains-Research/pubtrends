@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 
-from pandas.util.testing import assert_frame_equal
+from pandas.testing import assert_frame_equal
 from parameterized import parameterized
 
 from pysrc.papers.utils import SORT_MOST_RECENT, SORT_MOST_CITED, SORT_MOST_RELEVANT

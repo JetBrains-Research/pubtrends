@@ -34,4 +34,6 @@ class MockDBWriter<T>(private val batch: Boolean = false) : AbstractDBWriter<T> 
     }
 
     override fun reset() {}
+
+    override fun finish() {}
 }
