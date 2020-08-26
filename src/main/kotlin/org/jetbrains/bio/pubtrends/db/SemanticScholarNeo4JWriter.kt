@@ -16,7 +16,7 @@ import java.io.Closeable
 open class SemanticScholarNeo4JWriter(
         host: String,
         port: Int,
-        user: String,
+        username: String,
         password: String
 ) : AbstractDBWriter<SemanticScholarArticle>, Closeable {
 
@@ -25,7 +25,7 @@ open class SemanticScholarNeo4JWriter(
     }
 
     private val driver: Driver = GraphDatabase.driver(
-            "bolt://$host:$port", AuthTokens.basic(user, password)
+            "bolt://$host:$port", AuthTokens.basic(username, password)
     ).apply {
         session().use {
             it.run("Match () Return 1 Limit 1")

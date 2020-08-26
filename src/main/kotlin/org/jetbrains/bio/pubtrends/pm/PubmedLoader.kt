@@ -35,11 +35,11 @@ object PubmedLoader {
             logger.info("Config path: $configPath")
 
             logger.info("Init Neo4j database connection")
-//            val dbHandler = PMNeo4JDatabaseWriter(
-//                    config["neo4jhost"]!!.toString(),
-//                    config["neo4jport"]!!.toString().toInt(),
-//                    config["neo4jusername"]!!.toString(),
-//                    config["neo4jpassword"]!!.toString()
+//            val dbHandler = PubmedNeo4JWriter(
+//                    config["neo4j_host"]!!.toString(),
+//                    config["neo4j_port"]!!.toString().toInt(),
+//                    config["neo4j_username"]!!.toString(),
+//                    config["neo4j_password"]!!.toString()
 //            )
 
             val dbHandler = PubmedPostgresWriter(

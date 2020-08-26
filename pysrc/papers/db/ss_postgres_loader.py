@@ -118,18 +118,21 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
             self.progress.info('Loading publication data', current=current, task=task)
 
         query = f'''
-                SELECT P.ssid, P.crc32id, P.title, P.abstract, P.year, P.type, P.doi, P.aux
+                SELECT P.ssid, P.crc32id, P.pmid, P.title, P.abstract, P.year, P.doi, P.aux
                 FROM SSPublications P
                 WHERE (P.crc32id, P.ssid) in (VALUES {SemanticScholarPostgresLoader.ids2values(ids)});
                 '''
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             pub_df = pd.DataFrame(cursor.fetchall(),
-                                  columns=['id', 'crc32id', 'title', 'abstract', 'year', 'type', 'doi', 'aux'],
+                                  columns=['id', 'crc32id', 'pmid', 'title', 'abstract', 'year', 'doi', 'aux'],
                                   dtype=object)
 
         if np.any(pub_df[['id', 'crc32id', 'title']].isna()):
             raise ValueError('Paper must have ID and title')
+
+        # Hack for missing type in SS, see https://github.com/JetBrains-Research/pubtrends/issues/200
+        pub_df['type'] = 'Article'
 
         return Loader.process_publications_dataframe(pub_df)
 

@@ -10,6 +10,7 @@ from pysrc.papers.db.article import Article
 class PubmedArticle(Article):
     date: date = date(1970, 1, 1)
     mesh: List[str] = field(default_factory=lambda: [])
+    type: str = 'Article'
 
     def to_dict(self):
         return {

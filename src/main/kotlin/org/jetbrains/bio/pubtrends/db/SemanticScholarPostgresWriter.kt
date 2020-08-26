@@ -13,7 +13,7 @@ open class SemanticScholarPostgresWriter(
         host: String,
         port: Int,
         database: String,
-        user: String,
+        username: String,
         password: String
 )
     : AbstractDBWriter<SemanticScholarArticle>, Closeable {
@@ -30,7 +30,7 @@ open class SemanticScholarPostgresWriter(
         Database.connect(
                 url = "jdbc:postgresql://$host:$port/$database",
                 driver = "org.postgresql.Driver",
-                user = user,
+                user = username,
                 password = password
         )
 

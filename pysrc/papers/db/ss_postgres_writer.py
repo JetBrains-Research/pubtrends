@@ -48,12 +48,12 @@ class SemanticScholarPostgresWriter(PostgresConnector):
     def insert_semantic_scholar_publications(self, articles):
         # For some reason SemanticScholarArticle doesn't have abstract field
         articles_vals = ', '.join(
-            str((a.ssid, a.crc32id, a.title, a.year, '', a.type,
+            str((a.ssid, a.crc32id, a.title, a.year, '',
                  a.doi or '', json.dumps({"journal": {"name": ""}, "authors": []})))
             for a in articles
         )
         query = f'''
-            insert into sspublications(ssid, crc32id, title, year, abstract, type, doi, aux) values {articles_vals};
+            insert into sspublications(ssid, crc32id, title, year, abstract, doi, aux) values {articles_vals};
             update sspublications
             set tsv = setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
                 setweight(to_tsvector('english', coalesce(abstract, '')), 'B')
