@@ -27,6 +27,8 @@ class PubmedPostgresWriter(PostgresConnector):
                         date    date,
                         abstract text,
                         type    varchar(20),
+                        keywords varchar(100),
+                        mesh varchar(100),
                         doi     varchar(100),
                         aux     jsonb
                     );
@@ -35,21 +37,38 @@ class PubmedPostgresWriter(PostgresConnector):
                     create index if not exists PMPublications_tsv on PMPublications using gin(tsv);
                     '''
 
+        query_drop_matview = '''
+                    drop materialized view if exists matview_pmcitations;
+                    drop index if exists PMCitation_matview_index;
+                    '''
+        query_create_matview = '''
+                    create materialized view matview_pmcitations as
+                    SELECT pmid, COUNT(*) AS count
+                    FROM PMPublications P
+                    LEFT JOIN PMCitations C
+                    ON C.pmid_in = pmid
+                    GROUP BY pmid;
+                    create index if not exists PMCitation_matview_index on matview_pmcitations (pmid);
+                    '''
         with self.postgres_connection.cursor() as cursor:
+            cursor.execute(query_drop_matview)
             cursor.execute(query_citations)
             cursor.execute(query_publications)
+            cursor.execute(query_create_matview)
             self.postgres_connection.commit()
 
     def insert_pubmed_publications(self, articles):
         ids_vals = ','.join(f'({a.pmid})' for a in articles)
         articles_vals = ', '.join(
             str((a.pmid, a.title, a.date.strftime('%Y-%m-%d'), a.abstract or '',
-                 a.type, a.doi, json.dumps(a.aux.to_dict())))
+                 a.type, ','.join(a.keywords), ','.join(a.mesh),
+                 a.doi or '', json.dumps(a.aux.to_dict())))
             for a in articles
         )
 
         query = f'''
-            insert into PMPublications(pmid, title, date, abstract, type, doi, aux) values {articles_vals};
+            insert into PMPublications(pmid, title, date, abstract, type, keywords, mesh, doi, aux)
+                values {articles_vals};
             update PMPublications
                 set tsv = setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
                     setweight(to_tsvector('english', coalesce(abstract, '')), 'B')
@@ -63,9 +82,11 @@ class PubmedPostgresWriter(PostgresConnector):
         citations_vals = ', '.join(f"({c[0]}, {c[1]})" for c in citations)
 
         query = f'insert into PMCitations (pmid_out, pmid_in) values {citations_vals};'
+        query_update_matview = 'refresh materialized view matview_pmcitations;'
 
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
+            cursor.execute(query_update_matview)
             self.postgres_connection.commit()
 
     def delete(self, ids):
@@ -76,6 +97,8 @@ class PubmedPostgresWriter(PostgresConnector):
                 DELETE FROM PMPublications
                 WHERE pmid IN (VALUES {ids_vals});
                 '''
+        query_update_matview = 'refresh materialized view matview_pmcitations;'
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
+            cursor.execute(query_update_matview)
             self.postgres_connection.commit()

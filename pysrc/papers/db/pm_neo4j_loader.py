@@ -112,7 +112,7 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
             MATCH (p:PMPublication)
             WHERE p.pmid IN pmids
             RETURN p.pmid as id, p.title as title, p.abstract as abstract,
-                p.date.year as year, p.type as type, p.doi as doi, p.aux as aux
+                p.date.year as year, p.type as type, p.keywords as keywords, p.mesh as mesh, p.doi as doi, p.aux as aux
             ORDER BY id;
         '''
 
@@ -120,7 +120,7 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
             pub_df = pd.DataFrame(session.run(query).data())
         if len(pub_df) == 0:
             logger.debug('Failed to load publications.')
-            pub_df = pd.DataFrame(columns=['id', 'title', 'abstract', 'year', 'type', 'doi', 'aux'])
+            pub_df = pd.DataFrame(columns=['id', 'title', 'abstract', 'year', 'type', 'keywords', 'mesh', 'doi', 'aux'])
         else:
             logger.debug(f'Found {len(pub_df)} publications in the local database')
             if np.any(pub_df[['id', 'title']].isna()):

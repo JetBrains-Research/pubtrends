@@ -26,7 +26,7 @@ class SemanticScholarNeo4jWriter(Neo4jConnector):
     def insert_semantic_scholar_publications(self, articles):
         query = '''
 UNWIND {articles} AS data
-MERGE (n:SSPublication { crc32id: toInteger(data.crc32id), ssid: data.id })
+MERGE (n:SSPublication { crc32id: toInteger(data.crc32id), ssid: data.ssid })
 ON CREATE SET
     n.pmid = data.pmid,
     n.title = data.title,

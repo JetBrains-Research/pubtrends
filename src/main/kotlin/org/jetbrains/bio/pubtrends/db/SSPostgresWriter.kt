@@ -42,7 +42,8 @@ open class SSPostgresWriter(
                     "CREATE INDEX IF NOT EXISTS " +
                             "ss_title_abstract_index ON SSPublications using GIN (tsv);"
             )
-
+            // Minimal work_mem
+            exec("SET work_mem = '4096MB'")
         }
     }
 
@@ -53,6 +54,8 @@ open class SSPostgresWriter(
             exec("DROP INDEX IF EXISTS ss_title_abstract_index;")
         }
     }
+
+    override fun finish() {}
 
     override fun store(articles: List<SemanticScholarArticle>) {
         val citationsList = articles.map { it.citationList.distinct().map { cit -> it.ssid to cit } }.flatten()

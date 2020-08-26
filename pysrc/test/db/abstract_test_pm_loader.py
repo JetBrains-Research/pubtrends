@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 
 import numpy as np
-from pandas.util.testing import assert_frame_equal
+from pandas.testing import assert_frame_equal
 from parameterized import parameterized
 
 from pysrc.papers.utils import SORT_MOST_RECENT, SORT_MOST_RELEVANT, SORT_MOST_CITED
@@ -110,7 +110,6 @@ class AbstractTestPubmedLoader(metaclass=ABCMeta):
     def test_load_citation_stats_data_frame(self):
         # Sort to compare with expected
         actual = self.getCitationsStatsDataframe().sort_values(by=['id', 'year']).reset_index(drop=True)
-        print(actual)
         assert_frame_equal(EXPECTED_CIT_STATS_DF, actual, 'Wrong citation stats data', check_like=True)
 
     def test_load_citations_count(self):
@@ -134,8 +133,6 @@ class AbstractTestPubmedLoader(metaclass=ABCMeta):
         expected = EXPANDED_IDS
         ids_list = list(map(lambda article: str(article.pmid), PART_OF_ARTICLES))
         actual = self.getLoader().expand(ids_list, 1000)
-        print(expected)
-        print(actual)
         self.assertSequenceEqual(sorted(expected), sorted(actual), "Wrong list of expanded ids")
 
     @parameterized.expand([

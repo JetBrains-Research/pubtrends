@@ -505,4 +505,8 @@ class PubmedXMLParser(
         dbWriter.store(articleList)
         articlesStored += articleList.size
     }
+
+    fun finish() {
+        dbWriter.finish()
+    }
 }

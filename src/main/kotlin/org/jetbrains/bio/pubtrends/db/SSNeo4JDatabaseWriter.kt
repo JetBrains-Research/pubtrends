@@ -57,6 +57,8 @@ CALL apoc.periodic.iterate("MATCH (p:SSPublication) RETURN p",
         processIndexes(true)
     }
 
+    override fun finish() {}
+
     /**
      * @param createOrDelete true to ensure indexes created, false to delete
      */
