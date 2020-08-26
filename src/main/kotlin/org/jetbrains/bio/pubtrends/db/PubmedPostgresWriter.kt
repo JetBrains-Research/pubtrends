@@ -9,7 +9,7 @@ import org.jetbrains.exposed.sql.statements.expandArgs
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.Closeable
 
-open class PMPostgresWriter(
+open class PubmedPostgresWriter(
         host: String,
         port: Int,
         database: String,
@@ -86,7 +86,7 @@ open class PMPostgresWriter(
     }
 
     override fun store(articles: List<PubmedArticle>) {
-        val citationsForArticle = articles.map { it.citationList.toSet().map { cit -> it.pmid to cit } }.flatten()
+        val citationsForArticle = articles.map { it.citations.toSet().map { cit -> it.pmid to cit } }.flatten()
 
         transaction {
             addLogger(Log4jSqlLogger)
@@ -94,22 +94,27 @@ open class PMPostgresWriter(
             PMPublications.batchInsertOnDuplicateKeyUpdate(
                     articles, PMPublications.pmid,
                     listOf(
-                            PMPublications.date, PMPublications.title, PMPublications.abstract,
-                            PMPublications.keywords, PMPublications.mesh, PMPublications.type,
-                            PMPublications.doi, PMPublications.aux
+                            PMPublications.date,
+                            PMPublications.title,
+                            PMPublications.abstract,
+                            PMPublications.keywords,
+                            PMPublications.mesh,
+                            PMPublications.type,
+                            PMPublications.doi,
+                            PMPublications.aux
                     )
             ) { batch, article ->
                 batch[pmid] = article.pmid
                 batch[date] = article.date
                 batch[title] = article.title.take(PUBLICATION_MAX_TITLE_LENGTH)
-                if (article.abstractText != "") {
-                    batch[abstract] = article.abstractText
+                if (article.abstract != "") {
+                    batch[abstract] = article.abstract
                 }
-                batch[keywords] = article.keywordList.joinToString(",")
-                batch[mesh] = article.meshHeadingList.joinToString(",")
+                batch[keywords] = article.keywords.joinToString(",")
+                batch[mesh] = article.mesh.joinToString(",")
                 batch[type] = article.type
                 batch[doi] = article.doi
-                batch[aux] = article.auxInfo
+                batch[aux] = article.aux
             }
 
             PMCitations.batchInsert(citationsForArticle, ignore = true) { citation ->

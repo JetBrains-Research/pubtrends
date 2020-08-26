@@ -3,7 +3,7 @@ package org.jetbrains.bio.pubtrends.pm
 import joptsimple.OptionParser
 import org.apache.logging.log4j.LogManager
 import org.jetbrains.bio.pubtrends.Config
-import org.jetbrains.bio.pubtrends.db.PMPostgresWriter
+import org.jetbrains.bio.pubtrends.db.PubmedPostgresWriter
 import java.nio.file.Files
 import kotlin.system.exitProcess
 
@@ -42,7 +42,7 @@ object PubmedLoader {
 //                    config["neo4jpassword"]!!.toString()
 //            )
 
-            val dbHandler = PMPostgresWriter(
+            val dbHandler = PubmedPostgresWriter(
                     config["postgres_host"]!!.toString(),
                     config["postgres_port"]!!.toString().toInt(),
                     config["postgres_database"]!!.toString(),

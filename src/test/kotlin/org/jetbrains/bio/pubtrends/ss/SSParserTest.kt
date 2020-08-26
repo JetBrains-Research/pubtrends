@@ -63,14 +63,14 @@ class SSParserTest {
     @Test
     fun testParseCitations() {
         listOf(0, 1, 2).forEach {
-            assertEquals(SemanticScholarArticles.articles[it].citationList, parsedArticles[it].citationList)
+            assertEquals(SemanticScholarArticles.articles[it].citations, parsedArticles[it].citations)
         }
     }
 
     @Test
     fun testParseEmptyCitations() {
         listOf(3, 4).forEach {
-            assertEquals(SemanticScholarArticles.articles[it].citationList, listOf())
+            assertEquals(SemanticScholarArticles.articles[it].citations, listOf())
         }
     }
 

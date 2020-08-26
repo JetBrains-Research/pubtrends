@@ -9,7 +9,7 @@ import org.jetbrains.exposed.sql.statements.expandArgs
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.Closeable
 
-open class SSPostgresWriter(
+open class SemanticScholarPostgresWriter(
         host: String,
         port: Int,
         database: String,
@@ -58,7 +58,7 @@ open class SSPostgresWriter(
     override fun finish() {}
 
     override fun store(articles: List<SemanticScholarArticle>) {
-        val citationsList = articles.map { it.citationList.distinct().map { cit -> it.ssid to cit } }.flatten()
+        val citationsList = articles.map { it.citations.distinct().map { cit -> it.ssid to cit } }.flatten()
 
         transaction {
             SSPublications.batchInsert(articles, ignore = true) { article ->

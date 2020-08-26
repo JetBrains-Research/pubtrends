@@ -417,13 +417,13 @@ class PubmedXMLParser(
                                 pmid = pmid,
                                 date = date,
                                 title = title,
-                                abstractText = abstractText,
-                                keywordList = keywordList.toList(),
-                                citationList = citationList.toList(),
-                                meshHeadingList = meshHeadingList.toList(),
+                                abstract = abstractText,
+                                keywords = keywordList.toList(),
+                                citations = citationList.toList(),
+                                mesh = meshHeadingList.toList(),
                                 type = type,
                                 doi = doi,
-                                auxInfo = ArticleAuxInfo(
+                                aux = Aux(
                                         authors.toList(), databanks.toList(), Journal(journalName), language
                                 )
                         )
