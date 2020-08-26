@@ -13,7 +13,7 @@ open class PubmedPostgresWriter(
         host: String,
         port: Int,
         database: String,
-        user: String,
+        username: String,
         password: String
 ) : AbstractDBWriter<PubmedArticle>, Closeable {
     companion object Log4jSqlLogger : SqlLogger {
@@ -29,7 +29,7 @@ open class PubmedPostgresWriter(
         Database.connect(
                 url = "jdbc:postgresql://$host:$port/$database",
                 driver = "org.postgresql.Driver",
-                user = user,
+                user = username,
                 password = password
         )
 

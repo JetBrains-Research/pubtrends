@@ -38,8 +38,7 @@ article9 = SemanticScholarArticle(ssid='89ffce2b5da6669f63c99ff6398b312389c357dc
 
 article10 = SemanticScholarArticle(ssid='390f6fbb1f25bfbc53232e8248c581cdcc1fb9e9', crc32id=-751585733, pmid=6,
                                    title='Article 10 is here', abstract='Abstract 10',
-                                   year=2017,
-                                   type='Review')
+                                   year=2017)
 
 required_articles = [article1, article2, article3, article4, article6, article7, article8, article9, article10]
 extra_articles = [article5]

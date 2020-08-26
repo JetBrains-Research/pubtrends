@@ -34,7 +34,6 @@ class Article:
     pmid: int or None
     title: str
     abstract: str or None = None
-    type: str = 'Article'
     doi: str = None
     keywords: List[str] = field(default_factory=lambda: [])
     aux: AuxInfo = AuxInfo()

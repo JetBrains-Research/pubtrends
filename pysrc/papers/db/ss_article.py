@@ -19,7 +19,6 @@ class SemanticScholarArticle(Article):
             'title': self.title,
             'year': self.year,
             'abstract': self.abstract,
-            'type': self.type,
             'keywords': self.keywords,
             'doi': self.doi,
             'aux': json.dumps({"journal": {"name": ""}, "authors": []})
