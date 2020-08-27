@@ -7,7 +7,6 @@ import org.joda.time.DateTime
 import org.neo4j.driver.v1.AuthTokens
 import org.neo4j.driver.v1.Driver
 import org.neo4j.driver.v1.GraphDatabase
-import java.io.Closeable
 
 /**
  * See ss_database_supplier.py and ss_loader.py for (up)loading code.
@@ -18,7 +17,7 @@ open class SemanticScholarNeo4JWriter(
         port: Int,
         username: String,
         password: String
-) : AbstractDBWriter<SemanticScholarArticle>, Closeable {
+) : AbstractDBWriter<SemanticScholarArticle> {
 
     companion object {
         const val DELETE_BATCH_SIZE = 10000
@@ -56,8 +55,6 @@ CALL apoc.periodic.iterate("MATCH (p:SSPublication) RETURN p",
 
         processIndexes(true)
     }
-
-    override fun finish() {}
 
     /**
      * @param createOrDelete true to ensure indexes created, false to delete
