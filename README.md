@@ -100,6 +100,13 @@ Launch crawler to download and keep up-to-date Pubmed database:
    * `lastId` - force downloading from given id from articles pack `pubmed20n{lastId+1}.xml`. 
    
 
+Updates - add crontab update every day at 22:00 with the command:
+    ```
+    crontab -e
+    0 22 * * * java -cp pubtrends-<version>.jar org.jetbrains.bio.pubtrends.pm.PubmedLoader --fillDatabase | \
+        tee -a crontab_update.log
+    ```
+
 ### Optional: Semantic Scholar
 
 
