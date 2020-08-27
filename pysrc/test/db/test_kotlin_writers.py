@@ -9,8 +9,7 @@ from pysrc.papers.db.pm_postgres_loader import PubmedPostgresLoader
 from pysrc.papers.db.ss_neo4j_loader import SemanticScholarNeo4jLoader
 from pysrc.papers.db.ss_postgres_loader import SemanticScholarPostgresLoader
 
-PUBTRENDS_JAR = os.path.abspath(os.path.relpath('../../../build/libs/pubtrends-dev.jar', os.path.dirname(__file__)))
-print(PUBTRENDS_JAR)
+PUBTRENDS_JAR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../build/libs/pubtrends-dev.jar'))
 
 
 class TestKotlinWriters(unittest.TestCase):
@@ -54,6 +53,7 @@ class TestKotlinWriters(unittest.TestCase):
          'authors': 'Jose Alejandro Rauh-Hain', 'journal': 'Annals of Surgical Oncology'}
 
     def test_kotlin_pubmed_neo4j_writer(self):
+        self.assertTrue(os.path.exists(PUBTRENDS_JAR), f'File not found: {PUBTRENDS_JAR}')
         subprocess.run(['java', '-cp', PUBTRENDS_JAR, 'org.jetbrains.bio.pubtrends.DBWriter', 'PubmedNeo4JWriter'])
         loader = PubmedNeo4jLoader(PubtrendsConfig(True))
         loader.set_progress(logging.getLogger(__name__))
@@ -63,6 +63,7 @@ class TestKotlinWriters(unittest.TestCase):
         loader.close_connection()
 
     def test_kotlin_pubmed_postgres_writer(self):
+        self.assertTrue(os.path.exists(PUBTRENDS_JAR), f'File not found: {PUBTRENDS_JAR}')
         subprocess.run(['java', '-cp', PUBTRENDS_JAR, 'org.jetbrains.bio.pubtrends.DBWriter', 'PubmedPostgresWriter'])
         loader = PubmedPostgresLoader(PubtrendsConfig(True))
         loader.set_progress(logging.getLogger(__name__))
@@ -72,6 +73,7 @@ class TestKotlinWriters(unittest.TestCase):
         loader.close_connection()
 
     def test_kotlin_semantic_scholar_neo4j_writer(self):
+        self.assertTrue(os.path.exists(PUBTRENDS_JAR), f'File not found: {PUBTRENDS_JAR}')
         subprocess.run(
             ['java', '-cp', PUBTRENDS_JAR, 'org.jetbrains.bio.pubtrends.DBWriter', 'SemanticScholarNeo4JWriter'])
         loader = SemanticScholarNeo4jLoader(PubtrendsConfig(True))
@@ -83,6 +85,7 @@ class TestKotlinWriters(unittest.TestCase):
         loader.close_connection()
 
     def test_kotlin_semantic_scholar_postgres_writer(self):
+        self.assertTrue(os.path.exists(PUBTRENDS_JAR), f'File not found: {PUBTRENDS_JAR}')
         subprocess.run(
             ['java', '-cp', PUBTRENDS_JAR, 'org.jetbrains.bio.pubtrends.DBWriter', 'SemanticScholarPostgresWriter'])
         loader = SemanticScholarPostgresLoader(PubtrendsConfig(True))
