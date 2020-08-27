@@ -130,6 +130,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
 
         if np.any(pub_df[['id', 'crc32id', 'title']].isna()):
             raise ValueError('Paper must have ID and title')
+        pub_df['pmid'] = pub_df['pmid'].astype(str)
 
         # Hack for missing type in SS, see https://github.com/JetBrains-Research/pubtrends/issues/200
         pub_df['type'] = 'Article'
