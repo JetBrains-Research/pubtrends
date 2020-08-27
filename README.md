@@ -155,7 +155,7 @@ Please ensure that you have Database configured, up and running.
 
 ## Testing
 
-1. Start Docker image with Neo4j / Postgres for tests (Kotlin and Python development)
+1. Start Docker image with Neo4j / Postgres environment for tests (Kotlin and Python development)
     ```
     docker run --rm --name pubtrends-test \
     --publish=7474:7474 --publish=7687:7687 --publish=5432:5432 \
@@ -171,19 +171,20 @@ Please ensure that you have Database configured, up and running.
     ./gradlew clean test
     ```
 
-3. Python tests with codestyle check for development
+3. Python tests with codestyle check for development (including integration with Kotlin DB writers)
     
     ```
-    ./gradlew shadowJar; conda activate pubtrends; pytest --flake8 pysrc
+    ./gradlew shadowJar; source activate pubtrends; pytest --flake8 pysrc
     ```
 
-4. Tests within Docker (please ignore point 1)
+4. All tests within Docker (please ignore point 1)
 
     ```
     docker run --rm --volume=$(pwd):/pubtrends -t biolabs/pubtrends /bin/bash -c \
-    "/usr/lib/postgresql/12/bin/pg_ctl -D /home/user/postgres start; sudo neo4j start; sleep 30s; \
+    "/usr/lib/postgresql/12/bin/pg_ctl -D /home/user/postgres start; sudo neo4j start; \
     cd /pubtrends; mkdir ~/.pubtrends; cp config.properties ~/.pubtrends; \
-    ./gradlew clean test; ./gradlew shadowJar; source activate pubtrends; pytest --flake8 pysrc"
+    ./gradlew test; \
+    ./gradlew shadowJar; source activate pubtrends; pytest --flake8 pysrc"
     ```
 
 ## Deployment
@@ -198,7 +199,7 @@ Please ensure that you have configured and prepared the database(s).
 1. Modify file `config.properties` with information about the database(s). 
    File from the project folder is used in this case.
 
-2. Launch Neo4j database docker image (you can omit lines prefixed by `--env`).
+2. Launch Neo4j database docker image.
 
     ```
     docker run --name pubtrends-neo4j \
