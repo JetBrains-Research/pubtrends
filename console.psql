@@ -1,8 +1,5 @@
--- Fetch default work_mem
-SHOW work_mem;
-
--- Minimal work_mem to support search query sorted by citations
-SET work_mem = '2048MB';
+-- Show current activity
+SELECT * FROM pg_stat_activity WHERE wait_event IS NOT NULL;
 
 -- Show database size
 SELECT pg_size_pretty(pg_database_size('pubtrends'));
