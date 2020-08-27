@@ -36,15 +36,14 @@ class DBWriter {
         private val SEMANTIC_SCHOLAR_ARTICLE = SemanticScholarArticle(
                 ssid = "03029e4427cfe66c3da6257979dc2d5b6eb3a0e4",
                 pmid = 2252909,
-                title = "Primary Debulking Surgery Versus Neoadjuvant Chemotherapy in Stage IV Ovarian Cancer",
-                year = 2011,
-                doi = "10.1245/s10434-011-2100-x",
-                aux = Aux(journal = Journal(name = "Annals of Surgical Oncology", volume = "19", pages = "959-965"),
-                        authors = listOf(Author(name = "Jose Alejandro Rauh-Hain")),
-                        venue = "Annals of Surgical Oncology",
-                        links = Links(
-                                s2Url = "https://semanticscholar.org/paper/4cd223df721b722b1c40689caa52932a41fcc223",
-                                pdfUrls = listOf("https://doi.org/10.1093/llc/fqu052"))
+                title = "Test title 1",
+                abstract = "Test abstract 2",
+                year = 2020,
+                doi = "10.1101/2020.05.10.087023",
+                aux = Aux(journal = Journal(name = "Nature Aging", volume = "1", pages = "1-6"),
+                        authors = listOf(Author(name = "Genius")),
+                        venue = "Nature",
+                        links = Links(pdfUrls = listOf("https://doi.org/10.1101/2020.05.10.087023"))
                 ))
 
         @JvmStatic

@@ -13,44 +13,39 @@ PUBTRENDS_JAR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../.
 
 
 class TestKotlinWriters(unittest.TestCase):
-    PUBMED_ARTICLE_NEO4J = \
-        {'id': '1', 'title': 'Test title 1', 'abstract': 'Test abstract 2',
-         'year': '1986', 'type': 'TechnicalReport',
-         'keywords': 'Keyword1,Keyword2', 'mesh': 'Term1,Term2,Term3', 'doi': '',
-         'aux': "{'authors': [{'name': 'Genius1', 'affiliation': []}], \
-'databanks': [], 'journal': {'name': 'Pravda'}, 'language': ''}",
-         'authors': 'Genius1', 'journal': 'Pravda'}
+    PUBMED_ARTICLE = \
+        {'abstract': 'Test abstract 2',
+         'authors': 'Genius1',
+         'aux': {'authors': [{'affiliation': [], 'name': 'Genius1'}],
+                 'databanks': [],
+                 'journal': {'name': 'Pravda'},
+                 'language': ''},
+         'doi': '',
+         'id': '1',
+         'journal': 'Pravda',
+         'keywords': 'Keyword1,Keyword2',
+         'mesh': 'Term1,Term2,Term3',
+         'title': 'Test title 1',
+         'type': 'TechnicalReport',
+         'year': 1986}
 
-    # Slightly different order in aux
-    PUBMED_ARTICLE_POSTGRES = \
-        {'id': '1', 'title': 'Test title 1', 'abstract': 'Test abstract 2',
-         'year': '1986', 'type': 'TechnicalReport',
-         'keywords': 'Keyword1,Keyword2', 'mesh': 'Term1,Term2,Term3', 'doi': '',
-         'aux': "{'authors': [{'name': 'Genius1', 'affiliation': []}], \
-'journal': {'name': 'Pravda'}, 'language': '', 'databanks': []}",
-         'authors': 'Genius1', 'journal': 'Pravda'}
-
-    SEMANTIC_SCHOLAR_ARTICLE_NEO4J = \
-        {'id': '03029e4427cfe66c3da6257979dc2d5b6eb3a0e4', 'crc32id': '1648497316', 'pmid': '2252909',
-         'title': 'Primary Debulking Surgery Versus Neoadjuvant Chemotherapy in Stage IV Ovarian Cancer',
-         'abstract': '', 'year': '2011', 'type': 'Article', 'doi': '10.1245/s10434-011-2100-x',
-         'aux': "{'authors': [{'name': 'Jose Alejandro Rauh-Hain'}], "
-                "'journal': {'name': 'Annals of Surgical Oncology', 'volume': '19', 'pages': '959-965'}, "
-                "'links': {'s2Url': 'https://semanticscholar.org/paper/4cd223df721b722b1c40689caa52932a41fcc223',"
-                " 's2PdfUrl': '', 'pdfUrls': ['https://doi.org/10.1093/llc/fqu052']}, "
-                "'venue': 'Annals of Surgical Oncology'}",
-         'authors': 'Jose Alejandro Rauh-Hain', 'journal': 'Annals of Surgical Oncology'}
-
-    # Slightly different order in Aux
-    SEMANTIC_SCHOLAR_ARTICLE_POSTGRES = \
-        {'id': '03029e4427cfe66c3da6257979dc2d5b6eb3a0e4', 'crc32id': '1648497316', 'pmid': '2252909',
-         'title': 'Primary Debulking Surgery Versus Neoadjuvant Chemotherapy in Stage IV Ovarian Cancer',
-         'abstract': '', 'year': '2011', 'type': 'Article', 'doi': '10.1245/s10434-011-2100-x',
-         'aux': "{'links': {'s2Url': 'https://semanticscholar.org/paper/4cd223df721b722b1c40689caa52932a41fcc223', "
-                "'pdfUrls': ['https://doi.org/10.1093/llc/fqu052'], 's2PdfUrl': ''}, "
-                "'venue': 'Annals of Surgical Oncology', 'authors': [{'name': 'Jose Alejandro Rauh-Hain'}], "
-                "'journal': {'name': 'Annals of Surgical Oncology', 'pages': '959-965', 'volume': '19'}}",
-         'authors': 'Jose Alejandro Rauh-Hain', 'journal': 'Annals of Surgical Oncology'}
+    SEMANTIC_SCHOLAR_ARTICLE = \
+        {'abstract': 'Test abstract 2',
+         'authors': 'Genius',
+         'aux': {'authors': [{'name': 'Genius'}],
+                 'journal': {'name': 'Nature Aging', 'pages': '1-6', 'volume': '1'},
+                 'links': {'pdfUrls': ['https://doi.org/10.1101/2020.05.10.087023'],
+                           's2PdfUrl': '',
+                           's2Url': ''},
+                 'venue': 'Nature'},
+         'crc32id': 1648497316,
+         'doi': '10.1101/2020.05.10.087023',
+         'id': '03029e4427cfe66c3da6257979dc2d5b6eb3a0e4',
+         'journal': 'Nature Aging',
+         'pmid': '2252909',
+         'title': 'Test title 1',
+         'type': 'Article',
+         'year': 2020}
 
     def test_kotlin_pubmed_neo4j_writer(self):
         self.assertTrue(os.path.exists(PUBTRENDS_JAR), f'File not found: {PUBTRENDS_JAR}')
@@ -58,8 +53,8 @@ class TestKotlinWriters(unittest.TestCase):
         loader = PubmedNeo4jLoader(PubtrendsConfig(True))
         loader.set_progress(logging.getLogger(__name__))
         pub_df = loader.load_publications(['1'])
-        actual = dict(zip(pub_df.columns, [str(v) for v in next(pub_df.iterrows())[1]]))
-        self.assertEquals(actual, self.PUBMED_ARTICLE_NEO4J)
+        actual = dict(zip(pub_df.columns, next(pub_df.iterrows())[1]))
+        self.assertEqual(actual, self.PUBMED_ARTICLE)
         loader.close_connection()
 
     def test_kotlin_pubmed_postgres_writer(self):
@@ -68,8 +63,8 @@ class TestKotlinWriters(unittest.TestCase):
         loader = PubmedPostgresLoader(PubtrendsConfig(True))
         loader.set_progress(logging.getLogger(__name__))
         pub_df = loader.load_publications(['1'])
-        actual = dict(zip(pub_df.columns, [str(v) for v in next(pub_df.iterrows())[1]]))
-        self.assertEquals(actual, self.PUBMED_ARTICLE_POSTGRES)
+        actual = dict(zip(pub_df.columns, next(pub_df.iterrows())[1]))
+        self.assertEqual(actual, self.PUBMED_ARTICLE)
         loader.close_connection()
 
     def test_kotlin_semantic_scholar_neo4j_writer(self):
@@ -79,9 +74,9 @@ class TestKotlinWriters(unittest.TestCase):
         loader = SemanticScholarNeo4jLoader(PubtrendsConfig(True))
         loader.set_progress(logging.getLogger(__name__))
         pub_df = loader.load_publications(['03029e4427cfe66c3da6257979dc2d5b6eb3a0e4'])
-        actual = dict(zip(pub_df.columns, [str(v) for v in next(pub_df.iterrows())[1]]))
+        actual = dict(zip(pub_df.columns, next(pub_df.iterrows())[1]))
         print(actual)
-        self.assertEquals(actual, self.SEMANTIC_SCHOLAR_ARTICLE_NEO4J)
+        self.assertEqual(actual, self.SEMANTIC_SCHOLAR_ARTICLE)
         loader.close_connection()
 
     def test_kotlin_semantic_scholar_postgres_writer(self):
@@ -91,9 +86,9 @@ class TestKotlinWriters(unittest.TestCase):
         loader = SemanticScholarPostgresLoader(PubtrendsConfig(True))
         loader.set_progress(logging.getLogger(__name__))
         pub_df = loader.load_publications(['03029e4427cfe66c3da6257979dc2d5b6eb3a0e4'])
-        actual = dict(zip(pub_df.columns, [str(v) for v in next(pub_df.iterrows())[1]]))
+        actual = dict(zip(pub_df.columns, next(pub_df.iterrows())[1]))
         print(actual)
-        self.assertEquals(actual, self.SEMANTIC_SCHOLAR_ARTICLE_POSTGRES)
+        self.assertEqual(actual, self.SEMANTIC_SCHOLAR_ARTICLE)
         loader.close_connection()
 
 
