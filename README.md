@@ -68,10 +68,11 @@ Ensure that file contains correct information about the database(s) (url, port, 
     ALTER ROLE biolabs WITH LOGIN;
     CREATE DATABASE pubtrends OWNER biolabs;
     ```
-    * Configure `work_mem` to support search query sorted by citations in `postgresql.conf`.
-      Experimentally, this amount is sufficient to search term 'computer' in Semantic Scholar sorted by citations count. 
+    * Configure memory params in `~/postgres/pgdata/postgresql.conf`.
     ```
-    work_mem = '2048MB';   
+    work_mem = 1GB
+    maintenance_work_mem = 2GB
+    effective_cache_size = 4GB
     ```
    
 ## Kotlin/Java Build
@@ -214,6 +215,9 @@ Please ensure that you have configured and prepared the database(s).
         --volume=$HOME/neo4j/data:/var/lib/neo4j/data \
         --volume=$HOME/neo4j/logs:/logs \
         --volume=$HOME/neo4j/plugins:/plugins \
+        --env NEO4J_dbms_memory_pagecache_size=1G \
+        --env NEO4J_dbms_memory_heap_initial__size=1G \
+        --env NEO4J_dbms_memory_heap_max__size=4G \
         -d neo4j:3.5
     ```
     
