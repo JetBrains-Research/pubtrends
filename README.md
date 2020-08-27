@@ -70,9 +70,17 @@ Ensure that file contains correct information about the database(s) (url, port, 
     ```
     * Configure memory params in `~/postgres/pgdata/postgresql.conf`.
     ```
-    work_mem = 1GB
-    maintenance_work_mem = 2GB
-    effective_cache_size = 4GB
+    # Memory settings
+    effective_cache_size = 6GB  # ~ 50 to 75% (can be set precisely by referring to “top” free+cached)
+    shared_buffers = 4GB        # ~ 1/4 – 1/3 total system RAM
+    work_mem = 512MB            # For sorting, ordering etc
+    max_client_connections = 4  # Total mem is work_mem * connections
+    maintenance_work_mem = 1GB  # Memory for indexes, etc
+    
+    # Write performance
+    checkpoint_timeout = 1h
+    checkpoint_completion_target = 0.8
+    synchronous_commit = off
     ```
    
 ## Kotlin/Java Build
@@ -233,6 +241,7 @@ Please ensure that you have configured and prepared the database(s).
         -e PGDATA=/var/lib/postgresql/data/pgdata \
         -d postgres:12 
     ```
+   NOTE: stop Postgres docker image with timeout `--time=120` to avoid DB recovery.
    
 4. Build ready for deployment package with script `dist.sh`.
 
