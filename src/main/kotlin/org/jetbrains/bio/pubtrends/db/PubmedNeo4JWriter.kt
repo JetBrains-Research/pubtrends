@@ -5,7 +5,6 @@ import org.jetbrains.bio.pubtrends.pm.PubmedArticle
 import org.neo4j.driver.v1.AuthTokens
 import org.neo4j.driver.v1.Driver
 import org.neo4j.driver.v1.GraphDatabase
-import java.io.Closeable
 
 /**
  * See pm_database_supplier.py and pm_loader.py for (up)loading code.
@@ -16,7 +15,7 @@ open class PubmedNeo4JWriter(
         port: Int,
         username: String,
         password: String
-) : AbstractDBWriter<PubmedArticle>, Closeable {
+) : AbstractDBWriter<PubmedArticle> {
 
     companion object {
         const val DELETE_BATCH_SIZE = 10000
@@ -55,8 +54,6 @@ CALL apoc.periodic.iterate("MATCH (p:PMPublication) RETURN p",
 
         processIndexes(true)
     }
-
-    override fun finish() {}
 
     /**
      * @param createOrDelete true to ensure indexes created, false to delete

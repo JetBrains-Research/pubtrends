@@ -7,7 +7,6 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.statements.StatementContext
 import org.jetbrains.exposed.sql.statements.expandArgs
 import org.jetbrains.exposed.sql.transactions.transaction
-import java.io.Closeable
 
 open class PubmedPostgresWriter(
         host: String,
@@ -15,7 +14,7 @@ open class PubmedPostgresWriter(
         database: String,
         username: String,
         password: String
-) : AbstractDBWriter<PubmedArticle>, Closeable {
+) : AbstractDBWriter<PubmedArticle> {
     companion object Log4jSqlLogger : SqlLogger {
         private val logger = LogManager.getLogger(Log4jSqlLogger::class)
 
@@ -147,16 +146,22 @@ open class PubmedPostgresWriter(
         }
     }
 
-    override fun finish() {
+    override fun close() {
+        /**
+         * No actions to close db connection is required: Exposed should manage the connection pool.
+         */
         transaction {
             addLogger(Log4jSqlLogger)
-            exec("refresh materialized view matview_pmcitations;")
+            exec("""
+do
+${"$$"}
+    begin
+        IF (select matviewname from pg_matviews where matviewname = 'matview_pmcitations') THEN
+            refresh materialized view matview_pmcitations;
+        END IF;
+    end;
+${"$$"}
+            """.trimMargin())
         }
     }
-
-    /**
-     * Dummy function in order to implement Closeable interface.
-     * No actions are needed in fact, Exposed should manage the connection pool.
-     */
-    override fun close() {}
 }

@@ -62,8 +62,6 @@ class DBWriter {
                         createPubmedNeo4JWriter(config).use {
                             LOG.info("Store")
                             it.store(listOf(PUBMED_ARTICLE))
-                            LOG.info("Finish")
-                            it.finish()
                         }
                     }
                     PubmedPostgresWriter::class.java.simpleName -> {
@@ -74,8 +72,6 @@ class DBWriter {
                         createPubmedPostgresWriter(config).use {
                             LOG.info("Store")
                             it.store(listOf(PUBMED_ARTICLE))
-                            LOG.info("Finish")
-                            it.finish()
                         }
                     }
                     SemanticScholarNeo4JWriter::class.java.simpleName -> {
@@ -86,8 +82,6 @@ class DBWriter {
                         createSemanticScholarNeo4JWriter(config).use {
                             LOG.info("Store")
                             it.store(listOf(SEMANTIC_SCHOLAR_ARTICLE))
-                            LOG.info("Finish")
-                            it.finish()
                         }
                     }
                     SemanticScholarPostgresWriter::class.java.simpleName -> {
@@ -98,8 +92,6 @@ class DBWriter {
                         createSemanticScholarPostgresWriter(config).use {
                             LOG.info("Store")
                             it.store(listOf(SEMANTIC_SCHOLAR_ARTICLE))
-                            LOG.info("Finish")
-                            it.finish()
                         }
                     }
                     else -> LOG.error("Unknown arg $arg")

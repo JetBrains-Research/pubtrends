@@ -7,7 +7,6 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.statements.StatementContext
 import org.jetbrains.exposed.sql.statements.expandArgs
 import org.jetbrains.exposed.sql.transactions.transaction
-import java.io.Closeable
 
 open class SemanticScholarPostgresWriter(
         host: String,
@@ -16,7 +15,7 @@ open class SemanticScholarPostgresWriter(
         username: String,
         password: String
 )
-    : AbstractDBWriter<SemanticScholarArticle>, Closeable {
+    : AbstractDBWriter<SemanticScholarArticle> {
     companion object Log4jSqlLogger : SqlLogger {
         private val logger = LogManager.getLogger(Log4jSqlLogger::class)
 
@@ -54,8 +53,6 @@ open class SemanticScholarPostgresWriter(
             exec("DROP INDEX IF EXISTS ss_title_abstract_index;")
         }
     }
-
-    override fun finish() {}
 
     override fun store(articles: List<SemanticScholarArticle>) {
         val citationsList = articles.map { it.citations.distinct().map { cit -> it.ssid to cit } }.flatten()

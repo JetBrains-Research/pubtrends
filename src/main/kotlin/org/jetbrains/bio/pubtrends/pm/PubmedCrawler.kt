@@ -149,7 +149,6 @@ class PubmedCrawler(
                 it.write("lastId\t${PubmedFTPHandler.pubmedFileToId(file)}")
             }
         }
-        xmlParser.finish()
     }
 
     private fun deleteIfExists(name: String) {
