@@ -71,15 +71,15 @@ Ensure that file contains correct information about the database(s) (url, port, 
     * Configure memory params in `~/postgres/pgdata/postgresql.conf`.
     ```
     # Memory settings
-    effective_cache_size = 6GB  # ~ 50 to 75% (can be set precisely by referring to “top” free+cached)
-    shared_buffers = 4GB        # ~ 1/4 – 1/3 total system RAM
+    effective_cache_size = 4GB  # ~ 50 to 75% (can be set precisely by referring to “top” free+cached)
+    shared_buffers = 2GB        # ~ 1/4 – 1/3 total system RAM
     work_mem = 512MB            # For sorting, ordering etc
     max_client_connections = 4  # Total mem is work_mem * connections
     maintenance_work_mem = 1GB  # Memory for indexes, etc
     
     # Write performance
     checkpoint_timeout = 1h
-    checkpoint_completion_target = 0.8
+    checkpoint_completion_target = 0.5
     synchronous_commit = off
     ```
    
