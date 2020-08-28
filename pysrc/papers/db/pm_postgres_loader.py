@@ -1,6 +1,5 @@
 import html
 import logging
-from collections import Iterable
 
 import numpy as np
 import pandas as pd
@@ -222,46 +221,30 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         return df
 
     def expand(self, ids, limit, current=1, task=None):
-        max_to_expand = (limit - len(ids)) / 2
         vals = self.ids_to_vals(ids)
-        if isinstance(ids, Iterable):
-            self.progress.info('Expanding current topic', current=current, task=task)
-            expanded = set()
-            # in citations expand
-            query = f'''
-                SELECT C.pmid_out AS pmid_inner, ARRAY_AGG(C.pmid_in) AS pmids_outter
+        # List of ids sorted by citations
+        # TODO[shpynov] transferring huge list of ids can be a problem
+        query = f'''
+            WITH X AS (
+                SELECT C.pmid_in AS pmid
                 FROM PMCitations C
                 WHERE C.pmid_out IN (VALUES {vals})
-                GROUP BY C.pmid_out
-                LIMIT {max_to_expand};
-                '''
-            with self.postgres_connection.cursor() as cursor:
-                cursor.execute(query)
-                for row in cursor.fetchall():
-                    inner, outer = row
-                    expanded.add(str(inner))
-                    expanded |= set(map(lambda i: str(i), outer))
-
-            # out citations expand
-            query = f'''
-                SELECT C.pmid_in AS pmid_inner, ARRAY_AGG(C.pmid_out) AS pmids_outter
+                UNION
+                SELECT C.pmid_out AS pmid
                 FROM PMCitations C
-                WHERE C.pmid_in IN (VALUES {vals})
-                GROUP BY C.pmid_in
-                LIMIT {max_to_expand};
+                WHERE C.pmid_in IN (VALUES {vals}))
+            SELECT X.pmid as pmid FROM X
+                    LEFT JOIN matview_pmcitations C
+                    ON X.pmid = C.pmid
+                ORDER BY count DESC NULLS LAST
+                LIMIT {limit};
                 '''
 
-            with self.postgres_connection.cursor() as cursor:
-                cursor.execute(query)
-                for row in cursor.fetchall():
-                    inner, outer = row
-                    expanded.add(str(inner))
-                    expanded |= set(map(lambda i: str(i), outer))
+        with self.postgres_connection.cursor() as cursor:
+            cursor.execute(query)
+            df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
 
-            self.progress.info(f'Found {len(expanded)} papers', current=current, task=task)
-            return expanded
-        else:
-            raise TypeError('ids should be Iterable')
+        return list(df['pmid'].astype(str))
 
     def load_bibliographic_coupling(self, ids, current=1, task=None):
         self.progress.info('Processing bibliographic coupling for selected papers', current=current, task=task)

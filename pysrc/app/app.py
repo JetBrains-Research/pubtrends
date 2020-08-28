@@ -212,7 +212,7 @@ def process_paper():
         if job and job.state == 'SUCCESS':
             id_list = job.result
             logger.info(f'/process_paper single paper analysis {log_request(request)}')
-            job = analyze_id_list.delay(source, id_list=id_list, zoom=PAPER_ANALYSIS, query=query)
+            job = analyze_id_list.delay(source, ids=id_list, zoom=PAPER_ANALYSIS, query=query)
             return redirect(url_for('.process', query=query, analysis_type=PAPER_ANALYSIS_TITLE,
                                     id=id_list[0], source=source, jobid=job.id))
 
@@ -410,11 +410,11 @@ def search_terms_(data):
     if query and source and sort and limit:
         if not jobid:
             logger.info(f'/search_terms {log_request(request)}')
-            job = analyze_search_terms.delay(source, query=query, limit=limit, sort=sort)
+            job = analyze_search_terms.delay(source, query=query, limit=int(limit), sort=sort)
             jobid = job.id
         else:
             logger.info(f'/search_terms with fixed jobid {log_request(request)}')
-            analyze_search_terms.apply_async(args=[source, query, sort, limit], task_id=jobid)
+            analyze_search_terms.apply_async(args=[source, query, sort, int(limit)], task_id=jobid)
         return redirect(url_for('.process', query=query, source=source, limit=limit, sort=sort, jobid=jobid))
     logger.error(f'/search_terms error {log_request(request)}')
     return render_template_string(f"Request does not contain necessary params: {request}"), 400
@@ -444,7 +444,7 @@ def process_ids():
         id_list = request.form.get('id_list').split(',')
         zoom = request.form.get('zoom')
         analysis_type = zoom_name(zoom)
-        job = analyze_id_list.delay(source, id_list=id_list, zoom=int(zoom), query=query)
+        job = analyze_id_list.delay(source, ids=id_list, zoom=int(zoom), query=query)
         logger.info(f'/process_ids {log_request(request)}')
         return redirect(url_for('.process', query=query, analysis_type=analysis_type, source=source, jobid=job.id))
     logger.error(f'/process_ids error {log_request(request)}')

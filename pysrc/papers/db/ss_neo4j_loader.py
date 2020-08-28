@@ -1,7 +1,6 @@
 import html
 import logging
 import re
-from collections import Iterable
 
 import numpy as np
 import pandas as pd
@@ -262,13 +261,11 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
         return bibliographic_coupling_df
 
     def expand(self, ids, limit, current=1, task=None):
+        # TODO[shpynov] sort by citations!
         max_to_expand = int((limit - len(ids)) / 2)
         expanded = set(ids)
-        if isinstance(ids, Iterable):
-            self.progress.info('Expanding current topic', current=current, task=task)
-
-            # TODO[shpynov] transferring huge list of ids can be a problem
-            query = f'''
+        # TODO[shpynov] transferring huge list of ids can be a problem
+        query = f'''
             WITH [{','.join(f'"{id}"' for id in ids)}] AS ssids,
                  [{','.join(str(crc32(id)) for id in ids)}] AS crc32ids
                 MATCH (out:SSPublication)-[:SSReferenced]->(in:SSPublication)
@@ -276,10 +273,10 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
                 RETURN out.ssid AS expanded
                 LIMIT {max_to_expand};
             '''
-            with self.neo4jdriver.session() as session:
-                expanded |= set([str(r['expanded']) for r in session.run(query)])
+        with self.neo4jdriver.session() as session:
+            expanded |= set([str(r['expanded']) for r in session.run(query)])
 
-            query = f'''
+        query = f'''
             WITH [{','.join(f'"{id}"' for id in ids)}] AS ssids,
                  [{','.join(str(crc32(id)) for id in ids)}] AS crc32ids
                 MATCH (out:SSPublication)-[:SSReferenced]->(in:SSPublication)
@@ -287,10 +284,6 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
                 RETURN in.ssid AS expanded
                 LIMIT {max_to_expand};
             '''
-            with self.neo4jdriver.session() as session:
-                expanded |= set([str(r['expanded']) for r in session.run(query)])
-        else:
-            raise TypeError('ids should be Iterable')
-
-        self.progress.info(f'Found {len(expanded)} papers', current=current, task=task)
+        with self.neo4jdriver.session() as session:
+            expanded |= set([str(r['expanded']) for r in session.run(query)])
         return expanded

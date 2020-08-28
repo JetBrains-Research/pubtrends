@@ -10,7 +10,7 @@ from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.plot.plotter import visualize_analysis
 from pysrc.papers.plot.plotter_experimental import visualize_experimental_analysis
 from pysrc.papers.progress import Progress
-from pysrc.papers.utils import SORT_MOST_CITED
+from pysrc.papers.utils import SORT_MOST_CITED, ZOOM_OUT, PAPER_ANALYSIS
 
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379'),
 CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379')
@@ -27,7 +27,10 @@ def analyze_search_terms(source, query, sort=None, limit=None):
     analyzer = get_analyzer(loader, PUBTRENDS_CONFIG)
     try:
         sort = sort or SORT_MOST_CITED
+        limit = limit or analyzer.config.show_max_articles_default_value
         ids = analyzer.search_terms(query, limit=limit, sort=sort, task=current_task)
+        if 0 < len(ids) < limit:
+            ids = analyzer.expand_ids(ids, keep_mesh=True, limit=limit, current=2, task=current_task)
         analyzer.analyze_papers(ids, query, current_task)
     finally:
         loader.close_connection()
@@ -43,11 +46,21 @@ def analyze_search_terms(source, query, sort=None, limit=None):
 
 
 @celery.task(name='analyze_id_list')
-def analyze_id_list(source, id_list, zoom, query):
+def analyze_id_list(source, ids, zoom, query):
+    if len(ids) == 0:
+        raise RuntimeError("Empty papers list")
+
     loader = Loaders.get_loader(source, PUBTRENDS_CONFIG)
     analyzer = get_analyzer(loader, PUBTRENDS_CONFIG)
     try:
-        ids = analyzer.process_id_list(id_list, zoom, 1, current_task)
+        if zoom == ZOOM_OUT:
+            ids = analyzer.expand_ids(ids, keep_mesh=True, limit=analyzer.config.max_number_to_expand,
+                                      current=1, task=current_task)
+        elif zoom == PAPER_ANALYSIS:
+            ids = analyzer.expand_ids(ids, keep_mesh=False, limit=analyzer.config.max_number_to_expand,
+                                      current=1, task=current_task)
+        else:
+            ids = ids  # Leave intact
         analyzer.analyze_papers(ids, query, current_task)
     finally:
         loader.close_connection()
