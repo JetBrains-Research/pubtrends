@@ -1,4 +1,5 @@
 import logging
+from collections import Counter
 from math import floor
 from queue import PriorityQueue
 
@@ -47,6 +48,9 @@ class KeyPaperAnalyzer:
     TOP_JOURNALS = 50
     TOP_AUTHORS = 50
 
+    EXPAND_TOP_CITED = 0.9  # Keep top cited fraction in each expansion
+    MESH_OVERLAP = 0.05  # Keep mesh terms overlap
+
     def __init__(self, loader, config, test=False):
         self.config = config
         self.progress = Progress(self.total_steps())
@@ -71,18 +75,52 @@ class KeyPaperAnalyzer:
             raise RuntimeError(f"Nothing found for search query: {query}")
         return ids
 
-    def process_id_list(self, id_list, zoom, current=1, task=None):
-        # Zoom and load data about publications with given ids
-        ids = id_list
-        if len(ids) == 0:
-            raise RuntimeError("Nothing found in DB for empty ids list")
-        for _ in range(zoom):
-            if len(ids) > self.config.max_number_to_expand:
-                self.progress.info('Too many related papers, stop references expanding',
-                                   current=current, task=task)
+    def expand_ids(self, ids, keep_mesh, limit, current=1, task=None):
+        if len(ids) > self.config.max_number_to_expand:
+            self.progress.info('Too many related papers, nothing to expand', current=current, task=task)
+            return ids
+        self.progress.info('Expanding related papers', current=current, task=task)
+        current_ids = ids
+        mesh_terms = 0
+        mesh_counter = Counter()
+        if keep_mesh:
+            for mesh_list in self.loader.load_publications(ids)['mesh']:
+                for mt in mesh_list.split(','):
+                    mesh_counter[mt] += 1
+                    mesh_terms += 1
+        # Expand while we can
+        i = 0
+        new_ids = []
+        while True:
+            if len(current_ids) >= limit:
                 break
-            ids = self.loader.expand(ids, self.config.max_number_to_expand, current=current, task=task)
-        return ids
+            expanded_ids = self.loader.expand(new_ids or current_ids, limit - len(current_ids),
+                                              current=current, task=task)
+
+            # Pick new ids
+            new_ids = [pid for pid in expanded_ids if pid not in set(current_ids)]
+            # Top cited fraction
+            new_ids = new_ids[:int(len(new_ids) * self.EXPAND_TOP_CITED)]
+            if len(new_ids) == 0:
+                break
+            if keep_mesh:
+                new_mesh_ids = []
+                for (pid, mesh_list) in zip(new_ids, self.loader.load_publications(new_ids)['mesh']):
+                    if mesh_terms == 0 or \
+                            sum(mesh_counter[mt] for mt in mesh_list.split(',')) / mesh_terms >= \
+                            self.MESH_OVERLAP + self.MESH_OVERLAP * i:
+                        new_mesh_ids.append(pid)
+                if len(new_mesh_ids) == 0:
+                    break
+                else:
+                    current_ids += new_mesh_ids
+                    new_ids = new_mesh_ids
+            else:
+                current_ids += new_ids
+            i += 1
+
+        self.progress.info(f'Expanded {len(current_ids)} papers', current=current, task=task)
+        return current_ids
 
     def analyze_papers(self, ids, query, task=None):
         """:return full log"""

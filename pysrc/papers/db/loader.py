@@ -67,7 +67,7 @@ class Loader(metaclass=ABCMeta):
     @abstractmethod
     def expand(self, ids, limit, current=1, task=None):
         """
-        Expands list of ids doing one or two steps of breadth first search along citations graph.
+        Expands list of ids after one or BFS step along citations graph sorted by citations count.
         :return: list of ids, i.e. list(String).
         """
 

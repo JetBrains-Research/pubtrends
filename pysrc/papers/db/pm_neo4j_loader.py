@@ -1,7 +1,6 @@
 import html
 import logging
 import re
-from collections.abc import Iterable
 
 import numpy as np
 import pandas as pd
@@ -257,34 +256,28 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
         return bibliographic_coupling_df
 
     def expand(self, ids, limit, current=1, task=None):
+        # TODO[shpynov] sort by citations!
         max_to_expand = int((limit - len(ids)) / 2)
         expanded = set(ids)
-        if isinstance(ids, Iterable):
-            self.progress.info('Expanding current topic', current=current, task=task)
-
-            # TODO[shpynov] transferring huge list of ids can be a problem
-            query = f'''
+        # TODO[shpynov] transferring huge list of ids can be a problem
+        query = f'''
                 WITH [{','.join(ids)}] AS pmids
                 MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
                 WHERE in.pmid IN pmids
                 RETURN out.pmid AS expanded
                 LIMIT {max_to_expand};
             '''
-            with self.neo4jdriver.session() as session:
-                expanded |= set([str(r['expanded']) for r in session.run(query)])
+        with self.neo4jdriver.session() as session:
+            expanded |= set([str(r['expanded']) for r in session.run(query)])
 
-            query = f'''
+        query = f'''
                 WITH [{','.join(ids)}] AS pmids
                 MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
                 WHERE out.pmid IN pmids
                 RETURN in.pmid AS expanded
                 LIMIT {max_to_expand};
             '''
-            with self.neo4jdriver.session() as session:
-                expanded |= set([str(r['expanded']) for r in session.run(query)])
+        with self.neo4jdriver.session() as session:
+            expanded |= set([str(r['expanded']) for r in session.run(query)])
 
-        else:
-            raise TypeError('ids should be Iterable')
-
-        self.progress.info(f'Found {len(expanded)} papers', current=current, task=task)
         return expanded
