@@ -235,6 +235,7 @@ Please ensure that you have configured and prepared the database(s).
 
     ```
     docker run --rm  --name pubtrends-postgres -p 5432:5432 \
+        --shm-size=1g \
         -e POSTGRES_USER=biolabs -e POSTGRES_PASSWORD=mysecretpassword \
         -e POSTGRES_DB=pubtrends \
         -v ~/postgres/:/var/lib/postgresql/data \
