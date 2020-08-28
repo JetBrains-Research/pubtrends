@@ -78,9 +78,13 @@ Ensure that file contains correct information about the database(s) (url, port, 
     maintenance_work_mem = 1GB  # Memory for indexes, etc
     
     # Write performance
-    checkpoint_timeout = 1h
-    checkpoint_completion_target = 0.5
+    checkpoint_timeout = 10min
+    checkpoint_completion_target = 0.8
     synchronous_commit = off
+
+    # Concurrency
+    max_worker_processes = 8
+    max_parallel_workers = 8
     ```
    
 ## Kotlin/Java Build
@@ -235,14 +239,20 @@ Please ensure that you have configured and prepared the database(s).
 
     ```
     docker run --rm  --name pubtrends-postgres -p 5432:5432 \
-        --shm-size=1g \
+        --shm-size=4g \
         -e POSTGRES_USER=biolabs -e POSTGRES_PASSWORD=mysecretpassword \
         -e POSTGRES_DB=pubtrends \
         -v ~/postgres/:/var/lib/postgresql/data \
         -e PGDATA=/var/lib/postgresql/data/pgdata \
         -d postgres:12 
     ```
-   NOTE: stop Postgres docker image with timeout `--time=120` to avoid DB recovery.
+   NOTE: stop Postgres docker image with timeout `--time=300` to avoid DB recovery.\
+
+   NOTE2: for speed reason we use materialize views, which are updated upon successful database update.
+   In case of emergency stop, the view should be refreshed manually to ensure sort by citations works correctly:
+    ```
+    refresh materialized view matview_pmcitations;
+    ``` 
    
 4. Build ready for deployment package with script `dist.sh`.
 
