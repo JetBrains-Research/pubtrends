@@ -244,16 +244,18 @@ class KeyPaperAnalyzer:
         result = nx.Graph()
         # NOTE: we use nodes id as String to avoid problems str keys in jsonify
         # during graph visualization
-        for el in cocit_df[['cited_1', 'cited_2', 'total']].values:
-            start, end, cocitation = str(el[0]), str(el[1]), float(el[2])
-            result.add_edge(start, end, cocitation=cocitation)
+        if len(cocit_df) > 0:
+            for el in cocit_df[['cited_1', 'cited_2', 'total']].values:
+                start, end, cocitation = str(el[0]), str(el[1]), float(el[2])
+                result.add_edge(start, end, cocitation=cocitation)
 
-        for el in bibliographic_coupling_df[['citing_1', 'citing_2', 'total']].values:
-            start, end, bibcoupling = str(el[0]), str(el[1]), float(el[2])
-            if result.has_edge(start, end):
-                result[start][end]['bibcoupling'] = bibcoupling
-            else:
-                result.add_edge(start, end, bibcoupling=bibcoupling)
+        if len(bibliographic_coupling_df) > 0:
+            for el in bibliographic_coupling_df[['citing_1', 'citing_2', 'total']].values:
+                start, end, bibcoupling = str(el[0]), str(el[1]), float(el[2])
+                if result.has_edge(start, end):
+                    result[start][end]['bibcoupling'] = bibcoupling
+                else:
+                    result.add_edge(start, end, bibcoupling=bibcoupling)
 
         for u, v in citations_graph.edges:
             if result.has_edge(u, v):
