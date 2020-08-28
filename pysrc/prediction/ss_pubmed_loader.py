@@ -1,4 +1,3 @@
-import html
 import logging
 
 from pysrc.papers.db.ss_neo4j_loader import SemanticScholarNeo4jLoader
@@ -11,12 +10,10 @@ class SSPubmedLoader(SemanticScholarNeo4jLoader):
     def __init__(self, config):
         super(SSPubmedLoader, self).__init__(config)
 
-    def search(self, query, limit=None, sort=None, current=1, task=None):
+    def search(self, query, limit=None, sort=None):
         raise Exception('Use search_pubmed')
 
     def search_pubmed(self, limit, sort='random'):
-        self.progress.info(html.escape(f'Searching {limit} {sort.lower()} publications'),
-                           current=1, task=None)
         if sort == SORT_MOST_CITED:
             query = f'''
                 MATCH ()-[r:SSReferenced]->(node:SSPublication)
@@ -47,6 +44,4 @@ class SSPubmedLoader(SemanticScholarNeo4jLoader):
         with self.neo4jdriver.session() as session:
             ids = [str(r['ssid']) for r in session.run(query)]
 
-        self.progress.info(f'Found {len(ids)} publications in the local database', current=1,
-                           task=None)
         return ids

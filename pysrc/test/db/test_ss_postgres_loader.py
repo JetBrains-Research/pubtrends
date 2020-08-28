@@ -1,4 +1,3 @@
-import logging
 import unittest
 
 from pysrc.papers.config import PubtrendsConfig
@@ -16,7 +15,6 @@ class TestSemanticScholarPostgresLoader(unittest.TestCase, AbstractTestSemanticS
     @classmethod
     def setUpClass(cls):
         cls.loader = TestSemanticScholarPostgresLoader.loader
-        cls.loader.set_progress(logging.getLogger(__name__))
 
         # Text search is not tested, imitating search results
         cls.ids = list(map(lambda article: article.ssid, required_articles))

@@ -16,11 +16,11 @@ class PredictAnalyzer(KeyPaperAnalyzer):
                 raise RuntimeError("Nothing found")
 
             # Load data about publications, citations and co-citations
-            self.pub_df = self.loader.load_publications(self.ids, current=2, task=None)
+            self.pub_df = self.loader.load_publications(self.ids)
             if len(self.pub_df) == 0:
                 raise RuntimeError("Nothing found in DB")
 
-            cit_stats_df_from_query = self.loader.load_citation_stats(self.ids, current=3, task=None)
+            cit_stats_df_from_query = self.loader.load_citation_stats(self.ids)
             self.cit_stats_df = self.build_cit_stats_df(cit_stats_df_from_query, self.n_papers,
                                                         current=4, task=None)
             if len(self.cit_stats_df) == 0:
@@ -32,7 +32,7 @@ class PredictAnalyzer(KeyPaperAnalyzer):
             if len(self.df) == 0:
                 raise RuntimeError("Failed to merge publications and citations")
 
-            self.cit_df = self.loader.load_citations(self.ids, current=5, task=None)
+            self.cit_df = self.loader.load_citations(self.ids)
 
             return self.progress.stream.getvalue()
         finally:

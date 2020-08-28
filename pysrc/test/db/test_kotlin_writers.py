@@ -1,4 +1,3 @@
-import logging
 import os
 import subprocess
 import unittest
@@ -51,7 +50,6 @@ class TestKotlinWriters(unittest.TestCase):
         self.assertTrue(os.path.exists(PUBTRENDS_JAR), f'File not found: {PUBTRENDS_JAR}')
         subprocess.run(['java', '-cp', PUBTRENDS_JAR, 'org.jetbrains.bio.pubtrends.DBWriter', 'PubmedNeo4JWriter'])
         loader = PubmedNeo4jLoader(PubtrendsConfig(True))
-        loader.set_progress(logging.getLogger(__name__))
         pub_df = loader.load_publications(['1'])
         actual = dict(zip(pub_df.columns, next(pub_df.iterrows())[1]))
         self.assertEqual(actual, self.PUBMED_ARTICLE)
@@ -61,7 +59,6 @@ class TestKotlinWriters(unittest.TestCase):
         self.assertTrue(os.path.exists(PUBTRENDS_JAR), f'File not found: {PUBTRENDS_JAR}')
         subprocess.run(['java', '-cp', PUBTRENDS_JAR, 'org.jetbrains.bio.pubtrends.DBWriter', 'PubmedPostgresWriter'])
         loader = PubmedPostgresLoader(PubtrendsConfig(True))
-        loader.set_progress(logging.getLogger(__name__))
         pub_df = loader.load_publications(['1'])
         actual = dict(zip(pub_df.columns, next(pub_df.iterrows())[1]))
         self.assertEqual(actual, self.PUBMED_ARTICLE)
@@ -72,7 +69,6 @@ class TestKotlinWriters(unittest.TestCase):
         subprocess.run(
             ['java', '-cp', PUBTRENDS_JAR, 'org.jetbrains.bio.pubtrends.DBWriter', 'SemanticScholarNeo4JWriter'])
         loader = SemanticScholarNeo4jLoader(PubtrendsConfig(True))
-        loader.set_progress(logging.getLogger(__name__))
         pub_df = loader.load_publications(['03029e4427cfe66c3da6257979dc2d5b6eb3a0e4'])
         actual = dict(zip(pub_df.columns, next(pub_df.iterrows())[1]))
         print(actual)
@@ -84,7 +80,6 @@ class TestKotlinWriters(unittest.TestCase):
         subprocess.run(
             ['java', '-cp', PUBTRENDS_JAR, 'org.jetbrains.bio.pubtrends.DBWriter', 'SemanticScholarPostgresWriter'])
         loader = SemanticScholarPostgresLoader(PubtrendsConfig(True))
-        loader.set_progress(logging.getLogger(__name__))
         pub_df = loader.load_publications(['03029e4427cfe66c3da6257979dc2d5b6eb3a0e4'])
         actual = dict(zip(pub_df.columns, next(pub_df.iterrows())[1]))
         print(actual)

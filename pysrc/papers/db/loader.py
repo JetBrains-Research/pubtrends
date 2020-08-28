@@ -9,63 +9,57 @@ from pysrc.papers.utils import extract_authors
 
 class Loader(metaclass=ABCMeta):
 
-    def __init__(self, ):
-        self.progress = None
-
-    def set_progress(self, pl):
-        self.progress = pl
-
     @abstractmethod
-    def find(self, key, value, current=1, task=None):
+    def find(self, key, value):
         """
         Searches single or multiple paper(s) for give search key, value.
         :return: list of ids, i.e. list(String).
         """
 
     @abstractmethod
-    def search(self, query, limit=None, sort=None, current=1, task=None):
+    def search(self, query, limit=None, sort=None):
         """
         Searches publications by given query.
         :return: list of ids, i.e. list(String).
         """
 
     @abstractmethod
-    def load_publications(self, ids, current=1, task=None):
+    def load_publications(self, ids):
         """
         Loads publications for given ids.
         :return: dataframe[id(String), title, abstract, year, type, aux]
         """
 
     @abstractmethod
-    def load_citation_stats(self, ids, current=1, task=None):
+    def load_citation_stats(self, ids):
         """
         Loads all the citations stats for each of given ids.
         :return: dataframe[id(String), year, count]
         """
 
     @abstractmethod
-    def load_citations(self, ids, current=1, task=None):
+    def load_citations(self, ids):
         """
         Loading INNER citations graph, where all the nodes are inside query of interest.
         :return: dataframe[id_out(String), id_in(String)]
         """
 
     @abstractmethod
-    def load_cocitations(self, ids, current=1, task=None):
+    def load_cocitations(self, ids):
         """
         Loading co-citations graph.
         :return: dataframe[citing(String), cited_1(String), cited_2(String), year]
         """
 
     @abstractmethod
-    def load_bibliographic_coupling(self, ids, current=1, task=None):
+    def load_bibliographic_coupling(self, ids):
         """
         Loading bibliographic coupling graph.
         :return: dataframe[citing_1(String), citing_2(String), total]
         """
 
     @abstractmethod
-    def expand(self, ids, limit, current=1, task=None):
+    def expand(self, ids, limit):
         """
         Expands list of ids after one or BFS step along citations graph sorted by citations count.
         :return: list of ids, i.e. list(String).

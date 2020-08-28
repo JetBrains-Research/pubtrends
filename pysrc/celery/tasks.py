@@ -77,9 +77,11 @@ def analyze_id_list(source, ids, zoom, query):
 def find_paper_async(source, key, value):
     loader = Loaders.get_loader(source, PUBTRENDS_CONFIG)
     progress = Progress(total=2)
-    loader.set_progress(progress)
     try:
+        progress.info(f"Searching for a publication with {key} '{value}'", current=1, task=None)
         result = loader.find(key, value)
+        progress.info(f'Found {len(result)} publications in the local database', current=1, task=None)
+
         if len(result) == 1:
             progress.info('Done', current=2)
             return result

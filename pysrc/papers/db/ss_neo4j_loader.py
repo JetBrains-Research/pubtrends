@@ -1,4 +1,3 @@
-import html
 import logging
 import re
 
@@ -18,9 +17,8 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
     def __init__(self, config):
         super(SemanticScholarNeo4jLoader, self).__init__(config)
 
-    def find(self, key, value, current=1, task=None):
+    def find(self, key, value):
         value = value.strip()
-        self.progress.info(f"Searching for a publication with {key} '{value}'", current=current, task=task)
 
         if key == 'id':
             key = 'ssid'
@@ -48,17 +46,8 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
         with self.neo4jdriver.session() as session:
             return [str(r['ssid']) for r in session.run(query)]
 
-    def search(self, query, limit=None, sort=None, current=1, task=None):
+    def search(self, query, limit=None, sort=None):
         query_str = preprocess_search_query_for_neo4j(query, self.config.min_search_words)
-
-        if not limit:
-            limit_message = ''
-            limit = self.config.max_number_of_articles
-        else:
-            limit_message = f'{limit} '
-
-        self.progress.info(html.escape(f'Searching {limit_message}{sort.lower()} publications matching {query}'),
-                           current=current, task=task)
 
         if sort == SORT_MOST_RELEVANT:
             query = f'''
@@ -91,13 +80,9 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
         with self.neo4jdriver.session() as session:
             ids = [str(r['ssid']) for r in session.run(query)]
 
-        self.progress.info(f'Found {len(ids)} publications in the local database', current=current,
-                           task=task)
         return ids
 
-    def load_publications(self, ids, current=1, task=None):
-        self.progress.info('Loading publication data', current=current, task=task)
-
+    def load_publications(self, ids):
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
             WITH [{','.join(f'"{id}"' for id in ids)}] AS ssids,
@@ -125,9 +110,7 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
             pub_df['type'] = 'Article'
         return pub_df
 
-    def load_citation_stats(self, ids, current=1, task=None):
-        self.progress.info('Loading citations statistics', current=current, task=task)
-
+    def load_citation_stats(self, ids):
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
             WITH [{','.join(f'"{id}"' for id in ids)}] AS ssids,
@@ -145,8 +128,6 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
             logger.debug('Failed to load citations statistics.')
             cit_stats_df = pd.DataFrame(columns=['id', 'year', 'count'])
         else:
-            self.progress.info(f'Found {cit_stats_df.shape[0]} records of citations by year',
-                               current=current, task=task)
             if np.any(cit_stats_df.isna()):
                 raise ValueError('NaN values are not allowed in citation stats DataFrame')
 
@@ -156,10 +137,7 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
 
         return cit_stats_df
 
-    def load_citations(self, ids, current=1, task=None):
-        """ Loading INNER citations graph, where all the nodes are inside query of interest """
-        self.progress.info('Started loading citations', current=current, task=task)
-
+    def load_citations(self, ids):
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
             WITH [{','.join(f'"{id}"' for id in ids)}] AS ssids,
@@ -179,8 +157,6 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
             logger.debug('Failed to load citations.')
             cit_df = pd.DataFrame(columns=['id_in', 'id_out'])
         else:
-            self.progress.info(f'Found {len(cit_df)} citations among papers', current=current, task=task)
-
             if np.any(cit_df.isna()):
                 raise ValueError('Citation must have id_out and id_in')
 
@@ -188,9 +164,7 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
             cit_df['id_out'] = cit_df['id_out'].apply(str)
         return cit_df
 
-    def load_cocitations(self, ids, current=1, task=None):
-        self.progress.info('Loading co-citations for papers', current=current, task=task)
-
+    def load_cocitations(self, ids):
         # Use unfolding to pairs on the client side instead of DataBase
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
@@ -217,8 +191,6 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
         if len(cocit_data) == 0:
             logger.debug('Failed to load cocitations.')
         else:
-            self.progress.info(f'Found {len(cocit_df)} co-cited pairs of papers', current=current, task=task)
-
             if np.any(cocit_df[['citing', 'cited_1', 'cited_2']].isna()):
                 raise ValueError('NaN values are not allowed in co-citation DataFrame')
 
@@ -229,9 +201,7 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
 
         return cocit_df
 
-    def load_bibliographic_coupling(self, ids, current=1, task=None):
-        self.progress.info('Loading bibliographic coupling for papers', current=current, task=task)
-
+    def load_bibliographic_coupling(self, ids):
         # Use unfolding to pairs on the client side instead of DataBase
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
@@ -253,14 +223,11 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
         if len(bibliographic_coupling_df) == 0:
             logger.debug('Failed to load bibliographic coupling.')
             bibliographic_coupling_df = pd.DataFrame(columns=['citing_1', 'citing_2', 'total'])
-        else:
-            self.progress.info(f'Found {len(bibliographic_coupling_df)} bibliographic coupling pairs',
-                               current=current, task=task)
 
         bibliographic_coupling_df['total'] = bibliographic_coupling_df['total'].apply(int)
         return bibliographic_coupling_df
 
-    def expand(self, ids, limit, current=1, task=None):
+    def expand(self, ids, limit):
         # TODO[shpynov] sort by citations!
         max_to_expand = int((limit - len(ids)) / 2)
         expanded = set(ids)

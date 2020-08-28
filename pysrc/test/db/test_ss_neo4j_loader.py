@@ -1,4 +1,3 @@
-import logging
 import unittest
 
 from pysrc.papers.config import PubtrendsConfig
@@ -15,7 +14,6 @@ class TestSemanticScholarNeo4jLoader(unittest.TestCase, AbstractTestSemanticScho
     @classmethod
     def setUpClass(cls):
         cls.loader = TestSemanticScholarNeo4jLoader.loader
-        cls.loader.set_progress(logging.getLogger(__name__))
 
         # Text search is not tested, imitating search results
         cls.ids = list(map(lambda article: article.ssid, required_articles))

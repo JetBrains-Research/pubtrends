@@ -1,4 +1,3 @@
-import logging
 import unittest
 
 from pysrc.papers.config import PubtrendsConfig
@@ -16,7 +15,6 @@ class TestPubmedNeo4jLoader(unittest.TestCase, AbstractTestPubmedLoader):
     @classmethod
     def setUpClass(cls):
         cls.loader = TestPubmedNeo4jLoader.loader
-        cls.loader.set_progress(logging.getLogger(__name__))
 
         # Text search is not tested, imitating search results
         cls.ids = list(map(lambda article: article.pmid, REQUIRED_ARTICLES))
