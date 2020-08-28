@@ -20,6 +20,10 @@ object PMPublications : Table() {
     val mesh = text("mesh").nullable()
     val doi = text("doi").nullable()
     val aux = jsonb("aux", Aux::class.java, jsonMapper)
+
+    init {
+        index(true, doi)
+    }
 }
 
 object PMCitations : Table() {
