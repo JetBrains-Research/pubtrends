@@ -68,6 +68,8 @@ class PubmedXMLParser(
                 "Jan" to 1, "Feb" to 2, "Mar" to 3, "Apr" to 4, "May" to 5, "Jun" to 6,
                 "Jul" to 7, "Aug" to 8, "Sep" to 9, "Oct" to 10, "Nov" to 11, "Dec" to 12
         )
+
+        private val NON_BASIC_LATIN_REGEX = "\\P{InBasic_Latin}".toRegex()
     }
 
     private val factory = XMLInputFactory.newFactory()!!
@@ -355,15 +357,15 @@ class PubmedXMLParser(
                         authorName += " ${dataElement.data}"
                     }
                     fullName == AUTHOR_AFFILIATION_TAG -> {
-                        authorAffiliations.add(dataElement.data.trim(' ', '.'))
+                        authorAffiliations.add(dataElement.data.trim(' ', '.').replace(NON_BASIC_LATIN_REGEX, ""))
                     }
 
                     // Other information - journal title, language, DOI, publication type
                     fullName == JOURNAL_TITLE_TAG -> {
-                        journalName = dataElement.data
+                        journalName = dataElement.data.replace(NON_BASIC_LATIN_REGEX, "")
                     }
                     fullName == LANGUAGE_TAG -> {
-                        language = dataElement.data
+                        language = dataElement.data.replace(NON_BASIC_LATIN_REGEX, "")
                     }
                     (fullName == DOI_TAG) && (isDOIFound) -> {
                         doi = dataElement.data
@@ -416,8 +418,8 @@ class PubmedXMLParser(
                         val pubmedArticle = PubmedArticle(
                                 pmid = pmid,
                                 date = date,
-                                title = title,
-                                abstract = abstractText,
+                                title = title.replace(NON_BASIC_LATIN_REGEX, ""),
+                                abstract = abstractText.replace(NON_BASIC_LATIN_REGEX, ""),
                                 keywords = keywordList.toList(),
                                 citations = citationList.toList(),
                                 mesh = meshHeadingList.toList(),
@@ -435,7 +437,7 @@ class PubmedXMLParser(
                     AUTHOR_TAG -> {
                         authors.add(
                                 Author(
-                                        authorName, authorAffiliations.toList()
+                                        authorName.replace(NON_BASIC_LATIN_REGEX, ""), authorAffiliations.toList()
                                 )
                         )
                     }
