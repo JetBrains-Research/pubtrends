@@ -1,6 +1,5 @@
 import html
 import logging
-from collections import Iterable
 
 import numpy as np
 import pandas as pd
@@ -113,9 +112,8 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
 
         return list(pub_df['id'].values)
 
-    def load_publications(self, ids, temp_table_created=False, current=0, task=None):
-        if not temp_table_created:
-            self.progress.info('Loading publication data', current=current, task=task)
+    def load_publications(self, ids, current=0, task=None):
+        self.progress.info('Loading publication data', current=current, task=task)
 
         query = f'''
                 SELECT P.ssid, P.crc32id, P.pmid, P.title, P.abstract, P.year, P.doi, P.aux
@@ -228,43 +226,24 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         return cocit_df
 
     def expand(self, ids, limit, current=1, task=None):
-        if isinstance(ids, Iterable):
-            self.progress.info('Expanding current topic', current=current, task=task)
-            expanded = set()
-            max_to_expand = (limit - len(ids)) / 2
-            # Inner citations
-            query = f'''
-                SELECT C.ssid_out as id_inner, ARRAY_AGG(C.ssid_in) as ids_outer
+        # TODO[shpynov] sort by citations
+        query = f'''
+            WITH X AS (
+                SELECT C.ssid_in as ssid
                 FROM sscitations C
                 WHERE (C.crc32id_out, C.ssid_out) IN (VALUES  {SemanticScholarPostgresLoader.ids2values(ids)})
-                GROUP BY C.ssid_out
-                LIMIT {max_to_expand};
-                '''
-            with self.postgres_connection.cursor() as cursor:
-                cursor.execute(query)
-                for row in cursor.fetchall():
-                    citing, cited = row
-                    expanded.add(citing)
-                    expanded |= set(cited)
-            # Outer citations
-            query = f'''
-                SELECT C.ssid_in as id_inner, ARRAY_AGG(C.ssid_out) as ids_outer
+                UNION
+                SELECT C.ssid_out as ssid
                 FROM sscitations C
-                WHERE (C.crc32id_in, C.ssid_in) IN (VALUES  {SemanticScholarPostgresLoader.ids2values(ids)})
-                GROUP BY C.ssid_in
-                LIMIT {max_to_expand};
+                WHERE (C.crc32id_in, C.ssid_in) IN (VALUES  {SemanticScholarPostgresLoader.ids2values(ids)}))
+            SELECT ssid from X
+            LIMIT {limit};
                 '''
-            with self.postgres_connection.cursor() as cursor:
-                cursor.execute(query)
-                for row in cursor.fetchall():
-                    citing, cited = row
-                    expanded.add(citing)
-                    expanded |= set(cited)
+        with self.postgres_connection.cursor() as cursor:
+            cursor.execute(query)
+            df = pd.DataFrame(cursor.fetchall(), columns=['ssid'], dtype=object)
 
-            self.progress.info(f'Found {len(expanded)} papers', current=current, task=task)
-            return expanded
-        else:
-            raise TypeError('ids should be Iterable')
+        return list(df['ssid'].values)
 
     def load_bibliographic_coupling(self, ids, current=1, task=None):
         self.progress.info('Processing bibliographic coupling for selected papers', current=current, task=task)
