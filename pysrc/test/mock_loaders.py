@@ -53,82 +53,82 @@ EXPECTED_MAX_RELATIVE_GAIN = {1972: '3', 1974: '4'}
 
 class MockLoader(Loader):
 
-    def find(self, key, value, current=1, task=None):
+    def find(self, key, value):
         raise Exception('Not implemented')
 
-    def expand(self, ids, limit, current=1, task=None):
+    def expand(self, ids, limit):
         raise Exception('Not implemented')
 
-    def search(self, terms, limit=None, sort=None, current=1, task=None):
+    def search(self, terms, limit=None, sort=None):
         return ['1', '2', '3', '4', '5']
 
-    def load_publications(self, ids=None, current=1, task=None):
+    def load_publications(self, ids=None):
         return pd.DataFrame(PUBLICATION_DATA, columns=['id', 'year', 'title', 'abstract', 'type', 'authors', 'journal'])
 
-    def load_citation_stats(self, ids=None, current=1, task=None):
+    def load_citation_stats(self, ids=None):
         return pd.DataFrame(CITATION_STATS_DATA, columns=['id', 'year', 'count'])
 
-    def load_citations(self, ids=None, current=1, task=None):
+    def load_citations(self, ids=None):
         return pd.DataFrame(CITATION_DATA, columns=['id_out', 'id_in'])
 
-    def load_cocitations(self, ids=None, current=1, task=None):
+    def load_cocitations(self, ids=None):
         return pd.DataFrame(COCITATION_DATA, columns=['citing', 'cited_1', 'cited_2', 'year'])
 
-    def load_bibliographic_coupling(self, ids=None, current=1, task=None):
+    def load_bibliographic_coupling(self, ids=None):
         return pd.DataFrame(BIBLIOGRAPHIC_COUPLING_DATA, columns=['citing_1', 'citing_2', 'total'])
 
 
 class MockLoaderSingle(Loader):
 
-    def find(self, key, value, current=1, task=None):
+    def find(self, key, value):
         raise Exception('Not implemented')
 
-    def expand(self, ids, limit, current=1, task=None):
+    def expand(self, ids, limit):
         raise Exception('Not implemented')
 
-    def search(self, terms, limit=None, sort=None, current=1, task=None):
+    def search(self, terms, limit=None, sort=None):
         return ['1']
 
-    def load_publications(self, ids=None, current=1, task=None):
+    def load_publications(self, ids=None):
         return pd.DataFrame(PUBLICATION_DATA[0:1],
                             columns=['id', 'year', 'title', 'abstract', 'type', 'authors', 'journal'])
 
-    def load_citation_stats(self, ids=None, current=1, task=None):
+    def load_citation_stats(self, ids=None):
         return pd.DataFrame([['1', 1972, 2], ['1', 1974, 15]],
                             columns=['id', 'year', 'count'])
 
-    def load_citations(self, ids=None, current=1, task=None):
+    def load_citations(self, ids=None):
         return pd.DataFrame([], columns=['id_out', 'id_in'])
 
-    def load_cocitations(self, ids=None, current=1, task=None):
+    def load_cocitations(self, ids=None):
         return pd.DataFrame([], columns=['citing', 'cited_1', 'cited_2', 'year'])
 
-    def load_bibliographic_coupling(self, ids=None, current=1, task=None):
+    def load_bibliographic_coupling(self, ids=None):
         return pd.DataFrame([], columns=['citing_1', 'citing_2', 'total'])
 
 
 class MockLoaderEmpty(Loader):
 
-    def search(self, terms, limit=None, sort=None, current=1, task=None):
+    def search(self, terms, limit=None, sort=None):
         return []
 
-    def find(self, key, value, current=1, task=None):
+    def find(self, key, value):
         raise Exception('Not implemented')
 
-    def load_publications(self, ids, current=1, task=None):
+    def load_publications(self, ids):
         raise Exception('Not implemented')
 
-    def load_citation_stats(self, ids, current=1, task=None):
+    def load_citation_stats(self, ids):
         raise Exception('Not implemented')
 
-    def load_citations(self, ids, current=1, task=None):
+    def load_citations(self, ids):
         raise Exception('Not implemented')
 
-    def load_cocitations(self, ids, current=1, task=None):
+    def load_cocitations(self, ids):
         raise Exception('Not implemented')
 
-    def load_bibliographic_coupling(self, ids=None, current=1, task=None):
+    def load_bibliographic_coupling(self, ids=None):
         raise Exception('Not implemented')
 
-    def expand(self, ids, limit, current=1, task=None):
+    def expand(self, ids, limit):
         raise Exception('Not implemented')

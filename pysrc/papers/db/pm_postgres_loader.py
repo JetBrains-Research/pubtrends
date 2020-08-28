@@ -1,4 +1,3 @@
-import html
 import logging
 
 import numpy as np
@@ -22,9 +21,8 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
     def ids_to_vals(ids):
         return ','.join([f'({i})' for i in ids])
 
-    def find(self, key, value, current=1, task=None):
+    def find(self, key, value):
         value = value.strip()
-        self.progress.info(f"Searching for a publication with {key} '{value}'", current=current, task=task)
 
         if key == 'id':
             key = 'pmid'
@@ -58,22 +56,10 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
 
-        self.progress.info(f'Found {len(df)} publications in the local database', current=current,
-                           task=task)
-
         return list(df['pmid'].astype(str))
 
-    def search(self, query, limit=None, sort=None, current=0, task=None):
+    def search(self, query, limit=None, sort=None):
         query_str = preprocess_search_query_for_postgres(query, self.config.min_search_words)
-        if not limit:
-            limit_message = ''
-            limit = self.config.max_number_of_articles
-        else:
-            limit_message = f'{limit} '
-
-        self.progress.info(html.escape(f'Searching {limit_message}{sort.lower()} publications matching {query}'),
-                           current=current, task=task)
-
         if sort == SORT_MOST_RELEVANT:
             query = f'''
                 SELECT pmid
@@ -108,13 +94,9 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
 
-        self.progress.info(f'Found {len(df)} publications in the local database', current=current,
-                           task=task)
-
         return list(df['pmid'].astype(str))
 
-    def load_publications(self, ids, current=0, task=None):
-        self.progress.info('Loading publication data', current=current, task=task)
+    def load_publications(self, ids):
         vals = self.ids_to_vals(ids)
         query = f'''
                 SELECT P.pmid as id, title, abstract, date_part('year', date) as year, type,
@@ -133,9 +115,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         logger.debug(f'Loaded {len(df)} papers')
         return Loader.process_publications_dataframe(df)
 
-    def load_citation_stats(self, ids, current=0, task=None):
-        self.progress.info('Loading citations statistics',
-                           current=current, task=task)
+    def load_citation_stats(self, ids):
         vals = self.ids_to_vals(ids)
         query = f'''
            SELECT C.pmid_in AS id, date_part('year', P_out.date) as year, COUNT(1) AS count
@@ -161,13 +141,10 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         df['year'] = df['year'].apply(int)
         df['count'] = df['count'].apply(int)
 
-        self.progress.info(f'Found {df.shape[0]} records of citations by year',
-                           current=current, task=task)
 
         return df
 
-    def load_citations(self, ids, current=0, task=None):
-        self.progress.info('Loading citations data', current=current, task=task)
+    def load_citations(self, ids):
         vals = self.ids_to_vals(ids)
         query = f'''SELECT pmid_out as id_out, pmid_in as id_in
                     FROM PMCitations C
@@ -186,11 +163,9 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         df['id_in'] = df['id_in'].apply(str)
         df['id_out'] = df['id_out'].apply(str)
 
-        self.progress.info(f'Found {len(df)} citations', current=current, task=task)
         return df
 
-    def load_cocitations(self, ids, current=0, task=None):
-        self.progress.info('Calculating co-citations for selected papers', current=current, task=task)
+    def load_cocitations(self, ids):
         vals = self.ids_to_vals(ids)
         query = f'''with X AS (SELECT pmid_out, pmid_in
                         FROM PMCitations
@@ -216,11 +191,10 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
             raise ValueError('NaN values are not allowed in ids of co-citation DataFrame')
 
         logger.debug(f'Loaded {lines} lines of citing info')
-        self.progress.info(f'Found {len(df)} co-cited pairs of papers', current=current, task=task)
 
         return df
 
-    def expand(self, ids, limit, current=1, task=None):
+    def expand(self, ids, limit):
         vals = self.ids_to_vals(ids)
         # List of ids sorted by citations
         # TODO[shpynov] transferring huge list of ids can be a problem
@@ -246,8 +220,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
         return list(df['pmid'].astype(str))
 
-    def load_bibliographic_coupling(self, ids, current=1, task=None):
-        self.progress.info('Processing bibliographic coupling for selected papers', current=current, task=task)
+    def load_bibliographic_coupling(self, ids):
         vals = self.ids_to_vals(ids)
         query = f'''WITH X AS (SELECT pmid_out, pmid_in
                         FROM PMCitations
@@ -265,7 +238,5 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
             df, lines = process_bibliographic_coupling_postgres(cursor)
 
         logger.debug(f'Loaded {lines} lines of bibliographic coupling info')
-        self.progress.info(f'Found {len(df)} bibliographic coupling pairs of papers',
-                           current=current, task=task)
 
         return df

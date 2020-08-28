@@ -1,3 +1,4 @@
+import html
 import logging
 from collections import Counter
 from math import floor
@@ -13,7 +14,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.progress import Progress
-from pysrc.papers.utils import split_df_list, get_topics_description, tokenize
+from pysrc.papers.utils import split_df_list, get_topics_description, tokenize, SORT_MOST_CITED
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +57,6 @@ class KeyPaperAnalyzer:
         self.progress = Progress(self.total_steps())
 
         self.loader = loader
-        loader.set_progress(self.progress)
         self.source = Loaders.source(self.loader, test)
 
     def total_steps(self):
@@ -70,9 +70,16 @@ class KeyPaperAnalyzer:
         if len(query) == 0:
             raise Exception('Empty search string, please use search terms or '
                             'all the query wrapped in "" for phrasal search')
-        ids = self.loader.search(query, limit=limit, sort=sort, current=1, task=task)
+        limit = limit or self.config.max_number_of_articles
+        sort = sort or SORT_MOST_CITED
+        self.progress.info(f'Searching {limit} {sort.lower()} publications matching {html.escape(query)}',
+                           current=1, task=task)
+        ids = self.loader.search(query, limit=limit, sort=sort)
         if len(ids) == 0:
             raise RuntimeError(f"Nothing found for search query: {query}")
+        else:
+            self.progress.info(f'Found {len(ids)} publications in the local database', current=1,
+                               task=task)
         return ids
 
     def expand_ids(self, ids, keep_mesh, limit, current=1, task=None):
@@ -94,8 +101,7 @@ class KeyPaperAnalyzer:
         while True:
             if len(current_ids) >= limit:
                 break
-            expanded_ids = self.loader.expand(new_ids or current_ids, limit - len(current_ids),
-                                              current=current, task=task)
+            expanded_ids = self.loader.expand(new_ids or current_ids, limit - len(current_ids))
 
             # Pick new ids
             new_ids = [pid for pid in expanded_ids if pid not in set(current_ids)]
@@ -127,16 +133,20 @@ class KeyPaperAnalyzer:
         self.ids = ids
         self.query = query
 
-        # Load data about publications
-        self.pub_df = self.loader.load_publications(ids, current=2, task=task)
+        self.progress.info('Loading publication data', current=2, task=task)
+        self.pub_df = self.loader.load_publications(ids)
         if len(self.pub_df) == 0:
             raise RuntimeError(f"Nothing found in DB for ids: {ids}")
         self.ids = set(self.pub_df['id'])  # Limit ids to existing papers only!
         self.n_papers = len(self.ids)
         self.pub_types = list(set(self.pub_df['type']))
 
-        # Load data about citations statistics (including outer papers)
-        cit_stats_df_from_query = self.loader.load_citation_stats(self.ids, current=3, task=task)
+        self.progress.info('Loading citations statistics',
+                           current=3, task=task)
+        cit_stats_df_from_query = self.loader.load_citation_stats(self.ids)
+        self.progress.info(f'Found {len(cit_stats_df_from_query)} records of citations by year',
+                           current=3, task=task)
+
         self.cit_stats_df = self.build_cit_stats_df(cit_stats_df_from_query, self.n_papers, current=4, task=task)
         if len(self.cit_stats_df) == 0:
             raise RuntimeError("No citations of papers were found")
@@ -145,19 +155,25 @@ class KeyPaperAnalyzer:
         if len(self.df) == 0:
             raise RuntimeError("Failed to merge publications and citations")
 
-        # Load data about citations within given papers (excluding outer papers)
+        # Load data about citations between given papers (excluding outer papers)
         # IMPORTANT: cit_df may contain not all the publications for query
-        self.cit_df = self.loader.load_citations(self.ids, current=5, task=task)
+        self.progress.info('Loading citations data', current=5, task=task)
+        self.cit_df = self.loader.load_citations(self.ids)
+        self.progress.info(f'Found {len(self.cit_df)} citations between papers', current=5, task=task)
 
         # Building inner citations graph for pagerank analysis
         self.citations_graph = self.build_citation_graph(self.cit_df, current=6, task=task)
 
-        # Loading data about cocitations
-        self.cocit_df = self.loader.load_cocitations(self.ids, current=7, task=task)
+        self.progress.info('Calculating co-citations for selected papers', current=7, task=task)
+        self.cocit_df = self.loader.load_cocitations(self.ids)
+        self.progress.info(f'Found {len(self.cocit_df)} co-cited pairs of papers', current=7, task=task)
+
         cocit_grouped_df = self.build_cocit_grouped_df(self.cocit_df)
 
-        # Loading data about bibliographic coupling
-        self.bibliographic_coupling_df = self.loader.load_bibliographic_coupling(self.ids, current=8, task=task)
+        self.progress.info('Processing bibliographic coupling for selected papers', current=8, task=task)
+        self.bibliographic_coupling_df = self.loader.load_bibliographic_coupling(self.ids)
+        self.progress.info(f'Found {len(self.bibliographic_coupling_df)} bibliographic coupling pairs of papers',
+                           current=8, task=task)
 
         # Building paper similarity graph, including all the papers from citations graph
         # IMPORTANT: not all the publications might be still covered

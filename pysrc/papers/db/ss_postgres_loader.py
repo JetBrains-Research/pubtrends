@@ -1,4 +1,3 @@
-import html
 import logging
 
 import numpy as np
@@ -23,9 +22,8 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         ids = list(ids)  # In case of generator, avoid problems with zip and map
         return ', '.join(f'({i}, \'{j}\')' for (i, j) in zip(map(crc32, ids), ids))
 
-    def find(self, key, value, current=1, task=None):
+    def find(self, key, value):
         value = value.strip()
-        self.progress.info(f"Searching for a publication with {key} '{value}'", current=current, task=task)
 
         # Preprocess DOI
         if key == 'doi':
@@ -53,23 +51,10 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(), columns=['id'], dtype=object)
 
-        self.progress.info(f'Found {len(df)} publications in the local database', current=current,
-                           task=task)
-
         return list(df['id'].astype(str))
 
-    def search(self, query, limit=None, sort=None, current=0, task=None):
-        self.progress.info(html.escape(f'Searching publications matching <{query}>'), current=current, task=task)
+    def search(self, query, limit=None, sort=None):
         query_str = preprocess_search_query_for_postgres(query, self.config.min_search_words)
-        if not limit:
-            limit_message = ''
-            limit = self.config.max_number_of_articles
-        else:
-            limit_message = f'{limit} '
-
-        self.progress.info(html.escape(f'Searching {limit_message}{sort.lower()} publications matching <{query}>'),
-                           current=current, task=task)
-
         if sort == SORT_MOST_RELEVANT:
             query = f'''
                 SELECT ssid
@@ -107,14 +92,9 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         # Duplicate rows may occur if crawler was stopped while parsing Semantic Scholar archive
         pub_df.drop_duplicates(subset='id', inplace=True)
 
-        self.progress.info(f'Found {len(pub_df)} publications in the local database', current=current,
-                           task=task)
-
         return list(pub_df['id'].values)
 
-    def load_publications(self, ids, current=0, task=None):
-        self.progress.info('Loading publication data', current=current, task=task)
-
+    def load_publications(self, ids):
         query = f'''
                 SELECT P.ssid, P.crc32id, P.pmid, P.title, P.abstract, P.year, P.doi, P.aux
                 FROM SSPublications P
@@ -135,9 +115,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
 
         return Loader.process_publications_dataframe(pub_df)
 
-    def load_citation_stats(self, ids, current=0, task=None):
-        self.progress.info('Loading citations statistics among millions of citations',
-                           current=current, task=task)
+    def load_citation_stats(self, ids):
         query = f'''
            SELECT C.ssid_in AS ssid, P_out.year, COUNT(1) AS count
                 FROM SSCitations C
@@ -162,15 +140,9 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         cit_stats_df_from_query['year'] = cit_stats_df_from_query['year'].apply(int)
         cit_stats_df_from_query['count'] = cit_stats_df_from_query['count'].apply(int)
 
-        self.progress.info(f'Found {cit_stats_df_from_query.shape[0]} records of citations by year',
-                           current=current, task=task)
-
         return cit_stats_df_from_query
 
-    def load_citations(self, ids, current=0, task=None):
-        self.progress.info('Loading citations data', current=current, task=task)
-        logger.debug('Started loading raw information about citations', current=current, task=task)
-
+    def load_citations(self, ids):
         query = f'''SELECT C.ssid_out, C.ssid_in
                     FROM SSCitations C
                     WHERE (C.crc32id_in, C.ssid_in) in (VALUES {SemanticScholarPostgresLoader.ids2values(ids)})
@@ -190,13 +162,9 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         if np.any(citations.isna()):
             raise ValueError('Citation must have ssid_out and ssid_in')
 
-        self.progress.info(f'Found {len(citations)} citations', current=current, task=task)
-
         return citations
 
-    def load_cocitations(self, ids, current=0, task=None):
-        self.progress.info('Calculating co-citations for selected papers', current=current, task=task)
-
+    def load_cocitations(self, ids):
         query = f'''
                 with Z as (select ssid_out, ssid_in, crc32id_out, crc32id_in
                     from SSCitations
@@ -219,13 +187,9 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
 
         if np.any(cocit_df[['citing', 'cited_1', 'cited_2']].isna()):
             raise ValueError('NaN values are not allowed in ids of co-citation DataFrame')
-
-        logger.debug(f'Loaded {lines} lines of citing info', current=current, task=task)
-        self.progress.info(f'Found {len(cocit_df)} co-cited pairs of papers', current=current, task=task)
-
         return cocit_df
 
-    def expand(self, ids, limit, current=1, task=None):
+    def expand(self, ids, limit):
         # TODO[shpynov] sort by citations
         query = f'''
             WITH X AS (
@@ -245,8 +209,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
 
         return list(df['ssid'].values)
 
-    def load_bibliographic_coupling(self, ids, current=1, task=None):
-        self.progress.info('Processing bibliographic coupling for selected papers', current=current, task=task)
+    def load_bibliographic_coupling(self, ids):
         query = f'''WITH X AS (SELECT ssid_out, ssid_in
                         FROM sscitations C
                         WHERE (crc32id_out, ssid_out) IN (VALUES  {SemanticScholarPostgresLoader.ids2values(ids)}))
@@ -262,7 +225,4 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
             df, lines = process_bibliographic_coupling_postgres(cursor)
 
         logger.debug(f'Loaded {lines} lines of bibliographic coupling info')
-        self.progress.info(f'Found {len(df)} bibliographic coupling pairs of papers',
-                           current=current, task=task)
-
         return df
