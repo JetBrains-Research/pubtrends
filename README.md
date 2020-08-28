@@ -153,7 +153,7 @@ Please ensure that you have Database configured, up and running.
 
 2. Start Redis
     ```
-    docker run redis:5.0
+    docker run -p 6379:6379 redis:5.0
     ```
 3. Start Celery worker queue
     ```
