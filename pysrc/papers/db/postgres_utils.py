@@ -25,7 +25,7 @@ def preprocess_search_query_for_postgres(query, min_search_words):
         raise Exception(f'Please use more specific query with >= {min_search_words} words. Query: {query}')
     # Looking for complete phrase
     if re.match('^"[^"]+"$', processed):
-        return "''" + ' '.join(re.sub('[\'"]', '', processed).split(' ')) + "''"
+        return '<->'.join(re.sub('[\'"]', '', processed).split(' '))
     elif re.match('^[^"]+$', processed):
         words = [re.sub("'s$", '', w) for w in processed.split(' ')]  # Fix apostrophes
         stemmer = SnowballStemmer('english')
