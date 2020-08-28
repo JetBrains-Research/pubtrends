@@ -59,11 +59,10 @@ open class PubmedPostgresWriter(
             exec(
                     """
                     create materialized view if not exists matview_pmcitations as
-                    SELECT pmid, COUNT(*) AS count
-                    FROM PMPublications P
-                    LEFT JOIN PMCitations C
-                        ON C.pmid_in = pmid
-                        GROUP BY pmid;
+                    SELECT pmid_in as pmid, COUNT(*) AS count
+                    FROM PMCitations C
+                    GROUP BY pmid_in
+                    HAVING COUNT(*) >= 3; -- Ignore tail of 0,1,2 cited papers
                     create index if not exists PMCitation_matview_index on matview_pmcitations (pmid);
                     """
             )
@@ -75,8 +74,8 @@ open class PubmedPostgresWriter(
             addLogger(Log4jSqlLogger)
             exec(
                     """
-                    drop materialized view if exists matview_pmcitations;
                     drop index if exists PMCitation_matview_index;
+                    drop materialized view if exists matview_pmcitations;
                     """
             )
             SchemaUtils.drop(PMPublications, PMCitations)
