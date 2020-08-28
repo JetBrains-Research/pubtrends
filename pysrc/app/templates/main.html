@@ -131,9 +131,9 @@
                                 </div>
                                 <select class="form-control" name="sort"
                                         aria-describedby="sort-addon">
-                                    <option>Most Relevant</option>
-                                    <option>Most Recent</option>
                                     <option>Most Cited</option>
+                                    <option>Most Recent</option>
+                                    <option>Most Relevant</option>
                                 </select>
                             </div>
                             &nbsp;&nbsp;&nbsp;
@@ -204,7 +204,7 @@
     </main>
     <form action="search_terms" method="post" class="inline">
         <input type="hidden" name="source" value="{{ search_example_source }}">
-        <input type="hidden" name="sort" value="Most Relevant">
+        <input type="hidden" name="sort" value="Most Cited">
         <input type="hidden" name="limit" value="1000">
         <strong>The service is in development!</strong>
         Try example search
