@@ -69,7 +69,7 @@ class PubmedXMLParser(
                 "Jul" to 7, "Aug" to 8, "Sep" to 9, "Oct" to 10, "Nov" to 11, "Dec" to 12
         )
 
-        private val NON_BASIC_LATIN_REGEX = "\\P{InBasic_Latin}".toRegex()
+        val NON_BASIC_LATIN_REGEX = "\\P{InBasic_Latin}".toRegex()
     }
 
     private val factory = XMLInputFactory.newFactory()!!

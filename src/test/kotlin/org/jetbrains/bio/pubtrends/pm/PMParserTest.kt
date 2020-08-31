@@ -76,14 +76,16 @@ class PMParserTest {
     @Test
     fun testParseAbstractWithInnerXMLTags() {
         listOf(29736257, 29456534).forEach {
-            assertEquals(PubmedArticles.articles[it]?.abstract, articleMap[it]?.abstract)
+            assertEquals(PubmedArticles.articles[it]?.abstract!!.replace(PubmedXMLParser.NON_BASIC_LATIN_REGEX, ""),
+                    articleMap[it]?.abstract)
         }
     }
 
     @Test
     fun testParseStructuredAbstract() {
         listOf(20453483, 27654823, 24884411).forEach {
-            assertEquals(PubmedArticles.articles[it]?.abstract, articleMap[it]?.abstract)
+            assertEquals(PubmedArticles.articles[it]?.abstract!!.replace(PubmedXMLParser.NON_BASIC_LATIN_REGEX, ""),
+                    articleMap[it]?.abstract)
         }
     }
 
@@ -198,7 +200,9 @@ class PMParserTest {
 
     @Test
     fun testParseAuthorAffiliations() {
-        assertEquals(PubmedArticles.articles[29456534]?.aux?.authors?.map { it.affiliation },
+        assertEquals(PubmedArticles.articles[29456534]?.aux?.authors?.map {
+            it.affiliation.map { aff -> aff.replace(PubmedXMLParser.NON_BASIC_LATIN_REGEX, "") }
+        },
                 articleMap[29456534]?.aux?.authors?.map { it.affiliation })
     }
 // TODO revert once switching to full Pubmed Neo4j model
