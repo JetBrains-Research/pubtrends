@@ -251,6 +251,7 @@ Please ensure that you have configured and prepared the database(s).
    NOTE2: for speed reason we use materialize views, which are updated upon successful database update.
    In case of emergency stop, the view should be refreshed manually to ensure sort by citations works correctly:
     ```
+    psql -h localhost -p 5432 -U biolabs -d pubtrends
     refresh materialized view matview_pmcitations;
     ``` 
    
