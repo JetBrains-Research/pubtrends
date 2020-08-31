@@ -195,19 +195,20 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
             WITH X AS (
                 SELECT C.ssid_in as ssid
                 FROM sscitations C
-                WHERE (C.crc32id_out, C.ssid_out) IN (VALUES  {SemanticScholarPostgresLoader.ids2values(ids)})
+                WHERE (C.crc32id_out, C.ssid_out) IN (VALUES {SemanticScholarPostgresLoader.ids2values(ids)})
                 UNION
                 SELECT C.ssid_out as ssid
                 FROM sscitations C
-                WHERE (C.crc32id_in, C.ssid_in) IN (VALUES  {SemanticScholarPostgresLoader.ids2values(ids)}))
-            SELECT ssid from X
+                WHERE (C.crc32id_in, C.ssid_in) IN (VALUES {SemanticScholarPostgresLoader.ids2values(ids)}))
+            SELECT DISTINCT ssid from X
             LIMIT {limit};
                 '''
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(), columns=['ssid'], dtype=object)
-
-        return list(df['ssid'].values)
+        expanded = set(ids)
+        expanded |= set(df['ssid'])
+        return expanded
 
     def load_bibliographic_coupling(self, ids):
         query = f'''WITH X AS (SELECT ssid_out, ssid_in

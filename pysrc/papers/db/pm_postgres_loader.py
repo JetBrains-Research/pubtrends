@@ -196,7 +196,6 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
     def expand(self, ids, limit):
         vals = self.ids_to_vals(ids)
-        # List of ids sorted by citations
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
             WITH X AS (
@@ -206,10 +205,11 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 UNION
                 SELECT C.pmid_out AS pmid
                 FROM PMCitations C
-                WHERE C.pmid_in IN (VALUES {vals}))
-            SELECT X.pmid as pmid FROM X
+                WHERE C.pmid_in IN (VALUES {vals})),
+                Y AS (SELECT DISTINCT pmid from X)
+            SELECT Y.pmid as pmid FROM Y
                     LEFT JOIN matview_pmcitations C
-                    ON X.pmid = C.pmid
+                    ON Y.pmid = C.pmid
                 ORDER BY count DESC NULLS LAST
                 LIMIT {limit};
                 '''
@@ -217,8 +217,9 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
-
-        return list(df['pmid'].astype(str))
+        expanded = set(ids)
+        expanded |= set(df['pmid'].astype(str))
+        return expanded
 
     def load_bibliographic_coupling(self, ids):
         vals = self.ids_to_vals(ids)
