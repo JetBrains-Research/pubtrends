@@ -49,6 +49,7 @@ class KeyPaperAnalyzer:
     TOP_JOURNALS = 50
     TOP_AUTHORS = 50
 
+    EXPAND_STEPS = 3  # Max expand steps
     EXPAND_TOP_CITED = 0.9  # Keep top cited fraction in each expansion
     MESH_OVERLAP = 0.05  # Keep mesh terms overlap
 
@@ -87,40 +88,43 @@ class KeyPaperAnalyzer:
             self.progress.info('Too many related papers, nothing to expand', current=current, task=task)
             return ids
         self.progress.info('Expanding related papers', current=current, task=task)
+        logger.debug(f'Expanding {len(ids)} papers to: {limit} keeping mesh: {keep_mesh}')
         current_ids = ids
-        mesh_terms = 0
+        n_mesh_terms = 0
         mesh_counter = Counter()
         if keep_mesh:
             for mesh_list in self.loader.load_publications(ids)['mesh']:
-                for mt in mesh_list.split(','):
-                    mesh_counter[mt] += 1
-                    mesh_terms += 1
+                mesh_terms = mesh_list.split(',')
+                mesh_counter.update(mesh_terms)
+                n_mesh_terms += len(mesh_terms)
         # Expand while we can
         i = 0
         new_ids = []
         while True:
-            if len(current_ids) >= limit:
+            if i == self.EXPAND_STEPS or len(current_ids) >= limit:
                 break
+            logger.debug(f'Expanding step {i}: {len(current_ids)} papers')
             expanded_ids = self.loader.expand(new_ids or current_ids, limit - len(current_ids))
-
+            logger.debug(f'Found {len(expanded_ids)} papers')
             # Pick new ids
             new_ids = [pid for pid in expanded_ids if pid not in set(current_ids)]
-            # Top cited fraction
+            logger.debug(f'New {len(new_ids)} papers')
             new_ids = new_ids[:int(len(new_ids) * self.EXPAND_TOP_CITED)]
+            logger.debug(f'Top cited {len(new_ids)}')
             if len(new_ids) == 0:
                 break
             if keep_mesh:
                 new_mesh_ids = []
                 for (pid, mesh_list) in zip(new_ids, self.loader.load_publications(new_ids)['mesh']):
-                    if mesh_terms == 0 or \
-                            sum(mesh_counter[mt] for mt in mesh_list.split(',')) / mesh_terms >= \
+                    if n_mesh_terms == 0 or \
+                            sum(mesh_counter[mt] for mt in mesh_list.split(',')) / n_mesh_terms >= \
                             self.MESH_OVERLAP + self.MESH_OVERLAP * i:
                         new_mesh_ids.append(pid)
+                logger.debug(f'Similar mesh papers: {len(new_mesh_ids)}')
                 if len(new_mesh_ids) == 0:
                     break
                 else:
                     current_ids += new_mesh_ids
-                    new_ids = new_mesh_ids
             else:
                 current_ids += new_ids
             i += 1
