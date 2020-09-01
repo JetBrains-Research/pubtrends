@@ -13,7 +13,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.progress import Progress
-from pysrc.papers.utils import split_df_list, get_topics_description, SORT_MOST_CITED
+from pysrc.papers.utils import split_df_list, get_topics_description, SORT_MOST_CITED, \
+    compute_global_tfidf
 
 logger = logging.getLogger(__name__)
 
@@ -331,7 +332,7 @@ class KeyPaperAnalyzer:
                                current=current, task=task)
             self.progress.info('Processing possible citations based on text similarity',
                                current=current, task=task)
-            tfidf = self.compute_tfidf(df, self.TFIDF_WORDS, n_gram=1)
+            tfidf = compute_global_tfidf(df, self.TFIDF_WORDS, n_gram=1)
             cos_similarities = cosine_similarity(tfidf)
             text_citations = [PriorityQueue(maxsize=self.SIMILARITY_TEXT_CITATION_N) for _ in range(len(df))]
 
