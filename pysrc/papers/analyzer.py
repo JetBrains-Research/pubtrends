@@ -549,7 +549,7 @@ class KeyPaperAnalyzer:
     def compute_tfidf(df, max_features, n_gram):
         logger.debug(f'Compute global TF-IDF {len(df)}x{max_features}')
         corpus = [f'{t} {a}' for t, a in zip(df['title'], df['abstract'])]
-        vectorizer = CountVectorizer(max_df=0.8, ngram_range=(1, n_gram),
+        vectorizer = CountVectorizer(max_df=0.5, ngram_range=(1, n_gram),
                                      max_features=max_features,
                                      tokenizer=lambda t: tokenize(t))
         counts = vectorizer.fit_transform(corpus)
