@@ -23,6 +23,8 @@ open class PubmedPostgresWriter(
         }
     }
 
+    private var changed = false
+
     init {
 
         Database.connect(
@@ -80,6 +82,7 @@ open class PubmedPostgresWriter(
             )
             SchemaUtils.drop(PMPublications, PMCitations)
             exec("DROP INDEX IF EXISTS pm_title_abstract_index;")
+            changed = true
         }
     }
 
@@ -130,6 +133,7 @@ open class PubmedPostgresWriter(
                     WHERE pmid IN (VALUES $vals);
                     """
             )
+            changed = true
         }
     }
 
@@ -142,6 +146,7 @@ open class PubmedPostgresWriter(
             PMCitations.deleteWhere {
                 (PMCitations.pmidOut inList intIds) or (PMCitations.pmidIn inList intIds)
             }
+            changed = true
         }
     }
 
@@ -149,18 +154,20 @@ open class PubmedPostgresWriter(
         /**
          * No actions to close db connection is required: Exposed should manage the connection pool.
          */
-        transaction {
-            addLogger(Log4jSqlLogger)
-            exec("""
-do
-${"$$"}
-    begin
-        IF (select matviewname from pg_matviews where matviewname = 'matview_pmcitations') THEN
-            refresh materialized view matview_pmcitations;
-        END IF;
-    end;
-${"$$"}
-            """.trimMargin())
+        if (changed) {
+            transaction {
+                addLogger(Log4jSqlLogger)
+                exec("""
+                    do
+                    ${"$$"}
+                    begin
+                    IF (select matviewname from pg_matviews where matviewname = 'matview_pmcitations') THEN
+                        refresh materialized view matview_pmcitations;
+                    END IF;
+                    end;
+                    ${"$$"}
+                    """)
+            }
         }
     }
 }
