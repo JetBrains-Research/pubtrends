@@ -9,12 +9,11 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 from networkx.readwrite import json_graph
-from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.progress import Progress
-from pysrc.papers.utils import split_df_list, get_topics_description, tokenize, SORT_MOST_CITED
+from pysrc.papers.utils import split_df_list, get_topics_description, SORT_MOST_CITED
 
 logger = logging.getLogger(__name__)
 
@@ -151,7 +150,7 @@ class KeyPaperAnalyzer:
         self.progress.info(f'Found {len(cit_stats_df_from_query)} records of citations by year',
                            current=3, task=task)
 
-        self.cit_stats_df = self.build_cit_stats_df(cit_stats_df_from_query, self.n_papers, current=4, task=task)
+        self.cit_stats_df = self.build_cit_stats_df(cit_stats_df_from_query, self.n_papers)
         if len(self.cit_stats_df) == 0:
             raise RuntimeError("No citations of papers were found")
         self.df, self.min_year, self.max_year, self.citation_years = self.merge_citation_stats(
@@ -182,8 +181,8 @@ class KeyPaperAnalyzer:
         # Building paper similarity graph, including all the papers from citations graph
         # IMPORTANT: not all the publications might be still covered
         self.similarity_graph = self.build_similarity_graph(
-            self.df,
-            self.citations_graph, cocit_grouped_df, self.bibliographic_coupling_df, current=9, task=task
+            self.df, self.citations_graph, cocit_grouped_df, self.bibliographic_coupling_df,
+            current=9, task=task
         )
 
         if len(self.similarity_graph.nodes()) == 0:
@@ -210,16 +209,19 @@ class KeyPaperAnalyzer:
             self.structure_graph = self.build_structure_graph(self.df, self.similarity_graph,
                                                               current=12, task=task)
 
-        # Perform PageRank analysis
-        pr = self.pagerank(self.citations_graph, current=13, task=task)
+        self.progress.info('Performing PageRank analysis', current=13, task=task)
+        pr = nx.pagerank(self.citations_graph, alpha=0.5, tol=1e-9)
         self.df = self.merge_col(self.df, pr, col='pagerank', na=0.0)
 
-        # Find interesting papers
-        self.top_cited_papers, self.top_cited_df = self.find_top_cited_papers(self.df, current=14, task=task)
-        self.max_gain_papers, self.max_gain_df = self.find_max_gain_papers(self.df, self.citation_years,
-                                                                           current=15, task=task)
+        self.progress.info('Identifying top cited papers', current=14, task=task)
+        self.top_cited_papers, self.top_cited_df = self.find_top_cited_papers(self.df)
+
+        self.progress.info('Identifying top cited papers for each year', current=15, task=task)
+        self.max_gain_papers, self.max_gain_df = self.find_max_gain_papers(self.df, self.citation_years)
+
+        self.progress.info('Identifying hot papers of the year', current=16,task=task)
         self.max_rel_gain_papers, self.max_rel_gain_df = self.find_max_relative_gain_papers(
-            self.df, self.citation_years, current=16, task=task
+            self.df, self.citation_years
         )
 
         # Find top journals
@@ -227,7 +229,8 @@ class KeyPaperAnalyzer:
         # Find top authors
         self.author_stats = self.popular_authors(self.df, current=18, task=task)
 
-    def build_cit_stats_df(self, cit_stats_df_from_query, n_papers, current=None, task=None):
+    @staticmethod
+    def build_cit_stats_df(cit_stats_df_from_query, n_papers):
         # Get citation stats with columns 'id', year_1, ..., year_N and fill NaN with 0
         cit_stats_df = cit_stats_df_from_query.pivot(index='id', columns='year',
                                                      values='count').reset_index().fillna(0)
@@ -245,7 +248,8 @@ class KeyPaperAnalyzer:
 
         return cit_stats_df
 
-    def build_cocit_grouped_df(self, cocit_df, current=0, task=None):
+    @staticmethod
+    def build_cocit_grouped_df(cocit_df):
         logger.debug('Aggregating co-citations')
         cocit_grouped_df = cocit_df.groupby(['cited_1', 'cited_2', 'year']).count().reset_index()
         cocit_grouped_df = cocit_grouped_df.pivot_table(index=['cited_1', 'cited_2'],
@@ -546,18 +550,6 @@ class KeyPaperAnalyzer:
             KeyPaperAnalyzer.SIMILARITY_TEXT_CITATION * d.get('text', 0)
 
     @staticmethod
-    def compute_tfidf(df, max_features, n_gram):
-        logger.debug(f'Compute global TF-IDF {len(df)}x{max_features}')
-        corpus = [f'{t} {a}' for t, a in zip(df['title'], df['abstract'])]
-        vectorizer = CountVectorizer(max_df=0.5, ngram_range=(1, n_gram),
-                                     max_features=max_features,
-                                     tokenizer=lambda t: tokenize(t))
-        counts = vectorizer.fit_transform(corpus)
-        tfidf_transformer = TfidfTransformer()
-        tfidf = tfidf_transformer.fit_transform(counts)
-        return tfidf
-
-    @staticmethod
     def merge_col(df, data, col, na):
         t = pd.Series(data).reset_index().rename(columns={'index': 'id', 0: col})
         t['id'] = t['id'].astype(str)
@@ -565,17 +557,15 @@ class KeyPaperAnalyzer:
         df_merged[col] = df_merged[col].fillna(na)
         return df_merged
 
-    def find_top_cited_papers(self, df, n_papers=TOP_CITED_PAPERS, threshold=TOP_CITED_PAPERS_FRACTION,
-                              current=0, task=None):
-        self.progress.info('Identifying top cited papers', current=current, task=task)
+    @staticmethod
+    def find_top_cited_papers(df, n_papers=TOP_CITED_PAPERS, threshold=TOP_CITED_PAPERS_FRACTION):
         papers_to_show = max(min(n_papers, round(len(df) * threshold)), 1)
-        top_cited_df = df.sort_values(by='total',
-                                      ascending=False).iloc[:papers_to_show, :]
+        top_cited_df = df.sort_values(by='total', ascending=False).iloc[:papers_to_show, :]
         top_cited_papers = set(top_cited_df['id'].values)
         return top_cited_papers, top_cited_df
 
-    def find_max_gain_papers(self, df, citation_years, current=0, task=None):
-        self.progress.info('Identifying papers with max citation gain for each year', current=current, task=task)
+    @staticmethod
+    def find_max_gain_papers(df, citation_years):
         max_gain_data = []
         for year in citation_years:
             max_gain = df[year].astype(int).max()
@@ -592,9 +582,8 @@ class KeyPaperAnalyzer:
         max_gain_papers = set(max_gain_df['id'].values)
         return max_gain_papers, max_gain_df
 
-    def find_max_relative_gain_papers(self, df, citation_years, current=0, task=None):
-        self.progress.info('Identifying papers with max relative citation gain % for each year', current=current,
-                           task=task)
+    @staticmethod
+    def find_max_relative_gain_papers(df, citation_years):
         current_sum = pd.Series(np.zeros(len(df), ))
         df_rel = df.loc[:, ['id', 'title', 'authors', 'year']]
         for year in citation_years:
@@ -772,16 +761,14 @@ class KeyPaperAnalyzer:
         logger.debug(f'Loaded\n{loaded}')
         self.df = loaded['df']
         self.comp_other = loaded['comp_other']
+        # Used for components naming
         self.df_kwd = loaded['df_kwd']
+        # Used for structure visualization
         self.citations_graph = loaded['citations_graph']
         self.similarity_graph = loaded['similarity_graph']
         self.structure_graph = loaded['structure_graph']
         self.topics_dendrogram = loaded['topics_dendrogram']
+        # Used for navigation
         self.top_cited_papers = loaded['top_cited_papers']
         self.max_gain_papers = loaded['max_gain_papers']
         self.max_rel_gain_papers = loaded['max_rel_gain_papers']
-
-    def pagerank(self, G, current=0, task=None):
-        self.progress.info('Performing PageRank analysis', current=current, task=task)
-        # Apply PageRank algorithm with damping factor of 0.5
-        return nx.pagerank(G, alpha=0.5, tol=1e-9)

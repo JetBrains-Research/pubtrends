@@ -202,7 +202,7 @@ def compute_tfidf(df, comps, query, n_words, n_gram=1, other_comp=None, ignore_o
         if not (ignore_other and comp == other_comp):
             df_comp = df[df['id'].isin(article_ids)]
             corpus.append(' '.join([f'{t} {a}' for t, a in zip(df_comp['title'], df_comp['abstract'])]))
-    vectorizer = CountVectorizer(min_df=0.01, max_df=0.8, ngram_range=(1, n_gram),
+    vectorizer = CountVectorizer(min_df=0.01, max_df=0.5, ngram_range=(1, n_gram),
                                  max_features=n_words * len(comps),
                                  tokenizer=lambda t: tokenize(t, query))
     counts = vectorizer.fit_transform(corpus)
@@ -210,6 +210,17 @@ def compute_tfidf(df, comps, query, n_words, n_gram=1, other_comp=None, ignore_o
     tfidf = tfidf_transformer.fit_transform(counts)
     ngrams = vectorizer.get_feature_names()
     return ngrams, tfidf
+
+
+def compute_global_tfidf(df, max_features, n_gram):
+    corpus = [f'{t} {a}' for t, a in zip(df['title'], df['abstract'])]
+    vectorizer = CountVectorizer(min_df=0.01, max_df=0.8, ngram_range=(1, n_gram),
+                                 max_features=max_features,
+                                 tokenizer=lambda t: tokenize(t))
+    counts = vectorizer.fit_transform(corpus)
+    tfidf_transformer = TfidfTransformer()
+    tfidf = tfidf_transformer.fit_transform(counts)
+    return tfidf
 
 
 def split_df_list(df, target_column, separator):
