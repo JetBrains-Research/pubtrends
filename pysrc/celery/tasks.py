@@ -31,7 +31,11 @@ def analyze_search_terms(source, query, sort=None, limit=None):
         limit = limit or analyzer.config.show_max_articles_default_value
         ids = analyzer.search_terms(query, limit=limit, sort=sort, task=current_task)
         if 0 < len(ids) < limit:
-            ids = analyzer.expand_ids(ids, keep_mesh=True, limit=limit, current=2, task=current_task)
+            ids = analyzer.expand_ids(
+                ids, keep_mesh=True,
+                limit=min(len(ids) * KeyPaperAnalyzer.EXPAND_MULTIPLIER, limit),
+                current=2, task=current_task
+            )
         analyzer.analyze_papers(ids, query, current_task)
     finally:
         loader.close_connection()
@@ -55,8 +59,11 @@ def analyze_id_list(source, ids, zoom, query):
     analyzer = get_analyzer(loader, PUBTRENDS_CONFIG)
     try:
         if zoom == ZOOM_OUT:
-            ids = analyzer.expand_ids(ids, keep_mesh=True, limit=analyzer.config.max_number_to_expand,
-                                      current=1, task=current_task)
+            ids = analyzer.expand_ids(
+                ids, keep_mesh=True,
+                limit=min(len(ids) * KeyPaperAnalyzer.EXPAND_MULTIPLIER, analyzer.config.max_number_to_expand),
+                current=1, task=current_task
+            )
         elif zoom == PAPER_ANALYSIS:
             ids = analyzer.expand_ids(ids, keep_mesh=False, limit=analyzer.config.max_number_to_expand,
                                       current=1, task=current_task)
