@@ -20,6 +20,7 @@ from pysrc.celery.tasks import celery, find_paper_async, analyze_search_terms, a
 from pysrc.celery.tasks_cache import get_or_cancel_task
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
+from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.paper import prepare_paper_data, prepare_papers_data
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.plot.plotter import Plotter
@@ -90,7 +91,8 @@ def status():
         elif job_state == 'FAILURE':
             return json.dumps({
                 'state': job_state,
-                'message': html.escape(str(job_result).replace('\\n', '\n').replace('\\t', '\t'))
+                'message': html.escape(str(job_result).replace('\\n', '\n').replace('\\t', '\t')),
+                'search_error': isinstance(job_result, SearchError)
             })
         elif job_state == 'STARTED':
             return json.dumps({
