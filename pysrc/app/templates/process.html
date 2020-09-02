@@ -47,8 +47,12 @@
                     console.log(response);
                     if (response.state === 'FAILURE') {
                         $('#progress').hide();
-                        $('#status').html("<h2>Error</h2>" +
-                            `<span class="error-message"> ${response.message} </span><br>We're working on it. Please check back soon.`);
+                        let errorMsg = `<h2>Error</h2><span class="error-message"> ${response.message} </span>`;
+                        if (response.search_error) {
+                            $('#status').html(errorMsg);
+                        } else {
+                            $('#status').html(errorMsg + `<br>We're working on it. Please check back soon.`)
+                        }
                         $('#log').html(response.log);
                     } else if (response.state === 'PENDING') {
                         $('#status').html(response.message);
@@ -111,8 +115,12 @@
                         }, TIMEOUT);
                     } else if (response.state === 'FAILURE') {
                         $('#progress').hide();
-                        $('#status').html("<h2>Error</h2>" +
-                            `<span class="error-message"> ${response.message} </span><br>We're working on it. Please check back soon.`);
+                        let errorMsg = `<h2>Error</h2><span class="error-message"> ${response.message} </span>`;
+                        if (response.search_error) {
+                            $('#status').html(errorMsg);
+                        } else {
+                            $('#status').html(errorMsg + `<br>We're working on it. Please check back soon.`)
+                        }
                         $('#log').empty();
                         setTimeout(function () {
                             window.location.replace("/");

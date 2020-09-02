@@ -7,6 +7,7 @@ from pysrc.papers.analyzer import KeyPaperAnalyzer
 from pysrc.papers.analyzer_experimental import ExperimentalAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
+from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plotter import visualize_analysis
 from pysrc.papers.plot.plotter_experimental import visualize_experimental_analysis
 from pysrc.papers.progress import Progress
@@ -86,9 +87,9 @@ def find_paper_async(source, key, value):
             progress.info('Done', current=2)
             return result
         elif len(result) == 0:
-            raise Exception('Found no papers matching specified key - value pair')
+            raise SearchError('Found no papers matching specified key - value pair')
         else:
-            raise Exception('Found multiple papers matching your search, please try to be more specific')
+            raise SearchError('Found multiple papers matching your search, please try to be more specific')
     finally:
         loader.close_connection()
 

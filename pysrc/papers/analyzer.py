@@ -12,6 +12,7 @@ from networkx.readwrite import json_graph
 from sklearn.metrics.pairwise import cosine_similarity
 
 from pysrc.papers.db.loaders import Loaders
+from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.progress import Progress
 from pysrc.papers.utils import split_df_list, get_topics_description, SORT_MOST_CITED, \
     compute_global_tfidf
@@ -77,7 +78,7 @@ class KeyPaperAnalyzer:
                            current=1, task=task)
         ids = self.loader.search(query, limit=limit, sort=sort)
         if len(ids) == 0:
-            raise RuntimeError(f"Nothing found for search query: {query}")
+            raise SearchError(f"Nothing found for search query: {query}")
         else:
             self.progress.info(f'Found {len(ids)} publications in the local database', current=1,
                                task=task)
@@ -140,7 +141,7 @@ class KeyPaperAnalyzer:
         self.progress.info('Loading publication data', current=2, task=task)
         self.pub_df = self.loader.load_publications(ids)
         if len(self.pub_df) == 0:
-            raise RuntimeError(f"Nothing found in DB for ids: {ids}")
+            raise SearchError(f"Nothing found for ids: {ids}")
         self.ids = set(self.pub_df['id'])  # Limit ids to existing papers only!
         self.n_papers = len(self.ids)
         self.pub_types = list(set(self.pub_df['type']))
