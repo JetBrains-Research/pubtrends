@@ -51,6 +51,7 @@ class KeyPaperAnalyzer:
     TOP_AUTHORS = 50
 
     EXPAND_STEPS = 3  # Max expand steps
+    EXPAND_MULTIPLIER = 20  # Original papers should be at least >= 1 / multiplier
     EXPAND_TOP_CITED = 0.9  # Keep top cited fraction in each expansion
     MESH_OVERLAP = 0.05  # Keep mesh terms overlap
 
