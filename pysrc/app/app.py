@@ -409,15 +409,19 @@ def search_terms_(data):
     sort = data.get('sort')  # Sort order
     limit = data.get('limit')  # Limit
     jobid = data.get('jobid')
-    if query and source and sort and limit:
-        if not jobid:
-            logger.info(f'/search_terms {log_request(request)}')
-            job = analyze_search_terms.delay(source, query=query, limit=int(limit), sort=sort)
-            jobid = job.id
-        else:
-            logger.info(f'/search_terms with fixed jobid {log_request(request)}')
-            analyze_search_terms.apply_async(args=[source, query, sort, int(limit)], task_id=jobid)
-        return redirect(url_for('.process', query=query, source=source, limit=limit, sort=sort, jobid=jobid))
+    try:
+        if query and source and sort and limit:
+            if not jobid:
+                logger.info(f'/search_terms {log_request(request)}')
+                job = analyze_search_terms.delay(source, query=query, limit=int(limit), sort=sort)
+                jobid = job.id
+            else:
+                logger.info(f'/search_terms with fixed jobid {log_request(request)}')
+                analyze_search_terms.apply_async(args=[source, query, sort, int(limit)], task_id=jobid)
+            return redirect(url_for('.process', query=query, source=source, limit=limit, sort=sort, jobid=jobid))
+    except Exception as e:
+        logger.error(f'/search_terms error', e)
+        return render_template_string(f"Error occurred. We're working on it. Please check back soon."), 500
     logger.error(f'/search_terms error {log_request(request)}')
     return render_template_string(f"Request does not contain necessary params: {request}"), 400
 
@@ -427,12 +431,16 @@ def search_paper():
     logger.info('/search_paper')
     source = request.form.get('source')  # Pubmed or Semantic Scholar
 
-    if source and 'key' in request.form and 'value' in request.form:
-        logger.info(f'/search_paper {log_request(request)}')
-        key = request.form.get('key')
-        value = request.form.get('value')
-        job = find_paper_async.delay(source, key, value)
-        return redirect(url_for('.process', source=source, key=key, value=value, jobid=job.id))
+    try:
+        if source and 'key' in request.form and 'value' in request.form:
+            logger.info(f'/search_paper {log_request(request)}')
+            key = request.form.get('key')
+            value = request.form.get('value')
+            job = find_paper_async.delay(source, key, value)
+            return redirect(url_for('.process', source=source, key=key, value=value, jobid=job.id))
+    except Exception as e:
+        logger.error(f'/search_paper error', e)
+        return render_template_string(f"Error occurred. We're working on it. Please check back soon."), 500
     logger.error(f'/search_paper error {log_request(request)}')
     return render_template_string(f"Request does not contain necessary params: {request}"), 400
 
@@ -442,13 +450,17 @@ def process_ids():
     source = request.form.get('source')  # Pubmed or Semantic Scholar
     query = request.form.get('query')  # Original search query
 
-    if source and query and 'id_list' in request.form:
-        id_list = request.form.get('id_list').split(',')
-        zoom = request.form.get('zoom')
-        analysis_type = zoom_name(zoom)
-        job = analyze_id_list.delay(source, ids=id_list, zoom=int(zoom), query=query)
-        logger.info(f'/process_ids {log_request(request)}')
-        return redirect(url_for('.process', query=query, analysis_type=analysis_type, source=source, jobid=job.id))
+    try:
+        if source and query and 'id_list' in request.form:
+            id_list = request.form.get('id_list').split(',')
+            zoom = request.form.get('zoom')
+            analysis_type = zoom_name(zoom)
+            job = analyze_id_list.delay(source, ids=id_list, zoom=int(zoom), query=query)
+            logger.info(f'/process_ids {log_request(request)}')
+            return redirect(url_for('.process', query=query, analysis_type=analysis_type, source=source, jobid=job.id))
+    except Exception as e:
+        logger.error(f'/process_ids error', e)
+        return render_template_string(f"Error occurred. We're working on it. Please check back soon."), 500
     logger.error(f'/process_ids error {log_request(request)}')
     return render_template_string(f"Request does not contain necessary params: {request}"), 400
 
