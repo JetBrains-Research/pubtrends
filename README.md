@@ -40,16 +40,18 @@ Ensure that file contains correct information about the database(s) (url, port, 
     ```
    * Download the [latest release](https://github.com/neo4j-contrib/neo4j-apoc-procedures/releases/tag/3.5.0.4) of APOC
    * Place the binary JAR into your `$HOME/neo4j/plugins` folder
-    * Launch Neo4j docker image.
+   * Launch Neo4j docker image to init database and change default password.
+   
     ```
-    docker run --name pubtrends-neo4j \
+    mkdir $HOME/neo4j/data/
+    chmod a+rw $HOME/neo4j/data/
+    docker run --rm --name pubtrends-neo4j \
         --publish=7474:7474 --publish=7687:7687 \
         --volume=$HOME/neo4j/data:/var/lib/neo4j/data \
         --volume=$HOME/neo4j/logs:/logs \
         --volume=$HOME/neo4j/plugins:/plugins \
-        -d neo4j:3.5
+        neo4j:3.5 /bin/bash -c 'bin/neo4j-admin set-initial-password mysecretpassword'
     ```   
-   * Open Neo4j web browser to change default password (neo4j) to a strong one.
 
 5. Init PostgreSQL database.
     
