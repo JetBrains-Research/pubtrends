@@ -1,8 +1,6 @@
 import configparser
 import os
 
-import numpy as np
-
 
 class PubtrendsConfig:
     """
@@ -52,7 +50,7 @@ class PubtrendsConfig:
 
         self.show_max_articles_options = [opt.strip() for opt in params['show_max_articles_options'].split(',')]
         self.show_max_articles_default_value = params['show_max_articles_default_value'].strip()
-        self.max_number_of_articles = np.max(self.show_max_articles_options)
+        self.max_number_of_articles = max(self.show_max_articles_options)
 
         # Max allowed pending tasks
         self.celery_max_pending_tasks = params.getint('celery_max_pending_tasks')
