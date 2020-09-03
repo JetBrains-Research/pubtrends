@@ -115,7 +115,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
 
         return Loader.process_publications_dataframe(pub_df)
 
-    def load_citation_stats(self, ids):
+    def load_citations_by_year(self, ids):
         query = f'''
            SELECT C.ssid_in AS ssid, P.year, COUNT(1) AS count
                 FROM SSCitations C

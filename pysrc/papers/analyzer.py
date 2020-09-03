@@ -142,24 +142,21 @@ class KeyPaperAnalyzer:
         self.progress.info('Loading publication data', current=2, task=task)
         self.pub_df = self.loader.load_publications(ids)
         if len(self.pub_df) == 0:
-            raise SearchError(f"Nothing found for ids: {ids}")
+            raise SearchError(f'Nothing found for ids: {ids}')
         self.ids = set(self.pub_df['id'])  # Limit ids to existing papers only!
         self.n_papers = len(self.ids)
         self.pub_types = list(set(self.pub_df['type']))
 
-        self.progress.info('Loading citations statistics',
-                           current=3, task=task)
-        cit_stats_df_from_query = self.loader.load_citation_stats(self.ids)
-        self.progress.info(f'Found {len(cit_stats_df_from_query)} records of citations by year',
+        self.progress.info('Loading citations statistics by year', current=3, task=task)
+        cits_by_year_df = self.loader.load_citations_by_year(self.ids)
+        self.progress.info(f'Found {len(cits_by_year_df)} records of citations by year',
                            current=3, task=task)
 
-        self.cit_stats_df = self.build_cit_stats_df(cit_stats_df_from_query, self.n_papers)
+        self.cit_stats_df = self.build_cit_stats_df(cits_by_year_df, self.n_papers)
         if len(self.cit_stats_df) == 0:
-            raise RuntimeError("No citations of papers were found")
+            raise SearchError('No citations of papers were found')
         self.df, self.min_year, self.max_year, self.citation_years = self.merge_citation_stats(
             self.pub_df, self.cit_stats_df)
-        if len(self.df) == 0:
-            raise RuntimeError("Failed to merge publications and citations")
 
         # Load data about citations between given papers (excluding outer papers)
         # IMPORTANT: cit_df may contain not all the publications for query
@@ -189,7 +186,7 @@ class KeyPaperAnalyzer:
         )
 
         if len(self.similarity_graph.nodes()) == 0:
-            self.progress.info("Not enough papers to process topics analysis", current=10, task=task)
+            self.progress.info('Not enough papers to process topics analysis', current=10, task=task)
             self.df['comp'] = 0  # Technical value for top authors and papers analysis
             self.df_kwd = pd.DataFrame({'comp': [0], 'kwd': ['']})
             self.structure_graph = nx.Graph()
@@ -222,7 +219,7 @@ class KeyPaperAnalyzer:
         self.progress.info('Identifying top cited papers for each year', current=15, task=task)
         self.max_gain_papers, self.max_gain_df = self.find_max_gain_papers(self.df, self.citation_years)
 
-        self.progress.info('Identifying hot papers of the year', current=16,task=task)
+        self.progress.info('Identifying hot papers of the year', current=16, task=task)
         self.max_rel_gain_papers, self.max_rel_gain_df = self.find_max_relative_gain_papers(
             self.df, self.citation_years
         )
@@ -233,20 +230,19 @@ class KeyPaperAnalyzer:
         self.author_stats = self.popular_authors(self.df, current=18, task=task)
 
     @staticmethod
-    def build_cit_stats_df(cit_stats_df_from_query, n_papers):
+    def build_cit_stats_df(cits_by_year_df, n_papers):
         # Get citation stats with columns 'id', year_1, ..., year_N and fill NaN with 0
-        cit_stats_df = cit_stats_df_from_query.pivot(index='id', columns='year',
-                                                     values='count').reset_index().fillna(0)
+        df = cits_by_year_df.pivot(index='id', columns='year', values='count').reset_index().fillna(0)
 
         # Fix column names from float 'YYYY.0' to int 'YYYY'
-        mapper = {col: int(col) for col in cit_stats_df.columns if col != 'id'}
-        cit_stats_df = cit_stats_df.rename(mapper)
+        mapper = {col: int(col) for col in df.columns if col != 'id'}
+        df = df.rename(mapper)
 
-        cit_stats_df['total'] = cit_stats_df.iloc[:, 1:].sum(axis=1)
-        cit_stats_df = cit_stats_df.sort_values(by='total', ascending=False)
-        logger.debug(f'Loaded citation stats for {len(cit_stats_df)} of {n_papers} papers')
+        df['total'] = df.iloc[:, 1:].sum(axis=1)
+        df = df.sort_values(by='total', ascending=False)
+        logger.debug(f'Loaded citation stats for {len(df)} of {n_papers} papers')
 
-        return cit_stats_df
+        return df
 
     @staticmethod
     def build_cocit_grouped_df(cocit_df):
