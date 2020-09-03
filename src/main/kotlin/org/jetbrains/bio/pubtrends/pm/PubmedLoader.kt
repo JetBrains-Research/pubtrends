@@ -58,9 +58,9 @@ object PubmedLoader {
                 throw IllegalStateException("No database configured")
             }
 
-            val db = dbWriter.javaClass.simpleName.toLowerCase()
-            val pubmedLastIdFile = settingsRoot.resolve("pubmed_${db}_last.tsv")
-            val pubmedStatsFile = settingsRoot.resolve("pubmed_${db}_stats.tsv")
+            val writerName = dbWriter.javaClass.simpleName.toLowerCase()
+            val pubmedLastIdFile = settingsRoot.resolve("${writerName}_last.tsv")
+            val pubmedStatsFile = settingsRoot.resolve("${writerName}_stats.tsv")
 
             dbWriter.use {
                 if (options.has("resetDatabase")) {
