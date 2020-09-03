@@ -194,7 +194,7 @@ Please ensure that you have Database configured, up and running.
 3. Python tests with codestyle check for development (including integration with Kotlin DB writers)
     
     ```
-    ./gradlew shadowJar; source activate pubtrends; pytest --flake8 pysrc
+    ./gradlew shadowJar; source activate pubtrends; pytest pysrc
     ```
 
 4. All tests within Docker (please ignore point 1)
@@ -204,7 +204,7 @@ Please ensure that you have Database configured, up and running.
     "/usr/lib/postgresql/12/bin/pg_ctl -D /home/user/postgres start; sudo neo4j start; \
     cd /pubtrends; mkdir ~/.pubtrends; cp config.properties ~/.pubtrends; \
     ./gradlew test; \
-    ./gradlew shadowJar; source activate pubtrends; pytest --flake8 pysrc"
+    ./gradlew shadowJar; source activate pubtrends; pytest pysrc"
     ```
 
 ## Deployment
