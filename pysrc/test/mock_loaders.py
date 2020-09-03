@@ -65,7 +65,7 @@ class MockLoader(Loader):
     def load_publications(self, ids=None):
         return pd.DataFrame(PUBLICATION_DATA, columns=['id', 'year', 'title', 'abstract', 'type', 'authors', 'journal'])
 
-    def load_citation_stats(self, ids=None):
+    def load_citations_by_year(self, ids=None):
         return pd.DataFrame(CITATION_STATS_DATA, columns=['id', 'year', 'count'])
 
     def load_citations(self, ids=None):
@@ -93,7 +93,7 @@ class MockLoaderSingle(Loader):
         return pd.DataFrame(PUBLICATION_DATA[0:1],
                             columns=['id', 'year', 'title', 'abstract', 'type', 'authors', 'journal'])
 
-    def load_citation_stats(self, ids=None):
+    def load_citations_by_year(self, ids=None):
         return pd.DataFrame([['1', 1972, 2], ['1', 1974, 15]],
                             columns=['id', 'year', 'count'])
 
@@ -118,7 +118,7 @@ class MockLoaderEmpty(Loader):
     def load_publications(self, ids):
         raise Exception('Not implemented')
 
-    def load_citation_stats(self, ids):
+    def load_citations_by_year(self, ids):
         raise Exception('Not implemented')
 
     def load_citations(self, ids):

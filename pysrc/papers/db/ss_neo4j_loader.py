@@ -110,7 +110,7 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
             pub_df['type'] = 'Article'
         return pub_df
 
-    def load_citation_stats(self, ids):
+    def load_citations_by_year(self, ids):
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
             WITH [{','.join(f'"{id}"' for id in ids)}] AS ssids,

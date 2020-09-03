@@ -25,7 +25,7 @@ class TestSemanticScholarNeo4jLoader(unittest.TestCase, AbstractTestSemanticScho
 
         # Get data via loader methods
         cls.pub_df = cls.loader.load_publications(cls.ids)
-        cls.cit_stats_df = cls.loader.load_citation_stats(cls.ids)
+        cls.cit_stats_df = cls.loader.load_citations_by_year(cls.ids)
         cls.cit_df = cls.loader.load_citations(cls.ids)
         cls.cocit_df = cls.loader.load_cocitations(cls.ids)
 

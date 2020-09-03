@@ -115,7 +115,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         logger.debug(f'Loaded {len(df)} papers')
         return Loader.process_publications_dataframe(df)
 
-    def load_citation_stats(self, ids):
+    def load_citations_by_year(self, ids):
         vals = self.ids_to_vals(ids)
         query = f'''
            SELECT C.pmid_in AS id, date_part('year', P.date) as year, COUNT(1) AS count

@@ -31,7 +31,7 @@ class Loader(metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def load_citation_stats(self, ids):
+    def load_citations_by_year(self, ids):
         """
         Loads all the citations stats for each of given ids.
         :return: dataframe[id(String), year, count]

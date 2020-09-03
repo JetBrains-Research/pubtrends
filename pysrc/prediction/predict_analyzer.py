@@ -20,7 +20,7 @@ class PredictAnalyzer(KeyPaperAnalyzer):
             if len(self.pub_df) == 0:
                 raise RuntimeError("Nothing found in DB")
 
-            cit_stats_df_from_query = self.loader.load_citation_stats(self.ids)
+            cit_stats_df_from_query = self.loader.load_citations_by_year(self.ids)
             self.cit_stats_df = self.build_cit_stats_df(cit_stats_df_from_query, self.n_papers,
                                                         current=4, task=None)
             if len(self.cit_stats_df) == 0:
