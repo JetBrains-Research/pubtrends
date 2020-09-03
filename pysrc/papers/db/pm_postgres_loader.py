@@ -118,13 +118,11 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
     def load_citation_stats(self, ids):
         vals = self.ids_to_vals(ids)
         query = f'''
-           SELECT C.pmid_in AS id, date_part('year', P_out.date) as year, COUNT(1) AS count
+           SELECT C.pmid_in AS id, date_part('year', P.date) as year, COUNT(1) AS count
                 FROM PMCitations C
-                JOIN PMPublications P_out
-                  ON C.pmid_out = P_out.pmid
-                JOIN PMPublications P_in
-                  ON C.pmid_in = P_in.pmid
-                WHERE P_out.date >= P_in.date AND C.pmid_in IN (VALUES {vals})
+                JOIN PMPublications P
+                  ON C.pmid_out = P.pmid
+                WHERE C.pmid_in IN (VALUES {vals})
                 GROUP BY C.pmid_in, year
                 LIMIT {self.config.max_number_of_citations};
             '''

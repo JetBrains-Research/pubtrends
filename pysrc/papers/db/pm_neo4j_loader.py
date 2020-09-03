@@ -120,7 +120,7 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
         query = f'''
             WITH [{','.join(str(id) for id in ids)}] AS pmids
             MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
-            WHERE in.pmid IN pmids AND out.date.year >= in.date.year
+            WHERE in.pmid IN pmids
             RETURN in.pmid AS id, out.date.year AS year, COUNT(*) AS count
             LIMIT {self.config.max_number_of_citations};
         '''
