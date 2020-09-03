@@ -203,7 +203,7 @@ def compute_tfidf(df, comps, query, n_words, n_gram=1, other_comp=None, ignore_o
             df_comp = df[df['id'].isin(article_ids)]
             corpus.append(' '.join([f'{t} {a}' for t, a in zip(df_comp['title'], df_comp['abstract'])]))
     vectorizer = CountVectorizer(min_df=0.01, max_df=0.5, ngram_range=(1, n_gram),
-                                 max_features=n_words * len(comps),
+                                 max_features=n_words,
                                  tokenizer=lambda t: tokenize(t, query))
     counts = vectorizer.fit_transform(corpus)
     tfidf_transformer = TfidfTransformer()
