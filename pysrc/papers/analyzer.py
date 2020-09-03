@@ -239,10 +239,7 @@ class KeyPaperAnalyzer:
                                                      values='count').reset_index().fillna(0)
 
         # Fix column names from float 'YYYY.0' to int 'YYYY'
-        mapper = {}
-        for col in cit_stats_df.columns:
-            if col != 'id':
-                mapper[col] = int(col)
+        mapper = {col: int(col) for col in cit_stats_df.columns if col != 'id'}
         cit_stats_df = cit_stats_df.rename(mapper)
 
         cit_stats_df['total'] = cit_stats_df.iloc[:, 1:].sum(axis=1)
