@@ -117,15 +117,12 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
 
     def load_citation_stats(self, ids):
         query = f'''
-           SELECT C.ssid_in AS ssid, P_out.year, COUNT(1) AS count
+           SELECT C.ssid_in AS ssid, P.year, COUNT(1) AS count
                 FROM SSCitations C
-                JOIN SSPublications P_out
-                  ON C.crc32id_out = P_out.crc32id AND C.ssid_out = P_out.ssid
-                JOIN SSPublications P_in
-                  ON C.crc32id_in = P_in.crc32id AND C.ssid_in = P_in.ssid
-                WHERE P_out.year >= P_in.year AND
-                  (C.crc32id_in, C.ssid_in) IN (VALUES {SemanticScholarPostgresLoader.ids2values(ids)})
-                GROUP BY C.ssid_in, P_out.year
+                JOIN SSPublications P
+                  ON C.crc32id_out = P.crc32id AND C.ssid_out = P.ssid
+                WHERE (C.crc32id_in, C.ssid_in) IN (VALUES {SemanticScholarPostgresLoader.ids2values(ids)})
+                GROUP BY C.ssid_in, P.year
                 LIMIT {self.config.max_number_of_citations};
             '''
 
