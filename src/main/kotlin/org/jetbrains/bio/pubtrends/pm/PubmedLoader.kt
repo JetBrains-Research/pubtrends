@@ -3,6 +3,8 @@ package org.jetbrains.bio.pubtrends.pm
 import joptsimple.OptionParser
 import org.apache.logging.log4j.LogManager
 import org.jetbrains.bio.pubtrends.Config
+import org.jetbrains.bio.pubtrends.db.AbstractDBWriter
+import org.jetbrains.bio.pubtrends.db.PubmedNeo4JWriter
 import org.jetbrains.bio.pubtrends.db.PubmedPostgresWriter
 import java.nio.file.Files
 import kotlin.system.exitProcess
@@ -34,28 +36,36 @@ object PubmedLoader {
             val (config, configPath, settingsRoot) = Config.load()
             logger.info("Config path: $configPath")
 
-//            logger.info("Init Neo4j database connection")
-//            val dbHandler = PubmedNeo4JWriter(
-//                    config["neo4j_host"]!!.toString(),
-//                    config["neo4j_port"]!!.toString().toInt(),
-//                    config["neo4j_username"]!!.toString(),
-//                    config["neo4j_password"]!!.toString()
-//            )
-            logger.info("Init Postgresql database connection")
-            val dbHandler = PubmedPostgresWriter(
-                    config["postgres_host"]!!.toString(),
-                    config["postgres_port"]!!.toString().toInt(),
-                    config["postgres_database"]!!.toString(),
-                    config["postgres_username"]!!.toString(),
-                    config["postgres_password"]!!.toString()
-            )
-            val pubmedLastIdFile = settingsRoot.resolve("pubmed_last.tsv")
-            val pubmedStatsFile = settingsRoot.resolve("pubmed_stats.tsv")
+            val dbWriter: AbstractDBWriter<PubmedArticle>
+            if (!(config["neo4j_host"]?.toString()).isNullOrBlank()) {
+                logger.info("Init Neo4j database connection")
+                dbWriter = PubmedNeo4JWriter(
+                        config["neo4j_host"]!!.toString(),
+                        config["neo4j_port"]!!.toString().toInt(),
+                        config["neo4j_username"]!!.toString(),
+                        config["neo4j_password"]!!.toString()
+                )
+            } else if (!(config["postgres_host"]?.toString()).isNullOrBlank()) {
+                logger.info("Init Postgresql database connection")
+                dbWriter = PubmedPostgresWriter(
+                        config["postgres_host"]!!.toString(),
+                        config["postgres_port"]!!.toString().toInt(),
+                        config["postgres_database"]!!.toString(),
+                        config["postgres_username"]!!.toString(),
+                        config["postgres_password"]!!.toString()
+                )
+            } else {
+                throw IllegalStateException("No database configured")
+            }
 
-            dbHandler.use {
+            val db = dbWriter.javaClass.simpleName.toLowerCase()
+            val pubmedLastIdFile = settingsRoot.resolve("pubmed_${db}_last.tsv")
+            val pubmedStatsFile = settingsRoot.resolve("pubmed_${db}_stats.tsv")
+
+            dbWriter.use {
                 if (options.has("resetDatabase")) {
                     logger.info("Resetting database")
-                    dbHandler.reset()
+                    dbWriter.reset()
                     Files.deleteIfExists(pubmedLastIdFile)
                     Files.deleteIfExists(pubmedStatsFile)
                 }
@@ -70,7 +80,7 @@ object PubmedLoader {
                         try {
                             logger.info("Init Pubmed processor")
                             val pubmedXMLParser =
-                                    PubmedXMLParser(dbHandler, config["loader_batch_size"].toString().toInt())
+                                    PubmedXMLParser(dbWriter, config["loader_batch_size"].toString().toInt())
 
                             logger.info("Init crawler")
                             val collectStats = config["loader_collect_stats"].toString().toBoolean()
