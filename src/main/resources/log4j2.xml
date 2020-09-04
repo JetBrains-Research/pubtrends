@@ -2,7 +2,7 @@
 <Configuration>
 
     <Properties>
-        <Property name="filename">${sys:user.home}/.pubtrends/log.txt</Property>
+        <Property name="filename">${sys:user.home}/.pubtrends/logs/loader.log</Property>
     </Properties>
 
     <Appenders>
