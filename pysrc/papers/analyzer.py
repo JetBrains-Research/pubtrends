@@ -51,9 +51,8 @@ class KeyPaperAnalyzer:
     TOP_AUTHORS = 50
 
     EXPAND_STEPS = 3  # Max expand steps
-    EXPAND_MULTIPLIER = 20  # Original papers should be at least >= 1 / multiplier
-    EXPAND_TOP_CITED = 0.9  # Keep top cited fraction in each expansion
-    MESH_OVERLAP = 0.05  # Keep mesh terms overlap
+    EXPAND_MULTIPLIER = 10  # Original papers should be at least >= 1 / multiplier
+    MESH_OVERLAP = 0.1  # Keep mesh terms overlap
 
     def __init__(self, loader, config, test=False):
         self.config = config
@@ -105,14 +104,10 @@ class KeyPaperAnalyzer:
         while True:
             if i == self.EXPAND_STEPS or len(current_ids) >= limit:
                 break
-            logger.debug(f'Expanding step {i}: {len(current_ids)} papers')
+            logger.debug(f'Expanding step {i}: current papers: {len(current_ids)}, new_ids: {len(new_ids)}')
             expanded_ids = self.loader.expand(new_ids or current_ids, limit - len(current_ids))
-            logger.debug(f'Found {len(expanded_ids)} papers')
-            # Pick new ids
             new_ids = [pid for pid in expanded_ids if pid not in set(current_ids)]
             logger.debug(f'New {len(new_ids)} papers')
-            new_ids = new_ids[:int(len(new_ids) * self.EXPAND_TOP_CITED)]
-            logger.debug(f'Top cited {len(new_ids)}')
             if len(new_ids) == 0:
                 break
             if keep_mesh:
@@ -125,10 +120,8 @@ class KeyPaperAnalyzer:
                 logger.debug(f'Similar mesh papers: {len(new_mesh_ids)}')
                 if len(new_mesh_ids) == 0:
                     break
-                else:
-                    current_ids += new_mesh_ids
-            else:
-                current_ids += new_ids
+                new_ids = new_mesh_ids
+            current_ids += new_ids
             i += 1
 
         self.progress.info(f'Expanded {len(current_ids)} papers', current=current, task=task)
