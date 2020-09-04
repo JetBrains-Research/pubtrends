@@ -48,7 +48,7 @@ def process_cocitations_postgres(cursor):
             for j in range(i + 1, len(cited_list)):
                 data.append((str(citing), str(cited_list[i]), str(cited_list[j]), year))
     df = pd.DataFrame(data, columns=['citing', 'cited_1', 'cited_2', 'year'], dtype=object)
-    df['year'] = df['year'].apply(lambda x: int(x) if x else np.nan)
+    df['year'] = df['year'].apply(lambda x: int(x) if x else float('nan'))
     return df, lines
 
 
