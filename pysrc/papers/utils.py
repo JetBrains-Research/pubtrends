@@ -227,7 +227,7 @@ def compute_global_tfidf(df, max_features, n_gram):
 def cosine_similarity(x):
     """Modified version of sklearn.metrics.pairwise.cosine_similarity - no copying"""
     normalize(x, copy=False)
-    return np.dot(x, x)
+    return x @ x.T
 
 
 def split_df_list(df, target_column, separator):
