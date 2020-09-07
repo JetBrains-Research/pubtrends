@@ -7,7 +7,7 @@ from pysrc.papers.db.ss_postgres_loader import SemanticScholarPostgresLoader
 class SemanticScholarPostgresWriter(PostgresConnector):
 
     def __init__(self, config):
-        super(SemanticScholarPostgresWriter, self).__init__(config)
+        super(SemanticScholarPostgresWriter, self).__init__(config, readonly=False)
 
     def init_semantic_scholar_database(self):
         query_citations = '''

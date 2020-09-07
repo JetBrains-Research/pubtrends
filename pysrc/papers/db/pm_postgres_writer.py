@@ -6,7 +6,7 @@ from pysrc.papers.db.postgres_connector import PostgresConnector
 class PubmedPostgresWriter(PostgresConnector):
 
     def __init__(self, config):
-        super(PubmedPostgresWriter, self).__init__(config)
+        super(PubmedPostgresWriter, self).__init__(config, readonly=False)
 
     def init_pubmed_database(self):
         query_citations = '''
