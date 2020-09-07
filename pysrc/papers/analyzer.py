@@ -9,13 +9,12 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 from networkx.readwrite import json_graph
-from sklearn.metrics.pairwise import cosine_similarity
 
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.progress import Progress
 from pysrc.papers.utils import split_df_list, get_topics_description, SORT_MOST_CITED, \
-    compute_global_tfidf
+    compute_global_tfidf, cosine_similarity
 
 logger = logging.getLogger(__name__)
 

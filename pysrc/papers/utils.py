@@ -16,6 +16,7 @@ from nltk.stem import WordNetLemmatizer, SnowballStemmer
 from nltk.tokenize import word_tokenize
 from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from sklearn.preprocessing import normalize
 
 nltk.download('averaged_perceptron_tagger')  # required for nltk.pos_tag
 nltk.download('punkt')  # required for word_tokenize
@@ -221,6 +222,12 @@ def compute_global_tfidf(df, max_features, n_gram):
     tfidf_transformer = TfidfTransformer()
     tfidf = tfidf_transformer.fit_transform(counts)
     return tfidf
+
+
+def cosine_similarity(x):
+    """Modified version of sklearn.metrics.pairwise.cosine_similarity - no copying"""
+    normalize(x, copy=False)
+    return np.dot(x, x)
 
 
 def split_df_list(df, target_column, separator):
