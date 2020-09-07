@@ -122,8 +122,8 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 FROM PMCitations C
                 JOIN PMPublications P
                   ON C.pmid_out = P.pmid
-                WHERE C.pmid_in IN (VALUES {vals})
-                GROUP BY C.pmid_in, year
+                WHERE P.pmid IN (VALUES {vals})
+                GROUP BY id, year
                 LIMIT {self.config.max_number_of_citations};
             '''
 
@@ -138,7 +138,6 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         df['id'] = df['id'].apply(str)
         df['year'] = df['year'].apply(int)
         df['count'] = df['count'].apply(int)
-
 
         return df
 
