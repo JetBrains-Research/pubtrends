@@ -70,12 +70,11 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 '''
         elif sort == SORT_MOST_CITED:
             query = f'''
-                WITH X as (SELECT P.pmid as pmid
-                            FROM PMPublications P
-                            WHERE tsv @@ to_tsquery('{query_str}'))
-                SELECT X.pmid as pmid FROM X
+                SELECT P.pmid as pmid
+                FROM PMPublications P
                     LEFT JOIN matview_pmcitations C
-                    ON X.pmid = C.pmid
+                    ON P.pmid = C.pmid
+                WHERE tsv @@ to_tsquery('{query_str}')
                 ORDER BY count DESC NULLS LAST
                 LIMIT {limit};
                 '''
@@ -164,20 +163,14 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
     def load_cocitations(self, ids):
         vals = self.ids_to_vals(ids)
-        query = f'''with X AS (SELECT pmid_out, pmid_in
-                        FROM PMCitations
-                        WHERE pmid_in IN (VALUES {vals})),
-
-                        Y AS (SELECT pmid_out, ARRAY_AGG(pmid_in) as cited_list
-                        FROM X
-                        GROUP BY pmid_out
-                        HAVING COUNT(*) >= 2)
-
-                        SELECT Y.pmid_out, date_part('year', P.date) as year, Y.cited_list
-                        FROM Y
+        query = f'''SELECT C.pmid_out as citing, date_part('year', P.date) as year, ARRAY_AGG(pmid_in) as cited_list
+                    FROM PMCitations C
                         JOIN PMPublications P
-                        ON pmid_out = P.pmid and pmid_out = P.pmid
-                        LIMIT {self.config.max_number_of_cocitations};
+                        ON C.pmid_out = P.pmid
+                    WHERE P.pmid IN (VALUES {vals})
+                    GROUP BY citing, year
+                    HAVING COUNT(*) >= 2
+                    LIMIT {self.config.max_number_of_cocitations};
                     '''
 
         with self.postgres_connection.cursor() as cursor:
@@ -219,15 +212,12 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
     def load_bibliographic_coupling(self, ids):
         vals = self.ids_to_vals(ids)
-        query = f'''WITH X AS (SELECT pmid_out, pmid_in
-                        FROM PMCitations
-                        WHERE pmid_out IN (VALUES {vals}))
-
-                        SELECT pmid_in, ARRAY_AGG(pmid_out) as citing_list
-                        FROM X
-                        GROUP BY pmid_in
-                        HAVING COUNT(*) >= 2
-                        LIMIT {self.config.max_number_of_bibliographic_coupling};
+        query = f'''SELECT pmid_in, ARRAY_AGG(pmid_out) as citing_list
+                    FROM PMCitations 
+                    WHERE pmid_out IN (VALUES {vals})
+                    GROUP BY pmid_in
+                    HAVING COUNT(*) >= 2
+                    LIMIT {self.config.max_number_of_bibliographic_coupling};
                     '''
 
         with self.postgres_connection.cursor() as cursor:
