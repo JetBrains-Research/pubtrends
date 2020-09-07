@@ -121,7 +121,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 FROM PMCitations C
                 JOIN PMPublications P
                   ON C.pmid_out = P.pmid
-                WHERE P.pmid IN (VALUES {vals})
+                WHERE C.pmid_in IN (VALUES {vals})
                 GROUP BY id, year
                 LIMIT {self.config.max_number_of_citations};
             '''
@@ -163,14 +163,14 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
     def load_cocitations(self, ids):
         vals = self.ids_to_vals(ids)
-        query = f'''SELECT C.pmid_out as citing, date_part('year', P.date) as year, ARRAY_AGG(pmid_in) as cited_list
-                    FROM PMCitations C
-                        JOIN PMPublications P
-                        ON C.pmid_out = P.pmid
-                    WHERE P.pmid IN (VALUES {vals})
-                    GROUP BY citing, year
-                    HAVING COUNT(*) >= 2
-                    LIMIT {self.config.max_number_of_cocitations};
+        query = f'''SELECT C.pmid_out as citing, date_part('year', P.date) as year, ARRAY_AGG(C.pmid_in) as cited_list
+                        FROM PMCitations C
+                            JOIN PMPublications P
+                            ON C.pmid_out = P.pmid
+                        WHERE C.pmid_in IN (VALUES {vals})
+                        GROUP BY citing, year
+                        HAVING COUNT(*) >= 2
+                        LIMIT {self.config.max_number_of_cocitations};
                     '''
 
         with self.postgres_connection.cursor() as cursor:
@@ -212,10 +212,10 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
     def load_bibliographic_coupling(self, ids):
         vals = self.ids_to_vals(ids)
-        query = f'''SELECT pmid_in, ARRAY_AGG(pmid_out) as citing_list
-                    FROM PMCitations 
-                    WHERE pmid_out IN (VALUES {vals})
-                    GROUP BY pmid_in
+        query = f'''SELECT C.pmid_in as cited, ARRAY_AGG(C.pmid_out) as citing_list
+                    FROM PMCitations C
+                    WHERE C.pmid_out IN (VALUES {vals})
+                    GROUP BY cited
                     HAVING COUNT(*) >= 2
                     LIMIT {self.config.max_number_of_bibliographic_coupling};
                     '''

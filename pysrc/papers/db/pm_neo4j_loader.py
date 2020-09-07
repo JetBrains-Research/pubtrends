@@ -92,7 +92,7 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
     def load_publications(self, ids):
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
-            WITH [{','.join(ids)}] AS pmids
+            WITH [{','.join(str(id) for id in ids)}] AS pmids
             MATCH (p:PMPublication)
             WHERE p.pmid IN pmids
             RETURN p.pmid as id, p.title as title, p.abstract as abstract,
@@ -118,7 +118,7 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
     def load_citations_by_year(self, ids):
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
-            WITH [{','.join(ids)}] AS pmids
+            WITH [{','.join(str(id) for id in ids)}] AS pmids
             MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
             WHERE in.pmid IN pmids
             RETURN in.pmid AS id, out.date.year AS year, COUNT(*) AS count
@@ -142,7 +142,7 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
     def load_citations(self, ids):
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
-            WITH [{','.join(ids)}] AS pmids
+            WITH [{','.join(str(id) for id in ids)}] AS pmids
             MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
             WHERE in.pmid IN pmids AND out.pmid IN pmids
             RETURN out.pmid AS id_out, in.pmid AS id_in
@@ -167,7 +167,7 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
         # Use unfolding to pairs on the client side instead of DataBase
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
-            WITH [{','.join(ids)}] AS pmids
+            WITH [{','.join(str(id) for id in ids)}] AS pmids
             MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
             WHERE in.pmid IN pmids
             RETURN out.pmid AS citing, COLLECT(in.pmid) AS cited, out.date.year AS year
@@ -204,7 +204,7 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
         # Use unfolding to pairs on the client side instead of DataBase
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
-            WITH [{','.join(ids)}] AS pmids
+            WITH [{','.join(f'"{id}"' for id in ids)}] AS pmids
             MATCH (out1:PMPublication),(out2:PMPublication)
             WHERE NOT (out1.pmid = out2.pmid) AND out1.pmid IN pmids AND out2.pmid IN pmids
             MATCH (out1:PMPublication)-[:PMReferenced]->(in:PMPublication),
