@@ -203,11 +203,10 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 UNION
                 SELECT C.pmid_out AS pmid
                 FROM PMCitations C
-                WHERE C.pmid_in IN (VALUES {vals})),
-                Y AS (SELECT DISTINCT pmid from X)
-            SELECT Y.pmid as pmid FROM Y
+                WHERE C.pmid_in IN (VALUES {vals}))
+            SELECT X.pmid as pmid FROM X
                     LEFT JOIN matview_pmcitations C
-                    ON Y.pmid = C.pmid
+                    ON X.pmid = C.pmid
                 ORDER BY count DESC NULLS LAST
                 LIMIT {limit};
                 '''
