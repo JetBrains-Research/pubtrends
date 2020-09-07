@@ -100,7 +100,8 @@ class ExperimentalAnalyzer(KeyPaperAnalyzer):
         evolution_kwds = {}
         for col in evolution_df:
             if col in year_range:
-                logger.debug(f'Generating topics descriptions for year {col}')
+                self.progress.info(f'Generating topics descriptions for year {col}',
+                                   current=current, task=task)
                 if isinstance(col, (int, float)):
                     evolution_df[col] = evolution_df[col].apply(int)
                     comps = evolution_df.groupby(col)['id'].apply(list).to_dict()
