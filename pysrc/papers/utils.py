@@ -156,12 +156,12 @@ def get_topic_word_cloud_data(df_kwd, comp):
     return kwds
 
 
-def get_topics_description(df, comps, query, n_words, n_gram=2):
+def get_topics_description(df, comps, corpus_ngrams, corpus_counts, query, n_words):
     if len(comps) == 1:
         most_frequent = get_frequent_tokens(df, query)
         return {0: list(sorted(most_frequent.items(), key=lambda kv: kv[1], reverse=True))[:n_words]}
 
-    ngrams, tfidf = compute_tfidf(df, comps, query, n_words, n_gram=n_gram)
+    tfidf = compute_comps_tfidf(df, comps, corpus_counts)
     result = {}
     for comp in comps.keys():
         # Generate no keywords for '-1' component
@@ -171,15 +171,16 @@ def get_topics_description(df, comps, query, n_words, n_gram=2):
 
         # Take size indices with the largest tfidf first
         counter = Counter()
-        for i, n in enumerate(ngrams):
+        for i, n in enumerate(corpus_ngrams):
             for w in n.split(' '):
                 counter[w] += tfidf[comp, i]
         result[comp] = counter.most_common(n_words)
     return result
 
 
-def get_tfidf_words(df, comps, query, size, n_words):
-    tokens, tfidf = compute_tfidf(df, comps, query, n_words, other_comp=-1, ignore_other=True)
+def get_evolution_topics_description(df, comps, corpus_ngrams, corpus_counts, size):
+    # -1 is Not Published Yet
+    tfidf = compute_comps_tfidf(df, comps, corpus_counts, ignore_comp=-1)
     kwd = {}
     for comp in comps.keys():
         # Generate no keywords for '-1' component
@@ -192,36 +193,42 @@ def get_tfidf_words(df, comps, query, size, n_words):
         ind = np.argsort(tfidf[comp, :].toarray(), axis=1)
 
         # Take tokens with the largest tfidf
-        kwd[comp] = [tokens[idx] for idx in ind[0, -size:]]
+        kwd[comp] = [corpus_ngrams[idx] for idx in ind[0, -size:]]
     return kwd
 
 
-def compute_tfidf(df, comps, query, n_words, n_gram=1, other_comp=None, ignore_other=False):
-    corpus = []
-    for comp, article_ids in comps.items():
-        # -1 is OTHER component, not meaningful
-        if not (ignore_other and comp == other_comp):
-            df_comp = df[df['id'].isin(article_ids)]
-            corpus.append(' '.join([f'{t} {a}' for t, a in zip(df_comp['title'], df_comp['abstract'])]))
-    vectorizer = CountVectorizer(min_df=0.01, max_df=0.5, ngram_range=(1, n_gram),
-                                 max_features=n_words,
-                                 tokenizer=lambda t: tokenize(t, query))
-    counts = vectorizer.fit_transform(corpus)
-    tfidf_transformer = TfidfTransformer()
-    tfidf = tfidf_transformer.fit_transform(counts)
-    ngrams = vectorizer.get_feature_names()
-    return ngrams, tfidf
+def compute_comps_tfidf(df, comps, corpus_counts, ignore_comp=None):
+    log.debug(f'Creating corpus for comps {len(comps)}')
+    comps_to_process = dict(enumerate([c for c in comps if c != ignore_comp]))
+    comp_counts = np.zeros(shape=(len(comps_to_process), corpus_counts.shape[1]), dtype=np.short)
+    for c, article_ids in comps.items():
+        if c in comps_to_process:
+            comp_counts[comps_to_process[c], :] = \
+                np.sum(corpus_counts[np.flatnonzero(df['id'].isin(article_ids)), :], axis=0)
+    return compute_tfidf(comp_counts)
 
 
-def compute_global_tfidf(df, max_features, n_gram):
-    corpus = [f'{t} {a}' for t, a in zip(df['title'], df['abstract'])]
-    vectorizer = CountVectorizer(min_df=0.01, max_df=0.8, ngram_range=(1, n_gram),
-                                 max_features=max_features,
-                                 tokenizer=lambda t: tokenize(t))
-    counts = vectorizer.fit_transform(corpus)
+def compute_tfidf(counts):
     tfidf_transformer = TfidfTransformer()
     tfidf = tfidf_transformer.fit_transform(counts)
+    log.debug(f'TFIDF shape {tfidf.shape}')
     return tfidf
+
+
+def vectorize_corpus(df, max_features, n_gram):
+    log.debug(f'Creating corpus {len(df)}')
+    corpus = [f'{t} {a}' for t, a in zip(df['title'], df['abstract'])]
+    vectorizer = CountVectorizer(
+        min_df=0.01,
+        max_df=0.8 if len(df) > 1 else 1.0,  # For tests
+        ngram_range=(1, n_gram),
+        max_features=max_features,
+        tokenizer=lambda t: tokenize(t)
+    )
+    log.debug('Vectorizing')
+    counts = vectorizer.fit_transform(corpus)
+    log.debug(f'Vectorized corpus size {counts.shape}')
+    return vectorizer.get_feature_names(), counts
 
 
 def cosine_similarity(x):

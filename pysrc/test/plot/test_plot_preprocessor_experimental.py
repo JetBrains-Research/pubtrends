@@ -20,7 +20,7 @@ class TestExperimentalPlotPreprocessor(unittest.TestCase):
                           ('2014 0', '2019 0', 3), ('2014 1', '2019 1', 2)]
         expected_nodes_data = [('2019 0', '2019 shiftwork, estrogen, pattern, disturbance, cell'),
                                ('2019 1', '2019 study, analysis, association, time, cpg'),
-                               ('2014 -1', 'TBD'),
+                               ('2014 -1', 'NPY'),
                                ('2014 0', '2014 body, susceptibility, ieaa, risk, time'),
                                ('2014 1', '2014 reaction, disturbance, pattern, study, rhythm')]
 

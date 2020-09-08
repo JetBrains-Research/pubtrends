@@ -39,6 +39,7 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
     def test_build_similarity_graph_edges(self):
         similarity_graph = self.analyzer.build_similarity_graph(
             self.analyzer.df,
+            self.analyzer.tfidf,
             self.analyzer.citations_graph,
             self.analyzer.build_cocit_grouped_df(self.analyzer.cocit_df),
             self.analyzer.bibliographic_coupling_df

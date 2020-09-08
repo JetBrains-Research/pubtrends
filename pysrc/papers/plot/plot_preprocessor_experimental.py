@@ -44,7 +44,7 @@ class ExperimentalPlotPreprocessor(PlotPreprocessor):
                     # Fix topic numbering to start with 1
                     label = f"{year} {int(c) + 1}"
             else:
-                label = "TBD"
+                label = "NPY"
             nodes_data.append((node, label))
         nodes_data = sorted(nodes_data, key=sort_nodes_key, reverse=True)
 

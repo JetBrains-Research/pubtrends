@@ -1,17 +1,17 @@
 import logging
 
 import community
+import networkx as nx
 import numpy as np
 import pandas as pd
 
 from pysrc.papers.analyzer import KeyPaperAnalyzer
-from pysrc.papers.utils import get_tfidf_words
+from pysrc.papers.utils import get_evolution_topics_description
 
 logger = logging.getLogger(__name__)
 
 
 class ExperimentalAnalyzer(KeyPaperAnalyzer):
-
     EVOLUTION_STEP = 10
 
     def __init__(self, loader, config, test=False):
@@ -26,8 +26,7 @@ class ExperimentalAnalyzer(KeyPaperAnalyzer):
         self.evolution_df, self.evolution_year_range = \
             self.topic_evolution_analysis(self.cocit_df, current=super().total_steps(), task=task)
         self.evolution_kwds = self.topic_evolution_descriptions(
-            self.df, self.evolution_df, self.evolution_year_range, self.query,
-            current=super().total_steps() + 1, task=task
+            self.df, self.evolution_df, self.evolution_year_range, current=super().total_steps() + 1, task=task
         )
 
     def topic_evolution_analysis(self, cocit_df, step=EVOLUTION_STEP, min_papers=0, current=0, task=None):
@@ -44,28 +43,58 @@ class ExperimentalAnalyzer(KeyPaperAnalyzer):
         self.progress.info(f'Studying evolution of topics in {min_year} - {max_year}',
                            current=current, task=task)
 
-        n_components_merged = {}
-        similarity_graph = {}
-
         logger.debug(f"Topics evolution years: {', '.join([str(year) for year in year_range])}")
-
-        # Use results of topic analysis for current year, perform analysis for other years
         years_processed = 1
         evolution_series = [pd.Series(self.partition)]
         for i, year in enumerate(year_range[1:]):
             self.progress.info(f'Processing year {year}', current=current, task=task)
+
+            # Use only citations earlier than year
+            citations_graph_year = nx.DiGraph()
+            for index, row in self.cit_df.iterrows():
+                v, u = row['id_out'], row['id_in']
+                if int(self.df.loc[self.df['id'] == v]['year'].values[0]) <= year:
+                    citations_graph_year.add_edge(v, u)
+
             # Use only co-citations earlier than year
-            cocit_grouped_df = self.build_cocit_grouped_df(cocit_df[cocit_df['year'] <= year])
-            similarity_graph[year] = self.build_similarity_graph(
-                self.df, self.citations_graph, cocit_grouped_df, self.bibliographic_coupling_df,
+            cocit_grouped_df_year = self.build_cocit_grouped_df(cocit_df[cocit_df['year'] <= year])
+
+            # Use bibliographic coupling earlier then year
+            bibliographic_coupling_df_year = self.bibliographic_coupling_df.loc[
+                np.logical_and(
+                    [int(self.df.loc[self.df['id'] == v]['year'].values[0]) <= year
+                     for v in self.bibliographic_coupling_df['citing_1']],
+                    [int(self.df.loc[self.df['id'] == v]['year'].values[0]) <= year
+                     for v in self.bibliographic_coupling_df['citing_2']]
+                )
+            ]
+
+            # Use only non-zero tfidf for papers earlier then year
+            tfidf_year = self.tfidf.copy()
+            tfidf_year[np.flatnonzero(self.df['year'].apply(int) > year), :] = 0
+            sg = self.build_similarity_graph(
+                self.df, tfidf_year,
+                citations_graph_year,
+                cocit_grouped_df_year,
+                bibliographic_coupling_df_year,
+                process_all_papers=False,  # Dont add all the papers to the graph
                 current=current, task=task
             )
+            logger.debug('Compute aggregated similarity')
+            for _, _, d in sg.edges(data=True):
+                d['similarity'] = KeyPaperAnalyzer.get_similarity(d)
 
-            if len(similarity_graph[year].nodes) >= min_papers:
-                p = {vertex: int(comp) for vertex, comp in
-                     community.best_partition(similarity_graph[year], random_state=KeyPaperAnalyzer.SEED).items()}
-                p, n_components_merged[year] = KeyPaperAnalyzer.merge_components(
-                    p, topic_min_size=self.TOPIC_MIN_SIZE, max_topics_number=self.TOPICS_MAX_NUMBER
+            if len(sg.nodes) >= min_papers:
+                logger.debug('Graph clustering via Louvain community algorithm')
+                dendrogram = community.generate_dendrogram(
+                    sg, weight='similarity', random_state=KeyPaperAnalyzer.SEED
+                )
+                # Smallest communities
+                partition_louvain = dendrogram[0]
+                logger.debug(f'Found {len(set(partition_louvain.values()))} components')
+                # Reorder and merge small components to 'OTHER'
+                p, _ = KeyPaperAnalyzer.merge_components(
+                    partition_louvain, topic_min_size=self.TOPIC_MIN_SIZE, max_topics_number=self.TOPICS_MAX_NUMBER
                 )
                 evolution_series.append(pd.Series(p))
                 years_processed += 1
@@ -80,17 +109,14 @@ class ExperimentalAnalyzer(KeyPaperAnalyzer):
         evolution_df['current'] = evolution_df[max_year]
         evolution_df = evolution_df[list(reversed(list(evolution_df.columns)))]
 
-        # Assign -1 to articles that do not belong to any topic at some step
+        # Assign -1 to articles not published yet
         evolution_df = evolution_df.fillna(-1.0)
 
         evolution_df = evolution_df.reset_index().rename(columns={'index': 'id'})
         evolution_df['id'] = evolution_df['id'].astype(str)
         return evolution_df, year_range
 
-    def topic_evolution_descriptions(
-            self, df, evolution_df, year_range, query,
-            current=0, task=None
-    ):
+    def topic_evolution_descriptions(self, df, evolution_df, year_range, current=0, task=None):
         # Topic evolution failed, no need to generate keywords
         if evolution_df is None or not year_range:
             return None
@@ -105,8 +131,8 @@ class ExperimentalAnalyzer(KeyPaperAnalyzer):
                 if isinstance(col, (int, float)):
                     evolution_df[col] = evolution_df[col].apply(int)
                     comps = evolution_df.groupby(col)['id'].apply(list).to_dict()
-                    evolution_kwds[col] = get_tfidf_words(df, comps, query,
-                                                          n_words=KeyPaperAnalyzer.TFIDF_WORDS,
-                                                          size=KeyPaperAnalyzer.TOPIC_WORDS)
+                    evolution_kwds[col] = get_evolution_topics_description(
+                        df, comps, self.corpus_ngrams, self.corpus_counts, size=KeyPaperAnalyzer.TOPIC_WORDS
+                    )
 
         return evolution_kwds
