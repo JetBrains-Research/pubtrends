@@ -204,9 +204,9 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
         # Use unfolding to pairs on the client side instead of DataBase
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
-            WITH [{','.join(f'"{id}"' for id in ids)}] AS pmids
+            WITH [{','.join(str(id) for id in ids)}] AS pmids
             MATCH (out1:PMPublication),(out2:PMPublication)
-            WHERE NOT (out1.pmid = out2.pmid) AND out1.pmid IN pmids AND out2.pmid IN pmids
+            WHERE out1.pmid <> out2.pmid AND out1.pmid IN pmids AND out2.pmid IN pmids
             MATCH (out1:PMPublication)-[:PMReferenced]->(in:PMPublication),
                   (out2:PMPublication)-[:PMReferenced]->(in:PMPublication)
             RETURN out1.pmid AS citing_1, out2.pmid AS citing_2, COUNT(in) AS total
