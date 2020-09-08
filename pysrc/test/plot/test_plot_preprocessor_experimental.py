@@ -30,25 +30,18 @@ class TestExperimentalPlotPreprocessor(unittest.TestCase):
         self.assertListEqual(nodes_data, expected_nodes_data, 'Wrong nodes data')
 
     def test_topic_evolution_keywords(self):
-        _, source = ExperimentalPlotPreprocessor.topic_evolution_keywords_data(
+        kwds_data = ExperimentalPlotPreprocessor.topic_evolution_keywords_data(
             self.analyzer.evolution_kwds
         )
 
-        expected_keywords_data = {
-            'years': [2014, 2014, 2019, 2019],
-            'topics': [1, 2, 1, 2],
-            'keywords': [
-                'body, susceptibility, ieaa, risk, time, acceleration, gene, association, tumor, ageaccel, '
-                'development, tissue, blood, study, age',
-                'reaction, disturbance, pattern, study, rhythm, result, change, analysis, shiftwork, disruption, '
-                'per2, per1, promoter, expression, gene',
-                'shiftwork, estrogen, pattern, disturbance, cell, per2, disruption, night, analysis, study, rhythm, '
-                'per1, promoter, expression, gene',
-                'study, analysis, association, time, cpg, sample, development, ageaccel, type, blood, cell, '
-                'acceleration, risk, tissue, age'
-            ]
-        }
+        expected_keywords_data = [
+            (2014, 1, 'body, susceptibility, ieaa, risk, time, acceleration, gene, association, tumor, ageaccel, '
+                      'development, tissue, blood, study, age'),
+            (2014, 2, 'reaction, disturbance, pattern, study, rhythm, result, change, analysis, shiftwork, disruption, '
+                      'per2, per1, promoter, expression, gene'),
+            (2019, 1, 'shiftwork, estrogen, pattern, disturbance, cell, per2, disruption, night, analysis, study, '
+                      'rhythm, per1, promoter, expression, gene'),
+            (2019, 2,   'study, analysis, association, time, cpg, sample, development, ageaccel, type, blood, cell, '
+                        'acceleration, risk, tissue, age')]
 
-        self.assertEqual(expected_keywords_data['years'], source.data['years'], 'Wrong years')
-        self.assertEqual(expected_keywords_data['topics'], source.data['topics'], 'Wrong topics')
-        self.assertEqual(expected_keywords_data['keywords'], source.data['keywords'], 'Wrong keywords')
+        self.assertEqual(expected_keywords_data, kwds_data)

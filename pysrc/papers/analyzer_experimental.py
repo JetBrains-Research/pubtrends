@@ -18,16 +18,16 @@ class ExperimentalAnalyzer(KeyPaperAnalyzer):
         super().__init__(loader, config, test)
 
     def total_steps(self):
-        return super().total_steps() + 2
+        return super().total_steps() + 2  # One extra step for visualization
 
     def analyze_papers(self, ids, query, task=None):
         super().analyze_papers(ids, query, task)
-
         # Perform topic evolution analysis and get topic descriptions
         self.evolution_df, self.evolution_year_range = \
-            self.topic_evolution_analysis(self.cocit_df, current=19, task=task)
+            self.topic_evolution_analysis(self.cocit_df, current=super().total_steps(), task=task)
         self.evolution_kwds = self.topic_evolution_descriptions(
-            self.df, self.evolution_df, self.evolution_year_range, self.query, current=20, task=task
+            self.df, self.evolution_df, self.evolution_year_range, self.query,
+            current=super().total_steps() + 1, task=task
         )
 
     def topic_evolution_analysis(self, cocit_df, step=EVOLUTION_STEP, min_papers=0, current=0, task=None):
@@ -53,6 +53,7 @@ class ExperimentalAnalyzer(KeyPaperAnalyzer):
         years_processed = 1
         evolution_series = [pd.Series(self.partition)]
         for i, year in enumerate(year_range[1:]):
+            self.progress.info(f'Processing year {year}', current=current, task=task)
             # Use only co-citations earlier than year
             cocit_grouped_df = self.build_cocit_grouped_df(cocit_df[cocit_df['year'] <= year])
             similarity_graph[year] = self.build_similarity_graph(
@@ -79,7 +80,7 @@ class ExperimentalAnalyzer(KeyPaperAnalyzer):
         evolution_df['current'] = evolution_df[max_year]
         evolution_df = evolution_df[list(reversed(list(evolution_df.columns)))]
 
-        # Assign -1 to articles that do not belong to any cluster at some step
+        # Assign -1 to articles that do not belong to any topic at some step
         evolution_df = evolution_df.fillna(-1.0)
 
         evolution_df = evolution_df.reset_index().rename(columns={'index': 'id'})
@@ -88,7 +89,6 @@ class ExperimentalAnalyzer(KeyPaperAnalyzer):
 
     def topic_evolution_descriptions(
             self, df, evolution_df, year_range, query,
-            keywords=KeyPaperAnalyzer.TOPIC_WORDS,
             current=0, task=None
     ):
         # Topic evolution failed, no need to generate keywords
@@ -105,6 +105,8 @@ class ExperimentalAnalyzer(KeyPaperAnalyzer):
                 if isinstance(col, (int, float)):
                     evolution_df[col] = evolution_df[col].apply(int)
                     comps = evolution_df.groupby(col)['id'].apply(list).to_dict()
-                    evolution_kwds[col] = get_tfidf_words(df, comps, query, n_words=100, size=keywords)
+                    evolution_kwds[col] = get_tfidf_words(df, comps, query,
+                                                          n_words=KeyPaperAnalyzer.TFIDF_WORDS,
+                                                          size=KeyPaperAnalyzer.TOPIC_WORDS)
 
         return evolution_kwds

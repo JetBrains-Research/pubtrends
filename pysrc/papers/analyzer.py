@@ -61,7 +61,7 @@ class KeyPaperAnalyzer:
         self.source = Loaders.source(self.loader, test)
 
     def total_steps(self):
-        return 19  # 18 + 1 for visualization
+        return 19  # 18 + one extra step for visualization
 
     def teardown(self):
         self.progress.remove_handler()

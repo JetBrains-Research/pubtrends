@@ -1,8 +1,5 @@
 import logging
 
-import pandas as pd
-from bokeh.models import ColumnDataSource, TableColumn
-
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 
 logger = logging.getLogger(__name__)
@@ -55,26 +52,9 @@ class ExperimentalPlotPreprocessor(PlotPreprocessor):
 
     @staticmethod
     def topic_evolution_keywords_data(kwds):
-        years = []
-        topics = []
-        keywords = []
+        kwds_data = []
         for year, comps in kwds.items():
-            for c, kwd in comps.items():
-                if c >= 0:
-                    years.append(year)
-                    topics.append(c + 1)
-                    keywords.append(', '.join(kwd))
-        data = dict(
-            years=years,
-            topics=topics,
-            keywords=keywords
-        )
-        source = ColumnDataSource(data)
-        source.add(pd.RangeIndex(start=1, stop=len(keywords), step=1), 'index')
-        columns = [
-            TableColumn(field="index", title="#", width=20),
-            TableColumn(field="years", title="Year", width=50),
-            TableColumn(field="topics", title="Topic", width=50),
-            TableColumn(field="keywords", title="Keywords", width=800),
-        ]
-        return columns, source
+            for comp, kwd in comps.items():
+                if comp >= 0:
+                    kwds_data.append((year, comp + 1, ', '.join(kwd)))
+        return kwds_data

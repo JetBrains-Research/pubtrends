@@ -98,7 +98,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
     def load_publications(self, ids):
         vals = self.ids_to_vals(ids)
         query = f'''
-                SELECT P.pmid as id, title, abstract, date_part('year', date) as year, type,
+                SELECT P.pmid as id, title, abstract, date_part('year', date) as year1, type,
                     keywords, mesh, doi, aux
                 FROM PMPublications P
                 WHERE P.pmid IN (VALUES {vals});
@@ -117,12 +117,12 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
     def load_citations_by_year(self, ids):
         vals = self.ids_to_vals(ids)
         query = f'''
-           SELECT C.pmid_in AS id, date_part('year', P.date) as year, COUNT(1) AS count
+           SELECT C.pmid_in AS id, date_part('year', P.date) as year1, COUNT(1) AS count
                 FROM PMCitations C
                 JOIN PMPublications P
                   ON C.pmid_out = P.pmid
                 WHERE C.pmid_in IN (VALUES {vals})
-                GROUP BY id, year
+                GROUP BY id, year1
                 LIMIT {self.config.max_number_of_citations};
             '''
 
@@ -163,12 +163,12 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
     def load_cocitations(self, ids):
         vals = self.ids_to_vals(ids)
-        query = f'''SELECT C.pmid_out as citing, date_part('year', P.date) as year, ARRAY_AGG(C.pmid_in) as cited_list
+        query = f'''SELECT C.pmid_out as citing, date_part('year', P.date) as year1, ARRAY_AGG(C.pmid_in) as cited_list
                         FROM PMCitations C
                             JOIN PMPublications P
                             ON C.pmid_out = P.pmid
                         WHERE C.pmid_in IN (VALUES {vals})
-                        GROUP BY citing, year
+                        GROUP BY citing, year1
                         HAVING COUNT(*) >= 2
                         LIMIT {self.config.max_number_of_cocitations};
                     '''

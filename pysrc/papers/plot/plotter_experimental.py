@@ -1,8 +1,6 @@
 import holoviews as hv
 from bokeh.embed import components
-from bokeh.layouts import column
 # Tools used: hover,pan,tap,wheel_zoom,box_zoom,reset,save
-from bokeh.models.widgets.tables import DataTable
 from holoviews import dim
 
 from pysrc.papers.plot.plot_preprocessor_experimental import ExperimentalPlotPreprocessor
@@ -13,10 +11,12 @@ def visualize_experimental_analysis(analyzer):
     result = visualize_analysis(analyzer)
     result['experimental'] = True  # Mark as experimental
     if analyzer.similarity_graph.nodes():
-        topic_evolution = ExperimentalPlotter(analyzer).topic_evolution()
+        topic_evolution, keywords_data = ExperimentalPlotter(analyzer).topic_evolution()
         # Pass topic evolution only if not None
         if topic_evolution:
             result['topic_evolution'] = [components(topic_evolution)]
+        if keywords_data:
+            result['topic_evolution_keywords'] = keywords_data
     return result
 
 
@@ -50,11 +50,9 @@ class ExperimentalPlotter(Plotter):
                              edge_color=dim('To').str(), node_color=dim('index').str())
 
         if n_steps > 3:
-            columns, source = ExperimentalPlotPreprocessor.topic_evolution_keywords_data(
+            kwds_data = ExperimentalPlotPreprocessor.topic_evolution_keywords_data(
                 self.analyzer.evolution_kwds
             )
-            topic_keywords = DataTable(source=source, columns=columns, width=PLOT_WIDTH, index_position=None)
+            return hv.render(topic_evolution, backend='bokeh'), kwds_data
 
-            return column(hv.render(topic_evolution, backend='bokeh'), topic_keywords)
-
-        return hv.render(topic_evolution, backend='bokeh')
+        return hv.render(topic_evolution, backend='bokeh'), None
