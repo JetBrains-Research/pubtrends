@@ -220,6 +220,8 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
             logger.debug('Failed to load bibliographic coupling.')
             bibliographic_coupling_df = pd.DataFrame(columns=['citing_1', 'citing_2', 'total'])
 
+        bibliographic_coupling_df['citing_1'] = bibliographic_coupling_df['citing_1'].apply(str)
+        bibliographic_coupling_df['citing_2'] = bibliographic_coupling_df['citing_2'].apply(str)
         bibliographic_coupling_df['total'] = bibliographic_coupling_df['total'].apply(int)
         return bibliographic_coupling_df
 
