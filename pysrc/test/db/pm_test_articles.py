@@ -42,6 +42,8 @@ ARTICLES = REQUIRED_ARTICLES + EXTRA_ARTICLES
 PART_OF_ARTICLES = [REQUIRED_ARTICLES[2], REQUIRED_ARTICLES[3]]
 
 EXPANDED_IDS = ['2', '3', '4', '5', '7', '8', '9', '10']
+EXPANDED_TOP_CITED_3 = ['3', '4', '5']
+EXPANDED_TOP_CITED_4 = ['2', '3', '4', '5']
 
 OUTER_CITATIONS = [
     ('7', '1'), ('7', '2'), ('7', '3'), ('8', '1'), ('8', '3'),

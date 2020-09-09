@@ -51,7 +51,7 @@ class KeyPaperAnalyzer:
 
     EXPAND_STEPS = 3  # Max expand steps
     EXPAND_MULTIPLIER = 10  # Original papers should be at least >= 1 / multiplier
-    MESH_OVERLAP = 0.1  # Keep mesh terms overlap
+    MESH_OVERLAP = 0.05  # Keep mesh terms overlap
 
     def __init__(self, loader, config, test=False):
         self.config = config

@@ -226,28 +226,57 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
         return bibliographic_coupling_df
 
     def expand(self, ids, limit):
-        # TODO[shpynov] sort by citations!
-        max_to_expand = int((limit - len(ids)) / 2)
-        expanded = set(ids)
+        max_to_expand = limit
+        # Cypher doesn't support any operations on unions, process two separate queries
+        expanded_dfs = []
+
         # TODO[shpynov] transferring huge list of ids can be a problem
-        query = f'''
-                WITH [{','.join(ids)}] AS pmids
+        # Join query sorted by citations and without any
+        query_expand_out = f'''
+                WITH [{','.join(str(id) for id in ids)}] AS pmids
+                MATCH (out:PMPublication)-[:PMReferenced]->(in1:PMPublication)
+                WHERE in1.pmid IN pmids
+                MATCH ()-[r:PMReferenced]->(in2:PMPublication)
+                WHERE in2.pmid = out.pmid
+                WITH out, COUNT(r) AS cnt
+                RETURN out.pmid as pmid, cnt
+                ORDER BY cnt DESC
+                LIMIT {max_to_expand}
+                UNION
+                WITH [{','.join(str(id) for id in ids)}] AS pmids
                 MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
                 WHERE in.pmid IN pmids
-                RETURN out.pmid AS expanded
+                RETURN out.pmid as pmid, 0 as cnt
                 LIMIT {max_to_expand};
             '''
-        with self.neo4jdriver.session() as session:
-            expanded |= set([str(r['expanded']) for r in session.run(query)])
 
-        query = f'''
-                WITH [{','.join(ids)}] AS pmids
+        with self.neo4jdriver.session() as session:
+            expanded_dfs.append(pd.DataFrame(session.run(query_expand_out).data()))
+
+        # Join query sorted by citations and without any
+        query_expand_in = f'''
+                WITH [{','.join(str(id) for id in ids)}] AS pmids
+                MATCH (out:PMPublication)-[:PMReferenced]->(in1:PMPublication)
+                WHERE out.pmid IN pmids
+                MATCH ()-[r:PMReferenced]->(in2:PMPublication)
+                WHERE in2.pmid = in1.pmid
+                WITH in1, COUNT(r) AS cnt
+                RETURN in1.pmid as pmid, cnt
+                ORDER BY cnt DESC
+                LIMIT {max_to_expand}
+                UNION
+                WITH [{','.join(str(id) for id in ids)}] AS pmids
                 MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
                 WHERE out.pmid IN pmids
-                RETURN in.pmid AS expanded
+                RETURN in.pmid as pmid, 0 as cnt
                 LIMIT {max_to_expand};
             '''
-        with self.neo4jdriver.session() as session:
-            expanded |= set([str(r['expanded']) for r in session.run(query)])
 
+        with self.neo4jdriver.session() as session:
+            expanded_dfs.append(pd.DataFrame(session.run(query_expand_in).data()))
+
+        expanded_df = pd.concat(expanded_dfs)
+        expanded_df.sort_values(by=['cnt'], ascending=False, inplace=True)
+        expanded = set(ids)
+        expanded |= set(expanded_df.iloc[:max_to_expand, :]['pmid'].astype(str))
         return expanded

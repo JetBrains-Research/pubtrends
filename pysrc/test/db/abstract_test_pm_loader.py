@@ -7,7 +7,7 @@ from parameterized import parameterized
 from pysrc.papers.utils import SORT_MOST_RECENT, SORT_MOST_RELEVANT, SORT_MOST_CITED
 from pysrc.test.db.pm_test_articles import REQUIRED_ARTICLES, EXPECTED_PUB_DF, \
     EXPECTED_CIT_STATS_DF, INNER_CITATIONS, EXPECTED_CIT_DF, EXPECTED_COCIT_DF, EXPECTED_PUB_DF_GIVEN_IDS, \
-    PART_OF_ARTICLES, EXPANDED_IDS
+    PART_OF_ARTICLES, EXPANDED_IDS, EXPANDED_TOP_CITED_3, EXPANDED_TOP_CITED_4
 
 
 class AbstractTestPubmedLoader(metaclass=ABCMeta):
@@ -130,10 +130,17 @@ class AbstractTestPubmedLoader(metaclass=ABCMeta):
                            "Wrong publications extracted", check_like=True)
 
     def test_expand(self):
-        expected = EXPANDED_IDS
         ids_list = list(map(lambda article: str(article.pmid), PART_OF_ARTICLES))
         actual = self.getLoader().expand(ids_list, 1000)
-        self.assertSequenceEqual(sorted(expected), sorted(actual), "Wrong list of expanded ids")
+        self.assertSequenceEqual(sorted(EXPANDED_IDS), sorted(actual), "Wrong list of expanded ids")
+
+    def test_expand_limited(self):
+        ids_list = list(map(lambda article: str(article.pmid), PART_OF_ARTICLES))
+        actual = self.getLoader().expand(ids_list, 3)
+        self.assertSequenceEqual(sorted(EXPANDED_TOP_CITED_3), sorted(actual), "Wrong list of expanded 3 ids")
+        actual = self.getLoader().expand(ids_list, 4)
+        self.assertSequenceEqual(sorted(EXPANDED_TOP_CITED_4), sorted(actual), "Wrong list of expanded 4 ids")
+
 
     @parameterized.expand([
         ('id search', 'id', '1', ['1']),

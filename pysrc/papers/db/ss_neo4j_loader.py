@@ -229,7 +229,7 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
 
     def expand(self, ids, limit):
         # TODO[shpynov] sort by citations!
-        max_to_expand = int((limit - len(ids)) / 2)
+        max_to_expand = int(limit / 2)
         expanded = set(ids)
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
