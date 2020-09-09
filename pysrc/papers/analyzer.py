@@ -49,7 +49,7 @@ class KeyPaperAnalyzer:
     TOP_JOURNALS = 50
     TOP_AUTHORS = 50
 
-    EXPAND_STEPS = 3  # Max expand steps
+    EXPAND_STEPS = 2  # Max expand steps
     EXPAND_MULTIPLIER = 10  # Original papers should be at least >= 1 / multiplier
     MESH_OVERLAP = 0.05  # Keep mesh terms overlap
 
@@ -103,7 +103,7 @@ class KeyPaperAnalyzer:
         while True:
             if i == self.EXPAND_STEPS or len(current_ids) >= limit:
                 break
-            logger.debug(f'Expanding step {i}: current papers: {len(current_ids)}, new_ids: {len(new_ids)}')
+            logger.debug(f'Step {i}: current_ids: {len(current_ids)}, new_ids: {len(new_ids)}, limit: {limit}')
             expanded_ids = self.loader.expand(new_ids or current_ids, limit - len(current_ids))
             new_ids = [pid for pid in expanded_ids if pid not in set(current_ids)]
             logger.debug(f'New {len(new_ids)} papers')
