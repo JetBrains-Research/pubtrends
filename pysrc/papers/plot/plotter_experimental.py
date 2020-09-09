@@ -11,13 +11,13 @@ def visualize_experimental_analysis(analyzer):
     result = visualize_analysis(analyzer)
     result['experimental'] = True  # Mark as experimental
     if analyzer.similarity_graph.nodes():
-        topic_evolution, keywords_data = ExperimentalPlotter(analyzer).topic_evolution()
-        # Pass topic evolution only if not None
-        if topic_evolution:
-            result['topic_evolution'] = [components(topic_evolution)]
-        if keywords_data:
-            result['topic_evolution_keywords'] = keywords_data
-    return result
+        evolution_result = ExperimentalPlotter(analyzer).topic_evolution()
+        if evolution_result is not None:
+            evolution_data, keywords_data = evolution_result
+            result['topic_evolution'] = [components(evolution_data)]
+            if keywords_data:
+                result['topic_evolution_keywords'] = keywords_data
+        return result
 
 
 class ExperimentalPlotter(Plotter):
