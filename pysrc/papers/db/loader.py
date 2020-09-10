@@ -27,7 +27,7 @@ class Loader(metaclass=ABCMeta):
     def load_publications(self, ids):
         """
         Loads publications for given ids.
-        :return: dataframe[id(String), title, abstract, year, type, aux]
+        :return: dataframe[id(String), title, abstract, year, type, keywords, mesh, doi, aux]
         """
 
     @abstractmethod
