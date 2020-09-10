@@ -33,6 +33,8 @@ def prepare_paper_data(data, source, pid):
     year = sel['year'].values[0]
     topic = sel['comp'].values[0] + 1
     doi = str(sel['doi'].values[0])
+    mesh = str(sel['mesh'].values[0])
+    keywords = str(sel['keywords'].values[0])
     if doi == 'None' or doi == 'nan':
         doi = ''
 
@@ -83,6 +85,8 @@ def prepare_paper_data(data, source, pid):
         'year': year,
         'topic': topic,
         'doi': doi,
+        'mesh': mesh,
+        'keywords': keywords,
         'url': url_prefix + pid,
         'source': source,
         'citation_dynamics': [components(plotter.article_citation_dynamics(analyzer.df, str(pid)))],

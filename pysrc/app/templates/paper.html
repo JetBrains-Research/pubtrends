@@ -151,6 +151,12 @@
                             <br>
                             <a class="link" href="https://doi.org/{{doi}}">doi:{{doi}}</a>
                         {% endif %}
+                        {% if mesh != "" %}
+                        <br>Mesh: {{mesh}}
+                        {% endif %}
+                        {% if keywords != "" %}
+                        <br>Keywords: {{keywords}}
+                        {% endif %}
                         <br>
                         <a class="link" href="{{ url }}">Open in {{ source }}</a>
                         {% if abstract is defined %}
