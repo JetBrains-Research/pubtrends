@@ -142,9 +142,12 @@ class KeyPaperAnalyzer:
         self.progress.info('Analyzing title and abstract texts', current=3, task=task)
         self.corpus_ngrams, self.corpus_counts = \
             vectorize_corpus(self.pub_df, max_features=KeyPaperAnalyzer.TFIDF_WORDS, n_gram=1)
-        self.tfidf = compute_tfidf(self.corpus_counts)
+        tfidf = compute_tfidf(self.corpus_counts)
 
-        self.progress.info('Loading citations statistics by year', current=4, task=task)
+        self.progress.info('Processing texts similarity', current=4, task=task)
+        self.texts_similarity = self.analyze_texts_similarity(self.pub_df, tfidf)
+
+        self.progress.info('Loading citations statistics by year', current=5, task=task)
         cits_by_year_df = self.loader.load_citations_by_year(self.ids)
         self.progress.info(f'Found {len(cits_by_year_df)} records of citations by year',
                            current=5, task=task)
@@ -177,7 +180,7 @@ class KeyPaperAnalyzer:
 
         # All the papers will be covered by default
         self.similarity_graph = self.build_similarity_graph(
-            self.df, self.tfidf,
+            self.df, self.texts_similarity,
             self.citations_graph, cocit_grouped_df, self.bibliographic_coupling_df,
             current=10, task=task
         )
@@ -188,9 +191,9 @@ class KeyPaperAnalyzer:
             self.df_kwd = pd.DataFrame({'comp': [0], 'kwd': ['']})
             self.structure_graph = nx.Graph()
         else:
-            # Perform topic analysis and get topic descriptions
+            self.progress.info('Extracting topics from paper similarity graph', current=11, task=task)
             self.topics_dendrogram, self.partition, self.comp_other, self.components, self.comp_sizes = \
-                self.topic_analysis(self.similarity_graph, current=11, task=task)
+                self.topic_analysis(self.similarity_graph)
 
             self.progress.info('Computing topics descriptions by top cited papers', current=12, task=task)
             most_cited_per_comp = self.get_most_cited_papers_for_comps(self.df, self.partition)
@@ -205,8 +208,7 @@ class KeyPaperAnalyzer:
             self.df_kwd = pd.DataFrame(kwds, columns=['comp', 'kwd'])
             logger.debug(f'Components description\n{self.df_kwd["kwd"]}')
             # Build structure graph
-            self.structure_graph = self.build_structure_graph(self.df, self.similarity_graph,
-                                                              current=13, task=task)
+            self.structure_graph = self.build_structure_graph(self.df, self.similarity_graph)
 
         self.progress.info('Performing PageRank analysis', current=14, task=task)
         pr = nx.pagerank(self.citations_graph, alpha=0.5, tol=1e-9)
@@ -223,10 +225,11 @@ class KeyPaperAnalyzer:
             self.df, self.citation_years
         )
 
-        # Find top journals
-        self.journal_stats = self.popular_journals(self.df, current=18, task=task)
-        # Find top authors
-        self.author_stats = self.popular_authors(self.df, current=19, task=task)
+        self.progress.info("Finding popular journals", current=18, task=task)
+        self.journal_stats = self.popular_journals(self.df)
+
+        self.progress.info("Finding popular authors", current=19, task=task)
+        self.author_stats = self.popular_authors(self.df)
 
     @staticmethod
     def build_cit_stats_df(cits_by_year_df, n_papers):
@@ -283,13 +286,17 @@ class KeyPaperAnalyzer:
                            current=current, task=task)
         return G
 
-    def build_similarity_graph(self, df, tfidf, citations_graph, cocit_df, bibliographic_coupling_df,
-                               process_cocitations=True,
-                               process_bibliographic_coupling=True,
-                               process_citations=True,
-                               process_text_citations=True,
-                               process_all_papers=True,
-                               current=0, task=None):
+    def build_similarity_graph(
+            self,
+            df, texts_similarity,
+            citations_graph, cocit_df, bibliographic_coupling_df,
+            process_cocitations=True,
+            process_bibliographic_coupling=True,
+            process_citations=True,
+            process_text_citations=True,
+            process_all_papers=True,
+            current=0, task=None
+    ):
         """
         Relationship graph is build using citation and text based methods.
 
@@ -328,50 +335,50 @@ class KeyPaperAnalyzer:
                 else:
                     result.add_edge(u, v, citation=1)
 
+        self.progress.info(f'Citations based graph - {len(result.nodes())} nodes and {len(result.edges())} edges',
+                           current=current, task=task)
+
         if process_text_citations:
             if len(df) >= 2:  # If we have any corpus
-                self.progress.info(f'Citations based graph - {len(result.nodes())} nodes and {len(result.edges())} edges',
-                                   current=current, task=task)
-                self.progress.info('Processing possible citations based on text similarity',
-                                   current=current, task=task)
-                cos_similarities = cosine_similarity(tfidf)
-                text_citations = [PriorityQueue(maxsize=self.SIMILARITY_TEXT_CITATION_N) for _ in range(len(df))]
-
-                # Adding text citations
                 for i, pid1 in enumerate(df['id']):
-                    if not tfidf[i, :].toarray().any():
-                        continue
-                    text_citations_i = text_citations[i]
-                    for j in range(i + 1, len(df)):
-                        if not tfidf[j, :].toarray().any():
-                            continue
-                        similarity = cos_similarities[i, j]
-                        if np.isfinite(similarity) and similarity >= self.SIMILARITY_TEXT_MIN:
-                            if text_citations_i.full():
-                                text_citations_i.get()  # Removes the element with lowest similarity
-                            text_citations_i.put((similarity, j))
-
-                for i, pid1 in enumerate(df['id']):
-                    text_citations_i = text_citations[i]
-                    while not text_citations_i.empty():
-                        similarity, j = text_citations_i.get()
+                    similarity_queue = texts_similarity[i]
+                    while not similarity_queue.empty():
+                        similarity, j = similarity_queue.get()
                         pid2 = pids[j]
                         if result.has_edge(pid1, pid2):
                             pid1_pid2_edge = result[pid1][pid2]
                             pid1_pid2_edge['text'] = similarity
                         else:
                             result.add_edge(pid1, pid2, text=similarity)
+
         if process_all_papers:
             # Ensure all the papers are in the graph
             for pid in pids:
                 if not result.has_node(pid):
                     result.add_node(pid)
+
         self.progress.info(f'Built full similarity graph - {len(result.nodes())} nodes and {len(result.edges())} edges',
                            current=current, task=task)
         return result
 
-    def topic_analysis(self, similarity_graph, current=0, task=None):
-        self.progress.info('Extracting topics from paper similarity graph', current=current, task=task)
+    @staticmethod
+    def analyze_texts_similarity(df, tfidf):
+        cos_similarities = cosine_similarity(tfidf)
+        similarity_queues = [PriorityQueue(maxsize=KeyPaperAnalyzer.SIMILARITY_TEXT_CITATION_N)
+                             for _ in range(len(df))]
+        # Adding text citations
+        for i, pid1 in enumerate(df['id']):
+            queue_i = similarity_queues[i]
+            for j in range(i + 1, len(df)):
+                similarity = cos_similarities[i, j]
+                if np.isfinite(similarity) and similarity >= KeyPaperAnalyzer.SIMILARITY_TEXT_MIN:
+                    if queue_i.full():
+                        queue_i.get()  # Removes the element with lowest similarity
+                    queue_i.put((similarity, j))
+        return similarity_queues
+
+    @staticmethod
+    def topic_analysis(similarity_graph):
         connected_components = nx.number_connected_components(similarity_graph)
         logger.debug(f'Relations graph has {connected_components} connected components')
 
@@ -396,7 +403,10 @@ class KeyPaperAnalyzer:
 
         # Reorder and merge small components to 'OTHER'
         partition, n_components_merged = KeyPaperAnalyzer.merge_components(
-            partition_louvain, topic_min_size=self.TOPIC_MIN_SIZE, max_topics_number=self.TOPICS_MAX_NUMBER)
+            partition_louvain,
+            topic_min_size=KeyPaperAnalyzer.TOPIC_MIN_SIZE,
+            max_topics_number=KeyPaperAnalyzer.TOPICS_MAX_NUMBER
+        )
 
         logger.debug('Sorting components by size descending')
         components = set(partition.values())
@@ -437,7 +447,8 @@ class KeyPaperAnalyzer:
 
         return comp_dendrogram, sorted_partition, comp_other, components, sorted_comp_sizes
 
-    def build_structure_graph(self, df, similarity_graph, current=0, task=None):
+    @staticmethod
+    def build_structure_graph(df, similarity_graph):
         """
         Structure graph is visualization of similarity connections.
         It uses topics a structure.
@@ -453,7 +464,7 @@ class KeyPaperAnalyzer:
             comp_df = df.loc[df['comp'] == c]
             logger.debug(f'Processing component {c}')
             topic_sparse = KeyPaperAnalyzer.local_sparse(similarity_graph.subgraph(comp_df['id']),
-                                                         e=self.STRUCTURE_LOW_LEVEL_SPARSITY)
+                                                         e=KeyPaperAnalyzer.STRUCTURE_LOW_LEVEL_SPARSITY)
             connected_components = [cc for cc in nx.connected_components(topic_sparse)]
             logger.debug(f'Connected components {connected_components}')
             # Build a map node -> connected group
@@ -511,7 +522,8 @@ class KeyPaperAnalyzer:
                 continue
             if (c1, c2) not in inter_topics:
                 # Do not add edges between topics more than minimum * scale factor
-                max_connections = int(min(topics_edges[c1], topics_edges[c2]) * self.STRUCTURE_BETWEEN_TOPICS_SPARSITY)
+                max_connections = \
+                    int(min(topics_edges[c1], topics_edges[c2]) * KeyPaperAnalyzer.STRUCTURE_BETWEEN_TOPICS_SPARSITY)
                 pq = inter_topics[(c1, c2)] = PriorityQueue(maxsize=max_connections)
             else:
                 pq = inter_topics[(c1, c2)]
@@ -649,8 +661,8 @@ class KeyPaperAnalyzer:
             logger.debug('No need to reassign components')
             return partition, 0
 
-    def popular_journals(self, df, n=TOP_JOURNALS, current=0, task=None):
-        self.progress.info("Finding popular journals", current=current, task=task)
+    @staticmethod
+    def popular_journals(df, n=TOP_JOURNALS):
         journal_stats = df.groupby(['journal', 'comp']).size().reset_index(name='counts')
         journal_stats['journal'].replace('', np.nan, inplace=True)
         journal_stats.dropna(subset=['journal'], inplace=True)
@@ -664,12 +676,10 @@ class KeyPaperAnalyzer:
         journal_stats.columns = ['journal', 'comp', 'counts', 'sum']
 
         journal_stats = journal_stats.sort_values(by=['sum'], ascending=False)
-
         return journal_stats.head(n=n)
 
-    def popular_authors(self, df, n=TOP_AUTHORS, current=0, task=None):
-        self.progress.info("Finding popular authors", current=current, task=task)
-
+    @staticmethod
+    def popular_authors(df, n=TOP_AUTHORS):
         author_stats = df[['authors', 'comp']].copy()
         author_stats['authors'].replace({'': np.nan, -1: np.nan}, inplace=True)
         author_stats.dropna(subset=['authors'], inplace=True)
@@ -686,7 +696,6 @@ class KeyPaperAnalyzer:
         author_stats.columns = author_stats.columns.droplevel(level=1)
         author_stats.columns = ['author', 'comp', 'counts', 'sum']
         author_stats = author_stats.sort_values(by=['sum'], ascending=False)
-
         return author_stats.head(n=n)
 
     @staticmethod

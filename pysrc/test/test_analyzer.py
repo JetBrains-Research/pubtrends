@@ -7,7 +7,7 @@ from pysrc.papers.analyzer import KeyPaperAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.test.mock_loaders import MockLoader, \
     CITATION_YEARS, EXPECTED_MAX_GAIN, EXPECTED_MAX_RELATIVE_GAIN, CITATION_GRAPH_NODES, CITATION_GRAPH_EDGES, \
-    MockLoaderEmpty, MockLoaderSingle, SIMILARITY_GRAPH_EDGES
+    MockLoaderEmpty, MockLoaderSingle, SIMILARITY_GRAPH
 
 
 class TestKeyPaperAnalyzer(unittest.TestCase):
@@ -37,14 +37,7 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
         self.assertCountEqual(list(self.analyzer.citations_graph.edges()), CITATION_GRAPH_EDGES)
 
     def test_build_similarity_graph_edges(self):
-        similarity_graph = self.analyzer.build_similarity_graph(
-            self.analyzer.df,
-            self.analyzer.tfidf,
-            self.analyzer.citations_graph,
-            self.analyzer.build_cocit_grouped_df(self.analyzer.cocit_df),
-            self.analyzer.bibliographic_coupling_df
-        )
-        self.assertCountEqual(list(similarity_graph.edges(data=True)), SIMILARITY_GRAPH_EDGES)
+        self.assertCountEqual(list(self.analyzer.similarity_graph.edges(data=True)), SIMILARITY_GRAPH)
 
     def test_find_max_gain_papers_count(self):
         max_gain_count = len(list(self.analyzer.max_gain_df['year'].values))
@@ -127,7 +120,7 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
 
     def test_get_most_cited_papers_for_comps(self):
         comps = self.analyzer.get_most_cited_papers_for_comps(self.analyzer.df, self.analyzer.partition, 1)
-        self.assertDictEqual(comps, {0: ['3'], 1: ['1']})
+        self.assertDictEqual(comps, {0: ['3']})
 
 
 class TestKeyPaperAnalyzerSingle(unittest.TestCase):

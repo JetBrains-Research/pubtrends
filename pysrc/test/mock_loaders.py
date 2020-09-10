@@ -35,17 +35,18 @@ BIBLIOGRAPHIC_COUPLING_DATA = [['3', '4', 2],
                                ['3', '5', 2],
                                ['4', '5', 2]]
 
-SIMILARITY_GRAPH_EDGES = [('1', '2', {'cocitation': 3}),
-                          ('1', '4', {'citation': 1, 'text': 0.6279137616509934}),
-                          ('1', '3', {'citation': 1}),
-                          ('1', '5', {'citation': 1}),
-                          ('2', '4', {'citation': 1}),
-                          ('2', '3', {'citation': 1, 'text': 1.0}),
-                          ('2', '5', {'citation': 1}),
-                          ('3', '4', {'cocitation': 1, 'bibcoupling': 2}),
-                          ('3', '5', {'bibcoupling': 2, 'citation': 1}),
-                          ('4', '5', {'bibcoupling': 2, 'citation': 1})]
-
+SIMILARITY_GRAPH = [
+    ('1', '2', {'cocitation': 3, 'similarity': 3}),
+    ('1', '4', {'citation': 1, 'text': 0.6279137616509934, 'similarity': 0.07279137616509934}),
+    ('1', '3', {'citation': 1, 'similarity': 0.01}),
+    ('1', '5', {'citation': 1, 'similarity': 0.01}),
+    ('2', '4', {'citation': 1, 'similarity': 0.01}),
+    ('2', '3', {'citation': 1, 'text': 1.0, 'similarity': 0.11}),
+    ('2', '5', {'citation': 1, 'similarity': 0.01}),
+    ('3', '4', {'cocitation': 1.0, 'bibcoupling': 2.0, 'similarity': 21.0}),
+    ('3', '5', {'bibcoupling': 2.0, 'citation': 1, 'similarity': 20.01}),
+    ('4', '5', {'bibcoupling': 2.0, 'citation': 1, 'similarity': 20.01})
+]
 
 EXPECTED_MAX_GAIN = {1972: '3', 1974: '1'}
 EXPECTED_MAX_RELATIVE_GAIN = {1972: '3', 1974: '4'}

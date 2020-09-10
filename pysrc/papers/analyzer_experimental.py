@@ -1,4 +1,5 @@
 import logging
+from queue import PriorityQueue
 
 import community
 import networkx as nx
@@ -69,11 +70,13 @@ class ExperimentalAnalyzer(KeyPaperAnalyzer):
                 )
             ]
 
-            # Use only non-zero tfidf for papers earlier then year
-            tfidf_year = self.tfidf.copy()
-            tfidf_year[np.flatnonzero(self.df['year'].apply(int) > year), :] = 0
-            sg = self.build_similarity_graph(
-                self.df, tfidf_year,
+            # Use similarities for papers earlier then year
+            texts_similarity_year = self.texts_similarity.copy()
+            for idx in np.flatnonzero(self.df['year'].apply(int) > year):
+                texts_similarity_year[idx] = PriorityQueue(maxsize=0)
+
+            similarity_graph = self.build_similarity_graph(
+                self.df, texts_similarity_year,
                 citations_graph_year,
                 cocit_grouped_df_year,
                 bibliographic_coupling_df_year,
@@ -81,13 +84,13 @@ class ExperimentalAnalyzer(KeyPaperAnalyzer):
                 current=current, task=task
             )
             logger.debug('Compute aggregated similarity')
-            for _, _, d in sg.edges(data=True):
+            for _, _, d in similarity_graph.edges(data=True):
                 d['similarity'] = KeyPaperAnalyzer.get_similarity(d)
 
-            if len(sg.nodes) >= min_papers:
-                logger.debug('Graph clustering via Louvain community algorithm')
+            if len(similarity_graph.nodes) >= min_papers:
+                self.progress.info('Extracting topics from paper similarity graph', current=current, task=task)
                 dendrogram = community.generate_dendrogram(
-                    sg, weight='similarity', random_state=KeyPaperAnalyzer.SEED
+                    similarity_graph, weight='similarity', random_state=KeyPaperAnalyzer.SEED
                 )
                 # Smallest communities
                 partition_louvain = dendrogram[0]

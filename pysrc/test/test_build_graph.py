@@ -1,12 +1,10 @@
 import unittest
 
 import networkx as nx
-import numpy as np
 import pandas as pd
 
 from pysrc.papers.analyzer import KeyPaperAnalyzer
 from pysrc.papers.config import PubtrendsConfig
-from pysrc.papers.utils import compute_tfidf
 from pysrc.test.db.ss_test_articles import citations_graph, cocitations_df, bibliographic_coupling_df, \
     expected_cocit_and_cit_graph
 from pysrc.test.mock_loaders import MockLoader
@@ -25,8 +23,7 @@ class TestBuildGraph(unittest.TestCase):
         cls.analyzer.SIMILARITY_COCITATION = 1
         cls.analyzer.SIMILARITY_CITATION = 0.01
         cls.analyzer.similarity_graph = cls.analyzer.build_similarity_graph(
-            pd.DataFrame(columns=['id', 'title', 'abstract']),
-            compute_tfidf(np.zeros(shape=(1, 1000))),
+            pd.DataFrame(columns=['id', 'title', 'abstract']), [],
             citations_graph, cocitations_df, bibliographic_coupling_df
         )
 
