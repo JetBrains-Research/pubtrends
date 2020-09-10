@@ -3,7 +3,7 @@ package org.jetbrains.bio.pubtrends.db
 import org.jetbrains.bio.pubtrends.db.SSPublications.crc32id
 import org.jetbrains.bio.pubtrends.db.SSPublications.keywords
 import org.jetbrains.bio.pubtrends.db.SSPublications.ssid
-import org.jetbrains.bio.pubtrends.ss.Aux
+import org.jetbrains.bio.pubtrends.ss.AuxInfo
 import org.jetbrains.exposed.sql.Table
 
 internal const val MAX_ID_LENGTH = 40
@@ -25,7 +25,7 @@ object SSPublications : Table() {
     val keywords = text("keywords").nullable()
     val year = integer("year").nullable()
     val doi = varchar("doi", MAX_DOI_LENGTH).nullable()
-    val aux = jsonb("aux", Aux::class.java, jsonMapper)
+    val aux = jsonb("aux", AuxInfo::class.java, jsonMapper)
 
     init {
         index(false, crc32id)

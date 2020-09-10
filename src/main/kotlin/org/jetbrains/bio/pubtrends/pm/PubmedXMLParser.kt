@@ -425,7 +425,7 @@ class PubmedXMLParser(
                                 mesh = meshHeadingList.toList(),
                                 type = type,
                                 doi = doi,
-                                aux = Aux(
+                                aux = AuxInfo(
                                         authors.toList(), databanks.toList(), Journal(journalName), language
                                 )
                         )

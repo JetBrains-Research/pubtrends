@@ -85,7 +85,7 @@ class ArchiveParser(
                 val journal = extractJournal(jsonObject)
                 val links = extractLinks(jsonObject)
                 val venue = jsonObject.get("venue")?.asString ?: ""
-                val aux = Aux(authors, journal, links, venue)
+                val aux = AuxInfo(authors, journal, links, venue)
 
                 curArticle = SemanticScholarArticle(ssid = ssid, title = title,
                         pmid = pmid, doi = doi, abstract = abstract, keywords = keywords, year = year,

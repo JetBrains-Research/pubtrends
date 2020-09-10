@@ -17,7 +17,7 @@ data class Links(
         val pdfUrls: List<String> = listOf()
 )
 
-data class Aux(
+data class AuxInfo(
         val authors: List<Author> = listOf(),
         val journal: Journal = Journal(),
         val links: Links = Links(),
@@ -35,7 +35,7 @@ data class SemanticScholarArticle(
         val year: Int? = null,
         val doi: String? = null,
         val keywords: String? = null,
-        val aux: Aux = Aux(),
+        val aux: AuxInfo = AuxInfo(),
         val citations: List<String> = listOf()
 )
 

@@ -11,7 +11,7 @@ object SemanticScholarArticles {
                     title = "Primary Debulking Surgery Versus Neoadjuvant Chemotherapy in Stage IV Ovarian Cancer",
                     year = 2011,
                     doi = "10.1245/s10434-011-2100-x",
-                    aux = Aux(journal = Journal(name = "Annals of Surgical Oncology", volume = "19", pages = "959-965"),
+                    aux = AuxInfo(journal = Journal(name = "Annals of Surgical Oncology", volume = "19", pages = "959-965"),
                             authors = listOf(Author(name = "Jose Alejandro Rauh-Hain")),
                             venue = "Annals of Surgical Oncology",
                             links = Links(s2Url = "https://semanticscholar.org/paper/4cd223df721b722b1c40689caa52932a41fcc223",
@@ -25,7 +25,7 @@ object SemanticScholarArticles {
                     title = "Lipid transport function of lipoproteins in flying insects.",
                     year = 1990,
                     keywords = "Lipid Transport,Lipoproteins",
-                    aux = Aux(journal = Journal(name = "Biochimica et biophysica acta", volume = "1047 3", pages = "195-211"),
+                    aux = AuxInfo(journal = Journal(name = "Biochimica et biophysica acta", volume = "1047 3", pages = "195-211"),
                             authors = listOf(Author(name = "Dick J van der Horst")),
                             venue = "Biochimica et biophysica acta")),
 
@@ -38,7 +38,7 @@ object SemanticScholarArticles {
                     title = "Acute spastic entropion.",
                     year = 1976,
                     keywords = "Spastic entropion",
-                    aux = Aux(journal = Journal(name = "Canadian journal of ophthalmology. Journal canadien d'ophtalmologie",
+                    aux = AuxInfo(journal = Journal(name = "Canadian journal of ophthalmology. Journal canadien d'ophtalmologie",
                             volume = "11 4", pages = "346"),
                             authors = listOf(Author(name = "R I Noble")),
                             venue = "Canadian journal of ophthalmology. Journal canadien d'ophtalmologie",
@@ -52,5 +52,5 @@ object SemanticScholarArticles {
 
             SemanticScholarArticle("585c33b4e6b4613e6403ccd16516c335d36ab2c7",
                     title = "Article from ArXiv with id and title",
-                    aux = Aux(links = Links(pdfUrls = listOf("http://arxiv.org/pdf/cond-mat/0606534v1.pdf")))))
+                    aux = AuxInfo(links = Links(pdfUrls = listOf("http://arxiv.org/pdf/cond-mat/0606534v1.pdf")))))
 }

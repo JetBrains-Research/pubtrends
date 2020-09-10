@@ -24,7 +24,7 @@ class DBWriter {
                 date = DateTime(1986, 4, 7, 12, 0, DateTimeZone.UTC),
                 title = "Test title 1",
                 abstract = "Test abstract 2",
-                aux = org.jetbrains.bio.pubtrends.pm.Aux(
+                aux = org.jetbrains.bio.pubtrends.pm.AuxInfo(
                         authors = listOf(org.jetbrains.bio.pubtrends.pm.Author("Genius1")),
                         journal = org.jetbrains.bio.pubtrends.pm.Journal("Pravda")
                 ),
@@ -40,7 +40,7 @@ class DBWriter {
                 abstract = "Test abstract 2",
                 year = 2020,
                 doi = "10.1101/2020.05.10.087023",
-                aux = Aux(journal = Journal(name = "Nature Aging", volume = "1", pages = "1-6"),
+                aux = AuxInfo(journal = Journal(name = "Nature Aging", volume = "1", pages = "1-6"),
                         authors = listOf(Author(name = "Genius")),
                         venue = "Nature",
                         links = Links(pdfUrls = listOf("https://doi.org/10.1101/2020.05.10.087023"))

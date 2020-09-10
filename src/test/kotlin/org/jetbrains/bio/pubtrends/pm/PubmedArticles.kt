@@ -16,7 +16,7 @@ object PubmedArticles {
                             "Female", "Hydrocortisone pharmacology", "Kinetics", "Liver growth & development metabolism",
                             "Methylation", "Methyltransferases metabolism", "Pregnancy", "Rats"
                     ),
-                    aux = Aux(
+                    aux = AuxInfo(
                             databanks = listOf(
                                     DatabankEntry(
                                             name = "GENBANK",
@@ -90,7 +90,7 @@ object PubmedArticles {
                             "phenotypically and functionally stable iTreg cells.",
                     keywords = listOf("CNS2", "DNA methylation", "Foxp3", "epigenetic regulation", "iTreg"),
                     citations = listOf(27989104, 17591856, 25159127, 23123060, 22343569),
-                    aux = Aux(
+                    aux = AuxInfo(
                             authors = listOf(
                                     Author(
                                             name = "Freudenberg K",

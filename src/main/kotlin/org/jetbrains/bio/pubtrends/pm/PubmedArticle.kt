@@ -14,7 +14,7 @@ data class DatabankEntry(
         val accessionNumber: List<String> = listOf()
 )
 
-data class Aux(
+data class AuxInfo(
         val authors: List<Author> = listOf(),
         val databanks: List<DatabankEntry> = listOf(),
         val journal: Journal = Journal(),
@@ -38,6 +38,6 @@ data class PubmedArticle(
         val keywords: List<String> = listOf(),
         val mesh: List<String> = listOf(),
         val doi: String = "",
-        val aux: Aux = Aux(),
+        val aux: AuxInfo = AuxInfo(),
         val citations: List<Int> = listOf()
 )
