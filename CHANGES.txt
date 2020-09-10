@@ -10,8 +10,9 @@ Released on XXX XX, 2020
 
  - Reworked DB backends (default is postgres)
  - Optimized most cited search for postgres
- - Support MESH terms for Pubmed
+ - Support MESH terms and keywords for Pubmed
  - Expand queries when small number of papers can be found by direct search
+ - Show keywords and MESH terms in paper info
  - Bugfixes and improvements
 
 

@@ -5,7 +5,7 @@ from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.plot.plotter import Plotter
 from pysrc.papers.utils import (
-    trim, preprocess_text)
+    trim, build_corpus)
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
@@ -122,8 +122,8 @@ def prepare_papers_data(data, source, comp=None, word=None, author=None, journal
         df = df.loc[df['comp'].astype(int) == comp]
     # Filter by word
     if word is not None:
-        df = df.loc[[word.lower() in preprocess_text(f'{t} {a}')
-                     for (t, a) in zip(df['title'], df['abstract'])]]
+        corpus = build_corpus(df)
+        df = df.loc[[word.lower() in text for text in corpus]]
     # Filter by author
     if author is not None:
         # Check if string was trimmed
