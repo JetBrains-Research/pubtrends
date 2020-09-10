@@ -22,7 +22,7 @@ object PMPublications : Table() {
     val aux = jsonb("aux", AuxInfo::class.java, jsonMapper)
 
     init {
-        index(true, doi)
+        index(false, doi)
     }
 }
 
