@@ -86,22 +86,18 @@ def preprocess_text(text):
     text = text.lower()
     # Replace non-ascii with space
     text = re.sub(r'[^\x00-\x7F]+', ' ', text)
-    text = text.replace('-', ' ')
+    text = text.replace('[+-=]', ' ')
     text = re.sub('[^a-zA-Z0-9 ]*', '', text)
     # Whitespaces normalization, see #215
     text = re.sub('[ ]{2,}', ' ', text.strip())
     return text
 
 
-def tokenize(text, query=None, min_token_length=3):
-    if text is None:
-        return []
-    text = preprocess_text(text)
-
+def tokens_stems(text, query=None, min_token_length=3):
     # Filter out search query
     if query is not None:
         for term in preprocess_text(query).split(' '):
-            text = text.replace(term.lower(), '')
+            text = text.replace(term, '')
 
     tokenized = word_tokenize(text)
 
@@ -113,8 +109,15 @@ def tokenize(text, query=None, min_token_length=3):
                         [lemmatizer.lemmatize(w, pos=get_wordnet_pos(pos)) for w, pos in words_of_interest])
 
     stemmer = SnowballStemmer('english')
-    stemmed = [(stemmer.stem(word), word) for word in lemmatized]
+    return [(stemmer.stem(word), word) for word in lemmatized]
 
+
+def tokenize(text, query=None, min_token_length=3):
+    if text is None:
+        return []
+    text = preprocess_text(text)
+
+    stemmed = tokens_stems(text, query, min_token_length)
     # Substitute each stem with the shortest similar word
     stems_mapping = {}
     for stem, word in stemmed:
@@ -216,11 +219,10 @@ def compute_tfidf(counts):
 
 
 def vectorize_corpus(df, max_features, n_gram):
-    log.debug(f'Creating corpus {len(df)}')
-    corpus = [f'{t} {a}' for t, a in zip(df['title'], df['abstract'])]
+    corpus = build_corpus(df)
     vectorizer = CountVectorizer(
         min_df=0.01,
-        max_df=0.8 if len(df) > 1 else 1.0,  # For tests
+        max_df=0.5 if len(df) > 1 else 1.0,  # For tests
         ngram_range=(1, n_gram),
         max_features=max_features,
         tokenizer=lambda t: tokenize(t)
@@ -291,9 +293,10 @@ def to_32_bit_int(n):
 
 
 def build_corpus(df):
-    log.info(f'Building corpus from {len(df)} articles')
-    corpus = [f'{title} {abstract}'
-              for title, abstract in zip(df['title'].values, df['abstract'].values)]
+    log.info(f'Building corpus from {len(df)} papers')
+    corpus = [preprocess_text(f'{title} {abstract} {keywords} {mesh}')
+              for title, abstract, mesh, keywords in
+              zip(df['title'], df['abstract'], df['keywords'], df['mesh'])]
     log.info(f'Corpus size: {sys.getsizeof(corpus)} bytes')
     return corpus
 

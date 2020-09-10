@@ -1,6 +1,5 @@
 import html
 import logging
-from collections import Counter
 from math import floor
 from queue import PriorityQueue
 
@@ -14,7 +13,7 @@ from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.progress import Progress
 from pysrc.papers.utils import split_df_list, get_topics_description, SORT_MOST_CITED, \
-    compute_tfidf, cosine_similarity, vectorize_corpus
+    compute_tfidf, cosine_similarity, vectorize_corpus, tokens_stems
 
 logger = logging.getLogger(__name__)
 
@@ -50,8 +49,8 @@ class KeyPaperAnalyzer:
     TOP_AUTHORS = 50
 
     EXPAND_STEPS = 2  # Max expand steps
-    EXPAND_MULTIPLIER = 10  # Original papers should be at least >= 1 / multiplier
-    MESH_OVERLAP = 0.1  # Keep mesh terms overlap
+    EXPAND_MAX = 200  # Max papers to expand
+    KEYWORDS_OVERLAP = 0.8  # Keep keywords and mesh terms overlap
 
     def __init__(self, loader, config, test=False):
         self.config = config
@@ -83,20 +82,21 @@ class KeyPaperAnalyzer:
                                task=task)
         return ids
 
-    def expand_ids(self, ids, keep_mesh, limit, current=1, task=None):
+    def expand_ids(self, ids, keep_keywords, limit, current=1, task=None):
         if len(ids) > self.config.max_number_to_expand:
             self.progress.info('Too many related papers, nothing to expand', current=current, task=task)
             return ids
         self.progress.info('Expanding related papers', current=current, task=task)
-        logger.debug(f'Expanding {len(ids)} papers to: {limit} keeping mesh: {keep_mesh}')
+        logger.debug(f'Expanding {len(ids)} papers to: {limit} keeping mesh: {keep_keywords}')
         current_ids = ids
-        n_mesh_terms = 0
-        mesh_counter = Counter()
-        if keep_mesh:
-            for mesh_list in self.loader.load_publications(ids)['mesh']:
-                mesh_terms = mesh_list.split(',')
-                mesh_counter.update(mesh_terms)
-                n_mesh_terms += len(mesh_terms)
+
+        publications = self.loader.load_publications(ids)
+        if keep_keywords:
+            stem_mesh_keywords = set([s for s, _ in tokens_stems(
+                ' '.join(publications['mesh'] + ' ' + publications['keywords']).replace(',', ' '))])
+        else:
+            stem_mesh_keywords = set()
+
         # Expand while we can
         i = 0
         new_ids = []
@@ -109,14 +109,17 @@ class KeyPaperAnalyzer:
             logger.debug(f'New {len(new_ids)} papers')
             if len(new_ids) == 0:
                 break
-            if keep_mesh:
+            if keep_keywords:
                 new_mesh_ids = []
-                for (pid, mesh_list) in zip(new_ids, self.loader.load_publications(new_ids)['mesh']):
-                    if n_mesh_terms == 0 or \
-                            sum(mesh_counter[mt] for mt in mesh_list.split(',')) / n_mesh_terms >= \
-                            self.MESH_OVERLAP + self.MESH_OVERLAP * i:
+                new_publications = self.loader.load_publications(new_ids)
+                for (pid, mesh, keywords) in zip(new_ids, new_publications['mesh'], new_publications['keywords']):
+                    new_stem_mesh_keywords = set([s for s, _ in
+                                                  tokens_stems((mesh + ' ' + keywords).replace(',', ' '))])
+                    if (not stem_mesh_keywords or
+                            len(new_stem_mesh_keywords.intersection(stem_mesh_keywords)) >=
+                            self.KEYWORDS_OVERLAP * len(new_stem_mesh_keywords)):
                         new_mesh_ids.append(pid)
-                logger.debug(f'Similar mesh papers: {len(new_mesh_ids)}')
+                logger.debug(f'Similar mesh papers with threshold {self.KEYWORDS_OVERLAP}: {len(new_mesh_ids)}')
                 if len(new_mesh_ids) == 0:
                     break
                 new_ids = new_mesh_ids
