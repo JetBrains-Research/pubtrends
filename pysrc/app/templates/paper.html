@@ -151,14 +151,14 @@
                             <br>
                             <a class="link" href="https://doi.org/{{doi}}">doi:{{doi}}</a>
                         {% endif %}
+                        <br>
+                        <a class="link" href="{{ url }}">Open in {{ source }}</a>
                         {% if mesh != "" %}
                         <br>Mesh: {{mesh}}
                         {% endif %}
                         {% if keywords != "" %}
                         <br>Keywords: {{keywords}}
                         {% endif %}
-                        <br>
-                        <a class="link" href="{{ url }}">Open in {{ source }}</a>
                         {% if abstract is defined %}
                             <h5 class="card-subtitle mt-3">Abstract</h5>
                             <p class="mt-2">{{ abstract }}</p>
