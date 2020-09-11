@@ -43,14 +43,18 @@ class KeyPaperAnalyzer:
     TOPICS_MAX_NUMBER = 100
     TOPIC_PAPERS_TFIDF = 50
     TOPIC_WORDS = 20
-    TFIDF_WORDS = 1000
+
+    VECTOR_WORDS = 1000
+    VECTOR_NGRAMS = 2
+    VECTOR_MIN_DF = 0.01
+    VECTOR_MAX_DF = 0.5
 
     TOP_JOURNALS = 50
     TOP_AUTHORS = 50
 
     EXPAND_STEPS = 2  # Max expand steps
     EXPAND_MAX = 200  # Max papers to expand
-    KEYWORDS_OVERLAP = 0.8  # Keep keywords and mesh terms overlap
+    EXPAND_KEYWORDS_OVERLAP = 0.8  # Keep keywords and mesh terms overlap
 
     def __init__(self, loader, config, test=False):
         self.config = config
@@ -117,9 +121,9 @@ class KeyPaperAnalyzer:
                                                   tokens_stems((mesh + ' ' + keywords).replace(',', ' '))])
                     if (not stem_mesh_keywords or
                             len(new_stem_mesh_keywords.intersection(stem_mesh_keywords)) >=
-                            self.KEYWORDS_OVERLAP * len(new_stem_mesh_keywords)):
+                            self.EXPAND_KEYWORDS_OVERLAP * len(new_stem_mesh_keywords)):
                         new_mesh_ids.append(pid)
-                logger.debug(f'Similar mesh papers with threshold {self.KEYWORDS_OVERLAP}: {len(new_mesh_ids)}')
+                logger.debug(f'Similar mesh papers with threshold {self.EXPAND_KEYWORDS_OVERLAP}: {len(new_mesh_ids)}')
                 if len(new_mesh_ids) == 0:
                     break
                 new_ids = new_mesh_ids
@@ -144,7 +148,9 @@ class KeyPaperAnalyzer:
 
         self.progress.info('Analyzing title and abstract texts', current=3, task=task)
         self.corpus_ngrams, self.corpus_counts = \
-            vectorize_corpus(self.pub_df, max_features=KeyPaperAnalyzer.TFIDF_WORDS, n_gram=1)
+            vectorize_corpus(self.pub_df,
+                             max_features=KeyPaperAnalyzer.VECTOR_WORDS, n_gram=KeyPaperAnalyzer.VECTOR_NGRAMS,
+                             min_df=KeyPaperAnalyzer.VECTOR_MIN_DF, max_df=KeyPaperAnalyzer.VECTOR_MAX_DF)
         tfidf = compute_tfidf(self.corpus_counts)
 
         self.progress.info('Processing texts similarity', current=4, task=task)

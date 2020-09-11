@@ -216,11 +216,11 @@ def compute_tfidf(counts):
     return tfidf
 
 
-def vectorize_corpus(df, max_features, n_gram):
+def vectorize_corpus(df, max_features, n_gram, min_df, max_df):
     corpus = build_corpus(df)
     vectorizer = CountVectorizer(
-        min_df=0.01,
-        max_df=0.5 if len(df) > 1 else 1.0,  # For tests
+        min_df=min_df,
+        max_df=max_df if len(df) > 1 else 1.0,  # For tests
         ngram_range=(1, n_gram),
         max_features=max_features,
         tokenizer=lambda t: tokenize(t)
