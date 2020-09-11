@@ -2,11 +2,18 @@ import pandas as pd
 
 from pysrc.papers.db.loader import Loader
 
-PUBLICATION_DATA = [['1', 1963, 'Article 1', 'just a paper', 'Article', 'Geller R, Geller M, Bing Ch', 'Nature'],
-                    ['2', 1965, 'Article 2', 'abstract', 'Article', 'Buffay Ph, Geller M, Doe J', 'Science'],
-                    ['3', 1967, 'Article 3', 'other abstract', 'Article', 'Doe J, Buffay Ph', 'Nature'],
-                    ['4', 1968, 'Article 4', 'interesting paper', 'Article', 'Doe J, Geller R', 'Science'],
-                    ['5', 1975, 'Article 5', 'just a breakthrough', 'Review', 'Green R, Geller R, Doe J', 'Nature']]
+PUBLICATION_DATA = [
+    ['1', 1963, 'Article 1', 'just a paper', 'Article', 'Geller R, Geller M, Bing Ch', 'Nature',
+     'term1,term2,term3', 'kw1,kw2'],
+    ['2', 1965, 'Article 2', 'abstract', 'Article', 'Buffay Ph, Geller M, Doe J', 'Science',
+     'term2,term3,term4', 'kw2,kw3'],
+    ['3', 1967, 'Article 3', 'other abstract', 'Article', 'Doe J, Buffay Ph', 'Nature',
+     'term3,term4,term5', 'kw3,kw4'],
+    ['4', 1968, 'Article 4', 'interesting paper', 'Article', 'Doe J, Geller R', 'Science',
+     'term4,term5,term1', 'kw4,kw5'],
+    ['5', 1975, 'Article 5', 'just a breakthrough', 'Review', 'Green R, Geller R, Doe J', 'Nature',
+     'term5,term1,term2', 'kw5,kw1']
+]
 
 CITATION_STATS_DATA = [['1', 1972, 2], ['1', 1974, 15],
                        ['2', 1974, 1],
@@ -36,12 +43,11 @@ BIBLIOGRAPHIC_COUPLING_DATA = [['3', '4', 2],
                                ['4', '5', 2]]
 
 SIMILARITY_GRAPH = [
-    ('1', '2', {'cocitation': 3, 'similarity': 3}),
-    ('1', '4', {'citation': 1, 'text': 0.6279137616509934, 'similarity': 0.07279137616509934}),
-    ('1', '3', {'citation': 1, 'similarity': 0.01}),
-    ('1', '5', {'citation': 1, 'similarity': 0.01}),
+    ('1', '2', {'cocitation': 3.0, 'text': 0.3333333333333333, 'similarity': 3.033333333333333}),
+    ('1', '4', {'citation': 1, 'similarity': 0.01}), ('1', '3', {'citation': 1, 'similarity': 0.01}),
+    ('1', '5', {'citation': 1, 'text': 0.30701885383748023, 'similarity': 0.04070188538374803}),
     ('2', '4', {'citation': 1, 'similarity': 0.01}),
-    ('2', '3', {'citation': 1, 'text': 1.0, 'similarity': 0.11}),
+    ('2', '3', {'citation': 1, 'text': 0.6666666666666666, 'similarity': 0.07666666666666666}),
     ('2', '5', {'citation': 1, 'similarity': 0.01}),
     ('3', '4', {'cocitation': 1.0, 'bibcoupling': 2.0, 'similarity': 21.0}),
     ('3', '5', {'bibcoupling': 2.0, 'citation': 1, 'similarity': 20.01}),
@@ -64,7 +70,10 @@ class MockLoader(Loader):
         return ['1', '2', '3', '4', '5']
 
     def load_publications(self, ids=None):
-        return pd.DataFrame(PUBLICATION_DATA, columns=['id', 'year', 'title', 'abstract', 'type', 'authors', 'journal'])
+        return pd.DataFrame(
+            PUBLICATION_DATA,
+            columns=['id', 'year', 'title', 'abstract', 'type', 'authors', 'journal', 'mesh', 'keywords']
+        )
 
     def load_citations_by_year(self, ids=None):
         return pd.DataFrame(CITATION_STATS_DATA, columns=['id', 'year', 'count'])
@@ -91,8 +100,10 @@ class MockLoaderSingle(Loader):
         return ['1']
 
     def load_publications(self, ids=None):
-        return pd.DataFrame(PUBLICATION_DATA[0:1],
-                            columns=['id', 'year', 'title', 'abstract', 'type', 'authors', 'journal'])
+        return pd.DataFrame(
+            PUBLICATION_DATA[0:1],
+            columns=['id', 'year', 'title', 'abstract', 'type', 'authors', 'journal', 'mesh', 'keywords']
+        )
 
     def load_citations_by_year(self, ids=None):
         return pd.DataFrame([['1', 1972, 2], ['1', 1974, 15]],

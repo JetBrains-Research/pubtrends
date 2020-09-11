@@ -122,6 +122,16 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
         comps = self.analyzer.get_most_cited_papers_for_comps(self.analyzer.df, self.analyzer.partition, 1)
         self.assertDictEqual(comps, {0: ['3']})
 
+    def test_corpus_vectorization(self):
+        self.assertEquals(self.analyzer.corpus_ngrams,
+                          ['abstract', 'breakthrough', 'interesting', 'kw1', 'kw2', 'kw3', 'kw4', 'kw5', 'paper'])
+        self.assertTrue(np.array_equal(self.analyzer.corpus_counts.toarray(),
+                                       [[0, 0, 0, 1, 1, 0, 0, 0, 1],
+                                        [1, 0, 0, 0, 1, 1, 0, 0, 0],
+                                        [1, 0, 0, 0, 0, 1, 1, 0, 0],
+                                        [0, 0, 1, 0, 0, 0, 1, 1, 1],
+                                        [0, 1, 0, 1, 0, 0, 0, 1, 0]]))
+
 
 class TestKeyPaperAnalyzerSingle(unittest.TestCase):
     PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
