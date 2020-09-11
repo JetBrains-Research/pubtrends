@@ -45,7 +45,7 @@ class KeyPaperAnalyzer:
     TOPIC_WORDS = 20
 
     VECTOR_WORDS = 1000
-    VECTOR_NGRAMS = 2
+    VECTOR_NGRAMS = 1
     VECTOR_MIN_DF = 0.01
     VECTOR_MAX_DF = 0.5
 
