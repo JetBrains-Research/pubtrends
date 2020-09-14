@@ -52,7 +52,6 @@ class KeyPaperAnalyzer:
     TOP_JOURNALS = 50
     TOP_AUTHORS = 50
 
-    EXPAND_STEPS = 2  # Max expand steps
     EXPAND_MAX = 200  # Max papers to expand
     EXPAND_KEYWORDS_OVERLAP = 0.8  # Keep keywords and mesh terms overlap
 
@@ -86,7 +85,7 @@ class KeyPaperAnalyzer:
                                task=task)
         return ids
 
-    def expand_ids(self, ids, keep_keywords, limit, current=1, task=None):
+    def expand_ids(self, ids, limit, keep_keywords, steps, current=1, task=None):
         if len(ids) > self.config.max_number_to_expand:
             self.progress.info('Too many related papers, nothing to expand', current=current, task=task)
             return ids
@@ -105,7 +104,7 @@ class KeyPaperAnalyzer:
         i = 0
         new_ids = []
         while True:
-            if i == self.EXPAND_STEPS or len(current_ids) >= limit:
+            if i == steps or len(current_ids) >= limit:
                 break
             logger.debug(f'Step {i}: current_ids: {len(current_ids)}, new_ids: {len(new_ids)}, limit: {limit}')
             expanded_ids = self.loader.expand(new_ids or current_ids, limit - len(current_ids))
