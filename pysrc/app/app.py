@@ -4,6 +4,7 @@ import logging
 import os
 import random
 import re
+import time
 from threading import Lock
 from urllib.parse import quote
 
@@ -418,6 +419,7 @@ def search_terms_(data):
             else:
                 logger.info(f'/search_terms with fixed jobid {log_request(request)}')
                 analyze_search_terms.apply_async(args=[source, query, sort, int(limit)], task_id=jobid)
+            time.sleep(10)  # Ensure task is in queue
             return redirect(url_for('.process', query=query, source=source, limit=limit, sort=sort, jobid=jobid))
     except Exception as e:
         logger.error(f'/search_terms error', e)
@@ -437,6 +439,7 @@ def search_paper():
             key = request.form.get('key')
             value = request.form.get('value')
             job = find_paper_async.delay(source, key, value)
+            time.sleep(10)  # Ensure task is in queue
             return redirect(url_for('.process', source=source, key=key, value=value, jobid=job.id))
     except Exception as e:
         logger.error(f'/search_paper error', e)
@@ -457,6 +460,7 @@ def process_ids():
             analysis_type = zoom_name(zoom)
             job = analyze_id_list.delay(source, ids=id_list, zoom=int(zoom), query=query)
             logger.info(f'/process_ids {log_request(request)}')
+            time.sleep(10)  # Ensure task is in queue
             return redirect(url_for('.process', query=query, analysis_type=analysis_type, source=source, jobid=job.id))
     except Exception as e:
         logger.error(f'/process_ids error', e)
