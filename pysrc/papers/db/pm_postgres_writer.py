@@ -11,16 +11,19 @@ class PubmedPostgresWriter(PostgresConnector):
     def init_pubmed_database(self):
         query_citations = '''
                     drop table if exists PMCitations;
+                    
                     create table PMCitations (
                         pmid_out integer,
                         pmid_in  integer
                     );
+                    
                     create index if not exists PMCitations_pmid_out_pmid_in_index
                     on PMCitations (pmid_out, pmid_in);
                     '''
 
         query_publications = '''
                     drop table if exists PMPublications;
+                    
                     create table PMPublications(
                         pmid    integer,
                         title   varchar(1023),
@@ -32,9 +35,14 @@ class PubmedPostgresWriter(PostgresConnector):
                         doi     varchar(100),
                         aux     jsonb
                     );
+                    
                     create index if not exists PMPublications_pmid_index on PMPublications (pmid);
+                    
                     ALTER TABLE PMPublications ADD COLUMN IF NOT EXISTS tsv TSVECTOR;
                     create index if not exists PMPublications_tsv on PMPublications using gin(tsv);
+                    
+                    CREATE INDEX IF NOT EXISTS
+                    pmpublications_pmid_year ON pmpublications (pmid, date_part('year', date));
                     '''
 
         query_drop_matview = '''

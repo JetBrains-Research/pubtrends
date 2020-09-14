@@ -68,6 +68,12 @@ open class PubmedPostgresWriter(
                     create index if not exists PMCitation_matview_index on matview_pmcitations (pmid);
                     """
             )
+            exec(
+                    """
+                    CREATE INDEX IF NOT EXISTS
+                    pmpublications_pmid_year ON pmpublications (pmid, date_part('year', date));
+                    """
+            )
         }
     }
 
@@ -82,6 +88,7 @@ open class PubmedPostgresWriter(
             )
             SchemaUtils.drop(PMPublications, PMCitations)
             exec("DROP INDEX IF EXISTS pm_title_abstract_index;")
+            exec("DROP INDEX IF EXISTS pmpublications_pmid_year;")
             changed = true
         }
     }
