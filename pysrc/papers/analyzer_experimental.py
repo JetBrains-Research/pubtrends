@@ -53,24 +53,24 @@ class ExperimentalAnalyzer(KeyPaperAnalyzer):
         evolution_series = [pd.Series(self.partition)]
         for i, year in enumerate(year_range[1:]):
             self.progress.info(f'Processing year {year}', current=current, task=task)
+            # Get ids earlier than year
+            ids_year = set(self.df.loc[self.df['year'] <= year]['id'])
 
             # Use only citations earlier than year
             citations_graph_year = nx.DiGraph()
             for index, row in self.cit_df.iterrows():
                 v, u = row['id_out'], row['id_in']
-                if int(self.df.loc[self.df['id'] == v]['year'].values[0]) <= year:
+                if v in ids_year and u in ids_year:
                     citations_graph_year.add_edge(v, u)
 
             # Use only co-citations earlier than year
-            cocit_grouped_df_year = self.build_cocit_grouped_df(cocit_df[cocit_df['year'] <= year])
+            cocit_grouped_df_year = self.build_cocit_grouped_df(cocit_df.loc[cocit_df['year'] <= year])
 
             # Use bibliographic coupling earlier then year
             bibliographic_coupling_df_year = self.bibliographic_coupling_df.loc[
                 np.logical_and(
-                    [int(self.df.loc[self.df['id'] == v]['year'].values[0]) <= year
-                     for v in self.bibliographic_coupling_df['citing_1']],
-                    [int(self.df.loc[self.df['id'] == v]['year'].values[0]) <= year
-                     for v in self.bibliographic_coupling_df['citing_2']]
+                    self.bibliographic_coupling_df['citing_1'].isin(ids_year),
+                    self.bibliographic_coupling_df['citing_2'].isin(ids_year)
                 )
             ]
 
