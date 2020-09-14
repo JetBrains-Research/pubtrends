@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class ExperimentalAnalyzer(KeyPaperAnalyzer):
+    EVOLUTION_MIN_PAPERS = 100
     EVOLUTION_STEP = 10
 
     def __init__(self, loader, config, test=False):
@@ -23,6 +24,9 @@ class ExperimentalAnalyzer(KeyPaperAnalyzer):
 
     def analyze_papers(self, ids, query, task=None):
         super().analyze_papers(ids, query, task)
+        if len(self.df) < ExperimentalAnalyzer.EVOLUTION_MIN_PAPERS:
+            self.evolution_df = None
+            return
         # Perform topic evolution analysis and get topic descriptions
         self.evolution_df, self.evolution_year_range = \
             self.topic_evolution_analysis(self.cocit_df, current=super().total_steps(), task=task)
