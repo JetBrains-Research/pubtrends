@@ -29,8 +29,9 @@ def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, e
     try:
         sort = sort or SORT_MOST_CITED
         limit = limit or analyzer.config.show_max_articles_default_value
-        papers_to_search = limit - int(limit * expand)
-        ids = analyzer.search_terms(query, limit=papers_to_search, sort=sort, noreviews=noreviews, task=current_task)
+        ids = analyzer.search_terms(query, limit=limit, sort=sort,
+                                    noreviews=noreviews, expand=expand,
+                                    task=current_task)
         if 0 < len(ids) and expand > 0:
             ids = analyzer.expand_ids(ids,
                                       limit=limit,

@@ -1,5 +1,6 @@
 import html
 import logging
+from collections import Counter
 from math import floor
 from queue import PriorityQueue
 
@@ -53,7 +54,7 @@ class KeyPaperAnalyzer:
     TOP_AUTHORS = 50
 
     EXPAND_MAX = 200  # Max papers to expand
-    EXPAND_KEYWORDS_OVERLAP = 0.8  # Keep keywords and mesh terms overlap
+    EXPAND_SIMILARITY_FC = 100  # Keep keywords and mesh terms overlap
 
     def __init__(self, loader, config, test=False):
         self.config = config
@@ -68,19 +69,26 @@ class KeyPaperAnalyzer:
     def teardown(self):
         self.progress.remove_handler()
 
-    def search_terms(self, query, limit=None, sort=None, noreviews=True, task=None):
+    def search_terms(self, query, limit=None, sort=None, noreviews=True, expand=0, task=None):
         # Search articles relevant to the terms
         if len(query) == 0:
-            raise Exception('Empty search string, please use search terms or '
-                            'all the query wrapped in "" for phrasal search')
+            raise SearchError('Empty search string, please use search terms or '
+                              'all the query wrapped in "" for phrasal search')
         limit = limit or self.config.max_number_of_articles
         sort = sort or SORT_MOST_CITED
-        self.progress.info(f'Searching {limit} {sort.lower()} publications matching {html.escape(query)}',
-                           current=1, task=task)
+        if expand > 0:
+            papers_to_search = int(limit * (1 - expand))
+            self.progress.info(f'Searching {int((1 - expand) * 100)}% of {limit} {sort.lower()} '
+                               f'publications matching {html.escape(query)}',
+                               current=1, task=task)
+        else:
+            papers_to_search = limit
+            self.progress.info(f'Searching {limit} {sort.lower()} publications matching {html.escape(query)}',
+                               current=1, task=task)
         if noreviews:
             self.progress.info('Preferring non review papers', current=1, task=task)
 
-        ids = self.loader.search(query, limit=limit, sort=sort, noreviews=noreviews)
+        ids = self.loader.search(query, limit=papers_to_search, sort=sort, noreviews=noreviews)
         if len(ids) == 0:
             raise SearchError(f"Nothing found for search query: {query}")
         else:
@@ -98,10 +106,13 @@ class KeyPaperAnalyzer:
 
         publications = self.loader.load_publications(ids)
         if keep_keywords:
-            stem_mesh_keywords = set([s for s, _ in tokens_stems(
-                ' '.join(publications['mesh'] + ' ' + publications['keywords']).replace(',', ' '))])
+            mesh_stems = [s for s, _ in tokens_stems(
+                ' '.join(publications['mesh'] + ' ' + publications['keywords']).replace(',', ' ')
+            )]
+            mesh_counter = Counter(mesh_stems)
         else:
-            stem_mesh_keywords = set()
+            mesh_stems = []
+            mesh_counter = None
 
         # Expand while we can
         i = 0
@@ -119,13 +130,15 @@ class KeyPaperAnalyzer:
                 new_mesh_ids = []
                 new_publications = self.loader.load_publications(new_ids)
                 for (pid, mesh, keywords) in zip(new_ids, new_publications['mesh'], new_publications['keywords']):
-                    new_stem_mesh_keywords = set([s for s, _ in
-                                                  tokens_stems((mesh + ' ' + keywords).replace(',', ' '))])
-                    if (not stem_mesh_keywords or
-                            len(new_stem_mesh_keywords.intersection(stem_mesh_keywords)) >=
-                            self.EXPAND_KEYWORDS_OVERLAP * len(new_stem_mesh_keywords)):
+                    if not mesh_stems:
                         new_mesh_ids.append(pid)
-                logger.debug(f'Similar mesh papers with threshold {self.EXPAND_KEYWORDS_OVERLAP}: {len(new_mesh_ids)}')
+                    else:
+                        new_mesh_stems = [s for s, _ in tokens_stems((mesh + ' ' + keywords).replace(',', ' '))]
+                        # Estimate fold change of similarity vs random single paper
+                        similarity_fc = sum([mesh_counter[s] / (len(mesh_stems) / len(ids)) for s in new_mesh_stems])
+                        if similarity_fc >= self.EXPAND_SIMILARITY_FC:
+                            new_mesh_ids.append(pid)
+                logger.debug(f'Similar mesh papers with fc {self.EXPAND_SIMILARITY_FC}: {len(new_mesh_ids)}')
                 if len(new_mesh_ids) == 0:
                     break
                 new_ids = new_mesh_ids

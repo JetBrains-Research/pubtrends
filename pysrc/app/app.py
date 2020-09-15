@@ -423,7 +423,9 @@ def search_terms_(data):
                 analyze_search_terms.apply_async(args=[source, query, sort, int(limit), noreviews, int(expand) / 100],
                                                  task_id=jobid)
 
-            return redirect(url_for('.process', query=query, source=source, limit=limit, sort=sort, jobid=jobid))
+            return redirect(url_for('.process', query=query, source=source, limit=limit, sort=sort,
+                                    noreviews=noreviews, expand=expand,
+                                    jobid=jobid))
     except Exception as e:
         logger.error(f'/search_terms error', e)
         return render_template_string(f"Error occurred. We're working on it. Please check back soon."), 500
