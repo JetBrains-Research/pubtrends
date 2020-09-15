@@ -58,13 +58,14 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
         return list(df['pmid'].astype(str))
 
-    def search(self, query, limit=None, sort=None):
+    def search(self, query, limit=None, sort=None, noreviews=True):
+        noreviews_filter = "AND type != 'Review'" if noreviews else ''
         query_str = preprocess_search_query_for_postgres(query, self.config.min_search_words)
         if sort == SORT_MOST_RELEVANT:
             query = f'''
                 SELECT pmid
                 FROM to_tsquery('{query_str}') query, PMPublications P
-                WHERE tsv @@ query
+                WHERE tsv @@ query {noreviews_filter}
                 ORDER BY ts_rank_cd(P.tsv, query) DESC
                 LIMIT {limit};
                 '''
@@ -74,7 +75,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 FROM PMPublications P
                     LEFT JOIN matview_pmcitations C
                     ON P.pmid = C.pmid
-                WHERE tsv @@ to_tsquery('{query_str}')
+                WHERE tsv @@ to_tsquery('{query_str}') {noreviews_filter}
                 ORDER BY count DESC NULLS LAST
                 LIMIT {limit};
                 '''
@@ -82,7 +83,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
             query = f'''
                 SELECT pmid
                 FROM to_tsquery('{query_str}') query, PMPublications P
-                WHERE tsv @@ query
+                WHERE tsv @@ query {noreviews_filter}
                 ORDER BY date DESC NULLS LAST
                 LIMIT {limit};
                 '''

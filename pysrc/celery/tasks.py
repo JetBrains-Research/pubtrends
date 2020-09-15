@@ -23,19 +23,20 @@ PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
 
 @celery.task(name='analyze_search_terms')
-def analyze_search_terms(source, query, sort=None, limit=None):
+def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, expand=0.5):
     loader = Loaders.get_loader(source, PUBTRENDS_CONFIG)
     analyzer = get_analyzer(loader, PUBTRENDS_CONFIG)
     try:
         sort = sort or SORT_MOST_CITED
         limit = limit or analyzer.config.show_max_articles_default_value
-        ids = analyzer.search_terms(query, limit=limit, sort=sort, task=current_task)
-        if 0 < len(ids) < limit:
+        papers_to_search = limit - int(limit * expand)
+        ids = analyzer.search_terms(query, limit=papers_to_search, sort=sort, noreviews=noreviews, task=current_task)
+        if 0 < len(ids) and expand > 0:
             ids = analyzer.expand_ids(ids,
-                                      limit=min(len(ids) + KeyPaperAnalyzer.EXPAND_MAX, limit),
+                                      limit=limit,
                                       keep_keywords=True, steps=1,
                                       current=2, task=current_task)
-        analyzer.analyze_papers(ids, query, current_task)
+        analyzer.analyze_papers(ids, query, noreviews=noreviews, task=current_task)
     finally:
         loader.close_connection()
 

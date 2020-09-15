@@ -17,9 +17,9 @@ class Loader(metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def search(self, query, limit=None, sort=None):
+    def search(self, query, limit=None, sort=None, noreviews=True):
         """
-        Searches publications by given query.
+        Searches publications by given query, ignoring reviews
         :return: list of ids, i.e. list(String).
         """
 

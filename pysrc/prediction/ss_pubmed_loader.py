@@ -10,7 +10,7 @@ class SSPubmedLoader(SemanticScholarNeo4jLoader):
     def __init__(self, config):
         super(SSPubmedLoader, self).__init__(config)
 
-    def search(self, query, limit=None, sort=None):
+    def search(self, query, limit=None, sort=None, noreviews=True):
         raise Exception('Use search_pubmed')
 
     def search_pubmed(self, limit, sort='random'):

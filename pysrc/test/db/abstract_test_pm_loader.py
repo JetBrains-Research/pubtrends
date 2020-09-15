@@ -107,6 +107,15 @@ class AbstractTestPubmedLoader(metaclass=ABCMeta):
         ids = self.getLoader().search(query, limit=limit, sort=sort)
         self.assertListEqual(sorted(expected_ids), sorted(ids), 'Wrong IDs of papers')
 
+    def test_search_noreviews(self):
+        # Use sorted to avoid ambiguity
+        ids = self.getLoader().search('Article', limit=10, sort=SORT_MOST_RECENT)
+        self.assertListEqual(sorted(ids), ['1', '10', '2', '3', '4', '5', '7', '8', '9'], 'Wrong IDs of papers')
+
+        idswithreview = self.getLoader().search('Article', limit=10, sort=SORT_MOST_RECENT, noreviews=False)
+        self.assertListEqual(sorted(idswithreview), ['1', '10', '2', '3', '4', '5', '6', '7', '8', '9'],
+                             'Wrong IDs of papers')
+
     def test_load_citation_stats_data_frame(self):
         # Sort to compare with expected
         actual = self.getCitationsStatsDataframe().sort_values(by=['id', 'year']).reset_index(drop=True)

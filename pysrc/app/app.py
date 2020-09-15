@@ -408,16 +408,20 @@ def search_terms_(data):
     source = data.get('source')  # Pubmed or Semantic Scholar
     sort = data.get('sort')  # Sort order
     limit = data.get('limit')  # Limit
-    jobid = data.get('jobid')
+    jobid = data.get('jobid')  # Optional job id
+    noreviews = data.get('noreviews')  # Include reviews in the initial search phase
+    expand = data.get('expand')  # Fraction of papers to cover by references
     try:
-        if query and source and sort and limit:
+        if query and source and sort and limit and noreviews is not None and expand:
             if not jobid:
                 logger.info(f'/search_terms {log_request(request)}')
-                job = analyze_search_terms.delay(source, query=query, limit=int(limit), sort=sort)
+                job = analyze_search_terms.delay(source, query=query, limit=int(limit), sort=sort,
+                                                 noreviews=noreviews == 'on', expand=int(expand) / 100)
                 jobid = job.id
             else:
                 logger.info(f'/search_terms with fixed jobid {log_request(request)}')
-                analyze_search_terms.apply_async(args=[source, query, sort, int(limit)], task_id=jobid)
+                analyze_search_terms.apply_async(args=[source, query, sort, int(limit), noreviews, int(expand) / 100],
+                                                 task_id=jobid)
 
             return redirect(url_for('.process', query=query, source=source, limit=limit, sort=sort, jobid=jobid))
     except Exception as e:

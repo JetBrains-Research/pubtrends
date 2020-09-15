@@ -22,8 +22,8 @@ class ExperimentalAnalyzer(KeyPaperAnalyzer):
     def total_steps(self):
         return super().total_steps() + 2  # One extra step for visualization
 
-    def analyze_papers(self, ids, query, task=None):
-        super().analyze_papers(ids, query, task)
+    def analyze_papers(self, ids, query, noreviews=True, task=None):
+        super().analyze_papers(ids, query, noreviews, task)
         if len(self.df) < ExperimentalAnalyzer.EVOLUTION_MIN_PAPERS:
             self.evolution_df = None
             return

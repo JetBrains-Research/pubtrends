@@ -10,7 +10,7 @@ class SSArxivLoader(SemanticScholarNeo4jLoader):
     def __init__(self, config):
         super(SSArxivLoader, self).__init__(config)
 
-    def search(self, query, limit=None, sort=None):
+    def search(self, query, limit=None, sort=None, noreviews=True):
         raise Exception('Use search_arxiv')
 
     def search_arxiv(self, limit, sort='random'):

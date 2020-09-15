@@ -68,7 +68,7 @@ class KeyPaperAnalyzer:
     def teardown(self):
         self.progress.remove_handler()
 
-    def search_terms(self, query, limit=None, sort=None, task=None):
+    def search_terms(self, query, limit=None, sort=None, noreviews=True, task=None):
         # Search articles relevant to the terms
         if len(query) == 0:
             raise Exception('Empty search string, please use search terms or '
@@ -77,7 +77,10 @@ class KeyPaperAnalyzer:
         sort = sort or SORT_MOST_CITED
         self.progress.info(f'Searching {limit} {sort.lower()} publications matching {html.escape(query)}',
                            current=1, task=task)
-        ids = self.loader.search(query, limit=limit, sort=sort)
+        if noreviews:
+            self.progress.info('Preferring non review papers', current=1, task=task)
+
+        ids = self.loader.search(query, limit=limit, sort=sort, noreviews=noreviews)
         if len(ids) == 0:
             raise SearchError(f"Nothing found for search query: {query}")
         else:
@@ -89,7 +92,7 @@ class KeyPaperAnalyzer:
         if len(ids) > self.config.max_number_to_expand:
             self.progress.info('Too many related papers, nothing to expand', current=current, task=task)
             return ids
-        self.progress.info('Expanding related papers', current=current, task=task)
+        self.progress.info('Expanding related papers by references', current=current, task=task)
         logger.debug(f'Expanding {len(ids)} papers to: {limit} keeping mesh: {keep_keywords}')
         current_ids = ids
 
@@ -132,7 +135,7 @@ class KeyPaperAnalyzer:
         self.progress.info(f'Expanded {len(current_ids)} papers', current=current, task=task)
         return current_ids
 
-    def analyze_papers(self, ids, query, task=None):
+    def analyze_papers(self, ids, query, noreviews=True, task=None):
         """:return full log"""
         self.ids = ids
         self.query = query
@@ -202,12 +205,13 @@ class KeyPaperAnalyzer:
             self.progress.info('Extracting topics from paper similarity graph', current=11, task=task)
             self.topics_dendrogram, self.partition, self.comp_other, self.components, self.comp_sizes = \
                 self.topic_analysis(self.similarity_graph)
-
-            self.progress.info('Computing topics descriptions by top cited papers', current=12, task=task)
-            most_cited_per_comp = self.get_most_cited_papers_for_comps(self.df, self.partition)
             self.df = self.merge_col(self.df, self.partition, col='comp', na=-1)
 
-            logger.debug('Prepare information for word cloud')
+            self.progress.info('Computing topics descriptions by top cited papers', current=12, task=task)
+            most_cited_per_comp = self.get_most_cited_papers_for_comps(
+                self.df.loc[self.df['type'] != 'Review'] if noreviews else self.df,
+                self.partition
+            )
             tfidf_per_comp = get_topics_description(self.df, most_cited_per_comp,
                                                     self.corpus_ngrams, self.corpus_counts,
                                                     query, self.TOPIC_WORDS)

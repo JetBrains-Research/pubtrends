@@ -53,7 +53,9 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
 
         return list(df['id'].astype(str))
 
-    def search(self, query, limit=None, sort=None):
+    def search(self, query, limit=None, sort=None, noreviews=True):
+        if noreviews:
+            logger.debug('Type is not supported for Semantic Scholar')
         query_str = preprocess_search_query_for_postgres(query, self.config.min_search_words)
         if sort == SORT_MOST_RELEVANT:
             query = f'''

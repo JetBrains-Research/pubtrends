@@ -53,13 +53,15 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
         with self.neo4jdriver.session() as session:
             return [str(r['pmid']) for r in session.run(query)]
 
-    def search(self, query, limit=None, sort=None):
+    def search(self, query, limit=None, sort=None, noreviews=True):
         query_str = preprocess_search_query_for_neo4j(query, self.config.min_search_words)
+        noreviews_filter = 'WHERE node.type <> "Review"' if noreviews else ''
 
         if sort == SORT_MOST_RELEVANT:
             query = f'''
                 CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", '{query_str}')
                 YIELD node, score
+                {noreviews_filter}
                 RETURN node.pmid as pmid
                 ORDER BY score DESC
                 LIMIT {limit};
@@ -70,6 +72,7 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
                 MATCH ()-[r:PMReferenced]->(in:PMPublication)
                 WHERE in.pmid = node.pmid
                 WITH node, COUNT(r) AS cnt
+                {noreviews_filter}
                 RETURN node.pmid as pmid
                 ORDER BY cnt DESC
                 LIMIT {limit};
@@ -77,6 +80,7 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
         elif sort == SORT_MOST_RECENT:
             query = f'''
                 CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", '{query_str}') YIELD node
+                {noreviews_filter}
                 RETURN node.pmid as pmid
                 ORDER BY node.date DESC
                 LIMIT {limit};
