@@ -32,10 +32,10 @@ def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, e
         ids = analyzer.search_terms(query, limit=limit, sort=sort,
                                     noreviews=noreviews, expand=expand,
                                     task=current_task)
-        if 0 < len(ids) and expand > 0:
+        if 0 < len(ids):
             ids = analyzer.expand_ids(ids,
-                                      limit=limit,
-                                      keep_keywords=True, steps=1,
+                                      limit=min(len(ids) + KeyPaperAnalyzer.EXPAND_PAPERS, int(limit * (1 + expand))),
+                                      keep_keywords=True, steps=KeyPaperAnalyzer.EXPAND_STEPS,
                                       current=2, task=current_task)
         analyzer.analyze_papers(ids, query, noreviews=noreviews, task=current_task)
     finally:
@@ -62,14 +62,14 @@ def analyze_id_list(source, ids, zoom, query):
         if zoom == ZOOM_OUT:
             ids = analyzer.expand_ids(
                 ids,
-                limit=min(len(ids) + KeyPaperAnalyzer.EXPAND_MAX, analyzer.config.max_number_to_expand),
+                limit=min(len(ids) + KeyPaperAnalyzer.EXPAND_PAPERS, analyzer.config.max_number_to_expand),
                 keep_keywords=True, steps=1,
                 current=1, task=current_task
             )
         elif zoom == PAPER_ANALYSIS:
             ids = analyzer.expand_ids(ids,
-                                      limit=analyzer.config.max_number_to_expand,
-                                      keep_keywords=False, steps=2,
+                                      limit=KeyPaperAnalyzer.EXPAND_PAPERS,
+                                      keep_keywords=False, steps=KeyPaperAnalyzer.EXPAND_STEPS,
                                       current=1, task=current_task)
         else:
             ids = ids  # Leave intact

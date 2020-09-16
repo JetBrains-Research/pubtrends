@@ -143,7 +143,7 @@
                                 </div>
                                 <div class="ml-2 col input-group">
                                     <div class="input-group-prepend">
-                                        <span class="input-group-text" id="amount-addon">Show</span>
+                                        <span class="input-group-text" id="amount-addon">Search</span>
                                     </div>
                                     <select class="form-control" aria-describedby="amount-addon"
                                             name="limit">
@@ -169,11 +169,13 @@
                                 </div>
                                 <div class="ml-2 col input-group d-flex align-items-center">
                                     <label for="expand" style="margin-top: auto;margin-bottom: auto">
-                                        Expanding %
+                                        Expand by references +
                                     </label>
                                     &nbsp;
                                     <input id="expand" name="expand" class="form-control" type="number"
-                                           min="0" max="80" step="10" value="30"/>
+                                           min="0" max="100" step="10" value="20"/>
+                                    &nbsp;
+                                    %
                                 </div>
                                 <div class="ml-2 col input-group">
                                 </div>
@@ -228,9 +230,9 @@
     <form action="search_terms" method="post" class="inline">
         <input type="hidden" name="source" value="{{ search_example_source }}">
         <input type="hidden" name="sort" value="Most Cited">
-        <input type="hidden" name="limit" value="1000">
+        <input type="hidden" name="limit" value="500">
         <input type="hidden" name="noreviews" value="on">
-        <input type="hidden" name="expand" value="30">
+        <input type="hidden" name="expand" value="20">
         <strong>The service is in development!</strong>
         Try example search
         <button type="submit" name="query" value="{{ search_example_terms }}" class="link-button">
@@ -286,7 +288,7 @@
                         "<ul>" +
                             "<li><em>Source</em>: database of scientific publications</li>" +
                             "<li><em>Sort by</em>: papers ranking - relevance, recency or number of citations</li>" +
-                            "<li><em>Show</em>: number of papers to analyze</li>" +
+                            "<li><em>Search</em>: number of papers to look for</li>" +
                             "<li><em>Prefer no reviews</em>: ignore review papers in the search phase</li>" +
                             "<li><em>Expand %</em>: fraction of paper covered by references</li>" +
                         "</ul>"

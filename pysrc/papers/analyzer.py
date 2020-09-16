@@ -53,8 +53,15 @@ class KeyPaperAnalyzer:
     TOP_JOURNALS = 50
     TOP_AUTHORS = 50
 
-    EXPAND_MAX = 200  # Max papers to expand
-    EXPAND_SIMILARITY_FC = 100  # Keep keywords and mesh terms overlap
+    EXPAND_STEPS = 2
+    EXPAND_PAPERS = 200  # Papers to expand
+    # Methods are highly cited, keep them only for computational topics
+    EXPAND_COMPUTATIONAL_MESH = [
+        'comput', 'method', 'data', 'interpret', 'statist', 'method', 'internet', 'softwar', 'user-comput',
+        'align', 'array', 'languag', 'signal', 'computer-assist', 'databas', 'inform', 'interfac', 'simul',
+        'imag', 'techniqu', 'likelihood', 'function', 'statist', 'factual'
+    ]
+    EXPAND_COMPUTATIONAL_THRESHOLD = 0.05  # Threshold to determine whether topic is computational or not
 
     def __init__(self, loader, config, test=False):
         self.config = config
@@ -76,19 +83,12 @@ class KeyPaperAnalyzer:
                               'all the query wrapped in "" for phrasal search')
         limit = limit or self.config.max_number_of_articles
         sort = sort or SORT_MOST_CITED
-        if expand > 0:
-            papers_to_search = int(limit * (1 - expand))
-            self.progress.info(f'Searching {int((1 - expand) * 100)}% of {limit} {sort.lower()} '
-                               f'publications matching {html.escape(query)}',
-                               current=1, task=task)
-        else:
-            papers_to_search = limit
-            self.progress.info(f'Searching {limit} {sort.lower()} publications matching {html.escape(query)}',
-                               current=1, task=task)
+        self.progress.info(f'Searching {limit} {sort.lower()} publications matching {html.escape(query)}',
+                           current=1, task=task)
         if noreviews:
             self.progress.info('Preferring non review papers', current=1, task=task)
 
-        ids = self.loader.search(query, limit=papers_to_search, sort=sort, noreviews=noreviews)
+        ids = self.loader.search(query, limit=limit, sort=sort, noreviews=noreviews)
         if len(ids) == 0:
             raise SearchError(f"Nothing found for search query: {query}")
         else:
@@ -110,9 +110,12 @@ class KeyPaperAnalyzer:
                 ' '.join(publications['mesh'] + ' ' + publications['keywords']).replace(',', ' ')
             )]
             mesh_counter = Counter(mesh_stems)
+            computational_mesh = sum(mesh_counter[s] / len(mesh_stems) for s in self.EXPAND_COMPUTATIONAL_MESH)
+            logger.debug(f'Computational mesh: {"{0:.3f}".format(computational_mesh)}')
         else:
             mesh_stems = []
             mesh_counter = None
+            computational_mesh = 0
 
         # Expand while we can
         i = 0
@@ -120,32 +123,57 @@ class KeyPaperAnalyzer:
         while True:
             if i == steps or len(current_ids) >= limit:
                 break
-            logger.debug(f'Step {i}: current_ids: {len(current_ids)}, new_ids: {len(new_ids)}, limit: {limit}')
-            expanded_ids = self.loader.expand(new_ids or current_ids, limit - len(current_ids))
-            new_ids = [pid for pid in expanded_ids if pid not in set(current_ids)]
-            logger.debug(f'New {len(new_ids)} papers')
-            if len(new_ids) == 0:
-                break
-            if keep_keywords:
-                new_mesh_ids = []
-                new_publications = self.loader.load_publications(new_ids)
-                for (pid, mesh, keywords) in zip(new_ids, new_publications['mesh'], new_publications['keywords']):
-                    if not mesh_stems:
-                        new_mesh_ids.append(pid)
-                    else:
-                        new_mesh_stems = [s for s, _ in tokens_stems((mesh + ' ' + keywords).replace(',', ' '))]
-                        # Estimate fold change of similarity vs random single paper
-                        similarity_fc = sum([mesh_counter[s] / (len(mesh_stems) / len(ids)) for s in new_mesh_stems])
-                        if similarity_fc >= self.EXPAND_SIMILARITY_FC:
-                            new_mesh_ids.append(pid)
-                logger.debug(f'Similar mesh papers with fc {self.EXPAND_SIMILARITY_FC}: {len(new_mesh_ids)}')
-                if len(new_mesh_ids) == 0:
-                    break
-                new_ids = new_mesh_ids
-            current_ids += new_ids
             i += 1
+            logger.debug(f'Step {i}: current_ids: {len(current_ids)}, new_ids: {len(new_ids)}, limit: {limit}')
+            if not keep_keywords or not mesh_stems:
+                expanded_ids = self.loader.expand(new_ids or current_ids, limit - len(current_ids))
+                new_ids = [pid for pid in expanded_ids if pid not in set(current_ids)]
+                logger.debug(f'New {len(new_ids)} papers')
+                if len(new_ids) == 0:
+                    break
+                current_ids += new_ids
+                continue
 
-        self.progress.info(f'Expanded {len(current_ids)} papers', current=current, task=task)
+            expanded_ids = self.loader.expand(new_ids or current_ids, self.config.max_number_to_expand)
+            new_ids = [pid for pid in expanded_ids if pid not in set(current_ids)]
+
+            logger.debug(f'Mesh most common:\n' + ','.join(f'{k}:{"{0:.3f}".format(v / len(mesh_stems))}'
+                                                           for k, v in mesh_counter.most_common(100)))
+            new_publications = self.loader.load_publications(new_ids)
+            fcs = []
+            for _, row in new_publications.iterrows():
+                pid = row['id']
+                mesh = row['mesh']
+                keywords = row['keywords']
+                title = row['title']
+                new_mesh_stems = [s for s, _ in tokens_stems((mesh + ' ' + keywords).replace(',', ' '))]
+                if new_mesh_stems:
+                    new_mesh_counter = Counter(new_mesh_stems)
+                    # Estimate fold change of similarity vs random single paper
+                    similarity = sum([mesh_counter[s] / (len(mesh_stems) / len(ids)) for s in new_mesh_stems])
+                    new_computational_mesh = sum(new_mesh_counter[s] / len(new_mesh_stems)
+                                                 for s in self.EXPAND_COMPUTATIONAL_MESH)
+                    fcs.append([pid, False, similarity, new_computational_mesh, title, ','.join(new_mesh_stems)])
+                else:
+                    fcs.append([pid, True, 0.0, 0.0, title, ''])
+
+            fcs.sort(key=lambda v: v[2], reverse=True)
+            sim_threshold = fcs[0][2] / 10  # Take 90% of similarity
+            for v in fcs:
+                if not v[1]:
+                    v[1] = (v[2] > sim_threshold and
+                            abs(computational_mesh - v[3]) < self.EXPAND_COMPUTATIONAL_THRESHOLD)
+
+            logger.debug('\n'.join(f'{p}\t{"+" if a else "-"}\t{int(s)}\t{"{0:.3f}".format(c)}\t{t}\t{m}' for
+                                   p, a, s, c, t, m in fcs))
+            new_mesh_ids = [v[0] for v in fcs if v[1]][:limit - len(current_ids)]
+            logger.debug(f'Similar mesh papers: {len(new_mesh_ids)}')
+            if len(new_mesh_ids) == 0:
+                break
+            new_ids = new_mesh_ids
+            current_ids += new_ids
+
+        self.progress.info(f'Expanded to {len(current_ids)} papers', current=current, task=task)
         return current_ids
 
     def analyze_papers(self, ids, query, noreviews=True, task=None):
