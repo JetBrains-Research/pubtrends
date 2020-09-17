@@ -103,7 +103,7 @@ class TestPlotPreprocessor(unittest.TestCase):
         self.assertListEqual(topics, ['1', '2', '3'], 'Wrong topics')
 
         expected_values = np.array([[4.5, 1, 0],
-                                    [1, 8.833333333333334, 0],
+                                    [1, 4.833333333333333, 0],
                                     [0, 0, 0]])
 
         n_comps = len(self.analyzer.components)

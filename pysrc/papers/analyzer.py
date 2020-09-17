@@ -23,14 +23,13 @@ class KeyPaperAnalyzer:
     SEED = 20190723
 
     TOP_CITED_PAPERS = 50
-    TOP_CITED_PAPERS_FRACTION = 0.1
 
     # ...bibliographic coupling (BC) was the most accurate,  followed by co-citation (CC).
     # Direct citation (DC) was a distant third among the three...
-    SIMILARITY_BIBLIOGRAPHIC_COUPLING = 10
+    SIMILARITY_BIBLIOGRAPHIC_COUPLING = 2
     SIMILARITY_COCITATION = 1
-    SIMILARITY_TEXT_CITATION = 0.1
-    SIMILARITY_CITATION = 0.01
+    SIMILARITY_CITATION = 0.1
+    SIMILARITY_TEXT_CITATION = 0.01
 
     SIMILARITY_TEXT_MIN = 0.3  # Minimal cosine similarity for potential text citation
     SIMILARITY_TEXT_CITATION_N = 20  # Max number of potential text citations for paper
@@ -38,14 +37,14 @@ class KeyPaperAnalyzer:
     # Reduce number of edges in smallest communities, i.e. topics
     STRUCTURE_LOW_LEVEL_SPARSITY = 0.5
     # Reduce number of edges between different topics to min number of inner edges * scale factor
-    STRUCTURE_BETWEEN_TOPICS_SPARSITY = 0.1
+    STRUCTURE_BETWEEN_TOPICS_SPARSITY = 0.2
 
     TOPIC_MIN_SIZE = 10
     TOPICS_MAX_NUMBER = 100
     TOPIC_PAPERS_TFIDF = 50
     TOPIC_WORDS = 20
 
-    VECTOR_WORDS = 1000
+    VECTOR_WORDS = 10000
     VECTOR_NGRAMS = 1
     VECTOR_MIN_DF = 0.01
     VECTOR_MAX_DF = 0.5
@@ -630,8 +629,8 @@ class KeyPaperAnalyzer:
         return df_merged
 
     @staticmethod
-    def find_top_cited_papers(df, n_papers=TOP_CITED_PAPERS, threshold=TOP_CITED_PAPERS_FRACTION):
-        papers_to_show = max(min(n_papers, round(len(df) * threshold)), 1)
+    def find_top_cited_papers(df, n_papers=TOP_CITED_PAPERS):
+        papers_to_show = min(n_papers, len(df))
         top_cited_df = df.sort_values(by='total', ascending=False).iloc[:papers_to_show, :]
         top_cited_papers = set(top_cited_df['id'].values)
         return top_cited_papers, top_cited_df

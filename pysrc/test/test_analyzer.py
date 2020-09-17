@@ -79,15 +79,13 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
                 self.assertEqual(getattr(row, 'comp'), -1)
 
     @parameterized.expand([
-        ('threshold 1', 5, 1, ['3', '1', '4', '2', '5']),
-        ('threshold 1.5', 10, 1.5, ['3', '1', '4', '2', '5']),
-        ('limit-1', 2, 0.5, ['3', '1']),
-        ('limit-2', 4, 0.8, ['3', '1', '4', '2']),
-        ('pick at least 1', 50, 0.1, ['3'])
+        ('threshold 5', 5, ['3', '1', '4', '2', '5']),
+        ('threshold 10', 10, ['3', '1', '4', '2', '5']),
+        ('limit-2', 2, ['3', '1']),
+        ('limit-4', 4, ['3', '1', '4', '2'])
     ])
-    def test_find_top_cited_papers(self, name, max_papers, threshold, expected):
-        _, top_cited_df = self.analyzer.find_top_cited_papers(self.analyzer.df, n_papers=max_papers,
-                                                              threshold=threshold)
+    def test_find_top_cited_papers(self, name, max_papers, expected):
+        _, top_cited_df = self.analyzer.find_top_cited_papers(self.analyzer.df, n_papers=max_papers)
         top_cited_papers = list(top_cited_df['id'].values)
         self.assertListEqual(top_cited_papers, expected, name)
 

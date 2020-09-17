@@ -42,17 +42,15 @@ BIBLIOGRAPHIC_COUPLING_DATA = [['3', '4', 2],
                                ['3', '5', 2],
                                ['4', '5', 2]]
 
-SIMILARITY_GRAPH = [
-    ('1', '2', {'cocitation': 3.0, 'text': 0.3333333333333333, 'similarity': 3.033333333333333}),
-    ('1', '4', {'citation': 1, 'similarity': 0.01}), ('1', '3', {'citation': 1, 'similarity': 0.01}),
-    ('1', '5', {'citation': 1, 'text': 0.30701885383748023, 'similarity': 0.04070188538374803}),
-    ('2', '4', {'citation': 1, 'similarity': 0.01}),
-    ('2', '3', {'citation': 1, 'text': 0.6666666666666666, 'similarity': 0.07666666666666666}),
-    ('2', '5', {'citation': 1, 'similarity': 0.01}),
-    ('3', '4', {'cocitation': 1.0, 'bibcoupling': 2.0, 'similarity': 21.0}),
-    ('3', '5', {'bibcoupling': 2.0, 'citation': 1, 'similarity': 20.01}),
-    ('4', '5', {'bibcoupling': 2.0, 'citation': 1, 'similarity': 20.01})
-]
+SIMILARITY_GRAPH = [('1', '2', {'cocitation': 3.0, 'text': 0.3333333333333333, 'similarity': 3.0033333333333334}),
+                    ('1', '4', {'citation': 1, 'similarity': 0.1}), ('1', '3', {'citation': 1, 'similarity': 0.1}),
+                    ('1', '5', {'citation': 1, 'text': 0.30701885383748023, 'similarity': 0.10307018853837481}),
+                    ('2', '4', {'citation': 1, 'similarity': 0.1}),
+                    ('2', '3', {'citation': 1, 'text': 0.6666666666666666, 'similarity': 0.10666666666666667}),
+                    ('2', '5', {'citation': 1, 'similarity': 0.1}),
+                    ('3', '4', {'cocitation': 1.0, 'bibcoupling': 2.0, 'similarity': 5.0}),
+                    ('3', '5', {'bibcoupling': 2.0, 'citation': 1, 'similarity': 4.1}),
+                    ('4', '5', {'bibcoupling': 2.0, 'citation': 1, 'similarity': 4.1})]
 
 EXPECTED_MAX_GAIN = {1972: '3', 1974: '1'}
 EXPECTED_MAX_RELATIVE_GAIN = {1972: '3', 1974: '4'}
