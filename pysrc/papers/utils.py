@@ -16,6 +16,7 @@ from nltk.stem import WordNetLemmatizer, SnowballStemmer
 from nltk.tokenize import word_tokenize
 from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from sklearn.preprocessing import normalize
 
 nltk.download('averaged_perceptron_tagger')  # required for nltk.pos_tag
 nltk.download('punkt')  # required for word_tokenize
@@ -84,23 +85,17 @@ def is_noun_or_adj(pos):
 def preprocess_text(text):
     text = text.lower()
     # Replace non-ascii with space
-    text = re.sub(r'[^\x00-\x7F]+', ' ', text)
-    text = text.replace('-', ' ')
-    text = re.sub('[^a-zA-Z0-9 ]*', '', text)
+    text = re.sub('[^a-zA-Z0-9 ]+', ' ', text)
     # Whitespaces normalization, see #215
     text = re.sub('[ ]{2,}', ' ', text.strip())
     return text
 
 
-def tokenize(text, query=None, min_token_length=3):
-    if text is None:
-        return []
-    text = preprocess_text(text)
-
+def tokens_stems(text, query=None, min_token_length=3):
     # Filter out search query
     if query is not None:
         for term in preprocess_text(query).split(' '):
-            text = text.replace(term.lower(), '')
+            text = text.replace(term, '')
 
     tokenized = word_tokenize(text)
 
@@ -112,8 +107,15 @@ def tokenize(text, query=None, min_token_length=3):
                         [lemmatizer.lemmatize(w, pos=get_wordnet_pos(pos)) for w, pos in words_of_interest])
 
     stemmer = SnowballStemmer('english')
-    stemmed = [(stemmer.stem(word), word) for word in lemmatized]
+    return [(stemmer.stem(word), word) for word in lemmatized]
 
+
+def tokenize(text, query=None, min_token_length=3):
+    if text is None:
+        return []
+    text = preprocess_text(text)
+
+    stemmed = tokens_stems(text, query, min_token_length)
     # Substitute each stem with the shortest similar word
     stems_mapping = {}
     for stem, word in stemmed:
@@ -155,12 +157,12 @@ def get_topic_word_cloud_data(df_kwd, comp):
     return kwds
 
 
-def get_topics_description(df, comps, query, n_words, n_gram=2):
+def get_topics_description(df, comps, corpus_ngrams, corpus_counts, query, n_words):
     if len(comps) == 1:
         most_frequent = get_frequent_tokens(df, query)
         return {0: list(sorted(most_frequent.items(), key=lambda kv: kv[1], reverse=True))[:n_words]}
 
-    ngrams, tfidf = compute_tfidf(df, comps, query, n_words, n_gram=n_gram)
+    tfidf = compute_comps_tfidf(df, comps, corpus_counts)
     result = {}
     for comp in comps.keys():
         # Generate no keywords for '-1' component
@@ -170,15 +172,16 @@ def get_topics_description(df, comps, query, n_words, n_gram=2):
 
         # Take size indices with the largest tfidf first
         counter = Counter()
-        for i, n in enumerate(ngrams):
+        for i, n in enumerate(corpus_ngrams):
             for w in n.split(' '):
                 counter[w] += tfidf[comp, i]
         result[comp] = counter.most_common(n_words)
     return result
 
 
-def get_tfidf_words(df, comps, query, size, n_words):
-    tokens, tfidf = compute_tfidf(df, comps, query, n_words, other_comp=-1, ignore_other=True)
+def get_evolution_topics_description(df, comps, corpus_ngrams, corpus_counts, size):
+    # -1 is Not Published Yet
+    tfidf = compute_comps_tfidf(df, comps, corpus_counts, ignore_comp=-1)
     kwd = {}
     for comp in comps.keys():
         # Generate no keywords for '-1' component
@@ -191,25 +194,47 @@ def get_tfidf_words(df, comps, query, size, n_words):
         ind = np.argsort(tfidf[comp, :].toarray(), axis=1)
 
         # Take tokens with the largest tfidf
-        kwd[comp] = [tokens[idx] for idx in ind[0, -size:]]
+        kwd[comp] = [corpus_ngrams[idx] for idx in ind[0, -size:]]
     return kwd
 
 
-def compute_tfidf(df, comps, query, n_words, n_gram=1, other_comp=None, ignore_other=False):
-    corpus = []
-    for comp, article_ids in comps.items():
-        # -1 is OTHER component, not meaningful
-        if not (ignore_other and comp == other_comp):
-            df_comp = df[df['id'].isin(article_ids)]
-            corpus.append(' '.join([f'{t} {a}' for t, a in zip(df_comp['title'], df_comp['abstract'])]))
-    vectorizer = CountVectorizer(min_df=0.01, max_df=0.8, ngram_range=(1, n_gram),
-                                 max_features=n_words * len(comps),
-                                 tokenizer=lambda t: tokenize(t, query))
-    counts = vectorizer.fit_transform(corpus)
+def compute_comps_tfidf(df, comps, corpus_counts, ignore_comp=None):
+    log.debug(f'Creating corpus for comps {len(comps)}')
+    comps_to_process = dict(enumerate([c for c in comps if c != ignore_comp]))
+    comp_counts = np.zeros(shape=(len(comps_to_process), corpus_counts.shape[1]), dtype=np.short)
+    for c, article_ids in comps.items():
+        if c in comps_to_process:
+            comp_counts[comps_to_process[c], :] = \
+                np.sum(corpus_counts[np.flatnonzero(df['id'].isin(article_ids)), :], axis=0)
+    return compute_tfidf(comp_counts)
+
+
+def compute_tfidf(counts):
     tfidf_transformer = TfidfTransformer()
     tfidf = tfidf_transformer.fit_transform(counts)
-    ngrams = vectorizer.get_feature_names()
-    return ngrams, tfidf
+    log.debug(f'TFIDF shape {tfidf.shape}')
+    return tfidf
+
+
+def vectorize_corpus(df, max_features, n_gram, min_df, max_df):
+    corpus = build_corpus(df)
+    vectorizer = CountVectorizer(
+        min_df=min_df,
+        max_df=max_df if len(df) > 1 else 1.0,  # For tests
+        ngram_range=(1, n_gram),
+        max_features=max_features,
+        tokenizer=lambda t: tokenize(t)
+    )
+    log.debug('Vectorizing')
+    counts = vectorizer.fit_transform(corpus)
+    log.debug(f'Vectorized corpus size {counts.shape}')
+    return vectorizer.get_feature_names(), counts
+
+
+def cosine_similarity(x):
+    """Modified version of sklearn.metrics.pairwise.cosine_similarity - no copying"""
+    normalize(x, copy=False)
+    return x @ x.T
 
 
 def split_df_list(df, target_column, separator):
@@ -266,9 +291,10 @@ def to_32_bit_int(n):
 
 
 def build_corpus(df):
-    log.info(f'Building corpus from {len(df)} articles')
-    corpus = [f'{title} {abstract}'
-              for title, abstract in zip(df['title'].values, df['abstract'].values)]
+    log.info(f'Building corpus from {len(df)} papers')
+    corpus = [preprocess_text(f'{title} {abstract} {keywords} {mesh}')
+              for title, abstract, mesh, keywords in
+              zip(df['title'], df['abstract'], df['keywords'], df['mesh'])]
     log.info(f'Corpus size: {sys.getsizeof(corpus)} bytes')
     return corpus
 
@@ -282,7 +308,7 @@ def vectorize(corpus, query=None, n_words=1000):
 
 
 def lda_topics(counts, n_topics=10):
-    log.info(f'Performing LDA topic analysis')
+    log.info('Performing LDA topic analysis')
     lda = LatentDirichletAllocation(n_components=n_topics, random_state=0)
     topics = lda.fit_transform(counts)
 
@@ -303,42 +329,6 @@ def trim(string, max_length):
     return f'{string[:max_length]}...' if len(string) > max_length else string
 
 
-def preprocess_search_query(query, min_search_words):
-    """ Preprocess search string for Neo4j full text lookup """
-    if ',' in query:
-        qor = ''
-        for p in query.split(','):
-            if len(qor) > 0:
-                qor += ' OR '
-            pp = preprocess_search_query(p.strip(), min_search_words)
-            if ' AND ' in pp:
-                qor += f'({pp})'
-            else:
-                qor += pp
-        return qor
-    processed = re.sub('[ ]{2,}', ' ', query.strip())  # Whitespaces normalization, see #215
-    if len(processed) == 0:
-        raise Exception('Empty query')
-    processed = re.sub('[^0-9a-zA-Z\'"\\-\\.+ ]', '', processed)  # Remove unknown symbols
-    if len(processed) == 0:
-        raise Exception('Illegal character(s), only English letters, numbers, '
-                        f'and +- signs are supported. Query: {query}')
-    if len(re.split('[ -]', processed)) < min_search_words:
-        raise Exception(f'Please use more specific query with >= {min_search_words} words. Query: {query}')
-    # Looking for complete phrase
-    if re.match('^"[^"]+"$', processed):
-        return '"' + re.sub('"', '', processed) + '"'
-    elif re.match('^[^"]+$', processed):
-        words = [re.sub("'s$", '', w) for w in processed.split(' ')]  # Fix apostrophes
-        stemmer = SnowballStemmer('english')
-        stems = set([stemmer.stem(word) for word in words])
-        if len(stems) + len(processed.split('-')) - 1 < min_search_words:
-            raise Exception(f'Please use query with >= {min_search_words} different words. Query: {query}')
-        return ' AND '.join([w if '-' not in w else f'"{w}"' for w in words])  # Dashed terms should be quoted
-    raise Exception(f'Illegal search query, please use search terms or '
-                    f'all the query wrapped in "" for phrasal search. Query: {query}')
-
-
 def preprocess_doi(line):
     """
     Removes doi.org prefix if full URL was pasted, then strips unnecessary slashes
@@ -347,15 +337,11 @@ def preprocess_doi(line):
     return doi.strip('/')
 
 
-def preprocess_pubmed_search_title(line):
+def preprocess_search_title(line):
     """
     Title processing similar to PubmedXMLParser - special characters removal
     """
     return line.strip('.[]')
-
-
-def hex2rgb(color):
-    return [int(color[pos:pos + 2], 16) for pos in range(1, 7, 2)]
 
 
 def rgb2hex(color):

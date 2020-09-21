@@ -20,9 +20,11 @@ from flask_sqlalchemy import SQLAlchemy
 from pysrc.celery.tasks import celery, find_paper_async, analyze_search_terms, analyze_id_list, get_analyzer
 from pysrc.celery.tasks_cache import get_or_cancel_task
 from pysrc.papers.config import PubtrendsConfig
-from pysrc.papers.paper import prepare_review_data, prepare_paper_data, prepare_papers_data, get_loader_and_url_prefix
-from pysrc.papers.plot_preprocessor import PlotPreprocessor
-from pysrc.papers.plotter import Plotter
+from pysrc.papers.db.loaders import Loaders
+from pysrc.papers.db.search_error import SearchError
+from pysrc.papers.paper import prepare_review_data, prepare_paper_data, prepare_papers_data
+from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
+from pysrc.papers.plot.plotter import Plotter
 from pysrc.papers.stats import prepare_stats_data
 from pysrc.papers.utils import zoom_name, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE, trim, ZOOM_OUT_TITLE
 from pysrc.papers.version import VERSION
@@ -90,7 +92,8 @@ def status():
         elif job_state == 'FAILURE':
             return json.dumps({
                 'state': job_state,
-                'message': html.escape(str(job_result).replace('\\n', '\n').replace('\\t', '\t'))
+                'message': html.escape(str(job_result).replace('\\n', '\n').replace('\\t', '\t')),
+                'search_error': isinstance(job_result, SearchError)
             })
         elif job_state == 'STARTED':
             return json.dumps({
@@ -110,7 +113,7 @@ def status():
     # no jobid
     return json.dumps({
         'state': 'FAILURE',
-        'message': f'No task id'
+        'message': 'No task id'
     })
 
 
@@ -137,8 +140,8 @@ def result():
         logger.info(f'/result No job or out-of-date job, restart it {log_request(request)}')
         return search_terms_(request.args)
     else:
-        logger.error(f'/result error {log_request(request)}')
-        return render_template_string("Something went wrong..."), 400
+        logger.error(f'/result error wrong request {log_request(request)}')
+        return render_template_string("Wrong request..."), 400
 
 
 @app.route('/review')
@@ -175,7 +178,8 @@ def process():
         jobid = request.values.get('jobid')
 
         if not jobid:
-            return render_template_string("Something went wrong...")
+            logger.error(f'/process error wrong request {log_request(request)}')
+            return render_template_string("Wrong request...")
 
         query = request.args.get('query')
         analysis_type = request.values.get('analysis_type')
@@ -239,7 +243,7 @@ def process_paper():
         if job and job.state == 'SUCCESS':
             id_list = job.result
             logger.info(f'/process_paper single paper analysis {log_request(request)}')
-            job = analyze_id_list.delay(source, id_list=id_list, zoom=PAPER_ANALYSIS, query=query)
+            job = analyze_id_list.delay(source, ids=id_list, zoom=PAPER_ANALYSIS, query=query)
             return redirect(url_for('.process', query=query, analysis_type=PAPER_ANALYSIS_TITLE,
                                     id=id_list[0], source=source, jobid=job.id))
 
@@ -256,9 +260,11 @@ def paper():
             logger.info(f'/paper success {log_request(request)}')
             return render_template('paper.html', **prepare_paper_data(data, source, pid),
                                    version=VERSION)
-
-    logger.error(f'/paper error {log_request(request)}')
-    return render_template_string("Something went wrong..."), 400
+        logger.error(f'/paper error jobid {log_request(request)}')
+        return render_template_string("Out-of-date search, please search again..."), 400
+    else:
+        logger.error(f'/paper error wrong request {log_request(request)}')
+        return render_template_string("Wrong request..."), 400
 
 
 @app.route('/graph')
@@ -273,10 +279,9 @@ def graph():
         job = AsyncResult(jobid, app=celery)
         if job and job.state == 'SUCCESS':
             _, data, _ = job.result
-            loader, url_prefix = get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
+            loader, url_prefix = Loaders.get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
             analyzer = get_analyzer(loader, PUBTRENDS_CONFIG)
             analyzer.init(data)
-            min_year, max_year = int(analyzer.df['year'].min()), int(analyzer.df['year'].max())
             topics_tags = {comp: ', '.join(
                 [w[0] for w in analyzer.df_kwd[analyzer.df_kwd['comp'] == comp]['kwd'].values[0][:10]]
             ) for comp in sorted(set(analyzer.df['comp']))}
@@ -291,8 +296,6 @@ def graph():
                     limit=limit,
                     sort=sort,
                     citation_graph="true",
-                    min_year=min_year,
-                    max_year=max_year,
                     topic_other=analyzer.comp_other or -1,
                     topics_palette_json=json.dumps(Plotter.topics_palette(analyzer.df)),
                     topics_description_json=json.dumps(topics_tags),
@@ -309,15 +312,16 @@ def graph():
                     limit=limit,
                     sort=sort,
                     citation_graph="false",
-                    min_year=min_year,
-                    max_year=max_year,
                     topic_other=analyzer.comp_other or -1,
                     topics_palette_json=json.dumps(Plotter.topics_palette(analyzer.df)),
                     topics_description_json=json.dumps(topics_tags),
                     graph_cytoscape_json=json.dumps(graph_cs)
                 )
-    logger.error(f'/graph error {log_request(request)}')
-    return render_template_string("Something went wrong..."), 400
+        logger.error(f'/graph error job id {log_request(request)}')
+        return render_template_string("Out-of-date search, please search again..."), 400
+    else:
+        logger.error(f'/graph error wrong request {log_request(request)}')
+        return render_template_string("Wrong request..."), 400
 
 
 @app.route('/papers')
@@ -347,11 +351,11 @@ def show_ids():
 
     papers_list = request.args.get('papers_list')
     if papers_list == 'top':
-        search_string += f'Top Papers'
+        search_string += 'Top Papers'
     if papers_list == 'year':
-        search_string += f'Papers of the Year'
+        search_string += 'Papers of the Year'
     if papers_list == 'hot':
-        search_string += f'Hot Papers'
+        search_string += 'Hot Papers'
 
     if jobid:
         job = AsyncResult(jobid, app=celery)
@@ -389,7 +393,7 @@ def cancel():
             })
     return json.dumps({
         'state': 'FAILURE',
-        'message': f'Unknown task id'
+        'message': 'Unknown task id'
     })
 
 
@@ -433,16 +437,27 @@ def search_terms_(data):
     source = data.get('source')  # Pubmed or Semantic Scholar
     sort = data.get('sort')  # Sort order
     limit = data.get('limit')  # Limit
-    jobid = data.get('jobid')
-    if query and source and sort and limit:
-        if not jobid:
-            logger.info(f'/search_terms {log_request(request)}')
-            job = analyze_search_terms.delay(source, query=query, limit=limit, sort=sort)
-            jobid = job.id
-        else:
-            logger.info(f'/search_terms with fixed jobid {log_request(request)}')
-            analyze_search_terms.apply_async(args=[source, query, sort, limit], task_id=jobid)
-        return redirect(url_for('.process', query=query, source=source, limit=limit, sort=sort, jobid=jobid))
+    jobid = data.get('jobid')  # Optional job id
+    noreviews = data.get('noreviews')  # Include reviews in the initial search phase
+    expand = data.get('expand')  # Fraction of papers to cover by references
+    try:
+        if query and source and sort and limit and noreviews is not None and expand:
+            if not jobid:
+                logger.info(f'/search_terms {log_request(request)}')
+                job = analyze_search_terms.delay(source, query=query, limit=int(limit), sort=sort,
+                                                 noreviews=noreviews == 'on', expand=int(expand) / 100)
+                jobid = job.id
+            else:
+                logger.info(f'/search_terms with fixed jobid {log_request(request)}')
+                analyze_search_terms.apply_async(args=[source, query, sort, int(limit), noreviews, int(expand) / 100],
+                                                 task_id=jobid)
+
+            return redirect(url_for('.process', query=query, source=source, limit=limit, sort=sort,
+                                    noreviews=noreviews, expand=expand,
+                                    jobid=jobid))
+    except Exception as e:
+        logger.error(f'/search_terms error', e)
+        return render_template_string(f"Error occurred. We're working on it. Please check back soon."), 500
     logger.error(f'/search_terms error {log_request(request)}')
     return render_template_string(f"Request does not contain necessary params: {request}"), 400
 
@@ -452,12 +467,16 @@ def search_paper():
     logger.info('/search_paper')
     source = request.form.get('source')  # Pubmed or Semantic Scholar
 
-    if source and 'key' in request.form and 'value' in request.form:
-        logger.info(f'/search_paper {log_request(request)}')
-        key = request.form.get('key')
-        value = request.form.get('value')
-        job = find_paper_async.delay(source, key, value)
-        return redirect(url_for('.process', source=source, key=key, value=value, jobid=job.id))
+    try:
+        if source and 'key' in request.form and 'value' in request.form:
+            logger.info(f'/search_paper {log_request(request)}')
+            key = request.form.get('key')
+            value = request.form.get('value')
+            job = find_paper_async.delay(source, key, value)
+            return redirect(url_for('.process', source=source, key=key, value=value, jobid=job.id))
+    except Exception as e:
+        logger.error(f'/search_paper error', e)
+        return render_template_string(f"Error occurred. We're working on it. Please check back soon."), 500
     logger.error(f'/search_paper error {log_request(request)}')
     return render_template_string(f"Request does not contain necessary params: {request}"), 400
 
@@ -467,13 +486,17 @@ def process_ids():
     source = request.form.get('source')  # Pubmed or Semantic Scholar
     query = request.form.get('query')  # Original search query
 
-    if source and query and 'id_list' in request.form:
-        id_list = request.form.get('id_list').split(',')
-        zoom = request.form.get('zoom')
-        analysis_type = zoom_name(zoom)
-        job = analyze_id_list.delay(source, id_list=id_list, zoom=int(zoom), query=query)
-        logger.info(f'/process_ids {log_request(request)}')
-        return redirect(url_for('.process', query=query, analysis_type=analysis_type, source=source, jobid=job.id))
+    try:
+        if source and query and 'id_list' in request.form:
+            id_list = request.form.get('id_list').split(',')
+            zoom = request.form.get('zoom')
+            analysis_type = zoom_name(zoom)
+            job = analyze_id_list.delay(source, ids=id_list, zoom=int(zoom), query=query)
+            logger.info(f'/process_ids {log_request(request)}')
+            return redirect(url_for('.process', query=query, analysis_type=analysis_type, source=source, jobid=job.id))
+    except Exception as e:
+        logger.error(f'/process_ids error', e)
+        return render_template_string(f"Error occurred. We're working on it. Please check back soon."), 500
     logger.error(f'/process_ids error {log_request(request)}')
     return render_template_string(f"Request does not contain necessary params: {request}"), 400
 

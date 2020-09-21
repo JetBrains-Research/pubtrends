@@ -6,33 +6,17 @@ from lazy import lazy
 
 from pysrc.papers.analyzer import KeyPaperAnalyzer
 from pysrc.papers.config import PubtrendsConfig
-from pysrc.papers.plotter import Plotter
-from pysrc.papers.pm_loader import PubmedLoader
-from pysrc.papers.ss_loader import SemanticScholarLoader
-from pysrc.papers.utils import (
-    trim, preprocess_text,
-    PUBMED_ARTICLE_BASE_URL, SEMANTIC_SCHOLAR_BASE_URL)
+from pysrc.papers.db.loaders import Loaders
+from pysrc.papers.plot.plotter import Plotter
 from pysrc.review.model import load_model
 from pysrc.review.text import text_to_data
-from pysrc.review.utils import setup_single_gpu
+from pysrc.papers.utils import trim, build_corpus, setup_single_gpu
 
 logger = logging.getLogger(__name__)
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
 MAX_TITLE_LENGTH = 200
-
-
-def get_loader_and_url_prefix(source, config):
-    if source == 'Pubmed':
-        loader = PubmedLoader(config)
-        url_prefix = PUBMED_ARTICLE_BASE_URL
-    elif source == 'Semantic Scholar':
-        loader = SemanticScholarLoader(config)
-        url_prefix = SEMANTIC_SCHOLAR_BASE_URL
-    else:
-        raise ValueError(f"Unknown source {source}")
-    return loader, url_prefix
 
 
 def get_top_papers_id_title(papers, df, key, n=50):
@@ -96,7 +80,7 @@ def prepare_review_data(data, source, num_papers, num_sents):
 
 
 def prepare_paper_data(data, source, pid):
-    loader, url_prefix = get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
+    loader, url_prefix = Loaders.get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
     analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
     analyzer.init(data)
 
@@ -110,6 +94,8 @@ def prepare_paper_data(data, source, pid):
     year = sel['year'].values[0]
     topic = sel['comp'].values[0] + 1
     doi = str(sel['doi'].values[0])
+    mesh = str(sel['mesh'].values[0])
+    keywords = str(sel['keywords'].values[0])
     if doi == 'None' or doi == 'nan':
         doi = ''
 
@@ -160,6 +146,8 @@ def prepare_paper_data(data, source, pid):
         'year': year,
         'topic': topic,
         'doi': doi,
+        'mesh': mesh,
+        'keywords': keywords,
         'url': url_prefix + pid,
         'source': source,
         'citation_dynamics': [components(plotter.article_citation_dynamics(analyzer.df, str(pid)))],
@@ -185,7 +173,7 @@ def prepare_paper_data(data, source, pid):
 
 
 def prepare_papers_data(data, source, comp=None, word=None, author=None, journal=None, papers_list=None):
-    loader, url_prefix = get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
+    loader, url_prefix = Loaders.get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
     analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
     analyzer.init(data)
 
@@ -195,8 +183,8 @@ def prepare_papers_data(data, source, comp=None, word=None, author=None, journal
         df = df.loc[df['comp'].astype(int) == comp]
     # Filter by word
     if word is not None:
-        df = df.loc[[word.lower() in preprocess_text(f'{t} {a}')
-                     for (t, a) in zip(df['title'], df['abstract'])]]
+        corpus = build_corpus(df)
+        df = df.loc[[word.lower() in text for text in corpus]]
     # Filter by author
     if author is not None:
         # Check if string was trimmed
@@ -224,13 +212,13 @@ def prepare_papers_data(data, source, comp=None, word=None, author=None, journal
 
     result = []
     for _, row in df.iterrows():
-        pid, title, abstract, authors, journal, year, total, doi = \
-            row['id'], row['title'], row['abstract'], row['authors'], row['journal'], \
-            row['year'], row['total'], str(row['doi'])
+        pid, title, authors, journal, year, total, doi, topic = \
+            row['id'], row['title'], row['authors'], row['journal'], \
+            row['year'], row['total'], str(row['doi']), row['comp'] + 1
         if doi == 'None' or doi == 'nan':
             doi = ''
         # Don't trim or cut anything here, because this information can be exported
-        result.append((pid, title, authors, url_prefix + pid, journal, year, total, doi))
+        result.append((pid, title, authors, url_prefix + pid, journal, year, total, doi, topic))
 
     # Return list sorted by year
     return sorted(result, key=lambda t: t[5], reverse=True)

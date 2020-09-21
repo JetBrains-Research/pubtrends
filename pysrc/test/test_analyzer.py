@@ -5,11 +5,9 @@ from parameterized import parameterized
 
 from pysrc.papers.analyzer import KeyPaperAnalyzer
 from pysrc.papers.config import PubtrendsConfig
-from pysrc.papers.pm_loader import PubmedLoader
-from pysrc.papers.ss_loader import SemanticScholarLoader
 from pysrc.test.mock_loaders import MockLoader, \
     CITATION_YEARS, EXPECTED_MAX_GAIN, EXPECTED_MAX_RELATIVE_GAIN, CITATION_GRAPH_NODES, CITATION_GRAPH_EDGES, \
-    MockLoaderEmpty, MockLoaderSingle, SIMILARITY_GRAPH_EDGES
+    MockLoaderEmpty, MockLoaderSingle, SIMILARITY_GRAPH
 
 
 class TestKeyPaperAnalyzer(unittest.TestCase):
@@ -26,18 +24,6 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
         cls.analyzer.citations_graph = cls.analyzer.build_citation_graph(cls.analyzer.cit_df)
         cls.analyzer.bibliographic_coupling_df = loader.load_bibliographic_coupling(cls.analyzer.ids)
 
-    @parameterized.expand([
-        ('Pubmed', PubmedLoader(PUBTRENDS_CONFIG), False, 'Pubmed'),
-        ('Semantic Scholar', SemanticScholarLoader(PUBTRENDS_CONFIG), False, 'Semantic Scholar')
-    ])
-    def test_valid_source(self, name, loader, test, expected):
-        analyzer = KeyPaperAnalyzer(loader, TestKeyPaperAnalyzer.PUBTRENDS_CONFIG, test=test)
-        self.assertEqual(analyzer.source, expected, name)
-
-    def test_bad_source(self):
-        with self.assertRaises(TypeError):
-            KeyPaperAnalyzer(MockLoader(), TestKeyPaperAnalyzer.PUBTRENDS_CONFIG, test=False)
-
     def test_build_citation_graph_nodes_count(self):
         self.assertEqual(self.analyzer.citations_graph.number_of_nodes(), len(CITATION_GRAPH_NODES))
 
@@ -51,13 +37,7 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
         self.assertCountEqual(list(self.analyzer.citations_graph.edges()), CITATION_GRAPH_EDGES)
 
     def test_build_similarity_graph_edges(self):
-        similarity_graph = self.analyzer.build_similarity_graph(
-            self.analyzer.df,
-            self.analyzer.citations_graph,
-            self.analyzer.build_cocit_grouped_df(self.analyzer.cocit_df),
-            self.analyzer.bibliographic_coupling_df
-        )
-        self.assertCountEqual(list(similarity_graph.edges(data=True)), SIMILARITY_GRAPH_EDGES)
+        self.assertCountEqual(list(self.analyzer.similarity_graph.edges(data=True)), SIMILARITY_GRAPH)
 
     def test_find_max_gain_papers_count(self):
         max_gain_count = len(list(self.analyzer.max_gain_df['year'].values))
@@ -99,15 +79,13 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
                 self.assertEqual(getattr(row, 'comp'), -1)
 
     @parameterized.expand([
-        ('threshold 1', 5, 1, ['3', '1', '4', '2', '5']),
-        ('threshold 1.5', 10, 1.5, ['3', '1', '4', '2', '5']),
-        ('limit-1', 2, 0.5, ['3', '1']),
-        ('limit-2', 4, 0.8, ['3', '1', '4', '2']),
-        ('pick at least 1', 50, 0.1, ['3'])
+        ('threshold 5', 5, ['3', '1', '4', '2', '5']),
+        ('threshold 10', 10, ['3', '1', '4', '2', '5']),
+        ('limit-2', 2, ['3', '1']),
+        ('limit-4', 4, ['3', '1', '4', '2'])
     ])
-    def test_find_top_cited_papers(self, name, max_papers, threshold, expected):
-        _, top_cited_df = self.analyzer.find_top_cited_papers(self.analyzer.df, n_papers=max_papers,
-                                                              threshold=threshold)
+    def test_find_top_cited_papers(self, name, max_papers, expected):
+        _, top_cited_df = self.analyzer.find_top_cited_papers(self.analyzer.df, n_papers=max_papers)
         top_cited_papers = list(top_cited_df['id'].values)
         self.assertListEqual(top_cited_papers, expected, name)
 
@@ -140,7 +118,17 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
 
     def test_get_most_cited_papers_for_comps(self):
         comps = self.analyzer.get_most_cited_papers_for_comps(self.analyzer.df, self.analyzer.partition, 1)
-        self.assertDictEqual(comps, {0: ['3'], 1: ['1']})
+        self.assertDictEqual(comps, {0: ['3']})
+
+    def test_corpus_vectorization(self):
+        self.assertEquals(self.analyzer.corpus_ngrams,
+                          ['abstract', 'breakthrough', 'interesting', 'kw1', 'kw2', 'kw3', 'kw4', 'kw5', 'paper'])
+        self.assertTrue(np.array_equal(self.analyzer.corpus_counts.toarray(),
+                                       [[0, 0, 0, 1, 1, 0, 0, 0, 1],
+                                        [1, 0, 0, 0, 1, 1, 0, 0, 0],
+                                        [1, 0, 0, 0, 0, 1, 1, 0, 0],
+                                        [0, 0, 1, 0, 0, 0, 1, 1, 1],
+                                        [0, 1, 0, 1, 0, 0, 0, 1, 0]]))
 
 
 class TestKeyPaperAnalyzerSingle(unittest.TestCase):

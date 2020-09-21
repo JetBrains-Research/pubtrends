@@ -158,10 +158,11 @@
                         <th scope="col">Id</th>
                         <th scope="col">Doi</th>
                         <th scope="col">Cited</th>
+                        <th scope="col">Topic</tr>
                     </tr>
                     </thead>
                     <tbody>
-                    {% for id, title, authors, url, journal, year, total, doi in papers %}
+                    {% for id, title, authors, url, journal, year, total, doi, topic in papers %}
                     <tr>
                         <th scope="row">{{ loop.index }}</th>
                         <td>{{ title }}</td>
@@ -175,6 +176,7 @@
                             {% endif %}
                         </td>
                         <td>{{ total }}</td>
+                        <td>{{ topic }}</td>
                     </tr>
                     {% endfor %}
                     </tbody>

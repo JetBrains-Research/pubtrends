@@ -1,13 +1,19 @@
 import pandas as pd
 
-from pysrc.papers.config import PubtrendsConfig
-from pysrc.papers.loader import Loader
+from pysrc.papers.db.loader import Loader
 
-PUBLICATION_DATA = [['1', 1963, 'Article 1', 'just a paper', 'Article', 'Geller R, Geller M, Bing Ch', 'Nature'],
-                    ['2', 1965, 'Article 2', 'abstract', 'Article', 'Buffay Ph, Geller M, Doe J', 'Science'],
-                    ['3', 1967, 'Article 3', 'other abstract', 'Article', 'Doe J, Buffay Ph', 'Nature'],
-                    ['4', 1968, 'Article 4', 'interesting paper', 'Article', 'Doe J, Geller R', 'Science'],
-                    ['5', 1975, 'Article 5', 'just a breakthrough', 'Review', 'Green R, Geller R, Doe J', 'Nature']]
+PUBLICATION_DATA = [
+    ['1', 1963, 'Article 1', 'just a paper', 'Article', 'Geller R, Geller M, Bing Ch', 'Nature',
+     'term1,term2,term3', 'kw1,kw2'],
+    ['2', 1965, 'Article 2', 'abstract', 'Article', 'Buffay Ph, Geller M, Doe J', 'Science',
+     'term2,term3,term4', 'kw2,kw3'],
+    ['3', 1967, 'Article 3', 'other abstract', 'Article', 'Doe J, Buffay Ph', 'Nature',
+     'term3,term4,term5', 'kw3,kw4'],
+    ['4', 1968, 'Article 4', 'interesting paper', 'Article', 'Doe J, Geller R', 'Science',
+     'term4,term5,term1', 'kw4,kw5'],
+    ['5', 1975, 'Article 5', 'just a breakthrough', 'Review', 'Green R, Geller R, Doe J', 'Nature',
+     'term5,term1,term2', 'kw5,kw1']
+]
 
 CITATION_STATS_DATA = [['1', 1972, 2], ['1', 1974, 15],
                        ['2', 1974, 1],
@@ -36,17 +42,15 @@ BIBLIOGRAPHIC_COUPLING_DATA = [['3', '4', 2],
                                ['3', '5', 2],
                                ['4', '5', 2]]
 
-SIMILARITY_GRAPH_EDGES = [('1', '2', {'cocitation': 3}),
-                          ('1', '4', {'citation': 1, 'text': 0.6279137616509934}),
-                          ('1', '3', {'citation': 1}),
-                          ('1', '5', {'citation': 1}),
-                          ('2', '4', {'citation': 1}),
-                          ('2', '3', {'citation': 1, 'text': 1.0}),
-                          ('2', '5', {'citation': 1}),
-                          ('3', '4', {'cocitation': 1, 'bibcoupling': 2}),
-                          ('3', '5', {'bibcoupling': 2, 'citation': 1}),
-                          ('4', '5', {'bibcoupling': 2, 'citation': 1})]
-
+SIMILARITY_GRAPH = [('1', '2', {'cocitation': 3.0, 'text': 0.3333333333333333, 'similarity': 3.0033333333333334}),
+                    ('1', '4', {'citation': 1, 'similarity': 0.1}), ('1', '3', {'citation': 1, 'similarity': 0.1}),
+                    ('1', '5', {'citation': 1, 'text': 0.30701885383748023, 'similarity': 0.10307018853837481}),
+                    ('2', '4', {'citation': 1, 'similarity': 0.1}),
+                    ('2', '3', {'citation': 1, 'text': 0.6666666666666666, 'similarity': 0.10666666666666667}),
+                    ('2', '5', {'citation': 1, 'similarity': 0.1}),
+                    ('3', '4', {'cocitation': 1.0, 'bibcoupling': 2.0, 'similarity': 5.0}),
+                    ('3', '5', {'bibcoupling': 2.0, 'citation': 1, 'similarity': 4.1}),
+                    ('4', '5', {'bibcoupling': 2.0, 'citation': 1, 'similarity': 4.1})]
 
 EXPECTED_MAX_GAIN = {1972: '3', 1974: '1'}
 EXPECTED_MAX_RELATIVE_GAIN = {1972: '3', 1974: '4'}
@@ -54,94 +58,87 @@ EXPECTED_MAX_RELATIVE_GAIN = {1972: '3', 1974: '4'}
 
 class MockLoader(Loader):
 
-    def __init__(self, ids=None):
-        config = PubtrendsConfig(test=True)
-        super(MockLoader, self).__init__(config, connect=False)
-
-    def find(self, key, value, current=1, task=None):
+    def find(self, key, value):
         raise Exception('Not implemented')
 
-    def expand(self, ids, limit, current=1, task=None):
+    def expand(self, ids, limit):
         raise Exception('Not implemented')
 
-    def search(self, terms, limit=None, sort=None, current=1, task=None):
+    def search(self, terms, limit=None, sort=None, noreviews=True):
         return ['1', '2', '3', '4', '5']
 
-    def load_publications(self, ids=None, current=1, task=None):
-        return pd.DataFrame(PUBLICATION_DATA, columns=['id', 'year', 'title', 'abstract', 'type', 'authors', 'journal'])
+    def load_publications(self, ids=None):
+        return pd.DataFrame(
+            PUBLICATION_DATA,
+            columns=['id', 'year', 'title', 'abstract', 'type', 'authors', 'journal', 'mesh', 'keywords']
+        )
 
-    def load_citation_stats(self, ids=None, current=1, task=None):
+    def load_citations_by_year(self, ids=None):
         return pd.DataFrame(CITATION_STATS_DATA, columns=['id', 'year', 'count'])
 
-    def load_citations(self, ids=None, current=1, task=None):
+    def load_citations(self, ids=None):
         return pd.DataFrame(CITATION_DATA, columns=['id_out', 'id_in'])
 
-    def load_cocitations(self, ids=None, current=1, task=None):
+    def load_cocitations(self, ids=None):
         return pd.DataFrame(COCITATION_DATA, columns=['citing', 'cited_1', 'cited_2', 'year'])
 
-    def load_bibliographic_coupling(self, ids=None, current=1, task=None):
+    def load_bibliographic_coupling(self, ids=None):
         return pd.DataFrame(BIBLIOGRAPHIC_COUPLING_DATA, columns=['citing_1', 'citing_2', 'total'])
 
 
 class MockLoaderSingle(Loader):
 
-    def __init__(self):
-        config = PubtrendsConfig(test=True)
-        super(MockLoaderSingle, self).__init__(config, connect=False)
-
-    def find(self, key, value, current=1, task=None):
+    def find(self, key, value):
         raise Exception('Not implemented')
 
-    def expand(self, ids, limit, current=1, task=None):
+    def expand(self, ids, limit):
         raise Exception('Not implemented')
 
-    def search(self, terms, limit=None, sort=None, current=1, task=None):
+    def search(self, terms, limit=None, sort=None, noreviews=True):
         return ['1']
 
-    def load_publications(self, ids=None, current=1, task=None):
-        return pd.DataFrame(PUBLICATION_DATA[0:1],
-                            columns=['id', 'year', 'title', 'abstract', 'type', 'authors', 'journal'])
+    def load_publications(self, ids=None):
+        return pd.DataFrame(
+            PUBLICATION_DATA[0:1],
+            columns=['id', 'year', 'title', 'abstract', 'type', 'authors', 'journal', 'mesh', 'keywords']
+        )
 
-    def load_citation_stats(self, ids=None, current=1, task=None):
+    def load_citations_by_year(self, ids=None):
         return pd.DataFrame([['1', 1972, 2], ['1', 1974, 15]],
                             columns=['id', 'year', 'count'])
 
-    def load_citations(self, ids=None, current=1, task=None):
+    def load_citations(self, ids=None):
         return pd.DataFrame([], columns=['id_out', 'id_in'])
 
-    def load_cocitations(self, ids=None, current=1, task=None):
+    def load_cocitations(self, ids=None):
         return pd.DataFrame([], columns=['citing', 'cited_1', 'cited_2', 'year'])
 
-    def load_bibliographic_coupling(self, ids=None, current=1, task=None):
+    def load_bibliographic_coupling(self, ids=None):
         return pd.DataFrame([], columns=['citing_1', 'citing_2', 'total'])
 
 
 class MockLoaderEmpty(Loader):
 
-    def __init__(self):
-        config = PubtrendsConfig(test=True)
-        super(MockLoaderEmpty, self).__init__(config, connect=False)
-
-    def search(self, terms, limit=None, sort=None, current=1, task=None):
+    def search(self, terms, limit=None, sort=None, noreviews=True):
         return []
 
-    def find(self, key, value, current=1, task=None):
+    def find(self, key, value):
         raise Exception('Not implemented')
 
-    def load_publications(self, ids, current=1, task=None):
+    def load_publications(self, ids):
         raise Exception('Not implemented')
 
-    def load_citation_stats(self, ids, current=1, task=None):
+    def load_citations_by_year(self, ids):
         raise Exception('Not implemented')
 
-    def load_citations(self, ids, current=1, task=None):
+    def load_citations(self, ids):
         raise Exception('Not implemented')
 
-    def load_cocitations(self, ids, current=1, task=None):
+    def load_cocitations(self, ids):
         raise Exception('Not implemented')
 
-    def load_bibliographic_coupling(self, ids=None, current=1, task=None):
+    def load_bibliographic_coupling(self, ids=None):
         raise Exception('Not implemented')
 
-    def expand(self, ids, limit, current=1, task=None):
+    def expand(self, ids, limit):
         raise Exception('Not implemented')

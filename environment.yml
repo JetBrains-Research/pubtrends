@@ -18,16 +18,15 @@ dependencies:
   - parameterized=0.7.4
   - python=3.8.2
   - pytest=5.4.1
+  - psycopg2=2.8.5
   - wordcloud=1.6.0
   - networkx=2.4
   - python-louvain=0.13
   - scikit-learn=0.22.1
-  - catboost=0.23
   - pip
   - pip:
       - gunicorn
       - redis
-      - scholarmetrics==0.2.1
       - neo4j==1.7.6
       - flask-admin==1.5.6
       - flask-security==3.0.0

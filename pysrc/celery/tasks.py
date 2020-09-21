@@ -6,13 +6,12 @@ from celery import Celery, current_task
 from pysrc.papers.analyzer import KeyPaperAnalyzer
 from pysrc.papers.analyzer_experimental import ExperimentalAnalyzer
 from pysrc.papers.config import PubtrendsConfig
-from pysrc.papers.plotter import visualize_analysis
-from pysrc.papers.plotter_experimental import visualize_experimental_analysis
-from pysrc.papers.pm_loader import PubmedLoader
+from pysrc.papers.db.loaders import Loaders
+from pysrc.papers.db.search_error import SearchError
+from pysrc.papers.plot.plotter import visualize_analysis
+from pysrc.papers.plot.plotter_experimental import visualize_experimental_analysis
 from pysrc.papers.progress import Progress
-from pysrc.papers.ss_loader import SemanticScholarLoader
-from pysrc.papers.utils import SORT_MOST_CITED
-from pysrc.prediction.arxiv_loader import ArxivLoader
+from pysrc.papers.utils import SORT_MOST_CITED, ZOOM_OUT, PAPER_ANALYSIS
 
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379'),
 CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379')
@@ -24,13 +23,21 @@ PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
 
 @celery.task(name='analyze_search_terms')
-def analyze_search_terms(source, query, sort=None, limit=None):
-    loader = get_loader(source, PUBTRENDS_CONFIG)
+def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, expand=0.5):
+    loader = Loaders.get_loader(source, PUBTRENDS_CONFIG)
     analyzer = get_analyzer(loader, PUBTRENDS_CONFIG)
     try:
         sort = sort or SORT_MOST_CITED
-        ids = analyzer.search_terms(query, limit=limit, sort=sort, task=current_task)
-        analyzer.analyze_papers(ids, query, current_task)
+        limit = limit or analyzer.config.show_max_articles_default_value
+        ids = analyzer.search_terms(query, limit=limit, sort=sort,
+                                    noreviews=noreviews, expand=expand,
+                                    task=current_task)
+        if 0 < len(ids):
+            ids = analyzer.expand_ids(ids,
+                                      limit=min(len(ids) + KeyPaperAnalyzer.EXPAND_PAPERS, int(limit * (1 + expand))),
+                                      keep_keywords=True, steps=KeyPaperAnalyzer.EXPAND_STEPS,
+                                      current=2, task=current_task)
+        analyzer.analyze_papers(ids, query, noreviews=noreviews, task=current_task)
     finally:
         loader.close_connection()
 
@@ -45,11 +52,27 @@ def analyze_search_terms(source, query, sort=None, limit=None):
 
 
 @celery.task(name='analyze_id_list')
-def analyze_id_list(source, id_list, zoom, query):
-    loader = get_loader(source, PUBTRENDS_CONFIG)
+def analyze_id_list(source, ids, zoom, query):
+    if len(ids) == 0:
+        raise RuntimeError("Empty papers list")
+
+    loader = Loaders.get_loader(source, PUBTRENDS_CONFIG)
     analyzer = get_analyzer(loader, PUBTRENDS_CONFIG)
     try:
-        ids = analyzer.process_id_list(id_list, zoom, 1, current_task)
+        if zoom == ZOOM_OUT:
+            ids = analyzer.expand_ids(
+                ids,
+                limit=min(len(ids) + KeyPaperAnalyzer.EXPAND_PAPERS, analyzer.config.max_number_to_expand),
+                keep_keywords=True, steps=1,
+                current=1, task=current_task
+            )
+        elif zoom == PAPER_ANALYSIS:
+            ids = analyzer.expand_ids(ids,
+                                      limit=KeyPaperAnalyzer.EXPAND_PAPERS,
+                                      keep_keywords=False, steps=KeyPaperAnalyzer.EXPAND_STEPS,
+                                      current=1, task=current_task)
+        else:
+            ids = ids  # Leave intact
         analyzer.analyze_papers(ids, query, current_task)
     finally:
         loader.close_connection()
@@ -64,31 +87,22 @@ def analyze_id_list(source, id_list, zoom, query):
 
 @celery.task(name='find_paper_async')
 def find_paper_async(source, key, value):
-    loader = get_loader(source, PUBTRENDS_CONFIG)
+    loader = Loaders.get_loader(source, PUBTRENDS_CONFIG)
     progress = Progress(total=2)
-    loader.set_progress(progress)
     try:
+        progress.info(f"Searching for a publication with {key} '{value}'", current=1, task=None)
         result = loader.find(key, value)
+        progress.info(f'Found {len(result)} publications in the local database', current=1, task=None)
+
         if len(result) == 1:
             progress.info('Done', current=2)
             return result
         elif len(result) == 0:
-            raise Exception('Found no papers matching specified key - value pair')
+            raise SearchError('Found no papers matching specified key - value pair')
         else:
-            raise Exception('Found multiple papers matching your search, please try to be more specific')
+            raise SearchError('Found multiple papers matching your search, please try to be more specific')
     finally:
         loader.close_connection()
-
-
-def get_loader(source, config):
-    if source == 'Pubmed':
-        return PubmedLoader(config)
-    elif source == 'Semantic Scholar':
-        return SemanticScholarLoader(config)
-    elif source == 'Arxiv':
-        return ArxivLoader(config)
-    else:
-        raise ValueError(f"Unknown source {source}")
 
 
 def get_analyzer(loader, config):

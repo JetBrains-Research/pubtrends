@@ -23,10 +23,16 @@ class PubtrendsConfig:
             raise RuntimeError(f'Configuration file not found among: {self.CONFIG_PATHS}')
         params = config_parser['params']
 
-        self.neo4jhost = params['neo4jhost' if not test else 'test_neo4jhost']
-        self.neo4jport = params['neo4jport' if not test else 'test_neo4jport']
-        self.neo4juser = params['neo4jusername' if not test else 'test_neo4jusername']
-        self.neo4jpassword = params['neo4jpassword' if not test else 'test_neo4jpassword']
+        self.neo4j_host = params['neo4j_host' if not test else 'test_neo4j_host']
+        self.neo4j_port = params['neo4j_port' if not test else 'test_neo4j_port']
+        self.neo4j_username = params['neo4j_username' if not test else 'test_neo4j_username']
+        self.neo4j_password = params['neo4j_password' if not test else 'test_neo4j_password']
+
+        self.postgres_host = params['postgres_host' if not test else 'test_postgres_host']
+        self.postgres_port = params['postgres_port' if not test else 'test_postgres_port']
+        self.postgres_username = params['postgres_username' if not test else 'test_postgres_username']
+        self.postgres_password = params['postgres_password' if not test else 'test_postgres_password']
+        self.postgres_database = params['postgres_database' if not test else 'test_postgres_database']
 
         self.experimental = params.getboolean('experimental')
 
@@ -37,7 +43,6 @@ class PubtrendsConfig:
         self.ss_search_example_terms = [terms.strip() for terms in params['ss_search_example_terms'].split(';')]
 
         self.min_search_words = params.getint('min_search_words') if not test else 0
-        self.max_number_of_articles = params.getint('max_number_of_articles')
         self.max_number_of_citations = params.getint('max_number_of_citations')
         self.max_number_of_cocitations = params.getint('max_number_of_cocitations')
         self.max_number_of_bibliographic_coupling = params.getint('max_number_of_bibliographic_coupling')
@@ -45,6 +50,7 @@ class PubtrendsConfig:
 
         self.show_max_articles_options = [opt.strip() for opt in params['show_max_articles_options'].split(',')]
         self.show_max_articles_default_value = params['show_max_articles_default_value'].strip()
+        self.max_number_of_articles = max(self.show_max_articles_options)
 
         # Max allowed pending tasks
         self.celery_max_pending_tasks = params.getint('celery_max_pending_tasks')

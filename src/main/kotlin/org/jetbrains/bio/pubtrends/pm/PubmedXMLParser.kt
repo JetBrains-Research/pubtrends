@@ -1,10 +1,13 @@
 package org.jetbrains.bio.pubtrends.pm
 
 import org.apache.logging.log4j.LogManager
-import org.jetbrains.bio.pubtrends.AbstractDBHandler
+import org.jetbrains.bio.pubtrends.db.AbstractDBWriter
 import org.joda.time.DateTime
+import org.joda.time.DateTimeZone
 import org.joda.time.IllegalFieldValueException
-import java.io.*
+import java.io.BufferedInputStream
+import java.io.File
+import java.io.FileInputStream
 import java.util.zip.GZIPInputStream
 import javax.xml.namespace.QName
 import javax.xml.stream.XMLEventReader
@@ -13,7 +16,7 @@ import javax.xml.stream.XMLStreamException
 
 
 class PubmedXMLParser(
-        private val dbHandler: AbstractDBHandler<PubmedArticle>,
+        private val dbWriter: AbstractDBWriter<PubmedArticle>,
         private val batchSize: Int = 0
 ) {
     companion object {
@@ -65,6 +68,8 @@ class PubmedXMLParser(
                 "Jan" to 1, "Feb" to 2, "Mar" to 3, "Apr" to 4, "May" to 5, "Jun" to 6,
                 "Jul" to 7, "Aug" to 8, "Sep" to 9, "Oct" to 10, "Nov" to 11, "Dec" to 12
         )
+
+        val NON_BASIC_LATIN_REGEX = "\\P{InBasic_Latin}".toRegex()
     }
 
     private val factory = XMLInputFactory.newFactory()!!
@@ -352,15 +357,15 @@ class PubmedXMLParser(
                         authorName += " ${dataElement.data}"
                     }
                     fullName == AUTHOR_AFFILIATION_TAG -> {
-                        authorAffiliations.add(dataElement.data.trim(' ', '.'))
+                        authorAffiliations.add(dataElement.data.trim(' ', '.').replace(NON_BASIC_LATIN_REGEX, ""))
                     }
 
                     // Other information - journal title, language, DOI, publication type
                     fullName == JOURNAL_TITLE_TAG -> {
-                        journalName = dataElement.data
+                        journalName = dataElement.data.replace(NON_BASIC_LATIN_REGEX, "")
                     }
                     fullName == LANGUAGE_TAG -> {
-                        language = dataElement.data
+                        language = dataElement.data.replace(NON_BASIC_LATIN_REGEX, "")
                     }
                     (fullName == DOI_TAG) && (isDOIFound) -> {
                         doi = dataElement.data
@@ -400,23 +405,27 @@ class PubmedXMLParser(
 
                         // There is an issue when some local dates might be absent in other calendars
                         val date = try {
-                            if (year != null) DateTime(year, month, day, 12, 0) else null
+                            if (year != null)
+                                DateTime(year, month, day, 12, 0, DateTimeZone.UTC)
+                            else null
                         } catch (e: IllegalFieldValueException) {
-                            if (year != null) DateTime(year, 1, 1, 12, 0) else null
+                            if (year != null)
+                                DateTime(year, 1, 1, 12, 0, DateTimeZone.UTC)
+                            else null
                         }
 
                         abstractText = abstractText.trim()
                         val pubmedArticle = PubmedArticle(
                                 pmid = pmid,
                                 date = date,
-                                title = title,
-                                abstractText = abstractText,
-                                keywordList = keywordList.toList(),
-                                citationList = citationList.toList(),
-                                meshHeadingList = meshHeadingList.toList(),
+                                title = title.replace(NON_BASIC_LATIN_REGEX, ""),
+                                abstract = abstractText.replace(NON_BASIC_LATIN_REGEX, ""),
+                                keywords = keywordList.toList(),
+                                citations = citationList.toList(),
+                                mesh = meshHeadingList.toList(),
                                 type = type,
                                 doi = doi,
-                                auxInfo = ArticleAuxInfo(
+                                aux = AuxInfo(
                                         authors.toList(), databanks.toList(), Journal(journalName), language
                                 )
                         )
@@ -428,7 +437,7 @@ class PubmedXMLParser(
                     AUTHOR_TAG -> {
                         authors.add(
                                 Author(
-                                        authorName, authorAffiliations.toList()
+                                        authorName.replace(NON_BASIC_LATIN_REGEX, ""), authorAffiliations.toList()
                                 )
                         )
                     }
@@ -483,7 +492,7 @@ class PubmedXMLParser(
         if (deletedArticlePMIDList.size > 0) {
             logger.info("Deleting ${deletedArticlePMIDList.size} articles")
 
-            dbHandler.delete(deletedArticlePMIDList)
+            dbWriter.delete(deletedArticlePMIDList.map { it.toString() })
         }
 
         logger.info(
@@ -495,7 +504,7 @@ class PubmedXMLParser(
     private fun storeArticles() {
         logger.info("Storing articles ${articlesStored + 1}-${articlesStored + articleList.size}...")
 
-        dbHandler.store(articleList)
+        dbWriter.store(articleList)
         articlesStored += articleList.size
     }
 }

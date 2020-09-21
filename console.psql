@@ -1,0 +1,125 @@
+-- Show current activity
+SELECT * FROM pg_stat_activity WHERE wait_event IS NOT NULL;
+
+-- Show database size
+SELECT pg_size_pretty(pg_database_size('pubtrends'));
+
+analyse pmpublications;
+analyse pmcitations;
+
+SELECT COUNT(*)
+FROM PMPublications;
+
+SELECT COUNT(*)
+FROM PMCitations;
+
+select max(pmid)
+from PMpublications;
+
+-- Most popular terms
+select *
+from ts_stat($$SELECT tsv FROM PMpublications$$)
+order by ndoc desc
+limit 50;
+
+-- Cache cleanup
+DISCARD ALL;
+VACUUM;
+
+-- full text search 1m4s
+SELECT COUNT(*)
+FROM PMPublications P
+WHERE tsv @@ to_tsquery('english', 'cell');
+
+-- Cache cleanup
+DISCARD ALL;
+VACUUM;
+
+-- by relevance 1m23s
+-- explain analyse
+SELECT pmid
+FROM PMPublications P
+WHERE tsv @@ to_tsquery('english', 'cell')
+ORDER BY ts_rank_cd(tsv, 'cell') DESC
+LIMIT 1000;
+
+-- Cache cleanup
+DISCARD ALL;
+VACUUM;
+
+-- by year 1m20s
+-- explain analyse
+SELECT pmid
+FROM PMPublications P
+WHERE tsv @@ to_tsquery('english', 'cell')
+ORDER BY date DESC NULLS LAST
+LIMIT 1000;
+
+-- Cache cleanup
+DISCARD ALL;
+VACUUM;
+
+-- by citations 2m50s
+-- explain analyse
+SELECT pmid
+FROM PMPublications P
+         LEFT JOIN PMCitations C
+                   ON C.pmid_in = pmid
+WHERE tsv @@ to_tsquery('english', 'cell')
+GROUP BY pmid
+ORDER BY COUNT(*) DESC NULLS LAST
+LIMIT 1000;
+
+
+-- Cache cleanup
+DISCARD ALL;
+VACUUM;
+
+
+-- Create materialized view
+create materialized view matview_pmcitations as
+SELECT pmid, COUNT(*) AS count
+FROM PMPublications P
+         LEFT JOIN PMCitations C
+                   ON C.pmid_in = pmid
+GROUP BY pmid
+HAVING COUNT(*) >= 2;
+create index on matview_pmcitations (pmid);
+
+-- refresh all rows
+refresh materialized view matview_pmcitations;
+
+-- Cache cleanup
+DISCARD ALL;
+VACUUM;
+
+-- by citations with materialized view 1m27sec
+explain analyse
+SELECT P.pmid
+FROM PMPublications P
+         LEFT JOIN matview_pmcitations C
+                   ON P.pmid = C.pmid
+WHERE tsv @@ to_tsquery('english', 'cell')
+ORDER BY count DESC NULLS LAST
+LIMIT 1000;
+
+-- Cache cleanup
+DISCARD ALL;
+VACUUM;
+
+-- by citations with materialized view 1m22sec
+-- explain analyse
+WITH X as (SELECT P.pmid as pmid
+            FROM PMPublications P
+            WHERE tsv @@ to_tsquery('english', 'cell'))
+SELECT X.pmid FROM X
+LEFT JOIN matview_pmcitations C
+ON X.pmid = C.pmid
+ORDER BY count DESC NULLS LAST
+LIMIT 1000;
+
+
+select count(*)
+from pmcitations
+where pmid_in = 388356;
+

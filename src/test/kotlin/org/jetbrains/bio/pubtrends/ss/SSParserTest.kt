@@ -1,13 +1,13 @@
 package org.jetbrains.bio.pubtrends.ss
 
-import org.jetbrains.bio.pubtrends.MockDBHandler
+import org.jetbrains.bio.pubtrends.db.MockDBWriter
 import org.junit.Test
 import java.io.File
 import java.nio.file.Paths
 import kotlin.test.assertEquals
 
 class SSParserTest {
-    private val dbHandler = MockDBHandler<SemanticScholarArticle>()
+    private val dbHandler = MockDBWriter<SemanticScholarArticle>()
     private val parsedArticles = dbHandler.articles
 
     init {
@@ -63,14 +63,14 @@ class SSParserTest {
     @Test
     fun testParseCitations() {
         listOf(0, 1, 2).forEach {
-            assertEquals(SemanticScholarArticles.articles[it].citationList, parsedArticles[it].citationList)
+            assertEquals(SemanticScholarArticles.articles[it].citations, parsedArticles[it].citations)
         }
     }
 
     @Test
     fun testParseEmptyCitations() {
         listOf(3, 4).forEach {
-            assertEquals(SemanticScholarArticles.articles[it].citationList, listOf())
+            assertEquals(SemanticScholarArticles.articles[it].citations, listOf())
         }
     }
 

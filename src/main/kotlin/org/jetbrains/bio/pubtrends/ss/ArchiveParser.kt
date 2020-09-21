@@ -3,7 +3,7 @@ package org.jetbrains.bio.pubtrends.ss
 import com.google.gson.*
 import com.google.gson.reflect.TypeToken
 import org.apache.logging.log4j.LogManager
-import org.jetbrains.bio.pubtrends.AbstractDBHandler
+import org.jetbrains.bio.pubtrends.db.AbstractDBWriter
 import java.io.File
 import java.nio.file.Path
 import java.util.*
@@ -11,7 +11,7 @@ import java.util.zip.GZIPInputStream
 
 
 class ArchiveParser(
-        private val dbHandler: AbstractDBHandler<SemanticScholarArticle>,
+        private val dbWriter: AbstractDBWriter<SemanticScholarArticle>,
         private val archiveFileGz: File,
         private var batchSize: Int,
         private val collectStats: Boolean,
@@ -85,11 +85,11 @@ class ArchiveParser(
                 val journal = extractJournal(jsonObject)
                 val links = extractLinks(jsonObject)
                 val venue = jsonObject.get("venue")?.asString ?: ""
-                val aux = ArticleAuxInfo(authors, journal, links, venue)
+                val aux = AuxInfo(authors, journal, links, venue)
 
                 curArticle = SemanticScholarArticle(ssid = ssid, title = title,
                         pmid = pmid, doi = doi, abstract = abstract, keywords = keywords, year = year,
-                        citationList = citationList, aux = aux)
+                        citations = citationList, aux = aux)
 
                 addArticleToBatch(curArticle)
 
@@ -110,7 +110,7 @@ class ArchiveParser(
     }
 
     private fun storeBatch() {
-        dbHandler.store(currentBatch)
+        dbWriter.store(currentBatch)
         currentBatch.clear()
         batchIndex++
         val progress = 10000 * batchIndex / batchSize

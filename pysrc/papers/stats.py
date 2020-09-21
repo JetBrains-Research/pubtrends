@@ -9,7 +9,7 @@ from bokeh.models import HoverTool
 from bokeh.plotting import figure
 from wordcloud import WordCloud
 
-from pysrc.papers.plotter import Plotter
+from pysrc.papers.plot.plotter import Plotter
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
 PLOT_WIDTH = 900

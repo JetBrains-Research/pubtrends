@@ -3,6 +3,30 @@ Pubtrends changelog
 
 Here you can see the full list of changes between each release.
 
+Version 0.7
+-------------
+
+Released on XXX XX, 2020
+
+ - Reworked DB backends (default is postgres)
+ - Optimized most cited search for postgres
+ - Support MESH terms and keywords for Pubmed
+ - Expand queries when small number of papers can be found by direct search
+ - Show keywords and MESH terms in paper info
+ - Bugfixes and improvements
+
+
+Version 0.6
+-------------
+
+Released on August 8, 2020
+
+ - Reworked topics extraction based on the smallest communities of Louvain algorithm
+ - Removed limitation of 20 topics
+ - Show highly similar papers between topics in structure graph
+ - Bugfixes
+
+
 Version 0.5
 -------------
 

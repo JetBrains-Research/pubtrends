@@ -89,7 +89,7 @@
             const jobid = new URL(window.location).searchParams.get('jobid');
             window.open(url + '&type=' + graphType + '&jobid=' + jobid, '_blank');
         }
-        
+
         function review_callback(papersNumber, sentsNumber) {
             const url = '/review?query=' + query_fixed + '&source={{source}}&limit={{limit}}&sort={{sort}}';
             // Decode jobid from URL
@@ -101,6 +101,9 @@
         $(document).ready(function() {
             $('#authors-table').DataTable();
             $('#journals-table').DataTable();
+            {% if topic_evolution is defined %}
+                $('#topic_evolution_keywords').DataTable();
+            {% endif %}
 
             var words = JSON.parse('{{ papers_word_cloud }}'.replace(/&#34;/g, '"').replace(/&amp;/g, '&'));
             process_word_cloud('papers_word_cloud', 220, 335, words, papers_callback_word);
@@ -296,7 +299,7 @@
                     <div class="card-body">
                         <h2 class="card-subtitle">Top Cited Papers</h2>
                         <p>
-                            Top 50 or 10% cited papers are shown among all the papers for given search query.<br>
+                            Top 50 cited papers are shown among all the papers for given search query.<br>
                             Year reflects publication year of the original paper.
                         </p>
                         <button type="button" class="btn btn-light"
@@ -357,24 +360,21 @@
                     </div>
                     <div class="card-body">
                         <p>
-                            Similarity between papers is computed based on <em>co-citations</em>,
-                            <em>bibliographic coupling</em>, <em>direct citations</em>,<br>
+                            Similarity between papers is computed based on <em>bibliographic coupling</em>,
+                            <em>co-citations</em>, <em>direct citations</em>,<br>
                             and <em>potential</em> citations based on text similarity.<br>
-                            Structure within a research field can be visualized as an hierarchical graph.<br>
-                        </p>
-                            <button id="show_structure_graph" type="button" class="col-auto btn btn-light"
-                                    onclick="(function(){ graph_callback('structure') })();">
-                                <img src="{{ url_for('static', filename='globe.svg') }}" alt="+"/>&nbsp;
-                                Show structure graph
-                            </button>
-                        </p>
+                            Clustering by similarity information is used for topics extraction.
                         <hr>
                         <p>
-                            Similarity information is used for topics extraction.<br>
-                            Bars represent number of papers within each topic.<br>
-                            Click on bars to get detailed information about keywords and publications for each topic.
-                            <br>
-                            <em>Note: small topics are merged to "Other" by size (&#8804;10 papers) and to limit total number to &#8804;20.</em>
+                            Similarity between topics is an average similarity between the papers.
+                        </p>
+                        {% for script, div in components_similarity %}
+                        {{ script|safe }}
+                        {{ div|safe }}
+                        {% endfor %}
+                        <hr>
+                        <p>
+                            Topic sizes. <em>Note: small topics are merged to "Other".</em>
                         </p>
                         <div>
                             {% for script, div in component_ratio %}
@@ -384,12 +384,22 @@
                         </div>
                         <hr>
                         <p>
-                            Similarity between topics is an average similarity between the papers.
+                            Topics are organized hierarchically.
                         </p>
-                        {% for script, div in components_similarity %}
+                        {% for script, div in topics_hierarchy %}
                         {{ script|safe }}
                         {{ div|safe }}
                         {% endfor %}
+                        <hr>
+                        Structure within a research field can be visualized as a graph.<br>
+                        </p>
+                        <button id="show_structure_graph" type="button" class="col-auto btn btn-light"
+                                onclick="(function(){ graph_callback('structure') })();">
+                            <img src="{{ url_for('static', filename='globe.svg') }}" alt="+"/>&nbsp;
+                            Show structure graph
+                        </button>
+                        </p>
+
                     </div>
                 </div>
 
@@ -410,9 +420,9 @@
                             {% endfor %}
                         </div>
                         <hr>
-                        <p>Each boxplot demonstrates summary publication year for given topic.</p>
+                        <p>Summary publication year for topics.</p>
                         <div>
-                            {% for script, div in component_years_summary_boxplots %}
+                            {% for script, div in component_years_summary %}
                             {{ script|safe }}
                             {{ div|safe }}
                             {% endfor %}
@@ -552,7 +562,7 @@
                         </table>
                     </div>
                 </div>
-            
+
                 <div class="card mt-3">
                     <div class="card-title" id="review">
                         <h1 class="card-header">Review</h1>
@@ -598,19 +608,40 @@
                         <h2 class="card-subtitle">Topic Evolution</h2>
                         <p>
                             Topics extraction is performed longitudinally at several time points to detect merges and splits
-                            of clusters,<br>
-                            which can be related to new ideas. Clusters are described by several words with the highest<br>
-                            <em>TF-IDF</em> value, edge width reflects the number of papers which moved from one cluster to
-                            another.
+                            of topics. <br>
+                            Edge width reflects the number of papers which moved from one topic to another.<br>
+                            <i>NPY</i> - not published yet.
                         </p>
                         <div>
                             {% if topic_evolution is defined %}
-                            {% for script, div in topic_evolution %}
-                            {{ script|safe }}
-                            {{ div|safe }}
-                            {% endfor %}
+                                {% for script, div in topic_evolution %}
+                                {{ script|safe }}
+                                {{ div|safe }}
+                                {% endfor %}
+                                {% if topic_evolution_keywords is defined %}
+                            <table id="topic_evolution_keywords" class="table table-sm table-bordered table-striped">
+                                <thead>
+                                <tr>
+                                    <th scope="col">#</th>
+                                    <th scope="col">Year</th>
+                                    <th scope="col">Topic</th>
+                                    <th scope="col">Tags</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for year, topic, kwds in topic_evolution_keywords %}
+                                <tr>
+                                    <th scope="row">{{ loop.index }}</th>
+                                    <td>{{ year }}</td>
+                                    <td>{{ topic }}</td>
+                                    <td>{{ kwds }}</td>
+                                </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                                {% endif %}
                             {% else %}
-                            Failed to analyze topic evolution because year step is too big.
+                                Failed to analyze topic evolution because year step is too big.
                             {% endif %}
                         </div>
                     </div>
@@ -719,6 +750,11 @@
                         "is organised into tables, which also show distribution over topics. You can " +
                         "open all papers for a certain author or journal by clicking the corresponding " +
                         "number of papers."
+                },
+                {
+                    element: '#review',
+                    intro: "Generate review draft. Apply deep neural network language model BERT " +
+                        "to collect most important sentences from most cited papers for earch topic."
                 },
                 {   intro: "Congratulations!<br>" +
                         "Now you are ready to explore scientific literature with PubTrends."

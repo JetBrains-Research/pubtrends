@@ -6,7 +6,6 @@ import org.neo4j.driver.v1.exceptions.ServiceUnavailableException
 import java.io.*
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.zip.GZIPInputStream
 import javax.xml.stream.XMLStreamException
 
 class PubmedCrawlerException : Exception {
@@ -71,17 +70,17 @@ class PubmedCrawler(
             val (baselineFiles, updateFiles) = ftpHandler.fetch(lastId)
             val baselineSize = baselineFiles.size
             val updatesSize = updateFiles.size
+            val totalSize = baselineSize + updatesSize
             logger.info(
-                    "Found ${baselineSize + updatesSize} new file(s)\n" +
-                            "Baseline: $baselineSize, Updates: $updatesSize"
+                    "Found $totalSize new file(s)\nBaseline: $baselineSize, Updates: $updatesSize"
             )
             if (baselineSize + updatesSize == 0) {
                 return false
             }
             logger.info("Processing baseline")
-            downloadFiles(baselineFiles, isBaseline = true)
+            downloadAndProcessFiles(baselineFiles, 0, totalSize, isBaseline = true)
             logger.info("Processing updates")
-            downloadFiles(updateFiles, isBaseline = false)
+            downloadAndProcessFiles(updateFiles, baselineSize, totalSize, isBaseline = false)
         } catch (e: IOException) {
             logger.error("Download failed: ${e.message}")
             throw PubmedCrawlerException(e)
@@ -109,13 +108,17 @@ class PubmedCrawler(
         return false
     }
 
-    private fun downloadFiles(files: List<String>, isBaseline: Boolean) {
-        val filesSize = files.size
+    private fun downloadAndProcessFiles(
+            files: List<String>,
+            startProgress: Int,
+            totalProgress: Int,
+            isBaseline: Boolean
+    ) {
         val fileType = if (isBaseline) "baseline" else "update"
 
         files.forEachIndexed { idx, file ->
             val localArchiveName = "${tempDirectory.absolutePath}/$file"
-            val progressPrefix = "(${idx + 1} / $filesSize $fileType)"
+            val progressPrefix = "(${startProgress + idx + 1} / $totalProgress total) [$fileType]"
 
             logger.info("$progressPrefix $localArchiveName: Downloading...")
 
