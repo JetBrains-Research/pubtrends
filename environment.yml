@@ -30,6 +30,7 @@ dependencies:
   - pip:
       - gunicorn
       - redis
+      - vine==1.3.0
       - lazy==1.4
       - neo4j==1.7.6
       - flask-admin==1.5.6
