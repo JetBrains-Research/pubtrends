@@ -28,8 +28,8 @@ class KeyPaperAnalyzer:
     # Direct citation (DC) was a distant third among the three...
     SIMILARITY_BIBLIOGRAPHIC_COUPLING = 2
     SIMILARITY_COCITATION = 1
-    SIMILARITY_CITATION = 0.1
-    SIMILARITY_TEXT_CITATION = 0.01
+    SIMILARITY_CITATION = 0.5  # Maximum single citation between two papers
+    SIMILARITY_TEXT_CITATION = 1  # Cosine similarity is <= 1
 
     SIMILARITY_TEXT_MIN = 0.3  # Minimal cosine similarity for potential text citation
     SIMILARITY_TEXT_CITATION_N = 20  # Max number of potential text citations for paper
