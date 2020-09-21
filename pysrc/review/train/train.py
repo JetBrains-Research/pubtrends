@@ -1,12 +1,13 @@
 import math
 
-import config as cfg
 import torch
 import torch.distributed as distrib
 import torch.nn as nn
 from torch.optim.optimizer import Optimizer
 from tqdm import tqdm
-from utils import get_enc_lr, get_dec_lr
+
+import pysrc.review.config as cfg
+from pysrc.review.utils import get_enc_lr, get_dec_lr
 
 
 def distribute(loss, device):
