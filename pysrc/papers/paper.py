@@ -8,9 +8,10 @@ from pysrc.papers.analyzer import KeyPaperAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.plot.plotter import Plotter
+from pysrc.papers.utils import trim, build_corpus
 from pysrc.review.model import load_model
 from pysrc.review.text import text_to_data
-from pysrc.papers.utils import trim, build_corpus, setup_single_gpu
+from pysrc.review.train.main import setup_single_gpu
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,7 @@ MODEL_CACHE = ModelCache()
 
 def prepare_review_data(data, source, num_papers, num_sents):
     logger.info(f'Initializing analyzer for review')
-    loader, url_prefix = get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
+    loader, url_prefix = Loaders.get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
     analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
     analyzer.init(data)
 
@@ -50,7 +51,7 @@ def prepare_review_data(data, source, num_papers, num_sents):
     model.eval()
 
     top_cited_papers, top_cited_df = analyzer.find_top_cited_papers(
-        analyzer.df, n_papers=int(num_papers), threshold=1
+        analyzer.df, n_papers=int(num_papers)
     )
 
     logger.info(f'Processing abstracts for {len(top_cited_papers)} top cited papers')
