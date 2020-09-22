@@ -111,6 +111,8 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
             pub_df = Loader.process_publications_dataframe(pub_df)
             # Hack for missing type in SS, see https://github.com/JetBrains-Research/pubtrends/issues/200
             pub_df['type'] = 'Article'
+            pub_df['mesh'] = ''
+            pub_df['keywords'] = ''
         return pub_df
 
     def load_citations_by_year(self, ids):
