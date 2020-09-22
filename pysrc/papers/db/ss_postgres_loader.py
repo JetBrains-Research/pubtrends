@@ -114,7 +114,8 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
 
         # Hack for missing type in SS, see https://github.com/JetBrains-Research/pubtrends/issues/200
         pub_df['type'] = 'Article'
-
+        pub_df['mesh'] = ''
+        pub_df['keywords'] = ''
         return Loader.process_publications_dataframe(pub_df)
 
     def load_citations_by_year(self, ids):
