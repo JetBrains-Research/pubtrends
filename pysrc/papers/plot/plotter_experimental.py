@@ -3,13 +3,21 @@ from bokeh.embed import components
 # Tools used: hover,pan,tap,wheel_zoom,box_zoom,reset,save
 from holoviews import dim
 
+from pysrc.papers.db.loaders import Loaders
+from pysrc.papers.paper import MAX_TITLE_LENGTH
 from pysrc.papers.plot.plot_preprocessor_experimental import ExperimentalPlotPreprocessor
 from pysrc.papers.plot.plotter import Plotter, PLOT_WIDTH, TALL_PLOT_HEIGHT, visualize_analysis
+from pysrc.papers.utils import trim
 
 
 def visualize_experimental_analysis(analyzer):
+    _, url_prefix = Loaders.get_loader_and_url_prefix(analyzer.source, analyzer.config)
     result = visualize_analysis(analyzer)
     result['experimental'] = True  # Mark as experimental
+    if analyzer.numbers_df is not None:
+        result['numbers'] = [(row['id'], url_prefix + row['id'], trim(row['title'], MAX_TITLE_LENGTH), row['numbers'])
+                             for _, row in analyzer.numbers_df.iterrows()]
+
     if analyzer.similarity_graph.nodes():
         evolution_result = ExperimentalPlotter(analyzer).topic_evolution()
         if evolution_result is not None:

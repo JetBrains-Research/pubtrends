@@ -22,6 +22,7 @@ dependencies:
   - networkx=2.4
   - python-louvain=0.13
   - scikit-learn=0.22.1
+  - spacy=2.3.2
   - pip
   - pip:
       - gunicorn
@@ -32,3 +33,4 @@ dependencies:
       - flask-security==3.0.0
       - flask-sqlalchemy==2.4.1
       - email-validator==1.1.0
+      - text2num

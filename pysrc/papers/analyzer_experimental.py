@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 from pysrc.papers.analyzer import KeyPaperAnalyzer
+from pysrc.papers.experimental.numbers import extract_metrics, MetricExtractor
 from pysrc.papers.utils import get_evolution_topics_description
 
 logger = logging.getLogger(__name__)
@@ -20,19 +21,30 @@ class ExperimentalAnalyzer(KeyPaperAnalyzer):
         super().__init__(loader, config, test)
 
     def total_steps(self):
-        return super().total_steps() + 2  # One extra step for visualization
+        return super().total_steps() + 3  # One extra step for visualization
 
     def analyze_papers(self, ids, query, noreviews=True, task=None):
         super().analyze_papers(ids, query, noreviews, task)
-        if len(self.df) < ExperimentalAnalyzer.EVOLUTION_MIN_PAPERS:
+
+        if len(self.df) >= 0:
+            logger.debug('Perform numbers extraction')
+            self.progress.info('Extracting numbers from publication abstracts',
+                               current=super().total_steps() + 1, task=task)
+            self.numbers_df = self.extract_numbers(self.df)
+        else:
+            logger.debug('Not enough papers for numbers extraction')
+
+        if len(self.df) >= ExperimentalAnalyzer.EVOLUTION_MIN_PAPERS:
+            logger.debug('Perform topic evolution analysis and get topic descriptions')
+            self.evolution_df, self.evolution_year_range = \
+                self.topic_evolution_analysis(self.cocit_df, current=super().total_steps(), task=task)
+            self.evolution_kwds = self.topic_evolution_descriptions(
+                self.df, self.evolution_df, self.evolution_year_range, current=super().total_steps() + 2, task=task
+            )
+        else:
+            logger.debug('Not enough papers for topics evolution')
             self.evolution_df = None
-            return
-        # Perform topic evolution analysis and get topic descriptions
-        self.evolution_df, self.evolution_year_range = \
-            self.topic_evolution_analysis(self.cocit_df, current=super().total_steps(), task=task)
-        self.evolution_kwds = self.topic_evolution_descriptions(
-            self.df, self.evolution_df, self.evolution_year_range, current=super().total_steps() + 1, task=task
-        )
+
 
     def topic_evolution_analysis(self, cocit_df, step=EVOLUTION_STEP, min_papers=0, current=0, task=None):
         min_year = int(cocit_df['year'].min())
@@ -143,3 +155,20 @@ class ExperimentalAnalyzer(KeyPaperAnalyzer):
                     )
 
         return evolution_kwds
+
+    @staticmethod
+    def extract_numbers(df):
+        # Slow, currently moved out of the class to speed up fixing & rerunning the code of MetricExtractor
+        metrics_data = []
+        for _, data in df.iterrows():
+            paper_metrics_data = [data['id'], *extract_metrics(data['abstract'])]
+            metrics_data.append(paper_metrics_data)
+        me = MetricExtractor(metrics_data)
+        result = pd.merge(left=me.metrics_df, left_on='ID', right=df[['id', 'title']], right_on='id')
+        result = result[['id', 'title', 'Metrics']]
+        result['numbers'] = [
+            '; '.join(
+                f'{number}:{",".join(str(v[0]) for v in values)}' for number, values in row['Metrics'].items()
+            ) for _, row in result.iterrows()
+        ]
+        return result[['id', 'title', 'numbers']]

@@ -97,6 +97,9 @@
             {% if topic_evolution is defined %}
                 $('#topic_evolution_keywords').DataTable();
             {% endif %}
+            {% if numbers is defined %}
+                $('#numbers').DataTable();
+            {% endif %}
 
             var words = JSON.parse('{{ papers_word_cloud }}'.replace(/&#34;/g, '"').replace(/&amp;/g, '&'));
             process_word_cloud('papers_word_cloud', 220, 335, words, papers_callback_word);
@@ -554,6 +557,35 @@
                         <h1 class="card-header">Experimental</h1>
                     </div>
                     <div class="card-body">
+                        <h2 class="card-subtitle">Numbers</h2>
+                        <p>
+                            Numbers are extracted from papers abstracts, use search to filter the table.
+                        </p>
+                        <div>
+                            {% if numbers is defined %}
+                            <table id="numbers" class="table table-sm table-bordered table-striped">
+                                <thead>
+                                <tr>
+                                    <th scope="col">#</th>
+                                    <th scope="col">Id</th>
+                                    <th scope="col">Title</th>
+                                    <th scope="col">Numbers</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for id, url, title, metrics in numbers %}
+                                <tr>
+                                    <th scope="row">{{ loop.index }}</th>
+                                    <td><a class="link" href="{{ url }}">{{ id }}</a></td>
+                                    <td>{{ title }}</td>
+                                    <td>{{ metrics }}</td>
+                                </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                            {% endif %}
+                        </div>
+                        <hr>
                         <h2 class="card-subtitle">Topic Evolution</h2>
                         <p>
                             Topics extraction is performed longitudinally at several time points to detect merges and splits
