@@ -98,7 +98,12 @@
                 $('#topic_evolution_keywords').DataTable();
             {% endif %}
             {% if numbers is defined %}
-                $('#numbers').DataTable();
+                // disable search on the first column
+                $('#numbers').DataTable({
+                    "columnDefs": [
+                        { "searchable": false, "targets": 1 }
+                    ]
+                });
             {% endif %}
 
             var words = JSON.parse('{{ papers_word_cloud }}'.replace(/&#34;/g, '"').replace(/&amp;/g, '&'));
@@ -567,7 +572,6 @@
                                 <thead>
                                 <tr>
                                     <th scope="col">#</th>
-                                    <th scope="col">Id</th>
                                     <th scope="col">Title</th>
                                     <th scope="col">Numbers</th>
                                 </tr>
@@ -576,8 +580,7 @@
                                 {% for id, url, title, metrics in numbers %}
                                 <tr>
                                     <th scope="row">{{ loop.index }}</th>
-                                    <td><a class="link" href="{{ url }}">{{ id }}</a></td>
-                                    <td>{{ title }}</td>
+                                    <td><a class="link" href="{{ url }}">{{ title }}</a></td>
                                     <td>{{ metrics }}</td>
                                 </tr>
                                 {% endfor %}
