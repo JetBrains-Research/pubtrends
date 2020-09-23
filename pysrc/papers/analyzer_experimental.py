@@ -168,7 +168,8 @@ class ExperimentalAnalyzer(KeyPaperAnalyzer):
         result = result[['id', 'title', 'Metrics']]
         result['numbers'] = [
             '; '.join(
-                f'{number}:{",".join(str(v[0]) for v in values)}' for number, values in row['Metrics'].items()
+                f'{number}:{",".join(str(v) for v in sorted(set(v[0] for v in values)))}'
+                for number, values in row['Metrics'].items()
             ) for _, row in result.iterrows()
         ]
         return result[['id', 'title', 'numbers']]
