@@ -23,10 +23,18 @@
             crossorigin="anonymous"></script>
     <script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-2.0.2.min.js"
             crossorigin="anonymous"></script>
-    <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.10.20/js/dataTables.bootstrap4.min.js"></script>
-    <link href="https://cdn.datatables.net/1.10.20/css/dataTables.bootstrap4.min.css"
+
+    <!-- DataTables with search -->
+    <script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.21/js/dataTables.bootstrap4.min.js"></script>
+    <link href="https://cdn.datatables.net/1.10.21/css/dataTables.bootstrap4.min.css"
           rel="stylesheet" type="text/css">
+    <!-- DataTables search highlight -->
+    <script src="https://cdn.jsdelivr.net/g/mark.js(jquery.mark.min.js)"></script>
+    <script src="https://cdn.datatables.net/plug-ins/1.10.13/features/mark.js/datatables.mark.js"></script>
+    <link href="https://cdn.datatables.net/plug-ins/1.10.13/features/mark.js/datatables.mark.min.css"
+    type="text/css">
+
 
     <!-- IntroJS feature tour -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.9.3/introjs.css"
@@ -92,6 +100,10 @@
 
 
         $(document).ready(function() {
+            // Mark search by default
+            $.extend(true, $.fn.dataTable.defaults, {
+                mark: true
+            });
             $('#authors-table').DataTable();
             $('#journals-table').DataTable();
             {% if topic_evolution is defined %}
