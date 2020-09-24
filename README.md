@@ -206,7 +206,8 @@ Please ensure that you have Database configured, up and running.
     "/usr/lib/postgresql/12/bin/pg_ctl -D /home/user/postgres start; sudo neo4j start; \
     cd /pubtrends; mkdir ~/.pubtrends; cp config.properties ~/.pubtrends; \
     ./gradlew test; \
-    ./gradlew shadowJar; source activate pubtrends; pytest pysrc"
+    ./gradlew shadowJar; source activate pubtrends; python -m spacy download en_core_web_sm; \
+    pytest pysrc"
     ```
 
 ## Deployment
