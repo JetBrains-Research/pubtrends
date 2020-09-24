@@ -345,7 +345,7 @@ def show_ids():
                                    export_name=export_name,
                                    papers=prepare_papers_data(data, source, comp, word, author, journal, papers_list))
     logger.error(f'/papers error {log_request(request)}')
-    return render_template_string(f"Request does not contain necessary params: {request}"), 400
+    return render_template_string(f"Something went wrong, please rerun your search."), 400
 
 
 @app.route('/cancel')
@@ -431,7 +431,7 @@ def search_terms_(data):
         logger.error(f'/search_terms error', e)
         return render_template_string(f"Error occurred. We're working on it. Please check back soon."), 500
     logger.error(f'/search_terms error {log_request(request)}')
-    return render_template_string(f"Request does not contain necessary params: {request}"), 400
+    return render_template_string(f"Something went wrong, please rerun your search."), 400
 
 
 @app.route('/search_paper', methods=['POST'])
@@ -450,7 +450,7 @@ def search_paper():
         logger.error(f'/search_paper error', e)
         return render_template_string(f"Error occurred. We're working on it. Please check back soon."), 500
     logger.error(f'/search_paper error {log_request(request)}')
-    return render_template_string(f"Request does not contain necessary params: {request}"), 400
+    return render_template_string(f"Something went wrong, please rerun your search."), 400
 
 
 @app.route('/process_ids', methods=['POST'])
@@ -470,7 +470,7 @@ def process_ids():
         logger.error(f'/process_ids error', e)
         return render_template_string(f"Error occurred. We're working on it. Please check back soon."), 500
     logger.error(f'/process_ids error {log_request(request)}')
-    return render_template_string(f"Request does not contain necessary params: {request}"), 400
+    return render_template_string(f"Something went wrong, please rerun your search."), 400
 
 
 #######################
