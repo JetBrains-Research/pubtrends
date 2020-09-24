@@ -32,11 +32,13 @@ def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, e
         ids = analyzer.search_terms(query, limit=limit, sort=sort,
                                     noreviews=noreviews, expand=expand,
                                     task=current_task)
-        if 0 < len(ids):
-            ids = analyzer.expand_ids(ids,
-                                      limit=min(len(ids) + KeyPaperAnalyzer.EXPAND_PAPERS, int(limit * (1 + expand))),
-                                      keep_keywords=True, steps=KeyPaperAnalyzer.EXPAND_STEPS,
-                                      current=2, task=current_task)
+        if 0 < len(ids) and expand != 0:
+            ids = analyzer.expand_ids(
+                ids,
+                limit=min(len(ids) + KeyPaperAnalyzer.EXPAND_PAPERS, int(limit * (1 + expand))),
+                keep_keywords=True, steps=KeyPaperAnalyzer.EXPAND_STEPS,
+                current=2, task=current_task
+            )
         analyzer.analyze_papers(ids, query, noreviews=noreviews, task=current_task)
     finally:
         loader.close_connection()
