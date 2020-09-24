@@ -235,7 +235,9 @@
                 <div class="card-body">
                     <p>
                         This section demonstrates similarity with other papers. <br>
-                        Similarity is computed based on citations, co-citations and bibliographic coupling.
+                        Similarity between papers is computed based on <em>bibliographic coupling</em>,
+                        <em>co-citations</em>, <em>direct citations</em>,<br>
+                        and <em>potential</em> citations based on text similarity.<br>
                     </p>
 
                     {% if citing_papers is defined %}
@@ -306,11 +308,11 @@
                         <tr>
                             <th scope="col">#</th>
                             <th scope="col">Title</th>
-                            <th scope="col">Weight</th>
+                            <th scope="col">Similarity</th>
                         </tr>
                         </thead>
                         <tbody>
-                        {% for id, title, url, cw in related_papers %}
+                        {% for id, title, url, similarity in related_papers %}
                         <tr>
                             <th scope="row">{{ loop.index }}</th>
                             <td>
@@ -318,7 +320,7 @@
                                     {{ title }}
                                 </a>
                             </td>
-                            <td>{{ cw }}</td>
+                            <td>{{ similarity }}</td>
                         </tr>
                         {% endfor %}
                         </tbody>
