@@ -5,12 +5,9 @@ from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.plot.plotter import Plotter
 from pysrc.papers.utils import (
-    trim, build_corpus)
+    trim, build_corpus, MAX_TITLE_LENGTH)
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
-
-MAX_TITLE_LENGTH = 200
-
 
 def get_top_papers_id_title(papers, df, key, n=50):
     citing_papers = map(lambda v: (df[df['id'] == v], df[df['id'] == v][key].values[0]), list(papers))

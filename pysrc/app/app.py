@@ -16,8 +16,9 @@ from flask_security import Security, SQLAlchemyUserDatastore, \
 from flask_security.utils import hash_password
 from flask_sqlalchemy import SQLAlchemy
 
-from pysrc.celery.tasks import celery, find_paper_async, analyze_search_terms, analyze_id_list, get_analyzer
+from pysrc.celery.tasks import celery, find_paper_async, analyze_search_terms, analyze_id_list
 from pysrc.celery.tasks_cache import get_or_cancel_task
+from pysrc.papers.analyzer import KeyPaperAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
@@ -251,7 +252,7 @@ def graph():
         if job and job.state == 'SUCCESS':
             _, data, _ = job.result
             loader, url_prefix = Loaders.get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
-            analyzer = get_analyzer(loader, PUBTRENDS_CONFIG)
+            analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
             analyzer.init(data)
             topics_tags = {comp: ', '.join(
                 [w[0] for w in analyzer.df_kwd[analyzer.df_kwd['comp'] == comp]['kwd'].values[0][:10]]

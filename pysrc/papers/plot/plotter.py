@@ -18,9 +18,10 @@ from matplotlib import pyplot as plt
 from more_itertools import unique_everseen
 from wordcloud import WordCloud
 
+from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.utils import LOCAL_BASE_URL, get_topic_word_cloud_data, \
-    get_frequent_tokens, cut_authors_list, ZOOM_OUT, ZOOM_IN, zoom_name, trim, rgb2hex
+    get_frequent_tokens, cut_authors_list, ZOOM_OUT, ZOOM_IN, zoom_name, trim, rgb2hex, MAX_TITLE_LENGTH
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
 hv.extension('bokeh')
@@ -50,7 +51,7 @@ def visualize_analysis(analyzer):
     paper_statistics, word_cloud, zoom_out_callback = plotter.papers_statistics_and_word_cloud_and_callback()
     if analyzer.similarity_graph.nodes():
         topics_hierarchy = plotter.topics_hierarchy()
-        return {
+        result = {
             'topics_analyzed': True,
             'n_papers': analyzer.n_papers,
             'n_citations': int(analyzer.df['total'].sum()),
@@ -75,7 +76,7 @@ def visualize_analysis(analyzer):
             'topics_hierarchy': [components(topics_hierarchy)] if topics_hierarchy is not None else []
         }
     else:
-        return {
+        result = {
             'topics_analyzed': False,
             'n_papers': analyzer.n_papers,
             'n_citations': int(analyzer.df['total'].sum()),
@@ -89,6 +90,20 @@ def visualize_analysis(analyzer):
             'author_statistics': plotter.author_statistics(),
             'journal_statistics': plotter.journal_statistics(),
         }
+
+    _, url_prefix = Loaders.get_loader_and_url_prefix(analyzer.source, analyzer.config)
+    if analyzer.numbers_df is not None:
+        result['numbers'] = [(row['id'], url_prefix + row['id'], trim(row['title'], MAX_TITLE_LENGTH), row['numbers'])
+                             for _, row in analyzer.numbers_df.iterrows()]
+
+    if analyzer.similarity_graph.nodes():
+        evolution_result = plotter.topic_evolution()
+        if evolution_result is not None:
+            evolution_data, keywords_data = evolution_result
+            result['topic_evolution'] = [components(evolution_data)]
+            if keywords_data:
+                result['topic_evolution_keywords'] = keywords_data
+    return result
 
 
 class Plotter:
@@ -635,6 +650,39 @@ class Plotter:
         hm.outline_line_color = None
 
         return hm
+
+    def topic_evolution(self):
+        """
+        Sankey diagram of topic evolution
+        :return:
+            if self.analyzer.evolution_df is None: None, as no evolution can be observed in 1 step
+            if number of steps < 3: Sankey diagram
+            else: Sankey diagram + table with keywords
+        """
+        # Topic evolution analysis failed, one step is not enough to analyze evolution
+        if self.analyzer.evolution_df is None or not self.analyzer.evolution_kwds:
+            return None
+
+        n_steps = len(self.analyzer.evolution_df.columns) - 2
+
+        edges, nodes_data = PlotPreprocessor.topic_evolution_data(
+            self.analyzer.evolution_df, self.analyzer.evolution_kwds, n_steps
+        )
+
+        value_dim = hv.Dimension('Amount', unit=None)
+        nodes_ds = hv.Dataset(nodes_data, 'index', 'label')
+        topic_evolution = hv.Sankey((edges, nodes_ds), ['From', 'To'], vdims=value_dim)
+        topic_evolution.opts(labels='label', width=PLOT_WIDTH, height=TALL_PLOT_HEIGHT,
+                             show_values=False, cmap='tab20',
+                             edge_color=dim('To').str(), node_color=dim('index').str())
+
+        if n_steps > 3:
+            kwds_data = PlotPreprocessor.topic_evolution_keywords_data(
+                self.analyzer.evolution_kwds
+            )
+            return hv.render(topic_evolution, backend='bokeh'), kwds_data
+
+        return hv.render(topic_evolution, backend='bokeh'), None
 
     @staticmethod
     def word_cloud_prepare(wc):

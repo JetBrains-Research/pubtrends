@@ -111,7 +111,7 @@
             {% endif %}
             {% if numbers is defined %}
                 // disable search on the first column
-                $('#numbers').DataTable({
+                $('#numbers-table').DataTable({
                     "columnDefs": [
                         { "searchable": false, "targets": 1 }
                     ]
@@ -216,16 +216,22 @@
                             Journals
                         </a>
                     </li>
-                    {% if experimental is defined %}
                     <li class="nav-item row">
-                        <a class="nav-link no-padding-right" href="#evolution" title="Evolution">
-                            <img src="{{ url_for('static', filename='flag.svg') }}"/>
+                        <a class="nav-link no-padding-right" href="#numbers" title="Numbers">
+                            <img src="{{ url_for('static', filename='hash.svg') }}"/>
                         </a>
-                        <a class="nav-link d-none d-xl-block no-padding" href="#evolution">
-                            Experimental
+                        <a class="nav-link d-none d-xl-block no-padding" href="#numbers">
+                            Numbers
                         </a>
                     </li>
-                    {% endif %}
+                    <li class="nav-item row">
+                        <a class="nav-link no-padding-right" href="#evolution" title="Evolution">
+                            <img src="{{ url_for('static', filename='compass.svg') }}"/>
+                        </a>
+                        <a class="nav-link d-none d-xl-block no-padding" href="#evolution">
+                            Evolution
+                        </a>
+                    </li>
                 </ul>
             </div>
         </nav>
@@ -568,19 +574,17 @@
                     </div>
                 </div>
 
-                {% if experimental is defined %}
                 <div class="card mt-3">
-                    <div class="card-title" id="evolution">
-                        <h1 class="card-header">Experimental</h1>
+                    <div class="card-title" id="numbers">
+                        <h1 class="card-header">Numbers</h1>
                     </div>
                     <div class="card-body">
-                        <h2 class="card-subtitle">Numbers</h2>
                         <p>
                             Numbers are extracted from papers abstracts, use search to filter the table.
                         </p>
                         <div>
                             {% if numbers is defined %}
-                            <table id="numbers" class="table table-sm table-bordered table-striped">
+                            <table id="numbers-table" class="table table-sm table-bordered table-striped">
                                 <thead>
                                 <tr>
                                     <th scope="col">#</th>
@@ -600,8 +604,14 @@
                             </table>
                             {% endif %}
                         </div>
-                        <hr>
-                        <h2 class="card-subtitle">Topic Evolution</h2>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-title" id="evolution">
+                        <h1 class="card-header">Topic Evolution</h1>
+                    </div>
+                    <div class="card-body">
                         <p>
                             Topics extraction is performed longitudinally at several time points to detect merges and splits
                             of topics. <br>
@@ -642,7 +652,6 @@
                         </div>
                     </div>
                 </div>
-                {% endif %}
 
                 <div class="mt-3 ml-3" id="log">
                     <h5><a class="link" data-toggle="collapse" href="#collapseLog"
@@ -746,6 +755,10 @@
                         "is organised into tables, which also show distribution over topics. You can " +
                         "open all papers for a certain author or journal by clicking the corresponding " +
                         "number of papers."
+                },
+                {
+                    element: '#numbers',
+                    intro: "Explore numbers hidden in papers abstracts!"
                 },
                 {   intro: "Congratulations!<br>" +
                         "Now you are ready to explore scientific literature with PubTrends."

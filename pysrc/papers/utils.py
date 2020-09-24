@@ -47,6 +47,7 @@ SORT_MOST_CITED = 'Most Cited'
 SORT_MOST_RELEVANT = 'Most Relevant'
 SORT_MOST_RECENT = 'Most Recent'
 
+MAX_TITLE_LENGTH = 200
 
 log = logging.getLogger(__name__)
 
