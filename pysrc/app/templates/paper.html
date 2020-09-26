@@ -120,20 +120,46 @@
                         Citation Dynamics
                     </a>
                 </li>
+
+                {% if related_papers is defined %}
+                <li class="nav-item row">
+                    <a class="nav-link no-padding-right" href="#similar-papers" title="Similar Papers">
+                        <img class="nav-icon" src="{{ url_for('static', filename='pause.svg') }}"/>
+                    </a>
+                    <a class="nav-link d-none d-xl-block no-padding" href="#similar-papers">
+                        Similar Papers
+                    </a>
+                </li>
+                {% endif %}
+
+                {% if cited_papers is defined %}
+                <li class="nav-item row">
+                    <a class="nav-link no-padding-right" href="#prior-papers" title="Prior Papers">
+                        <img class="nav-icon" src="{{ url_for('static', filename='rewind.svg') }}"/>
+                    </a>
+                    <a class="nav-link d-none d-xl-block no-padding" href="#prior-papers">
+                        Prior Papers
+                    </a>
+                </li>
+                {% endif %}
+
+                {% if citing_papers is defined %}
+                <li class="nav-item row">
+                    <a class="nav-link no-padding-right" href="#derivative-papers" title="Derivative Papers">
+                        <img class="nav-icon" src="{{ url_for('static', filename='fast-forward.svg') }}"/>
+                    </a>
+                    <a class="nav-link d-none d-xl-block no-padding" href="#derivative-papers">
+                        Derivative Papers
+                    </a>
+                </li>
+                {% endif %}
+
                 <li class="nav-item row">
                     <a class="nav-link no-padding-right" href="#related-topics" title="Related Topics">
                         <img class="nav-icon" src="{{ url_for('static', filename='tag.svg') }}"/>
                     </a>
                     <a class="nav-link d-none d-xl-block no-padding" href="#related-topics">
                         Related Topics
-                    </a>
-                </li>
-                <li class="nav-item row">
-                    <a class="nav-link no-padding-right" href="#related-papers" title="Related Papers">
-                        <img class="nav-icon" src="{{ url_for('static', filename='columns.svg') }}"/>
-                    </a>
-                    <a class="nav-link d-none d-xl-block no-padding" href="#related-papers">
-                        Related Papers
                     </a>
                 </li>
             </ul>
@@ -192,58 +218,83 @@
                 </div>
             </div>
 
+            {% if related_papers is defined %}
             <div class="card mt-3">
-                <div class="card-title" id="related-topics">
-                    <h1 class="card-header">Related Topics</h1>
+                <div class="card-title" id="similar-papers">
+                    <h1 class="card-header">Similar Papers</h1>
                 </div>
                 <div class="card-body">
                     <p>
-                        This section demonstrates similarity between the paper and other topics in the field.<br>
-                        Table below show number of co-cited papers with respect to different topics.<br>
-                        Generally, the more interdisciplinary paper is, the more interconnections with several topics it
-                        has.
+                        This section represents valuable papers, similar to the paper of interest.
                     </p>
-                    {% if related_topics is defined %}
-                    <p>Paper topic: {{topic}}.</p>
-                    <br>
-                    <table id="related_topics" class="table table-sm table-bordered table-striped">
+                    <table id="related_papers" class="table table-sm table-bordered table-striped">
                         <thead>
                         <tr>
                             <th scope="col">#</th>
-                            <th scope="col">Topic keywords</th>
-                            <th scope="col">Similar papers</th>
+                            <th scope="col">Title</th>
+                            <th scope="col">Similarity</th>
                         </tr>
                         </thead>
                         <tbody>
-                        {% for row in related_topics %}
+                        {% for id, title, url, similarity in related_papers %}
                         <tr>
                             <th scope="row">{{ loop.index }}</th>
-                            <td>{{ row[0] }}</td>
-                            <td>{{ row[1] }}</td>
+                            <td>
+                                <a class="link" href="{{ url }}" title="Open in {{ source }}">
+                                    {{ title }}
+                                </a>
+                            </td>
+                            <td>{{ similarity }}</td>
                         </tr>
                         {% endfor %}
                         </tbody>
                     </table>
-                    {% endif %}
                 </div>
             </div>
+            {% endif %}
 
+            {% if cited_papers is defined %}
             <div class="card mt-3">
-                <div class="card-title" id="related-papers">
-                    <h1 class="card-header">Related Papers</h1>
+                <div class="card-title" id="prior-papers">
+                    <h1 class="card-header">Prior Papers</h1>
                 </div>
                 <div class="card-body">
                     <p>
-                        This section demonstrates similarity with other papers. <br>
-                        Similarity between papers is computed based on <em>bibliographic coupling</em>,
-                        <em>co-citations</em>, <em>direct citations</em>,<br>
-                        and <em>potential</em> citations based on text similarity.<br>
+                        This section represents most valuable papers, cited by the paper of interest.
                     </p>
+                    <table id="cited_papers" class="table table-sm table-bordered table-striped">
+                        <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Title</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for id, title, url in cited_papers %}
+                        <tr>
+                            <th scope="row">{{ loop.index }}</th>
+                            <td>
+                                <a class="link" href="{{ url }}" title="Open in {{ source }}">
+                                    {{ title }}
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
 
-                    {% if citing_papers is defined %}
-                    <h4>Valuable References</h4>
+            {% if citing_papers is defined %}
+            <div class="card mt-3">
+                <div class="card-title" id="derivative-papers">
+                    <h1 class="card-header">Derivative Papers</h1>
+                </div>
+                <div class="card-body">
+                    <h4>Derivative Works</h4>
                     <p>
-                        This section represents most valuable papers, which are referenced from the paper of interest.
+                        This section represents most valuable papers, citing the paper of interest.
                     </p>
                     <table id="citing_papers" class="table table-sm table-bordered table-striped">
                         <thead>
@@ -266,61 +317,35 @@
                         </tbody>
                     </table>
                     <br>
-                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
 
-                    {% if cited_papers is defined %}
-                    <hr>
-                    <h4>Valuable Citations</h4>
+            <div class="card mt-3">
+                <div class="card-title" id="related-topics">
+                    <h1 class="card-header">Related Topics</h1>
+                </div>
+                <div class="card-body">
                     <p>
-                        This section represents most valuable papers, which has the paper of interest among references.
+                        This section demonstrates similarity between the paper and other topics in the field.
                     </p>
-                    <table id="cited_papers" class="table table-sm table-bordered table-striped">
-                        <thead>
-                        <tr>
-                            <th scope="col">#</th>
-                            <th scope="col">Title</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {% for id, title, url in cited_papers %}
-                        <tr>
-                            <th scope="row">{{ loop.index }}</th>
-                            <td>
-                                <a class="link" href="{{ url }}" title="Open in {{ source }}">
-                                    {{ title }}
-                                </a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
+                    {% if related_topics is defined %}
+                    <p>Paper topic: {{topic}}.</p>
                     <br>
-                    {% endif %}
-
-                    {% if related_papers is defined %}
-                    <hr>
-                    <h4>Valuable Related Papers</h4>
-                    <p>
-                        This section represents valuable papers, which are similar to the paper of interest.
-                    </p>
-                    <table id="related_papers" class="table table-sm table-bordered table-striped">
+                    <table id="related_topics" class="table table-sm table-bordered table-striped">
                         <thead>
                         <tr>
                             <th scope="col">#</th>
-                            <th scope="col">Title</th>
-                            <th scope="col">Similarity</th>
+                            <th scope="col">Topic keywords</th>
+                            <th scope="col">Similar papers</th>
                         </tr>
                         </thead>
                         <tbody>
-                        {% for id, title, url, similarity in related_papers %}
+                        {% for row in related_topics %}
                         <tr>
                             <th scope="row">{{ loop.index }}</th>
-                            <td>
-                                <a class="link" href="{{ url }}" title="Open in {{ source }}">
-                                    {{ title }}
-                                </a>
-                            </td>
-                            <td>{{ similarity }}</td>
+                            <td>{{ row[0] }}</td>
+                            <td>{{ row[1] }}</td>
                         </tr>
                         {% endfor %}
                         </tbody>
@@ -348,7 +373,8 @@
             steps: [
                 {
                     intro: "This is a paper detailed report.<br>" +
-                            "It contains citations dynamics and most valuable references.<br>"
+                            "It contains citations dynamics, similar papers," +
+                            " and most valuable prior and derivative works.<br>"
 
                 },
                 {
@@ -366,12 +392,20 @@
                     intro: 'Citations dynamics. Show all indexed citations of the paper.'
                 },
                 {
-                    element: '#related-topics',
-                    intro: 'Shows number of similar papers by topics.'
+                    element: '#similar-papers',
+                    intro: 'This section demonstrates most important similar works.'
                 },
                 {
-                    element: '#related-papers',
-                    intro: 'This section demonstrates similarity with other papers.'
+                    element: '#prior-papers',
+                    intro: 'This section demonstrates most important prior works.'
+                },
+                {
+                    element: '#derivative-papers',
+                    intro: 'This section demonstrates most important derivative works.'
+                },
+                {
+                    element: '#related-topics',
+                    intro: 'Shows number of similar papers by topics.'
                 }
             ]
         });
