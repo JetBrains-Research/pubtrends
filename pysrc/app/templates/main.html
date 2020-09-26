@@ -70,14 +70,14 @@
     </div>
 
     <main class="card" role="main">
-        <div id="step1" class="card-header">
+        <div class="card-header">
             <ul class="nav nav-tabs card-header-tabs" id="tabs-list" role="tablist">
-                <li class="nav-item">
+                <li id="step1" class="nav-item">
                     <a class="nav-link active grey" id="topic-tab" data-toggle="tab" href="#topic"
                        role="tab"
                        aria-controls="topic" aria-selected="true">Topic Analysis</a>
                 </li>
-                <li class="nav-item">
+                <li id="step1-2" class="nav-item">
                     <a class="nav-link grey" id="paper-tab" data-toggle="tab" href="#paper"
                        role="tab"
                        aria-controls="paper" aria-selected="false">Paper Analysis</a>
@@ -271,8 +271,11 @@
                 },
                 {
                     element: '#step1',
-                    intro: "Proceed with the <em>Topic Analysis</em> tab to study the research topic of interest.<br>" +
-                        "Use the <em>Paper Analysis</em> option to analyse particular paper.<br>"
+                    intro: "Proceed with the <em>Topic Analysis</em> tab to study the research topic of interest."
+                },
+                {
+                    element: '#step1-2',
+                    intro: "<em>Paper Analysis</em> finds similar papers and most important prior and derivative works."
                 },
                 {
                     element: '#step2',
