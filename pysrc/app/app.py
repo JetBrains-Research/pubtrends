@@ -33,6 +33,8 @@ PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
 MAX_QUERY_LENGTH = 60
 
+SOMETHING_WENT_WRONG = 'Something went wrong, please <a href="/">rerun</a> your search.'
+
 app = Flask(__name__)
 
 #####################
@@ -141,7 +143,7 @@ def result():
         return search_terms_(request.args)
     else:
         logger.error(f'/result error wrong request {log_request(request)}')
-        return render_template_string("Wrong request..."), 400
+        return render_template_string(SOMETHING_WENT_WRONG), 400
 
 
 @app.route('/process')
@@ -151,7 +153,7 @@ def process():
 
         if not jobid:
             logger.error(f'/process error wrong request {log_request(request)}')
-            return render_template_string("Wrong request...")
+            return render_template_string(SOMETHING_WENT_WRONG)
 
         query = request.args.get('query')
         analysis_type = request.values.get('analysis_type')
@@ -202,7 +204,7 @@ def process():
                                    redirect_page="result",  # redirect in case of success
                                    jobid=jobid, version=VERSION)
     logger.error(f'/process error {log_request(request)}')
-    return render_template_string("Something went wrong..."), 400
+    return render_template_string(SOMETHING_WENT_WRONG), 400
 
 
 @app.route('/process_paper')
@@ -236,7 +238,7 @@ def paper():
         return render_template_string("Out-of-date search, please search again..."), 400
     else:
         logger.error(f'/paper error wrong request {log_request(request)}')
-        return render_template_string("Wrong request..."), 400
+        return render_template_string(SOMETHING_WENT_WRONG), 400
 
 
 @app.route('/graph')
@@ -290,10 +292,10 @@ def graph():
                     graph_cytoscape_json=json.dumps(graph_cs)
                 )
         logger.error(f'/graph error job id {log_request(request)}')
-        return render_template_string("Out-of-date search, please search again..."), 400
+        return render_template_string(SOMETHING_WENT_WRONG), 400
     else:
         logger.error(f'/graph error wrong request {log_request(request)}')
-        return render_template_string("Wrong request..."), 400
+        return render_template_string(SOMETHING_WENT_WRONG), 400
 
 
 @app.route('/papers')
@@ -345,7 +347,7 @@ def show_ids():
                                    export_name=export_name,
                                    papers=prepare_papers_data(data, source, comp, word, author, journal, papers_list))
     logger.error(f'/papers error {log_request(request)}')
-    return render_template_string(f"Something went wrong, please rerun your search."), 400
+    return render_template_string(SOMETHING_WENT_WRONG), 400
 
 
 @app.route('/cancel')
@@ -429,9 +431,9 @@ def search_terms_(data):
                                     jobid=jobid))
     except Exception as e:
         logger.error(f'/search_terms error', e)
-        return render_template_string(f"Error occurred. We're working on it. Please check back soon."), 500
+        return render_template_string("Error occurred. We're working on it. Please check back soon."), 500
     logger.error(f'/search_terms error {log_request(request)}')
-    return render_template_string(f"Something went wrong, please rerun your search."), 400
+    return render_template_string(SOMETHING_WENT_WRONG), 400
 
 
 @app.route('/search_paper', methods=['POST'])
@@ -448,9 +450,9 @@ def search_paper():
             return redirect(url_for('.process', source=source, key=key, value=value, jobid=job.id))
     except Exception as e:
         logger.error(f'/search_paper error', e)
-        return render_template_string(f"Error occurred. We're working on it. Please check back soon."), 500
+        return render_template_string("Error occurred. We're working on it. Please check back soon."), 500
     logger.error(f'/search_paper error {log_request(request)}')
-    return render_template_string(f"Something went wrong, please rerun your search."), 400
+    return render_template_string(SOMETHING_WENT_WRONG), 400
 
 
 @app.route('/process_ids', methods=['POST'])
@@ -468,9 +470,9 @@ def process_ids():
             return redirect(url_for('.process', query=query, analysis_type=analysis_type, source=source, jobid=job.id))
     except Exception as e:
         logger.error(f'/process_ids error', e)
-        return render_template_string(f"Error occurred. We're working on it. Please check back soon."), 500
+        return render_template_string("Error occurred. We're working on it. Please check back soon."), 500
     logger.error(f'/process_ids error {log_request(request)}')
-    return render_template_string(f"Something went wrong, please rerun your search."), 400
+    return render_template_string(SOMETHING_WENT_WRONG), 400
 
 
 #######################
@@ -610,7 +612,6 @@ DB_LOCK.acquire()
 if not os.path.exists(DATABASE_PATH):
     build_users_db()
 DB_LOCK.release()
-
 
 # With debug=True, Flask server will auto-reload on changes
 if __name__ == '__main__':
