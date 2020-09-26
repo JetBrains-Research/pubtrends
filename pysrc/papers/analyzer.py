@@ -54,7 +54,7 @@ class KeyPaperAnalyzer:
     TOP_AUTHORS = 50
 
     EXPAND_STEPS = 2
-    EXPAND_PAPERS = 200  # Papers to expand
+    EXPAND_MIN = 200  # Papers to expand
     # Methods are highly cited, keep them only for computational topics
     EXPAND_COMPUTATIONAL_MESH = [
         'comput', 'method', 'data', 'interpret', 'statist', 'method', 'internet', 'softwar', 'user-comput',
