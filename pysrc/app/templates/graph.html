@@ -114,8 +114,9 @@
 
             function showTopics(){
                 cy.nodes().forEach(function(ele){
-                    if ('title' in ele.data()){
-                        ele.classes('topic');
+                    if ('title' in ele.data()) {
+                        ele.removeClass('topic cited year pagerank centrality');
+                        ele.addClass('topic');
                     }
                 });
             }
@@ -123,7 +124,8 @@
             function showCited(){
                 cy.nodes().forEach(function(ele){
                     if ('title' in ele.data()){
-                        ele.classes('cited');
+                        ele.removeClass('topic cited year pagerank centrality');
+                        ele.addClass('cited');
                     }
                 });
             }
@@ -131,7 +133,8 @@
             function showYear(){
                 cy.nodes().forEach(function(ele){
                     if ('title' in ele.data()){
-                        ele.classes('year');
+                        ele.removeClass('topic cited year pagerank centrality');
+                        ele.addClass('year');
                     }
                 });
             }
@@ -139,7 +142,8 @@
             function showPagerank(){
                 cy.nodes().forEach(function(ele){
                     if ('title' in ele.data()){
-                        ele.classes('pagerank');
+                        ele.removeClass('topic cited year pagerank centrality');
+                        ele.addClass('pagerank');
                     }
                 });
             }
@@ -147,7 +151,8 @@
             function showCentrality(){
                 cy.nodes().forEach(function(ele){
                     if ('title' in ele.data()){
-                        ele.classes('centrality');
+                        ele.removeClass('topic cited year pagerank centrality');
+                        ele.addClass('centrality');
                     }
                 });
             }
