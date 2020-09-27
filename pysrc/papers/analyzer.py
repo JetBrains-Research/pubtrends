@@ -12,7 +12,7 @@ from networkx.readwrite import json_graph
 
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
-from pysrc.papers.numbers import extract_metrics, MetricExtractor
+from pysrc.papers.extract_numbers import extract_metrics, MetricExtractor
 from pysrc.papers.progress import Progress
 from pysrc.papers.utils import split_df_list, get_topics_description, SORT_MOST_CITED, \
     compute_tfidf, cosine_similarity, vectorize_corpus, tokens_stems, get_evolution_topics_description

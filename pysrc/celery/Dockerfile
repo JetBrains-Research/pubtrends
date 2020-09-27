@@ -10,8 +10,8 @@ ENV C_FORCE_ROOT true
 COPY . /home/user/
 WORKDIR /home/user/
 
-# Download spacy corpus
-RUN source activate pubtrends && python -m spacy download en_core_web_sm
+# Download nltk & spacy resources
+RUN source activate pubtrends && python pysrc/papers/utils.py && python -m spacy download en_core_web_sm
 
 # Launch celery workers
 ENTRYPOINT source activate pubtrends \

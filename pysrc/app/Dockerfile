@@ -19,8 +19,8 @@ EXPOSE 8000
 COPY . /home/user/
 WORKDIR /home/user/
 
-# Download spacy corpus
-RUN source activate pubtrends && python -m spacy download en_core_web_sm
+# Download nltk & spacy resources
+RUN source activate pubtrends && python pysrc/papers/utils.py && python -m spacy download en_core_web_sm
 
 # run the app server
 CMD echo $PUBTRENDS_VERSION \
