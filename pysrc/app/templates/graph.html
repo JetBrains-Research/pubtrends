@@ -60,7 +60,7 @@
                 "target-arrow-shape": "triangle",
                 "arrow-scale": 1,
                 "line-color": "#000000",
-                "opacity": 0.3
+                "opacity": 0.2
             };
 
             const PR_EDGE_STYLE = {
@@ -69,7 +69,7 @@
                     if ('similarity' in data) {
                         return Math.max(1, Math.min(10, Math.log1p(data.similarity)));
                     }
-                    return 0.3;
+                    return 0.2;
                 },
                 "curve-style": "haystack",
                 "line-color": function (edge) {
@@ -219,7 +219,15 @@
                                 },
                                 "border-width": 1,
                                 "border-color": "black",
-                                "opacity": 0.8,
+                                "opacity": 0.5,
+                            }
+                        },
+                        <!-- In case of Paper Analyzer highlight analyzed paper -->
+                        {
+                            selector: 'node.analyzed',
+                            style: {
+                                'border-width': '2px',
+                                'opacity': '1.0 !important'
                             }
                         },
                         {
@@ -333,7 +341,7 @@
                         {
                             selector: 'node.semitransp',
                             style: {
-                                'opacity': 0.3
+                                'opacity': 0.2
                             }
                         },
                         {
@@ -509,6 +517,22 @@
                             cy.edges().difference(neighborEdges).removeClass('semitransp');
                         }
                     });
+
+                    <!-- Highlight analyzed paper -->
+                    if ("{{ limit }} {{ sort }}" === "related papers") {
+                        let filter = "{{ query }}";
+                        if (filter.endsWith("...")) {
+                            filter = filter.replace("...", "");
+                        }
+                        cy.nodes().forEach(function (ele) {
+                            let data = ele.data();
+                            if ('title' in data) {
+                                if (data.title.startsWith(filter)) {
+                                    ele.addClass('analyzed');
+                                }
+                            }
+                        });
+                    }
                 });
 
                 // Close all tippy
