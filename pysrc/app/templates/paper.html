@@ -74,6 +74,13 @@
             window.open(url + '&jobid=' + jobid, '_blank');
         }
 
+        function graph_callback(graphType) {
+            const url = '/graph?query={{title}}&&source={{source}}&limit=related&sort=papers';
+            // Decode jobid from URL
+            const jobid = new URL(window.location).searchParams.get('jobid');
+            window.open(url + '&type=' + graphType + '&jobid=' + jobid, '_blank');
+        }
+
     </script>
 </head>
 <body>
@@ -85,11 +92,6 @@
             <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
         </div>
         <div class="col-lg-11 col-xl-8">
-            <div class="content">
-                <a id="result" href="javascript:void(0);" class="ml-3 link vertical-center" onclick="result();">
-                    Explore related papers
-                </a>
-            </div>
         </div>
         <div class="d-none d-xl-block col-xl-2 float-right no-padding-right">
             <a id="tour-start" class="btn btn-secondary float-right"
@@ -102,7 +104,7 @@
     <div class="row ">
         <!-- Sticky sidebar -->
         <nav class="d-none d-xl-block d-lg-block col-lg-1 col-xl-2 sidebar no-padding">
-        <div class="sidebar-sticky">
+        <div class="sidebar-sticky" id="sidebar">
             <ul class="nav flex-column">
                 <li class="nav-item row">
                     <a class="nav-link no-padding-right" href="#paper" title="Paper">
@@ -113,11 +115,20 @@
                     </a>
                 </li>
                 <li class="nav-item row">
-                    <a class="nav-link no-padding-right" href="#citation-dynamics" title="Citation Dynamics">
+                    <a class="nav-link no-padding-right" href="#citations" title="Citations">
                         <img class="nav-icon" src="{{ url_for('static', filename='bar-chart-2.svg') }}"/>
                     </a>
-                    <a class="nav-link d-none d-xl-block no-padding" href="#citation-dynamics">
-                        Citation Dynamics
+                    <a class="nav-link d-none d-xl-block no-padding" href="#citations">
+                        Citations
+                    </a>
+                </li>
+
+                <li class="nav-item row">
+                    <a class="nav-link no-padding-right" href="#network" title="Si">
+                        <img class="nav-icon" src="{{ url_for('static', filename='globe.svg') }}"/>
+                    </a>
+                    <a class="nav-link d-none d-xl-block no-padding" href="#network">
+                        Network
                     </a>
                 </li>
 
@@ -155,11 +166,11 @@
                 {% endif %}
 
                 <li class="nav-item row">
-                    <a class="nav-link no-padding-right" href="#related-topics" title="Related Topics">
+                    <a class="nav-link no-padding-right" href="#related-info" title="Related Info">
                         <img class="nav-icon" src="{{ url_for('static', filename='tag.svg') }}"/>
                     </a>
-                    <a class="nav-link d-none d-xl-block no-padding" href="#related-topics">
-                        Related Topics
+                    <a class="nav-link d-none d-xl-block no-padding" href="#related-info">
+                        Related Info
                     </a>
                 </li>
             </ul>
@@ -205,8 +216,8 @@
             </div>
 
             <div class="card mt-3">
-                <div class="card-title" id="citation-dynamics">
-                    <h1 class="card-header">Citation Dynamics</h1>
+                <div class="card-title" id="citations">
+                    <h1 class="card-header">Citations</h1>
                 </div>
                 <div class="card-body">
                     <div>
@@ -215,6 +226,33 @@
                         {{ div|safe }}
                         {% endfor %}
                     </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-title" id="network">
+                    <h1 class="card-header">Network</h1>
+                </div>
+                <div class="card-body">
+                    <p>
+                        Explore references for the paper of interest on the citations graph.
+                    </p>
+                    <button id="show_citations_graph" type="button" class="btn btn-light"
+                            onclick="(function(){ graph_callback('citations') })();">
+                        Show citations graph
+                    </button>
+                    <hr>
+                    <p>
+                        Similarity between papers is computed based on <em>bibliographic coupling</em>,
+                        <em>co-citations</em>,<br>
+                        <em>direct citations</em>, and <em>potential</em> citations based on text similarity.
+                        <br>
+                        Explore papers network, where similar papers are located together and connected.
+                    </p>
+                    <button id="show_structure_graph" type="button" class="col-auto btn btn-light"
+                            onclick="(function(){ graph_callback('structure') })();">
+                        Show structure graph
+                    </button>
                 </div>
             </div>
 
@@ -292,7 +330,6 @@
                     <h1 class="card-header">Derivative Papers</h1>
                 </div>
                 <div class="card-body">
-                    <h4>Derivative Works</h4>
                     <p>
                         This section represents most valuable papers, citing the paper of interest.
                     </p>
@@ -322,15 +359,18 @@
             {% endif %}
 
             <div class="card mt-3">
-                <div class="card-title" id="related-topics">
-                    <h1 class="card-header">Related Topics</h1>
+                <div class="card-title" id="related-info">
+                    <h1 class="card-header">Related Info</h1>
                 </div>
                 <div class="card-body">
-                    <p>
-                        This section demonstrates similarity between the paper and other topics in the field.
+                    <p id="result">
+                        Explore full related papers report
+                        <a href="javascript:void(0);" class="link" onclick="result();">here</a>.
                     </p>
                     {% if related_topics is defined %}
-                    <p>Paper topic: {{topic}}.</p>
+                    <hr>
+                    <p>
+                        Number of similar papers topics in the field. Paper topic is #{{topic}}.</p>
                     <br>
                     <table id="related_topics" class="table table-sm table-bordered table-striped">
                         <thead>
@@ -375,12 +415,10 @@
                     intro: "This is a paper detailed report.<br>" +
                             "It contains citations dynamics, similar papers," +
                             " and most valuable prior and derivative works.<br>"
-
                 },
                 {
-                    element: '#result',
-                    intro: "Open full analysis report.<br>" +
-                        "Learn more about topics, most cited papers, etc."
+                    element: '#sidebar',
+                    intro: "Results are organised into sections - different aspects of analysis."
                 },
                 {
                     element: '#paper',
@@ -388,8 +426,12 @@
                         'Information about title, abstract, authors, journal and external references.'
                 },
                 {
-                    element: '#citation-dynamics',
+                    element: '#citations',
                     intro: 'Citations dynamics. Show all indexed citations of the paper.'
+                },
+                {
+                    element: '#network',
+                    intro: 'Explore paper similarity network.'
                 },
                 {
                     element: '#similar-papers',
@@ -404,8 +446,8 @@
                     intro: 'This section demonstrates most important derivative works.'
                 },
                 {
-                    element: '#related-topics',
-                    intro: 'Shows number of similar papers by topics.'
+                    element: '#related-info',
+                    intro: 'Learn more about topics, most cited papers, etc.'
                 }
             ]
         });
