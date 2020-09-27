@@ -99,26 +99,21 @@ class KeyPaperAnalyzer:
                                task=task)
         return ids
 
-    def expand_ids(self, ids, limit, keep_keywords, steps, current=1, task=None):
+    def expand_ids(self, ids, limit, steps, current=1, task=None):
         if len(ids) > self.config.max_number_to_expand:
             self.progress.info('Too many related papers, nothing to expand', current=current, task=task)
             return ids
         self.progress.info('Expanding related papers by references', current=current, task=task)
-        logger.debug(f'Expanding {len(ids)} papers to: {limit} keeping mesh: {keep_keywords}')
+        logger.debug(f'Expanding {len(ids)} papers to: {limit}')
         current_ids = ids
 
         publications = self.loader.load_publications(ids)
-        if keep_keywords:
-            mesh_stems = [s for s, _ in tokens_stems(
-                ' '.join(publications['mesh'] + ' ' + publications['keywords']).replace(',', ' ')
-            )]
-            mesh_counter = Counter(mesh_stems)
-            computational_mesh = sum(mesh_counter[s] / len(mesh_stems) for s in self.EXPAND_COMPUTATIONAL_MESH)
-            logger.debug(f'Computational mesh: {"{0:.3f}".format(computational_mesh)}')
-        else:
-            mesh_stems = []
-            mesh_counter = None
-            computational_mesh = 0
+        mesh_stems = [s for s, _ in tokens_stems(
+            ' '.join(publications['mesh'] + ' ' + publications['keywords']).replace(',', ' ')
+        )]
+        mesh_counter = Counter(mesh_stems)
+        computational_mesh = sum(mesh_counter[s] / len(mesh_stems) for s in self.EXPAND_COMPUTATIONAL_MESH)
+        logger.debug(f'Computational mesh: {"{0:.3f}".format(computational_mesh)}')
 
         # Expand while we can
         i = 0
@@ -128,7 +123,7 @@ class KeyPaperAnalyzer:
                 break
             i += 1
             logger.debug(f'Step {i}: current_ids: {len(current_ids)}, new_ids: {len(new_ids)}, limit: {limit}')
-            if not keep_keywords or not mesh_stems:
+            if not mesh_stems:
                 expanded_ids = self.loader.expand(new_ids or current_ids, limit - len(current_ids))
                 new_ids = [pid for pid in expanded_ids if pid not in set(current_ids)]
                 logger.debug(f'New {len(new_ids)} papers')
