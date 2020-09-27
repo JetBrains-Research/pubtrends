@@ -1,4 +1,5 @@
 import logging
+import math
 import re
 from collections import Counter
 
@@ -94,8 +95,13 @@ def extract_metrics(text, visualize_dependencies=False):
             #             print(token.text, token.pos_, list(token.ancestors))
             if NUMBER.fullmatch(token.text):
                 tt = token.text.replace(',', '')  # TODO: can fail in case of different locale
-                value = float(tt) if '.' in tt else int(tt)
-                process_number(token, value, idx, metrics)
+                try:
+                    value = float(tt)
+                    if math.ceil(value) == value:
+                        value = int(value)
+                    process_number(token, value, idx, metrics)
+                except Exception as e:
+                    logging.error(f'/Failed to process number {tt}', e)
         if visualize_dependencies:
             displacy.render(sent, style="dep", jupyter=True)
     return metrics, sentences
