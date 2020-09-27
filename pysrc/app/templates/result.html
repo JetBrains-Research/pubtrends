@@ -176,6 +176,14 @@
                         </a>
                     </li>
                     <li class="nav-item row">
+                        <a class="nav-link no-padding-right" href="#network" title="Network">
+                            <img class="nav-icon" src="{{ url_for('static', filename='globe.svg') }}"/>
+                        </a>
+                        <a class="nav-link d-none d-xl-block no-padding" href="#network">
+                            Network
+                        </a>
+                    </li>
+                    <li class="nav-item row">
                         <a class="nav-link no-padding-right" href="#topics" title="Topics">
                             <img class="nav-icon" src="{{ url_for('static', filename='tag.svg') }}"/>
                         </a>
@@ -292,13 +300,6 @@
                                     <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
                                 </button>
                             </div>
-                            <div class="col-auto no-padding-left">
-                                <button id="show_citations_graph" type="button" class="btn btn-light"
-                                        onclick="(function(){ graph_callback('citations') })();">
-                                    <img src="{{ url_for('static', filename='globe.svg') }}" alt="+"/>&nbsp;
-                                    Show citations graph
-                                </button>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -366,16 +367,43 @@
 
                 {% if topics_analyzed %}
                 <div class="card mt-3">
+                    <div class="card-title" id="network">
+                        <h1 class="card-header">Network</h1>
+                    </div>
+                    <div class="card-body">
+                        <p>
+                            Explore citations between the papers of interest on the citations graph.
+                        </p>
+                        <button id="show_citations_graph" type="button" class="btn btn-light"
+                                onclick="(function(){ graph_callback('citations') })();">
+                            Show citations graph
+                        </button>
+                        <hr>
+                        <p>
+                            Similarity between papers is computed based on <em>bibliographic coupling</em>,
+                            <em>co-citations</em>,<br>
+                            <em>direct citations</em>, and <em>potential</em> citations based on text similarity.
+                            <br>
+                            Explore papers network, where similar papers are located together and connected.
+                        </p>
+                        <button id="show_structure_graph" type="button" class="col-auto btn btn-light"
+                                onclick="(function(){ graph_callback('structure') })();">
+                            Show structure graph
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
                     <div class="card-title" id="topics">
                         <h1 class="card-header">Topics</h1>
                     </div>
                     <div class="card-body">
                         <p>
-                            Similarity between papers is computed based on <em>bibliographic coupling</em>,
-                            <em>co-citations</em>, <em>direct citations</em>,<br>
-                            and <em>potential</em> citations based on text similarity.<br>
-                            Clustering by similarity information is used for topics extraction.
-                        <hr>
+                            Topic is a group of papers which share common ideas, describe common features, etc.
+                            <br>
+                            Topics are extracted based on similarity between papers.
+                            <br>
+                        </p>
                         <p>
                             Similarity between topics is an average similarity between the papers.
                         </p>
@@ -401,16 +429,6 @@
                         {{ script|safe }}
                         {{ div|safe }}
                         {% endfor %}
-                        <hr>
-                        Structure within a research field can be visualized as a graph.<br>
-                        </p>
-                        <button id="show_structure_graph" type="button" class="col-auto btn btn-light"
-                                onclick="(function(){ graph_callback('structure') })();">
-                            <img src="{{ url_for('static', filename='globe.svg') }}" alt="+"/>&nbsp;
-                            Show structure graph
-                        </button>
-                        </p>
-
                     </div>
                 </div>
 
@@ -712,19 +730,17 @@
                         "<em>Show as list</em> anytime to open the list of papers in a separate window."
                 },
                 {
-                    element: '#show_citations_graph',
-                    intro: "Click <img src=\"{{ url_for('static', filename='globe.svg') }}\" alt=\"+\"/> " +
-                        "<em>Show citations graph</em> to explore citations graph among the papers."
-                },
-                {
                     element: '#highlights',
                     intro: "Highlights section contains information about most notable papers. " +
                         "Top cited papers, papers of the year, and hot papers are shown in a dedicated sections."
                 },
                 {
+                    element: '#show_citations_graph',
+                    intro: "Click <em>Show citations graph</em> to explore citations graph among the papers."
+                },
+                {
                     element: '#show_structure_graph',
-                    intro: "Click <img src=\"{{ url_for('static', filename='globe.svg') }}\" alt=\"+\"/> " +
-                        "<em>Show structure graph</em> to explore overall papers similarity."
+                    intro: "Click <em>Show structure graph</em> to explore overall papers similarity."
                 },
                 {
                     element: '#topics',
@@ -759,6 +775,10 @@
                 {
                     element: '#numbers',
                     intro: "Explore numbers hidden in papers abstracts!"
+                },
+                {
+                    element: '#evolution',
+                    intro: "Explore evolution of ideas in the field."
                 },
                 {   intro: "Congratulations!<br>" +
                         "Now you are ready to explore scientific literature with PubTrends."
