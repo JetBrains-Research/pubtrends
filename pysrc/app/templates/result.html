@@ -52,11 +52,8 @@
     <script>
         "use strict";
 
-        // Query may contain double quotes or ' fix it.
-        const query_fixed = '{{ query }}'.replace(/&#34;/g, '"').replace(/&#39;/g, '\'');
-
         function papers_callback_impl(key, value) {
-            const url = '/papers?query=' + query_fixed + '&source={{source}}&limit={{limit}}&sort={{sort}}';
+            const url = '/papers?query=' + escape('{{ query }}') + '&source={{source}}&limit={{limit}}&sort={{sort}}';
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
             var args = '';
@@ -92,7 +89,7 @@
         }
 
         function graph_callback(graphType) {
-            const url = '/graph?query=' + query_fixed + '&source={{source}}&limit={{limit}}&sort={{sort}}';
+            const url = '/graph?query=' + escape('{{ query }}') + '&source={{source}}&limit={{limit}}&sort={{sort}}';
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
             window.open(url + '&type=' + graphType + '&jobid=' + jobid, '_blank');
@@ -118,11 +115,11 @@
                 });
             {% endif %}
 
-            var words = JSON.parse('{{ papers_word_cloud }}'.replace(/&#34;/g, '"').replace(/&amp;/g, '&'));
+            var words = JSON.parse('{{ papers_word_cloud }}'.replace(/&#34;/g, '"').replace(/&#39;/g, '\'').replace(/&amp;/g, '&'));
             process_word_cloud('papers_word_cloud', 220, 335, words, papers_callback_word);
 
             {% for (script, div), word_cloud, zoom_in_callback in topics_info_and_word_cloud_and_callback %}
-                 words = JSON.parse('{{ word_cloud }}'.replace(/&#34;/g, '"').replace(/&amp;/g, '&'));
+                 words = JSON.parse('{{ word_cloud }}'.replace(/&#34;/g, '"').replace(/&#39;/g, '\'').replace(/&amp;/g, '&'));
                  process_word_cloud('topic_word_cloud_{{ loop.index }}', 220, 335, words, papers_callback_word);
             {% endfor %}
         } );

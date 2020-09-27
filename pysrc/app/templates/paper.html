@@ -68,14 +68,14 @@
         } );
 
         function result() {
-            const url = '/result?query={{title}}&source={{source}}&limit=related&sort=papers';
+            const url = '/result?query=' + escape('{{ title }}') + '&source={{source}}&limit=related&sort=papers';
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
             window.open(url + '&jobid=' + jobid, '_blank');
         }
 
         function graph_callback(graphType) {
-            const url = '/graph?query={{title}}&&source={{source}}&limit=related&sort=papers';
+            const url = '/graph?query=' + escape('{{ title }}') + '&source={{source}}&limit=related&sort=papers';
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
             window.open(url + '&type=' + graphType + '&jobid=' + jobid, '_blank');

@@ -54,9 +54,7 @@
         });
 
         function result() {
-            // Query may contain double quotes, fix it.
-            const query_fixed = '{{ query }}'.replace(/&#34;/g, '"');
-            const url = '/result?query=' + query_fixed + '&source={{source}}&limit={{limit}}&sort={{sort}}';
+            const url = '/result?query=' + escape('{{ query }}') + '&source={{source}}&limit={{limit}}&sort={{sort}}';
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
             window.open(url + '&jobid=' + jobid, '_blank');

@@ -5,7 +5,7 @@ import os
 import random
 import re
 from threading import Lock
-from urllib.parse import quote
+from urllib.parse import quote, unquote
 
 import flask_admin
 from celery.result import AsyncResult
@@ -211,7 +211,7 @@ def process():
 def process_paper():
     jobid = request.values.get('jobid')
     source = request.values.get('source')
-    query = request.values.get('query')
+    query = unqoute(request.values.get('query'))
     if jobid:
         job = get_or_cancel_task(jobid)
         if job and job.state == 'SUCCESS':
