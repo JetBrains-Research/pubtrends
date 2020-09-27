@@ -524,15 +524,15 @@
                     });
 
                     <!-- Highlight analyzed paper -->
-                    if ("{{ limit }} {{ sort }}" === "related papers") {
-                        let filter = "{{ query }}";
-                        if (filter.endsWith("...")) {
-                            filter = filter.replace("...", "");
+                    if ("{{ limit }}" === "related" && "{{ sort }}" === "papers") {
+                        let title = "{{ query }}".replace(/&#34;/g, '"').replace(/&#39;/g, '\'').replace(/&amp;/g, '&');
+                        if (title.endsWith("...")) {
+                            title = title.replace("...", "");
                         }
                         cy.nodes().forEach(function (ele) {
                             let data = ele.data();
                             if ('title' in data) {
-                                if (data.title.startsWith(filter)) {
+                                if (data.title.startsWith(title)) {
                                     ele.addClass('analyzed');
                                 }
                             }
