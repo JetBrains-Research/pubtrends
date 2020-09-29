@@ -28,6 +28,13 @@ Ensure that file contains correct information about the database(s) (url, port, 
     Workaround for "image not found" error during neo4j pip install on newest Mac OS Sierra:
     `conda install -y conda-forge::ncurses`
 
+    Download Nltk and Spacy resources
+    ```
+    source activate pubtrends \
+    && python -m nltk.downloader averaged_perceptron_tagger punkt stopwords wordnet \
+    && python -m spacy download en_core_web_sm
+    ```
+
 3. Build `biolabs/pubtrends` Docker image (available on Docker hub).
     ```
     docker build -t biolabs/pubtrends .
@@ -205,9 +212,8 @@ Please ensure that you have Database configured, up and running.
     docker run --rm --volume=$(pwd):/pubtrends -t biolabs/pubtrends /bin/bash -c \
     "/usr/lib/postgresql/12/bin/pg_ctl -D /home/user/postgres start; sudo neo4j start; \
     cd /pubtrends; mkdir ~/.pubtrends; cp config.properties ~/.pubtrends; \
-    ./gradlew test; \
-    ./gradlew shadowJar; source activate pubtrends; python -m spacy download en_core_web_sm; \
-    pytest pysrc"
+    ./gradlew test shadowJar; \
+    source activate pubtrends; pytest pysrc"
     ```
 
 ## Deployment
