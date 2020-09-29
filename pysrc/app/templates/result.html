@@ -722,6 +722,10 @@
                     intro: "{{n_topics}} topics were found among the papers.<br>"
                 },
                 {
+                    element: '#papers_word_cloud',
+                    intro: "Click on any keyword to open the list of papers with this keyword in a new tab."
+                },
+                {
                     element: '#show_as_list',
                     intro: "Click <img src=\"{{ url_for('static', filename='list.svg') }}\" alt=\"+\"/> " +
                         "<em>Show as list</em> anytime to open the list of papers in a separate window."
@@ -751,10 +755,6 @@
                         "<em>Show as list</em> to open the list of papers for the topic or " +
                         "use the <img src=\"{{ url_for('static', filename='zoom-in.svg') }}\" alt=\"+\"/> " +
                         "<em>Zoom into</em> button to run analysis for this particular topic.<br>"
-                },
-                {
-                    element: '#topic_word_cloud_1',
-                    intro: "Click on any keyword to open the list of papers with this keyword in a new tab."
                 },
                 {
                     element: '#topic_chart_1',
