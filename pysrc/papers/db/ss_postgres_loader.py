@@ -69,10 +69,10 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
             query = f'''
                 SELECT P.ssid
                 FROM to_tsquery('{query_str}') query, SSPublications P
-                    LEFT JOIN SSCitations C
-                        ON C.ssid_in = P.ssid
+                    LEFT JOIN matview_sscitations C
+                        ON C.ssid = P.ssid AND C.crc32id = P.crc32id
                 WHERE tsv @@ query
-                GROUP BY ssid
+                GROUP BY P.ssid, P.crc32id
                 ORDER BY COUNT(*) DESC NULLS LAST
                 LIMIT {limit};
                 '''
@@ -193,15 +193,18 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         # TODO[shpynov] sort by citations
         query = f'''
             WITH X AS (
-                SELECT C.ssid_in as ssid
+                SELECT C.ssid_in as ssid, C.crc32id_in as crc32id
                 FROM sscitations C
                 WHERE (C.crc32id_out, C.ssid_out) IN (VALUES {SemanticScholarPostgresLoader.ids2values(ids)})
                 UNION
-                SELECT C.ssid_out as ssid
+                SELECT C.ssid_out as ssid, C.crc32id_out as crc32id
                 FROM sscitations C
                 WHERE (C.crc32id_in, C.ssid_in) IN (VALUES {SemanticScholarPostgresLoader.ids2values(ids)}))
-            SELECT DISTINCT ssid from X
-            LIMIT {limit};
+            SELECT X.ssid as pmid FROM X
+                    LEFT JOIN matview_sscitations C
+                    ON X.ssid = C.ssid AND X.crc32id = C.crc32id
+                ORDER BY count DESC NULLS LAST
+                LIMIT {limit};
                 '''
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)

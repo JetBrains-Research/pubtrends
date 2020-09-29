@@ -10,6 +10,7 @@ from pysrc.test.db.pm_test_articles import REQUIRED_ARTICLES, EXPECTED_PUB_DF, \
     PART_OF_ARTICLES, EXPANDED_IDS, EXPANDED_TOP_CITED_3, EXPANDED_TOP_CITED_4
 
 
+# Don't make it subclass of unittest.TestCase to avoid tests execution
 class AbstractTestPubmedLoader(metaclass=ABCMeta):
 
     # @classmethod

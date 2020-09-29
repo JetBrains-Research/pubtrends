@@ -24,6 +24,8 @@ open class SemanticScholarPostgresWriter(
         }
     }
 
+    private var changed = false
+
     init {
 
         Database.connect(
@@ -41,16 +43,37 @@ open class SemanticScholarPostgresWriter(
                     "CREATE INDEX IF NOT EXISTS " +
                             "ss_title_abstract_index ON SSPublications using GIN (tsv);"
             )
-            // Minimal work_mem
-            exec("SET work_mem = '4096MB'")
+            exec(
+                    """
+                    create materialized view if not exists matview_sscitations as
+                    SELECT ssid_in as ssid, crc32id_in as crc32id, COUNT(*) AS count
+                    FROM SSCitations C
+                    GROUP BY ssid, crc32id
+                    HAVING COUNT(*) >= 3; -- Ignore tail of 0,1,2 cited papers
+                    create index if not exists SSCitation_matview_index on matview_sscitations (crc32id);
+                    """
+            )
+            exec(
+                    """
+                    CREATE INDEX IF NOT EXISTS
+                    sspublications_ssid_year ON sspublications (ssid, year);
+                    """
+            )
         }
     }
 
     override fun reset() {
         transaction {
             addLogger(Log4jSqlLogger)
+            exec(
+                    """
+                    drop index if exists SSCitation_matview_index;
+                    drop materialized view if exists matview_sscitations;
+                    """
+            )
             SchemaUtils.drop(SSPublications, SSCitations)
             exec("DROP INDEX IF EXISTS ss_title_abstract_index;")
+            changed = true
         }
     }
 
@@ -71,20 +94,20 @@ open class SemanticScholarPostgresWriter(
             }
 
             SSCitations.batchInsert(citationsList, ignore = true) { citation ->
-                this[SSCitations.id_out] = citation.first
-                this[SSCitations.id_in] = citation.second
+                this[SSCitations.ssid_out] = citation.first
+                this[SSCitations.ssid_in] = citation.second
                 this[SSCitations.crc32id_out] = crc32id(citation.first)
                 this[SSCitations.crc32id_in] = crc32id(citation.second)
             }
             // Update TSV vector
-            val vals = articles.map { it.ssid }.joinToString(",") { "('$it')" }
+            val vals = articles.map { it.ssid }.joinToString(",") { "('$it', ${crc32id(it)})" }
             exec(
                     "UPDATE SSPublications\n" +
                             "set tsv = setweight(to_tsvector('english', coalesce(title, '')), 'A') || \n" +
                             "   setweight(to_tsvector('english', coalesce(abstract, '')), 'B')\n" +
-                            "WHERE ssid IN (VALUES $vals);"
+                            "WHERE (ssid, crc32id) IN (VALUES $vals);"
             )
-
+            changed = true
         }
     }
 
@@ -93,10 +116,25 @@ open class SemanticScholarPostgresWriter(
         throw IllegalStateException("delete is not supported")
     }
 
-    /**
-     * Dummy function in order to implement Closeable interface.
-     * No actions are needed in fact, Exposed should manage the connection pool.
-     */
-    override fun close() {}
+    override fun close() {
+        /**
+         * No actions to close db connection is required: Exposed should manage the connection pool.
+         */
+        if (changed) {
+            transaction {
+                addLogger(PubmedPostgresWriter)
+                exec("""
+                    do
+                    ${"$$"}
+                    begin
+                    IF exists (select matviewname from pg_matviews where matviewname = 'matview_sscitations') THEN
+                        refresh materialized view matview_sscitations;
+                    END IF;
+                    end;
+                    ${"$$"};
+                    """)
+            }
+        }
+    }
 }
 

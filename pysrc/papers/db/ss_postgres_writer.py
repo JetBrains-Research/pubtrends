@@ -39,10 +39,25 @@ class SemanticScholarPostgresWriter(PostgresConnector):
                     ALTER TABLE SSPublications ADD COLUMN IF NOT EXISTS tsv TSVECTOR;
                     create index if not exists SSPublications_tsv on SSPublications using gin(tsv);
                     '''
+        query_drop_matview = '''
+                    drop materialized view if exists matview_sscitations;
+                    drop index if exists SSCitation_matview_index;
+                    '''
+        query_create_matview = '''
+                    create materialized view matview_sscitations as
+                    SELECT ssid, crc32id, COUNT(*) AS count
+                    FROM SSPublications P
+                    LEFT JOIN SSCitations C
+                    ON C.ssid_in = ssid AND C.crc32id_in = crc32id
+                    GROUP BY ssid, crc32id;
+                    create index if not exists SSCitation_matview_index on matview_sscitations (crc32id);
+                    '''
 
         with self.postgres_connection.cursor() as cursor:
+            cursor.execute(query_drop_matview)
             cursor.execute(query_citations)
             cursor.execute(query_publications)
+            cursor.execute(query_create_matview)
             self.postgres_connection.commit()
 
     def insert_semantic_scholar_publications(self, articles):
@@ -69,9 +84,11 @@ class SemanticScholarPostgresWriter(PostgresConnector):
         )
 
         query = f'insert into sscitations (ssid_out, crc32id_out, ssid_in, crc32id_in) values {citations_vals};'
+        query_update_matview = 'refresh materialized view matview_sscitations;'
 
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
+            cursor.execute(query_update_matview)
             self.postgres_connection.commit()
 
     def delete(self, ids):

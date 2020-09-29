@@ -50,41 +50,51 @@ class TestKotlinWriters(unittest.TestCase):
         self.assertTrue(os.path.exists(PUBTRENDS_JAR), f'File not found: {PUBTRENDS_JAR}')
         subprocess.run(['java', '-cp', PUBTRENDS_JAR, 'org.jetbrains.bio.pubtrends.DBWriter', 'PubmedNeo4JWriter'])
         loader = PubmedNeo4jLoader(PubtrendsConfig(True))
-        pub_df = loader.load_publications(['1'])
-        actual = dict(zip(pub_df.columns, next(pub_df.iterrows())[1]))
-        self.assertEqual(actual, self.PUBMED_ARTICLE)
-        loader.close_connection()
+        try:
+            pub_df = loader.load_publications(['1'])
+            actual = dict(zip(pub_df.columns, next(pub_df.iterrows())[1]))
+            self.assertEqual(actual, self.PUBMED_ARTICLE)
+        finally:
+            loader.close_connection()
 
     def test_kotlin_pubmed_postgres_writer(self):
         self.assertTrue(os.path.exists(PUBTRENDS_JAR), f'File not found: {PUBTRENDS_JAR}')
         subprocess.run(['java', '-cp', PUBTRENDS_JAR, 'org.jetbrains.bio.pubtrends.DBWriter', 'PubmedPostgresWriter'])
         loader = PubmedPostgresLoader(PubtrendsConfig(True))
-        pub_df = loader.load_publications(['1'])
-        actual = dict(zip(pub_df.columns, next(pub_df.iterrows())[1]))
-        self.assertEqual(actual, self.PUBMED_ARTICLE)
-        loader.close_connection()
+        try:
+            pub_df = loader.load_publications(['1'])
+            actual = dict(zip(pub_df.columns, next(pub_df.iterrows())[1]))
+            self.assertEqual(actual, self.PUBMED_ARTICLE)
+        finally:
+            loader.close_connection()
 
     def test_kotlin_semantic_scholar_neo4j_writer(self):
         self.assertTrue(os.path.exists(PUBTRENDS_JAR), f'File not found: {PUBTRENDS_JAR}')
         subprocess.run(
             ['java', '-cp', PUBTRENDS_JAR, 'org.jetbrains.bio.pubtrends.DBWriter', 'SemanticScholarNeo4JWriter'])
         loader = SemanticScholarNeo4jLoader(PubtrendsConfig(True))
-        pub_df = loader.load_publications(['03029e4427cfe66c3da6257979dc2d5b6eb3a0e4'])
-        actual = dict(zip(pub_df.columns, next(pub_df.iterrows())[1]))
-        print(actual)
-        self.assertEqual(actual, self.SEMANTIC_SCHOLAR_ARTICLE)
-        loader.close_connection()
+        try:
+            pub_df = loader.load_publications(['03029e4427cfe66c3da6257979dc2d5b6eb3a0e4'])
+            actual = dict(zip(pub_df.columns, next(pub_df.iterrows())[1]))
+            expected = self.SEMANTIC_SCHOLAR_ARTICLE
+            expected.update(dict(keywords='', mesh=''))
+            self.assertEqual(actual, expected)
+        finally:
+            loader.close_connection()
 
     def test_kotlin_semantic_scholar_postgres_writer(self):
         self.assertTrue(os.path.exists(PUBTRENDS_JAR), f'File not found: {PUBTRENDS_JAR}')
         subprocess.run(
             ['java', '-cp', PUBTRENDS_JAR, 'org.jetbrains.bio.pubtrends.DBWriter', 'SemanticScholarPostgresWriter'])
         loader = SemanticScholarPostgresLoader(PubtrendsConfig(True))
-        pub_df = loader.load_publications(['03029e4427cfe66c3da6257979dc2d5b6eb3a0e4'])
-        actual = dict(zip(pub_df.columns, next(pub_df.iterrows())[1]))
-        print(actual)
-        self.assertEqual(actual, self.SEMANTIC_SCHOLAR_ARTICLE)
-        loader.close_connection()
+        try:
+            pub_df = loader.load_publications(['03029e4427cfe66c3da6257979dc2d5b6eb3a0e4'])
+            actual = dict(zip(pub_df.columns, next(pub_df.iterrows())[1]))
+            expected = self.SEMANTIC_SCHOLAR_ARTICLE
+            expected.update(dict(keywords='', mesh=''))
+            self.assertEqual(actual, expected)
+        finally:
+            loader.close_connection()
 
 
 if __name__ == "__main__":
