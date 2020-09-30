@@ -102,6 +102,7 @@ class AbstractTestPubmedLoader(metaclass=ABCMeta):
         ('Article', 1, SORT_MOST_RECENT, ['5']),
         ('Abstract', 5, SORT_MOST_RELEVANT, ['2', '3']),
         ('Article', 1, SORT_MOST_CITED, ['4']),
+        ('Article', 10, SORT_MOST_CITED, ['1', '10', '2', '3', '4', '5', '7', '8', '9']),
     ])
     def test_search(self, query, limit, sort, expected_ids):
         # Use sorted to avoid ambiguity
