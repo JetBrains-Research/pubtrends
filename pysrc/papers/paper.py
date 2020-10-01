@@ -69,8 +69,8 @@ def prepare_paper_data(data, source, pid):
                        analyzer.similarity_graph.edges[pid, v]['similarity']),
             list(analyzer.similarity_graph[pid])
         )
-        related_papers = [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid, cw)
-                          for pid, title, cw in sorted(related_papers, key=lambda x: x[2], reverse=True)[:50]]
+        related_papers = [[pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid, f'{similarity:.3f}']
+                          for pid, title, similarity in sorted(related_papers, key=lambda x: x[2], reverse=True)[:50]]
     else:
         related_papers = None
 
