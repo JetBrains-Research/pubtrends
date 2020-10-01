@@ -45,7 +45,7 @@ def process_number(token, value, idx, metrics):
     # TODO: is there a better way?
     # TODO: use close nouns as a fallback when it is hard to find a dependency?
     # TODO: expand nouns with adjectives or other nouns? (rate -> information transfer rate)
-    # logging.debug(f'Token children: {",".join(t.text for t in token.children)}')
+    logging.debug(f'Token children: {",".join(t.text for t in token.children)}')
     children_matched = False
     for t in token.children:
         if process_candidate(metrics, t, value, idx):
@@ -53,8 +53,8 @@ def process_number(token, value, idx, metrics):
             children_matched = True
         if children_matched:
             return
-    # logging.debug('Head with children: '
-    #              f'{token.head.text} | {",".join(t.text for t in token.head.children)}')
+    logging.debug('Head with children: '
+                  f'{token.head.text} | {",".join(t.text for t in token.head.children)}')
     if process_candidate(metrics, token.head, value, idx):
         logging.debug(f'Head term: {token.head.text}')
         return
@@ -85,6 +85,7 @@ def extract_metrics(text, visualize_dependencies=False):
     text = alpha2digit(text.lower(), 'en', relaxed=True)
     # Convect 10th -> 10
     text = re.sub(r"([\d]+)th", r"\g<1>", text)
+    text = re.sub(r"([^0-9a-zA-Z\- !?;,.\n])", r" \g<1> ", text)
     # Split text into sentences and find numbers in sentences
     doc = spacy_en(text)
     for idx, sent in enumerate(doc.sents):
