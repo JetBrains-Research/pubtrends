@@ -10,6 +10,8 @@ from spacy import displacy
 from text_to_num import alpha2digit
 
 NUMBER = re.compile(r'-?[\d]+([\.,][\d]+)?([eE][+-]?\d+)?')
+ENTITY = re.compile(r'[a-zA-Z_]+[a-zA-Z0-9_\-]*')
+URL = re.compile(r"((http|https)\:\/\/)?[a-zA-Z0-9\.\/\?\:@\-_=#]+\.([a-zA-Z]){2,6}([a-zA-Z0-9\.\&\/\?\:@\-_=#])*")
 spacy_en = spacy.load('en_core_web_sm')
 
 lemmatizer = WordNetLemmatizer()
@@ -17,8 +19,10 @@ lemmatizer = WordNetLemmatizer()
 
 def process_candidate(metrics, token, value, idx):
     tt = token.text
-    if tt != '%' and token.pos_ in set(['NOUN', 'PROPN']):
-        tt = lemmatizer.lemmatize(tt)
+    if ENTITY.fullmatch(tt) and token.pos_ in set(['NOUN', 'PROPN']):
+        if re.match(r'[A-Z\-0-9_]+s', tt):  # plural of abbreviation
+            tt = tt[:-1]
+        tt = lemmatizer.lemmatize(tt.lower())
         if tt not in metrics:
             metrics[tt] = []
         metrics[tt].append((value, idx))
@@ -30,13 +34,13 @@ def process_number(token, value, idx, metrics):
     logging.debug(f'Number: {value}')
     if token.head.pos_ == 'NUM':
         tht = token.head.text
-        if tht == 'hundred':
+        if re.match(r'hundred(s?)', tht, flags=re.IGNORECASE):
             value *= 100
-        elif tht == 'thousand':
+        elif re.match(r'thousand(s?)', tht, flags=re.IGNORECASE):
             value *= 1000
-        elif tht == 'million':
+        elif re.match(r'million(s?)', tht, flags=re.IGNORECASE):
             value *= 1000000
-        elif tht == 'billion':
+        elif re.match(r'billion(s?)', tht, flags=re.IGNORECASE):
             value *= 1000000000
         logging.debug(f'Value adjusted: {value}')
         token = next(token.ancestors, token)
@@ -46,30 +50,28 @@ def process_number(token, value, idx, metrics):
     # TODO: use close nouns as a fallback when it is hard to find a dependency?
     # TODO: expand nouns with adjectives or other nouns? (rate -> information transfer rate)
     logging.debug(f'Token children: {",".join(t.text for t in token.children)}')
-    children_matched = False
     for t in token.children:
-        if process_candidate(metrics, t, value, idx):
+        if t != token and process_candidate(metrics, t, value, idx):
             logging.debug(f'Child term: {t.text}')
-            children_matched = True
-        if children_matched:
             return
+
     logging.debug('Head with children: '
                   f'{token.head.text} | {",".join(t.text for t in token.head.children)}')
-    if process_candidate(metrics, token.head, value, idx):
-        logging.debug(f'Head term: {token.head.text}')
-        return
+    if token != token.head:
+        if process_candidate(metrics, token.head, value, idx):
+            logging.debug(f'Head term: {token.head.text}')
+            return
 
-    head_children_matched = False
-    for t in token.head.children:
-        if process_candidate(metrics, t, value, idx):
-            logging.debug(f'Child of head term: {t.text}')
-            head_children_matched = True
-    if head_children_matched:
-        return
+        for t in token.head.children:
+            if t != token and process_candidate(metrics, t, value, idx):
+                logging.debug(f'Child of head term: {t.text}')
+                return
 
     logging.debug(f'Token anscestors: {",".join(t.text for t in token.ancestors)}')
-    for t in token.ancestors:
-        if process_candidate(metrics, t, value, idx):
+    for i, t in enumerate(token.ancestors):
+        if i == 3:  # Don't go too high
+            return
+        if t != token and process_candidate(metrics, t, value, idx):
             logging.debug(f'Ancestor: {t.text}')
             return
 
@@ -81,11 +83,16 @@ def extract_metrics(text, visualize_dependencies=False):
     """
     metrics = {}
     sentences = {}
+    # Replace all emails / urls to avoid irrelevant numbers
+    text = re.sub(URL, "", text)
+    # Insert whitespaces between non-ascii and punctuation symbols, help spacy to split tokens correctly.
+    text = re.sub(r"([^0-9a-z\-\n])", r" \g<1> ", text, flags=re.IGNORECASE)
+    # Whitespaces normalization
+    text = re.sub(r'[ ]{2,}', ' ', text.strip())
     # Convert textual numbers to digits (three -> 3)
-    text = alpha2digit(text.lower(), 'en', relaxed=True)
+    text = alpha2digit(text, 'en', relaxed=True)
     # Convect 10th -> 10
-    text = re.sub(r"([\d]+)th", r"\g<1>", text)
-    text = re.sub(r"([^0-9a-zA-Z\- !?;,.\n])", r" \g<1> ", text)
+    text = re.sub(r"([\d]+)th", r"\g<1>", text, flags=re.IGNORECASE)
     # Split text into sentences and find numbers in sentences
     doc = spacy_en(text)
     for idx, sent in enumerate(doc.sents):
