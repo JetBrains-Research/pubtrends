@@ -901,6 +901,7 @@ class KeyPaperAnalyzer:
                 for number, values in row['Metrics'].items()
             ) for _, row in result.iterrows()
         ]
+        result = result.loc[result['numbers'] != '']
         return result[['id', 'title', 'numbers']]
 
     def dump(self):
