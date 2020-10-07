@@ -139,6 +139,7 @@ Download Sample from [Semantic Scholar](https://www.semanticscholar.org/) or ful
    echo "" > complete.txt
    cat manifest.txt | grep corpus | while read -r file; do 
       if [[ -z $(grep "$file" complete.txt) ]]; then
+         echo "Processing $file"
          wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2020-01-01/$file;
          java -cp build/libs/pubtrends-dev.jar org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --fillDatabase $(pwd)/$file
          rm $file;
@@ -151,13 +152,14 @@ Download Sample from [Semantic Scholar](https://www.semanticscholar.org/) or ful
    ```
    curl.exe -o .\manifest.txt https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2020-01-01/manifest.txt 
    echo "" > .\complete.txt
-   foreach($file in Get-Content .\manifest.txt) {
+   foreach ($file in Get-Content .\manifest.txt) {
        $sel = Select-String -Path .\complete.txt -Pattern $file
-       if($sel -eq $null) {
+       if ($sel -eq $null) {
+          echo "Processing $file"
           curl.exe -o .\$file https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2020-01-01/$file
-          java -cp "pubtrends-XXX.jar" org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --fillDatabase .\$file
+          java -cp "C:\Users\oleg\work\pubtrends\build\libs\pubtrends-dev.jar" org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --fillDatabase .\$file
           del ./$file
-          echo $file\n >> .\complete.txt
+          echo $file >> .\complete.txt
        }
    }
    ```
