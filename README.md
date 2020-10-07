@@ -131,8 +131,9 @@ Updates - add crontab update every day at 22:00 with the command:
 
 ### Optional: Semantic Scholar
 
-
 Download Sample from [Semantic Scholar](https://www.semanticscholar.org/) or full archive. 
+
+   * Linux & Mac OS
    ```
    wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2020-01-01/manifest.txt
    echo "" > complete.txt
@@ -144,6 +145,21 @@ Download Sample from [Semantic Scholar](https://www.semanticscholar.org/) or ful
          echo "$file" >> complete.txt
       fi;
    done
+   ```
+   
+   * Windows 10 PowerShell
+   ```
+   curl.exe -o .\manifest.txt https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2020-01-01/manifest.txt 
+   echo "" > .\complete.txt
+   foreach($file in Get-Content .\manifest.txt) {
+       $sel = Select-String -Path .\complete.txt -Pattern $file
+       if($sel -eq $null) {
+          curl.exe -o .\$file https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2020-01-01/$file
+          java -cp "pubtrends-XXX.jar" org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --fillDatabase .\$file
+          del ./$file
+          echo $file\n >> .\complete.txt
+       }
+   }
    ```
 
    Command line options supported:
