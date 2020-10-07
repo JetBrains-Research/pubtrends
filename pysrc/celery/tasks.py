@@ -33,7 +33,7 @@ def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, e
         if 0 < len(ids) and expand != 0:
             ids = analyzer.expand_ids(
                 ids,
-                limit=min(int(limit * (1 + expand)), analyzer.config.max_number_to_expand),
+                limit=min(int(min(len(ids), limit) * (1 + expand)), analyzer.config.max_number_to_expand),
                 steps=KeyPaperAnalyzer.EXPAND_STEPS,
                 current=2, task=current_task
             )
