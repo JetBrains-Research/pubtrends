@@ -155,7 +155,7 @@ def process():
             logger.error(f'/process error wrong request {log_request(request)}')
             return render_template_string(SOMETHING_WENT_WRONG)
 
-        query = html.unescape(request.args.get('query'))
+        query = html.unescape(request.args.get('query') or '')
         analysis_type = request.values.get('analysis_type')
         source = request.values.get('source')
         key = request.args.get('key')
