@@ -22,9 +22,10 @@ from pysrc.celery.tasks_cache import get_or_cancel_task
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
-from pysrc.papers.paper import prepare_review_data, prepare_paper_data, prepare_papers_data
+from pysrc.papers.paper import prepare_paper_data, prepare_papers_data
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.plot.plotter import Plotter
+from pysrc.papers.review import prepare_review_data
 from pysrc.papers.stats import prepare_stats_data
 from pysrc.papers.utils import zoom_name, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE, trim, ZOOM_OUT_TITLE
 from pysrc.papers.version import VERSION
@@ -143,34 +144,6 @@ def result():
         logger.error(f'/result error wrong request {log_request(request)}')
         return render_template_string("Wrong request..."), 400
 
-
-@app.route('/review')
-def review():
-    jobid = request.args.get('jobid')
-    query = request.args.get('query')
-    source = request.args.get('source')
-    limit = request.args.get('limit')
-    sort = request.args.get('sort')
-    num_papers = request.args.get('papers_number')
-    num_sents = request.args.get('sents_number')
-    if jobid:
-        job = AsyncResult(jobid, app=celery)
-        if job and job.state == 'SUCCESS':
-            _, data, _ = job.result
-            review_res = prepare_review_data(data, source, num_papers, num_sents)
-            export_name = re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{query}_review'.lower().strip('_')))
-            return render_template('review.html',
-                                   query=trim(query, MAX_QUERY_LENGTH),
-                                   source=source,
-                                   limit=limit,
-                                   sort=sort,
-                                   version=VERSION,
-                                   review_array=review_res,
-                                   export_name=export_name,
-                                   **data)
-    else:
-        logger.error(f'/result error {log_request(request)}')
-        return render_template_string("Something went wrong..."), 400
 
 @app.route('/process')
 def process():
@@ -499,6 +472,39 @@ def process_ids():
         return render_template_string(f"Error occurred. We're working on it. Please check back soon."), 500
     logger.error(f'/process_ids error {log_request(request)}')
     return render_template_string(f"Request does not contain necessary params: {request}"), 400
+
+#######################
+# Review functionality #
+#######################
+
+
+@app.route('/review')
+def review():
+    jobid = request.args.get('jobid')
+    query = request.args.get('query')
+    source = request.args.get('source')
+    limit = request.args.get('limit')
+    sort = request.args.get('sort')
+    num_papers = request.args.get('papers_number')
+    num_sents = request.args.get('sents_number')
+    if jobid:
+        job = AsyncResult(jobid, app=celery)
+        if job and job.state == 'SUCCESS':
+            _, data, _ = job.result
+            review_res = prepare_review_data(data, source, num_papers, num_sents)
+            export_name = re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{query}_review'.lower().strip('_')))
+            return render_template('review.html',
+                                   query=trim(query, MAX_QUERY_LENGTH),
+                                   source=source,
+                                   limit=limit,
+                                   sort=sort,
+                                   version=VERSION,
+                                   review_array=review_res,
+                                   export_name=export_name,
+                                   **data)
+    else:
+        logger.error(f'/result error {log_request(request)}')
+        return render_template_string("Something went wrong..."), 400
 
 
 #######################
