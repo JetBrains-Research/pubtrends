@@ -10,6 +10,7 @@ from pysrc.test.db.pm_test_articles import REQUIRED_ARTICLES, EXPECTED_PUB_DF, \
     PART_OF_ARTICLES, EXPANDED_IDS, EXPANDED_TOP_CITED_3, EXPANDED_TOP_CITED_4
 
 
+# Don't make it subclass of unittest.TestCase to avoid tests execution
 class AbstractTestPubmedLoader(metaclass=ABCMeta):
 
     # @classmethod
@@ -101,6 +102,7 @@ class AbstractTestPubmedLoader(metaclass=ABCMeta):
         ('Article', 1, SORT_MOST_RECENT, ['5']),
         ('Abstract', 5, SORT_MOST_RELEVANT, ['2', '3']),
         ('Article', 1, SORT_MOST_CITED, ['4']),
+        ('Article', 10, SORT_MOST_CITED, ['1', '10', '2', '3', '4', '5', '7', '8', '9']),
     ])
     def test_search(self, query, limit, sort, expected_ids):
         # Use sorted to avoid ambiguity

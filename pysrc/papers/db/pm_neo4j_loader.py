@@ -58,16 +58,15 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
         noreviews_filter = 'WHERE node.type <> "Review"' if noreviews else ''
 
         if sort == SORT_MOST_RELEVANT:
-            query = f'''
-                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", '{query_str}')
-                YIELD node, score
+            neo4j_query = f'''
+                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", '{query_str}') YIELD node, score
                 {noreviews_filter}
                 RETURN node.pmid as pmid
                 ORDER BY score DESC
                 LIMIT {limit};
                 '''
         elif sort == SORT_MOST_CITED:
-            query = f'''
+            neo4j_query = f'''
                 CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", '{query_str}') YIELD node
                 MATCH ()-[r:PMReferenced]->(in:PMPublication)
                 WHERE in.pmid = node.pmid
@@ -78,7 +77,7 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
                 LIMIT {limit};
                 '''
         elif sort == SORT_MOST_RECENT:
-            query = f'''
+            neo4j_query = f'''
                 CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", '{query_str}') YIELD node
                 {noreviews_filter}
                 RETURN node.pmid as pmid
@@ -89,7 +88,18 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
             raise ValueError(f'Illegal sort method: {sort}')
 
         with self.neo4jdriver.session() as session:
-            ids = [str(r['pmid']) for r in session.run(query)]
+            ids = [str(r['pmid']) for r in session.run(neo4j_query)]
+
+        if sort == SORT_MOST_CITED and len(ids) < limit:
+            # Papers with any citations may be missing, append papers by relevance
+            additional_ids = self.search(query, limit=limit, sort=SORT_MOST_RELEVANT, noreviews=noreviews)
+            sids = set(ids)
+            for ai in additional_ids:
+                if ai in sids:
+                    continue
+                ids.append(ai)
+                if len(ids) == limit:
+                    return ids
 
         return ids
 

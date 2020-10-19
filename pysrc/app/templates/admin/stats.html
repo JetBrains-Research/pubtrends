@@ -17,7 +17,7 @@
     <script>
         "use strict";
         $(document).ready(function() {
-            var words = JSON.parse('{{ word_cloud }}'.replace(/&#34;/g, '"').replace(/&amp;/g, '&'));
+            var words = JSON.parse('{{ word_cloud }}'.replace(/&#34;/g, '"').replace(/&#39;/g, '\'').replace(/&amp;/g, '&'));
             process_word_cloud('word_cloud', 900, 600, words, null);
         });
     </script>
@@ -36,12 +36,36 @@
             {% endfor %}
         {%  endif %}
 
+        {% if word_cloud is defined %}
+        <h3>Word cloud</h3>
+        <canvas id="word_cloud" width="0" height="0" style="border:1px solid #eee;">
+            Canvas is not supported in your browser.
+        </canvas>
+        {% endif %}
+
         <h3>Recent searches</h3>
-        {% for row in recent_searches %}
-        <button type="button" class="btn btn-link link" onclick="(function(){
-                window.open('{{ row[1] }}');
-            })();">{{ row[0] }}</button><br/>
-        {% endfor %}
+        <table class="table table-sm table-bordered table-striped">
+            <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Search</th>
+                <th scope="col">Date</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for row in recent_searches %}
+            <tr>
+                <th scope="row">{{ loop.index }}</th>
+                <td>
+                    <button type="button" class="btn btn-link link"
+                            onclick="(function(){ window.open('{{ row[2] }}'); })();">{{ row[1] }}
+                    </button>
+                </td>
+                <td>{{ row[0] }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
 
         <h3>Paper searches</h3>
         Total: {{ total_paper_searches }}
@@ -52,12 +76,6 @@
             {% endfor %}
         {% endif %}
 
-        {% if word_cloud is defined %}
-            <h3>Word cloud</h3>
-            <canvas id="word_cloud" width="0" height="0" style="border:1px solid #eee;">
-                Canvas is not supported in your browser.
-            </canvas>
-        {% endif %}
     </div>
 
     <footer>

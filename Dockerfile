@@ -79,6 +79,11 @@ RUN conda init bash \
     && conda clean -afy \
     && rm /home/user/environment.yml
 
+# Download nltk & spacy resources
+RUN source activate pubtrends \
+    && python -m nltk.downloader averaged_perceptron_tagger punkt stopwords wordnet \
+    && python -m spacy download en_core_web_sm
+
 # Configure Postgresql configuration
 USER root
 RUN chmod -R a+w /var/run/postgresql

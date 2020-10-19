@@ -2,7 +2,7 @@
 # Script for building tar.gz archive for deployment
 # author Oleg.Shpynov os@jetbrains.com
 
-version=0.7
+version=0.8
 build=development
 
 for ARGUMENT in "$@"; do
@@ -28,7 +28,7 @@ cp docker-compose.yml "${PTV}"/
 cp -r pysrc "${PTV}"/
 
 # Update config version
-sed -E "s/VERSION[^\n]*/VERSION = '${FULL_VERSION}'/g" -i "${PTV}"/pysrc/papers/version.py
+sed -E "s/VERSION[^\n]*/VERSION = '${FULL_VERSION}'/g" -i "${PTV}"/pysrc/version.py
 
 # Create folder for logs
 mkdir "${PTV}"/logs

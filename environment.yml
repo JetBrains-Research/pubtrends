@@ -28,6 +28,7 @@ dependencies:
   - tensorboardx=2.1
   - psutil=5.7.2
   - unidecode=1.1.0
+  - spacy=2.3.2
   - pip
   - pip:
       - gunicorn

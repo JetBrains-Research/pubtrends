@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>PubTrends - {{query}} at {{source}}{{ search_string }} {{limit}} {{sort}}</title>
+    <title>{{query}} at {{source}}{{ search_string }} {{limit}} {{sort}} - PubTrends</title>
     <meta charset="utf-8">
     <link rel="stylesheet"
           href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
@@ -23,10 +23,18 @@
             crossorigin="anonymous"></script>
     <script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-2.0.2.min.js"
             crossorigin="anonymous"></script>
-    <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.10.20/js/dataTables.bootstrap4.min.js"></script>
-    <link href="https://cdn.datatables.net/1.10.20/css/dataTables.bootstrap4.min.css"
+
+    <!-- DataTables with search -->
+    <script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.21/js/dataTables.bootstrap4.min.js"></script>
+    <link href="https://cdn.datatables.net/1.10.21/css/dataTables.bootstrap4.min.css"
           rel="stylesheet" type="text/css">
+    <!-- DataTables search highlight -->
+    <script src="https://cdn.jsdelivr.net/g/mark.js(jquery.mark.min.js)"></script>
+    <script src="https://cdn.datatables.net/plug-ins/1.10.13/features/mark.js/datatables.mark.js"></script>
+    <link href="https://cdn.datatables.net/plug-ins/1.10.13/features/mark.js/datatables.mark.min.css"
+    type="text/css">
+
 
     <!-- IntroJS feature tour -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.9.3/introjs.css"
@@ -44,11 +52,8 @@
     <script>
         "use strict";
 
-        // Query may contain double quotes or ' fix it.
-        const query_fixed = '{{ query }}'.replace(/&#34;/g, '"').replace(/&#39;/g, '\'');
-
         function papers_callback_impl(key, value) {
-            const url = '/papers?query=' + query_fixed + '&source={{source}}&limit={{limit}}&sort={{sort}}';
+            const url = '/papers?query=' + escape('{{ query }}') + '&source={{source}}&limit={{limit}}&sort={{sort}}';
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
             var args = '';
@@ -84,7 +89,7 @@
         }
 
         function graph_callback(graphType) {
-            const url = '/graph?query=' + query_fixed + '&source={{source}}&limit={{limit}}&sort={{sort}}';
+            const url = '/graph?query=' + escape('{{ query }}') + '&source={{source}}&limit={{limit}}&sort={{sort}}';
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
             window.open(url + '&type=' + graphType + '&jobid=' + jobid, '_blank');
@@ -99,17 +104,29 @@
 
 
         $(document).ready(function() {
+            // Mark search by default in datatables
+            $.extend(true, $.fn.dataTable.defaults, {
+                mark: true
+            });
             $('#authors-table').DataTable();
             $('#journals-table').DataTable();
             {% if topic_evolution is defined %}
                 $('#topic_evolution_keywords').DataTable();
             {% endif %}
+            {% if numbers is defined %}
+                // disable search on the first column
+                $('#numbers-table').DataTable({
+                    "columnDefs": [
+                        { "searchable": false, "targets": 1 }
+                    ]
+                });
+            {% endif %}
 
-            var words = JSON.parse('{{ papers_word_cloud }}'.replace(/&#34;/g, '"').replace(/&amp;/g, '&'));
+            var words = JSON.parse('{{ papers_word_cloud }}'.replace(/&#34;/g, '"').replace(/&#39;/g, '\'').replace(/&amp;/g, '&'));
             process_word_cloud('papers_word_cloud', 220, 335, words, papers_callback_word);
 
             {% for (script, div), word_cloud, zoom_in_callback in topics_info_and_word_cloud_and_callback %}
-                 words = JSON.parse('{{ word_cloud }}'.replace(/&#34;/g, '"').replace(/&amp;/g, '&'));
+                 words = JSON.parse('{{ word_cloud }}'.replace(/&#34;/g, '"').replace(/&#39;/g, '\'').replace(/&amp;/g, '&'));
                  process_word_cloud('topic_word_cloud_{{ loop.index }}', 220, 335, words, papers_callback_word);
             {% endfor %}
         } );
@@ -163,6 +180,14 @@
                         </a>
                     </li>
                     <li class="nav-item row">
+                        <a class="nav-link no-padding-right" href="#network" title="Network">
+                            <img class="nav-icon" src="{{ url_for('static', filename='globe.svg') }}"/>
+                        </a>
+                        <a class="nav-link d-none d-xl-block no-padding" href="#network">
+                            Network
+                        </a>
+                    </li>
+                    <li class="nav-item row">
                         <a class="nav-link no-padding-right" href="#topics" title="Topics">
                             <img class="nav-icon" src="{{ url_for('static', filename='tag.svg') }}"/>
                         </a>
@@ -204,20 +229,27 @@
                         </a>
                     </li>
                     <li class="nav-item row">
+                        <a class="nav-link no-padding-right" href="#numbers" title="Numbers">
+                            <img src="{{ url_for('static', filename='hash.svg') }}"/>
+                        </a>
+                        <a class="nav-link d-none d-xl-block no-padding" href="#numbers">
+                            Numbers
+                        </a>
+                    </li>
+                    <li class="nav-item row">
+                        <a class="nav-link no-padding-right" href="#evolution" title="Evolution">
+                            <img src="{{ url_for('static', filename='compass.svg') }}"/>
+                        </a>
+                        <a class="nav-link d-none d-xl-block no-padding" href="#evolution">
+                            Evolution
+                        </a>
+                    </li>
+                    <li class="nav-item row">
                         <a class="nav-link no-padding-right" href="#review" title="Review">
                             <img class="nav-icon" src="{{ url_for('static', filename='list.svg') }}"/>
                         </a>
                         <a class="nav-link d-none d-xl-block no-padding" href="#review">
                             Review
-                        </a>
-                    </li>
-                    {% if experimental is defined %}
-                    <li class="nav-item row">
-                        <a class="nav-link no-padding-right" href="#evolution" title="Evolution">
-                            <img src="{{ url_for('static', filename='flag.svg') }}"/>
-                        </a>
-                        <a class="nav-link d-none d-xl-block no-padding" href="#evolution">
-                            Experimental
                         </a>
                     </li>
                     {% endif %}
@@ -279,13 +311,6 @@
                                 <button id="show_as_list" type="button" class="btn btn-light"
                                         onclick="(function(){ papers_callback() })();">
                                     <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
-                                </button>
-                            </div>
-                            <div class="col-auto no-padding-left">
-                                <button id="show_citations_graph" type="button" class="btn btn-light"
-                                        onclick="(function(){ graph_callback('citations') })();">
-                                    <img src="{{ url_for('static', filename='globe.svg') }}" alt="+"/>&nbsp;
-                                    Show citations graph
                                 </button>
                             </div>
                         </div>
@@ -355,16 +380,43 @@
 
                 {% if topics_analyzed %}
                 <div class="card mt-3">
+                    <div class="card-title" id="network">
+                        <h1 class="card-header">Network</h1>
+                    </div>
+                    <div class="card-body">
+                        <p>
+                            Explore citations between the papers of interest on the citations graph.
+                        </p>
+                        <button id="show_citations_graph" type="button" class="btn btn-light"
+                                onclick="(function(){ graph_callback('citations') })();">
+                            Show citations graph
+                        </button>
+                        <hr>
+                        <p>
+                            Similarity between papers is computed based on <em>bibliographic coupling</em>,
+                            <em>co-citations</em>,<br>
+                            <em>direct citations</em>, and <em>potential</em> citations based on text similarity.
+                            <br>
+                            Explore papers network, where similar papers are located together and connected.
+                        </p>
+                        <button id="show_structure_graph" type="button" class="col-auto btn btn-light"
+                                onclick="(function(){ graph_callback('structure') })();">
+                            Show structure graph
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
                     <div class="card-title" id="topics">
                         <h1 class="card-header">Topics</h1>
                     </div>
                     <div class="card-body">
                         <p>
-                            Similarity between papers is computed based on <em>bibliographic coupling</em>,
-                            <em>co-citations</em>, <em>direct citations</em>,<br>
-                            and <em>potential</em> citations based on text similarity.<br>
-                            Clustering by similarity information is used for topics extraction.
-                        <hr>
+                            Topic is a group of papers which share common ideas, describe common features, etc.
+                            <br>
+                            Topics are extracted based on similarity between papers.
+                            <br>
+                        </p>
                         <p>
                             Similarity between topics is an average similarity between the papers.
                         </p>
@@ -390,16 +442,6 @@
                         {{ script|safe }}
                         {{ div|safe }}
                         {% endfor %}
-                        <hr>
-                        Structure within a research field can be visualized as a graph.<br>
-                        </p>
-                        <button id="show_structure_graph" type="button" class="col-auto btn btn-light"
-                                onclick="(function(){ graph_callback('structure') })();">
-                            <img src="{{ url_for('static', filename='globe.svg') }}" alt="+"/>&nbsp;
-                            Show structure graph
-                        </button>
-                        </p>
-
                     </div>
                 </div>
 
@@ -564,48 +606,43 @@
                 </div>
 
                 <div class="card mt-3">
-                    <div class="card-title" id="review">
-                        <h1 class="card-header">Review</h1>
+                    <div class="card-title" id="numbers">
+                        <h1 class="card-header">Numbers</h1>
                     </div>
                     <div class="card-body">
                         <p>
-                            Generate a review for the chosen topic.<br>
+                            Numbers are extracted from papers abstracts, use search to filter the table.
                         </p>
-                        <div class="row no-gutters align-items-center mb-3">
-                            <div class="col input-group">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text" id="number-papers-addon">Number of papers</span>
-                                </div>
-                                <input class="form-control form-control-borderless" type="number"
-                                       name="number-papers" id="papers-input"
-                                       value="10"
-                                       aria-describedby="number-papers-addon"
-                                       autofocus required>
-                            </div>
-                            <div class="col input-group">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text" id="number-of-sents-addon">Sentences each</span>
-                                </div>
-                                <input class="form-control form-control-borderless" type="number"
-                                       name="number-of-sents" id="sents-input"
-                                       value="1"
-                                       aria-describedby="number-of-sents-addon"
-                                       autofocus required>
-                            </div>
+                        <div>
+                            {% if numbers is defined %}
+                            <table id="numbers-table" class="table table-sm table-bordered table-striped">
+                                <thead>
+                                <tr>
+                                    <th scope="col">#</th>
+                                    <th scope="col">Title</th>
+                                    <th scope="col">Numbers</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for id, url, title, metrics in numbers %}
+                                <tr>
+                                    <th scope="row">{{ loop.index }}</th>
+                                    <td><a class="link" href="{{ url }}">{{ title }}</a></td>
+                                    <td>{{ metrics }}</td>
+                                </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                            {% endif %}
                         </div>
-                        <button type="button" class="btn btn-primary btn-block" onclick="(function(){
-                                review_callback(document.getElementById('papers-input').value,document.getElementById('sents-input').value);
-                            })();">Generate review</button>
                     </div>
                 </div>
 
-                {% if experimental is defined %}
                 <div class="card mt-3">
                     <div class="card-title" id="evolution">
-                        <h1 class="card-header">Experimental</h1>
+                        <h1 class="card-header">Topic Evolution</h1>
                     </div>
                     <div class="card-body">
-                        <h2 class="card-subtitle">Topic Evolution</h2>
                         <p>
                             Topics extraction is performed longitudinally at several time points to detect merges and splits
                             of topics. <br>
@@ -646,7 +683,42 @@
                         </div>
                     </div>
                 </div>
-                {% endif %}
+
+                <div class="card mt-3">
+                    <div class="card-title" id="review">
+                        <h1 class="card-header">Review</h1>
+                    </div>
+                    <div class="card-body">
+                        <p>
+                            Generate a review for the chosen topic.<br>
+                        </p>
+                        <div class="row no-gutters align-items-center mb-3">
+                            <div class="col input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text" id="number-papers-addon">Number of papers</span>
+                                </div>
+                                <input class="form-control form-control-borderless" type="number"
+                                       name="number-papers" id="papers-input"
+                                       value="10"
+                                       aria-describedby="number-papers-addon"
+                                       autofocus required>
+                            </div>
+                            <div class="col input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text" id="number-of-sents-addon">Sentences each</span>
+                                </div>
+                                <input class="form-control form-control-borderless" type="number"
+                                       name="number-of-sents" id="sents-input"
+                                       value="1"
+                                       aria-describedby="number-of-sents-addon"
+                                       autofocus required>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-primary btn-block" onclick="(function(){
+                                review_callback(document.getElementById('papers-input').value,document.getElementById('sents-input').value);
+                            })();">Generate review</button>
+                    </div>
+                </div>
 
                 <div class="mt-3 ml-3" id="log">
                     <h5><a class="link" data-toggle="collapse" href="#collapseLog"
@@ -702,14 +774,13 @@
                     intro: "{{n_topics}} topics were found among the papers.<br>"
                 },
                 {
+                    element: '#papers_word_cloud',
+                    intro: "Click on any keyword to open the list of papers with this keyword in a new tab."
+                },
+                {
                     element: '#show_as_list',
                     intro: "Click <img src=\"{{ url_for('static', filename='list.svg') }}\" alt=\"+\"/> " +
                         "<em>Show as list</em> anytime to open the list of papers in a separate window."
-                },
-                {
-                    element: '#show_citations_graph',
-                    intro: "Click <img src=\"{{ url_for('static', filename='globe.svg') }}\" alt=\"+\"/> " +
-                        "<em>Show citations graph</em> to explore citations graph among the papers."
                 },
                 {
                     element: '#highlights',
@@ -717,9 +788,12 @@
                         "Top cited papers, papers of the year, and hot papers are shown in a dedicated sections."
                 },
                 {
+                    element: '#show_citations_graph',
+                    intro: "Click <em>Show citations graph</em> to explore citations graph among the papers."
+                },
+                {
                     element: '#show_structure_graph',
-                    intro: "Click <img src=\"{{ url_for('static', filename='globe.svg') }}\" alt=\"+\"/> " +
-                        "<em>Show structure graph</em> to explore overall papers similarity."
+                    intro: "Click <em>Show structure graph</em> to explore overall papers similarity."
                 },
                 {
                     element: '#topics',
@@ -735,10 +809,6 @@
                         "<em>Zoom into</em> button to run analysis for this particular topic.<br>"
                 },
                 {
-                    element: '#topic_word_cloud_1',
-                    intro: "Click on any keyword to open the list of papers with this keyword in a new tab."
-                },
-                {
                     element: '#topic_chart_1',
                     intro: "Hover over glyphs to check out tooltips that contain general information " +
                         "about the papers. Click glyphs to open a page about corresponding paper in a " +
@@ -750,6 +820,14 @@
                         "is organised into tables, which also show distribution over topics. You can " +
                         "open all papers for a certain author or journal by clicking the corresponding " +
                         "number of papers."
+                },
+                {
+                    element: '#numbers',
+                    intro: "Explore numbers hidden in papers abstracts!"
+                },
+                {
+                    element: '#evolution',
+                    intro: "Explore evolution of ideas in the field."
                 },
                 {
                     element: '#review',

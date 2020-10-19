@@ -15,12 +15,13 @@ TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
 PLOT_WIDTH = 900
 PLOT_HEIGHT = 300
 WC_HEIGHT = 600
+RECENT_SEARCHES = 100
 
 
 def prepare_stats_data(logfile):
     terms_searches = []
     paper_searches = []
-    recent_searches = Queue(maxsize=10)
+    recent_searches = Queue(maxsize=RECENT_SEARCHES)
     terms = []
 
     for line in open(logfile).readlines():
@@ -33,9 +34,9 @@ def prepare_stats_data(logfile):
         if '/process regular search addr:' in line:
             terms_searches.append(date)
             if recent_searches.full():
-                recent_searches.get()
+                recent_searches.get()  # Free some space
             terms.append(re.sub('(.*"query": ")|(", "source.*)', '', line.strip()))
-            recent_searches.put(re.sub(".*args:", "", line.strip()))
+            recent_searches.put((date, re.sub(".*args:", "", line.strip())))
         if '/search_paper addr:' in line:
             paper_searches.append(date)
 
@@ -54,11 +55,11 @@ def prepare_stats_data(logfile):
 
     recent_searches_query_links = []
     while not recent_searches.empty():
-        rs = recent_searches.get()
+        date, rs = recent_searches.get()
         args_map = json.loads(rs)
         query = args_map['query']
         link = f'/result?{"&".join([f"{a}={v}" for a, v in args_map.items()])}'
-        recent_searches_query_links.append((query, link))
+        recent_searches_query_links.append((date.strftime('%Y-%m-%d'), query, link))
     result['recent_searches'] = recent_searches_query_links[::-1]
 
     # Generate a word cloud image

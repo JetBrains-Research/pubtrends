@@ -2,19 +2,19 @@ import unittest
 
 from parameterized import parameterized
 
-from pysrc.papers.analyzer_experimental import ExperimentalAnalyzer
+from pysrc.papers.analyzer import KeyPaperAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.test.mock_loaders import MockLoader
 from pysrc.test.test_analyzer import TestKeyPaperAnalyzer
 
 
-class TestExperimentalAnalyzer(unittest.TestCase):
+class TestTopicEvolution(unittest.TestCase):
     PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
 
     @classmethod
     def setUpClass(cls):
         loader = MockLoader()
-        cls.analyzer = ExperimentalAnalyzer(loader, TestKeyPaperAnalyzer.PUBTRENDS_CONFIG, test=True)
+        cls.analyzer = KeyPaperAnalyzer(loader, TestKeyPaperAnalyzer.PUBTRENDS_CONFIG, test=True)
         ids = cls.analyzer.search_terms(query='query')
         cls.analyzer.analyze_papers(ids, 'query')
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.ids)

@@ -34,8 +34,8 @@ object SSPublications : Table() {
 
 
 object SSCitations : Table() {
-    val id_out = varchar("id_out", MAX_ID_LENGTH)
-    val id_in = varchar("id_in", MAX_ID_LENGTH)
+    val ssid_out = varchar("ssid_out", MAX_ID_LENGTH)
+    val ssid_in = varchar("ssid_in", MAX_ID_LENGTH)
 
     val crc32id_out = integer("crc32id_out")
     val crc32id_in = integer("crc32id_in")

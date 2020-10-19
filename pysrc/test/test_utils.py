@@ -1,7 +1,7 @@
 import unittest
 
 import pandas as pd
-from pandas.util.testing import assert_frame_equal
+from pandas.testing import assert_frame_equal
 from parameterized import parameterized
 
 from pysrc.papers.utils import tokenize, cut_authors_list, split_df_list, crc32, \

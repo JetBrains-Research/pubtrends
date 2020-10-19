@@ -8,6 +8,7 @@ from pysrc.test.db.ss_test_articles import required_citations, \
     expected_cit_stats_df, expected_cit_df, expected_cocit_df, part_of_articles, expanded_articles
 
 
+# Don't make it subclass of unittest.TestCase to avoid tests execution
 class AbstractTestSemanticScholarLoader(metaclass=ABCMeta):
 
     # @classmethod
@@ -48,15 +49,18 @@ class AbstractTestSemanticScholarLoader(metaclass=ABCMeta):
         """:return co-citations dataframe"""
 
     @parameterized.expand([
-        ('limit 3, most recent', 3, SORT_MOST_RECENT, ['5a63b4199bb58992882b0bf60bc1b1b3f392e5a5',
-                                                       '5451b1ef43678d473575bdfa7016d024146f2b53',
-                                                       'cad767094c2c4fff5206793fd8674a10e7fba3fe']),
-        ('limit 3, most cited', 3, SORT_MOST_CITED, ['3cf82f53a52867aaade081324dff65dd35b5b7eb',
-                                                     'e7cdbddc7af4b6138227139d714df28e2090bd5f',
-                                                     '5451b1ef43678d473575bdfa7016d024146f2b53']),
-        ('limit 3, most relevant', 3, SORT_MOST_RELEVANT, ['cad767094c2c4fff5206793fd8674a10e7fba3fe',
-                                                           'e7cdbddc7af4b6138227139d714df28e2090bd5f',
-                                                           '3cf82f53a52867aaade081324dff65dd35b5b7eb']),
+        ('3 most recent', 3, SORT_MOST_RECENT, ['5a63b4199bb58992882b0bf60bc1b1b3f392e5a5',
+                                                '5451b1ef43678d473575bdfa7016d024146f2b53',
+                                                'cad767094c2c4fff5206793fd8674a10e7fba3fe']),
+        ('4 most relevant', 4, SORT_MOST_RELEVANT, ['cad767094c2c4fff5206793fd8674a10e7fba3fe',
+                                                    'e7cdbddc7af4b6138227139d714df28e2090bd5f',
+                                                    '3cf82f53a52867aaade081324dff65dd35b5b7eb',
+                                                    '5a63b4199bb58992882b0bf60bc1b1b3f392e5a5']),
+        ('10 most cited', 10, SORT_MOST_CITED, ['3cf82f53a52867aaade081324dff65dd35b5b7eb',
+                                                '5451b1ef43678d473575bdfa7016d024146f2b53',
+                                                '5a63b4199bb58992882b0bf60bc1b1b3f392e5a5',
+                                                'cad767094c2c4fff5206793fd8674a10e7fba3fe',
+                                                'e7cdbddc7af4b6138227139d714df28e2090bd5f']),
     ])
     def test_search(self, name, limit, sort, expected):
         # Use sorted to avoid ambiguity

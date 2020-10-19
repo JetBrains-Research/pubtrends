@@ -1,7 +1,7 @@
     <!DOCTYPE html>
     <html>
     <head>
-        <title>PubTrends - {{query}} at {{source}} {{limit}} {{sort}}</title>
+        <title>{{query}} at {{source}} {{limit}} {{sort}} - PubTrends</title>
         <meta charset="utf-8">
         <link rel="stylesheet"
               href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
@@ -60,7 +60,7 @@
                 "target-arrow-shape": "triangle",
                 "arrow-scale": 1,
                 "line-color": "#000000",
-                "opacity": 0.3
+                "opacity": 0.2
             };
 
             const PR_EDGE_STYLE = {
@@ -69,7 +69,7 @@
                     if ('similarity' in data) {
                         return Math.max(1, Math.min(10, Math.log1p(data.similarity)));
                     }
-                    return 0.3;
+                    return 0.2;
                 },
                 "curve-style": "haystack",
                 "line-color": function (edge) {
@@ -101,7 +101,7 @@
                     }
                     return "#000000";
                 },
-                "opacity": 0.3
+                "opacity": 0.2
             };
 
             function rgbToHex(r, g, b) {
@@ -114,8 +114,9 @@
 
             function showTopics(){
                 cy.nodes().forEach(function(ele){
-                    if ('title' in ele.data()){
-                        ele.classes('topic');
+                    if ('title' in ele.data()) {
+                        ele.removeClass('topic cited year pagerank centrality');
+                        ele.addClass('topic');
                     }
                 });
             }
@@ -123,7 +124,8 @@
             function showCited(){
                 cy.nodes().forEach(function(ele){
                     if ('title' in ele.data()){
-                        ele.classes('cited');
+                        ele.removeClass('topic cited year pagerank centrality');
+                        ele.addClass('cited');
                     }
                 });
             }
@@ -131,7 +133,8 @@
             function showYear(){
                 cy.nodes().forEach(function(ele){
                     if ('title' in ele.data()){
-                        ele.classes('year');
+                        ele.removeClass('topic cited year pagerank centrality');
+                        ele.addClass('year');
                     }
                 });
             }
@@ -139,7 +142,8 @@
             function showPagerank(){
                 cy.nodes().forEach(function(ele){
                     if ('title' in ele.data()){
-                        ele.classes('pagerank');
+                        ele.removeClass('topic cited year pagerank centrality');
+                        ele.addClass('pagerank');
                     }
                 });
             }
@@ -147,7 +151,8 @@
             function showCentrality(){
                 cy.nodes().forEach(function(ele){
                     if ('title' in ele.data()){
-                        ele.classes('centrality');
+                        ele.removeClass('topic cited year pagerank centrality');
+                        ele.addClass('centrality');
                     }
                 });
             }
@@ -219,7 +224,15 @@
                                 },
                                 "border-width": 1,
                                 "border-color": "black",
-                                "opacity": 0.8,
+                                "opacity": 0.7,
+                            }
+                        },
+                        <!-- In case of Paper Analyzer highlight analyzed paper -->
+                        {
+                            selector: 'node.analyzed',
+                            style: {
+                                'border-width': '4px',
+                                'opacity': '1.0 !important'
                             }
                         },
                         {
@@ -333,7 +346,7 @@
                         {
                             selector: 'node.semitransp',
                             style: {
-                                'opacity': 0.3
+                                'opacity': 0.2
                             }
                         },
                         {
@@ -509,6 +522,22 @@
                             cy.edges().difference(neighborEdges).removeClass('semitransp');
                         }
                     });
+
+                    <!-- Highlight analyzed paper -->
+                    if ("{{ limit }}" === "related" && "{{ sort }}" === "papers") {
+                        let title = "{{ query }}".replace(/&#34;/g, '"').replace(/&#39;/g, '\'').replace(/&amp;/g, '&');
+                        if (title.endsWith("...")) {
+                            title = title.replace("...", "");
+                        }
+                        cy.nodes().forEach(function (ele) {
+                            let data = ele.data();
+                            if ('title' in data) {
+                                if (data.title.startsWith(title)) {
+                                    ele.addClass('analyzed');
+                                }
+                            }
+                        });
+                    }
                 });
 
                 // Close all tippy
@@ -561,9 +590,7 @@
             }
 
             function result() {
-                // Query may contain double quotes, fix it.
-                const query_fixed = '{{ query }}'.replace(/&#34;/g, '"');
-                const url = '/result?query=' + query_fixed + '&source={{source}}&limit={{limit}}&sort={{sort}}';
+                const url = '/result?query=' + escape('{{ query }}') + '&source={{source}}&limit={{limit}}&sort={{sort}}';
                 // Decode jobid from URL
                 const jobid = new URL(window.location).searchParams.get('jobid');
                 window.open(url + '&jobid=' + jobid, '_blank');

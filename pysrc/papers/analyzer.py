@@ -12,9 +12,10 @@ from networkx.readwrite import json_graph
 
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
+from pysrc.papers.extract_numbers import extract_metrics, MetricExtractor
 from pysrc.papers.progress import Progress
 from pysrc.papers.utils import split_df_list, get_topics_description, SORT_MOST_CITED, \
-    compute_tfidf, cosine_similarity, vectorize_corpus, tokens_stems
+    compute_tfidf, cosine_similarity, vectorize_corpus, tokens_stems, get_evolution_topics_description
 
 logger = logging.getLogger(__name__)
 
@@ -28,8 +29,8 @@ class KeyPaperAnalyzer:
     # Direct citation (DC) was a distant third among the three...
     SIMILARITY_BIBLIOGRAPHIC_COUPLING = 2
     SIMILARITY_COCITATION = 1
-    SIMILARITY_CITATION = 0.1
-    SIMILARITY_TEXT_CITATION = 0.01
+    SIMILARITY_CITATION = 0.5  # Maximum single citation between two papers
+    SIMILARITY_TEXT_CITATION = 1  # Cosine similarity is <= 1
 
     SIMILARITY_TEXT_MIN = 0.3  # Minimal cosine similarity for potential text citation
     SIMILARITY_TEXT_CITATION_N = 20  # Max number of potential text citations for paper
@@ -53,7 +54,8 @@ class KeyPaperAnalyzer:
     TOP_AUTHORS = 50
 
     EXPAND_STEPS = 2
-    EXPAND_PAPERS = 200  # Papers to expand
+    EXPAND_ZOOM_OUT = 100
+
     # Methods are highly cited, keep them only for computational topics
     EXPAND_COMPUTATIONAL_MESH = [
         'comput', 'method', 'data', 'interpret', 'statist', 'method', 'internet', 'softwar', 'user-comput',
@@ -61,6 +63,9 @@ class KeyPaperAnalyzer:
         'imag', 'techniqu', 'likelihood', 'function', 'statist', 'factual'
     ]
     EXPAND_COMPUTATIONAL_THRESHOLD = 0.05  # Threshold to determine whether topic is computational or not
+
+    EVOLUTION_MIN_PAPERS = 100
+    EVOLUTION_STEP = 10
 
     def __init__(self, loader, config, test=False):
         self.config = config
@@ -70,12 +75,12 @@ class KeyPaperAnalyzer:
         self.source = Loaders.source(self.loader, test)
 
     def total_steps(self):
-        return 19 + 1  # One extra step for visualization
+        return 21 + 1  # One extra step for visualization
 
     def teardown(self):
         self.progress.remove_handler()
 
-    def search_terms(self, query, limit=None, sort=None, noreviews=True, expand=0, task=None):
+    def search_terms(self, query, limit=None, sort=None, noreviews=True, task=None):
         # Search articles relevant to the terms
         if len(query) == 0:
             raise SearchError('Empty search string, please use search terms or '
@@ -95,26 +100,21 @@ class KeyPaperAnalyzer:
                                task=task)
         return ids
 
-    def expand_ids(self, ids, limit, keep_keywords, steps, current=1, task=None):
+    def expand_ids(self, ids, limit, steps, current=1, task=None):
         if len(ids) > self.config.max_number_to_expand:
             self.progress.info('Too many related papers, nothing to expand', current=current, task=task)
             return ids
         self.progress.info('Expanding related papers by references', current=current, task=task)
-        logger.debug(f'Expanding {len(ids)} papers to: {limit} keeping mesh: {keep_keywords}')
+        logger.debug(f'Expanding {len(ids)} papers to: {limit}')
         current_ids = ids
 
         publications = self.loader.load_publications(ids)
-        if keep_keywords:
-            mesh_stems = [s for s, _ in tokens_stems(
-                ' '.join(publications['mesh'] + ' ' + publications['keywords']).replace(',', ' ')
-            )]
-            mesh_counter = Counter(mesh_stems)
-            computational_mesh = sum(mesh_counter[s] / len(mesh_stems) for s in self.EXPAND_COMPUTATIONAL_MESH)
-            logger.debug(f'Computational mesh: {"{0:.3f}".format(computational_mesh)}')
-        else:
-            mesh_stems = []
-            mesh_counter = None
-            computational_mesh = 0
+        mesh_stems = [s for s, _ in tokens_stems(
+            ' '.join(publications['mesh'] + ' ' + publications['keywords']).replace(',', ' ')
+        )]
+        mesh_counter = Counter(mesh_stems)
+        computational_mesh = sum(mesh_counter[s] / len(mesh_stems) for s in self.EXPAND_COMPUTATIONAL_MESH)
+        logger.debug(f'Computational mesh: {"{0:.3f}".format(computational_mesh)}')
 
         # Expand while we can
         i = 0
@@ -124,7 +124,7 @@ class KeyPaperAnalyzer:
                 break
             i += 1
             logger.debug(f'Step {i}: current_ids: {len(current_ids)}, new_ids: {len(new_ids)}, limit: {limit}')
-            if not keep_keywords or not mesh_stems:
+            if not mesh_stems:
                 expanded_ids = self.loader.expand(new_ids or current_ids, limit - len(current_ids))
                 new_ids = [pid for pid in expanded_ids if pid not in set(current_ids)]
                 logger.debug(f'New {len(new_ids)} papers')
@@ -282,6 +282,24 @@ class KeyPaperAnalyzer:
 
         self.progress.info("Finding popular authors", current=19, task=task)
         self.author_stats = self.popular_authors(self.df)
+
+        if len(self.df) >= 0:
+            logger.debug('Perform numbers extraction')
+            self.progress.info('Extracting numbers from publication abstracts', current=20, task=task)
+            self.numbers_df = self.extract_numbers(self.df)
+        else:
+            logger.debug('Not enough papers for numbers extraction')
+
+        if len(self.df) >= KeyPaperAnalyzer.EVOLUTION_MIN_PAPERS:
+            logger.debug('Perform topic evolution analysis and get topic descriptions')
+            self.evolution_df, self.evolution_year_range = \
+                self.topic_evolution_analysis(self.cocit_df, current=21, task=task)
+            self.evolution_kwds = self.topic_evolution_descriptions(
+                self.df, self.evolution_df, self.evolution_year_range, current=21, task=task
+            )
+        else:
+            logger.debug('Not enough papers for topics evolution')
+            self.evolution_df = None
 
     @staticmethod
     def build_cit_stats_df(cits_by_year_df, n_papers):
@@ -756,6 +774,135 @@ class KeyPaperAnalyzer:
                                right=pdf, right_on='id', how='inner')
         ids = ids_comp_df.sort_values(by='total', ascending=False).groupby('comp')['id']
         return ids.apply(list).apply(lambda x: x[:n_papers]).to_dict()
+
+    def topic_evolution_analysis(self, cocit_df, step=EVOLUTION_STEP, min_papers=0, current=0, task=None):
+        min_year = int(cocit_df['year'].min())
+        max_year = int(cocit_df['year'].max())
+        year_range = list(np.arange(max_year, min_year - 1, step=-step).astype(int))
+
+        # Cannot analyze evolution
+        if len(year_range) < 2:
+            self.progress.info(f'Year step is too big to analyze evolution of topics in {min_year} - {max_year}',
+                               current=current, task=task)
+            return None, None
+
+        self.progress.info(f'Studying evolution of topics in {min_year} - {max_year}',
+                           current=current, task=task)
+
+        logger.debug(f"Topics evolution years: {', '.join([str(year) for year in year_range])}")
+        years_processed = 1
+        evolution_series = [pd.Series(self.partition)]
+        for i, year in enumerate(year_range[1:]):
+            self.progress.info(f'Processing year {year}', current=current, task=task)
+            # Get ids earlier than year
+            ids_year = set(self.df.loc[self.df['year'] <= year]['id'])
+
+            # Use only citations earlier than year
+            citations_graph_year = nx.DiGraph()
+            for index, row in self.cit_df.iterrows():
+                v, u = row['id_out'], row['id_in']
+                if v in ids_year and u in ids_year:
+                    citations_graph_year.add_edge(v, u)
+
+            # Use only co-citations earlier than year
+            cocit_grouped_df_year = self.build_cocit_grouped_df(cocit_df.loc[cocit_df['year'] <= year])
+
+            # Use bibliographic coupling earlier then year
+            bibliographic_coupling_df_year = self.bibliographic_coupling_df.loc[
+                np.logical_and(
+                    self.bibliographic_coupling_df['citing_1'].isin(ids_year),
+                    self.bibliographic_coupling_df['citing_2'].isin(ids_year)
+                )
+            ]
+
+            # Use similarities for papers earlier then year
+            texts_similarity_year = self.texts_similarity.copy()
+            for idx in np.flatnonzero(self.df['year'].apply(int) > year):
+                texts_similarity_year[idx] = PriorityQueue(maxsize=0)
+
+            similarity_graph = self.build_similarity_graph(
+                self.df, texts_similarity_year,
+                citations_graph_year,
+                cocit_grouped_df_year,
+                bibliographic_coupling_df_year,
+                process_all_papers=False,  # Dont add all the papers to the graph
+                current=current, task=task
+            )
+            logger.debug('Compute aggregated similarity')
+            for _, _, d in similarity_graph.edges(data=True):
+                d['similarity'] = KeyPaperAnalyzer.get_similarity(d)
+
+            if len(similarity_graph.nodes) >= min_papers:
+                self.progress.info('Extracting topics from paper similarity graph', current=current, task=task)
+                dendrogram = community.generate_dendrogram(
+                    similarity_graph, weight='similarity', random_state=KeyPaperAnalyzer.SEED
+                )
+                # Smallest communities
+                partition_louvain = dendrogram[0]
+                logger.debug(f'Found {len(set(partition_louvain.values()))} components')
+                # Reorder and merge small components to 'OTHER'
+                p, _ = KeyPaperAnalyzer.merge_components(
+                    partition_louvain, topic_min_size=self.TOPIC_MIN_SIZE, max_topics_number=self.TOPICS_MAX_NUMBER
+                )
+                evolution_series.append(pd.Series(p))
+                years_processed += 1
+            else:
+                logger.debug(f'Total number of papers is less than {min_papers}, stopping.')
+                break
+
+        year_range = year_range[:years_processed]
+
+        evolution_df = pd.concat(evolution_series, axis=1).rename(
+            columns=dict(enumerate(year_range)))
+        evolution_df['current'] = evolution_df[max_year]
+        evolution_df = evolution_df[list(reversed(list(evolution_df.columns)))]
+
+        # Assign -1 to articles not published yet
+        evolution_df = evolution_df.fillna(-1.0)
+
+        evolution_df = evolution_df.reset_index().rename(columns={'index': 'id'})
+        evolution_df['id'] = evolution_df['id'].astype(str)
+        return evolution_df, year_range
+
+    def topic_evolution_descriptions(self, df, evolution_df, year_range, current=0, task=None):
+        # Topic evolution failed, no need to generate keywords
+        if evolution_df is None or not year_range:
+            return None
+
+        self.progress.info('Generating evolution topics description by top cited papers',
+                           current=current, task=task)
+        evolution_kwds = {}
+        for col in evolution_df:
+            if col in year_range:
+                self.progress.info(f'Generating topics descriptions for year {col}',
+                                   current=current, task=task)
+                if isinstance(col, (int, float)):
+                    evolution_df[col] = evolution_df[col].apply(int)
+                    comps = evolution_df.groupby(col)['id'].apply(list).to_dict()
+                    evolution_kwds[col] = get_evolution_topics_description(
+                        df, comps, self.corpus_ngrams, self.corpus_counts, size=KeyPaperAnalyzer.TOPIC_WORDS
+                    )
+
+        return evolution_kwds
+
+    @staticmethod
+    def extract_numbers(df):
+        # Slow, currently moved out of the class to speed up fixing & rerunning the code of MetricExtractor
+        metrics_data = []
+        for _, data in df.iterrows():
+            paper_metrics_data = [data['id'], *extract_metrics(data['abstract'])]
+            metrics_data.append(paper_metrics_data)
+        me = MetricExtractor(metrics_data)
+        result = pd.merge(left=me.metrics_df, left_on='ID', right=df[['id', 'title']], right_on='id')
+        result = result[['id', 'title', 'Metrics']]
+        result['numbers'] = [
+            '; '.join(
+                f'{number}:{",".join(str(v) for v in sorted(set(v[0] for v in values)))}'
+                for number, values in row['Metrics'].items()
+            ) for _, row in result.iterrows()
+        ]
+        result = result.loc[result['numbers'] != '']
+        return result[['id', 'title', 'numbers']]
 
     def dump(self):
         """

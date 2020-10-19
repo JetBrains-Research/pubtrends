@@ -17,8 +17,9 @@ from flask_security import Security, SQLAlchemyUserDatastore, \
 from flask_security.utils import hash_password
 from flask_sqlalchemy import SQLAlchemy
 
-from pysrc.celery.tasks import celery, find_paper_async, analyze_search_terms, analyze_id_list, get_analyzer
+from pysrc.celery.tasks import celery, find_paper_async, analyze_search_terms, analyze_id_list
 from pysrc.celery.tasks_cache import get_or_cancel_task
+from pysrc.papers.analyzer import KeyPaperAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
@@ -28,11 +29,13 @@ from pysrc.papers.plot.plotter import Plotter
 from pysrc.papers.review import prepare_review_data
 from pysrc.papers.stats import prepare_stats_data
 from pysrc.papers.utils import zoom_name, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE, trim, ZOOM_OUT_TITLE
-from pysrc.papers.version import VERSION
+from pysrc.version import VERSION
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
 MAX_QUERY_LENGTH = 60
+
+SOMETHING_WENT_WRONG = 'Something went wrong, please <a href="/">rerun</a> your search.'
 
 app = Flask(__name__)
 
@@ -121,7 +124,7 @@ def status():
 @app.route('/result')
 def result():
     jobid = request.args.get('jobid')
-    query = request.args.get('query')
+    query = html.unescape(request.args.get('query'))
     source = request.args.get('source')
     limit = request.args.get('limit')
     sort = request.args.get('sort')
@@ -142,7 +145,7 @@ def result():
         return search_terms_(request.args)
     else:
         logger.error(f'/result error wrong request {log_request(request)}')
-        return render_template_string("Wrong request..."), 400
+        return render_template_string(SOMETHING_WENT_WRONG), 400
 
 
 @app.route('/process')
@@ -152,9 +155,9 @@ def process():
 
         if not jobid:
             logger.error(f'/process error wrong request {log_request(request)}')
-            return render_template_string("Wrong request...")
+            return render_template_string(SOMETHING_WENT_WRONG)
 
-        query = request.args.get('query')
+        query = html.unescape(request.args.get('query') or '')
         analysis_type = request.values.get('analysis_type')
         source = request.values.get('source')
         key = request.args.get('key')
@@ -203,14 +206,14 @@ def process():
                                    redirect_page="result",  # redirect in case of success
                                    jobid=jobid, version=VERSION)
     logger.error(f'/process error {log_request(request)}')
-    return render_template_string("Something went wrong..."), 400
+    return render_template_string(SOMETHING_WENT_WRONG), 400
 
 
 @app.route('/process_paper')
 def process_paper():
     jobid = request.values.get('jobid')
     source = request.values.get('source')
-    query = request.values.get('query')
+    query = html.unescape(request.values.get('query'))
     if jobid:
         job = get_or_cancel_task(jobid)
         if job and job.state == 'SUCCESS':
@@ -237,13 +240,13 @@ def paper():
         return render_template_string("Out-of-date search, please search again..."), 400
     else:
         logger.error(f'/paper error wrong request {log_request(request)}')
-        return render_template_string("Wrong request..."), 400
+        return render_template_string(SOMETHING_WENT_WRONG), 400
 
 
 @app.route('/graph')
 def graph():
     jobid = request.values.get('jobid')
-    query = request.args.get('query')
+    query = html.unescape(request.args.get('query'))
     source = request.args.get('source')
     limit = request.args.get('limit')
     sort = request.args.get('sort')
@@ -253,7 +256,7 @@ def graph():
         if job and job.state == 'SUCCESS':
             _, data, _ = job.result
             loader, url_prefix = Loaders.get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
-            analyzer = get_analyzer(loader, PUBTRENDS_CONFIG)
+            analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
             analyzer.init(data)
             topics_tags = {comp: ', '.join(
                 [w[0] for w in analyzer.df_kwd[analyzer.df_kwd['comp'] == comp]['kwd'].values[0][:10]]
@@ -291,16 +294,16 @@ def graph():
                     graph_cytoscape_json=json.dumps(graph_cs)
                 )
         logger.error(f'/graph error job id {log_request(request)}')
-        return render_template_string("Out-of-date search, please search again..."), 400
+        return render_template_string(SOMETHING_WENT_WRONG), 400
     else:
         logger.error(f'/graph error wrong request {log_request(request)}')
-        return render_template_string("Wrong request..."), 400
+        return render_template_string(SOMETHING_WENT_WRONG), 400
 
 
 @app.route('/papers')
 def show_ids():
     jobid = request.values.get('jobid')
-    query = request.args.get('query')
+    query = html.unescape(request.args.get('query'))
     source = request.args.get('source')  # Pubmed or Semantic Scholar
     limit = request.args.get('limit')
     sort = request.args.get('sort')
@@ -346,7 +349,7 @@ def show_ids():
                                    export_name=export_name,
                                    papers=prepare_papers_data(data, source, comp, word, author, journal, papers_list))
     logger.error(f'/papers error {log_request(request)}')
-    return render_template_string(f"Request does not contain necessary params: {request}"), 400
+    return render_template_string(SOMETHING_WENT_WRONG), 400
 
 
 @app.route('/cancel')
@@ -406,7 +409,7 @@ def search_terms():
 
 
 def search_terms_(data):
-    query = data.get('query')  # Original search query
+    query = html.unescape(data.get('query'))  # Original search query
     source = data.get('source')  # Pubmed or Semantic Scholar
     sort = data.get('sort')  # Sort order
     limit = data.get('limit')  # Limit
@@ -430,9 +433,9 @@ def search_terms_(data):
                                     jobid=jobid))
     except Exception as e:
         logger.error(f'/search_terms error', e)
-        return render_template_string(f"Error occurred. We're working on it. Please check back soon."), 500
+        return render_template_string("Error occurred. We're working on it. Please check back soon."), 500
     logger.error(f'/search_terms error {log_request(request)}')
-    return render_template_string(f"Request does not contain necessary params: {request}"), 400
+    return render_template_string(SOMETHING_WENT_WRONG), 400
 
 
 @app.route('/search_paper', methods=['POST'])
@@ -449,15 +452,15 @@ def search_paper():
             return redirect(url_for('.process', source=source, key=key, value=value, jobid=job.id))
     except Exception as e:
         logger.error(f'/search_paper error', e)
-        return render_template_string(f"Error occurred. We're working on it. Please check back soon."), 500
+        return render_template_string("Error occurred. We're working on it. Please check back soon."), 500
     logger.error(f'/search_paper error {log_request(request)}')
-    return render_template_string(f"Request does not contain necessary params: {request}"), 400
+    return render_template_string(SOMETHING_WENT_WRONG), 400
 
 
 @app.route('/process_ids', methods=['POST'])
 def process_ids():
     source = request.form.get('source')  # Pubmed or Semantic Scholar
-    query = request.form.get('query')  # Original search query
+    query = html.unescape(request.form.get('query'))  # Original search query
 
     try:
         if source and query and 'id_list' in request.form:
@@ -469,9 +472,9 @@ def process_ids():
             return redirect(url_for('.process', query=query, analysis_type=analysis_type, source=source, jobid=job.id))
     except Exception as e:
         logger.error(f'/process_ids error', e)
-        return render_template_string(f"Error occurred. We're working on it. Please check back soon."), 500
+        return render_template_string("Error occurred. We're working on it. Please check back soon."), 500
     logger.error(f'/process_ids error {log_request(request)}')
-    return render_template_string(f"Request does not contain necessary params: {request}"), 400
+    return render_template_string(SOMETHING_WENT_WRONG), 400
 
 #######################
 # Review functionality #
@@ -644,7 +647,6 @@ DB_LOCK.acquire()
 if not os.path.exists(DATABASE_PATH):
     build_users_db()
 DB_LOCK.release()
-
 
 # With debug=True, Flask server will auto-reload on changes
 if __name__ == '__main__':

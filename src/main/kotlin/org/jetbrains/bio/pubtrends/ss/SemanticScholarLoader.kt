@@ -5,7 +5,9 @@ import joptsimple.ValueConversionException
 import joptsimple.ValueConverter
 import org.apache.logging.log4j.LogManager
 import org.jetbrains.bio.pubtrends.Config
+import org.jetbrains.bio.pubtrends.db.AbstractDBWriter
 import org.jetbrains.bio.pubtrends.db.SemanticScholarNeo4JWriter
+import org.jetbrains.bio.pubtrends.db.SemanticScholarPostgresWriter
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -35,18 +37,33 @@ object SemanticScholarLoader {
             val (config, configPath, settingsRoot) = Config.load()
             logger.info("Config path: $configPath")
 
-            logger.info("Init Neo4j database connection")
-            val dbHandler = SemanticScholarNeo4JWriter(
-                    config["neo4jhost"].toString(),
-                    config["neo4jport"].toString().toInt(),
-                    config["neo4jusername"].toString(),
-                    config["neo4jpassword"].toString()
-            )
+            val dbWriter: AbstractDBWriter<SemanticScholarArticle>
+            if (!(config["neo4j_host"]?.toString()).isNullOrBlank()) {
+                logger.info("Init Neo4j database connection")
+                dbWriter = SemanticScholarNeo4JWriter(
+                        config["neo4j_host"]!!.toString(),
+                        config["neo4j_port"]!!.toString().toInt(),
+                        config["neo4j_username"]!!.toString(),
+                        config["neo4j_password"]!!.toString()
+                )
+            } else if (!(config["postgres_host"]?.toString()).isNullOrBlank()) {
+                logger.info("Init Postgresql database connection")
+                dbWriter = SemanticScholarPostgresWriter(
+                        config["postgres_host"]!!.toString(),
+                        config["postgres_port"]!!.toString().toInt(),
+                        config["postgres_database"]!!.toString(),
+                        config["postgres_username"]!!.toString(),
+                        config["postgres_password"]!!.toString()
+                )
+            } else {
+                throw IllegalStateException("No database configured")
+            }
 
-            dbHandler.use {
+
+            dbWriter.use {
                 if (options.has("resetDatabase")) {
                     logger.info("Resetting database")
-                    dbHandler.reset()
+                    dbWriter.reset()
                 }
 
                 if (options.has("fillDatabase")) {
@@ -55,7 +72,7 @@ object SemanticScholarLoader {
 
                     val file = File(options.valueOf("fillDatabase").toString())
                     logger.info("Started parsing articles $file")
-                    ArchiveParser(dbHandler, file,
+                    ArchiveParser(dbWriter, file,
                             config["loader_batch_size"].toString().toInt(),
                             collectStats,
                             statsFile

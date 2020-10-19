@@ -18,10 +18,11 @@ from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.preprocessing import normalize
 
-nltk.download('averaged_perceptron_tagger')  # required for nltk.pos_tag
-nltk.download('punkt')  # required for word_tokenize
-nltk.download('stopwords')
-nltk.download('wordnet')
+# Ensure that modules are downloaded in advance
+# nltk averaged_perceptron_tagger required for nltk.pos_tag
+# nltk punkt  required for word_tokenize
+# nltk stopwords
+# nltk wordnet
 STOP_WORDS_SET = set(stopwords.words('english'))
 
 # Lock to support multithreading for NLTK
@@ -47,6 +48,7 @@ SORT_MOST_CITED = 'Most Cited'
 SORT_MOST_RELEVANT = 'Most Relevant'
 SORT_MOST_RECENT = 'Most Recent'
 
+MAX_TITLE_LENGTH = 200
 
 log = logging.getLogger(__name__)
 

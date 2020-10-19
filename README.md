@@ -28,6 +28,13 @@ Ensure that file contains correct information about the database(s) (url, port, 
     Workaround for "image not found" error during neo4j pip install on newest Mac OS Sierra:
     `conda install -y conda-forge::ncurses`
 
+    Download Nltk and Spacy resources
+    ```
+    source activate pubtrends \
+    && python -m nltk.downloader averaged_perceptron_tagger punkt stopwords wordnet \
+    && python -m spacy download en_core_web_sm
+    ```
+
 3. Build `biolabs/pubtrends` Docker image (available on Docker hub).
     ```
     docker build -t biolabs/pubtrends .
@@ -124,19 +131,37 @@ Updates - add crontab update every day at 22:00 with the command:
 
 ### Optional: Semantic Scholar
 
-
 Download Sample from [Semantic Scholar](https://www.semanticscholar.org/) or full archive. 
+
+   * Linux & Mac OS
    ```
    wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2020-01-01/manifest.txt
    echo "" > complete.txt
    cat manifest.txt | grep corpus | while read -r file; do 
       if [[ -z $(grep "$file" complete.txt) ]]; then
+         echo "Processing $file"
          wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2020-01-01/$file;
          java -cp build/libs/pubtrends-dev.jar org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --fillDatabase $(pwd)/$file
          rm $file;
          echo "$file" >> complete.txt
       fi;
    done
+   ```
+   
+   * Windows 10 PowerShell
+   ```
+   curl.exe -o .\manifest.txt https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2020-01-01/manifest.txt 
+   echo "" > .\complete.txt
+   foreach ($file in Get-Content .\manifest.txt) {
+       $sel = Select-String -Path .\complete.txt -Pattern $file
+       if ($sel -eq $null) {
+          echo "Processing $file"
+          curl.exe -o .\$file https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2020-01-01/$file
+          java -cp "C:\Users\oleg\work\pubtrends\build\libs\pubtrends-dev.jar" org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --fillDatabase .\$file
+          del ./$file
+          echo $file >> .\complete.txt
+       }
+   }
    ```
 
    Command line options supported:
@@ -205,8 +230,8 @@ Please ensure that you have Database configured, up and running.
     docker run --rm --volume=$(pwd):/pubtrends -t biolabs/pubtrends /bin/bash -c \
     "/usr/lib/postgresql/12/bin/pg_ctl -D /home/user/postgres start; sudo neo4j start; \
     cd /pubtrends; mkdir ~/.pubtrends; cp config.properties ~/.pubtrends; \
-    ./gradlew test; \
-    ./gradlew shadowJar; source activate pubtrends; pytest pysrc"
+    ./gradlew test shadowJar; \
+    source activate pubtrends; pytest pysrc"
     ```
 
 ## Deployment
@@ -297,3 +322,5 @@ See [AUTHORS.md](AUTHORS.md) for a list of authors and contributors.
 * Project architecture [presentation](https://docs.google.com/presentation/d/131qvkEnzzmpx7-I0rz1om6TG7bMBtYwU9T1JNteRIEs/edit?usp=sharing) - summer 2019. 
 * Review generation [presentation](https://my.compscicenter.ru/media/projects/2019-autumn/844/presentations/participants.pdf) - fall 2019.
 * Extractive summarization [presentation](https://drive.google.com/file/d/1NnZ6JtJ2owtxFnuwKbARzOFM5_aHw6ls/view?usp=sharing) - spring 2020.
+* [Icons by Feather](https://feathericons.com/)
+

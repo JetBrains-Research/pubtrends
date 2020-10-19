@@ -53,7 +53,7 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
         query_str = preprocess_search_query_for_neo4j(query, self.config.min_search_words)
 
         if sort == SORT_MOST_RELEVANT:
-            query = f'''
+            neo4j_query = f'''
                 CALL db.index.fulltext.queryNodes("ssTitlesAndAbstracts", '{query_str}')
                 YIELD node, score
                 RETURN node.ssid as ssid
@@ -61,7 +61,7 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
                 LIMIT {limit};
                 '''
         elif sort == SORT_MOST_CITED:
-            query = f'''
+            neo4j_query = f'''
                 CALL db.index.fulltext.queryNodes("ssTitlesAndAbstracts", '{query_str}') YIELD node
                 MATCH ()-[r:SSReferenced]->(in:SSPublication)
                 WHERE in.crc32id = node.crc32id AND in.ssid = node.ssid
@@ -71,7 +71,7 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
                 LIMIT {limit};
                 '''
         elif sort == SORT_MOST_RECENT:
-            query = f'''
+            neo4j_query = f'''
                 CALL db.index.fulltext.queryNodes("ssTitlesAndAbstracts", '{query_str}') YIELD node
                 RETURN node.ssid as ssid
                 ORDER BY node.date DESC
@@ -81,7 +81,18 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
             raise ValueError(f'Illegal sort method: {sort}')
 
         with self.neo4jdriver.session() as session:
-            ids = [str(r['ssid']) for r in session.run(query)]
+            ids = [str(r['ssid']) for r in session.run(neo4j_query)]
+
+        if sort == SORT_MOST_CITED and len(ids) < limit:
+            # Papers with any citations may be missing, append papers by relevance
+            additional_ids = self.search(query, limit=limit, sort=SORT_MOST_RELEVANT, noreviews=noreviews)
+            sids = set(ids)
+            for ai in additional_ids:
+                if ai in sids:
+                    continue
+                ids.append(ai)
+                if len(ids) == limit:
+                    return ids
 
         return ids
 

@@ -1,19 +1,13 @@
-import logging
-
 from bokeh.embed import components
 
 from pysrc.papers.analyzer import KeyPaperAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.plot.plotter import Plotter
-from pysrc.papers.utils import trim, build_corpus
-
-logger = logging.getLogger(__name__)
+from pysrc.papers.utils import (
+    trim, build_corpus, MAX_TITLE_LENGTH)
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
-
-MAX_TITLE_LENGTH = 200
-
 
 def get_top_papers_id_title(papers, df, key, n=50):
     citing_papers = map(lambda v: (df[df['id'] == v], df[df['id'] == v][key].values[0]), list(papers))
@@ -75,8 +69,8 @@ def prepare_paper_data(data, source, pid):
                        analyzer.similarity_graph.edges[pid, v]['similarity']),
             list(analyzer.similarity_graph[pid])
         )
-        related_papers = [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid, cw)
-                          for pid, title, cw in sorted(related_papers, key=lambda x: x[2], reverse=True)[:50]]
+        related_papers = [[pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid, f'{similarity:.3f}']
+                          for pid, title, similarity in sorted(related_papers, key=lambda x: x[2], reverse=True)[:50]]
     else:
         related_papers = None
 

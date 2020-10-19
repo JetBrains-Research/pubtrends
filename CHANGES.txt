@@ -3,10 +3,19 @@ Pubtrends changelog
 
 Here you can see the full list of changes between each release.
 
-Version 0.7
+Version 0.8
 -------------
 
 Released on XXX XX, 2020
+
+ - Extact numbers from texts of abstracts
+ - Small Bugfixes
+
+
+Version 0.7
+-------------
+
+Released on September 1, 2020
 
  - Reworked DB backends (default is postgres)
  - Optimized most cited search for postgres

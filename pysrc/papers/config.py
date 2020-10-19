@@ -34,8 +34,6 @@ class PubtrendsConfig:
         self.postgres_password = params['postgres_password' if not test else 'test_postgres_password']
         self.postgres_database = params['postgres_database' if not test else 'test_postgres_database']
 
-        self.experimental = params.getboolean('experimental')
-
         self.pm_enabled = params.getboolean('pm_enabled')
         self.pm_search_example_terms = [terms.strip() for terms in params['pm_search_example_terms'].split(';')]
 
