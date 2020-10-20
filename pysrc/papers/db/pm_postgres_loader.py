@@ -145,6 +145,23 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
         return df
 
+    def estimate_citations(self, ids):
+        vals = self.ids_to_vals(ids)
+        query = f'''
+                SELECT count
+                FROM PMPublications P
+                    LEFT JOIN matview_pmcitations C
+                    ON P.pmid = C.pmid
+                WHERE P.pmid in (VALUES {vals});
+                '''
+
+        with self.postgres_connection.cursor() as cursor:
+            cursor.execute(query)
+            df = pd.DataFrame(cursor.fetchall(), columns=['total'])
+            df.fillna(value=1, inplace=True)  # matview_pmcitations ignores < 3 citations
+
+        return df['total'].mean(), df['total'].std()
+
     def load_citations(self, ids):
         vals = self.ids_to_vals(ids)
         query = f'''SELECT pmid_out as id_out, pmid_in as id_in
@@ -201,7 +218,8 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 SELECT C.pmid_out AS pmid
                 FROM PMCitations C
                 WHERE C.pmid_in IN (VALUES {vals}))
-            SELECT X.pmid as pmid FROM X
+            SELECT X.pmid as pmid, count 
+                FROM X
                     LEFT JOIN matview_pmcitations C
                     ON X.pmid = C.pmid
                 ORDER BY count DESC NULLS LAST
@@ -210,10 +228,10 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
-        expanded = set(ids)
-        expanded |= set(df['pmid'].astype(str))
-        return expanded
+            df = pd.DataFrame(cursor.fetchall(), columns=['id', 'total'], dtype=object)
+        df['id'] = df['id'].astype(str)
+        df.fillna(value=1, inplace=True)
+        return df
 
     def load_bibliographic_coupling(self, ids):
         vals = self.ids_to_vals(ids)
