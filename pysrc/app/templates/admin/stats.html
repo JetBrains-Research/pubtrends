@@ -9,7 +9,7 @@
 <script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-2.0.2.min.js"
         crossorigin="anonymous"></script>
 <script src="{{ url_for('static', filename='wordcloud.js') }}"></script>
-<!--<script src="../static/wordcloud.js"/>-->
+<!--<script src="../../static/wordcloud.js"/>-->
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1"/>
 <!--<link rel="stylesheet" href="../../static/style.css" />-->
 
@@ -26,62 +26,57 @@
 {% endblock head %}
 {% block body %}
     {{ super() }}
-    <div class="container">
-        <h3>Terms searches</h3>
-        Total: {{ total_terms_searches }}
-        {% if total_terms_searches > 0 %}
-            {% for script, div in terms_searches_plot %}
-            {{ script|safe }}
-            {{ div|safe }}
-            {% endfor %}
-        {%  endif %}
+<h3>Terms searches</h3>
+Total: {{ total_terms_searches }}
+{% if total_terms_searches > 0 %}
+{% for script, div in terms_searches_plot %}
+{{ script|safe }}
+{{ div|safe }}
+{% endfor %}
+{%  endif %}
 
-        {% if word_cloud is defined %}
-        <h3>Word cloud</h3>
-        <canvas id="word_cloud" width="0" height="0" style="border:1px solid #eee;">
-            Canvas is not supported in your browser.
-        </canvas>
-        {% endif %}
+{% if word_cloud is defined %}
+<h3>Word cloud</h3>
+<canvas id="word_cloud" width="0" height="0" style="border:1px solid #eee;">
+    Canvas is not supported in your browser.
+</canvas>
+{% endif %}
 
-        <h3>Recent searches</h3>
-        <table class="table table-sm table-bordered table-striped">
-            <thead>
-            <tr>
-                <th scope="col">#</th>
-                <th scope="col">Search</th>
-                <th scope="col">Date</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for row in recent_searches %}
-            <tr>
-                <th scope="row">{{ loop.index }}</th>
-                <td>
-                    <button type="button" class="btn btn-link link"
-                            onclick="(function(){ window.open('{{ row[2] }}'); })();">{{ row[1] }}
-                    </button>
-                </td>
-                <td>{{ row[0] }}</td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
+<h3>Recent searches</h3>
+<table class="table table-sm table-bordered table-striped">
+    <thead>
+    <tr>
+        <th scope="col">#</th>
+        <th scope="col">Search</th>
+        <th scope="col">Date</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for row in recent_searches %}
+    <tr>
+        <th scope="row">{{ loop.index }}</th>
+        <td>
+            <a class="link" href="{{ row[2] }}">{{ row[1] }}</a>
+        </td>
+        <td>{{ row[0] }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
 
-        <h3>Paper searches</h3>
-        Total: {{ total_paper_searches }}
-        {% if total_paper_searches > 0 %}
-            {% for script, div in paper_searches_plot %}
-            {{ script|safe }}
-            {{ div|safe }}
-            {% endfor %}
-        {% endif %}
+<h3>Paper searches</h3>
+Total: {{ total_paper_searches }}
+{% if total_paper_searches > 0 %}
+{% for script, div in paper_searches_plot %}
+{{ script|safe }}
+{{ div|safe }}
+{% endfor %}
+{% endif %}
 
-    </div>
-
-    <footer>
-        <p>version {{ version }}<br/>
-            &copy; 2019-2020 <a href="https://research.jetbrains.org/groups/biolabs"
-                                title="JetBrains Research BioLabs"
-                                target="_blank">JetBrains Research</a></p>
-    </footer>
+<footer>
+    <p>version {{ version }}<br/>
+        &copy; 2019-2020 <a href="https://research.jetbrains.org/groups/biolabs"
+                            title="JetBrains Research BioLabs"
+                            target="_blank">JetBrains Research</a></p>
+</footer>
 {% endblock body %}
