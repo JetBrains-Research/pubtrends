@@ -10,8 +10,6 @@
         crossorigin="anonymous"></script>
 <script src="{{ url_for('static', filename='wordcloud.js') }}"></script>
 <!--<script src="../../static/wordcloud.js"/>-->
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1"/>
-<!--<link rel="stylesheet" href="../../static/style.css" />-->
 
 {% if word_cloud is defined %}
     <script>
@@ -73,10 +71,4 @@ Total: {{ total_paper_searches }}
 {% endfor %}
 {% endif %}
 
-<footer>
-    <p>version {{ version }}<br/>
-        &copy; 2019-2020 <a href="https://research.jetbrains.org/groups/biolabs"
-                            title="JetBrains Research BioLabs"
-                            target="_blank">JetBrains Research</a></p>
-</footer>
 {% endblock body %}

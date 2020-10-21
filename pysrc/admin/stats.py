@@ -27,10 +27,10 @@ def prepare_stats_data(logfile):
     for line in open(logfile).readlines():
         if 'INFO' not in line:
             continue
-        search = re.search('[\\d-]+ [\\d:]+,\\d+', line)
-        if search is None:
+        search_date = re.search('[\\d-]+ [\\d:]+,\\d+', line)
+        if search_date is None:
             continue
-        date = datetime.datetime.strptime(search.group(0), '%Y-%m-%d %H:%M:%S,%f')
+        date = datetime.datetime.strptime(search_date.group(0), '%Y-%m-%d %H:%M:%S,%f')
         if '/process regular search addr:' in line:
             terms_searches.append(date)
             if recent_searches.full():

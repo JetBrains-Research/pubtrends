@@ -16,6 +16,8 @@ from flask_security import Security, SQLAlchemyUserDatastore, \
 from flask_security.utils import hash_password
 from flask_sqlalchemy import SQLAlchemy
 
+from pysrc.admin.feedback import prepare_feedback_data
+from pysrc.admin.stats import prepare_stats_data
 from pysrc.celery.tasks import celery, find_paper_async, analyze_search_terms, analyze_id_list
 from pysrc.celery.tasks_cache import get_or_cancel_task
 from pysrc.papers.analyzer import KeyPaperAnalyzer
@@ -25,7 +27,6 @@ from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.paper import prepare_paper_data, prepare_papers_data
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.plot.plotter import Plotter
-from pysrc.papers.stats import prepare_stats_data
 from pysrc.papers.utils import zoom_name, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE, trim, ZOOM_OUT_TITLE
 from pysrc.version import VERSION
 
@@ -560,11 +561,67 @@ user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 security = Security(app, user_datastore)
 
 
+def build_users_db():
+    """
+    Populate a small db with some example entries.
+    """
+    db.drop_all()
+    db.create_all()
+
+    with app.app_context():
+        user_role = Role(name='user')
+        admin_role = Role(name='admin')
+        db.session.add(user_role)
+        db.session.add(admin_role)
+        db.session.commit()
+
+        user_datastore.create_user(
+            first_name='Admin',
+            email='admin',
+            password=hash_password(PUBTRENDS_CONFIG.admin_password),
+            roles=[user_role, admin_role]
+        )
+        db.session.commit()
+    return
+
+
+# Build a sample db on the fly, if one does not exist yet.
+DB_LOCK = Lock()
+
+DB_LOCK.acquire()
+if not os.path.exists(DATABASE_PATH):
+    build_users_db()
+DB_LOCK.release()
+
+
+# UI
 class AdminStatsView(BaseView):
     @expose('/')
     def index(self):
         stats_data = prepare_stats_data(logfile)
         return self.render('admin/stats.html', version=VERSION, **stats_data)
+
+    def is_accessible(self):
+        return current_user.is_active and current_user.is_authenticated and current_user.has_role('admin')
+
+    def _handle_view(self, name, **kwargs):
+        """
+        Override builtin _handle_view in order to redirect users when a view is not accessible.
+        """
+        if not self.is_accessible():
+            if current_user.is_authenticated:
+                # permission denied
+                abort(403)
+            else:
+                # login
+                return redirect(url_for('security.login', next=request.url))
+
+
+class AdminFeedbackView(BaseView):
+    @expose('/')
+    def index(self):
+        feedback_data = prepare_feedback_data(logfile)
+        return self.render('admin/feedback.html', version=VERSION, **feedback_data)
 
     def is_accessible(self):
         return current_user.is_active and current_user.is_authenticated and current_user.has_role('admin')
@@ -590,8 +647,9 @@ admin = flask_admin.Admin(
     template_mode='bootstrap3',
 )
 
-# Show only stats view
+# Available views
 admin.add_view(AdminStatsView(name='Statistics', endpoint='stats'))
+admin.add_view(AdminFeedbackView(name='Feedback', endpoint='feedback'))
 
 
 # define a context processor for merging flask-admin's template context into the
@@ -606,41 +664,10 @@ def security_context_processor():
     )
 
 
-def build_users_db():
-    """
-    Populate a small db with some example entries.
-    """
-    db.drop_all()
-    db.create_all()
-
-    with app.app_context():
-        user_role = Role(name='user')
-        admin_role = Role(name='admin')
-        db.session.add(user_role)
-        db.session.add(admin_role)
-        db.session.commit()
-
-        user_datastore.create_user(
-            first_name='Admin',
-            email='admin',
-            password=hash_password(PUBTRENDS_CONFIG.admin_password),
-            roles=[user_role, admin_role]
-        )
-        db.session.commit()
-    return
-
-
+# Application
 def get_app():
     return app
 
-
-# Build a sample db on the fly, if one does not exist yet.
-DB_LOCK = Lock()
-
-DB_LOCK.acquire()
-if not os.path.exists(DATABASE_PATH):
-    build_users_db()
-DB_LOCK.release()
 
 # With debug=True, Flask server will auto-reload on changes
 if __name__ == '__main__':
