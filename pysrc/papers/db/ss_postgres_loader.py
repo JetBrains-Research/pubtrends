@@ -142,6 +142,9 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
 
         return cit_stats_df_from_query
 
+    def estimate_citations(self, ids):
+        raise Exception('Not implemented yet')
+
     def load_citations(self, ids):
         query = f'''SELECT C.ssid_out, C.ssid_in
                     FROM SSCitations C

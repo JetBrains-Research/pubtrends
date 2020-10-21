@@ -153,6 +153,9 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
 
         return cit_stats_df
 
+    def estimate_citations(self, ids):
+        raise Exception('Not implemented yet')
+
     def load_citations(self, ids):
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
