@@ -103,7 +103,7 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
                  [{','.join(str(crc32(id)) for id in ids)}] AS crc32ids
             MATCH (p:SSPublication)
             WHERE p.crc32id in crc32ids AND p.ssid IN ssids
-            RETURN p.ssid as id, p.crc32id as crc32id, p.ssid as ssid, p.title as title, p.abstract as abstract,
+            RETURN p.ssid as id, p.crc32id as crc32id, p.pmid as pmid, p.title as title, p.abstract as abstract,
                 p.date.year as year, p.doi as doi, p.aux as aux
             ORDER BY id
         '''
