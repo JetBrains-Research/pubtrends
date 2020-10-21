@@ -3,12 +3,22 @@ Pubtrends changelog
 
 Here you can see the full list of changes between each release.
 
+Version 0.9
+-------------
+
+Released on October 22, 2020
+
+ - Support for feedback collecting
+ - Changed expand logic: keep total citation count the same magnitude
+ - Small Bugfixes
+
+
 Version 0.8
 -------------
 
-Released on XXX XX, 2020
+Released on September 24, 2020
 
- - Extact numbers from texts of abstracts
+ - Extract numbers from texts of abstracts
  - Small Bugfixes
 
 
