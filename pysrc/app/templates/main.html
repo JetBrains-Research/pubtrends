@@ -226,13 +226,13 @@
         <input type="hidden" name="limit" value="500">
         <input type="hidden" name="noreviews" value="on">
         <input type="hidden" name="expand" value="20">
+        <p class="mt-2">
+            Try example search
+            <button type="submit" name="query" value="{{ search_example_terms }}" class="link-button">
+                {{ search_example_terms }} at {{ search_example_source }}.
+            </button>
+        </p>
     </form>
-    <p class="mt-2">
-        Try example search
-        <button type="submit" name="query" value="{{ search_example_terms }}" class="link-button">
-            {{ search_example_terms }} at {{ search_example_source }}.
-        </button>
-    </p>
 </div>
 <footer>
     <p>version {{ version }}<br/>
