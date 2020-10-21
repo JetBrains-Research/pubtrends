@@ -390,11 +390,16 @@ def index():
         if random.choice(sources) == 'ss':
             search_example_source = 'Semantic Scholar'
             search_example_terms = random.choice(PUBTRENDS_CONFIG.ss_search_example_terms)
+    if PUBTRENDS_CONFIG.min_search_words > 1:
+        min_words_message = f' Minimum {PUBTRENDS_CONFIG.min_search_words} words.'
+    else:
+        min_words_message = ''
 
     return render_template('main.html',
                            version=VERSION,
                            limits=PUBTRENDS_CONFIG.show_max_articles_options,
                            default_limit=PUBTRENDS_CONFIG.show_max_articles_default_value,
+                           min_words_message=min_words_message,
                            pm_enabled=PUBTRENDS_CONFIG.pm_enabled,
                            ss_enabled=PUBTRENDS_CONFIG.ss_enabled,
                            search_example_source=search_example_source,
