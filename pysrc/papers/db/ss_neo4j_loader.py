@@ -103,7 +103,7 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
                  [{','.join(str(crc32(id)) for id in ids)}] AS crc32ids
             MATCH (p:SSPublication)
             WHERE p.crc32id in crc32ids AND p.ssid IN ssids
-            RETURN p.ssid as id, p.crc32id as crc32id, p.pmid as pmid, p.title as title, p.abstract as abstract,
+            RETURN p.ssid as id, p.crc32id as crc32id, p.ssid as ssid, p.title as title, p.abstract as abstract,
                 p.date.year as year, p.doi as doi, p.aux as aux
             ORDER BY id
         '''
@@ -112,7 +112,7 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
             pub_df = pd.DataFrame(session.run(query).data())
         if len(pub_df) == 0:
             logger.debug('Failed to load publications.')
-            pub_df = pd.DataFrame(columns=['id', 'crc32id', 'pmid', 'title', 'abstract', 'year', 'doi', 'aux'])
+            pub_df = pd.DataFrame(columns=['id', 'crc32id', 'ssid', 'title', 'abstract', 'year', 'doi', 'aux'])
         else:
             logger.debug(f'Found {len(pub_df)} publications in the local database')
             if np.any(pub_df[['id', 'title']].isna()):
@@ -247,29 +247,60 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
         return bibliographic_coupling_df
 
     def expand(self, ids, limit):
-        # TODO[shpynov] sort by citations!
-        max_to_expand = int(limit / 2)
-        expanded = set(ids)
-        # TODO[shpynov] transferring huge list of ids can be a problem
-        query = f'''
-            WITH [{','.join(f'"{id}"' for id in ids)}] AS ssids,
-                 [{','.join(str(crc32(id)) for id in ids)}] AS crc32ids
-                MATCH (out:SSPublication)-[:SSReferenced]->(in:SSPublication)
-                WHERE in.crc32id IN crc32ids AND in.ssid in ssids
-                RETURN out.ssid AS expanded
-                LIMIT {max_to_expand};
-            '''
-        with self.neo4jdriver.session() as session:
-            expanded |= set([str(r['expanded']) for r in session.run(query)])
+        max_to_expand = limit
+        # Cypher doesn't support any operations on unions, process two separate queries
+        expanded_dfs = []
 
-        query = f'''
-            WITH [{','.join(f'"{id}"' for id in ids)}] AS ssids,
-                 [{','.join(str(crc32(id)) for id in ids)}] AS crc32ids
+        # TODO[shpynov] transferring huge list of ids can be a problem
+        # Join query sorted by citations and without any
+        query_expand_out = f'''
+                WITH [{','.join(f'"{id}"' for id in ids)}] AS ssids,
+                    [{','.join(str(crc32(id)) for id in ids)}] AS crc32ids
+                MATCH (out:SSPublication)-[:SSReferenced]->(in1:SSPublication)
+                WHERE in1.ssid IN ssids AND in1.crc32id IN crc32ids
+                MATCH ()-[r:SSReferenced]->(in2:SSPublication)
+                WHERE in2.ssid = out.ssid AND in2.crc32id = out.crc32id
+                WITH out, COUNT(r) AS cnt
+                RETURN out.ssid as id, cnt as total
+                ORDER BY cnt DESC
+                LIMIT {max_to_expand}
+                UNION
+                WITH [{','.join(f'"{id}"' for id in ids)}] AS ssids,
+                    [{','.join(str(crc32(id)) for id in ids)}] AS crc32ids
                 MATCH (out:SSPublication)-[:SSReferenced]->(in:SSPublication)
-                WHERE out.crc32id IN crc32ids AND out.ssid in ssids
-                RETURN in.ssid AS expanded
+                WHERE in.ssid IN ssids AND in.crc32id in crc32ids
+                RETURN out.ssid as id, 0 as total
                 LIMIT {max_to_expand};
             '''
+
         with self.neo4jdriver.session() as session:
-            expanded |= set([str(r['expanded']) for r in session.run(query)])
-        return expanded
+            expanded_dfs.append(pd.DataFrame(session.run(query_expand_out).data()))
+
+        # Join query sorted by citations and without any
+        query_expand_in = f'''
+                WITH [{','.join(f'"{id}"' for id in ids)}] AS ssids,
+                    [{','.join(str(crc32(id)) for id in ids)}] AS crc32ids
+                MATCH (out:SSPublication)-[:SSReferenced]->(in1:SSPublication)
+                WHERE out.ssid IN ssids AND out.crc32id in crc32ids
+                MATCH ()-[r:SSReferenced]->(in2:SSPublication)
+                WHERE in2.ssid = in1.ssid AND in2.crc32id = in1.crc32id
+                WITH in1, COUNT(r) AS cnt
+                RETURN in1.ssid as id, cnt as total
+                ORDER BY cnt DESC
+                LIMIT {max_to_expand}
+                UNION
+                WITH [{','.join(f'"{id}"' for id in ids)}] AS ssids,
+                    [{','.join(str(crc32(id)) for id in ids)}] AS crc32ids
+                MATCH (out:SSPublication)-[:SSReferenced]->(in:SSPublication)
+                WHERE out.ssid IN ssids AND out.crc32id IN crc32ids
+                RETURN in.ssid as id, 0 as total
+                LIMIT {max_to_expand};
+            '''
+
+        with self.neo4jdriver.session() as session:
+            expanded_dfs.append(pd.DataFrame(session.run(query_expand_in).data()))
+
+        expanded_df = pd.concat(expanded_dfs)
+        expanded_df.sort_values(by=['total'], ascending=False, inplace=True)
+        expanded_df['id'] = expanded_df['id'].astype(str)
+        return expanded_df.iloc[:max_to_expand, :]
