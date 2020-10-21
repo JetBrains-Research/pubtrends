@@ -101,9 +101,8 @@
                                        aria-describedby="query-addon"
                                        autofocus required>
                             </div>
-                            &nbsp;&nbsp;&nbsp;
                             <!--end of col-->
-                            <div id="step4" class="col-auto">
+                            <div id="step4" class="col-auto ml-2">
                                 <button class="btn btn-success" type="submit">Search</button>
                             </div>
                             <!--end of col-->
@@ -162,7 +161,7 @@
                             </div>
                             <div class="row no-gutters align-items-center mt-2">
                                 <div class="col input-group">
-                                    <label class="container" style="margin-top: auto;margin-bottom: auto">
+                                    <label style="margin-top: auto;margin-bottom: auto">
                                         <input type="checkbox" checked="checked" name="noreviews" id="noreviews" >
                                         <span class="checkmark">Prefer no reviews</span>
                                     </label>
@@ -171,11 +170,8 @@
                                     <label for="expand" style="margin-top: auto;margin-bottom: auto">
                                         Expand by references +
                                     </label>
-                                    &nbsp;
-                                    <input id="expand" name="expand" class="form-control" type="number"
+                                    <input id="expand" name="expand" class="ml-1 form-control" type="number"
                                            min="0" max="100" step="10" value="20"/>
-                                    &nbsp;
-                                    %
                                 </div>
                                 <div class="ml-2 col input-group">
                                 </div>
@@ -196,8 +192,7 @@
                                     <option value="id">ID</option>
                                 </select>
                             </div>
-                            &nbsp;&nbsp;
-                            <div id="stepP2" class="col">
+                            <div id="stepP2" class="col ml-2">
                                 <input class="form-control form-control-borderless" type="search"
                                        name="value" id="paper-input"
                                        placeholder="Enter paper details"
@@ -205,8 +200,7 @@
                                        autofocus
                                        required>
                             </div>
-                            &nbsp;&nbsp;
-                            <div class="col-auto">
+                            <div class="col-auto ml-2">
                                 <select class="form-control" name="source">
                                     {% if pm_enabled %}
                                     <option>Pubmed</option>
@@ -216,9 +210,8 @@
                                     {% endif %}
                                 </select>
                             </div>
-                            &nbsp;&nbsp;
                             <!--end of col-->
-                            <div id="stepP3" class="col-auto">
+                            <div id="stepP3" class="col-auto ml-2">
                                 <button class="btn btn-success" type="submit">Search</button>
                             </div>
                         </div>
@@ -233,12 +226,6 @@
         <input type="hidden" name="limit" value="500">
         <input type="hidden" name="noreviews" value="on">
         <input type="hidden" name="expand" value="20">
-        <strong>The service is in development!</strong>
-        Try example search
-        <button type="submit" name="query" value="{{ search_example_terms }}" class="link-button">
-            {{ search_example_terms }} at {{ search_example_source }}
-        </button>
-        and be patient.
     </form>
 </div>
 <footer>

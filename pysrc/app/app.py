@@ -476,6 +476,30 @@ def process_ids():
 
 
 #######################
+# Feedback functionality #
+#######################
+
+@app.route('/feedback', methods=['POST'])
+def feedback():
+    data = request.form
+    if 'key' in data:
+        key = data.get('key')
+        value = data.get('value')
+        jobid = data.get('jobid')
+        logger.info('Feedback ' + json.dumps(dict(key=key, value=value, jobid=jobid)))
+    elif 'type' in data:
+        ftype = data.get('type')
+        message = data.get('message')
+        email = data.get('email')
+        jobid = data.get('jobid')
+        logger.info('Feedback ' + json.dumps(dict(type=ftype, message=message, email=email, jobid=jobid)))
+    else:
+        logger.error(f'/feedback error')
+        return render_template_string("Error occurred. We're working on it. Please check back soon."), 500
+    return render_template_string('Thanks you for the feedback!'), 200
+
+
+#######################
 # Admin functionality #
 #######################
 
