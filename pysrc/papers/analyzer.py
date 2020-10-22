@@ -40,7 +40,7 @@ class KeyPaperAnalyzer:
     # Reduce number of edges between different topics to min number of inner edges * scale factor
     STRUCTURE_BETWEEN_TOPICS_SPARSITY = 0.2
 
-    TOPIC_MIN_SIZE = 3
+    TOPIC_MIN_SIZE = 10
     TOPICS_MAX_NUMBER = 100
     TOPIC_PAPERS_TFIDF = 50
     TOPIC_WORDS = 20
