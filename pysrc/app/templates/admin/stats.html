@@ -25,7 +25,13 @@
 {% block body %}
     {{ super() }}
 <h3>Terms searches</h3>
-Total: {{ total_terms_searches }}
+Total: {{ total_terms_searches }}<br>
+Successful: {{ successful_searches }}<br>
+Average duration: {{ searches_avg_duration }}<br>
+Papers shown: {{ searches_papers_shown }}<br>
+Citations graph shown: {{ searches_graph_citations_shown }}<br>
+Structure graph shown: {{ searches_graph_structure_shown }}<br>
+
 {% if total_terms_searches > 0 %}
 {% for script, div in terms_searches_plot %}
 {{ script|safe }}
@@ -45,18 +51,26 @@ Total: {{ total_terms_searches }}
     <thead>
     <tr>
         <th scope="col">#</th>
-        <th scope="col">Search</th>
         <th scope="col">Date</th>
+        <th scope="col">Search</th>
+        <th scope="col">Duration</th>
+        <th scope="col">Papers</th>
+        <th scope="col">Citations</th>
+        <th scope="col">Structure</th>
     </tr>
     </thead>
     <tbody>
-    {% for row in recent_searches %}
+    {% for d, q, l, du, p, cg, sg in recent_searches %}
     <tr>
         <th scope="row">{{ loop.index }}</th>
+        <td>{{ d }}</td>
         <td>
-            <a class="link" href="{{ row[2] }}">{{ row[1] }}</a>
+            <a class="link" href="{{ l }}">{{ q }}</a>
         </td>
-        <td>{{ row[0] }}</td>
+        <td>{{ du }}</td>
+        <td>{{ p }}</td>
+        <td>{{ cg }}</td>
+        <td>{{ sg }}</td>
     </tr>
     {% endfor %}
     </tbody>
