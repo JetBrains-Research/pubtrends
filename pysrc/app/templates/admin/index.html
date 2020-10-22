@@ -6,11 +6,10 @@
             <p>Please login to proceed.</p>
             <a class="btn btn-primary" href="{{ url_for('security.login') }}">login</a>
         {% else %}
-            <p>Welcome to pubtrends admin interface!</p>
+            <ul>
+                <li><a href="/admin/stats">Statistics</a></li>
+                <li><a href="/admin/feedback">Feedback</a></li>
+            </ul>
         {% endif %}
-        <ul>
-            <li><a href="/admin/stats">Statistics</a></li>
-            <li><a href="/admin/feedback">Feedback</a></li>
-        </ul>
     </div>
 {% endblock body %}
