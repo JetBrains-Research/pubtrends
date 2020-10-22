@@ -851,6 +851,7 @@
                             {% endfor %}
                             </tbody>
                         </table>
+                        {% endif %}
                         <div class="mt-3">
                             <small class="text-muted">Was this useful?</small>
                             <div id="feedback-evolution" class="btn-group-horizontal">
@@ -868,7 +869,6 @@
                                 </button>
                             </div>
                         </div>
-                        {% endif %}
                         {% else %}
                         Failed to analyze topic evolution because year step is too big.
                         {% endif %}
