@@ -113,7 +113,7 @@ def prepare_stats_data(logfile):
         query = args['query']
         link = f'/result?{"&".join([f"{a}={v}" for a, v in args.items()])}'
         recent_searches_results.append((
-            date.strftime('%Y-%m-%d'),
+            date.strftime('%Y-%m-%d %H:%M:%S'),
             query,
             link,
             duration,
