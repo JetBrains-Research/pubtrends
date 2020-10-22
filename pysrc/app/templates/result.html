@@ -322,7 +322,21 @@
                                 {% endfor %}
                             </div>
                         </div>
-                        <div class="row">
+                        <div id="search-in-papers" class="row">
+                            <div class="col col-auto">
+                                <input id="search-input" type="text" class="form-control"
+                                       placeholder="Search in papers...">
+                            </div>
+                            <div class="col col-auto no-padding-left">
+                                <button id="search_word" type="button" class="btn btn-light"
+                                        onclick="(function(){
+                                            papers_callback_word($('#search-input').val().trim())
+                                        })();">
+                                    <img src="{{ url_for('static', filename='search.svg') }}" alt=""/>&nbsp;Search
+                                </button>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
                             <div class="col-auto">
                                 <button id="show_as_list" type="button" class="btn btn-light"
                                         onclick="(function(){ papers_callback() })();">
@@ -970,6 +984,10 @@
                 {
                     element: '#papers_word_cloud',
                     intro: "Click on any keyword to open the list of papers with this keyword in a new tab."
+                },
+                {
+                    element: '#search-in-papers',
+                    intro: "Or search anything in paper titles or abstracts."
                 },
                 {
                     element: '#show_as_list',
