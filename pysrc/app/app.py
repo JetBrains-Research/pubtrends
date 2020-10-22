@@ -16,8 +16,8 @@ from flask_security import Security, SQLAlchemyUserDatastore, \
 from flask_security.utils import hash_password
 from flask_sqlalchemy import SQLAlchemy
 
-from pysrc.admin.feedback import prepare_feedback_data
-from pysrc.admin.stats import prepare_stats_data
+from pysrc.app.admin.feedback import prepare_feedback_data
+from pysrc.app.admin.stats import prepare_stats_data
 from pysrc.celery.tasks import celery, find_paper_async, analyze_search_terms, analyze_id_list
 from pysrc.celery.tasks_cache import get_or_cancel_task
 from pysrc.papers.analyzer import KeyPaperAnalyzer
