@@ -43,7 +43,7 @@ function feedback(element, value) {
             console.error("Error recording feedback: " + responseText);
         }
     });
-    $.notify("Thank you for the feedback!", {
+    $.notify("Thanks! You can leave us a message below.", {
         className: "success",
         position: "bottom right"
     });
