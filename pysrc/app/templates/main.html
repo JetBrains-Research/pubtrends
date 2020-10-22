@@ -89,7 +89,7 @@
                 <!-- Form for topic analysis -->
                 <div class="tab-pane fade show active" id="topic" role="tabpanel"
                      aria-labelledby="topic-tab">
-                    <form action="search_terms" method="POST" class="needs-validation" novalidate>
+                    <form action="search_terms" method="POST" class="needs-validation mb-2" novalidate>
                         <div class="row no-gutters align-items-center">
                             <div id="step2" class="col input-group">
                                 <div class="input-group-prepend">
@@ -178,6 +178,17 @@
                             </div>
                         </div>
                     </form>
+                    <form action="search_terms" method="post" class="inline">
+                        <input type="hidden" name="source" value="{{ search_example_source }}">
+                        <input type="hidden" name="sort" value="Most Cited">
+                        <input type="hidden" name="limit" value="500">
+                        <input type="hidden" name="noreviews" value="on">
+                        <input type="hidden" name="expand" value="20">
+                        Try example search
+                        <button type="submit" name="query" value="{{ search_example_terms }}" class="link-button">
+                            {{ search_example_terms }} at {{ search_example_source }}.
+                        </button>
+                    </form>
                 </div>
 
                 <!-- Form for paper analysis -->
@@ -220,19 +231,44 @@
             </div>
         </div>
     </main>
-    <form action="search_terms" method="post" class="inline">
-        <input type="hidden" name="source" value="{{ search_example_source }}">
-        <input type="hidden" name="sort" value="Most Cited">
-        <input type="hidden" name="limit" value="500">
-        <input type="hidden" name="noreviews" value="on">
-        <input type="hidden" name="expand" value="20">
-        <p class="mt-2">
-            Try example search
-            <button type="submit" name="query" value="{{ search_example_terms }}" class="link-button">
-                {{ search_example_terms }} at {{ search_example_source }}.
-            </button>
+    <div class="mt-2">
+        <a id="feedback" class="link" data-toggle="collapse" href="#collapseFeedbackForm"
+           role="button" aria-expanded="false">
+            Please help us to make the service better!
+        </a>
+    </div>
+    <div class="collapse mt-2" id="collapseFeedbackForm">
+        <p>
+            Use the form below to tell us more about you and your opinion about the service.<br>
+            Also you can optionally leave your email to contact you later.
         </p>
-    </form>
+        <form name="feedback-form" action="feedback" method="POST">
+            <div class="form-group">
+                <label for="feedback-message">Message</label>
+                <textarea class="form-control" id="feedback-message" name="message"
+                          rows="5" maxlength="2000"
+                          aria-describedby="emailHelp"
+                          placeholder="Enter message"></textarea>
+                <small id="messageHelp" class="form-text text-muted">
+                    Max length: 2000.</small>
+            </div>
+            <div class="form-group">
+                <label for="feedback-email">Email address</label>
+                <input type="email" class="form-control" id="feedback-email" name="email"
+                       aria-describedby="emailHelp"
+                       placeholder="Enter email"/>
+                <small id="emailHelp" class="form-text text-muted">
+                    We'll never share your email with anyone else.</small>
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </div>
+            <div class="form-group">
+                <input type="hidden" class="form-control" id="feedback-jobid" name="jobid" value=""/>
+                <input type="hidden" class="form-control" name="type" value="main"/>
+            </div>
+        </form>
+    </div>
 </div>
 <footer>
     <p>version {{ version }}<br/>
