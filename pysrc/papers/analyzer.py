@@ -128,12 +128,13 @@ class KeyPaperAnalyzer:
             new_df = expanded_df.loc[np.logical_not(expanded_df['id'].isin(set(current_ids)))]
             logging.debug(f'New papers {len(new_df)}')
 
-            logger.debug(f'Filter by citations count mean({mean}) +- {self.EXPAND_CITATIONS_SIGMA} * std({std})')
-            new_df = new_df.loc[[
-                mean - self.EXPAND_CITATIONS_SIGMA * std <= t <= mean + self.EXPAND_CITATIONS_SIGMA * std
-                for t in new_df['total']]]
-            new_ids = list(new_df['id'])
-            logger.debug(f'Citations filtered: {len(new_ids)}')
+            if len(ids) > 1:  # Don't keep citations distribution in case of paper analysis
+                logger.debug(f'Filter by citations count mean({mean}) +- {self.EXPAND_CITATIONS_SIGMA} * std({std})')
+                new_df = new_df.loc[[
+                    mean - self.EXPAND_CITATIONS_SIGMA * std <= t <= mean + self.EXPAND_CITATIONS_SIGMA * std
+                    for t in new_df['total']]]
+                new_ids = list(new_df['id'])
+                logger.debug(f'Citations filtered: {len(new_ids)}')
 
             if len(new_ids) == 0:
                 break
