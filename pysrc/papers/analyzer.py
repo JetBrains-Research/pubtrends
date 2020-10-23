@@ -133,9 +133,9 @@ class KeyPaperAnalyzer:
                 new_df = new_df.loc[[
                     mean - self.EXPAND_CITATIONS_SIGMA * std <= t <= mean + self.EXPAND_CITATIONS_SIGMA * std
                     for t in new_df['total']]]
-                new_ids = list(new_df['id'])
-                logger.debug(f'Citations filtered: {len(new_ids)}')
+                logger.debug(f'Citations filtered: {len(new_df)}')
 
+            new_ids = list(new_df['id'])
             if len(new_ids) == 0:
                 break
 
