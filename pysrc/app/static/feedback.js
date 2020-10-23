@@ -1,5 +1,12 @@
 "use strict";
 
+function clearSelection($buttons) {
+    $buttons
+        .removeClass('btn-feedback-yes-selected')
+        .removeClass('btn-feedback-meh-selected')
+        .removeClass('btn-feedback-no-selected');
+}
+
 // element - feedback button
 //      element should be placed under class btn-group-horizontal, which id is used as key
 // value -1, 0, +1
@@ -7,22 +14,20 @@ function feedback(element, value) {
     let $element = $(element);
     let groupId = $element.closest('.btn-group-horizontal').attr('id');
     console.info("Feedback " + groupId + ": " + value);
-    // Deselect all
     let $buttons = $('#' + groupId + ' button');
-    $buttons
-        .removeClass('btn-feedback-yes-selected')
-        .removeClass('btn-feedback-meh-selected')
-        .removeClass('btn-feedback-no-selected');
-    // Select only one
-    if ($element.hasClass('btn-feedback-yes')) {
-        $element.addClass('btn-feedback-yes-selected');
-    }
-    if ($element.hasClass('btn-feedback-meh')) {
-        $element.addClass('btn-feedback-meh-selected');
-    }
-    if ($element.hasClass('btn-feedback-no')) {
-        $element.addClass('btn-feedback-no-selected');
-    }
+    ['yes', 'meh', 'no'].forEach((opt) => {
+        const optClass = 'btn-feedback-' + opt;
+        const selectedClass = 'btn-feedback-' + opt + '-selected';
+        if ($element.hasClass(optClass)) {
+            if ($element.hasClass(selectedClass)) {
+                $element.removeClass(selectedClass);
+                key = 'cancel:' + key;
+            } else {
+                clearSelection($buttons);
+                $element.addClass(selectedClass);
+            }
+        }
+    });
     // Decode jobid from URL
     const jobid = new URL(window.location).searchParams.get('jobid');
     $.ajax({
