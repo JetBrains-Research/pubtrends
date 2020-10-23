@@ -74,15 +74,43 @@ Structure graph shown: {{ searches_graph_structure_shown }}<br>
     </tr>
     {% endfor %}
     </tbody>
-</table>
+</table><small class="form-text text-muted">{{recent}} recent.</small>
+
 
 <h3>Paper searches</h3>
-Total: {{ total_paper_searches }}
+Total: {{ total_paper_searches }}<br>
+Successful: {{ paper_successful_searches }}<br>
+Average duration: {{ paper_searches_avg_duration }}
+
 {% if total_paper_searches > 0 %}
 {% for script, div in paper_searches_plot %}
 {{ script|safe }}
 {{ div|safe }}
 {% endfor %}
+<h3>Recent papers</h3>
+<table class="table table-sm table-bordered table-striped">
+    <thead>
+    <tr>
+        <th scope="col">#</th>
+        <th scope="col">Date</th>
+        <th scope="col">Search</th>
+        <th scope="col">Duration</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for d, q, l, du in recent_papers %}
+    <tr>
+        <th scope="row">{{ loop.index }}</th>
+        <td>{{ d }}</td>
+        <td>
+            <a class="link" href="{{ l }}">{{ q }}</a>
+        </td>
+        <td>{{ du }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table><small class="text-muted">{{recent}} recent.</small>
+
 {% endif %}
 
 {% endblock body %}
