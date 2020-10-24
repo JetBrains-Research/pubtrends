@@ -2,12 +2,12 @@ import json
 from collections import Counter
 from queue import Queue
 
-RECENT_MESSAGES = 100
+RECENT = 50
 
 
 def prepare_feedback_data(logfile):
     emotions_counter = Counter()
-    recent_messages = Queue(maxsize=RECENT_MESSAGES)
+    recent_messages = Queue(maxsize=RECENT)
 
     for line in open(logfile).readlines():
         if 'INFO' not in line or 'Feedback ' not in line:
@@ -30,4 +30,4 @@ def prepare_feedback_data(logfile):
         fb = recent_messages.get()
         messages.append((fb['type'], fb['message'], fb['email']))
     emotions = [(v[0], v[1], c) for v, c in emotions_counter.most_common()]
-    return dict(messages=reversed(messages), emotions=emotions)
+    return dict(recent=RECENT, messages=reversed(messages), emotions=emotions)
