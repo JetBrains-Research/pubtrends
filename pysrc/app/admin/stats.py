@@ -153,7 +153,7 @@ def prepare_stats_data(logfile):
         else:
             duration = '-'
 
-        link = f'/result?{"&".join([f"{a}={v}" for a, v in args.items()])}'
+        link = f'/paper?{"&".join([f"{a}={v}" for a, v in args.items()])}'
         recent_papers_results.append((
             date.strftime('%Y-%m-%d %H:%M:%S'),
             args['query'],
