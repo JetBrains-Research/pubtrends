@@ -1,4 +1,9 @@
 "use strict";
+// Include this snippet to include notify.js 0.4.2
+//     <!-- Notify.js -->
+//       <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"
+//               integrity="sha512-efUTj3HdSPwWJ9gjfGR71X9cvsrthIA78/Fvd/IN+fttQVy7XWkOAXb295j8B3cmm/kFKVxjiNYzKw9IQJHIuQ=="
+//               crossorigin="anonymous"></script>
 
 function clearSelection($buttons) {
     $buttons

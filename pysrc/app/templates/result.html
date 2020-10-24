@@ -49,9 +49,10 @@
     <!--    <link rel="stylesheet" href="../static/result.css"/>-->
     <script src="{{ url_for('static', filename='wordcloud.js') }}"></script>
     <!--    <script src="../static/wordcloud.js"/>-->
-    <!-- Requirement for feedback.js -->
-    <script src="{{ url_for('static', filename='notify.min.js') }}"></script>
-    <!--    <script src="../static/notify.min.js"/>-->
+    <!-- Notify.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"
+            integrity="sha512-efUTj3HdSPwWJ9gjfGR71X9cvsrthIA78/Fvd/IN+fttQVy7XWkOAXb295j8B3cmm/kFKVxjiNYzKw9IQJHIuQ=="
+            crossorigin="anonymous"></script>
     <script src="{{ url_for('static', filename='feedback.js') }}"></script>
     <!--    <script src="../static/feedback.js"/>-->
 
@@ -146,6 +147,14 @@
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
             $('#feedback-jobid').val(jobid);
+
+            setTimeout(function() {
+                $.notify("See About for quick introduction.", {
+                    className: "success",
+                    position: "bottom right",
+                    autoHideDelay: 15000
+                });
+            }, 5000);
         });
     </script>
 </head>
