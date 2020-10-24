@@ -236,7 +236,7 @@ def paper():
             return render_template('paper.html', **prepare_paper_data(data, source, pid),
                                    version=VERSION)
         logger.error(f'/paper error jobid {log_request(request)}')
-        return render_template_string("Out-of-date search, please search again..."), 400
+        return render_template_string(SOMETHING_WENT_WRONG), 400
     else:
         logger.error(f'/paper error wrong request {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG), 400
