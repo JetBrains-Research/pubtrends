@@ -102,8 +102,11 @@ class KeyPaperAnalyzer:
             return ids
         self.progress.info('Expanding related papers by references', current=current, task=task)
         logger.debug(f'Expanding {len(ids)} papers to: {limit}')
-        mean, std = self.loader.estimate_citations(ids) if keep_citations else 0, 0
-        logger.debug(f'Estimated citations count mean={mean}, std={std}')
+        if keep_citations:
+            mean, std = self.loader.estimate_citations(ids)
+            logger.debug(f'Estimated citations count mean={mean}, std={std}')
+        else:
+            mean, std = 0, 0
         current_ids = ids
 
         publications = self.loader.load_publications(ids)
