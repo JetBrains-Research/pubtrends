@@ -96,20 +96,20 @@ class KeyPaperAnalyzer:
                                task=task)
         return ids
 
-    def expand_ids(self, ids, limit, steps, current=1, task=None):
+    def expand_ids(self, ids, limit, steps, keep_keywords=True, keep_citations=True, current=1, task=None):
         if len(ids) > self.config.max_number_to_expand:
             self.progress.info('Too many related papers, nothing to expand', current=current, task=task)
             return ids
         self.progress.info('Expanding related papers by references', current=current, task=task)
         logger.debug(f'Expanding {len(ids)} papers to: {limit}')
-        mean, std = self.loader.estimate_citations(ids)
+        mean, std = self.loader.estimate_citations(ids) if keep_citations else 0, 0
         logger.debug(f'Estimated citations count mean={mean}, std={std}')
         current_ids = ids
 
         publications = self.loader.load_publications(ids)
         mesh_stems = [s for s, _ in tokens_stems(
             ' '.join(publications['mesh'] + ' ' + publications['keywords']).replace(',', ' ')
-        )]
+        )] if keep_keywords else []
         mesh_counter = Counter(mesh_stems)
 
         # Expand while we can
@@ -128,7 +128,7 @@ class KeyPaperAnalyzer:
             new_df = expanded_df.loc[np.logical_not(expanded_df['id'].isin(set(current_ids)))]
             logging.debug(f'New papers {len(new_df)}')
 
-            if len(ids) > 1:  # Don't keep citations distribution in case of paper analysis
+            if keep_citations:
                 logger.debug(f'Filter by citations count mean({mean}) +- {self.EXPAND_CITATIONS_SIGMA} * std({std})')
                 new_df = new_df.loc[[
                     mean - self.EXPAND_CITATIONS_SIGMA * std <= t <= mean + self.EXPAND_CITATIONS_SIGMA * std
@@ -140,7 +140,7 @@ class KeyPaperAnalyzer:
                 break
 
             # No additional filtration required
-            if not mesh_stems:
+            if not keep_keywords or not mesh_stems:
                 current_ids += new_ids
                 continue
 
