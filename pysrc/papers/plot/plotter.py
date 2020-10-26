@@ -305,6 +305,8 @@ class Plotter:
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
         for comp in range(n_comps):
             df_comp = self.analyzer.df[self.analyzer.df['comp'] == comp]
+            if len(df_comp) == 0:
+                continue
             ds = ColumnDataSource(PlotPreprocessor.article_view_data_source(
                 df_comp, min_year, max_year, True, width=PAPERS_PLOT_WIDTH
             ))
