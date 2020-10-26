@@ -11,7 +11,7 @@
     position: absolute;
     top: 140px;
     left: auto;
-    padding-left: 20px;
+    padding-left: 1rem;
 }
 
 .jumbotron-background {
@@ -66,12 +66,11 @@ img.background {
     padding-right: unset !important;
 }
 
-.content-max {
-    max-width: 960px;
+.container {
+    width: 960px;
     margin-left: auto;
     margin-right: auto;
 }
-
 
 pre {
     font-size: 0.8rem;

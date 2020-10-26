@@ -1,4 +1,8 @@
 {% extends 'admin/base.html' %}
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1"/>
+    <!--<link rel="stylesheet" href="../../static/style.css" />-->
+{% endblock %}
 
 {% block access_control %}
 {% if current_user.is_authenticated %}

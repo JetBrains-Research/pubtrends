@@ -111,7 +111,11 @@ expected_cocit_and_cit_graph.add_weighted_edges_from([(article7.ssid, article10.
                                                       (article1.ssid, article8.ssid, 0.3)])
 
 part_of_articles = [article1, article4, article3, article8, article7, article10]
-expanded_articles = [article1, article2, article3, article4, article5, article6, article7, article8, article10]
+expanded_articles_df = pd.DataFrame(
+    [[article1.ssid, 1], [article6.ssid, 1], [article2.ssid, 1],
+     [article4.ssid, 2], [article8.ssid, 2], [article3.ssid, 2]],
+    columns=['id', 'total']
+)
 
 pub_df_given_ids = pd.DataFrame.from_records([article.to_dict() for article in part_of_articles]) \
     .sort_values(by=['ssid']).reset_index(drop=True)

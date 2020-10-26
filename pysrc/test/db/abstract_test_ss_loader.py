@@ -5,7 +5,7 @@ from parameterized import parameterized
 
 from pysrc.papers.utils import SORT_MOST_RECENT, SORT_MOST_CITED, SORT_MOST_RELEVANT
 from pysrc.test.db.ss_test_articles import required_citations, \
-    expected_cit_stats_df, expected_cit_df, expected_cocit_df, part_of_articles, expanded_articles
+    expected_cit_stats_df, expected_cit_df, expected_cocit_df, part_of_articles, expanded_articles_df
 
 
 # Don't make it subclass of unittest.TestCase to avoid tests execution
@@ -95,9 +95,18 @@ class AbstractTestSemanticScholarLoader(metaclass=ABCMeta):
 
     def test_expand(self):
         ids = list(map(lambda article: article.ssid, part_of_articles))
-        expected = list(map(lambda article: article.ssid, expanded_articles))
-        actual = self.getLoader().expand(ids, 1000)
-        self.assertSequenceEqual(sorted(expected), sorted(actual), "Wrong list of expanded ids")
+        actual = self.getLoader().expand(ids, 6)
+        expected = expanded_articles_df.sort_values(by=['total', 'id']).reset_index(drop=True)
+        actual = actual.sort_values(by=['total', 'id']).reset_index(drop=True)
+        print(expected['id'])
+        print(actual['id'])
+        print(actual['total'])
+        self.assertEqual(set(expected['id']), set(actual['id']))
+        assert_frame_equal(
+            expected,
+            actual,
+            "Wrong list of expanded ids"
+        )
 
     @parameterized.expand([
         ('id search', 'id', '5451b1ef43678d473575bdfa7016d024146f2b53', ['5451b1ef43678d473575bdfa7016d024146f2b53']),

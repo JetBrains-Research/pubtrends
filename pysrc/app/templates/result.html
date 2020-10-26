@@ -33,7 +33,7 @@
     <script src="https://cdn.jsdelivr.net/g/mark.js(jquery.mark.min.js)"></script>
     <script src="https://cdn.datatables.net/plug-ins/1.10.13/features/mark.js/datatables.mark.js"></script>
     <link href="https://cdn.datatables.net/plug-ins/1.10.13/features/mark.js/datatables.mark.min.css"
-    type="text/css">
+          type="text/css">
 
 
     <!-- IntroJS feature tour -->
@@ -49,6 +49,13 @@
     <!--    <link rel="stylesheet" href="../static/result.css"/>-->
     <script src="{{ url_for('static', filename='wordcloud.js') }}"></script>
     <!--    <script src="../static/wordcloud.js"/>-->
+    <!-- Notify.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"
+            integrity="sha512-efUTj3HdSPwWJ9gjfGR71X9cvsrthIA78/Fvd/IN+fttQVy7XWkOAXb295j8B3cmm/kFKVxjiNYzKw9IQJHIuQ=="
+            crossorigin="anonymous"></script>
+    <script src="{{ url_for('static', filename='feedback.js') }}"></script>
+    <!--    <script src="../static/feedback.js"/>-->
+
     <script>
         "use strict";
 
@@ -56,7 +63,7 @@
             const url = '/papers?query=' + escape('{{ query }}') + '&source={{source}}&limit={{limit}}&sort={{sort}}';
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
-            var args = '';
+            let args = '';
             if (key != null) {
                 args = '&' + key + '=' + value;
             }
@@ -66,24 +73,31 @@
         function papers_callback() {
             papers_callback_impl(null, null)
         }
+
         function papers_callback_component(comp) {
             papers_callback_impl('comp', comp)
         }
+
         function papers_callback_word(word) {
             papers_callback_impl('word', word)
         }
+
         function papers_callback_author(author) {
             papers_callback_impl('author', author)
         }
+
         function papers_callback_journal(journal) {
             papers_callback_impl('journal', journal)
         }
+
         function papers_callback_top_papers() {
             papers_callback_impl('papers_list', 'top')
         }
+
         function papers_callback_papers_of_the_year() {
             papers_callback_impl('papers_list', 'year')
         }
+
         function papers_callback_hot_papers() {
             papers_callback_impl('papers_list', 'hot')
         }
@@ -103,16 +117,20 @@
         }
 
 
-        $(document).ready(function() {
+        $(document).ready(function () {
             // Mark search by default in datatables
             $.extend(true, $.fn.dataTable.defaults, {
                 mark: true
             });
+
+            // Setup datatables
             $('#authors-table').DataTable();
             $('#journals-table').DataTable();
             {% if topic_evolution is defined %}
                 $('#topic_evolution_keywords').DataTable();
             {% endif %}
+
+            // Enable search for numbers only in numbers table
             {% if numbers is defined %}
                 // disable search on the first column
                 $('#numbers-table').DataTable({
@@ -122,14 +140,29 @@
                 });
             {% endif %}
 
-            var words = JSON.parse('{{ papers_word_cloud }}'.replace(/&#34;/g, '"').replace(/&#39;/g, '\'').replace(/&amp;/g, '&'));
+            // Process main word cloud
+            let words = JSON.parse('{{ papers_word_cloud }}'.replace(/&#34;/g, '"').replace(/&#39;/g, '\'').replace(/&amp;/g, '&'));
             process_word_cloud('papers_word_cloud', 220, 335, words, papers_callback_word);
 
+            // Process topics word clouds
             {% for (script, div), word_cloud, zoom_in_callback in topics_info_and_word_cloud_and_callback %}
                  words = JSON.parse('{{ word_cloud }}'.replace(/&#34;/g, '"').replace(/&#39;/g, '\'').replace(/&amp;/g, '&'));
                  process_word_cloud('topic_word_cloud_{{ loop.index }}', 220, 335, words, papers_callback_word);
             {% endfor %}
-        } );
+
+            // Configure jobid for feedback
+            // Decode jobid from URL
+            const jobid = new URL(window.location).searchParams.get('jobid');
+            $('#feedback-jobid').val(jobid);
+
+            setTimeout(function() {
+                $.notify("See About for quick introduction.", {
+                    className: "success",
+                    position: "bottom right",
+                    autoHideDelay: 15000
+                });
+            }, 5000);
+        });
     </script>
 </head>
 <body>
@@ -252,7 +285,14 @@
                             Review
                         </a>
                     </li>
-                    {% endif %}
+                    <li class="nav-item row">
+                        <a class="nav-link no-padding-right" href="#feedback" title="Feedback">
+                            <img class="nav-icon" src="{{ url_for('static', filename='edit.svg') }}"/>
+                        </a>
+                        <a class="nav-link d-none d-xl-block no-padding" href="#feedback">
+                            Feedback
+                        </a>
+                    </li>
                 </ul>
             </div>
         </nav>
@@ -306,11 +346,42 @@
                                 {% endfor %}
                             </div>
                         </div>
-                        <div class="row">
+                        <div id="search-in-papers" class="row">
+                            <div class="col col-auto">
+                                <input id="search-input" type="text" class="form-control"
+                                       placeholder="Search in papers...">
+                            </div>
+                            <div class="col col-auto no-padding-left">
+                                <button id="search_word" type="button" class="btn btn-light"
+                                        onclick="(function(){
+                                            papers_callback_word($('#search-input').val().trim())
+                                        })();">
+                                    <img src="{{ url_for('static', filename='search.svg') }}" alt=""/>&nbsp;Search
+                                </button>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
                             <div class="col-auto">
                                 <button id="show_as_list" type="button" class="btn btn-light"
                                         onclick="(function(){ papers_callback() })();">
                                     <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <small class="text-muted">Was this useful?</small>
+                            <div id="feedback-overview" class="btn-group-horizontal">
+                                <button type="button" class="btn btn-sm btn-feedback-yes"
+                                        onclick="feedback(this, 1)">
+                                    <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-feedback-meh"
+                                        onclick="feedback(this, 0)">
+                                    <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-feedback-no"
+                                        onclick="feedback(this, -1)">
+                                    <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
                                 </button>
                             </div>
                         </div>
@@ -375,6 +446,23 @@
                             {{ div|safe }}
                             {% endfor %}
                         </div>
+                        <div class="mt-3">
+                            <small class="text-muted">Was this useful?</small>
+                            <div id="feedback-highlights" class="btn-group-horizontal">
+                                <button type="button" class="btn btn-sm btn-feedback-yes"
+                                        onclick="feedback(this, 1)">
+                                    <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-feedback-meh"
+                                        onclick="feedback(this, 0)">
+                                    <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-feedback-no"
+                                        onclick="feedback(this, -1)">
+                                    <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -403,6 +491,23 @@
                                 onclick="(function(){ graph_callback('structure') })();">
                             Show structure graph
                         </button>
+                        <div class="mt-3">
+                            <small class="text-muted">Was this useful?</small>
+                            <div id="feedback-network" class="btn-group-horizontal">
+                                <button type="button" class="btn btn-sm btn-feedback-yes"
+                                        onclick="feedback(this, 1)">
+                                    <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-feedback-meh"
+                                        onclick="feedback(this, 0)">
+                                    <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-feedback-no"
+                                        onclick="feedback(this, -1)">
+                                    <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -442,6 +547,23 @@
                         {{ script|safe }}
                         {{ div|safe }}
                         {% endfor %}
+                        <div class="mt-3">
+                            <small class="text-muted">Was this useful?</small>
+                            <div id="feedback-topics" class="btn-group-horizontal">
+                                <button type="button" class="btn btn-sm btn-feedback-yes"
+                                        onclick="feedback(this, 1)">
+                                    <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-feedback-meh"
+                                        onclick="feedback(this, 0)">
+                                    <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-feedback-no"
+                                        onclick="feedback(this, -1)">
+                                    <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -469,7 +591,23 @@
                             {{ div|safe }}
                             {% endfor %}
                         </div>
-
+                        <div class="mt-3">
+                            <small class="text-muted">Was this useful?</small>
+                            <div id="feedback-trends" class="btn-group-horizontal">
+                                <button type="button" class="btn btn-sm btn-feedback-yes"
+                                        onclick="feedback(this, 1)">
+                                    <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-feedback-meh"
+                                        onclick="feedback(this, 0)">
+                                    <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-feedback-no"
+                                        onclick="feedback(this, -1)">
+                                    <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -484,7 +622,8 @@
                             Year reflects publication year of the original paper.
                         </p>
                         <div>
-                            {% for (script, div), word_cloud, zoom_in_callback in topics_info_and_word_cloud_and_callback %}
+                            {% for (script, div), word_cloud, zoom_in_callback in
+                            topics_info_and_word_cloud_and_callback %}
                             <div id="topic-div-{{ loop.index }}">
                                 <hr>
                                 <h2 id="topic-{{ loop.index }}" class="card-subtitle">
@@ -494,11 +633,13 @@
                                     {% endif %}
                                     <button type="button" class="btn btn-light"
                                             onclick="(function(){ papers_callback_component({{ loop.index }}); })();">
-                                        <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
+                                        <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as
+                                        list
                                     </button>
                                     <button type="button" class="btn btn-light"
                                             onclick="(function(){ {{ zoom_in_callback|safe }} })();">
-                                        <img src="{{ url_for('static', filename='zoom-in.svg') }}" alt="+"/>&nbsp;Zoom into
+                                        <img src="{{ url_for('static', filename='zoom-in.svg') }}" alt="+"/>&nbsp;Zoom
+                                        into
                                     </button>
                                 </h2>
                                 Number of papers: {{ component_sizes[loop.index - 1] }}
@@ -527,8 +668,26 @@
                         </p>
                         <button type="button" class="btn btn-light"
                                 onclick="(function(){ {{ papers_zoom_out_callback|safe }} })();">
-                            <img src="{{ url_for('static', filename='zoom-out.svg') }}" alt="-"/>&nbsp;Zoom out to related papers
+                            <img src="{{ url_for('static', filename='zoom-out.svg') }}" alt="-"/>&nbsp;Zoom out to
+                            related papers
                         </button>
+                        <div class="mt-3">
+                            <small class="text-muted">Was this useful?</small>
+                            <div id="feedback-papers" class="btn-group-horizontal">
+                                <button type="button" class="btn btn-sm btn-feedback-yes"
+                                        onclick="feedback(this, 1)">
+                                    <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-feedback-meh"
+                                        onclick="feedback(this, 0)">
+                                    <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-feedback-no"
+                                        onclick="feedback(this, -1)">
+                                    <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 {% endif %}
@@ -558,14 +717,34 @@
                             <tr>
                                 <th scope="row">{{ loop.index }}</th>
                                 <td>{{ row[0] }}</td>
-                                <td><button type="button" class="btn btn-link link" onclick="(function(){
-                                papers_callback_author('{{ row[0] }}');
-                            })();">{{ row[1] }}</button></td>
+                                <td>
+                                    <button type="button" class="btn btn-link link"
+                                            onclick="(function(){ papers_callback_author('{{ row[0] }}');})();">
+                                        {{ row[1] }}
+                                    </button>
+                                </td>
                                 <td>{{ row[2]|safe }}</td>
                             </tr>
                             {% endfor %}
                             </tbody>
                         </table>
+                        <div class="mt-3">
+                            <small class="text-muted">Was this useful?</small>
+                            <div id="feedback-authors" class="btn-group-horizontal">
+                                <button type="button" class="btn btn-sm btn-feedback-yes"
+                                        onclick="feedback(this, 1)">
+                                    <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-feedback-meh"
+                                        onclick="feedback(this, 0)">
+                                    <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-feedback-no"
+                                        onclick="feedback(this, -1)">
+                                    <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -594,14 +773,34 @@
                             <tr>
                                 <th scope="row">{{ loop.index }}</th>
                                 <td>{{ row[0] }}</td>
-                                <td><button type="button" class="btn btn-link link" onclick="(function(){
+                                <td>
+                                    <button type="button" class="btn btn-link link" onclick="(function(){
                                 papers_callback_journal('{{ row[0] }}');
-                            })();">{{ row[1] }}</button></td>
+                            })();">{{ row[1] }}
+                                    </button>
+                                </td>
                                 <td>{{ row[2]|safe }}</td>
                             </tr>
                             {% endfor %}
                             </tbody>
                         </table>
+                        <div class="mt-3">
+                            <small class="text-muted">Was this useful?</small>
+                            <div id="feedback-journals" class="btn-group-horizontal">
+                                <button type="button" class="btn btn-sm btn-feedback-yes"
+                                        onclick="feedback(this, 1)">
+                                    <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-feedback-meh"
+                                        onclick="feedback(this, 0)">
+                                    <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-feedback-no"
+                                        onclick="feedback(this, -1)">
+                                    <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -613,27 +812,42 @@
                         <p>
                             Numbers are extracted from papers abstracts, use search to filter the table.
                         </p>
-                        <div>
-                            {% if numbers is defined %}
-                            <table id="numbers-table" class="table table-sm table-bordered table-striped">
-                                <thead>
-                                <tr>
-                                    <th scope="col">#</th>
-                                    <th scope="col">Title</th>
-                                    <th scope="col">Numbers</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                {% for id, url, title, metrics in numbers %}
-                                <tr>
-                                    <th scope="row">{{ loop.index }}</th>
-                                    <td><a class="link" href="{{ url }}">{{ title }}</a></td>
-                                    <td>{{ metrics }}</td>
-                                </tr>
-                                {% endfor %}
-                                </tbody>
-                            </table>
-                            {% endif %}
+                        {% if numbers is defined %}
+                        <table id="numbers-table" class="table table-sm table-bordered table-striped">
+                            <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Title</th>
+                                <th scope="col">Numbers</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for id, url, title, metrics in numbers %}
+                            <tr>
+                                <th scope="row">{{ loop.index }}</th>
+                                <td><a class="link" href="{{ url }}">{{ title }}</a></td>
+                                <td>{{ metrics }}</td>
+                            </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                        {% endif %}
+                        <div class="mt-3">
+                            <small class="text-muted">Was this useful?</small>
+                            <div id="feedback-numbers" class="btn-group-horizontal">
+                                <button type="button" class="btn btn-sm btn-feedback-yes"
+                                        onclick="feedback(this, 1)">
+                                    <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-feedback-meh"
+                                        onclick="feedback(this, 0)">
+                                    <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-feedback-no"
+                                        onclick="feedback(this, -1)">
+                                    <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -649,38 +863,53 @@
                             Edge width reflects the number of papers which moved from one topic to another.<br>
                             <i>NPY</i> - not published yet.
                         </p>
-                        <div>
-                            {% if topic_evolution is defined %}
-                                {% for script, div in topic_evolution %}
-                                {{ script|safe }}
-                                {{ div|safe }}
-                                {% endfor %}
-                                {% if topic_evolution_keywords is defined %}
-                            <table id="topic_evolution_keywords" class="table table-sm table-bordered table-striped">
-                                <thead>
-                                <tr>
-                                    <th scope="col">#</th>
-                                    <th scope="col">Year</th>
-                                    <th scope="col">Topic</th>
-                                    <th scope="col">Tags</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                {% for year, topic, kwds in topic_evolution_keywords %}
-                                <tr>
-                                    <th scope="row">{{ loop.index }}</th>
-                                    <td>{{ year }}</td>
-                                    <td>{{ topic }}</td>
-                                    <td>{{ kwds }}</td>
-                                </tr>
-                                {% endfor %}
-                                </tbody>
-                            </table>
-                                {% endif %}
-                            {% else %}
-                                Failed to analyze topic evolution because year step is too big.
-                            {% endif %}
+                        {% if topic_evolution is defined %}
+                        {% for script, div in topic_evolution %}
+                        {{ script|safe }}
+                        {{ div|safe }}
+                        {% endfor %}
+                        {% if topic_evolution_keywords is defined %}
+                        <table id="topic_evolution_keywords" class="table table-sm table-bordered table-striped">
+                            <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Year</th>
+                                <th scope="col">Topic</th>
+                                <th scope="col">Tags</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for year, topic, kwds in topic_evolution_keywords %}
+                            <tr>
+                                <th scope="row">{{ loop.index }}</th>
+                                <td>{{ year }}</td>
+                                <td>{{ topic }}</td>
+                                <td>{{ kwds }}</td>
+                            </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                        {% endif %}
+                        <div class="mt-3">
+                            <small class="text-muted">Was this useful?</small>
+                            <div id="feedback-evolution" class="btn-group-horizontal">
+                                <button type="button" class="btn btn-sm btn-feedback-yes"
+                                        onclick="feedback(this, 1)">
+                                    <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-feedback-meh"
+                                        onclick="feedback(this, 0)">
+                                    <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-feedback-no"
+                                        onclick="feedback(this, -1)">
+                                    <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
+                                </button>
+                            </div>
                         </div>
+                        {% else %}
+                        Failed to analyze topic evolution because year step is too big.
+                        {% endif %}
                     </div>
                 </div>
 
@@ -717,6 +946,63 @@
                         <button type="button" class="btn btn-primary btn-block" onclick="(function(){
                                 review_callback(document.getElementById('papers-input').value,document.getElementById('sents-input').value);
                             })();">Generate review</button>
+                        <div class="mt-3">
+                            <small class="text-muted">Was this useful?</small>
+                            <div id="feedback-review" class="btn-group-horizontal">
+                                <button type="button" class="btn btn-sm btn-feedback-yes"
+                                        onclick="feedback(this, 1)">
+                                    <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-feedback-meh"
+                                        onclick="feedback(this, 0)">
+                                    <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-feedback-no"
+                                        onclick="feedback(this, -1)">
+                                    <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-title" id="feedback">
+                        <h1 class="card-header">We value your opinion</h1>
+                    </div>
+                    <div class="card-body">
+                        <p>
+                            Please help us to make the service better!<br>
+                            Use the form below to tell us more about you and your opinion about the service,<br>
+                            or click instant feedback buttons to share your feelings about particular report section.<br>
+                            Also you can optionally leave your email to contact you later.
+                        </p>
+                        <form name="feedback-form" action="feedback" method="POST">
+                            <div class="form-group">
+                                <label for="feedback-message">Message</label>
+                                <textarea class="form-control" id="feedback-message" name="message"
+                                          rows="5" maxlength="2000"
+                                          aria-describedby="emailHelp"
+                                          placeholder="Enter message"></textarea>
+                                <small id="messageHelp" class="form-text text-muted">
+                                    Max length: 2000.</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="feedback-email">Email address</label>
+                                <input type="email" class="form-control" id="feedback-email" name="email"
+                                       aria-describedby="emailHelp"
+                                       placeholder="Enter email"/>
+                                <small id="emailHelp" class="form-text text-muted">
+                                    We'll never share your email with anyone else.</small>
+                            </div>
+                            <div class="form-group">
+                                <button type="submit" class="btn btn-primary">Submit</button>
+                            </div>
+                            <div class="form-group">
+                                <input type="hidden" class="form-control" id="feedback-jobid" name="jobid" value=""/>
+                                <input type="hidden" class="form-control" name="type" value="result"/>
+                            </div>
+                        </form>
                     </div>
                 </div>
 
@@ -828,11 +1114,6 @@
                 {
                     element: '#evolution',
                     intro: "Explore evolution of ideas in the field."
-                },
-                {
-                    element: '#review',
-                    intro: "Generate review draft. Apply deep neural network language model BERT " +
-                        "to collect most important sentences from most cited papers for earch topic."
                 },
                 {   intro: "Congratulations!<br>" +
                         "Now you are ready to explore scientific literature with PubTrends."

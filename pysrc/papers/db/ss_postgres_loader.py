@@ -142,6 +142,9 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
 
         return cit_stats_df_from_query
 
+    def estimate_citations(self, ids):
+        raise Exception('Not implemented yet')
+
     def load_citations(self, ids):
         query = f'''SELECT C.ssid_out, C.ssid_in
                     FROM SSCitations C
@@ -200,7 +203,8 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
                 SELECT C.ssid_out as ssid, C.crc32id_out as crc32id
                 FROM sscitations C
                 WHERE (C.crc32id_in, C.ssid_in) IN (VALUES {SemanticScholarPostgresLoader.ids2values(ids)}))
-            SELECT X.ssid as pmid FROM X
+            SELECT X.ssid, count 
+                FROM X
                     LEFT JOIN matview_sscitations C
                     ON X.ssid = C.ssid AND X.crc32id = C.crc32id
                 ORDER BY count DESC NULLS LAST
@@ -208,10 +212,10 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
                 '''
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df = pd.DataFrame(cursor.fetchall(), columns=['ssid'], dtype=object)
-        expanded = set(ids)
-        expanded |= set(df['ssid'])
-        return expanded
+            df = pd.DataFrame(cursor.fetchall(), columns=['id', 'total'], dtype=object)
+        df['id'] = df['id'].astype(str)
+        df.fillna(value=1, inplace=True)
+        return df
 
     def load_bibliographic_coupling(self, ids):
         query = f'''WITH X AS (SELECT ssid_out, ssid_in

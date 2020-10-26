@@ -46,6 +46,11 @@
                 integrity="sha256-SPZP/x8QDPEhRlpJjet4AD5X4ergPWcxjhMn73SwyOE="
                 crossorigin="anonymous"></script>
 
+        <!-- Notify.js -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"
+                integrity="sha512-efUTj3HdSPwWJ9gjfGR71X9cvsrthIA78/Fvd/IN+fttQVy7XWkOAXb295j8B3cmm/kFKVxjiNYzKw9IQJHIuQ=="
+                crossorigin="anonymous"></script>
+
         <script>
             "use strict";
 
@@ -596,6 +601,16 @@
                 window.open(url + '&jobid=' + jobid, '_blank');
             }
 
+            $(document).ready(function() {
+                setTimeout(function() {
+                    $.notify("See About for quick introduction.", {
+                        className: "success",
+                        position: "bottom right",
+                        autoHideDelay: 15000
+                    });
+                }, 5000);
+            });
+
         </script>
     </head>
 
@@ -672,15 +687,16 @@
             // Boolean value if we are visualizing citations graph (true) of structure graph (false)
             const citation_graph = {{ citation_graph }};
             let description;
-            if (citation_graph){
+            if (citation_graph) {
                 description = "Citations graph shows citations among papers.<br>" +
                     "Papers are visualized as nodes, citations as edges. " +
                     "Node size encodes citations count. See Color menu for node color options.<br>" +
-                    "Papers without citations are grouped by topics."
+                    "Papers without citations are grouped by topics.<br>" +
+                    "If citations graph looks messy, consider structure graph instead."
             } else {
                 description = "Structure graph represents similarity among papers.<br>" +
-                    "Papers are visualized as nodes, citations as edges. " +
-                    "Node size shows paper citations count, see Color menu for node colors options.<br> " +
+                    "Papers are visualized as nodes, similarities as edges. " +
+                    "Node size shows paper citations count, see Color menu for node colors options. <br>" +
                     "Edge width shows papers similarity, the thicker the more similar papers are." +
                     "Edge color - similarity type.<br>" +
                     '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(128,255,0,0.3);"/></svg>' +
@@ -693,8 +709,7 @@
                     "&nbsp;<em>Direct citation</em>" +
                     "<br>" +
                     '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(0,0,0,0.3);"/></svg>' +
-                    "&nbsp;<em>Text similarity</em>"
-                ;
+                    "&nbsp;<em>Text similarity</em>";
             }
             intro.setOptions({
                 steps: [

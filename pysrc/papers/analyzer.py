@@ -54,15 +54,11 @@ class KeyPaperAnalyzer:
     TOP_AUTHORS = 50
 
     EXPAND_STEPS = 2
+    # Limit citations count of expanded papers to avoid prevalence of related methods
+    EXPAND_CITATIONS_SIGMA = 5
+    # Take up to fraction of top similarity
+    EXPAND_SIMILARITY_THRESHOLD = 0.2
     EXPAND_ZOOM_OUT = 100
-
-    # Methods are highly cited, keep them only for computational topics
-    EXPAND_COMPUTATIONAL_MESH = [
-        'comput', 'method', 'data', 'interpret', 'statist', 'method', 'internet', 'softwar', 'user-comput',
-        'align', 'array', 'languag', 'signal', 'computer-assist', 'databas', 'inform', 'interfac', 'simul',
-        'imag', 'techniqu', 'likelihood', 'function', 'statist', 'factual'
-    ]
-    EXPAND_COMPUTATIONAL_THRESHOLD = 0.05  # Threshold to determine whether topic is computational or not
 
     EVOLUTION_MIN_PAPERS = 100
     EVOLUTION_STEP = 10
@@ -106,6 +102,8 @@ class KeyPaperAnalyzer:
             return ids
         self.progress.info('Expanding related papers by references', current=current, task=task)
         logger.debug(f'Expanding {len(ids)} papers to: {limit}')
+        mean, std = self.loader.estimate_citations(ids)
+        logger.debug(f'Estimated citations count mean={mean}, std={std}')
         current_ids = ids
 
         publications = self.loader.load_publications(ids)
@@ -113,8 +111,6 @@ class KeyPaperAnalyzer:
             ' '.join(publications['mesh'] + ' ' + publications['keywords']).replace(',', ' ')
         )]
         mesh_counter = Counter(mesh_stems)
-        computational_mesh = sum(mesh_counter[s] / len(mesh_stems) for s in self.EXPAND_COMPUTATIONAL_MESH)
-        logger.debug(f'Computational mesh: {"{0:.3f}".format(computational_mesh)}')
 
         # Expand while we can
         i = 0
@@ -124,17 +120,29 @@ class KeyPaperAnalyzer:
                 break
             i += 1
             logger.debug(f'Step {i}: current_ids: {len(current_ids)}, new_ids: {len(new_ids)}, limit: {limit}')
+            papers_to_expand = new_ids or current_ids
+            number_to_expand = limit - len(current_ids) if not mesh_stems else self.config.max_number_to_expand
+            expanded_df = self.loader.expand(papers_to_expand, number_to_expand)
+            logger.debug(f'Expanded {len(new_ids)} papers')
+
+            new_df = expanded_df.loc[np.logical_not(expanded_df['id'].isin(set(current_ids)))]
+            logging.debug(f'New papers {len(new_df)}')
+
+            if len(ids) > 1:  # Don't keep citations distribution in case of paper analysis
+                logger.debug(f'Filter by citations count mean({mean}) +- {self.EXPAND_CITATIONS_SIGMA} * std({std})')
+                new_df = new_df.loc[[
+                    mean - self.EXPAND_CITATIONS_SIGMA * std <= t <= mean + self.EXPAND_CITATIONS_SIGMA * std
+                    for t in new_df['total']]]
+                logger.debug(f'Citations filtered: {len(new_df)}')
+
+            new_ids = list(new_df['id'])
+            if len(new_ids) == 0:
+                break
+
+            # No additional filtration required
             if not mesh_stems:
-                expanded_ids = self.loader.expand(new_ids or current_ids, limit - len(current_ids))
-                new_ids = [pid for pid in expanded_ids if pid not in set(current_ids)]
-                logger.debug(f'New {len(new_ids)} papers')
-                if len(new_ids) == 0:
-                    break
                 current_ids += new_ids
                 continue
-
-            expanded_ids = self.loader.expand(new_ids or current_ids, self.config.max_number_to_expand)
-            new_ids = [pid for pid in expanded_ids if pid not in set(current_ids)]
 
             logger.debug(f'Mesh most common:\n' + ','.join(f'{k}:{"{0:.3f}".format(v / len(mesh_stems))}'
                                                            for k, v in mesh_counter.most_common(100)))
@@ -147,26 +155,22 @@ class KeyPaperAnalyzer:
                 title = row['title']
                 new_mesh_stems = [s for s, _ in tokens_stems((mesh + ' ' + keywords).replace(',', ' '))]
                 if new_mesh_stems:
-                    new_mesh_counter = Counter(new_mesh_stems)
                     # Estimate fold change of similarity vs random single paper
                     similarity = sum([mesh_counter[s] / (len(mesh_stems) / len(ids)) for s in new_mesh_stems])
-                    new_computational_mesh = sum(new_mesh_counter[s] / len(new_mesh_stems)
-                                                 for s in self.EXPAND_COMPUTATIONAL_MESH)
-                    fcs.append([pid, False, similarity, new_computational_mesh, title, ','.join(new_mesh_stems)])
+                    fcs.append([pid, False, similarity, title, ','.join(new_mesh_stems)])
                 else:
-                    fcs.append([pid, True, 0.0, 0.0, title, ''])
+                    fcs.append([pid, True, 0.0, title, ''])
 
             fcs.sort(key=lambda v: v[2], reverse=True)
-            sim_threshold = fcs[0][2] / 10  # Take 90% of similarity
+            sim_threshold = fcs[0][2] * self.EXPAND_SIMILARITY_THRESHOLD  # Compute threshold as a fraction of top
             for v in fcs:
-                if not v[1]:
-                    v[1] = (v[2] > sim_threshold and
-                            abs(computational_mesh - v[3]) < self.EXPAND_COMPUTATIONAL_THRESHOLD)
+                v[1] = v[1] or v[2] > sim_threshold
 
-            logger.debug('\n'.join(f'{p}\t{"+" if a else "-"}\t{int(s)}\t{"{0:.3f}".format(c)}\t{t}\t{m}' for
-                                   p, a, s, c, t, m in fcs))
+            logger.debug('Pid\tOk\tSimilarity\tTitle\tMesh\n' +
+                         '\n'.join(f'{p}\t{"+" if a else "-"}\t{int(s)}\t{t}\t{m}' for
+                                   p, a, s, t, m in fcs))
             new_mesh_ids = [v[0] for v in fcs if v[1]][:limit - len(current_ids)]
-            logger.debug(f'Similar mesh papers: {len(new_mesh_ids)}')
+            logger.debug(f'Similar by mesh papers: {len(new_mesh_ids)}')
             if len(new_mesh_ids) == 0:
                 break
             new_ids = new_mesh_ids

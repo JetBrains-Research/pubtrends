@@ -7,7 +7,7 @@ from parameterized import parameterized
 from pysrc.papers.utils import SORT_MOST_RECENT, SORT_MOST_RELEVANT, SORT_MOST_CITED
 from pysrc.test.db.pm_test_articles import REQUIRED_ARTICLES, EXPECTED_PUB_DF, \
     EXPECTED_CIT_STATS_DF, INNER_CITATIONS, EXPECTED_CIT_DF, EXPECTED_COCIT_DF, EXPECTED_PUB_DF_GIVEN_IDS, \
-    PART_OF_ARTICLES, EXPANDED_IDS, EXPANDED_TOP_CITED_3, EXPANDED_TOP_CITED_4
+    PART_OF_ARTICLES, EXPANDED_IDS_DF, EXPANDED_TOP_CITED_3_DF, EXPANDED_TOP_CITED_4_DF
 
 
 # Don't make it subclass of unittest.TestCase to avoid tests execution
@@ -143,14 +143,26 @@ class AbstractTestPubmedLoader(metaclass=ABCMeta):
     def test_expand(self):
         ids_list = list(map(lambda article: str(article.pmid), PART_OF_ARTICLES))
         actual = self.getLoader().expand(ids_list, 1000)
-        self.assertSequenceEqual(sorted(EXPANDED_IDS), sorted(actual), "Wrong list of expanded ids")
+        assert_frame_equal(
+            EXPANDED_IDS_DF,
+            actual.sort_values(by=['total', 'id']).reset_index(drop=True),
+            "Wrong list of expanded ids"
+        )
 
     def test_expand_limited(self):
         ids_list = list(map(lambda article: str(article.pmid), PART_OF_ARTICLES))
         actual = self.getLoader().expand(ids_list, 3)
-        self.assertSequenceEqual(sorted(EXPANDED_TOP_CITED_3), sorted(actual), "Wrong list of expanded 3 ids")
+        assert_frame_equal(
+            EXPANDED_TOP_CITED_3_DF,
+            actual.sort_values(by=['total', 'id']).reset_index(drop=True),
+            "Wrong list of expanded 3 ids"
+        )
         actual = self.getLoader().expand(ids_list, 4)
-        self.assertSequenceEqual(sorted(EXPANDED_TOP_CITED_4), sorted(actual), "Wrong list of expanded 4 ids")
+        assert_frame_equal(
+            EXPANDED_TOP_CITED_4_DF,
+            actual.sort_values(by=['total', 'id']).reset_index(drop=True),
+            "Wrong list of expanded 4 ids"
+        )
 
 
     @parameterized.expand([

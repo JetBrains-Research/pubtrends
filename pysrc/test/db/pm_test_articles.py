@@ -41,9 +41,17 @@ ARTICLES = REQUIRED_ARTICLES + EXTRA_ARTICLES
 
 PART_OF_ARTICLES = [REQUIRED_ARTICLES[2], REQUIRED_ARTICLES[3]]
 
-EXPANDED_IDS = ['2', '3', '4', '5', '7', '8', '9', '10']
-EXPANDED_TOP_CITED_3 = ['3', '4', '5']
-EXPANDED_TOP_CITED_4 = ['2', '3', '4', '5']
+EXPANDED_IDS_DF = pd.DataFrame([
+    [10, 1], [7, 1], [8, 1], [9, 1], [2, 2], [3, 3], [5, 3], [4, 4]],
+    columns=['id', 'total']
+)
+EXPANDED_IDS_DF['id'] = EXPANDED_IDS_DF['id'].astype(str)
+
+EXPANDED_TOP_CITED_3_DF = pd.DataFrame([[3, 3], [5, 3], [4, 4]], columns=['id', 'total'])
+EXPANDED_TOP_CITED_3_DF['id'] = EXPANDED_TOP_CITED_3_DF['id'].astype(str)
+
+EXPANDED_TOP_CITED_4_DF = pd.DataFrame([[2, 2], [3, 3], [5, 3], [4, 4]], columns=['id', 'total'])
+EXPANDED_TOP_CITED_4_DF['id'] = EXPANDED_TOP_CITED_4_DF['id'].astype(str)
 
 OUTER_CITATIONS = [
     ('7', '1'), ('7', '2'), ('7', '3'), ('8', '1'), ('8', '3'),

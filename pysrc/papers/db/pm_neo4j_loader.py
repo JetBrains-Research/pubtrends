@@ -153,6 +153,9 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
 
         return cit_stats_df
 
+    def estimate_citations(self, ids):
+        raise Exception('Not implemented yet')
+
     def load_citations(self, ids):
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
@@ -253,14 +256,14 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
                 MATCH ()-[r:PMReferenced]->(in2:PMPublication)
                 WHERE in2.pmid = out.pmid
                 WITH out, COUNT(r) AS cnt
-                RETURN out.pmid as pmid, cnt
+                RETURN out.pmid as id, cnt as total
                 ORDER BY cnt DESC
                 LIMIT {max_to_expand}
                 UNION
                 WITH [{','.join(str(id) for id in ids)}] AS pmids
                 MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
                 WHERE in.pmid IN pmids
-                RETURN out.pmid as pmid, 0 as cnt
+                RETURN out.pmid as id, 0 as total
                 LIMIT {max_to_expand};
             '''
 
@@ -275,14 +278,14 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
                 MATCH ()-[r:PMReferenced]->(in2:PMPublication)
                 WHERE in2.pmid = in1.pmid
                 WITH in1, COUNT(r) AS cnt
-                RETURN in1.pmid as pmid, cnt
+                RETURN in1.pmid as id, cnt as total
                 ORDER BY cnt DESC
                 LIMIT {max_to_expand}
                 UNION
                 WITH [{','.join(str(id) for id in ids)}] AS pmids
                 MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
                 WHERE out.pmid IN pmids
-                RETURN in.pmid as pmid, 0 as cnt
+                RETURN in.pmid as id, 0 as total
                 LIMIT {max_to_expand};
             '''
 
@@ -290,7 +293,6 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
             expanded_dfs.append(pd.DataFrame(session.run(query_expand_in).data()))
 
         expanded_df = pd.concat(expanded_dfs)
-        expanded_df.sort_values(by=['cnt'], ascending=False, inplace=True)
-        expanded = set(ids)
-        expanded |= set(expanded_df.iloc[:max_to_expand, :]['pmid'].astype(str))
-        return expanded
+        expanded_df.sort_values(by=['total'], ascending=False, inplace=True)
+        expanded_df['id'] = expanded_df['id'].astype(str)
+        return expanded_df.iloc[:max_to_expand, :]

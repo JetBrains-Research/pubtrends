@@ -16,7 +16,7 @@
             integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
             crossorigin="anonymous"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1"/>
-    <link rel="stylesheet" href="../static/style.css" />
+<!--    <link rel="stylesheet" href="../static/style.css" />-->
 
     <!-- IntroJS feature tour -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.9.3/introjs.css"
@@ -47,7 +47,7 @@
     </script>
 </head>
 <body>
-<div class="container content-max">
+<div class="container">
     <div class="jumbotron">
         <div class="jumbotron-background">
             <!-- Photo by Susan Yin on Unsplash. Cropped and scaled to width 1600. -->
@@ -57,7 +57,7 @@
         <div class="jumbotron-content mb-3">
             <h1>PubTrends</h1>
             <p class="lead">
-                Discover science topics and trends
+                Explore intellectual structure of research topic or analyze similar papers
             </p>
             <p class="lead">
                 <a id="tour-start" class="btn btn-light"
@@ -89,7 +89,7 @@
                 <!-- Form for topic analysis -->
                 <div class="tab-pane fade show active" id="topic" role="tabpanel"
                      aria-labelledby="topic-tab">
-                    <form action="search_terms" method="POST" class="needs-validation" novalidate>
+                    <form action="search_terms" method="POST" class="needs-validation mb-2" novalidate>
                         <div class="row no-gutters align-items-center">
                             <div id="step2" class="col input-group">
                                 <div class="input-group-prepend">
@@ -97,13 +97,12 @@
                                 </div>
                                 <input class="form-control form-control-borderless" type="search"
                                        name="query" id="terms-input"
-                                       placeholder="Use &quot;&quot; for phrase search and commas for alternatives"
+                                       placeholder="{{min_words_message}}Use double quotes for phrase search, join queries by commas."
                                        aria-describedby="query-addon"
                                        autofocus required>
                             </div>
-                            &nbsp;&nbsp;&nbsp;
                             <!--end of col-->
-                            <div id="step4" class="col-auto">
+                            <div id="step4" class="col-auto ml-2">
                                 <button class="btn btn-success" type="submit">Search</button>
                             </div>
                             <!--end of col-->
@@ -162,7 +161,7 @@
                             </div>
                             <div class="row no-gutters align-items-center mt-2">
                                 <div class="col input-group">
-                                    <label class="container" style="margin-top: auto;margin-bottom: auto">
+                                    <label style="margin-top: auto;margin-bottom: auto">
                                         <input type="checkbox" checked="checked" name="noreviews" id="noreviews" >
                                         <span class="checkmark">Prefer no reviews</span>
                                     </label>
@@ -171,16 +170,24 @@
                                     <label for="expand" style="margin-top: auto;margin-bottom: auto">
                                         Expand by references +
                                     </label>
-                                    &nbsp;
-                                    <input id="expand" name="expand" class="form-control" type="number"
+                                    <input id="expand" name="expand" class="ml-1 form-control" type="number"
                                            min="0" max="100" step="10" value="20"/>
-                                    &nbsp;
-                                    %
                                 </div>
                                 <div class="ml-2 col input-group">
                                 </div>
                             </div>
                         </div>
+                    </form>
+                    <form action="search_terms" method="post" class="inline">
+                        <input type="hidden" name="source" value="{{ search_example_source }}">
+                        <input type="hidden" name="sort" value="Most Cited">
+                        <input type="hidden" name="limit" value="500">
+                        <input type="hidden" name="noreviews" value="on">
+                        <input type="hidden" name="expand" value="20">
+                        Try example search
+                        <button type="submit" name="query" value="{{ search_example_terms }}" class="link-button">
+                            {{ search_example_terms }} at {{ search_example_source }}.
+                        </button>
                     </form>
                 </div>
 
@@ -196,8 +203,7 @@
                                     <option value="id">ID</option>
                                 </select>
                             </div>
-                            &nbsp;&nbsp;
-                            <div id="stepP2" class="col">
+                            <div id="stepP2" class="col ml-2">
                                 <input class="form-control form-control-borderless" type="search"
                                        name="value" id="paper-input"
                                        placeholder="Enter paper details"
@@ -205,8 +211,7 @@
                                        autofocus
                                        required>
                             </div>
-                            &nbsp;&nbsp;
-                            <div class="col-auto">
+                            <div class="col-auto ml-2">
                                 <select class="form-control" name="source">
                                     {% if pm_enabled %}
                                     <option>Pubmed</option>
@@ -216,9 +221,8 @@
                                     {% endif %}
                                 </select>
                             </div>
-                            &nbsp;&nbsp;
                             <!--end of col-->
-                            <div id="stepP3" class="col-auto">
+                            <div id="stepP3" class="col-auto ml-2">
                                 <button class="btn btn-success" type="submit">Search</button>
                             </div>
                         </div>
@@ -227,19 +231,44 @@
             </div>
         </div>
     </main>
-    <form action="search_terms" method="post" class="inline">
-        <input type="hidden" name="source" value="{{ search_example_source }}">
-        <input type="hidden" name="sort" value="Most Cited">
-        <input type="hidden" name="limit" value="500">
-        <input type="hidden" name="noreviews" value="on">
-        <input type="hidden" name="expand" value="20">
-        <strong>The service is in development!</strong>
-        Try example search
-        <button type="submit" name="query" value="{{ search_example_terms }}" class="link-button">
-            {{ search_example_terms }} at {{ search_example_source }}
-        </button>
-        and be patient.
-    </form>
+    <div class="mt-2">
+        <a id="feedback" class="link" data-toggle="collapse" href="#collapseFeedbackForm"
+           role="button" aria-expanded="false">
+            Please help us to make the service better!
+        </a>
+    </div>
+    <div class="collapse mt-2" id="collapseFeedbackForm">
+        <p>
+            Use the form below to tell us more about you and your opinion about the service.<br>
+            Also you can optionally leave your email to contact you later.
+        </p>
+        <form name="feedback-form" action="feedback" method="POST">
+            <div class="form-group">
+                <label for="feedback-message">Message</label>
+                <textarea class="form-control" id="feedback-message" name="message"
+                          rows="5" maxlength="2000"
+                          aria-describedby="emailHelp"
+                          placeholder="Enter message"></textarea>
+                <small id="messageHelp" class="form-text text-muted">
+                    Max length: 2000.</small>
+            </div>
+            <div class="form-group">
+                <label for="feedback-email">Email address</label>
+                <input type="email" class="form-control" id="feedback-email" name="email"
+                       aria-describedby="emailHelp"
+                       placeholder="Enter email"/>
+                <small id="emailHelp" class="form-text text-muted">
+                    We'll never share your email with anyone else.</small>
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </div>
+            <div class="form-group">
+                <input type="hidden" class="form-control" id="feedback-jobid" name="jobid" value=""/>
+                <input type="hidden" class="form-control" name="type" value="main"/>
+            </div>
+        </form>
+    </div>
 </div>
 <footer>
     <p>version {{ version }}<br/>
@@ -264,9 +293,7 @@
         intro.setOptions({
             steps: [
                 {
-                    intro: "Welcome to PubTrends -<br>" +
-                        "a scientific literature explorer, " +
-                        "built for trends analysis and breakthrough papers discovery.<br>" +
+                    intro: "Welcome to PubTrends, scientific literature explorer!<br>" +
                         "This quick tutorial will guide you through the features."
                 },
                 {
@@ -279,11 +306,10 @@
                 },
                 {
                     element: '#step2',
-                    intro: 'Enter keywords to define the topic of interest, e.g. ' +
+                    intro: 'Enter search query to define the topic of interest, e.g. ' +
                         '<a href="javascript:void(0);" onclick="useTermsSuggestion();">' +
                         '{{ search_example_terms }}' +
-                        '</a>.<br>' +
-                        'Use &quot;&quot; for phrase search, alternatives should be delimited with commas.'
+                        '</a>'
                 },
                 {
                     element: '#step3',
