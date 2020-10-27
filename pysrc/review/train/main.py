@@ -1,4 +1,5 @@
 import argparse
+import logging
 from argparse import RawTextHelpFormatter
 
 import torch
@@ -16,6 +17,8 @@ from pysrc.review.train.scheduler import NoamScheduler
 from pysrc.review.train.train import train
 from pysrc.review.utils import count_parameters, DummyWriter
 from pysrc.review.utils import str2bool
+
+logger = logging.getLogger(__name__)
 
 
 def get_args():
@@ -69,7 +72,7 @@ def load_model(model_type, froze_strategy, rank, article_len):
     model.froze_backbone(froze_strategy)
     model.unfroze_head()
     if rank == 0:
-        cfg.logger.log(f"Model trainable parameters: {count_parameters(model)}")
+        logger.log(f"Model trainable parameters: {count_parameters(model)}")
     return model
 
 
@@ -112,7 +115,7 @@ def get_tools(model, enc_lr, dec_lr, warmup,
 
 
 # def setup_multi_gpu(model, optimizer, rank, size):
-#     cfg.logger.log('Setup distributed settings...')
+#     logger.log('Setup distributed settings...')
 #     distrib_config = DistributedConfig(local_rank=rank, size=size, amp_enabled=cfg.amp_enabled)
 #     setup_distributed(distrib_config)
 #     device = choose_device(local_rank=rank)
@@ -123,7 +126,7 @@ def get_tools(model, enc_lr, dec_lr, warmup,
 
 
 def setup_single_gpu(model):
-    cfg.logger.log('Setup single-device settings...')
+    logger.log('Setup single-device settings...')
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
     return model, device
@@ -138,12 +141,12 @@ def main(rank=0, size=1, args=None, data=None):
     writer.add_text("Hparams", '<br />'.join([f"{k}: {v}" for k, v in args.__dict__.items()]))
     writer.train_step, writer.eval_step = 0, 0
 
-    cfg.logger.log('Load model...')
+    logger.log('Load model...')
     model = load_model(args.model_type, args.froze_strategy, rank, args.article_len)
 
     if args.mode == 'trainval':
 
-        cfg.logger.log('Load training tools...')
+        logger.log('Load training tools...')
         optimizer, scheduler, criter = \
             get_tools(model, args.lr_encoder, args.lr_decoder, args.warmup, args.weight_decay,
                       args.clip_value, args.accumulation_interval)
@@ -154,7 +157,7 @@ def main(rank=0, size=1, args=None, data=None):
         else:
             model, device = setup_single_gpu(model)
 
-        cfg.logger.log('Create dataloaders...')
+        logger.log('Create dataloaders...')
         model_ref = model.module if args.distributed else model
         train_loader, valid_loader = \
             get_dataloaders(data, args.batch_size, model_ref.article_len,
@@ -166,14 +169,14 @@ def main(rank=0, size=1, args=None, data=None):
 #             if isinstance(train_loader, DistributedSampler):
 #                 train_loader.set_epoch(epoch)
 
-            cfg.logger.log(f"{epoch} epoch training...", is_print=rank == 0)
+            logger.log(f"{epoch} epoch training...", is_print=rank == 0)
             model, optimizer, scheduler, writer = train(
                 model, train_loader, optimizer, scheduler,
                 criter, device, rank, writer, args.distributed
             )
 
             if not epoch % args.valid_interval:
-                cfg.logger.log(f"{epoch} epoch validation...", is_print=rank == 0)
+                logger.log(f"{epoch} epoch validation...", is_print=rank == 0)
                 model, writer = evaluate(
                     model, valid_loader, device, rank, writer, args.distributed,
                     epoch, args.save_filename, to_write=epoch > args.epochs // 2,
@@ -213,7 +216,7 @@ def main(rank=0, size=1, args=None, data=None):
     else:
         raise Exception(f"wrong value for argument -mode: {args.mode}")
 
-    writer = cfg.logger.write(writer)
+    writer = logger.write(writer)
     writer.close()
 
 
@@ -228,9 +231,9 @@ if __name__ == '__main__':
     data = load_data(args.dataset, parts)
     
     for prt, ds in zip(['train', 'valid', 'test'], data):
-        cfg.logger.log(f"{prt} examples: {len(ds)}")
+        logger.log(f"{prt} examples: {len(ds)}")
 
-    cfg.logger.log('Main starting point...')
+    logger.log('Main starting point...')
     if args.distributed:
         spawn(main, args=(cfg.n_devices, args, data), nprocs=cfg.n_devices)
     else:

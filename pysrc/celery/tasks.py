@@ -1,6 +1,6 @@
-import html
 import os
 
+import html
 from celery import Celery, current_task
 
 from pysrc.papers.analyzer import KeyPaperAnalyzer
@@ -10,6 +10,7 @@ from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plotter import visualize_analysis
 from pysrc.papers.progress import Progress
 from pysrc.papers.utils import SORT_MOST_CITED, ZOOM_OUT, PAPER_ANALYSIS
+from pysrc.review.review import generate_review
 
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379'),
 CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379')
@@ -106,3 +107,11 @@ def find_paper_async(source, key, value):
             raise SearchError('Found multiple papers matching your search, please try to be more specific')
     finally:
         loader.close_connection()
+
+
+@celery.task(name='prepare_review_data_async')
+def prepare_review_data_async(data, source, num_papers, num_sents):
+    progress = Progress(total=5)
+    result = generate_review(data, source, num_papers, num_sents, progress=progress, task=current_task)
+    progress.done('Done review', task=current_task)
+    return result

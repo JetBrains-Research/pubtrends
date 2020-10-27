@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 import pandas as pd
 import torch
@@ -6,7 +8,7 @@ from nltk.tokenize import sent_tokenize
 from rouge import Rouge
 from tqdm import tqdm
 
-import pysrc.review.config as cfg
+logger = logging.getLogger(__name__)
 
 ROUGE_TYPES = ['r1', 'r2', 'rl', 'rmean']
 
@@ -82,7 +84,7 @@ def evaluate(model, dataloader, device, rank, writer, distributed, epoch=0, save
     if distributed:
         rouges_values = distribute(rouges_values, device)
     for rouge_type, val in zip(ROUGE_TYPES, rouges_values):
-        cfg.logger.log(f"{rouge_type}: {val / len(dataloader.dataset):.2f}", is_print=rank == 0)
+        logger.log(f"{rouge_type}: {val / len(dataloader.dataset):.2f}", is_print=rank == 0)
         writer.add_scalar(f"Eval_Overall/{rouge_type}", val / len(dataloader.dataset), epoch)
 
     # save model if need

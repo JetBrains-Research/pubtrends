@@ -110,7 +110,7 @@
         }
 
         function review_callback(papersNumber, sentsNumber) {
-            const url = '/review?query=' + escape('{{ query }}') + '&source={{source}}&limit={{limit}}&sort={{sort}}';
+            const url = '/generate_review?query=' + escape('{{ query }}') + '&source={{source}}&limit={{limit}}&sort={{sort}}';
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
             window.open(url + '&papers_number=' + papersNumber + '&sents_number=' + sentsNumber + '&jobid=' + jobid, '_blank');

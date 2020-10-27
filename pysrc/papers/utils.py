@@ -1,12 +1,11 @@
-import binascii
-import html
 import logging
 import re
 import sys
 from collections import Counter
-from string import Template
 from threading import Lock
 
+import binascii
+import html
 import nltk
 import numpy as np
 import pandas as pd
@@ -17,6 +16,7 @@ from nltk.tokenize import word_tokenize
 from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.preprocessing import normalize
+from string import Template
 
 # Ensure that modules are downloaded in advance
 # nltk averaged_perceptron_tagger required for nltk.pos_tag
@@ -43,6 +43,7 @@ PAPER_ANALYSIS = 2
 ZOOM_IN_TITLE = 'detailed'
 ZOOM_OUT_TITLE = 'expanded'
 PAPER_ANALYSIS_TITLE = 'paper-analysis'
+SEARCH_TERMS_ANALYSIS_TITLE = 'search-terms'
 
 SORT_MOST_CITED = 'Most Cited'
 SORT_MOST_RELEVANT = 'Most Relevant'

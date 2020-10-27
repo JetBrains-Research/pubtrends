@@ -1,13 +1,13 @@
-import html
 import logging
 from collections import Counter
-from math import floor
 from queue import PriorityQueue
 
 import community
+import html
 import networkx as nx
 import numpy as np
 import pandas as pd
+from math import floor
 from networkx.readwrite import json_graph
 
 from pysrc.papers.db.loaders import Loaders
@@ -977,7 +977,7 @@ class KeyPaperAnalyzer:
         }
 
     def init(self, fields):
-        logger.debug(f'Loading\n{fields}')
+        # logger.debug(f'Loading\n{fields}')
         loaded = KeyPaperAnalyzer.load(fields)
         logger.debug(f'Loaded\n{loaded}')
         self.df = loaded['df']

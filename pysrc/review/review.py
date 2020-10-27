@@ -14,6 +14,8 @@ logger = logging.getLogger(__name__)
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
+REVIEW_ANALYSIS_TITLE = 'review'
+
 
 class ModelCache:
     @lazy
@@ -27,23 +29,19 @@ class ModelCache:
 MODEL_CACHE = ModelCache()
 
 
-def prepare_review_data(data, source, num_papers, num_sents):
-    logger.info(f'Initializing analyzer for review')
+def generate_review(data, source, num_papers, num_sents, progress, task):
+    progress.info(f'Initializing analyzer for review', current=1, task=task)
     loader, url_prefix = Loaders.get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
     analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
     analyzer.init(data)
-
-    logger.info('Requesting model and device')
+    progress.info('Initializing model and device', current=2, task=task)
     model, device = MODEL_CACHE.model_and_device
-
-    logger.info('Configuring model for evaluation')
+    progress.info('Configuring model for evaluation', current=3, task=task)
     model.eval()
-
     top_cited_papers, top_cited_df = analyzer.find_top_cited_papers(
         analyzer.df, n_papers=int(num_papers)
     )
-
-    logger.info(f'Processing abstracts for {len(top_cited_papers)} top cited papers')
+    progress.info(f'Processing abstracts for {len(top_cited_papers)} top cited papers', current=4, task=task)
     result = []
     for id in top_cited_papers:
         cur_paper = top_cited_df[top_cited_df['id'] == id]
@@ -65,6 +63,4 @@ def prepare_review_data(data, source, num_papers, num_sents):
         to_add = sorted(choose_from, key=lambda x: -x[1])[:int(num_sents)]
         for sent, score in to_add:
             result.append([title, year, cited, topic, sent, url_prefix + id, score])
-    logger.info('Done review')
     return result
-

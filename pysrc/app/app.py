@@ -1,4 +1,3 @@
-import html
 import json
 import logging
 import os
@@ -8,6 +7,7 @@ from threading import Lock
 from urllib.parse import quote
 
 import flask_admin
+import html
 from celery.result import AsyncResult
 from flask import Flask, url_for, redirect, render_template, request, abort, render_template_string
 from flask_admin import helpers as admin_helpers, expose, BaseView
@@ -18,7 +18,8 @@ from flask_sqlalchemy import SQLAlchemy
 
 from pysrc.app.admin.feedback import prepare_feedback_data
 from pysrc.app.admin.stats import prepare_stats_data
-from pysrc.celery.tasks import celery, find_paper_async, analyze_search_terms, analyze_id_list
+from pysrc.celery.tasks import celery, find_paper_async, analyze_search_terms, analyze_id_list, \
+    prepare_review_data_async
 from pysrc.celery.tasks_cache import get_or_cancel_task
 from pysrc.papers.analyzer import KeyPaperAnalyzer
 from pysrc.papers.config import PubtrendsConfig
@@ -27,8 +28,9 @@ from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.paper import prepare_paper_data, prepare_papers_data
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.plot.plotter import Plotter
-from pysrc.papers.review import prepare_review_data
-from pysrc.papers.utils import zoom_name, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE, trim, ZOOM_OUT_TITLE
+from pysrc.papers.utils import zoom_name, trim, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE, ZOOM_OUT_TITLE, \
+    SEARCH_TERMS_ANALYSIS_TITLE
+from pysrc.review.review import REVIEW_ANALYSIS_TITLE
 from pysrc.version import VERSION
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
@@ -191,7 +193,7 @@ def process():
                                    query=trim(query, MAX_QUERY_LENGTH), source=source,
                                    redirect_page="paper",  # redirect in case of success
                                    jobid=jobid, version=VERSION)
-        elif query:
+        elif analysis_type == SEARCH_TERMS_ANALYSIS_TITLE:
             logger.info(f'/process regular search {log_request(request)}')
             limit = request.args.get('limit')
             sort = request.args.get('sort')
@@ -205,6 +207,21 @@ def process():
                                    limit=limit, sort=sort,
                                    redirect_page="result",  # redirect in case of success
                                    jobid=jobid, version=VERSION)
+        elif analysis_type == REVIEW_ANALYSIS_TITLE:
+            logger.info(f'/process review {log_request(request)}')
+            limit = request.args.get('limit')
+            sort = request.args.get('sort')
+
+            return render_template('process.html',
+                                   redirect_args={
+                                       'query': quote(query), 'source': source,
+                                       'limit': limit, 'sort': sort,
+                                       'jobid': jobid},
+                                   query=trim(query, MAX_QUERY_LENGTH), source=source,
+                                   limit=limit, sort=sort,
+                                   redirect_page="review",  # redirect in case of success
+                                   jobid=jobid, version=VERSION)
+
     logger.error(f'/process error {log_request(request)}')
     return render_template_string(SOMETHING_WENT_WRONG), 400
 
@@ -435,6 +452,7 @@ def search_terms_(data):
 
             return redirect(url_for('.process', query=query, source=source, limit=limit, sort=sort,
                                     noreviews=noreviews, expand=expand,
+                                    analysis_type=SEARCH_TERMS_ANALYSIS_TITLE,
                                     jobid=jobid))
     except Exception as e:
         logger.error(f'/search_terms error', e)
@@ -486,8 +504,8 @@ def process_ids():
 #######################
 
 
-@app.route('/review')
-def review():
+@app.route('/generate_review')
+def generate_review():
     jobid = request.args.get('jobid')
     query = request.args.get('query')
     source = request.args.get('source')
@@ -499,7 +517,25 @@ def review():
         job = AsyncResult(jobid, app=celery)
         if job and job.state == 'SUCCESS':
             _, data, _ = job.result
-            review_res = prepare_review_data(data, source, num_papers, num_sents)
+            job = prepare_review_data_async.delay(data, source, num_papers, num_sents)
+            return redirect(url_for('.process', analysis_type=REVIEW_ANALYSIS_TITLE, jobid=job.id,
+                                    query=query, source=source, limit=limit, sort=sort))
+    else:
+        logger.error(f'/result error {log_request(request)}')
+        return render_template_string("Something went wrong..."), 400
+
+
+@app.route('/review')
+def review():
+    jobid = request.args.get('jobid')
+    query = request.args.get('query')
+    source = request.args.get('source')
+    limit = request.args.get('limit')
+    sort = request.args.get('sort')
+    if jobid:
+        job = AsyncResult(jobid, app=celery)
+        if job and job.state == 'SUCCESS':
+            _, review_res, _ = job.result
             export_name = re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{query}_review'.lower().strip('_')))
             return render_template('review.html',
                                    query=trim(query, MAX_QUERY_LENGTH),
@@ -508,8 +544,7 @@ def review():
                                    sort=sort,
                                    version=VERSION,
                                    review_array=review_res,
-                                   export_name=export_name,
-                                   **data)
+                                   export_name=export_name)
     else:
         logger.error(f'/result error {log_request(request)}')
         return render_template_string("Something went wrong..."), 400
