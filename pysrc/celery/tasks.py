@@ -80,7 +80,7 @@ def analyze_id_list(source, ids, zoom, query, limit=None):
                 current=1, task=current_task)
         else:
             ids = ids  # Leave intact
-        analyzer.analyze_papers(ids, query, current_task)
+        analyzer.analyze_papers(ids, query, task=current_task)
     finally:
         loader.close_connection()
 
