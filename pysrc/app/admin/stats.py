@@ -36,6 +36,7 @@ def prepare_stats_data(logfile):
             if search_date is None:
                 continue
             date = datetime.datetime.strptime(search_date.group(0), '%Y-%m-%d %H:%M:%S,%f')
+
             if '/process regular search addr:' in line:
                 terms_searches_dates.append(date)
                 args = json.loads(re.sub(".*args:", "", line.strip()))
@@ -43,10 +44,24 @@ def prepare_stats_data(logfile):
                 jobid = args['jobid']
                 if not jobid:
                     continue
+                if jobid not in searches_infos:  # Don't re-add already existing task
+                    searches_infos[jobid] = dict(jobid=jobid, start=date, args=args)
+                    if recent_searches.full():
+                        recent_searches.get()  # Free some space
+                    recent_searches.put(jobid)
+
+            if '/search_terms with fixed jobid addr:' in line:
+                args = json.loads(re.sub(".*args:", "", line.strip()))
+                jobid = args['jobid']
+                if not jobid or jobid:
+                    continue
                 searches_infos[jobid] = dict(jobid=jobid, start=date, args=args)
                 if recent_searches.full():
                     recent_searches.get()  # Free some space
                 recent_searches.put(jobid)
+                terms_searches_dates.append(date)
+                terms.append(args['query'].replace(',', ' ').replace('[^a-zA-Z0-9]+', ' '))
+
             if '/result success addr:' in line:
                 args = json.loads(re.sub(".*args:", "", line.strip()))
                 jobid = args['jobid']
@@ -56,6 +71,7 @@ def prepare_stats_data(logfile):
                     info = searches_infos[jobid]
                     if 'end' not in info:
                         info['end'] = date
+
             if '/papers success addr:' in line:
                 args = json.loads(re.sub(".*args:", "", line.strip()))
                 jobid = args['jobid']
@@ -65,6 +81,7 @@ def prepare_stats_data(logfile):
                     info = searches_infos[jobid]
                     if 'papers' not in info:
                         info['papers'] = True
+
             if '/graph success citations addr:' in line:
                 args = json.loads(re.sub(".*args:", "", line.strip()))
                 jobid = args['jobid']
@@ -74,6 +91,7 @@ def prepare_stats_data(logfile):
                     info = searches_infos[jobid]
                     if 'graph_citations' not in info:
                         info['graph_citations'] = True
+
             if '/graph success structure addr:' in line:
                 args = json.loads(re.sub(".*args:", "", line.strip()))
                 jobid = args['jobid']
@@ -83,6 +101,7 @@ def prepare_stats_data(logfile):
                     info = searches_infos[jobid]
                     if 'graph_structure' not in info:
                         info['graph_structure'] = True
+
             if '/process paper analysis addr:' in line:
                 paper_searches_dates.append(date)
                 args = json.loads(re.sub(".*args:", "", line.strip()))
@@ -93,6 +112,7 @@ def prepare_stats_data(logfile):
                 if recent_papers.full():
                     recent_papers.get()  # Free some space
                 recent_papers.put(jobid)
+
             if '/paper success addr:' in line:
                 args = json.loads(re.sub(".*args:", "", line.strip()))
                 jobid = args['jobid']
