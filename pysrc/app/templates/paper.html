@@ -113,7 +113,12 @@
         <div class="col-lg-1 col-xl-2 no-padding">
             <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
         </div>
-        <div class="col-lg-11 col-xl-8">
+        <div class="col-lg-11 col-xl-8 no-padding-left">
+            <div class="content no-padding-left">
+                <a id="result" href="javascript:void(0);" class="link vertical-center" onclick="result();">
+                    Explore related papers
+                </a>
+            </div>
         </div>
         <div class="d-none d-xl-block col-xl-2 float-right no-padding-right">
             <a id="tour-start" class="btn btn-secondary float-right"
@@ -188,11 +193,11 @@
                 {% endif %}
 
                 <li class="nav-item row">
-                    <a class="nav-link no-padding-right" href="#related-info" title="Related Info">
+                    <a class="nav-link no-padding-right" href="#topics-info" title="Topics Info">
                         <img class="nav-icon" src="{{ url_for('static', filename='tag.svg') }}"/>
                     </a>
-                    <a class="nav-link d-none d-xl-block no-padding" href="#related-info">
-                        Related Info
+                    <a class="nav-link d-none d-xl-block no-padding" href="#topics-info">
+                        Topics Info
                     </a>
                 </li>
 
@@ -474,11 +479,11 @@
             {% endif %}
 
             <div class="card mt-3">
-                <div class="card-title" id="related-info">
-                    <h1 class="card-header">Related Info</h1>
+                <div class="card-title" id="topics-info">
+                    <h1 class="card-header">Topics Info</h1>
                 </div>
                 <div class="card-body">
-                    <p id="result">
+                    <p>
                         Explore full related papers report
                         <a href="javascript:void(0);" class="link" onclick="result();">here</a>.
                     </p>
@@ -597,6 +602,10 @@
                         'Information about title, abstract, authors, journal and external references.'
                 },
                 {
+                    element: '#result',
+                    intro: 'Explore related papers and topics full analysis report.'
+                },
+                {
                     element: '#citations',
                     intro: 'Citations dynamics. Show all indexed citations of the paper.'
                 },
@@ -617,8 +626,8 @@
                     intro: 'This section demonstrates most important derivative works.'
                 },
                 {
-                    element: '#related-info',
-                    intro: 'Learn more about topics, most cited papers, etc.'
+                    element: '#topics-info',
+                    intro: 'Learn more about related topics, most cited papers, etc.'
                 },
                 {
                     element: '#feedback',
