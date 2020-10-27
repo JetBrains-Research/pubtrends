@@ -110,7 +110,7 @@
         }
 
         function review_callback(papersNumber, sentsNumber) {
-            const url = '/review?query=' + query_fixed + '&source={{source}}&limit={{limit}}&sort={{sort}}';
+            const url = '/review?query=' + escape('{{ query }}') + '&source={{source}}&limit={{limit}}&sort={{sort}}';
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
             window.open(url + '&papers_number=' + papersNumber + '&sents_number=' + sentsNumber + '&jobid=' + jobid, '_blank');
@@ -943,7 +943,7 @@
                                        autofocus required>
                             </div>
                         </div>
-                        <button type="button" class="btn btn-primary btn-block" onclick="(function(){
+                        <button type="button" class="btn btn-primary" onclick="(function(){
                                 review_callback(document.getElementById('papers-input').value,document.getElementById('sents-input').value);
                             })();">Generate review</button>
                         <div class="mt-3">
