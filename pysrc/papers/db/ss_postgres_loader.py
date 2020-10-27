@@ -23,6 +23,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         return ', '.join(f'({i}, \'{j}\')' for (i, j) in zip(map(crc32, ids), ids))
 
     def find(self, key, value):
+        self.check_connection()
         value = value.strip()
 
         # Preprocess DOI
@@ -54,6 +55,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         return list(df['id'].astype(str))
 
     def search(self, query, limit=None, sort=None, noreviews=True):
+        self.check_connection()
         if noreviews:
             logger.debug('Type is not supported for Semantic Scholar')
         query_str = preprocess_search_query_for_postgres(query, self.config.min_search_words)
@@ -97,6 +99,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         return list(pub_df['id'].values)
 
     def load_publications(self, ids):
+        self.check_connection()
         query = f'''
                 SELECT P.ssid, P.crc32id, P.pmid, P.title, P.abstract, P.year, P.doi, P.aux
                 FROM SSPublications P
@@ -119,6 +122,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         return Loader.process_publications_dataframe(pub_df)
 
     def load_citations_by_year(self, ids):
+        self.check_connection()
         query = f'''
            SELECT C.ssid_in AS ssid, P.year, COUNT(1) AS count
                 FROM SSCitations C
@@ -146,6 +150,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         raise Exception('Not implemented yet')
 
     def load_citations(self, ids):
+        self.check_connection()
         query = f'''SELECT C.ssid_out, C.ssid_in
                     FROM SSCitations C
                     WHERE (C.crc32id_in, C.ssid_in) in (VALUES {SemanticScholarPostgresLoader.ids2values(ids)})
@@ -168,6 +173,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         return citations
 
     def load_cocitations(self, ids):
+        self.check_connection()
         query = f'''
                 with Z as (select ssid_out, ssid_in, crc32id_out, crc32id_in
                     from SSCitations
@@ -193,7 +199,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         return cocit_df
 
     def expand(self, ids, limit):
-        # TODO[shpynov] sort by citations
+        self.check_connection()
         query = f'''
             WITH X AS (
                 SELECT C.ssid_in as ssid, C.crc32id_in as crc32id
@@ -218,6 +224,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         return df
 
     def load_bibliographic_coupling(self, ids):
+        self.check_connection()
         query = f'''WITH X AS (SELECT ssid_out, ssid_in
                         FROM sscitations C
                         WHERE (crc32id_out, ssid_out) IN (VALUES  {SemanticScholarPostgresLoader.ids2values(ids)}))
