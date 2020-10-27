@@ -18,6 +18,7 @@ function clearSelection($buttons) {
 function feedback(element, value) {
     let $element = $(element);
     let groupId = $element.closest('.btn-group-horizontal').attr('id');
+    let key = groupId;
     console.info("Feedback " + groupId + ": " + value);
     let $buttons = $('#' + groupId + ' button');
     ['yes', 'meh', 'no'].forEach((opt) => {
@@ -40,7 +41,7 @@ function feedback(element, value) {
         type: "POST",
         data: {
             jobid: jobid,
-            key: groupId,
+            key: key,
             value: value
         },
 
