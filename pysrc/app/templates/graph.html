@@ -124,6 +124,29 @@
                         ele.addClass('topic');
                     }
                 });
+                // Close all notifications
+                $('.notifyjs-wrapper').trigger('notify-hide');
+            }
+
+            function showRange(minValue, maxValue) {
+                // Close all notifications
+                $('.notifyjs-wrapper').trigger('notify-hide');
+                $.notify({
+                    title:
+                        $('<p>' +
+                            '<svg width="16" height="16"><rect width="16" height="16" style="fill:#000000;"/></svg> ' +
+                            minValue + ' - ' +
+                            '<svg width="16" height="16"><rect width="16" height="16" style="fill:#00FF00;"/></svg> ' +
+                            maxValue +
+                            '</p>')
+                }, {
+                    style: 'html_title',
+                    autoHide: false,
+                    position: 'bottom right',
+                    showDuration: 0,
+                    hideDuration: 0,
+                    clickToHide: false
+                });
             }
 
             function showCited(){
@@ -133,6 +156,7 @@
                         ele.addClass('cited');
                     }
                 });
+                showRange(window.min_cited, window.max_cited);
             }
 
             function showYear(){
@@ -142,6 +166,7 @@
                         ele.addClass('year');
                     }
                 });
+                showRange(window.min_year, window.max_year);
             }
 
             function showPagerank(){
@@ -151,6 +176,8 @@
                         ele.addClass('pagerank');
                     }
                 });
+                showRange(Number(window.min_pagerank.toString()).toFixed(2),
+                    Number(window.max_pagerank.toString()).toFixed(2));
             }
 
             function showCentrality(){
@@ -160,12 +187,14 @@
                         ele.addClass('centrality');
                     }
                 });
+                showRange(Number(window.min_centrality.toString()).toFixed(2),
+                    Number(window.max_centrality.toString()).toFixed(2));
             }
 
             $(window).on("load", function () {
                 document.getElementById('cy').innerHTML = "";
                 const citation_graph = {{ citation_graph }};
-                const topics_palette = JSON.parse({{ topics_palette_json | tojson }});
+                const topics_palette = window.topics_palette = JSON.parse({{ topics_palette_json | tojson }});
                 const topics_description = JSON.parse({{topics_description_json | tojson }});
                 let edge_style;
                 if (citation_graph) {
@@ -203,6 +232,21 @@
                         max_centrality = Math.max(data.centrality, max_centrality);
                     }
                 });
+                // Save variables
+                window.min_year = min_year;
+                window.max_year = max_year;
+                window.min_cited = min_cited;
+                window.max_cited = max_cited;
+
+                //add a new style 'html_title'
+                $.notify.addStyle('html_title', {
+                    html: "<div class='title' data-notify-html='title'/>"
+                });
+
+                window.min_pagerank = min_pagerank;
+                window.max_pagerank = max_pagerank;
+                window.min_centrality = min_centrality;
+                window.max_centrality = max_centrality;
 
                 let cy = window.cy = cytoscape({
                     container: document.getElementById('cy'),
