@@ -23,6 +23,8 @@ PTV=pubtrends-${VERSION_BUILD}
 
 # Copy sources
 mkdir -p "${PTV}"
+cp environment.yml "${PTV}"/
+cp Dockerfile "${PTV}"/
 cp config.properties "${PTV}"/
 cp docker-compose.yml "${PTV}"/
 cp -r pysrc "${PTV}"/
