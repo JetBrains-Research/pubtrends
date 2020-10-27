@@ -29,6 +29,8 @@ seed = 1234
 base_path = "../summarization"
 data_path = f"{base_path}/data"
 weights_path = f"{base_path}/weights"
-log_filepath = f"{base_path}/logs/log.log"
 tb_logdir = f"{base_path}/logs/tb_runs"
 predicted_path = "summarized_texts"
+
+# Model lookup is in /model and ~/.pubtrends/model folders
+model_name = 'learn_simple_berta.pth'
