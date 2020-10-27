@@ -1,6 +1,6 @@
-import html
 import os
 
+import html
 from celery import Celery, current_task
 
 from pysrc.papers.analyzer import KeyPaperAnalyzer
@@ -52,7 +52,7 @@ def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, e
 
 
 @celery.task(name='analyze_id_list')
-def analyze_id_list(source, ids, zoom, query):
+def analyze_id_list(source, ids, zoom, query, limit=None):
     if len(ids) == 0:
         raise RuntimeError("Empty papers list")
 
@@ -68,9 +68,13 @@ def analyze_id_list(source, ids, zoom, query):
                 current=1, task=current_task
             )
         elif zoom == PAPER_ANALYSIS:
+            if limit:
+                limit = int(limit)
+            else:
+                limit = 0
             ids = analyzer.expand_ids(
                 ids,
-                limit=analyzer.config.max_number_to_expand,
+                limit=limit if limit > 0 else analyzer.config.max_number_to_expand,
                 steps=KeyPaperAnalyzer.EXPAND_STEPS,
                 keep_keywords=False, keep_citations=False,
                 current=1, task=current_task)

@@ -211,20 +211,51 @@
                                        autofocus
                                        required>
                             </div>
-                            <div class="col-auto ml-2">
-                                <select class="form-control" name="source">
-                                    {% if pm_enabled %}
-                                    <option>Pubmed</option>
-                                    {% endif %}
-                                    {% if ss_enabled %}
-                                    <option>Semantic Scholar</option>
-                                    {% endif %}
-                                </select>
-                            </div>
                             <!--end of col-->
                             <div id="stepP3" class="col-auto ml-2">
                                 <button class="btn btn-success" type="submit">Search</button>
                             </div>
+                        </div>
+                        <div class="mt-2">
+                            <a class="link" data-toggle="collapse" href="#collapsePaperAdvanced"
+                               role="button" aria-expanded="false">
+                                <small>Advanced settings</small>
+                            </a>
+                        </div>
+                        <div id="collapsePaperAdvanced" class="collapse mt-2">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text" id="paper-source-addon">Source</span>
+                                    </div>
+                                    <select class="form-control" name="source"
+                                            aria-describedby="source-addon">
+                                        {% if pm_enabled %}
+                                        <option>Pubmed</option>
+                                        {% endif %}
+                                        {% if ss_enabled %}
+                                        <option>Semantic Scholar</option>
+                                        {% endif %}
+                                    </select>
+                                </div>
+                                <div class="ml-2 col input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text" id="paper-amount-addon">Search</span>
+                                    </div>
+                                    <select class="form-control" aria-describedby="amount-addon"
+                                            name="limit">
+                                        {% for limit in limits %}
+                                        {% if limit == default_limit %}
+                                        <option selected>{{ limit }}</option>
+                                        {% else %}
+                                        <option>{{ limit }}</option>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">papers</span>
+                                    </div>
+                                </div>
                         </div>
                     </form>
                 </div>

@@ -1,4 +1,3 @@
-import html
 import json
 import logging
 import os
@@ -8,6 +7,7 @@ from threading import Lock
 from urllib.parse import quote
 
 import flask_admin
+import html
 from celery.result import AsyncResult
 from flask import Flask, url_for, redirect, render_template, request, abort, render_template_string
 from flask_admin import helpers as admin_helpers, expose, BaseView
@@ -168,7 +168,7 @@ def process():
             query = f'Paper {key}: {value}'
             return render_template('process.html',
                                    redirect_args={'query': quote(query), 'source': source, 'jobid': jobid,
-                                                  'limit': '', 'sort': ''},
+                                                  'limit': request.args.get('limit'), 'sort': ''},
                                    query=trim(query, MAX_QUERY_LENGTH), source=source,
                                    redirect_page="process_paper",  # redirect in case of success
                                    jobid=jobid, version=VERSION)
@@ -218,7 +218,8 @@ def process_paper():
         if job and job.state == 'SUCCESS':
             id_list = job.result
             logger.info(f'/process_paper single paper analysis {log_request(request)}')
-            job = analyze_id_list.delay(source, ids=id_list, zoom=PAPER_ANALYSIS, query=query)
+            job = analyze_id_list.delay(source, ids=id_list, zoom=PAPER_ANALYSIS, query=query,
+                                        limit=request.values.get('limit'))
             return redirect(url_for('.process', query=query, analysis_type=PAPER_ANALYSIS_TITLE,
                                     id=id_list[0], source=source, jobid=job.id))
 
@@ -445,15 +446,16 @@ def search_terms_(data):
 @app.route('/search_paper', methods=['POST'])
 def search_paper():
     logger.info('/search_paper')
-    source = request.form.get('source')  # Pubmed or Semantic Scholar
-
+    data = request.form
     try:
-        if source and 'key' in request.form and 'value' in request.form:
+        if 'source' in data and 'key' in data and 'value' in data:
+            source = data.get('source')  # Pubmed or Semantic Scholar
             logger.info(f'/search_paper {log_request(request)}')
-            key = request.form.get('key')
-            value = request.form.get('value')
+            key = data.get('key')
+            value = data.get('value')
+            limit = data.get('limit')
             job = find_paper_async.delay(source, key, value)
-            return redirect(url_for('.process', source=source, key=key, value=value, jobid=job.id))
+            return redirect(url_for('.process', source=source, key=key, value=value, jobid=job.id, limit=limit))
     except Exception as e:
         logger.error(f'/search_paper error', e)
         return render_template_string("Error occurred. We're working on it. Please check back soon."), 500
@@ -471,7 +473,7 @@ def process_ids():
             id_list = request.form.get('id_list').split(',')
             zoom = request.form.get('zoom')
             analysis_type = zoom_name(zoom)
-            job = analyze_id_list.delay(source, ids=id_list, zoom=int(zoom), query=query)
+            job = analyze_id_list.delay(source, ids=id_list, zoom=int(zoom), query=query, limit = None)
             logger.info(f'/process_ids {log_request(request)}')
             return redirect(url_for('.process', query=query, analysis_type=analysis_type, source=source, jobid=job.id))
     except Exception as e:
