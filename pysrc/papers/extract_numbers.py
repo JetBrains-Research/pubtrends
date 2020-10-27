@@ -31,7 +31,7 @@ def process_candidate(metrics, token, value, idx):
 
 
 def process_number(token, value, idx, metrics):
-    logging.debug(f'Number: {value}')
+    # logging.debug(f'Number: {value}')
     if token.head.pos_ == 'NUM':
         tht = token.head.text
         if re.match(r'hundred(s?)', tht, flags=re.IGNORECASE):
@@ -42,37 +42,37 @@ def process_number(token, value, idx, metrics):
             value *= 1000000
         elif re.match(r'billion(s?)', tht, flags=re.IGNORECASE):
             value *= 1000000000
-        logging.debug(f'Value adjusted: {value}')
+        # logging.debug(f'Value adjusted: {value}')
         token = next(token.ancestors, token)
 
     # Analyze children and siblings, then ancestors if first was not enough
     # TODO: is there a better way?
     # TODO: use close nouns as a fallback when it is hard to find a dependency?
     # TODO: expand nouns with adjectives or other nouns? (rate -> information transfer rate)
-    logging.debug(f'Token children: {",".join(t.text for t in token.children)}')
+    # logging.debug(f'Token children: {",".join(t.text for t in token.children)}')
     for t in token.children:
         if t != token and process_candidate(metrics, t, value, idx):
-            logging.debug(f'Child term: {t.text}')
+            # logging.debug(f'Child term: {t.text}')
             return
 
-    logging.debug('Head with children: '
-                  f'{token.head.text} | {",".join(t.text for t in token.head.children)}')
+    # logging.debug('Head with children: '
+    #               f'{token.head.text} | {",".join(t.text for t in token.head.children)}')
     if token != token.head:
         if process_candidate(metrics, token.head, value, idx):
-            logging.debug(f'Head term: {token.head.text}')
+            # logging.debug(f'Head term: {token.head.text}')
             return
 
         for t in token.head.children:
             if t != token and process_candidate(metrics, t, value, idx):
-                logging.debug(f'Child of head term: {t.text}')
+                # logging.debug(f'Child of head term: {t.text}')
                 return
 
-    logging.debug(f'Token anscestors: {",".join(t.text for t in token.ancestors)}')
+    # logging.debug(f'Token anscestors: {",".join(t.text for t in token.ancestors)}')
     for i, t in enumerate(token.ancestors):
         if i == 3:  # Don't go too high
             return
         if t != token and process_candidate(metrics, t, value, idx):
-            logging.debug(f'Ancestor: {t.text}')
+            # logging.debug(f'Ancestor: {t.text}')
             return
 
 
