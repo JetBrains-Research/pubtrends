@@ -33,4 +33,4 @@ dependencies:
       - flask-security==3.0.0
       - flask-sqlalchemy==2.4.1
       - email-validator==1.1.0
-      - text2num
+      - text2num==2.2.1
