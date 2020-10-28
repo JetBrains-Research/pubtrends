@@ -13,16 +13,21 @@ services:
       - ~/.pubtrends:/config:ro
       - ~/.pubtrends/logs:/logs
       - ~/.pubtrends/database:/database
-      - ~/.pubtrends/model:/model:ro
   worker:
     build:
       context: .
       dockerfile: pysrc/celery/Dockerfile
+    deploy:
+      resources:
+        limits:
+          memory: 6G
     depends_on:
       - redis
     volumes:
       - ~/.pubtrends:/config:ro
       - ~/.pubtrends/logs:/logs
+      - ~/.pubtrends/model:/model:ro
+      - ~/.pubtrends/.cache:/home/user/.cache
   redis:
     image: redis:5.0
 
