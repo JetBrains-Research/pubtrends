@@ -12,4 +12,4 @@ WORKDIR /home/user/
 
 # Launch celery workers
 ENTRYPOINT source activate pubtrends \
-    && celery -A pysrc.celery.tasks worker -c 3 --loglevel=debug --logfile=/logs/celery.log
+    && celery -A pysrc.celery.tasks worker -c 3 --loglevel=info --logfile=/logs/celery.log
