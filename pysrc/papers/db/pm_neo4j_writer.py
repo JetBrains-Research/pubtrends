@@ -8,6 +8,7 @@ class PubmedNeo4jWriter(Neo4jConnector):
         super(PubmedNeo4jWriter, self).__init__(config)
 
     def init_pubmed_database(self):
+        self.check_connection()
         with self.neo4jdriver.session() as session:
             indexes = session.run('CALL db.indexes()').data()
             for field in self.INDEX_FIELDS:

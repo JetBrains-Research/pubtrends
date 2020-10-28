@@ -10,6 +10,7 @@ class SemanticScholarPostgresWriter(PostgresConnector):
         super(SemanticScholarPostgresWriter, self).__init__(config, readonly=False)
 
     def init_semantic_scholar_database(self):
+        self.check_connection()
         query_citations = '''
                     drop table if exists sscitations;
                     create table sscitations (

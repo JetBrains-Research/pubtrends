@@ -22,6 +22,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         return ','.join([f'({i})' for i in ids])
 
     def find(self, key, value):
+        self.check_connection()
         value = value.strip()
 
         if key == 'id':
@@ -59,6 +60,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         return list(df['pmid'].astype(str))
 
     def search(self, query, limit=None, sort=None, noreviews=True):
+        self.check_connection()
         noreviews_filter = "AND type != 'Review'" if noreviews else ''
         query_str = preprocess_search_query_for_postgres(query, self.config.min_search_words)
         if sort == SORT_MOST_RELEVANT:
@@ -97,6 +99,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         return list(df['pmid'].astype(str))
 
     def load_publications(self, ids):
+        self.check_connection()
         vals = self.ids_to_vals(ids)
         query = f'''
                 SELECT P.pmid as id, title, abstract, date_part('year', date) as year, type,
@@ -116,6 +119,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         return Loader.process_publications_dataframe(df)
 
     def load_citations_by_year(self, ids):
+        self.check_connection()
         vals = self.ids_to_vals(ids)
         query = f'''
             WITH X as (SELECT pmid_in, pmid_out
@@ -146,6 +150,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         return df
 
     def estimate_citations(self, ids):
+        self.check_connection()
         vals = self.ids_to_vals(ids)
         query = f'''
                 SELECT count
@@ -163,6 +168,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         return df['total'].mean(), df['total'].std()
 
     def load_citations(self, ids):
+        self.check_connection()
         vals = self.ids_to_vals(ids)
         query = f'''SELECT pmid_out as id_out, pmid_in as id_in
                     FROM PMCitations C
@@ -184,6 +190,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         return df
 
     def load_cocitations(self, ids):
+        self.check_connection()
         vals = self.ids_to_vals(ids)
         query = f'''SELECT C.pmid_out as citing, date_part('year', P.date) as year, ARRAY_AGG(C.pmid_in) as cited_list
                         FROM PMCitations C
@@ -207,6 +214,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         return df
 
     def expand(self, ids, limit):
+        self.check_connection()
         vals = self.ids_to_vals(ids)
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
@@ -234,6 +242,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         return df
 
     def load_bibliographic_coupling(self, ids):
+        self.check_connection()
         vals = self.ids_to_vals(ids)
         query = f'''SELECT C.pmid_in as cited, ARRAY_AGG(C.pmid_out) as citing_list
                     FROM PMCitations C

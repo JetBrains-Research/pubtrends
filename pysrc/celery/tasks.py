@@ -35,8 +35,7 @@ def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, e
             ids = analyzer.expand_ids(
                 ids,
                 limit=min(int(min(len(ids), limit) * (1 + expand)), analyzer.config.max_number_to_expand),
-                steps=KeyPaperAnalyzer.EXPAND_STEPS,
-                keep_keywords=True, keep_citations=True,
+                steps=KeyPaperAnalyzer.EXPAND_STEPS, keep_citations=True,
                 current=2, task=current_task
             )
         analyzer.analyze_papers(ids, query, noreviews=noreviews, task=current_task)
@@ -53,7 +52,7 @@ def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, e
 
 
 @celery.task(name='analyze_id_list')
-def analyze_id_list(source, ids, zoom, query):
+def analyze_id_list(source, ids, zoom, query, limit=None):
     if len(ids) == 0:
         raise RuntimeError("Empty papers list")
 
@@ -64,20 +63,22 @@ def analyze_id_list(source, ids, zoom, query):
             ids = analyzer.expand_ids(
                 ids,
                 limit=min(len(ids) + KeyPaperAnalyzer.EXPAND_ZOOM_OUT, analyzer.config.max_number_to_expand),
-                steps=1,
-                keep_keywords=True, keep_citations=True,
+                steps=1, keep_citations=True,
                 current=1, task=current_task
             )
         elif zoom == PAPER_ANALYSIS:
+            if limit:
+                limit = int(limit)
+            else:
+                limit = 0
             ids = analyzer.expand_ids(
                 ids,
-                limit=analyzer.config.max_number_to_expand,
-                steps=KeyPaperAnalyzer.EXPAND_STEPS,
-                keep_keywords=False, keep_citations=False,
+                limit=limit if limit > 0 else analyzer.config.max_number_to_expand,
+                steps=KeyPaperAnalyzer.EXPAND_STEPS, keep_citations=False,
                 current=1, task=current_task)
         else:
             ids = ids  # Leave intact
-        analyzer.analyze_papers(ids, query, current_task)
+        analyzer.analyze_papers(ids, query, task=current_task)
     finally:
         loader.close_connection()
 

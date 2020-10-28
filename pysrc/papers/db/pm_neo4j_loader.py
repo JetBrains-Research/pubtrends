@@ -18,6 +18,7 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
         super(PubmedNeo4jLoader, self).__init__(config)
 
     def find(self, key, value):
+        self.check_connection()
         value = value.strip()
 
         if key == 'id':
@@ -54,6 +55,7 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
             return [str(r['pmid']) for r in session.run(query)]
 
     def search(self, query, limit=None, sort=None, noreviews=True):
+        self.check_connection()
         query_str = preprocess_search_query_for_neo4j(query, self.config.min_search_words)
         noreviews_filter = 'WHERE node.type <> "Review"' if noreviews else ''
 
@@ -104,6 +106,7 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
         return ids
 
     def load_publications(self, ids):
+        self.check_connection()
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
             WITH [{','.join(str(id) for id in ids)}] AS pmids
@@ -130,6 +133,7 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
         return pub_df
 
     def load_citations_by_year(self, ids):
+        self.check_connection()
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
             WITH [{','.join(str(id) for id in ids)}] AS pmids
@@ -157,6 +161,7 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
         raise Exception('Not implemented yet')
 
     def load_citations(self, ids):
+        self.check_connection()
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
             WITH [{','.join(str(id) for id in ids)}] AS pmids
@@ -181,6 +186,7 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
         return cit_df
 
     def load_cocitations(self, ids):
+        self.check_connection()
         # Use unfolding to pairs on the client side instead of DataBase
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
@@ -218,6 +224,7 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
         return cocit_df
 
     def load_bibliographic_coupling(self, ids):
+        self.check_connection()
         # Use unfolding to pairs on the client side instead of DataBase
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
@@ -243,6 +250,7 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
         return bibliographic_coupling_df
 
     def expand(self, ids, limit):
+        self.check_connection()
         max_to_expand = limit
         # Cypher doesn't support any operations on unions, process two separate queries
         expanded_dfs = []

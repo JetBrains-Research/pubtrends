@@ -186,14 +186,30 @@ Please ensure that you have Database configured, up and running.
     ```
     docker run -p 6379:6379 redis:5.0
     ```
-3. Start Celery worker queue
+
+3. Configure conda environment `pubtrends`
+    ```
+    conda env create -f environment.yml
+    ```
+    Enable environment by command `conda activate pubtrends`.
+
+4. Download nltk & spacy resources
+    ```
+    conda activate pubtrends
+    python -m nltk.downloader averaged_perceptron_tagger punkt stopwords wordnet
+    python -m spacy download en_core_web_sm
+    ```
+
+5. Start Celery worker queue
     ```
     celery -A pysrc.celery.tasks worker -c 1 --loglevel=debug
     ```
-4. Start flask server at localhost:5000/
+
+6. Start flask server at localhost:5000/
     ```
     python -m pysrc.app.app
     ```    
+
 ### Jupyter Notebook
    ```
    jupyter notebook

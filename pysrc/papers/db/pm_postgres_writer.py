@@ -9,6 +9,7 @@ class PubmedPostgresWriter(PostgresConnector):
         super(PubmedPostgresWriter, self).__init__(config, readonly=False)
 
     def init_pubmed_database(self):
+        self.check_connection()
         query_citations = '''
                     drop table if exists PMCitations;
                     

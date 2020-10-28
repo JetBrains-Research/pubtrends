@@ -18,6 +18,7 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
         super(SemanticScholarNeo4jLoader, self).__init__(config)
 
     def find(self, key, value):
+        self.check_connection()
         value = value.strip()
 
         if key == 'id':
@@ -47,6 +48,7 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
             return [str(r['ssid']) for r in session.run(query)]
 
     def search(self, query, limit=None, sort=None, noreviews=True):
+        self.check_connection()
         if noreviews:
             logger.debug('Type is not supported for Semantic Scholar')
 
@@ -97,6 +99,7 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
         return ids
 
     def load_publications(self, ids):
+        self.check_connection()
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
             WITH [{','.join(f'"{id}"' for id in ids)}] AS ssids,
@@ -127,6 +130,7 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
         return pub_df
 
     def load_citations_by_year(self, ids):
+        self.check_connection()
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
             WITH [{','.join(f'"{id}"' for id in ids)}] AS ssids,
@@ -157,6 +161,7 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
         raise Exception('Not implemented yet')
 
     def load_citations(self, ids):
+        self.check_connection()
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
             WITH [{','.join(f'"{id}"' for id in ids)}] AS ssids,
@@ -184,6 +189,7 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
         return cit_df
 
     def load_cocitations(self, ids):
+        self.check_connection()
         # Use unfolding to pairs on the client side instead of DataBase
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
@@ -221,6 +227,7 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
         return cocit_df
 
     def load_bibliographic_coupling(self, ids):
+        self.check_connection()
         # Use unfolding to pairs on the client side instead of DataBase
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
@@ -247,6 +254,7 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
         return bibliographic_coupling_df
 
     def expand(self, ids, limit):
+        self.check_connection()
         max_to_expand = limit
         # Cypher doesn't support any operations on unions, process two separate queries
         expanded_dfs = []

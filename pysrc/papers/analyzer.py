@@ -27,17 +27,18 @@ class KeyPaperAnalyzer:
 
     # ...bibliographic coupling (BC) was the most accurate,  followed by co-citation (CC).
     # Direct citation (DC) was a distant third among the three...
-    SIMILARITY_BIBLIOGRAPHIC_COUPLING = 2
-    SIMILARITY_COCITATION = 1
-    SIMILARITY_CITATION = 0.5  # Maximum single citation between two papers
-    SIMILARITY_TEXT_CITATION = 1  # Cosine similarity is <= 1
+    SIMILARITY_BIBLIOGRAPHIC_COUPLING = 2  # Limited by number of references
+    SIMILARITY_COCITATION = 1  # Limiter by number of co-citations
+    SIMILARITY_CITATION = 0.5  # Limited by 1 citation
+    SIMILARITY_TEXT_CITATION = 10  # Limited by cosine similarity <= 1
 
-    SIMILARITY_TEXT_MIN = 0.3  # Minimal cosine similarity for potential text citation
-    SIMILARITY_TEXT_CITATION_N = 20  # Max number of potential text citations for paper
+    SIMILARITY_TEXT_MIN = 0.5  # Minimal cosine similarity for potential text citation
+    SIMILARITY_TEXT_CITATION_N = 10  # Max number of potential text citations for paper
 
     # Reduce number of edges in smallest communities, i.e. topics
     STRUCTURE_LOW_LEVEL_SPARSITY = 0.5
-    # Reduce number of edges between different topics to min number of inner edges * scale factor
+    # Limit number of edges between different topics to min number of inner edges * scale factor,
+    # ignoring similarities less than average within groups
     STRUCTURE_BETWEEN_TOPICS_SPARSITY = 0.2
 
     TOPIC_MIN_SIZE = 10
@@ -96,7 +97,7 @@ class KeyPaperAnalyzer:
                                task=task)
         return ids
 
-    def expand_ids(self, ids, limit, steps, keep_keywords=True, keep_citations=True, current=1, task=None):
+    def expand_ids(self, ids, limit, steps, keep_citations=True, current=1, task=None):
         if len(ids) > self.config.max_number_to_expand:
             self.progress.info('Too many related papers, nothing to expand', current=current, task=task)
             return ids
@@ -112,7 +113,7 @@ class KeyPaperAnalyzer:
         publications = self.loader.load_publications(ids)
         mesh_stems = [s for s, _ in tokens_stems(
             ' '.join(publications['mesh'] + ' ' + publications['keywords']).replace(',', ' ')
-        )] if keep_keywords else []
+        )]
         mesh_counter = Counter(mesh_stems)
 
         # Expand while we can
@@ -143,7 +144,7 @@ class KeyPaperAnalyzer:
                 break
 
             # No additional filtration required
-            if not keep_keywords or not mesh_stems:
+            if not mesh_stems:
                 current_ids += new_ids
                 continue
 
@@ -590,10 +591,8 @@ class KeyPaperAnalyzer:
             pid1, c1, pid2, c2, similarity = row['id_x'], row['comp_x'], row['id_y'], row['comp_y'], row['similarity']
             if c1 == c2:
                 continue  # Ignore same group
-            if c2 > c1:  # Swap
-                pidt, ct = pid1, c1
-                pid1, c1 = pid2, c2
-                pid2, c2 = pidt, ct
+            if c2 > c1:
+                c2, c1 = c1, c2  # Swap
             # Ignore between components similarities less than average within groups
             if similarity < (topics_mean_similarities[c1] + topics_mean_similarities[c2]) / 2:
                 continue
