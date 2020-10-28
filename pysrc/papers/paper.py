@@ -9,9 +9,10 @@ from pysrc.papers.utils import (
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
-def get_top_papers_id_title(papers, df, key, n=50):
-    citing_papers = map(lambda v: (df[df['id'] == v], df[df['id'] == v][key].values[0]), list(papers))
-    return [(el[0]['id'].values[0], el[0]['title'].values[0])
+
+def get_top_papers_id_title_year(papers, df, key, n=50):
+    citing_papers = map(lambda v: (df[df['id'] == v], df[df['id'] == v][key].values[0]), papers)
+    return [(el[0]['id'].values[0], el[0]['title'].values[0], el[0]['year'].values[0])
             for el in sorted(citing_papers, key=lambda x: x[1], reverse=True)[:n]]
 
 
@@ -53,26 +54,28 @@ def prepare_paper_data(data, source, pid):
     else:
         related_topics = None
 
-    # Determine top references (papers that are cited by current),
-    # citations (papers that cite current), and co-citations
-    # Citations graph is limited by only the nodes in pub_df, so not all the nodes might present
+    # Citations graph is limited by only the nodes in pub_df
     if analyzer.citations_graph.has_node(pid):
-        top_references = get_top_papers_id_title(analyzer.citations_graph.successors(pid), analyzer.df, key='pagerank')
-        top_citations = get_top_papers_id_title(analyzer.citations_graph.predecessors(pid), analyzer.df, key='pagerank')
+        derivative_papers = get_top_papers_id_title_year(
+            analyzer.citations_graph.predecessors(pid), analyzer.df, key='pagerank'
+        )
+        prior_papers = get_top_papers_id_title_year(
+            analyzer.citations_graph.successors(pid), analyzer.df, key='pagerank'
+        )
     else:
-        top_references = top_citations = []
+        prior_papers = derivative_papers = []
 
     if analyzer.similarity_graph.nodes() and analyzer.similarity_graph.has_node(pid):
-        related_papers = map(
+        similar_papers = map(
             lambda v: (analyzer.df[analyzer.df['id'] == v]['id'].values[0],
                        analyzer.df[analyzer.df['id'] == v]['title'].values[0],
+                       analyzer.df[analyzer.df['id'] == v]['year'].values[0],
                        analyzer.similarity_graph.edges[pid, v]['similarity']),
             list(analyzer.similarity_graph[pid])
         )
-        related_papers = [[pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid, f'{similarity:.3f}']
-                          for pid, title, similarity in sorted(related_papers, key=lambda x: x[2], reverse=True)[:50]]
+        similar_papers = sorted(similar_papers, key=lambda x: x[2], reverse=True)[:50]
     else:
-        related_papers = None
+        similar_papers = None
 
     result = {
         'title': title,
@@ -88,8 +91,10 @@ def prepare_paper_data(data, source, pid):
         'source': source,
         'citation_dynamics': [components(plotter.article_citation_dynamics(analyzer.df, str(pid)))],
     }
-    if related_papers:
-        result['related_papers'] = related_papers
+    if similar_papers:
+        result['similar_papers'] = [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid, year, f'{similarity:.3f}')
+                                    for pid, title, year, similarity in similar_papers]
+
     if related_topics:
         result['related_topics'] = related_topics
 
@@ -97,13 +102,13 @@ def prepare_paper_data(data, source, pid):
     if abstract != '':
         result['abstract'] = abstract
 
-    if len(top_references) > 0:
-        result['citing_papers'] = [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid)
-                                   for pid, title in top_references]
+    if len(prior_papers) > 0:
+        result['prior_papers'] = [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid, year)
+                                  for pid, title, year in prior_papers]
 
-    if len(top_citations) > 0:
-        result['cited_papers'] = [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid)
-                                  for pid, title in top_citations]
+    if len(derivative_papers) > 0:
+        result['derivative_papers'] = [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid, year)
+                                       for pid, title, year in derivative_papers]
 
     return result
 
