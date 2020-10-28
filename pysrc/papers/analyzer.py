@@ -1,13 +1,13 @@
+import html
 import logging
 from collections import Counter
+from math import floor
 from queue import PriorityQueue
 
 import community
-import html
 import networkx as nx
 import numpy as np
 import pandas as pd
-from math import floor
 from networkx.readwrite import json_graph
 
 from pysrc.papers.db.loaders import Loaders
@@ -97,7 +97,7 @@ class KeyPaperAnalyzer:
                                task=task)
         return ids
 
-    def expand_ids(self, ids, limit, steps, keep_keywords=True, keep_citations=True, current=1, task=None):
+    def expand_ids(self, ids, limit, steps, keep_citations=True, current=1, task=None):
         if len(ids) > self.config.max_number_to_expand:
             self.progress.info('Too many related papers, nothing to expand', current=current, task=task)
             return ids
@@ -113,7 +113,7 @@ class KeyPaperAnalyzer:
         publications = self.loader.load_publications(ids)
         mesh_stems = [s for s, _ in tokens_stems(
             ' '.join(publications['mesh'] + ' ' + publications['keywords']).replace(',', ' ')
-        )] if keep_keywords else []
+        )]
         mesh_counter = Counter(mesh_stems)
 
         # Expand while we can
@@ -144,7 +144,7 @@ class KeyPaperAnalyzer:
                 break
 
             # No additional filtration required
-            if not keep_keywords or not mesh_stems:
+            if not mesh_stems:
                 current_ids += new_ids
                 continue
 
