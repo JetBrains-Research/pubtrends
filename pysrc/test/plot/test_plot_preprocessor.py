@@ -118,18 +118,17 @@ class TestPlotPreprocessor(unittest.TestCase):
             self.analyzer.evolution_df, self.analyzer.evolution_kwds, self.analyzer.n_steps
         )
 
-        expected_edges = [('2014 -1', '2019 0', 1), ('2014 -1', '2019 1', 4),
-                          ('2014 0', '2019 0', 3), ('2014 1', '2019 1', 2)]
-        expected_nodes_data = [('2019 0', '2019 shiftwork, estrogen, pattern, disturbance, cell'),
-                               ('2019 1', '2019 study, analysis, association, time, cpg'),
-                               ('2014 -1', 'NPY'),
-                               ('2014 0', '2014 body, susceptibility, ieaa, risk, time'),
-                               ('2014 1', '2014 reaction, disturbance, pattern, study, rhythm')]
-
+        expected_edges = [('2014 1', '2019 1', 3), ('2014 2', '2019 2', 2), ('2014 NPY', '2019 1', 1),
+                          ('2014 NPY', '2019 2', 4)]
+        expected_nodes_data = [('2019 1', '2019 shiftwork, estrogen, pattern, disturbance, cell'),
+                               ('2019 2', '2019 study, analysis, association, time, cpg'),
+                               ('2014 NPY', 'NPY'),
+                               ('2014 1', '2014 body, susceptibility, ieaa, risk, time'),
+                               ('2014 2', '2014 reaction, disturbance, pattern, study, rhythm')]
+        self.assertListEqual(nodes_data, expected_nodes_data, 'Wrong nodes data')
         self.assertCountEqual(edges, expected_edges, 'Wrong Sankey diagram edges')
         self.assertListEqual([el[0] for el in nodes_data], [el[0] for el in expected_nodes_data],
                              'Wrong node order')
-        self.assertListEqual(nodes_data, expected_nodes_data, 'Wrong nodes data')
 
     def test_topic_evolution_keywords(self):
         kwds_data = PlotPreprocessor.topic_evolution_keywords_data(
@@ -143,7 +142,7 @@ class TestPlotPreprocessor(unittest.TestCase):
                       'per2, per1, promoter, expression, gene'),
             (2019, 1, 'shiftwork, estrogen, pattern, disturbance, cell, per2, disruption, night, analysis, study, '
                       'rhythm, per1, promoter, expression, gene'),
-            (2019, 2,   'study, analysis, association, time, cpg, sample, development, ageaccel, type, blood, cell, '
-                        'acceleration, risk, tissue, age')]
+            (2019, 2, 'study, analysis, association, time, cpg, sample, development, ageaccel, type, blood, cell, '
+                      'acceleration, risk, tissue, age')]
 
         self.assertEqual(expected_keywords_data, kwds_data)
