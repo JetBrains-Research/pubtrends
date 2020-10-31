@@ -1,3 +1,5 @@
+package examples
+
 import org.jetbrains.bio.pubtrends.arxiv.ArxivData
 import org.jetbrains.bio.pubtrends.data.Author
 import org.jetbrains.bio.pubtrends.data.JournalRef

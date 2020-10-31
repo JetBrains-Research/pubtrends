@@ -3,7 +3,8 @@ package org.jetbrains.bio.pubtrends.arxiv
 import org.jetbrains.bio.pubtrends.neo4j.DatabaseHandler
 import org.jetbrains.bio.pubtrends.validation.ArxivValidator
 import org.jetbrains.bio.pubtrends.validation.CrossRefValidator
-import org.jetbrains.bio.pubtrends.validation.LocalValidator
+// TODO(kapralov): local validator is an external dependency, not yet sure whether it is needed
+//import org.jetbrains.bio.pubtrends.validation.LocalValidator
 import joptsimple.OptionParser
 import org.jetbrains.bio.pubtrends.Config
 import java.io.IOException
@@ -27,7 +28,8 @@ fun main(args: Array<String>) {
         validators = mutableListOf()
         options.valueOf("validators").toString().forEach { c ->
             when (c) {
-                'l' -> validators.add(LocalValidator)
+                // TODO(kapralov): local validator is an external dependency, not yet sure whether it is needed
+//                'l' -> validators.add(LocalValidator)
                 'c' -> validators.add(CrossRefValidator)
                 'a' -> validators.add(ArxivValidator)
                 else -> throw IOException("Wrong argument for --validators")

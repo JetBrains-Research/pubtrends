@@ -1,3 +1,5 @@
+package examples
+
 import org.jetbrains.bio.pubtrends.arxiv.ArxivXMLDomParser
 
 import com.github.kittinunf.fuel.httpGet

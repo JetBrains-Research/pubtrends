@@ -1,3 +1,5 @@
+package examples
+
 import org.jetbrains.bio.pubtrends.arxiv.ArxivAPI
 
 val recordIds = listOf("1507.11111", "1604.08289", "1608.08082", "1403.5117")

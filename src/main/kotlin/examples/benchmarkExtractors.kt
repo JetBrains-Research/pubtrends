@@ -1,10 +1,11 @@
-package preprint.server.examples
+package examples
 
 import org.jetbrains.bio.pubtrends.data.Reference
 import org.jetbrains.bio.pubtrends.ref.CustomReferenceExtractor
 import org.jetbrains.bio.pubtrends.ref.GrobidReferenceExtractor
 import org.jetbrains.bio.pubtrends.validation.ArxivValidator
-import org.jetbrains.bio.pubtrends.validation.LocalValidator
+// TODO(kapralov): local validator is an external dependency, not yet sure whether it is needed
+//import org.jetbrains.bio.pubtrends.validation.LocalValidator
 import java.io.File
 import java.nio.file.Paths
 import kotlin.system.measureTimeMillis
@@ -24,7 +25,9 @@ const val BENCHMARKS_FOLDER = "./benchmarks/data"
 fun main() {
     System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.NoOpLog")
 
-    val validators = listOf(LocalValidator, ArxivValidator)
+    // TODO(kapralov): local validator is an external dependency, not yet sure whether it is needed
+//    val validators = listOf(LocalValidator, ArxivValidator)
+    val validators = listOf(ArxivValidator)
 
     val extractors = mapOf(
         CustomReferenceExtractor to "Custom",
