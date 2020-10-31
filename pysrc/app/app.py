@@ -34,7 +34,9 @@ PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
 MAX_QUERY_LENGTH = 60
 
-SOMETHING_WENT_WRONG = 'Something went wrong, please <a href="/">rerun</a> your search.'
+SOMETHING_WENT_WRONG_SEARCH = 'Something went wrong, please <a href="/">rerun</a> your search.'
+SOMETHING_WENT_WRONG_TOPIC = 'Something went wrong, please <a href="/">rerun</a> your topic analysis.'
+SOMETHING_WENT_WRONG_PAPER = 'Something went wrong, please <a href="/">rerun</a> your paper analysis.'
 
 app = Flask(__name__)
 
@@ -144,7 +146,7 @@ def result():
         return search_terms_(request.args)
     else:
         logger.error(f'/result error wrong request {log_request(request)}')
-        return render_template_string(SOMETHING_WENT_WRONG), 400
+        return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
 
 
 @app.route('/process')
@@ -154,7 +156,7 @@ def process():
 
         if not jobid:
             logger.error(f'/process error wrong request {log_request(request)}')
-            return render_template_string(SOMETHING_WENT_WRONG)
+            return render_template_string(SOMETHING_WENT_WRONG_SEARCH)
 
         query = html.unescape(request.args.get('query') or '')
         analysis_type = request.values.get('analysis_type')
@@ -205,7 +207,7 @@ def process():
                                    redirect_page="result",  # redirect in case of success
                                    jobid=jobid, version=VERSION)
     logger.error(f'/process error {log_request(request)}')
-    return render_template_string(SOMETHING_WENT_WRONG), 400
+    return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
 
 
 @app.route('/process_paper')
@@ -222,6 +224,11 @@ def process_paper():
                                         limit=request.values.get('limit'))
             return redirect(url_for('.process', query=query, analysis_type=PAPER_ANALYSIS_TITLE,
                                     id=id_list[0], source=source, jobid=job.id))
+        logger.error(f'/process_paper error job is not success {log_request(request)}')
+        return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
+    else:
+        logger.error(f'/process_paper error wrong request no jobid {log_request(request)}')
+        return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
 
 
 @app.route('/paper')
@@ -237,10 +244,10 @@ def paper():
             return render_template('paper.html', **prepare_paper_data(data, source, pid),
                                    version=VERSION)
         logger.error(f'/paper error jobid {log_request(request)}')
-        return render_template_string(SOMETHING_WENT_WRONG), 400
+        return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
     else:
         logger.error(f'/paper error wrong request {log_request(request)}')
-        return render_template_string(SOMETHING_WENT_WRONG), 400
+        return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
 
 
 @app.route('/graph')
@@ -294,10 +301,10 @@ def graph():
                     graph_cytoscape_json=json.dumps(graph_cs)
                 )
         logger.error(f'/graph error job id {log_request(request)}')
-        return render_template_string(SOMETHING_WENT_WRONG), 400
+        return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     else:
         logger.error(f'/graph error wrong request {log_request(request)}')
-        return render_template_string(SOMETHING_WENT_WRONG), 400
+        return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
 
 
 @app.route('/papers')
@@ -349,7 +356,7 @@ def show_ids():
                                    export_name=export_name,
                                    papers=prepare_papers_data(data, source, comp, word, author, journal, papers_list))
     logger.error(f'/papers error {log_request(request)}')
-    return render_template_string(SOMETHING_WENT_WRONG), 400
+    return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
 
 
 @app.route('/cancel')
@@ -440,7 +447,7 @@ def search_terms_(data):
         logger.error(f'/search_terms error', e)
         return render_template_string("Error occurred. We're working on it. Please check back soon."), 500
     logger.error(f'/search_terms error {log_request(request)}')
-    return render_template_string(SOMETHING_WENT_WRONG), 400
+    return render_template_string(SOMETHING_WENT_WRONG_TOPIC), 400
 
 
 @app.route('/search_paper', methods=['POST'])
@@ -460,7 +467,7 @@ def search_paper():
         logger.error(f'/search_paper error', e)
         return render_template_string("Error occurred. We're working on it. Please check back soon."), 500
     logger.error(f'/search_paper error {log_request(request)}')
-    return render_template_string(SOMETHING_WENT_WRONG), 400
+    return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
 
 
 @app.route('/process_ids', methods=['POST'])
@@ -480,7 +487,7 @@ def process_ids():
         logger.error(f'/process_ids error', e)
         return render_template_string("Error occurred. We're working on it. Please check back soon."), 500
     logger.error(f'/process_ids error {log_request(request)}')
-    return render_template_string(SOMETHING_WENT_WRONG), 400
+    return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
 
 
 #######################
