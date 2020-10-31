@@ -54,8 +54,8 @@ open class PubmedPostgresWriter(
             exec("ALTER TABLE PMPublications ADD COLUMN IF NOT EXISTS tsv TSVECTOR;")
             exec(
                     """
-                    CREATE INDEX IF NOT EXISTS
-                    pm_title_abstract_index ON PMPublications using GIN (tsv);
+                    CREATE INDEX IF NOT EXISTS pm_doi_index ON PMPublications using HASH (doi); 
+                    CREATE INDEX IF NOT EXISTS pm_title_abstract_index ON PMPublications using GIN (tsv);
                     """
             )
             exec(
@@ -87,6 +87,7 @@ open class PubmedPostgresWriter(
                     """
             )
             SchemaUtils.drop(PMPublications, PMCitations)
+            exec("DROP INDEX IF EXISTS pm_doi_index;")
             exec("DROP INDEX IF EXISTS pm_title_abstract_index;")
             exec("DROP INDEX IF EXISTS pmpublications_pmid_year;")
             changed = true

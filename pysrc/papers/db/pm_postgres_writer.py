@@ -38,6 +38,7 @@ class PubmedPostgresWriter(PostgresConnector):
                     );
                     
                     create index if not exists PMPublications_pmid_index on PMPublications (pmid);
+                    create index if not exists PMPublications_doi_index on PMPublications using hash(doi); 
                     
                     ALTER TABLE PMPublications ADD COLUMN IF NOT EXISTS tsv TSVECTOR;
                     create index if not exists PMPublications_tsv on PMPublications using gin(tsv);
