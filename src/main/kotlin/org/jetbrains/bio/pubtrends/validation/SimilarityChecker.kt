@@ -1,10 +1,7 @@
 package com.preprint.server.core.validation
 
 import com.preprint.server.core.algo.Algorithms
-import com.preprint.server.core.crossref.CRData
-import com.preprint.server.core.data.Author
 import com.preprint.server.core.data.Reference
-import com.preprint.server.validation.database.UniversalData
 
 object SimilarityChecker {
     fun check(ref: Reference, record: ValidationRecord): Boolean {
