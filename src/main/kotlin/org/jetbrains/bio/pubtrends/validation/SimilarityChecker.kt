@@ -1,7 +1,7 @@
-package com.preprint.server.core.validation
+package org.jetbrains.bio.pubtrends.validation
 
-import com.preprint.server.core.algo.Algorithms
-import com.preprint.server.core.data.Reference
+import org.jetbrains.bio.pubtrends.algo.Algorithms
+import org.jetbrains.bio.pubtrends.data.Reference
 
 object SimilarityChecker {
     fun check(ref: Reference, record: ValidationRecord): Boolean {
@@ -71,7 +71,7 @@ object SimilarityChecker {
 
     fun checkByTitle(ref: Reference, record: ValidationRecord): Boolean {
         if (
-            record.authors.all { containsAuthor(it.name, ref.rawReference)}
+            record.authors.all { containsAuthor(it.name, ref.rawReference) }
             && ref.rawReference.contains(record.year.toString())
         ) {
             return true

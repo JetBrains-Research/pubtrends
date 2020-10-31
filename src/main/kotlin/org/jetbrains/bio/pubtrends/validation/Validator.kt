@@ -1,6 +1,6 @@
-package com.preprint.server.core.validation
+package org.jetbrains.bio.pubtrends.validation
 
-import com.preprint.server.core.data.Reference
+import org.jetbrains.bio.pubtrends.data.Reference
 import kotlinx.coroutines.*
 import java.lang.Exception
 import java.lang.Thread.sleep

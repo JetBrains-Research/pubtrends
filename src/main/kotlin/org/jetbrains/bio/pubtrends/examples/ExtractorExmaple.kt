@@ -1,6 +1,6 @@
 package examples
 
-import com.preprint.server.core.ref.CustomReferenceExtractor
+import org.jetbrains.bio.pubtrends.ref.CustomReferenceExtractor
 import java.io.File
 
 fun main() {

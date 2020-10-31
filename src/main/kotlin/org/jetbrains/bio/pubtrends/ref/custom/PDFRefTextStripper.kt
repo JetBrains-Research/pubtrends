@@ -1,4 +1,4 @@
-package com.preprint.server.core.ref.custom
+package org.jetbrains.bio.pubtrends.ref.custom
 
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.text.PDFTextStripper

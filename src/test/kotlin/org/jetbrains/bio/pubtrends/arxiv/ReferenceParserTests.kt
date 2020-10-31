@@ -1,8 +1,8 @@
-package com.preprint.server.core
+package org.jetbrains.bio.pubtrends.arxiv
 
-import com.preprint.server.core.ref.CustomReferenceExtractor
-import com.preprint.server.core.ref.custom.ReferenceParser
-import com.preprint.server.core.ref.custom.ReferenceType
+import org.jetbrains.bio.pubtrends.ref.CustomReferenceExtractor
+import org.jetbrains.bio.pubtrends.ref.custom.ReferenceParser
+import org.jetbrains.bio.pubtrends.ref.custom.ReferenceType
 import io.mockk.*
 import junit.framework.Assert.assertEquals
 import org.apache.logging.log4j.kotlin.KotlinLogger

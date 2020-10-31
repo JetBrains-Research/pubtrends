@@ -1,7 +1,7 @@
-package com.preprint.server.core.validation
+package org.jetbrains.bio.pubtrends.validation
 
-import com.preprint.server.core.data.Author
-import com.preprint.server.core.data.Reference
+import org.jetbrains.bio.pubtrends.data.Author
+import org.jetbrains.bio.pubtrends.data.Reference
 import com.preprint.server.validation.database.DBHandler
 import com.preprint.server.validation.database.UniversalData
 import kotlinx.coroutines.launch
@@ -132,7 +132,7 @@ object LocalValidator : Validator, AutoCloseable {
 
     private fun universalToValidationRecord(record: UniversalData): ValidationRecord {
         return ValidationRecord(
-            authors = record.authors.map { ValidationRecord.Author(it.name)},
+            authors = record.authors.map { ValidationRecord.Author(it.name) },
             journalName = record.journalName,
             journalVolume = record.journalVolume,
             title = record.title,

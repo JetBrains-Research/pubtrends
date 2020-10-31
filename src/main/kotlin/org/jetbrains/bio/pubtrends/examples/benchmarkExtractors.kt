@@ -1,16 +1,10 @@
 package preprint.server.examples
 
-import com.preprint.server.core.data.Reference
-import com.preprint.server.core.ref.CustomReferenceExtractor
-import com.preprint.server.core.ref.GrobidReferenceExtractor
-import com.preprint.server.core.validation.ArxivValidator
-import com.preprint.server.core.validation.LocalValidator
-import org.apache.log4j.Level
-import org.apache.log4j.LogManager
-import org.apache.log4j.Logger
-import org.apache.log4j.varia.NullAppender
-import org.apache.logging.log4j.kotlin.KotlinLogger
-import org.apache.logging.log4j.kotlin.logger
+import org.jetbrains.bio.pubtrends.data.Reference
+import org.jetbrains.bio.pubtrends.ref.CustomReferenceExtractor
+import org.jetbrains.bio.pubtrends.ref.GrobidReferenceExtractor
+import org.jetbrains.bio.pubtrends.validation.ArxivValidator
+import org.jetbrains.bio.pubtrends.validation.LocalValidator
 import java.io.File
 import java.nio.file.Paths
 import kotlin.system.measureTimeMillis

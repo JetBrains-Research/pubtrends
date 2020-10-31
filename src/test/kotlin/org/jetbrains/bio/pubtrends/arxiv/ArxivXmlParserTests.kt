@@ -1,8 +1,6 @@
-package com.preprint.server.core
+package org.jetbrains.bio.pubtrends.arxiv
 
-import com.preprint.server.core.arxiv.ArxivData
-import com.preprint.server.core.arxiv.ArxivXMLDomParser
-import com.preprint.server.core.data.Author
+import org.jetbrains.bio.pubtrends.data.Author
 import io.mockk.*
 import org.apache.logging.log4j.kotlin.KotlinLogger
 import org.junit.jupiter.api.*

@@ -1,4 +1,4 @@
-package com.preprint.server.core.utils
+package org.jetbrains.bio.pubtrends.utils
 
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit

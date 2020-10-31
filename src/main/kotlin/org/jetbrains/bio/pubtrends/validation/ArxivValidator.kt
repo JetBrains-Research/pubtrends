@@ -1,6 +1,6 @@
-package com.preprint.server.core.validation
+package org.jetbrains.bio.pubtrends.validation
 
-import com.preprint.server.core.data.Reference
+import org.jetbrains.bio.pubtrends.data.Reference
 
 
 /**
@@ -50,7 +50,7 @@ object ArxivValidator : Validator {
             }
         }
         else {
-            ids.forEach {idPrefix ->
+            ids.forEach { idPrefix ->
                 val beg = ref.rawReference.indexOf(idPrefix + "/")
                 if (beg != -1) {
                     var res = idPrefix + "/"

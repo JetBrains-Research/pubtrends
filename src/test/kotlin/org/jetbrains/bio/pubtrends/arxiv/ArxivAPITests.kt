@@ -1,13 +1,10 @@
-package com.preprint.server.core
+package org.jetbrains.bio.pubtrends.arxiv
 
 import com.github.kittinunf.fuel.*
 import com.github.kittinunf.fuel.core.FuelError
 import com.github.kittinunf.fuel.core.Request
 import com.github.kittinunf.fuel.core.Response
 import com.github.kittinunf.result.Result
-import com.preprint.server.core.arxiv.ArxivAPI
-import com.preprint.server.core.arxiv.ArxivData
-import com.preprint.server.core.arxiv.ArxivXMLDomParser
 import io.mockk.*
 import org.apache.logging.log4j.kotlin.KotlinLogger
 import org.junit.jupiter.api.*
@@ -43,7 +40,7 @@ class ArxivAPITests {
         every { resultMock.get()} returns "xml text"
 
         mockkObject(ArxivXMLDomParser)
-        every {ArxivXMLDomParser.parseArxivRecords("xml text")} returns
+        every { ArxivXMLDomParser.parseArxivRecords("xml text")} returns
                 Triple(listOf(ArxivData("ident", id = "id1")), "new token", 1000)
         val slot = slot<List<String>>()
         every { spyArxiApi.getRecordsUrl(capture(slot))} answers {listOf("pdf url ${slot.captured[0]}")}
@@ -74,7 +71,7 @@ class ArxivAPITests {
         every { resultMock.get()} returns "xml text"
 
         mockkObject(ArxivXMLDomParser)
-        every {ArxivXMLDomParser.parseArxivRecords("xml text")} returns
+        every { ArxivXMLDomParser.parseArxivRecords("xml text")} returns
                 Triple(listOf(ArxivData("ident", id = "id1")), "new token", 1000)
         val slot = slot<List<String>>()
         every { spyArxiApi.getRecordsUrl(capture(slot))} answers {listOf("pdf url ${slot.captured[0]}")}
@@ -111,7 +108,7 @@ class ArxivAPITests {
         every { resultSuccessMock.get()} returns "xml text"
 
         mockkObject(ArxivXMLDomParser)
-        every {ArxivXMLDomParser.parseArxivRecords("xml text")} returns
+        every { ArxivXMLDomParser.parseArxivRecords("xml text")} returns
                 Triple(listOf(ArxivData("ident", id = "id1")), "new token", 1000)
         val slot = slot<List<String>>()
         every { spyArxiApi.getRecordsUrl(capture(slot))} answers {listOf("pdf url ${slot.captured[0]}")}
@@ -143,7 +140,8 @@ class ArxivAPITests {
         every { resultFailMock.getException()} returns fmock
         every { responseMock.statusCode } returns 404
 
-        assertThrows(ArxivAPI.ApiRequestFailedException::class.java
+        assertThrows(
+            ArxivAPI.ApiRequestFailedException::class.java
         ) {spyArxiApi.getBulkArxivRecords("2020-01-10", "", 100)}
     }
 

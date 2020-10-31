@@ -1,8 +1,8 @@
-package com.preprint.server.core.ref.custom
+package org.jetbrains.bio.pubtrends.ref.custom
 
-import com.preprint.server.core.ref.GrobidEngine
-import com.preprint.server.core.data.Reference
-import com.preprint.server.core.validation.ArxivValidator
+import org.jetbrains.bio.pubtrends.ref.GrobidEngine
+import org.jetbrains.bio.pubtrends.data.Reference
+import org.jetbrains.bio.pubtrends.validation.ArxivValidator
 import org.apache.logging.log4j.kotlin.logger
 
 object ReferenceParser {
@@ -154,7 +154,7 @@ object ReferenceParser {
                 }
                 val refs = curRef.split(";").map{it.trim()}.filter { it.isNotEmpty() }
                 if (refs.size > 1) {
-                    if (refs.any { rejectAsReferenceStrong(it)}) {
+                    if (refs.any { rejectAsReferenceStrong(it) }) {
                         logger.debug("Drop because can't parse reference with semicolon")
                         return listOf()
                     }
@@ -330,7 +330,7 @@ object ReferenceParser {
                 }
                 val refs = curRef.split(";").map{it.trim()}.filter { it.isNotEmpty() }
                 if (refs.size > 1) {
-                    if (refs.any { rejectAsReferenceStrong(it)}) {
+                    if (refs.any { rejectAsReferenceStrong(it) }) {
                         logger.debug("Drop because can't parse reference with semicolon")
                         return listOf()
                     }

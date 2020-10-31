@@ -1,4 +1,4 @@
-package com.preprint.server.core.validation
+package org.jetbrains.bio.pubtrends.validation
 
 data class ValidationRecord(
     val authors: List<Author> = mutableListOf(),

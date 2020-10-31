@@ -1,7 +1,7 @@
-package com.preprint.server.core
+package org.jetbrains.bio.pubtrends.arxiv
 
-import com.preprint.server.core.data.Reference
-import com.preprint.server.core.validation.ArxivValidator
+import org.jetbrains.bio.pubtrends.data.Reference
+import org.jetbrains.bio.pubtrends.validation.ArxivValidator
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test

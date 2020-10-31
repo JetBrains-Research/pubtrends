@@ -1,9 +1,9 @@
-package com.preprint.server.core.validation
+package org.jetbrains.bio.pubtrends.validation
 
-import com.preprint.server.core.algo.Algorithms
-import com.preprint.server.core.crossref.CRData
-import com.preprint.server.core.crossref.CrossRefApi
-import com.preprint.server.core.data.Reference
+import org.jetbrains.bio.pubtrends.algo.Algorithms
+import org.jetbrains.bio.pubtrends.crossref.CRData
+import org.jetbrains.bio.pubtrends.crossref.CrossRefApi
+import org.jetbrains.bio.pubtrends.data.Reference
 import org.apache.logging.log4j.kotlin.logger
 
 object CrossRefValidator : Validator {
@@ -46,7 +46,7 @@ object CrossRefValidator : Validator {
 
     private fun crDataToValidationRecord(crRecord: CRData): ValidationRecord {
         return ValidationRecord(
-            authors = crRecord.authors.map {ValidationRecord.Author(it.name)},
+            authors = crRecord.authors.map { ValidationRecord.Author(it.name) },
             journalName = if (crRecord.journal?.fullTitle.isNullOrBlank()) crRecord.journal?.shortTitle
                             else crRecord.journal?.fullTitle,
             journalVolume = crRecord.journal?.volume,

@@ -1,4 +1,4 @@
-package com.preprint.server.core.crossref
+package org.jetbrains.bio.pubtrends.crossref
 
 import com.beust.klaxon.Json
 

@@ -1,9 +1,10 @@
-package com.preprint.server.core.arxiv
+package org.jetbrains.bio.pubtrends.arxiv
 
 import com.github.kittinunf.fuel.httpGet
 import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.result.Result
 import org.apache.logging.log4j.kotlin.logger
+import org.jetbrains.bio.pubtrends.Config
 import java.lang.Thread.sleep
 
 

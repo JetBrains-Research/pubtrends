@@ -1,10 +1,11 @@
-package com.preprint.server.core.crossref
+package org.jetbrains.bio.pubtrends.crossref
 
 import com.github.kittinunf.fuel.core.Response
 import com.github.kittinunf.fuel.httpGet
 import com.github.kittinunf.result.Result
-import com.preprint.server.core.utils.RequestLimiter
+import org.jetbrains.bio.pubtrends.utils.RequestLimiter
 import org.apache.logging.log4j.kotlin.logger
+import org.jetbrains.bio.pubtrends.Config
 import java.lang.Thread.sleep
 import java.net.URLEncoder
 

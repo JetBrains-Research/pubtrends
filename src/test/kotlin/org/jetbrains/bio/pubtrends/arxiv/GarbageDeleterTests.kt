@@ -1,7 +1,7 @@
-package com.preprint.server.core
+package org.jetbrains.bio.pubtrends.arxiv
 
-import com.preprint.server.core.ref.CustomReferenceExtractor
-import com.preprint.server.core.ref.custom.GarbageDeleter
+import org.jetbrains.bio.pubtrends.ref.CustomReferenceExtractor
+import org.jetbrains.bio.pubtrends.ref.custom.GarbageDeleter
 import io.mockk.*
 import org.apache.logging.log4j.kotlin.KotlinLogger
 import org.junit.jupiter.api.*

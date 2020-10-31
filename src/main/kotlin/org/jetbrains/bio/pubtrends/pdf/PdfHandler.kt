@@ -1,12 +1,13 @@
-package com.preprint.server.core.pdf
+package org.jetbrains.bio.pubtrends.pdf
 
-import com.preprint.server.core.data.PubData
-import com.preprint.server.core.ref.ReferenceExtractor
+import org.jetbrains.bio.pubtrends.data.PubData
+import org.jetbrains.bio.pubtrends.ref.ReferenceExtractor
 
 import com.github.kittinunf.fuel.httpGet
 import com.github.kittinunf.result.Result
-import com.preprint.server.core.validation.Validator
+import org.jetbrains.bio.pubtrends.validation.Validator
 import org.apache.logging.log4j.kotlin.logger
+import org.jetbrains.bio.pubtrends.Config
 import java.io.File
 import java.lang.Exception
 import java.lang.Thread.sleep

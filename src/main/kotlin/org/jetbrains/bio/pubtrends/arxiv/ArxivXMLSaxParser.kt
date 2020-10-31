@@ -1,7 +1,7 @@
-package com.preprint.server.core.arxiv
+package org.jetbrains.bio.pubtrends.arxiv
 
-import com.preprint.server.core.data.Author
-import com.preprint.server.core.data.JournalRef
+import org.jetbrains.bio.pubtrends.data.Author
+import org.jetbrains.bio.pubtrends.data.JournalRef
 import org.xml.sax.Attributes
 import org.xml.sax.helpers.DefaultHandler
 import java.io.ByteArrayInputStream

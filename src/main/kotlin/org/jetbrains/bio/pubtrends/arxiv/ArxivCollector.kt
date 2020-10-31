@@ -1,11 +1,12 @@
-package com.preprint.server.core.arxiv
+package org.jetbrains.bio.pubtrends.arxiv
 
-import com.preprint.server.core.neo4j.DatabaseHandler
-import com.preprint.server.core.pdf.PdfHandler
-import com.preprint.server.core.ref.CustomReferenceExtractor
-import com.preprint.server.core.validation.Validator
+import org.jetbrains.bio.pubtrends.neo4j.DatabaseHandler
+import org.jetbrains.bio.pubtrends.pdf.PdfHandler
+import org.jetbrains.bio.pubtrends.ref.CustomReferenceExtractor
+import org.jetbrains.bio.pubtrends.validation.Validator
 
 import org.apache.logging.log4j.kotlin.logger
+import org.jetbrains.bio.pubtrends.Config
 import java.lang.Thread.sleep
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit

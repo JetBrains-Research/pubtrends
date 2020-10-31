@@ -1,9 +1,7 @@
-package com.preprint.server.core.ref
+package org.jetbrains.bio.pubtrends.ref
 
-import com.preprint.server.core.data.Reference
-import com.preprint.server.core.validation.Validator
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import org.jetbrains.bio.pubtrends.data.Reference
+import org.jetbrains.bio.pubtrends.validation.Validator
 import org.apache.logging.log4j.kotlin.logger
 import java.lang.Thread.sleep
 

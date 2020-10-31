@@ -1,7 +1,7 @@
-import com.preprint.server.core.arxiv.ArxivXMLDomParser
+import org.jetbrains.bio.pubtrends.arxiv.ArxivXMLDomParser
 
 import com.github.kittinunf.fuel.httpGet
-import com.github.kittinunf.result.Result;
+import com.github.kittinunf.result.Result
 import java.io.File
 
 fun main() {

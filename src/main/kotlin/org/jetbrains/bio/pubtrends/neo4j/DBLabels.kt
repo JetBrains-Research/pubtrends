@@ -1,4 +1,4 @@
-package com.preprint.server.core.neo4j
+package org.jetbrains.bio.pubtrends.neo4j
 
 enum class DBLabels(val str: String) {
     PUBLICATION("Publication"),

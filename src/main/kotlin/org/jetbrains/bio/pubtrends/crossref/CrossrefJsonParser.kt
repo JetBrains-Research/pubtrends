@@ -1,9 +1,9 @@
-package com.preprint.server.core.crossref
+package org.jetbrains.bio.pubtrends.crossref
 
 import com.beust.klaxon.Klaxon
-import com.preprint.server.core.data.Author
-import com.preprint.server.core.data.JournalRef
-import com.preprint.server.core.utils.Common
+import org.jetbrains.bio.pubtrends.data.Author
+import org.jetbrains.bio.pubtrends.data.JournalRef
+import org.jetbrains.bio.pubtrends.utils.Common
 
 /**
  * Used to parse data from CrossRef API response

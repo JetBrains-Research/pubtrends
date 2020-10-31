@@ -1,7 +1,7 @@
-package com.preprint.server.core.data
+package org.jetbrains.bio.pubtrends.data
 
-import com.preprint.server.core.ref.GrobidEngine
-import com.preprint.server.core.utils.Common
+import org.jetbrains.bio.pubtrends.ref.GrobidEngine
+import org.jetbrains.bio.pubtrends.utils.Common
 import org.grobid.core.data.BibDataSet
 import org.grobid.core.data.BiblioItem
 
@@ -53,7 +53,7 @@ data class Reference(
     private fun setBib(p: BiblioItem) {
         arxivId = p.arXivId
         doi = p.doi
-        authors = p.fullAuthors?.map {author -> Author(author.toString())} ?: listOf()
+        authors = p.fullAuthors?.map {author -> Author(author.toString()) } ?: listOf()
         title = p.title
         journal = p.journal
         issue = p.issue

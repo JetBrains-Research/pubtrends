@@ -1,6 +1,6 @@
-package com.preprint.server.core.ref.custom
+package org.jetbrains.bio.pubtrends.ref.custom
 
-import com.preprint.server.core.algo.Algorithms
+import org.jetbrains.bio.pubtrends.algo.Algorithms
 import java.lang.Math.abs
 
 

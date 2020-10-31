@@ -1,4 +1,4 @@
-package com.preprint.server.core.data
+package org.jetbrains.bio.pubtrends.data
 
 interface PubData {
     var id: String

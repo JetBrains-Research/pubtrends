@@ -1,4 +1,4 @@
-package com.preprint.server.core.utils
+package org.jetbrains.bio.pubtrends.utils
 
 object Common {
     fun splitPages(pages: String?): Pair<Int?, Int?> {

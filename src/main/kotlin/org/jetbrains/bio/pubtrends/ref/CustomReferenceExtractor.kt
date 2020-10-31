@@ -1,10 +1,9 @@
-package com.preprint.server.core.ref
+package org.jetbrains.bio.pubtrends.ref
 
-import com.preprint.server.core.data.Reference
-import com.preprint.server.core.ref.custom.*
+import org.jetbrains.bio.pubtrends.data.Reference
+import org.jetbrains.bio.pubtrends.ref.custom.*
 import org.apache.logging.log4j.kotlin.logger
 import org.apache.pdfbox.pdmodel.PDDocument
-import org.apache.pdfbox.pdmodel.PDPage
 import java.io.ByteArrayOutputStream
 import java.lang.Integer.max
 import java.lang.Integer.min

@@ -1,7 +1,7 @@
-package com.preprint.server.core.data
+package org.jetbrains.bio.pubtrends.data
 
-import com.preprint.server.core.ref.GrobidEngine
-import com.preprint.server.core.utils.Common
+import org.jetbrains.bio.pubtrends.ref.GrobidEngine
+import org.jetbrains.bio.pubtrends.utils.Common
 import org.grobid.core.data.BiblioItem
 
 /**

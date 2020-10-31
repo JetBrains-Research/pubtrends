@@ -1,6 +1,6 @@
-package com.preprint.server.core.ref
+package org.jetbrains.bio.pubtrends.ref
 
-import com.preprint.server.core.data.Reference
+import org.jetbrains.bio.pubtrends.data.Reference
 import pl.edu.icm.cermine.ContentExtractor
 import java.io.ByteArrayInputStream
 import java.io.InputStream

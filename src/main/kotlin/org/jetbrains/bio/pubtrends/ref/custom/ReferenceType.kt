@@ -1,4 +1,4 @@
-package com.preprint.server.core.ref.custom
+package org.jetbrains.bio.pubtrends.ref.custom
 
 enum class ReferenceType(val regex : Regex,
                          val firstRegex : Regex,

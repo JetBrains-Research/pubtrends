@@ -1,7 +1,6 @@
-package com.preprint.server.core.ref
+package org.jetbrains.bio.pubtrends.ref
 
-import com.preprint.server.core.data.Reference
-import java.io.File
+import org.jetbrains.bio.pubtrends.data.Reference
 
 
 object GrobidReferenceExtractor : ReferenceExtractor {

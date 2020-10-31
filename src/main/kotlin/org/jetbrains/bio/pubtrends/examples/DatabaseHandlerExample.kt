@@ -1,8 +1,8 @@
-import com.preprint.server.core.arxiv.ArxivData
-import com.preprint.server.core.data.Author
-import com.preprint.server.core.data.JournalRef
-import com.preprint.server.core.neo4j.DatabaseHandler
-import com.preprint.server.core.data.Reference
+import org.jetbrains.bio.pubtrends.arxiv.ArxivData
+import org.jetbrains.bio.pubtrends.data.Author
+import org.jetbrains.bio.pubtrends.data.JournalRef
+import org.jetbrains.bio.pubtrends.neo4j.DatabaseHandler
+import org.jetbrains.bio.pubtrends.data.Reference
 
 fun main() {
     val dbh = DatabaseHandler("localhost", "7687", "neo4j", "qwerty")

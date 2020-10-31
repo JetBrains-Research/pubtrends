@@ -1,17 +1,18 @@
-package com.preprint.server.core.neo4j
+package org.jetbrains.bio.pubtrends.neo4j
 
-import org.neo4j.driver.AuthTokens
-import org.neo4j.driver.GraphDatabase
-import com.preprint.server.core.arxiv.ArxivData
-import com.preprint.server.core.data.Author
-import com.preprint.server.core.data.JournalRef
-import com.preprint.server.core.data.Reference
+import org.jetbrains.bio.pubtrends.arxiv.ArxivData
+import org.jetbrains.bio.pubtrends.data.Author
+import org.jetbrains.bio.pubtrends.data.JournalRef
+import org.jetbrains.bio.pubtrends.data.Reference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.apache.logging.log4j.kotlin.logger
-import org.neo4j.driver.Transaction
+import org.jetbrains.bio.pubtrends.Config
+import org.neo4j.driver.v1.AuthTokens
+import org.neo4j.driver.v1.GraphDatabase
+import org.neo4j.driver.v1.Transaction
 import java.io.Closeable
 import java.lang.Exception
 import java.time.LocalDate
@@ -525,10 +526,10 @@ class DatabaseHandler(
      * Creates all connections that needed for given record
      */
     private fun createConnections(
-            tr : Transaction,
-            id : Long,
-            record: ArxivData,
-            newPublications: Set<Reference>
+        tr : Transaction,
+        id : Long,
+        record: ArxivData,
+        newPublications: Set<Reference>
     ) {
         createAuthorConnections(tr, record.authors, id)
 
@@ -543,9 +544,9 @@ class DatabaseHandler(
      * Creates Publication -> Author connection and Author -> Affiliation connections
      */
     private fun createAuthorConnections(
-            tr: Transaction,
-            authors: List<Author>,
-            id: Long
+        tr: Transaction,
+        authors: List<Author>,
+        id: Long
     ) {
 
         authors.forEach {author ->
@@ -690,9 +691,9 @@ class DatabaseHandler(
      * Create Publication->Journal connection
      */
     private fun createJournalPublicationConnections(
-            tr: Transaction,
-            journal: JournalRef?,
-            id: Long
+        tr: Transaction,
+        journal: JournalRef?,
+        id: Long
     ) {
 
         if (journal?.rawTitle != null) {

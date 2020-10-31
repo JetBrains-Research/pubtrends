@@ -1,10 +1,10 @@
 package examples
 
-import com.preprint.server.core.arxiv.ArxivCollector
-import com.preprint.server.core.neo4j.DatabaseHandler
-import com.preprint.server.core.validation.ArxivValidator
-import com.preprint.server.core.validation.CrossRefValidator
-import com.preprint.server.core.validation.LocalValidator
+import org.jetbrains.bio.pubtrends.Config
+import org.jetbrains.bio.pubtrends.arxiv.ArxivCollector
+import org.jetbrains.bio.pubtrends.neo4j.DatabaseHandler
+import org.jetbrains.bio.pubtrends.validation.ArxivValidator
+import org.jetbrains.bio.pubtrends.validation.CrossRefValidator
 
 fun main() {
     val START_DATE = "2020-05-11"

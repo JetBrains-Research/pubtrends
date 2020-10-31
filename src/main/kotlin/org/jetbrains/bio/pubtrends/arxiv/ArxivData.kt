@@ -1,9 +1,9 @@
-package com.preprint.server.core.arxiv
+package org.jetbrains.bio.pubtrends.arxiv
 
-import com.preprint.server.core.data.Author
-import com.preprint.server.core.data.JournalRef
-import com.preprint.server.core.data.PubData
-import com.preprint.server.core.data.Reference
+import org.jetbrains.bio.pubtrends.data.Author
+import org.jetbrains.bio.pubtrends.data.JournalRef
+import org.jetbrains.bio.pubtrends.data.PubData
+import org.jetbrains.bio.pubtrends.data.Reference
 
 data class ArxivData(
     val identifier: String = "",

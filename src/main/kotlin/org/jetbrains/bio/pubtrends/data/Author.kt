@@ -1,4 +1,4 @@
-package com.preprint.server.core.data
+package org.jetbrains.bio.pubtrends.data
 
 data class Author(val name: String,
                   val affiliation: String? = null)

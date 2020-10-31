@@ -1,4 +1,4 @@
-package com.preprint.server.core.algo
+package org.jetbrains.bio.pubtrends.algo
 
 
 /**

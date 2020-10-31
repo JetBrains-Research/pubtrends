@@ -1,11 +1,8 @@
-package com.preprint.server.core
+package org.jetbrains.bio.pubtrends.arxiv
 
-import com.preprint.server.core.arxiv.ArxivAPI
-import com.preprint.server.core.arxiv.ArxivCollector
-import com.preprint.server.core.arxiv.ArxivData
-import com.preprint.server.core.neo4j.DatabaseHandler
-import com.preprint.server.core.pdf.PdfHandler
-import com.preprint.server.core.ref.GrobidEngine
+import org.jetbrains.bio.pubtrends.neo4j.DatabaseHandler
+import org.jetbrains.bio.pubtrends.pdf.PdfHandler
+import org.jetbrains.bio.pubtrends.ref.GrobidEngine
 import io.mockk.*
 import org.apache.logging.log4j.kotlin.KotlinLogger
 import org.junit.Assert.assertEquals
