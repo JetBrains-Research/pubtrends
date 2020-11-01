@@ -1,6 +1,6 @@
-package org.jetbrains.bio.pubtrends.neo4j
+package org.jetbrains.bio.pubtrends.db
 
-enum class DBLabels(val str: String) {
+enum class ArxivNeo4JDBLabels(val str: String) {
     PUBLICATION("Publication"),
     AUTHOR("Author"),
     AFFILIATION("Affiliation"),

@@ -3,11 +3,11 @@ package examples
 import org.jetbrains.bio.pubtrends.arxiv.ArxivData
 import org.jetbrains.bio.pubtrends.data.Author
 import org.jetbrains.bio.pubtrends.data.JournalRef
-import org.jetbrains.bio.pubtrends.neo4j.DatabaseHandler
+import org.jetbrains.bio.pubtrends.db.ArxivNeo4JWriter
 import org.jetbrains.bio.pubtrends.data.Reference
 
 fun main() {
-    val dbh = DatabaseHandler("localhost", "7687", "neo4j", "qwerty")
+    val dbh = ArxivNeo4JWriter("localhost", "7687", "neo4j", "qwerty")
     val records = mutableListOf<ArxivData>()
     val r1 = ArxivData("1")
     r1.id = "1"

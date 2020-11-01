@@ -1,6 +1,6 @@
 package org.jetbrains.bio.pubtrends.arxiv
 
-import org.jetbrains.bio.pubtrends.neo4j.DatabaseHandler
+import org.jetbrains.bio.pubtrends.db.ArxivNeo4JWriter
 import org.jetbrains.bio.pubtrends.ref.GrobidEngine
 import io.mockk.*
 import org.apache.logging.log4j.kotlin.KotlinLogger
@@ -28,7 +28,7 @@ class ArxivCollectorTests {
     @Test
     fun emptyResumptionTokenTest() {
         val records = mutableListOf<ArxivData>()
-        val dbMock = mockk<DatabaseHandler>()
+        val dbMock = mockk<ArxivNeo4JWriter>()
         val slot = slot<List<ArxivData>>()
         every { dbMock.storeArxivData(capture(slot)) } answers {records += slot.captured}
         val arxivList1 = listOf(
@@ -61,7 +61,7 @@ class ArxivCollectorTests {
     @Test
     fun nonEmptyResumptionTokenTest() {
         val records = mutableListOf<ArxivData>()
-        val dbMock = mockk<DatabaseHandler>()
+        val dbMock = mockk<ArxivNeo4JWriter>()
         val slot = slot<List<ArxivData>>()
         every { dbMock.storeArxivData(capture(slot)) } answers {records += slot.captured}
         val arxivList1 = listOf(
@@ -94,7 +94,7 @@ class ArxivCollectorTests {
     @Test
     fun exceptionTest() {
         val records = mutableListOf<ArxivData>()
-        val dbMock = mockk<DatabaseHandler>()
+        val dbMock = mockk<ArxivNeo4JWriter>()
         val slot = slot<List<ArxivData>>()
         every { dbMock.storeArxivData(capture(slot)) } answers {records += slot.captured}
         val arxivList1 = listOf(

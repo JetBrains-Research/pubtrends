@@ -1,4 +1,4 @@
-package org.jetbrains.bio.pubtrends.neo4j
+package org.jetbrains.bio.pubtrends.db
 
 import org.jetbrains.bio.pubtrends.arxiv.ArxivData
 import org.jetbrains.bio.pubtrends.data.Author
@@ -22,7 +22,7 @@ import java.util.concurrent.Executors
 /**
  * Used to work with neo4j database
  */
-class DatabaseHandler(
+class ArxivNeo4JWriter(
     url: String,
     port: String,
     user: String,
@@ -82,8 +82,8 @@ class DatabaseHandler(
                 pubIds = tr.run(
                     """
                     UNWIND ${"$"}publications as pubData
-                    MERGE (pub:${DBLabels.PUBLICATION.str} {arxivId : pubData.arxivId}) 
-                    SET pub += pubData, pub:${DBLabels.ARXIV_LBL.str}
+                    MERGE (pub:${ArxivNeo4JDBLabels.PUBLICATION.str} {arxivId : pubData.arxivId}) 
+                    SET pub += pubData, pub:${ArxivNeo4JDBLabels.ARXIV_LBL.str}
                     RETURN id(pub)
                 """.trimIndent(), publications
                 ).list().map { it.get("id(pub)").asLong() }
@@ -151,7 +151,7 @@ class DatabaseHandler(
             it.writeTransaction { tr ->
                 if (!existingIndexes.contains("publication_arxivId")) {
                     tr.run(
-                        """CREATE INDEX publication_arxivId FOR (p:${DBLabels.PUBLICATION.str})
+                        """CREATE INDEX publication_arxivId FOR (p:${ArxivNeo4JDBLabels.PUBLICATION.str})
                           ON (p.arxivId)"""
                             .trimIndent()
                     )
@@ -159,7 +159,7 @@ class DatabaseHandler(
 
                 if (!existingIndexes.contains("publication_doi")) {
                     tr.run(
-                        """CREATE INDEX publication_doi FOR (p:${DBLabels.PUBLICATION.str})
+                        """CREATE INDEX publication_doi FOR (p:${ArxivNeo4JDBLabels.PUBLICATION.str})
                           ON (p.doi)"""
                             .trimIndent()
                     )
@@ -167,7 +167,7 @@ class DatabaseHandler(
 
                 if (!existingIndexes.contains("publication_title")) {
                     tr.run(
-                        """CREATE INDEX publication_title FOR (p:${DBLabels.PUBLICATION.str})
+                        """CREATE INDEX publication_title FOR (p:${ArxivNeo4JDBLabels.PUBLICATION.str})
                           ON (p.title)"""
                             .trimIndent()
                     )
@@ -175,7 +175,7 @@ class DatabaseHandler(
 
                 if (!existingIndexes.contains("author_name")) {
                     tr.run(
-                        """CREATE INDEX author_name FOR (a:${DBLabels.AUTHOR.str})
+                        """CREATE INDEX author_name FOR (a:${ArxivNeo4JDBLabels.AUTHOR.str})
                           ON (a.name)"""
                             .trimIndent()
                     )
@@ -183,7 +183,7 @@ class DatabaseHandler(
 
                 if (!existingIndexes.contains("journal_title")) {
                     tr.run(
-                        """CREATE INDEX journal_title FOR (j:${DBLabels.JOURNAL.str})
+                        """CREATE INDEX journal_title FOR (j:${ArxivNeo4JDBLabels.JOURNAL.str})
                           ON (j.title)"""
                             .trimIndent()
                     )
@@ -191,7 +191,7 @@ class DatabaseHandler(
 
                 if (!existingIndexes.contains("affiliation_name")) {
                     tr.run(
-                        """CREATE INDEX affiliation_name FOR (a:${DBLabels.AFFILIATION.str})
+                        """CREATE INDEX affiliation_name FOR (a:${ArxivNeo4JDBLabels.AFFILIATION.str})
                           ON (a.name)"""
                             .trimIndent()
                     )
@@ -199,7 +199,7 @@ class DatabaseHandler(
 
                 if (!existingIndexes.contains("missing_publication_title")) {
                     tr.run(
-                        """CREATE INDEX missing_publication_title FOR (m:${DBLabels.MISSING_PUBLICATION.str})
+                        """CREATE INDEX missing_publication_title FOR (m:${ArxivNeo4JDBLabels.MISSING_PUBLICATION.str})
                           ON (m.title)"""
                             .trimIndent()
                     )
@@ -261,7 +261,7 @@ class DatabaseHandler(
             it.writeTransaction {tr ->
                 tr.run("""
                     UNWIND ${parm("authors")} as authorName
-                    MERGE (a:${DBLabels.AUTHOR.str} {name : authorName})
+                    MERGE (a:${ArxivNeo4JDBLabels.AUTHOR.str} {name : authorName})
                 """.trimIndent(), params)
             }
         }
@@ -276,7 +276,7 @@ class DatabaseHandler(
             it.writeTransaction { tr ->
                 tr.run("""
                     UNWIND ${parm("journals")} as journalTitle
-                    MERGE (j:${DBLabels.JOURNAL.str} {title : journalTitle})
+                    MERGE (j:${ArxivNeo4JDBLabels.JOURNAL.str} {title : journalTitle})
                 """.trimIndent(), params)
             }
         }
@@ -291,7 +291,7 @@ class DatabaseHandler(
             it.writeTransaction { tr ->
                 tr.run("""
                     UNWIND ${parm("affs")} as aname
-                    MERGE (a:${DBLabels.AFFILIATION.str} {name : aname})
+                    MERGE (a:${ArxivNeo4JDBLabels.AFFILIATION.str} {name : aname})
                 """.trimIndent(), params)
             }
         }
@@ -315,7 +315,7 @@ class DatabaseHandler(
                     """.trimIndent(), params)
                     if (pubs.list().isEmpty()) {
                         tr.run("""
-                            MERGE (p:${DBLabels.MISSING_PUBLICATION.str} {title : ${parm("title")}})
+                            MERGE (p:${ArxivNeo4JDBLabels.MISSING_PUBLICATION.str} {title : ${parm("title")}})
                         """.trimIndent(), params)
                     }
                 }
@@ -347,7 +347,7 @@ class DatabaseHandler(
                             else if (!ref.arxivId.isNullOrEmpty()) "arxivId: ${parm("arxivId")}"
                             else "title: ${parm("title")}"
                         tr.run("""
-                            MERGE (p:${DBLabels.PUBLICATION.str} {${matchString}})
+                            MERGE (p:${ArxivNeo4JDBLabels.PUBLICATION.str} {${matchString}})
                         """.trimIndent(), params)
                     }
                 }
@@ -449,8 +449,8 @@ class DatabaseHandler(
         if (!record.creationDate.isBlank()) {
             res += "creationDate" to LocalDate.parse(record.creationDate)
         }
-        if (!record.lastUpdateDate.isNullOrBlank()) {
-            res += "lastUpdateDate" to LocalDate.parse(record.lastUpdateDate!!)
+        if (!record.lastUpdateDate.isBlank()) {
+            res += "lastUpdateDate" to LocalDate.parse(record.lastUpdateDate)
         }
         if (record.pdfUrl.isNotBlank()) {
             res += "pdfUrl" to record.pdfUrl
@@ -558,18 +558,18 @@ class DatabaseHandler(
             val createAffiliationQuery =
                 if (author.affiliation != null) {
                     """
-                        MATCH (aff:${DBLabels.AFFILIATION.str} {name: ${parm("aff")}})
-                        MERGE (auth)-[:${DBLabels.WORKS.str}]->(aff)
+                        MATCH (aff:${ArxivNeo4JDBLabels.AFFILIATION.str} {name: ${parm("aff")}})
+                        MERGE (auth)-[:${ArxivNeo4JDBLabels.WORKS.str}]->(aff)
                     """.trimIndent()
                 } else ""
 
             tr.run("""
-                    MATCH (auth:${DBLabels.AUTHOR.str} {name: ${parm("name")}})
+                    MATCH (auth:${ArxivNeo4JDBLabels.AUTHOR.str} {name: ${parm("name")}})
                     $createAffiliationQuery
                     WITH auth
-                    MATCH (pub:${DBLabels.PUBLICATION.str})
+                    MATCH (pub:${ArxivNeo4JDBLabels.PUBLICATION.str})
                     WHERE id(pub) = ${parm("pubId")}
-                    MERGE (pub)-[:${DBLabels.AUTHORED.str}]->(auth)
+                    MERGE (pub)-[:${ArxivNeo4JDBLabels.AUTHORED.str}]->(auth)
                 """.trimIndent(), params)
         }
     }
@@ -606,12 +606,12 @@ class DatabaseHandler(
             if (!newPublications.contains(ref)) {
                 val res = tr.run(
                     """
-                    MATCH (pubFrom:${DBLabels.PUBLICATION.str} {arxivId: ${parm("rid")}})
-                    MATCH (pubTo:${DBLabels.PUBLICATION.str})
+                    MATCH (pubFrom:${ArxivNeo4JDBLabels.PUBLICATION.str} {arxivId: ${parm("rid")}})
+                    MATCH (pubTo:${ArxivNeo4JDBLabels.PUBLICATION.str})
                     WHERE pubTo <> pubFrom AND (pubTo.arxivId = ${parm("arxId")} OR
                         pubTo.doi = ${parm("rdoi")} OR pubTo.title = ${parm("rtit")})
                     SET pubTo += ${parm("cdata")}
-                    MERGE (pubFrom)-[c:${DBLabels.CITES.str} {rawRef: ${parm("rRef")}}]->(pubTo)
+                    MERGE (pubFrom)-[c:${ArxivNeo4JDBLabels.CITES.str} {rawRef: ${parm("rRef")}}]->(pubTo)
                     RETURN pubTo
                 """.trimIndent(), params
                 )
@@ -622,9 +622,9 @@ class DatabaseHandler(
                         //crete missing publication -> publication connection
                         tr.run(
                             """
-                    MATCH (pub:${DBLabels.PUBLICATION.str} {arxivId: ${parm("rid")}})
-                    MATCH (mpub:${DBLabels.MISSING_PUBLICATION.str} {title: ${parm("rtit")}})
-                    MERGE (mpub)-[c:${DBLabels.CITED_BY.str}]->(pub)
+                    MATCH (pub:${ArxivNeo4JDBLabels.PUBLICATION.str} {arxivId: ${parm("rid")}})
+                    MATCH (mpub:${ArxivNeo4JDBLabels.MISSING_PUBLICATION.str} {title: ${parm("rtit")}})
+                    MERGE (mpub)-[c:${ArxivNeo4JDBLabels.CITED_BY.str}]->(pub)
                     SET c.rawRef = ${parm("rRef")}, 
                         mpub += ${parm("cdata")},
                         mpub += ${parm("jdata")}
@@ -633,9 +633,9 @@ class DatabaseHandler(
                     } else {
                         tr.run(
                             """	
-                    MATCH (pub:${DBLabels.PUBLICATION.str} {arxivId: ${parm("rid")}})	
-                    CREATE (mpub:${DBLabels.MISSING_PUBLICATION.str})	
-                    MERGE (mpub)-[c:${DBLabels.CITED_BY.str}]->(pub)	
+                    MATCH (pub:${ArxivNeo4JDBLabels.PUBLICATION.str} {arxivId: ${parm("rid")}})	
+                    CREATE (mpub:${ArxivNeo4JDBLabels.MISSING_PUBLICATION.str})	
+                    MERGE (mpub)-[c:${ArxivNeo4JDBLabels.CITED_BY.str}]->(pub)	
                     SET c.rawRef = ${parm("rRef")}, 	
                         mpub += ${parm("cdata")},	
                         mpub += ${parm("jdata")}	
@@ -657,10 +657,10 @@ class DatabaseHandler(
 
                 val idObj = tr.run(
                     """
-                        MATCH (pub:${DBLabels.PUBLICATION.str} {arxivId: ${parm("arxivId")}})
-                        MATCH (cpub:${DBLabels.PUBLICATION.str} {${matchString}})
+                        MATCH (pub:${ArxivNeo4JDBLabels.PUBLICATION.str} {arxivId: ${parm("arxivId")}})
+                        MATCH (cpub:${ArxivNeo4JDBLabels.PUBLICATION.str} {${matchString}})
                         SET cpub += ${parm("cdata")}
-                        MERGE (pub)-[cites:${DBLabels.CITES.str}]->(cpub)
+                        MERGE (pub)-[cites:${ArxivNeo4JDBLabels.CITES.str}]->(cpub)
                         SET cites.rawRef = ${parm("rawRef")}
                         RETURN id(cpub)
                         """.trimIndent(),
@@ -707,10 +707,10 @@ class DatabaseHandler(
                 "rr" to journal.rawRef
             )
             tr.run("""
-                   MATCH (pub:${DBLabels.PUBLICATION.str})
+                   MATCH (pub:${ArxivNeo4JDBLabels.PUBLICATION.str})
                    WHERE id(pub) = ${parm("pubId")}
-                   MATCH (j:${DBLabels.JOURNAL.str} {title: ${parm("rjrl")}})
-                   MERGE (pub)-[jref:${DBLabels.PUBLISHED_IN}]->(j)
+                   MATCH (j:${ArxivNeo4JDBLabels.JOURNAL.str} {title: ${parm("rjrl")}})
+                   MERGE (pub)-[jref:${ArxivNeo4JDBLabels.PUBLISHED_IN}]->(j)
                    ON CREATE SET pub.journalVolume = ${parm("vol")}, pub.journalFirstPage = ${parm("firstPage")},
                        pub.journalLastPage = ${parm("lastPage")}, pub.journalIssue = ${parm("no")},
                        jref.rawRef = ${parm("rr")}

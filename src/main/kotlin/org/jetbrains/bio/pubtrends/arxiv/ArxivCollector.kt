@@ -1,6 +1,6 @@
 package org.jetbrains.bio.pubtrends.arxiv
 
-import org.jetbrains.bio.pubtrends.neo4j.DatabaseHandler
+import org.jetbrains.bio.pubtrends.db.ArxivNeo4JWriter
 import org.jetbrains.bio.pubtrends.ref.CustomReferenceExtractor
 import org.jetbrains.bio.pubtrends.validation.Validator
 
@@ -8,7 +8,6 @@ import org.apache.logging.log4j.kotlin.logger
 import org.jetbrains.bio.pubtrends.Config
 import java.lang.Thread.sleep
 import java.time.LocalDate
-import java.time.temporal.ChronoUnit
 
 
 /**
@@ -38,12 +37,13 @@ object ArxivCollector {
      * (arxiv api response contains 1000 records)
      */
     fun collect(
-        startDate: String,
-        dbHandler: DatabaseHandler,
-        validators: List<Validator>,
-        resumptionToken_: String = "",
-        limit: Int = 1000
+            startDate: String,
+            dbWriter: ArxivNeo4JWriter,
+            validators: List<Validator>,
+            resumptionToken_: String = "",
+            limit: Int = 1000
     ) {
+        val requestDate = LocalDate.parse(startDate)
         var recordsProcessed = 0
         resumptionToken = resumptionToken_
 
@@ -53,8 +53,8 @@ object ArxivCollector {
             logger.info("Continue collecting arxiv metadata from $startDate with resumption token:$resumptionToken")
         }
 
-        //do request until resumption token in the response will be empty,
-        //that means that this was the last pack of records
+        // do request until resumption token in the response will be empty,
+        // that means that this was the last pack of records
         do {
             val (newArxivRecords, newResumptionToken, recordsTotal) = try {
                 ArxivAPI.getBulkArxivRecords(startDate, resumptionToken, limit)
@@ -64,20 +64,13 @@ object ArxivCollector {
             }
             resumptionToken = newResumptionToken
 
-            // Old papers are filtered out in order to reduce the amount of downloaded PDF files
-            // TODO: check whether it can be determined that new PDF version was added
+            // Filter out only papers that were updated since `startDate` inclusively
             val newUpdatedRecords = newArxivRecords.filter {record ->
                 val date = record.lastUpdateDate.let {LocalDate.parse(it)}
-                val requestDate = LocalDate.parse(startDate)
-                if (requestDate > date) {
-                    val days = ChronoUnit.DAYS.between(date, requestDate)
-                    days < 7
-                } else {
-                    true
-                }
+                return@filter date >= requestDate
             }
 
-            //get references for all records, and store them
+            // get references for all records, and store them
             // in the `refList` property of each record in `newArxivRecords`
             ArxivPDFHandler.getFullInfo(
                 newUpdatedRecords,
@@ -89,7 +82,7 @@ object ArxivCollector {
                 recordsProcessed
             )
 
-            dbHandler.storeArxivData(newArxivRecords)
+            dbWriter.storeArxivData(newArxivRecords)
 
             recordsProcessed += newArxivRecords.size
             logger.info("Records processed ${recordsProcessed} out of $recordsTotal")
