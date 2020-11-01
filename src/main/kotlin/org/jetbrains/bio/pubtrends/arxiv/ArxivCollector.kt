@@ -1,7 +1,6 @@
 package org.jetbrains.bio.pubtrends.arxiv
 
 import org.jetbrains.bio.pubtrends.neo4j.DatabaseHandler
-import org.jetbrains.bio.pubtrends.pdf.PdfHandler
 import org.jetbrains.bio.pubtrends.ref.CustomReferenceExtractor
 import org.jetbrains.bio.pubtrends.validation.Validator
 
@@ -80,7 +79,7 @@ object ArxivCollector {
 
             //get references for all records, and store them
             // in the `refList` property of each record in `newArxivRecords`
-            PdfHandler.getFullInfo(
+            ArxivPDFHandler.getFullInfo(
                 newUpdatedRecords,
                 "files/",
                 CustomReferenceExtractor,

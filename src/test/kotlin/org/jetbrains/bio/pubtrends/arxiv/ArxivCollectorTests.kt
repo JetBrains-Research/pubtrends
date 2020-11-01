@@ -1,7 +1,6 @@
 package org.jetbrains.bio.pubtrends.arxiv
 
 import org.jetbrains.bio.pubtrends.neo4j.DatabaseHandler
-import org.jetbrains.bio.pubtrends.pdf.PdfHandler
 import org.jetbrains.bio.pubtrends.ref.GrobidEngine
 import io.mockk.*
 import org.apache.logging.log4j.kotlin.KotlinLogger
@@ -15,8 +14,8 @@ class ArxivCollectorTests {
     fun initTest() {
         mockkConstructor(KotlinLogger::class)
         every {anyConstructed<KotlinLogger>().info(any<String>())} just Runs
-        mockkObject(PdfHandler)
-        every { PdfHandler.getFullInfo(any(), any(), any(), any(), any(), any()) } just Runs
+        mockkObject(ArxivPDFHandler)
+        every { ArxivPDFHandler.getFullInfo(any(), any(), any(), any(), any(), any()) } just Runs
         mockkObject(GrobidEngine)
         mockkObject(ArxivAPI)
     }

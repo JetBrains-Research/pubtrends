@@ -1,4 +1,4 @@
-package org.jetbrains.bio.pubtrends.pdf
+package org.jetbrains.bio.pubtrends.arxiv
 
 import org.jetbrains.bio.pubtrends.data.PubData
 import org.jetbrains.bio.pubtrends.ref.ReferenceExtractor
@@ -16,7 +16,7 @@ import java.lang.Thread.sleep
 /**
  * Used to download pdf and extract references from them
  */
-object PdfHandler {
+object ArxivPDFHandler {
     private val logger = logger()
     var sleepTime : Long = Config.config["arxiv_pdf_sleep_time"].toString().toLong()
 
@@ -75,7 +75,7 @@ object PdfHandler {
                     continue
                 }
                 logger.debug(record.refList
-                        .mapIndexed { i, ref -> "  ${i + 1}) $ref"}.joinToString(prefix = "\n", separator = "\n"))
+                        .mapIndexed { idx, ref -> "  ${idx + 1}) $ref"}.joinToString(prefix = "\n", separator = "\n"))
             }
 
             sleep(sleepTime)

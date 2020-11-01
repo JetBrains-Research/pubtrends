@@ -2,7 +2,7 @@ package examples
 
 import org.jetbrains.bio.pubtrends.arxiv.ArxivAPI
 import org.jetbrains.bio.pubtrends.arxiv.ArxivAPI.getRecordsUrl
-import org.jetbrains.bio.pubtrends.pdf.PdfHandler
+import org.jetbrains.bio.pubtrends.arxiv.ArxivPDFHandler
 import org.jetbrains.bio.pubtrends.ref.GrobidReferenceExtractor
 import java.time.LocalDate
 
@@ -31,7 +31,7 @@ fun main() {
         arxivData.pdfUrl = pdfLink
     }
 
-    PdfHandler.getFullInfo(
+    ArxivPDFHandler.getFullInfo(
             newRecords,
             "local/pdf/",
             GrobidReferenceExtractor,
