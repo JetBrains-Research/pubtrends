@@ -130,7 +130,7 @@ def result():
     source = request.args.get('source')
     limit = request.args.get('limit')
     sort = request.args.get('sort')
-    noreviews = request.args.get('noreviews')  # Include reviews in the initial search phase
+    noreviews = request.args.get('noreviews') == 'on'  # Include reviews in the initial search phase
     expand = request.args.get('expand')  # Fraction of papers to cover by references
     try:
         if jobid and query and source and limit is not None and sort is not None:
@@ -441,13 +441,13 @@ def search_terms():
     source = request.form.get('source')  # Pubmed or Semantic Scholar
     sort = request.form.get('sort')  # Sort order
     limit = request.form.get('limit')  # Limit
-    noreviews = request.form.get('noreviews')  # Include reviews in the initial search phase
+    noreviews = request.form.get('noreviews') == 'on'  # Include reviews in the initial search phase
     expand = request.form.get('expand')  # Fraction of papers to cover by references
     try:
-        if query and source and sort and limit and noreviews is not None and expand:
+        if query and source and sort and limit and expand:
             logger.info(f'/search_terms {log_request(request)}')
             job = analyze_search_terms.delay(source, query=query, limit=int(limit), sort=sort,
-                                             noreviews=noreviews == 'on', expand=int(expand) / 100)
+                                             noreviews=noreviews, expand=int(expand) / 100)
             return redirect(url_for('.process', query=query, source=source, limit=limit, sort=sort,
                                     noreviews=noreviews, expand=expand,
                                     jobid=job.id))
