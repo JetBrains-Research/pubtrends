@@ -728,7 +728,7 @@
     <script type="text/javascript">
         function startIntro(){
             var intro = introJs();
-            // Boolean value if we are visualizing citations graph (true) of structure graph (false)
+            // Boolean value if we are visualizing citations graph (true) of similarity graph (false)
             const citation_graph = {{ citation_graph }};
             let description;
             if (citation_graph) {
@@ -736,9 +736,9 @@
                     "Papers are visualized as nodes, citations as edges. " +
                     "Node size encodes citations count. See Color menu for node color options.<br>" +
                     "Papers without citations are grouped by topics.<br>" +
-                    "If citations graph looks messy, consider structure graph instead."
+                    "If citations graph looks messy, consider similarity graph instead."
             } else {
-                description = "Structure graph represents similarity among papers.<br>" +
+                description = "Similarity graph represents similarity among papers.<br>" +
                     "Papers are visualized as nodes, similarities as edges. " +
                     "Node size shows paper citations count, see Color menu for node colors options. <br>" +
                     "Edge width shows papers similarity, the thicker the more similar papers are." +
