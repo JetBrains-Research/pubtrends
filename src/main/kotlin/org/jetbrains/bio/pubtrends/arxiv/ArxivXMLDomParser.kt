@@ -36,21 +36,22 @@ object ArxivXMLDomParser {
             recordHeader.normalize()
             recordMetadata.normalize()
 
-            //create ArxivData from identifier string
+            // create ArxivData from identifier string
             val arxivData = ArxivData(
                 recordHeader.getValue("identifier") ?: continue
             )
 
-            //parse all required fields
+            // Required fields
             arxivData.datestamp = recordHeader.getValue("datestamp") ?: continue
             arxivData.id = recordMetadata.getValue("id") ?: continue
             arxivData.creationDate = recordMetadata.getValue("created") ?: continue
             arxivData.title = recordMetadata.getValue("title") ?: continue
             arxivData.abstract = recordMetadata.getValue("abstract") ?: continue
 
-            //parse optional fields
-            arxivData.lastUpdateDate = recordMetadata.getValue("updated")
-            //get authors' names with affiliations(if present)
+            // Optional fields
+            arxivData.lastUpdateDate = recordMetadata.getValue("updated") ?: arxivData.creationDate
+
+            // get authors' names with affiliations(if present)
             val authorsNodeList = recordMetadata.getElementsByTagName("authors").item(0) as Element
             val authorsList = authorsNodeList.getElementsByTagName("author")
             for (j in 0 until authorsList.length) {
@@ -59,10 +60,10 @@ object ArxivXMLDomParser {
                 val forenames = authorInfo.getValue("forenames")
                 val suffix = authorInfo.getValue("suffix")
                 if (forenames != null) {
-                    name = forenames + " " + name
+                    name = "$forenames $name"
                 }
                 if (suffix != null) {
-                    name = name + " " + suffix
+                    name = "$name $suffix"
                 }
 
                 val affiliation : String? = authorInfo.getValue("affiliation")
@@ -73,7 +74,8 @@ object ArxivXMLDomParser {
                 ?.split(" ")?.toMutableList() ?: mutableListOf()
 
             recordMetadata.getValue("journal-ref")?.let {
-                arxivData.journal = JournalRef(it, true)
+                // FIXME: disabled parsing in order to disentangle reference processing
+                arxivData.journal = JournalRef(it, false)
             }
             arxivData.comments = recordMetadata.getValue("comments")
             arxivData.reportNo = recordMetadata.getValue("report-no")

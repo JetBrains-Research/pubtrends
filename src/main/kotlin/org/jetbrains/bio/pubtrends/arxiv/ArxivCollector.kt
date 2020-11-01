@@ -59,14 +59,16 @@ object ArxivCollector {
         do {
             val (newArxivRecords, newResumptionToken, recordsTotal) = try {
                 ArxivAPI.getBulkArxivRecords(startDate, resumptionToken, limit)
-            }  catch (e: ArxivAPI.ApiRequestFailedException) {
+            } catch (e: ArxivAPI.ApiRequestFailedException) {
                 sleep(sleepTime)
                 continue
             }
             resumptionToken = newResumptionToken
 
+            // Old papers are filtered out in order to reduce the amount of downloaded PDF files
+            // TODO: check whether it can be determined that new PDF version was added
             val newUpdatedRecords = newArxivRecords.filter {record ->
-                val date = record.lastUpdateDate?.let {LocalDate.parse(it)} ?: LocalDate.parse(record.creationDate)
+                val date = record.lastUpdateDate.let {LocalDate.parse(it)}
                 val requestDate = LocalDate.parse(startDate)
                 if (requestDate > date) {
                     val days = ChronoUnit.DAYS.between(date, requestDate)

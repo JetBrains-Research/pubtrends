@@ -95,7 +95,7 @@ object ArxivXMLSaxParser {
                 "title"     -> curRecord.title = getFullText("title")!!
                 "summary"   -> curRecord.abstract = getFullText("summary")!!
                 "published" -> curRecord.creationDate = getFullString("published")!!.substringBefore("T")
-                "updated"   -> curRecord.lastUpdateDate = getFullString("updated")?.substringBefore("T")
+                "updated"   -> curRecord.lastUpdateDate = (getFullString("updated") ?: curRecord.creationDate).substringBefore("T")
                 "author"    -> {
                                     val aff = getFullString("arxiv:affiliation")
                                     curRecord.authors.add(Author(getFullString("name")!!, aff))

@@ -12,7 +12,7 @@ data class ArxivData(
     override var abstract: String = "",
     var creationDate: String = "",
     override var title: String = "",
-    var lastUpdateDate: String? = null,
+    var lastUpdateDate: String = "",
     override val authors: MutableList<Author> = mutableListOf(),
     var categories: MutableList<String> = mutableListOf(),
     var comments: String? = null,

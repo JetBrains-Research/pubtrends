@@ -77,21 +77,22 @@ object ArxivAPI {
 
                 val (arxivRecords, newResumptionToken, recordsTotal) = ArxivXMLDomParser.parseArxivRecords(data)
                 if (resumptionToken == "") {
-                    logger.info("Total records: ${recordsTotal}")
+                    logger.info("Total records: $recordsTotal")
                 }
 
                 logger.info("Received ${arxivRecords.size} records")
 
-                val pdfLinks = try {
-                    getRecordsUrl(arxivRecords.map { arxivData -> arxivData.id })
-                } catch (e : ApiRequestFailedException) {
-                    //try one more time
-                    getRecordsUrl(arxivRecords.map { arxivData -> arxivData.id })
-                }
-
-                for ((arxivData, pdfLink) in arxivRecords.zip(pdfLinks)) {
-                    arxivData.pdfUrl = pdfLink
-                }
+                // TODO: disentangle
+//                val pdfLinks = try {
+//                    getRecordsUrl(arxivRecords.map { arxivData -> arxivData.id })
+//                } catch (e : ApiRequestFailedException) {
+//                    //try one more time
+//                    getRecordsUrl(arxivRecords.map { arxivData -> arxivData.id })
+//                }
+//
+//                for ((arxivData, pdfLink) in arxivRecords.zip(pdfLinks)) {
+//                    arxivData.pdfUrl = pdfLink
+//                }
                 Triple(arxivRecords.take(limit), newResumptionToken, recordsTotal)
             }
         }
