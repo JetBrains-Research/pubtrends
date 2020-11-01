@@ -247,7 +247,7 @@ def paper():
     jobid = request.values.get('jobid')
     source = request.args.get('source')
     pid = request.args.get('id')
-    query = html.unescape(request.args.get('query'))
+    query = request.args.get('query')
     limit = request.args.get('limit')
     try:
         if jobid and pid:
