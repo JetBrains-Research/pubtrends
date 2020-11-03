@@ -598,8 +598,14 @@
                 // Close all tippy
                 $(document).keyup(function(event) { // keyprocess doesn't handle escape key
                     if (event.keyCode === 27) { // Escape
-                         tippys.forEach((e) => e.hide());
-                         window.freeze = false;  // Don't freeze hover highlighting
+                        tippys.forEach((e) => e.hide());
+                        // Unfreeze hover highlighting
+                        window.freeze = false;
+                        // Remove frozen highlighting
+                        cy.nodes().addClass('semitransp');
+                        cy.nodes().removeClass('highlight');
+                        cy.edges().addClass('semitransp');
+                        cy.edges().removeClass('highlight');
                     }
                 });
                 $(document).keypress(function(event) {
