@@ -448,14 +448,13 @@
                                     text = data.text;
                                 }
 
-                                content.innerHTML = "<b>Similarity</b> " + Number(data.similarity).toFixed(3) + "<br>" +
-                                    "Computed based on citations-based methods<br> "+
+                                content.innerHTML = "Similarity is computed based on citations "+
                                     "and text similarity between papers.<br>" +
                                     "The bigger value the more similar papers are." + "<br>" +
                                     "<b>Bibliographic coupling</b> " + bibcoupling + "<br>" +
                                     "<b>Co-citation</b> " + cocitation + "<br>" +
                                     "<b>Citation</b> " + citation + "<br>" +
-                                    "<b>Text</b> " + Number(text).toFixed(2) + "<br>";
+                                    "<b>Text similarity</b> " + Number(text).toFixed(2) + "<br>";
                             } else if('title' in data) {
                                 // Paper
                                 const topic = data.topic;
