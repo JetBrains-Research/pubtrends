@@ -601,9 +601,9 @@
                         // Unfreeze hover highlighting
                         window.freeze = false;
                         // Remove frozen highlighting
-                        cy.nodes().addClass('semitransp');
+                        cy.nodes().removeClass('semitransp');
                         cy.nodes().removeClass('highlight');
-                        cy.edges().addClass('semitransp');
+                        cy.edges().removeClass('semitransp');
                         cy.edges().removeClass('highlight');
                     }
                 });
