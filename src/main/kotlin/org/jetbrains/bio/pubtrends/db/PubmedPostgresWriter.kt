@@ -71,7 +71,7 @@ open class PubmedPostgresWriter(
             exec(
                     """
                     CREATE INDEX IF NOT EXISTS
-                    pmpublications_pmid_year ON pmpublications (pmid, date_part('year', date));
+                    pmpublications_pmid_year ON pmpublications (pmid, year);
                     """
             )
         }
@@ -103,9 +103,9 @@ open class PubmedPostgresWriter(
             PMPublications.batchInsertOnDuplicateKeyUpdate(
                     articles, PMPublications.pmid,
                     listOf(
-                            PMPublications.date,
                             PMPublications.title,
                             PMPublications.abstract,
+                            PMPublications.year,
                             PMPublications.keywords,
                             PMPublications.mesh,
                             PMPublications.type,
@@ -114,11 +114,11 @@ open class PubmedPostgresWriter(
                     )
             ) { batch, article ->
                 batch[pmid] = article.pmid
-                batch[date] = article.date
                 batch[title] = article.title.take(PUBLICATION_MAX_TITLE_LENGTH)
                 if (article.abstract != "") {
                     batch[abstract] = article.abstract
                 }
+                batch[year] = article.year
                 batch[keywords] = article.keywords.joinToString(",")
                 batch[mesh] = article.mesh.joinToString(",")
                 batch[type] = article.type

@@ -86,7 +86,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 SELECT pmid
                 FROM to_tsquery('{query_str}') query, PMPublications P
                 WHERE tsv @@ query {noreviews_filter}
-                ORDER BY date DESC NULLS LAST
+                ORDER BY year DESC NULLS LAST
                 LIMIT {limit};
                 '''
         else:
@@ -102,8 +102,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         self.check_connection()
         vals = self.ids_to_vals(ids)
         query = f'''
-                SELECT P.pmid as id, title, abstract, date_part('year', date) as year, type,
-                    keywords, mesh, doi, aux
+                SELECT P.pmid as id, title, abstract, year, type, keywords, mesh, doi, aux
                 FROM PMPublications P
                 WHERE P.pmid IN (VALUES {vals});
                 '''
@@ -114,7 +113,6 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                               dtype=object)
         if np.any(df[['id', 'title']].isna()):
             raise ValueError('Paper must have ID and title')
-        df['id'] = df['id'].apply(str)
         logger.debug(f'Loaded {len(df)} papers')
         return Loader.process_publications_dataframe(df)
 
@@ -127,13 +125,14 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 JOIN PMPublications P
                 ON C.pmid_in = P.pmid
                 WHERE P.pmid in (VALUES {vals}))
-            SELECT X.pmid_in AS id, date_part('year', P.date) as year, COUNT(1) AS count
+            SELECT X.pmid_in AS id, year, COUNT(1) AS count
             FROM X
                 JOIN PMPublications P
                 ON X.pmid_out = P.pmid
                 GROUP BY id, year
                 LIMIT {self.config.max_number_of_citations};
             '''
+        logger.info(query)
 
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
@@ -192,7 +191,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
     def load_cocitations(self, ids):
         self.check_connection()
         vals = self.ids_to_vals(ids)
-        query = f'''SELECT C.pmid_out as citing, date_part('year', P.date) as year, ARRAY_AGG(C.pmid_in) as cited_list
+        query = f'''SELECT C.pmid_out as citing, year, ARRAY_AGG(C.pmid_in) as cited_list
                         FROM PMCitations C
                             JOIN PMPublications P
                             ON C.pmid_out = P.pmid

@@ -47,6 +47,7 @@ class TestKotlinWriters(unittest.TestCase):
          'year': 2020}
 
     def test_kotlin_pubmed_neo4j_writer(self):
+        print(PUBTRENDS_JAR)
         self.assertTrue(os.path.exists(PUBTRENDS_JAR), f'File not found: {PUBTRENDS_JAR}')
         subprocess.run(['java', '-cp', PUBTRENDS_JAR, 'org.jetbrains.bio.pubtrends.DBWriter', 'PubmedNeo4JWriter'])
         loader = PubmedNeo4jLoader(PubtrendsConfig(True))
@@ -58,6 +59,7 @@ class TestKotlinWriters(unittest.TestCase):
             loader.close_connection()
 
     def test_kotlin_pubmed_postgres_writer(self):
+        print(PUBTRENDS_JAR)
         self.assertTrue(os.path.exists(PUBTRENDS_JAR), f'File not found: {PUBTRENDS_JAR}')
         subprocess.run(['java', '-cp', PUBTRENDS_JAR, 'org.jetbrains.bio.pubtrends.DBWriter', 'PubmedPostgresWriter'])
         loader = PubmedPostgresLoader(PubtrendsConfig(True))
@@ -69,6 +71,7 @@ class TestKotlinWriters(unittest.TestCase):
             loader.close_connection()
 
     def test_kotlin_semantic_scholar_neo4j_writer(self):
+        print(PUBTRENDS_JAR)
         self.assertTrue(os.path.exists(PUBTRENDS_JAR), f'File not found: {PUBTRENDS_JAR}')
         subprocess.run(
             ['java', '-cp', PUBTRENDS_JAR, 'org.jetbrains.bio.pubtrends.DBWriter', 'SemanticScholarNeo4JWriter'])
@@ -83,6 +86,7 @@ class TestKotlinWriters(unittest.TestCase):
             loader.close_connection()
 
     def test_kotlin_semantic_scholar_postgres_writer(self):
+        print(PUBTRENDS_JAR)
         self.assertTrue(os.path.exists(PUBTRENDS_JAR), f'File not found: {PUBTRENDS_JAR}')
         subprocess.run(
             ['java', '-cp', PUBTRENDS_JAR, 'org.jetbrains.bio.pubtrends.DBWriter', 'SemanticScholarPostgresWriter'])

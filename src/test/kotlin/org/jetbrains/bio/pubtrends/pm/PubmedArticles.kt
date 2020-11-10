@@ -1,13 +1,10 @@
 package org.jetbrains.bio.pubtrends.pm
 
-import org.joda.time.DateTime
-import org.joda.time.DateTimeZone
-
 object PubmedArticles {
     val articles = mapOf(
             420880 to PubmedArticle(
                     pmid = 420880,
-                    date = DateTime(1979, 1, 1, 12, 0, DateTimeZone.UTC),
+                    year = 1979,
                     title = "Changes in DNA methylation in rat during ontogenesis and under effects of hydrocortisone",
                     type = PublicationType.Article,
                     mesh = listOf(
@@ -34,7 +31,7 @@ object PubmedArticles {
 
             29736257 to PubmedArticle(
                     pmid = 29736257,
-                    date = DateTime(2017, 1, 1, 12, 0, DateTimeZone.UTC),
+                    year = 2017,
                     title = "Evidence that S6K1, but not 4E-BP1, mediates skeletal muscle " +
                             "pathology associated with loss of A-type lamins",
                     abstract = "The mechanistic target of rapamycin (mTOR) signaling pathway plays a central " +
@@ -61,7 +58,7 @@ object PubmedArticles {
 
             29456534 to PubmedArticle(
                     pmid = 29456534,
-                    date = DateTime(2018, 1, 1, 12, 0),
+                    year = 2018,
                     title = "Critical Role of TGF-β and IL-2 Receptor Signaling in Foxp3 Induction by an " +
                             "Inhibitor of DNA Methylation",
                     abstract = "Under physiological conditions, CD4+ regulatory T (Treg) cells expressing the" +
@@ -117,7 +114,7 @@ object PubmedArticles {
 
             20453483 to PubmedArticle(
                     pmid = 20453483,
-                    date = DateTime(2011, 1, 1, 12, 0),
+                    year = 2011,
                     title = "Coping strategies used by seniors going through the normal aging process: " +
                             "does fear of falling matter?",
                     abstract = "Recent studies show that fear of falling, a frequent fear of " +
@@ -145,7 +142,7 @@ object PubmedArticles {
 
             27654823 to PubmedArticle(
                     pmid = 27654823,
-                    date = DateTime(2017, 1, 1, 12, 0, DateTimeZone.UTC),
+                    year = 2017,
                     title = "Production of 10S-hydroxy-8(E)-octadecenoic acid from oleic acid by whole " +
                             "recombinant Escherichia coli cells expressing 10S-dioxygenase from Nostoc punctiforme PCC 73102 " +
                             "with the aid of a chaperone",
@@ -167,7 +164,7 @@ object PubmedArticles {
 
             11243089 to PubmedArticle(
                     pmid = 11243089,
-                    date = DateTime(1998, 1, 1, 12, 0, DateTimeZone.UTC),
+                    year = 1998,
                     title = "Nutritional status of pavement dweller children of Calcutta City",
                     abstract = "Pavement dwelling is likely to aggravate malnutrition among its residents due " +
                             "to extreme poverty, lack of dwelling and access to food and their exposure to polluted environment. " +
@@ -202,7 +199,7 @@ object PubmedArticles {
 
             11540070 to PubmedArticle(
                     pmid = 11540070,
-                    date = DateTime(1987, 1, 1, 12, 0, DateTimeZone.UTC),
+                    year = 1987,
                     title = "Calcium messenger system in plants",
                     abstract = "The purpose of this review is to delineate the ubiquitous and pivotal role " +
                             "of Ca2+ in diverse physiological processes. Emphasis will be given to the role of Ca2+ in " +
@@ -218,13 +215,13 @@ object PubmedArticles {
 
             10188493 to PubmedArticle(
                     pmid = 10188493,
-                    date = DateTime(1998, 12, 1, 12, 0, DateTimeZone.UTC),
+                    year = 1998,
                     title = "Women's health osteopathy: an alternative view"
             ),
 
             14316043 to PubmedArticle(
                     pmid = 14316043,
-                    date = DateTime(1965, 12, 1, 12, 0, DateTimeZone.UTC),
+                    year = 1965,
                     title = "THE RESPONSIBILITY OF THE DENTIST AND THE DENTAL PROFESSION WITH RESPECT TO JAW " +
                             "FRACTURES",
                     keywords = listOf(
@@ -236,14 +233,14 @@ object PubmedArticles {
 
             18122624 to PubmedArticle(
                     pmid = 18122624,
-                    date = DateTime(1947, 1, 1, 12, 0, DateTimeZone.UTC),
+                    year = 1947,
                     title = "Mesenteric vascular occlusion",
                     keywords = listOf("MESENTERY occlusion")
             ),
 
             24884411 to PubmedArticle(
                     pmid = 24884411,
-                    date = DateTime(2014, 5, 12, 12, 0, DateTimeZone.UTC),
+                    year = 2014,
                     title = "A multilocus timescale for oomycete evolution estimated under three distinct " +
                             "molecular clock models",
                     abstract = "Molecular clock methodologies allow for the estimation of divergence times " +
@@ -279,7 +276,7 @@ object PubmedArticles {
 
             29391692 to PubmedArticle(
                     pmid = 29391692,
-                    date = DateTime(2017, 12, 1, 12, 0, DateTimeZone.UTC),
+                    year = 2017,
                     title = "Partial purification and characterization of glutathione S-transferase from the " +
                             "somatic tissue of Gastrothylax crumenifer (Trematoda: Digenea)",
                     doi = "10.14202/vetworld.2017.1493-1500"

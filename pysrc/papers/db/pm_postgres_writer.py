@@ -28,7 +28,7 @@ class PubmedPostgresWriter(PostgresConnector):
                     create table PMPublications(
                         pmid    integer,
                         title   varchar(1023),
-                        date    date,
+                        year    integer,
                         abstract text,
                         type    varchar(20),
                         keywords varchar(100),
@@ -44,7 +44,7 @@ class PubmedPostgresWriter(PostgresConnector):
                     create index if not exists PMPublications_tsv on PMPublications using gin(tsv);
                     
                     CREATE INDEX IF NOT EXISTS
-                    pmpublications_pmid_year ON pmpublications (pmid, date_part('year', date));
+                    pmpublications_pmid_year ON pmpublications (pmid, year);
                     '''
 
         query_drop_matview = '''
@@ -70,14 +70,14 @@ class PubmedPostgresWriter(PostgresConnector):
     def insert_pubmed_publications(self, articles):
         ids_vals = ','.join(f'({a.pmid})' for a in articles)
         articles_vals = ', '.join(
-            str((a.pmid, a.title, a.date.strftime('%Y-%m-%d'), a.abstract or '',
+            str((a.pmid, a.title, a.year, a.abstract or '',
                  a.type, ','.join(a.keywords), ','.join(a.mesh),
                  a.doi or '', json.dumps(a.aux.to_dict())))
             for a in articles
         )
 
         query = f'''
-            insert into PMPublications(pmid, title, date, abstract, type, keywords, mesh, doi, aux)
+            insert into PMPublications(pmid, title, year, abstract, type, keywords, mesh, doi, aux)
                 values {articles_vals};
             update PMPublications
                 set tsv = setweight(to_tsvector('english', coalesce(title, '')), 'A') ||

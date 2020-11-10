@@ -9,7 +9,7 @@ import org.jetbrains.exposed.sql.Table
  */
 object PMPublications : Table() {
     val pmid = integer("pmid").primaryKey()
-    val date = date("date").nullable()
+    val year = integer("year")
     val title = varchar("title", PUBLICATION_MAX_TITLE_LENGTH)
     val abstract = text("abstract").nullable()
 

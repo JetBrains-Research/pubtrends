@@ -2,8 +2,6 @@ import html
 import json
 from abc import abstractmethod, ABCMeta
 
-import numpy as np
-
 from pysrc.papers.utils import extract_authors
 
 
@@ -81,9 +79,7 @@ class Loader(metaclass=ABCMeta):
             lambda aux: json.loads(aux) if type(aux) is str else aux
         )
         pub_df = pub_df.fillna(value={'abstract': ''})
-        pub_df['year'] = pub_df['year'].apply(
-            lambda year: int(year) if year and np.isfinite(year) else np.nan
-        )
+        pub_df['year'] = pub_df['year'].apply(int)
         pub_df['authors'] = pub_df['aux'].apply(lambda aux: extract_authors(aux['authors']))
         pub_df['journal'] = pub_df['aux'].apply(lambda aux: html.unescape(aux['journal']['name']))
         pub_df['title'] = pub_df['title'].apply(lambda title: html.unescape(title))
