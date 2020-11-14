@@ -64,6 +64,6 @@ echo "Cleanup"
 rm -r "${PTV}"
 
 echo "Move jar to dist if exists"
-if [[ -f BUILD/libs/pubtrends-dev.jar ]]; then
-  mv BUILD/libs/pubtrends-dev.jar "dist/${PTV}.jar"
+if [[ -f build/libs/pubtrends-dev.jar ]]; then
+  mv build/libs/pubtrends-dev.jar "dist/${PTV}.jar"
 fi
