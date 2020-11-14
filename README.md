@@ -299,6 +299,10 @@ Please ensure that you have configured and prepared the database(s).
     ``` 
    
 4. Build ready for deployment package with script `dist.sh`.
+   ```
+   dist.sh build=build-number ga=google-analytics-id
+   ```
+
 
 5. Create logs folder within deployment package folder
    ```
