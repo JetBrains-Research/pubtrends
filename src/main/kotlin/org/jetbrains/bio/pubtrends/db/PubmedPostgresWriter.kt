@@ -146,14 +146,15 @@ open class PubmedPostgresWriter(
     }
 
     override fun delete(ids: List<String>) {
+        // Postgresql org.postgresql.core.v3.QueryExecutorImpl
+        // supports no more than Short.MAX_VALUE number of params
+        require(ids.size <= Short.MAX_VALUE) { "Too many ids to remove ${ids.size}" }
         val intIds = ids.map { it.toInt() }
         transaction {
             addLogger(Log4jSqlLogger)
-
             PMPublications.deleteWhere { PMPublications.pmid inList intIds }
-            PMCitations.deleteWhere {
-                (PMCitations.pmidOut inList intIds) or (PMCitations.pmidIn inList intIds)
-            }
+            PMCitations.deleteWhere { PMCitations.pmidOut inList intIds }
+            PMCitations.deleteWhere { PMCitations.pmidIn inList intIds }
             changed = true
         }
     }
