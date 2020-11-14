@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Script for BUILDing tar.gz archive for deployment
+# Script for building tar.gz archive for deployment
 # author Oleg.Shpynov os@jetbrains.com
 
 VERSION=0.9
@@ -19,9 +19,10 @@ done
 
 VERSION_BUILD="${VERSION}.${BUILD}"
 FULL_VERSION="${VERSION_BUILD} built on $(date +%F)"
+echo "Full version $FULL_VERSION"
 PTV=pubtrends-${VERSION_BUILD}
 
-# Copy sources
+echo "Copy sources"
 mkdir -p "${PTV}"
 cp environment.yml "${PTV}"/
 cp Dockerfile "${PTV}"/
@@ -29,11 +30,10 @@ cp config.properties "${PTV}"/
 cp docker-compose.yml "${PTV}"/
 cp -r pysrc "${PTV}"/
 
-# Update config VERSION
-sed -E "s/VERSION[^\n]*/VERSION = '${FULL_VERSION}'/g" -i "${PTV}"/pysrc/VERSION.py
+echo "Update config VERSION"
+sed -E "s/VERSION[^\n]*/VERSION = '${FULL_VERSION}'/g" -i "${PTV}"/pysrc/version.py
 
-# Setup GA
-
+echo "Setup GA"
 if [[ ! -z "${GA}" ]]; then
   GA_SCRIPT="<!-- Global site tag (gtag.js) - Google Analytics -->\
 <script async src='https://www.googletagmanager.com/gtag/js?id=$GA'></script>\
@@ -51,19 +51,19 @@ if [[ ! -z "${GA}" ]]; then
   done
 fi
 
-# Create folder for logs
+echo "Create folder for logs"
 mkdir "${PTV}"/logs
 chmod a+rwx "${PTV}"/logs
 
-# Create distributive tar.gz
+echo "Create distributive dist/${PTV}.tar.gz"
 rm -r dist
 mkdir -p dist
-tar -zcvf "dist/${PTV}.tar.gz" "${PTV}"
+tar -zcf "dist/${PTV}.tar.gz" "${PTV}"
 
-# Cleanup
+echo "Cleanup"
 rm -r "${PTV}"
 
-# Move jar to dist if exists
+echo "Move jar to dist if exists"
 if [[ -f BUILD/libs/pubtrends-dev.jar ]]; then
   mv BUILD/libs/pubtrends-dev.jar "dist/${PTV}.jar"
 fi
