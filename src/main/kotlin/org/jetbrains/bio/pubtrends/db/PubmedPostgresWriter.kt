@@ -170,7 +170,7 @@ open class PubmedPostgresWriter(
                     ${"$$"}
                     begin
                     IF exists (select matviewname from pg_matviews where matviewname = 'matview_pmcitations') THEN
-                        refresh materialized view concurrently matview_pmcitations;
+                        refresh materialized view matview_pmcitations;
                     END IF;
                     end;
                     ${"$$"};
