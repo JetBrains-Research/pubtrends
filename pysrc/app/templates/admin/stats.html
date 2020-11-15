@@ -30,7 +30,7 @@ Successful: {{ successful_searches }}<br>
 Average duration: {{ searches_avg_duration }}<br>
 Papers shown: {{ searches_papers_shown }}<br>
 Citations graph shown: {{ searches_graph_citations_shown }}<br>
-Structure graph shown: {{ searches_graph_structure_shown }}<br>
+Similarity graph shown: {{ searches_graph_similarity_shown }}<br>
 
 {% if total_terms_searches > 0 %}
 {% for script, div in terms_searches_plot %}
@@ -56,7 +56,7 @@ Structure graph shown: {{ searches_graph_structure_shown }}<br>
         <th scope="col">Duration</th>
         <th scope="col">Papers</th>
         <th scope="col">Citations</th>
-        <th scope="col">Structure</th>
+        <th scope="col">Similarity</th>
     </tr>
     </thead>
     <tbody>

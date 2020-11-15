@@ -99,8 +99,8 @@ def prepare_stats_data(logfile):
                     continue
                 if jobid in searches_infos:
                     info = searches_infos[jobid]
-                    if 'graph_structure' not in info:
-                        info['graph_structure'] = True
+                    if 'graph_similarity' not in info:
+                        info['graph_similarity'] = True
 
             if '/process paper analysis addr:' in line:
                 paper_searches_dates.append(date)
@@ -158,7 +158,7 @@ def prepare_stats_data(logfile):
             duration,
             '+' if 'papers' in info else '-',
             '+' if 'graph_citations' in info else '-',
-            '+' if 'graph_structure' in info else '-',
+            '+' if 'graph_similarity' in info else '-',
         ))
     result['recent_searches'] = recent_searches_results[::-1]
 
@@ -204,7 +204,7 @@ def prepare_stats_data(logfile):
         result['searches_avg_duration'] = 'N/A'
     result['searches_papers_shown'] = sum('papers' in info for info in searches_infos.values())
     result['searches_graph_citations_shown'] = sum('graph_citations' in info for info in searches_infos.values())
-    result['searches_graph_structure_shown'] = sum('graph_structure' in info for info in searches_infos.values())
+    result['searches_graph_similarity_shown'] = sum('graph_similarity' in info for info in searches_infos.values())
 
     # Papers search statistics
     successful_paper_searches = sum('end' in info for info in papers_infos.values())
