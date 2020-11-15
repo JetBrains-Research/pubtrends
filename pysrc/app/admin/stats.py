@@ -226,11 +226,14 @@ def prepare_stats_data(logfile):
 
 
 def duration_string(dt):
-    dt = dt.seconds
-    h = divmod(dt, 86400 * 3600)  # hours
-    m = divmod(h[1], 60)  # minutes
-    s = m[1]  # seconds
-    return f'{h[0]:02d}:{m[0]:02d}:{s:02d}'
+    return duration_seconds(dt.seconds)
+
+
+def duration_seconds(seconds):
+    s = seconds % 60
+    m = int(seconds / 60) % 60
+    h = int(seconds / 3600)
+    return f'{h:02d}:{m:02d}:{s:02d}'
 
 
 def prepare_timeseries(dates, title):
