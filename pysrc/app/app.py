@@ -9,7 +9,7 @@ from urllib.parse import quote
 
 import flask_admin
 from celery.result import AsyncResult
-from flask import Flask, url_for, redirect, render_template, request, abort, render_template_string
+from flask import Flask, url_for, redirect, render_template, request, abort, render_template_string, send_from_directory
 from flask_admin import helpers as admin_helpers, expose, BaseView
 from flask_security import Security, SQLAlchemyUserDatastore, \
     UserMixin, RoleMixin, current_user
@@ -71,6 +71,11 @@ logger = app.logger
 
 def log_request(r):
     return f'addr:{r.remote_addr} args:{json.dumps(r.args)}'
+
+@app.route('/robots.txt')
+@app.route('/sitemap.xml')
+def static_from_root():
+    return send_from_directory(app.static_folder, request.path[1:])
 
 
 @app.route('/status')
