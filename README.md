@@ -253,7 +253,7 @@ Please ensure that you have Database configured, up and running.
 ## Deployment
 
 Deployment is done with docker-compose. It is configured to start three containers:
-* Gunicorn serving Flask app on HTTP port 80
+* Gunicorn serving Flask app on HTTPS port 443
 * Redis as a message proxy
 * Celery workers queue
 
@@ -314,8 +314,17 @@ Please ensure that you have configured and prepared the database(s).
     mkdir ~/.pubtrends/logs
     mkdir ~/.pubtrends/database
     ```
+
+7. Prepare SSL certificates files `privkey.pem` and `cert.pem` and optional CA-authority file `chain.pem`.\
+   You can generate a self-signed certificate for testing purposes by the command:
+   
+   ```
+   mkdir ~/.pubtrends/ssl
+   cd ~/.pubtrends/ssl
+   openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -subj '/CN=localhost'
+   ```
  
-7. Launch pubtrends with docker-compose.
+8. Launch pubtrends with docker-compose.
     ```
     # start
     docker-compose up -d --build
@@ -327,12 +336,6 @@ Please ensure that you have configured and prepared the database(s).
     # inpect logs
     docker-compose logs
     ```
-
-8. During updates or other construction works consider launching simple reporter.
-    ``` 
-   docker run --rm -p 80:8000 -v $(pwd)/pysrc/app/construction:/construction \
-        -t biolabs/pubtrends /bin/bash -c "python -m http.server -d /construction 8000"
-   ```
 
 # Authors
 

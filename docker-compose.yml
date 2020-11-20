@@ -6,13 +6,14 @@ services:
       dockerfile: pysrc/app/Dockerfile
     restart: always
     ports:
-      - "80:8000"
+      - "443:4433"
     depends_on:
       - redis
     volumes:
       - ~/.pubtrends:/config:ro
       - ~/.pubtrends/logs:/logs
       - ~/.pubtrends/database:/database
+      - ~/.pubtrends/ssl:/ssl:ro
   worker:
     build:
       context: .
