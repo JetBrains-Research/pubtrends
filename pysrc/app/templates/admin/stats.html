@@ -39,6 +39,17 @@ Similarity graph shown: {{ searches_graph_similarity_shown }}<br>
 {% endfor %}
 {%  endif %}
 
+<h3>Paper searches</h3>
+Total: {{ total_paper_searches }}<br>
+Successful: {{ paper_successful_searches }}<br>
+Average duration: {{ paper_searches_avg_duration }}
+
+{% if total_paper_searches > 0 %}
+{% for script, div in paper_searches_plot %}
+{{ script|safe }}
+{{ div|safe }}
+{% endfor %}
+
 {% if word_cloud is defined %}
 <h3>Word cloud</h3>
 <canvas id="word_cloud" width="0" height="0" style="border:1px solid #eee;">
@@ -77,16 +88,6 @@ Similarity graph shown: {{ searches_graph_similarity_shown }}<br>
 </table><small class="form-text text-muted">{{recent}} recent.</small>
 
 
-<h3>Paper searches</h3>
-Total: {{ total_paper_searches }}<br>
-Successful: {{ paper_successful_searches }}<br>
-Average duration: {{ paper_searches_avg_duration }}
-
-{% if total_paper_searches > 0 %}
-{% for script, div in paper_searches_plot %}
-{{ script|safe }}
-{{ div|safe }}
-{% endfor %}
 <h3>Recent papers</h3>
 <table class="table table-sm table-bordered table-striped">
     <thead>
