@@ -37,36 +37,6 @@ body {
     font-weight: 600;
 }
 
-.btn-feedback-yes {
-    background: rgba(0,128,0,0.1);
-}
-.btn-feedback-yes:hover {
-    background: rgb(0,128,0);
-}
-.btn-feedback-yes-selected {
-    background: rgb(0,128,0);
-}
-
-.btn-feedback-no {
-    background: rgba(128,0,0,0.1);
-}
-.btn-feedback-no:hover {
-    background: rgb(128,0,0);
-}
-.btn-feedback-no-selected {
-    background: rgb(128,0,0);
-}
-
-.btn-feedback-meh {
-    background: rgba(128,128,128,0.1);
-}
-.btn-feedback-meh:hover {
-    background: rgb(128,128,128);
-}
-.btn-feedback-meh-selected {
-    background: rgb(128,128,128);
-}
-
 .content {
     width: 960px;
     margin-left: auto;

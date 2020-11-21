@@ -35,10 +35,7 @@ class PubtrendsConfig:
         self.postgres_database = params['postgres_database' if not test else 'test_postgres_database']
 
         self.pm_enabled = params.getboolean('pm_enabled')
-        self.pm_search_example_terms = [terms.strip() for terms in params['pm_search_example_terms'].split(';')]
-
         self.ss_enabled = params.getboolean('ss_enabled')
-        self.ss_search_example_terms = [terms.strip() for terms in params['ss_search_example_terms'].split(';')]
 
         self.min_search_words = params.getint('min_search_words') if not test else 0
         self.max_number_of_citations = params.getint('max_number_of_citations')
