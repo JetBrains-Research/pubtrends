@@ -2,7 +2,7 @@
 # Script for building tar.gz archive for deployment
 # author Oleg.Shpynov os@jetbrains.com
 
-VERSION=0.9
+VERSION=0.10
 BUILD=development
 
 for ARGUMENT in "$@"; do
@@ -45,9 +45,13 @@ if [[ ! -z "${GA}" ]]; then
 </script>"
 
   for F in $(find "${PTV}"/pysrc -name "*.html"); do
-    echo "Adding Google Analytics tracker to $F"
-    echo "$GA_SCRIPT"
-    sed "s#<head>#<head>${GA_SCRIPT}#" -i $F
+    echo "Save version to $F"
+    sed "s#{{ version }}#${FULL_VERSION}#" -i $F
+    if [[ -z "$(echo $F | grep 'admin')" ]]; then
+      echo "Adding Google Analytics tracker to $F"
+      echo "$GA_SCRIPT"
+      sed "s#<head>#<head>${GA_SCRIPT}#" -i $F
+    fi
   done
 fi
 

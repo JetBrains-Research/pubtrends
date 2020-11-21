@@ -3,6 +3,18 @@ Pubtrends changelog
 
 Here you can see the full list of changes between each release.
 
+Version 0.10
+-------------
+
+Released on November 22, 2020
+
+ - Redesign of main page
+ - Add dedicated on-site webpage with example search description
+ - HTTPS supported
+ - Add Google Analytics code during building
+ - robots.txt and sitemap.xml
+
+
 Version 0.9
 -------------
 
