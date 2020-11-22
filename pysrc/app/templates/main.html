@@ -54,11 +54,11 @@
             Explore intellectual structure of research area or analyze similar papers
         </p>
         <hr>
-        View frequent words in publications, most cited papers, explore topics and trends, analyze quantitative
-        features, visualize graphs of citations and papers similarity. Find most cited similar papers, important prior,
-        and derivative works for any paper.<br>
-        We apply bibliometrics methods for citations information and natural language processing algorithms for papers
-        text analysis. Pubtrends includes more than 30 million of papers and 175 mln citations of biomedical literature
+        Search for publications by search query, view frequent words in publications, most cited and papers with fastest
+        citations growth, explore topics and trends, analyze quantitative features in titles and abstracts,
+        visualize graphs of citations and papers similarity.<br>
+        Find most cited similar papers, important prior, and derivative works for the paper of interest.<br>
+        Pubtrends includes more than 30 million of papers and 175 mln citations of biomedical literature
         from <a
             class="link"
             href="https://pubmed.ncbi.nlm.nih.gov/">PubMed®</a> database.<br>
@@ -71,18 +71,18 @@
                 <li id="step1" class="nav-item">
                     <a class="nav-link active grey" id="topic-tab" data-toggle="tab" href="#topic"
                        role="tab"
-                       aria-controls="topic" aria-selected="true">Topic Analysis</a>
+                       aria-controls="topic" aria-selected="true">Search</a>
                 </li>
                 <li id="step1-2" class="nav-item">
                     <a class="nav-link grey" id="paper-tab" data-toggle="tab" href="#paper"
                        role="tab"
-                       aria-controls="paper" aria-selected="false">Paper Analysis</a>
+                       aria-controls="paper" aria-selected="false">Paper</a>
                 </li>
             </ul>
         </div>
         <div class="card-body">
             <div class="tab-content">
-                <!-- Form for topic analysis -->
+                <!-- Form for Search -->
                 <div class="tab-pane fade show active" id="topic" role="tabpanel"
                      aria-labelledby="topic-tab">
                     <form action="search_terms" method="POST" class="needs-validation mb-2" novalidate>
@@ -177,7 +177,7 @@
                     Read about example search <a class="link" href="/about.html" target="_blank" role="button">here</a>.
                 </div>
 
-                <!-- Form for paper analysis -->
+                <!-- Form for Paper -->
                 <div class="tab-pane fade" id="paper" role="tabpanel" aria-labelledby="paper-tab">
                     <form action="search_paper" method="POST" class="needs-validation" novalidate>
                         <div class="row no-gutters align-items-center">
@@ -243,6 +243,7 @@
                                     </div>
                                 </div>
                             </div>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -267,22 +268,24 @@
                 },
                 {
                     element: '#step1',
-                    intro: "Proceed with the <em>Topic Analysis</em> tab to study the research topic of interest."
+                    intro: "Proceed with the <em>Search</em> tab to search papers in database, " +
+                        "find most cited papers, explore topics and trends, analyze quantitative " +
+                        "features, visualize graphs of citations and papers similarity."
                 },
                 {
                     element: '#step1-2',
-                    intro: "<em>Paper Analysis</em> finds similar papers and most important prior and derivative works."
+                    intro: "Use the <em>Paper</em> tab to find most cited similar papers, important prior, " +
+                        "and derivative works for the paper of interest. Search by DOI, title name and id is supported."
                 },
                 {
                     element: '#step2',
-                    intro: "Enter search query to define the topic of interest.<br>" +
+                    intro: "Enter search query to define the research area of interest.<br>" +
                         "{{min_words_message}}Use double quotes for phrase search, join queries by commas."
                 },
                 {
                     element: '#step3',
-                    intro: "You can additionally configure:" +
+                    intro: "Additionally configure:" +
                         "<ul>" +
-                        "<li><em>Source</em>: database of scientific publications</li>" +
                         "<li><em>Sort by</em>: papers ranking - relevance, recency or number of citations</li>" +
                         "<li><em>Search</em>: number of papers to look for</li>" +
                         "<li><em>Prefer no reviews</em>: ignore review papers in the search phase</li>" +
