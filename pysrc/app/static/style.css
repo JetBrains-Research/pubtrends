@@ -1,3 +1,43 @@
+.jumbotron {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    padding: unset;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+}
+
+.jumbotron-content {
+    position: absolute;
+    top: 140px;
+    left: auto;
+    padding-left: 1rem;
+}
+
+.jumbotron-background {
+    position: relative;
+    z-index: -1;
+    opacity: 0.2;
+}
+
+img.background {
+    width: 100%;
+    height: 280px;
+    -webkit-filter: blur(4px);
+    filter: blur(4px);
+    filter: progid:DXImageTransform.Microsoft.Blur(PixelRadius='4');
+}
+
+.unselectable {
+    /* For Opera and <= IE9, we need to add unselectable="on" attribute onto each element */
+    /* Check this site for more details: http://help.dottoro.com/lhwdpnva.php */
+    -moz-user-select: none; /* These user-select properties are inheritable, used to prevent text selection */
+    -webkit-user-select: none;
+    -ms-user-select: none; /* From IE10 only */
+    user-select: none; /* Not valid CSS yet, as of July 2012 */
+    -webkit-user-drag: none; /* Prevents dragging of images/divs etc */
+    user-drag: none;
+}
+
 .grey {
     color: #555555;
 }
