@@ -3,6 +3,7 @@ import html
 import json
 import logging
 import os
+import pickle
 import random
 import re
 from threading import Lock
@@ -150,6 +151,66 @@ def status():
     })
 
 
+def save_predefined(viz, data, log, jobid):
+    if jobid.startswith('predefined_'):
+        logger.info(f'/result Saving predefined search {log_request(request)}')
+        path = os.path.join(predefined_path, jobid)
+        try:
+            PREDEFINED_LOCK.acquire()
+            path_viz = f'{path}_viz.pkl'
+            path_data = f'{path}_data.pkl'
+            path_log = f'{path}_log.pkl'
+            if not os.path.exists(path_viz):
+                with open(path_viz, 'wb') as f:
+                    pickle.dump(viz, f, pickle.HIGHEST_PROTOCOL)
+            if not os.path.exists(path_data):
+                with open(path_data, 'wb') as f:
+                    pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+            if not os.path.exists(path_log):
+                with open(path_log, 'wb') as f:
+                    pickle.dump(log, f, pickle.HIGHEST_PROTOCOL)
+        finally:
+            PREDEFINED_LOCK.release()
+
+
+def load_predefined_viz_log(jobid):
+    if jobid.startswith('predefined_'):
+        logger.info(f'/result Trying to load predefined viz, log {log_request(request)}')
+        path = os.path.join(predefined_path, jobid)
+        path_viz = f'{path}_viz.pkl'
+        path_log = f'{path}_log.pkl'
+        try:
+            PREDEFINED_LOCK.acquire()
+            if os.path.exists(path_viz) and os.path.exists(path_log):
+                with open(path_viz, 'rb') as f:
+                    viz = pickle.load(f)
+                with open(path_log, 'rb') as f:
+                    log = pickle.load(f)
+                return viz, log
+        finally:
+            PREDEFINED_LOCK.release()
+    return None
+
+
+def load_predefined_or_result_data(jobid):
+    if jobid.startswith('predefined_'):
+        logger.info(f'/result Trying to load predefined data {log_request(request)}')
+        path = os.path.join(predefined_path, jobid)
+        path_data = f'{path}_data.pkl'
+        try:
+            PREDEFINED_LOCK.acquire()
+            if os.path.exists(path_data):
+                with open(path_data, 'rb') as f:
+                    return pickle.load(f)
+        finally:
+            PREDEFINED_LOCK.release()
+    job = AsyncResult(jobid, app=celery)
+    if job and job.state == 'SUCCESS':
+        viz, data, log = job.result
+        return data
+    return None
+
+
 @app.route('/result')
 def result():
     jobid = request.args.get('jobid')
@@ -163,16 +224,8 @@ def result():
         if jobid and query and source and limit is not None and sort is not None:
             job = AsyncResult(jobid, app=celery)
             if job and job.state == 'SUCCESS':
-                data, _, log = job.result
-                if jobid.startswith('predefined_'):
-                    logger.info(f'/result Saving predefined search {log_request(request)}')
-                    jsonpath = os.path.join(predefined_path, f'{jobid}.json')
-                    PREDEFINED_LOCK.acquire()
-                    if not os.path.exists(jsonpath):
-                        with open(jsonpath, mode='w') as f:
-                            json.dump(dict(data=data, log=log), f)
-                    PREDEFINED_LOCK.release()
-
+                viz, data, log = job.result
+                save_predefined(viz, data, log, jobid)
                 logger.info(f'/result success {log_request(request)}')
                 return render_template('result.html',
                                        query=trim(query, MAX_QUERY_LENGTH),
@@ -181,24 +234,18 @@ def result():
                                        sort=sort,
                                        version=VERSION,
                                        log=log,
-                                       **data)
-            if jobid.startswith('predefined_'):
-                logger.info(f'/result Processing predefined search {log_request(request)}')
-                jsonpath = os.path.join(predefined_path, f'{jobid}.json')
-                if os.path.exists(jsonpath):
-                    PREDEFINED_LOCK.acquire()
-                    with open(jsonpath) as f:
-                        data_log = json.load(f)
-                        data, log = data_log['data'], data_log['log']
-                    PREDEFINED_LOCK.release()
-                    return render_template('result.html',
-                                           query=trim(query, MAX_QUERY_LENGTH),
-                                           source=source,
-                                           limit=limit,
-                                           sort=sort,
-                                           version=VERSION,
-                                           log=log,
-                                           **data)
+                                       **viz)
+            viz_log = load_predefined_viz_log(jobid)
+            if viz_log is not None:
+                viz, log = viz_log
+                return render_template('result.html',
+                                       query=trim(query, MAX_QUERY_LENGTH),
+                                       source=source,
+                                       limit=limit,
+                                       sort=sort,
+                                       version=VERSION,
+                                       log=log,
+                                       **viz)
             logger.info(f'/result No job or out-of-date job, restart it {log_request(request)}')
             analyze_search_terms.apply_async(args=[source, query, sort, int(limit), noreviews, int(expand) / 100],
                                              task_id=jobid)
@@ -304,9 +351,8 @@ def paper():
     limit = request.args.get('limit')
     try:
         if jobid and pid:
-            job = AsyncResult(jobid, app=celery)
-            if job and job.state == 'SUCCESS':
-                _, data, _ = job.result
+            data = load_predefined_or_result_data(jobid)
+            if data is not None:
                 logger.info(f'/paper success {log_request(request)}')
                 return render_template('paper.html', **prepare_paper_data(data, source, pid),
                                        version=VERSION)
@@ -332,9 +378,8 @@ def graph():
     sort = request.args.get('sort')
     graph_type = request.args.get('type')
     if jobid:
-        job = AsyncResult(jobid, app=celery)
-        if job and job.state == 'SUCCESS':
-            _, data, _ = job.result
+        data = load_predefined_or_result_data(jobid)
+        if data is not None:
             loader, url_prefix = Loaders.get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
             analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
             analyzer.init(data)
@@ -414,9 +459,8 @@ def show_ids():
         search_string += 'Hot Papers'
 
     if jobid:
-        job = AsyncResult(jobid, app=celery)
-        if job and job.state == 'SUCCESS':
-            _, data, _ = job.result
+        data = load_predefined_or_result_data(jobid)
+        if data is not None:
             logger.info(f'/papers success {log_request(request)}')
             export_name = re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{query}_{search_string}'.lower().strip('_')))
             return render_template('papers.html',
