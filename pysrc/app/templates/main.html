@@ -88,7 +88,7 @@
                 <!-- Form for Search -->
                 <div class="tab-pane fade show active" id="topic" role="tabpanel"
                      aria-labelledby="topic-tab">
-                    <form action="search_terms" method="POST" class="needs-validation" novalidate>
+                    <form action="search_terms" method="POST" class="mb-2 needs-validation" novalidate>
                         <div class="row no-gutters align-items-center">
                             <div id="step2" class="col input-group">
                                 <div class="input-group-prepend">
@@ -177,6 +177,19 @@
                             </div>
                         </div>
                     </form>
+                    <!-- Preprocessed example -->
+                    <form action="result" method="GET" class="inline">
+                        <input type="hidden" name="source" value="{{ search_example_source }}">
+                        <input type="hidden" name="sort" value="Most Cited">
+                        <input type="hidden" name="limit" value="500">
+                        <input type="hidden" name="noreviews" value="on">
+                        <input type="hidden" name="expand" value="20">
+                        <input type="hidden" name="jobid" value="predefined_{{ search_example_terms_hash }}">
+                        Try example search
+                        <button type="submit" name="query" value="{{ search_example_terms }}" class="link-button">
+                            {{ search_example_terms }} at {{ search_example_source }}.
+                        </button>
+                    </form>
                 </div>
 
                 <!-- Form for Paper -->
@@ -253,14 +266,14 @@
     </main>
     <div class="card border-light mt-3">
         <div class="card-body">
-        Search publications by search query, find most cited and papers with fastest citations growth, explore
-        topics and trends,<br>
-        analyze frequent words and quantitative features in titles and abstracts, visualize graphs of citations and
-        papers similarity.<br>
-        Find most cited similar papers, important prior, and derivative works for the paper of interest.<br>
-        Pubtrends includes 30 million papers and 175 mln citations of biomedical literature from the <a
-            class="link"
-            href="https://pubmed.ncbi.nlm.nih.gov/">PubMed®</a> database.<br>
+            Search publications by search query, find most cited and papers with fastest citations growth, explore
+            topics and trends,<br>
+            analyze frequent words and quantitative features in titles and abstracts, visualize graphs of citations and
+            papers similarity.<br>
+            Find most cited similar papers, important prior, and derivative works for the paper of interest.<br>
+            Pubtrends includes 30 million papers and 175 mln citations of biomedical literature from the <a
+                class="link"
+                href="https://pubmed.ncbi.nlm.nih.gov/">PubMed®</a> database.<br>
         </div>
     </div>
 </div>

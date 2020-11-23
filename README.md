@@ -309,10 +309,11 @@ Please ensure that you have configured and prepared the database(s).
    mkdir logs
    ```
 
-6. Create necessary folders for logs and service database.
+6. Create necessary folders.
     ```
     mkdir ~/.pubtrends/logs
     mkdir ~/.pubtrends/database
+    mkdir ~/.pubtrends/predefined
     ```
 
 7. Prepare SSL certificates files `privkey.pem` and `cert.pem` and optional CA-authority file `chain.pem`.\
@@ -321,7 +322,7 @@ Please ensure that you have configured and prepared the database(s).
    ```
    mkdir ~/.pubtrends/ssl
    cd ~/.pubtrends/ssl
-   openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -subj '/CN=localhost'
+   openssl req -nodes -x509 -newkey rsa:4096 -keyout privkey.pem -out cert.pem -days 365 -subj '/CN=localhost'
    ```
  
 8. Launch pubtrends with docker-compose.

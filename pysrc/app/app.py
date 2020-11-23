@@ -1,7 +1,9 @@
+import hashlib
 import html
 import json
 import logging
 import os
+import random
 import re
 from threading import Lock
 from urllib.parse import quote
@@ -52,6 +54,16 @@ for p in LOG_PATHS:
         break
 else:
     raise RuntimeError('Failed to configure main log file')
+
+PREDEFINED_PATHS = ['/predefined', os.path.expanduser('~/.pubtrends/predefined')]
+for p in PREDEFINED_PATHS:
+    if os.path.isdir(p):
+        predefined_path = p
+        break
+else:
+    raise RuntimeError('Failed to configure predefined searches dir')
+PREDEFINED_LOCK = Lock()
+
 
 logging.basicConfig(filename=logfile,
                     filemode='a',
@@ -152,6 +164,15 @@ def result():
             job = AsyncResult(jobid, app=celery)
             if job and job.state == 'SUCCESS':
                 data, _, log = job.result
+                if jobid.startswith('predefined_'):
+                    logger.info(f'/result Saving predefined search {log_request(request)}')
+                    jsonpath = os.path.join(predefined_path, f'{jobid}.json')
+                    PREDEFINED_LOCK.acquire()
+                    if not os.path.exists(jsonpath):
+                        with open(jsonpath, mode='w') as f:
+                            json.dump(dict(data=data, log=log), f)
+                    PREDEFINED_LOCK.release()
+
                 logger.info(f'/result success {log_request(request)}')
                 return render_template('result.html',
                                        query=trim(query, MAX_QUERY_LENGTH),
@@ -161,6 +182,23 @@ def result():
                                        version=VERSION,
                                        log=log,
                                        **data)
+            if jobid.startswith('predefined_'):
+                logger.info(f'/result Processing predefined search {log_request(request)}')
+                jsonpath = os.path.join(predefined_path, f'{jobid}.json')
+                if os.path.exists(jsonpath):
+                    PREDEFINED_LOCK.acquire()
+                    with open(jsonpath) as f:
+                        data_log = json.load(f)
+                        data, log = data_log['data'], data_log['log']
+                    PREDEFINED_LOCK.release()
+                    return render_template('result.html',
+                                           query=trim(query, MAX_QUERY_LENGTH),
+                                           source=source,
+                                           limit=limit,
+                                           sort=sort,
+                                           version=VERSION,
+                                           log=log,
+                                           **data)
             logger.info(f'/result No job or out-of-date job, restart it {log_request(request)}')
             analyze_search_terms.apply_async(args=[source, query, sort, int(limit), noreviews, int(expand) / 100],
                                              task_id=jobid)
@@ -419,6 +457,22 @@ def cancel():
 @app.route('/')
 def index():
     logger.info(f'/ {log_request(request)}')
+
+    search_example_source = ''
+    search_example_terms = ''
+    sources = []
+    if PUBTRENDS_CONFIG.pm_enabled:
+        sources.append('pm')
+    if PUBTRENDS_CONFIG.ss_enabled:
+        sources.append('ss')
+    if len(sources):
+        if random.choice(sources) == 'pm':
+            search_example_source = 'Pubmed'
+            search_example_terms = random.choice(PUBTRENDS_CONFIG.pm_search_example_terms)
+        if random.choice(sources) == 'ss':
+            search_example_source = 'Semantic Scholar'
+            search_example_terms = random.choice(PUBTRENDS_CONFIG.ss_search_example_terms)
+    search_example_terms_hash = hashlib.md5(search_example_terms.encode('utf-8')).hexdigest()
     if PUBTRENDS_CONFIG.min_search_words > 1:
         min_words_message = f'Minimum {PUBTRENDS_CONFIG.min_search_words} words per query. '
     else:
@@ -429,7 +483,10 @@ def index():
                            default_limit=PUBTRENDS_CONFIG.show_max_articles_default_value,
                            min_words_message=min_words_message,
                            pm_enabled=PUBTRENDS_CONFIG.pm_enabled,
-                           ss_enabled=PUBTRENDS_CONFIG.ss_enabled)
+                           ss_enabled=PUBTRENDS_CONFIG.ss_enabled,
+                           search_example_source=search_example_source,
+                           search_example_terms=search_example_terms,
+                           search_example_terms_hash=search_example_terms_hash)
 
 
 @app.route('/search_terms', methods=['POST'])
