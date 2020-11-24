@@ -500,8 +500,6 @@ def cancel():
 # Index page
 @app.route('/')
 def index():
-    logger.info(f'/ {log_request(request)}')
-
     search_example_source = ''
     search_example_terms = ''
     sources = []
