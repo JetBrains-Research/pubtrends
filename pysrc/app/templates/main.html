@@ -178,18 +178,21 @@
                         </div>
                     </form>
                     <!-- Preprocessed example -->
+                    Try one of our examples<br>
+                    {% for terms, hash in search_example_terms %}
                     <form action="result" method="GET" class="inline">
                         <input type="hidden" name="source" value="{{ search_example_source }}">
                         <input type="hidden" name="sort" value="Most Cited">
                         <input type="hidden" name="limit" value="500">
                         <input type="hidden" name="noreviews" value="on">
                         <input type="hidden" name="expand" value="20">
-                        <input type="hidden" name="jobid" value="predefined_{{ search_example_terms_hash }}">
-                        Try example search
-                        <button type="submit" name="query" value="{{ search_example_terms }}" class="link-button">
-                            {{ search_example_terms }} at {{ search_example_source }}.
+                        <input type="hidden" name="jobid" value="predefined_{{ hash }}">
+                        <button type="submit" name="query" value="{{ terms }}" class="btn btn-sm btn-outline-secondary mb-2 mr-2"
+                        style="border-radius: 10px;">
+                            {{ terms }}
                         </button>
                     </form>
+                    {% endfor %}
                 </div>
 
                 <!-- Form for Paper -->

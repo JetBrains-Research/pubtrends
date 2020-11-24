@@ -512,11 +512,11 @@ def index():
     if len(sources):
         if random.choice(sources) == 'pm':
             search_example_source = 'Pubmed'
-            search_example_terms = random.choice(PUBTRENDS_CONFIG.pm_search_example_terms)
+            search_example_terms = PUBTRENDS_CONFIG.pm_search_example_terms
         if random.choice(sources) == 'ss':
             search_example_source = 'Semantic Scholar'
-            search_example_terms = random.choice(PUBTRENDS_CONFIG.ss_search_example_terms)
-    search_example_terms_hash = hashlib.md5(search_example_terms.encode('utf-8')).hexdigest()
+            search_example_terms = PUBTRENDS_CONFIG.ss_search_example_terms
+    search_example_terms = [(t, hashlib.md5(t.encode('utf-8')).hexdigest()) for t in search_example_terms]
     if PUBTRENDS_CONFIG.min_search_words > 1:
         min_words_message = f'Minimum {PUBTRENDS_CONFIG.min_search_words} words per query. '
     else:
@@ -529,8 +529,7 @@ def index():
                            pm_enabled=PUBTRENDS_CONFIG.pm_enabled,
                            ss_enabled=PUBTRENDS_CONFIG.ss_enabled,
                            search_example_source=search_example_source,
-                           search_example_terms=search_example_terms,
-                           search_example_terms_hash=search_example_terms_hash)
+                           search_example_terms=search_example_terms)
 
 
 @app.route('/search_terms', methods=['POST'])
