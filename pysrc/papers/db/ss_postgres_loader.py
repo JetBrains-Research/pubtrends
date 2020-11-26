@@ -6,7 +6,7 @@ import pandas as pd
 from pysrc.papers.db.loader import Loader
 from pysrc.papers.db.postgres_connector import PostgresConnector
 from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres, \
-    process_bibliographic_coupling_postgres, process_cocitations_postgres
+    process_bibliographic_coupling_postgres, process_cocitations_postgres, no_stemming_filter
 from pysrc.papers.utils import crc32, SORT_MOST_RELEVANT, SORT_MOST_CITED, SORT_MOST_RECENT, preprocess_doi, \
     preprocess_search_title
 
@@ -59,11 +59,14 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         if noreviews:
             logger.debug('Type is not supported for Semantic Scholar')
         query_str = preprocess_search_query_for_postgres(query, self.config.min_search_words)
+        # Disable stemming-based lookup for now, see: https://github.com/JetBrains-Research/pubtrends/issues/242
+        exact_filter = no_stemming_filter(query_str)
+
         if sort == SORT_MOST_RELEVANT:
             query = f'''
                 SELECT ssid
                 FROM to_tsquery('{query_str}') query, SSPublications P
-                WHERE tsv @@ query
+                WHERE tsv @@ query {exact_filter}
                 ORDER BY ts_rank_cd(P.tsv, query) DESC
                 LIMIT {limit};
                 '''
@@ -73,7 +76,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
                 FROM to_tsquery('{query_str}') query, SSPublications P
                     LEFT JOIN matview_sscitations C
                         ON C.ssid = P.ssid AND C.crc32id = P.crc32id
-                WHERE tsv @@ query
+                WHERE tsv @@ query {exact_filter}
                 GROUP BY P.ssid, P.crc32id
                 ORDER BY COUNT(*) DESC NULLS LAST
                 LIMIT {limit};
@@ -82,7 +85,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
             query = f'''
                 SELECT ssid
                 FROM to_tsquery('{query_str}') query, SSPublications P
-                WHERE tsv @@ query
+                WHERE tsv @@ query {exact_filter}
                 ORDER BY year DESC NULLS LAST
                 LIMIT {limit};
                 '''

@@ -5,7 +5,7 @@ import pandas as pd
 
 from pysrc.papers.db.loader import Loader
 from pysrc.papers.db.postgres_connector import PostgresConnector
-from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres, \
+from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres, no_stemming_filter, \
     process_bibliographic_coupling_postgres, process_cocitations_postgres
 from pysrc.papers.utils import SORT_MOST_RELEVANT, SORT_MOST_CITED, SORT_MOST_RECENT, preprocess_doi, \
     preprocess_search_title
@@ -63,29 +63,32 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         self.check_connection()
         noreviews_filter = "AND type != 'Review'" if noreviews else ''
         query_str = preprocess_search_query_for_postgres(query, self.config.min_search_words)
+        # Disable stemming-based lookup for now, see: https://github.com/JetBrains-Research/pubtrends/issues/242
+        exact_filter = no_stemming_filter(query_str)
+
         if sort == SORT_MOST_RELEVANT:
             query = f'''
-                SELECT pmid
+                SELECT P.pmid
                 FROM to_tsquery('{query_str}') query, PMPublications P
-                WHERE tsv @@ query {noreviews_filter}
+                WHERE tsv @@ query {noreviews_filter} {exact_filter}
                 ORDER BY ts_rank_cd(P.tsv, query) DESC
                 LIMIT {limit};
                 '''
         elif sort == SORT_MOST_CITED:
             query = f'''
-                SELECT P.pmid as pmid
+                SELECT P.pmid
                 FROM PMPublications P
                     LEFT JOIN matview_pmcitations C
                     ON P.pmid = C.pmid
-                WHERE tsv @@ to_tsquery('{query_str}') {noreviews_filter}
+                WHERE tsv @@ to_tsquery('{query_str}') {noreviews_filter} {exact_filter}
                 ORDER BY count DESC NULLS LAST
                 LIMIT {limit};
                 '''
         elif sort == SORT_MOST_RECENT:
             query = f'''
-                SELECT pmid
+                SELECT P.pmid
                 FROM to_tsquery('{query_str}') query, PMPublications P
-                WHERE tsv @@ query {noreviews_filter}
+                WHERE tsv @@ query {noreviews_filter} {exact_filter}
                 ORDER BY year DESC NULLS LAST
                 LIMIT {limit};
                 '''
@@ -93,6 +96,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
             raise ValueError(f'Illegal sort method: {sort}')
 
         with self.postgres_connection.cursor() as cursor:
+            logger.debug(f'search query: {query}')
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
 
@@ -132,7 +136,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 GROUP BY id, year
                 LIMIT {self.config.max_number_of_citations};
             '''
-        logger.info(query)
+        logger.debug('load_citations_by_year query: ', query)
 
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)

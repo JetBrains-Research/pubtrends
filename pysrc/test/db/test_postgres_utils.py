@@ -2,7 +2,7 @@ import unittest
 
 from parameterized import parameterized
 
-from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres
+from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres, no_stemming_filter
 
 
 class TestPostgresUtils(unittest.TestCase):
@@ -46,6 +46,16 @@ class TestPostgresUtils(unittest.TestCase):
                 '"Middle East Respiratory Syndrome"',
                 0
             )
+        )
+
+    def test_no_stemming_filter(self):
+        self.assertEqual(
+            " AND ((LOWER(P.title) LIKE '%covid-19%' OR LOWER(P.abstract) LIKE '%covid-19%') OR "
+            "(LOWER(P.title) LIKE '%corona%' OR LOWER(P.abstract) LIKE '%corona%') AND "
+            "(LOWER(P.title) LIKE '%virus%' OR LOWER(P.abstract) LIKE '%virus%') OR "
+            "(LOWER(P.title) LIKE '%respiratory%' OR LOWER(P.abstract) LIKE '%respiratory%') AND "
+            "(LOWER(P.title) LIKE '%syndrome%' OR LOWER(P.abstract) LIKE '%syndrome%'))",
+            no_stemming_filter('COVID-19 | Corona<->virus| Respiratory & Syndrome')
         )
 
     def test_preprocess_search_illegal_string(self):
