@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html>
 <head>
     <title>{{query}} at {{source}}{{ search_string }} {{limit}} {{sort}} - PubTrends</title>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet"
           href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
           integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
@@ -135,12 +135,14 @@
 
             // Process main word cloud
             let words = JSON.parse('{{ papers_word_cloud }}'.replace(/&#34;/g, '"').replace(/&#39;/g, '\'').replace(/&amp;/g, '&'));
-            process_word_cloud('papers_word_cloud', 220, 335, words, papers_callback_word);
+            process_word_cloud('papers_word_cloud', $('#papers_word_cloud').outerWidth(), 335, words, papers_callback_word);
 
             // Process topics word clouds
+            let cid = '';
             {% for (script, div), word_cloud, zoom_in_callback in topics_info_and_word_cloud_and_callback %}
                  words = JSON.parse('{{ word_cloud }}'.replace(/&#34;/g, '"').replace(/&#39;/g, '\'').replace(/&amp;/g, '&'));
-                 process_word_cloud('topic_word_cloud_{{ loop.index }}', 220, 335, words, papers_callback_word);
+                 cid = 'topic_word_cloud_{{ loop.index }}';
+                 process_word_cloud(cid, $('#' + cid).outerWidth(), 335, words, papers_callback_word);
             {% endfor %}
 
             // Configure jobid for feedback
@@ -156,6 +158,7 @@
                 });
             }, 5000);
         });
+
     </script>
 </head>
 <body>
@@ -317,10 +320,10 @@
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-3 no-padding-right">
+                            <div class="col-3 no-padding-right" style="min-width: 200px;">
                                 <strong>Word cloud</strong>
                                 <br>
-                                <canvas id="papers_word_cloud" width="0" height="0" style="border:1px solid #eee;">
+                                <canvas id="papers_word_cloud" style="border:1px solid #eee; width: 100%; height: 100%;">
                                     Canvas is not supported in your browser.
                                 </canvas>
                             </div>
@@ -399,7 +402,6 @@
                         <p>
                             For each year we show the paper which has the most significant number of citations in a
                             given year.<br>
-                            Number <i>V</i> means <i>+V</i> gain in citations.<br>
                             Different papers have different colors.
                         </p>
                         <button type="button" class="btn btn-light"
@@ -407,7 +409,7 @@
                             <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
                         </button>
                         <div>
-                            {% for script, div in max_gain_papers %}
+                            {% for script, div in most_cited_per_year_papers %}
                             {{ script|safe }}
                             {{ div|safe }}
                             {% endfor %}
@@ -416,9 +418,9 @@
 
                         <h2 class="card-subtitle">Hot Papers</h2>
                         <p>
-                            For each year we show a recent paper which has the biggest number of citation since the
-                            moment of publication.<br>
-                            Number <i>V</i> means <i>*(1 + V)</i> gain in citations.<br>
+                            For each year we show a recent paper which has the biggest growth in citations.<br>
+                            Growth is computed as a fraction of citations count in particular year to the count in
+                            previous year.<br>
                             Different papers have different colors.
                         </p>
                         <button type="button" class="btn btn-light"
@@ -426,7 +428,7 @@
                             <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
                         </button>
                         <div>
-                            {% for script, div in max_relative_gain_papers %}
+                            {% for script, div in fastest_growth_per_year_papers %}
                             {{ script|safe }}
                             {{ div|safe }}
                             {% endfor %}
@@ -629,11 +631,11 @@
                                 </h2>
                                 Number of papers: {{ component_sizes[loop.index - 1] }}
                                 <div class="row">
-                                    <div class="col-3 no-padding-right">
+                                    <div class="col-3 no-padding-right" style="min-width: 200px;">
                                         <strong>Word cloud</strong>
                                         <br>
-                                        <canvas id="topic_word_cloud_{{ loop.index }}" width="0" height="0"
-                                                style="border:1px solid #eee;">
+                                        <canvas id="topic_word_cloud_{{ loop.index }}"
+                                                style="border:1px solid #eee; width: 100%; height: 100%;">
                                             Canvas is not supported in your browser.
                                         </canvas>
                                     </div>
@@ -795,7 +797,8 @@
                     </div>
                     <div class="card-body">
                         <p>
-                            Quantitative features extracted from papers titles and abstracts, use search to filter the table.
+                            Quantitative features extracted from papers titles and abstracts, use search to filter the
+                            table.
                         </p>
                         {% if numbers is defined %}
                         <table id="numbers-table" class="table table-sm table-bordered table-striped">
@@ -843,7 +846,8 @@
                     </div>
                     <div class="card-body">
                         <p>
-                            Topics extraction is performed longitudinally at several time points to detect merges and splits
+                            Topics extraction is performed longitudinally at several time points to detect merges and
+                            splits
                             of topics. <br>
                             Edge width reflects the number of papers which moved from one topic to another.<br>
                             <i>NPY</i> - not published yet.
@@ -906,7 +910,8 @@
                         <p>
                             Let's make the service better together!<br>
                             Use the form below to tell us more about you and your opinion about the service,<br>
-                            or click instant feedback buttons to share your feelings about particular report section.<br>
+                            or click instant feedback buttons to share your feelings about particular report
+                            section.<br>
                             Also you can optionally leave your email to contact you later.<br>
                         </p>
                         <form name="feedback-form" action="feedback" method="POST">
@@ -1064,6 +1069,7 @@
 
         intro.start();
     }
+
 </script>
 </body>
 </html>

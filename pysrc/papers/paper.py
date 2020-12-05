@@ -89,7 +89,7 @@ def prepare_paper_data(data, source, pid):
         'keywords': keywords,
         'url': url_prefix + pid,
         'source': source,
-        'citation_dynamics': [components(plotter.article_citation_dynamics(analyzer.df, str(pid)))],
+        'citation_dynamics': [components(plotter.paper_citations_per_year(analyzer.df, str(pid)))],
     }
     if similar_papers:
         result['similar_papers'] = [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid, year, f'{similarity:.3f}')
