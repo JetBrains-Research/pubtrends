@@ -681,13 +681,14 @@ class Plotter:
                              show_values=False, cmap='tab20',
                              edge_color=dim('To').str(), node_color=dim('index').str())
 
+        p = hv.render(topic_evolution, backend='bokeh')
+        p.sizing_mode = 'stretch_width'
         if n_steps > 3:
             kwds_data = PlotPreprocessor.topic_evolution_keywords_data(
                 self.analyzer.evolution_kwds
             )
-            return hv.render(topic_evolution, backend='bokeh'), kwds_data
-
-        return hv.render(topic_evolution, backend='bokeh'), None
+            return p, kwds_data
+        return p, None
 
     @staticmethod
     def word_cloud_prepare(wc):
