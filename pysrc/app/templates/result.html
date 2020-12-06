@@ -166,11 +166,11 @@
 <!-- Fixed navbar -->
 <nav class="navbar navbar-light bg-light fixed-top border-bottom no-padding-right">
     <div class="row container-fluid no-padding-right">
-        <div class="col-lg-1 col-xl-2 no-padding">
+        <div class="col-lg-1 col-xl-2 no-padding-left">
             <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
         </div>
         <div class="col-lg-11 col-xl-8 no-padding-left">
-            <div class="content no-padding-left">
+            <div class="no-padding-left">
                 <ol class="breadcrumb bg-light search-query">
                     <li class="breadcrumb-item">{{ source }}</li>
                     <li class="breadcrumb-item"><strong>{{ query }}</strong></li>
@@ -287,670 +287,668 @@
 
         <!-- Main content -->
         <main class="col-lg-11 col-xl-8" role="main">
-            <div class="content">
-                <div class="card mt-3">
-                    <div class="card-title" id="overview">
-                        <h2 class="card-header">Overview</h2>
-                    </div>
-                    <div class="card-body">
-                        <div class="row mb-3">
-                            <div class="col-sm-4">
-                                <div class="card">
-                                    <div id="n_papers" class="card-body text-center">
-                                        <span class="stats-number"><b>{{ n_papers }}</b></span><br>
-                                        <span class="card-text">papers</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-sm-4">
-                                <div id="n_citations" class="card">
-                                    <div class="card-body text-center">
-                                        <span class="stats-number"><b>{{ n_citations }}</b></span><br>
-                                        <span class="card-text">citations</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-sm-4">
-                                <div id="n_topics" class="card">
-                                    <div class="card-body text-center">
-                                        <span class="stats-number"><b>{{ n_topics }}</b></span><br>
-                                        <span class="card-text">topics</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-3 no-padding-right" style="min-width: 185x;">
-                                <strong>Word cloud</strong>
-                                <br>
-                                <canvas id="papers_word_cloud" style="border:1px solid #eee; width: 100%; height: 100%;">
-                                    Canvas is not supported in your browser.
-                                </canvas>
-                            </div>
-                            <div class="col-9 no-padding-left">
-                                {% for script, div in papers_stats %}
-                                {{ script|safe }}
-                                {{ div|safe }}
-                                {% endfor %}
-                            </div>
-                        </div>
-                        <div id="search-in-papers" class="row">
-                            <div class="col col-auto">
-                                <input id="search-input" type="text" class="form-control"
-                                       placeholder="Search in papers...">
-                            </div>
-                            <div class="col col-auto no-padding-left">
-                                <button id="search_word" type="button" class="btn btn-light"
-                                        onclick="(function(){
-                                            papers_callback_word($('#search-input').val().trim())
-                                        })();">
-                                    <img src="{{ url_for('static', filename='search.svg') }}" alt=""/>&nbsp;Search
-                                </button>
-                            </div>
-                        </div>
-                        <div class="row mt-3">
-                            <div class="col-auto">
-                                <button id="show_as_list" type="button" class="btn btn-light"
-                                        onclick="(function(){ papers_callback() })();">
-                                    <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
-                                </button>
-                            </div>
-                        </div>
-                        <div class="mt-3">
-                            <small class="text-muted">Was this useful?</small>
-                            <div id="feedback-overview" class="btn-group-horizontal">
-                                <button type="button" class="btn btn-sm btn-feedback-yes"
-                                        onclick="feedback(this, 1)">
-                                    <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-feedback-meh"
-                                        onclick="feedback(this, 0)">
-                                    <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-feedback-no"
-                                        onclick="feedback(this, -1)">
-                                    <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+            <div class="card mt-3">
+                <div class="card-title" id="overview">
+                    <h2 class="card-header">Overview</h2>
                 </div>
-
-                <div class="card mt-3">
-                    <div class="card-title" id="highlights">
-                        <h1 class="card-header">Highlights</h1>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <div class="card">
+                                <div id="n_papers" class="card-body text-center">
+                                    <span class="stats-number"><b>{{ n_papers }}</b></span><br>
+                                    <span class="card-text">papers</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div id="n_citations" class="card">
+                                <div class="card-body text-center">
+                                    <span class="stats-number"><b>{{ n_citations }}</b></span><br>
+                                    <span class="card-text">citations</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div id="n_topics" class="card">
+                                <div class="card-body text-center">
+                                    <span class="stats-number"><b>{{ n_topics }}</b></span><br>
+                                    <span class="card-text">topics</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <h2 class="card-subtitle">Top Cited Papers</h2>
-                        <p>
-                            Top 50 cited papers are shown among all the papers for given search query.<br>
-                            Year reflects publication year of the original paper.
-                        </p>
-                        <button type="button" class="btn btn-light"
-                                onclick="(function(){ papers_callback_top_papers() })();">
-                            <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
-                        </button>
-                        <div>
-                            {% for script, div in top_cited_papers %}
+                    <div class="row">
+                        <div class="col-3 no-padding-right" style="min-width: 185x;">
+                            <strong>Word cloud</strong>
+                            <br>
+                            <canvas id="papers_word_cloud" style="border:1px solid #eee; width: 100%; height: 100%;">
+                                Canvas is not supported in your browser.
+                            </canvas>
+                        </div>
+                        <div class="col-9 no-padding-left">
+                            {% for script, div in papers_stats %}
                             {{ script|safe }}
                             {{ div|safe }}
                             {% endfor %}
                         </div>
-                        <hr>
-
-                        <h2 class="card-subtitle">Top Cited Papers of the Year</h2>
-                        <p>
-                            For each year we show the paper which has the most significant number of citations in a
-                            given year.<br>
-                            Different papers have different colors.
-                        </p>
-                        <button type="button" class="btn btn-light"
-                                onclick="(function(){ papers_callback_papers_of_the_year() })();">
-                            <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
-                        </button>
-                        <div>
-                            {% for script, div in most_cited_per_year_papers %}
-                            {{ script|safe }}
-                            {{ div|safe }}
-                            {% endfor %}
+                    </div>
+                    <div id="search-in-papers" class="row">
+                        <div class="col col-auto">
+                            <input id="search-input" type="text" class="form-control"
+                                   placeholder="Search in papers...">
                         </div>
-                        <hr>
-
-                        <h2 class="card-subtitle">Hot Papers</h2>
-                        <p>
-                            For each year we show a recent paper which has the biggest growth in citations.<br>
-                            Growth is computed as a fraction of citations count in particular year to the count in
-                            previous year.<br>
-                            Different papers have different colors.
-                        </p>
-                        <button type="button" class="btn btn-light"
-                                onclick="(function(){ papers_callback_hot_papers() })();">
-                            <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
-                        </button>
-                        <div>
-                            {% for script, div in fastest_growth_per_year_papers %}
-                            {{ script|safe }}
-                            {{ div|safe }}
-                            {% endfor %}
+                        <div class="col col-auto no-padding-left">
+                            <button id="search_word" type="button" class="btn btn-light"
+                                    onclick="(function(){
+                                        papers_callback_word($('#search-input').val().trim())
+                                    })();">
+                                <img src="{{ url_for('static', filename='search.svg') }}" alt=""/>&nbsp;Search
+                            </button>
                         </div>
-                        <div class="mt-3">
-                            <small class="text-muted">Was this useful?</small>
-                            <div id="feedback-highlights" class="btn-group-horizontal">
-                                <button type="button" class="btn btn-sm btn-feedback-yes"
-                                        onclick="feedback(this, 1)">
-                                    <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-feedback-meh"
-                                        onclick="feedback(this, 0)">
-                                    <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-feedback-no"
-                                        onclick="feedback(this, -1)">
-                                    <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                                </button>
-                            </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-auto">
+                            <button id="show_as_list" type="button" class="btn btn-light"
+                                    onclick="(function(){ papers_callback() })();">
+                                <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <small class="text-muted">Was this useful?</small>
+                        <div id="feedback-overview" class="btn-group-horizontal">
+                            <button type="button" class="btn btn-sm btn-feedback-yes"
+                                    onclick="feedback(this, 1)">
+                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-feedback-meh"
+                                    onclick="feedback(this, 0)">
+                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-feedback-no"
+                                    onclick="feedback(this, -1)">
+                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
+                            </button>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                {% if topics_analyzed %}
-                <div class="card mt-3">
-                    <div class="card-title" id="network">
-                        <h1 class="card-header">Network</h1>
-                    </div>
-                    <div class="card-body">
-                        <p>
-                            Explore citations between the papers of interest on the citations graph.
-                        </p>
-                        <button id="show_citations_graph" type="button" class="btn btn-light"
-                                onclick="(function(){ graph_callback('citations') })();">
-                            Show citations graph
-                        </button>
-                        <hr>
-                        <p>
-                            Similarity between papers is computed based on <em>bibliographic coupling</em>,
-                            <em>co-citations</em>,<br>
-                            <em>direct citations</em>, and <em>potential</em> citations based on text similarity.
-                            <br>
-                            Explore papers network, where similar papers are located together and connected.
-                        </p>
-                        <button id="show_similarity_graph" type="button" class="col-auto btn btn-light"
-                                onclick="(function(){ graph_callback('structure') })();">
-                            Show similarity graph
-                        </button>
-                        <div class="mt-3">
-                            <small class="text-muted">Was this useful?</small>
-                            <div id="feedback-network" class="btn-group-horizontal">
-                                <button type="button" class="btn btn-sm btn-feedback-yes"
-                                        onclick="feedback(this, 1)">
-                                    <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-feedback-meh"
-                                        onclick="feedback(this, 0)">
-                                    <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-feedback-no"
-                                        onclick="feedback(this, -1)">
-                                    <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+            <div class="card mt-3">
+                <div class="card-title" id="highlights">
+                    <h1 class="card-header">Highlights</h1>
                 </div>
-
-                <div class="card mt-3">
-                    <div class="card-title" id="topics">
-                        <h1 class="card-header">Topics</h1>
-                    </div>
-                    <div class="card-body">
-                        <p>
-                            Topic is a group of papers which share common ideas, describe common features, etc.
-                            <br>
-                            Topics are extracted based on similarity between papers.
-                            <br>
-                        </p>
-                        <p>
-                            Similarity between topics is an average similarity between the papers.
-                        </p>
-                        {% for script, div in components_similarity %}
+                <div class="card-body">
+                    <h2 class="card-subtitle">Top Cited Papers</h2>
+                    <p>
+                        Top 50 cited papers are shown among all the papers for given search query.<br>
+                        Year reflects publication year of the original paper.
+                    </p>
+                    <button type="button" class="btn btn-light"
+                            onclick="(function(){ papers_callback_top_papers() })();">
+                        <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
+                    </button>
+                    <div>
+                        {% for script, div in top_cited_papers %}
                         {{ script|safe }}
                         {{ div|safe }}
                         {% endfor %}
-                        <hr>
-                        <p>
-                            Topic sizes. <em>Note: small topics are merged to "Other".</em>
-                        </p>
-                        <div>
-                            {% for script, div in component_ratio %}
-                            {{ script|safe }}
-                            {{ div|safe }}
-                            {% endfor %}
-                        </div>
-                        <hr>
-                        <p>
-                            Topics are organized hierarchically.
-                        </p>
-                        {% for script, div in topics_hierarchy %}
+                    </div>
+                    <hr>
+
+                    <h2 class="card-subtitle">Top Cited Papers of the Year</h2>
+                    <p>
+                        For each year we show the paper which has the most significant number of citations in a
+                        given year.<br>
+                        Different papers have different colors.
+                    </p>
+                    <button type="button" class="btn btn-light"
+                            onclick="(function(){ papers_callback_papers_of_the_year() })();">
+                        <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
+                    </button>
+                    <div>
+                        {% for script, div in most_cited_per_year_papers %}
                         {{ script|safe }}
                         {{ div|safe }}
                         {% endfor %}
-                        <div class="mt-3">
-                            <small class="text-muted">Was this useful?</small>
-                            <div id="feedback-topics" class="btn-group-horizontal">
-                                <button type="button" class="btn btn-sm btn-feedback-yes"
-                                        onclick="feedback(this, 1)">
-                                    <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-feedback-meh"
-                                        onclick="feedback(this, 0)">
-                                    <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-feedback-no"
-                                        onclick="feedback(this, -1)">
-                                    <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                                </button>
-                            </div>
+                    </div>
+                    <hr>
+
+                    <h2 class="card-subtitle">Hot Papers</h2>
+                    <p>
+                        For each year we show a recent paper which has the biggest growth in citations.<br>
+                        Growth is computed as a fraction of citations count in particular year to the count in
+                        previous year.<br>
+                        Different papers have different colors.
+                    </p>
+                    <button type="button" class="btn btn-light"
+                            onclick="(function(){ papers_callback_hot_papers() })();">
+                        <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
+                    </button>
+                    <div>
+                        {% for script, div in fastest_growth_per_year_papers %}
+                        {{ script|safe }}
+                        {{ div|safe }}
+                        {% endfor %}
+                    </div>
+                    <div class="mt-3">
+                        <small class="text-muted">Was this useful?</small>
+                        <div id="feedback-highlights" class="btn-group-horizontal">
+                            <button type="button" class="btn btn-sm btn-feedback-yes"
+                                    onclick="feedback(this, 1)">
+                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-feedback-meh"
+                                    onclick="feedback(this, 0)">
+                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-feedback-no"
+                                    onclick="feedback(this, -1)">
+                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
+                            </button>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="card mt-3">
-                    <div class="card-title" id="trends">
-                        <h1 class="card-header">Trends</h1>
-                    </div>
-                    <div class="card-body">
-                        <h2 class="card-subtitle">Topics summary</h2>
-                        <p>
-                            Explore the evolution of trends - dynamics is shown for the timeline.<br>
-                            Colors are the same as in the previous diagram.
-                        </p>
-                        <div>
-                            {% for script, div in component_size_summary %}
-                            {{ script|safe }}
-                            {{ div|safe }}
-                            {% endfor %}
-                        </div>
-                        <hr>
-                        <p>Summary publication year for topics.</p>
-                        <div>
-                            {% for script, div in component_years_summary %}
-                            {{ script|safe }}
-                            {{ div|safe }}
-                            {% endfor %}
-                        </div>
-                        <div class="mt-3">
-                            <small class="text-muted">Was this useful?</small>
-                            <div id="feedback-trends" class="btn-group-horizontal">
-                                <button type="button" class="btn btn-sm btn-feedback-yes"
-                                        onclick="feedback(this, 1)">
-                                    <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-feedback-meh"
-                                        onclick="feedback(this, 0)">
-                                    <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-feedback-no"
-                                        onclick="feedback(this, -1)">
-                                    <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                                </button>
-                            </div>
+            {% if topics_analyzed %}
+            <div class="card mt-3">
+                <div class="card-title" id="network">
+                    <h1 class="card-header">Network</h1>
+                </div>
+                <div class="card-body">
+                    <p>
+                        Explore citations between the papers of interest on the citations graph.
+                    </p>
+                    <button id="show_citations_graph" type="button" class="btn btn-light"
+                            onclick="(function(){ graph_callback('citations') })();">
+                        Show citations graph
+                    </button>
+                    <hr>
+                    <p>
+                        Similarity between papers is computed based on <em>bibliographic coupling</em>,
+                        <em>co-citations</em>,<br>
+                        <em>direct citations</em>, and <em>potential</em> citations based on text similarity.
+                        <br>
+                        Explore papers network, where similar papers are located together and connected.
+                    </p>
+                    <button id="show_similarity_graph" type="button" class="col-auto btn btn-light"
+                            onclick="(function(){ graph_callback('structure') })();">
+                        Show similarity graph
+                    </button>
+                    <div class="mt-3">
+                        <small class="text-muted">Was this useful?</small>
+                        <div id="feedback-network" class="btn-group-horizontal">
+                            <button type="button" class="btn btn-sm btn-feedback-yes"
+                                    onclick="feedback(this, 1)">
+                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-feedback-meh"
+                                    onclick="feedback(this, 0)">
+                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-feedback-no"
+                                    onclick="feedback(this, -1)">
+                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
+                            </button>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="card mt-3">
-                    <div class="card-title" id="publications">
-                        <h1 class="card-header">Publications</h1>
+            <div class="card mt-3">
+                <div class="card-title" id="topics">
+                    <h1 class="card-header">Topics</h1>
+                </div>
+                <div class="card-body">
+                    <p>
+                        Topic is a group of papers which share common ideas, describe common features, etc.
+                        <br>
+                        Topics are extracted based on similarity between papers.
+                        <br>
+                    </p>
+                    <p>
+                        Similarity between topics is an average similarity between the papers.
+                    </p>
+                    {% for script, div in components_similarity %}
+                    {{ script|safe }}
+                    {{ div|safe }}
+                    {% endfor %}
+                    <hr>
+                    <p>
+                        Topic sizes. <em>Note: small topics are merged to "Other".</em>
+                    </p>
+                    <div>
+                        {% for script, div in component_ratio %}
+                        {{ script|safe }}
+                        {{ div|safe }}
+                        {% endfor %}
                     </div>
-                    <div class="card-body">
-                        <p>
-                            Learn more about topics - most cited papers over time are shown for each topic.<br>
-                            Papers are sorted descending by citations number overall from bottom to top.<br>
-                            Year reflects publication year of the original paper.
-                        </p>
-                        <div>
-                            {% for (script, div), word_cloud, zoom_in_callback in
-                            topics_info_and_word_cloud_and_callback %}
-                            <div id="topic-div-{{ loop.index }}">
-                                <hr>
-                                <h2 id="topic-{{ loop.index }}" class="card-subtitle">
-                                    Topic {{ loop.index }}
-                                    {% if loop.index0 == comp_other %}
-                                    - OTHER
-                                    {% endif %}
-                                    <button type="button" class="btn btn-light"
-                                            onclick="(function(){ papers_callback_component({{ loop.index }}); })();">
-                                        <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as
-                                        list
-                                    </button>
-                                    <button type="button" class="btn btn-light"
-                                            onclick="(function(){ {{ zoom_in_callback|safe }} })();">
-                                        <img src="{{ url_for('static', filename='zoom-in.svg') }}" alt="+"/>&nbsp;Zoom
-                                        into
-                                    </button>
-                                </h2>
-                                Number of papers: {{ component_sizes[loop.index - 1] }}
-                                <div class="row">
-                                    <div class="col-3 no-padding-right" style="min-width: 185px;">
-                                        <strong>Word cloud</strong>
-                                        <br>
-                                        <canvas id="topic_word_cloud_{{ loop.index }}"
-                                                style="border:1px solid #eee; width: 100%; height: 100%;">
-                                            Canvas is not supported in your browser.
-                                        </canvas>
-                                    </div>
-                                    <div class="col-9 no-padding-left" id="topic_chart_{{ loop.index }}">
-                                        {{ script|safe }}
-                                        {{ div|safe }}
-                                    </div>
+                    <hr>
+                    <p>
+                        Topics are organized hierarchically.
+                    </p>
+                    {% for script, div in topics_hierarchy %}
+                    {{ script|safe }}
+                    {{ div|safe }}
+                    {% endfor %}
+                    <div class="mt-3">
+                        <small class="text-muted">Was this useful?</small>
+                        <div id="feedback-topics" class="btn-group-horizontal">
+                            <button type="button" class="btn btn-sm btn-feedback-yes"
+                                    onclick="feedback(this, 1)">
+                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-feedback-meh"
+                                    onclick="feedback(this, 0)">
+                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-feedback-no"
+                                    onclick="feedback(this, -1)">
+                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-title" id="trends">
+                    <h1 class="card-header">Trends</h1>
+                </div>
+                <div class="card-body">
+                    <h2 class="card-subtitle">Topics summary</h2>
+                    <p>
+                        Explore the evolution of trends - dynamics is shown for the timeline.<br>
+                        Colors are the same as in the previous diagram.
+                    </p>
+                    <div>
+                        {% for script, div in component_size_summary %}
+                        {{ script|safe }}
+                        {{ div|safe }}
+                        {% endfor %}
+                    </div>
+                    <hr>
+                    <p>Summary publication year for topics.</p>
+                    <div>
+                        {% for script, div in component_years_summary %}
+                        {{ script|safe }}
+                        {{ div|safe }}
+                        {% endfor %}
+                    </div>
+                    <div class="mt-3">
+                        <small class="text-muted">Was this useful?</small>
+                        <div id="feedback-trends" class="btn-group-horizontal">
+                            <button type="button" class="btn btn-sm btn-feedback-yes"
+                                    onclick="feedback(this, 1)">
+                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-feedback-meh"
+                                    onclick="feedback(this, 0)">
+                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-feedback-no"
+                                    onclick="feedback(this, -1)">
+                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-title" id="publications">
+                    <h1 class="card-header">Publications</h1>
+                </div>
+                <div class="card-body">
+                    <p>
+                        Learn more about topics - most cited papers over time are shown for each topic.<br>
+                        Papers are sorted descending by citations number overall from bottom to top.<br>
+                        Year reflects publication year of the original paper.
+                    </p>
+                    <div>
+                        {% for (script, div), word_cloud, zoom_in_callback in
+                        topics_info_and_word_cloud_and_callback %}
+                        <div id="topic-div-{{ loop.index }}">
+                            <hr>
+                            <h2 id="topic-{{ loop.index }}" class="card-subtitle">
+                                Topic {{ loop.index }}
+                                {% if loop.index0 == comp_other %}
+                                - OTHER
+                                {% endif %}
+                                <button type="button" class="btn btn-light"
+                                        onclick="(function(){ papers_callback_component({{ loop.index }}); })();">
+                                    <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as
+                                    list
+                                </button>
+                                <button type="button" class="btn btn-light"
+                                        onclick="(function(){ {{ zoom_in_callback|safe }} })();">
+                                    <img src="{{ url_for('static', filename='zoom-in.svg') }}" alt="+"/>&nbsp;Zoom
+                                    into
+                                </button>
+                            </h2>
+                            Number of papers: {{ component_sizes[loop.index - 1] }}
+                            <div class="row">
+                                <div class="col-3 no-padding-right" style="min-width: 185px;">
+                                    <strong>Word cloud</strong>
+                                    <br>
+                                    <canvas id="topic_word_cloud_{{ loop.index }}"
+                                            style="border:1px solid #eee; width: 100%; height: 100%;">
+                                        Canvas is not supported in your browser.
+                                    </canvas>
+                                </div>
+                                <div class="col-9 no-padding-left" id="topic_chart_{{ loop.index }}">
+                                    {{ script|safe }}
+                                    {{ div|safe }}
                                 </div>
                             </div>
-                            {% endfor %}
                         </div>
-                        <hr>
-                        <p>
-                            Explore related papers by taking into account all the referencing and citing relationships
-                            for papers of interest.<br>
-                            <strong>WARNING</strong>: number of papers can increase exponentially, analysis can be slow!
-                        </p>
-                        <button type="button" class="btn btn-light"
-                                onclick="(function(){ {{ papers_zoom_out_callback|safe }} })();">
-                            <img src="{{ url_for('static', filename='zoom-out.svg') }}" alt="-"/>&nbsp;Zoom out to
-                            related papers
-                        </button>
-                        <div class="mt-3">
-                            <small class="text-muted">Was this useful?</small>
-                            <div id="feedback-papers" class="btn-group-horizontal">
-                                <button type="button" class="btn btn-sm btn-feedback-yes"
-                                        onclick="feedback(this, 1)">
-                                    <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-feedback-meh"
-                                        onclick="feedback(this, 0)">
-                                    <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-feedback-no"
-                                        onclick="feedback(this, -1)">
-                                    <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
-
-                <div class="card mt-3">
-                    <div class="card-title" id="authors">
-                        <h1 class="card-header">Authors</h1>
-                    </div>
-                    <div class="card-body">
-                        <p>
-                            List of authors with the largest number of papers for given search query.<br>
-                            The colors of the circles in the topics column indicate top 3 most common topics among
-                            these papers.<br>
-                            The topic circles are arranged according to the number of papers, in descending order.
-                        </p>
-                        <table id="authors-table" class="table table-sm table-bordered table-striped">
-                            <thead>
-                            <tr>
-                                <th scope="col">#</th>
-                                <th scope="col">Author</th>
-                                <th scope="col">Papers</th>
-                                <th scope="col">Topics</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {% for row in author_statistics %}
-                            <tr>
-                                <th scope="row">{{ loop.index }}</th>
-                                <td>{{ row[0] }}</td>
-                                <td>
-                                    <button type="button" class="btn btn-link link"
-                                            onclick="(function(){ papers_callback_author('{{ row[0] }}');})();">
-                                        {{ row[1] }}
-                                    </button>
-                                </td>
-                                <td>{{ row[2]|safe }}</td>
-                            </tr>
-                            {% endfor %}
-                            </tbody>
-                        </table>
-                        <div class="mt-3">
-                            <small class="text-muted">Was this useful?</small>
-                            <div id="feedback-authors" class="btn-group-horizontal">
-                                <button type="button" class="btn btn-sm btn-feedback-yes"
-                                        onclick="feedback(this, 1)">
-                                    <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-feedback-meh"
-                                        onclick="feedback(this, 0)">
-                                    <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-feedback-no"
-                                        onclick="feedback(this, -1)">
-                                    <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card mt-3">
-                    <div class="card-title" id="journals">
-                        <h1 class="card-header">Journals</h1>
-                    </div>
-                    <div class="card-body">
-                        <p>
-                            List of journals with the largest number of papers for given search query.<br>
-                            The colors of the circles in the topics column indicate top 3 most common topics among
-                            these papers.<br>
-                            The topic circles are arranged according to the number of papers, in descending order.
-                        </p>
-                        <table id="journals-table" class="table table-sm table-bordered table-striped">
-                            <thead>
-                            <tr>
-                                <th scope="col">#</th>
-                                <th scope="col">Journal</th>
-                                <th scope="col">Papers</th>
-                                <th scope="col">Topics</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {% for row in journal_statistics %}
-                            <tr>
-                                <th scope="row">{{ loop.index }}</th>
-                                <td>{{ row[0] }}</td>
-                                <td>
-                                    <button type="button" class="btn btn-link link" onclick="(function(){
-                                papers_callback_journal('{{ row[0] }}');
-                            })();">{{ row[1] }}
-                                    </button>
-                                </td>
-                                <td>{{ row[2]|safe }}</td>
-                            </tr>
-                            {% endfor %}
-                            </tbody>
-                        </table>
-                        <div class="mt-3">
-                            <small class="text-muted">Was this useful?</small>
-                            <div id="feedback-journals" class="btn-group-horizontal">
-                                <button type="button" class="btn btn-sm btn-feedback-yes"
-                                        onclick="feedback(this, 1)">
-                                    <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-feedback-meh"
-                                        onclick="feedback(this, 0)">
-                                    <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-feedback-no"
-                                        onclick="feedback(this, -1)">
-                                    <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card mt-3">
-                    <div class="card-title" id="numbers">
-                        <h1 class="card-header">Numbers</h1>
-                    </div>
-                    <div class="card-body">
-                        <p>
-                            Quantitative features extracted from papers titles and abstracts, use search to filter the
-                            table.
-                        </p>
-                        {% if numbers is defined %}
-                        <table id="numbers-table" class="table table-sm table-bordered table-striped">
-                            <thead>
-                            <tr>
-                                <th scope="col">#</th>
-                                <th scope="col">Title</th>
-                                <th scope="col">Numbers</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {% for id, url, title, metrics in numbers %}
-                            <tr>
-                                <th scope="row">{{ loop.index }}</th>
-                                <td><a class="link" href="{{ url }}">{{ title }}</a></td>
-                                <td>{{ metrics }}</td>
-                            </tr>
-                            {% endfor %}
-                            </tbody>
-                        </table>
-                        {% endif %}
-                        <div class="mt-3">
-                            <small class="text-muted">Was this useful?</small>
-                            <div id="feedback-numbers" class="btn-group-horizontal">
-                                <button type="button" class="btn btn-sm btn-feedback-yes"
-                                        onclick="feedback(this, 1)">
-                                    <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-feedback-meh"
-                                        onclick="feedback(this, 0)">
-                                    <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-feedback-no"
-                                        onclick="feedback(this, -1)">
-                                    <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card mt-3">
-                    <div class="card-title" id="evolution">
-                        <h1 class="card-header">Topic Evolution</h1>
-                    </div>
-                    <div class="card-body">
-                        <p>
-                            Topics extraction is performed longitudinally at several time points to detect merges and
-                            splits
-                            of topics. <br>
-                            Edge width reflects the number of papers which moved from one topic to another.<br>
-                            <i>NPY</i> - not published yet.
-                        </p>
-                        {% if topic_evolution is defined %}
-                        {% for script, div in topic_evolution %}
-                        {{ script|safe }}
-                        {{ div|safe }}
                         {% endfor %}
-                        {% if topic_evolution_keywords is defined %}
-                        <table id="topic_evolution_keywords" class="table table-sm table-bordered table-striped">
-                            <thead>
-                            <tr>
-                                <th scope="col">#</th>
-                                <th scope="col">Year</th>
-                                <th scope="col">Topic</th>
-                                <th scope="col">Tags</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {% for year, topic, kwds in topic_evolution_keywords %}
-                            <tr>
-                                <th scope="row">{{ loop.index }}</th>
-                                <td>{{ year }}</td>
-                                <td>{{ topic }}</td>
-                                <td>{{ kwds }}</td>
-                            </tr>
-                            {% endfor %}
-                            </tbody>
-                        </table>
-                        {% endif %}
-                        <div class="mt-3">
-                            <small class="text-muted">Was this useful?</small>
-                            <div id="feedback-evolution" class="btn-group-horizontal">
-                                <button type="button" class="btn btn-sm btn-feedback-yes"
-                                        onclick="feedback(this, 1)">
-                                    <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-feedback-meh"
-                                        onclick="feedback(this, 0)">
-                                    <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-feedback-no"
-                                        onclick="feedback(this, -1)">
-                                    <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                                </button>
-                            </div>
+                    </div>
+                    <hr>
+                    <p>
+                        Explore related papers by taking into account all the referencing and citing relationships
+                        for papers of interest.<br>
+                        <strong>WARNING</strong>: number of papers can increase exponentially, analysis can be slow!
+                    </p>
+                    <button type="button" class="btn btn-light"
+                            onclick="(function(){ {{ papers_zoom_out_callback|safe }} })();">
+                        <img src="{{ url_for('static', filename='zoom-out.svg') }}" alt="-"/>&nbsp;Zoom out to
+                        related papers
+                    </button>
+                    <div class="mt-3">
+                        <small class="text-muted">Was this useful?</small>
+                        <div id="feedback-papers" class="btn-group-horizontal">
+                            <button type="button" class="btn btn-sm btn-feedback-yes"
+                                    onclick="feedback(this, 1)">
+                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-feedback-meh"
+                                    onclick="feedback(this, 0)">
+                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-feedback-no"
+                                    onclick="feedback(this, -1)">
+                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
+                            </button>
                         </div>
-                        {% else %}
-                        Failed to analyze topic evolution because year step is too big.
-                        {% endif %}
                     </div>
                 </div>
+            </div>
+            {% endif %}
 
-                <div class="card mt-3">
-                    <div class="card-title" id="feedback">
-                        <h1 class="card-header">Feedback</h1>
-                    </div>
-                    <div class="card-body">
-                        <p>
-                            Let's make the service better together!<br>
-                            Use the form below to tell us more about you and your opinion about the service,<br>
-                            or click instant feedback buttons to share your feelings about particular report
-                            section.<br>
-                            Also you can optionally leave your email to contact you later.<br>
-                        </p>
-                        <form name="feedback-form" action="feedback" method="POST">
-                            <div class="form-group">
-                                <label for="feedback-message">Message</label>
-                                <textarea class="form-control" id="feedback-message" name="message"
-                                          rows="5" maxlength="2000"
-                                          aria-describedby="emailHelp"
-                                          placeholder="Enter message"></textarea>
-                                <small id="messageHelp" class="form-text text-muted">
-                                    Max length: 2000.</small>
-                            </div>
-                            <div class="form-group">
-                                <label for="feedback-email">Email address</label>
-                                <input type="email" class="form-control" id="feedback-email" name="email"
-                                       aria-describedby="emailHelp"
-                                       placeholder="Enter email"/>
-                                <small id="emailHelp" class="form-text text-muted">
-                                    We'll never share your email with anyone else.</small>
-                            </div>
-                            <div class="form-group">
-                                <button type="submit" class="btn btn-primary">Submit</button>
-                            </div>
-                            <div class="form-group">
-                                <input type="hidden" class="form-control" id="feedback-jobid" name="jobid" value=""/>
-                                <input type="hidden" class="form-control" name="type" value="result"/>
-                            </div>
-                        </form>
+            <div class="card mt-3">
+                <div class="card-title" id="authors">
+                    <h1 class="card-header">Authors</h1>
+                </div>
+                <div class="card-body">
+                    <p>
+                        List of authors with the largest number of papers for given search query.<br>
+                        The colors of the circles in the topics column indicate top 3 most common topics among
+                        these papers.<br>
+                        The topic circles are arranged according to the number of papers, in descending order.
+                    </p>
+                    <table id="authors-table" class="table table-sm table-bordered table-striped">
+                        <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Author</th>
+                            <th scope="col">Papers</th>
+                            <th scope="col">Topics</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for row in author_statistics %}
+                        <tr>
+                            <th scope="row">{{ loop.index }}</th>
+                            <td>{{ row[0] }}</td>
+                            <td>
+                                <button type="button" class="btn btn-link link"
+                                        onclick="(function(){ papers_callback_author('{{ row[0] }}');})();">
+                                    {{ row[1] }}
+                                </button>
+                            </td>
+                            <td>{{ row[2]|safe }}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                    <div class="mt-3">
+                        <small class="text-muted">Was this useful?</small>
+                        <div id="feedback-authors" class="btn-group-horizontal">
+                            <button type="button" class="btn btn-sm btn-feedback-yes"
+                                    onclick="feedback(this, 1)">
+                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-feedback-meh"
+                                    onclick="feedback(this, 0)">
+                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-feedback-no"
+                                    onclick="feedback(this, -1)">
+                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
+                            </button>
+                        </div>
                     </div>
                 </div>
-                <div class="mt-3 ml-3" id="log">
-                    <h5><a class="link" data-toggle="collapse" href="#collapseLog"
-                           role="button" aria-expanded="false"
-                           aria-controls="collapseCocitations">
-                        Logs
-                    </a></h5>
-                    <div id="collapseLog" class="card-body collapse">
-                        <pre>{{log}}</pre>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-title" id="journals">
+                    <h1 class="card-header">Journals</h1>
+                </div>
+                <div class="card-body">
+                    <p>
+                        List of journals with the largest number of papers for given search query.<br>
+                        The colors of the circles in the topics column indicate top 3 most common topics among
+                        these papers.<br>
+                        The topic circles are arranged according to the number of papers, in descending order.
+                    </p>
+                    <table id="journals-table" class="table table-sm table-bordered table-striped">
+                        <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Journal</th>
+                            <th scope="col">Papers</th>
+                            <th scope="col">Topics</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for row in journal_statistics %}
+                        <tr>
+                            <th scope="row">{{ loop.index }}</th>
+                            <td>{{ row[0] }}</td>
+                            <td>
+                                <button type="button" class="btn btn-link link" onclick="(function(){
+                            papers_callback_journal('{{ row[0] }}');
+                        })();">{{ row[1] }}
+                                </button>
+                            </td>
+                            <td>{{ row[2]|safe }}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                    <div class="mt-3">
+                        <small class="text-muted">Was this useful?</small>
+                        <div id="feedback-journals" class="btn-group-horizontal">
+                            <button type="button" class="btn btn-sm btn-feedback-yes"
+                                    onclick="feedback(this, 1)">
+                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-feedback-meh"
+                                    onclick="feedback(this, 0)">
+                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-feedback-no"
+                                    onclick="feedback(this, -1)">
+                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
+                            </button>
+                        </div>
                     </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-title" id="numbers">
+                    <h1 class="card-header">Numbers</h1>
+                </div>
+                <div class="card-body">
+                    <p>
+                        Quantitative features extracted from papers titles and abstracts, use search to filter the
+                        table.
+                    </p>
+                    {% if numbers is defined %}
+                    <table id="numbers-table" class="table table-sm table-bordered table-striped">
+                        <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Title</th>
+                            <th scope="col">Numbers</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for id, url, title, metrics in numbers %}
+                        <tr>
+                            <th scope="row">{{ loop.index }}</th>
+                            <td><a class="link" href="{{ url }}">{{ title }}</a></td>
+                            <td>{{ metrics }}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                    {% endif %}
+                    <div class="mt-3">
+                        <small class="text-muted">Was this useful?</small>
+                        <div id="feedback-numbers" class="btn-group-horizontal">
+                            <button type="button" class="btn btn-sm btn-feedback-yes"
+                                    onclick="feedback(this, 1)">
+                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-feedback-meh"
+                                    onclick="feedback(this, 0)">
+                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-feedback-no"
+                                    onclick="feedback(this, -1)">
+                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-title" id="evolution">
+                    <h1 class="card-header">Topic Evolution</h1>
+                </div>
+                <div class="card-body">
+                    <p>
+                        Topics extraction is performed longitudinally at several time points to detect merges and
+                        splits
+                        of topics. <br>
+                        Edge width reflects the number of papers which moved from one topic to another.<br>
+                        <i>NPY</i> - not published yet.
+                    </p>
+                    {% if topic_evolution is defined %}
+                    {% for script, div in topic_evolution %}
+                    {{ script|safe }}
+                    {{ div|safe }}
+                    {% endfor %}
+                    {% if topic_evolution_keywords is defined %}
+                    <table id="topic_evolution_keywords" class="table table-sm table-bordered table-striped">
+                        <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Year</th>
+                            <th scope="col">Topic</th>
+                            <th scope="col">Tags</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for year, topic, kwds in topic_evolution_keywords %}
+                        <tr>
+                            <th scope="row">{{ loop.index }}</th>
+                            <td>{{ year }}</td>
+                            <td>{{ topic }}</td>
+                            <td>{{ kwds }}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                    {% endif %}
+                    <div class="mt-3">
+                        <small class="text-muted">Was this useful?</small>
+                        <div id="feedback-evolution" class="btn-group-horizontal">
+                            <button type="button" class="btn btn-sm btn-feedback-yes"
+                                    onclick="feedback(this, 1)">
+                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-feedback-meh"
+                                    onclick="feedback(this, 0)">
+                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-feedback-no"
+                                    onclick="feedback(this, -1)">
+                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
+                            </button>
+                        </div>
+                    </div>
+                    {% else %}
+                    Failed to analyze topic evolution because year step is too big.
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-title" id="feedback">
+                    <h1 class="card-header">Feedback</h1>
+                </div>
+                <div class="card-body">
+                    <p>
+                        Let's make the service better together!<br>
+                        Use the form below to tell us more about you and your opinion about the service,<br>
+                        or click instant feedback buttons to share your feelings about particular report
+                        section.<br>
+                        Also you can optionally leave your email to contact you later.<br>
+                    </p>
+                    <form name="feedback-form" action="feedback" method="POST">
+                        <div class="form-group">
+                            <label for="feedback-message">Message</label>
+                            <textarea class="form-control" id="feedback-message" name="message"
+                                      rows="5" maxlength="2000"
+                                      aria-describedby="emailHelp"
+                                      placeholder="Enter message"></textarea>
+                            <small id="messageHelp" class="form-text text-muted">
+                                Max length: 2000.</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="feedback-email">Email address</label>
+                            <input type="email" class="form-control" id="feedback-email" name="email"
+                                   aria-describedby="emailHelp"
+                                   placeholder="Enter email"/>
+                            <small id="emailHelp" class="form-text text-muted">
+                                We'll never share your email with anyone else.</small>
+                        </div>
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary">Submit</button>
+                        </div>
+                        <div class="form-group">
+                            <input type="hidden" class="form-control" id="feedback-jobid" name="jobid" value=""/>
+                            <input type="hidden" class="form-control" name="type" value="result"/>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="mt-3 ml-3" id="log">
+                <h5><a class="link" data-toggle="collapse" href="#collapseLog"
+                       role="button" aria-expanded="false"
+                       aria-controls="collapseCocitations">
+                    Logs
+                </a></h5>
+                <div id="collapseLog" class="card-body collapse">
+                    <pre>{{log}}</pre>
                 </div>
             </div>
         </main>
