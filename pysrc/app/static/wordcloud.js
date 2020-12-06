@@ -14,14 +14,14 @@ function isHighDensity() {
         (window.devicePixelRatio && window.devicePixelRatio > 1.3));
 }
 
-function process_word_cloud(id, width, height, words, callback) {
+function process_word_cloud(id, width, height, ww, wh, words, callback) {
     const canvas = document.getElementById(id);
     const ctx = canvas.getContext("2d");
     // Make canvas visible
     canvas.style.width = width.toString() + "px";
     canvas.style.height = height.toString() + "px";
-    const sx = (height - 20) / 300;
-    const sy = (width - 20) / 200;
+    const sx = (height - 20) / wh;
+    const sy = (width - 20) / ww;
 
     // Retina/HiDPI fix
     if (isHighDensity()) {

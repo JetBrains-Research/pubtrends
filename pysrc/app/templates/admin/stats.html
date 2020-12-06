@@ -16,7 +16,7 @@
         "use strict";
         $(document).ready(function() {
             var words = JSON.parse('{{ word_cloud }}'.replace(/&#34;/g, '"').replace(/&#39;/g, '\'').replace(/&amp;/g, '&'));
-            process_word_cloud('word_cloud', 900, 600, words, null);
+            process_word_cloud('word_cloud', $('#word_cloud').outerWidth(), 600, 900, 600, words, null);
         });
     </script>
 {% endif %}
@@ -52,7 +52,7 @@ Average duration: {{ paper_searches_avg_duration }}
 
 {% if word_cloud is defined %}
 <h3>Word cloud</h3>
-<canvas id="word_cloud" width="0" height="0" style="border:1px solid #eee;">
+<canvas id="word_cloud" style="border:1px solid #eee; width: 100%; height: 100%;">
     Canvas is not supported in your browser.
 </canvas>
 {% endif %}

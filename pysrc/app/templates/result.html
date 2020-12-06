@@ -135,14 +135,14 @@
 
             // Process main word cloud
             let words = JSON.parse('{{ papers_word_cloud }}'.replace(/&#34;/g, '"').replace(/&#39;/g, '\'').replace(/&amp;/g, '&'));
-            process_word_cloud('papers_word_cloud', $('#papers_word_cloud').outerWidth(), 335, words, papers_callback_word);
+            process_word_cloud('papers_word_cloud', $('#papers_word_cloud').outerWidth(), 335, 200, 300, words, papers_callback_word);
 
             // Process topics word clouds
             let cid = '';
             {% for (script, div), word_cloud, zoom_in_callback in topics_info_and_word_cloud_and_callback %}
                  words = JSON.parse('{{ word_cloud }}'.replace(/&#34;/g, '"').replace(/&#39;/g, '\'').replace(/&amp;/g, '&'));
                  cid = 'topic_word_cloud_{{ loop.index }}';
-                 process_word_cloud(cid, $('#' + cid).outerWidth(), 335, words, papers_callback_word);
+                 process_word_cloud(cid, $('#' + cid).outerWidth(), 335, 200, 300, words, papers_callback_word);
             {% endfor %}
 
             // Configure jobid for feedback
