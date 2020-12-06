@@ -245,4 +245,5 @@ def prepare_timeseries(dates, title):
     hover = p.select(dict(type=HoverTool))
     hover.tooltips = [('Date', '@date{%F}'), ('Count', '@count')]
     hover.formatters = {'@date': 'datetime'}
+    p.sizing_mode = 'stretch_width'
     return p
