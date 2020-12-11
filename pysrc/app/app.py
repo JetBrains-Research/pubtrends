@@ -1,15 +1,17 @@
+import hashlib
+import html
 import json
 import logging
 import os
+import pickle
 import random
 import re
 from threading import Lock
 from urllib.parse import quote
 
 import flask_admin
-import html
 from celery.result import AsyncResult
-from flask import Flask, url_for, redirect, render_template, request, abort, render_template_string
+from flask import Flask, url_for, redirect, render_template, request, abort, render_template_string, send_from_directory
 from flask_admin import helpers as admin_helpers, expose, BaseView
 from flask_security import Security, SQLAlchemyUserDatastore, \
     UserMixin, RoleMixin, current_user
@@ -37,7 +39,10 @@ PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
 MAX_QUERY_LENGTH = 60
 
-SOMETHING_WENT_WRONG = 'Something went wrong, please <a href="/">rerun</a> your search.'
+SOMETHING_WENT_WRONG_SEARCH = 'Something went wrong, please <a href="/">rerun</a> your search.'
+SOMETHING_WENT_WRONG_TOPIC = 'Something went wrong, please <a href="/">rerun</a> your topic analysis.'
+SOMETHING_WENT_WRONG_PAPER = 'Something went wrong, please <a href="/">rerun</a> your paper analysis.'
+ERROR_OCCURRED = "Error occurred. We're working on it. Please check back soon."
 
 app = Flask(__name__)
 
@@ -53,6 +58,16 @@ for p in LOG_PATHS:
         break
 else:
     raise RuntimeError('Failed to configure main log file')
+
+PREDEFINED_PATHS = ['/predefined', os.path.expanduser('~/.pubtrends/predefined')]
+for p in PREDEFINED_PATHS:
+    if os.path.isdir(p):
+        predefined_path = p
+        break
+else:
+    raise RuntimeError('Failed to configure predefined searches dir')
+PREDEFINED_LOCK = Lock()
+
 
 logging.basicConfig(filename=logfile,
                     filemode='a',
@@ -71,6 +86,22 @@ logger = app.logger
 
 def log_request(r):
     return f'addr:{r.remote_addr} args:{json.dumps(r.args)}'
+
+
+@app.route('/robots.txt')
+@app.route('/sitemap.xml')
+@app.route('/about.html')
+@app.route('/feedback.js')
+@app.route('/style.css')
+@app.route('/about_humanaging_graph.png')
+@app.route('/about_humanaging_report.png')
+@app.route('/about_humanaging_topic_other.png')
+@app.route('/about_pubtrends_scheme.png')
+@app.route('/smile.svg')
+@app.route('/meh.svg')
+@app.route('/frown.svg')
+def static_from_root():
+    return send_from_directory(app.static_folder, request.path[1:])
 
 
 @app.route('/status')
@@ -123,6 +154,66 @@ def status():
     })
 
 
+def save_predefined(viz, data, log, jobid):
+    if jobid.startswith('predefined_'):
+        logger.info(f'/result Saving predefined search {log_request(request)}')
+        path = os.path.join(predefined_path, jobid)
+        try:
+            PREDEFINED_LOCK.acquire()
+            path_viz = f'{path}_viz.pkl'
+            path_data = f'{path}_data.pkl'
+            path_log = f'{path}_log.pkl'
+            if not os.path.exists(path_viz):
+                with open(path_viz, 'wb') as f:
+                    pickle.dump(viz, f, pickle.HIGHEST_PROTOCOL)
+            if not os.path.exists(path_data):
+                with open(path_data, 'wb') as f:
+                    pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+            if not os.path.exists(path_log):
+                with open(path_log, 'wb') as f:
+                    pickle.dump(log, f, pickle.HIGHEST_PROTOCOL)
+        finally:
+            PREDEFINED_LOCK.release()
+
+
+def load_predefined_viz_log(jobid):
+    if jobid.startswith('predefined_'):
+        logger.info(f'/result Trying to load predefined viz, log {log_request(request)}')
+        path = os.path.join(predefined_path, jobid)
+        path_viz = f'{path}_viz.pkl'
+        path_log = f'{path}_log.pkl'
+        try:
+            PREDEFINED_LOCK.acquire()
+            if os.path.exists(path_viz) and os.path.exists(path_log):
+                with open(path_viz, 'rb') as f:
+                    viz = pickle.load(f)
+                with open(path_log, 'rb') as f:
+                    log = pickle.load(f)
+                return viz, log
+        finally:
+            PREDEFINED_LOCK.release()
+    return None
+
+
+def load_predefined_or_result_data(jobid):
+    if jobid.startswith('predefined_'):
+        logger.info(f'/result Trying to load predefined data {log_request(request)}')
+        path = os.path.join(predefined_path, jobid)
+        path_data = f'{path}_data.pkl'
+        try:
+            PREDEFINED_LOCK.acquire()
+            if os.path.exists(path_data):
+                with open(path_data, 'rb') as f:
+                    return pickle.load(f)
+        finally:
+            PREDEFINED_LOCK.release()
+    job = AsyncResult(jobid, app=celery)
+    if job and job.state == 'SUCCESS':
+        viz, data, log = job.result
+        return data
+    return None
+
+
 @app.route('/result')
 def result():
     jobid = request.args.get('jobid')
@@ -130,24 +221,46 @@ def result():
     source = request.args.get('source')
     limit = request.args.get('limit')
     sort = request.args.get('sort')
-    if jobid and query and source and limit is not None and sort is not None:
-        job = AsyncResult(jobid, app=celery)
-        if job and job.state == 'SUCCESS':
-            data, _, log = job.result
-            logger.info(f'/result success {log_request(request)}')
-            return render_template('result.html',
-                                   query=trim(query, MAX_QUERY_LENGTH),
-                                   source=source,
-                                   limit=limit,
-                                   sort=sort,
-                                   version=VERSION,
-                                   log=log,
-                                   **data)
-        logger.info(f'/result No job or out-of-date job, restart it {log_request(request)}')
-        return search_terms_(request.args)
-    else:
-        logger.error(f'/result error wrong request {log_request(request)}')
-        return render_template_string(SOMETHING_WENT_WRONG), 400
+    noreviews = request.args.get('noreviews') == 'on'  # Include reviews in the initial search phase
+    expand = request.args.get('expand')  # Fraction of papers to cover by references
+    try:
+        if jobid and query and source and limit is not None and sort is not None:
+            job = AsyncResult(jobid, app=celery)
+            if job and job.state == 'SUCCESS':
+                viz, data, log = job.result
+                save_predefined(viz, data, log, jobid)
+                logger.info(f'/result success {log_request(request)}')
+                return render_template('result.html',
+                                       query=trim(query, MAX_QUERY_LENGTH),
+                                       source=source,
+                                       limit=limit,
+                                       sort=sort,
+                                       version=VERSION,
+                                       log=log,
+                                       **viz)
+            viz_log = load_predefined_viz_log(jobid)
+            if viz_log is not None:
+                viz, log = viz_log
+                return render_template('result.html',
+                                       query=trim(query, MAX_QUERY_LENGTH),
+                                       source=source,
+                                       limit=limit,
+                                       sort=sort,
+                                       version=VERSION,
+                                       log=log,
+                                       **viz)
+            logger.info(f'/result No job or out-of-date job, restart it {log_request(request)}')
+            analyze_search_terms.apply_async(args=[source, query, sort, int(limit), noreviews, int(expand) / 100],
+                                             task_id=jobid)
+            return redirect(url_for('.process', query=query, source=source, limit=limit, sort=sort,
+                                    noreviews=noreviews, expand=expand,
+                                    jobid=jobid))
+        else:
+            logger.error(f'/result error wrong request {log_request(request)}')
+            return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
+    except Exception as e:
+        logger.error(f'/result error', e)
+        return render_template_string(ERROR_OCCURRED), 500
 
 
 @app.route('/process')
@@ -157,7 +270,7 @@ def process():
 
         if not jobid:
             logger.error(f'/process error wrong request {log_request(request)}')
-            return render_template_string(SOMETHING_WENT_WRONG)
+            return render_template_string(SOMETHING_WENT_WRONG_SEARCH)
 
         query = html.unescape(request.args.get('query') or '')
         analysis_type = request.values.get('analysis_type')
@@ -193,7 +306,7 @@ def process():
                                    query=trim(query, MAX_QUERY_LENGTH), source=source,
                                    redirect_page="paper",  # redirect in case of success
                                    jobid=jobid, version=VERSION)
-        elif analysis_type == SEARCH_TERMS_ANALYSIS_TITLE:
+        elif query:
             logger.info(f'/process regular search {log_request(request)}')
             limit = request.args.get('limit')
             sort = request.args.get('sort')
@@ -223,7 +336,7 @@ def process():
                                    jobid=jobid, version=VERSION)
 
     logger.error(f'/process error {log_request(request)}')
-    return render_template_string(SOMETHING_WENT_WRONG), 400
+    return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
 
 
 @app.route('/process_paper')
@@ -240,6 +353,11 @@ def process_paper():
                                         limit=request.values.get('limit'))
             return redirect(url_for('.process', query=query, analysis_type=PAPER_ANALYSIS_TITLE,
                                     id=id_list[0], source=source, jobid=job.id))
+        logger.error(f'/process_paper error job is not success {log_request(request)}')
+        return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
+    else:
+        logger.error(f'/process_paper error wrong request no jobid {log_request(request)}')
+        return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
 
 
 @app.route('/paper')
@@ -247,18 +365,26 @@ def paper():
     jobid = request.values.get('jobid')
     source = request.args.get('source')
     pid = request.args.get('id')
-    if jobid:
-        job = AsyncResult(jobid, app=celery)
-        if job and job.state == 'SUCCESS':
-            _, data, _ = job.result
-            logger.info(f'/paper success {log_request(request)}')
-            return render_template('paper.html', **prepare_paper_data(data, source, pid),
-                                   version=VERSION)
-        logger.error(f'/paper error jobid {log_request(request)}')
-        return render_template_string(SOMETHING_WENT_WRONG), 400
-    else:
-        logger.error(f'/paper error wrong request {log_request(request)}')
-        return render_template_string(SOMETHING_WENT_WRONG), 400
+    query = request.args.get('query')
+    limit = request.args.get('limit')
+    try:
+        if jobid and pid:
+            data = load_predefined_or_result_data(jobid)
+            if data is not None:
+                logger.info(f'/paper success {log_request(request)}')
+                return render_template('paper.html', **prepare_paper_data(data, source, pid),
+                                       version=VERSION)
+            else:
+                logger.info(f'/paper No job or out-of-date job, restart it {log_request(request)}')
+                job = analyze_id_list.apply_async(args=[source, [pid], PAPER_ANALYSIS, query, limit], task_id=jobid)
+                return redirect(url_for('.process', query=query, analysis_type=PAPER_ANALYSIS_TITLE,
+                                        id=pid, source=source, jobid=job.id))
+        else:
+            logger.error(f'/paper error wrong request {log_request(request)}')
+            return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
+    except Exception as e:
+        logger.error(f'/paper error', e)
+        return render_template_string(ERROR_OCCURRED), 500
 
 
 @app.route('/graph')
@@ -270,9 +396,8 @@ def graph():
     sort = request.args.get('sort')
     graph_type = request.args.get('type')
     if jobid:
-        job = AsyncResult(jobid, app=celery)
-        if job and job.state == 'SUCCESS':
-            _, data, _ = job.result
+        data = load_predefined_or_result_data(jobid)
+        if data is not None:
             loader, url_prefix = Loaders.get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
             analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
             analyzer.init(data)
@@ -312,10 +437,10 @@ def graph():
                     graph_cytoscape_json=json.dumps(graph_cs)
                 )
         logger.error(f'/graph error job id {log_request(request)}')
-        return render_template_string(SOMETHING_WENT_WRONG), 400
+        return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     else:
         logger.error(f'/graph error wrong request {log_request(request)}')
-        return render_template_string(SOMETHING_WENT_WRONG), 400
+        return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
 
 
 @app.route('/papers')
@@ -352,9 +477,8 @@ def show_ids():
         search_string += 'Hot Papers'
 
     if jobid:
-        job = AsyncResult(jobid, app=celery)
-        if job and job.state == 'SUCCESS':
-            _, data, _ = job.result
+        data = load_predefined_or_result_data(jobid)
+        if data is not None:
             logger.info(f'/papers success {log_request(request)}')
             export_name = re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{query}_{search_string}'.lower().strip('_')))
             return render_template('papers.html',
@@ -367,7 +491,7 @@ def show_ids():
                                    export_name=export_name,
                                    papers=prepare_papers_data(data, source, comp, word, author, journal, papers_list))
     logger.error(f'/papers error {log_request(request)}')
-    return render_template_string(SOMETHING_WENT_WRONG), 400
+    return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
 
 
 @app.route('/cancel')
@@ -394,8 +518,6 @@ def cancel():
 # Index page
 @app.route('/')
 def index():
-    logger.info(f'/ {log_request(request)}')
-
     search_example_source = ''
     search_example_terms = ''
     sources = []
@@ -406,15 +528,15 @@ def index():
     if len(sources):
         if random.choice(sources) == 'pm':
             search_example_source = 'Pubmed'
-            search_example_terms = random.choice(PUBTRENDS_CONFIG.pm_search_example_terms)
+            search_example_terms = PUBTRENDS_CONFIG.pm_search_example_terms
         if random.choice(sources) == 'ss':
             search_example_source = 'Semantic Scholar'
-            search_example_terms = random.choice(PUBTRENDS_CONFIG.ss_search_example_terms)
+            search_example_terms = PUBTRENDS_CONFIG.ss_search_example_terms
+    search_example_terms = [(t, hashlib.md5(t.encode('utf-8')).hexdigest()) for t in search_example_terms]
     if PUBTRENDS_CONFIG.min_search_words > 1:
         min_words_message = f'Minimum {PUBTRENDS_CONFIG.min_search_words} words per query. '
     else:
         min_words_message = ''
-
     return render_template('main.html',
                            version=VERSION,
                            limits=PUBTRENDS_CONFIG.show_max_articles_options,
@@ -428,38 +550,25 @@ def index():
 
 @app.route('/search_terms', methods=['POST'])
 def search_terms():
-    return search_terms_(request.form)
-
-
-def search_terms_(data):
-    query = html.unescape(data.get('query'))  # Original search query
-    source = data.get('source')  # Pubmed or Semantic Scholar
-    sort = data.get('sort')  # Sort order
-    limit = data.get('limit')  # Limit
-    jobid = data.get('jobid')  # Optional job id
-    noreviews = data.get('noreviews')  # Include reviews in the initial search phase
-    expand = data.get('expand')  # Fraction of papers to cover by references
+    query = html.unescape(request.form.get('query'))  # Original search query
+    source = request.form.get('source')  # Pubmed or Semantic Scholar
+    sort = request.form.get('sort')  # Sort order
+    limit = request.form.get('limit')  # Limit
+    noreviews = request.form.get('noreviews') == 'on'  # Include reviews in the initial search phase
+    expand = request.form.get('expand')  # Fraction of papers to cover by references
     try:
-        if query and source and sort and limit and noreviews is not None and expand:
-            if not jobid:
-                logger.info(f'/search_terms {log_request(request)}')
-                job = analyze_search_terms.delay(source, query=query, limit=int(limit), sort=sort,
-                                                 noreviews=noreviews == 'on', expand=int(expand) / 100)
-                jobid = job.id
-            else:
-                logger.info(f'/search_terms with fixed jobid {log_request(request)}')
-                analyze_search_terms.apply_async(args=[source, query, sort, int(limit), noreviews, int(expand) / 100],
-                                                 task_id=jobid)
-
+        if query and source and sort and limit and expand:
+            logger.info(f'/search_terms {log_request(request)}')
+            job = analyze_search_terms.delay(source, query=query, limit=int(limit), sort=sort,
+                                             noreviews=noreviews, expand=int(expand) / 100)
             return redirect(url_for('.process', query=query, source=source, limit=limit, sort=sort,
                                     noreviews=noreviews, expand=expand,
-                                    analysis_type=SEARCH_TERMS_ANALYSIS_TITLE,
-                                    jobid=jobid))
+                                    jobid=job.id))
+        logger.error(f'/search_terms error {log_request(request)}')
+        return render_template_string(SOMETHING_WENT_WRONG_TOPIC), 400
     except Exception as e:
         logger.error(f'/search_terms error', e)
-        return render_template_string("Error occurred. We're working on it. Please check back soon."), 500
-    logger.error(f'/search_terms error {log_request(request)}')
-    return render_template_string(SOMETHING_WENT_WRONG), 400
+        return render_template_string(ERROR_OCCURRED), 500
 
 
 @app.route('/search_paper', methods=['POST'])
@@ -475,31 +584,30 @@ def search_paper():
             limit = data.get('limit')
             job = find_paper_async.delay(source, key, value)
             return redirect(url_for('.process', source=source, key=key, value=value, jobid=job.id, limit=limit))
+        logger.error(f'/search_paper error {log_request(request)}')
+        return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
     except Exception as e:
         logger.error(f'/search_paper error', e)
-        return render_template_string("Error occurred. We're working on it. Please check back soon."), 500
-    logger.error(f'/search_paper error {log_request(request)}')
-    return render_template_string(SOMETHING_WENT_WRONG), 400
+        return render_template_string(ERROR_OCCURRED), 500
 
 
 @app.route('/process_ids', methods=['POST'])
 def process_ids():
     source = request.form.get('source')  # Pubmed or Semantic Scholar
     query = html.unescape(request.form.get('query'))  # Original search query
-
     try:
         if source and query and 'id_list' in request.form:
             id_list = request.form.get('id_list').split(',')
             zoom = request.form.get('zoom')
             analysis_type = zoom_name(zoom)
-            job = analyze_id_list.delay(source, ids=id_list, zoom=int(zoom), query=query, limit = None)
+            job = analyze_id_list.delay(source, ids=id_list, zoom=int(zoom), query=query, limit=None)
             logger.info(f'/process_ids {log_request(request)}')
             return redirect(url_for('.process', query=query, analysis_type=analysis_type, source=source, jobid=job.id))
+        logger.error(f'/process_ids error {log_request(request)}')
+        return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception as e:
         logger.error(f'/process_ids error', e)
-        return render_template_string("Error occurred. We're working on it. Please check back soon."), 500
-    logger.error(f'/process_ids error {log_request(request)}')
-    return render_template_string(SOMETHING_WENT_WRONG), 400
+        return render_template_string(ERROR_OCCURRED), 500
 
 #######################
 # Review functionality #
@@ -572,7 +680,7 @@ def feedback():
         logger.info('Feedback ' + json.dumps(dict(type=ftype, message=message, email=email, jobid=jobid)))
     else:
         logger.error(f'/feedback error')
-        return render_template_string("Error occurred. We're working on it. Please check back soon."), 500
+        return render_template_string(ERROR_OCCURRED), 500
     return render_template_string('Thanks you for the feedback!'), 200
 
 

@@ -39,6 +39,13 @@ def preprocess_search_query_for_postgres(query, min_search_words):
                       f'all the query wrapped in "" for phrasal search. Query: {query}')
 
 
+def no_stemming_filter(query_str):
+    return ' AND (' + ' OR '.join(' AND '.join(
+        f"(LOWER(P.title) LIKE '%{w.strip()}%' OR LOWER(P.abstract) LIKE '%{w.strip()}%')"
+        for w in re.split(r'(?:&|<->)+', q)
+    ) for q in query_str.lower().split('|')) + ')'
+
+
 def process_cocitations_postgres(cursor):
     data = []
     lines = 0

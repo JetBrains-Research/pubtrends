@@ -209,21 +209,23 @@ class PlotPreprocessor:
     def topic_evolution_data(df, kwds, n_steps):
         def sort_nodes_key(node):
             y, c = node[0].split(' ')
-            return int(y), -int(c)
+            return int(y), 1 if c == 'NPY' else -int(c)
 
         cols = df.columns[2:]
         pairs = list(zip(cols, cols[1:]))
         nodes = set()
         edges = []
         for now, then in pairs:
-            nodes_now = [f'{now} {c}' for c in df[now].unique()]
-            nodes_then = [f'{then} {c}' for c in df[then].unique()]
+            nodes_now = [f'{now} {PlotPreprocessor.evolution_topic_name(c)}' for c in df[now].unique()]
+            nodes_then = [f'{then} {PlotPreprocessor.evolution_topic_name(c)}' for c in df[then].unique()]
 
             inner = {node: 0 for node in nodes_then}
             changes = {node: inner.copy() for node in nodes_now}
             for pmid, comp in df.iterrows():
                 c_now, c_then = comp[now], comp[then]
-                changes[f'{now} {c_now}'][f'{then} {c_then}'] += 1
+                changes[f'{now} {PlotPreprocessor.evolution_topic_name(c_now)}'][
+                    f'{then} {PlotPreprocessor.evolution_topic_name(c_then)}'
+                ] += 1
 
             for v in nodes_now:
                 for u in nodes_then:
@@ -235,18 +237,26 @@ class PlotPreprocessor:
         nodes_data = []
         for node in nodes:
             year, c = node.split(' ')
-            if int(c) >= 0:
-                if n_steps < 4:
-                    label = f"{year} {', '.join(kwds[int(year)][int(c)][:5])}"
-                else:
-                    # Fix topic numbering to start with 1
-                    label = f"{year} {int(c) + 1}"
+            if c == 'NPY':
+                label = c
             else:
-                label = "NPY"
+                if n_steps < 4:
+                    label = f"{year} {', '.join(kwds[int(year)][int(c) - 1][:5])}"
+                else:
+                    label = f"{year} {c}"
             nodes_data.append((node, label))
         nodes_data = sorted(nodes_data, key=sort_nodes_key, reverse=True)
 
         return edges, nodes_data
+
+    @staticmethod
+    def evolution_topic_name(comp):
+        if comp == -1:
+            result = 'NPY'
+        else:
+            # Fix topic numbering to start with 1
+            result = comp + 1
+        return result
 
     @staticmethod
     def topic_evolution_keywords_data(kwds):

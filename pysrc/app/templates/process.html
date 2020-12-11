@@ -3,6 +3,7 @@
 <head>
     <title>{{query}} at {{source}}{{ search_string }} {{limit}} {{sort}} - PubTrends</title>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
           integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
           crossorigin="anonymous">
@@ -144,7 +145,7 @@
             <li class="breadcrumb-item"><strong>{{ query }}</strong></li>
             <li class="breadcrumb-item">{{ limit }} {{ sort }}</li>
         </ol>
-        <button class="btn btn-lg btn-link grey" type="reset" onclick="cancel()">&#10006;&nbsp;Cancel</button>
+        <button class="btn btn-lg btn-link grey no-padding-left" type="reset" onclick="cancel()">&#10006;&nbsp;Cancel</button>
     </nav>
     <div id="progress" class="progress">
         <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"

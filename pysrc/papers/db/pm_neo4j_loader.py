@@ -83,7 +83,7 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
                 CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", '{query_str}') YIELD node
                 {noreviews_filter}
                 RETURN node.pmid as pmid
-                ORDER BY node.date DESC
+                ORDER BY node.year DESC
                 LIMIT {limit};
                 '''
         else:
@@ -113,7 +113,7 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
             MATCH (p:PMPublication)
             WHERE p.pmid IN pmids
             RETURN p.pmid as id, p.title as title, p.abstract as abstract,
-                p.date.year as year, p.type as type, p.keywords as keywords, p.mesh as mesh, p.doi as doi, p.aux as aux
+                p.year as year, p.type as type, p.keywords as keywords, p.mesh as mesh, p.doi as doi, p.aux as aux
             ORDER BY id;
         '''
 
@@ -139,7 +139,7 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
             WITH [{','.join(str(id) for id in ids)}] AS pmids
             MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
             WHERE in.pmid IN pmids
-            RETURN in.pmid AS id, out.date.year AS year, COUNT(*) AS count
+            RETURN in.pmid AS id, out.year AS year, COUNT(*) AS count
             LIMIT {self.config.max_number_of_citations};
         '''
 
@@ -193,7 +193,7 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
             WITH [{','.join(str(id) for id in ids)}] AS pmids
             MATCH (out:PMPublication)-[:PMReferenced]->(in:PMPublication)
             WHERE in.pmid IN pmids
-            RETURN out.pmid AS citing, COLLECT(in.pmid) AS cited, out.date.year AS year
+            RETURN out.pmid AS citing, COLLECT(in.pmid) AS cited, out.year AS year
             LIMIT {self.config.max_number_of_cocitations};
         '''
 

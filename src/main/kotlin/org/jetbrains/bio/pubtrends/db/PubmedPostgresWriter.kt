@@ -54,8 +54,8 @@ open class PubmedPostgresWriter(
             exec("ALTER TABLE PMPublications ADD COLUMN IF NOT EXISTS tsv TSVECTOR;")
             exec(
                     """
-                    CREATE INDEX IF NOT EXISTS
-                    pm_title_abstract_index ON PMPublications using GIN (tsv);
+                    CREATE INDEX IF NOT EXISTS pm_doi_index ON PMPublications using HASH (doi); 
+                    CREATE INDEX IF NOT EXISTS pm_title_abstract_index ON PMPublications using GIN (tsv);
                     """
             )
             exec(
@@ -71,7 +71,7 @@ open class PubmedPostgresWriter(
             exec(
                     """
                     CREATE INDEX IF NOT EXISTS
-                    pmpublications_pmid_year ON pmpublications (pmid, date_part('year', date));
+                    pmpublications_pmid_year ON pmpublications (pmid, year);
                     """
             )
         }
@@ -87,6 +87,7 @@ open class PubmedPostgresWriter(
                     """
             )
             SchemaUtils.drop(PMPublications, PMCitations)
+            exec("DROP INDEX IF EXISTS pm_doi_index;")
             exec("DROP INDEX IF EXISTS pm_title_abstract_index;")
             exec("DROP INDEX IF EXISTS pmpublications_pmid_year;")
             changed = true
@@ -102,9 +103,9 @@ open class PubmedPostgresWriter(
             PMPublications.batchInsertOnDuplicateKeyUpdate(
                     articles, PMPublications.pmid,
                     listOf(
-                            PMPublications.date,
                             PMPublications.title,
                             PMPublications.abstract,
+                            PMPublications.year,
                             PMPublications.keywords,
                             PMPublications.mesh,
                             PMPublications.type,
@@ -113,11 +114,11 @@ open class PubmedPostgresWriter(
                     )
             ) { batch, article ->
                 batch[pmid] = article.pmid
-                batch[date] = article.date
                 batch[title] = article.title.take(PUBLICATION_MAX_TITLE_LENGTH)
                 if (article.abstract != "") {
                     batch[abstract] = article.abstract
                 }
+                batch[year] = article.year
                 batch[keywords] = article.keywords.joinToString(",")
                 batch[mesh] = article.mesh.joinToString(",")
                 batch[type] = article.type
@@ -145,14 +146,15 @@ open class PubmedPostgresWriter(
     }
 
     override fun delete(ids: List<String>) {
+        // Postgresql org.postgresql.core.v3.QueryExecutorImpl
+        // supports no more than Short.MAX_VALUE number of params
+        require(ids.size <= Short.MAX_VALUE) { "Too many ids to remove ${ids.size}" }
         val intIds = ids.map { it.toInt() }
         transaction {
             addLogger(Log4jSqlLogger)
-
             PMPublications.deleteWhere { PMPublications.pmid inList intIds }
-            PMCitations.deleteWhere {
-                (PMCitations.pmidOut inList intIds) or (PMCitations.pmidIn inList intIds)
-            }
+            PMCitations.deleteWhere { PMCitations.pmidOut inList intIds }
+            PMCitations.deleteWhere { PMCitations.pmidIn inList intIds }
             changed = true
         }
     }
@@ -169,7 +171,7 @@ open class PubmedPostgresWriter(
                     ${"$$"}
                     begin
                     IF exists (select matviewname from pg_matviews where matviewname = 'matview_pmcitations') THEN
-                        refresh materialized view concurrently matview_pmcitations;
+                        refresh materialized view matview_pmcitations;
                     END IF;
                     end;
                     ${"$$"};

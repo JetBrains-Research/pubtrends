@@ -1,5 +1,3 @@
-from datetime import date
-
 import pandas as pd
 
 from pysrc.papers.db.article import AuxInfo, Author, Journal
@@ -7,23 +5,23 @@ from pysrc.papers.db.loader import Loader
 from pysrc.papers.db.pm_article import PubmedArticle
 
 REQUIRED_ARTICLES = [
-    PubmedArticle(pmid=1, title='Article Title 1', date=date(1963, 2, 1), doi='10.000/0000',
+    PubmedArticle(pmid=1, title='Article Title 1', year=1963, doi='10.000/0000',
                   aux=AuxInfo(
                       authors=[Author(name='Geller R'), Author(name='Geller M'), Author(name='Bing Ch')],
                       journal=Journal(name='Nature'))),
-    PubmedArticle(2, 'Article Title 2', abstract='Abstract', date=date(1965, 4, 10),
+    PubmedArticle(2, 'Article Title 2', abstract='Abstract', year=1965,
                   aux=AuxInfo(
                       authors=[Author(name='Buffay Ph'), Author(name='Geller M'), Author(name='Doe J')],
                       journal=Journal(name='Science'))),
-    PubmedArticle(3, 'Article Title 3', abstract='Other Abstract', date=date(1967, 6, 21),
+    PubmedArticle(3, 'Article Title 3', abstract='Other Abstract', year=1967,
                   aux=AuxInfo(
                       authors=[Author(name='Doe J'), Author(name='Buffay Ph')],
                       journal=Journal(name='Nature'))),
-    PubmedArticle(4, 'Article Title 4', date=date(1968, 1, 1),
+    PubmedArticle(4, 'Article Title 4', year=1968,
                   aux=AuxInfo(
                       authors=[Author(name='Doe J'), Author(name='Geller R')],
                       journal=Journal(name='Science'))),
-    PubmedArticle(5, 'Article Title 5', date=date(1975, 1, 1),
+    PubmedArticle(5, 'Article Title 5', year=1975,
                   aux=AuxInfo(
                       authors=[Author(name='Green R'), Author(name='Geller R'), Author(name='Doe J')],
                       journal=Journal(name='Nature'))),
@@ -31,10 +29,10 @@ REQUIRED_ARTICLES = [
 ]
 
 EXTRA_ARTICLES = [
-    PubmedArticle(7, 'Article Title 7', date=date(1968, 1, 1)),
-    PubmedArticle(8, 'Article Title 8', date=date(1969, 1, 1)),
-    PubmedArticle(9, 'Article Title 9', date=date(1970, 1, 1)),
-    PubmedArticle(10, 'Article Title 10', date=date(1970, 1, 1))
+    PubmedArticle(7, 'Article Title 7', year=1968),
+    PubmedArticle(8, 'Article Title 8', year=1969),
+    PubmedArticle(9, 'Article Title 9', year=1970),
+    PubmedArticle(10, 'Article Title 10', year=1970)
 ]
 
 ARTICLES = REQUIRED_ARTICLES + EXTRA_ARTICLES

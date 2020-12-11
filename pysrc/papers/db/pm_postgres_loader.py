@@ -5,7 +5,7 @@ import pandas as pd
 
 from pysrc.papers.db.loader import Loader
 from pysrc.papers.db.postgres_connector import PostgresConnector
-from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres, \
+from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres, no_stemming_filter, \
     process_bibliographic_coupling_postgres, process_cocitations_postgres
 from pysrc.papers.utils import SORT_MOST_RELEVANT, SORT_MOST_CITED, SORT_MOST_RECENT, preprocess_doi, \
     preprocess_search_title
@@ -63,36 +63,40 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         self.check_connection()
         noreviews_filter = "AND type != 'Review'" if noreviews else ''
         query_str = preprocess_search_query_for_postgres(query, self.config.min_search_words)
+        # Disable stemming-based lookup for now, see: https://github.com/JetBrains-Research/pubtrends/issues/242
+        exact_filter = no_stemming_filter(query_str)
+
         if sort == SORT_MOST_RELEVANT:
             query = f'''
-                SELECT pmid
+                SELECT P.pmid
                 FROM to_tsquery('{query_str}') query, PMPublications P
-                WHERE tsv @@ query {noreviews_filter}
+                WHERE tsv @@ query {noreviews_filter} {exact_filter}
                 ORDER BY ts_rank_cd(P.tsv, query) DESC
                 LIMIT {limit};
                 '''
         elif sort == SORT_MOST_CITED:
             query = f'''
-                SELECT P.pmid as pmid
+                SELECT P.pmid
                 FROM PMPublications P
                     LEFT JOIN matview_pmcitations C
                     ON P.pmid = C.pmid
-                WHERE tsv @@ to_tsquery('{query_str}') {noreviews_filter}
+                WHERE tsv @@ to_tsquery('{query_str}') {noreviews_filter} {exact_filter}
                 ORDER BY count DESC NULLS LAST
                 LIMIT {limit};
                 '''
         elif sort == SORT_MOST_RECENT:
             query = f'''
-                SELECT pmid
+                SELECT P.pmid
                 FROM to_tsquery('{query_str}') query, PMPublications P
-                WHERE tsv @@ query {noreviews_filter}
-                ORDER BY date DESC NULLS LAST
+                WHERE tsv @@ query {noreviews_filter} {exact_filter}
+                ORDER BY year DESC NULLS LAST
                 LIMIT {limit};
                 '''
         else:
             raise ValueError(f'Illegal sort method: {sort}')
 
         with self.postgres_connection.cursor() as cursor:
+            logger.debug(f'search query: {query}')
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
 
@@ -102,8 +106,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         self.check_connection()
         vals = self.ids_to_vals(ids)
         query = f'''
-                SELECT P.pmid as id, title, abstract, date_part('year', date) as year, type,
-                    keywords, mesh, doi, aux
+                SELECT P.pmid as id, title, abstract, year, type, keywords, mesh, doi, aux
                 FROM PMPublications P
                 WHERE P.pmid IN (VALUES {vals});
                 '''
@@ -114,7 +117,6 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                               dtype=object)
         if np.any(df[['id', 'title']].isna()):
             raise ValueError('Paper must have ID and title')
-        df['id'] = df['id'].apply(str)
         logger.debug(f'Loaded {len(df)} papers')
         return Loader.process_publications_dataframe(df)
 
@@ -127,13 +129,14 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 JOIN PMPublications P
                 ON C.pmid_in = P.pmid
                 WHERE P.pmid in (VALUES {vals}))
-            SELECT X.pmid_in AS id, date_part('year', P.date) as year, COUNT(1) AS count
+            SELECT X.pmid_in AS id, year, COUNT(1) AS count
             FROM X
                 JOIN PMPublications P
                 ON X.pmid_out = P.pmid
                 GROUP BY id, year
                 LIMIT {self.config.max_number_of_citations};
             '''
+        logger.debug('load_citations_by_year query: ', query)
 
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
@@ -192,7 +195,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
     def load_cocitations(self, ids):
         self.check_connection()
         vals = self.ids_to_vals(ids)
-        query = f'''SELECT C.pmid_out as citing, date_part('year', P.date) as year, ARRAY_AGG(C.pmid_in) as cited_list
+        query = f'''SELECT C.pmid_out as citing, year, ARRAY_AGG(C.pmid_in) as cited_list
                         FROM PMCitations C
                             JOIN PMPublications P
                             ON C.pmid_out = P.pmid

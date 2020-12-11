@@ -14,12 +14,14 @@ function isHighDensity() {
         (window.devicePixelRatio && window.devicePixelRatio > 1.3));
 }
 
-function process_word_cloud(id, width, height, words, callback) {
+function process_word_cloud(id, width, height, ww, wh, words, callback) {
     const canvas = document.getElementById(id);
     const ctx = canvas.getContext("2d");
     // Make canvas visible
     canvas.style.width = width.toString() + "px";
     canvas.style.height = height.toString() + "px";
+    const sx = (height - 20) / wh;
+    const sy = (width - 20) / ww;
 
     // Retina/HiDPI fix
     if (isHighDensity()) {
@@ -41,7 +43,7 @@ function process_word_cloud(id, width, height, words, callback) {
         ctx.font = size.toString() + "px Arial Bold";
 
         var linkWidth = ctx.measureText(word).width,
-            linkHeight = parseInt(ctx.font); // Get lineheight out of fontsize
+            linkHeight = parseInt(ctx.font); // Get line height out of font size
 
         if (vertical) {
             ctx.save();
@@ -103,7 +105,7 @@ function process_word_cloud(id, width, height, words, callback) {
         const w = words[i];
         const word = w[0], x = w[1], y = w[2], size = w[3], vertical = w[4], color = w[5];
         // Add word with small shift, coordinates changed!
-        addWord(word, y + 20, x + 20, size, vertical, color);
+        addWord(word, y * sy + 10, x * sx + 10, size, vertical, color);
     }
 
     // Add mouse listeners

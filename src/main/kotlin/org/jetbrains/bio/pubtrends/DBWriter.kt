@@ -8,8 +8,6 @@ import org.jetbrains.bio.pubtrends.db.SemanticScholarPostgresWriter
 import org.jetbrains.bio.pubtrends.pm.PublicationType
 import org.jetbrains.bio.pubtrends.pm.PubmedArticle
 import org.jetbrains.bio.pubtrends.ss.*
-import org.joda.time.DateTime
-import org.joda.time.DateTimeZone
 import java.util.*
 
 /**
@@ -21,7 +19,7 @@ class DBWriter {
 
         private val PUBMED_ARTICLE = PubmedArticle(
                 pmid = 1,
-                date = DateTime(1986, 4, 7, 12, 0, DateTimeZone.UTC),
+                year = 1986,
                 title = "Test title 1",
                 abstract = "Test abstract 2",
                 aux = org.jetbrains.bio.pubtrends.pm.AuxInfo(

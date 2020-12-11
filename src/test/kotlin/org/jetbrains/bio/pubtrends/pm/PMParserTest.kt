@@ -41,13 +41,13 @@ class PMParserTest {
 
     @Test
     fun testParseYear() {
-        assertEquals(PubmedArticles.articles[420880]?.date, articleMap[420880]?.date)
+        assertEquals(PubmedArticles.articles[420880]?.year, articleMap[420880]?.year)
     }
 
     @Test
     fun testParseYearFromMedlineDateField() {
         listOf(10188493, 14316043, 18122624).forEach {
-            assertEquals(PubmedArticles.articles[it]?.date, articleMap[it]?.date)
+            assertEquals(PubmedArticles.articles[it]?.year, articleMap[it]?.year)
         }
     }
 

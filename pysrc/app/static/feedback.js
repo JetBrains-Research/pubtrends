@@ -16,6 +16,14 @@ function clearSelection($buttons) {
 //      element should be placed under class btn-group-horizontal, which id is used as key
 // value -1, 0, +1
 function feedback(element, value) {
+    feedbackImpl(element, value, true)
+}
+
+function feedbackNoMessageForm(element, value) {
+    feedbackImpl(element, value, false)
+}
+
+function feedbackImpl(element, value, messageFormIsAvailable) {
     let $element = $(element);
     let groupId = $element.closest('.btn-group-horizontal').attr('id');
     let key = groupId;
@@ -54,7 +62,13 @@ function feedback(element, value) {
             console.error("Error recording feedback: " + responseText);
         }
     });
-    $.notify("Thanks! You can leave us a message below.", {
+    let message;
+    if (messageFormIsAvailable) {
+        message = "Thanks! You can leave us a message below.";
+    } else {
+        message = "Thanks for the feedback!";
+    }
+    $.notify(message, {
         className: "success",
         position: "bottom right"
     });

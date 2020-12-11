@@ -1,7 +1,5 @@
 package org.jetbrains.bio.pubtrends.pm
 
-import org.joda.time.DateTime
-
 data class Author(
         val name: String = "",
         val affiliation: List<String> = listOf()
@@ -33,7 +31,7 @@ data class PubmedArticle(
         val pmid: Int = 0,
         val title: String = "",
         val abstract: String = "",
-        val date: DateTime? = null,
+        val year: Int = 1970,
         val type: PublicationType = PublicationType.Article,
         val keywords: List<String> = listOf(),
         val mesh: List<String> = listOf(),

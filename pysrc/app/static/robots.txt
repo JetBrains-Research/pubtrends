@@ -1,0 +1,7 @@
+User-agent: * #All the robots are equal
+Allow: /
+Disallow: /admin/ # Admin interface
+Disallow: /result/ # Search result
+Disallow: /paper/ # Paper results
+Disallow: /result/ # List of papers
+Disallow: /graph/ # Graph representation

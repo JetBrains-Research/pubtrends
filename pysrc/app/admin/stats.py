@@ -99,8 +99,8 @@ def prepare_stats_data(logfile):
                     continue
                 if jobid in searches_infos:
                     info = searches_infos[jobid]
-                    if 'graph_structure' not in info:
-                        info['graph_structure'] = True
+                    if 'graph_similarity' not in info:
+                        info['graph_similarity'] = True
 
             if '/process paper analysis addr:' in line:
                 paper_searches_dates.append(date)
@@ -158,7 +158,7 @@ def prepare_stats_data(logfile):
             duration,
             '+' if 'papers' in info else '-',
             '+' if 'graph_citations' in info else '-',
-            '+' if 'graph_structure' in info else '-',
+            '+' if 'graph_similarity' in info else '-',
         ))
     result['recent_searches'] = recent_searches_results[::-1]
 
@@ -176,7 +176,7 @@ def prepare_stats_data(logfile):
         link = f'/paper?{"&".join([f"{a}={v}" for a, v in args.items()])}'
         recent_papers_results.append((
             date.strftime('%Y-%m-%d %H:%M:%S'),
-            args['query'],
+            args['query'] if 'query' in args else 'N/A',
             link,
             duration,
         ))
@@ -185,7 +185,7 @@ def prepare_stats_data(logfile):
     # Generate a word cloud
     text = ' '.join(terms).replace(',', ' ').replace('[^a-zA-Z0-9]+', ' ')
     if text:  # Check that string is not empty
-        wc = WordCloud(collocations=False, width=PLOT_WIDTH - 40, height=WC_HEIGHT - 40,
+        wc = WordCloud(collocations=False, width=PLOT_WIDTH, height=WC_HEIGHT,
                        background_color='white', max_font_size=100).generate(text)
         result['word_cloud'] = Plotter.word_cloud_prepare(wc)
 
@@ -204,7 +204,7 @@ def prepare_stats_data(logfile):
         result['searches_avg_duration'] = 'N/A'
     result['searches_papers_shown'] = sum('papers' in info for info in searches_infos.values())
     result['searches_graph_citations_shown'] = sum('graph_citations' in info for info in searches_infos.values())
-    result['searches_graph_structure_shown'] = sum('graph_structure' in info for info in searches_infos.values())
+    result['searches_graph_similarity_shown'] = sum('graph_similarity' in info for info in searches_infos.values())
 
     # Papers search statistics
     successful_paper_searches = sum('end' in info for info in papers_infos.values())
@@ -226,11 +226,14 @@ def prepare_stats_data(logfile):
 
 
 def duration_string(dt):
-    dt = dt.seconds
-    h = divmod(dt, 86400 * 3600)  # hours
-    m = divmod(h[1], 60)  # minutes
-    s = m[1]  # seconds
-    return f'{h[0]:02d}:{m[0]:02d}:{s:02d}'
+    return duration_seconds(dt.seconds)
+
+
+def duration_seconds(seconds):
+    s = seconds % 60
+    m = int(seconds / 60) % 60
+    h = int(seconds / 3600)
+    return f'{h:02d}:{m:02d}:{s:02d}'
 
 
 def prepare_timeseries(dates, title):
@@ -242,4 +245,5 @@ def prepare_timeseries(dates, title):
     hover = p.select(dict(type=HoverTool))
     hover.tooltips = [('Date', '@date{%F}'), ('Count', '@count')]
     hover.formatters = {'@date': 'datetime'}
+    p.sizing_mode = 'stretch_width'
     return p

@@ -448,14 +448,13 @@
                                     text = data.text;
                                 }
 
-                                content.innerHTML = "<b>Similarity</b> " + Number(data.similarity).toFixed(3) + "<br>" +
-                                    "Computed based on citations-based methods<br> "+
+                                content.innerHTML = "Similarity is computed based on citations "+
                                     "and text similarity between papers.<br>" +
                                     "The bigger value the more similar papers are." + "<br>" +
                                     "<b>Bibliographic coupling</b> " + bibcoupling + "<br>" +
                                     "<b>Co-citation</b> " + cocitation + "<br>" +
                                     "<b>Citation</b> " + citation + "<br>" +
-                                    "<b>Text</b> " + Number(text).toFixed(2) + "<br>";
+                                    "<b>Text similarity</b> " + Number(text).toFixed(2) + "<br>";
                             } else if('title' in data) {
                                 // Paper
                                 const topic = data.topic;
@@ -550,6 +549,9 @@
                     });
                     // Highlight node and neighbours on hover
                     cy.on('mouseover', 'node', function(event){
+                        if (window.freeze) {
+                            return;
+                        }
                         let sel = event.target;
                         if ('title' in sel.data()) {
                             let neighborEdges = sel.connectedEdges();
@@ -561,6 +563,9 @@
                         }
                     });
                     cy.on('mouseout', 'node', function(event){
+                        if (window.freeze) {
+                            return;
+                        }
                         let sel = event.target;
                         if ('title' in sel.data()) {
                             let neighborEdges = sel.connectedEdges();
@@ -588,11 +593,23 @@
                         });
                     }
                 });
-
+                window.freeze = false;
                 // Close all tippy
                 $(document).keyup(function(event) { // keyprocess doesn't handle escape key
                     if (event.keyCode === 27) { // Escape
-                         tippys.forEach((e) => e.hide());
+                        tippys.forEach((e) => e.hide());
+                        // Unfreeze hover highlighting
+                        window.freeze = false;
+                        // Remove frozen highlighting
+                        cy.nodes().removeClass('semitransp');
+                        cy.nodes().removeClass('highlight');
+                        cy.edges().removeClass('semitransp');
+                        cy.edges().removeClass('highlight');
+                    }
+                });
+                $(document).keypress(function(event) {
+                    if (event.keyCode === 70 || event.keyCode === 102) { // F or f
+                        window.freeze = true;  // Freeze hover highlighting
                     }
                 });
 
@@ -636,6 +653,7 @@
                         }
                     });
                 }
+                event.stopPropagation();
             }
 
             function result() {
@@ -728,7 +746,7 @@
     <script type="text/javascript">
         function startIntro(){
             var intro = introJs();
-            // Boolean value if we are visualizing citations graph (true) of structure graph (false)
+            // Boolean value if we are visualizing citations graph (true) of similarity graph (false)
             const citation_graph = {{ citation_graph }};
             let description;
             if (citation_graph) {
@@ -736,12 +754,14 @@
                     "Papers are visualized as nodes, citations as edges. " +
                     "Node size encodes citations count. See Color menu for node color options.<br>" +
                     "Papers without citations are grouped by topics.<br>" +
-                    "If citations graph looks messy, consider structure graph instead."
+                    "Similar papers are highlighted on hover, use <strong>F</strong> to freeze highlighting, <strong>Escape</strong> to unfreeze.<br>" +
+                    "If citations graph looks messy, consider similarity graph instead."
             } else {
-                description = "Structure graph represents similarity among papers.<br>" +
+                description = "Similarity graph represents similarity among papers.<br>" +
                     "Papers are visualized as nodes, similarities as edges. " +
                     "Node size shows paper citations count, see Color menu for node colors options. <br>" +
-                    "Edge width shows papers similarity, the thicker the more similar papers are." +
+                    "Edge width shows papers similarity, the thicker the more similar papers are.<br>" +
+                    "Similar papers are highlighted on hover, use <strong>F</strong> to freeze highlighting, <strong>Escape</strong> to unfreeze.<br>" +
                     "Edge color - similarity type.<br>" +
                     '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(128,255,0,0.3);"/></svg>' +
                     "&nbsp;<em>Bibliographic coupling</em> " +

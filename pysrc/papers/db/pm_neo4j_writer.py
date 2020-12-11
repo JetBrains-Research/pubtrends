@@ -28,7 +28,7 @@ class PubmedNeo4jWriter(Neo4jConnector):
 UNWIND {articles} AS data
 MERGE (n:PMPublication { pmid: data.pmid })
 ON CREATE SET
-    n.date = data.date,
+    n.year = data.year,
     n.title = data.title,
     n.abstract = data.abstract,
     n.type = data.type,
@@ -37,7 +37,7 @@ ON CREATE SET
     n.keywords = data.keywords,
     n.mesh = data.mesh
 ON MATCH SET
-    n.date = data.date,
+    n.year = data.year,
     n.title = data.title,
     n.abstract = data.abstract,
     n.type = data.type,

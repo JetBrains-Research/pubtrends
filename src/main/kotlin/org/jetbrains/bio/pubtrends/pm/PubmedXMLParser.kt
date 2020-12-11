@@ -2,9 +2,6 @@ package org.jetbrains.bio.pubtrends.pm
 
 import org.apache.logging.log4j.LogManager
 import org.jetbrains.bio.pubtrends.db.AbstractDBWriter
-import org.joda.time.DateTime
-import org.joda.time.DateTimeZone
-import org.joda.time.IllegalFieldValueException
 import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileInputStream
@@ -115,8 +112,6 @@ class PubmedXMLParser(
         // Containers for data about current article
         var pmid = 0
         var year: Int? = null
-        var month = 1
-        var day = 1
         var title = ""
         var abstractText = ""
 
@@ -173,8 +168,6 @@ class PubmedXMLParser(
 
                         pmid = 0
                         year = null
-                        month = 1
-                        day = 1
                         title = ""
                         abstractText = ""
 
@@ -250,15 +243,9 @@ class PubmedXMLParser(
                         deletedArticlePMIDList.add(dataElement.data.toInt())
                     }
 
-                    // Year of publication
+                    // Year of publication, ignore MONTH_TAG and DAY_TAG
                     fullName == YEAR_TAG -> {
                         year = dataElement.data.toInt()
-                    }
-                    fullName == MONTH_TAG -> {
-                        month = CALENDAR_MONTH[dataElement.data] ?: 1
-                    }
-                    fullName == DAY_TAG -> {
-                        day = dataElement.data.toInt()
                     }
                     fullName == MEDLINE_TAG -> {
                         val yearRegex = "(1\\d|20)\\d{2}".toRegex()
@@ -269,25 +256,6 @@ class PubmedXMLParser(
                         } else {
                             logger.warn(
                                     "Failed to parse year from MEDLINE date in article $pmid: " +
-                                            dataElement.data
-                            )
-                        }
-
-                        val monthRegex = "(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)".toRegex()
-                        val monthMatch = monthRegex.find(dataElement.data)
-
-                        if (monthMatch != null) {
-                            if (monthMatch.value in CALENDAR_MONTH.keys) {
-                                month = CALENDAR_MONTH[monthMatch.value] ?: 1
-                            } else {
-                                logger.debug(
-                                        "Failed to parse name of MEDLINE month in article $pmid: " +
-                                                dataElement.data
-                                )
-                            }
-                        } else {
-                            logger.debug(
-                                    "Failed to parse value of MEDLINE month in article $pmid: " +
                                             dataElement.data
                             )
                         }
@@ -403,21 +371,10 @@ class PubmedXMLParser(
                         citationCounter += citationList.size
                         keywordCounter += keywordList.size
 
-                        // There is an issue when some local dates might be absent in other calendars
-                        val date = try {
-                            if (year != null)
-                                DateTime(year, month, day, 12, 0, DateTimeZone.UTC)
-                            else null
-                        } catch (e: IllegalFieldValueException) {
-                            if (year != null)
-                                DateTime(year, 1, 1, 12, 0, DateTimeZone.UTC)
-                            else null
-                        }
-
                         abstractText = abstractText.trim()
                         val pubmedArticle = PubmedArticle(
                                 pmid = pmid,
-                                date = date,
+                                year = year ?: 1970,
                                 title = title.replace(NON_BASIC_LATIN_REGEX, ""),
                                 abstract = abstractText.replace(NON_BASIC_LATIN_REGEX, ""),
                                 keywords = keywordList.toList(),

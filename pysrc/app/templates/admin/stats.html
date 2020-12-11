@@ -16,7 +16,7 @@
         "use strict";
         $(document).ready(function() {
             var words = JSON.parse('{{ word_cloud }}'.replace(/&#34;/g, '"').replace(/&#39;/g, '\'').replace(/&amp;/g, '&'));
-            process_word_cloud('word_cloud', 900, 600, words, null);
+            process_word_cloud('word_cloud', $('#word_cloud').outerWidth(), 600, 900, 600, words, null);
         });
     </script>
 {% endif %}
@@ -30,7 +30,7 @@ Successful: {{ successful_searches }}<br>
 Average duration: {{ searches_avg_duration }}<br>
 Papers shown: {{ searches_papers_shown }}<br>
 Citations graph shown: {{ searches_graph_citations_shown }}<br>
-Structure graph shown: {{ searches_graph_structure_shown }}<br>
+Similarity graph shown: {{ searches_graph_similarity_shown }}<br>
 
 {% if total_terms_searches > 0 %}
 {% for script, div in terms_searches_plot %}
@@ -52,7 +52,7 @@ Average duration: {{ paper_searches_avg_duration }}
 
 {% if word_cloud is defined %}
 <h3>Word cloud</h3>
-<canvas id="word_cloud" width="0" height="0" style="border:1px solid #eee;">
+<canvas id="word_cloud" style="border:1px solid #eee; width: 100%; height: 100%;">
     Canvas is not supported in your browser.
 </canvas>
 {% endif %}
@@ -67,7 +67,7 @@ Average duration: {{ paper_searches_avg_duration }}
         <th scope="col">Duration</th>
         <th scope="col">Papers</th>
         <th scope="col">Citations</th>
-        <th scope="col">Structure</th>
+        <th scope="col">Similarity</th>
     </tr>
     </thead>
     <tbody>
@@ -86,6 +86,7 @@ Average duration: {{ paper_searches_avg_duration }}
     {% endfor %}
     </tbody>
 </table><small class="form-text text-muted">{{recent}} recent.</small>
+
 
 <h3>Recent papers</h3>
 <table class="table table-sm table-bordered table-striped">

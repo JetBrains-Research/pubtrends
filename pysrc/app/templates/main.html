@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html>
 <head>
     <title>PubTrends - Publication Analysis Service</title>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
           integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
           crossorigin="anonymous">
@@ -16,7 +16,7 @@
             integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
             crossorigin="anonymous"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1"/>
-<!--    <link rel="stylesheet" href="../static/style.css" />-->
+    <!--    <link rel="stylesheet" href="../static/style.css" />-->
 
     <!-- IntroJS feature tour -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.9.3/introjs.css"
@@ -31,9 +31,9 @@
             'use strict';
             window.addEventListener('load', function () {
                 // Fetch all the forms we want to apply custom Bootstrap validation styles to
-                var forms = document.getElementsByClassName('needs-validation');
+                const forms = document.getElementsByClassName('needs-validation');
                 // Loop over them and prevent submission
-                var validation = Array.prototype.filter.call(forms, function (form) {
+                Array.prototype.filter.call(forms, function (form) {
                     form.addEventListener('submit', function (event) {
                         if (form.checkValidity() === false) {
                             event.preventDefault();
@@ -47,49 +47,41 @@
     </script>
 </head>
 <body>
-<div class="container">
-    <div class="jumbotron">
-        <div class="jumbotron-background">
-            <!-- Photo by Susan Yin on Unsplash. Cropped and scaled to width 1600. -->
-            <img src="../static/susan-yin-2JIvboGLeho-unsplash-processed.jpg"
-                 class="background unselectable"/>
-        </div>
-        <div class="jumbotron-content mb-3">
+<div class="container mt-3">
+    <div class="jumbotron border-light">
             <h1>PubTrends</h1>
             <p class="lead">
-                Explore intellectual structure of research topic or analyze similar papers
+                Explore research topics and analyze similar papers
             </p>
-            <p class="lead">
+            <p>
                 <a id="tour-start" class="btn btn-light"
                    href="javascript:void(0);" onclick="startIntro();">Take a tour</a>
                 <a class="btn btn-light ml-1"
-                   href="https://research.jetbrains.org/groups/biolabs/projects?project_id=56"
+                   href="about.html"
                    target="_blank" role="button">Learn more</a>
             </p>
-        </div>
     </div>
-
-    <main class="card" role="main">
+    <main class="card border-light mt-3" role="main">
         <div class="card-header">
             <ul class="nav nav-tabs card-header-tabs" id="tabs-list" role="tablist">
                 <li id="step1" class="nav-item">
                     <a class="nav-link active grey" id="topic-tab" data-toggle="tab" href="#topic"
                        role="tab"
-                       aria-controls="topic" aria-selected="true">Topic Analysis</a>
+                       aria-controls="topic" aria-selected="true">Search</a>
                 </li>
                 <li id="step1-2" class="nav-item">
                     <a class="nav-link grey" id="paper-tab" data-toggle="tab" href="#paper"
                        role="tab"
-                       aria-controls="paper" aria-selected="false">Paper Analysis</a>
+                       aria-controls="paper" aria-selected="false">Paper</a>
                 </li>
             </ul>
         </div>
         <div class="card-body">
             <div class="tab-content">
-                <!-- Form for topic analysis -->
+                <!-- Form for Search -->
                 <div class="tab-pane fade show active" id="topic" role="tabpanel"
                      aria-labelledby="topic-tab">
-                    <form action="search_terms" method="POST" class="needs-validation mb-2" novalidate>
+                    <form action="search_terms" method="POST" class="mb-2 needs-validation" novalidate>
                         <div class="row no-gutters align-items-center">
                             <div id="step2" class="col input-group">
                                 <div class="input-group-prepend">
@@ -162,13 +154,13 @@
                             <div class="row no-gutters align-items-center mt-2">
                                 <div class="col input-group">
                                     <label style="margin-top: auto;margin-bottom: auto">
-                                        <input type="checkbox" checked="checked" name="noreviews" id="noreviews" >
+                                        <input type="checkbox" checked="checked" name="noreviews" id="noreviews">
                                         <span class="checkmark">Prefer no reviews</span>
                                     </label>
                                 </div>
                                 <div class="ml-2 col input-group d-flex align-items-center">
                                     <label for="expand" style="margin-top: auto;margin-bottom: auto">
-                                        Expand by references +
+                                        Expand by references %
                                     </label>
                                     <input id="expand" name="expand" class="ml-1 form-control" type="number"
                                            min="0" max="100" step="10" value="20"/>
@@ -178,20 +170,25 @@
                             </div>
                         </div>
                     </form>
-                    <form action="search_terms" method="post" class="inline">
+                    <!-- Preprocessed example -->
+                    Try one of our examples<br>
+                    {% for terms, hash in search_example_terms %}
+                    <form action="result" method="GET" class="inline">
                         <input type="hidden" name="source" value="{{ search_example_source }}">
                         <input type="hidden" name="sort" value="Most Cited">
                         <input type="hidden" name="limit" value="500">
                         <input type="hidden" name="noreviews" value="on">
                         <input type="hidden" name="expand" value="20">
-                        Try example search
-                        <button type="submit" name="query" value="{{ search_example_terms }}" class="link-button">
-                            {{ search_example_terms }} at {{ search_example_source }}.
+                        <input type="hidden" name="jobid" value="predefined_{{ hash }}">
+                        <button type="submit" name="query" value="{{ terms }}" class="btn btn-sm btn-outline-secondary mt-2 mr-2"
+                        style="border-radius: 10px;">
+                            {{ terms }}
                         </button>
                     </form>
+                    {% endfor %}
                 </div>
 
-                <!-- Form for paper analysis -->
+                <!-- Form for Paper -->
                 <div class="tab-pane fade" id="paper" role="tabpanel" aria-labelledby="paper-tab">
                     <form action="search_paper" method="POST" class="needs-validation" novalidate>
                         <div class="row no-gutters align-items-center">
@@ -224,7 +221,7 @@
                         </div>
                         <div id="collapsePaperAdvanced" class="collapse mt-2">
                             <div class="row no-gutters align-items-center">
-                                <div class="col input-group">
+                                <div class="col-4 input-group">
                                     <div class="input-group-prepend">
                                         <span class="input-group-text" id="paper-source-addon">Source</span>
                                     </div>
@@ -238,7 +235,7 @@
                                         {% endif %}
                                     </select>
                                 </div>
-                                <div class="ml-2 col input-group">
+                                <div class="ml-2 col-4 input-group">
                                     <div class="input-group-prepend">
                                         <span class="input-group-text" id="paper-amount-addon">Search</span>
                                     </div>
@@ -256,49 +253,24 @@
                                         <span class="input-group-text">papers</span>
                                     </div>
                                 </div>
+                            </div>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
     </main>
-    <div class="mt-2">
-        <a id="feedback" class="link" data-toggle="collapse" href="#collapseFeedbackForm"
-           role="button" aria-expanded="false">
-            Please help us to make the service better!
-        </a>
-    </div>
-    <div class="collapse mt-2" id="collapseFeedbackForm">
-        <p>
-            Use the form below to tell us more about you and your opinion about the service.<br>
-            Also you can optionally leave your email to contact you later.
-        </p>
-        <form name="feedback-form" action="feedback" method="POST">
-            <div class="form-group">
-                <label for="feedback-message">Message</label>
-                <textarea class="form-control" id="feedback-message" name="message"
-                          rows="5" maxlength="2000"
-                          aria-describedby="emailHelp"
-                          placeholder="Enter message"></textarea>
-                <small id="messageHelp" class="form-text text-muted">
-                    Max length: 2000.</small>
-            </div>
-            <div class="form-group">
-                <label for="feedback-email">Email address</label>
-                <input type="email" class="form-control" id="feedback-email" name="email"
-                       aria-describedby="emailHelp"
-                       placeholder="Enter email"/>
-                <small id="emailHelp" class="form-text text-muted">
-                    We'll never share your email with anyone else.</small>
-            </div>
-            <div class="form-group">
-                <button type="submit" class="btn btn-primary">Submit</button>
-            </div>
-            <div class="form-group">
-                <input type="hidden" class="form-control" id="feedback-jobid" name="jobid" value=""/>
-                <input type="hidden" class="form-control" name="type" value="main"/>
-            </div>
-        </form>
+    <div class="card border-light mt-3">
+        <div class="card-body">
+            Search publications by search query, find most cited and papers with fastest citations growth, explore
+            topics and trends,<br>
+            analyze frequent words and quantitative features in titles and abstracts, visualize graphs of citations and
+            papers similarity.<br>
+            Find most cited similar papers, important prior, and derivative works for the paper of interest.<br>
+            Pubtrends includes 30 million papers and 175 mln citations of biomedical literature from the <a
+                class="link"
+                href="https://pubmed.ncbi.nlm.nih.gov/">PubMed®</a> database.<br>
+        </div>
     </div>
 </div>
 <footer>
@@ -309,53 +281,43 @@
 </footer>
 
 <script type="text/javascript">
-    var decodeHtmlEntity = function(str) {
-        return str.replace(/&#(\d+);/g, function(match, dec) {
-            return String.fromCharCode(dec);
-        });
-    };
-
-    function useTermsSuggestion(){
-        document.getElementById('terms-input').value = decodeHtmlEntity("{{ search_example_terms }}");
-    }
-
-    function startIntro(){
+    function startIntro() {
         var intro = introJs();
         intro.setOptions({
             steps: [
                 {
-                    intro: "Welcome to PubTrends, scientific literature explorer!<br>" +
+                    intro: "Welcome to PubTrends, a scientific literature explorer!<br>" +
                         "This quick tutorial will guide you through the features."
                 },
                 {
                     element: '#step1',
-                    intro: "Proceed with the <em>Topic Analysis</em> tab to study the research topic of interest."
+                    intro: "Proceed with the <em>Search</em> tab to search papers in database, " +
+                        "find most cited papers, explore topics and trends, analyze quantitative " +
+                        "features, visualize graphs of citations and papers similarity."
                 },
                 {
                     element: '#step1-2',
-                    intro: "<em>Paper Analysis</em> finds similar papers and most important prior and derivative works."
+                    intro: "Use the <em>Paper</em> tab to find most cited similar papers, important prior, " +
+                        "and derivative works for the paper of interest. Search by DOI, title name and id is supported."
                 },
                 {
                     element: '#step2',
-                    intro: 'Enter search query to define the topic of interest, e.g. ' +
-                        '<a href="javascript:void(0);" onclick="useTermsSuggestion();">' +
-                        '{{ search_example_terms }}' +
-                        '</a>'
+                    intro: "Enter search query to define the research area of interest.<br>" +
+                        "{{min_words_message}}Use double quotes for phrase search, join queries by commas."
                 },
                 {
                     element: '#step3',
-                    intro: "You can additionally configure:" +
+                    intro: "Additionally configure:" +
                         "<ul>" +
-                            "<li><em>Source</em>: database of scientific publications</li>" +
-                            "<li><em>Sort by</em>: papers ranking - relevance, recency or number of citations</li>" +
-                            "<li><em>Search</em>: number of papers to look for</li>" +
-                            "<li><em>Prefer no reviews</em>: ignore review papers in the search phase</li>" +
-                            "<li><em>Expand %</em>: fraction of paper covered by references</li>" +
+                        "<li><em>Sort by</em>: papers ranking - relevance, recency or number of citations</li>" +
+                        "<li><em>Search</em>: number of papers to look for</li>" +
+                        "<li><em>Prefer no reviews</em>: ignore review papers in the search phase</li>" +
+                        "<li><em>Expand %</em>: fraction of paper covered by references</li>" +
                         "</ul>"
                 },
                 {
                     element: '#step4',
-                    intro: "Click the <em>Search</em> button now!<br>" +
+                    intro: "Click the <em>Search</em> button!<br>" +
                         "You will be redirected automatically to a results page once analysis is complete.<br>" +
                         "Click <em>About</em> button to learn about results."
                 }

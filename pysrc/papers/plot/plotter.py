@@ -49,12 +49,25 @@ def visualize_analysis(analyzer):
     plotter = Plotter(analyzer=analyzer)
     # Order is important here!
     paper_statistics, word_cloud, zoom_out_callback = plotter.papers_statistics_and_word_cloud_and_callback()
+    result = {
+        'topics_analyzed': False,
+        'n_papers': analyzer.n_papers,
+        'n_citations': int(analyzer.df['total'].sum()),
+        'n_topics': 0,
+        'top_cited_papers': [components(plotter.top_cited_papers())],
+        'most_cited_per_year_papers': [components(plotter.most_cited_per_year_papers())],
+        'fastest_growth_per_year_papers': [components(plotter.fastest_growth_per_year_papers())],
+        'papers_stats': [components(paper_statistics)],
+        'papers_word_cloud': Plotter.word_cloud_prepare(word_cloud),
+        'papers_zoom_out_callback': zoom_out_callback,
+        'author_statistics': plotter.author_statistics(),
+        'journal_statistics': plotter.journal_statistics(),
+    }
+
     if analyzer.similarity_graph.nodes():
         topics_hierarchy = plotter.topics_hierarchy()
-        result = {
+        result.update({
             'topics_analyzed': True,
-            'n_papers': analyzer.n_papers,
-            'n_citations': int(analyzer.df['total'].sum()),
             'n_topics': len(analyzer.components),
             'comp_other': analyzer.comp_other,
             'components_similarity': [components(plotter.heatmap_topics_similarity())],
@@ -63,33 +76,10 @@ def visualize_analysis(analyzer):
             'topics_info_and_word_cloud_and_callback':
                 [(components(p), Plotter.word_cloud_prepare(wc), zoom_in_callback) for
                  (p, wc, zoom_in_callback) in plotter.topics_info_and_word_cloud_and_callback()],
-            'top_cited_papers': [components(plotter.top_cited_papers())],
-            'max_gain_papers': [components(plotter.max_gain_papers())],
-            'max_relative_gain_papers': [components(plotter.max_relative_gain_papers())],
             'component_sizes': plotter.component_sizes(),
             'component_ratio': [components(plotter.component_ratio())],
-            'papers_stats': [components(paper_statistics)],
-            'papers_word_cloud': Plotter.word_cloud_prepare(word_cloud),
-            'papers_zoom_out_callback': zoom_out_callback,
-            'author_statistics': plotter.author_statistics(),
-            'journal_statistics': plotter.journal_statistics(),
             'topics_hierarchy': [components(topics_hierarchy)] if topics_hierarchy is not None else []
-        }
-    else:
-        result = {
-            'topics_analyzed': False,
-            'n_papers': analyzer.n_papers,
-            'n_citations': int(analyzer.df['total'].sum()),
-            'n_topics': 0,
-            'top_cited_papers': [components(plotter.top_cited_papers())],
-            'max_gain_papers': [components(plotter.max_gain_papers())],
-            'max_relative_gain_papers': [components(plotter.max_relative_gain_papers())],
-            'papers_stats': [components(paper_statistics)],
-            'papers_word_cloud': Plotter.word_cloud_prepare(word_cloud),
-            'papers_zoom_out_callback': zoom_out_callback,
-            'author_statistics': plotter.author_statistics(),
-            'journal_statistics': plotter.journal_statistics(),
-        }
+        })
 
     _, url_prefix = Loaders.get_loader_and_url_prefix(analyzer.source, analyzer.config)
     if analyzer.numbers_df is not None:
@@ -210,11 +200,12 @@ class Plotter:
         p = figure(title="Similarity between topics",
                    x_range=topics, y_range=topics,
                    x_axis_location="below", plot_width=PLOT_WIDTH, plot_height=PAPERS_PLOT_HEIGHT,
-                   tools=TOOLS, toolbar_location='above',
+                   tools=TOOLS, toolbar_location="right",
                    tooltips=[('Topic 1', '@comp_x'),
                              ('Topic 2', '@comp_y'),
                              ('Similarity', '@similarity')])
-
+        
+        p.sizing_mode = 'stretch_width'
         p.grid.grid_line_color = None
         p.axis.axis_line_color = None
         p.axis.major_tick_line_color = None
@@ -241,7 +232,7 @@ class Plotter:
         )
 
         p = figure(x_range=[min_year - 1, max_year + 1], plot_width=PLOT_WIDTH, plot_height=SHORT_PLOT_HEIGHT,
-                   title="Topics by Year", toolbar_location="right", tools=TOOLS,
+                   title="Topics by year", toolbar_location="right", tools=TOOLS,
                    tooltips=[('Topic', '$name'), ('Amount', '@$name')])
 
         # NOTE: VBar is invisible (alpha = 0) to provide tooltips on hover as stacked area does not support them
@@ -260,6 +251,7 @@ class Plotter:
         ])
         p.add_layout(legend)
 
+        p.sizing_mode = 'stretch_width'
         p.y_range.start = 0
         p.xgrid.grid_line_color = None
         p.axis.minor_tick_line_color = None
@@ -293,7 +285,9 @@ class Plotter:
                     gridstyle=grid_style, show_grid=True,
                     violin_fill_color=dim('Topic').str(),
                     cmap=Plotter.factors_colormap(len(components)))
-        return hv.render(violin, backend='bokeh')
+        p = hv.render(violin, backend='bokeh')
+        p.sizing_mode = 'stretch_width'
+        return p
 
     def topics_info_and_word_cloud_and_callback(self):
         logger.debug('Per component detailed info visualization')
@@ -348,10 +342,10 @@ class Plotter:
         source = ColumnDataSource(data=dict(comps=comps, ratios=ratios, colors=colors))
 
         p = figure(plot_width=PLOT_WIDTH, plot_height=SHORT_PLOT_HEIGHT,
-                   toolbar_location="above", tools=TOOLS, x_range=comps)
+                   toolbar_location="right", tools=TOOLS, x_range=comps)
         p.vbar(x='comps', top='ratios', width=0.8, fill_alpha=0.5, color='colors', source=source)
         p.hover.tooltips = [("Topic", '@comps'), ("Amount", '@ratios %')]
-
+        p.sizing_mode = 'stretch_width'
         p.xaxis.axis_label = 'Topic'
         p.yaxis.axis_label = 'Percentage of papers'
         p.xgrid.grid_line_color = None
@@ -380,21 +374,24 @@ class Plotter:
         plot.legend.location = "top_left"
         return plot
 
-    def max_gain_papers(self):
+    def most_cited_per_year_papers(self):
         logger.debug('Different colors encode different papers')
         cols = ['year', 'id', 'title', 'authors', 'paper_year', 'count']
-        max_gain_df = self.analyzer.max_gain_df[cols].replace(np.nan, "Undefined")
-        max_gain_df['authors'] = max_gain_df['authors'].apply(lambda authors: cut_authors_list(authors))
-        ds_max = ColumnDataSource(max_gain_df)
+        most_cited_per_year_df = self.analyzer.max_gain_df[cols].replace(np.nan, "Undefined")
+        most_cited_per_year_df['authors'] = most_cited_per_year_df['authors'].apply(
+            lambda authors: cut_authors_list(authors)
+        )
+        ds_max = ColumnDataSource(most_cited_per_year_df)
 
         factors = self.analyzer.max_gain_df['id'].unique()
         colors = self.factor_colors(factors)
 
         year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
-        p = figure(tools=TOOLS, toolbar_location="above",
+        p = figure(tools=TOOLS, toolbar_location="right",
                    plot_width=PLOT_WIDTH, plot_height=SHORT_PLOT_HEIGHT, x_range=year_range,
                    y_axis_type="log" if max(self.analyzer.max_gain_df['count']) > MAX_LINEAR_AXIS else "linear",
-                   title='Max gain of citations per year')
+                   title='Cited per year')
+        p.sizing_mode = 'stretch_width'
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Number of citations'
         p.yaxis.formatter = NumeralTickFormatter(format='0,0')
@@ -411,23 +408,26 @@ class Plotter:
                fill_alpha=0.5, source=ds_max, fill_color=colors, line_color=colors)
         return p
 
-    def max_relative_gain_papers(self):
-        logger.debug('Top papers in relative gain for each year')
-        logger.debug('Relative gain (year) = Citation Gain (year) / Citations before year')
+    def fastest_growth_per_year_papers(self):
+        logger.debug('Fastest growing papers per year')
+        logger.debug('Growth(year) = Citation delta (year) / Citations previous year')
         logger.debug('Different colors encode different papers')
         cols = ['year', 'id', 'title', 'authors', 'paper_year', 'rel_gain']
-        max_rel_gain_df = self.analyzer.max_rel_gain_df[cols].replace(np.nan, "Undefined")
-        max_rel_gain_df['authors'] = max_rel_gain_df['authors'].apply(lambda authors: cut_authors_list(authors))
-        ds_max = ColumnDataSource(max_rel_gain_df)
+        fastest_growth_per_year_df = self.analyzer.max_rel_gain_df[cols].replace(np.nan, "Undefined")
+        fastest_growth_per_year_df['authors'] = fastest_growth_per_year_df['authors'].apply(
+            lambda authors: cut_authors_list(authors)
+        )
+        ds_max = ColumnDataSource(fastest_growth_per_year_df)
 
         factors = self.analyzer.max_rel_gain_df['id'].astype(str).unique()
         colors = self.factor_colors(factors)
 
         year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
-        p = figure(tools=TOOLS, toolbar_location="above",
+        p = figure(tools=TOOLS, toolbar_location="right",
                    plot_width=PLOT_WIDTH, plot_height=SHORT_PLOT_HEIGHT, x_range=year_range,
                    y_axis_type="log" if max(self.analyzer.max_rel_gain_df['rel_gain']) > MAX_LINEAR_AXIS else "linear",
-                   title='Max relative gain of citations per year')
+                   title='Fastest citations growth papers')
+        p.sizing_mode = 'stretch_width'
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Relative Gain of Citations'
         p.yaxis.formatter = NumeralTickFormatter(format='0,0')
@@ -444,12 +444,13 @@ class Plotter:
         return p
 
     @staticmethod
-    def article_citation_dynamics(df, pid):
+    def paper_citations_per_year(df, pid):
         d = ColumnDataSource(PlotPreprocessor.article_citation_dynamics_data(df, pid))
 
-        p = figure(tools=TOOLS, toolbar_location="above", plot_width=PLOT_WIDTH,
-                   plot_height=SHORT_PLOT_HEIGHT, title="Number of Citations per Year")
+        p = figure(tools=TOOLS, toolbar_location="right", plot_width=PLOT_WIDTH,
+                   plot_height=SHORT_PLOT_HEIGHT, title="Number of citations per Year")
         p.vbar(x='x', width=0.8, top='y', source=d, color='#A6CEE3', line_width=3)
+        p.sizing_mode = 'stretch_width'
         p.xaxis.axis_label = "Year"
         p.yaxis.axis_label = "Number of citations"
         p.hover.tooltips = [
@@ -463,9 +464,10 @@ class Plotter:
         ds_stats = ColumnDataSource(PlotPreprocessor.papers_statistics_data(self.analyzer.df))
 
         year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
-        p = figure(tools=TOOLS, toolbar_location="above",
+        p = figure(tools=TOOLS, toolbar_location="right",
                    plot_width=PAPERS_PLOT_WIDTH, plot_height=PAPERS_PLOT_HEIGHT,
                    x_range=year_range, title='Papers per year')
+        p.sizing_mode = 'stretch_width'
         p.y_range.start = 0
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Amount of papers'
@@ -525,10 +527,11 @@ class Plotter:
 
     def __serve_scatter_article_layout(self, ds, year_range, title, width=PLOT_WIDTH):
         min_year, max_year = year_range
-        p = figure(tools=TOOLS, toolbar_location="above",
+        p = figure(tools=TOOLS, toolbar_location="right",
                    plot_width=width, plot_height=PAPERS_PLOT_HEIGHT,
                    x_range=(min_year - 1, max_year + 1),
                    title=title, y_axis_type="log")
+        p.sizing_mode = 'stretch_width'
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Number of citations'
         p.yaxis.formatter = NumeralTickFormatter(format='0,0')
@@ -591,9 +594,9 @@ class Plotter:
 
         w = len(set(dendrogram[0].keys())) * 10 + 10
         dy = 3
-        hm = figure(x_range=[-10, w + 10],
-                    y_range=[-3, dy * (len(dendrogram) + 1)],
-                    width=PLOT_WIDTH, height=100 * (len(dendrogram) + 1), tools=[])
+        p = figure(x_range=[-10, w + 10],
+                   y_range=[-3, dy * (len(dendrogram) + 1)],
+                   width=PLOT_WIDTH, height=100 * (len(dendrogram) + 1), tools=[])
 
         paths = []
         for i, level in enumerate(dendrogram):
@@ -602,12 +605,12 @@ class Plotter:
                     paths.append([k])
             # Edges
             for k, v in level.items():
-                for p in paths:
-                    if p[i] == k:
-                        p.append(v)
+                for path in paths:
+                    if path[i] == k:
+                        path.append(v)
         # Add root as last item
-        for p in paths:
-            p.append(0)
+        for path in paths:
+            path.append(0)
 
         # Radix sort or paths to ensure no overlaps
         for i in range(0, len(dendrogram) + 1):
@@ -622,36 +625,36 @@ class Plotter:
         for i in range(1, len(dendrogram) + 2):
             # Vertical lines
             for _, x in xs.items():
-                hm.line([x, x], [(i - 1) * dy, i * dy], line_color='black')
+                p.line([x, x], [(i - 1) * dy, i * dy], line_color='black')
             new_xs = {}
-            for p in paths:
-                if p[i] not in new_xs:
-                    new_xs[p[i]] = []
-                new_xs[p[i]].append(xs[p[i - 1]])
+            for path in paths:
+                if path[i] not in new_xs:
+                    new_xs[path[i]] = []
+                new_xs[path[i]].append(xs[path[i - 1]])
             for v, pxs in new_xs.items():
                 if len(pxs) > 1:  # Horizontal connections
-                    hm.line([pxs[0], pxs[-1]], [i * dy, i * dy], line_color='black')
+                    p.line([pxs[0], pxs[-1]], [i * dy, i * dy], line_color='black')
                 new_xs[v] = np.mean(pxs)
             xs = new_xs
 
         # Draw leaves
         topics_colors = Plotter.topics_palette_rgb(self.analyzer.df)
         for v, x in xs0.items():
-            hm.circle(x=x, y=0, size=15, line_color="black", fill_color=topics_colors[v])
-        hm.text(x=[x - 1 for _, x in xs0.items()],
-                y=[-1] * len(xs0),
-                text=[str(v + 1) for v, _ in xs0.items()],
-                text_baseline='middle', text_font_size='11pt')
+            p.circle(x=x, y=0, size=15, line_color="black", fill_color=topics_colors[v])
+        p.text(x=[x - 1 for _, x in xs0.items()],
+               y=[-1] * len(xs0),
+               text=[str(v + 1) for v, _ in xs0.items()],
+               text_baseline='middle', text_font_size='11pt')
 
-        hm.axis.major_tick_line_color = None
-        hm.axis.minor_tick_line_color = None
-        hm.axis.major_label_text_color = None
-        hm.axis.major_label_text_font_size = '0pt'
-        hm.axis.axis_line_color = None
-        hm.grid.grid_line_color = None
-        hm.outline_line_color = None
-
-        return hm
+        p.sizing_mode = 'stretch_width'
+        p.axis.major_tick_line_color = None
+        p.axis.minor_tick_line_color = None
+        p.axis.major_label_text_color = None
+        p.axis.major_label_text_font_size = '0pt'
+        p.axis.axis_line_color = None
+        p.grid.grid_line_color = None
+        p.outline_line_color = None
+        return p
 
     def topic_evolution(self):
         """
@@ -678,13 +681,14 @@ class Plotter:
                              show_values=False, cmap='tab20',
                              edge_color=dim('To').str(), node_color=dim('index').str())
 
+        p = hv.render(topic_evolution, backend='bokeh')
+        p.sizing_mode = 'stretch_width'
         if n_steps > 3:
             kwds_data = PlotPreprocessor.topic_evolution_keywords_data(
                 self.analyzer.evolution_kwds
             )
-            return hv.render(topic_evolution, backend='bokeh'), kwds_data
-
-        return hv.render(topic_evolution, backend='bokeh'), None
+            return p, kwds_data
+        return p, None
 
     @staticmethod
     def word_cloud_prepare(wc):

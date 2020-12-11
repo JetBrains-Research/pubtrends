@@ -100,7 +100,7 @@ CALL db.index.fulltext.createNodeIndex("${"pmTitlesAndAbstracts"}", ["PMPublicat
                     "pmid" to it.pmid.toString(),
                     "title" to it.title.replace('\n', ' '),
                     "abstract" to it.abstract.replace('\n', ' '),
-                    "date" to (it.date?.toString() ?: ""),
+                    "year" to it.year.toString(),
                     "type" to it.type.name,
                     "keywords" to it.keywords.joinToString(","),
                     "mesh" to it.mesh.joinToString(","),
@@ -119,7 +119,7 @@ MERGE (n:PMPublication { pmid: toInteger(data.pmid) })
 ON CREATE SET
     n.title = data.title,
     n.abstract = data.abstract,
-    n.date = datetime(data.date),
+    n.year = data.year,
     n.type = data.type,
     n.doi = data.doi,
     n.aux = data.aux,
@@ -128,7 +128,7 @@ ON CREATE SET
 ON MATCH SET
     n.title = data.title,
     n.abstract = data.abstract,
-    n.date = datetime(data.date),
+    n.year = data.year,
     n.type = data.type,
     n.doi = data.doi,
     n.aux = data.aux,

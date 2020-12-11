@@ -3,6 +3,7 @@
 <head>
     <title>{{ trimmed_title }} - PubTrends</title>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet"
           href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
           integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
@@ -110,11 +111,11 @@
 <!-- Fixed navbar -->
 <nav class="navbar navbar-light bg-light fixed-top border-bottom no-padding-right">
     <div class="row container-fluid no-padding-right">
-        <div class="col-lg-1 col-xl-2 no-padding">
+        <div class="col-lg-1 col-xl-2 no-padding-left">
             <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
         </div>
         <div class="col-lg-11 col-xl-8 no-padding-left">
-            <div class="content no-padding-left">
+            <div class="no-padding-left">
                 <a id="result" href="javascript:void(0);" class="link vertical-center" onclick="result();">
                     Explore related papers
                 </a>
@@ -215,365 +216,363 @@
 
     <!-- Main content -->
     <main class="col-lg-10 col-xl-8" role="main">
-        <div class="content">
-            <div class="card mt-3">
-                <div class="card-title" id="paper">
-                    <h1 class="card-header">Paper</h1>
-                </div>
-                <div class="card-body">
-                    <div>
-                        <h2 class="paper-title">{{ title }}</h2>
-                        <em>{{ authors }}</em><br>
-                        <!-- Generate info about publication year and journal-->
-                        {% if journal != "" %}
-                            {{journal}}
-                        {% endif %}
-                        {% if year != "None" %}
-                            {{year}}
-                        {% endif %}
-                        {% if doi != "" %}
-                            <br>
-                            <a class="link" href="https://doi.org/{{doi}}">doi:{{doi}}</a>
-                        {% endif %}
-                        <br>
-                        <a class="link" href="{{ url }}">Open in {{ source }}</a>
-                        {% if mesh != "" %}
-                        <br>Mesh: {{mesh}}
-                        {% endif %}
-                        {% if keywords != "" %}
-                        <br>Keywords: {{keywords}}
-                        {% endif %}
-                        {% if abstract is defined %}
-                            <h5 class="card-subtitle mt-3">Abstract</h5>
-                            <p class="mt-2">{{ abstract }}</p>
-                        {% endif %}
-                    </div>
-                </div>
+        <div class="card mt-3">
+            <div class="card-title" id="paper">
+                <h1 class="card-header">Paper</h1>
             </div>
-
-            <div class="card mt-3">
-                <div class="card-title" id="citations">
-                    <h1 class="card-header">Citations</h1>
-                </div>
-                <div class="card-body">
-                    <div>
-                        {% for script, div in citation_dynamics %}
-                        {{ script|safe }}
-                        {{ div|safe }}
-                        {% endfor %}
-                    </div>
-                    <div class="mt-3">
-                        <small class="text-muted">Was this useful?</small>
-                        <div id="paper-feedback-citations" class="btn-group-horizontal">
-                            <button type="button" class="btn btn-sm btn-feedback-yes"
-                                    onclick="feedback(this, 1)">
-                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-meh"
-                                    onclick="feedback(this, 0)">
-                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-no"
-                                    onclick="feedback(this, -1)">
-                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card mt-3">
-                <div class="card-title" id="network">
-                    <h1 class="card-header">Network</h1>
-                </div>
-                <div class="card-body">
-                    <p>
-                        Explore references for the paper of interest on the citations graph.
-                    </p>
-                    <button id="show_citations_graph" type="button" class="btn btn-light"
-                            onclick="(function(){ graph_callback('citations') })();">
-                        Show citations graph
-                    </button>
-                    <hr>
-                    <p>
-                        Similarity between papers is computed based on <em>bibliographic coupling</em>,
-                        <em>co-citations</em>,<br>
-                        <em>direct citations</em>, and <em>potential</em> citations based on text similarity.
-                        <br>
-                        Explore papers network, where similar papers are located together and connected.
-                    </p>
-                    <button id="show_structure_graph" type="button" class="col-auto btn btn-light"
-                            onclick="(function(){ graph_callback('structure') })();">
-                        Show structure graph
-                    </button>
-                    <div class="mt-3">
-                        <small class="text-muted">Was this useful?</small>
-                        <div id="paper-feedback-network" class="btn-group-horizontal">
-                            <button type="button" class="btn btn-sm btn-feedback-yes"
-                                    onclick="feedback(this, 1)">
-                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-meh"
-                                    onclick="feedback(this, 0)">
-                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-no"
-                                    onclick="feedback(this, -1)">
-                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {% if similar_papers is defined %}
-            <div class="card mt-3">
-                <div class="card-title" id="similar">
-                    <h1 class="card-header">Similar Papers</h1>
-                </div>
-                <div class="card-body">
-                    <p>
-                        This section represents valuable papers, similar to the paper of interest.
-                    </p>
-                    <table id="similar_papers" class="table table-sm table-bordered table-striped">
-                        <thead>
-                        <tr>
-                            <th scope="col">#</th>
-                            <th scope="col">Title</th>
-                            <th scope="col">Year</th>
-                            <th scope="col">Similarity</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {% for id, title, url, year, similarity in similar_papers %}
-                        <tr>
-                            <th scope="row">{{ loop.index }}</th>
-                            <td>
-                                <a class="link" href="{{ url }}" title="Open in {{ source }}">
-                                    {{ title }}
-                                </a>
-                            </td>
-                            <td>{{ year }}</td>
-                            <td>{{ similarity }}</td>
-                        </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                    <div class="mt-3">
-                        <small class="text-muted">Was this useful?</small>
-                        <div id="paper-feedback-similar" class="btn-group-horizontal">
-                            <button type="button" class="btn btn-sm btn-feedback-yes"
-                                    onclick="feedback(this, 1)">
-                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-meh"
-                                    onclick="feedback(this, 0)">
-                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-no"
-                                    onclick="feedback(this, -1)">
-                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
-            {% if prior_papers is defined %}
-            <div class="card mt-3">
-                <div class="card-title" id="prior">
-                    <h1 class="card-header">Prior Papers</h1>
-                </div>
-                <div class="card-body">
-                    <p>
-                        This section represents most valuable papers, cited by the paper of interest.
-                    </p>
-                    <table id="prior_papers" class="table table-sm table-bordered table-striped">
-                        <thead>
-                        <tr>
-                            <th scope="col">#</th>
-                            <th scope="col">Title</th>
-                            <th scope="col">Year</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {% for id, title, url, year in prior_papers %}
-                        <tr>
-                            <th scope="row">{{ loop.index }}</th>
-                            <td>
-                                <a class="link" href="{{ url }}" title="Open in {{ source }}">
-                                    {{ title }}
-                                </a>
-                            </td>
-                            <td>{{ year }}</td>
-                        </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                    <div class="mt-3">
-                        <small class="text-muted">Was this useful?</small>
-                        <div id="paper-feedback-prior" class="btn-group-horizontal">
-                            <button type="button" class="btn btn-sm btn-feedback-yes"
-                                    onclick="feedback(this, 1)">
-                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-meh"
-                                    onclick="feedback(this, 0)">
-                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-no"
-                                    onclick="feedback(this, -1)">
-                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
-            {% if derivative_papers is defined %}
-            <div class="card mt-3">
-                <div class="card-title" id="derivative">
-                    <h1 class="card-header">Derivative Papers</h1>
-                </div>
-                <div class="card-body">
-                    <p>
-                        This section represents most valuable papers, citing the paper of interest.
-                    </p>
-                    <table id="derivative_papers" class="table table-sm table-bordered table-striped">
-                        <thead>
-                        <tr>
-                            <th scope="col">#</th>
-                            <th scope="col">Title</th>
-                            <th scope="col">Year</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {% for id, title, url, year in derivative_papers %}
-                        <tr>
-                            <th scope="row">{{ loop.index }}</th>
-                            <td>
-                                <a class="link" href="{{ url }}" title="Open in {{ source }}">
-                                    {{ title }}
-                                </a>
-                            </td>
-                            <td>{{ year }}</td>
-                        </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                    <div class="mt-3">
-                        <small class="text-muted">Was this useful?</small>
-                        <div id="paper-feedback-derivative" class="btn-group-horizontal">
-                            <button type="button" class="btn btn-sm btn-feedback-yes"
-                                    onclick="feedback(this, 1)">
-                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-meh"
-                                    onclick="feedback(this, 0)">
-                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-no"
-                                    onclick="feedback(this, -1)">
-                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
-            <div class="card mt-3">
-                <div class="card-title" id="related">
-                    <h1 class="card-header">Topics Info</h1>
-                </div>
-                <div class="card-body">
-                    <p>
-                        Explore full related papers report
-                        <a href="javascript:void(0);" class="link" onclick="result();">here</a>.
-                    </p>
-                    {% if related_topics is defined %}
-                    <hr>
-                    <p>
-                        Number of similar papers topics in the field. Paper topic is #{{topic}}.</p>
-                    <br>
-                    <table id="related_topics" class="table table-sm table-bordered table-striped">
-                        <thead>
-                        <tr>
-                            <th scope="col">#</th>
-                            <th scope="col">Topic keywords</th>
-                            <th scope="col">Similar papers</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {% for row in related_topics %}
-                        <tr>
-                            <th scope="row">{{ loop.index }}</th>
-                            <td>{{ row[0] }}</td>
-                            <td>{{ row[1] }}</td>
-                        </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
+            <div class="card-body">
+                <div>
+                    <h2 class="paper-title">{{ title }}</h2>
+                    <em>{{ authors }}</em><br>
+                    <!-- Generate info about publication year and journal-->
+                    {% if journal != "" %}
+                        {{journal}}
                     {% endif %}
-                    <div class="mt-3">
-                        <small class="text-muted">Was this useful?</small>
-                        <div id="paper-feedback-related" class="btn-group-horizontal">
-                            <button type="button" class="btn btn-sm btn-feedback-yes"
-                                    onclick="feedback(this, 1)">
-                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-meh"
-                                    onclick="feedback(this, 0)">
-                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-no"
-                                    onclick="feedback(this, -1)">
-                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                            </button>
-                        </div>
+                    {% if year != "None" %}
+                        {{year}}
+                    {% endif %}
+                    {% if doi != "" %}
+                        <br>
+                        <a class="link" href="https://doi.org/{{doi}}">doi:{{doi}}</a>
+                    {% endif %}
+                    <br>
+                    <a class="link" href="{{ url }}">Open in {{ source }}</a>
+                    {% if mesh != "" %}
+                    <br>Mesh: {{mesh}}
+                    {% endif %}
+                    {% if keywords != "" %}
+                    <br>Keywords: {{keywords}}
+                    {% endif %}
+                    {% if abstract is defined %}
+                        <h5 class="card-subtitle mt-3">Abstract</h5>
+                        <p class="mt-2">{{ abstract }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-title" id="citations">
+                <h1 class="card-header">Citations</h1>
+            </div>
+            <div class="card-body">
+                <div>
+                    {% for script, div in citation_dynamics %}
+                    {{ script|safe }}
+                    {{ div|safe }}
+                    {% endfor %}
+                </div>
+                <div class="mt-3">
+                    <small class="text-muted">Was this useful?</small>
+                    <div id="paper-feedback-citations" class="btn-group-horizontal">
+                        <button type="button" class="btn btn-sm btn-feedback-yes"
+                                onclick="feedback(this, 1)">
+                            <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-feedback-meh"
+                                onclick="feedback(this, 0)">
+                            <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-feedback-no"
+                                onclick="feedback(this, -1)">
+                            <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
+                        </button>
                     </div>
                 </div>
             </div>
-            <div class="card mt-3">
-                <div class="card-title" id="feedback">
-                    <h1 class="card-header">Feedback</h1>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-title" id="network">
+                <h1 class="card-header">Network</h1>
+            </div>
+            <div class="card-body">
+                <p>
+                    Explore references for the paper of interest on the citations graph.
+                </p>
+                <button id="show_citations_graph" type="button" class="btn btn-light"
+                        onclick="(function(){ graph_callback('citations') })();">
+                    Show citations graph
+                </button>
+                <hr>
+                <p>
+                    Similarity between papers is computed based on <em>bibliographic coupling</em>,
+                    <em>co-citations</em>,<br>
+                    <em>direct citations</em>, and <em>potential</em> citations based on text similarity.
+                    <br>
+                    Explore papers network, where similar papers are located together and connected.
+                </p>
+                <button id="show_similarity_graph" type="button" class="col-auto btn btn-light"
+                        onclick="(function(){ graph_callback('structure') })();">
+                    Show similarity graph
+                </button>
+                <div class="mt-3">
+                    <small class="text-muted">Was this useful?</small>
+                    <div id="paper-feedback-network" class="btn-group-horizontal">
+                        <button type="button" class="btn btn-sm btn-feedback-yes"
+                                onclick="feedback(this, 1)">
+                            <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-feedback-meh"
+                                onclick="feedback(this, 0)">
+                            <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-feedback-no"
+                                onclick="feedback(this, -1)">
+                            <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
+                        </button>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <p>
-                        Please help us to make the service better!<br>
-                        Use the form below to tell us more about you and your opinion about the service,<br>
-                        or click instant feedback buttons to share your feelings about particular report section.<br>
-                        Also you can optionally leave your email to contact you later.
-                    </p>
-                    <form name="feedback-form" action="feedback" method="POST">
-                        <div class="form-group">
-                            <label for="feedback-message">Message</label>
-                            <textarea class="form-control" id="feedback-message" name="message"
-                                      rows="5" maxlength="2000"
-                                      aria-describedby="emailHelp"
-                                      placeholder="Enter message"></textarea>
-                            <small id="messageHelp" class="form-text text-muted">
-                                Max length: 2000.</small>
-                        </div>
-                        <div class="form-group">
-                            <label for="feedback-email">Email address</label>
-                            <input type="email" class="form-control" id="feedback-email" name="email"
-                                   aria-describedby="emailHelp"
-                                   placeholder="Enter email"/>
-                            <small id="emailHelp" class="form-text text-muted">
-                                We'll never share your email with anyone else.</small>
-                        </div>
-                        <div class="form-group">
-                            <button type="submit" class="btn btn-primary">Submit</button>
-                        </div>
-                        <div class="form-group">
-                            <input type="hidden" class="form-control" id="feedback-jobid" name="jobid" value=""/>
-                            <input type="hidden" class="form-control" name="type" value="result"/>
-                        </div>
-                    </form>
+            </div>
+        </div>
+
+        {% if similar_papers is defined %}
+        <div class="card mt-3">
+            <div class="card-title" id="similar">
+                <h1 class="card-header">Similar Papers</h1>
+            </div>
+            <div class="card-body">
+                <p>
+                    This section represents valuable papers, similar to the paper of interest.
+                </p>
+                <table id="similar_papers" class="table table-sm table-bordered table-striped">
+                    <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Title</th>
+                        <th scope="col">Year</th>
+                        <th scope="col">Similarity</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for id, title, url, year, similarity in similar_papers %}
+                    <tr>
+                        <th scope="row">{{ loop.index }}</th>
+                        <td>
+                            <a class="link" href="{{ url }}" title="Open in {{ source }}">
+                                {{ title }}
+                            </a>
+                        </td>
+                        <td>{{ year }}</td>
+                        <td>{{ similarity }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                <div class="mt-3">
+                    <small class="text-muted">Was this useful?</small>
+                    <div id="paper-feedback-similar" class="btn-group-horizontal">
+                        <button type="button" class="btn btn-sm btn-feedback-yes"
+                                onclick="feedback(this, 1)">
+                            <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-feedback-meh"
+                                onclick="feedback(this, 0)">
+                            <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-feedback-no"
+                                onclick="feedback(this, -1)">
+                            <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
+                        </button>
+                    </div>
                 </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if prior_papers is defined %}
+        <div class="card mt-3">
+            <div class="card-title" id="prior">
+                <h1 class="card-header">Prior Papers</h1>
+            </div>
+            <div class="card-body">
+                <p>
+                    This section represents most valuable papers, cited by the paper of interest.
+                </p>
+                <table id="prior_papers" class="table table-sm table-bordered table-striped">
+                    <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Title</th>
+                        <th scope="col">Year</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for id, title, url, year in prior_papers %}
+                    <tr>
+                        <th scope="row">{{ loop.index }}</th>
+                        <td>
+                            <a class="link" href="{{ url }}" title="Open in {{ source }}">
+                                {{ title }}
+                            </a>
+                        </td>
+                        <td>{{ year }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                <div class="mt-3">
+                    <small class="text-muted">Was this useful?</small>
+                    <div id="paper-feedback-prior" class="btn-group-horizontal">
+                        <button type="button" class="btn btn-sm btn-feedback-yes"
+                                onclick="feedback(this, 1)">
+                            <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-feedback-meh"
+                                onclick="feedback(this, 0)">
+                            <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-feedback-no"
+                                onclick="feedback(this, -1)">
+                            <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if derivative_papers is defined %}
+        <div class="card mt-3">
+            <div class="card-title" id="derivative">
+                <h1 class="card-header">Derivative Papers</h1>
+            </div>
+            <div class="card-body">
+                <p>
+                    This section represents most valuable papers, citing the paper of interest.
+                </p>
+                <table id="derivative_papers" class="table table-sm table-bordered table-striped">
+                    <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Title</th>
+                        <th scope="col">Year</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for id, title, url, year in derivative_papers %}
+                    <tr>
+                        <th scope="row">{{ loop.index }}</th>
+                        <td>
+                            <a class="link" href="{{ url }}" title="Open in {{ source }}">
+                                {{ title }}
+                            </a>
+                        </td>
+                        <td>{{ year }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                <div class="mt-3">
+                    <small class="text-muted">Was this useful?</small>
+                    <div id="paper-feedback-derivative" class="btn-group-horizontal">
+                        <button type="button" class="btn btn-sm btn-feedback-yes"
+                                onclick="feedback(this, 1)">
+                            <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-feedback-meh"
+                                onclick="feedback(this, 0)">
+                            <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-feedback-no"
+                                onclick="feedback(this, -1)">
+                            <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="card mt-3">
+            <div class="card-title" id="related">
+                <h1 class="card-header">Topics Info</h1>
+            </div>
+            <div class="card-body">
+                <p>
+                    Explore full related papers report
+                    <a href="javascript:void(0);" class="link" onclick="result();">here</a>.
+                </p>
+                {% if related_topics is defined %}
+                <hr>
+                <p>
+                    Number of similar papers topics in the field. Paper topic is #{{topic}}.</p>
+                <br>
+                <table id="related_topics" class="table table-sm table-bordered table-striped">
+                    <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Topic keywords</th>
+                        <th scope="col">Similar papers</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for row in related_topics %}
+                    <tr>
+                        <th scope="row">{{ loop.index }}</th>
+                        <td>{{ row[0] }}</td>
+                        <td>{{ row[1] }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                {% endif %}
+                <div class="mt-3">
+                    <small class="text-muted">Was this useful?</small>
+                    <div id="paper-feedback-related" class="btn-group-horizontal">
+                        <button type="button" class="btn btn-sm btn-feedback-yes"
+                                onclick="feedback(this, 1)">
+                            <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-feedback-meh"
+                                onclick="feedback(this, 0)">
+                            <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-feedback-no"
+                                onclick="feedback(this, -1)">
+                            <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card mt-3">
+            <div class="card-title" id="feedback">
+                <h1 class="card-header">Feedback</h1>
+            </div>
+            <div class="card-body">
+                <p>
+                    Let's make the service better together!<br>
+                    Use the form below to tell us more about you and your opinion about the service,<br>
+                    or click instant feedback buttons to share your feelings about particular report section.<br>
+                    Also you can optionally leave your email to contact you later.<br>
+                </p>
+                <form name="feedback-form" action="feedback" method="POST">
+                    <div class="form-group">
+                        <label for="feedback-message">Message</label>
+                        <textarea class="form-control" id="feedback-message" name="message"
+                                  rows="5" maxlength="2000"
+                                  aria-describedby="emailHelp"
+                                  placeholder="Enter message"></textarea>
+                        <small id="messageHelp" class="form-text text-muted">
+                            Max length: 2000.</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="feedback-email">Email address</label>
+                        <input type="email" class="form-control" id="feedback-email" name="email"
+                               aria-describedby="emailHelp"
+                               placeholder="Enter email"/>
+                        <small id="emailHelp" class="form-text text-muted">
+                            We'll never share your email with anyone else.</small>
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </div>
+                    <div class="form-group">
+                        <input type="hidden" class="form-control" id="feedback-jobid" name="jobid" value=""/>
+                        <input type="hidden" class="form-control" name="type" value="result"/>
+                    </div>
+                </form>
             </div>
         </div>
     </main>

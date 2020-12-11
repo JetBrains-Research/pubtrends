@@ -20,13 +20,13 @@ def prepare_feedback_data(logfile):
             jobid = args['jobid']
             if not jobid:
                 continue
-            queries[jobid] = args['query']
+            queries[jobid] = args['query'] if 'query' in args else 'NA'
         if '/process paper analysis addr:' in line:
             args = json.loads(re.sub(".*args:", "", line.strip()))
             jobid = args['jobid']
             if not jobid:
                 continue
-            queries[jobid] = args['query']
+            queries[jobid] = args['query'] if 'query' in args else 'NA'
         if 'Feedback ' not in line:
             continue
         try:
