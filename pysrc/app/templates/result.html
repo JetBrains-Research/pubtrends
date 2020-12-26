@@ -109,6 +109,13 @@
             window.open(url + '&type=' + graphType + '&jobid=' + jobid, '_blank');
         }
 
+        function export_results() {
+            let title = "{{ query }}".replace(/&#34;/g, '"').replace(/&#39;/g, '\'').replace(/&amp;/g, '&');
+            const url = '/export_results?query=' + title + '&source={{source}}&limit={{limit}}&sort={{sort}}';
+            // Decode jobid from URL
+            const jobid = new URL(window.location).searchParams.get('jobid');
+            window.open(url + '&jobid=' + jobid, '_blank');
+        }
 
         $(document).ready(function () {
             // Mark search by default in datatables
@@ -942,11 +949,16 @@
                 </div>
             </div>
             <div class="mt-3 ml-3" id="log">
-                <h5><a class="link" data-toggle="collapse" href="#collapseLog"
-                       role="button" aria-expanded="false"
-                       aria-controls="collapseCocitations">
+                <a class="btn btn-light" data-toggle="collapse" href="#collapseLog"
+                   role="button" aria-expanded="false"
+                   aria-controls="collapseCocitations">
                     Logs
-                </a></h5>
+                </a>
+                <a href="javascript:void(0);"
+                   class="ml-1 btn btn-light"
+                   role="button" onclick="export_results();">
+                    Export
+                </a>
                 <div id="collapseLog" class="card-body collapse">
                     <pre>{{log}}</pre>
                 </div>

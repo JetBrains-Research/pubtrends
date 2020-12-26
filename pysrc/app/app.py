@@ -6,12 +6,15 @@ import os
 import pickle
 import random
 import re
+import tempfile
+import zipfile
 from threading import Lock
 from urllib.parse import quote
 
 import flask_admin
 from celery.result import AsyncResult
-from flask import Flask, url_for, redirect, render_template, request, abort, render_template_string, send_from_directory
+from flask import Flask, url_for, redirect, render_template, request, abort, render_template_string, \
+    send_from_directory, send_file
 from flask_admin import helpers as admin_helpers, expose, BaseView
 from flask_security import Security, SQLAlchemyUserDatastore, \
     UserMixin, RoleMixin, current_user
@@ -462,7 +465,7 @@ def show_ids():
         data = load_predefined_or_result_data(jobid)
         if data is not None:
             logger.info(f'/papers success {log_request(request)}')
-            export_name = re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{query}_{search_string}'.lower().strip('_')))
+            export_name = re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{query}_{search_string}'.lower())).strip('_')
             return render_template('papers.html',
                                    version=VERSION,
                                    source=source,
@@ -589,6 +592,43 @@ def process_ids():
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception as e:
         logger.error(f'/process_ids error', e)
+        return render_template_string(ERROR_OCCURRED), 500
+
+
+@app.route('/export_results', methods=['GET'])
+def export_results():
+    try:
+        jobid = request.values.get('jobid')
+        query = request.args.get('query')
+        source = request.args.get('source')
+        limit = request.args.get('limit')
+        sort = request.args.get('sort')
+        if jobid and query and source and limit and source:
+            job = AsyncResult(jobid, app=celery)
+            if job and job.state == 'SUCCESS':
+                viz, data, log = job.result
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    name = re.sub('_{2,}', '_',
+                                  re.sub('["\':,. ]', '_', f'{source}_{query}_{sort}_{limit}'.lower())).strip('_')
+                    path_viz = os.path.join(tmpdir, 'viz.pkl')
+                    path_data = os.path.join(tmpdir, 'data.pkl')
+                    path_log = os.path.join(tmpdir, 'log.pkl')
+                    with open(path_viz, 'wb') as f:
+                        pickle.dump(viz, f, pickle.HIGHEST_PROTOCOL)
+                    with open(path_data, 'wb') as f:
+                        pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+                    with open(path_log, 'wb') as f:
+                        pickle.dump(log, f, pickle.HIGHEST_PROTOCOL)
+                    path_za = os.path.join(tmpdir, f'{name}.zip')
+                    with zipfile.ZipFile(path_za, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as za:
+                        za.write(path_viz, f'/{name}/viz.pkl')
+                        za.write(path_data, f'/{name}/data.pkl')
+                        za.write(path_log, f'/{name}/log.pkl')
+                    return send_file(path_za, as_attachment=True)
+        logger.error(f'/export_results error {log_request(request)}')
+        return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
+    except Exception as e:
+        logger.error(f'/export_results error', e)
         return render_template_string(ERROR_OCCURRED), 500
 
 
