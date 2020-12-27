@@ -38,6 +38,8 @@
         <!--     <link rel="stylesheet" href="../static/style.css"/> -->
         <link rel="stylesheet" href="{{ url_for('static', filename='result.css') }}?v=1"/>
         <!--     <link rel="stylesheet" href="../static/result.css"/> -->
+        <script src="{{ url_for('static', filename='text_utils.js') }}"></script>
+        <!--<script src="../../static/text_utils.js"/>-->
 
         <!-- IntroJS feature tour -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.9.3/introjs.css"
@@ -579,7 +581,7 @@
 
                     <!-- Highlight analyzed paper -->
                     if ("{{ limit }}" === "related" && "{{ sort }}" === "papers") {
-                        let title = "{{ query }}".replace(/&#34;/g, '"').replace(/&#39;/g, '\'').replace(/&amp;/g, '&');
+                        let title = normalize('{{ query }}');
                         if (title.endsWith("...")) {
                             title = title.replace("...", "");
                         }
@@ -657,7 +659,7 @@
             }
 
             function result() {
-                const url = '/result?query=' + escape('{{ query }}') + '&source={{source}}&limit={{limit}}&sort={{sort}}';
+                const url = '/result?query=' + normalize('{{ query }}') + '&source={{source}}&limit={{limit}}&sort={{sort}}';
                 // Decode jobid from URL
                 const jobid = new URL(window.location).searchParams.get('jobid');
                 window.open(url + '&jobid=' + jobid, '_blank');

@@ -47,7 +47,7 @@ def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, e
     dump = analyzer.dump()
     analyzer.progress.done(task=current_task)
     analyzer.teardown()
-    return visualization, dump, html.unescape(analyzer.progress.log())
+    return visualization, dump, analyzer.progress.log()
 
 
 @celery.task(name='analyze_id_list')
@@ -86,7 +86,7 @@ def analyze_id_list(source, ids, zoom, query, limit=None):
     dump = analyzer.dump()
     analyzer.progress.done(task=current_task)
     analyzer.teardown()
-    return visualization, dump, html.unescape(analyzer.progress.log())
+    return visualization, dump, analyzer.progress.log()
 
 
 @celery.task(name='find_paper_async')

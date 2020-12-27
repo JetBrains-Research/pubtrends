@@ -46,6 +46,8 @@
     <!--     <link rel="stylesheet" href="../static/style.css"/> -->
     <link rel="stylesheet" href="{{ url_for('static', filename='result.css') }}?v=1"/>
     <!--     <link rel="stylesheet" href="../static/result.css"/> -->
+    <script src="{{ url_for('static', filename='text_utils.js') }}"></script>
+    <!--<script src="../../static/text_utils.js"/>-->
 
     <!-- Notify.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"
@@ -91,14 +93,14 @@
         });
 
         function result() {
-            const url = '/result?query=' + escape('{{ title }}') + '&source={{source}}&limit=related&sort=papers';
+            const url = '/result?query=' + normalize('{{ title }}') + '&source={{source}}&limit=related&sort=papers';
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
             window.open(url + '&jobid=' + jobid, '_blank');
         }
 
         function graph_callback(graphType) {
-            const url = '/graph?query=' + escape('{{ title }}') + '&source={{source}}&limit=related&sort=papers';
+            const url = '/graph?query=' + normalize('{{ title }}') + '&source={{source}}&limit=related&sort=papers';
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
             window.open(url + '&type=' + graphType + '&jobid=' + jobid, '_blank');

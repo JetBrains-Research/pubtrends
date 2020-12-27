@@ -81,8 +81,8 @@ class Loader(metaclass=ABCMeta):
         pub_df = pub_df.fillna(value={'abstract': ''})
         pub_df['year'] = pub_df['year'].apply(int)
         pub_df['authors'] = pub_df['aux'].apply(lambda aux: extract_authors(aux['authors']))
-        pub_df['journal'] = pub_df['aux'].apply(lambda aux: html.unescape(aux['journal']['name']))
-        pub_df['title'] = pub_df['title'].apply(lambda title: html.unescape(title))
+        pub_df['journal'] = pub_df['aux'].apply(lambda aux: aux['journal']['name'])
+        pub_df['title'] = pub_df['title'].apply(lambda title: title)
 
         # Semantic Scholar specific hack
         if 'crc32id' in pub_df:

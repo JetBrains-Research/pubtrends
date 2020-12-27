@@ -49,6 +49,8 @@
     <!--    <link rel="stylesheet" href="../static/result.css"/>-->
     <script src="{{ url_for('static', filename='wordcloud.js') }}"></script>
     <!--    <script src="../static/wordcloud.js"/>-->
+    <script src="{{ url_for('static', filename='text_utils.js') }}"></script>
+    <!--    <script src="../static/text_utils.js"/>-->
     <!-- Notify.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"
             integrity="sha512-efUTj3HdSPwWJ9gjfGR71X9cvsrthIA78/Fvd/IN+fttQVy7XWkOAXb295j8B3cmm/kFKVxjiNYzKw9IQJHIuQ=="
@@ -60,7 +62,7 @@
         "use strict";
 
         function papers_callback_impl(key, value) {
-            const url = '/papers?query=' + escape('{{ query }}') + '&source={{source}}&limit={{limit}}&sort={{sort}}';
+            const url = '/papers?query=' + normalize('{{ query }}') + '&source={{source}}&limit={{limit}}&sort={{sort}}';
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
             let args = '';
@@ -103,15 +105,14 @@
         }
 
         function graph_callback(graphType) {
-            const url = '/graph?query=' + escape('{{ query }}') + '&source={{source}}&limit={{limit}}&sort={{sort}}';
+            const url = '/graph?query=' + normalize('{{ query }}') + '&source={{source}}&limit={{limit}}&sort={{sort}}';
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
             window.open(url + '&type=' + graphType + '&jobid=' + jobid, '_blank');
         }
 
         function export_results() {
-            let title = "{{ query }}".replace(/&#34;/g, '"').replace(/&#39;/g, '\'').replace(/&amp;/g, '&');
-            const url = '/export_results?query=' + title + '&source={{source}}&limit={{limit}}&sort={{sort}}';
+            const url = '/export_results?query=' + normalize('{{ query }}') + '&source={{source}}&limit={{limit}}&sort={{sort}}';
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
             window.open(url + '&jobid=' + jobid, '_blank');
@@ -141,13 +142,13 @@
             {% endif %}
 
             // Process main word cloud
-            let words = JSON.parse('{{ papers_word_cloud }}'.replace(/&#34;/g, '"').replace(/&#39;/g, '\'').replace(/&amp;/g, '&'));
+            let words = JSON.parse(normalize('{{ papers_word_cloud }}'));
             process_word_cloud('papers_word_cloud', $('#papers_word_cloud').outerWidth(), 335, 200, 300, words, papers_callback_word);
 
             // Process topics word clouds
             let cid = '';
             {% for (script, div), word_cloud, zoom_in_callback in topics_info_and_word_cloud_and_callback %}
-                 words = JSON.parse('{{ word_cloud }}'.replace(/&#34;/g, '"').replace(/&#39;/g, '\'').replace(/&amp;/g, '&'));
+                 words = JSON.parse(normalize('{{ word_cloud }}'));
                  cid = 'topic_word_cloud_{{ loop.index }}';
                  process_word_cloud(cid, $('#' + cid).outerWidth(), 335, 200, 300, words, papers_callback_word);
             {% endfor %}

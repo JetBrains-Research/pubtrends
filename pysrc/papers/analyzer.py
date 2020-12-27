@@ -1,4 +1,3 @@
-import html
 import logging
 from collections import Counter
 from math import floor
@@ -84,7 +83,7 @@ class KeyPaperAnalyzer:
                               'all the query wrapped in "" for phrasal search')
         limit = limit or self.config.max_number_of_articles
         sort = sort or SORT_MOST_CITED
-        self.progress.info(f'Searching {limit} {sort.lower()} publications matching {html.escape(query)}',
+        self.progress.info(f'Searching {limit} {sort.lower()} publications matching {query}',
                            current=1, task=task)
         if noreviews:
             self.progress.info('Preferring non review papers', current=1, task=task)

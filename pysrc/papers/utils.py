@@ -1,5 +1,4 @@
 import binascii
-import html
 import logging
 import re
 import sys
@@ -278,7 +277,7 @@ def extract_authors(authors_list):
     if not authors_list:
         return ''
 
-    return ', '.join(filter(None, map(lambda authors: html.unescape(authors['name']), authors_list)))
+    return ', '.join(filter(None, map(lambda authors: authors['name'], authors_list)))
 
 
 def crc32(hex_string):

@@ -129,7 +129,7 @@ def status():
         elif job_state == 'FAILURE':
             return json.dumps({
                 'state': job_state,
-                'message': html.escape(str(job_result).replace('\\n', '\n').replace('\\t', '\t')),
+                'message': str(job_result).replace('\\n', '\n').replace('\\t', '\t'),
                 'search_error': isinstance(job_result, SearchError)
             })
         elif job_state == 'STARTED':
@@ -217,7 +217,7 @@ def load_predefined_or_result_data(jobid):
 @app.route('/result')
 def result():
     jobid = request.args.get('jobid')
-    query = html.unescape(request.args.get('query'))
+    query = request.args.get('query')
     source = request.args.get('source')
     limit = request.args.get('limit')
     sort = request.args.get('sort')
@@ -272,7 +272,7 @@ def process():
             logger.error(f'/process error wrong request {log_request(request)}')
             return render_template_string(SOMETHING_WENT_WRONG_SEARCH)
 
-        query = html.unescape(request.args.get('query') or '')
+        query = request.args.get('query') or ''
         analysis_type = request.values.get('analysis_type')
         source = request.values.get('source')
         key = request.args.get('key')
@@ -328,7 +328,7 @@ def process():
 def process_paper():
     jobid = request.values.get('jobid')
     source = request.values.get('source')
-    query = html.unescape(request.values.get('query'))
+    query = request.values.get('query')
     if jobid:
         job = get_or_cancel_task(jobid)
         if job and job.state == 'SUCCESS':
@@ -375,7 +375,7 @@ def paper():
 @app.route('/graph')
 def graph():
     jobid = request.values.get('jobid')
-    query = html.unescape(request.args.get('query'))
+    query = request.args.get('query')
     source = request.args.get('source')
     limit = request.args.get('limit')
     sort = request.args.get('sort')
@@ -431,7 +431,7 @@ def graph():
 @app.route('/papers')
 def show_ids():
     jobid = request.values.get('jobid')
-    query = html.unescape(request.args.get('query'))
+    query = request.args.get('query')
     source = request.args.get('source')  # Pubmed or Semantic Scholar
     limit = request.args.get('limit')
     sort = request.args.get('sort')
@@ -535,7 +535,7 @@ def index():
 
 @app.route('/search_terms', methods=['POST'])
 def search_terms():
-    query = html.unescape(request.form.get('query'))  # Original search query
+    query = request.form.get('query')  # Original search query
     source = request.form.get('source')  # Pubmed or Semantic Scholar
     sort = request.form.get('sort')  # Sort order
     limit = request.form.get('limit')  # Limit
@@ -579,7 +579,7 @@ def search_paper():
 @app.route('/process_ids', methods=['POST'])
 def process_ids():
     source = request.form.get('source')  # Pubmed or Semantic Scholar
-    query = html.unescape(request.form.get('query'))  # Original search query
+    query = request.form.get('query')  # Original search query
     try:
         if source and query and 'id_list' in request.form:
             id_list = request.form.get('id_list').split(',')
