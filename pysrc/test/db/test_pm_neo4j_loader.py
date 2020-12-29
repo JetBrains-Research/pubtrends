@@ -53,6 +53,10 @@ class TestPubmedNeo4jLoader(unittest.TestCase, AbstractTestPubmedLoader):
     def getCoCitationsDataframe(self):
         return self.cocit_df
 
+    def test_load_references(self, pid, limit, expected_ids):
+        # TODO: fix me!
+        pass
+
     def test_expand(self):
         # TODO: fix me!
         pass
