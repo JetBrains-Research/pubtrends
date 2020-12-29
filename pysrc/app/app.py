@@ -160,7 +160,7 @@ def save_predefined(viz, data, log, jobid):
             PREDEFINED_LOCK.acquire()
             path_viz = f'{path}_viz.json.gz'
             path_data = f'{path}_data.json.gz'
-            path_log = f'{path}_log.json.gz'
+            path_log = f'{path}_log.gz'
             if not os.path.exists(path_viz):
                 with gzip.open(path_viz, 'w') as f:
                     f.write(json.dumps(viz).encode('utf-8'))
@@ -169,7 +169,7 @@ def save_predefined(viz, data, log, jobid):
                     f.write(json.dumps(data).encode('utf-8'))
             if not os.path.exists(path_log):
                 with gzip.open(path_log, 'w') as f:
-                    f.write(json.dumps(log).encode('utf-8'))
+                    f.write(log.encode('utf-8'))
         finally:
             PREDEFINED_LOCK.release()
 
@@ -179,14 +179,14 @@ def load_predefined_viz_log(jobid):
         logger.info('Trying to load predefined viz, log')
         path = os.path.join(predefined_path, jobid)
         path_viz = f'{path}_viz.json.gz'
-        path_log = f'{path}_log.json.gz'
+        path_log = f'{path}_log.gz'
         try:
             PREDEFINED_LOCK.acquire()
             if os.path.exists(path_viz) and os.path.exists(path_log):
                 with gzip.open(path_viz, 'r') as f:
                     viz = json.loads(f.read().decode('utf-8'))
                 with gzip.open(path_log, 'r') as f:
-                    log = json.loads(f.read().decode('utf-8'))
+                    log = f.read().decode('utf-8')
                 return viz, log
         finally:
             PREDEFINED_LOCK.release()
