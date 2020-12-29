@@ -36,6 +36,13 @@ class Loader(metaclass=ABCMeta):
         """
 
     @abstractmethod
+    def load_references(self, pid, limit):
+        """
+        Returns paper references, limited by number.
+        :return: list[String]
+        """
+
+    @abstractmethod
     def estimate_citations(self, ids):
         """
         Estimates mean, variance for total citations count of given ids.

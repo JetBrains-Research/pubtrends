@@ -34,7 +34,6 @@ def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, e
             ids = analyzer.expand_ids(
                 ids,
                 limit=min(int(min(len(ids), limit) * (1 + expand)), analyzer.config.max_number_to_expand),
-                steps=KeyPaperAnalyzer.EXPAND_STEPS, keep_citations=True,
                 current=2, task=current_task
             )
         analyzer.analyze_papers(ids, query, noreviews=noreviews, task=current_task)
@@ -62,7 +61,6 @@ def analyze_id_list(source, ids, zoom, query, limit=None):
             ids = analyzer.expand_ids(
                 ids,
                 limit=min(len(ids) + KeyPaperAnalyzer.EXPAND_ZOOM_OUT, analyzer.config.max_number_to_expand),
-                steps=1, keep_citations=True,
                 current=1, task=current_task
             )
         elif zoom == PAPER_ANALYSIS:
@@ -70,11 +68,15 @@ def analyze_id_list(source, ids, zoom, query, limit=None):
                 limit = int(limit)
             else:
                 limit = 0
+            # Fetch references at first
+            ids = ids + analyzer.load_references(
+                ids[0], limit=limit if limit > 0 else analyzer.config.max_number_to_expand
+            )
+            # And then expand
             ids = analyzer.expand_ids(
-                ids,
-                limit=limit if limit > 0 else analyzer.config.max_number_to_expand,
-                steps=KeyPaperAnalyzer.EXPAND_STEPS, keep_citations=False,
-                current=1, task=current_task)
+                ids, limit=limit if limit > 0 else analyzer.config.max_number_to_expand,
+                current=1, task=current_task
+            )
         else:
             ids = ids  # Leave intact
         analyzer.analyze_papers(ids, query, task=current_task)

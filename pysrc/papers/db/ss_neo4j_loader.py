@@ -157,6 +157,9 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
 
         return cit_stats_df
 
+    def load_references(self, pid, limit):
+        raise Exception('Not implemented yet')
+
     def estimate_citations(self, ids):
         raise Exception('Not implemented yet')
 

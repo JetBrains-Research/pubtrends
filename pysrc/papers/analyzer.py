@@ -55,7 +55,7 @@ class KeyPaperAnalyzer:
 
     EXPAND_STEPS = 2
     # Limit citations count of expanded papers to avoid prevalence of related methods
-    EXPAND_CITATIONS_SIGMA = 5
+    EXPAND_CITATIONS_SIGMA = 3
     # Take up to fraction of top similarity
     EXPAND_SIMILARITY_THRESHOLD = 0.2
     EXPAND_ZOOM_OUT = 100
@@ -96,20 +96,23 @@ class KeyPaperAnalyzer:
                                task=task)
         return ids
 
-    def expand_ids(self, ids, limit, steps, keep_citations=True, current=1, task=None):
+    def load_references(self, pid, limit):
+        return self.loader.load_references(pid, limit)
+
+    def expand_ids(self, ids, limit, current=1, task=None):
         if len(ids) > self.config.max_number_to_expand:
             self.progress.info('Too many related papers, nothing to expand', current=current, task=task)
             return ids
         self.progress.info('Expanding related papers by references', current=current, task=task)
         logger.debug(f'Expanding {len(ids)} papers to: {limit}')
-        if keep_citations:
-            mean, std = self.loader.estimate_citations(ids)
-            logger.debug(f'Estimated citations count mean={mean}, std={std}')
-        else:
-            mean, std = 0, 0
+
+        mean, std = self.loader.estimate_citations(ids)
+        logger.debug(f'Estimated citations count mean={mean}, std={std} to keep citations on a group level')
         current_ids = ids
 
         publications = self.loader.load_publications(ids)
+
+        logger.debug(f'Estimating mesh and keywords terms to keep the theme')
         mesh_stems = [s for s, _ in tokens_stems(
             ' '.join(publications['mesh'] + ' ' + publications['keywords']).replace(',', ' ')
         )]
@@ -119,7 +122,7 @@ class KeyPaperAnalyzer:
         i = 0
         new_ids = []
         while True:
-            if i == steps or len(current_ids) >= limit:
+            if i == self.EXPAND_STEPS or len(current_ids) >= limit:
                 break
             i += 1
             logger.debug(f'Step {i}: current_ids: {len(current_ids)}, new_ids: {len(new_ids)}, limit: {limit}')
@@ -131,12 +134,11 @@ class KeyPaperAnalyzer:
             new_df = expanded_df.loc[np.logical_not(expanded_df['id'].isin(set(current_ids)))]
             logging.debug(f'New papers {len(new_df)}')
 
-            if keep_citations:
-                logger.debug(f'Filter by citations count mean({mean}) +- {self.EXPAND_CITATIONS_SIGMA} * std({std})')
-                new_df = new_df.loc[[
-                    mean - self.EXPAND_CITATIONS_SIGMA * std <= t <= mean + self.EXPAND_CITATIONS_SIGMA * std
-                    for t in new_df['total']]]
-                logger.debug(f'Citations filtered: {len(new_df)}')
+            logger.debug(f'Filter by citations mean({mean}) +- {self.EXPAND_CITATIONS_SIGMA} * std({std})')
+            new_df = new_df.loc[[
+                mean - self.EXPAND_CITATIONS_SIGMA * std <= t <= mean + self.EXPAND_CITATIONS_SIGMA * std
+                for t in new_df['total']]]
+            logger.debug(f'Citations filtered: {len(new_df)}')
 
             new_ids = list(new_df['id'])
             if len(new_ids) == 0:

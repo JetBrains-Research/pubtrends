@@ -152,6 +152,24 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
         return df
 
+    def load_references(self, pid, limit):
+        self.check_connection()
+        vals = self.ids_to_vals([pid])
+        # TODO[shpynov] transferring huge list of ids can be a problem
+        query = f'''
+                SELECT C.pmid_in AS pmid
+                FROM PMCitations C JOIN matview_pmcitations MC
+                    ON C.pmid_in = MC.pmid
+                WHERE C.pmid_out IN (VALUES {vals})
+                ORDER BY MC.count DESC NULLS LAST
+                LIMIT {limit};
+                '''
+
+        with self.postgres_connection.cursor() as cursor:
+            cursor.execute(query)
+            df = pd.DataFrame(cursor.fetchall(), columns=['id'], dtype=object)
+        return list(df['id'].astype(str))
+
     def estimate_citations(self, ids):
         self.check_connection()
         vals = self.ids_to_vals(ids)

@@ -149,6 +149,23 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
 
         return cit_stats_df_from_query
 
+    def load_references(self, pid, limit):
+        self.check_connection()
+        # TODO[shpynov] transferring huge list of ids can be a problem
+        query = f'''
+                SELECT C.pmid_in AS pmid
+                FROM PMCitations C JOIN matview_pmcitations MC
+                    ON C.pmid_in = MC.pmid
+                WHERE (C.crc32id_out, C.ssid_out) in (VALUES {SemanticScholarPostgresLoader.ids2values([pid])})
+                ORDER BY MC.count DESC NULLS LAST
+                LIMIT {limit};
+                '''
+
+        with self.postgres_connection.cursor() as cursor:
+            cursor.execute(query)
+            df = pd.DataFrame(cursor.fetchall(), columns=['id'], dtype=object)
+        return list(df['id'].astype(str))
+
     def estimate_citations(self, ids):
         raise Exception('Not implemented yet')
 
