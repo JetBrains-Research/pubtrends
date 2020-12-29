@@ -111,8 +111,8 @@
             window.open(url + '&type=' + graphType + '&jobid=' + jobid, '_blank');
         }
 
-        function export_results() {
-            const url = '/export_results?query=' + normalize('{{ query }}') + '&source={{source}}&limit={{limit}}&sort={{sort}}';
+        function export_data() {
+            const url = '/export_data?query=' + normalize('{{ query }}') + '&source={{source}}&limit={{limit}}&sort={{sort}}';
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
             window.open(url + '&jobid=' + jobid, '_blank');
@@ -957,7 +957,7 @@
                 </a>
                 <a href="javascript:void(0);"
                    class="ml-1 btn btn-light"
-                   role="button" onclick="export_results();">
+                   role="button" onclick="export_data();">
                     Export
                 </a>
                 <div id="collapseLog" class="card-body collapse">

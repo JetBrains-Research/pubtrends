@@ -1,13 +1,11 @@
+import gzip
 import hashlib
-import html
 import json
 import logging
 import os
-import pickle
 import random
 import re
 import tempfile
-import zipfile
 from threading import Lock
 from urllib.parse import quote
 
@@ -156,39 +154,39 @@ def status():
 
 def save_predefined(viz, data, log, jobid):
     if jobid.startswith('predefined_'):
-        logger.info(f'/result Saving predefined search {log_request(request)}')
+        logger.info('Saving predefined search')
         path = os.path.join(predefined_path, jobid)
         try:
             PREDEFINED_LOCK.acquire()
-            path_viz = f'{path}_viz.pkl'
-            path_data = f'{path}_data.pkl'
-            path_log = f'{path}_log.pkl'
+            path_viz = f'{path}_viz.json.gz'
+            path_data = f'{path}_data.json.gz'
+            path_log = f'{path}_log.json.gz'
             if not os.path.exists(path_viz):
-                with open(path_viz, 'wb') as f:
-                    pickle.dump(viz, f, pickle.HIGHEST_PROTOCOL)
+                with gzip.open(path_viz, 'w') as f:
+                    f.write(json.dumps(viz).encode('utf-8'))
             if not os.path.exists(path_data):
-                with open(path_data, 'wb') as f:
-                    pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+                with gzip.open(path_data, 'w') as f:
+                    f.write(json.dumps(data).encode('utf-8'))
             if not os.path.exists(path_log):
-                with open(path_log, 'wb') as f:
-                    pickle.dump(log, f, pickle.HIGHEST_PROTOCOL)
+                with gzip.open(path_log, 'w') as f:
+                    f.write(json.dumps(log).encode('utf-8'))
         finally:
             PREDEFINED_LOCK.release()
 
 
 def load_predefined_viz_log(jobid):
     if jobid.startswith('predefined_'):
-        logger.info(f'/result Trying to load predefined viz, log {log_request(request)}')
+        logger.info('Trying to load predefined viz, log')
         path = os.path.join(predefined_path, jobid)
-        path_viz = f'{path}_viz.pkl'
-        path_log = f'{path}_log.pkl'
+        path_viz = f'{path}_viz.json.gz'
+        path_log = f'{path}_log.json.gz'
         try:
             PREDEFINED_LOCK.acquire()
             if os.path.exists(path_viz) and os.path.exists(path_log):
-                with open(path_viz, 'rb') as f:
-                    viz = pickle.load(f)
-                with open(path_log, 'rb') as f:
-                    log = pickle.load(f)
+                with gzip.open(path_viz, 'r') as f:
+                    viz = json.loads(f.read().decode('utf-8'))
+                with gzip.open(path_log, 'r') as f:
+                    log = json.loads(f.read().decode('utf-8'))
                 return viz, log
         finally:
             PREDEFINED_LOCK.release()
@@ -197,14 +195,14 @@ def load_predefined_viz_log(jobid):
 
 def load_predefined_or_result_data(jobid):
     if jobid.startswith('predefined_'):
-        logger.info(f'/result Trying to load predefined data {log_request(request)}')
+        logger.info('Trying to load predefined data')
         path = os.path.join(predefined_path, jobid)
-        path_data = f'{path}_data.pkl'
+        path_data = f'{path}_data.json.gz'
         try:
             PREDEFINED_LOCK.acquire()
             if os.path.exists(path_data):
-                with open(path_data, 'rb') as f:
-                    return pickle.load(f)
+                with gzip.open(path_data, 'r') as f:
+                    return json.loads(f.read().decode('utf-8'))
         finally:
             PREDEFINED_LOCK.release()
     job = AsyncResult(jobid, app=celery)
@@ -595,7 +593,7 @@ def process_ids():
         return render_template_string(ERROR_OCCURRED), 500
 
 
-@app.route('/export_results', methods=['GET'])
+@app.route('/export_data', methods=['GET'])
 def export_results():
     try:
         jobid = request.values.get('jobid')
@@ -604,27 +602,14 @@ def export_results():
         limit = request.args.get('limit')
         sort = request.args.get('sort')
         if jobid and query and source and limit and source:
-            job = AsyncResult(jobid, app=celery)
-            if job and job.state == 'SUCCESS':
-                viz, data, log = job.result
-                with tempfile.TemporaryDirectory() as tmpdir:
-                    name = re.sub('_{2,}', '_',
-                                  re.sub('["\':,. ]', '_', f'{source}_{query}_{sort}_{limit}'.lower())).strip('_')
-                    path_viz = os.path.join(tmpdir, 'viz.pkl')
-                    path_data = os.path.join(tmpdir, 'data.pkl')
-                    path_log = os.path.join(tmpdir, 'log.pkl')
-                    with open(path_viz, 'wb') as f:
-                        pickle.dump(viz, f, pickle.HIGHEST_PROTOCOL)
-                    with open(path_data, 'wb') as f:
-                        pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
-                    with open(path_log, 'wb') as f:
-                        pickle.dump(log, f, pickle.HIGHEST_PROTOCOL)
-                    path_za = os.path.join(tmpdir, f'{name}.zip')
-                    with zipfile.ZipFile(path_za, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as za:
-                        za.write(path_viz, f'/{name}/viz.pkl')
-                        za.write(path_data, f'/{name}/data.pkl')
-                        za.write(path_log, f'/{name}/log.pkl')
-                    return send_file(path_za, as_attachment=True)
+            data = load_predefined_or_result_data(jobid)
+            with tempfile.TemporaryDirectory() as tmpdir:
+                name = re.sub('_{2,}', '_',
+                              re.sub('["\':,. ]', '_', f'{source}_{query}_{sort}_{limit}'.lower())).strip('_')
+                path = os.path.join(tmpdir, f'{name}.json.gz')
+                with gzip.open(path, 'w') as f:
+                    f.write(json.dumps(data).encode('utf-8'))
+                return send_file(path, as_attachment=True)
         logger.error(f'/export_results error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception as e:
