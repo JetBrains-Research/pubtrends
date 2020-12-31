@@ -237,16 +237,15 @@ Please ensure that you have Database configured, up and running.
 3. Python tests with codestyle check for development (including integration with Kotlin DB writers)
     
     ```
-    ./gradlew shadowJar; source activate pubtrends; pytest pysrc
+    source activate pubtrends; pytest pysrc
     ```
 
-4. All tests within Docker (please ignore point 1)
+4. Python tests within Docker (ensure that `./build/libs/pubtrends-dev.jar` file is present)
 
     ```
     docker run --rm --volume=$(pwd):/pubtrends -t biolabs/pubtrends /bin/bash -c \
     "/usr/lib/postgresql/12/bin/pg_ctl -D /home/user/postgres start; sudo neo4j start; \
     cd /pubtrends; mkdir ~/.pubtrends; cp config.properties ~/.pubtrends; \
-    ./gradlew test shadowJar; \
     source activate pubtrends; pytest pysrc"
     ```
 
