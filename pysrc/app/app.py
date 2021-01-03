@@ -12,7 +12,7 @@ from urllib.parse import quote
 import flask_admin
 from celery.result import AsyncResult
 from flask import Flask, url_for, redirect, render_template, request, abort, render_template_string, \
-    send_from_directory, send_file
+    send_from_directory, send_file, jsonify
 from flask_admin import helpers as admin_helpers, expose, BaseView
 from flask_security import Security, SQLAlchemyUserDatastore, \
     UserMixin, RoleMixin, current_user
@@ -533,6 +533,7 @@ def index():
 
 @app.route('/search_terms', methods=['POST'])
 def search_terms():
+    logger.info(f'/search_terms {log_request(request)}')
     query = request.form.get('query')  # Original search query
     source = request.form.get('source')  # Pubmed or Semantic Scholar
     sort = request.form.get('sort')  # Sort order
@@ -541,7 +542,6 @@ def search_terms():
     expand = request.form.get('expand')  # Fraction of papers to cover by references
     try:
         if query and source and sort and limit and expand:
-            logger.info(f'/search_terms {log_request(request)}')
             job = analyze_search_terms.delay(source, query=query, limit=int(limit), sort=sort,
                                              noreviews=noreviews, expand=int(expand) / 100)
             return redirect(url_for('.process', query=query, source=source, limit=limit, sort=sort,
@@ -571,6 +571,24 @@ def search_paper():
         return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
     except Exception as e:
         logger.error(f'/search_paper error', e)
+        return render_template_string(ERROR_OCCURRED), 500
+
+
+@app.route('/search_pubmed_paper_by_title', methods=['GET'])
+def search_pubmed_paper_by_title():
+    logger.info(f'/search_paper_by_title {log_request(request)}')
+    title = request.values.get('title')
+    try:
+        if title:
+            logger.info(f'/search_paper_by_title {log_request(request)}')
+            # Sync call
+            loader = Loaders.get_loader('Pubmed', PUBTRENDS_CONFIG)
+            papers = loader.find('title', title)
+            return jsonify(papers)
+        logger.error(f'/search_paper_by_title error missing title {log_request(request)}')
+        return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
+    except Exception as e:
+        logger.error(f'/search_paper_by_title error', e)
         return render_template_string(ERROR_OCCURRED), 500
 
 
