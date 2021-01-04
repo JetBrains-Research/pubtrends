@@ -30,18 +30,18 @@ class Loaders:
 
     @staticmethod
     def get_loader_and_url_prefix(source, config):
-        if Neo4jConnector.neo4j_configured(config):
-            if source == 'Pubmed':
-                return PubmedNeo4jLoader(config), PUBMED_ARTICLE_BASE_URL
-            elif source == 'Semantic Scholar':
-                return SemanticScholarNeo4jLoader(config), SEMANTIC_SCHOLAR_BASE_URL
-            else:
-                raise ValueError(f"Unknown source {source}")
-        elif PostgresConnector.postgres_configured(config):
+        if PostgresConnector.postgres_configured(config):
             if source == 'Pubmed':
                 return PubmedPostgresLoader(config), PUBMED_ARTICLE_BASE_URL
             elif source == 'Semantic Scholar':
                 return SemanticScholarPostgresLoader(config), SEMANTIC_SCHOLAR_BASE_URL
+            else:
+                raise ValueError(f"Unknown source {source}")
+        elif Neo4jConnector.neo4j_configured(config):
+            if source == 'Pubmed':
+                return PubmedNeo4jLoader(config), PUBMED_ARTICLE_BASE_URL
+            elif source == 'Semantic Scholar':
+                return SemanticScholarNeo4jLoader(config), SEMANTIC_SCHOLAR_BASE_URL
             else:
                 raise ValueError(f"Unknown source {source}")
         else:
