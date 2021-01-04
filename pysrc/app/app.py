@@ -24,7 +24,7 @@ from pysrc.app.admin.stats import prepare_stats_data
 from pysrc.celery.tasks import celery, find_paper_async, analyze_search_terms, analyze_id_list
 from pysrc.celery.tasks_cache import get_or_cancel_task
 from pysrc.papers.analyzer import KeyPaperAnalyzer
-from pysrc.papers.config import PubtrendsConfig
+from pysrc.papers.pubtrends_config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.paper import prepare_paper_data, prepare_papers_data
@@ -249,7 +249,7 @@ def result():
                                        **viz)
             logger.info(f'/result No job or out-of-date job, restart it {log_request(request)}')
             analyze_search_terms.apply_async(args=[source, query, sort, int(limit), noreviews, int(expand) / 100],
-                                             task_id=jobid)
+                                             task_id=jobid, test=app.config['TESTING'])
             return redirect(url_for('.process', query=query, source=source, limit=limit, sort=sort,
                                     noreviews=noreviews, expand=expand,
                                     jobid=jobid))
@@ -332,8 +332,10 @@ def process_paper():
         if job and job.state == 'SUCCESS':
             id_list = job.result
             logger.info(f'/process_paper single paper analysis {log_request(request)}')
-            job = analyze_id_list.delay(source, ids=id_list, zoom=PAPER_ANALYSIS, query=query,
-                                        limit=request.values.get('limit'))
+            job = analyze_id_list.delay(
+                source, ids=id_list, zoom=PAPER_ANALYSIS, query=query, limit=request.values.get('limit'),
+                test=app.config['TESTING']
+            )
             return redirect(url_for('.process', query=query, analysis_type=PAPER_ANALYSIS_TITLE,
                                     id=id_list[0], source=source, jobid=job.id))
         logger.error(f'/process_paper error job is not success {log_request(request)}')
@@ -359,7 +361,10 @@ def paper():
                                        version=VERSION)
             else:
                 logger.info(f'/paper No job or out-of-date job, restart it {log_request(request)}')
-                job = analyze_id_list.apply_async(args=[source, [pid], PAPER_ANALYSIS, query, limit], task_id=jobid)
+                job = analyze_id_list.apply_async(
+                    args=[source, [pid], PAPER_ANALYSIS, query, limit, app.config['TESTING']],
+                    task_id=jobid
+                )
                 return redirect(url_for('.process', query=query, analysis_type=PAPER_ANALYSIS_TITLE,
                                         id=pid, source=source, jobid=job.id))
         else:
@@ -543,7 +548,8 @@ def search_terms():
     try:
         if query and source and sort and limit and expand:
             job = analyze_search_terms.delay(source, query=query, limit=int(limit), sort=sort,
-                                             noreviews=noreviews, expand=int(expand) / 100)
+                                             noreviews=noreviews, expand=int(expand) / 100,
+                                             test=app.config['TESTING'])
             return redirect(url_for('.process', query=query, source=source, limit=limit, sort=sort,
                                     noreviews=noreviews, expand=expand,
                                     jobid=job.id))
@@ -556,16 +562,15 @@ def search_terms():
 
 @app.route('/search_paper', methods=['POST'])
 def search_paper():
-    logger.info('/search_paper')
+    logger.info(f'/search_paper {log_request(request)}')
     data = request.form
     try:
         if 'source' in data and 'key' in data and 'value' in data:
             source = data.get('source')  # Pubmed or Semantic Scholar
-            logger.info(f'/search_paper {log_request(request)}')
             key = data.get('key')
             value = data.get('value')
             limit = data.get('limit')
-            job = find_paper_async.delay(source, key, value)
+            job = find_paper_async.delay(source, key, value, test=app.config['TESTING'])
             return redirect(url_for('.process', source=source, key=key, value=value, jobid=job.id, limit=limit))
         logger.error(f'/search_paper error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
@@ -594,6 +599,7 @@ def search_pubmed_paper_by_title():
 
 @app.route('/process_ids', methods=['POST'])
 def process_ids():
+    logger.info(f'/process_ids {log_request(request)}')
     source = request.form.get('source')  # Pubmed or Semantic Scholar
     query = request.form.get('query')  # Original search query
     try:
@@ -601,8 +607,10 @@ def process_ids():
             id_list = request.form.get('id_list').split(',')
             zoom = request.form.get('zoom')
             analysis_type = zoom_name(zoom)
-            job = analyze_id_list.delay(source, ids=id_list, zoom=int(zoom), query=query, limit=None)
-            logger.info(f'/process_ids {log_request(request)}')
+            job = analyze_id_list.delay(
+                source, ids=id_list, zoom=int(zoom), query=query, limit=None,
+                test=app.config['TESTING']
+            )
             return redirect(url_for('.process', query=query, analysis_type=analysis_type, source=source, jobid=job.id))
         logger.error(f'/process_ids error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
@@ -613,6 +621,7 @@ def process_ids():
 
 @app.route('/export_data', methods=['GET'])
 def export_results():
+    logger.info(f'/export_data {log_request(request)}')
     try:
         jobid = request.values.get('jobid')
         query = request.args.get('query')
@@ -641,6 +650,7 @@ def export_results():
 
 @app.route('/feedback', methods=['POST'])
 def feedback():
+    logger.info(f'/feedback {log_request(request)}')
     data = request.form
     if 'key' in data:
         key = data.get('key')

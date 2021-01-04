@@ -1,4 +1,4 @@
-from pysrc.papers.config import PubtrendsConfig
+from pysrc.papers.pubtrends_config import PubtrendsConfig
 from pysrc.papers.db.neo4j_connector import Neo4jConnector
 
 

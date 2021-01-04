@@ -4,7 +4,7 @@ import numpy as np
 from parameterized import parameterized
 
 from pysrc.papers.analyzer import KeyPaperAnalyzer
-from pysrc.papers.config import PubtrendsConfig
+from pysrc.papers.pubtrends_config import PubtrendsConfig
 from pysrc.test.mock_loaders import MockLoader, \
     CITATION_YEARS, EXPECTED_MAX_GAIN, EXPECTED_MAX_RELATIVE_GAIN, CITATION_GRAPH_NODES, CITATION_GRAPH_EDGES, \
     MockLoaderEmpty, MockLoaderSingle, SIMILARITY_GRAPH

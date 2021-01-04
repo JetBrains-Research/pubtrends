@@ -1,6 +1,6 @@
 import unittest
 
-from pysrc.papers.config import PubtrendsConfig
+from pysrc.papers.pubtrends_config import PubtrendsConfig
 from pysrc.papers.db.ss_neo4j_loader import SemanticScholarNeo4jLoader
 from pysrc.papers.db.ss_neo4j_writer import SemanticScholarNeo4jWriter
 from pysrc.test.db.abstract_test_ss_loader import AbstractTestSemanticScholarLoader

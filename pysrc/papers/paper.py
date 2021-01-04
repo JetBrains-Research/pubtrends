@@ -1,7 +1,7 @@
 from bokeh.embed import components
 
 from pysrc.papers.analyzer import KeyPaperAnalyzer
-from pysrc.papers.config import PubtrendsConfig
+from pysrc.papers.pubtrends_config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.plot.plotter import Plotter
 from pysrc.papers.utils import (

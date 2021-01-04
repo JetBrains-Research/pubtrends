@@ -2,7 +2,7 @@ import os
 import subprocess
 import unittest
 
-from pysrc.papers.config import PubtrendsConfig
+from pysrc.papers.pubtrends_config import PubtrendsConfig
 from pysrc.papers.db.pm_neo4j_loader import PubmedNeo4jLoader
 from pysrc.papers.db.pm_postgres_loader import PubmedPostgresLoader
 from pysrc.papers.db.ss_neo4j_loader import SemanticScholarNeo4jLoader

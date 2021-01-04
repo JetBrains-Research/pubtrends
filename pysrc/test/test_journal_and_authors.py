@@ -3,7 +3,7 @@ import unittest
 from pandas.testing import assert_frame_equal
 
 from pysrc.papers.analyzer import KeyPaperAnalyzer
-from pysrc.papers.config import PubtrendsConfig
+from pysrc.papers.pubtrends_config import PubtrendsConfig
 from pysrc.test.articles_for_analysis_testing import df_authors_and_journals, author_df, journal_df
 from pysrc.test.mock_loaders import MockLoader
 
