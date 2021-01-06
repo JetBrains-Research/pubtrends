@@ -3,7 +3,10 @@ import time
 import unittest
 from urllib.parse import quote
 
+from celery.contrib.testing.worker import start_worker
+
 from pysrc.app.app import app
+from pysrc.celery.tasks import celery
 from pysrc.papers import pubtrends_config
 from pysrc.papers.db.pm_postgres_loader import PubmedPostgresLoader
 from pysrc.papers.db.pm_postgres_writer import PubmedPostgresWriter
@@ -11,40 +14,52 @@ from pysrc.papers.utils import SORT_MOST_CITED
 from pysrc.test.db.pm_test_articles import REQUIRED_ARTICLES, ARTICLES, CITATIONS
 
 
+# Workaround for celery test worker and missing task, will be fixed in Celery 5+
+# See for the details
+# https://stackoverflow.com/questions/46530784/make-django-test-case-database-visible-to-celery
+@celery.task(name='celery.ping')
+def ping():
+    # type: () -> str
+    """Simple task that just returns 'pong'."""
+    return 'pong'
+
+
 class TestApp(unittest.TestCase):
     """
-    This is integration test of the whole App. Launch Testing container AND Celery before launching this test.
-    TODO: should be rewritten to avoid external celery tasks executing
+    This is integration test of the whole Pubtrends application.
     """
-
-    test_config = pubtrends_config.PubtrendsConfig(test=True)
-    loader = PubmedPostgresLoader(test_config)
 
     @classmethod
     def setUpClass(cls):
-        cls.loader = TestApp.loader
+        test_config = pubtrends_config.PubtrendsConfig(test=True)
+        cls.loader = PubmedPostgresLoader(test_config)
+
+        # Configure celery not to use broker
+        celery.conf.broker_url = 'memory://'
+        celery.conf.result_backend = 'cache+memory://'
+
+        cls.celery_worker = start_worker(celery, perform_ping_check=False)
+        cls.celery_worker.__enter__()
 
         # Text search is not tested, imitating search results
-        cls.ids = list(map(lambda article: article.pmid, REQUIRED_ARTICLES))
+        ids = list(map(lambda article: article.pmid, REQUIRED_ARTICLES))
 
         # Reset and load data to the test database
-        writer = PubmedPostgresWriter(config=TestApp.test_config)
+        writer = PubmedPostgresWriter(config=test_config)
         writer.init_pubmed_database()
         writer.insert_pubmed_publications(ARTICLES)
         writer.insert_pubmed_citations(CITATIONS)
 
         # Get data via loader methods
-        cls.pub_df = cls.loader.load_publications(cls.ids)
-        cls.cit_stats_df = cls.loader.load_citations_by_year(cls.ids)
-        cls.cit_df = cls.loader.load_citations(cls.ids)
-        cls.cocit_df = cls.loader.load_cocitations(cls.ids)
+        cls.pub_df = cls.loader.load_publications(ids)
+        cls.cit_stats_df = cls.loader.load_citations_by_year(ids)
+        cls.cit_df = cls.loader.load_citations(ids)
+        cls.cocit_df = cls.loader.load_cocitations(ids)
 
     @classmethod
     def tearDownClass(cls):
+        cls.celery_worker.__exit__(None, None, None)
         cls.loader.close_connection()
-
-    def getLoader(self):
-        return self.loader
 
     def test_terms_search(self):
         app.config['TESTING'] = True
