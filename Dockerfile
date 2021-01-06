@@ -109,11 +109,5 @@ RUN /usr/lib/postgresql/12/bin/pg_ctl -D /home/user/postgres start \
 # Expose the PostgreSQL port
 EXPOSE 5432
 
-# Install OpenJDK for Kotlin-python DB integration tests & cleanup apt
-RUN sudo apt-get update && sudo apt-get install -y openjdk-8-jdk \
-    && sudo apt-get clean \
-    && sudo apt-get autoremove -y \
-    && sudo rm -rf /var/lib/apt/lists/*
-
 # Use `-d` param to launch container as daemon
 CMD /usr/lib/postgresql/12/bin/pg_ctl -D /home/user/postgres start && sudo neo4j start && sleep infinity
