@@ -4,6 +4,10 @@ import unittest
 from urllib.parse import quote
 
 from celery.contrib.testing.worker import start_worker
+# Workaround for celery test worker and missing task, will be fixed in Celery 5+
+# See: https://github.com/celery/celery/issues/4851
+# noinspection PyUnresolvedReferences
+from celery.contrib.testing.tasks import ping
 
 from pysrc.app.app import app
 from pysrc.celery.tasks import celery
@@ -12,16 +16,6 @@ from pysrc.papers.db.pm_postgres_loader import PubmedPostgresLoader
 from pysrc.papers.db.pm_postgres_writer import PubmedPostgresWriter
 from pysrc.papers.utils import SORT_MOST_CITED
 from pysrc.test.db.pm_test_articles import REQUIRED_ARTICLES, ARTICLES, CITATIONS
-
-
-# Workaround for celery test worker and missing task, will be fixed in Celery 5+
-# See for the details
-# https://stackoverflow.com/questions/46530784/make-django-test-case-database-visible-to-celery
-@celery.task(name='celery.ping')
-def ping():
-    # type: () -> str
-    """Simple task that just returns 'pong'."""
-    return 'pong'
 
 
 class TestApp(unittest.TestCase):
