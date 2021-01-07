@@ -389,7 +389,7 @@ class Plotter:
         year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
         p = figure(tools=TOOLS, toolbar_location="right",
                    plot_width=PLOT_WIDTH, plot_height=SHORT_PLOT_HEIGHT, x_range=year_range,
-                   y_axis_type="log" if max(self.analyzer.max_gain_df['count']) > MAX_LINEAR_AXIS else "linear",
+                   y_axis_type="log" if self.analyzer.max_gain_df['count'].max() > MAX_LINEAR_AXIS else "linear",
                    title='Cited per year')
         p.sizing_mode = 'stretch_width'
         p.xaxis.axis_label = 'Year'
@@ -403,7 +403,7 @@ class Plotter:
         p.js_on_event('tap', self.paper_callback(ds_max, self.analyzer.source))
         # Use explicit bottom for log scale as workaround
         # https://github.com/bokeh/bokeh/issues/6536
-        bottom = min(self.analyzer.max_gain_df['count']) - 0.01
+        bottom = self.analyzer.max_gain_df['count'].min() - 0.01 if len(self.analyzer.max_gain_df) else 0.0
         p.vbar(x='year', width=0.8, top='count', bottom=bottom,
                fill_alpha=0.5, source=ds_max, fill_color=colors, line_color=colors)
         return p
@@ -425,7 +425,7 @@ class Plotter:
         year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
         p = figure(tools=TOOLS, toolbar_location="right",
                    plot_width=PLOT_WIDTH, plot_height=SHORT_PLOT_HEIGHT, x_range=year_range,
-                   y_axis_type="log" if max(self.analyzer.max_rel_gain_df['rel_gain']) > MAX_LINEAR_AXIS else "linear",
+                   y_axis_type="log" if self.analyzer.max_rel_gain_df['rel_gain'].max() > MAX_LINEAR_AXIS else "linear",
                    title='Fastest citations growth papers')
         p.sizing_mode = 'stretch_width'
         p.xaxis.axis_label = 'Year'
@@ -438,7 +438,7 @@ class Plotter:
         p.js_on_event('tap', self.paper_callback(ds_max, self.analyzer.source))
         # Use explicit bottom for log scale as workaround
         # https://github.com/bokeh/bokeh/issues/6536
-        bottom = min(self.analyzer.max_rel_gain_df['rel_gain']) - 0.01
+        bottom = self.analyzer.max_rel_gain_df['rel_gain'].min() - 0.01 if len(self.analyzer.max_rel_gain_df) else 0.0
         p.vbar(x='year', width=0.8, top='rel_gain', bottom=bottom, source=ds_max,
                fill_alpha=0.5, fill_color=colors, line_color=colors)
         return p

@@ -214,7 +214,7 @@ class KeyPaperAnalyzer:
 
         self.cit_stats_df = self.build_cit_stats_df(cits_by_year_df, self.n_papers)
         if len(self.cit_stats_df) == 0:
-            raise SearchError('No citations of papers were found')
+            logger.warning('No citations of papers were found')
         self.df, self.min_year, self.max_year, self.citation_years = self.merge_citation_stats(
             self.pub_df, self.cit_stats_df)
 

@@ -31,8 +31,8 @@ class TestPlotPreprocessor(unittest.TestCase):
         }
 
         self.assertEqual(components, expected_components, 'Wrong list of components')
-        self.assertEqual(min(data['years']), self.analyzer.min_year, 'Wrong min year')
-        self.assertEqual(max(data['years']), self.analyzer.max_year, 'Wrong max year')
+        self.assertEqual(data['years'].min(), self.analyzer.min_year, 'Wrong min year')
+        self.assertEqual(data['years'].max(), self.analyzer.max_year, 'Wrong max year')
 
         for c in expected_components_data.keys():
             self.assertEqual(data[c], expected_components_data[c], f'Wrong component size list for component {c}')
@@ -70,7 +70,7 @@ class TestPlotPreprocessor(unittest.TestCase):
         self.assertFalse(np.any(ds.data['year'] == np.nan), 'NaN values in `year` column')
         self.assertFalse(np.any(ds.data['size'] == np.nan), 'NaN values in `size` column')
 
-        max_size = np.max(ds.data['size'])
+        max_size = ds.data['size'].max()
         max_width = max_size * (self.analyzer.max_year - self.analyzer.min_year + 1)
         self.assertLessEqual(max_width, width, 'Horizontal overlap')
 
@@ -87,7 +87,7 @@ class TestPlotPreprocessor(unittest.TestCase):
         self.assertFalse(np.any(ds.data['year'] == np.nan), 'NaN values in `year` column')
         self.assertFalse(np.any(ds.data['size'] == np.nan), 'NaN values in `size` column')
 
-        max_size = np.max(ds.data['size'])
+        max_size = ds.data['size'].max()
         max_width = max_size * (self.analyzer.max_year - self.analyzer.min_year + 1)
         self.assertLessEqual(max_width, width, 'Horizontal overlap')
 
