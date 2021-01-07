@@ -109,5 +109,11 @@ RUN /usr/lib/postgresql/12/bin/pg_ctl -D /home/user/postgres start \
 # Expose the PostgreSQL port
 EXPOSE 5432
 
+USER root
+RUN mkdir /logs && chmod a+rw /logs \
+    && mkdir /database && chmod a+rw /database \
+    && mkdir /predefined && chmod a+rw /predefined
+USER user
+
 # Use `-d` param to launch container as daemon
 CMD /usr/lib/postgresql/12/bin/pg_ctl -D /home/user/postgres start && sudo neo4j start && sleep infinity

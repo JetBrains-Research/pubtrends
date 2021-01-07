@@ -22,7 +22,7 @@ Ensure that file contains correct information about the database(s) (url, port, 
 
     ```
     conda env create -f environment.yml
-    conda activate pubtrends
+    source activate pubtrends
     ```
 
     Workaround for "image not found" error during neo4j pip install on newest Mac OS Sierra:
@@ -30,7 +30,7 @@ Ensure that file contains correct information about the database(s) (url, port, 
 
     Download Nltk and Spacy resources
     ```
-    conda activate pubtrends \
+    source activate pubtrends \
     && python -m nltk.downloader averaged_perceptron_tagger punkt stopwords wordnet \
     && python -m spacy download en_core_web_sm
     ```
@@ -191,11 +191,11 @@ Please ensure that you have Database configured, up and running.
     ```
     conda env create -f environment.yml
     ```
-    Enable environment by command `conda activate pubtrends`.
+    Enable environment by command `source activate pubtrends`.
 
 4. Download nltk & spacy resources
     ```
-    conda activate pubtrends
+    source activate pubtrends
     python -m nltk.downloader averaged_perceptron_tagger punkt stopwords wordnet
     python -m spacy download en_core_web_sm
     ```
@@ -237,7 +237,7 @@ Please ensure that you have Database configured, up and running.
 3. Python tests with codestyle check for development (including integration with Kotlin DB writers)
     
     ```
-    conda activate pubtrends; pytest pysrc
+    source activate pubtrends; pytest pysrc
     ```
 
 4. Python tests within Docker (ensure that `./build/libs/pubtrends-dev.jar` file is present)
@@ -246,7 +246,7 @@ Please ensure that you have Database configured, up and running.
     docker run --rm --volume=$(pwd):/pubtrends -t biolabs/pubtrends /bin/bash -c \
     "/usr/lib/postgresql/12/bin/pg_ctl -D /home/user/postgres start; sudo neo4j start; \
     cd /pubtrends; mkdir ~/.pubtrends; cp config.properties ~/.pubtrends; \
-    conda activate pubtrends; pytest pysrc"
+    source activate pubtrends; pytest pysrc"
     ```
 
 ## Deployment
