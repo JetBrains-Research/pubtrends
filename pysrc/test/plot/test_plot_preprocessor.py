@@ -31,8 +31,8 @@ class TestPlotPreprocessor(unittest.TestCase):
         }
 
         self.assertEqual(components, expected_components, 'Wrong list of components')
-        self.assertEqual(data['years'].min(), self.analyzer.min_year, 'Wrong min year')
-        self.assertEqual(data['years'].max(), self.analyzer.max_year, 'Wrong max year')
+        self.assertEqual(min(data['years']), self.analyzer.min_year, 'Wrong min year')
+        self.assertEqual(max(data['years']), self.analyzer.max_year, 'Wrong max year')
 
         for c in expected_components_data.keys():
             self.assertEqual(data[c], expected_components_data[c], f'Wrong component size list for component {c}')
