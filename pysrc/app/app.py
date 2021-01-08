@@ -589,6 +589,8 @@ def search_pubmed_paper_by_title():
             # Sync call
             loader = Loaders.get_loader('Pubmed', PUBTRENDS_CONFIG)
             ids = loader.find('title', title)
+            if not ids:
+                return json.dumps([])
             papers = loader.load_publications(ids)
             return json.dumps([
                 papers.to_dict(orient='records'),
