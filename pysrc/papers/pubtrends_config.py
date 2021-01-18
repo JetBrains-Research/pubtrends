@@ -1,5 +1,6 @@
 import configparser
 import os
+from collections import namedtuple
 
 
 class PubtrendsConfig:
@@ -59,49 +60,51 @@ class PubtrendsConfig:
         self.admin_password = params['admin_password']
 
 
-class AnalyzerSettings:
-    SEED = 20190723
+DEFAULT_ANALYZER_SETTINGS_DICT = dict(
+    SEED=20190723,
 
-    TOP_CITED_PAPERS = 50
+    TOP_CITED_PAPERS=50,
 
     # ...bibliographic coupling (BC) was the most accurate,  followed by co-citation (CC).
     # Direct citation (DC) was a distant third among the three...
-    SIMILARITY_BIBLIOGRAPHIC_COUPLING = 2  # Limited by number of references
-    SIMILARITY_COCITATION = 1  # Limiter by number of co-citations
-    SIMILARITY_CITATION = 0.5  # Limited by 1 citation
-    SIMILARITY_TEXT_CITATION = 10  # Limited by cosine similarity <= 1
+    SIMILARITY_BIBLIOGRAPHIC_COUPLING=2,  # Limited by number of references
+    SIMILARITY_COCITATION=1,  # Limiter by number of co-citations
+    SIMILARITY_CITATION=0.5,  # Limited by 1 citation
+    SIMILARITY_TEXT_CITATION=10,  # Limited by cosine similarity <= 1
 
-    SIMILARITY_TEXT_MIN = 0.5  # Minimal cosine similarity for potential text citation
-    SIMILARITY_TEXT_CITATION_N = 10  # Max number of potential text citations for paper
+    SIMILARITY_TEXT_MIN=0.5,  # Minimal cosine similarity for potential text citation
+    SIMILARITY_TEXT_CITATION_N=10,  # Max number of potential text citations for paper
 
     # Reduce number of edges in smallest communities, i.e. topics
-    STRUCTURE_LOW_LEVEL_SPARSITY = 0.5
+    STRUCTURE_LOW_LEVEL_SPARSITY=0.5,
     # Limit number of edges between different topics to min number of inner edges * scale factor,
     # ignoring similarities less than average within groups
-    STRUCTURE_BETWEEN_TOPICS_SPARSITY = 0.2
+    STRUCTURE_BETWEEN_TOPICS_SPARSITY=0.2,
 
-    TOPIC_MIN_SIZE = 10
-    TOPICS_MAX_NUMBER = 100
-    TOPIC_PAPERS_TFIDF = 50
-    TOPIC_WORDS = 20
+    TOPIC_MIN_SIZE=10,
+    TOPICS_MAX_NUMBER=100,
+    TOPIC_PAPERS_TFIDF=50,
+    TOPIC_WORDS=20,
 
-    VECTOR_WORDS = 10000
-    VECTOR_NGRAMS = 1
-    VECTOR_MIN_DF = 0.01
-    VECTOR_MAX_DF = 0.5
+    VECTOR_WORDS=10000,
+    VECTOR_NGRAMS=1,
+    VECTOR_MIN_DF=0.01,
+    VECTOR_MAX_DF=0.5,
 
-    TOP_JOURNALS = 50
-    TOP_AUTHORS = 50
+    TOP_JOURNALS=50,
+    TOP_AUTHORS=50,
 
-    EXPAND_STEPS = 2
+    EXPAND_STEPS=2,
     # Limit citations count of expanded papers to avoid prevalence of related methods
-    EXPAND_CITATIONS_SIGMA = 3
+    EXPAND_CITATIONS_SIGMA=3,
     # Take up to fraction of top similarity
-    EXPAND_SIMILARITY_THRESHOLD = 0.2
-    EXPAND_ZOOM_OUT = 100
+    EXPAND_SIMILARITY_THRESHOLD=0.2,
+    EXPAND_ZOOM_OUT=100,
 
-    EVOLUTION_MIN_PAPERS = 100
-    EVOLUTION_STEP = 10
+    EVOLUTION_MIN_PAPERS=100,
+    EVOLUTION_STEP=10,
+)
 
-
+AnalyzerSettings = namedtuple('AnalyzerSettings', DEFAULT_ANALYZER_SETTINGS_DICT.keys(),
+                              defaults=DEFAULT_ANALYZER_SETTINGS_DICT.values())
 DEFAULT_ANALYZER_SETTINGS = AnalyzerSettings()
