@@ -147,7 +147,7 @@ class KeyPaperAnalyzer:
 
     def analyze_papers(self, ids, query,
                        settings: AnalyzerSettings = DEFAULT_ANALYZER_SETTINGS,
-                       load_data=True, noreviews=True, task=None):
+                       load_data=True, noreviews=True, compute_topic_descriptions=True, task=None):
         """:return full log"""
         self.ids = ids
         self.query = query
@@ -155,7 +155,7 @@ class KeyPaperAnalyzer:
         if not load_data:
             self.progress.info('Recalculating analysis without reloading data', current=0, task=task)
             # Drop columns that contain results of previous analysis
-            self.df = self.df.drop(columns=['comp', 'pagerank'])
+            self.df = self.df.drop(columns=['comp'])
 
         if load_data:
             self.progress.info('Loading publication data', current=2, task=task)
@@ -166,19 +166,19 @@ class KeyPaperAnalyzer:
             self.n_papers = len(self.ids)
             self.pub_types = list(set(self.pub_df['type']))
 
-        self.progress.info('Analyzing title and abstract texts', current=3, task=task)
-        self.corpus_ngrams, self.corpus_counts = \
-            vectorize_corpus(self.pub_df,
-                             max_features=settings.VECTOR_WORDS, n_gram=settings.VECTOR_NGRAMS,
-                             min_df=settings.VECTOR_MIN_DF, max_df=settings.VECTOR_MAX_DF)
-        tfidf = compute_tfidf(self.corpus_counts)
+            self.progress.info('Analyzing title and abstract texts', current=3, task=task)
+            self.corpus_ngrams, self.corpus_counts = \
+                vectorize_corpus(self.pub_df,
+                                 max_features=settings.VECTOR_WORDS, n_gram=settings.VECTOR_NGRAMS,
+                                 min_df=settings.VECTOR_MIN_DF, max_df=settings.VECTOR_MAX_DF)
+            tfidf = compute_tfidf(self.corpus_counts)
 
-        self.progress.info('Processing texts similarity', current=4, task=task)
-        self.texts_similarity = self.analyze_texts_similarity(self.pub_df, tfidf,
-                                                              settings.SIMILARITY_TEXT_MIN,
-                                                              settings.SIMILARITY_TEXT_CITATION_N)
+            self.progress.info('Processing texts similarity', current=4, task=task)
+            self.texts_similarity = self.analyze_texts_similarity(self.pub_df, tfidf,
+                                                                  settings.SIMILARITY_TEXT_MIN,
+                                                                  settings.SIMILARITY_TEXT_CITATION_N)
 
-        if load_data:
+
             self.progress.info('Loading citations statistics by year', current=5, task=task)
             cits_by_year_df = self.loader.load_citations_by_year(self.ids)
             self.progress.info(f'Found {len(cits_by_year_df)} records of citations by year',
@@ -235,29 +235,30 @@ class KeyPaperAnalyzer:
                                     similarity_text_citation=settings.SIMILARITY_TEXT_CITATION)
             self.df = self.merge_col(self.df, self.partition, col='comp', na=-1)
 
-            self.progress.info('Computing topics descriptions by top cited papers', current=12, task=task)
-            most_cited_per_comp = self.get_most_cited_papers_for_comps(
-                self.df.loc[self.df['type'] != 'Review'] if noreviews else self.df,
-                self.partition,
-                n_papers=settings.TOPIC_PAPERS_TFIDF
-            )
-            tfidf_per_comp = get_topics_description(self.df, most_cited_per_comp,
-                                                    self.corpus_ngrams, self.corpus_counts,
-                                                    query, settings.TOPIC_WORDS)
-            kwds = [(comp, ','.join([f'{t}:{max(1e-3, v):.3f}' for t, v in vs[:settings.TOPIC_WORDS]]))
-                    for comp, vs in tfidf_per_comp.items()]
-            self.df_kwd = pd.DataFrame(kwds, columns=['comp', 'kwd'])
-            logger.debug(f'Components description\n{self.df_kwd["kwd"]}')
-            # Build structure graph
-            self.structure_graph = self.build_structure_graph(
-                self.df, self.similarity_graph,
-                structure_low_level_sparsity=settings.STRUCTURE_LOW_LEVEL_SPARSITY,
-                structure_between_topics_sparsity=settings.STRUCTURE_BETWEEN_TOPICS_SPARSITY,
-                similarity_bibliographic_coupling=settings.SIMILARITY_BIBLIOGRAPHIC_COUPLING,
-                similarity_cocitation=settings.SIMILARITY_COCITATION,
-                similarity_citation=settings.SIMILARITY_CITATION,
-                similarity_text_citation=settings.SIMILARITY_TEXT_CITATION
-            )
+            if compute_topic_descriptions:
+                self.progress.info('Computing topics descriptions by top cited papers', current=12, task=task)
+                most_cited_per_comp = self.get_most_cited_papers_for_comps(
+                    self.df.loc[self.df['type'] != 'Review'] if noreviews else self.df,
+                    self.partition,
+                    n_papers=settings.TOPIC_PAPERS_TFIDF
+                )
+                tfidf_per_comp = get_topics_description(self.df, most_cited_per_comp,
+                                                        self.corpus_ngrams, self.corpus_counts,
+                                                        query, settings.TOPIC_WORDS)
+                kwds = [(comp, ','.join([f'{t}:{max(1e-3, v):.3f}' for t, v in vs[:settings.TOPIC_WORDS]]))
+                        for comp, vs in tfidf_per_comp.items()]
+                self.df_kwd = pd.DataFrame(kwds, columns=['comp', 'kwd'])
+                logger.debug(f'Components description\n{self.df_kwd["kwd"]}')
+                # Build structure graph
+                self.structure_graph = self.build_structure_graph(
+                    self.df, self.similarity_graph,
+                    structure_low_level_sparsity=settings.STRUCTURE_LOW_LEVEL_SPARSITY,
+                    structure_between_topics_sparsity=settings.STRUCTURE_BETWEEN_TOPICS_SPARSITY,
+                    similarity_bibliographic_coupling=settings.SIMILARITY_BIBLIOGRAPHIC_COUPLING,
+                    similarity_cocitation=settings.SIMILARITY_COCITATION,
+                    similarity_citation=settings.SIMILARITY_CITATION,
+                    similarity_text_citation=settings.SIMILARITY_TEXT_CITATION
+                )
 
         if load_data:
             self.progress.info('Performing PageRank analysis', current=14, task=task)
