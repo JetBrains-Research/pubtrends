@@ -3,7 +3,7 @@ import os
 from celery import Celery, current_task
 
 from pysrc.papers.analyzer import KeyPaperAnalyzer
-from pysrc.papers.pubtrends_config import PubtrendsConfig
+from pysrc.papers.pubtrends_config import PubtrendsConfig, DEFAULT_ANALYZER_SETTINGS
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plotter import visualize_analysis
@@ -57,6 +57,7 @@ def analyze_id_list(source, ids, zoom, query, limit=None, test=False):
     config = PubtrendsConfig(test=test)
     loader = Loaders.get_loader(source, config)
     analyzer = KeyPaperAnalyzer(loader, config)
+    settings = DEFAULT_ANALYZER_SETTINGS
     try:
         if zoom == ZOOM_OUT:
             ids = analyzer.expand_ids(
@@ -76,6 +77,8 @@ def analyze_id_list(source, ids, zoom, query, limit=None, test=False):
             # And then expand
             ids = analyzer.expand_ids(
                 ids, limit=limit if limit > 0 else analyzer.config.max_number_to_expand,
+                expand_steps=settings.EXPAND_STEPS, expand_citations_sigma=settings.EXPAND_CITATIONS_SIGMA,
+                expand_similarity_threshold=settings.EXPAND_SIMILARITY_THRESHOLD,
                 current=1, task=current_task
             )
         else:
