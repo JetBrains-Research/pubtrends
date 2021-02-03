@@ -1,0 +1,300 @@
+[
+    {
+        "title": "Overview of the HSF activation cycle",
+        "references": [
+            20628411,
+            {
+                "title": "Activation and oligomerization of HSF1.",
+                "references": [
+                    21417720,
+                    10413683,
+                    26785146,
+                    23733891,
+                    23733891,
+                    26727490,
+                    8421783,
+                    12600944,
+                    8421783,
+                    26785146,
+                    12519785,
+                    12519785
+                ]
+            },
+            {
+                "title": "Regulatory role of chaperone proteins.",
+                "references": [
+                    7592665,
+                    20628411,
+                    21417720,
+                    9499401,
+                    25437552,
+                    27926536,
+                    9727490,
+                    20628411,
+                    9499401,
+                    9727490,
+                    26785146,
+                    9499401,
+                    25437552,
+                    20628411,
+                    25437552
+                ]
+            },
+            {
+                "title": "Regulatory role of HSF degradation.",
+                "references": [
+                    17889646,
+                    26503960,
+                    23665061,
+                    18794143,
+                    18794143,
+                    25202032
+                ]
+            }
+        ]
+    },
+    {
+        "title": "HSF binding to target genes",
+        "references": [
+            20628411,
+            10331875,
+            10331875,
+            26727490,
+            26727490,
+            26727490,
+            22940245,
+            26727490
+        ]
+    },
+    {
+        "title": "PTMs and their role in HSF regulation",
+        "references": [
+            {
+                "title": "Regulation of HSF1 activity and stability by acetylases.",
+                "references": [
+                    26727490,
+                    19229036,
+                    24581496,
+                    21417720,
+                    19229036,
+                    24581496,
+                    24581496,
+                    24556212,
+                    11867645,
+                    18316066,
+                    24435709,
+                    23022381,
+                    25688804
+                ]
+            },
+            {
+                "title": "Phosphorylation regulates HSF1 activity and degrad ation.",
+                "references": [
+                    25963659,
+                    25425574,
+                    21723507
+                ]
+            },
+            {
+                "title": "Sumoylation of HSFs regulates their activity in an isoformspecific manner.",
+                "references": [
+                    28112733,
+                    16428449,
+                    26727490
+                ]
+            }
+        ]
+    },
+    {
+        "title": "HSF1 and metabolism",
+        "references": [
+            15169889,
+            {
+                "title": "Cross talk between metabolic stress and the HSF1 mediated heat shock response.",
+                "references": [
+                    21265739,
+                    25425574,
+                    25425574,
+                    14612437,
+                    25425574,
+                    21723507
+                ]
+            },
+            {
+                "title": "HSF1 and the PGC1\u03b1 network in mitochondrial func tion.",
+                "references": [
+                    12356732,
+                    22786682,
+                    22786682,
+                    26344102
+                ]
+            },
+            {
+                "title": "HSF1 in systemic energy metabolism and white fat browning.",
+                "references": [
+                    26344102,
+                    26890141,
+                    26344102,
+                    26344102,
+                    26890141,
+                    26890141
+                ]
+            }
+        ]
+    },
+    {
+        "title": "HSF1 and neurodegenerative diseases",
+        "references": [
+            17652588,
+            27173427,
+            21205885,
+            27283588,
+            21417720,
+            22129991,
+            22129991,
+            {
+                "title": "Huntington disease and other polyglutamine expansion diseases.",
+                "references": [
+                    19575804,
+                    21417720,
+                    18316066,
+                    15115766,
+                    21785217,
+                    22649566,
+                    16467349,
+                    22396390,
+                    27106072,
+                    27151442,
+                    21785217,
+                    22129991,
+                    20834230,
+                    16051598,
+                    23293686,
+                    14668476,
+                    21785217,
+                    22649566,
+                    24381308,
+                    19817876,
+                    21253609,
+                    16051598,
+                    26344102,
+                    22786682,
+                    21813737,
+                    21813737,
+                    20834230,
+                    21813737
+                ]
+            },
+            {
+                "title": "Parkinson disease.",
+                "references": [
+                    26503960,
+                    26503960,
+                    25009465
+                ]
+            },
+            {
+                "title": "Alzheimer disease",
+                "references": [
+                    20870670,
+                    24523537,
+                    23985416,
+                    23665061,
+                    23665061,
+                    23121022,
+                    1739121,
+                    26732432,
+                    1739121,
+                    26732432,
+                    1739121,
+                    8308007
+                ]
+            },
+            {
+                "title": "Amyotrophic lateral sclerosis.",
+                "references": [
+                    24256636,
+                    23180277,
+                    12843283,
+                    26936937,
+                    25167838,
+                    24256636,
+                    26936937,
+                    26936937,
+                    24595055,
+                    21376022
+                ]
+            }
+        ]
+    },
+    {
+        "title": "HSFs in cell proliferation and cancer",
+        "references": [
+            26597576,
+            20622894
+        ]
+    },
+    {
+        "title": "HSF1 and HSF2 have different capacities for regulating gene expression in mitosis.",
+        "references": [
+            18794143
+        ]
+    },
+    {
+        "title": "HSF1 in cancer initiation and progression.",
+        "references": [
+            17889646,
+            21723507,
+            17310987,
+            22847003,
+            22945628,
+            17889646,
+            19269363,
+            26597576,
+            19668225,
+            22945628,
+            26597576,
+            26597576,
+            16175177,
+            16175177,
+            26597576,
+            16175177,
+            22885793,
+            22885793,
+            22215620,
+            27589382,
+            27043084,
+            25083868,
+            25083868,
+            25083868
+        ]
+    },
+    {
+        "title": "HSF2 as a potential tumour suppressor",
+        "references": [
+            25202032,
+            28101237,
+            16336210,
+            19129477
+        ]
+    },
+    {
+        "title": "Box 1 | Domain organization, family members and isoforms of human HSFs",
+        "references": [
+            20628411,
+            8421783,
+            20628411,
+            23869022,
+            20945528,
+            7565677,
+            21813737,
+            18755693,
+            15483628,
+            8972228,
+            8972228,
+            19864465,
+            20945528,
+            14985478
+        ]
+    }
+]

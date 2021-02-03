@@ -1,0 +1,173 @@
+[
+    {
+        "title": "Defining T RM cells",
+        "references": [
+            {
+                "title": "Migration properties",
+                "references": [
+                    10537110,
+                    15142524,
+                    19305395,
+                    20156972,
+                    25170048,
+                    22058417,
+                    23598650,
+                    25957682
+                ]
+            },
+            {
+                "title": "Cell surface phenotype",
+                "references": [
+                    24600038,
+                    22896631,
+                    25957682,
+                    16116469,
+                    16116468,
+                    24600038
+                ]
+            },
+            {
+                "title": "The importance of location",
+                "references": [
+                    19305395,
+                    22504644,
+                    20923878,
+                    22896631,
+                    24385150,
+                    22896631,
+                    23524967,
+                    24714492,
+                    21624939
+                ]
+            },
+            {
+                "title": "T RM cells in human tissues.",
+                "references": [
+                    25526304,
+                    22261031,
+                    19648930,
+                    22504644,
+                    23260195
+                ]
+            }
+        ]
+    },
+    {
+        "title": "Development of T RM cells",
+        "references": [
+            25396352,
+            22922816,
+            25962122,
+            {
+                "title": "Signals for T RM cell development.",
+                "references": [
+                    25070853,
+                    16116469,
+                    25624457,
+                    25624457,
+                    16365448,
+                    24076049,
+                    25637015,
+                    22504644,
+                    24600038,
+                    25170048,
+                    22504644,
+                    23075848,
+                    20923878,
+                    22271651,
+                    25170048,
+                    16618602,
+                    22504644,
+                    24076049
+                ]
+            },
+            {
+                "title": "Precursors of long-lived T RM cells.",
+                "references": [
+                    16455963
+                ]
+            }
+        ]
+    },
+    {
+        "title": "Prolonged persistence of T RM cells in tissues",
+        "references": [
+            19305395,
+            20923878,
+            16365448,
+            25624457,
+            22504644,
+            24706879,
+            21999944,
+            24706879
+        ]
+    },
+    {
+        "title": "Immunosurveillance and protection by T RM cells",
+        "references": [
+            {
+                "title": "Migration and surveillance",
+                "references": [
+                    24706879,
+                    24706879,
+                    25170048,
+                    25170048,
+                    20923878,
+                    25240383,
+                    25240383
+                ]
+            },
+            {
+                "title": "Recall responses and enhanced immunity.",
+                "references": [
+                    19240755,
+                    20156972,
+                    12563257,
+                    19219024,
+                    18780790,
+                    22504644,
+                    22271651,
+                    25170049,
+                    20923878,
+                    25671696,
+                    25170049,
+                    25170049
+                ]
+            }
+        ]
+    },
+    {
+        "title": "Box 1 | CD4 + T RM cells",
+        "references": [
+            25071787,
+            2307933,
+            22058417,
+            24064670,
+            25170048,
+            25170048,
+            25170048
+        ]
+    },
+    {
+        "title": "Box 2 | Other tissue-resident lymphocytes",
+        "references": [
+            21624939,
+            21624939,
+            23524967,
+            24714492,
+            24048122,
+            24378538
+        ]
+    },
+    {
+        "title": "Box 3 | Transcription factors for memory CD8 + T cell development",
+        "references": [
+            25396352,
+            25396352,
+            2307933,
+            25170048,
+            22058417,
+            24064670
+        ]
+    }
+]

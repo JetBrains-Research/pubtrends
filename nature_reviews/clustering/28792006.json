@@ -1,0 +1,203 @@
+[
+    {
+        "title": "mtDNA maintenance and translation",
+        "references": [
+            27023847,
+            26789594,
+            {
+                "title": "mtDNA maintenance machinery.",
+                "references": [
+                    11431692,
+                    15167897,
+                    16574152,
+                    18685103,
+                    9500544,
+                    15164064,
+                    15509589,
+                    9500544,
+                    17581862,
+                    20413656,
+                    17486094,
+                    1671889
+                ]
+            },
+            {
+                "title": "The major defects of mtDNA maintenance.",
+                "references": [
+                    2541333,
+                    11687801,
+                    11687800,
+                    2725645,
+                    1634620,
+                    24429632,
+                    11017080,
+                    20038678,
+                    27418514
+                ]
+            },
+            {
+                "title": "Mitochondrial protein synthesis.",
+                "references": [
+                    27729525,
+                    26789594,
+                    21907147,
+                    27225121
+                ]
+            },
+            {
+                "title": "The major defects of mtDNA expression",
+                "references": [
+                    24412566,
+                    25058219,
+                    21806499,
+                    7271857,
+                    19671450,
+                    23453957,
+                    22094260,
+                    8285309,
+                    26030272,
+                    23315540,
+                    25278503,
+                    20598281
+                ]
+            }
+        ]
+    },
+    {
+        "title": "Mitochondrial stress and disease",
+        "references": [
+            26924217,
+            {
+                "title": "Protein synthesis defects, protein stress and mito chondrial disorders.",
+                "references": [
+                    27345149,
+                    4824294,
+                    25970558,
+                    2102678,
+                    1284550,
+                    2102678,
+                    1284550,
+                    18753147,
+                    10660592,
+                    18753147,
+                    18753147,
+                    17656376,
+                    1334369,
+                    7647790
+                ]
+            },
+            {
+                "title": "Disruption of mitochondrial protein quality control can contribute to disease.",
+                "references": [
+                    9635427,
+                    20208537,
+                    8681382,
+                    20038678,
+                    23453957,
+                    4824294,
+                    20038677
+                ]
+            },
+            {
+                "title": "Activation of an integrated stress response in mito chondrial disease.",
+                "references": [
+                    23453957,
+                    26924217,
+                    20656789,
+                    24606902,
+                    20656789,
+                    12198143,
+                    12198143,
+                    17925224,
+                    22700657,
+                    23489877,
+                    20656789,
+                    24606902,
+                    26924217,
+                    25491309
+                ]
+            },
+            {
+                "title": "The integrated mitochondrial stress response, the one-carbon cycle and mtDNA defects",
+                "references": [
+                    26924217,
+                    20656789,
+                    27641100,
+                    20656789,
+                    24451681,
+                    20656789,
+                    26924217,
+                    24451681,
+                    24805240,
+                    23822983,
+                    25456139,
+                    26912862,
+                    26924217,
+                    26924217,
+                    26924217,
+                    26924217,
+                    17486094,
+                    24362886
+                ]
+            },
+            {
+                "title": "Systemic mediators of the integrated mitochondrial stress response",
+                "references": [
+                    27010621,
+                    20656789,
+                    24606902,
+                    21820356,
+                    27794108,
+                    15902306,
+                    17550778,
+                    17996984,
+                    15902306,
+                    17550778,
+                    17996984,
+                    26463265,
+                    23737651,
+                    27794108,
+                    26785494,
+                    17996984,
+                    15707376,
+                    25107473,
+                    27291334
+                ]
+            }
+        ]
+    },
+    {
+        "title": "Oxygen, ROS and mitochondrial disease",
+        "references": [
+            19061483,
+            21459321,
+            15164064,
+            25305438,
+            25751021,
+            25751021,
+            20430626,
+            15496926,
+            24651542,
+            25751021,
+            26027936,
+            25978847
+        ]
+    },
+    {
+        "title": "Metabolism as a therapeutic target",
+        "references": [
+            22012983,
+            20167576,
+            24231806,
+            20167576
+        ]
+    },
+    {
+        "title": "Box 2 | One-carbon metabolism and the folate cycle",
+        "references": [
+            26924217,
+            26909316,
+            26924217
+        ]
+    }
+]

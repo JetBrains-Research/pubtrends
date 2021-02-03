@@ -1,0 +1,139 @@
+[
+    {
+        "title": "Regulatory memory",
+        "references": [
+            {
+                "title": "The concept and definition of memory T Reg cells",
+                "references": [
+                    25526304
+                ]
+            },
+            {
+                "title": "Defining memory T cells by phenotypic markers.",
+                "references": [
+                    2653379,
+                    14662907,
+                    23347146,
+                    16179372,
+                    22362896,
+                    23543753,
+                    22444422
+                ]
+            },
+            {
+                "title": "Defining memory T Reg cells by epigenetics",
+                "references": [
+                    25126783,
+                    19412181,
+                    19412181
+                ]
+            },
+            {
+                "title": "Challenges in defining memory T Reg cells.",
+                "references": [
+                    22121024,
+                    23543753,
+                    24048122
+                ]
+            },
+            {
+                "title": "Early evidence for memory T Reg cells",
+                "references": [
+                    76988,
+                    76988,
+                    12522256
+                ]
+            }
+        ]
+    },
+    {
+        "title": "Memory T Reg cells with self antigen specificity",
+        "references": [
+            24048122,
+            22121024,
+            22121024,
+            20331469
+        ]
+    },
+    {
+        "title": "Box 1 | Regulatory T cell subsets",
+        "references": [
+            23507634
+        ]
+    },
+    {
+        "title": "Memory T Reg cells in antimicrobial host defence",
+        "references": [
+            20714351,
+            76988
+        ]
+    },
+    {
+        "title": "Memory T Reg cells in maternal-fetal tolerance",
+        "references": [
+            24837152,
+            23237963,
+            3970893,
+            8728435,
+            8570620,
+            22609148,
+            24553046,
+            26213383,
+            19056990,
+            19700665,
+            19512930,
+            26213383,
+            11739516
+        ]
+    },
+    {
+        "title": "Evidence for memory T Reg cells in humans",
+        "references": [
+            12414720,
+            8011300,
+            22554789,
+            10837070,
+            3500214,
+            25526304,
+            25526304
+        ]
+    },
+    {
+        "title": "Generation and maintenance of memory T Reg cells",
+        "references": [
+            {
+                "title": "Cytokines",
+                "references": [
+                    21807532,
+                    14662907,
+                    23543753,
+                    23543753
+                ]
+            },
+            {
+                "title": "Transcription factors",
+                "references": [
+                    25194422
+                ]
+            },
+            {
+                "title": "Epigenetic modifications.",
+                "references": [
+                    23178119,
+                    24097267
+                ]
+            },
+            {
+                "title": "Metabolic pathways",
+                "references": [
+                    24115444,
+                    19494812,
+                    19543266,
+                    25477880,
+                    24100582,
+                    25477880
+                ]
+            }
+        ]
+    }
+]

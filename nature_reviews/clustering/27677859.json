@@ -1,0 +1,321 @@
+[
+    {
+        "title": "Types of CIL behaviour",
+        "references": [
+            4586793,
+            4611644,
+            6493341,
+            6049107,
+            18648374,
+            {
+                "title": "Definition of CIL",
+                "references": [
+                    551275,
+                    4943054,
+                    4568376,
+                    4568376,
+                    1099106,
+                    4864106,
+                    4864106
+                ]
+            },
+            {
+                "title": "Variability in CIL responses",
+                "references": [
+                    4568376,
+                    4244665,
+                    4244665,
+                    4364325,
+                    25990957,
+                    19011623,
+                    16326894,
+                    4943054,
+                    4864106,
+                    25258412,
+                    1169157,
+                    24047876,
+                    4943054
+                ]
+            }
+        ]
+    },
+    {
+        "title": "Stages of the CIL response",
+        "references": [
+            4244665,
+            4943054,
+            4864106,
+            25258412,
+            1169157,
+            24047876,
+            5100756,
+            26235046
+        ]
+    },
+    {
+        "title": "Molecular mechanisms of CIL",
+        "references": [
+            {
+                "title": "Establishing cell-cell contact.",
+                "references": [
+                    26235046,
+                    13597891,
+                    4570584,
+                    26235046,
+                    26206614,
+                    24392028,
+                    9438130,
+                    1649199,
+                    9548728,
+                    11447275,
+                    26235046,
+                    9438130,
+                    9539742,
+                    26235046,
+                    26235046,
+                    26235046,
+                    26235046,
+                    19945376,
+                    26790531,
+                    23395373,
+                    24795148,
+                    551275,
+                    23495724,
+                    21804545,
+                    12360300,
+                    22819515
+                ]
+            },
+            {
+                "title": "Protrusion inhibition.",
+                "references": [
+                    4244665,
+                    26235046,
+                    24173803,
+                    26439400,
+                    22498500,
+                    24173803,
+                    26235046,
+                    24173803,
+                    26439400
+                ]
+            },
+            {
+                "title": "Contraction of protrusions and repolarization.",
+                "references": [
+                    21750190,
+                    13083622,
+                    22169071,
+                    1304824,
+                    7172219,
+                    24173803,
+                    21750190,
+                    23172914,
+                    1394462,
+                    23172914,
+                    24173803,
+                    21750190,
+                    1394462,
+                    13597891,
+                    26235046
+                ]
+            },
+            {
+                "title": "Migration away from the collision.",
+                "references": [
+                    23704353,
+                    1169157,
+                    1169157,
+                    4787750,
+                    26235046,
+                    23770678,
+                    22675119,
+                    16216928,
+                    17646397,
+                    22307605,
+                    21383129,
+                    20144995,
+                    21444749
+                ]
+            }
+        ]
+    },
+    {
+        "title": "Embryological functions of CIL",
+        "references": [
+            {
+                "title": "Driving cellular dispersion.",
+                "references": [
+                    13858936,
+                    23395373
+                ]
+            },
+            {
+                "title": "Inducing cellular tiling",
+                "references": [
+                    23395373,
+                    23172914,
+                    23172914
+                ]
+            },
+            {
+                "title": "Coordinating collective cell migration",
+                "references": [
+                    24047876,
+                    23770678,
+                    25851023,
+                    25258412,
+                    24047876
+                ]
+            }
+        ]
+    },
+    {
+        "title": "Unexplored roles for CIL",
+        "references": [
+            {
+                "title": "Neuronal contact repulsion.",
+                "references": [
+                    11231595,
+                    8895455,
+                    5156974,
+                    943295,
+                    4130534,
+                    10631786,
+                    22407321,
+                    20573716,
+                    17482551
+                ]
+            },
+            {
+                "title": "Stripe formation in zebrafish skin.",
+                "references": [
+                    24449859,
+                    22323812,
+                    19433782,
+                    24449859,
+                    27118125,
+                    24449859,
+                    23770678
+                ]
+            },
+            {
+                "title": "Tissue boundary formation.",
+                "references": [
+                    25448699,
+                    25448699,
+                    25482630,
+                    25247423
+                ]
+            },
+            {
+                "title": "Cell condensation.",
+                "references": [
+                    10655033
+                ]
+            },
+            {
+                "title": "Inflammatory cell recruitment.",
+                "references": [
+                    13939931,
+                    1092702,
+                    13939931,
+                    23172914,
+                    20457764,
+                    15699212,
+                    27426513,
+                    23708969
+                ]
+            },
+            {
+                "title": "Cancer invasion",
+                "references": [
+                    551275,
+                    4864106,
+                    4244665,
+                    13858936,
+                    20144995,
+                    4943054,
+                    26235046,
+                    24795148,
+                    24854083
+                ]
+            }
+        ]
+    },
+    {
+        "title": "Box 1 | Contact inhibition of locomotion assays",
+        "references": [
+            {
+                "title": "Mixing assay",
+                "references": [
+                    26235046,
+                    24392028,
+                    26235046,
+                    24173803
+                ]
+            },
+            {
+                "title": "Radial outgrowth",
+                "references": [
+                    26235046
+                ]
+            },
+            {
+                "title": "Kinematics in 2D",
+                "references": [
+                    23172914,
+                    6129651
+                ]
+            },
+            {
+                "title": "Kinematics in 1D",
+                "references": [
+                    19221195,
+                    24047876,
+                    25851023,
+                    24143276
+                ]
+            }
+        ]
+    },
+    {
+        "title": "Box 2 | Mathematical models of CIL explain 'social' cell behaviour",
+        "references": [
+            {
+                "title": "Spontaneous collective migration",
+                "references": [
+                    23059978,
+                    25258412,
+                    25258412,
+                    24047876,
+                    23752100,
+                    21296089,
+                    25779619,
+                    23251032,
+                    24047876,
+                    25779619,
+                    23251032,
+                    26903658
+                ]
+            },
+            {
+                "title": "Collective chemotaxis",
+                "references": [
+                    25181349,
+                    22118769,
+                    27241911,
+                    26991203
+                ]
+            },
+            {
+                "title": "Cellular dispersion and tiling",
+                "references": [
+                    23395373,
+                    23172914,
+                    23172914
+                ]
+            }
+        ]
+    }
+]

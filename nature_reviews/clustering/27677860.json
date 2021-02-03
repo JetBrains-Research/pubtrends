@@ -1,0 +1,209 @@
+[
+    {
+        "title": "APA in 3\u0374 UTRs",
+        "references": [
+            {
+                "title": "mRNA stability and translation",
+                "references": [
+                    19167326,
+                    24631284,
+                    19167326,
+                    17245413,
+                    17412832,
+                    17412832,
+                    22722342,
+                    24529382,
+                    20574513
+                ]
+            },
+            {
+                "title": "mRNA nuclear export and localization.",
+                "references": [
+                    26546131,
+                    22955620,
+                    22955620,
+                    26546131,
+                    19716791,
+                    19239891,
+                    18667152,
+                    26907613
+                ]
+            },
+            {
+                "title": "Protein localization",
+                "references": [
+                    25735911
+                ]
+            }
+        ]
+    },
+    {
+        "title": "APA upstream of the last exon",
+        "references": [
+            22386318,
+            26907613,
+            22747694,
+            {
+                "title": "Protein diversification",
+                "references": [
+                    6283379,
+                    16683029,
+                    21925381,
+                    22139301
+                ]
+            },
+            {
+                "title": "Repression of gene expression.",
+                "references": [
+                    16316725,
+                    8628305
+                ]
+            }
+        ]
+    },
+    {
+        "title": "Regulation of APA",
+        "references": [
+            {
+                "title": "Polyadenylation factors that promote proximal PAS usage",
+                "references": [
+                    8945520,
+                    22747694
+                ]
+            },
+            {
+                "title": "Polyadenylation factors that promote distal PAS usage.",
+                "references": [
+                    8945520,
+                    15647503,
+                    24814343,
+                    19509282,
+                    22502866,
+                    22772983,
+                    22502866,
+                    22502866,
+                    24146636,
+                    23166521,
+                    26484760,
+                    23136375
+                ]
+            },
+            {
+                "title": "The splicing connection and the role of U1 snRNP in APA.",
+                "references": [
+                    1701407,
+                    9659922,
+                    20881964,
+                    22770214,
+                    19239890,
+                    22770214,
+                    27462460
+                ]
+            },
+            {
+                "title": "Regulation of APA by other RBPs.",
+                "references": [
+                    18978773,
+                    25201104,
+                    25544561,
+                    17127772,
+                    21948791,
+                    8682289,
+                    25155147,
+                    26944680,
+                    23931993,
+                    25995189,
+                    23249733,
+                    22081015,
+                    26192745,
+                    24290757,
+                    25263597
+                ]
+            },
+            {
+                "title": "Regulation of APA by transcription.",
+                "references": [
+                    26034889,
+                    10360175,
+                    14560031,
+                    19749764,
+                    21602789,
+                    21329879,
+                    21952137,
+                    24025092,
+                    21952137,
+                    18157150,
+                    15937220,
+                    12782649,
+                    17135252,
+                    21329879,
+                    26765774,
+                    26659056,
+                    19204718,
+                    19092803,
+                    19854133,
+                    22684278,
+                    21952137,
+                    26546131,
+                    26801249
+                ]
+            }
+        ]
+    },
+    {
+        "title": "Box 1 | Core sequence elements and factors involved in cleavage and polyadenylation",
+        "references": [
+            16131587,
+            16870936,
+            20339349,
+            25934501,
+            2170946,
+            15647503,
+            15647503,
+            25301781,
+            14749727,
+            15937220,
+            9199325,
+            9611233,
+            17386263,
+            23167306
+        ]
+    },
+    {
+        "title": "Box 2 | Tissue-specific APA patterns",
+        "references": [
+            16356263,
+            11544195,
+            22454233,
+            24145798,
+            16356263,
+            16356263,
+            22685694,
+            22454233,
+            24145798,
+            25544561,
+            21343387,
+            26144867,
+            26144867,
+            26801249,
+            26801249,
+            21329879,
+            21952137,
+            18032416,
+            23791531,
+            26801249,
+            25582079,
+            25995188
+        ]
+    },
+    {
+        "title": "Box 3 | Global regulation of APA",
+        "references": [
+            21343387,
+            22747694,
+            22874640,
+            22874640,
+            19109909
+        ]
+    }
+]

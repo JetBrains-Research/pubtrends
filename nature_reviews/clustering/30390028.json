@@ -1,0 +1,285 @@
+[
+    {
+        "title": "INTRODUCTION",
+        "references": [
+            21358745,
+            22868264,
+            26681459,
+            16009131,
+            21726817,
+            21258342,
+            23665916,
+            24379442,
+            18722172,
+            25549891,
+            8967953,
+            8945521,
+            8684459,
+            9296499,
+            19065135,
+            8602529,
+            18292778,
+            9512514,
+            8962081,
+            15050820,
+            18292778,
+            19065135,
+            17956988,
+            18249170,
+            24388149,
+            22249520,
+            19065135,
+            18292778,
+            24691964,
+            24382387
+        ]
+    },
+    {
+        "title": "The structure and function of HDAC3",
+        "references": [
+            10944117,
+            10860984,
+            10809664,
+            {
+                "title": "The enzymatic activity of HDAC3 is dependent on its interaction with NCoR or SMRT.",
+                "references": [
+                    23757177,
+                    12518001,
+                    15957004,
+                    24619218,
+                    10652267,
+                    10368774,
+                    10652267,
+                    10573424,
+                    20084085,
+                    10944117,
+                    10860984,
+                    10809664,
+                    12628926,
+                    11931768,
+                    10640276,
+                    9139820,
+                    9150137,
+                    10640276,
+                    10640275,
+                    11931768,
+                    10617569,
+                    11509652,
+                    15837933,
+                    8882580,
+                    12419236,
+                    15040448,
+                    15837933,
+                    22230954,
+                    22781900,
+                    22337871,
+                    12502735,
+                    11509652,
+                    24268577
+                ]
+            },
+            {
+                "title": "Non-enzymatic functions of HDAC3.",
+                "references": [
+                    24268577,
+                    24268577,
+                    22337871,
+                    12502735,
+                    18406327,
+                    18830415,
+                    19037247,
+                    22781900
+                ]
+            },
+            {
+                "title": "Post-translational modification of HDAC3.",
+                "references": [
+                    15352162,
+                    17803935,
+                    12082111
+                ]
+            }
+        ]
+    },
+    {
+        "title": "Tissue-specific functions of HDAC3",
+        "references": [
+            {
+                "title": "HDAC3 controls lipid metabolism and circadian histone deacetylation in the liver.",
+                "references": [
+                    18354499,
+                    22561686,
+                    21393543,
+                    22561686,
+                    21393543,
+                    9106656,
+                    22474260,
+                    29439026,
+                    21393543,
+                    22474260,
+                    26044300,
+                    22561686,
+                    21393543,
+                    28916805,
+                    28916805
+                ]
+            },
+            {
+                "title": "HDAC3 primes the thermogenic capacity of brown fat for survival in cold conditions.",
+                "references": [
+                    28614293,
+                    9139827,
+                    28614293,
+                    28614293,
+                    18664618,
+                    14585956,
+                    28614293,
+                    12522104,
+                    17618855,
+                    29320702,
+                    28178569,
+                    28733645
+                ]
+            },
+            {
+                "title": "HDAC3 influences cardiac development and cardiomyocyte metabolism.",
+                "references": [
+                    16129885,
+                    24565863,
+                    29033129,
+                    29033129,
+                    16129885,
+                    29033129,
+                    22570481,
+                    22726435,
+                    29440224,
+                    29033129,
+                    24565863,
+                    24565863,
+                    22078432,
+                    15731757,
+                    12598898,
+                    21959220,
+                    18830415,
+                    21808063,
+                    21808063,
+                    28192373,
+                    16511594
+                ]
+            },
+            {
+                "title": "HDAC3 regulates neuronal cell fate and function.",
+                "references": [
+                    25339172,
+                    25339172,
+                    26859354,
+                    26859354,
+                    26859354,
+                    29431744,
+                    25339172,
+                    21228185,
+                    23770587,
+                    23770565,
+                    27428650,
+                    27428650
+                ]
+            },
+            {
+                "title": "HDAC3 coordinates lung development.",
+                "references": [
+                    26832331,
+                    26832331,
+                    27141870,
+                    27141870
+                ]
+            },
+            {
+                "title": "HDAC3 governs intestinal homeostasis and host defence.",
+                "references": [
+                    24185009,
+                    28494866,
+                    24185009,
+                    24185009,
+                    28494866,
+                    29689264
+                ]
+            },
+            {
+                "title": "HDAC3 in pancreatic \u03b2-\u200bc ells controls glucose-\u200bstimulated insulin secretion.",
+                "references": [
+                    28123935,
+                    25846481,
+                    22726680,
+                    22772764,
+                    27542279,
+                    23823474,
+                    20824628
+                ]
+            },
+            {
+                "title": "HDAC3 impacts skeletal muscle metabolism and a fuel source switch.",
+                "references": [
+                    27991918,
+                    27991918,
+                    27991918,
+                    27991918
+                ]
+            },
+            {
+                "title": "HDAC3 promotes haematopoietic cell lineages and prevents a lethal autoimmune disease. HDAC3 orches",
+                "references": [
+                    22156208,
+                    22802645,
+                    25007801,
+                    22156208,
+                    21075309,
+                    23921131,
+                    23921131,
+                    26324326,
+                    26324326,
+                    27279370,
+                    26163592,
+                    27279370,
+                    11533489,
+                    27279370
+                ]
+            },
+            {
+                "title": "HDAC3 is required for the development and physiological remodelling of bones.",
+                "references": [
+                    26378079,
+                    21959220,
+                    23506836,
+                    20628553,
+                    28782836,
+                    27507649,
+                    27507649,
+                    23085085,
+                    15292260,
+                    23300083,
+                    21173110,
+                    24502598,
+                    15082034,
+                    11580761,
+                    15265190,
+                    11502911,
+                    11702867,
+                    8309898,
+                    26251326
+                ]
+            }
+        ]
+    },
+    {
+        "title": "CONCLUSIONS",
+        "references": [
+            10944117,
+            10860984,
+            10809664,
+            24121437,
+            29035278,
+            24599251,
+            11502911
+        ]
+    }
+]

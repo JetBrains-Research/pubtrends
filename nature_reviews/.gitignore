@@ -1,0 +1,8 @@
+grouped_refs/
+pdf/
+pubtrends_export/
+refs_grobid/
+tei/
+tei_crossref_citations/
+
+*/.ipynb_checkpoints
