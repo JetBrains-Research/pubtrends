@@ -3,6 +3,7 @@
 **Current status: 20/40 papers processed, ~76% references mapped**
 
 This folder contains:
+ * `collect_papers.sh` - source code for fetching appropriate review papers with information about references
  * `clustering/` - the final result of preprocessing for each paper
  * `grouped_refs_validated` - hand-curated mapping of references by section of the paper
  
