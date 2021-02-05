@@ -336,6 +336,25 @@ Please ensure that you have configured and prepared the database(s).
     # inpect logs
     docker-compose logs
     ```
+# Migrate Postgresql database between instances
+
+1. Dump DB to file locally on the source machine
+    ```
+    pg_dump -h localhost -p 5432 -U biolabs -f pubtrendsdb -Z 9 -F d -j 4 pubtrends
+    ```
+
+2. Sync file between servers
+    ```
+    rsync -aivz --progress -e "ssh -i ssh_key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
+         user@host:/home/user/pubtrendsdb <local_path>
+    ```
+
+
+3. On the target machine restore DB from file
+    ```
+    pg_restore -h localhost -p 5432  -U biolabs -C -d pubtrends -F d <local_path>
+    ```
+
 
 # Authors
 
