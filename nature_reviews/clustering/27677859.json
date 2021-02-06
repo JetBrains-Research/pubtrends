@@ -158,7 +158,8 @@
                 "references": [
                     23395373,
                     23172914,
-                    23172914
+                    23172914,
+                    12143388
                 ]
             },
             {
@@ -288,6 +289,7 @@
     {
         "title": "Box 2 | Mathematical models of CIL explain 'social' cell behaviour",
         "references": [
+            9695823,
             25556249,
             {
                 "title": "Spontaneous collective migration",

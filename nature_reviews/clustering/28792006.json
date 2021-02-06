@@ -2,6 +2,8 @@
     {
         "title": "mtDNA maintenance and translation",
         "references": [
+            25837512,
+            25838379,
             27023847,
             26789594,
             {
@@ -94,13 +96,15 @@
             {
                 "title": "Disruption of mitochondrial protein quality control can contribute to disease.",
                 "references": [
+                    24681487,
                     9635427,
                     20208537,
                     8681382,
                     20038678,
                     23453957,
                     4824294,
-                    20038677
+                    20038677,
+                    24681487
                 ]
             },
             {
