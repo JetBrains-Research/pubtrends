@@ -28,7 +28,8 @@
                     23749966,
                     12354385,
                     22370719,
-                    23749966
+                    23749966,
+                    21482090
                 ]
             },
             {
@@ -38,6 +39,7 @@
             {
                 "title": "Molecular mechanisms of fate instruction.",
                 "references": [
+                    29884460,
                     28183981
                 ]
             },
@@ -82,6 +84,7 @@
             {
                 "title": "Further differentiation of GC B cells.",
                 "references": [
+                    29884459,
                     24880458
                 ]
             },
@@ -89,6 +92,7 @@
                 "title": "Roles of long-lived plasma cells and memory B cells in protective immunity.",
                 "references": [
                     22162833,
+                    31231764,
                     26631631,
                     24141387
                 ]
@@ -112,6 +116,7 @@
     {
         "title": "Box 1 | T FH cells in B cell memory",
         "references": [
+            31117010,
             30150988
         ]
     }

@@ -1,6 +1,6 @@
 ## Nature Reviews Reference Clustering
 
-**Current status: 40/40 papers processed, ~79% references mapped**
+**Current status: 40/40 papers processed, ~90% references mapped**
 
 ### Validation
 
@@ -15,6 +15,7 @@ This folder contains:
  * `src/collect_papers.sh` - source code for fetching appropriate review papers with information about references
  * `clustering/` - the final result of preprocessing for each paper
  * `grouped_refs_validated` - hand-curated mapping of references by section of the paper
+ * `refs_validated` - files with references that were originally extracted by Grobid and later partially fixed to get better mapping with Pubmed titles
  
 Important things:
  * clustering contains PMIDs of references grouped by paper sections in the exact order, which means:

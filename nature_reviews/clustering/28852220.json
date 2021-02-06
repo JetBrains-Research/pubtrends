@@ -60,7 +60,9 @@
             10331875,
             10331875,
             26727490,
+            26727489,
             26727490,
+            26727489,
             26727490,
             22940245,
             26727490
@@ -69,6 +71,7 @@
     {
         "title": "PTMs and their role in HSF regulation",
         "references": [
+            22494029,
             {
                 "title": "Regulation of HSF1 activity and stability by acetylases.",
                 "references": [
@@ -91,6 +94,8 @@
                 "title": "Phosphorylation regulates HSF1 activity and degrad ation.",
                 "references": [
                     25963659,
+                    25720964,
+                    25720964,
                     25425574,
                     21723507
                 ]
@@ -125,7 +130,9 @@
                 "references": [
                     12356732,
                     22786682,
+                    10412986,
                     22786682,
+                    25241037,
                     26344102
                 ]
             },
@@ -145,6 +152,7 @@
     {
         "title": "HSF1 and neurodegenerative diseases",
         "references": [
+            25027850,
             17652588,
             27173427,
             21205885,
@@ -231,6 +239,7 @@
         "title": "HSFs in cell proliferation and cancer",
         "references": [
             26597576,
+            26119944,
             20622894
         ]
     },
@@ -252,6 +261,7 @@
             19269363,
             26597576,
             19668225,
+            25720964,
             22945628,
             26597576,
             26597576,
@@ -261,7 +271,9 @@
             16175177,
             22885793,
             22885793,
+            24954509,
             22215620,
+            24954509,
             27589382,
             27043084,
             25083868,
@@ -273,6 +285,8 @@
         "title": "HSF2 as a potential tumour suppressor",
         "references": [
             25202032,
+            26119944,
+            26119944,
             28101237,
             16336210,
             19129477
