@@ -1,0 +1,450 @@
+[
+    {
+        "title": "INTRODUCTION",
+        "references": [
+            22136168,
+            22136168,
+            25306126,
+            26735697,
+            24854589,
+            25033907,
+            26322042,
+            26124761
+        ]
+    },
+    {
+        "title": "Basic principles of DC migration",
+        "references": [
+            {
+                "title": "Maturation and mobilization of tissue-resident DCs.",
+                "references": [
+                    23516985,
+                    24837101,
+                    15308107,
+                    21930767,
+                    23329049,
+                    21930767,
+                    19995949,
+                    9841930,
+                    25862089
+                ]
+            },
+            {
+                "title": "Intranodal migration and positioning of dendritic cells.",
+                "references": [
+                    21841786,
+                    21841786,
+                    21841786,
+                    18451854,
+                    22195748,
+                    15534368,
+                    15664156,
+                    19286519,
+                    21296980,
+                    21296980,
+                    23502855,
+                    25049334,
+                    20305659
+                ]
+            }
+        ]
+    },
+    {
+        "title": "DC migration in the skin",
+        "references": [
+            {
+                "title": "DC subsets in the skin",
+                "references": [
+                    25776847,
+                    24854591
+                ]
+            },
+            {
+                "title": "LCs in the epidermis",
+                "references": [
+                    22729249,
+                    16356859,
+                    16444257,
+                    22729248,
+                    22689996,
+                    15894281,
+                    22006331,
+                    22006331,
+                    22411813,
+                    21536741
+                ]
+            },
+            {
+                "title": "Dermal cDCs",
+                "references": [
+                    23787991,
+                    25539086,
+                    24184057,
+                    24288007
+                ]
+            },
+            {
+                "title": "Other dermal DCs.",
+                "references": [
+                    24184057,
+                    18424716,
+                    21296980,
+                    21937703
+                ]
+            },
+            {
+                "title": "Migration of activated LCs and DCs. Upon activation,",
+                "references": [
+                    23329049,
+                    15894281,
+                    25862089,
+                    22933627,
+                    25344933,
+                    26438363
+                ]
+            },
+            {
+                "title": "Steady-state versus inflammatory DC migration.",
+                "references": [
+                    25112380,
+                    23018291
+                ]
+            }
+        ]
+    },
+    {
+        "title": "Migratory DCs of the intestines",
+        "references": [
+            10843382,
+            16713979,
+            20007263,
+            {
+                "title": "Lamina propria DCs.",
+                "references": [
+                    17082596,
+                    17620362
+                ]
+            },
+            {
+                "title": "Antigen uptake in the gut.",
+                "references": [
+                    16533884,
+                    16220046
+                ]
+            },
+            {
+                "title": "Intestinal pDCs mobilize DCs.",
+                "references": [
+                    17056538,
+                    17404233,
+                    18789731,
+                    21762123,
+                    21693759
+                ]
+            },
+            {
+                "title": "Monocyte-derived cells in the gut.",
+                "references": [
+                    22936024,
+                    22936024,
+                    24043764,
+                    23219392,
+                    22936024,
+                    20399121,
+                    22936024,
+                    22262658
+                ]
+            },
+            {
+                "title": "DC migration and induction of tolerance or immunity.",
+                "references": [
+                    17082596,
+                    15821737,
+                    22222225
+                ]
+            },
+            {
+                "title": "DC migration and immune responses to commensals.",
+                "references": [
+                    15016999,
+                    15016999,
+                    24684957
+                ]
+            },
+            {
+                "title": "DC migration during intestinal infection.",
+                "references": [
+                    26451485,
+                    26451485,
+                    19506012,
+                    19506012,
+                    19506012
+                ]
+            }
+        ]
+    },
+    {
+        "title": "Migration of lung-derived DCs",
+        "references": [
+            {
+                "title": "Regulation of lung DC migration to draining lymph nodes.",
+                "references": [
+                    17082654,
+                    16517726,
+                    20606167,
+                    17080194,
+                    21731495,
+                    21402903
+                ]
+            },
+            {
+                "title": "DC migration and asthma.",
+                "references": [
+                    22585735,
+                    26109638,
+                    21646718,
+                    19330007,
+                    22802353,
+                    19733903,
+                    15238608,
+                    19553531,
+                    15238608
+                ]
+            },
+            {
+                "title": "DC migration and chronic obstructive pulmonary disease.",
+                "references": [
+                    20420706,
+                    17332482,
+                    17332482,
+                    27058955
+                ]
+            },
+            {
+                "title": "DC migration during respiratory infection.",
+                "references": [
+                    12594953,
+                    23549447,
+                    19420085,
+                    23168837,
+                    21173243,
+                    22855715,
+                    22855715,
+                    21173243,
+                    16818672,
+                    20547826,
+                    25774636,
+                    25774636,
+                    17548636
+                ]
+            }
+        ]
+    },
+    {
+        "title": "DC migration to and from the CNS",
+        "references": [
+            18865105,
+            24780507,
+            22903150,
+            {
+                "title": "CNS fluid compartments.",
+                "references": [
+                    23695293,
+                    26431936,
+                    22903150,
+                    23695293,
+                    23695293
+                ]
+            },
+            {
+                "title": "Antigen drainage via meningeal lymphatics.",
+                "references": [
+                    26077718,
+                    26077718,
+                    23695293,
+                    26077718,
+                    22903150,
+                    22903150
+                ]
+            },
+            {
+                "title": "DC recruitment during CNS inflammation.",
+                "references": [
+                    18830405,
+                    19829296,
+                    25505278,
+                    21804537,
+                    25002752,
+                    26341385,
+                    16951385,
+                    24057429,
+                    15122702,
+                    20621365
+                ]
+            },
+            {
+                "title": "An alternative route of CNS-derived DC migration.",
+                "references": []
+            }
+        ]
+    },
+    {
+        "title": "DC migration in inflammatory diseases",
+        "references": [
+            23827956,
+            22760781,
+            18789731,
+            16633346,
+            16951687,
+            22444632,
+            {
+                "title": "Rheumatoid arthritis.",
+                "references": [
+                    11994492,
+                    26416269,
+                    25248373,
+                    26515512,
+                    26416269
+                ]
+            },
+            {
+                "title": "Systemic lupus erythematosus.",
+                "references": [
+                    25180065,
+                    25180061,
+                    23382217,
+                    21115693,
+                    26512111,
+                    22890025,
+                    24829414
+                ]
+            },
+            {
+                "title": "Psoriasis.",
+                "references": [
+                    19114666,
+                    19168032,
+                    24470498,
+                    23731727,
+                    24401998
+                ]
+            }
+        ]
+    },
+    {
+        "title": "General concepts of DC migration",
+        "references": [
+            25049334,
+            17934446,
+            25607462
+        ]
+    },
+    {
+        "title": "Box 1 | Overview of DC migration routes",
+        "references": [
+            24854589,
+            16951687,
+            22444632
+        ]
+    },
+    {
+        "title": "Box 2 | Molecular basics of DC migration",
+        "references": [
+            {
+                "title": "CCR7 signals and cytoskeleton dynamics",
+                "references": [
+                    23018291,
+                    20471289,
+                    26597008,
+                    26597008,
+                    25589653
+                ]
+            },
+            {
+                "title": "Adhesion molecules",
+                "references": [
+                    18451854,
+                    19190242,
+                    22461490,
+                    25713392
+                ]
+            },
+            {
+                "title": "Transendothelial migration",
+                "references": [
+                    25751747,
+                    19273627,
+                    20579936,
+                    24470498
+                ]
+            },
+            {
+                "title": "Actin-binding molecules and directional migration",
+                "references": [
+                    19074353,
+                    21835647,
+                    23632887,
+                    25780038,
+                    25084094,
+                    25780038,
+                    26975831,
+                    23420539,
+                    26729805,
+                    24218450,
+                    15494425,
+                    23160469
+                ]
+            }
+        ]
+    },
+    {
+        "title": "Box 3 | DC migration in atherosclerosis",
+        "references": [
+            26892963,
+            24855200,
+            {
+                "title": "DC networks in pre-lesional artery walls",
+                "references": [
+                    16894012,
+                    11304464,
+                    19221394,
+                    19893012,
+                    24855200
+                ]
+            },
+            {
+                "title": "DC functions within atherosclerotic plaques",
+                "references": [
+                    22886300,
+                    21633167,
+                    26084025,
+                    22078798
+                ]
+            },
+            {
+                "title": "Alterations of DC migration in metabolic disorders",
+                "references": [
+                    25222066,
+                    25960616,
+                    20124992,
+                    15485633,
+                    23950984,
+                    22619482
+                ]
+            },
+            {
+                "title": "Open questions regarding DC migration and atherosclerosis",
+                "references": [
+                    20921438,
+                    22163030,
+                    23180724,
+                    22388324,
+                    25223984,
+                    22021930,
+                    18769227,
+                    25223984
+                ]
+            }
+        ]
+    }
+]

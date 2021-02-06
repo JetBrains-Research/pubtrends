@@ -1,0 +1,232 @@
+[
+    {
+        "title": "INTRODUCTION",
+        "references": [
+            16275758,
+            15247468,
+            21502986,
+            18490903,
+            25858860,
+            18449194,
+            17307878
+        ]
+    },
+    {
+        "title": "Technological advances",
+        "references": [
+            26682979,
+            25594173
+        ]
+    },
+    {
+        "title": "Time-dependent immune system variation",
+        "references": [
+            {
+                "title": "Variation over time within individuals",
+                "references": []
+            },
+            {
+                "title": "Immune system variation with age.",
+                "references": [
+                    24880460,
+                    26702035,
+                    19544311,
+                    24880460,
+                    25242415,
+                    25964462,
+                    23390249,
+                    25157137,
+                    23792036,
+                    25147954,
+                    23591775,
+                    26682988
+                ]
+            },
+            {
+                "title": "Seasonal and circadian immune system variation.",
+                "references": [
+                    19573115,
+                    17264092,
+                    24399446,
+                    25965853,
+                    17265475,
+                    24560196
+                ]
+            }
+        ]
+    },
+    {
+        "title": "Inter-individual variation",
+        "references": [
+            27153492,
+            21646338,
+            {
+                "title": "Quantifying inter-individual variation",
+                "references": [
+                    25594173,
+                    25772697,
+                    25594173
+                ]
+            },
+            {
+                "title": "The structure of immune system variation in human populations.",
+                "references": [
+                    27040498
+                ]
+            },
+            {
+                "title": "Immune system variation by sex.",
+                "references": [
+                    11526384,
+                    17127685,
+                    25147954,
+                    12578971,
+                    15485092,
+                    24367114,
+                    24791905
+                ]
+            }
+        ]
+    },
+    {
+        "title": "Heritable influences",
+        "references": [
+            3347221,
+            14704768,
+            21091717,
+            26857735,
+            19302045,
+            {
+                "title": "The genetics of immune cell frequencies",
+                "references": [
+                    16934002,
+                    21738480,
+                    16934002,
+                    21738480,
+                    19648293,
+                    25772697,
+                    24074872
+                ]
+            },
+            {
+                "title": "The genetics of serum protein concentrations.",
+                "references": [
+                    17011763,
+                    20171594,
+                    12604793,
+                    24182552,
+                    15588692,
+                    25594173
+                ]
+            },
+            {
+                "title": "Heritable influences on functional immune responses.",
+                "references": [
+                    21383966,
+                    24604203,
+                    25214635,
+                    24604203,
+                    25214635,
+                    25594173
+                ]
+            }
+        ]
+    },
+    {
+        "title": "Non-heritable influences",
+        "references": [
+            1438221,
+            19282243,
+            16009939,
+            {
+                "title": "Influences of the microbiota",
+                "references": [
+                    27126036,
+                    22726443,
+                    27096360,
+                    27107939,
+                    2513902,
+                    12239261,
+                    12239255,
+                    27133167
+                ]
+            },
+            {
+                "title": "Bacterial dysbiosis and its effect on human immune systems.",
+                "references": [
+                    26424567,
+                    25083986,
+                    22547653,
+                    25220212,
+                    25220212,
+                    24264990,
+                    26541610,
+                    26541606
+                ]
+            },
+            {
+                "title": "The influence of viruses on the human immune system.",
+                "references": [
+                    26045439,
+                    16147978,
+                    26869205,
+                    25594173,
+                    25834109,
+                    24679532,
+                    24267896
+                ]
+            },
+            {
+                "title": "Non-microbial environmental factors.",
+                "references": [
+                    12033743,
+                    27583199,
+                    12033743,
+                    457307,
+                    4126476,
+                    15476204
+                ]
+            }
+        ]
+    },
+    {
+        "title": "Box 1 | Details of high-dimensional immune system analyses technologies",
+        "references": [
+            {
+                "title": "Immune cell analyses",
+                "references": [
+                    {
+                        "title": "Flow cytometry",
+                        "references": [
+                            25708158
+                        ]
+                    },
+                    {
+                        "title": "Mass cytometry.",
+                        "references": [
+                            19601617,
+                            26808670,
+                            27153492,
+                            21551058
+                        ]
+                    },
+                    {
+                        "title": "Single-cell gene expression analyses.",
+                        "references": [
+                            26000488,
+                            24952902,
+                            26950746
+                        ]
+                    }
+                ]
+            },
+            {
+                "title": "Analyses of serum proteins",
+                "references": [
+                    21646338,
+                    24661227
+                ]
+            }
+        ]
+    }
+]

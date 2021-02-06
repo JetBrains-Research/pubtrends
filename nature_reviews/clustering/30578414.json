@@ -1,0 +1,382 @@
+[
+    {
+        "title": "INTRODUCTION",
+        "references": [
+            26193902,
+            28187284,
+            29692415,
+            28104906,
+            23434901,
+            26667849,
+            28028012,
+            22460905,
+            22460902,
+            23993102,
+            23180760,
+            28753430,
+            29083409,
+            25485619,
+            22586653,
+            23478236,
+            24356420,
+            27070704,
+            29141224,
+            29141225,
+            28331002,
+            28854174,
+            29748182,
+            29483136,
+            26479923,
+            27641504,
+            25201530,
+            25957691,
+            29625057,
+            29224780,
+            29472484,
+            29472484,
+            28945830,
+            25185190,
+            17606733,
+            23737486,
+            21892149,
+            22460880,
+            24284626,
+            27193678,
+            27193678,
+            29695587,
+            28794201,
+            25993940,
+            28183939,
+            29023500
+        ]
+    },
+    {
+        "title": "Model evolution: proof and prevalence",
+        "references": [
+            {
+                "title": "Genetically engineered mouse models",
+                "references": [
+                    {
+                        "title": "De novo tumour evolution",
+                        "references": [
+                            28028012,
+                            20399958,
+                            27149548,
+                            19805309,
+                            26266985,
+                            25363767,
+                            26168291,
+                            27374210,
+                            20399958,
+                            26266985,
+                            27374210,
+                            21633010
+                        ]
+                    },
+                    {
+                        "title": "Genetic instability in mouse colonies.",
+                        "references": [
+                            23902802,
+                            23902802,
+                            18397380,
+                            26482575,
+                            21557537,
+                            27210752,
+                            22447858
+                        ]
+                    }
+                ]
+            },
+            {
+                "title": "Patient-derived models",
+                "references": [
+                    {
+                        "title": "Established cancer cell lines.",
+                        "references": [
+                            10704689,
+                            19706540,
+                            12713671,
+                            27456714,
+                            26483214,
+                            27003384,
+                            22460905,
+                            22460902,
+                            23993102,
+                            23180760,
+                            28753430,
+                            29083409,
+                            25485619,
+                            30046134,
+                            28837588,
+                            22560080,
+                            23168266
+                        ]
+                    },
+                    {
+                        "title": "New patient-derived cell lines",
+                        "references": [
+                            26077369,
+                            22189618,
+                            27329820,
+                            23981300,
+                            18037961,
+                            21294158,
+                            21668985,
+                            28991255,
+                            28991255
+                        ]
+                    },
+                    {
+                        "title": "Patient-derived xenografts.",
+                        "references": [
+                            28104906,
+                            25185190,
+                            29074950,
+                            25470049,
+                            21464223,
+                            24613412,
+                            30245083,
+                            28991255,
+                            28991255,
+                            28991255,
+                            30029672,
+                            30029672
+                        ]
+                    },
+                    {
+                        "title": "Patient-derived organoids",
+                        "references": [
+                            29692415,
+                            29692415,
+                            29692415,
+                            29692415,
+                            29748182,
+                            25957691,
+                            29224780,
+                            29472484,
+                            29472484,
+                            29853643,
+                            29643510,
+                            28991255,
+                            25470049,
+                            21464223,
+                            29748182,
+                            25957691,
+                            29224780,
+                            29472484,
+                            30061675,
+                            30061675,
+                            25957691
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "title": "Mechanisms of cancer model evolution",
+        "references": [
+            {
+                "title": "Clonal dynamics",
+                "references": [
+                    28187284,
+                    21854987,
+                    25470049,
+                    28991255,
+                    30061675,
+                    28991255,
+                    25470049,
+                    28991255,
+                    25470049
+                ]
+            },
+            {
+                "title": "Ongoing genomic instability",
+                "references": [
+                    30146160,
+                    27374210,
+                    27292643,
+                    15894267,
+                    28991255
+                ]
+            },
+            {
+                "title": "Bottlenecks of model propagation",
+                "references": [
+                    28187284,
+                    23434901
+                ]
+            },
+            {
+                "title": "Distinct trajectories of tumour evolution",
+                "references": [
+                    24613412,
+                    28991255
+                ]
+            }
+        ]
+    },
+    {
+        "title": "Implications for research and medicine",
+        "references": [
+            {
+                "title": "Phenotypic consequences",
+                "references": [
+                    23902802,
+                    18397380,
+                    27210752,
+                    23993102,
+                    28991255
+                ]
+            },
+            {
+                "title": "Implications for tumour avatars",
+                "references": [
+                    29483136,
+                    29472484,
+                    29853643,
+                    28460066,
+                    27142472,
+                    29483136,
+                    29472484,
+                    29853643,
+                    28991255,
+                    25540894,
+                    27218886
+                ]
+            },
+            {
+                "title": "Implications for tumour model biobanks",
+                "references": [
+                    29748182,
+                    29483136,
+                    26479923,
+                    27641504,
+                    25201530,
+                    29224780,
+                    17157791,
+                    28991255,
+                    28991255,
+                    29748182,
+                    28991255
+                ]
+            },
+            {
+                "title": "Implications for screening purposes",
+                "references": [
+                    29892067,
+                    29892062,
+                    29083409,
+                    27260156,
+                    27260157
+                ]
+            },
+            {
+                "title": "Implications for reproducibility",
+                "references": [
+                    21557537,
+                    24284626,
+                    27193678
+                ]
+            },
+            {
+                "title": "Mitigation strategies",
+                "references": [
+                    {
+                        "title": "Assess diversification.",
+                        "references": [
+                            22460905
+                        ]
+                    },
+                    {
+                        "title": "Minimize genomic evolution.",
+                        "references": [
+                            23597659,
+                            28991255
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "title": "Emerging opportunities",
+        "references": [
+            {
+                "title": "Panels of near-isogenic cancer models",
+                "references": [
+                    18397380,
+                    27210752
+                ]
+            },
+            {
+                "title": "Studying heterogeneity",
+                "references": [
+                    28187284,
+                    26618723,
+                    26301495,
+                    28360267,
+                    {
+                        "title": "Cooperative and competitive interactions.",
+                        "references": [
+                            26156638,
+                            25079331,
+                            25066122,
+                            25331979,
+                            26775840,
+                            29967352
+                        ]
+                    },
+                    {
+                        "title": "Determinants of drug sensitivity.",
+                        "references": [
+                            25849130,
+                            26828195,
+                            25849130
+                        ]
+                    }
+                ]
+            },
+            {
+                "title": "Studying genomic instability",
+                "references": [
+                    25907220,
+                    29297505
+                ]
+            }
+        ]
+    },
+    {
+        "title": "Box 1 | Measuring genomic evolution in cancer models",
+        "references": [
+            27374210,
+            28991255,
+            25470049,
+            25470049,
+            26301495,
+            28360267,
+            29967352,
+            26618723,
+            24633410,
+            16921376,
+            25437005,
+            23446422,
+            28991255,
+            26618723
+        ]
+    },
+    {
+        "title": "Box 2 | Model evolution and cancer aneuploidy",
+        "references": [
+            23619890,
+            28991255,
+            28991255,
+            28991255,
+            28991255,
+            28089890,
+            25198699,
+            24071852,
+            27374210
+        ]
+    }
+]

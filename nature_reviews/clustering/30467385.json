@@ -1,0 +1,268 @@
+[
+    {
+        "title": "INTRODUCTION",
+        "references": [
+            11048732,
+            16408008,
+            16408008,
+            24129419,
+            27999438,
+            29593066,
+            24129419,
+            29700495,
+            29226626
+        ]
+    },
+    {
+        "title": "Apoptosis in the developing CNS",
+        "references": [
+            {
+                "title": "An evolutionarily conserved apoptosis programme",
+                "references": [
+                    15055582,
+                    27516615,
+                    8303301,
+                    14634618,
+                    14634618,
+                    22595785,
+                    16678772,
+                    19239902,
+                    28462525,
+                    25330111
+                ]
+            },
+            {
+                "title": "Apoptosis during nervous system development in mammals.",
+                "references": [
+                    15626491,
+                    10831605,
+                    8934524,
+                    9708735,
+                    11840165,
+                    21238939
+                ]
+            },
+            {
+                "title": "Mature neurons show increased resistance to intrinsic apoptosis.",
+                "references": [
+                    23807218,
+                    10831605,
+                    21245165,
+                    18056406
+                ]
+            },
+            {
+                "title": "Overcoming apoptosis resistance of mature neurons.",
+                "references": [
+                    12933918,
+                    27308305,
+                    20381883,
+                    11128604,
+                    26686654,
+                    23637280,
+                    11464212,
+                    16237080,
+                    11022932,
+                    15094456,
+                    17610960
+                ]
+            }
+        ]
+    },
+    {
+        "title": "Necroptosis in neurological diseases",
+        "references": [
+            24129419,
+            22695613,
+            {
+                "title": "Necroptosis induction",
+                "references": [
+                    24129419,
+                    22814620,
+                    26117714,
+                    27097852,
+                    25186741,
+                    8612133,
+                    12887920,
+                    24129419,
+                    29593066,
+                    19524513,
+                    22265413,
+                    24703947,
+                    24813885
+                ]
+            },
+            {
+                "title": "Regulation of RIPK1 activation.",
+                "references": [
+                    18570872,
+                    18570872,
+                    22435549,
+                    28842570,
+                    28506461,
+                    27591049,
+                    27545878,
+                    28701375,
+                    26670046,
+                    28701375,
+                    19109899,
+                    24821972,
+                    21622571,
+                    21606507,
+                    27552911,
+                    27493188,
+                    29203883,
+                    29394115,
+                    26982364,
+                    29203883,
+                    22435550,
+                    21697901,
+                    21095585,
+                    29203883,
+                    28322246
+                ]
+            },
+            {
+                "title": "Defective activation of caspase 8 in brain disorders.",
+                "references": [
+                    16408008,
+                    22695613,
+                    10521396,
+                    29440439,
+                    9729047,
+                    9506948,
+                    24813850,
+                    25186741,
+                    28985224,
+                    23142077
+                ]
+            },
+            {
+                "title": "Necroptosis of oligodendrocytes and axonal degeneration. Pathological axonal degeneration is frequently",
+                "references": [
+                    24840802,
+                    28791401,
+                    23046254,
+                    24840802,
+                    17506644,
+                    18558855,
+                    21057983,
+                    17934327,
+                    28791401,
+                    27493188,
+                    1506850,
+                    27493188,
+                    27493188,
+                    23542689,
+                    27493188,
+                    27493188,
+                    24508385
+                ]
+            },
+            {
+                "title": "Mitochondrial and lysosomal defects promote necroptosis.",
+                "references": [
+                    22735187,
+                    29466734,
+                    29466734,
+                    26330837,
+                    29891719,
+                    29466734,
+                    29466734,
+                    24441827,
+                    24441827
+                ]
+            }
+        ]
+    },
+    {
+        "title": "RIPK1 activation and neuroinflammation",
+        "references": [
+            27540165,
+            29459769,
+            23622250,
+            28549481,
+            {
+                "title": "RIPK1-mediated inflammatory responses in microglia.",
+                "references": [
+                    22695613,
+                    29703889,
+                    27493188,
+                    27493188,
+                    27493188,
+                    19864556,
+                    20205644,
+                    11121190,
+                    12933918,
+                    28758999,
+                    23197295,
+                    28758999,
+                    23197295,
+                    27493188,
+                    16909003,
+                    27779191,
+                    27779191
+                ]
+            },
+            {
+                "title": "Insoluble proteomes in neurodegenerative diseases and necroptosis.",
+                "references": [
+                    22817896,
+                    27493188,
+                    29891719,
+                    28620346
+                ]
+            },
+            {
+                "title": "Ageing and the onset of necroptosis.",
+                "references": [
+                    26987701,
+                    29696779,
+                    25700176,
+                    27892983,
+                    28842570,
+                    21813637,
+                    20660724,
+                    20660724,
+                    16522639,
+                    24653662,
+                    19933335,
+                    28178353,
+                    21344476,
+                    28602351
+                ]
+            }
+        ]
+    },
+    {
+        "title": "CONCLUSION",
+        "references": [
+            29422891,
+            20517700,
+            24095739,
+            21419663,
+            25132550,
+            30026316,
+            16408008,
+            24900635,
+            27258786,
+            22195746
+        ]
+    },
+    {
+        "title": "Box 1 | Development of small-molecule inhibitors of RIPK1",
+        "references": [
+            27258786,
+            22195746,
+            28574501,
+            25801024,
+            23473668,
+            16408008,
+            23197295,
+            28151659,
+            28151659,
+            26854747,
+            29700495
+        ]
+    }
+]

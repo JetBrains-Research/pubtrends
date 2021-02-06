@@ -1,0 +1,245 @@
+[
+    {
+        "title": "INTRODUCTION",
+        "references": [
+            28396078,
+            19183302,
+            5666958,
+            4538544,
+            28185068,
+            22378047,
+            24530056,
+            26982352,
+            24854589,
+            28662662
+        ]
+    },
+    {
+        "title": "Macrophage immunometabolism",
+        "references": [
+            28396078,
+            29520272,
+            29603622,
+            27396447,
+            25786174,
+            25786174,
+            19183302,
+            9144222,
+            25703560,
+            25324126,
+            25964487,
+            27396447,
+            19029990
+        ]
+    },
+    {
+        "title": "Pathogen metabolism in macrophages",
+        "references": [
+            18628769,
+            26949049,
+            {
+                "title": "S. Typhimurium",
+                "references": [
+                    24439899,
+                    22422755
+                ]
+            },
+            {
+                "title": "Legionella pneumophila.",
+                "references": [
+                    24762308,
+                    20442401,
+                    29404281,
+                    21342713
+                ]
+            },
+            {
+                "title": "Mycobacterium tuberculosis",
+                "references": [
+                    17604718,
+                    17312162,
+                    10963599,
+                    25675247,
+                    23306194,
+                    23326232,
+                    23911587
+                ]
+            },
+            {
+                "title": "Listeria monocytogenes",
+                "references": [
+                    14564012,
+                    25405102
+                ]
+            }
+        ]
+    },
+    {
+        "title": "Metabolic restriction of pathogens",
+        "references": [
+            4197776,
+            18194158,
+            22423963,
+            21205886,
+            8613393,
+            22693450,
+            26784254,
+            6422465,
+            25157255,
+            30705422,
+            27374498,
+            29590092,
+            29920191,
+            10963599,
+            10572116,
+            15895072,
+            26829557,
+            24657929
+        ]
+    },
+    {
+        "title": "Metabolic reprogramming by pathogens",
+        "references": [
+            {
+                "title": "Mediated by pathogen-associated molecular patterns.",
+                "references": [
+                    24651542,
+                    28187287,
+                    25786174,
+                    20498354,
+                    25406319,
+                    29603622,
+                    27991883,
+                    23285016,
+                    28559292,
+                    28559292,
+                    27102489
+                ]
+            },
+            {
+                "title": "Mediated by specific microbial effectors.",
+                "references": [
+                    24762308,
+                    21321208,
+                    21321208
+                ]
+            }
+        ]
+    },
+    {
+        "title": "Macrophage heterogeneity in vivo",
+        "references": [
+            29707888,
+            29661879,
+            19182798,
+            23485258,
+            25233380,
+            28207848,
+            26789254,
+            23485258,
+            28988065,
+            28736436,
+            24768561,
+            27114608,
+            25543231,
+            {
+                "title": "During S. Typhimurium infection.",
+                "references": [
+                    26593223
+                ]
+            },
+            {
+                "title": "During Mycobacterium tuberculosis infection.",
+                "references": [
+                    28736436,
+                    25543231,
+                    22174129,
+                    28569798,
+                    30146391,
+                    25319335,
+                    26764596,
+                    11159971,
+                    23749634,
+                    25368116,
+                    27114608,
+                    19182798,
+                    22737072,
+                    25233380,
+                    25233380,
+                    23592993,
+                    30115997,
+                    29944387,
+                    27403267,
+                    29247046
+                ]
+            }
+        ]
+    },
+    {
+        "title": "Macrophage ontogeny and metabolism",
+        "references": [
+            26232173,
+            28257233,
+            26232173,
+            28257233,
+            21566158,
+            24101381,
+            28334040,
+            28334040,
+            29768688,
+            27091928,
+            30029904,
+            28275133,
+            24899504
+        ]
+    },
+    {
+        "title": "Box 1 | Trained immunity",
+        "references": [
+            27926861,
+            29328908,
+            29328910,
+            29328910,
+            29328912
+        ]
+    },
+    {
+        "title": "Box 2 | Tools to understand the metabolic crosstalk between host and pathogen",
+        "references": [
+            {
+                "title": "Microbial fitness reporter strains",
+                "references": [
+                    25543231,
+                    18430255,
+                    25233380,
+                    20413500,
+                    25233380,
+                    23592993,
+                    21401735,
+                    9671304,
+                    18641659
+                ]
+            },
+            {
+                "title": "Single-cell RNA sequencing and dual RNA sequencing",
+                "references": [
+                    28192419,
+                    28207848
+                ]
+            },
+            {
+                "title": "Metabolic profiling",
+                "references": [
+                    27392747
+                ]
+            },
+            {
+                "title": "Chemical inhibitors",
+                "references": [
+                    27396447,
+                    25675247
+                ]
+            }
+        ]
+    }
+]
