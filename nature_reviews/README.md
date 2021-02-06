@@ -7,7 +7,7 @@
 1. **(DONE)** Grouped references file should be valid JSONs.
 2. Some grouped references files (29147025, 29213134, 26675821, 27919677, 28853444, 31836872, 31937935, 32042144 and 1 more) contain nulls, references should be validated.
 3. Paragraph structure (hierarchy) should be validated somehow (maybe via Nature's website?).
-
+4. Fix inconsistent use of tabs and spaces.
 
 ### Description
 
