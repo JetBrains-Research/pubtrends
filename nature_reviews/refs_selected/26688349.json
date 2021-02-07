@@ -1,0 +1,22 @@
+{
+    "b12": {
+        "title": "Pregnancy imprints regulatory memory that sustains anergy to fetal antigen",
+        "selected": true,
+        "reason": "This work phenotypically and functionally defines memory T Reg cells in a mouse model of fetal-maternal tolerance"
+    },
+    "b13": {
+        "title": "Cutting Edge: Self-Antigen Controls the Balance between Effector and Regulatory T Cells in Peripheral Tissues",
+        "selected": true,
+        "reason": "This paper shows that persistent self antigen expression in tissues leads to the preferential accumulation of T Reg cells instead of effector T cells"
+    },
+    "b15": {
+        "title": "The Development and Function of Memory Regulatory T Cells after Acute Viral Infections",
+        "selected": true,
+        "reason": "References 14 and 15 phenotypically and functionally define memory T Reg cells in a mouse model of infection"
+    },
+    "b30": {
+        "title": "Memory regulatory T cells reside in human skin",
+        "selected": true,
+        "reason": "The paper phenotypically characterizes memory T Reg cells in normal human skin and in the skin of patients with psoriasis"
+    }
+}

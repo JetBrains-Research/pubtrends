@@ -1,0 +1,17 @@
+{
+    "b36": {
+        "title": "Effect of Mutation Order on Myeloproliferative Neoplasms",
+        "selected": true,
+        "reason": "The first demonstration that mutational order alters clinical phenotype and outcomes in MPN"
+    },
+    "b75": {
+        "title": "Decision letter: Registered report: IDH mutation impairs histone demethylation and results in a block to cell differentiation",
+        "selected": true,
+        "reason": "References 70-74 demonstrate that IDH mutations cause disease through the generation of a novel oncometabolite"
+    },
+    "b147": {
+        "title": "Lenalidomide in the Myelodysplastic Syndrome with Chromosome 5q Deletion",
+        "selected": true,
+        "reason": "The first clinical trial demonstrating that lenalidomide improves outcomes in the 5q \u2212 syndrome"
+    }
+}

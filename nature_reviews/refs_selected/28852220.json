@@ -1,0 +1,32 @@
+{
+    "b2": {
+        "title": "Abnormal degradation of the neuronal stress-protective transcription factor HSF1 in Huntington\u2019s disease",
+        "selected": true,
+        "reason": "This publication reported a mechanism for the dampened expression of chaperones in polyQ expansion disease through the targeted degradation of HSF1"
+    },
+    "b3": {
+        "title": "HSF1 Drives a Transcriptional Program Distinct from Heat Shock to Support Highly Malignant Human Cancers",
+        "selected": true,
+        "reason": "This work identifies the HSF1 cancer gene signature, a set of genes that are largely distinct from those activated by heat shock stress"
+    },
+    "b5": {
+        "title": "Transcriptional response to stress in the dynamic chromatin environment of cycling and mitotic cells",
+        "selected": true,
+        "reason": "This work describes the comprehensive genomic binding profiles of HSF1 and HSF2 during stress and in mitotically arrested cells"
+    },
+    "b61": {
+        "title": "Direct link between metabolic regulation and the heat-shock response through the transcriptional regulator PGC-1\u03b1",
+        "selected": true,
+        "reason": "This work demonstrates a direct interaction between HSF1 and PGC1\u03b1 in metabolic regulation"
+    },
+    "b78": {
+        "title": "Heat shock factor-1 influences pathological lesion distribution of polyglutamine-induced neurodegeneration",
+        "selected": true,
+        "reason": "This work demonstrates that HSF1 has a key role in reducing the extent and tissue distribution of protein aggregation in a polyQ neurodegenerative disease mouse model"
+    },
+    "b113": {
+        "title": "MEK Guards Proteome Stability and Inhibits Tumor-Suppressive Amyloidogenesis via HSF1",
+        "selected": true,
+        "reason": "This study demonstrates a role for HSF1 in protecting cancer cells from proteomic instability"
+    }
+}

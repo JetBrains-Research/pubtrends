@@ -1,0 +1,12 @@
+{
+    "b2": {
+        "title": "Identification of RIP1 kinase as a specific cellular target of necrostatins",
+        "selected": true,
+        "reason": "This paper demonstrates RIPK1 kinase activity as the target of Nec-1 and the role of RIPK1 as a key mediator of necroptosis"
+    },
+    "b92": {
+        "title": "Activation of Necroptosis in Multiple Sclerosis",
+        "selected": true,
+        "reason": "This paper provides the first insight into the involvement and mechanism of RIPK1-mediated necroptosis in MS and the role of necroptosis in mediating oligodendrocyte cell death"
+    }
+}

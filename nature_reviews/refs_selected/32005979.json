@@ -1,0 +1,27 @@
+{
+    "b23": {
+        "title": "Abstract 3685: Antigen-capturing nanoparticles improve the abscopal effect and cancer immunotherapy",
+        "selected": true,
+        "reason": "This article demonstrates a new mechanism of action for nanoparticles in augmenting in situ vaccination by capturing antigens released from tumour cells during radiotherapy and promoting uptake by antigen-presenting cells"
+    },
+    "b34": {
+        "title": "Combination delivery of TGF-\u03b2 inhibitor and IL-2 by nanoscale liposomal polymeric gels enhances tumour immunotherapy",
+        "selected": true,
+        "reason": "This work demonstrates an elegant strategy to co-deliver small-molecule drugs (inhibitor of transforming growth factor-\u03b2) and protein drugs (IL-2) to tumours using nanoparticles"
+    },
+    "b55": {
+        "title": "Lipid Nanoparticle Encapsulating mRNAs Encoding Human OX40L/IL-23/IL-36gamma mRNA-2752",
+        "selected": true,
+        "reason": "This work demonstrates the use of in vitro screening to define candidate immunotherapy cues that would exert synergy in priming antitumour immunity, and then delivery of these cues to tumours using lipid nanoparticles carrying mRNA encoding the target genes"
+    },
+    "b99": {
+        "title": "TLR7/8-agonist-loaded nanoparticles promote the polarization of tumour-associated macrophages to enhance cancer immunotherapy",
+        "selected": true,
+        "reason": "This article demonstrates how preferential nanoparticle accumulation in TAMs can be exploited to reprogramme this immunosuppressive cell population in vivo"
+    },
+    "b119": {
+        "title": "Enhancing T cell therapy through TCR-signaling-responsive nanoparticle drug delivery",
+        "selected": true,
+        "reason": "This article shows how TCR signalling-mediated changes in cell surface biochemistry can be used as a trigger to link drug delivery to T cell activation in ACT"
+    }
+}

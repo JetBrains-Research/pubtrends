@@ -1,0 +1,37 @@
+{
+    "b5": {
+        "title": "A Mitochondrial Protein Compendium Elucidates Complex I Disease Biology",
+        "selected": true,
+        "reason": "This article defines the mammalian mitochondrial proteome across 14 different tissues, leading to the development of MitoCarta, an invaluable bioinformatic tool for mitochondrial biology"
+    },
+    "b15": {
+        "title": "NAD+-Dependent Activation of Sirt1 Corrects the Phenotype in a Mouse Model of Mitochondrial Disease",
+        "selected": true,
+        "reason": "References 15 and 16 report that shifting the NAD + balance by vitamin B 3 ameliorates mitochondrial disease in muscle"
+    },
+    "b26": {
+        "title": "Mitochondrial DNA Mutations, Oxidative Stress, and Apoptosis in Mammalian Aging",
+        "selected": true,
+        "reason": "References 26 and 27 show that accumulation of mtDNA mutations in mice leads to premature ageing"
+    },
+    "b57": {
+        "title": "Quality control of mitochondrial protein synthesis is required for membrane integrity and cell fitness",
+        "selected": true,
+        "reason": "This report shows how defects in the quality control of de novo synthesized mitochondrial proteins triggers OMA1 activation and OPA1 processing because of a proteotoxic stress in the membrane"
+    },
+    "b113": {
+        "title": "Somatic Progenitor Cell Vulnerability to Mitochondrial DNA Mutagenesis Underlies Progeroid Phenotypes in Polg Mutator Mice",
+        "selected": true,
+        "reason": "This paper shows that accumulation of mtDNA mutations in somatic stem cells decrease their stemness, providing a mechanistic explanation for mitochondrial progeria"
+    },
+    "b117": {
+        "title": "Hypoxia as a therapy for mitochondrial disease",
+        "selected": true,
+        "reason": "This report indicates that oxygen may have a role in mitochondrial disease progression, and that induction of hypoxia-signalling pathways by chronic hypoxia improves the condition of mice that have mitochondrial disease"
+    },
+    "b120": {
+        "title": "In Vivo Correction of COX Deficiency by Activation of the AMPK/PGC-1\u03b1 Axis",
+        "selected": true,
+        "reason": "References 116 and 117, which implement an idea that was originally proposed by Carlos Moraes and colleagues, lay the basis for therapy trials that induce mitochondrial biogenesis, by showing that induction of PPAR and activation of mitochondrial oxidative metabolism are beneficial for muscle that has mitochondrial dysfunction"
+    }
+}

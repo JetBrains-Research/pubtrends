@@ -1,0 +1,37 @@
+{
+    "b9": {
+        "title": "The Pore-Forming Protein Gasdermin D Regulates Interleukin-1 Secretion from Living Macrophages",
+        "selected": true,
+        "reason": "This study demonstrates that GSDMD facilitates active secretion of IL-1 family cytokines from live cells independently of its role as the effector of pyroptosis"
+    },
+    "b63": {
+        "title": "The Nlrp3 Inflammasome Suppresses Colorectal Cancer Metastatic Growth in the Liver by Promoting Natural Killer Cell Tumoricidal Activity",
+        "selected": true,
+        "reason": "This study elegantly demonstrates that IL-18 production as a result of NLRP3 activation in the immune cells contributes to maturation of hepatic NK cells, surface expression of the death ligand FASL and capacity to kill FASL-sensitive tumours"
+    },
+    "b101": {
+        "title": "Cell-Type-Specific Responses to Interleukin-1 Control Microbial Invasion and Tumor-Elicited Inflammation in Colorectal Cancer",
+        "selected": true,
+        "reason": "Using conditional gene deletion approaches in a model of CRC, this study demonstrates opposing roles of IL-1R signalling on different cell types"
+    },
+    "b126": {
+        "title": "Nlrp6- and ASC-Dependent Inflammasomes Do Not Shape the Commensal Gut Microbiota Composition",
+        "selected": true,
+        "reason": "This study concludes that NLRP6 and ASC-dependent inflammasomes do not contribute in shaping the commensal gut microbiota and highlights the necessity of littermate-controlled experiments to study gene functions in the gut"
+    },
+    "b132": {
+        "title": "Abstract 3173: The NLRC4 inflammasome promotes breast cancer progression in diet-induced obese mice",
+        "selected": true,
+        "reason": "This study demonstrates that IL-1\u03b2 production as a result of NLRC4 inflammasome activation in immune cells of the TME of obese mice acts on adipocytes to promote VEGF production and angiogenesis"
+    },
+    "b159": {
+        "title": "Activation of the NLRP3 inflammasome in dendritic cells induces IL-1\u03b2\u2013dependent adaptive immunity against tumors",
+        "selected": true,
+        "reason": "Using tumour transplantation models, this study demonstrates that chemotherapy-mediated DAMPs released from dying tumour cells activate the NLRP3 inflammasome in DCs to regulate the adaptive immune cell repertoire"
+    },
+    "b169": {
+        "title": "Targeting the NLRP3 inflammasome in inflammatory diseases",
+        "selected": true,
+        "reason": "This review highlights the evolving landscape of NLRP3 modulators and discusses opportunities for pharmacologically targeting NLRP3 with novel small molecules"
+    }
+}

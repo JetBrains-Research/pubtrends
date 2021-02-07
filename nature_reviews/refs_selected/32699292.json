@@ -1,0 +1,22 @@
+{
+    "b56": {
+        "title": "Gap junction mediated signaling between satellite glia and neurons in trigeminal ganglia",
+        "selected": true,
+        "reason": "This study uses dual whole-cell voltage clamp methodology to quantify gap junction-mediated coupling between SGCs and neurons in dissociated trigeminal ganglion cultures"
+    },
+    "b134": {
+        "title": "Satellite glial cells modulate cholinergic transmission between sympathetic neurons",
+        "selected": true,
+        "reason": "This paper shows that SGCs in sympathetic ganglia modulate neuron-to-neuron cholinergic neurotransmission, promote synapse formation and contribute to neuronal survival"
+    },
+    "b138": {
+        "title": "Ganglionic GFAP+ glial Gq-GPCR signaling enhances heart functions in vivo",
+        "selected": true,
+        "reason": "This study shows that stimulation of SGCs in sympathetic ganglia influences cardiac functions via actions of SGCs on sympathetic neurons"
+    },
+    "b155": {
+        "title": "Neuron-Interacting Satellite Glial Cells in Human Trigeminal Ganglia Have an APC Phenotype",
+        "selected": true,
+        "reason": "This paper shows that SGCs in human trigeminal ganglia display some properties of immune cells and have a unique leukocyte phenotype"
+    }
+}

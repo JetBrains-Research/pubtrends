@@ -1,0 +1,22 @@
+{
+    "b9": {
+        "title": "Single granule cells reliably discharge targets in the hippocampal CA3 network in vivo",
+        "selected": true,
+        "reason": "This study shows, through stimulation of single GCs and recordings of their CA3 targets in anaesthetized rats, that high-frequency GC activity recruits pyramidal cell firing"
+    },
+    "b25": {
+        "title": "Priming Spatial Activity by Single-Cell Stimulation in the Dentate Gyrus of Freely Moving Rats",
+        "selected": true,
+        "reason": "This study, using juxtacellular recordings in freely moving rats, shows that permanent place fields in GCs can be induced by strong depolarization that would be suitable to trigger dendritic depolarization"
+    },
+    "b93": {
+        "title": "Entorhinal Cortical Ocean Cells Encode Specific Contexts and Drive Context-Specific Fear Memory",
+        "selected": true,
+        "reason": "This study, using in vivo calcium imaging and optogenetic manipulations, shows that a subpopulation of MEC layer II neurons forms salient and distinct representations of different spatial contexts which are necessary for CFC learning"
+    },
+    "b113": {
+        "title": "Two-stage model of memory trace formation: A role for \u201cnoisy\u201d brain states",
+        "selected": true,
+        "reason": "This fundamental theoretical study postulates a two-stage memory model of memory formation involving heterosynaptic plasticity at recurrent and PP synapses by mossy-fibre input as a mechanism of initial memory storage"
+    }
+}

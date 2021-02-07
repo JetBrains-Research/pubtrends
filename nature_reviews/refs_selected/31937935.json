@@ -1,0 +1,22 @@
+{
+    "b52": {
+        "title": "Ribosomal protein S6 phosphorylation is a determinant of cell size and glucose homeostasis",
+        "selected": true,
+        "reason": "This study reports that a mouse bearing serine to alanine substitutions at all five phosphorylatable serines in ribosomal protein S6 does not experience any global defects in translation"
+    },
+    "b111": {
+        "title": "Regulation of TORC1 by Rag GTPases in nutrient response",
+        "selected": true,
+        "reason": "this study defines the Rag-GTPases as a second upstream signalling branch that transduces amino acid availability to mTORC1"
+    },
+    "b167": {
+        "title": "Table 1: Sociodemographic Characteristics (Baranyi et al., 2015a; Baranyi et al., 2015b; Baranyi et al., 2016).",
+        "selected": true,
+        "reason": "this study describes the molecular action of the cytoplasmic 'nutrient sensors"
+    },
+    "b277": {
+        "title": "Nitrogen Source Activates TOR (Target of Rapamycin) Complex 1 via Glutamine and Independently of Gtr/Rag Proteins",
+        "selected": true,
+        "reason": "This study finds that nitrogen sources can activate TORC1 in prototrophic yeast strains in a transient, Rag-dependent manner, although sustained activation by glutamine may feed through an alternative mechanism"
+    }
+}

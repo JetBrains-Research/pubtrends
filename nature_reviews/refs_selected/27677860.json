@@ -1,0 +1,12 @@
+{
+    "b10": {
+        "title": "Generation of expressed sequence tags and sequence-tagged sites as physical landmarks in the mosquito, Aedes aegypti, genome",
+        "selected": true,
+        "reason": "This paper reports the first use of expressed sequence tags to identify APA sites genome-wide"
+    },
+    "b21": {
+        "title": "Proliferating Cells Express mRNAs with Shortened 3' Untranslated Regions and Fewer MicroRNA Target Sites",
+        "selected": true,
+        "reason": "This is the first report that global changes in APA occur as a consequence of changes in cell proliferation"
+    }
+}

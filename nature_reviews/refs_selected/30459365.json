@@ -1,0 +1,77 @@
+{
+    "b10": {
+        "title": "Effects of aging on circadian patterns of gene expression in the human prefrontal cortex",
+        "selected": true,
+        "reason": "This is the largest-scale study of circadian rhythms of gene expression in human post-mortem brain tissue, revealing age-related decline in the expression of core circadian genes and the emergence of other rhythmic pathways in older subjects"
+    },
+    "b80": {
+        "title": "Preterm infants born at less than 31 weeks\u2019 gestation have improved growth in cycled light compared with continuous near darkness",
+        "selected": true,
+        "reason": "This randomized intervention study reports that preterm infants (<31 weeks) receiving cycled light (11 hours on and 11 hours off, with 1 transition hour for shift changes) during hospital care"
+    },
+    "b147": {
+        "title": "Increased Sensitivity of the Circadian System to Light in Early/Mid-Puberty",
+        "selected": true,
+        "reason": "This study shows that endogenous melatonin levels of prepubertal children and early adolescents are more sensitive to the suppressive effects of acute light exposure during the evening than melatonin levels in late adolescents"
+    },
+    "b192": {
+        "title": "Sleep and circadian rhythm disruption in schizophrenia",
+        "selected": true,
+        "reason": "This study reports notable circadian misalignment (phase delays and advances) of sleep-wake cycles and melatonin rhythms in patients with schizophrenia despite other factors"
+    },
+    "b208": {
+        "title": "Boosting slow oscillations during sleep potentiates memory",
+        "selected": true,
+        "reason": "This study establishes the importance of slow-wave sleep during non-REM episodes that occur during the early night and shows that it promotes the retention of hippocampus-dependent declarative memories"
+    },
+    "b218": {
+        "title": "Rapid and Sustained Antidepressant Response with Sleep Deprivation and Chronotherapy in Bipolar Disorder",
+        "selected": true,
+        "reason": "This study demonstrates, in a cohort of 49 patients with bipolar disorder, the ability of non-invasive circadian therapy (that is, bright light therapy and sleep phase advance) and sleep (that is, acute sleep deprivation) to improve and sustain the therapeutic efficacy of lithium and antidepressants on mood symptoms"
+    },
+    "b244": {
+        "title": "Association of sleep-wake habits in older people with changes in output of circadian pacemaker",
+        "selected": true,
+        "reason": "This landmark study suggests that changes in sleep timing and consolidation driven by the circadian system underlie sleep disturbances in elderly individuals"
+    },
+    "b246": {
+        "title": "SIRT1 Mediates Central Circadian Control in the SCN by a Mechanism that Decays with Aging",
+        "selected": true,
+        "reason": "This mouse study reveals that reductions of sirtuin activity in the SCN leads to a gradual age-dependent dampening of SCN activity and locomotor rhythms"
+    },
+    "b260": {
+        "title": "Sleep and Circadian Rhythm Regulation in Early Parkinson Disease",
+        "selected": true,
+        "reason": "This study shows significantly increased sleep latency, reduced sleep efficiency and reduced REM, along with reduced melatonin levels and a loss of BMAL1 serum expression rhythms"
+    },
+    "b269": {
+        "title": "NAD+ cellular redox and SIRT1 regulate the diurnal rhythms of tyrosine hydroxylase and conditioned cocaine reward",
+        "selected": true,
+        "reason": "This study demonstrates mechanistic links between circadian regulation of SIRT1-dependent metabolic signalling and dopaminergic neurotransmission in the mouse ventral tegmental area"
+    },
+    "b274": {
+        "title": "Dopamine oxidation mediates mitochondrial and lysosomal dysfunction in Parkinson\u2019s disease",
+        "selected": true,
+        "reason": "This study demonstrates that mitochondrial stress promotes the accumulation of oxidized dopamine, consequently increasing \u03b1-synuclein aggregates in neurons derived from patients with PD, an effect selective to human neurons"
+    },
+    "b282": {
+        "title": "Direct Midbrain Dopamine Input to the Suprachiasmatic Nucleus Accelerates Circadian Entrainment",
+        "selected": true,
+        "reason": "This study shows re-entrainment of the SCN to phase shifts in the light-dark schedule is facilitated by dopaminergic projections from the ventral tegmental area to the SCN and is dependent on dopamine 1 receptor"
+    },
+    "b287": {
+        "title": "Sundowning and Circadian Rhythms in Alzheimer\u2019s Disease",
+        "selected": true,
+        "reason": "This study shows that patients with AD have less diurnal activity, more nocturnal activity and phase delays in body-temperature rhythms, and that the severity of sundowning is positively correlated with lower-amplitude and more-phase-delayed rhythms"
+    },
+    "b297": {
+        "title": "Circadian clock proteins regulate neuronal redox homeostasis and neurodegeneration",
+        "selected": true,
+        "reason": "This preclinical investigation demonstrates that components of the molecular clock control redox state and, when disrupted, lead to oxidative stress and cell death related to neurodegeneration"
+    },
+    "b307": {
+        "title": "Effect of Bright Light and Melatonin on Cognitive and Noncognitive Function in Elderly Residents of Group Care Facilities",
+        "selected": true,
+        "reason": "This double-blinded randomized controlled trial of 189 elderly residents of a group care facility demonstrates that a combination of melatonin supplementation and scheduled light exposure improves cognitive symptoms of dementia and reduces aggression"
+    }
+}

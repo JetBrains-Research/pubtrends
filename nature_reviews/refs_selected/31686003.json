@@ -1,0 +1,17 @@
+{
+    "b61": {
+        "title": "Phosphoinositide 3-Kinase Regulates Glycolysis through Mobilization of Aldolase from the Actin Cytoskeleton",
+        "selected": true,
+        "reason": "This study demonstrates a new mode of regulation of glycolytic flux by PI3K through an AKT-independent, RAC-dependent mechanism involving cytoskeletal remodelling and release of actin"
+    },
+    "b157": {
+        "title": "Antioxidant and oncogene rescue of metabolic defects caused by loss of matrix attachment",
+        "selected": true,
+        "reason": "This study demonstrates that treatment with antioxidants or activation of oncogenes such as ERBB2, PIK3CA or AKT can rescue ROS-induced cell death caused by detachment of mammary cells from the extracellular matrix"
+    },
+    "b178": {
+        "title": "Nrf2 Redirects Glucose and Glutamine into Anabolic Pathways in Metabolic Reprogramming",
+        "selected": true,
+        "reason": "This study demonstrates that the PI3K-AKT pathway promotes nuclear accumulation of NRF2, which stimulates flux into the pentose phosphate pathway and nucleotide synthesis in proliferating cells"
+    }
+}

@@ -1,0 +1,22 @@
+{
+    "b49": {
+        "title": "Ceramide Triggers Budding of Exosome Vesicles into Multivesicular Endosomes",
+        "selected": true,
+        "reason": "This manuscript describes the mechanisms underlying ceramide-mediated exosome release"
+    },
+    "b87": {
+        "title": "Programmed cell death induced by ceramide",
+        "selected": true,
+        "reason": "This is a key manuscript demonstrating that ceramide induces apoptosis"
+    },
+    "b99": {
+        "title": "Ceramide targets autophagosomes to mitochondria and induces lethal mitophagy",
+        "selected": true,
+        "reason": "This manuscript shows that ceramide directly binds LC3B-II to recruit autophagosomes to mitochondria for mitophagy induction"
+    },
+    "b136": {
+        "title": "Ceramide Biogenesis Is Required for Radiation-Induced Apoptosis in the Germ Line of C. elegans",
+        "selected": true,
+        "reason": "This work describes mechanistic details of how ceramide mediates cell death in response to radiation"
+    }
+}

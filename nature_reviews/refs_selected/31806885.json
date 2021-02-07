@@ -1,0 +1,22 @@
+{
+    "b8": {
+        "title": "Single-cell RNA-seq highlights intratumoral heterogeneity in primary glioblastoma",
+        "selected": true,
+        "reason": "This study provides one of the most thorough documentations to date of glioblastoma heterogeneity at the single-cell level"
+    },
+    "b37": {
+        "title": "Sequestration of T cells in bone marrow in the setting of glioblastoma and other intracranial tumors",
+        "selected": true,
+        "reason": "This research uncovers the novel phenomenon of T cell sequestration within the bone marrow. The phenomenon is specific to tumours of the intracranial compartment and suggests a novel mechanism for CNS-imposed limitations to T cell access that tumours can usurp"
+    },
+    "b43": {
+        "title": "The Microenvironmental Landscape of Brain Tumors",
+        "selected": true,
+        "reason": "This excellent review article includes an in-depth discussion of the brain tumour microenvironment, relevant cell types"
+    },
+    "b185": {
+        "title": "CD40 Ligand-Modified Chimeric Antigen Receptor T Cells Enhance Antitumor Function by Eliciting an Endogenous Antitumor Response",
+        "selected": true,
+        "reason": "This article describes a preclinical study in which the expression of CD40L on CAR T cells led to the killing of antigen-negative tumour cells and the elimination of tumour immune escape via antigen loss"
+    }
+}

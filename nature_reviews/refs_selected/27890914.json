@@ -1,0 +1,27 @@
+{
+    "b18": {
+        "title": "The atypical chemokine receptor CCRL1 shapes functional CCL21 gradients in lymph nodes",
+        "selected": true,
+        "reason": "This manuscript shows the active formation of a chemokine gradient shaped by an atypical chemokine receptor"
+    },
+    "b101": {
+        "title": "Peripheral Lymphoid Volume Expansion and Maintenance Are Controlled by Gut Microbiota via RALDH+ Dendritic Cells",
+        "selected": true,
+        "reason": "This study shows that neonatal DCs in the gut respond to microbial colonization and migrate to cutaneous lymph nodes, where they instruct HEV maturation for the initiation of L-selectin-based homing of lymphocytes and lymph node cellularity increase"
+    },
+    "b170": {
+        "title": "Immune cell trafficking from the brain maintains CNS immune tolerance",
+        "selected": true,
+        "reason": "Although its relevance in adult humans remains controversial, this study demonstrated that the RMS is an important migration pathway within the CNS parenchyma of rodents, not only for neurons repopulating the olfactory bulb but for CNS-emigrating DCs as well"
+    },
+    "b190": {
+        "title": "Immune complexes stimulate CCR7-dependent dendritic cell migration to lymph nodes",
+        "selected": true,
+        "reason": "This paper reveals that immune complexes that are frequently found in autoimmune diseases induce DC mobilization thus potentially contributing to aggravation of disease"
+    },
+    "b223": {
+        "title": "Innate control of actin nucleation determines two distinct migration behaviours in dendritic cells",
+        "selected": true,
+        "reason": "This study identifies two main actin pools in DCs: one located in the rear drives forward locomotion, whereas the one in the front limits migration and directs antigen capture"
+    }
+}

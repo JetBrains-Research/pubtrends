@@ -1,0 +1,27 @@
+{
+    "b8": {
+        "title": "Time-Restricted Feeding without Reducing Caloric Intake Prevents Metabolic Diseases in Mice Fed a High-Fat Diet",
+        "selected": true,
+        "reason": "This study finds that 16 hours of fasting each day can prevent obesity and related metabolic morbidities in mice"
+    },
+    "b46": {
+        "title": "Caloric restriction and intermittent fasting alter spectral measures of heart rate and blood pressure variability in rats",
+        "selected": true,
+        "reason": "This study establishes that IF lowers blood pressure and heart rate and increases heart rate variability by a mechanism involving enhancement of parasympathetic tone"
+    },
+    "b53": {
+        "title": "3-Hydroxybutyrate regulates energy metabolism and induces BDNF expression in cerebral cortical neurons",
+        "selected": true,
+        "reason": "This study shows that the ketone BHB can act directly on neurons to induce transcription of the gene encoding BDNF by a mechanism involving NF-\u03baB"
+    },
+    "b105": {
+        "title": "Circulating Insulin-Like Growth Factor I Mediates the Protective Effects of Physical Exercise against Brain Insults of Different Etiology and Anatomy",
+        "selected": true,
+        "reason": "The authors of this study use an IGF1-blocking antibody to demonstrate a role for circulating IGF1 in the neuroprotective actions of exercise in mouse models of excitotoxic neuronal degeneration"
+    },
+    "b118": {
+        "title": "Fasting is neuroprotective following traumatic brain injury",
+        "selected": true,
+        "reason": "This study shows that when initiated after traumatic brain injury, fasting and ketone administration reduce neuronal loss in rats"
+    }
+}

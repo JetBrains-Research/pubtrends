@@ -1,0 +1,32 @@
+{
+    "b25": {
+        "title": "The DNA Inflammasome in Human Myeloid Cells Is Initiated by a STING-Cell Death Program Upstream of NLRP3",
+        "selected": true,
+        "reason": "This report shows that DNA-activated STINGdependent cell death occurs in human myeloid cells through lysosomal cell death and upstream of activation of the NLRP3 inflammasome"
+    },
+    "b69": {
+        "title": "Induction of necroptotic cell death by viral activation of the RIG-I or STING pathway",
+        "selected": true,
+        "reason": "This is the first demonstration of induction of necroptosis in a STING-dependent manner"
+    },
+    "b72": {
+        "title": "Host Restriction Factor SAMHD1 Limits Human T Cell Leukemia Virus Type 1 Infection of Monocytes via STING-Mediated Apoptosis",
+        "selected": true,
+        "reason": "The authors of this study identify a virus-induced STING-dependent apoptosis pathway dependent on IRF3-BAX signalling and show that this pathway is involved in control of human T cell leukaemia virus type 1 infection"
+    },
+    "b75": {
+        "title": "Signalling strength determines proapoptotic functions of STING",
+        "selected": true,
+        "reason": "This study identifies DNA-induced apoptosis in T cells that is mediated through STING-dependent transcription of pro-apoptotic genes"
+    },
+    "b122": {
+        "title": "The DNA-sensing AIM2 inflammasome controls radiation-induced cell death and tissue injury",
+        "selected": true,
+        "reason": "This study shows that AIM2-mediated pyroptosis plays a central role in radiation-induced cell death and tissue damage"
+    },
+    "b124": {
+        "title": "ATG16L1 orchestrates interleukin-22 signaling in the intestinal epithelium via cGAS\u2013STING",
+        "selected": true,
+        "reason": "This work shows that lack of the autophagy protein ATG16L unmasks a STING-dependent necroptosis pathway"
+    }
+}

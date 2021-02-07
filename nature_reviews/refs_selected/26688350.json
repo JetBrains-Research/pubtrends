@@ -1,0 +1,17 @@
+{
+    "b21": {
+        "title": "Transcriptional downregulation of S1pr1 is required for the establishment of resident memory CD8+ T cells",
+        "selected": true,
+        "reason": "This paper provides evidence that the expression of molecules associated with tissue egress needs to be downregulated for T RM cell generation"
+    },
+    "b45": {
+        "title": "Spatial Map of Human T Cell Compartmentalization and Maintenance over Decades of Life",
+        "selected": true,
+        "reason": "References 45 and 46 provide a comprehensive evaluation of T cell distribution in human tissues"
+    },
+    "b87": {
+        "title": "Skin-resident memory CD8+ T cells trigger a state of tissue-wide pathogen alert",
+        "selected": true,
+        "reason": "References 86 and 88 show that T RM cells can function as innate sensors of infection"
+    }
+}

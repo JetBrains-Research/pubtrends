@@ -1,0 +1,32 @@
+{
+    "b11": {
+        "title": "Genomic Analysis of Reactive Astrogliosis",
+        "selected": true,
+        "reason": "This study compared the transcriptome of reactive astrocytes in a model of ischaemia and a model of neuroinflammation, and found that astrocytes display injury-specific induction of gene expression"
+    },
+    "b12": {
+        "title": "Astrocyte-encoded positional cues maintain sensorimotor circuit integrity",
+        "selected": true,
+        "reason": "This study showed that astrocytes from the dorsal and ventral spinal cord display marked transcriptomic differences. Conditional ablation of a ventrally enriched astrocyte gene, Sema3a, which encodes an axon guidance molecule, results in a region-specific phenotype of motor neurons"
+    },
+    "b32": {
+        "title": "Circuit-specific signaling in astrocyte-neuron networks in basal ganglia pathways",
+        "selected": true,
+        "reason": "This important study investigated how astrocytes modulate synaptic transmission in specific basal ganglia circuits and found that striatal astrocytes differentially regulate neuronal activity in a circuit-and synapse-specific manner"
+    },
+    "b36": {
+        "title": "Optogenetic astrocyte activation modulates response selectivity of visual cortex neurons in vivo",
+        "selected": true,
+        "reason": "This study showed that photoactivation of astrocytes in the mouse primary visual cortex selectively modulates the activity of interneuron subtypes"
+    },
+    "b38": {
+        "title": "Bergmann Glial AMPA Receptors Are Required for Fine Motor Coordination",
+        "selected": true,
+        "reason": "This work showed that AMPAR signalling in Bergmann glial cells is necessary for Purkinje cell activity and fine motor coordination at the behavioural level"
+    },
+    "b42": {
+        "title": "An astrocyte-dependent mechanism for neuronal rhythmogenesis",
+        "selected": true,
+        "reason": "This study showed that astrocytes respond to sensory stimulation in a central pattern-generator region and are able to modulate neuronal activity by altering local extracellular Ca 2+ concentration"
+    }
+}

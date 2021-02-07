@@ -1,0 +1,47 @@
+{
+    "b5": {
+        "title": "Where and When to Pay Attention: The Neural Systems for Directing Attention to Spatial Locations and to Time Intervals as Revealed by Both PET and fMRI",
+        "selected": true,
+        "reason": "This is a landmark brain-imaging study in humans that reveals the brain network involved in temporal orienting of attention and compares and contrasts it with the spatial orienting network"
+    },
+    "b14": {
+        "title": "The auditory cortex mediates the perceptual effects of acoustic temporal expectation",
+        "selected": true,
+        "reason": "This study demonstrates the behavioural and neural benefits of cued temporal attention in a rodent model, such as temporally selective increases in A1 firing rate for neurons coding for the incoming stimuli to enhance the representation of sounds when auditory targets are expected"
+    },
+    "b19": {
+        "title": "Temporal Anticipation Based on Memory",
+        "selected": true,
+        "reason": "This recent study in humans demonstrates that long-term memories carry temporal associations that guide perception through temporally selective anticipation of target stimuli"
+    },
+    "b25": {
+        "title": "Attentional modulation in visual cortex depends on task timing",
+        "selected": true,
+        "reason": "This study presents a seminal demonstration in NHPs that attentional modulation of neuronal firing rates in a visual area (V4) follows the temporal hazard rate for the occurrence of target stimuli"
+    },
+    "b39": {
+        "title": "Automatic Bias of Temporal Expectations following Temporally Regular Input Independently of High-level Temporal Expectation",
+        "selected": true,
+        "reason": "This is a study in humans that offers a clear demonstration that different types of temporal structures can have dissociable impacts on perception"
+    },
+    "b87": {
+        "title": "Orienting Attention to an Upcoming Tactile Event Involves a Spatially and Temporally Specific Modulation of Sensorimotor Alpha- and Beta-Band Oscillations",
+        "selected": true,
+        "reason": "This is a study in humans that shows that modulation of alpha and beta oscillations by spatial attention is dynamically upregulated and downregulated by concurrent temporal expectations"
+    },
+    "b117": {
+        "title": "Temporal Prediction in lieu of Periodic Stimulation",
+        "selected": true,
+        "reason": "This study in humans suggests distinct mechanisms for behavioural facilitation by different types of predictable temporal structures and demonstrates synergistic interactions between temporal and feature-based expectations"
+    },
+    "b130": {
+        "title": "Reward Timing in the Primary Visual Cortex",
+        "selected": true,
+        "reason": "This is a study in rodents that demonstrates that neurons in the primary visual cortex are sensitive to temporal expectations about non-visual food rewards"
+    },
+    "b134": {
+        "title": "Temporal Expectations Guide Dynamic Prioritization in Visual Working Memory through Attenuated \u03b1 Oscillations",
+        "selected": true,
+        "reason": "This recent study in humans demonstrates that temporal expectations operate within working memory, guiding temporally selective prioritization of mnemonic items when they are expected to become relevant for behaviour"
+    }
+}

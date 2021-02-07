@@ -1,0 +1,12 @@
+{
+    "b13": {
+        "title": "A Temporal Switch in the Germinal Center Determines Differential Output of Memory B and Plasma Cells",
+        "selected": true,
+        "reason": "This study reveals that memory B cells and longlived plasma cells are produced in different phases of the GC reaction, with memory B cell formation preceding the formation of plasma cells"
+    },
+    "b34": {
+        "title": "Different B Cell Populations Mediate Early and Late Memory During an Endogenous Immune Response",
+        "selected": true,
+        "reason": "This study shows that owing to their high affinity and ability to be activated in the presence of neutralizing antibodies, isotype-switched IgG-expressing memory B cells prevail during the early phase of immune memory; however, once they disappear due to a shorter life span"
+    }
+}

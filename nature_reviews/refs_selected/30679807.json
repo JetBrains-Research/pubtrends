@@ -1,0 +1,47 @@
+{
+    "b17": {
+        "title": "Immune-responsive gene 1 protein links metabolism to immunity by catalyzing itaconic acid production",
+        "selected": true,
+        "reason": "This study reports the identification of Irg1 as encoding an enzyme that generates itaconate and the finding that itaconate is a potent antimicrobial molecule that can block the growth of intracellular M. tuberculosis and Salmonella spp"
+    },
+    "b28": {
+        "title": "Parallel Exploitation of Diverse Host Nutrients Enhances Salmonella Virulence",
+        "selected": true,
+        "reason": "This is an extremely comprehensive analysis of the major metabolic pathways that are required to support the survival and growth of Salmonella spp. inside mammalian cells using proteomics, genetics and computational modelling"
+    },
+    "b39": {
+        "title": "Mycobacterial persistence requires the utilization of host cholesterol",
+        "selected": true,
+        "reason": "This study identifies the Mce4 membrane protein complex as the primary transporter of cholesterol in M. tuberculosis and shows that the activity of this transporter is necessary for maintenance of M"
+    },
+    "b80": {
+        "title": "Legionella pneumophila Modulates Mitochondrial Dynamics to Trigger Metabolic Repurposing of Infected Macrophages",
+        "selected": true,
+        "reason": "This study shows that L. pneumophila modulates the metabolism of its host cell through driving fission of the mitochondria in a DNM1L-dependent manner"
+    },
+    "b84": {
+        "title": "Phenotypic Variation of Salmonella in Host Tissues Delays Eradication by Antimicrobial Chemotherapy",
+        "selected": true,
+        "reason": "This study uses fluorescent TIMER-expressing Salmonella spp. in an in vivo infection model to analyse the rate of bacterial division, identify a subpopulation of non-replicating bacteria and demonstrate that these bacteria have acquired a drug-tolerant phenotype"
+    },
+    "b86": {
+        "title": "Internalization of Salmonella by Macrophages Induces Formation of Nonreplicating Persisters",
+        "selected": true,
+        "reason": "In this study, a green fluorescent protein-dilution reporter strain is used to examine non-replicating Salmonella spp. bacteria in vivo and to show that, in vitro, IFN\u03b3-activated macrophages induce markedly higher levels of drug tolerance in Salmonella spp"
+    },
+    "b90": {
+        "title": "Single-cell RNA-seq ties macrophage polarization to growth rate of intracellular Salmonella",
+        "selected": true,
+        "reason": "This study uses single-cell RNA-seq to show that macrophages that preferentially support the growth of Salmonella spp. in vitro express polarization markers consistent with an M2-like macrophage phenotype"
+    },
+    "b108": {
+        "title": "Growth of Mycobacterium tuberculosis in vivo segregates with host macrophage metabolism and ontogeny",
+        "selected": true,
+        "reason": "This is a recent study showing that macrophages of different developmental lineages differentially support the growth of M. tuberculosis in vivo and that alveolar macrophages are more permissive for bacterial growth than are interstitial macrophages through metabolism-dependent mechanisms"
+    },
+    "b117": {
+        "title": "Cell Origin Dictates Programming of Resident versus Recruited Macrophages during Acute Lung Injury",
+        "selected": true,
+        "reason": "This study shows that resident and recruited macrophages respond differently to LPS challenge in the lung airways, which indicates that the developmental origin of macrophages, rather than their environment"
+    }
+}

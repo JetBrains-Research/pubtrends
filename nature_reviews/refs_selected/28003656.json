@@ -1,0 +1,112 @@
+{
+    "b2": {
+        "title": "Perceptual Learning Incepted by Decoded fMRI Neurofeedback Without Stimulus Presentation",
+        "selected": true,
+        "reason": "This was the first study with real-time fMRI-based neurofeedback demonstrating that the adult primate early visual cortex is plastic enough for visual perceptual learning"
+    },
+    "b5": {
+        "title": "Closed-loop training of attention with real-time brain imaging",
+        "selected": true,
+        "reason": "This was the first study to use real-time fMRI neurofeedback to increase the cognitive potential of participants"
+    },
+    "b7": {
+        "title": "The Inclusion of Functional Connectivity Information into fMRI-based Neurofeedback Improves Its Efficacy in the Reduction of Cigarette Cravings",
+        "selected": true,
+        "reason": "This study showed the importance of how inclusion of functional connectivity information in the feedback signal improves self-regulation learning and behavioural outcome"
+    },
+    "b26": {
+        "title": "Self-regulation of human brain activity using simultaneous real-time fMRI and EEG neurofeedback",
+        "selected": true,
+        "reason": "This was the first study to implement a real-time neurofeedback system that allows participants to simultaneously self-regulate haemodynamic (fMRI)"
+    },
+    "b43": {
+        "title": "Operant Conditioning of Cortical Unit Activity",
+        "selected": true,
+        "reason": "This was the first study to demonstrate the feasibility of realizing volitional control of a single neuron by operant training"
+    },
+    "b63": {
+        "title": "Neurofeedback training in children with ADHD: 6-month follow-up of a randomised controlled trial",
+        "selected": true,
+        "reason": "This study explored the long-term effect of neurofeedback training in children with ADHD, showing that the behavioural effect of neurofeedback training persists even after 6 months"
+    },
+    "b69": {
+        "title": "How feedback, motor imagery, and reward influence brain self-regulation using real-time fMRI",
+        "selected": true,
+        "reason": "This study investigated several factors (for example, reward, instruction and feedback) that influence the learning process during neurofeedback training, showing that participants who are trained with visual feedback without explicit instruction for using mental imagery show an increase in BOLD self-regulation compared with other participants who do not receive explicit instructions"
+    },
+    "b71": {
+        "title": "Covert neurofeedback without awareness shapes cortical network spontaneous connectivity",
+        "selected": true,
+        "reason": "This study demonstrated that volitional control of brain activations could be learned when participants were unaware that they were undergoing neurofeedback training and did not have any explicit awareness of the feedback signal"
+    },
+    "b86": {
+        "title": "Neural substrates of cognitive control under the belief of getting neurofeedback training",
+        "selected": true,
+        "reason": "This study investigated the cognitive mechanism underpinning the perception of control during neurofeedback training and showed that a broad frontoparietal and cingulo-opercular network was engaged by participants who were attempting to control the feedback signal"
+    },
+    "b87": {
+        "title": "Meta-analysis of real-time fMRI neurofeedback studies using individual participant data: How is brain regulation mediated?",
+        "selected": true,
+        "reason": "This meta-analysis of several past neurofeedback studies investigated neural correlates of self-regulation, showing that the anterior insula and basal ganglia are key components of the regulation network"
+    },
+    "b143": {
+        "title": "Brain-machine interface in chronic stroke rehabilitation: A controlled study",
+        "selected": true,
+        "reason": "This study provided haptic feedback in a BCI training paradigm, demonstrating improvement in motor function in patients with chronic stroke"
+    },
+    "b144": {
+        "title": "Brain repair after stroke\u2014a novel neurological model",
+        "selected": true,
+        "reason": "This study introduced a new model of neural repair after stroke that is based on the notion that specific brain networks are reorganized in response to physical and behavioural intervention"
+    },
+    "b149": {
+        "title": "Optimizing real time fMRI neurofeedback for therapeutic discovery and development",
+        "selected": true,
+        "reason": "This comprehensive review investigated the current status of neurofeedback techniques as a therapeutic tool and described the future steps that are needed to optimize their development and application"
+    },
+    "b157": {
+        "title": "Multiplexed Echo Planar Imaging for Sub-Second Whole Brain FMRI and Fast Diffusion Imaging",
+        "selected": true,
+        "reason": "This study introduced an innovative methodological development that enables acquisition of fMRI images at very high temporal resolution, potentially suitable for more-effective real-time fMRI feedback"
+    },
+    "b158": {
+        "title": "Optogenetics Based Rat\u2013Robot Control: Optical Stimulation Encodes \u201cStop\u201d and \u201cEscape\u201d Commands",
+        "selected": true,
+        "reason": "This pioneering study introduced a unique idea to control biorobots using optics rather than traditional electric brain stimulation"
+    },
+    "b160": {
+        "title": "Neurophysiological investigation of the basis of the fMRI signal",
+        "selected": true,
+        "reason": "This study pioneered the understanding of the physiological basis of BOLD signal and suggested that the BOLD reflects the input of intracortical processing neurons rather than their spiking output"
+    },
+    "b166": {
+        "title": "Optimising beamformer regions of interest analysis",
+        "selected": true,
+        "reason": "This paper introduced a new two-step approach to perform source reconstruction using the beam-forming method, by first taking into account prior specification of channels pertaining to a brain region of interest"
+    },
+    "b167": {
+        "title": "Low-Resolution Electromagnetic Tomography Neurofeedback",
+        "selected": true,
+        "reason": "This study developed a pioneering method to solve the inverse problem in EEG for neurofeedback"
+    },
+    "b183": {
+        "title": "The Chronnectome: Time-Varying Connectivity Networks as the Next Frontier in fMRI Data Discovery",
+        "selected": true,
+        "reason": "This paper introduced a new method for computing time-varying properties of functional connectivity to better understand the neural mechanism of different brain functions"
+    },
+    "b198": {
+        "title": "A framework for mesencephalic dopamine systems based on predictive Hebbian learning",
+        "selected": true,
+        "reason": "This paper discussed a theoretical framework to predict future reward and errors based on brain activity"
+    },
+    "b201": {
+        "title": "The operational analysis of psychological terms.",
+        "selected": true,
+        "reason": "This pioneering work proposed the theory of operant conditioning"
+    },
+    "b216": {
+        "title": "Dose-response relationships using brain\u2013computer interface technology impact stroke rehabilitation",
+        "selected": true,
+        "reason": "This paper investigated dose-response in BCI therapy, showing the effect of dose and intensity on behavioural change"
+    }
+}

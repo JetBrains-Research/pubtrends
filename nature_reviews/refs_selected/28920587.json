@@ -1,0 +1,22 @@
+{
+    "b12": {
+        "title": "Complement: a key system for immune surveillance and homeostasis",
+        "selected": true,
+        "reason": "This is a seminal review that offers a broad overview of complement functioning and its role in health and disease states"
+    },
+    "b57": {
+        "title": "Autocrine Effects of Tumor-Derived Complement",
+        "selected": true,
+        "reason": "This article shows that tumour cells secrete complement proteins that act in an autocrine fashion to induce tumorigenesis"
+    },
+    "b73": {
+        "title": "A Combined PD-1/C5a Blockade Synergistically Protects against Lung Cancer Growth and Metastasis",
+        "selected": true,
+        "reason": "This article shows evidence for a beneficial role of combined therapeutic inhibition of complement and immune checkpoint molecules"
+    },
+    "b137": {
+        "title": "Protection of host cells by complement regulators",
+        "selected": true,
+        "reason": "This review summarizes the function of complement inhibitors and their involvement in pathologic conditions"
+    }
+}

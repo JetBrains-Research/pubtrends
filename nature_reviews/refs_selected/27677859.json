@@ -1,0 +1,22 @@
+{
+    "b26": {
+        "title": "Contact inhibition of locomotion in vivo controls neural crest directional migration",
+        "selected": true,
+        "reason": "Provides the first demonstration of cells undergoing CIL in vivo and shows that RHOA and PCP signalling are involved"
+    },
+    "b27": {
+        "title": "Inter-Cellular Forces Orchestrate Contact Inhibition of Locomotion",
+        "selected": true,
+        "reason": "Shows that precisely orchestrated repulsion is required for CIL to work as a patterning cue"
+    },
+    "b43": {
+        "title": "Competition amongst Eph receptors regulates contact inhibition of locomotion and invasiveness in prostate cancer cells",
+        "selected": true,
+        "reason": "Shows how signalling through distinct Eph receptors controls heterotypic CIL between cancer cells and normal cells to control their invasiveness"
+    },
+    "b51": {
+        "title": "Collective Chemotaxis Requires Contact-Dependent Cell Polarity",
+        "selected": true,
+        "reason": "Shows how integrating CIL and chemotaxis responses can control the collective migration of a cell population"
+    }
+}

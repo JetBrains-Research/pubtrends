@@ -1,0 +1,17 @@
+{
+    "b109": {
+        "title": "LincRNA-p21 Suppresses Target mRNA Translation",
+        "selected": true,
+        "reason": "This study provides an example of a lncRNA that binds to and affects the translation of mRNAs"
+    },
+    "b116": {
+        "title": "Oncogenic Role of Fusion-circRNAs Derived from Cancer-Associated Chromosomal Translocations",
+        "selected": true,
+        "reason": "This is an important study that reveals that aberrant translocations observed in various types of cancer may generate fusion circRNAs"
+    },
+    "b135": {
+        "title": "Widespread Shortening of 3\u2032UTRs by Alternative Cleavage and Polyadenylation Activates Oncogenes in Cancer Cells",
+        "selected": true,
+        "reason": "This is an important study about the 3\u0374UTR shortening process in cancer cells as a mechanism to avoid inhibition of oncogenes by mi RNAs"
+    }
+}

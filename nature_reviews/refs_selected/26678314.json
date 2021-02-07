@@ -1,0 +1,17 @@
+{
+    "b55": {
+        "title": "DNA damage-induced phosphorylation of p53 at serine 20 correlates with p21 and Mdm-2 induction in vivo",
+        "selected": true,
+        "reason": "References 53 and 54 show that p53 phosphorylated at Ser15 and Ser20 displays different roles in auto-regulation and cell cycle checkpoint activation"
+    },
+    "b112": {
+        "title": "Telomeric DNA damage is irreparable and causes persistent DNA-damage-response activation",
+        "selected": true,
+        "reason": "The authors demonstrated that the shelterin protein TRF2 prevents the completion of DSB repair by NHEJ in telomeres by inhibiting ligase IV, thereby causing persistent ATM-mediated DDR signalling"
+    },
+    "b125": {
+        "title": "ROS-induced DNA damage and PARP-1 are required for optimal induction of starvation-induced autophagy",
+        "selected": true,
+        "reason": "References 117, 119 and 120 describe the fundamental role of PARP1 for survival and regulation of autophagy following DNA damage"
+    }
+}

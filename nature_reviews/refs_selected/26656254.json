@@ -1,0 +1,52 @@
+{
+    "b35": {
+        "title": "Targeted Combinatorial Alternative Splicing Generates Brain Region-Specific Repertoires of Neurexins",
+        "selected": true,
+        "reason": "References 35 and 36 use deep-sequencing analyses of neurexin mRNAs to identify a novel splice site in neurexin, to generate a quantitative description of neurexin isoform diversity in the brain and to demonstrate that neurexin diversity is linked to cellular diversity"
+    },
+    "b40": {
+        "title": "Neuroligin Expressed in Nonneuronal Cells Triggers Presynaptic Development in Contacting Axons",
+        "selected": true,
+        "reason": "This classic study demonstrates that expression of the synaptic adhesion molecule neuroligin on the surface of non-neuronal cells induces presynaptic differentiation in contacting axons of co-cultured neurons, a finding that contributed to the subsequent identification and characterization of additional synaptic adhesion molecules"
+    },
+    "b91": {
+        "title": "Single-Cell mRNA Profiling Reveals Cell-Type-Specific Expression of Neurexin Isoforms",
+        "selected": true,
+        "reason": "This study profiles mRNAs isolated from single cells and finds cell type-specific expression of neurexin isoforms and neurexin ligands, supporting the existence of cell type-specific adhesion repertoires"
+    },
+    "b101": {
+        "title": "An Extracellular Interactome of Immunoglobulin and LRR Proteins Reveals Receptor-Ligand Networks",
+        "selected": true,
+        "reason": "This large-scale extracellular interactome study tests the interactions of the complete extracellular D. melanogaster LRR, Ig superfamily and FN3 proteome (which corresponds to more than 20,000 unique pairwise interactions) and identifies close to 100 novel interactions"
+    },
+    "b108": {
+        "title": "Protocadherins mediate dendritic self-avoidance in the mammalian nervous system",
+        "selected": true,
+        "reason": "This study shows that deletion of the \u03b3-protocadherin cluster in retinal SACs and cerebellar Purkinje cells disrupts self-avoidance of their dendrites, indicating that protocadherin diversity provides these cell types with distinct surface identities required for proper establishment of their dendritic arbors"
+    },
+    "b116": {
+        "title": "Type II Cadherins Guide Assembly of a Direction-Selective Retinal Circuit",
+        "selected": true,
+        "reason": "This article shows that the type II cadherins CDH8 and CDH9 are selectively expressed in distinct retinal cell types and instruct the targeting of the axons of these cells to specific sublaminae in the IPL of the mouse retina in vivo"
+    },
+    "b117": {
+        "title": "Elfn1 Regulates Target-Specific Release Probability at CA1-Interneuron Synapses",
+        "selected": true,
+        "reason": "This paper shows that cell type-specific expression of the postsynaptic LRR protein ELFN1 instructs target cell-specific presynaptic release properties at CA1 pyramidal cell-interneuron synapses"
+    },
+    "b118": {
+        "title": "Cadherin-9 Regulates Synapse-Specific Differentiation in the Developing Hippocampus",
+        "selected": true,
+        "reason": "This study uses a combination of in vitro assays and in vivo analysis to show that the type II cadherin CDH9 regulates specific connectivity between DG granule cell axons and CA3 pyramidal neurons in dissociated cultures and in the developing hippocampus"
+    },
+    "b121": {
+        "title": "Neuronal Ig/Caspr Recognition Promotes the Formation of Axoaxonic Synapses in Mouse Spinal Cord",
+        "selected": true,
+        "reason": "This article shows that combinations of Ig superfamily proteins expressed on GABApre axons heterophilically interact with Ig superfamily proteins expressed on proprioceptive sensory axon terminals to promote the strikingly specific accumulation of GABApre synapses on"
+    },
+    "b125": {
+        "title": "Presynaptic Neurexin-3 Alternative Splicing trans-Synaptically Controls Postsynaptic AMPA Receptor Trafficking",
+        "selected": true,
+        "reason": "This study uses a genetic approach to test the consequences of neurexin alternative splicing in vivo and finds that constitutive inclusion of a key splice site in neurexin decreases postsynaptic AMPAR levels"
+    }
+}

@@ -1,0 +1,67 @@
+{
+    "b7": {
+        "title": "Microvascular permeability of normal and neoplastic tissues",
+        "selected": true,
+        "reason": "This study demonstrated higher microvascular permeability of macromolecules into tumours than into normal tissues, providing a rational basis for the use of large-size therapeutic agents in cancer treatment"
+    },
+    "b31": {
+        "title": "Evidence of RNAi in humans from systemically administered siRNA via targeted nanoparticles",
+        "selected": true,
+        "reason": "This study reported the first therapeutic knockdown in humans by polymeric NP-based systemic siRNA delivery"
+    },
+    "b70": {
+        "title": "Biodegradable long-circulating polymeric nanospheres",
+        "selected": true,
+        "reason": "This pioneering work described the development of long-circulating polymeric NPs, which have since been used in several biomedical applications such as drug delivery, medical imaging and RNAi and gene therapy"
+    },
+    "b77": {
+        "title": "Minimal \"Self\" Peptides That Inhibit Phagocytic Clearance and Enhance Delivery of Nanoparticles",
+        "selected": true,
+        "reason": "This paper described a biologically inspired strategy in developing NPs that can reduce MPS recognition for enhanced drug delivery"
+    },
+    "b78": {
+        "title": "Erythrocyte membrane-camouflaged polymeric nanoparticles as a biomimetic delivery platform",
+        "selected": true,
+        "reason": "This article reported a unique biomimetic strategy to extend the systemic circulation of NPs by 'tricking' the immune system"
+    },
+    "b90": {
+        "title": "Accumulation of sub-100 nm polymeric micelles in poorly permeable tumours depends on size",
+        "selected": true,
+        "reason": "This study highlighted the effect of NP size on accumulation in hypovascular and hypervascular tumours"
+    },
+    "b110": {
+        "title": "Correction for Wong et al., Multistage nanoparticle delivery system for deep penetration into tumor tissue",
+        "selected": true,
+        "reason": "This study demonstrated a multistage NP delivery strategy with long circulation for the EPR effect and deep tumour penetration for delivery into the dense collagen matrix of the tumour"
+    },
+    "b129": {
+        "title": "Transepithelial Transport of Fc-Targeted Nanoparticles by the Neonatal Fc Receptor for Oral Delivery",
+        "selected": true,
+        "reason": "This paper described the development of a novel NP technology that can successfully traverse across the digestive tract, potentially opening up new opportunities in cancer nanomedicine beyond intravenous administration"
+    },
+    "b160": {
+        "title": "Stimuli-responsive nanocarriers for drug delivery",
+        "selected": true,
+        "reason": "This article reviewed the different types of stimuli-responsive NPs for controlled drug delivery"
+    },
+    "b182": {
+        "title": "Treating metastatic cancer with nanotechnology",
+        "selected": true,
+        "reason": "This review highlighted the opportunities and challenges in developing nanotechnologies to treat metastatic cancer"
+    },
+    "b185": {
+        "title": "Engineered nanomedicine for myeloma and bone microenvironment targeting",
+        "selected": true,
+        "reason": "This paper described NPs that target the bone microenvironment as an alternative targeting strategy for cancer"
+    },
+    "b195": {
+        "title": "Future of the Particle Replication in Nonwetting Templates (PRINT) Technology",
+        "selected": true,
+        "reason": "This article reviewed the PRINT technology and its application in the biomedical and material sciences"
+    },
+    "b197": {
+        "title": "Reconstituting Organ-Level Lung Functions on a Chip",
+        "selected": true,
+        "reason": "This report described the development of 'organ-on-a-chip' and its potential for use in screening drugs and nanotherapeutics"
+    }
+}

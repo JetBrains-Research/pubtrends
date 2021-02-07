@@ -1,0 +1,27 @@
+{
+    "b8": {
+        "title": "Integration of growth and patterning during vascular tissue formation in Arabidopsis",
+        "selected": true,
+        "reason": "In this study, combined experimental and computational analyses indicate that auxin-dependent cytokinin biosynthesis is crucial for growth and patterning of the embryonic vascular tissue"
+    },
+    "b35": {
+        "title": "Cell signalling by microRNA165/6 directs gene dose-dependent root cell fate",
+        "selected": true,
+        "reason": "This work reveals how mi RNAs control the specification of the different xylem cell types by regulating HD"
+    },
+    "b59": {
+        "title": "Molecular genetic framework for protophloem formation",
+        "selected": true,
+        "reason": "The authors demonstrate the role of antagonistic regulatory pathways in controlling early protophloem development"
+    },
+    "b69": {
+        "title": "Contribution of NAC Transcription Factors to Plant Adaptation to Land",
+        "selected": true,
+        "reason": "This paper demonstrates that VND transcription factors that mediate xylem differentiation in vascular plants control differentiation of water-conducting cells in a moss"
+    },
+    "b76": {
+        "title": "Arabidopsis NAC45/86 direct sieve element morphogenesis culminating in enucleation",
+        "selected": true,
+        "reason": "The authors identify nucleases that mediate phloem cell differentiation, as well as their transcriptional regulators"
+    }
+}
