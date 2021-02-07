@@ -39,46 +39,51 @@ Important things:
  * not all references are currently mapped due to Grobid parsing errors, hopefully, will be fixed in the near future, details below:
 
 	```
-	26580716: 150 / 152 references mapped
-	26580717: 86 / 91 references mapped
-	26656254: 147 / 160 references mapped
-	26667849: 94 / 99 references mapped
-	26675821: 120 / 123 references mapped
-	26678314: 189 / 198 references mapped
-	26688349: 101 / 106 references mapped
-	26688350: 100 / 105 references mapped
-	27677859: 105 / 111 references mapped
-	27677860: 169 / 178 references mapped
-	27834397: 191 / 200 references mapped
-	27834398: 198 / 240 references mapped
-	27890914: 246 / 254 references mapped
-	27904142: 93 / 101 references mapped
+	26580716: [100%] 152 / 152 references mapped
+	26580717: [100%] 91 / 91 references mapped
+	26656254: [100%] 160 / 160 references mapped
+	26667849: [100%] 99 / 99 references mapped
+	26675821: [100%] 123 / 123 references mapped
+	26678314: [100%] 198 / 198 references mapped
+	26688349: [100%] 106 / 106 references mapped
+	26688350: [100%] 105 / 105 references mapped
+	27677859: [100%] 111 / 111 references mapped
+	27677860: [100%] 178 / 178 references mapped
+	27834397: [100%] 200 / 200 references mapped
+	27834398: [100%] 240 / 240 references mapped
+	27890914: [100%] 254 / 254 references mapped
+	27904142: 100 / 101 references mapped
+	--> Not a reference: regional heterogeneity in the response of astrocytes following traumatic brain injury in the adult rat
 	27916977: [100%] 106 / 106 references mapped
-	28003656: 166 / 196 references mapped
-	28792006: 117 / 126 references mapped
-	28852220: 128 / 137 references mapped
-	28853444: 88 / 89 references mapped
-	28920587: 179 / 188 references mapped
-	29147025: 160 / 172 references mapped
-	29170536: 149 / 161 references mapped
-	29213134: 136 / 151 references mapped
-	29321682: 179 / 185 references mapped
-	30108335: 268 / 277 references mapped
-	30390028: 160 / 162 references mapped
-	30459365: 310 / 333 references mapped
-	30467385: 174 / 177 references mapped
-	30578414: 123 / 127 references mapped
-	30644449: 153 / 164 references mapped
-	30679807: 142 / 157 references mapped
-	30842595: 197 / 209 references mapped
-	31686003: 187 / 195 references mapped
-	31806885: 195 / 203 references mapped
-	31836872: 37 / 79 references mapped
-	31937935: 266 / 279 references mapped
-	32005979: 129 / 139 references mapped
-	32020081: 174 / 178 references mapped
-	32042144: 144 / 204 references mapped
-	32699292: 146 / 153 references mapped
+	28003656: [100%] 196 / 196 references mapped
+	28792006: [100%] 126 / 126 references mapped
+	28852220: [100%] 137 / 137 references mapped
+	28853444: [100%] 89 / 89 references mapped
+	28920587: [100%] 188 / 188 references mapped
+	29147025: [100%] 172 / 172 references mapped
+	29170536: [100%] 161 / 161 references mapped
+	29213134: [100%] 151 / 151 references mapped
+	29321682: [100%] 185 / 185 references mapped
+	30108335: 276 / 277 references mapped
+	--> Not a reference: hepatitis c virus replication-specific inhibition of microrna activity with self-cleavable allosteric ribozyme
+	30390028: [100%] 162 / 162 references mapped
+	30459365: [100%] 333 / 333 references mapped
+	30467385: [100%] 177 / 177 references mapped
+	30578414: [100%] 127 / 127 references mapped
+	30644449: 163 / 164 references mapped
+	--> Wrong reference: pillars article: approaching the asymptote? evolution and revolution in immunology. cold spring harb symp quant biol. 1989. 54: 1-13
+	30679807: [100%] 157 / 157 references mapped
+	30842595: [100%] 209 / 209 references mapped
+	31686003: [100%] 195 / 195 references mapped
+	31806885: [100%] 203 / 203 references mapped
+	31836872: [100%] 79 / 79 references mapped
+	31937935: [100%] 279 / 279 references mapped
+	32005979: [100%] 139 / 139 references mapped
+	32020081: [100%] 178 / 178 references mapped
+	32042144: 202 / 204 references mapped
+	--> Not a reference: interregional synaptic maps among engram cells underlie memory formation
+	--> Not a reference: memory-associated dynamic regulation of the "stable" core of the chromatin particle
+	32699292: [100%] 153 / 153 references mapped
 	```
   
   * other thoughts:
