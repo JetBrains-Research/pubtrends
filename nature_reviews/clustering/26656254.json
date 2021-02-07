@@ -129,6 +129,8 @@
             7695896,
             22196734,
             24469635,
+            26182417,
+            26182417,
             17347997,
             23911103,
             23911104,
@@ -183,6 +185,7 @@
                 "title": "Subcellular specificity",
                 "references": [
                     18064706,
+                    23827685,
                     17785411,
                     23177961,
                     25411505
@@ -196,6 +199,7 @@
             {
                 "title": "Neurexins regulate postsynaptic receptor composition.",
                 "references": [
+                    23827676,
                     20064387,
                     20519524,
                     20064388
