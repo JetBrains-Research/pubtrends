@@ -1,13 +1,14 @@
 ## Nature Reviews Reference Clustering
 
-**Current status: 40/40 papers processed, ~93% references mapped**
+**Current status: 40/40 papers processed, ~96% references mapped**
 
 ### Validation
 
 1. **(DONE)** Grouped references file should be valid JSONs.
-2. Some grouped references files (29147025, 29213134, 26675821, 27919677, 28853444, 31836872, 31937935, 32042144 and 1 more) contain nulls, references should be validated.
-3. Paragraph structure (hierarchy) should be validated somehow (maybe via Nature's website?).
-4. Fix inconsistent use of tabs and spaces.
+2. **(DONE)** Grouped references files should not contain nulls, reference IDs should be unique.
+3. References should be validated.
+4. Paragraph structure (hierarchy) should be validated somehow (maybe via Nature's website?).
+5. Fix inconsistent use of tabs and spaces.
 
 ### Description
 
