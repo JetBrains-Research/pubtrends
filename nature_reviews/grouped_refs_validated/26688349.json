@@ -2,164 +2,164 @@
     {
         "title": "Regulatory memory",
         "references": [
-			{
-				"title": "The concept and definition of memory T Reg cells",
-				"references": [
-				    [
-				        "#b16",
-				        "16"
-				    ]
-				]
-			},
-			{
-				"title": "Defining memory T cells by phenotypic markers.",
-				"references": [
-				    [
-				        "#b17",
-				        "17,"
-				    ],
-				    [
-				        "#b18",
-				        "18"
-				    ],
-				    [
-				        "#b19",
-				        "19,"
-				    ],
-				    [
-				        "#b20",
-				        "20"
-				    ],
-				    [
-				        "#b21",
-				        "[21]"
-				    ],
-				    [
-				        "#b22",
-				        "[22]"
-				    ],
-				    [
-				        "#b23",
-				        "[23]"
-				    ],
-				    [
-				        "#b24",
-				        "[24]"
-				    ],
-				    [
-				        "#b25",
-				        "(REFS 25,"
-				    ],
-				    [
-				        "#b26",
-				        "26)"
-				    ],
-				    [
-				        "#b27",
-				        "27,"
-				    ],
-				    [
-				        "#b28",
-				        "28"
-				    ],
-				    [
-				        "#b29",
-				        "29"
-				    ],
-				    [
-				        "#b30",
-				        "30"
-				    ],
-				    [
-				        "#b31",
-				        "31"
-				    ]
-				]
-			},
-			{
-				"title": "Defining memory T Reg cells by epigenetics",
-				"references": [
-					[
-				        "#b32",
-				        "32"
-				    ],
-				    [
-				        "#b33",
-				        "33"
-				    ],
-				    [
-				        "#b34",
-				        "[34]"
-				    ],
-				    [
-				        "#b35",
-				        "[35]"
-				    ],
-				    [
-				        "#b36",
-				        "[36]"
-				    ],
-				    [
-				        "#b35",
-				        "35"
-				    ]
-				]
-			},
-			{
-				"title": "Challenges in defining memory T Reg cells.",
-				"references": [
-				    [
-				        "#b37",
-				        "37"
-				    ],
-				    [
-				        "#b10",
-				        "11,"
-				    ],
-				    [
-				        "#b13",
-				        "13,"
-				    ],
-				    [
-				        "#b29",
-				        "29"
-				    ],
-				    [
-				        "#b14",
-				        "14,"
-				    ],
-				    [
-				        "#b15",
-				        "15"
-				    ],
-				    [
-				        "#b38",
-				        "38"
-				    ]
-				]
-			},
-			{
-				"title": "Early evidence for memory T Reg cells",
-				"references": [
-				    [
-				        "#b39",
-				        "39"
-				    ],
-				    [
-				        "#b39",
-				        "39"
-				    ],
-				    [
-				        "#b8",
-				        "9"
-				    ]
-				]
-			}
-		]
-	},
-	{
-		"title": "Memory T Reg cells with self antigen specificity",
-		"references": [
+            {
+                "title": "The concept and definition of memory T Reg cells",
+                "references": [
+                    [
+                        "#b16",
+                        "16"
+                    ]
+                ]
+            },
+            {
+                "title": "Defining memory T cells by phenotypic markers.",
+                "references": [
+                    [
+                        "#b17",
+                        "17,"
+                    ],
+                    [
+                        "#b18",
+                        "18"
+                    ],
+                    [
+                        "#b19",
+                        "19,"
+                    ],
+                    [
+                        "#b20",
+                        "20"
+                    ],
+                    [
+                        "#b21",
+                        "[21]"
+                    ],
+                    [
+                        "#b22",
+                        "[22]"
+                    ],
+                    [
+                        "#b23",
+                        "[23]"
+                    ],
+                    [
+                        "#b24",
+                        "[24]"
+                    ],
+                    [
+                        "#b25",
+                        "(REFS 25,"
+                    ],
+                    [
+                        "#b26",
+                        "26)"
+                    ],
+                    [
+                        "#b27",
+                        "27,"
+                    ],
+                    [
+                        "#b28",
+                        "28"
+                    ],
+                    [
+                        "#b29",
+                        "29"
+                    ],
+                    [
+                        "#b30",
+                        "30"
+                    ],
+                    [
+                        "#b31",
+                        "31"
+                    ]
+                ]
+            },
+            {
+                "title": "Defining memory T Reg cells by epigenetics",
+                "references": [
+                    [
+                        "#b32",
+                        "32"
+                    ],
+                    [
+                        "#b33",
+                        "33"
+                    ],
+                    [
+                        "#b34",
+                        "[34]"
+                    ],
+                    [
+                        "#b35",
+                        "[35]"
+                    ],
+                    [
+                        "#b36",
+                        "[36]"
+                    ],
+                    [
+                        "#b35",
+                        "35"
+                    ]
+                ]
+            },
+            {
+                "title": "Challenges in defining memory T Reg cells.",
+                "references": [
+                    [
+                        "#b37",
+                        "37"
+                    ],
+                    [
+                        "#b10",
+                        "11,"
+                    ],
+                    [
+                        "#b13",
+                        "13,"
+                    ],
+                    [
+                        "#b29",
+                        "29"
+                    ],
+                    [
+                        "#b14",
+                        "14,"
+                    ],
+                    [
+                        "#b15",
+                        "15"
+                    ],
+                    [
+                        "#b38",
+                        "38"
+                    ]
+                ]
+            },
+            {
+                "title": "Early evidence for memory T Reg cells",
+                "references": [
+                    [
+                        "#b39",
+                        "39"
+                    ],
+                    [
+                        "#b39",
+                        "39"
+                    ],
+                    [
+                        "#b8",
+                        "9"
+                    ]
+                ]
+            }
+        ]
+    },
+    {
+        "title": "Memory T Reg cells with self antigen specificity",
+        "references": [
             [
                 "#b38",
                 "38,"
@@ -389,9 +389,9 @@
     {
         "title": "Generation and maintenance of memory T Reg cells",
         "references": [
-          	{
-          		"title": "Cytokines",
-          		"references": [
+            {
+                "title": "Cytokines",
+                "references": [
                     [
                         "#b72",
                         "70"
@@ -431,8 +431,8 @@
                 ]
             },
             {
-            	"title": "Transcription factors",
-            	"references": [
+                "title": "Transcription factors",
+                "references": [
                     [
                         "#b77",
                         "[75]"
@@ -494,11 +494,11 @@
                         "#b89",
                         "87"
                     ]
-            	]
-	        },
-	        {
-		        "title": "Metabolic pathways",
-		        "references": [
+                ]
+            },
+            {
+                "title": "Metabolic pathways",
+                "references": [
                     [
                         "#b90",
                         "88,"

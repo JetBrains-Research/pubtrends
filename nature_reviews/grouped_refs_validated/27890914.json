@@ -37,7 +37,7 @@
         ]
     },
     {
-        "title": "Basic principles of DC migration", 
+        "title": "Basic principles of DC migration",
         "references": [
             {
                 "title": "Maturation and mobilization of tissue-resident DCs.",
@@ -164,7 +164,7 @@
         "references": [
             {
                 "title": "DC subsets in the skin",
-                "references": [        
+                "references": [
                     [
                         "#b30",
                         "30,"
@@ -647,7 +647,7 @@
         ]
     },
     {
-        "title": "Migration of lung-derived DCs", 
+        "title": "Migration of lung-derived DCs",
         "references": [
             {
                 "title": "Regulation of lung DC migration to draining lymph nodes.",
