@@ -67,7 +67,6 @@ else:
     raise RuntimeError('Failed to configure predefined searches dir')
 PREDEFINED_LOCK = Lock()
 
-
 logging.basicConfig(filename=logfile,
                     filemode='a',
                     format='[%(asctime)s,%(msecs)03d: %(levelname)s/%(name)s] %(message)s',
@@ -305,7 +304,22 @@ def process():
                                    query=trim(query, MAX_QUERY_LENGTH), source=source,
                                    redirect_page="paper",  # redirect in case of success
                                    jobid=jobid, version=VERSION)
-        elif query:
+
+        elif analysis_type == REVIEW_ANALYSIS_TITLE:
+            logger.info(f'/process review {log_request(request)}')
+            limit = request.args.get('limit')
+            sort = request.args.get('sort')
+            return render_template('process.html',
+                                   redirect_args={
+                                       'query': quote(query), 'source': source,
+                                       'limit': limit, 'sort': sort,
+                                       'jobid': jobid},
+                                   query=trim(query, MAX_QUERY_LENGTH), source=source,
+                                   limit=limit, sort=sort,
+                                   redirect_page="review",  # redirect in case of success
+                                   jobid=jobid, version=VERSION)
+
+        elif query:  # This option should be the last default
             logger.info(f'/process regular search {log_request(request)}')
             limit = request.args.get('limit')
             sort = request.args.get('sort')
@@ -318,20 +332,6 @@ def process():
                                    query=trim(query, MAX_QUERY_LENGTH), source=source,
                                    limit=limit, sort=sort,
                                    redirect_page="result",  # redirect in case of success
-                                   jobid=jobid, version=VERSION)
-        elif analysis_type == REVIEW_ANALYSIS_TITLE:
-            logger.info(f'/process review {log_request(request)}')
-            limit = request.args.get('limit')
-            sort = request.args.get('sort')
-
-            return render_template('process.html',
-                                   redirect_args={
-                                       'query': quote(query), 'source': source,
-                                       'limit': limit, 'sort': sort,
-                                       'jobid': jobid},
-                                   query=trim(query, MAX_QUERY_LENGTH), source=source,
-                                   limit=limit, sort=sort,
-                                   redirect_page="review",  # redirect in case of success
                                    jobid=jobid, version=VERSION)
 
     logger.error(f'/process error {log_request(request)}')
@@ -608,6 +608,7 @@ def process_ids():
         logger.error(f'/process_ids error', e)
         return render_template_string(ERROR_OCCURRED), 500
 
+
 #######################
 # Review functionality #
 #######################
@@ -644,7 +645,7 @@ def review():
     if jobid:
         job = AsyncResult(jobid, app=celery)
         if job and job.state == 'SUCCESS':
-            _, review_res, _ = job.result
+            review_res = job.result
             export_name = re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{query}_review'.lower().strip('_')))
             return render_template('review.html',
                                    query=trim(query, MAX_QUERY_LENGTH),

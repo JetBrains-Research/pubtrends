@@ -1,20 +1,16 @@
 import logging
-import os
 from collections import namedtuple
 
 import numpy as np
 import torch
 import torch.nn as nn
-from transformers import BertModel, RobertaModel
-from transformers import BertTokenizer, RobertaTokenizer
+from transformers import BertModel, BertTokenizer
+from transformers import RobertaModel, RobertaTokenizer
 
 import pysrc.review.config as cfg
 from pysrc.review.text import convert_token_to_id
 
 SpecToken = namedtuple('SpecToken', ['tkn', 'idx'])
-
-# Deployment and development
-MODEL_PATHS = ['/model', os.path.expanduser('~/.pubtrends/model')]
 
 logger = logging.getLogger(__name__)
 
@@ -22,21 +18,13 @@ logger = logging.getLogger(__name__)
 def load_model(model_type, froze_strategy, article_len, features=False):
     model = Summarizer(model_type, article_len, features)
     model.expand_posembs_ifneed()
-    # TODO: add model path to config properties
-    for model_path in [os.path.join(p, cfg.model_name) for p in MODEL_PATHS]:
-        if os.path.exists(model_path):
-            model.load(model_path)
-            break
-    else:
-        raise RuntimeError(f'Model file {cfg.model_name} not found among: {MODEL_PATHS}')
-
     model.froze_backbone(froze_strategy)
     model.unfroze_head()
+    logger.info(f'Parameters {sum(p.numel() for p in model.parameters() if p.requires_grad)}')
     return model
 
 
 class Summarizer(nn.Module):
-
     enc_output: torch.Tensor
     rouges_values: np.array = np.zeros(4)
     dec_ids_mask: torch.Tensor
@@ -92,6 +80,7 @@ class Summarizer(nn.Module):
                 token_type_ids=input_segment,
                 position_ids=input_pos,
             )
+
         self.encoder = lambda *args: backbone_forward(*args)[0]
 
         # initialize decoder
@@ -101,17 +90,17 @@ class Summarizer(nn.Module):
             self.decoder = Classifier(cfg.d_hidden + 50)
 
     def expand_posembs_ifneed(self):
-        print(self.backbone.config.max_position_embeddings, self.article_len)
+        logger.info(self.backbone.config.max_position_embeddings, self.article_len)
         if self.article_len > self.backbone.config.max_position_embeddings:
-            print("OK")
+            logger.info("OK")
             old_maxlen = self.backbone.config.max_position_embeddings
             old_w = self.backbone.embeddings.position_embeddings.weight
-            logger.log(f"Backbone pos embeddings expanded from {old_maxlen} upto {self.article_len}")
+            logger.info(f"Backbone pos embeddings expanded from {old_maxlen} upto {self.article_len}")
             self.backbone.embeddings.position_embeddings = \
                 nn.Embedding(self.article_len, self.backbone.config.hidden_size)
             self.backbone.embeddings.position_embeddings.weight[:old_maxlen].data.copy_(old_w)
             self.backbone.config.max_position_embeddings = self.article_len
-        print(self.backbone.config.max_position_embeddings)
+        logger.info(self.backbone.config.max_position_embeddings)
 
     @staticmethod
     def initialize_bert():
@@ -168,12 +157,7 @@ class Summarizer(nn.Module):
         if self.features:
             self.features.load_state_dict(state['features_dict'])
 
-
     def froze_backbone(self, froze_strategy):
-
-        assert froze_strategy in ['froze_all', 'unfroze_last4', 'unfroze_all'],\
-            f"incorrect froze_strategy argument: {froze_strategy}"
-
         if froze_strategy == 'froze_all':
             for name, param in self.backbone.named_parameters():
                 param.requires_grad_(False)
@@ -181,15 +165,18 @@ class Summarizer(nn.Module):
         elif froze_strategy == 'unfroze_last4':
             for name, param in self.backbone.named_parameters():
                 param.requires_grad_(True if (
-                    'encoder.layer.11' in name or
-                    'encoder.layer.10' in name or
-                    'encoder.layer.9' in name or
-                    'encoder.layer.8' in name
+                        'encoder.layer.11' in name or
+                        'encoder.layer.10' in name or
+                        'encoder.layer.9' in name or
+                        'encoder.layer.8' in name
                 ) else False)
 
         elif froze_strategy == 'unfroze_all':
             for param in self.backbone.parameters():
                 param.requires_grad_(True)
+
+        else:
+            raise RuntimeError(f"incorrect froze_strategy argument: {froze_strategy}")
 
     def unfroze_head(self):
 
@@ -225,9 +212,9 @@ class Summarizer(nn.Module):
         cls_mask = (input_ids == self.artBOS.idx)
 
         # position ids | torch.Size([batch_size, article_len])
-        pos_ids = torch\
-            .arange(0, self.article_len, dtype=torch.long, device=input_ids.device)\
-            .unsqueeze(0)\
+        pos_ids = torch \
+            .arange(0, self.article_len, dtype=torch.long, device=input_ids.device) \
+            .unsqueeze(0) \
             .repeat(len(input_ids), 1)
         # extract bert embeddings | torch.Size([batch_size, article_len, d_bert])
         enc_output = self.encoder(input_ids, input_mask, input_segment, pos_ids)
@@ -253,9 +240,9 @@ class Summarizer(nn.Module):
         cls_mask = (input_ids == self.artBOS.idx)
 
         # position ids | torch.Size([batch_size, article_len])
-        pos_ids = torch\
-            .arange(0, self.article_len, dtype=torch.long, device=input_ids.device)\
-            .unsqueeze(0)\
+        pos_ids = torch \
+            .arange(0, self.article_len, dtype=torch.long, device=input_ids.device) \
+            .unsqueeze(0) \
             .repeat(len(input_ids), 1)
         # extract bert embeddings | torch.Size([batch_size, article_len, d_bert])
         enc_output = self.encoder(input_ids, input_mask, input_segment, pos_ids)
