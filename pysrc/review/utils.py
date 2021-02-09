@@ -1,17 +1,9 @@
 import logging
-import random
 
 import numpy as np
 import torch
 
 logger = logging.getLogger(__name__)
-
-
-def init_seed(seed):
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
 
 
 def setup_single_gpu(model):
