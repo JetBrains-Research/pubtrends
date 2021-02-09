@@ -4,7 +4,7 @@ import networkx as nx
 import pandas as pd
 
 from pysrc.papers.analyzer import KeyPaperAnalyzer
-from pysrc.papers.config import PubtrendsConfig
+from pysrc.papers.pubtrends_config import PubtrendsConfig
 from pysrc.test.db.ss_test_articles import citations_graph, cocitations_df, bibliographic_coupling_df, \
     expected_cocit_and_cit_graph
 from pysrc.test.mock_loaders import MockLoader

@@ -1,6 +1,6 @@
 import unittest
 
-from pysrc.papers.config import PubtrendsConfig
+from pysrc.papers.pubtrends_config import PubtrendsConfig
 from pysrc.papers.db.pm_postgres_loader import PubmedPostgresLoader
 from pysrc.papers.db.pm_postgres_writer import PubmedPostgresWriter
 from pysrc.test.db.abstract_test_pm_loader import AbstractTestPubmedLoader

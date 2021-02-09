@@ -4,7 +4,7 @@ from celery.result import AsyncResult
 
 from pysrc.celery.lru_ttl_cache_with_callback import lru_ttl_cache_with_callback
 from pysrc.celery.tasks import celery
-from pysrc.papers.config import PubtrendsConfig
+from pysrc.papers.pubtrends_config import PubtrendsConfig
 
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)

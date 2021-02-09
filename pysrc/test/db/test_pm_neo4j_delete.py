@@ -1,6 +1,6 @@
 import unittest
 
-from pysrc.papers.config import PubtrendsConfig
+from pysrc.papers.pubtrends_config import PubtrendsConfig
 from pysrc.papers.db.pm_neo4j_loader import PubmedNeo4jLoader
 from pysrc.papers.db.pm_neo4j_writer import PubmedNeo4jWriter
 from pysrc.papers.utils import SORT_MOST_RELEVANT

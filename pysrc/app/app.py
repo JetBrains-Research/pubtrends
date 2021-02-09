@@ -1,17 +1,18 @@
+import gzip
 import hashlib
-import html
 import json
 import logging
 import os
-import pickle
 import random
 import re
+import tempfile
 from threading import Lock
 from urllib.parse import quote
 
 import flask_admin
 from celery.result import AsyncResult
-from flask import Flask, url_for, redirect, render_template, request, abort, render_template_string, send_from_directory
+from flask import Flask, url_for, redirect, render_template, request, abort, render_template_string, \
+    send_from_directory, send_file, jsonify
 from flask_admin import helpers as admin_helpers, expose, BaseView
 from flask_security import Security, SQLAlchemyUserDatastore, \
     UserMixin, RoleMixin, current_user
@@ -24,7 +25,7 @@ from pysrc.celery.tasks import celery, find_paper_async, analyze_search_terms, a
     prepare_review_data_async
 from pysrc.celery.tasks_cache import get_or_cancel_task
 from pysrc.papers.analyzer import KeyPaperAnalyzer
-from pysrc.papers.config import PubtrendsConfig
+from pysrc.papers.pubtrends_config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.paper import prepare_paper_data, prepare_papers_data
@@ -127,7 +128,7 @@ def status():
         elif job_state == 'FAILURE':
             return json.dumps({
                 'state': job_state,
-                'message': html.escape(str(job_result).replace('\\n', '\n').replace('\\t', '\t')),
+                'message': str(job_result).replace('\\n', '\n').replace('\\t', '\t'),
                 'search_error': isinstance(job_result, SearchError)
             })
         elif job_state == 'STARTED':
@@ -154,39 +155,39 @@ def status():
 
 def save_predefined(viz, data, log, jobid):
     if jobid.startswith('predefined_'):
-        logger.info(f'/result Saving predefined search {log_request(request)}')
+        logger.info('Saving predefined search')
         path = os.path.join(predefined_path, jobid)
         try:
             PREDEFINED_LOCK.acquire()
-            path_viz = f'{path}_viz.pkl'
-            path_data = f'{path}_data.pkl'
-            path_log = f'{path}_log.pkl'
+            path_viz = f'{path}_viz.json.gz'
+            path_data = f'{path}_data.json.gz'
+            path_log = f'{path}_log.gz'
             if not os.path.exists(path_viz):
-                with open(path_viz, 'wb') as f:
-                    pickle.dump(viz, f, pickle.HIGHEST_PROTOCOL)
+                with gzip.open(path_viz, 'w') as f:
+                    f.write(json.dumps(viz).encode('utf-8'))
             if not os.path.exists(path_data):
-                with open(path_data, 'wb') as f:
-                    pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+                with gzip.open(path_data, 'w') as f:
+                    f.write(json.dumps(data).encode('utf-8'))
             if not os.path.exists(path_log):
-                with open(path_log, 'wb') as f:
-                    pickle.dump(log, f, pickle.HIGHEST_PROTOCOL)
+                with gzip.open(path_log, 'w') as f:
+                    f.write(log.encode('utf-8'))
         finally:
             PREDEFINED_LOCK.release()
 
 
 def load_predefined_viz_log(jobid):
     if jobid.startswith('predefined_'):
-        logger.info(f'/result Trying to load predefined viz, log {log_request(request)}')
+        logger.info('Trying to load predefined viz, log')
         path = os.path.join(predefined_path, jobid)
-        path_viz = f'{path}_viz.pkl'
-        path_log = f'{path}_log.pkl'
+        path_viz = f'{path}_viz.json.gz'
+        path_log = f'{path}_log.gz'
         try:
             PREDEFINED_LOCK.acquire()
             if os.path.exists(path_viz) and os.path.exists(path_log):
-                with open(path_viz, 'rb') as f:
-                    viz = pickle.load(f)
-                with open(path_log, 'rb') as f:
-                    log = pickle.load(f)
+                with gzip.open(path_viz, 'r') as f:
+                    viz = json.loads(f.read().decode('utf-8'))
+                with gzip.open(path_log, 'r') as f:
+                    log = f.read().decode('utf-8')
                 return viz, log
         finally:
             PREDEFINED_LOCK.release()
@@ -195,14 +196,14 @@ def load_predefined_viz_log(jobid):
 
 def load_predefined_or_result_data(jobid):
     if jobid.startswith('predefined_'):
-        logger.info(f'/result Trying to load predefined data {log_request(request)}')
+        logger.info('Trying to load predefined data')
         path = os.path.join(predefined_path, jobid)
-        path_data = f'{path}_data.pkl'
+        path_data = f'{path}_data.json.gz'
         try:
             PREDEFINED_LOCK.acquire()
             if os.path.exists(path_data):
-                with open(path_data, 'rb') as f:
-                    return pickle.load(f)
+                with gzip.open(path_data, 'r') as f:
+                    return json.loads(f.read().decode('utf-8'))
         finally:
             PREDEFINED_LOCK.release()
     job = AsyncResult(jobid, app=celery)
@@ -215,7 +216,7 @@ def load_predefined_or_result_data(jobid):
 @app.route('/result')
 def result():
     jobid = request.args.get('jobid')
-    query = html.unescape(request.args.get('query'))
+    query = request.args.get('query')
     source = request.args.get('source')
     limit = request.args.get('limit')
     sort = request.args.get('sort')
@@ -249,7 +250,7 @@ def result():
                                        **viz)
             logger.info(f'/result No job or out-of-date job, restart it {log_request(request)}')
             analyze_search_terms.apply_async(args=[source, query, sort, int(limit), noreviews, int(expand) / 100],
-                                             task_id=jobid)
+                                             task_id=jobid, test=app.config['TESTING'])
             return redirect(url_for('.process', query=query, source=source, limit=limit, sort=sort,
                                     noreviews=noreviews, expand=expand,
                                     jobid=jobid))
@@ -270,7 +271,7 @@ def process():
             logger.error(f'/process error wrong request {log_request(request)}')
             return render_template_string(SOMETHING_WENT_WRONG_SEARCH)
 
-        query = html.unescape(request.args.get('query') or '')
+        query = request.args.get('query') or ''
         analysis_type = request.values.get('analysis_type')
         source = request.values.get('source')
         key = request.args.get('key')
@@ -342,14 +343,16 @@ def process():
 def process_paper():
     jobid = request.values.get('jobid')
     source = request.values.get('source')
-    query = html.unescape(request.values.get('query'))
+    query = request.values.get('query')
     if jobid:
         job = get_or_cancel_task(jobid)
         if job and job.state == 'SUCCESS':
             id_list = job.result
             logger.info(f'/process_paper single paper analysis {log_request(request)}')
-            job = analyze_id_list.delay(source, ids=id_list, zoom=PAPER_ANALYSIS, query=query,
-                                        limit=request.values.get('limit'))
+            job = analyze_id_list.delay(
+                source, ids=id_list, zoom=PAPER_ANALYSIS, query=query, limit=request.values.get('limit'),
+                test=app.config['TESTING']
+            )
             return redirect(url_for('.process', query=query, analysis_type=PAPER_ANALYSIS_TITLE,
                                     id=id_list[0], source=source, jobid=job.id))
         logger.error(f'/process_paper error job is not success {log_request(request)}')
@@ -375,7 +378,10 @@ def paper():
                                        version=VERSION)
             else:
                 logger.info(f'/paper No job or out-of-date job, restart it {log_request(request)}')
-                job = analyze_id_list.apply_async(args=[source, [pid], PAPER_ANALYSIS, query, limit], task_id=jobid)
+                job = analyze_id_list.apply_async(
+                    args=[source, [pid], PAPER_ANALYSIS, query, limit, app.config['TESTING']],
+                    task_id=jobid
+                )
                 return redirect(url_for('.process', query=query, analysis_type=PAPER_ANALYSIS_TITLE,
                                         id=pid, source=source, jobid=job.id))
         else:
@@ -389,7 +395,7 @@ def paper():
 @app.route('/graph')
 def graph():
     jobid = request.values.get('jobid')
-    query = html.unescape(request.args.get('query'))
+    query = request.args.get('query')
     source = request.args.get('source')
     limit = request.args.get('limit')
     sort = request.args.get('sort')
@@ -445,7 +451,7 @@ def graph():
 @app.route('/papers')
 def show_ids():
     jobid = request.values.get('jobid')
-    query = html.unescape(request.args.get('query'))
+    query = request.args.get('query')
     source = request.args.get('source')  # Pubmed or Semantic Scholar
     limit = request.args.get('limit')
     sort = request.args.get('sort')
@@ -479,7 +485,7 @@ def show_ids():
         data = load_predefined_or_result_data(jobid)
         if data is not None:
             logger.info(f'/papers success {log_request(request)}')
-            export_name = re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{query}_{search_string}'.lower().strip('_')))
+            export_name = re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{query}_{search_string}'.lower())).strip('_')
             return render_template('papers.html',
                                    version=VERSION,
                                    source=source,
@@ -549,7 +555,8 @@ def index():
 
 @app.route('/search_terms', methods=['POST'])
 def search_terms():
-    query = html.unescape(request.form.get('query'))  # Original search query
+    logger.info(f'/search_terms {log_request(request)}')
+    query = request.form.get('query')  # Original search query
     source = request.form.get('source')  # Pubmed or Semantic Scholar
     sort = request.form.get('sort')  # Sort order
     limit = request.form.get('limit')  # Limit
@@ -557,9 +564,9 @@ def search_terms():
     expand = request.form.get('expand')  # Fraction of papers to cover by references
     try:
         if query and source and sort and limit and expand:
-            logger.info(f'/search_terms {log_request(request)}')
             job = analyze_search_terms.delay(source, query=query, limit=int(limit), sort=sort,
-                                             noreviews=noreviews, expand=int(expand) / 100)
+                                             noreviews=noreviews, expand=int(expand) / 100,
+                                             test=app.config['TESTING'])
             return redirect(url_for('.process', query=query, source=source, limit=limit, sort=sort,
                                     noreviews=noreviews, expand=expand,
                                     jobid=job.id))
@@ -572,16 +579,15 @@ def search_terms():
 
 @app.route('/search_paper', methods=['POST'])
 def search_paper():
-    logger.info('/search_paper')
+    logger.info(f'/search_paper {log_request(request)}')
     data = request.form
     try:
         if 'source' in data and 'key' in data and 'value' in data:
             source = data.get('source')  # Pubmed or Semantic Scholar
-            logger.info(f'/search_paper {log_request(request)}')
             key = data.get('key')
             value = data.get('value')
             limit = data.get('limit')
-            job = find_paper_async.delay(source, key, value)
+            job = find_paper_async.delay(source, key, value, test=app.config['TESTING'])
             return redirect(url_for('.process', source=source, key=key, value=value, jobid=job.id, limit=limit))
         logger.error(f'/search_paper error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
@@ -590,22 +596,74 @@ def search_paper():
         return render_template_string(ERROR_OCCURRED), 500
 
 
+@app.route('/search_pubmed_paper_by_title', methods=['GET'])
+def search_pubmed_paper_by_title():
+    logger.info(f'/search_paper_by_title {log_request(request)}')
+    title = request.values.get('title')
+    try:
+        if title:
+            logger.info(f'/search_paper_by_title {log_request(request)}')
+            # Sync call
+            loader = Loaders.get_loader('Pubmed', PUBTRENDS_CONFIG)
+            ids = loader.find('title', title)
+            if not ids:
+                return json.dumps([])
+            papers = loader.load_publications(ids)
+            return json.dumps([
+                papers.to_dict(orient='records'),
+                [dict(references=loader.load_references(pid, 1000)) for pid in ids]
+            ])
+        logger.error(f'/search_paper_by_title error missing title {log_request(request)}')
+        return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
+    except Exception as e:
+        logger.error(f'/search_paper_by_title error', e)
+        return render_template_string(ERROR_OCCURRED), 500
+
+
 @app.route('/process_ids', methods=['POST'])
 def process_ids():
+    logger.info(f'/process_ids {log_request(request)}')
     source = request.form.get('source')  # Pubmed or Semantic Scholar
-    query = html.unescape(request.form.get('query'))  # Original search query
+    query = request.form.get('query')  # Original search query
     try:
         if source and query and 'id_list' in request.form:
             id_list = request.form.get('id_list').split(',')
             zoom = request.form.get('zoom')
             analysis_type = zoom_name(zoom)
-            job = analyze_id_list.delay(source, ids=id_list, zoom=int(zoom), query=query, limit=None)
-            logger.info(f'/process_ids {log_request(request)}')
+            job = analyze_id_list.delay(
+                source, ids=id_list, zoom=int(zoom), query=query, limit=None,
+                test=app.config['TESTING']
+            )
             return redirect(url_for('.process', query=query, analysis_type=analysis_type, source=source, jobid=job.id))
         logger.error(f'/process_ids error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception as e:
         logger.error(f'/process_ids error', e)
+        return render_template_string(ERROR_OCCURRED), 500
+
+
+@app.route('/export_data', methods=['GET'])
+def export_results():
+    logger.info(f'/export_data {log_request(request)}')
+    try:
+        jobid = request.values.get('jobid')
+        query = request.args.get('query')
+        source = request.args.get('source')
+        limit = request.args.get('limit')
+        sort = request.args.get('sort')
+        if jobid and query and source and limit and source:
+            data = load_predefined_or_result_data(jobid)
+            with tempfile.TemporaryDirectory() as tmpdir:
+                name = re.sub('_{2,}', '_',
+                              re.sub('["\':,. ]', '_', f'{source}_{query}_{sort}_{limit}'.lower())).strip('_')
+                path = os.path.join(tmpdir, f'{name}.json.gz')
+                with gzip.open(path, 'w') as f:
+                    f.write(json.dumps(data).encode('utf-8'))
+                return send_file(path, as_attachment=True)
+        logger.error(f'/export_results error {log_request(request)}')
+        return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
+    except Exception as e:
+        logger.error(f'/export_results error', e)
         return render_template_string(ERROR_OCCURRED), 500
 
 
@@ -666,6 +724,7 @@ def review():
 
 @app.route('/feedback', methods=['POST'])
 def feedback():
+    logger.info(f'/feedback {log_request(request)}')
     data = request.form
     if 'key' in data:
         key = data.get('key')

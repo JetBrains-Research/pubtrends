@@ -75,6 +75,9 @@ class MockLoader(Loader):
     def load_citations_by_year(self, ids=None):
         return pd.DataFrame(CITATION_STATS_DATA, columns=['id', 'year', 'count'])
 
+    def load_references(self, pid, limit):
+        raise Exception('Not implemented')
+
     def estimate_citations(self, ids):
         raise Exception('Not implemented')
 
@@ -109,6 +112,9 @@ class MockLoaderSingle(Loader):
         return pd.DataFrame([['1', 1972, 2], ['1', 1974, 15]],
                             columns=['id', 'year', 'count'])
 
+    def load_references(self, pid, limit):
+        raise Exception('Not implemented')
+
     def estimate_citations(self, ids):
         raise Exception('Not implemented')
 
@@ -134,6 +140,9 @@ class MockLoaderEmpty(Loader):
         raise Exception('Not implemented')
 
     def load_citations_by_year(self, ids):
+        raise Exception('Not implemented')
+
+    def load_references(self, pid, limit):
         raise Exception('Not implemented')
 
     def estimate_citations(self, ids):

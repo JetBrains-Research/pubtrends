@@ -3,7 +3,7 @@ import unittest
 from parameterized import parameterized
 
 from pysrc.papers.analyzer import KeyPaperAnalyzer
-from pysrc.papers.config import PubtrendsConfig
+from pysrc.papers.pubtrends_config import PubtrendsConfig
 from pysrc.test.mock_loaders import MockLoader
 from pysrc.test.test_analyzer import TestKeyPaperAnalyzer
 

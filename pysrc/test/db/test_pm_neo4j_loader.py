@@ -1,6 +1,8 @@
 import unittest
 
-from pysrc.papers.config import PubtrendsConfig
+from parameterized import parameterized
+
+from pysrc.papers.pubtrends_config import PubtrendsConfig
 from pysrc.papers.db.pm_neo4j_loader import PubmedNeo4jLoader
 from pysrc.papers.db.pm_neo4j_writer import PubmedNeo4jWriter
 from pysrc.test.db.abstract_test_pm_loader import AbstractTestPubmedLoader
@@ -52,6 +54,19 @@ class TestPubmedNeo4jLoader(unittest.TestCase, AbstractTestPubmedLoader):
 
     def getCoCitationsDataframe(self):
         return self.cocit_df
+
+    @parameterized.expand([
+        ('1', 1, []),
+        ('2', 10, ['1']),
+        ('3', 10, ['2']),
+        ('4', 10, ['3']),
+        ('7', 1, ['1']),
+        ('7', 2, ['1', '3']),
+        ('7', 10, ['1', '3', '2']),
+    ])
+    def test_load_references(self, pid, limit, expected_ids):
+        # TODO: fix me!
+        pass
 
     def test_expand(self):
         # TODO: fix me!

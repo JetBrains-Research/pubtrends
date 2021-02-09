@@ -70,7 +70,7 @@ class TestPlotPreprocessor(unittest.TestCase):
         self.assertFalse(np.any(ds.data['year'] == np.nan), 'NaN values in `year` column')
         self.assertFalse(np.any(ds.data['size'] == np.nan), 'NaN values in `size` column')
 
-        max_size = np.max(ds.data['size'])
+        max_size = ds.data['size'].max()
         max_width = max_size * (self.analyzer.max_year - self.analyzer.min_year + 1)
         self.assertLessEqual(max_width, width, 'Horizontal overlap')
 
@@ -87,7 +87,7 @@ class TestPlotPreprocessor(unittest.TestCase):
         self.assertFalse(np.any(ds.data['year'] == np.nan), 'NaN values in `year` column')
         self.assertFalse(np.any(ds.data['size'] == np.nan), 'NaN values in `size` column')
 
-        max_size = np.max(ds.data['size'])
+        max_size = ds.data['size'].max()
         max_width = max_size * (self.analyzer.max_year - self.analyzer.min_year + 1)
         self.assertLessEqual(max_width, width, 'Horizontal overlap')
 

@@ -140,6 +140,18 @@ class AbstractTestPubmedLoader(metaclass=ABCMeta):
         assert_frame_equal(EXPECTED_PUB_DF_GIVEN_IDS, self.getLoader().load_publications(ids_list),
                            "Wrong publications extracted", check_like=True)
 
+    @parameterized.expand([
+        ('1', 1, []),
+        ('2', 10, ['1']),
+        ('3', 10, ['2']),
+        ('4', 10, ['3']),
+        ('7', 1, ['1']),
+        ('7', 2, ['1', '3']),
+        ('7', 10, ['1', '3', '2']),
+    ])
+    def test_load_references(self, pid, limit, expected_ids):
+        self.assertEqual(self.getLoader().load_references(pid, limit), expected_ids)
+
     def test_expand(self):
         ids_list = list(map(lambda article: str(article.pmid), PART_OF_ARTICLES))
         actual = self.getLoader().expand(ids_list, 1000)

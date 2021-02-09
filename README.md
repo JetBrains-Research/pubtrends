@@ -22,7 +22,7 @@ Ensure that file contains correct information about the database(s) (url, port, 
 
     ```
     conda env create -f environment.yml
-    conda activate pubtrends
+    source activate pubtrends
     ```
 
     Workaround for "image not found" error during neo4j pip install on newest Mac OS Sierra:
@@ -191,11 +191,11 @@ Please ensure that you have Database configured, up and running.
     ```
     conda env create -f environment.yml
     ```
-    Enable environment by command `conda activate pubtrends`.
+    Enable environment by command `source activate pubtrends`.
 
 4. Download nltk & spacy resources
     ```
-    conda activate pubtrends
+    source activate pubtrends
     python -m nltk.downloader averaged_perceptron_tagger punkt stopwords wordnet
     python -m spacy download en_core_web_sm
     ```
@@ -237,16 +237,15 @@ Please ensure that you have Database configured, up and running.
 3. Python tests with codestyle check for development (including integration with Kotlin DB writers)
     
     ```
-    ./gradlew shadowJar; source activate pubtrends; pytest pysrc
+    source activate pubtrends; pytest pysrc
     ```
 
-4. All tests within Docker (please ignore point 1)
+4. Python tests within Docker (ensure that `./build/libs/pubtrends-dev.jar` file is present)
 
     ```
     docker run --rm --volume=$(pwd):/pubtrends -t biolabs/pubtrends /bin/bash -c \
     "/usr/lib/postgresql/12/bin/pg_ctl -D /home/user/postgres start; sudo neo4j start; \
     cd /pubtrends; mkdir ~/.pubtrends; cp config.properties ~/.pubtrends; \
-    ./gradlew test shadowJar; \
     source activate pubtrends; pytest pysrc"
     ```
 
@@ -337,6 +336,25 @@ Please ensure that you have configured and prepared the database(s).
     # inpect logs
     docker-compose logs
     ```
+# Migrate Postgresql database between instances
+
+1. Dump DB to file locally on the source machine
+    ```
+    pg_dump -h localhost -p 5432 -U biolabs -f pubtrendsdb -Z 9 -F d -j 4 pubtrends
+    ```
+
+2. Sync file between servers
+    ```
+    rsync -aivz --progress -e "ssh -i ssh_key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
+         user@host:/home/user/pubtrendsdb <local_path>
+    ```
+
+
+3. On the target machine restore DB from file
+    ```
+    pg_restore -h localhost -p 5432  -U biolabs -C -d pubtrends -F d <local_path>
+    ```
+
 
 # Authors
 
