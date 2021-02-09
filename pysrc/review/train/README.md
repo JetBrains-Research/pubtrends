@@ -33,7 +33,7 @@ These are the last steps. 16 and 17 are to look at MSE score and to understand, 
 - preprocess data
 
 ```bash
-preprobach.sh
+preprobatch.sh
 ```
 
 - run
