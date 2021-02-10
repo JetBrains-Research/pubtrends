@@ -5,7 +5,7 @@ import torch
 from lazy import lazy
 
 from pysrc.papers.analyzer import KeyPaperAnalyzer
-from pysrc.papers.config import PubtrendsConfig
+from pysrc.papers.pubtrends_config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.review.model import load_model
 from pysrc.review.text import text_to_data
