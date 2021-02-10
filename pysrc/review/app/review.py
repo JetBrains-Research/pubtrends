@@ -73,5 +73,5 @@ def generate_review(data, source, num_papers, num_sents, progress, task):
             choose_from.extend(zip(sents[magic:], draft_probs.cpu().detach().numpy()[magic:]))
         to_add = sorted(choose_from, key=lambda x: -x[1])[:int(num_sents)]
         for sent, score in to_add:
-            result.append([title, year, cited, topic, sent, url_prefix + pid, float(score)])
+            result.append([title, year, cited, topic, sent, url_prefix + pid, float("{:.2f}".format(score))])
     return result
