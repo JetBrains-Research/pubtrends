@@ -90,7 +90,7 @@ class Summarizer(nn.Module):
             self.decoder = Classifier(cfg.d_hidden + 50)
 
     def expand_posembs_ifneed(self):
-        logger.info(self.backbone.config.max_position_embeddings, self.article_len)
+        logger.info(f'Max embs{self.backbone.config.max_position_embeddings} Paper length {self.article_len}')
         if self.article_len > self.backbone.config.max_position_embeddings:
             logger.info("OK")
             old_maxlen = self.backbone.config.max_position_embeddings
