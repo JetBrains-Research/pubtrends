@@ -19,10 +19,6 @@ services:
     build:
       context: .
       dockerfile: pysrc/celery/Dockerfile
-    deploy:
-      resources:
-        limits:
-          memory: 6G
     depends_on:
       - redis
     volumes:
