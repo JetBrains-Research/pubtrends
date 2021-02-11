@@ -684,18 +684,16 @@ def generate_review():
         num_papers = request.args.get('papers_number')
         num_sents = request.args.get('sents_number')
         if jobid:
-            job = AsyncResult(jobid, app=celery)
-            if job and job.state == 'SUCCESS':
-                _, data, _ = job.result
+            data = load_predefined_or_result_data(jobid)
+            if data is not None:
                 job = prepare_review_data_async.delay(data, source, num_papers, num_sents)
                 return redirect(url_for('.process', analysis_type=REVIEW_ANALYSIS_TITLE, jobid=job.id,
-                                    query=query, source=source, limit=limit, sort=sort))
+                                        query=query, source=source, limit=limit, sort=sort))
         logger.error(f'/result error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception as e:
         logger.error(f'/generate_review error', e)
         return render_template_string(ERROR_OCCURRED), 500
-
 
 
 @app.route('/review')
