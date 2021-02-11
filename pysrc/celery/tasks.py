@@ -26,6 +26,7 @@ def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, e
     config = PubtrendsConfig(test=test)
     loader = Loaders.get_loader(source, config)
     analyzer = KeyPaperAnalyzer(loader, config)
+    analyzer.progress.info('Analyzing search query', current=0, task=current_task)
     try:
         sort = sort or SORT_MOST_CITED
         limit = limit or analyzer.config.show_max_articles_default_value
@@ -59,6 +60,7 @@ def analyze_id_list(source, ids, zoom, query, limit=None, test=False):
     config = PubtrendsConfig(test=test)
     loader = Loaders.get_loader(source, config)
     analyzer = KeyPaperAnalyzer(loader, config)
+    analyzer.progress.info('Analyzing list of papers', current=0, task=current_task)
     try:
         if zoom == ZOOM_OUT:
             ids = analyzer.expand_ids(

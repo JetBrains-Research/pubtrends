@@ -43,7 +43,7 @@ MODEL_CACHE = ModelCache()
 
 
 def generate_review(data, source, num_papers, num_sents, progress, task):
-    progress.info(f'Initializing analyzer for review', current=1, task=task)
+    progress.info(f'Generating review', current=1, task=task)
     loader, url_prefix = Loaders.get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
     analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
     analyzer.init(data)
