@@ -1,14 +1,13 @@
 import os
 
-import html
 from celery import Celery, current_task
 
 from pysrc.papers.analyzer import KeyPaperAnalyzer
-from pysrc.papers.pubtrends_config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plotter import visualize_analysis
 from pysrc.papers.progress import Progress
+from pysrc.papers.pubtrends_config import PubtrendsConfig
 from pysrc.papers.utils import SORT_MOST_CITED, ZOOM_OUT, PAPER_ANALYSIS
 from pysrc.review.app.review import generate_review
 
