@@ -122,7 +122,7 @@
             const url = '/generate_review?query=' + normalize('{{ query }}') + '&source={{source}}&limit={{limit}}&sort={{sort}}';
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
-            window.open(url + '&papers_number=' + papersNumber + '&sents_number=' + sentsNumber + '&jobid=' + jobid, '_blank');
+            window.open(url + '&jobid=' + jobid + '&papers_number=' + papersNumber + '&sents_number=' + sentsNumber, '_blank');
         }
 
         $(document).ready(function () {
@@ -946,7 +946,7 @@
                                    aria-describedby="number-papers-addon"
                                    autofocus required>
                         </div>
-                        <div class="col input-group">
+                        <div class="col input-group ml-2">
                             <div class="input-group-prepend">
                                 <span class="input-group-text" id="number-of-sents-addon">Sentences each</span>
                             </div>
@@ -957,9 +957,9 @@
                                    autofocus required>
                         </div>
                     </div>
-                    <button type="button" class="btn btn-primary" onclick="(function(){
-                                review_callback(document.getElementById('papers-input').value,document.getElementById('sents-input').value);
-                            })();">Generate review</button>
+                    <button type="button" class="btn btn-secondary" onclick="(function(){
+                                review_callback($('#papers-input').val(), $('#sents-input').val());
+                            })();">Generate</button>
                     <div class="mt-3">
                         <small class="text-muted">Was this useful?</small>
                         <div id="feedback-review" class="btn-group-horizontal">
