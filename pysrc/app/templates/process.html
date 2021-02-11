@@ -58,7 +58,6 @@
                         $('#status').html(response.message);
                         setTimeout(check_status, TIMEOUT);
                     } else if (response.state !== undefined) {
-                        $('#status').html('Analyzing...');
                         $('#progress').show();
                         if (last_progress !== response.progress) {
                             $('.progress-bar').css('width', response.progress + '%').attr('aria-valuenow', response.progress);
