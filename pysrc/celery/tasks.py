@@ -3,12 +3,13 @@ import os
 from celery import Celery, current_task
 
 from pysrc.papers.analyzer import KeyPaperAnalyzer
-from pysrc.papers.pubtrends_config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plotter import visualize_analysis
 from pysrc.papers.progress import Progress
+from pysrc.papers.pubtrends_config import PubtrendsConfig
 from pysrc.papers.utils import SORT_MOST_CITED, ZOOM_OUT, PAPER_ANALYSIS
+from pysrc.review.app.review import generate_review
 
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379'),
 CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379')
@@ -24,6 +25,7 @@ def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, e
     config = PubtrendsConfig(test=test)
     loader = Loaders.get_loader(source, config)
     analyzer = KeyPaperAnalyzer(loader, config)
+    analyzer.progress.info('Analyzing search query', current=0, task=current_task)
     try:
         sort = sort or SORT_MOST_CITED
         limit = limit or analyzer.config.show_max_articles_default_value
@@ -57,6 +59,7 @@ def analyze_id_list(source, ids, zoom, query, limit=None, test=False):
     config = PubtrendsConfig(test=test)
     loader = Loaders.get_loader(source, config)
     analyzer = KeyPaperAnalyzer(loader, config)
+    analyzer.progress.info('Analyzing list of papers', current=0, task=current_task)
     try:
         if zoom == ZOOM_OUT:
             ids = analyzer.expand_ids(
@@ -110,3 +113,11 @@ def find_paper_async(source, key, value, test=False):
             raise SearchError('Found multiple papers matching your search, please try to be more specific')
     finally:
         loader.close_connection()
+
+
+@celery.task(name='prepare_review_data_async')
+def prepare_review_data_async(data, source, num_papers, num_sents):
+    progress = Progress(total=5)
+    result = generate_review(data, source, num_papers, num_sents, progress=progress, task=current_task)
+    progress.done('Done review', task=current_task)
+    return result

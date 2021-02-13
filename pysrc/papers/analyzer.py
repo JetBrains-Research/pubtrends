@@ -1,12 +1,12 @@
 import logging
 from collections import Counter
-from math import floor
 from queue import PriorityQueue
 
 import community
 import networkx as nx
 import numpy as np
 import pandas as pd
+from math import floor
 from networkx.readwrite import json_graph
 
 from pysrc.papers.db.loaders import Loaders
@@ -700,8 +700,7 @@ class KeyPaperAnalyzer:
         max_rel_gain_df = pd.DataFrame(max_rel_gain_data,
                                        columns=['year', 'id', 'title', 'authors',
                                                 'paper_year', 'rel_gain'])
-        max_rel_gain_papers = set(max_rel_gain_df['id'].values)
-        return max_rel_gain_papers, max_rel_gain_df
+        return list(max_rel_gain_df['id'].values), max_rel_gain_df
 
     @staticmethod
     def merge_components(partition, topic_min_size, max_topics_number):
@@ -978,7 +977,7 @@ class KeyPaperAnalyzer:
         }
 
     def init(self, fields):
-        logger.debug(f'Loading\n{fields}')
+        # logger.debug(f'Loading\n{fields}')
         loaded = KeyPaperAnalyzer.load(fields)
         logger.debug(f'Loaded\n{loaded}')
         self.df = loaded['df']

@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>{{query}} at {{source}} {{limit}} {{sort}}{{ search_string }} - PubTrends</title>
+    <title>PubTrends - {{query}} at {{source}} {{limit}} {{sort}}</title>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet"
           href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
           integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
@@ -22,47 +21,36 @@
             crossorigin="anonymous"></script>
     <script src="https://cdn.pydata.org/bokeh/release/bokeh-1.2.0.min.js"></script>
     <script src="https://cdn.pydata.org/bokeh/release/bokeh-widgets-1.2.0.min.js"></script>
-    <!-- DataTables with search -->
-    <script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.10.21/js/dataTables.bootstrap4.min.js"></script>
-    <link href="https://cdn.datatables.net/1.10.21/css/dataTables.bootstrap4.min.css"
-          rel="stylesheet" type="text/css">
-    <!-- DataTables search highlight -->
-    <script src="https://cdn.jsdelivr.net/g/mark.js(jquery.mark.min.js)"></script>
-    <script src="https://cdn.datatables.net/plug-ins/1.10.13/features/mark.js/datatables.mark.js"></script>
-    <link href="https://cdn.datatables.net/plug-ins/1.10.13/features/mark.js/datatables.mark.min.css"
-          type="text/css">
-
     <link href="https://cdn.pydata.org/bokeh/release/bokeh-1.2.0.min.css"
           rel="stylesheet" type="text/css">
     <link href="https://cdn.pydata.org/bokeh/release/bokeh-widgets-1.2.0.min.css"
           rel="stylesheet" type="text/css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1"/>
-    <!--         <link rel="stylesheet" href="../static/style.css"/>-->
-    <link rel="stylesheet" href="{{ url_for('static', filename='result.css') }}?v=1"/>
-    <!--         <link rel="stylesheet" href="../static/result.css"/>-->
-    <script src="{{ url_for('static', filename='text_utils.js') }}"></script>
-    <!--<script src="../../static/text_utils.js"/>-->
+    <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.20/js/dataTables.bootstrap4.min.js"></script>
+    <link href="https://cdn.datatables.net/1.10.20/css/dataTables.bootstrap4.min.css"
+          rel="stylesheet" type="text/css">
 
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1"/>
+    <!--     <link rel="stylesheet" href="../static/style.css"/> -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='result.css') }}?v=1"/>
+    <!--     <link rel="stylesheet" href="../static/result.css"/> -->
     <script>
         "use strict";
+        
         let table;
-        $(document).ready(function () {
-            // Mark search by default in datatables
-            $.extend(true, $.fn.dataTable.defaults, {
-                mark: true
-            });
-
-            table = $('#papers').DataTable();
-        });
+        
+        $(document).ready(function() {
+            table = $('#result_review').DataTable();
+        } );
 
         function result() {
-            const url = '/result?query=' + normalize('{{ query }}') + '&source={{source}}&limit={{limit}}&sort={{sort}}';
+            
+            const url = '/result?query={{query}}&source={{source}}&limit=related&sort=papers';
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
             window.open(url + '&jobid=' + jobid, '_blank');
         }
-
+        
         function process_text(text) {
             // numeric, ^ and $ are important here for exact match
             if (/^-?[0-9]+(\.[0-9]+)?([eE]-?[0-9]+)$/.test(text)) {
@@ -80,7 +68,7 @@
             // Use this jquery API till DataTables 2.0 is out
             let i = 0;  // Columns counter
             let headerProcessed = false;
-            $('#papers').find('tr').each(function () {
+            $('#result_review').find('tr').each(function () {
                 if (headerProcessed) {
                     return;
                 }
@@ -135,72 +123,82 @@
 <!-- Fixed navbar -->
 <nav class="navbar navbar-light bg-light fixed-top border-bottom">
     <div class="row container-fluid">
-        <div class="d-none d-xl-block d-lg-block col-lg-1 col-xl-1 no-padding"></div>
-        <div class="col-lg-1 col-xl-1 no-padding-left">
+        <div class="col-lg-1 col-xl-2 no-padding">
             <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
         </div>
-        <div class="col-lg-10 col-xl-10 no-padding">
-            <ol class="breadcrumb bg-light search-query">
-                <li class="breadcrumb-item">{{ source }}</li>
-                <li class="breadcrumb-item">
-                    <a href="javascript:void(0);" class="link" onclick="result();"><strong>{{ query }}</strong></a>
-                </li>
-                <li class="breadcrumb-item">{{ limit }} {{ sort }}</li>
-                {% if search_string %}
-                <li class="breadcrumb-item">{{ search_string }}</li>
-                {% endif %}
-            </ol>
+        <div class="col-lg-11 col-xl-10 no-padding">
+                <div class="row ml-3">
+                    <ol class="breadcrumb bg-light search-query col-auto">
+                        <li class="breadcrumb-item vertical-center">{{ source }}</li>
+                        <li class="breadcrumb-item vertical-center">
+                            <a id="result" href="javascript:void(0);" class="link" onclick="result();"><strong>{{ query }}</strong></a>
+                        </li>
+                        <li class="breadcrumb-item vertical-center">{{ limit }} {{ sort }}</li>
+                    </ol>
+                </div>
         </div>
     </div>
 </nav>
 
 <div class="container-fluid">
-    <div class="row">
-        <div class="d-none d-xl-block d-lg-block col-lg-1 col-xl-1 no-padding"></div>
-        <main class="col-lg-10 col-xl-10" role="main">
-            <div class="mt-3">
-                <table id="papers" class="table table-sm table-bordered table-striped">
-                    <thead>
-                    <tr>
-                        <th scope="col">#</th>
-                        <th scope="col">Title</th>
-                        <th scope="col">Authors</th>
-                        <th scope="col">Journal</th>
-                        <th scope="col">Year</th>
-                        <th scope="col">Id</th>
-                        <th scope="col">Doi</th>
-                        <th scope="col">Cited</th>
-                        <th scope="col">Topic</tr>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {% for id, title, authors, url, journal, year, total, doi, topic in papers %}
-                    <tr>
-                        <th scope="row">{{ loop.index }}</th>
-                        <td>{{ title }}</td>
-                        <td>{{ authors }}</td>
-                        <td>{{ journal }}</td>
-                        <td>{{ year }}</td>
-                        <td><a class="link" href="{{ url }}" title="Open in {{ source }}">{{ id }}</a></td>
-                        <td>
-                            {% if doi != "" %}
-                            <a class="link" href="https://doi.org/{{doi}}">{{ doi }}</a>
-                            {% endif %}
-                        </td>
-                        <td>{{ total }}</td>
-                        <td>{{ topic }}</td>
-                    </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
+    <div class="row ">
+    <nav class="d-none d-xl-block d-lg-block col-lg-1 col-xl-2 sidebar no-padding">
+    </nav>
+
+    <!-- Main content -->
+    <main class="col-lg-10 col-xl-8" role="main">
+        <div class="content">
+            <div class="card mt-3">
+                <div class="card-title" id="result-review">
+                    <h1 class="card-header">Result review</h1>
+                </div>
+                <div class="card-body">
+                    <p>
+                        This table shows the resulting review - a set of sentences from top cited papers <br>
+                        with the highest probability to be included in a real review.<br>
+                        The higher score the better sentence.
+                    </p>
+                    <br>
+                    <table id="result_review" class="table table-sm table-bordered table-striped">
+                        <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Paper</th>
+                            <th scope="col">Year</th>
+                            <th scope="col">Cited</th>
+                            <th scope="col">Topic</th>
+                            <th scope="col">Sentence</th>
+                            <th scope="col">Score</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for title, year, cited, topic, sent, url, score in review_array %}
+                        <tr>
+                            <th scope="row">{{ loop.index }}</th>
+                            <td>
+                                <a class="link" href="{{ url }}" title="Open in {{ source }}">
+                                    {{ title }}
+                                </a>
+                            </td>
+                            <td>{{ year }}</td>
+                            <td>{{ cited }}</td>
+                            <td>{{ topic }}</td>
+                            <td>{{ sent }}</td>
+                            <td>{{ score }}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            <button type="button" class="mt-3 btn btn-primary" onclick="export_to_csv();">Export to CSV</button>
-        </main>
-        <div class="d-none d-xl-block d-lg-block col-lg-1 col-xl-1 "></div>
-    </div>
+        </div>
+        <button type="button" class="mt-3 btn btn-primary" onclick="export_to_csv();">Export to CSV</button>
+    </main>
+
+    <!--Right alignment-->
+    <div class="d-none d-xl-block col-xl-2"></div>
 </div>
-
-
+</div>
 <footer>
     <p>version {{ version }}<br/>
         &copy; 2019-2020 <a href="https://research.jetbrains.org/groups/biolabs"

@@ -24,6 +24,8 @@ services:
     volumes:
       - ~/.pubtrends:/config:ro
       - ~/.pubtrends/logs:/logs
+      - ~/.pubtrends/model:/model:ro
+      - ~/.pubtrends/.cache:/home/user/.cache
   redis:
     image: redis:5.0
 

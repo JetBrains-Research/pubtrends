@@ -1,8 +1,8 @@
 import logging
-import math
 import re
 from collections import Counter
 
+import math
 import pandas as pd
 import spacy
 from nltk.stem import WordNetLemmatizer
@@ -96,8 +96,8 @@ def extract_metrics(text, visualize_dependencies=False):
     # Split text into sentences and find numbers in sentences
     doc = spacy_en(text)
     for idx, sent in enumerate(doc.sents):
-        # logging.debug('###')
-        # logging.debug(sent.text)
+        # # logging.debug('###')
+        # # logging.debug(sent.text)
         sentences[idx] = sent.text
         for token in sent:
             #             print(token.text, token.pos_, list(token.ancestors))

@@ -10,6 +10,9 @@ ENV C_FORCE_ROOT true
 COPY . /home/user/
 WORKDIR /home/user/
 
+# Download all the nltk resources
+RUN source activate pubtrends && python pysrc/papers/utils.py
+
 # Launch celery workers
 ENTRYPOINT source activate pubtrends \
     && celery -A pysrc.celery.tasks worker -c 3 --loglevel=info --logfile=/logs/celery.log

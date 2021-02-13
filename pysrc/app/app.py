@@ -21,7 +21,8 @@ from flask_sqlalchemy import SQLAlchemy
 
 from pysrc.app.admin.feedback import prepare_feedback_data
 from pysrc.app.admin.stats import prepare_stats_data
-from pysrc.celery.tasks import celery, find_paper_async, analyze_search_terms, analyze_id_list
+from pysrc.celery.tasks import celery, find_paper_async, analyze_search_terms, analyze_id_list, \
+    prepare_review_data_async
 from pysrc.celery.tasks_cache import get_or_cancel_task
 from pysrc.papers.analyzer import KeyPaperAnalyzer
 from pysrc.papers.pubtrends_config import PubtrendsConfig
@@ -30,7 +31,8 @@ from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.paper import prepare_paper_data, prepare_papers_data
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.plot.plotter import Plotter
-from pysrc.papers.utils import zoom_name, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE, trim, ZOOM_OUT_TITLE
+from pysrc.papers.utils import zoom_name, trim, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE, ZOOM_OUT_TITLE
+from pysrc.review.app.review import REVIEW_ANALYSIS_TITLE
 from pysrc.version import VERSION
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
@@ -65,7 +67,6 @@ for p in PREDEFINED_PATHS:
 else:
     raise RuntimeError('Failed to configure predefined searches dir')
 PREDEFINED_LOCK = Lock()
-
 
 logging.basicConfig(filename=logfile,
                     filemode='a',
@@ -304,7 +305,22 @@ def process():
                                    query=trim(query, MAX_QUERY_LENGTH), source=source,
                                    redirect_page="paper",  # redirect in case of success
                                    jobid=jobid, version=VERSION)
-        elif query:
+
+        elif analysis_type == REVIEW_ANALYSIS_TITLE:
+            logger.info(f'/process review {log_request(request)}')
+            limit = request.args.get('limit')
+            sort = request.args.get('sort')
+            return render_template('process.html',
+                                   redirect_args={
+                                       'query': quote(query), 'source': source,
+                                       'limit': limit, 'sort': sort,
+                                       'jobid': jobid},
+                                   query=trim(query, MAX_QUERY_LENGTH), source=source,
+                                   limit=limit, sort=sort,
+                                   redirect_page="review",  # redirect in case of success
+                                   jobid=jobid, version=VERSION)
+
+        elif query:  # This option should be the last default
             logger.info(f'/process regular search {log_request(request)}')
             limit = request.args.get('limit')
             sort = request.args.get('sort')
@@ -318,6 +334,7 @@ def process():
                                    limit=limit, sort=sort,
                                    redirect_page="result",  # redirect in case of success
                                    jobid=jobid, version=VERSION)
+
     logger.error(f'/process error {log_request(request)}')
     return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
 
@@ -648,6 +665,60 @@ def export_results():
     except Exception as e:
         logger.error(f'/export_results error', e)
         return render_template_string(ERROR_OCCURRED), 500
+
+
+#######################
+# Review functionality #
+#######################
+
+
+@app.route('/generate_review')
+def generate_review():
+    logger.info(f'/generate_review {log_request(request)}')
+    try:
+        jobid = request.args.get('jobid')
+        query = request.args.get('query')
+        source = request.args.get('source')
+        limit = request.args.get('limit')
+        sort = request.args.get('sort')
+        num_papers = request.args.get('papers_number')
+        num_sents = request.args.get('sents_number')
+        if jobid:
+            data = load_predefined_or_result_data(jobid)
+            if data is not None:
+                job = prepare_review_data_async.delay(data, source, num_papers, num_sents)
+                return redirect(url_for('.process', analysis_type=REVIEW_ANALYSIS_TITLE, jobid=job.id,
+                                        query=query, source=source, limit=limit, sort=sort))
+        logger.error(f'/result error {log_request(request)}')
+        return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
+    except Exception as e:
+        logger.error(f'/generate_review error', e)
+        return render_template_string(ERROR_OCCURRED), 500
+
+
+@app.route('/review')
+def review():
+    jobid = request.args.get('jobid')
+    query = request.args.get('query')
+    source = request.args.get('source')
+    limit = request.args.get('limit')
+    sort = request.args.get('sort')
+    if jobid:
+        job = AsyncResult(jobid, app=celery)
+        if job and job.state == 'SUCCESS':
+            review_res = job.result
+            export_name = re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{query}_review'.lower().strip('_')))
+            return render_template('review.html',
+                                   query=trim(query, MAX_QUERY_LENGTH),
+                                   source=source,
+                                   limit=limit,
+                                   sort=sort,
+                                   version=VERSION,
+                                   review_array=review_res,
+                                   export_name=export_name)
+    else:
+        logger.error(f'/result error {log_request(request)}')
+        return render_template_string("Something went wrong..."), 400
 
 
 #######################

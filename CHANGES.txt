@@ -3,6 +3,14 @@ Pubtrends changelog
 
 Here you can see the full list of changes between each release.
 
+
+Version 0.11
+------------
+Released on XXX XX, 2021
+
+ - Model from the paper [Automatic generation of reviews of scientific papers](https://arxiv.org/abs/2010.04147) is deployed. \\
+ It collects a set of sentences from top cited papers abstracts with the highest probability to be included in a real review.
+
 Version 0.10
 -------------
 

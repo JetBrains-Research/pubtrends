@@ -118,6 +118,13 @@
             window.open(url + '&jobid=' + jobid, '_blank');
         }
 
+        function review_callback(papersNumber, sentsNumber) {
+            const url = '/generate_review?query=' + normalize('{{ query }}') + '&source={{source}}&limit={{limit}}&sort={{sort}}';
+            // Decode jobid from URL
+            const jobid = new URL(window.location).searchParams.get('jobid');
+            window.open(url + '&jobid=' + jobid + '&papers_number=' + papersNumber + '&sents_number=' + sentsNumber, '_blank');
+        }
+
         $(document).ready(function () {
             // Mark search by default in datatables
             $.extend(true, $.fn.dataTable.defaults, {
@@ -281,6 +288,14 @@
                         </a>
                         <a class="nav-link d-none d-xl-block no-padding" href="#evolution">
                             Evolution
+                        </a>
+                    </li>
+                    <li class="nav-item row">
+                        <a class="nav-link no-padding-right" href="#review" title="Review">
+                            <img class="nav-icon" src="{{ url_for('static', filename='list.svg') }}"/>
+                        </a>
+                        <a class="nav-link d-none d-xl-block no-padding" href="#review">
+                            Review
                         </a>
                     </li>
                     <li class="nav-item row">
@@ -908,6 +923,60 @@
                     {% else %}
                     Failed to analyze topic evolution because year step is too big.
                     {% endif %}
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-title" id="review">
+                    <h1 class="card-header">Review</h1>
+                </div>
+                <div class="card-body">
+                    <p>
+                        Generate a review for the chosen topic - a set of sentences from top cited papers <br>
+                        with the highest probability to be included in a real review paper.
+                    </p>
+                    <div class="row no-gutters align-items-center mb-3">
+                        <div class="col input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="number-papers-addon">Number of papers</span>
+                            </div>
+                            <input class="form-control form-control-borderless" type="number"
+                                   name="number-papers" id="papers-input"
+                                   value="10"
+                                   aria-describedby="number-papers-addon"
+                                   autofocus required>
+                        </div>
+                        <div class="col input-group ml-2">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="number-of-sents-addon">Sentences each</span>
+                            </div>
+                            <input class="form-control form-control-borderless" type="number"
+                                   name="number-of-sents" id="sents-input"
+                                   value="1"
+                                   aria-describedby="number-of-sents-addon"
+                                   autofocus required>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-secondary" onclick="(function(){
+                                review_callback($('#papers-input').val(), $('#sents-input').val());
+                            })();">Generate</button>
+                    <div class="mt-3">
+                        <small class="text-muted">Was this useful?</small>
+                        <div id="feedback-review" class="btn-group-horizontal">
+                            <button type="button" class="btn btn-sm btn-feedback-yes"
+                                    onclick="feedback(this, 1)">
+                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-feedback-meh"
+                                    onclick="feedback(this, 0)">
+                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-feedback-no"
+                                    onclick="feedback(this, -1)">
+                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
