@@ -3,7 +3,6 @@ from collections import Counter
 from queue import PriorityQueue
 
 import community
-import html
 import networkx as nx
 import numpy as np
 import pandas as pd
