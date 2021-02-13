@@ -9,10 +9,10 @@ def preprocess_text(text, max_len, tokenizer):
     sents = [[tokenizer.artBOS.tkn] + tokenizer.tokenize(sent) + [tokenizer.artEOS.tkn]
              for sent in text]
     ids, segments, segment_signature = [], [], 0
-    n_setns = 0
+    n_sents = 0
     for s in sents:
         if len(ids) + len(s) <= max_len:
-            n_setns += 1
+            n_sents += 1
             ids.extend(tokenizer.convert_tokens_to_ids(s))
             segments.extend([segment_signature] * len(s))
             segment_signature = (segment_signature + 1) % 2
@@ -25,7 +25,7 @@ def preprocess_text(text, max_len, tokenizer):
     mask += [0] * pad_len
     segments += [segment_signature] * pad_len
 
-    return ids, mask, segments, n_setns
+    return ids, mask, segments, n_sents
 
 
 def text_to_data(text, max_len, tokenizer):
