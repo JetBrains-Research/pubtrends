@@ -13,10 +13,13 @@ from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.extract_numbers import extract_metrics, MetricExtractor
 from pysrc.papers.progress import Progress
+from pysrc.papers.pubtrends_config import PubtrendsConfig
 from pysrc.papers.utils import split_df_list, get_topics_description, SORT_MOST_CITED, \
     compute_tfidf, cosine_similarity, vectorize_corpus, tokens_stems, get_evolution_topics_description
 
 logger = logging.getLogger(__name__)
+
+PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
 
 class KeyPaperAnalyzer:
@@ -286,29 +289,34 @@ class KeyPaperAnalyzer:
             self.df, self.citation_years
         )
 
-        self.progress.info("Finding popular journals", current=18, task=task)
-        self.journal_stats = self.popular_journals(self.df)
+        # Additional analysis steps
+        if PUBTRENDS_CONFIG.feature_authors_enabled:
+            self.progress.info("Finding popular authors", current=18, task=task)
+            self.author_stats = self.popular_authors(self.df)
 
-        self.progress.info("Finding popular authors", current=19, task=task)
-        self.author_stats = self.popular_authors(self.df)
+        if PUBTRENDS_CONFIG.feature_journals_enabled:
+            self.progress.info("Finding popular journals", current=19, task=task)
+            self.journal_stats = self.popular_journals(self.df)
 
-        if len(self.df) >= 0:
-            logger.debug('Perform numbers extraction')
-            self.progress.info('Extracting numbers from publication abstracts', current=20, task=task)
-            self.numbers_df = self.extract_numbers(self.df)
-        else:
-            logger.debug('Not enough papers for numbers extraction')
+        if PUBTRENDS_CONFIG.feature_numbers_enabled:
+            if len(self.df) >= 0:
+                logger.debug('Perform numbers extraction')
+                self.progress.info('Extracting numbers from publication abstracts', current=20, task=task)
+                self.numbers_df = self.extract_numbers(self.df)
+            else:
+                logger.debug('Not enough papers for numbers extraction')
 
-        if len(self.df) >= KeyPaperAnalyzer.EVOLUTION_MIN_PAPERS:
-            logger.debug('Perform topic evolution analysis and get topic descriptions')
-            self.evolution_df, self.evolution_year_range = \
-                self.topic_evolution_analysis(self.cocit_df, current=21, task=task)
-            self.evolution_kwds = self.topic_evolution_descriptions(
-                self.df, self.evolution_df, self.evolution_year_range, current=21, task=task
-            )
-        else:
-            logger.debug('Not enough papers for topics evolution')
-            self.evolution_df = None
+        if PUBTRENDS_CONFIG.feature_evolution_enabled:
+            if len(self.df) >= KeyPaperAnalyzer.EVOLUTION_MIN_PAPERS:
+                logger.debug('Perform topic evolution analysis and get topic descriptions')
+                self.evolution_df, self.evolution_year_range = \
+                    self.topic_evolution_analysis(self.cocit_df, current=21, task=task)
+                self.evolution_kwds = self.topic_evolution_descriptions(
+                    self.df, self.evolution_df, self.evolution_year_range, current=21, task=task
+                )
+            else:
+                logger.debug('Not enough papers for topics evolution')
+                self.evolution_df = None
 
     @staticmethod
     def build_cit_stats_df(cits_by_year_df, n_papers):

@@ -57,3 +57,11 @@ class PubtrendsConfig:
 
         # TODO Admin password - should be a better way
         self.admin_password = params['admin_password']
+
+        # Additional modules configuration
+        self.feature_authors_enabled = params.getboolean('feature_authors_enabled')
+        self.feature_journals_enabled = params.getboolean('feature_journals_enabled')
+        self.feature_numbers_enabled = params.getboolean('feature_numbers_enabled')
+        self.feature_evolution_enabled = params.getboolean('feature_evolution_enabled')
+        self.feature_review_enabled = params.getboolean('feature_review_enabled')
+

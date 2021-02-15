@@ -228,6 +228,7 @@
                             Overview
                         </a>
                     </li>
+
                     {% if topics_analyzed %}
                     <li class="nav-item row">
                         <a class="nav-link no-padding-right" href="#highlights" title="Highlights">
@@ -270,6 +271,8 @@
                         </a>
                     </li>
                     {% endif %}
+
+                    {% if feature_authors_enabled %}
                     <li class="nav-item row">
                         <a class="nav-link no-padding-right" href="#authors" title="Authors">
                             <img src="{{ url_for('static', filename='users.svg') }}"/>
@@ -278,6 +281,9 @@
                             Authors
                         </a>
                     </li>
+                    {% endif %}
+
+                    {% if feature_journals_enabled %}
                     <li class="nav-item row">
                         <a class="nav-link no-padding-right" href="#journals" title="Journals">
                             <img class="nav-icon" src="{{ url_for('static', filename='book-open.svg') }}"/>
@@ -286,6 +292,9 @@
                             Journals
                         </a>
                     </li>
+                    {% endif %}
+
+                    {% if feature_numbers_enabled %}
                     <li class="nav-item row">
                         <a class="nav-link no-padding-right" href="#numbers" title="Numbers">
                             <img src="{{ url_for('static', filename='hash.svg') }}"/>
@@ -294,6 +303,9 @@
                             Numbers
                         </a>
                     </li>
+                    {% endif %}
+
+                    {% if feature_evolution_enabled %}
                     <li class="nav-item row">
                         <a class="nav-link no-padding-right" href="#evolution" title="Evolution">
                             <img src="{{ url_for('static', filename='compass.svg') }}"/>
@@ -302,6 +314,9 @@
                             Evolution
                         </a>
                     </li>
+                    {% endif %}
+
+                    {% if feature_review_enabled %}
                     <li class="nav-item row">
                         <a class="nav-link no-padding-right" href="#review" title="Review">
                             <img class="nav-icon" src="{{ url_for('static', filename='list.svg') }}"/>
@@ -310,6 +325,7 @@
                             Review
                         </a>
                     </li>
+                    {% endif %}
                     <li class="nav-item row">
                         <a class="nav-link no-padding-right" href="#feedback" title="Feedback">
                             <img class="nav-icon" src="{{ url_for('static', filename='edit.svg') }}"/>
@@ -619,6 +635,7 @@
             </div>
             {% endif %}
 
+            {% if feature_authors_enabled is defined %}
             <div class="card mt-3">
                 <div class="card-title" id="authors">
                     <h1 class="card-header">Authors</h1>
@@ -658,7 +675,9 @@
                     <div class="mt-3" id="feedback-authors-form"></div>
                 </div>
             </div>
+            {% endif %}
 
+            {% if feature_journals_enabled %}
             <div class="card mt-3">
                 <div class="card-title" id="journals">
                     <h1 class="card-header">Journals</h1>
@@ -698,7 +717,9 @@
                     <div class="mt-3" id="feedback-journals-form"></div>
                 </div>
             </div>
+            {% endif %}
 
+            {% if feature_numbers_enabled %}
             <div class="card mt-3">
                 <div class="card-title" id="numbers">
                     <h1 class="card-header">Numbers</h1>
@@ -731,7 +752,9 @@
                     <div class="mt-3" id="feedback-numbers-form"></div>
                 </div>
             </div>
+            {% endif %}
 
+            {% if feature_evolution_enabled %}
             <div class="card mt-3">
                 <div class="card-title" id="evolution">
                     <h1 class="card-header">Topic Evolution</h1>
@@ -777,7 +800,9 @@
                     {% endif %}
                 </div>
             </div>
+            {% endif %}
 
+            {% if feature_review_enabled %}
             <div class="card mt-3">
                 <div class="card-title" id="review">
                     <h1 class="card-header">Review</h1>
@@ -815,6 +840,7 @@
                     <div class="mt-3" id="feedback-review-form"></div>
                 </div>
             </div>
+            {% endif %}
 
             <div class="card mt-3">
                 <div class="card-title" id="feedback">

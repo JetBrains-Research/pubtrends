@@ -20,6 +20,7 @@ from wordcloud import WordCloud
 
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
+from pysrc.papers.pubtrends_config import PubtrendsConfig
 from pysrc.papers.utils import LOCAL_BASE_URL, get_topic_word_cloud_data, \
     get_frequent_tokens, cut_authors_list, ZOOM_OUT, ZOOM_IN, zoom_name, trim, rgb2hex, MAX_TITLE_LENGTH
 
@@ -27,6 +28,8 @@ TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
 hv.extension('bokeh')
 
 logger = logging.getLogger(__name__)
+
+PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
 MAX_AUTHOR_LENGTH = 100
 MAX_JOURNAL_LENGTH = 100
@@ -49,50 +52,67 @@ def visualize_analysis(analyzer):
     plotter = Plotter(analyzer=analyzer)
     # Order is important here!
     paper_statistics, word_cloud, zoom_out_callback = plotter.papers_statistics_and_word_cloud_and_callback()
-    result = {
-        'topics_analyzed': False,
-        'n_papers': analyzer.n_papers,
-        'n_citations': int(analyzer.df['total'].sum()),
-        'n_topics': 0,
-        'top_cited_papers': [components(plotter.top_cited_papers())],
-        'most_cited_per_year_papers': [components(plotter.most_cited_per_year_papers())],
-        'fastest_growth_per_year_papers': [components(plotter.fastest_growth_per_year_papers())],
-        'papers_stats': [components(paper_statistics)],
-        'papers_word_cloud': Plotter.word_cloud_prepare(word_cloud),
-        'papers_zoom_out_callback': zoom_out_callback,
-        'author_statistics': plotter.author_statistics(),
-        'journal_statistics': plotter.journal_statistics(),
-    }
+    result = dict(
+        topics_analyzed=False,
+        n_papers=analyzer.n_papers,
+        n_citations=int(analyzer.df['total'].sum()),
+        n_topics=0,
+        top_cited_papers=[components(plotter.top_cited_papers())],
+        most_cited_per_year_papers=[components(plotter.most_cited_per_year_papers())],
+        fastest_growth_per_year_papers=[components(plotter.fastest_growth_per_year_papers())],
+        papers_stats=[components(paper_statistics)],
+        papers_word_cloud=Plotter.word_cloud_prepare(word_cloud),
+        papers_zoom_out_callback=zoom_out_callback
+    )
 
     if analyzer.similarity_graph.nodes():
         topics_hierarchy = plotter.topics_hierarchy()
-        result.update({
-            'topics_analyzed': True,
-            'n_topics': len(analyzer.components),
-            'comp_other': analyzer.comp_other,
-            'components_similarity': [components(plotter.heatmap_topics_similarity())],
-            'component_size_summary': [components(plotter.component_size_summary())],
-            'component_years_summary': [components(plotter.component_years_summary())],
-            'topics_info_and_word_cloud_and_callback':
-                [(components(p), Plotter.word_cloud_prepare(wc), zoom_in_callback) for
-                 (p, wc, zoom_in_callback) in plotter.topics_info_and_word_cloud_and_callback()],
-            'component_sizes': plotter.component_sizes(),
-            'component_ratio': [components(plotter.component_ratio())],
-            'topics_hierarchy': [components(topics_hierarchy)] if topics_hierarchy is not None else []
-        })
+        result.update(dict(
+            topics_analyzed=True,
+            n_topics=len(analyzer.components),
+            comp_other=analyzer.comp_other,
+            components_similarity=[components(plotter.heatmap_topics_similarity())],
+            component_size_summary=[components(plotter.component_size_summary())],
+            component_years_summary=[components(plotter.component_years_summary())],
+            topics_info_and_word_cloud_and_callback=[
+                (components(p), Plotter.word_cloud_prepare(wc), zoom_in_callback) for
+                (p, wc, zoom_in_callback) in plotter.topics_info_and_word_cloud_and_callback()],
+            component_sizes=plotter.component_sizes(),
+            component_ratio=[components(plotter.component_ratio())],
+            topics_hierarchy=[components(topics_hierarchy)] if topics_hierarchy is not None else []
+        ))
 
-    _, url_prefix = Loaders.get_loader_and_url_prefix(analyzer.source, analyzer.config)
-    if analyzer.numbers_df is not None:
-        result['numbers'] = [(row['id'], url_prefix + row['id'], trim(row['title'], MAX_TITLE_LENGTH), row['numbers'])
-                             for _, row in analyzer.numbers_df.iterrows()]
+    # Configure additional features
+    result.update(dict(
+        feature_authors_enabled=PUBTRENDS_CONFIG.feature_authors_enabled,
+        feature_journals_enabled=PUBTRENDS_CONFIG.feature_journals_enabled,
+        feature_numbers_enabled=PUBTRENDS_CONFIG.feature_numbers_enabled,
+        feature_evolution_enabled=PUBTRENDS_CONFIG.feature_evolution_enabled,
+        feature_review_enabled=PUBTRENDS_CONFIG.feature_review_enabled
+    ))
 
-    if analyzer.similarity_graph.nodes():
-        evolution_result = plotter.topic_evolution()
-        if evolution_result is not None:
-            evolution_data, keywords_data = evolution_result
-            result['topic_evolution'] = [components(evolution_data)]
-            if keywords_data:
-                result['topic_evolution_keywords'] = keywords_data
+    if PUBTRENDS_CONFIG.feature_authors_enabled:
+        result['author_statistics'] = plotter.author_statistics()
+
+    if PUBTRENDS_CONFIG.feature_journals_enabled:
+        result['journal_statistics'] = plotter.journal_statistics()
+
+    if PUBTRENDS_CONFIG.feature_numbers_enabled:
+        _, url_prefix = Loaders.get_loader_and_url_prefix(analyzer.source, analyzer.config)
+        if analyzer.numbers_df is not None:
+            result['numbers'] = [
+                (row['id'], url_prefix + row['id'], trim(row['title'], MAX_TITLE_LENGTH), row['numbers'])
+                for _, row in analyzer.numbers_df.iterrows()
+            ]
+
+    if PUBTRENDS_CONFIG.feature_evolution_enabled:
+        if analyzer.similarity_graph.nodes():
+            evolution_result = plotter.topic_evolution()
+            if evolution_result is not None:
+                evolution_data, keywords_data = evolution_result
+                result['topic_evolution'] = [components(evolution_data)]
+                if keywords_data:
+                    result['topic_evolution_keywords'] = keywords_data
     return result
 
 
