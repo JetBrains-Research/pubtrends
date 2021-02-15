@@ -16,7 +16,7 @@ from pysrc.app.admin.admin import configure_admin_functions
 from pysrc.app.predefined import save_predefined, load_predefined_viz_log, load_predefined_or_result_data
 from pysrc.app.utils import log_request, MAX_QUERY_LENGTH, SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, \
     SOMETHING_WENT_WRONG_PAPER, SOMETHING_WENT_WRONG_TOPIC
-from pysrc.celery.pubtrends_celery import celery
+from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.celery.tasks_main import find_paper_async, analyze_search_terms, analyze_id_list
 from pysrc.celery.tasks_cache import get_or_cancel_task
 from pysrc.papers.analyzer import KeyPaperAnalyzer
@@ -139,7 +139,7 @@ def result():
     expand = request.args.get('expand')  # Fraction of papers to cover by references
     try:
         if jobid and query and source and limit is not None and sort is not None:
-            job = AsyncResult(jobid, app=celery)
+            job = AsyncResult(jobid, app=pubtrends_celery)
             if job and job.state == 'SUCCESS':
                 viz, data, log = job.result
                 save_predefined(viz, data, log, jobid)
@@ -286,7 +286,7 @@ def paper():
     limit = request.args.get('limit')
     try:
         if jobid and pid:
-            data = load_predefined_or_result_data(jobid, celery)
+            data = load_predefined_or_result_data(jobid, pubtrends_celery)
             if data is not None:
                 logger.info(f'/paper success {log_request(request)}')
                 return render_template('paper.html', **prepare_paper_data(data, source, pid),
@@ -316,7 +316,7 @@ def graph():
     sort = request.args.get('sort')
     graph_type = request.args.get('type')
     if jobid:
-        data = load_predefined_or_result_data(jobid, celery)
+        data = load_predefined_or_result_data(jobid, pubtrends_celery)
         if data is not None:
             loader, url_prefix = Loaders.get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
             analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
@@ -397,7 +397,7 @@ def show_ids():
         search_string += 'Hot Papers'
 
     if jobid:
-        data = load_predefined_or_result_data(jobid, celery)
+        data = load_predefined_or_result_data(jobid, pubtrends_celery)
         if data is not None:
             logger.info(f'/papers success {log_request(request)}')
             export_name = re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{query}_{search_string}'.lower())).strip('_')
@@ -419,7 +419,7 @@ def cancel():
     if len(request.args) > 0:
         jobid = request.values.get('jobid')
         if jobid:
-            celery.control.revoke(jobid, terminate=True)
+            pubtrends_celery.control.revoke(jobid, terminate=True)
             return json.dumps({
                 'state': 'CANCELLED',
                 'message': f'Successfully cancelled task {jobid}'
@@ -567,7 +567,7 @@ def export_results():
         limit = request.args.get('limit')
         sort = request.args.get('sort')
         if jobid and query and source and limit and source:
-            data = load_predefined_or_result_data(jobid, celery)
+            data = load_predefined_or_result_data(jobid, pubtrends_celery)
             with tempfile.TemporaryDirectory() as tmpdir:
                 name = re.sub('_{2,}', '_',
                               re.sub('["\':,. ]', '_', f'{source}_{query}_{sort}_{limit}'.lower())).strip('_')

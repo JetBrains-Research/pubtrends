@@ -6,7 +6,7 @@ from flask import request, redirect, url_for, render_template_string, render_tem
 
 from pysrc.app.predefined import load_predefined_or_result_data
 from pysrc.app.utils import log_request, SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, MAX_QUERY_LENGTH
-from pysrc.celery.tasks import celery
+from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.papers.pubtrends_config import PubtrendsConfig
 from pysrc.papers.utils import trim
 from pysrc.version import VERSION
@@ -33,7 +33,7 @@ def register_app_review(app):
             num_papers = request.args.get('papers_number')
             num_sents = request.args.get('sents_number')
             if jobid:
-                data = load_predefined_or_result_data(jobid, celery)
+                data = load_predefined_or_result_data(jobid, pubtrends_celery)
                 if data is not None:
                     job = prepare_review_data_async.delay(data, source, num_papers, num_sents)
                     return redirect(url_for('.process', analysis_type=REVIEW_ANALYSIS_TITLE, jobid=job.id,
@@ -52,7 +52,7 @@ def register_app_review(app):
         limit = request.args.get('limit')
         sort = request.args.get('sort')
         if jobid:
-            job = AsyncResult(jobid, app=celery)
+            job = AsyncResult(jobid, app=pubtrends_celery)
             if job and job.state == 'SUCCESS':
                 review_res = job.result
                 export_name = re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{query}_review'.lower().strip('_')))

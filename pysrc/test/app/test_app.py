@@ -10,7 +10,7 @@ from celery.contrib.testing.worker import start_worker
 from celery.contrib.testing.tasks import ping
 
 from pysrc.app.app import app
-from pysrc.celery.tasks import celery
+from pysrc.celery.tasks import pubtrends_celery
 from pysrc.papers import pubtrends_config
 from pysrc.papers.db.pm_postgres_loader import PubmedPostgresLoader
 from pysrc.papers.db.pm_postgres_writer import PubmedPostgresWriter
@@ -29,10 +29,10 @@ class TestApp(unittest.TestCase):
         cls.loader = PubmedPostgresLoader(test_config)
 
         # Configure celery not to use broker
-        celery.conf.broker_url = 'memory://'
-        celery.conf.result_backend = 'cache+memory://'
+        pubtrends_celery.conf.broker_url = 'memory://'
+        pubtrends_celery.conf.result_backend = 'cache+memory://'
 
-        cls.celery_worker = start_worker(celery, perform_ping_check=False)
+        cls.celery_worker = start_worker(pubtrends_celery, perform_ping_check=False)
         cls.celery_worker.__enter__()
 
         # Text search is not tested, imitating search results

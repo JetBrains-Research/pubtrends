@@ -7,7 +7,7 @@ from celery import current_task
 from lazy import lazy
 
 import pysrc.review.config as cfg
-from pysrc.celery.pubtrends_celery import celery
+from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.papers.analyzer import KeyPaperAnalyzer
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.progress import Progress
@@ -23,7 +23,7 @@ PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 REVIEW_ANALYSIS_TITLE = 'review'
 
 
-@celery.task(name='prepare_review_data_async')
+@pubtrends_celery.task(name='prepare_review_data_async')
 def prepare_review_data_async(data, source, num_papers, num_sents):
     progress = Progress(total=5)
     result = generate_review(data, source, num_papers, num_sents, progress=progress, task=current_task)

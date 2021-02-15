@@ -1,6 +1,6 @@
 from celery import current_task
 
-from pysrc.celery.pubtrends_celery import celery
+from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.papers.analyzer import KeyPaperAnalyzer
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
@@ -12,7 +12,7 @@ from pysrc.papers.utils import SORT_MOST_CITED, ZOOM_OUT, PAPER_ANALYSIS
 from pysrc.review.app.task import prepare_review_data_async
 
 
-@celery.task(name='analyze_search_terms')
+@pubtrends_celery.task(name='analyze_search_terms')
 def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, expand=0.5, test=False):
     config = PubtrendsConfig(test=test)
     loader = Loaders.get_loader(source, config)
@@ -43,7 +43,7 @@ def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, e
     return visualization, dump, analyzer.progress.log()
 
 
-@celery.task(name='analyze_id_list')
+@pubtrends_celery.task(name='analyze_id_list')
 def analyze_id_list(source, ids, zoom, query, limit=None, test=False):
     if len(ids) == 0:
         raise RuntimeError("Empty papers list")
@@ -87,7 +87,7 @@ def analyze_id_list(source, ids, zoom, query, limit=None, test=False):
     return visualization, dump, analyzer.progress.log()
 
 
-@celery.task(name='find_paper_async')
+@pubtrends_celery.task(name='find_paper_async')
 def find_paper_async(source, key, value, test=False):
     loader = Loaders.get_loader(source, PubtrendsConfig(test=test))
     progress = Progress(total=2)

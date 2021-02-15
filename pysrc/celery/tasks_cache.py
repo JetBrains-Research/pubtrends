@@ -3,7 +3,7 @@ import logging
 from celery.result import AsyncResult
 
 from pysrc.celery.lru_ttl_cache_with_callback import lru_ttl_cache_with_callback
-from pysrc.celery.tasks import celery
+from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.papers.pubtrends_config import PubtrendsConfig
 
 
@@ -22,10 +22,10 @@ def get_or_cancel_task(jobid):
 
 
 def _celery_revoke_pending_task(jobid):
-    task = AsyncResult(jobid, app=celery)
+    task = AsyncResult(jobid, app=pubtrends_celery)
     if task is not None and task.state in {'STARTED', 'PENDING'}:
         logger.debug(f'REVOKE Celery task: {jobid}')
-        celery.control.revoke(jobid, terminate=True)
+        pubtrends_celery.control.revoke(jobid, terminate=True)
 
 
 @lru_ttl_cache_with_callback(maxsize=PUBTRENDS_CONFIG.celery_max_pending_tasks,
@@ -33,4 +33,4 @@ def _celery_revoke_pending_task(jobid):
                              remove_callback=_celery_revoke_pending_task)
 def _get_or_cancel_task(jobid):
     logger.debug(f'get_or_cancel_task new: {jobid}')
-    return AsyncResult(jobid, app=celery)
+    return AsyncResult(jobid, app=pubtrends_celery)
