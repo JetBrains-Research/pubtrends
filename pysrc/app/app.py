@@ -156,7 +156,7 @@ def status():
 def save_predefined(viz, data, log, jobid):
     if jobid.startswith('predefined_'):
         logger.info('Saving predefined search')
-        path = os.path.join(predefined_path, jobid)
+        path = os.path.join(predefined_path, f"{VERSION.replace(' ', '_')}_{jobid}")
         try:
             PREDEFINED_LOCK.acquire()
             path_viz = f'{path}_viz.json.gz'
@@ -178,7 +178,7 @@ def save_predefined(viz, data, log, jobid):
 def load_predefined_viz_log(jobid):
     if jobid.startswith('predefined_'):
         logger.info('Trying to load predefined viz, log')
-        path = os.path.join(predefined_path, jobid)
+        path = os.path.join(predefined_path, f"{VERSION.replace(' ', '_')}_{jobid}")
         path_viz = f'{path}_viz.json.gz'
         path_log = f'{path}_log.gz'
         try:
@@ -197,7 +197,7 @@ def load_predefined_viz_log(jobid):
 def load_predefined_or_result_data(jobid):
     if jobid.startswith('predefined_'):
         logger.info('Trying to load predefined data')
-        path = os.path.join(predefined_path, jobid)
+        path = os.path.join(predefined_path, f"{VERSION.replace(' ', '_')}_{jobid}")
         path_data = f'{path}_data.json.gz'
         try:
             PREDEFINED_LOCK.acquire()
