@@ -160,11 +160,6 @@
                  process_word_cloud(cid, $('#' + cid).outerWidth(), 335, 200, 300, words, papers_callback_word);
             {% endfor %}
 
-            // Configure jobid for feedback
-            // Decode jobid from URL
-            const jobid = new URL(window.location).searchParams.get('jobid');
-            $('#feedback-jobid').val(jobid);
-
             setTimeout(function() {
                 $.notify("See About ? for quick introduction.", {
                     className: "success",
@@ -172,6 +167,23 @@
                     autoHideDelay: 15000
                 });
             }, 5000);
+
+            // Configure jobid for feedback for text message form, decode jobid from URL
+            const jobid = new URL(window.location).searchParams.get('jobid');
+            $('#feedback-jobid').val(jobid);
+
+            // Create clickable feedback forms
+            createClickableFeedBackForm("feedback-overview-form", "feedback-overview");
+            createClickableFeedBackForm("feedback-highlights-form", "feedback-highlights");
+            createClickableFeedBackForm("feedback-network-form", "feedback-network");
+            createClickableFeedBackForm("feedback-topics-form", "feedback-topics");
+            createClickableFeedBackForm("feedback-trends-form", "feedback-trends");
+            createClickableFeedBackForm("feedback-papers-form", "feedback-papers");
+            createClickableFeedBackForm("feedback-authors-form", "feedback-authors");
+            createClickableFeedBackForm("feedback-journals-form", "feedback-journals");
+            createClickableFeedBackForm("feedback-numbers-form", "feedback-numbers");
+            createClickableFeedBackForm("feedback-evolution-form", "feedback-evolution");
+            createClickableFeedBackForm("feedback-review-form", "feedback-review");
         });
 
     </script>
@@ -380,23 +392,7 @@
                             </button>
                         </div>
                     </div>
-                    <div class="mt-3">
-                        <small class="text-muted">Was this useful?</small>
-                        <div id="feedback-overview" class="btn-group-horizontal">
-                            <button type="button" class="btn btn-sm btn-feedback-yes"
-                                    onclick="feedback(this, 1)">
-                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-meh"
-                                    onclick="feedback(this, 0)">
-                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-no"
-                                    onclick="feedback(this, -1)">
-                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                            </button>
-                        </div>
-                    </div>
+                    <div class="mt-3" id="feedback-overview-form"></div>
                 </div>
             </div>
 
@@ -457,23 +453,7 @@
                         {{ div|safe }}
                         {% endfor %}
                     </div>
-                    <div class="mt-3">
-                        <small class="text-muted">Was this useful?</small>
-                        <div id="feedback-highlights" class="btn-group-horizontal">
-                            <button type="button" class="btn btn-sm btn-feedback-yes"
-                                    onclick="feedback(this, 1)">
-                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-meh"
-                                    onclick="feedback(this, 0)">
-                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-no"
-                                    onclick="feedback(this, -1)">
-                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                            </button>
-                        </div>
-                    </div>
+                    <div class="mt-3" id="feedback-highlights-form"></div>
                 </div>
             </div>
 
@@ -502,23 +482,7 @@
                             onclick="(function(){ graph_callback('structure') })();">
                         Show similarity graph
                     </button>
-                    <div class="mt-3">
-                        <small class="text-muted">Was this useful?</small>
-                        <div id="feedback-network" class="btn-group-horizontal">
-                            <button type="button" class="btn btn-sm btn-feedback-yes"
-                                    onclick="feedback(this, 1)">
-                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-meh"
-                                    onclick="feedback(this, 0)">
-                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-no"
-                                    onclick="feedback(this, -1)">
-                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                            </button>
-                        </div>
-                    </div>
+                    <div class="mt-3" id="feedback-network-form"></div>
                 </div>
             </div>
 
@@ -558,23 +522,7 @@
                     {{ script|safe }}
                     {{ div|safe }}
                     {% endfor %}
-                    <div class="mt-3">
-                        <small class="text-muted">Was this useful?</small>
-                        <div id="feedback-topics" class="btn-group-horizontal">
-                            <button type="button" class="btn btn-sm btn-feedback-yes"
-                                    onclick="feedback(this, 1)">
-                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-meh"
-                                    onclick="feedback(this, 0)">
-                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-no"
-                                    onclick="feedback(this, -1)">
-                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                            </button>
-                        </div>
-                    </div>
+                    <div class="mt-3" id="feedback-topics-form"></div>
                 </div>
             </div>
 
@@ -602,23 +550,7 @@
                         {{ div|safe }}
                         {% endfor %}
                     </div>
-                    <div class="mt-3">
-                        <small class="text-muted">Was this useful?</small>
-                        <div id="feedback-trends" class="btn-group-horizontal">
-                            <button type="button" class="btn btn-sm btn-feedback-yes"
-                                    onclick="feedback(this, 1)">
-                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-meh"
-                                    onclick="feedback(this, 0)">
-                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-no"
-                                    onclick="feedback(this, -1)">
-                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                            </button>
-                        </div>
-                    </div>
+                    <div class="mt-3" id="feedback-trends-form"></div>
                 </div>
             </div>
 
@@ -682,23 +614,7 @@
                         <img src="{{ url_for('static', filename='zoom-out.svg') }}" alt="-"/>&nbsp;Zoom out to
                         related papers
                     </button>
-                    <div class="mt-3">
-                        <small class="text-muted">Was this useful?</small>
-                        <div id="feedback-papers" class="btn-group-horizontal">
-                            <button type="button" class="btn btn-sm btn-feedback-yes"
-                                    onclick="feedback(this, 1)">
-                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-meh"
-                                    onclick="feedback(this, 0)">
-                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-no"
-                                    onclick="feedback(this, -1)">
-                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                            </button>
-                        </div>
-                    </div>
+                    <div class="mt-3" id="feedback-papers-form"></div>
                 </div>
             </div>
             {% endif %}
@@ -739,23 +655,7 @@
                         {% endfor %}
                         </tbody>
                     </table>
-                    <div class="mt-3">
-                        <small class="text-muted">Was this useful?</small>
-                        <div id="feedback-authors" class="btn-group-horizontal">
-                            <button type="button" class="btn btn-sm btn-feedback-yes"
-                                    onclick="feedback(this, 1)">
-                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-meh"
-                                    onclick="feedback(this, 0)">
-                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-no"
-                                    onclick="feedback(this, -1)">
-                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                            </button>
-                        </div>
-                    </div>
+                    <div class="mt-3" id="feedback-authors-form"></div>
                 </div>
             </div>
 
@@ -795,23 +695,7 @@
                         {% endfor %}
                         </tbody>
                     </table>
-                    <div class="mt-3">
-                        <small class="text-muted">Was this useful?</small>
-                        <div id="feedback-journals" class="btn-group-horizontal">
-                            <button type="button" class="btn btn-sm btn-feedback-yes"
-                                    onclick="feedback(this, 1)">
-                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-meh"
-                                    onclick="feedback(this, 0)">
-                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-no"
-                                    onclick="feedback(this, -1)">
-                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                            </button>
-                        </div>
-                    </div>
+                    <div class="mt-3" id="feedback-journals-form"></div>
                 </div>
             </div>
 
@@ -844,23 +728,7 @@
                         </tbody>
                     </table>
                     {% endif %}
-                    <div class="mt-3">
-                        <small class="text-muted">Was this useful?</small>
-                        <div id="feedback-numbers" class="btn-group-horizontal">
-                            <button type="button" class="btn btn-sm btn-feedback-yes"
-                                    onclick="feedback(this, 1)">
-                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-meh"
-                                    onclick="feedback(this, 0)">
-                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-no"
-                                    onclick="feedback(this, -1)">
-                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                            </button>
-                        </div>
-                    </div>
+                    <div class="mt-3" id="feedback-numbers-form"></div>
                 </div>
             </div>
 
@@ -903,23 +771,7 @@
                         </tbody>
                     </table>
                     {% endif %}
-                    <div class="mt-3">
-                        <small class="text-muted">Was this useful?</small>
-                        <div id="feedback-evolution" class="btn-group-horizontal">
-                            <button type="button" class="btn btn-sm btn-feedback-yes"
-                                    onclick="feedback(this, 1)">
-                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-meh"
-                                    onclick="feedback(this, 0)">
-                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-no"
-                                    onclick="feedback(this, -1)">
-                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                            </button>
-                        </div>
-                    </div>
+                    <div class="mt-3" id="feedback-evolution-form"></div>
                     {% else %}
                     Failed to analyze topic evolution because year step is too big.
                     {% endif %}
@@ -960,23 +812,7 @@
                     <button type="button" class="btn btn-secondary" onclick="(function(){
                                 review_callback($('#papers-input').val(), $('#sents-input').val());
                             })();">Generate</button>
-                    <div class="mt-3">
-                        <small class="text-muted">Was this useful?</small>
-                        <div id="feedback-review" class="btn-group-horizontal">
-                            <button type="button" class="btn btn-sm btn-feedback-yes"
-                                    onclick="feedback(this, 1)">
-                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-meh"
-                                    onclick="feedback(this, 0)">
-                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-no"
-                                    onclick="feedback(this, -1)">
-                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                            </button>
-                        </div>
-                    </div>
+                    <div class="mt-3" id="feedback-review-form"></div>
                 </div>
             </div>
 

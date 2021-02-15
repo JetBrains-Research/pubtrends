@@ -20,6 +20,12 @@
     <script src="feedback.js"></script>
 
     <link rel="stylesheet" href="style.css"/>
+    <script>
+        "use strict";
+        $(document).ready(function() {
+            createClickableFeedBackFormNoMessage("feedback-about-form", "feedback-about")
+        });
+    </script>
 </head>
 <body>
 <div class="container mt-2" role="main">
@@ -152,23 +158,7 @@
         Feel free to fill the feedback form on the bottom of reports page or use emotions buttons to
         share your thoughts.
     </p>
-    <div class="mt-3">
-        <small class="text-muted">Was this useful?</small>
-        <div id="feedback-about" class="btn-group-horizontal">
-            <button type="button" class="btn btn-sm btn-feedback-yes"
-                    onclick="feedbackNoMessageForm(this, 1)">
-                <img src="smile.svg" alt="Yes"/>
-            </button>
-            <button type="button" class="btn btn-sm btn-feedback-meh"
-                    onclick="feedbackNoMessageForm(this, 0)">
-                <img src="meh.svg" alt="Not sure"/>
-            </button>
-            <button type="button" class="btn btn-sm btn-feedback-no"
-                    onclick="feedbackNoMessageForm(this, -1)">
-                <img src="frown.svg" alt="No"/>
-            </button>
-        </div>
-    </div>
+    <div class="mt-3" id="feedback-about-form"></div>
 </div>
 <footer>
     <p>version {{ version }}<br/>
