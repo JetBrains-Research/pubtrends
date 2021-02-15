@@ -9,32 +9,28 @@ import tempfile
 from urllib.parse import quote
 
 from celery.result import AsyncResult
-from flask import Flask, url_for, redirect, render_template, request, abort, render_template_string, \
+from flask import Flask, url_for, redirect, render_template, request, render_template_string, \
     send_from_directory, send_file
-from pysrc.app.predefined import save_predefined, load_predefined_viz_log, load_predefined_or_result_data
+
 from pysrc.app.admin.admin import configure_admin_functions
-from pysrc.celery.tasks import celery, find_paper_async, analyze_search_terms, analyze_id_list, \
-    prepare_review_data_async
+from pysrc.app.predefined import save_predefined, load_predefined_viz_log, load_predefined_or_result_data
+from pysrc.app.utils import log_request, MAX_QUERY_LENGTH, SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, \
+    SOMETHING_WENT_WRONG_PAPER, SOMETHING_WENT_WRONG_TOPIC
+from pysrc.celery.pubtrends_celery import celery
+from pysrc.celery.tasks_main import find_paper_async, analyze_search_terms, analyze_id_list
 from pysrc.celery.tasks_cache import get_or_cancel_task
 from pysrc.papers.analyzer import KeyPaperAnalyzer
-from pysrc.papers.pubtrends_config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.paper import prepare_paper_data, prepare_papers_data
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.plot.plotter import Plotter
+from pysrc.papers.pubtrends_config import PubtrendsConfig
 from pysrc.papers.utils import zoom_name, trim, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE, ZOOM_OUT_TITLE
-from pysrc.review.app.review import REVIEW_ANALYSIS_TITLE
+from pysrc.review.app.review import REVIEW_ANALYSIS_TITLE, register_app_review
 from pysrc.version import VERSION
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
-
-MAX_QUERY_LENGTH = 60
-
-SOMETHING_WENT_WRONG_SEARCH = 'Something went wrong, please <a href="/">rerun</a> your search.'
-SOMETHING_WENT_WRONG_TOPIC = 'Something went wrong, please <a href="/">rerun</a> your topic analysis.'
-SOMETHING_WENT_WRONG_PAPER = 'Something went wrong, please <a href="/">rerun</a> your paper analysis.'
-ERROR_OCCURRED = "Error occurred. We're working on it. Please check back soon."
 
 app = Flask(__name__)
 
@@ -64,10 +60,6 @@ if __name__ != '__main__':
     app.logger.setLevel(gunicorn_logger.level)
 
 logger = app.logger
-
-
-def log_request(r):
-    return f'addr:{r.remote_addr} args:{json.dumps(r.args)}'
 
 
 @app.route('/robots.txt')
@@ -590,60 +582,6 @@ def export_results():
         return render_template_string(ERROR_OCCURRED), 500
 
 
-########################
-# Review functionality #
-########################
-
-
-@app.route('/generate_review')
-def generate_review():
-    logger.info(f'/generate_review {log_request(request)}')
-    try:
-        jobid = request.args.get('jobid')
-        query = request.args.get('query')
-        source = request.args.get('source')
-        limit = request.args.get('limit')
-        sort = request.args.get('sort')
-        num_papers = request.args.get('papers_number')
-        num_sents = request.args.get('sents_number')
-        if jobid:
-            data = load_predefined_or_result_data(jobid, celery)
-            if data is not None:
-                job = prepare_review_data_async.delay(data, source, num_papers, num_sents)
-                return redirect(url_for('.process', analysis_type=REVIEW_ANALYSIS_TITLE, jobid=job.id,
-                                        query=query, source=source, limit=limit, sort=sort))
-        logger.error(f'/result error {log_request(request)}')
-        return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
-    except Exception as e:
-        logger.error(f'/generate_review error', e)
-        return render_template_string(ERROR_OCCURRED), 500
-
-
-@app.route('/review')
-def review():
-    jobid = request.args.get('jobid')
-    query = request.args.get('query')
-    source = request.args.get('source')
-    limit = request.args.get('limit')
-    sort = request.args.get('sort')
-    if jobid:
-        job = AsyncResult(jobid, app=celery)
-        if job and job.state == 'SUCCESS':
-            review_res = job.result
-            export_name = re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{query}_review'.lower().strip('_')))
-            return render_template('review.html',
-                                   query=trim(query, MAX_QUERY_LENGTH),
-                                   source=source,
-                                   limit=limit,
-                                   sort=sort,
-                                   version=VERSION,
-                                   review_array=review_res,
-                                   export_name=export_name)
-    else:
-        logger.error(f'/result error {log_request(request)}')
-        return render_template_string("Something went wrong..."), 400
-
-
 ##########################
 # Feedback functionality #
 ##########################
@@ -674,6 +612,13 @@ def feedback():
 #######################
 
 configure_admin_functions(app, logfile)
+
+#######################
+# Additional features #
+#######################
+
+if PUBTRENDS_CONFIG.feature_review_enabled:
+    register_app_review(app)
 
 
 # Application
