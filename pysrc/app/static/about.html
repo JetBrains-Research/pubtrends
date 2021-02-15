@@ -17,7 +17,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"
             integrity="sha512-efUTj3HdSPwWJ9gjfGR71X9cvsrthIA78/Fvd/IN+fttQVy7XWkOAXb295j8B3cmm/kFKVxjiNYzKw9IQJHIuQ=="
             crossorigin="anonymous"></script>
-    <script src="feedback.js"></script>
+    <script src="{{ url_for('static', filename='feedback.js') }}"></script>
+    <!--    <script src="../static/feedback.js"/>-->
+    <link rel="stylesheet" href="{{ url_for('static', filename='feedback.css') }}?v=1">
+    <!--    <link rel="stylesheet" href="../static/feedback.css"/>-->
 
     <link rel="stylesheet" href="style.css"/>
     <script>
