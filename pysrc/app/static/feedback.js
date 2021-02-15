@@ -4,6 +4,7 @@
 //       <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"
 //               integrity="sha512-efUTj3HdSPwWJ9gjfGR71X9cvsrthIA78/Fvd/IN+fttQVy7XWkOAXb295j8B3cmm/kFKVxjiNYzKw9IQJHIuQ=="
 //               crossorigin="anonymous"></script>
+// Include necessary styling options from feedback.css
 
 function createClickableFeedBackForm(feedBackElementId, feedBackId) {
     createClickableFeedBackFormImpl(feedBackElementId, feedBackId, 'feedback');
@@ -16,16 +17,16 @@ function createClickableFeedBackFormNoMessage(feedBackElementId, feedBackId) {
 function createClickableFeedBackFormImpl(feedBackElementId, feedBackId, feedbackFunction) {
     $('#' + feedBackElementId).html(`
         <small className="text-muted">Was this useful?</small>
-        <div id="` + feedBackId + `" className="btn-group-horizontal">
-            <button type="button" className="btn btn-sm btn-feedback-yes"
+        <div id="` + feedBackId + `" class="btn-group-horizontal">
+            <button type="button" class="btn btn-sm btn-feedback-yes"
                 onClick="` + feedbackFunction + `(this, 1)">
                 <img src="smile.svg" alt="Yes"/>
             </button>
-            <button type="button" className="btn btn-sm btn-feedback-meh"
+            <button type="button" class="btn btn-sm btn-feedback-meh"
                 onClick="` + feedbackFunction + `(this, 0)">
                 <img src="meh.svg" alt="Not sure"/>
             </button>
-            <button type="button" className="btn btn-sm btn-feedback-no"
+            <button type="button" class="btn btn-sm btn-feedback-no"
                 onClick="` + feedbackFunction + `(this, -1)">
                 <img src="frown.svg" alt="No"/>
             </button>
