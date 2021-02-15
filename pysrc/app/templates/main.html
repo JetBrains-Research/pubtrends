@@ -26,40 +26,38 @@
             crossorigin="anonymous"></script>
 
     <script>
+        'use strict';
         // Example starter JavaScript for disabling form submissions if there are invalid fields
-        (function () {
-            'use strict';
-            window.addEventListener('load', function () {
-                // Fetch all the forms we want to apply custom Bootstrap validation styles to
-                const forms = document.getElementsByClassName('needs-validation');
-                // Loop over them and prevent submission
-                Array.prototype.filter.call(forms, function (form) {
-                    form.addEventListener('submit', function (event) {
-                        if (form.checkValidity() === false) {
-                            event.preventDefault();
-                            event.stopPropagation();
-                        }
-                        form.classList.add('was-validated');
-                    }, false);
-                });
-            }, false);
-        })();
+        window.addEventListener('load', function () {
+            // Fetch all the forms we want to apply custom Bootstrap validation styles to
+            const forms = document.getElementsByClassName('needs-validation');
+            // Loop over them and prevent submission
+            Array.prototype.filter.call(forms, function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (form.checkValidity() === false) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        }, false);
     </script>
 </head>
 <body>
 <div class="container mt-3">
     <div class="jumbotron border-light">
-            <h1>PubTrends</h1>
-            <p class="lead">
-                Explore research topics and analyze similar papers
-            </p>
-            <p>
-                <a id="tour-start" class="btn btn-light"
-                   href="javascript:void(0);" onclick="startIntro();">Take a tour</a>
-                <a class="btn btn-light ml-1"
-                   href="about.html"
-                   target="_blank" role="button">Learn more</a>
-            </p>
+        <h1>PubTrends</h1>
+        <p class="lead">
+            Explore research topics and analyze similar papers
+        </p>
+        <p>
+            <a id="tour-start" class="btn btn-light"
+               href="javascript:void(0);" onclick="startIntro();">Take a tour</a>
+            <a class="btn btn-light ml-1"
+               href="about.html"
+               target="_blank" role="button">Learn more</a>
+        </p>
     </div>
     <main class="card border-light mt-3" role="main">
         <div class="card-header">
@@ -180,8 +178,9 @@
                         <input type="hidden" name="noreviews" value="on">
                         <input type="hidden" name="expand" value="20">
                         <input type="hidden" name="jobid" value="predefined_{{ hash }}">
-                        <button type="submit" name="query" value="{{ terms }}" class="btn btn-sm btn-outline-secondary mt-2 mr-2"
-                        style="border-radius: 10px;">
+                        <button type="submit" name="query" value="{{ terms }}"
+                                class="btn btn-sm btn-outline-secondary mt-2 mr-2"
+                                style="border-radius: 10px;">
                             {{ terms }}
                         </button>
                     </form>

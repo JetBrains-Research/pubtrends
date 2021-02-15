@@ -1,15 +1,15 @@
 {% extends 'admin/master.html' %}
 {% block body %}
-    {{ super() }}
-    <div class="container">
-        {% if not current_user.is_authenticated %}
-            <p>Please login to proceed.</p>
-            <a class="btn btn-primary" href="{{ url_for('security.login') }}">login</a>
-        {% else %}
-            <ul>
-                <li><a href="/admin/stats">Statistics</a></li>
-                <li><a href="/admin/feedback">Feedback</a></li>
-            </ul>
-        {% endif %}
-    </div>
+{{ super() }}
+<div class="container">
+    {% if not current_user.is_authenticated %}
+    <p>Please login to proceed.</p>
+    <a class="btn btn-primary" href="{{ url_for('security.login') }}">login</a>
+    {% else %}
+    <ul>
+        <li><a href="/admin/stats">Statistics</a></li>
+        <li><a href="/admin/feedback">Feedback</a></li>
+    </ul>
+    {% endif %}
+</div>
 {% endblock body %}

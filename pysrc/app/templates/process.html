@@ -20,12 +20,12 @@
             integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
             crossorigin="anonymous"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1"/>
-<!--            <link rel="stylesheet" href="../static/style.css"/>-->
+    <!--            <link rel="stylesheet" href="../static/style.css"/>-->
 
     <script>
         "use strict";
 
-        window.onunload = function() {
+        window.onunload = function () {
             if (confirm('Leave the page? Task will be cancelled.')) {
                 cancel();
             }
@@ -66,15 +66,23 @@
                             last_progress = response.progress;
                         }
                         if (response.state === 'SUCCESS') {
+
+                            // Disable formatter for the next section because of injections.
+                            // Enable formatter control in File > Settings > Editor > Code Style
+                            // @formatter:off
+
                             // Join arg-value pairs for URL
                             var args = {{ redirect_args|safe }};
-                            var args_list = [];
-                            for (var key in args) {
+
+                            // @formatter:on
+
+                            const args_list = [];
+                            for (const key in args) {
                                 args_list.push(`${key}=${args[key]}`);
                             }
 
                             // Build href for given redirect page and args
-                            var href = `/{{ redirect_page }}?${args_list.join('&')}`;
+                            const href = `/{{ redirect_page }}?${args_list.join('&')}`;
                             window.location.replace(href);
                         } else {
                             if (last_log_message !== response.log) {
@@ -145,7 +153,8 @@
             <li class="breadcrumb-item"><strong>{{ query }}</strong></li>
             <li class="breadcrumb-item">{{ limit }} {{ sort }}</li>
         </ol>
-        <button class="btn btn-lg btn-link grey no-padding-left" type="reset" onclick="cancel()">&#10006;&nbsp;Cancel</button>
+        <button class="btn btn-lg btn-link grey no-padding-left" type="reset" onclick="cancel()">&#10006;&nbsp;Cancel
+        </button>
     </nav>
     <div id="progress" class="progress">
         <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
