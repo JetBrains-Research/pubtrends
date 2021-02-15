@@ -17,8 +17,6 @@ CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localho
 # Configure Celery
 celery = Celery('pubtrends', backend=CELERY_RESULT_BACKEND, broker=CELERY_BROKER_URL)
 
-PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
-
 
 @celery.task(name='analyze_search_terms')
 def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, expand=0.5, test=False):
