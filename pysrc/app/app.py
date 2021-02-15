@@ -12,7 +12,7 @@ from urllib.parse import quote
 import flask_admin
 from celery.result import AsyncResult
 from flask import Flask, url_for, redirect, render_template, request, abort, render_template_string, \
-    send_from_directory, send_file, jsonify
+    send_from_directory, send_file
 from flask_admin import helpers as admin_helpers, expose, BaseView
 from flask_security import Security, SQLAlchemyUserDatastore, \
     UserMixin, RoleMixin, current_user
@@ -21,6 +21,7 @@ from flask_sqlalchemy import SQLAlchemy
 
 from pysrc.app.admin.feedback import prepare_feedback_data
 from pysrc.app.admin.stats import prepare_stats_data
+from pysrc.app.predefined import save_predefined, load_predefined_viz_log, load_predefined_or_result_data
 from pysrc.celery.tasks import celery, find_paper_async, analyze_search_terms, analyze_id_list, \
     prepare_review_data_async
 from pysrc.celery.tasks_cache import get_or_cancel_task
@@ -58,15 +59,6 @@ for p in LOG_PATHS:
         break
 else:
     raise RuntimeError('Failed to configure main log file')
-
-PREDEFINED_PATHS = ['/predefined', os.path.expanduser('~/.pubtrends/predefined')]
-for p in PREDEFINED_PATHS:
-    if os.path.isdir(p):
-        predefined_path = p
-        break
-else:
-    raise RuntimeError('Failed to configure predefined searches dir')
-PREDEFINED_LOCK = Lock()
 
 logging.basicConfig(filename=logfile,
                     filemode='a',
@@ -151,66 +143,6 @@ def status():
         'state': 'FAILURE',
         'message': 'No task id'
     })
-
-
-def save_predefined(viz, data, log, jobid):
-    if jobid.startswith('predefined_'):
-        logger.info('Saving predefined search')
-        path = os.path.join(predefined_path, f"{VERSION.replace(' ', '_')}_{jobid}")
-        try:
-            PREDEFINED_LOCK.acquire()
-            path_viz = f'{path}_viz.json.gz'
-            path_data = f'{path}_data.json.gz'
-            path_log = f'{path}_log.gz'
-            if not os.path.exists(path_viz):
-                with gzip.open(path_viz, 'w') as f:
-                    f.write(json.dumps(viz).encode('utf-8'))
-            if not os.path.exists(path_data):
-                with gzip.open(path_data, 'w') as f:
-                    f.write(json.dumps(data).encode('utf-8'))
-            if not os.path.exists(path_log):
-                with gzip.open(path_log, 'w') as f:
-                    f.write(log.encode('utf-8'))
-        finally:
-            PREDEFINED_LOCK.release()
-
-
-def load_predefined_viz_log(jobid):
-    if jobid.startswith('predefined_'):
-        logger.info('Trying to load predefined viz, log')
-        path = os.path.join(predefined_path, f"{VERSION.replace(' ', '_')}_{jobid}")
-        path_viz = f'{path}_viz.json.gz'
-        path_log = f'{path}_log.gz'
-        try:
-            PREDEFINED_LOCK.acquire()
-            if os.path.exists(path_viz) and os.path.exists(path_log):
-                with gzip.open(path_viz, 'r') as f:
-                    viz = json.loads(f.read().decode('utf-8'))
-                with gzip.open(path_log, 'r') as f:
-                    log = f.read().decode('utf-8')
-                return viz, log
-        finally:
-            PREDEFINED_LOCK.release()
-    return None
-
-
-def load_predefined_or_result_data(jobid):
-    if jobid.startswith('predefined_'):
-        logger.info('Trying to load predefined data')
-        path = os.path.join(predefined_path, f"{VERSION.replace(' ', '_')}_{jobid}")
-        path_data = f'{path}_data.json.gz'
-        try:
-            PREDEFINED_LOCK.acquire()
-            if os.path.exists(path_data):
-                with gzip.open(path_data, 'r') as f:
-                    return json.loads(f.read().decode('utf-8'))
-        finally:
-            PREDEFINED_LOCK.release()
-    job = AsyncResult(jobid, app=celery)
-    if job and job.state == 'SUCCESS':
-        viz, data, log = job.result
-        return data
-    return None
 
 
 @app.route('/result')
@@ -371,7 +303,7 @@ def paper():
     limit = request.args.get('limit')
     try:
         if jobid and pid:
-            data = load_predefined_or_result_data(jobid)
+            data = load_predefined_or_result_data(jobid, celery)
             if data is not None:
                 logger.info(f'/paper success {log_request(request)}')
                 return render_template('paper.html', **prepare_paper_data(data, source, pid),
@@ -401,7 +333,7 @@ def graph():
     sort = request.args.get('sort')
     graph_type = request.args.get('type')
     if jobid:
-        data = load_predefined_or_result_data(jobid)
+        data = load_predefined_or_result_data(jobid, celery)
         if data is not None:
             loader, url_prefix = Loaders.get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
             analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
@@ -482,7 +414,7 @@ def show_ids():
         search_string += 'Hot Papers'
 
     if jobid:
-        data = load_predefined_or_result_data(jobid)
+        data = load_predefined_or_result_data(jobid, celery)
         if data is not None:
             logger.info(f'/papers success {log_request(request)}')
             export_name = re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{query}_{search_string}'.lower())).strip('_')
@@ -652,7 +584,7 @@ def export_results():
         limit = request.args.get('limit')
         sort = request.args.get('sort')
         if jobid and query and source and limit and source:
-            data = load_predefined_or_result_data(jobid)
+            data = load_predefined_or_result_data(jobid, celery)
             with tempfile.TemporaryDirectory() as tmpdir:
                 name = re.sub('_{2,}', '_',
                               re.sub('["\':,. ]', '_', f'{source}_{query}_{sort}_{limit}'.lower())).strip('_')
@@ -684,7 +616,7 @@ def generate_review():
         num_papers = request.args.get('papers_number')
         num_sents = request.args.get('sents_number')
         if jobid:
-            data = load_predefined_or_result_data(jobid)
+            data = load_predefined_or_result_data(jobid, celery)
             if data is not None:
                 job = prepare_review_data_async.delay(data, source, num_papers, num_sents)
                 return redirect(url_for('.process', analysis_type=REVIEW_ANALYSIS_TITLE, jobid=job.id,
