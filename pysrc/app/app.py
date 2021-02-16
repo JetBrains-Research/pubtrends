@@ -64,7 +64,6 @@ logger = app.logger
 
 @app.route('/robots.txt')
 @app.route('/sitemap.xml')
-@app.route('/about.html')
 @app.route('/feedback.js')
 @app.route('/style.css')
 @app.route('/about_humanaging_graph.png')
@@ -580,6 +579,11 @@ def export_results():
     except Exception as e:
         logger.error(f'/export_results error', e)
         return render_template_string(ERROR_OCCURRED), 500
+
+
+@app.route('/about.html', methods=['GET'])
+def about():
+    return render_template('about.html', version=VERSION)
 
 
 ##########################

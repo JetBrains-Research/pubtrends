@@ -43,6 +43,10 @@
     <!--         <link rel="stylesheet" href="../static/result.css"/>-->
     <script src="{{ url_for('static', filename='text_utils.js') }}"></script>
     <!--<script src="../../static/text_utils.js"/>-->
+    <script src="{{ url_for('static', filename='feedback.js') }}"></script>
+    <!--    <script src="../static/feedback.js"/>-->
+    <link rel="stylesheet" href="{{ url_for('static', filename='feedback.css') }}?v=1">
+    <!--    <link rel="stylesheet" href="../static/feedback.css"/>-->
 
     <script>
         "use strict";
@@ -54,6 +58,8 @@
             });
 
             table = $('#papers').DataTable();
+
+            createClickableFeedBackFormNoMessage("feedback-papers-html-form", "feedback-papers-html")
         });
 
         function result() {
@@ -201,11 +207,20 @@
 </div>
 
 
-<footer>
-    <p>version {{ version }}<br/>
-        &copy; 2019-2020 <a href="https://research.jetbrains.org/groups/biolabs"
-                            title="JetBrains Research BioLabs"
-                            target="_blank">JetBrains Research</a></p>
+<footer class="container">
+    <div class="row">
+        <div class="col-4">
+            <div id="feedback-papers-html-form" class="float-left vertical-center" ></div>
+        </div>
+        <div class="col-4">
+            <p>version {{ version }}<br/>
+                &copy; 2019-2020 <a href="https://research.jetbrains.org/groups/biolabs"
+                                    title="JetBrains Research BioLabs"
+                                    target="_blank">JetBrains Research</a>
+            </p>
+        </div>
+        <div class="col-4"></div>
+    </div>
 </footer>
 </body>
 </html>

@@ -40,6 +40,10 @@
     <!--     <link rel="stylesheet" href="../static/result.css"/> -->
     <script src="{{ url_for('static', filename='text_utils.js') }}"></script>
     <!--<script src="../../static/text_utils.js"/>-->
+    <script src="{{ url_for('static', filename='feedback.js') }}"></script>
+    <!--    <script src="../static/feedback.js"/>-->
+    <link rel="stylesheet" href="{{ url_for('static', filename='feedback.css') }}?v=1">
+    <!--    <link rel="stylesheet" href="../static/feedback.css"/>-->
 
     <!-- IntroJS feature tour -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.9.3/introjs.css"
@@ -676,6 +680,8 @@
         }
 
         $(document).ready(function () {
+            createClickableFeedBackFormNoMessage("feedback-graph-html-form", "feedback-graph-html")
+
             setTimeout(function () {
                 $.notify("See About for quick introduction.", {
                     className: "success",
@@ -752,11 +758,20 @@
 <div class="container-fluid">
     <div id="cy" role="main" style="height: 680px; margin-bottom: 2rem">Loading...</div>
 </div>
-<footer>
-    <p>version {{ version }}<br/>
-        &copy; 2019-2020 <a href="https://research.jetbrains.org/groups/biolabs"
-                            title="JetBrains Research BioLabs"
-                            target="_blank">JetBrains Research</a></p>
+<footer class="container">
+    <div class="row">
+        <div class="col-4">
+            <div id="feedback-graph-html-form" class="float-left vertical-center" ></div>
+        </div>
+        <div class="col-4">
+            <p>version {{ version }}<br/>
+                &copy; 2019-2020 <a href="https://research.jetbrains.org/groups/biolabs"
+                                    title="JetBrains Research BioLabs"
+                                    target="_blank">JetBrains Research</a>
+            </p>
+        </div>
+        <div class="col-4"></div>
+    </div>
 </footer>
 <script type="text/javascript">
     function startIntro() {
