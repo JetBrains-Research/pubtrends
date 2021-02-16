@@ -16,7 +16,7 @@ function createClickableFeedBackFormNoMessage(feedBackElementId, feedBackId) {
 
 function createClickableFeedBackFormImpl(feedBackElementId, feedBackId, feedbackFunction) {
     $('#' + feedBackElementId).html(`
-        <small className="text-muted">Was this useful?</small>
+        <small class="text-muted mr-2">Was this useful?</small>
         <div id="` + feedBackId + `" class="btn-group-horizontal">
             <button type="button" class="btn btn-sm btn-feedback-yes"
                 onClick="` + feedbackFunction + `(this, 1)">
