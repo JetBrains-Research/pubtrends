@@ -565,32 +565,69 @@
                 });
                 // Highlight node and neighbours on hover
                 cy.on('mouseover', 'node', function (event) {
-                    if (window.freeze) {
+                    if (window.freeze || getFilter() !== "") {
                         return;
                     }
                     let sel = event.target;
                     if ('title' in sel.data()) {
+                        sel.addClass('highlight');
+                        sel.removeClass('semitransp');
                         let neighborEdges = sel.connectedEdges();
                         let neighborNodes = neighborEdges.connectedNodes();
-                        cy.nodes().difference(neighborNodes).addClass('semitransp');
+                        cy.nodes().filter(function (ele) {
+                            return ele !== sel;
+                        }).difference(neighborNodes).addClass('semitransp');
                         neighborEdges.addClass('highlight');
                         cy.edges().difference(neighborEdges).addClass('semitransp');
                         neighborNodes.addClass('highlight');
                     }
                 });
                 cy.on('mouseout', 'node', function (event) {
-                    if (window.freeze) {
+                    if (window.freeze || getFilter() !== "") {
                         return;
                     }
                     let sel = event.target;
                     if ('title' in sel.data()) {
+                        sel.removeClass('highlight');
+                        sel.removeClass('semitransp');
                         let neighborEdges = sel.connectedEdges();
                         let neighborNodes = neighborEdges.connectedNodes();
                         neighborNodes.removeClass('highlight');
-                        cy.nodes().difference(neighborNodes).removeClass('semitransp');
+                        cy.nodes().filter(function (ele) {
+                            return ele !== sel;
+                        }).difference(neighborNodes).removeClass('semitransp');
                         neighborEdges.removeClass('highlight');
                         cy.edges().difference(neighborEdges).removeClass('semitransp');
                     }
+                });
+
+                // Highlight edges and neighbours on hover
+                cy.on('mouseover', 'edge', function (event) {
+                    if (window.freeze || getFilter() !== "") {
+                        return;
+                    }
+                    let sel = event.target;
+                    sel.addClass('highlight');
+                    let neighborNodes = sel.connectedNodes();
+                    cy.nodes().filter(function (ele) {
+                        return ele !== sel && ele.hasClass('dataset');
+                    }).difference(neighborNodes).addClass('semitransp');
+                    cy.edges().difference(sel).addClass('semitransp');
+                    neighborNodes.addClass('highlight');
+                });
+                cy.on('mouseout', 'edge', function (event) {
+                    if (window.freeze || getFilter() !== "") {
+                        return;
+                    }
+                    let sel = event.target;
+                    sel.removeClass('highlight');
+                    let neighborNodes = sel.connectedNodes();
+                    neighborNodes.removeClass('highlight');
+                    cy.nodes().filter(function (ele) {
+                        return ele !== sel && ele.hasClass('dataset');
+                    }).difference(neighborNodes).removeClass('semitransp');
+                    sel.removeClass('highlight');
+                    cy.edges().difference(sel).removeClass('semitransp');
                 });
 
                 <!-- Highlight analyzed paper -->
@@ -652,19 +689,35 @@
                 });
         });
 
+        function getFilter() {
+            return $.trim($("#search-input").val()).toLowerCase();
+        }
+
         function inputKey(event) {
             if (event.keyCode === 13 || event.which === 13) {
-                const filter = $.trim($("#search-input").val()).toLowerCase();
+                const filter = getFilter();
+                if (filter === "") {
+                    window.cy.nodes().filter(function (ele) {
+                        return 'title' in ele.data();
+                    }).forEach(function (ele) {
+                        ele.removeClass('highlight');
+                        ele.removeClass('semitransp');
+                    });
+                    return
+                }
                 window.cy.nodes().forEach(function (ele) {
                     let data = ele.data();
                     if ('title' in data) {
-                        if (filter === "" ||
-                            data.title.toLowerCase().includes(filter) || data.abstract.toLowerCase().includes(filter) ||
-                            data.authors.toLowerCase().includes(filter) || data.year.toString().includes(filter) ||
+                        if (data.title.toLowerCase().includes(filter) ||
+                            data.abstract.toLowerCase().includes(filter) ||
+                            data.authors.toLowerCase().includes(filter) ||
+                            data.year.toString().includes(filter) ||
                             filter.startsWith("topic") && (data.topic + 1).toString() === filter.substr(5).trim()) {
-                            ele.style("display", "element");
+                            ele.removeClass('semitransp');
+                            ele.addClass('highlight');
                         } else {
-                            ele.style("display", "none");
+                            ele.removeClass('highlight');
+                            ele.addClass('semitransp');
                         }
                     }
                 });
