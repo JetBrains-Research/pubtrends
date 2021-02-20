@@ -176,10 +176,12 @@ class PlotPreprocessor:
             attrs[node] = {
                 'title': sel['title'].values[0],
                 'abstract': sel['abstract'].values[0],
+                'keywords': sel['keywords'].values[0],
+                'mesh': sel['mesh'].values[0],
                 'authors': cut_authors_list(sel['authors'].values[0]),
                 'year': int(sel['year'].values[0]),
                 'cited': int(sel['total'].values[0]),
-                'topic': topic
+                'topic': topic,
             }
         nx.set_node_attributes(graph, attrs)
 

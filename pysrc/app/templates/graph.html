@@ -719,6 +719,8 @@
                         data.abstract.toLowerCase().includes(filter) ||
                         data.authors.toLowerCase().includes(filter) ||
                         data.year.toString().includes(filter) ||
+                        data.keywords.toString().includes(filter) ||
+                        data.mesh.toString().includes(filter) ||
                         filter.startsWith("topic") && (data.topic + 1).toString() === filter.substr(5).trim()) {
                         ele.removeClass('semitransp');
                         ele.addClass('highlight');
