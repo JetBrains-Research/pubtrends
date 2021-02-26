@@ -213,6 +213,10 @@ Please ensure that you have Database configured, up and running.
 
 ### Jupyter Notebook
    ```
+   # Configure paths
+   export PYTHONPATH=$PYTHONPATH:$(pwd)
+   
+   # Launch notebook
    jupyter notebook
    ```
 
