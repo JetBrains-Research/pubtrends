@@ -27,10 +27,15 @@ from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.plot.plotter import Plotter
 from pysrc.papers.pubtrends_config import PubtrendsConfig
 from pysrc.papers.utils import zoom_name, trim, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE, ZOOM_OUT_TITLE
-from pysrc.review.app.review import REVIEW_ANALYSIS_TITLE, register_app_review
 from pysrc.version import VERSION
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
+
+if PUBTRENDS_CONFIG.feature_review_enabled:
+    from pysrc.review.app.review import REVIEW_ANALYSIS_TITLE, register_app_review
+else:
+    REVIEW_ANALYSIS_TITLE = 'not_available'
+
 
 app = Flask(__name__)
 

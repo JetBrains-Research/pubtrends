@@ -8,8 +8,6 @@ from pysrc.papers.plot.plotter import visualize_analysis
 from pysrc.papers.progress import Progress
 from pysrc.papers.pubtrends_config import PubtrendsConfig
 from pysrc.papers.utils import SORT_MOST_CITED, ZOOM_OUT, PAPER_ANALYSIS
-# noinspection PyUnresolvedReferences
-from pysrc.review.app.task import prepare_review_data_async
 
 
 @pubtrends_celery.task(name='analyze_search_terms')
