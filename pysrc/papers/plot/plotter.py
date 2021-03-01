@@ -75,8 +75,8 @@ def visualize_analysis(analyzer):
             component_size_summary=[components(plotter.component_size_summary())],
             component_years_summary=[components(plotter.component_years_summary())],
             topics_info_and_word_cloud_and_callback=[
-                (components(p), Plotter.word_cloud_prepare(wc), zoom_in_callback) for
-                (p, wc, zoom_in_callback) in plotter.topics_info_and_word_cloud_and_callback()],
+                (components(p), Plotter.word_cloud_prepare(wc), "true" if is_empty else "false", zoom_in_callback) for
+                (p, wc, is_empty, zoom_in_callback) in plotter.topics_info_and_word_cloud_and_callback()],
             component_sizes=plotter.component_sizes(),
             component_ratio=[components(plotter.component_ratio())],
             topics_hierarchy=[components(topics_hierarchy)] if topics_hierarchy is not None else []
@@ -224,7 +224,7 @@ class Plotter:
                    tooltips=[('Topic 1', '@comp_x'),
                              ('Topic 2', '@comp_y'),
                              ('Similarity', '@similarity')])
-        
+
         p.sizing_mode = 'stretch_width'
         p.grid.grid_line_color = None
         p.axis.axis_line_color = None
@@ -335,6 +335,9 @@ class Plotter:
 
             # Word cloud description of topic by titles and abstracts
             kwds = get_topic_word_cloud_data(self.analyzer.df_kwd, comp)
+            is_empty = len(kwds) == 0
+            if is_empty:
+                kwds = {'N/A': 1}  # Artificial tag
             color = (self.comp_colors[comp].r, self.comp_colors[comp].g, self.comp_colors[comp].b)
             wc = WordCloud(background_color="white", width=WORD_CLOUD_WIDTH, height=WORD_CLOUD_HEIGHT,
                            color_func=lambda *args, **kwargs: color,
@@ -347,7 +350,7 @@ class Plotter:
                                                   zoom=ZOOM_IN,
                                                   query=self.analyzer.query)
 
-            result.append((plot, wc, zoom_in_callback))
+            result.append((plot, wc, is_empty, zoom_in_callback))
 
         return result
 

@@ -152,9 +152,10 @@ def get_topic_word_cloud_data(df_kwd, comp):
     """Parse TF-IDF based tokens from text"""
     kwds = {}
     for pair in list(df_kwd[df_kwd['comp'] == comp]['kwd'])[0].split(','):
-        token, value = pair.split(':')
-        for word in token.split(' '):
-            kwds[word] = float(value) + kwds.get(word, 0)
+        if pair != '':  # Correctly process empty kwds encoding
+            token, value = pair.split(':')
+            for word in token.split(' '):
+                kwds[word] = float(value) + kwds.get(word, 0)
     return kwds
 
 
@@ -177,7 +178,8 @@ def get_topics_description(df, comps, corpus_terms, corpus_counts, min_df, max_d
         counter = Counter()
         for i, w in enumerate(tfidf_terms):
             counter[w] += tfidf[comp, i]
-        result[comp] = counter.most_common(n_words)
+        # Ignore terms with insignificant frequencies
+        result[comp] = [(t, f) for t, f in counter.most_common(n_words) if f > 0]
     return result
 
 

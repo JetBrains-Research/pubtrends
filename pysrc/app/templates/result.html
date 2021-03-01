@@ -161,10 +161,14 @@
 
             // Process topics word clouds
             let cid = '';
-            {% for (script, div), word_cloud, zoom_in_callback in topics_info_and_word_cloud_and_callback %}
+            {% for (script, div), word_cloud, is_empty, zoom_in_callback in topics_info_and_word_cloud_and_callback %}
                  words = JSON.parse(normalize('{{ word_cloud }}'));
                  cid = 'topic_word_cloud_{{ loop.index }}';
-                 process_word_cloud(cid, $('#' + cid).outerWidth(), 335, 200, 300, words, papers_callback_word);
+                 if ({{ is_empty }}) {
+                     process_word_cloud(cid, $('#' + cid).outerWidth(), 335, 200, 300, words, null);
+                 } else {
+                    process_word_cloud(cid, $('#' + cid).outerWidth(), 335, 200, 300, words, papers_callback_word);
+                 }
             {% endfor %}
 
             // @formatter:on
@@ -589,7 +593,7 @@
                         Year reflects publication year of the original paper.
                     </p>
                     <div>
-                        {% for (script, div), word_cloud, zoom_in_callback in
+                        {% for (script, div), word_cloud, is_empty, zoom_in_callback in
                         topics_info_and_word_cloud_and_callback %}
                         <div id="topic-div-{{ loop.index }}">
                             <hr>

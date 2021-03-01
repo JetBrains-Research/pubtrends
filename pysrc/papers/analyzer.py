@@ -285,7 +285,7 @@ class KeyPaperAnalyzer:
                 query=query,
                 n_words=self.TOPIC_DESCRIPTION_WORDS
             )
-            kwds = [(comp, ','.join([f'{t}:{max(1e-3, v):.3f}' for t, v in vs[:self.TOPIC_DESCRIPTION_WORDS]]))
+            kwds = [(comp, ','.join([f'{t}:{v}' for t, v in vs[:self.TOPIC_DESCRIPTION_WORDS]]))
                     for comp, vs in topics_description.items()]
             self.df_kwd = pd.DataFrame(kwds, columns=['comp', 'kwd'])
             logger.debug(f'Components description\n{self.df_kwd["kwd"]}')
