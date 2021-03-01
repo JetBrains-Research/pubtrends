@@ -136,7 +136,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 GROUP BY id, year
                 LIMIT {self.config.max_number_of_citations};
             '''
-        logger.debug('load_citations_by_year query: ', query)
+        logger.debug(f'load_citations_by_year query: {query}')
 
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
