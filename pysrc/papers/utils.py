@@ -158,12 +158,14 @@ def get_topic_word_cloud_data(df_kwd, comp):
     return kwds
 
 
-def get_topics_description(df, comps, corpus_ngrams, corpus_counts, query, n_words):
+def get_topics_description(df, comps, corpus_terms, corpus_counts, min_df, max_df, query, n_words):
     if len(comps) == 1:
         most_frequent = get_frequent_tokens(df, query)
         return {0: list(sorted(most_frequent.items(), key=lambda kv: kv[1], reverse=True))[:n_words]}
 
-    tfidf = compute_comps_tfidf(df, comps, corpus_counts)
+    tfidf, tfidf_terms = compute_comps_tfidf(
+        df, comps, corpus_terms, corpus_counts, min_df=min_df, max_df=max_df
+    )
     result = {}
     for comp in comps.keys():
         # Generate no keywords for '-1' component
@@ -171,43 +173,73 @@ def get_topics_description(df, comps, corpus_ngrams, corpus_counts, query, n_wor
             result[comp] = ''
             continue
 
-        # Take size indices with the largest tfidf first
+        # Take indices with the largest tfidf
         counter = Counter()
-        for i, n in enumerate(corpus_ngrams):
-            for w in n.split(' '):
-                counter[w] += tfidf[comp, i]
+        for i, w in enumerate(tfidf_terms):
+            counter[w] += tfidf[comp, i]
         result[comp] = counter.most_common(n_words)
     return result
 
 
-def get_evolution_topics_description(df, comps, corpus_ngrams, corpus_counts, size):
-    # -1 is Not Published Yet
-    tfidf = compute_comps_tfidf(df, comps, corpus_counts, ignore_comp=-1)
+def get_evolution_topics_description(df, comps, corpus_terms, corpus_counts, min_df, max_df, size):
+    tfidf, tfidf_terms = compute_comps_tfidf(
+        df, comps, corpus_terms, corpus_counts, min_df=min_df, max_df=max_df, ignore_comp=-1
+    )
     kwd = {}
+    comp_idx = dict(enumerate([c for c in comps if c != -1]))  # -1 Not yet published
     for comp in comps.keys():
-        # Generate no keywords for '-1' component
-        if comp == -1:
+        if comp not in comp_idx:
+            # Generate no keywords for '-1' component
             kwd[comp] = ''
             continue
 
         # Sort indices by tfidf value
         # It might be faster to use np.argpartition instead of np.argsort
-        ind = np.argsort(tfidf[comp, :].toarray(), axis=1)
+        ind = np.argsort(tfidf[comp_idx[comp], :].toarray(), axis=1)
 
         # Take tokens with the largest tfidf
-        kwd[comp] = [corpus_ngrams[idx] for idx in ind[0, -size:]]
+        kwd[comp_idx[comp]] = [tfidf_terms[idx] for idx in ind[0, -size:]]
     return kwd
 
 
-def compute_comps_tfidf(df, comps, corpus_counts, ignore_comp=None):
+def compute_comps_tfidf(df, comps, corpus_terms, corpus_counts, min_df, max_df, ignore_comp=None):
+    """
+    Compute TFIDF given general corpus vectorization
+    :param df: Papers dataframe
+    :param comps: Dict of component to all papers
+    :param corpus_terms: Vocabulary terms
+    :param corpus_counts: Counts for all papers in general vocabulary
+    :param min_df: Ignore terms with frequency lower than given threshold
+    :param max_df: Ignore terms with frequency higher than given threshold
+    :param ignore_comp: None or number of component to ignore
+    :return: TFIDF matrix of size (components x new_vocabulary_size) and new_vocabulary
+    """
     log.debug(f'Creating corpus for comps {len(comps)}')
-    comps_to_process = dict(enumerate([c for c in comps if c != ignore_comp]))
-    comp_counts = np.zeros(shape=(len(comps_to_process), corpus_counts.shape[1]), dtype=np.short)
-    for c, article_ids in comps.items():
-        if c in comps_to_process:
-            comp_counts[comps_to_process[c], :] = \
-                np.sum(corpus_counts[np.flatnonzero(df['id'].isin(article_ids)), :], axis=0)
-    return compute_tfidf(comp_counts)
+    # Since some of the components may be skipped, use this dict for continuous indexes
+    comp_idx = dict(enumerate([c for c in comps if c != ignore_comp]))
+    comp_counts = np.zeros(shape=(len(comp_idx), corpus_counts.shape[1]), dtype=np.short)
+    for comp, comp_pids in comps.items():
+        if comp in comp_idx:  # Not ignored
+            comp_counts[comp_idx[comp], :] = \
+                np.sum(corpus_counts[np.flatnonzero(df['id'].isin(comp_pids)), :], axis=0)
+    comp_terms_counts = np.asarray(
+        np.sum(corpus_counts[np.flatnonzero([c != ignore_comp for c in comps]), :], axis=0)
+    ).reshape(-1)
+    comp_papers = sum([len(papers) for c, papers in comps.items() if c != ignore_comp])
+    # Filter out terms by min_df and max_df
+    comp_terms_filter = np.flatnonzero(
+        [min_df * comp_papers <= count <= max_df * comp_papers for count in comp_terms_counts]
+    )
+    filtered_comp_counts = comp_counts[:, comp_terms_filter]
+    for comp, comp_pids in comps.items():
+        if comp in comp_idx:  # Not ignored
+            # Normalize to component sizes
+            filtered_comp_counts[comp_idx[comp], :] = \
+                filtered_comp_counts[comp_idx[comp], :] / len(comp_pids)
+
+    filtered_terms = [corpus_terms[i] for i in comp_terms_filter]
+    tfidf = compute_tfidf(filtered_comp_counts)
+    return tfidf, filtered_terms
 
 
 def compute_tfidf(counts):
@@ -217,12 +249,19 @@ def compute_tfidf(counts):
     return tfidf
 
 
-def vectorize_corpus(df, max_features, n_gram, min_df, max_df):
+def vectorize_corpus(df, max_features, min_df, max_df):
+    """
+    Create vectorization for papers in df.
+    :param df: papers dataframe
+    :param max_features: Maximum vocabulary size
+    :param min_df: Ignore terms with frequency lower than given threshold
+    :param max_df: Ignore terms with frequency higher than given threshold
+    :return: Return vocabulary and term counts.
+    """
     corpus = build_corpus(df)
     vectorizer = CountVectorizer(
         min_df=min_df,
         max_df=max_df if len(df) > 1 else 1.0,  # For tests
-        ngram_range=(1, n_gram),
         max_features=max_features,
         tokenizer=lambda t: tokenize(t)
     )
@@ -230,12 +269,6 @@ def vectorize_corpus(df, max_features, n_gram, min_df, max_df):
     counts = vectorizer.fit_transform(corpus)
     log.debug(f'Vectorized corpus size {counts.shape}')
     return vectorizer.get_feature_names(), counts
-
-
-def cosine_similarity(x):
-    """Modified version of sklearn.metrics.pairwise.cosine_similarity - no copying"""
-    normalize(x, copy=False)
-    return x @ x.T
 
 
 def split_df_list(df, target_column, separator):

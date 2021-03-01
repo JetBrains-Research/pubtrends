@@ -45,12 +45,11 @@ BIBLIOGRAPHIC_COUPLING_DATA = [['3', '4', 2],
 SIMILARITY_GRAPH = [('1', '2', {'cocitation': 3.0, 'similarity': 3.0}), ('1', '4', {'citation': 1, 'similarity': 0.5}),
                     ('1', '3', {'citation': 1, 'similarity': 0.5}), ('1', '5', {'citation': 1, 'similarity': 0.5}),
                     ('2', '4', {'citation': 1, 'similarity': 0.5}),
-                    ('2', '3', {'citation': 1, 'text': 0.6666666666666666, 'similarity': 7.166666666666666}),
+                    ('2', '3', {'citation': 1, 'text': 0.6666666666666669, 'similarity': 7.166666666666669}),
                     ('2', '5', {'citation': 1, 'similarity': 0.5}),
                     ('3', '4', {'cocitation': 1.0, 'bibcoupling': 2.0, 'similarity': 5.0}),
                     ('3', '5', {'bibcoupling': 2.0, 'citation': 1, 'similarity': 4.5}),
                     ('4', '5', {'bibcoupling': 2.0, 'citation': 1, 'similarity': 4.5})]
-
 EXPECTED_MAX_GAIN = {1972: '3', 1974: '1'}
 EXPECTED_MAX_RELATIVE_GAIN = {1972: '3', 1974: '4'}
 

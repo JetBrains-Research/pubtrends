@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 from math import floor
 from networkx.readwrite import json_graph
+from sklearn.metrics.pairwise import cosine_similarity
 
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
@@ -15,7 +16,7 @@ from pysrc.papers.extract_numbers import extract_metrics, MetricExtractor
 from pysrc.papers.progress import Progress
 from pysrc.papers.pubtrends_config import PubtrendsConfig
 from pysrc.papers.utils import split_df_list, get_topics_description, SORT_MOST_CITED, \
-    compute_tfidf, cosine_similarity, vectorize_corpus, tokens_stems, get_evolution_topics_description
+    vectorize_corpus, tokens_stems, get_evolution_topics_description
 
 logger = logging.getLogger(__name__)
 
@@ -43,15 +44,26 @@ class KeyPaperAnalyzer:
     # ignoring similarities less than average within groups
     STRUCTURE_BETWEEN_TOPICS_SPARSITY = 0.2
 
+    # Global vectorization max vocabulary size
+    VECTOR_WORDS = 10000
+    # Terms with lower frequency will be ignored, remove rare words
+    VECTOR_MIN_DF = 0.001
+    # Terms with higher frequency will be ignored, remove abundant stop words
+    VECTOR_MAX_DF = 0.5
+
     TOPIC_MIN_SIZE = 10
     TOPICS_MAX_NUMBER = 100
-    TOPIC_PAPERS_TFIDF = 50
-    TOPIC_WORDS = 20
 
-    VECTOR_WORDS = 10000
-    VECTOR_NGRAMS = 1
-    VECTOR_MIN_DF = 0.01
-    VECTOR_MAX_DF = 0.5
+    # Number of top cited papers in topic picked for description computation
+    TOPIC_MOST_CITED_PAPERS = 50
+    # User for topics description generation.
+    # Terms with lower frequency among components top cited papers will be ignored.
+    TFIDF_VECTOR_MIN_DF = 0.01
+    # User for topics description generation.
+    # Terms with higher frequency among components top cited papers will be ignored.
+    TFIDF_VECTOR_MAX_DF = 0.2
+    # Number of words for topic description
+    TOPIC_DESCRIPTION_WORDS = 20
 
     TOP_JOURNALS = 50
     TOP_AUTHORS = 50
@@ -201,14 +213,15 @@ class KeyPaperAnalyzer:
         self.pub_types = list(set(self.pub_df['type']))
 
         self.progress.info('Analyzing title and abstract texts', current=3, task=task)
-        self.corpus_ngrams, self.corpus_counts = \
-            vectorize_corpus(self.pub_df,
-                             max_features=KeyPaperAnalyzer.VECTOR_WORDS, n_gram=KeyPaperAnalyzer.VECTOR_NGRAMS,
-                             min_df=KeyPaperAnalyzer.VECTOR_MIN_DF, max_df=KeyPaperAnalyzer.VECTOR_MAX_DF)
-        tfidf = compute_tfidf(self.corpus_counts)
+        self.corpus_terms, self.corpus_counts = vectorize_corpus(
+            self.pub_df,
+            max_features=KeyPaperAnalyzer.VECTOR_WORDS,
+            min_df=KeyPaperAnalyzer.VECTOR_MIN_DF,
+            max_df=KeyPaperAnalyzer.VECTOR_MAX_DF
+        )
 
         self.progress.info('Processing texts similarity', current=4, task=task)
-        self.texts_similarity = self.analyze_texts_similarity(self.pub_df, tfidf)
+        self.texts_similarity = self.analyze_texts_similarity(self.pub_df, self.corpus_counts)
 
         self.progress.info('Loading citations statistics by year', current=5, task=task)
         cits_by_year_df = self.loader.load_citations_by_year(self.ids)
@@ -264,11 +277,16 @@ class KeyPaperAnalyzer:
                 self.df.loc[self.df['type'] != 'Review'] if noreviews else self.df,
                 self.partition
             )
-            tfidf_per_comp = get_topics_description(self.df, most_cited_per_comp,
-                                                    self.corpus_ngrams, self.corpus_counts,
-                                                    query, self.TOPIC_WORDS)
-            kwds = [(comp, ','.join([f'{t}:{max(1e-3, v):.3f}' for t, v in vs[:self.TOPIC_WORDS]]))
-                    for comp, vs in tfidf_per_comp.items()]
+            topics_description = get_topics_description(
+                self.df, most_cited_per_comp,
+                self.corpus_terms, self.corpus_counts,
+                min_df=KeyPaperAnalyzer.TFIDF_VECTOR_MIN_DF,
+                max_df=KeyPaperAnalyzer.TFIDF_VECTOR_MAX_DF,
+                query=query,
+                n_words=self.TOPIC_DESCRIPTION_WORDS
+            )
+            kwds = [(comp, ','.join([f'{t}:{max(1e-3, v):.3f}' for t, v in vs[:self.TOPIC_DESCRIPTION_WORDS]]))
+                    for comp, vs in topics_description.items()]
             self.df_kwd = pd.DataFrame(kwds, columns=['comp', 'kwd'])
             logger.debug(f'Components description\n{self.df_kwd["kwd"]}')
             # Build structure graph
@@ -449,8 +467,8 @@ class KeyPaperAnalyzer:
         return result
 
     @staticmethod
-    def analyze_texts_similarity(df, tfidf):
-        cos_similarities = cosine_similarity(tfidf)
+    def analyze_texts_similarity(df, corpus_vectors):
+        cos_similarities = cosine_similarity(corpus_vectors)
         similarity_queues = [PriorityQueue(maxsize=KeyPaperAnalyzer.SIMILARITY_TEXT_CITATION_N)
                              for _ in range(len(df))]
         # Adding text citations
@@ -627,7 +645,7 @@ class KeyPaperAnalyzer:
         assert 0 < e < 1, f'sparsity parameter {e} should be in 0..1'
         result = nx.Graph()
         neighbours = {node: set(graph.neighbors(node)) for node in graph.nodes}
-        sim_queues = {node: PriorityQueue(maxsize=max(1, floor(pow(len(neighbours[node]), e))))
+        sim_queues = {node: PriorityQueue(maxsize=floor(pow(len(neighbours[node]), e)))
                       for node in graph.nodes}
         for (u, v, s) in graph.edges(data='similarity'):
             qu = sim_queues[u]
@@ -783,7 +801,7 @@ class KeyPaperAnalyzer:
         return author_stats.head(n=n)
 
     @staticmethod
-    def get_most_cited_papers_for_comps(df, partition, n_papers=TOPIC_PAPERS_TFIDF):
+    def get_most_cited_papers_for_comps(df, partition, n_papers=TOPIC_MOST_CITED_PAPERS):
         pdf = pd.DataFrame(partition.items(), columns=['id', 'comp'])
         ids_comp_df = pd.merge(left=df[['id', 'total']], left_on='id',
                                right=pdf, right_on='id', how='inner')
@@ -895,7 +913,10 @@ class KeyPaperAnalyzer:
                     evolution_df[col] = evolution_df[col].apply(int)
                     comps = evolution_df.groupby(col)['id'].apply(list).to_dict()
                     evolution_kwds[col] = get_evolution_topics_description(
-                        df, comps, self.corpus_ngrams, self.corpus_counts, size=KeyPaperAnalyzer.TOPIC_WORDS
+                        df, comps, self.corpus_terms, self.corpus_counts,
+                        min_df=KeyPaperAnalyzer.TFIDF_VECTOR_MIN_DF,
+                        max_df=KeyPaperAnalyzer.TFIDF_VECTOR_MAX_DF,
+                        size=KeyPaperAnalyzer.TOPIC_DESCRIPTION_WORDS
                     )
 
         return evolution_kwds

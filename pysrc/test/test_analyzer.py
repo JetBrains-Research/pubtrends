@@ -121,7 +121,7 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
         self.assertDictEqual(comps, {0: ['3']})
 
     def test_corpus_vectorization(self):
-        self.assertEquals(self.analyzer.corpus_ngrams,
+        self.assertEquals(self.analyzer.corpus_terms,
                           ['abstract', 'breakthrough', 'interesting', 'kw1', 'kw2', 'kw3', 'kw4', 'kw5', 'paper'])
         self.assertTrue(np.array_equal(self.analyzer.corpus_counts.toarray(),
                                        [[0, 0, 0, 1, 1, 0, 0, 0, 1],
@@ -193,8 +193,9 @@ class TestKeyPaperAnalyzerSingle(unittest.TestCase):
             'max_gain_df',
             'max_rel_gain_papers',
             'max_rel_gain_df',
-            'journal_stats',
-            'author_stats',
+            # These are optional
+            # 'journal_stats',
+            # 'author_stats',
         ]
         for a in all_attrs:
             self.assertTrue(hasattr(self.analyzer, a), f'Missing attr {a}')
