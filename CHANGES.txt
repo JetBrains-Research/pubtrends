@@ -3,10 +3,18 @@ Pubtrends changelog
 
 Here you can see the full list of changes between each release.
 
+Version 0.12
+------------
+Released on March 1, 2021
+
+ - Improved graph visualization - highlight nodes according to filter string on the fly
+ - Improved topics description - avoid similar terms in topics descriptions
+ - Modified similarity between papers - use log for bibcoupling and co-citations to make all features the same magnitude
+
 
 Version 0.11
 ------------
-Released on XXX XX, 2021
+Released on February 12, 2021
 
  - Model from the paper [Automatic generation of reviews of scientific papers](https://arxiv.org/abs/2010.04147) is deployed. \\
  It collects a set of sentences from top cited papers abstracts with the highest probability to be included in a real review.
