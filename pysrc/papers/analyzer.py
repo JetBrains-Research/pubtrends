@@ -377,6 +377,7 @@ class KeyPaperAnalyzer:
             process_citations=True,
             process_text_citations=True,
             process_all_papers=True,
+            scale_cocitations_bibcoupling=True,
             current=0, task=None
     ):
         """
@@ -394,16 +395,23 @@ class KeyPaperAnalyzer:
         self.progress.info('Building papers similarity graph', current=current, task=task)
         pids = list(df['id'])
 
+        # Scale cocitations and bibcoupling to have the same range of values as citation and text similarity
+        total_column = 'total'
+        if scale_cocitations_bibcoupling:
+            total_column = 'total_scaled'
+            cocit_df['total_scaled'] = np.log10(1 + cocit_df['total'])
+            bibliographic_coupling_df['total_scaled'] = np.log10(1 + bibliographic_coupling_df['total'])
+
         result = nx.Graph()
         # NOTE: we use nodes id as String to avoid problems str keys in jsonify
         # during graph visualization
         if process_cocitations and len(cocit_df) > 0:
-            for el in cocit_df[['cited_1', 'cited_2', 'total']].values:
+            for el in cocit_df[['cited_1', 'cited_2', total_column]].values:
                 start, end, cocitation = str(el[0]), str(el[1]), float(el[2])
                 result.add_edge(start, end, cocitation=cocitation)
 
         if process_bibliographic_coupling and len(bibliographic_coupling_df) > 0:
-            for el in bibliographic_coupling_df[['citing_1', 'citing_2', 'total']].values:
+            for el in bibliographic_coupling_df[['citing_1', 'citing_2', total_column]].values:
                 start, end, bibcoupling = str(el[0]), str(el[1]), float(el[2])
                 if result.has_edge(start, end):
                     result[start][end]['bibcoupling'] = bibcoupling
