@@ -121,14 +121,18 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
         self.assertDictEqual(comps, {0: ['3']})
 
     def test_corpus_vectorization(self):
-        self.assertEquals(self.analyzer.corpus_terms,
-                          ['abstract', 'breakthrough', 'interesting', 'kw1', 'kw2', 'kw3', 'kw4', 'kw5', 'paper'])
-        self.assertTrue(np.array_equal(self.analyzer.corpus_counts.toarray(),
-                                       [[0, 0, 0, 1, 1, 0, 0, 0, 1],
-                                        [1, 0, 0, 0, 1, 1, 0, 0, 0],
-                                        [1, 0, 0, 0, 0, 1, 1, 0, 0],
-                                        [0, 0, 1, 0, 0, 0, 1, 1, 1],
-                                        [0, 1, 0, 1, 0, 0, 0, 1, 0]]))
+        self.assertEquals(
+            self.analyzer.corpus_terms,
+            ['abstract', 'breakthrough', 'interesting', 'kw1', 'kw2', 'kw3', 'kw4', 'kw5', 'paper', 'term1', 'term2',
+             'term3', 'term4', 'term5']
+        )
+        self.assertTrue(np.array_equal(
+            self.analyzer.corpus_counts.toarray(),
+            [[0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0],
+             [1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0],
+             [1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1],
+             [0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1],
+             [0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1]]))
 
 
 class TestKeyPaperAnalyzerSingle(unittest.TestCase):
@@ -202,7 +206,9 @@ class TestKeyPaperAnalyzerSingle(unittest.TestCase):
 
     def test_dump(self):
         dump = self.analyzer.dump()
-        self.assertEqual('{"comp":{"0":0},"kwd":{"0":"article:0.5,paper:0.5"}}', dump['df_kwd'])
+        self.assertEqual(
+            '{"comp":{"0":0},"kwd":{"0":"article:0.167,paper:0.167,kw1:0.167,term1:0.167,term2:0.167,term3:0.167"}}',
+            dump['df_kwd'])
 
 
 class TestKeyPaperAnalyzerMissingPaper(unittest.TestCase):

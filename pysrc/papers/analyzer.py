@@ -36,20 +36,20 @@ class KeyPaperAnalyzer:
     SIMILARITY_TEXT_CITATION = 10  # Limited by cosine similarity <= 1
 
     SIMILARITY_TEXT_MIN = 0.5  # Minimal cosine similarity for potential text citation
-    SIMILARITY_TEXT_CITATION_N = 10  # Max number of potential text citations for paper
+    SIMILARITY_TEXT_CITATION_N = 20  # Max number of potential text citations for paper
 
     # Reduce number of edges in smallest communities, i.e. topics
-    STRUCTURE_LOW_LEVEL_SPARSITY = 0.5
+    STRUCTURE_LOW_LEVEL_SPARSITY = 0.7
     # Limit number of edges between different topics to min number of inner edges * scale factor,
     # ignoring similarities less than average within groups
-    STRUCTURE_BETWEEN_TOPICS_SPARSITY = 0.2
+    STRUCTURE_BETWEEN_TOPICS_SPARSITY = 0.3
 
     # Global vectorization max vocabulary size
     VECTOR_WORDS = 10000
     # Terms with lower frequency will be ignored, remove rare words
-    VECTOR_MIN_DF = 0.001
+    VECTOR_MIN_DF = 0.01
     # Terms with higher frequency will be ignored, remove abundant stop words
-    VECTOR_MAX_DF = 0.5
+    VECTOR_MAX_DF = 0.8
 
     TOPIC_MIN_SIZE = 10
     TOPICS_MAX_NUMBER = 100
@@ -57,13 +57,10 @@ class KeyPaperAnalyzer:
     # Number of top cited papers in topic picked for description computation
     TOPIC_MOST_CITED_PAPERS = 50
     # User for topics description generation.
-    # Terms with lower frequency among components top cited papers will be ignored.
-    TFIDF_VECTOR_MIN_DF = 0.01
-    # User for topics description generation.
     # Terms with higher frequency among components top cited papers will be ignored.
-    TFIDF_VECTOR_MAX_DF = 0.2
+    TFIDF_VECTOR_MAX_DF = 100
     # Number of words for topic description
-    TOPIC_DESCRIPTION_WORDS = 20
+    TOPIC_DESCRIPTION_WORDS = 10
 
     TOP_JOURNALS = 50
     TOP_AUTHORS = 50
@@ -280,15 +277,14 @@ class KeyPaperAnalyzer:
             topics_description = get_topics_description(
                 self.df, most_cited_per_comp,
                 self.corpus_terms, self.corpus_counts,
-                min_df=KeyPaperAnalyzer.TFIDF_VECTOR_MIN_DF,
-                max_df=KeyPaperAnalyzer.TFIDF_VECTOR_MAX_DF,
                 query=query,
                 n_words=self.TOPIC_DESCRIPTION_WORDS
             )
-            kwds = [(comp, ','.join([f'{t}:{v}' for t, v in vs[:self.TOPIC_DESCRIPTION_WORDS]]))
+            kwds = [(comp, ','.join([f'{t}:{v:.3f}' for t, v in vs[:self.TOPIC_DESCRIPTION_WORDS]]))
                     for comp, vs in topics_description.items()]
+            logger.debug('Components description')
+            logger.debug('\n'.join(f'{comp}: {kwd}' for comp, kwd in kwds))
             self.df_kwd = pd.DataFrame(kwds, columns=['comp', 'kwd'])
-            logger.debug(f'Components description\n{self.df_kwd["kwd"]}')
             # Build structure graph
             self.structure_graph = self.build_structure_graph(self.df, self.similarity_graph)
 
@@ -914,8 +910,6 @@ class KeyPaperAnalyzer:
                     comps = evolution_df.groupby(col)['id'].apply(list).to_dict()
                     evolution_kwds[col] = get_evolution_topics_description(
                         df, comps, self.corpus_terms, self.corpus_counts,
-                        min_df=KeyPaperAnalyzer.TFIDF_VECTOR_MIN_DF,
-                        max_df=KeyPaperAnalyzer.TFIDF_VECTOR_MAX_DF,
                         size=KeyPaperAnalyzer.TOPIC_DESCRIPTION_WORDS
                     )
 

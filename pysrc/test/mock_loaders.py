@@ -42,9 +42,10 @@ BIBLIOGRAPHIC_COUPLING_DATA = [['3', '4', 2],
                                ['3', '5', 2],
                                ['4', '5', 2]]
 
-SIMILARITY_GRAPH = [('1', '2', {'cocitation': 3.0, 'similarity': 1.3862943611198906}),
+SIMILARITY_GRAPH = [('1', '2', {'cocitation': 3.0, 'text': 0.5000000000000001, 'similarity': 6.386294361119892}),
                     ('1', '4', {'citation': 1, 'similarity': 0.5}), ('1', '3', {'citation': 1, 'similarity': 0.5}),
-                    ('1', '5', {'citation': 1, 'similarity': 0.5}), ('2', '4', {'citation': 1, 'similarity': 0.5}),
+                    ('1', '5', {'citation': 1, 'text': 0.5000000000000001, 'similarity': 5.500000000000001}),
+                    ('2', '4', {'citation': 1, 'similarity': 0.5}),
                     ('2', '3', {'citation': 1, 'text': 0.6666666666666669, 'similarity': 7.166666666666669}),
                     ('2', '5', {'citation': 1, 'similarity': 0.5}),
                     ('3', '4', {'cocitation': 1.0, 'bibcoupling': 2.0, 'similarity': 6.186208623900493}),
