@@ -47,9 +47,9 @@ SIMILARITY_GRAPH = [('1', '2', {'cocitation': 3.0, 'similarity': 1.3862943611198
                     ('1', '5', {'citation': 1, 'similarity': 0.5}), ('2', '4', {'citation': 1, 'similarity': 0.5}),
                     ('2', '3', {'citation': 1, 'text': 0.6666666666666669, 'similarity': 7.166666666666669}),
                     ('2', '5', {'citation': 1, 'similarity': 0.5}),
-                    ('3', '4', {'cocitation': 1.0, 'bibcoupling': 2.0, 'similarity': 6.1862086239004945}),
-                    ('3', '5', {'bibcoupling': 2.0, 'citation': 1, 'similarity': 5.993061443340549}),
-                    ('4', '5', {'bibcoupling': 2.0, 'citation': 1, 'similarity': 5.993061443340549})]
+                    ('3', '4', {'cocitation': 1.0, 'bibcoupling': 2.0, 'similarity': 6.186208623900493}),
+                    ('3', '5', {'bibcoupling': 2.0, 'citation': 1, 'similarity': 5.993061443340547}),
+                    ('4', '5', {'bibcoupling': 2.0, 'citation': 1, 'similarity': 5.993061443340547})]
 EXPECTED_MAX_GAIN = {1972: '3', 1974: '1'}
 EXPECTED_MAX_RELATIVE_GAIN = {1972: '3', 1974: '4'}
 
