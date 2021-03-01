@@ -30,8 +30,8 @@ class KeyPaperAnalyzer:
 
     # ...bibliographic coupling (BC) was the most accurate,  followed by co-citation (CC).
     # Direct citation (DC) was a distant third among the three...
-    SIMILARITY_BIBLIOGRAPHIC_COUPLING = 2  # Limited by number of references
-    SIMILARITY_COCITATION = 1  # Limiter by number of co-citations
+    SIMILARITY_BIBLIOGRAPHIC_COUPLING = 5  # Limited by number of references, applied to log
+    SIMILARITY_COCITATION = 1  # Limiter by number of co-citations, applied to log
     SIMILARITY_CITATION = 0.5  # Limited by 1 citation
     SIMILARITY_TEXT_CITATION = 10  # Limited by cosine similarity <= 1
 
@@ -666,8 +666,8 @@ class KeyPaperAnalyzer:
     @staticmethod
     def get_similarity(d):
         return \
-            KeyPaperAnalyzer.SIMILARITY_BIBLIOGRAPHIC_COUPLING * d.get('bibcoupling', 0) + \
-            KeyPaperAnalyzer.SIMILARITY_COCITATION * d.get('cocitation', 0) + \
+            KeyPaperAnalyzer.SIMILARITY_BIBLIOGRAPHIC_COUPLING * np.log1p(d.get('bibcoupling', 0)) + \
+            KeyPaperAnalyzer.SIMILARITY_COCITATION * np.log1p(d.get('cocitation', 0)) + \
             KeyPaperAnalyzer.SIMILARITY_CITATION * d.get('citation', 0) + \
             KeyPaperAnalyzer.SIMILARITY_TEXT_CITATION * d.get('text', 0)
 

@@ -102,15 +102,18 @@ class TestPlotPreprocessor(unittest.TestCase):
 
         self.assertListEqual(topics, ['1', '2', '3'], 'Wrong topics')
 
-        expected_values = np.array([[4.5, 1, 0],
-                                    [1, 4.833333333333333, 0],
-                                    [0, 0, 0]])
+        expected_similarities = np.array([[1.53027646, 0.69314718, 0.],
+                                          [0.69314718, 2.43673086, 0.],
+                                          [0., 0., 0.]])
 
-        n_comps = len(self.analyzer.components)
-        for i in range(n_comps):
-            for j in range(n_comps):
-                self.assertAlmostEqual(similarity_df[index(i + 1, j + 1)]['similarity'].values[0],
-                                       expected_values[i, j], places=3,
+        similarities = np.zeros(shape=(3, 3))
+        for i in range(3):
+            for j in range(3):
+                similarities[i, j] = similarity_df[index(i + 1, j + 1)]['similarity'].values[0]
+
+        for i in range(3):
+            for j in range(3):
+                self.assertAlmostEqual(expected_similarities[i, j], similarities[i, j], places=3,
                                        msg=f'Wrong similarities for comp_x {i} and comp_y {j}')
 
     def test_topic_evolution_data(self):
