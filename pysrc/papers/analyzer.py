@@ -112,14 +112,17 @@ class KeyPaperAnalyzer:
         return self.loader.load_references(pid, limit)
 
     def expand_ids(self, ids, limit, current=1, task=None):
-        if len(ids) > self.config.max_number_to_expand:
+        n_papers = len(ids)
+        if n_papers > self.config.max_number_to_expand:
             self.progress.info('Too many related papers, nothing to expand', current=current, task=task)
             return ids
         self.progress.info('Expanding related papers by references', current=current, task=task)
-        logger.debug(f'Expanding {len(ids)} papers to: {limit}')
-
-        mean, std = self.loader.estimate_citations(ids)
-        logger.debug(f'Estimated citations count mean={mean}, std={std} to keep citations on a group level')
+        logger.debug(f'Expanding {n_papers} papers to: {limit}')
+        if n_papers > 1:
+            mean, std = self.loader.estimate_citations(ids)
+            logger.debug(f'Estimated citations count mean={mean}, std={std} to keep citations on a group level')
+        else:
+            mean, std = None, None  # Not used
         current_ids = ids
 
         publications = self.loader.load_publications(ids)
@@ -146,11 +149,12 @@ class KeyPaperAnalyzer:
             new_df = expanded_df.loc[np.logical_not(expanded_df['id'].isin(set(current_ids)))]
             logging.debug(f'New papers {len(new_df)}')
 
-            logger.debug(f'Filter by citations mean({mean}) +- {self.EXPAND_CITATIONS_SIGMA} * std({std})')
-            new_df = new_df.loc[[
-                mean - self.EXPAND_CITATIONS_SIGMA * std <= t <= mean + self.EXPAND_CITATIONS_SIGMA * std
-                for t in new_df['total']]]
-            logger.debug(f'Citations filtered: {len(new_df)}')
+            if n_papers > 1:
+                logger.debug(f'Filter by citations mean({mean}) +- {self.EXPAND_CITATIONS_SIGMA} * std({std})')
+                new_df = new_df.loc[[
+                    mean - self.EXPAND_CITATIONS_SIGMA * std <= t <= mean + self.EXPAND_CITATIONS_SIGMA * std
+                    for t in new_df['total']]].copy()
+                logger.debug(f'Citations filtered: {len(new_df)}')
 
             new_ids = list(new_df['id'])
             if len(new_ids) == 0:
@@ -173,7 +177,7 @@ class KeyPaperAnalyzer:
                 new_mesh_stems = [s for s, _ in tokens_stems((mesh + ' ' + keywords).replace(',', ' '))]
                 if new_mesh_stems:
                     # Estimate fold change of similarity vs random single paper
-                    similarity = sum([mesh_counter[s] / (len(mesh_stems) / len(ids)) for s in new_mesh_stems])
+                    similarity = sum([mesh_counter[s] / (len(mesh_stems) / n_papers) for s in new_mesh_stems])
                     fcs.append([pid, False, similarity, title, ','.join(new_mesh_stems)])
                 else:
                     fcs.append([pid, True, 0.0, title, ''])
