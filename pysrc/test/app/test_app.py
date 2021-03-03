@@ -76,6 +76,6 @@ class TestApp(unittest.TestCase):
             rv = c.get(f'/result?{args}')  # Result should be fine
             self.assertEqual(200, rv.status_code)
             response = rv.data.decode('utf-8')
-            self.assertTrue(re.findall('<div id="n_papers"(.*\n)+.*<b>9</b>', response))
+            self.assertTrue(re.findall('<div id="n_papers"(.*\n)+.*<b>10</b>', response))
             self.assertTrue(re.findall('<div id="n_citations"(.*\n)+.*<b>15</b>', response))
             self.assertTrue(re.findall('<div id="n_topics"(.*\n)+.*<b>1</b>', response))

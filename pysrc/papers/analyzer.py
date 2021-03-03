@@ -39,7 +39,7 @@ class KeyPaperAnalyzer:
     SIMILARITY_TEXT_CITATION_N = 20  # Max number of potential text citations for paper
 
     # Reduce number of edges in smallest communities, i.e. topics
-    STRUCTURE_LOW_LEVEL_SPARSITY = 0.7
+    STRUCTURE_LOW_LEVEL_SPARSITY = 0.5
     # Limit number of edges between different topics to min number of inner edges * scale factor,
     # ignoring similarities less than average within groups
     STRUCTURE_BETWEEN_TOPICS_SPARSITY = 0.3
@@ -66,8 +66,8 @@ class KeyPaperAnalyzer:
     TOP_AUTHORS = 50
 
     EXPAND_STEPS = 2
-    # Limit citations count of expanded papers to avoid prevalence of related methods
-    EXPAND_CITATIONS_SIGMA = 3
+    # Multiplier to configure number of papers during expand
+    EXPAND_LIMIT_MULTIPLIER = 100
     # Take up to fraction of top similarity
     EXPAND_SIMILARITY_THRESHOLD = 0.2
     EXPAND_ZOOM_OUT = 100
@@ -121,17 +121,20 @@ class KeyPaperAnalyzer:
         if n_papers > 1:
             mean, std = self.loader.estimate_citations(ids)
             logger.debug(f'Estimated citations count mean={mean}, std={std} to keep citations on a group level')
+
+            logger.debug(f'Estimating mesh and keywords terms to keep the theme')
+            publications = self.loader.load_publications(ids)
+            mesh_stems = [s for s, _ in tokens_stems(
+                ' '.join(publications['mesh'] + ' ' + publications['keywords']).replace(',', ' ')
+            )]
+            mesh_counter = Counter(mesh_stems)
+            logger.debug(f'Mesh most common:\n' + ','.join(f'{k}:{"{0:.3f}".format(v / len(mesh_stems))}'
+                                                           for k, v in mesh_counter.most_common(20)))
         else:
-            mean, std = None, None  # Not used
+            mean, std = None, None
+            mesh_stems, mesh_counter = None, None
+
         current_ids = ids
-
-        publications = self.loader.load_publications(ids)
-
-        logger.debug(f'Estimating mesh and keywords terms to keep the theme')
-        mesh_stems = [s for s, _ in tokens_stems(
-            ' '.join(publications['mesh'] + ' ' + publications['keywords']).replace(',', ' ')
-        )]
-        mesh_counter = Counter(mesh_stems)
 
         # Expand while we can
         i = 0
@@ -139,34 +142,50 @@ class KeyPaperAnalyzer:
         while True:
             if i == self.EXPAND_STEPS or len(current_ids) >= limit:
                 break
+            if len(current_ids) > 1:
+                if mean is None and std is None:
+                    mean, std = self.loader.estimate_citations(current_ids)
+                    logger.debug(f'Estimated citations count mean={mean}, std={std} to keep citations on a group level')
+
+                if mesh_stems is None and mesh_counter is None:
+                    logger.debug(f'Estimating mesh and keywords terms to keep the theme')
+                    publications = self.loader.load_publications(current_ids)
+                    mesh_stems = [s for s, _ in tokens_stems(
+                        ' '.join(publications['mesh'] + ' ' + publications['keywords']).replace(',', ' ')
+                    )]
+                    mesh_counter = Counter(mesh_stems)
+                    logger.debug(f'Mesh most common:\n' + ','.join(f'{k}:{"{0:.3f}".format(v / len(mesh_stems))}'
+                                                                   for k, v in mesh_counter.most_common(20)))
+
             i += 1
+
             logger.debug(f'Step {i}: current_ids: {len(current_ids)}, new_ids: {len(new_ids)}, limit: {limit}')
-            papers_to_expand = new_ids or current_ids
-            number_to_expand = limit - len(current_ids) if not mesh_stems else self.config.max_number_to_expand
-            expanded_df = self.loader.expand(papers_to_expand, number_to_expand)
-            logger.debug(f'Expanded {len(new_ids)} papers')
+            number_to_expand = limit - len(current_ids)
+            papers_to_expand = new_ids or current_ids  # Expand only new ids on the previous step
+            expanded_df = self.loader.expand(papers_to_expand, number_to_expand * self.EXPAND_LIMIT_MULTIPLIER)
+            logger.debug(f'Expanded to {len(expanded_df)} papers')
 
             new_df = expanded_df.loc[np.logical_not(expanded_df['id'].isin(set(current_ids)))]
             logging.debug(f'New papers {len(new_df)}')
+            if len(new_df) == 0:  # Nothing to add
+                break
 
-            if n_papers > 1:
-                logger.debug(f'Filter by citations mean({mean}) +- {self.EXPAND_CITATIONS_SIGMA} * std({std})')
-                new_df = new_df.loc[[
-                    mean - self.EXPAND_CITATIONS_SIGMA * std <= t <= mean + self.EXPAND_CITATIONS_SIGMA * std
-                    for t in new_df['total']]].copy()
+            if mean is not None and std is not None:
+                logger.debug(f'New papers citations min={new_df["total"].min()}, max={new_df["total"].max()}')
+                logger.debug(f'Filter by citations mean({mean}) +- std({std})')
+                new_df = new_df.loc[[mean - std <= t <= mean + std for t in new_df['total']]]
                 logger.debug(f'Citations filtered: {len(new_df)}')
 
-            new_ids = list(new_df['id'])
-            if len(new_ids) == 0:
+            logging.debug(f'Limiting new papers to {number_to_expand}')
+            new_ids = list(new_df['id'])[:number_to_expand]
+            if len(new_ids) == 0:  # Nothing to add
                 break
 
             # No additional filtration required
-            if not mesh_stems:
+            if mesh_stems is None:
                 current_ids += new_ids
                 continue
 
-            logger.debug(f'Mesh most common:\n' + ','.join(f'{k}:{"{0:.3f}".format(v / len(mesh_stems))}'
-                                                           for k, v in mesh_counter.most_common(100)))
             new_publications = self.loader.load_publications(new_ids)
             fcs = []
             for _, row in new_publications.iterrows():
@@ -187,13 +206,14 @@ class KeyPaperAnalyzer:
             for v in fcs:
                 v[1] = v[1] or v[2] > sim_threshold
 
-            logger.debug('Pid\tOk\tSimilarity\tTitle\tMesh\n' +
-                         '\n'.join(f'{p}\t{"+" if a else "-"}\t{int(s)}\t{t}\t{m}' for
-                                   p, a, s, t, m in fcs))
+            # logger.debug('Pid\tOk\tSimilarity\tTitle\tMesh\n' +
+            #              '\n'.join(f'{p}\t{"+" if a else "-"}\t{int(s)}\t{t}\t{m}' for
+            #                        p, a, s, t, m in fcs))
             new_mesh_ids = [v[0] for v in fcs if v[1]][:limit - len(current_ids)]
             logger.debug(f'Similar by mesh papers: {len(new_mesh_ids)}')
-            if len(new_mesh_ids) == 0:
+            if len(new_mesh_ids) == 0:  # Nothing to add
                 break
+
             new_ids = new_mesh_ids
             current_ids += new_ids
 
