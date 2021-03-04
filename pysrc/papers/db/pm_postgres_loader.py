@@ -186,7 +186,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
             df = pd.DataFrame(cursor.fetchall(), columns=['total'])
             df.fillna(value=1, inplace=True)  # matview_pmcitations ignores < 3 citations
 
-        return df['total'].mean(), df['total'].std()
+        return df['total']
 
     def load_citations(self, ids):
         self.check_connection()

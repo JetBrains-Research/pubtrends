@@ -127,13 +127,11 @@ class KeyPaperAnalyzer:
             return ids
 
         if len(ids) > 1:
-            mean, std = self.loader.estimate_citations(ids)
-            logger.debug(f'Estimated citations count mean={mean}, std={std} to keep citations level')
-
+            cit_min, cit_max = self.estimate_citations_range(ids)
             mesh_stems, mesh_counter = self.estimate_mesh(ids)
         else:
             # Cannot estimate these characteristics by a single paper
-            mean, std = None, None
+            cit_min, cit_max = None, None
             mesh_stems, mesh_counter = None, None
 
         expanded_ids = ids
@@ -144,9 +142,8 @@ class KeyPaperAnalyzer:
             i += 1
             logger.debug(f'Step {i}: current_ids: {len(expanded_ids)}, new_ids: {len(new_ids)}, limit: {limit}')
             if len(expanded_ids) > 1:
-                if mean is None and std is None:
-                    mean, std = self.loader.estimate_citations(expanded_ids)
-                    logger.debug(f'Estimated citations count mean={mean}, std={std} to keep citations level')
+                if cit_min is None and cit_max is None:
+                    cit_min, cit_max = self.estimate_citations_range(expanded_ids)
 
                 if mesh_stems is None and mesh_counter is None:
                     mesh_stems, mesh_counter = self.estimate_mesh(expanded_ids)
@@ -161,10 +158,9 @@ class KeyPaperAnalyzer:
             if len(new_df) == 0:  # Nothing to add
                 break
 
-            if mean is not None and std is not None:
+            if cit_min is not None and cit_max is not None:
                 logger.debug(f'New papers citations min={new_df["total"].min()}, max={new_df["total"].max()}')
-                logger.debug(f'Filter by citations mean({mean}) +- std({std})')
-                new_df = new_df.loc[[mean - std <= t <= mean + std for t in new_df['total']]]
+                new_df = new_df.loc[[cit_min <= t <= cit_max for t in new_df['total']]]
                 logger.debug(f'Citations filtered: {len(new_df)}')
 
             logging.debug(f'Limiting new papers to {number_to_expand}')
@@ -210,6 +206,15 @@ class KeyPaperAnalyzer:
 
         self.progress.info(f'Expanded to {len(expanded_ids)} papers', current=current, task=task)
         return expanded_ids
+
+    def estimate_citations_range(self, ids):
+        total = self.loader.estimate_citations(ids)
+        logger.debug(f'Estimated citations mean={total.mean()}, std={total.std()}, '
+                     f'range=[{total.min()} - {total.max()}]')
+        q20 = np.percentile(total, 20)
+        q80 = np.percentile(total, 80)
+        logger.debug(f'Q20={q20}, Q80={q80}')
+        return q20, q80
 
     def estimate_mesh(self, ids):
         logger.debug(f'Estimating mesh and keywords terms to keep the theme')

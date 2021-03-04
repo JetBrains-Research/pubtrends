@@ -46,7 +46,7 @@ class Loader(metaclass=ABCMeta):
     def estimate_citations(self, ids):
         """
         Estimates mean, variance for total citations count of given ids.
-        :return: (mean, std)
+        :return: list of total citations
         """
 
     @abstractmethod
