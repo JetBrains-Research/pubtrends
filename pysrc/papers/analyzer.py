@@ -35,7 +35,12 @@ class KeyPaperAnalyzer:
     SIMILARITY_CITATION = 0.5  # Limited by 1 citation
     SIMILARITY_TEXT_CITATION = 10  # Limited by cosine similarity <= 1
 
-    SIMILARITY_TEXT_MIN = 0.5  # Minimal cosine similarity for potential text citation
+    # Minimal number of common references, used to reduces similarity graph edges count
+    # Value > 1 is especially useful while analysing single paper, removes meaningless connections by construction
+    SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN = 2
+
+    # Minimal cosine similarity for potential text citation, used to reduce similarity graph edges count
+    SIMILARITY_TEXT_MIN = 0.5
     SIMILARITY_TEXT_CITATION_N = 20  # Max number of potential text citations for paper
 
     # Reduce number of edges in smallest communities, i.e. topics
@@ -65,11 +70,11 @@ class KeyPaperAnalyzer:
     TOP_JOURNALS = 50
     TOP_AUTHORS = 50
 
-    EXPAND_STEPS = 2
+    EXPAND_STEPS = 3
     # Multiplier to configure number of papers during expand
     EXPAND_LIMIT_MULTIPLIER = 100
     # Take up to fraction of top similarity
-    EXPAND_SIMILARITY_THRESHOLD = 0.2
+    EXPAND_SIMILARITY_THRESHOLD = 0.3
     EXPAND_ZOOM_OUT = 100
 
     EVOLUTION_MIN_PAPERS = 100
@@ -109,63 +114,49 @@ class KeyPaperAnalyzer:
         return ids
 
     def load_references(self, pid, limit):
-        return self.loader.load_references(pid, limit)
+        logger.debug('Loading direct references for paper analysis')
+        references = self.loader.load_references(pid, limit)
+        logger.debug(f'Loaded {len(references)} references')
+        return references
 
     def expand_ids(self, ids, limit, current=1, task=None):
-        n_papers = len(ids)
-        if n_papers > self.config.max_number_to_expand:
+        self.progress.info('Expanding related papers by references', current=current, task=task)
+
+        if len(ids) > self.config.max_number_to_expand:
             self.progress.info('Too many related papers, nothing to expand', current=current, task=task)
             return ids
-        self.progress.info('Expanding related papers by references', current=current, task=task)
-        logger.debug(f'Expanding {n_papers} papers to: {limit}')
-        if n_papers > 1:
-            mean, std = self.loader.estimate_citations(ids)
-            logger.debug(f'Estimated citations count mean={mean}, std={std} to keep citations on a group level')
 
-            logger.debug(f'Estimating mesh and keywords terms to keep the theme')
-            publications = self.loader.load_publications(ids)
-            mesh_stems = [s for s, _ in tokens_stems(
-                ' '.join(publications['mesh'] + ' ' + publications['keywords']).replace(',', ' ')
-            )]
-            mesh_counter = Counter(mesh_stems)
-            logger.debug(f'Mesh most common:\n' + ','.join(f'{k}:{"{0:.3f}".format(v / len(mesh_stems))}'
-                                                           for k, v in mesh_counter.most_common(20)))
+        if len(ids) > 1:
+            mean, std = self.loader.estimate_citations(ids)
+            logger.debug(f'Estimated citations count mean={mean}, std={std} to keep citations level')
+
+            mesh_stems, mesh_counter = self.estimate_mesh(ids)
         else:
+            # Cannot estimate these characteristics by a single paper
             mean, std = None, None
             mesh_stems, mesh_counter = None, None
 
-        current_ids = ids
+        expanded_ids = ids
 
-        # Expand while we can
         i = 0
         new_ids = []
-        while True:
-            if i == self.EXPAND_STEPS or len(current_ids) >= limit:
-                break
-            if len(current_ids) > 1:
+        while i < self.EXPAND_STEPS and len(expanded_ids) < limit:
+            i += 1
+            logger.debug(f'Step {i}: current_ids: {len(expanded_ids)}, new_ids: {len(new_ids)}, limit: {limit}')
+            if len(expanded_ids) > 1:
                 if mean is None and std is None:
-                    mean, std = self.loader.estimate_citations(current_ids)
-                    logger.debug(f'Estimated citations count mean={mean}, std={std} to keep citations on a group level')
+                    mean, std = self.loader.estimate_citations(expanded_ids)
+                    logger.debug(f'Estimated citations count mean={mean}, std={std} to keep citations level')
 
                 if mesh_stems is None and mesh_counter is None:
-                    logger.debug(f'Estimating mesh and keywords terms to keep the theme')
-                    publications = self.loader.load_publications(current_ids)
-                    mesh_stems = [s for s, _ in tokens_stems(
-                        ' '.join(publications['mesh'] + ' ' + publications['keywords']).replace(',', ' ')
-                    )]
-                    mesh_counter = Counter(mesh_stems)
-                    logger.debug(f'Mesh most common:\n' + ','.join(f'{k}:{"{0:.3f}".format(v / len(mesh_stems))}'
-                                                                   for k, v in mesh_counter.most_common(20)))
+                    mesh_stems, mesh_counter = self.estimate_mesh(expanded_ids)
 
-            i += 1
-
-            logger.debug(f'Step {i}: current_ids: {len(current_ids)}, new_ids: {len(new_ids)}, limit: {limit}')
-            number_to_expand = limit - len(current_ids)
-            papers_to_expand = new_ids or current_ids  # Expand only new ids on the previous step
+            number_to_expand = limit - len(expanded_ids)
+            papers_to_expand = new_ids or expanded_ids  # Expand only new ids of the previous step
             expanded_df = self.loader.expand(papers_to_expand, number_to_expand * self.EXPAND_LIMIT_MULTIPLIER)
             logger.debug(f'Expanded to {len(expanded_df)} papers')
 
-            new_df = expanded_df.loc[np.logical_not(expanded_df['id'].isin(set(current_ids)))]
+            new_df = expanded_df.loc[np.logical_not(expanded_df['id'].isin(set(expanded_ids)))]
             logging.debug(f'New papers {len(new_df)}')
             if len(new_df) == 0:  # Nothing to add
                 break
@@ -183,7 +174,7 @@ class KeyPaperAnalyzer:
 
             # No additional filtration required
             if mesh_stems is None:
-                current_ids += new_ids
+                expanded_ids += new_ids
                 continue
 
             new_publications = self.loader.load_publications(new_ids)
@@ -196,7 +187,7 @@ class KeyPaperAnalyzer:
                 new_mesh_stems = [s for s, _ in tokens_stems((mesh + ' ' + keywords).replace(',', ' '))]
                 if new_mesh_stems:
                     # Estimate fold change of similarity vs random single paper
-                    similarity = sum([mesh_counter[s] / (len(mesh_stems) / n_papers) for s in new_mesh_stems])
+                    similarity = sum([mesh_counter[s] / (len(mesh_stems) / len(ids)) for s in new_mesh_stems])
                     fcs.append([pid, False, similarity, title, ','.join(new_mesh_stems)])
                 else:
                     fcs.append([pid, True, 0.0, title, ''])
@@ -209,16 +200,27 @@ class KeyPaperAnalyzer:
             # logger.debug('Pid\tOk\tSimilarity\tTitle\tMesh\n' +
             #              '\n'.join(f'{p}\t{"+" if a else "-"}\t{int(s)}\t{t}\t{m}' for
             #                        p, a, s, t, m in fcs))
-            new_mesh_ids = [v[0] for v in fcs if v[1]][:limit - len(current_ids)]
+            new_mesh_ids = [v[0] for v in fcs if v[1]][:limit - len(expanded_ids)]
             logger.debug(f'Similar by mesh papers: {len(new_mesh_ids)}')
             if len(new_mesh_ids) == 0:  # Nothing to add
                 break
 
             new_ids = new_mesh_ids
-            current_ids += new_ids
+            expanded_ids += new_ids
 
-        self.progress.info(f'Expanded to {len(current_ids)} papers', current=current, task=task)
-        return current_ids
+        self.progress.info(f'Expanded to {len(expanded_ids)} papers', current=current, task=task)
+        return expanded_ids
+
+    def estimate_mesh(self, ids):
+        logger.debug(f'Estimating mesh and keywords terms to keep the theme')
+        publications = self.loader.load_publications(ids)
+        mesh_stems = [s for s, _ in tokens_stems(
+            ' '.join(publications['mesh'] + ' ' + publications['keywords']).replace(',', ' ')
+        )]
+        mesh_counter = Counter(mesh_stems)
+        logger.debug(f'Mesh most common:\n' + ','.join(f'{k}:{"{0:.3f}".format(v / len(mesh_stems))}'
+                                                       for k, v in mesh_counter.most_common(20)))
+        return mesh_stems, mesh_counter
 
     def analyze_papers(self, ids, query, noreviews=True, task=None):
         """:return full log"""
@@ -271,8 +273,14 @@ class KeyPaperAnalyzer:
         cocit_grouped_df = self.build_cocit_grouped_df(self.cocit_df)
 
         self.progress.info('Processing bibliographic coupling for selected papers', current=9, task=task)
-        self.bibliographic_coupling_df = self.loader.load_bibliographic_coupling(self.ids)
-        self.progress.info(f'Found {len(self.bibliographic_coupling_df)} bibliographic coupling pairs of papers',
+        bibliographic_coupling_df = self.loader.load_bibliographic_coupling(self.ids)
+        self.progress.info(f'Found {len(bibliographic_coupling_df)} bibliographic coupling pairs of papers',
+                           current=9, task=task)
+        self.progress.info(f'Filtering bibliographic coupling with min threshold '
+                           f'{self.SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN}', current=9, task=task)
+        self.bibliographic_coupling_df = bibliographic_coupling_df[
+            bibliographic_coupling_df['total'] >= self.SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN].copy()
+        self.progress.info(f'Filtered {len(self.bibliographic_coupling_df)} bibliographic coupling pairs of papers',
                            current=9, task=task)
 
         # All the papers will be covered by default

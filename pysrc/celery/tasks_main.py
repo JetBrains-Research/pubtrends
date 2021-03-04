@@ -62,7 +62,7 @@ def analyze_id_list(source, ids, zoom, query, limit=None, test=False):
                 limit = int(limit)
             else:
                 limit = 0
-            # Fetch references at first
+            # Fetch references at first, but in some cases paper may have empty references
             ids = ids + analyzer.load_references(
                 ids[0], limit=limit if limit > 0 else analyzer.config.max_number_to_expand
             )
