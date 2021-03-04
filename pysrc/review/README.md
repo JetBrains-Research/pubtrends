@@ -1,3 +1,5 @@
+This is the source code for the paper: [Automatic generation of reviews of scientific papers](https://arxiv.org/abs/2010.04147).
+
 * Download [PubMedCentral Author Manuscript Collection](https://ftp.ncbi.nlm.nih.gov/pub/pmc/manuscript/) 
 into `pmc_dataset` folder.
 * Launch `dataset/make_dataset.ipynb` to create tables required for model training.
