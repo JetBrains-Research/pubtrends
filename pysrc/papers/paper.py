@@ -73,7 +73,7 @@ def prepare_paper_data(data, source, pid):
                        analyzer.similarity_graph.edges[pid, v]['similarity']),
             list(analyzer.similarity_graph[pid])
         )
-        similar_papers = sorted(similar_papers, key=lambda x: x[2], reverse=True)[:50]
+        similar_papers = sorted(similar_papers, key=lambda x: x[3], reverse=True)[:50]
     else:
         similar_papers = None
 
