@@ -30,10 +30,10 @@ class KeyPaperAnalyzer:
 
     # ...bibliographic coupling (BC) was the most accurate,  followed by co-citation (CC).
     # Direct citation (DC) was a distant third among the three...
-    SIMILARITY_BIBLIOGRAPHIC_COUPLING = 5  # Limited by number of references, applied to log
+    SIMILARITY_BIBLIOGRAPHIC_COUPLING = 0.125  # Limited by number of references, applied to log
     SIMILARITY_COCITATION = 1  # Limiter by number of co-citations, applied to log
-    SIMILARITY_CITATION = 0.5  # Limited by 1 citation
-    SIMILARITY_TEXT_CITATION = 10  # Limited by cosine similarity <= 1
+    SIMILARITY_CITATION = 0.125  # Limited by 1 citation
+    SIMILARITY_TEXT_CITATION = 1  # Limited by cosine similarity <= 1
 
     # Minimal number of common references, used to reduces similarity graph edges count
     # Value > 1 is especially useful while analysing single paper, removes meaningless connections by construction
