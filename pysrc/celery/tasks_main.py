@@ -28,7 +28,7 @@ def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, e
                 limit=min(int(min(len(ids), limit) * (1 + expand)), analyzer.config.max_number_to_expand),
                 current=2, task=current_task
             )
-        analyzer.analyze_papers(ids, query, noreviews=noreviews, task=current_task)
+        analyzer.analyze_papers(ids, query, task=current_task)
     finally:
         loader.close_connection()
 

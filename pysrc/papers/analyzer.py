@@ -67,7 +67,6 @@ class KeyPaperAnalyzer:
     TOP_JOURNALS = 50
     TOP_AUTHORS = 50
 
-    EXPAND_STEPS = 3
     # Multiplier to configure number of papers during expand
     EXPAND_LIMIT_MULTIPLIER = 100
     # Control citations count
@@ -135,51 +134,34 @@ class KeyPaperAnalyzer:
             cit_mean, cit_std = None, None
             mesh_stems, mesh_counter = None, None
 
-        expanded_ids = ids
+        number_to_expand = limit - len(ids)
+        expanded_df = self.loader.expand(ids, number_to_expand * self.EXPAND_LIMIT_MULTIPLIER)
+        logger.debug(f'Loaded {len(expanded_df)} papers by references')
 
-        i = 0
-        new_ids = []
-        while i < self.EXPAND_STEPS and len(expanded_ids) < limit:
-            i += 1
-            logger.debug(f'Step {i}: current_ids: {len(expanded_ids)}, new_ids: {len(new_ids)}, limit: {limit}')
-            if len(expanded_ids) > 1:
-                if cit_mean is None and cit_std is None:
-                    cit_mean, cit_std = self.estimate_citations(expanded_ids)
+        new_df = expanded_df.loc[np.logical_not(expanded_df['id'].isin(set(ids)))]
+        logging.debug(f'New papers {len(new_df)}')
+        if len(new_df) == 0:  # Nothing to add
+            logger.debug('Nothing expanded')
+            return ids
 
-                if mesh_stems is None and mesh_counter is None:
-                    mesh_stems, mesh_counter = self.estimate_mesh(expanded_ids)
+        if cit_mean is not None and cit_std is not None:
+            logger.debug(f'New papers citations min={new_df["total"].min()}, max={new_df["total"].max()}')
+            logger.debug(f'Filtering by citations mean({cit_mean}) +- {self.EXPAND_CITATIONS_SIGMA} * std({cit_std})')
+            new_df = new_df.loc[[
+                cit_mean - self.EXPAND_CITATIONS_SIGMA * cit_std <=
+                t <=
+                cit_mean + self.EXPAND_CITATIONS_SIGMA * cit_std
+                for t in new_df['total']
+            ]]
+            logger.debug(f'Citations filtered: {len(new_df)}')
 
-            number_to_expand = limit - len(expanded_ids)
-            papers_to_expand = new_ids or expanded_ids  # Expand only new ids of the previous step
-            expanded_df = self.loader.expand(papers_to_expand, number_to_expand * self.EXPAND_LIMIT_MULTIPLIER)
-            logger.debug(f'Expanded to {len(expanded_df)} papers')
+        logging.debug(f'Limiting new papers to {number_to_expand}')
+        new_ids = list(new_df['id'])[:number_to_expand]
+        if len(new_ids) == 0:  # Nothing to add
+            logger.debug('Nothing expanded after citations filtration')
+            return ids
 
-            new_df = expanded_df.loc[np.logical_not(expanded_df['id'].isin(set(expanded_ids)))]
-            logging.debug(f'New papers {len(new_df)}')
-            if len(new_df) == 0:  # Nothing to add
-                break
-
-            if cit_mean is not None and cit_std is not None:
-                logger.debug(f'New papers citations min={new_df["total"].min()}, max={new_df["total"].max()}')
-                logger.debug(f'Filter by citations mean({cit_mean}) +- {self.EXPAND_CITATIONS_SIGMA} * std({cit_std})')
-                new_df = new_df.loc[[
-                    cit_mean - self.EXPAND_CITATIONS_SIGMA * cit_std <=
-                    t <=
-                    cit_mean + self.EXPAND_CITATIONS_SIGMA * cit_std
-                    for t in new_df['total']
-                ]]
-                logger.debug(f'Citations filtered: {len(new_df)}')
-
-            logging.debug(f'Limiting new papers to {number_to_expand}')
-            new_ids = list(new_df['id'])[:number_to_expand]
-            if len(new_ids) == 0:  # Nothing to add
-                break
-
-            # No additional filtration required
-            if mesh_stems is None:
-                expanded_ids += new_ids
-                continue
-
+        if mesh_stems is not None:
             new_publications = self.loader.load_publications(new_ids)
             fcs = []
             for _, row in new_publications.iterrows():
@@ -200,19 +182,20 @@ class KeyPaperAnalyzer:
             for v in fcs:
                 v[1] = v[1] or v[2] > sim_threshold
 
-            # logger.debug('Pid\tOk\tSimilarity\tTitle\tMesh\n' +
-            #              '\n'.join(f'{p}\t{"+" if a else "-"}\t{int(s)}\t{t}\t{m}' for
-            #                        p, a, s, t, m in fcs))
-            new_mesh_ids = [v[0] for v in fcs if v[1]][:limit - len(expanded_ids)]
+            logger.debug('Pid\tOk\tSimilarity\tTitle\tMesh\n' +
+                         '\n'.join(f'{p}\t{"+" if a else "-"}\t{int(s)}\t{t}\t{m}' for
+                                   p, a, s, t, m in fcs))
+            new_mesh_ids = [v[0] for v in fcs if v[1]][:limit]
             logger.debug(f'Similar by mesh papers: {len(new_mesh_ids)}')
             if len(new_mesh_ids) == 0:  # Nothing to add
-                break
-
-            new_ids = new_mesh_ids
-            expanded_ids += new_ids
-
-        self.progress.info(f'Expanded to {len(expanded_ids)} papers', current=current, task=task)
-        return expanded_ids
+                logger.debug('Nothing expanded after mesh filtration')
+                return ids
+            else:
+                logger.debug(f'Expanded after citations and mesh filtration to {len(ids) + len(new_mesh_ids)} papers')
+                return ids + new_mesh_ids
+        else:
+            logger.debug(f'Expanded after citations filtration to {len(ids) + len(new_ids)} papers')
+            return ids + new_ids
 
     def estimate_citations(self, ids):
         total = self.loader.estimate_citations(ids)
