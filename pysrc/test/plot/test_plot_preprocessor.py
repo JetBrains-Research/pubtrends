@@ -102,14 +102,15 @@ class TestPlotPreprocessor(unittest.TestCase):
 
         self.assertListEqual(topics, ['1', '2', '3'], 'Wrong topics')
 
-        expected_similarities = np.array([[1.53027646, 0.69314718, 0.],
-                                          [0.69314718, 2.43673086, 0.],
-                                          [0., 0., 0.]])
+        expected_similarities = np.array([[[1.53027646, 0.69314718, 0.        ],
+                                           [0.69314718, 1.31036669, 0.        ],
+                                          [0.,         0.,         0.        ]]])
 
         similarities = np.zeros(shape=(3, 3))
         for i in range(3):
             for j in range(3):
                 similarities[i, j] = similarity_df[index(i + 1, j + 1)]['similarity'].values[0]
+        # print(similarities)
 
         for i in range(3):
             for j in range(3):
