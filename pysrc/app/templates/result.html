@@ -156,18 +156,22 @@
             {% endif %}
 
             // Process main word cloud
-            let words = JSON.parse(normalize('{{ papers_word_cloud }}'));
-            process_word_cloud('papers_word_cloud', $('#papers_word_cloud').outerWidth(), 335, 200, 300, words, papers_callback_word);
+            let word_records = JSON.parse(normalize('{{ papers_word_cloud }}'));
+            process_word_cloud('papers_word_cloud', $('#papers_word_cloud').outerWidth(),
+                335, 200, 300, word_records, papers_callback_word);
 
             // Process topics word clouds
             let cid = '';
             {% for (script, div), word_cloud, is_empty, zoom_in_callback in topics_info_and_word_cloud_and_callback %}
-                 words = JSON.parse(normalize('{{ word_cloud }}'));
+                 word_records = JSON.parse(normalize('{{ word_cloud }}'));
+                 // Ignore artificial tags for scale
+                 // word record [word, x, y, size, vertical, color]
+                word_records = word_records.filter(wr => !wr[0].startsWith("#"));
                  cid = 'topic_word_cloud_{{ loop.index }}';
                  if ({{ is_empty }}) {
-                     process_word_cloud(cid, $('#' + cid).outerWidth(), 335, 200, 300, words, null);
+                     process_word_cloud(cid, $('#' + cid).outerWidth(), 335, 200, 300, word_records, null);
                  } else {
-                    process_word_cloud(cid, $('#' + cid).outerWidth(), 335, 200, 300, words, papers_callback_word);
+                    process_word_cloud(cid, $('#' + cid).outerWidth(), 335, 200, 300, word_records, papers_callback_word);
                  }
             {% endfor %}
 

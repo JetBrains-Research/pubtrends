@@ -337,7 +337,8 @@ class Plotter:
             kwds = get_topic_word_cloud_data(self.analyzer.df_kwd, comp)
             is_empty = len(kwds) == 0
             if is_empty:
-                kwds = {'N/A': 1}  # Artificial tag
+                kwds = {'N/A': 1}
+            kwds[f'#{comp + 1}'] = 1  # Artificial tag for scale
             color = (self.comp_colors[comp].r, self.comp_colors[comp].g, self.comp_colors[comp].b)
             wc = WordCloud(background_color="white", width=WORD_CLOUD_WIDTH, height=WORD_CLOUD_HEIGHT,
                            color_func=lambda *args, **kwargs: color,

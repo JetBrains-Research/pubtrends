@@ -14,7 +14,7 @@ function isHighDensity() {
         (window.devicePixelRatio && window.devicePixelRatio > 1.3));
 }
 
-function process_word_cloud(id, width, height, ww, wh, words, callback) {
+function process_word_cloud(id, width, height, ww, wh, word_records, callback) {
     const canvas = document.getElementById(id);
     const ctx = canvas.getContext("2d");
     // Make canvas visible
@@ -101,9 +101,9 @@ function process_word_cloud(id, width, height, ww, wh, words, callback) {
         }
     }
 
-    for (let i = 0; i < words.length; i++) {
-        const w = words[i];
-        const word = w[0], x = w[1], y = w[2], size = w[3], vertical = w[4], color = w[5];
+    for (let i = 0; i < word_records.length; i++) {
+        const wr = word_records[i];
+        const word = wr[0], x = wr[1], y = wr[2], size = wr[3], vertical = wr[4], color = wr[5];
         // Add word with small shift, coordinates changed!
         addWord(word, y * sy + 10, x * sx + 10, size, vertical, color);
     }
