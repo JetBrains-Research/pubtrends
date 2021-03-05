@@ -73,6 +73,10 @@ class KeyPaperAnalyzer:
     EXPAND_STEPS = 3
     # Multiplier to configure number of papers during expand
     EXPAND_LIMIT_MULTIPLIER = 100
+    # Control citations count
+    EXPAND_CITATIONS_Q_LOW = 10
+    EXPAND_CITATIONS_Q_HIGH = 90
+    EXPAND_CITATIONS_SIGMA = 3
     # Take up to fraction of top similarity
     EXPAND_SIMILARITY_THRESHOLD = 0.3
     EXPAND_ZOOM_OUT = 100
@@ -127,11 +131,11 @@ class KeyPaperAnalyzer:
             return ids
 
         if len(ids) > 1:
-            cit_min, cit_max = self.estimate_citations_range(ids)
+            cit_mean, cit_std = self.estimate_citations(ids)
             mesh_stems, mesh_counter = self.estimate_mesh(ids)
         else:
             # Cannot estimate these characteristics by a single paper
-            cit_min, cit_max = None, None
+            cit_mean, cit_std = None, None
             mesh_stems, mesh_counter = None, None
 
         expanded_ids = ids
@@ -142,8 +146,8 @@ class KeyPaperAnalyzer:
             i += 1
             logger.debug(f'Step {i}: current_ids: {len(expanded_ids)}, new_ids: {len(new_ids)}, limit: {limit}')
             if len(expanded_ids) > 1:
-                if cit_min is None and cit_max is None:
-                    cit_min, cit_max = self.estimate_citations_range(expanded_ids)
+                if cit_mean is None and cit_std is None:
+                    cit_mean, cit_std = self.estimate_citations(expanded_ids)
 
                 if mesh_stems is None and mesh_counter is None:
                     mesh_stems, mesh_counter = self.estimate_mesh(expanded_ids)
@@ -158,9 +162,15 @@ class KeyPaperAnalyzer:
             if len(new_df) == 0:  # Nothing to add
                 break
 
-            if cit_min is not None and cit_max is not None:
+            if cit_mean is not None and cit_std is not None:
                 logger.debug(f'New papers citations min={new_df["total"].min()}, max={new_df["total"].max()}')
-                new_df = new_df.loc[[cit_min <= t <= cit_max for t in new_df['total']]]
+                logger.debug(f'Filter by citations mean({cit_mean}) +- {self.EXPAND_CITATIONS_SIGMA} * std({cit_std})')
+                new_df = new_df.loc[[
+                    cit_mean - self.EXPAND_CITATIONS_SIGMA * cit_std <=
+                    t <=
+                    cit_mean + self.EXPAND_CITATIONS_SIGMA * cit_std
+                    for t in new_df['total']
+                ]]
                 logger.debug(f'Citations filtered: {len(new_df)}')
 
             logging.debug(f'Limiting new papers to {number_to_expand}')
@@ -207,14 +217,19 @@ class KeyPaperAnalyzer:
         self.progress.info(f'Expanded to {len(expanded_ids)} papers', current=current, task=task)
         return expanded_ids
 
-    def estimate_citations_range(self, ids):
+    def estimate_citations(self, ids):
         total = self.loader.estimate_citations(ids)
         logger.debug(f'Estimated citations mean={total.mean()}, std={total.std()}, '
                      f'range=[{total.min()} - {total.max()}]')
-        q20 = np.percentile(total, 20)
-        q80 = np.percentile(total, 80)
-        logger.debug(f'Q20={q20}, Q80={q80}')
-        return q20, q80
+        q_low = np.percentile(total, self.EXPAND_CITATIONS_Q_LOW)
+        q_high = np.percentile(total, self.EXPAND_CITATIONS_Q_HIGH)
+        logger.debug(f'Q{self.EXPAND_CITATIONS_Q_LOW}={q_low}, Q{self.EXPAND_CITATIONS_Q_HIGH}={q_high}')
+        filtered = total[np.logical_and(total >= q_low, total <= q_high)]
+        mean = np.mean(filtered)
+        std = np.std(filtered)
+        logger.debug(f'After quantile clipping < Q{self.EXPAND_CITATIONS_Q_LOW} and > Q{self.EXPAND_CITATIONS_Q_HIGH} '
+                     f'estimated citations mean={mean}, std={std}')
+        return mean, std
 
     def estimate_mesh(self, ids):
         logger.debug(f'Estimating mesh and keywords terms to keep the theme')
