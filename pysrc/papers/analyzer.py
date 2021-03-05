@@ -61,9 +61,6 @@ class KeyPaperAnalyzer:
 
     # Number of top cited papers in topic picked for description computation
     TOPIC_MOST_CITED_PAPERS = 50
-    # User for topics description generation.
-    # Terms with higher frequency among components top cited papers will be ignored.
-    TFIDF_VECTOR_MAX_DF = 100
     # Number of words for topic description
     TOPIC_DESCRIPTION_WORDS = 10
 
@@ -219,16 +216,15 @@ class KeyPaperAnalyzer:
 
     def estimate_citations(self, ids):
         total = self.loader.estimate_citations(ids)
-        logger.debug(f'Estimated citations mean={total.mean()}, std={total.std()}, '
-                     f'range=[{total.min()} - {total.max()}]')
+        logger.debug(f'Citations min={total.min()}, max={total.max()}, '
+                     f'mean={total.mean()}, std={total.std()}')
         q_low = np.percentile(total, self.EXPAND_CITATIONS_Q_LOW)
         q_high = np.percentile(total, self.EXPAND_CITATIONS_Q_HIGH)
-        logger.debug(f'Q{self.EXPAND_CITATIONS_Q_LOW}={q_low}, Q{self.EXPAND_CITATIONS_Q_HIGH}={q_high}')
+        logger.debug(f'Filtering < Q{self.EXPAND_CITATIONS_Q_LOW}={q_low} or > Q{self.EXPAND_CITATIONS_Q_HIGH}={q_high}')
         filtered = total[np.logical_and(total >= q_low, total <= q_high)]
-        mean = np.mean(filtered)
-        std = np.std(filtered)
-        logger.debug(f'After quantile clipping < Q{self.EXPAND_CITATIONS_Q_LOW} and > Q{self.EXPAND_CITATIONS_Q_HIGH} '
-                     f'estimated citations mean={mean}, std={std}')
+        mean = filtered.mean()
+        std = filtered.std()
+        logger.debug(f'Filtered citations min={filtered.min()}, max={filtered.max()}, mean={mean}, std={std}')
         return mean, std
 
     def estimate_mesh(self, ids):
@@ -242,7 +238,7 @@ class KeyPaperAnalyzer:
                                                        for k, v in mesh_counter.most_common(20)))
         return mesh_stems, mesh_counter
 
-    def analyze_papers(self, ids, query, noreviews=True, task=None):
+    def analyze_papers(self, ids, query, task=None):
         """:return full log"""
         self.ids = ids
         self.query = query
@@ -321,13 +317,11 @@ class KeyPaperAnalyzer:
                 self.topic_analysis(self.similarity_graph)
             self.df = self.merge_col(self.df, self.partition, col='comp', na=-1)
 
-            self.progress.info('Computing topics descriptions by top cited papers', current=12, task=task)
-            most_cited_per_comp = self.get_most_cited_papers_for_comps(
-                self.df.loc[self.df['type'] != 'Review'] if noreviews else self.df,
-                self.partition
-            )
+            self.progress.info('Computing topics descriptions', current=12, task=task)
+            comp_pids = pd.DataFrame(self.partition.items(), columns=['id', 'comp']).\
+                groupby('comp')['id'].apply(list).to_dict()
             topics_description = get_topics_description(
-                self.df, most_cited_per_comp,
+                self.df, comp_pids,
                 self.corpus_terms, self.corpus_counts,
                 query=query,
                 n_words=self.TOPIC_DESCRIPTION_WORDS
@@ -847,14 +841,6 @@ class KeyPaperAnalyzer:
         author_stats.columns = ['author', 'comp', 'counts', 'sum']
         author_stats = author_stats.sort_values(by=['sum'], ascending=False)
         return author_stats.head(n=n)
-
-    @staticmethod
-    def get_most_cited_papers_for_comps(df, partition, n_papers=TOPIC_MOST_CITED_PAPERS):
-        pdf = pd.DataFrame(partition.items(), columns=['id', 'comp'])
-        ids_comp_df = pd.merge(left=df[['id', 'total']], left_on='id',
-                               right=pdf, right_on='id', how='inner')
-        ids = ids_comp_df.sort_values(by='total', ascending=False).groupby('comp')['id']
-        return ids.apply(list).apply(lambda x: x[:n_papers]).to_dict()
 
     def topic_evolution_analysis(self, cocit_df, step=EVOLUTION_STEP, min_papers=0, current=0, task=None):
         min_year = int(cocit_df['year'].min())

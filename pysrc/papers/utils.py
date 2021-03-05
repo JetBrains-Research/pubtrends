@@ -15,7 +15,6 @@ from nltk.stem import WordNetLemmatizer, SnowballStemmer
 from nltk.tokenize import word_tokenize
 from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
-from sklearn.preprocessing import normalize
 
 # Ensure that modules are downloaded in advance
 # nltk averaged_perceptron_tagger required for nltk.pos_tag
@@ -209,15 +208,16 @@ def compute_comps_tfidf(df, comps, corpus_counts, ignore_comp=None):
     :param ignore_comp: None or number of component to ignore
     :return: TFIDF matrix of size (components x new_vocabulary_size) and new_vocabulary
     """
-    log.debug('Compute average counts per components')
+    log.debug('Compute average terms counts per components')
     # Since some of the components may be skipped, use this dict for continuous indexes
     comp_idx = dict(enumerate([c for c in comps if c != ignore_comp]))
-    comp_counts = np.zeros(shape=(len(comp_idx), corpus_counts.shape[1]), dtype=np.short)
+    terms_freqs_per_comp = np.zeros(shape=(len(comp_idx), corpus_counts.shape[1]), dtype=np.short)
     for comp, comp_pids in comps.items():
         if comp in comp_idx:  # Not ignored
-            comp_counts[comp_idx[comp], :] = \
+            terms_freqs_per_comp[comp_idx[comp], :] = \
                 np.sum(corpus_counts[np.flatnonzero(df['id'].isin(comp_pids)), :], axis=0) / len(comp_pids)
-    return compute_tfidf(comp_counts)
+
+    return compute_tfidf(terms_freqs_per_comp)
 
 
 def compute_tfidf(counts):
@@ -243,9 +243,13 @@ def vectorize_corpus(df, max_features, min_df, max_df):
         max_features=max_features,
         tokenizer=lambda t: tokenize(t)
     )
-    log.debug('Vectorizing')
+    log.debug(f'Vectorizing min_df={min_df} max_df={max_df} max_features={max_features}')
     counts = vectorizer.fit_transform(corpus)
     log.debug(f'Vectorized corpus size {counts.shape}')
+    terms_counts = np.asarray(np.sum(counts, axis=0)).reshape(-1)
+    terms_freqs = terms_counts / len(df)
+    log.debug(f'Terms frequencies min={terms_freqs.min()}, max={terms_freqs.max()}, '
+              f'mean={terms_freqs.mean()}, std={terms_freqs.std()}')
     return vectorizer.get_feature_names(), counts
 
 
@@ -304,11 +308,9 @@ def to_32_bit_int(n):
 
 def build_corpus(df):
     log.info(f'Building corpus from {len(df)} papers')
-    corpus = [preprocess_text(f'{title} {abstract} {keywords} {mesh}')
-              for title, abstract, mesh, keywords in
-              zip(df['title'], df['abstract'], df['keywords'], df['mesh'])]
-    log.info(f'Corpus size: {sys.getsizeof(corpus)} bytes')
-    return corpus
+    return [preprocess_text(f'{title} {abstract} {keywords} {mesh}')
+            for title, abstract, mesh, keywords in
+            zip(df['title'], df['abstract'], df['keywords'], df['mesh'])]
 
 
 def vectorize(corpus, query=None, min_df=0, max_df=1, n_words=1000):
