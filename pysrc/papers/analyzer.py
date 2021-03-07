@@ -193,10 +193,10 @@ class KeyPaperAnalyzer:
                 logger.debug('Nothing expanded after mesh filtration')
                 return ids
             else:
-                logger.debug(f'Expanded after citations and mesh filtration to {len(ids) + len(new_mesh_ids)} papers')
+                self.progress.info(f'Expanded to {len(ids) + len(new_ids)} papers', current=current, task=task)
                 return ids + new_mesh_ids
         else:
-            logger.debug(f'Expanded after citations filtration to {len(ids) + len(new_ids)} papers')
+            self.progress.info(f'Expanded to {len(ids) + len(new_ids)} papers', current=current, task=task)
             return ids + new_ids
 
     def estimate_citations(self, ids):
@@ -205,7 +205,8 @@ class KeyPaperAnalyzer:
                      f'mean={total.mean()}, std={total.std()}')
         q_low = np.percentile(total, self.EXPAND_CITATIONS_Q_LOW)
         q_high = np.percentile(total, self.EXPAND_CITATIONS_Q_HIGH)
-        logger.debug(f'Filtering < Q{self.EXPAND_CITATIONS_Q_LOW}={q_low} or > Q{self.EXPAND_CITATIONS_Q_HIGH}={q_high}')
+        logger.debug(
+            f'Filtering < Q{self.EXPAND_CITATIONS_Q_LOW}={q_low} or > Q{self.EXPAND_CITATIONS_Q_HIGH}={q_high}')
         filtered = total[np.logical_and(total >= q_low, total <= q_high)]
         mean = filtered.mean()
         std = filtered.std()
@@ -306,7 +307,7 @@ class KeyPaperAnalyzer:
             self.df = self.merge_col(self.df, self.partition, col='comp', na=-1)
 
             self.progress.info('Computing topics descriptions', current=12, task=task)
-            comp_pids = pd.DataFrame(self.partition.items(), columns=['id', 'comp']).\
+            comp_pids = pd.DataFrame(self.partition.items(), columns=['id', 'comp']). \
                 groupby('comp')['id'].apply(list).to_dict()
             topics_description = get_topics_description(
                 self.df, comp_pids,
