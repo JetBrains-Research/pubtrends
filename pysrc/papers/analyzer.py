@@ -640,7 +640,8 @@ class KeyPaperAnalyzer:
             if c2 > c1:
                 c2, c1 = c1, c2  # Swap
             # Ignore between components similarities less than average within groups
-            if similarity < (topics_mean_similarities[c1] + topics_mean_similarities[c2]) / 2:
+            if similarity < (topics_mean_similarities.get(c1, 0) +
+                             topics_mean_similarities.get(c2, 0)) / 2:
                 continue
             if (c1, c2) not in inter_topics:
                 # Do not add edges between topics more than minimum * scale factor
@@ -921,20 +922,23 @@ class KeyPaperAnalyzer:
 
         self.progress.info('Generating evolution topics description by top cited papers',
                            current=current, task=task)
-        evolution_kwds = {}
-        for col in evolution_df:
-            if col in year_range:
-                self.progress.info(f'Generating topics descriptions for year {col}',
-                                   current=current, task=task)
-                if isinstance(col, (int, float)):
-                    evolution_df[col] = evolution_df[col].apply(int)
-                    comps = evolution_df.groupby(col)['id'].apply(list).to_dict()
-                    evolution_kwds[col] = get_evolution_topics_description(
-                        df, comps, self.corpus_terms, self.corpus_counts,
-                        size=KeyPaperAnalyzer.TOPIC_DESCRIPTION_WORDS
-                    )
-
-        return evolution_kwds
+        try:  # Workaround for https://github.com/JetBrains-Research/pubtrends/issues/247
+            evolution_kwds = {}
+            for col in evolution_df:
+                if col in year_range:
+                    self.progress.info(f'Generating topics descriptions for year {col}',
+                                       current=current, task=task)
+                    if isinstance(col, (int, float)):
+                        evolution_df[col] = evolution_df[col].apply(int)
+                        comps = evolution_df.groupby(col)['id'].apply(list).to_dict()
+                        evolution_kwds[col] = get_evolution_topics_description(
+                            df, comps, self.corpus_terms, self.corpus_counts,
+                            size=KeyPaperAnalyzer.TOPIC_DESCRIPTION_WORDS
+                        )
+            return evolution_kwds
+        except Exception as e:
+            logger.error('Error while computing evolution description', e)
+            return None
 
     @staticmethod
     def extract_numbers(df):
