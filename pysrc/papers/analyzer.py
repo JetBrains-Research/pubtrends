@@ -265,8 +265,11 @@ class KeyPaperAnalyzer:
         self.cit_df = self.loader.load_citations(self.ids)
         self.progress.info(f'Found {len(self.cit_df)} citations between papers', current=5, task=task)
 
-        # Building inner citations graph for pagerank analysis
-        self.citations_graph = self.build_citation_graph(self.cit_df, current=7, task=task)
+        self.progress.info('Building citation graph', current=7, task=task)
+        self.citations_graph = self.build_citation_graph(self.cit_df)
+        self.progress.info(f'Built citation graph - {len(self.citations_graph.nodes())} nodes and '
+                           f'{len(self.citations_graph.edges())} edges',
+                           current=7, task=task)
 
         self.progress.info('Calculating co-citations for selected papers', current=8, task=task)
         self.cocit_df = self.loader.load_cocitations(self.ids)
@@ -288,12 +291,15 @@ class KeyPaperAnalyzer:
         self.progress.info(f'Filtered {len(self.bibliographic_coupling_df)} bibliographic coupling pairs of papers',
                            current=9, task=task)
 
-        # All the papers will be covered by default
+        self.progress.info('Building papers similarity graph', current=10, task=task)
         self.similarity_graph = self.build_similarity_graph(
             self.df, self.texts_similarity,
             self.citations_graph, cocit_grouped_df, self.bibliographic_coupling_df,
-            current=10, task=task
+            process_all_papers=True,
         )
+        self.progress.info(f'Built similarity graph - {len(self.similarity_graph.nodes())} nodes and '
+                           f'{len(self.similarity_graph.edges())} edges',
+                           current=10, task=task)
 
         if len(self.similarity_graph.nodes()) == 0:
             self.progress.info('Not enough papers to process topics analysis', current=11, task=task)
@@ -408,22 +414,18 @@ class KeyPaperAnalyzer:
 
         return df, min_year, max_year, citation_years
 
-    def build_citation_graph(self, cit_df, current=0, task=None):
-        self.progress.info('Building citation graph', current=current, task=task)
+    @staticmethod
+    def build_citation_graph(cit_df):
         G = nx.DiGraph()
         for index, row in cit_df.iterrows():
             v, u = row['id_out'], row['id_in']
             G.add_edge(v, u)
-
-        self.progress.info(f'Built citation graph - {len(G.nodes())} nodes and {len(G.edges())} edges',
-                           current=current, task=task)
         return G
 
+    @staticmethod
     def build_similarity_graph(
-            self,
             df, texts_similarity, citations_graph, cocit_df, bibliographic_coupling_df,
             process_all_papers=True,
-            current=0, task=None
     ):
         """
         Relationship graph is build using citation and text based methods.
@@ -437,7 +439,6 @@ class KeyPaperAnalyzer:
         Sugiyama, K., Kan, M.Y.:
         Exploiting potential citation papers in scholarly paper recommendation. In: JCDL (2013)
         """
-        self.progress.info('Building papers similarity graph', current=current, task=task)
         pids = list(df['id'])
 
         result = nx.Graph()
@@ -477,14 +478,12 @@ class KeyPaperAnalyzer:
             else:
                 result.add_edge(u, v, citation=1)
 
+        # Ensure all the papers are in the graph
         if process_all_papers:
-            # Ensure all the papers are in the graph
             for pid in pids:
                 if not result.has_node(pid):
                     result.add_node(pid)
 
-        self.progress.info(f'Built full similarity graph - {len(result.nodes())} nodes and {len(result.edges())} edges',
-                           current=current, task=task)
         return result
 
     @staticmethod
@@ -867,14 +866,18 @@ class KeyPaperAnalyzer:
             for idx in np.flatnonzero(self.df['year'].apply(int) > year):
                 texts_similarity_year[idx] = PriorityQueue(maxsize=0)
 
+            self.progress.info('Building papers similarity graph', current=current, task=task)
             similarity_graph = self.build_similarity_graph(
                 self.df, texts_similarity_year,
                 citations_graph_year,
                 cocit_grouped_df_year,
                 bibliographic_coupling_df_year,
                 process_all_papers=False,  # Dont add all the papers to the graph
-                current=current, task=task
             )
+            self.progress.info(f'Built similarity graph - {len(similarity_graph.nodes())} nodes and '
+                               f'{len(similarity_graph.edges())} edges',
+                               current=current, task=task)
+
             logger.debug('Compute aggregated similarity')
             for _, _, d in similarity_graph.edges(data=True):
                 d['similarity'] = KeyPaperAnalyzer.get_similarity(d)
