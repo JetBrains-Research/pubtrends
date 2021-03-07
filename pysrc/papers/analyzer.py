@@ -39,9 +39,11 @@ class KeyPaperAnalyzer:
     # Value > 1 is especially useful while analysing single paper, removes meaningless connections by construction
     SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN = 2
 
+    # Minimal number of common references, used to reduces similarity graph edges count
+    SIMILARITY_COCITATION_MIN = 2
+
     # Minimal cosine similarity for potential text citation, used to reduce similarity graph edges count
-    SIMILARITY_TEXT_MIN = 0.5
-    SIMILARITY_TEXT_CITATION_N = 20  # Max number of potential text citations for paper
+    SIMILARITY_TEXT_CITATION_MIN = 0.5
 
     # Reduce number of edges in smallest communities, i.e. topics
     STRUCTURE_LOW_LEVEL_SPARSITY = 0.5
@@ -267,9 +269,12 @@ class KeyPaperAnalyzer:
 
         self.progress.info('Calculating co-citations for selected papers', current=8, task=task)
         self.cocit_df = self.loader.load_cocitations(self.ids)
-        self.progress.info(f'Found {len(self.cocit_df)} co-cited pairs of papers', current=8, task=task)
-
         cocit_grouped_df = self.build_cocit_grouped_df(self.cocit_df)
+        self.progress.info(f'Found {len(cocit_grouped_df)} co-cited pairs of papers', current=8, task=task)
+        cocit_grouped_df = cocit_grouped_df[cocit_grouped_df['total'] >= self.SIMILARITY_COCITATION_MIN].copy()
+        self.progress.info(f'Filtering co-citations with min threshold '
+                           f'{self.SIMILARITY_COCITATION_MIN}', current=8, task=task)
+        self.progress.info(f'Filtered {len(cocit_grouped_df)} co-cited pairs of papers', current=8, task=task)
 
         self.progress.info('Processing bibliographic coupling for selected papers', current=9, task=task)
         bibliographic_coupling_df = self.loader.load_bibliographic_coupling(self.ids)
@@ -383,11 +388,8 @@ class KeyPaperAnalyzer:
         cocit_grouped_df = cocit_grouped_df.pivot_table(index=['cited_1', 'cited_2'],
                                                         columns=['year'], values=['citing']).reset_index()
         cocit_grouped_df = cocit_grouped_df.replace(np.nan, 0)
-        cocit_grouped_df['total'] = cocit_grouped_df.iloc[:, 2:].sum(axis=1)
+        cocit_grouped_df['total'] = cocit_grouped_df.iloc[:, 2:].sum(axis=1).astype(int)
         cocit_grouped_df = cocit_grouped_df.sort_values(by='total', ascending=False)
-
-        for col in cocit_grouped_df:
-            cocit_grouped_df[col] = cocit_grouped_df[col].astype(object)
 
         return cocit_grouped_df
 
@@ -418,12 +420,7 @@ class KeyPaperAnalyzer:
 
     def build_similarity_graph(
             self,
-            df, texts_similarity,
-            citations_graph, cocit_df, bibliographic_coupling_df,
-            process_cocitations=True,
-            process_bibliographic_coupling=True,
-            process_citations=True,
-            process_text_citations=True,
+            df, texts_similarity, citations_graph, cocit_df, bibliographic_coupling_df,
             process_all_papers=True,
             current=0, task=None
     ):
@@ -445,12 +442,14 @@ class KeyPaperAnalyzer:
         result = nx.Graph()
         # NOTE: we use nodes id as String to avoid problems str keys in jsonify
         # during graph visualization
-        if process_cocitations and len(cocit_df) > 0:
-            for el in cocit_df[['cited_1', 'cited_2', 'total']].values:
-                start, end, cocitation = str(el[0]), str(el[1]), float(el[2])
-                result.add_edge(start, end, cocitation=cocitation)
 
-        if process_bibliographic_coupling and len(bibliographic_coupling_df) > 0:
+        # Co-citations
+        for el in cocit_df[['cited_1', 'cited_2', 'total']].values:
+            start, end, cocitation = str(el[0]), str(el[1]), float(el[2])
+            result.add_edge(start, end, cocitation=cocitation)
+
+        # Bibliographic coupling
+        if len(bibliographic_coupling_df) > 0:
             for el in bibliographic_coupling_df[['citing_1', 'citing_2', 'total']].values:
                 start, end, bibcoupling = str(el[0]), str(el[1]), float(el[2])
                 if result.has_edge(start, end):
@@ -458,28 +457,24 @@ class KeyPaperAnalyzer:
                 else:
                     result.add_edge(start, end, bibcoupling=bibcoupling)
 
-        if process_citations:
-            for u, v in citations_graph.edges:
-                if result.has_edge(u, v):
-                    result[u][v]['citation'] = 1
-                else:
-                    result.add_edge(u, v, citation=1)
-
-        self.progress.info(f'Citations based graph - {len(result.nodes())} nodes and {len(result.edges())} edges',
-                           current=current, task=task)
-
-        if process_text_citations:
-            if len(df) >= 2:  # If we have any corpus
-                for i, pid1 in enumerate(df['id']):
-                    similarity_queue = texts_similarity[i]
-                    while not similarity_queue.empty():
-                        similarity, j = similarity_queue.get()
-                        pid2 = pids[j]
-                        if result.has_edge(pid1, pid2):
-                            pid1_pid2_edge = result[pid1][pid2]
-                            pid1_pid2_edge['text'] = similarity
-                        else:
-                            result.add_edge(pid1, pid2, text=similarity)
+        # Text similarity
+        if len(df) >= 2:
+            for i, pid1 in enumerate(df['id']):
+                similarity_queue = texts_similarity[i]
+                while not similarity_queue.empty():
+                    similarity, j = similarity_queue.get()
+                    pid2 = pids[j]
+                    if result.has_edge(pid1, pid2):
+                        pid1_pid2_edge = result[pid1][pid2]
+                        pid1_pid2_edge['text'] = similarity
+                    else:
+                        result.add_edge(pid1, pid2, text=similarity)
+        # Citations
+        for u, v in citations_graph.edges:
+            if result.has_edge(u, v):
+                result[u][v]['citation'] = 1
+            else:
+                result.add_edge(u, v, citation=1)
 
         if process_all_papers:
             # Ensure all the papers are in the graph
@@ -494,14 +489,13 @@ class KeyPaperAnalyzer:
     @staticmethod
     def analyze_texts_similarity(df, corpus_vectors):
         cos_similarities = cosine_similarity(corpus_vectors)
-        similarity_queues = [PriorityQueue(maxsize=KeyPaperAnalyzer.SIMILARITY_TEXT_CITATION_N)
-                             for _ in range(len(df))]
+        similarity_queues = [PriorityQueue() for _ in range(len(df))]
         # Adding text citations
         for i, pid1 in enumerate(df['id']):
             queue_i = similarity_queues[i]
             for j in range(i + 1, len(df)):
                 similarity = cos_similarities[i, j]
-                if np.isfinite(similarity) and similarity >= KeyPaperAnalyzer.SIMILARITY_TEXT_MIN:
+                if np.isfinite(similarity) and similarity >= KeyPaperAnalyzer.SIMILARITY_TEXT_CITATION_MIN:
                     if queue_i.full():
                         queue_i.get()  # Removes the element with lowest similarity
                     queue_i.put((similarity, j))
@@ -693,7 +687,6 @@ class KeyPaperAnalyzer:
         return \
             KeyPaperAnalyzer.SIMILARITY_BIBLIOGRAPHIC_COUPLING * np.log1p(d.get('bibcoupling', 0)) + \
             KeyPaperAnalyzer.SIMILARITY_COCITATION * np.log1p(d.get('cocitation', 0)) + \
-            KeyPaperAnalyzer.SIMILARITY_CITATION * d.get('citation', 0) + \
             KeyPaperAnalyzer.SIMILARITY_TEXT_CITATION * d.get('text', 0)
 
     @staticmethod
@@ -856,6 +849,9 @@ class KeyPaperAnalyzer:
 
             # Use only co-citations earlier than year
             cocit_grouped_df_year = self.build_cocit_grouped_df(cocit_df.loc[cocit_df['year'] <= year])
+            # Filter cocitations df
+            cocit_grouped_df_year = \
+                cocit_grouped_df_year[cocit_grouped_df_year['total'] >= self.SIMILARITY_COCITATION_MIN]
 
             # Use bibliographic coupling earlier then year
             bibliographic_coupling_df_year = self.bibliographic_coupling_df.loc[

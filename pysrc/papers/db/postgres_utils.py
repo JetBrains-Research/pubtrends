@@ -56,7 +56,7 @@ def process_cocitations_postgres(cursor):
         for i in range(len(cited_list)):
             for j in range(i + 1, len(cited_list)):
                 data.append((str(citing), str(cited_list[i]), str(cited_list[j]), year))
-    df = pd.DataFrame(data, columns=['citing', 'cited_1', 'cited_2', 'year'], dtype=object)
+    df = pd.DataFrame(data, columns=['citing', 'cited_1', 'cited_2', 'year'])
     df['year'] = df['year'].astype(int)
     return df, lines
 
@@ -71,6 +71,6 @@ def process_bibliographic_coupling_postgres(cursor):
         for i in range(len(citing_list)):
             for j in range(i + 1, len(citing_list)):
                 data.append((str(citing_list[i]), str(citing_list[j]), 1))
-    df = pd.DataFrame(data, columns=['citing_1', 'citing_2', 'total'], dtype=object)
+    df = pd.DataFrame(data, columns=['citing_1', 'citing_2', 'total'])
     df = df.groupby(['citing_1', 'citing_2']).sum().reset_index()
     return df, lines

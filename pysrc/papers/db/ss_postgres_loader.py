@@ -50,7 +50,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
 
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df = pd.DataFrame(cursor.fetchall(), columns=['id'], dtype=object)
+            df = pd.DataFrame(cursor.fetchall(), columns=['id'])
 
         return list(df['id'].astype(str))
 
@@ -94,7 +94,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
 
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            pub_df = pd.DataFrame(cursor.fetchall(), columns=['id'], dtype=object)
+            pub_df = pd.DataFrame(cursor.fetchall(), columns=['id'])
 
         # Duplicate rows may occur if crawler was stopped while parsing Semantic Scholar archive
         pub_df.drop_duplicates(subset='id', inplace=True)
@@ -139,7 +139,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             cit_stats_df_from_query = pd.DataFrame(cursor.fetchall(),
-                                                   columns=['id', 'year', 'count'], dtype=object)
+                                                   columns=['id', 'year', 'count'])
 
         if np.any(cit_stats_df_from_query.isna()):
             raise ValueError('NaN values are not allowed in citation stats DataFrame')
@@ -163,7 +163,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
 
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df = pd.DataFrame(cursor.fetchall(), columns=['id'], dtype=object)
+            df = pd.DataFrame(cursor.fetchall(), columns=['id'])
         return list(df['id'].astype(str))
 
     def estimate_citations(self, ids):
@@ -182,7 +182,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             citations = pd.DataFrame(cursor.fetchall(),
-                                     columns=['id_out', 'id_in'], dtype=object)
+                                     columns=['id_out', 'id_in'])
 
         # TODO[shpynov] we can make it on DB side
         citations = citations[citations['id_out'].isin(ids)]
@@ -238,7 +238,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
                 '''
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df = pd.DataFrame(cursor.fetchall(), columns=['id', 'total'], dtype=object)
+            df = pd.DataFrame(cursor.fetchall(), columns=['id', 'total'])
         df['id'] = df['id'].astype(str)
         df.fillna(value=1, inplace=True)
         return df

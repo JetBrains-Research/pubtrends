@@ -1,13 +1,14 @@
 import unittest
 
 import numpy as np
+from pandas._testing import assert_frame_equal
 from parameterized import parameterized
 
 from pysrc.papers.analyzer import KeyPaperAnalyzer
 from pysrc.papers.pubtrends_config import PubtrendsConfig
 from pysrc.test.mock_loaders import MockLoader, \
     CITATION_YEARS, EXPECTED_MAX_GAIN, EXPECTED_MAX_RELATIVE_GAIN, CITATION_GRAPH_NODES, CITATION_GRAPH_EDGES, \
-    MockLoaderEmpty, MockLoaderSingle, SIMILARITY_GRAPH
+    MockLoaderEmpty, MockLoaderSingle, SIMILARITY_GRAPH, BIBCOUPLING_DF, COCITATION_DF
 
 
 class TestKeyPaperAnalyzer(unittest.TestCase):
@@ -36,8 +37,18 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
     def test_build_citation_graph_edges(self):
         self.assertCountEqual(list(self.analyzer.citations_graph.edges()), CITATION_GRAPH_EDGES)
 
+    def test_bibcoupling(self):
+        assert_frame_equal(BIBCOUPLING_DF, self.analyzer.bibliographic_coupling_df)
+
+    def test_cocitation(self):
+        df = KeyPaperAnalyzer.build_cocit_grouped_df(self.analyzer.cocit_df)[
+            ['cited_1', 'cited_2', 'total']].reset_index(drop=True)
+        df.columns = ['cited_1', 'cited_2', 'total']
+        assert_frame_equal(COCITATION_DF, df)
+
     def test_build_similarity_graph_edges(self):
-        self.assertCountEqual(list(self.analyzer.similarity_graph.edges(data=True)), SIMILARITY_GRAPH)
+        edges = list(self.analyzer.similarity_graph.edges(data=True))
+        self.assertCountEqual(edges, SIMILARITY_GRAPH)
 
     def test_find_max_gain_papers_count(self):
         max_gain_count = len(list(self.analyzer.max_gain_df['year'].values))

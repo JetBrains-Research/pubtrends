@@ -36,21 +36,22 @@ COCITATION_GROUPED_DATA = [['1', '2', 1, 1, 1, 3],
                            ['3', '4', 0, 0, 1, 1]]
 COCITATION_YEARS = [1967, 1968, 1969]
 
+COCITATION_DF = pd.DataFrame([['1', '2', 3], ['3', '4', 1]], columns=['cited_1', 'cited_2', 'total'])
 COCITATION_GRAPH_EDGES = [('1', '2', 3), ('3', '4', 1)]
 
 BIBLIOGRAPHIC_COUPLING_DATA = [['3', '4', 2],
                                ['3', '5', 2],
                                ['4', '5', 2]]
+BIBCOUPLING_DF = pd.DataFrame(BIBLIOGRAPHIC_COUPLING_DATA, columns=['citing_1', 'citing_2', 'total'])
 
 SIMILARITY_GRAPH = [('1', '2', {'cocitation': 3.0, 'text': 0.5000000000000001, 'similarity': 1.8862943611198908}),
-                    ('1', '4', {'citation': 1, 'similarity': 0.125}), ('1', '3', {'citation': 1, 'similarity': 0.125}),
-                    ('1', '5', {'citation': 1, 'text': 0.5000000000000001, 'similarity': 0.6250000000000001}),
-                    ('2', '4', {'citation': 1, 'similarity': 0.125}),
-                    ('2', '3', {'citation': 1, 'text': 0.6666666666666669, 'similarity': 0.7916666666666669}),
-                    ('2', '5', {'citation': 1, 'similarity': 0.125}),
-                    ('3', '4', {'cocitation': 1.0, 'bibcoupling': 2.0, 'similarity': 0.830473716643459}),
-                    ('3', '5', {'bibcoupling': 2.0, 'citation': 1, 'similarity': 0.2623265360835137}),
-                    ('4', '5', {'bibcoupling': 2.0, 'citation': 1, 'similarity': 0.2623265360835137})]
+                    ('1', '5', {'text': 0.5000000000000001, 'citation': 1, 'similarity': 0.5000000000000001}),
+                    ('1', '4', {'citation': 1, 'similarity': 0.0}), ('1', '3', {'citation': 1, 'similarity': 0.0}),
+                    ('2', '3', {'text': 0.6666666666666669, 'citation': 1, 'similarity': 0.6666666666666669}),
+                    ('2', '4', {'citation': 1, 'similarity': 0.0}), ('2', '5', {'citation': 1, 'similarity': 0.0}),
+                    ('3', '4', {'bibcoupling': 2.0, 'similarity': 0.1373265360835137}),
+                    ('3', '5', {'bibcoupling': 2.0, 'citation': 1, 'similarity': 0.1373265360835137}),
+                    ('4', '5', {'bibcoupling': 2.0, 'citation': 1, 'similarity': 0.1373265360835137})]
 EXPECTED_MAX_GAIN = {1972: '3', 1974: '1'}
 EXPECTED_MAX_RELATIVE_GAIN = {1972: '3', 1974: '4'}
 
