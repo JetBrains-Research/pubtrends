@@ -11,7 +11,7 @@ from celery.contrib.testing.tasks import ping
 
 from pysrc.app.app import app
 from pysrc.celery.tasks import pubtrends_celery
-from pysrc.papers import pubtrends_config
+from pysrc.papers import config
 from pysrc.papers.db.pm_postgres_loader import PubmedPostgresLoader
 from pysrc.papers.db.pm_postgres_writer import PubmedPostgresWriter
 from pysrc.papers.utils import SORT_MOST_CITED
@@ -25,7 +25,7 @@ class TestApp(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        test_config = pubtrends_config.PubtrendsConfig(test=True)
+        test_config = config.PubtrendsConfig(test=True)
         cls.loader = PubmedPostgresLoader(test_config)
 
         # Configure celery not to use broker

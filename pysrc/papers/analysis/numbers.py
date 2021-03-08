@@ -17,9 +17,32 @@ spacy_en = spacy.load('en_core_web_sm')
 lemmatizer = WordNetLemmatizer()
 
 
+def extract_numbers(df):
+    """
+    Extracts number from the titles of papers
+    :param df: Papers dataframe
+    :return: Dataframe [id, title, numbers]
+    """
+    metrics_data = []
+    for _, data in df.iterrows():
+        paper_metrics_data = [data['id'], *extract_metrics(data['abstract'])]
+        metrics_data.append(paper_metrics_data)
+    metrics_df = pd.DataFrame(metrics_data, columns=['ID', 'Metrics', 'Sentences'])
+    result = pd.merge(left=metrics_df, left_on='ID', right=df[['id', 'title']], right_on='id')
+    result = result[['id', 'title', 'Metrics']]
+    result['numbers'] = [
+        '; '.join(
+            f'{number}:{",".join(str(v) for v in sorted(set(v[0] for v in values)))}'
+            for number, values in row['Metrics'].items()
+        ) for _, row in result.iterrows()
+    ]
+    result = result.loc[result['numbers'] != '']
+    return result[['id', 'title', 'numbers']]
+
+
 def process_candidate(metrics, token, value, idx):
     tt = token.text
-    if ENTITY.fullmatch(tt) and token.pos_ in set(['NOUN', 'PROPN']):
+    if ENTITY.fullmatch(tt) and token.pos_ in {'NOUN', 'PROPN'}:
         if re.match(r'[A-Z\-0-9_]+s', tt):  # plural of abbreviation
             tt = tt[:-1]
         tt = lemmatizer.lemmatize(tt.lower())
@@ -113,65 +136,3 @@ def extract_metrics(text, visualize_dependencies=False):
         if visualize_dependencies:
             displacy.render(sent, style="dep", jupyter=True)
     return metrics, sentences
-
-
-class MetricExtractor:
-    def __init__(self, metrics_data):
-        self.metrics_df = pd.DataFrame(metrics_data, columns=['ID', 'Metrics', 'Sentences'])
-
-    def get_top_metrics(self, number=20):
-        metrics_counter = Counter()
-        for metric_dict in self.metrics_df['Metrics']:
-            for metric, occasions in metric_dict.items():
-                metrics_counter[metric] += len(occasions)
-        return metrics_counter.most_common(number)
-
-    def get_metric_values(self, *metrics, min_value=None, max_value=None, detailed=False):
-        values = []
-        for _, data in self.metrics_df.iterrows():
-            metric_dict = data['Metrics']
-            sentences = data['Sentences']
-
-            for metric in metrics:
-                if metric in metric_dict:
-                    for value, sentence_number in metric_dict[metric]:
-                        if min_value and value < min_value or max_value and value > max_value:
-                            continue
-                        if detailed:
-                            sentence = sentences[sentence_number]
-                            values.append([data['ID'], value, sentence])
-                        else:
-                            values.append(value)
-        if detailed:
-            return pd.DataFrame(values, columns=['PMID', ', '.join(metrics), 'Sentence'])
-        return values
-
-    def filter_papers(self, metrics):
-        """
-        :param metrics - list of tuples ([list of keywords], min_value, max_value)
-               e.g. (['subjects', 'participants'], 5, None)
-        :return list of PMIDs
-        """
-        selection = []
-        for _, data in self.metrics_df.iterrows():
-            suitable = True
-            metric_dict = data['Metrics']
-
-            for metric in metrics:
-                metric_suitable = False
-                words, min_value, max_value = metric
-
-                for word in words:
-                    if word in metric_dict:
-                        for value, _ in metric_dict[word]:
-                            if min_value and value < min_value or max_value and value > max_value:
-                                continue
-                            metric_suitable = True
-                    if metric_suitable:
-                        break
-
-                suitable &= metric_suitable
-
-            if suitable:
-                selection.append(data['ID'])
-        return selection

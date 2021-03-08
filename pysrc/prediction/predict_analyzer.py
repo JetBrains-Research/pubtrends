@@ -1,7 +1,8 @@
-from pysrc.papers.analyzer import KeyPaperAnalyzer
+from pysrc.papers.analysis.citations import build_cit_stats_df, merge_citation_stats
+from pysrc.papers.analyzer import PapersAnalyzer
 
 
-class PredictAnalyzer(KeyPaperAnalyzer):
+class PredictAnalyzer(PapersAnalyzer):
     def __init__(self, loader, config):
         super(PredictAnalyzer, self).__init__(loader, config)
 
@@ -21,12 +22,11 @@ class PredictAnalyzer(KeyPaperAnalyzer):
                 raise RuntimeError("Nothing found in DB")
 
             cit_stats_df_from_query = self.loader.load_citations_by_year(self.ids)
-            self.cit_stats_df = self.build_cit_stats_df(cit_stats_df_from_query, self.n_papers,
-                                                        current=4, task=None)
+            self.cit_stats_df = build_cit_stats_df(cit_stats_df_from_query, self.n_papers)
             if len(self.cit_stats_df) == 0:
                 raise RuntimeError("No citations of papers were found")
 
-            self.df, self.min_year, self.max_year, self.citation_years = self.merge_citation_stats(
+            self.df, self.min_year, self.max_year, self.citation_years = merge_citation_stats(
                 self.pub_df, self.cit_stats_df
             )
             if len(self.df) == 0:

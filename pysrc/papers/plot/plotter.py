@@ -18,11 +18,12 @@ from matplotlib import pyplot as plt
 from more_itertools import unique_everseen
 from wordcloud import WordCloud
 
+from pysrc.papers.analysis.text import get_frequent_tokens, get_topic_word_cloud_data
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
-from pysrc.papers.pubtrends_config import PubtrendsConfig
-from pysrc.papers.utils import LOCAL_BASE_URL, get_topic_word_cloud_data, \
-    get_frequent_tokens, cut_authors_list, ZOOM_OUT, ZOOM_IN, zoom_name, trim, rgb2hex, MAX_TITLE_LENGTH
+from pysrc.papers.config import PubtrendsConfig
+from pysrc.papers.utils import LOCAL_BASE_URL, \
+    cut_authors_list, ZOOM_OUT, ZOOM_IN, zoom_name, trim, rgb2hex, MAX_TITLE_LENGTH
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
 hv.extension('bokeh')

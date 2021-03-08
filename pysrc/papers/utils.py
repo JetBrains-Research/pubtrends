@@ -1,31 +1,14 @@
 import binascii
 import logging
 import re
-import sys
-from collections import Counter
 from string import Template
-from threading import Lock
 
-import nltk
-import numpy as np
 import pandas as pd
 from matplotlib import colors
-from nltk.corpus import stopwords, wordnet
-from nltk.stem import WordNetLemmatizer, SnowballStemmer
-from nltk.tokenize import word_tokenize
 from sklearn.decomposition import LatentDirichletAllocation
-from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from sklearn.feature_extraction.text import CountVectorizer
 
-# Ensure that modules are downloaded in advance
-# nltk averaged_perceptron_tagger required for nltk.pos_tag
-# nltk punkt  required for word_tokenize
-# nltk stopwords
-# nltk wordnet
-STOP_WORDS_SET = set(stopwords.words('english'))
-
-# Lock to support multithreading for NLTK
-# See https://github.com/nltk/nltk/issues/1576
-NLTK_LOCK = Lock()
+from pysrc.papers.analysis.text import tokenize
 
 LOCAL_BASE_URL = Template('/paper?source=$source&id=')
 PUBMED_ARTICLE_BASE_URL = 'https://www.ncbi.nlm.nih.gov/pubmed/?term='
@@ -48,6 +31,8 @@ SORT_MOST_RECENT = 'Most Recent'
 
 MAX_TITLE_LENGTH = 200
 
+SEED = 19700101
+
 log = logging.getLogger(__name__)
 
 
@@ -59,220 +44,6 @@ def zoom_name(zoom):
     elif int(zoom) == PAPER_ANALYSIS:
         return PAPER_ANALYSIS_TITLE
     raise ValueError(f'Illegal zoom key value: {zoom}')
-
-
-def get_wordnet_pos(treebank_tag):
-    """Convert pos_tag output to WordNetLemmatizer tags."""
-    NLTK_LOCK.acquire()
-    if treebank_tag.startswith('J'):
-        result = wordnet.ADJ
-    elif treebank_tag.startswith('V'):
-        result = wordnet.VERB
-    elif treebank_tag.startswith('N'):
-        result = wordnet.NOUN
-    elif treebank_tag.startswith('R'):
-        result = wordnet.ADV
-    else:
-        result = ''
-    NLTK_LOCK.release()
-    return result
-
-
-def is_noun_or_adj(pos):
-    return pos[:2] == 'NN' or pos == 'JJ'
-
-
-def preprocess_text(text):
-    text = text.lower()
-    # Replace non-ascii with space
-    text = re.sub('[^a-zA-Z0-9 ]+', ' ', text)
-    # Whitespaces normalization, see #215
-    text = re.sub('[ ]{2,}', ' ', text.strip())
-    return text
-
-
-def tokens_stems(text, query=None, min_token_length=3):
-    # Filter out search query
-    if query is not None:
-        for term in preprocess_text(query).split(' '):
-            text = text.replace(term, '')
-
-    tokenized = word_tokenize(text)
-
-    words_of_interest = [(word, pos) for word, pos in nltk.pos_tag(tokenized) if
-                         word not in STOP_WORDS_SET and is_noun_or_adj(pos)]
-
-    lemmatizer = WordNetLemmatizer()
-    lemmatized = filter(lambda t: len(t) >= min_token_length,
-                        [lemmatizer.lemmatize(w, pos=get_wordnet_pos(pos)) for w, pos in words_of_interest])
-
-    stemmer = SnowballStemmer('english')
-    return [(stemmer.stem(word), word) for word in lemmatized]
-
-
-def tokenize(text, query=None, min_token_length=3):
-    if text is None:
-        return []
-    text = preprocess_text(text)
-
-    stemmed = tokens_stems(text, query, min_token_length)
-    # Substitute each stem with the shortest similar word
-    stems_mapping = {}
-    for stem, word in stemmed:
-        if stem in stems_mapping:
-            if len(stems_mapping[stem]) > len(word):
-                stems_mapping[stem] = word
-        else:
-            stems_mapping[stem] = word
-
-    return [stems_mapping[stem] for stem, _ in stemmed]
-
-
-def get_frequent_tokens(df, query, fraction=0.1, min_tokens=20):
-    """
-    Compute tokens weighted frequencies
-    :param query: search query to exclude
-    :param fraction: fraction of most common tokens
-    :param min_tokens: minimal number of tokens to return
-    :return: dictionary {token: frequency}
-    """
-    counter = Counter()
-    for text in df['title'] + ' ' + df['abstract'] + ' ' + df['keywords'] + ' ' + df['mesh']:
-        for token in tokenize(text, query):
-            counter[token] += 1
-    result = {}
-    tokens = len(counter)
-    for token, cnt in counter.most_common(max(min_tokens, int(tokens * fraction))):
-        result[token] = cnt / tokens
-    return result
-
-
-def get_topic_word_cloud_data(df_kwd, comp):
-    """Parse TF-IDF based tokens from text"""
-    kwds = {}
-    for pair in list(df_kwd[df_kwd['comp'] == comp]['kwd'])[0].split(','):
-        if pair != '':  # Correctly process empty kwds encoding
-            token, value = pair.split(':')
-            for word in token.split(' '):
-                kwds[word] = float(value) + kwds.get(word, 0)
-    return kwds
-
-
-def get_topics_description(df, comps, corpus_terms, corpus_counts, query, n_words):
-    if len(comps) == 1:
-        most_frequent = get_frequent_tokens(df, query)
-        return {0: list(sorted(most_frequent.items(), key=lambda kv: kv[1], reverse=True))[:n_words]}
-
-    tfidf = compute_comps_tfidf(df, comps, corpus_counts)
-    result = {}
-    for comp in comps.keys():
-        # Generate no keywords for '-1' component
-        if comp == -1:
-            result[comp] = ''
-            continue
-
-        # Take indices with the largest tfidf
-        counter = Counter()
-        for i, w in enumerate(corpus_terms):
-            counter[w] += tfidf[comp, i]
-        # Ignore terms with insignificant frequencies
-        result[comp] = [(t, f) for t, f in counter.most_common(n_words) if f > 0]
-    return result
-
-
-def get_evolution_topics_description(df, comps, corpus_terms, corpus_counts, size):
-    tfidf = compute_comps_tfidf(df, comps, corpus_counts, ignore_comp=-1)
-    kwd = {}
-    comp_idx = dict(enumerate([c for c in comps if c != -1]))  # -1 Not yet published
-    for comp in comps.keys():
-        if comp not in comp_idx:
-            # Generate no keywords for '-1' component
-            kwd[comp] = ''
-            continue
-
-        # Sort indices by tfidf value
-        # It might be faster to use np.argpartition instead of np.argsort
-        ind = np.argsort(tfidf[comp_idx[comp], :].toarray(), axis=1)
-
-        # Take tokens with the largest tfidf
-        kwd[comp_idx[comp]] = [corpus_terms[idx] for idx in ind[0, -size:]]
-    return kwd
-
-
-def compute_comps_tfidf(df, comps, corpus_counts, ignore_comp=None):
-    """
-    Compute TFIDF for components based on average counts
-    :param df: Papers dataframe
-    :param comps: Dict of component to all papers
-    :param corpus_counts: Vectorization for all papers
-    :param ignore_comp: None or number of component to ignore
-    :return: TFIDF matrix of size (components x new_vocabulary_size) and new_vocabulary
-    """
-    log.debug('Compute average terms counts per components')
-    # Since some of the components may be skipped, use this dict for continuous indexes
-    comp_idx = dict(enumerate([c for c in comps if c != ignore_comp]))
-    terms_freqs_per_comp = np.zeros(shape=(len(comp_idx), corpus_counts.shape[1]), dtype=np.short)
-    for comp, comp_pids in comps.items():
-        if comp in comp_idx:  # Not ignored
-            terms_freqs_per_comp[comp_idx[comp], :] = \
-                np.sum(corpus_counts[np.flatnonzero(df['id'].isin(comp_pids)), :], axis=0) / len(comp_pids)
-
-    return compute_tfidf(terms_freqs_per_comp)
-
-
-def compute_tfidf(counts):
-    tfidf_transformer = TfidfTransformer()
-    tfidf = tfidf_transformer.fit_transform(counts)
-    log.debug(f'TFIDF shape {tfidf.shape}')
-    return tfidf
-
-
-def vectorize_corpus(df, max_features, min_df, max_df):
-    """
-    Create vectorization for papers in df.
-    :param df: papers dataframe
-    :param max_features: Maximum vocabulary size
-    :param min_df: Ignore terms with frequency lower than given threshold
-    :param max_df: Ignore terms with frequency higher than given threshold
-    :return: Return vocabulary and term counts.
-    """
-    corpus = build_corpus(df)
-    vectorizer = CountVectorizer(
-        min_df=min_df,
-        max_df=max_df if len(df) > 1 else 1.0,  # For tests
-        max_features=max_features,
-        tokenizer=lambda t: tokenize(t)
-    )
-    log.debug(f'Vectorizing min_df={min_df} max_df={max_df} max_features={max_features}')
-    counts = vectorizer.fit_transform(corpus)
-    log.debug(f'Vectorized corpus size {counts.shape}')
-    terms_counts = np.asarray(np.sum(counts, axis=0)).reshape(-1)
-    terms_freqs = terms_counts / len(df)
-    log.debug(f'Terms frequencies min={terms_freqs.min()}, max={terms_freqs.max()}, '
-              f'mean={terms_freqs.mean()}, std={terms_freqs.std()}')
-    return vectorizer.get_feature_names(), counts
-
-
-def split_df_list(df, target_column, separator):
-    """
-    :param df: dataframe to split
-    :param target_column: the column containing the values to split
-    :param separator:  the symbol used to perform the split
-    :return: a dataframe with each entry for the target column separated, with each element moved into a new row.
-    The values in the other columns are duplicated across the newly divided rows.
-    """
-
-    def split_list_to_rows(row, row_accumulator, target_column, separator):
-        split_row = row[target_column].split(separator)
-        for s in split_row:
-            new_row = row.to_dict()
-            new_row[target_column] = s
-            row_accumulator.append(new_row)
-
-    new_rows = []
-    df.apply(split_list_to_rows, axis=1, args=(new_rows, target_column, separator))
-    new_df = pd.DataFrame(new_rows)
-    return new_df
 
 
 def cut_authors_list(authors, limit=10):
@@ -306,13 +77,7 @@ def to_32_bit_int(n):
     return n
 
 
-def build_corpus(df):
-    log.info(f'Building corpus from {len(df)} papers')
-    return [preprocess_text(f'{title} {abstract} {keywords} {mesh}')
-            for title, abstract, mesh, keywords in
-            zip(df['title'], df['abstract'], df['keywords'], df['mesh'])]
-
-
+# TODO: move to the corresponding jupyter notebook
 def vectorize(corpus, query=None, min_df=0, max_df=1, n_words=1000):
     log.info(f'Counting word usage in the corpus, using only {n_words} most frequent words')
     vectorizer = CountVectorizer(tokenizer=lambda t: tokenize(t, query),
@@ -322,6 +87,7 @@ def vectorize(corpus, query=None, min_df=0, max_df=1, n_words=1000):
     return counts, vectorizer
 
 
+# TODO: move to the corresponding jupyter notebook
 def lda_topics(counts, n_topics=10):
     log.info('Performing LDA topic analysis')
     lda = LatentDirichletAllocation(n_components=n_topics, random_state=0)
@@ -331,6 +97,7 @@ def lda_topics(counts, n_topics=10):
     return topics, lda
 
 
+# TODO: move to the corresponding jupyter notebook
 def explain_lda_topics(lda, vectorizer, n_top_words=20):
     feature_names = vectorizer.get_feature_names()
     explanations = {}

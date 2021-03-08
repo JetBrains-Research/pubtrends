@@ -2,7 +2,7 @@ import unittest
 
 from parameterized import parameterized
 
-from pysrc.papers.pubtrends_config import PubtrendsConfig
+from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.pm_neo4j_loader import PubmedNeo4jLoader
 from pysrc.papers.db.pm_neo4j_writer import PubmedNeo4jWriter
 from pysrc.test.db.abstract_test_pm_loader import AbstractTestPubmedLoader

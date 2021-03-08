@@ -1,12 +1,13 @@
 from celery import current_task
 
 from pysrc.celery.pubtrends_celery import pubtrends_celery
-from pysrc.papers.analyzer import KeyPaperAnalyzer
+from pysrc.papers.analysis.expand import expand_ids
+from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plotter import visualize_analysis
 from pysrc.papers.progress import Progress
-from pysrc.papers.pubtrends_config import PubtrendsConfig
+from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.utils import SORT_MOST_CITED, ZOOM_OUT, PAPER_ANALYSIS
 
 
@@ -14,7 +15,7 @@ from pysrc.papers.utils import SORT_MOST_CITED, ZOOM_OUT, PAPER_ANALYSIS
 def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, expand=0.5, test=False):
     config = PubtrendsConfig(test=test)
     loader = Loaders.get_loader(source, config)
-    analyzer = KeyPaperAnalyzer(loader, config)
+    analyzer = PapersAnalyzer(loader, config)
     analyzer.progress.info('Analyzing search query', current=0, task=current_task)
     try:
         sort = sort or SORT_MOST_CITED
@@ -23,10 +24,16 @@ def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, e
                                     noreviews=noreviews,
                                     task=current_task)
         if ids and expand != 0:
-            ids = analyzer.expand_ids(
+            ids = expand_ids(
                 ids,
-                limit=min(int(min(len(ids), limit) * (1 + expand)), analyzer.config.max_number_to_expand),
-                current=2, task=current_task
+                min(int(min(len(ids), limit) * (1 + expand)), analyzer.config.max_number_to_expand),
+                loader,
+                PapersAnalyzer.EXPAND_LIMIT,
+                PapersAnalyzer.EXPAND_CITATIONS_Q_LOW,
+                PapersAnalyzer.EXPAND_CITATIONS_Q_HIGH,
+                PapersAnalyzer.EXPAND_CITATIONS_SIGMA,
+                PapersAnalyzer.EXPAND_SIMILARITY_THRESHOLD,
+                analyzer.progress, current=2, task=current_task
             )
         analyzer.analyze_papers(ids, query, task=current_task)
     finally:
@@ -48,14 +55,20 @@ def analyze_id_list(source, ids, zoom, query, limit=None, test=False):
 
     config = PubtrendsConfig(test=test)
     loader = Loaders.get_loader(source, config)
-    analyzer = KeyPaperAnalyzer(loader, config)
+    analyzer = PapersAnalyzer(loader, config)
     analyzer.progress.info('Analyzing list of papers', current=0, task=current_task)
     try:
         if zoom == ZOOM_OUT:
-            ids = analyzer.expand_ids(
+            ids = expand_ids(
                 ids,
-                limit=min(len(ids) + KeyPaperAnalyzer.EXPAND_ZOOM_OUT, analyzer.config.max_number_to_expand),
-                current=1, task=current_task
+                min(len(ids) + PapersAnalyzer.EXPAND_ZOOM_OUT, analyzer.config.max_number_to_expand),
+                loader,
+                PapersAnalyzer.EXPAND_LIMIT,
+                PapersAnalyzer.EXPAND_CITATIONS_Q_LOW,
+                PapersAnalyzer.EXPAND_CITATIONS_Q_HIGH,
+                PapersAnalyzer.EXPAND_CITATIONS_SIGMA,
+                PapersAnalyzer.EXPAND_SIMILARITY_THRESHOLD,
+                analyzer.progress, current=1, task=current_task
             )
         elif zoom == PAPER_ANALYSIS:
             if limit:
@@ -67,9 +80,16 @@ def analyze_id_list(source, ids, zoom, query, limit=None, test=False):
                 ids[0], limit=limit if limit > 0 else analyzer.config.max_number_to_expand
             )
             # And then expand
-            ids = analyzer.expand_ids(
-                ids, limit=limit if limit > 0 else analyzer.config.max_number_to_expand,
-                current=1, task=current_task
+            ids = expand_ids(
+                ids,
+                limit if limit > 0 else analyzer.config.max_number_to_expand,
+                loader,
+                PapersAnalyzer.EXPAND_LIMIT,
+                PapersAnalyzer.EXPAND_CITATIONS_Q_LOW,
+                PapersAnalyzer.EXPAND_CITATIONS_Q_HIGH,
+                PapersAnalyzer.EXPAND_CITATIONS_SIGMA,
+                PapersAnalyzer.EXPAND_SIMILARITY_THRESHOLD,
+                analyzer.progress, current=1, task=current_task
             )
         else:
             ids = ids  # Leave intact
@@ -82,7 +102,7 @@ def analyze_id_list(source, ids, zoom, query, limit=None, test=False):
     dump = analyzer.dump()
     analyzer.progress.done(task=current_task)
     analyzer.teardown()
-    return visualization, dump, analyzer.progress.log()
+    return visualization, dump, analyzer.progress.logger()
 
 
 @pubtrends_celery.task(name='find_paper_async')

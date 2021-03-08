@@ -10,7 +10,7 @@ import os
 
 from pysrc.app.admin.feedback import prepare_feedback_data
 from pysrc.app.admin.stats import prepare_stats_data
-from pysrc.papers.pubtrends_config import PubtrendsConfig
+from pysrc.papers.config import PubtrendsConfig
 from pysrc.version import VERSION
 
 

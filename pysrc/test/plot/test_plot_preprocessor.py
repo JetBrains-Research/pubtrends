@@ -5,7 +5,7 @@ from bokeh.models import ColumnDataSource
 
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.plot.plotter import Plotter
-from pysrc.test.mock_analyzer import MockAnalyzer
+from pysrc.test.plot.mock_analyzer import MockAnalyzer
 
 
 class TestPlotPreprocessor(unittest.TestCase):
@@ -110,7 +110,6 @@ class TestPlotPreprocessor(unittest.TestCase):
         for i in range(3):
             for j in range(3):
                 similarities[i, j] = similarity_df[index(i + 1, j + 1)]['similarity'].values[0]
-        # print(similarities)
 
         for i in range(3):
             for j in range(3):

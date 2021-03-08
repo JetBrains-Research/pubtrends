@@ -5,7 +5,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-from pysrc.papers.analyzer import KeyPaperAnalyzer
+from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.utils import cut_authors_list
 
 logger = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ class PlotPreprocessor:
         for u, v, data in similarity_graph.edges(data=True):
             sources[i] = u
             targets[i] = v
-            similarities[i] = KeyPaperAnalyzer.get_similarity(data)
+            similarities[i] = PapersAnalyzer.similarity(data)
             i += 1
         similarity_df = pd.DataFrame(data={'source': sources, 'target': targets, 'similarity': similarities})
 

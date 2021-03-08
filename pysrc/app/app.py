@@ -17,15 +17,15 @@ from pysrc.app.predefined import save_predefined, load_predefined_viz_log, load_
 from pysrc.app.utils import log_request, MAX_QUERY_LENGTH, SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, \
     SOMETHING_WENT_WRONG_PAPER, SOMETHING_WENT_WRONG_TOPIC
 from pysrc.celery.pubtrends_celery import pubtrends_celery
-from pysrc.celery.tasks_main import find_paper_async, analyze_search_terms, analyze_id_list
 from pysrc.celery.tasks_cache import get_or_cancel_task
-from pysrc.papers.analyzer import KeyPaperAnalyzer
+from pysrc.celery.tasks_main import find_paper_async, analyze_search_terms, analyze_id_list
+from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.paper import prepare_paper_data, prepare_papers_data
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.plot.plotter import Plotter
-from pysrc.papers.pubtrends_config import PubtrendsConfig
+from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.utils import zoom_name, trim, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE, ZOOM_OUT_TITLE
 from pysrc.version import VERSION
 
@@ -323,7 +323,7 @@ def graph():
         data = load_predefined_or_result_data(jobid, pubtrends_celery)
         if data is not None:
             loader, url_prefix = Loaders.get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
-            analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
+            analyzer = PapersAnalyzer(loader, PUBTRENDS_CONFIG)
             analyzer.init(data)
             topics_tags = {comp: ', '.join(
                 [w[0] for w in analyzer.df_kwd[analyzer.df_kwd['comp'] == comp]['kwd'].values[0][:10]]

@@ -8,10 +8,10 @@ from lazy import lazy
 
 import pysrc.review.config as cfg
 from pysrc.celery.pubtrends_celery import pubtrends_celery
-from pysrc.papers.analyzer import KeyPaperAnalyzer
+from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.progress import Progress
-from pysrc.papers.pubtrends_config import PubtrendsConfig
+from pysrc.papers.config import PubtrendsConfig
 from pysrc.review.model import load_model
 from pysrc.review.text import text_to_data
 from pysrc.review.utils import setup_single_gpu
@@ -62,7 +62,7 @@ def generate_review(data, source, num_papers, num_sents, progress, task):
         REVIEW_LOCK.acquire()
         progress.info(f'Generating review', current=1, task=task)
         loader, url_prefix = Loaders.get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
-        analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
+        analyzer = PapersAnalyzer(loader, PUBTRENDS_CONFIG)
         analyzer.init(data)
         progress.info('Initializing model and device', current=2, task=task)
         model, device = MODEL_CACHE.model_and_device
