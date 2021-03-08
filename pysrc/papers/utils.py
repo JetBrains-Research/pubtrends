@@ -5,10 +5,6 @@ from string import Template
 
 import pandas as pd
 from matplotlib import colors
-from sklearn.decomposition import LatentDirichletAllocation
-from sklearn.feature_extraction.text import CountVectorizer
-
-from pysrc.papers.analysis.text import tokenize
 
 LOCAL_BASE_URL = Template('/paper?source=$source&id=')
 PUBMED_ARTICLE_BASE_URL = 'https://www.ncbi.nlm.nih.gov/pubmed/?term='
@@ -75,36 +71,6 @@ def to_32_bit_int(n):
     if n >= (1 << 31):
         return -(1 << 32) + n
     return n
-
-
-# TODO: move to the corresponding jupyter notebook
-def vectorize(corpus, query=None, min_df=0, max_df=1, n_words=1000):
-    log.info(f'Counting word usage in the corpus, using only {n_words} most frequent words')
-    vectorizer = CountVectorizer(tokenizer=lambda t: tokenize(t, query),
-                                 min_df=min_df, max_df=max_df, max_features=n_words)
-    counts = vectorizer.fit_transform(corpus)
-    log.info(f'Output shape: {counts.shape}')
-    return counts, vectorizer
-
-
-# TODO: move to the corresponding jupyter notebook
-def lda_topics(counts, n_topics=10):
-    log.info('Performing LDA topic analysis')
-    lda = LatentDirichletAllocation(n_components=n_topics, random_state=0)
-    topics = lda.fit_transform(counts)
-
-    log.info('Done')
-    return topics, lda
-
-
-# TODO: move to the corresponding jupyter notebook
-def explain_lda_topics(lda, vectorizer, n_top_words=20):
-    feature_names = vectorizer.get_feature_names()
-    explanations = {}
-    for i, topic in enumerate(lda.components_):
-        explanations[i] = [(topic[i], feature_names[i]) for i in topic.argsort()[:-n_top_words - 1:-1]]
-
-    return explanations
 
 
 def trim(string, max_length):

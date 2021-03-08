@@ -2,9 +2,9 @@ import unittest
 import numpy as np
 
 from pysrc.papers.analysis.graph import build_citation_graph
+from pysrc.papers.analysis.text import tokenize
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
-from pysrc.papers.utils import tokenize
 from pysrc.test.mock_loaders import MockLoader
 
 
