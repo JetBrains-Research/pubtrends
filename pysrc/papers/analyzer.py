@@ -13,16 +13,12 @@ from pysrc.papers.analysis.metadata import popular_authors, popular_journals
 from pysrc.papers.analysis.numbers import extract_numbers
 from pysrc.papers.analysis.text import analyze_texts_similarity, vectorize_corpus
 from pysrc.papers.analysis.topics import topic_analysis, get_topics_description
-from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.progress import Progress
 from pysrc.papers.utils import SORT_MOST_CITED
 
 logger = logging.getLogger(__name__)
-
-PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
-
 
 class PapersAnalyzer:
     TOP_CITED_PAPERS = 50
@@ -254,15 +250,15 @@ class PapersAnalyzer:
         )
 
         # Additional analysis steps
-        if PUBTRENDS_CONFIG.feature_authors_enabled:
+        if self.config.feature_authors_enabled:
             self.progress.info("Finding popular authors", current=18, task=task)
             self.author_stats = popular_authors(self.df, n=self.POPULAR_AUTHORS)
 
-        if PUBTRENDS_CONFIG.feature_journals_enabled:
+        if self.config.feature_journals_enabled:
             self.progress.info("Finding popular journals", current=19, task=task)
             self.journal_stats = popular_journals(self.df, n=self.POPULAR_JOURNALS)
 
-        if PUBTRENDS_CONFIG.feature_numbers_enabled:
+        if self.config.feature_numbers_enabled:
             if len(self.df) >= 0:
                 logger.debug('Perform numbers extraction')
                 self.progress.info('Extracting numbers from publication abstracts', current=20, task=task)
@@ -270,7 +266,7 @@ class PapersAnalyzer:
             else:
                 logger.debug('Not enough papers for numbers extraction')
 
-        if PUBTRENDS_CONFIG.feature_evolution_enabled:
+        if self.config.feature_evolution_enabled:
             if len(self.df) >= PapersAnalyzer.EVOLUTION_MIN_PAPERS:
                 logger.debug('Perform topic evolution analysis and get topic descriptions')
                 self.evolution_df, self.evolution_year_range = \
