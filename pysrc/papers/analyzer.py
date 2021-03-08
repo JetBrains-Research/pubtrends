@@ -20,6 +20,7 @@ from pysrc.papers.utils import SORT_MOST_CITED
 
 logger = logging.getLogger(__name__)
 
+
 class PapersAnalyzer:
     TOP_CITED_PAPERS = 50
 
