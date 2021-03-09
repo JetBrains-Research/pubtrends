@@ -1,8 +1,10 @@
 import unittest
-
+import pandas as pd
+from pandas.testing import assert_frame_equal
 from parameterized import parameterized
 
-from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres, no_stemming_filter
+from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres, no_stemming_filter, \
+    process_bibliographic_coupling_postgres
 
 
 class TestPostgresUtils(unittest.TestCase):
@@ -63,3 +65,26 @@ class TestPostgresUtils(unittest.TestCase):
             preprocess_search_query_for_postgres('"Foo" Bar"', 2)
         with self.assertRaises(Exception):
             preprocess_search_query_for_postgres('&&&', 2)
+
+    def test_process_bibliographic_coupling_empty(self):
+        df, lines = process_bibliographic_coupling_postgres([])
+        self.assertTrue(len(df) == 0)
+        self.assertTrue(len(df['total']) == 0)
+
+    def test_process_bibliographic_coupling(self):
+        df, lines = process_bibliographic_coupling_postgres([
+            ('1', ['2', '3', '4', '5']),
+            ('2', ['3', '4', '5']),
+            ('3', ['4', '5']),
+            ('4', ['5'])
+        ])
+        expected_df = pd.DataFrame([
+            ['2', '3', 1],
+            ['2', '4', 1],
+            ['2', '5', 1],
+            ['3', '4', 2],
+            ['3', '5', 2],
+            ['4', '5', 3],
+        ], columns=['citing_1', 'citing_2', 'total'])
+        self.assertEquals(4, lines)
+        assert_frame_equal(df, expected_df)
