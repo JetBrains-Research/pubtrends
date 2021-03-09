@@ -102,7 +102,7 @@ def analyze_id_list(source, ids, zoom, query, limit=None, test=False):
     dump = analyzer.dump()
     analyzer.progress.done(task=current_task)
     analyzer.teardown()
-    return visualization, dump, analyzer.progress.logger()
+    return visualization, dump, analyzer.progress.log()
 
 
 @pubtrends_celery.task(name='find_paper_async')
