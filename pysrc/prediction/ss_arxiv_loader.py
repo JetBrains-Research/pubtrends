@@ -14,6 +14,7 @@ class SSArxivLoader(SemanticScholarNeo4jLoader):
         raise Exception('Use search_arxiv')
 
     def search_arxiv(self, limit, sort='random'):
+        self.check_connection()
         if sort == SORT_MOST_CITED:
             query = f'''
                 MATCH ()-[r:SSReferenced]->(node:SSPublication)
