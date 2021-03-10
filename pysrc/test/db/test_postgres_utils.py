@@ -18,6 +18,7 @@ class TestPostgresUtils(unittest.TestCase):
         ('Foo, Bar', 'Foo | Bar'),
         ('Foo, Bar Baz', 'Foo | Bar & Baz'),
         ('Foo, "Bar Baz"', 'Foo | Bar<->Baz'),
+        ('Foo, "Bar Baz" Bzzzz', 'Foo | Bar<->Baz & Bzzzz'),
     ])
     def test_preprocess_search_valid_source(self, terms, expected):
         self.assertEqual(expected, preprocess_search_query_for_postgres(terms, 0))
@@ -37,6 +38,14 @@ class TestPostgresUtils(unittest.TestCase):
 
     def test_preprocess_search_dash_split(self):
         self.assertEqual('Covid-19', preprocess_search_query_for_postgres('Covid-19', 2))
+
+    def test_preprocess_search_odd_quotes(self):
+        with self.assertRaises(Exception):
+            preprocess_search_query_for_postgres('"foo" "', 2)
+
+    def test_preprocess_search_empty_phrase(self):
+        with self.assertRaises(Exception):
+            preprocess_search_query_for_postgres('"" bar baz', 2)
 
     def test_preprocess_search_or(self):
         self.assertEqual(

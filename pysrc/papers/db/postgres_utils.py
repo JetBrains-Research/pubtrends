@@ -16,27 +16,54 @@ def preprocess_search_query_for_postgres(query, min_search_words):
             pp = preprocess_search_query_for_postgres(p.strip(), min_search_words)
             qor += pp
         return qor
-    processed = re.sub('[ ]{2,}', ' ', query.strip())  # Whitespaces normalization, see #215
+
+    # Whitespaces normalization, see #215
+    processed = re.sub('[ ]{2,}', ' ', query.strip())
     if len(processed) == 0:
         raise SearchError('Empty query')
+
     processed = re.sub('[^0-9a-zA-Z\'"\\-\\.+ ]', '', processed)  # Remove unknown symbols
     if len(processed) == 0:
         raise SearchError('Illegal character(s), only English letters, numbers, '
                           f'and +- signs are supported. Query: {query}')
+
+    # Check query complexity
     if len(re.split('[ -]', processed)) < min_search_words:
         raise SearchError(f'Please use more specific query with >= {min_search_words} words. Query: {query}')
-    # Looking for complete phrase
-    if re.match('^"[^"]+"$', processed):
-        return '<->'.join(re.sub('[\'"]', '', processed).split(' '))
-    elif re.match('^[^"]+$', processed):
-        words = [re.sub("'s$", '', w) for w in processed.split(' ')]  # Fix apostrophes
-        stemmer = SnowballStemmer('english')
-        stems = set([stemmer.stem(word) for word in words])  # Avoid similar words
-        if len(stems) + len(processed.split('-')) - 1 < min_search_words:
-            raise SearchError(f'Please use query with >= {min_search_words} different words. Query: {query}')
-        return ' & '.join(words)
-    raise SearchError(f'Illegal search query, please use search terms or '
-                      f'all the query wrapped in "" for phrasal search. Query: {query}')
+
+    # Check query complexity for similar words
+    stemmer = SnowballStemmer('english')
+    stems = set([stemmer.stem(word) for word in [re.sub("[\"-]|('s$)", '', w) for w in processed.split(' ')]])
+    if len(stems) + len(processed.split('-')) - 1 < min_search_words:
+        raise SearchError(f'Please use query with >= {min_search_words} different words. Query: {query}')
+
+    if len(re.findall('"', processed)) % 2 == 1:
+        raise SearchError(f'Illegal search query, please use search terms or '
+                          f'all the query wrapped in "" for phrasal search. Query: {query}')
+
+    # Looking for complete phrases
+    phrases = []
+    for phrase in re.findall('"[^"]*"', processed):
+        phrase_strip = phrase.strip('"').strip()
+        if ' ' not in phrase_strip:
+            raise SearchError(f'Illegal search query, please use search terms or '
+                              f'all the query wrapped in "" for phrasal search. Query: {query}')
+        phrases.append('<->'.join(phrase_strip.split(' ')))
+        processed = processed.replace(phrase, "").strip()
+    phrases_result = ' & '.join(phrases) if phrases else ''
+
+    # Processing words
+    rest_words = re.sub('[ ]{2,}', ' ', processed).strip()
+    words = [re.sub("'s$", '', w) for w in rest_words.split(' ')]  # Fix apostrophes
+    words_result = ' & '.join(words) if words else ''
+
+    if phrases_result != '':
+        return phrases_result if words_result == '' else f'{phrases_result} & {words_result}'
+    elif words_result != '':
+        return words_result
+    else:
+        raise SearchError(f'Illegal search query, please use search terms or '
+                          f'all the query wrapped in "" for phrasal search. Query: {query}')
 
 
 def no_stemming_filter(query_str):
