@@ -36,7 +36,7 @@ def recalculate_topic_analysis(analyzer, graph=None, settings=AnalyzerSettings()
     return partition
 
 
-def rebuild_similarity_graph(analyzer):
+def rebuild_similarity_graph(analyzer, min_cocitation=0):
     """
     Restores missing data based on the analyzer dump and rebuilds similarity graph applying
     scaling to bibliographic coupling and co-citations.
@@ -65,7 +65,7 @@ def rebuild_similarity_graph(analyzer):
     cocit_data = []
     bibcoupling_data = []
     for cited_1, cited_2, data in analyzer.similarity_graph.edges(data=True):
-        if 'cocitation' in data:
+        if 'cocitation' in data and data['cocitation'] > min_cocitation:
             cocit_data.append((cited_1, cited_2, data['cocitation']))
         if 'bibcoupling' in data:
             bibcoupling_data.append((cited_1, cited_2, data['bibcoupling']))
