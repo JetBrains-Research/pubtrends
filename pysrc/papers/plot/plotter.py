@@ -1,9 +1,8 @@
+import holoviews as hv
 import json
 import logging
-from string import Template
-
-import holoviews as hv
 import numpy as np
+import re
 from bokeh.colors import RGB
 from bokeh.core.properties import value
 from bokeh.embed import components
@@ -16,12 +15,13 @@ from bokeh.transform import factor_cmap
 from holoviews import dim
 from matplotlib import pyplot as plt
 from more_itertools import unique_everseen
+from string import Template
 from wordcloud import WordCloud
 
 from pysrc.papers.analysis.text import get_frequent_tokens, get_topic_word_cloud_data
+from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
-from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.utils import LOCAL_BASE_URL, \
     cut_authors_list, ZOOM_OUT, ZOOM_IN, zoom_name, trim, rgb2hex, MAX_TITLE_LENGTH
 
@@ -58,6 +58,10 @@ def visualize_analysis(analyzer):
         n_papers=analyzer.n_papers,
         n_citations=int(analyzer.df['total'].sum()),
         n_topics=0,
+        papers=PlotPreprocessor.prepare_papers_data(
+            analyzer.df.copy(), None, None, None, None, None, None, None, None, None
+        ),
+        export_name=re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{analyzer.query}'.lower())).strip('_'),
         top_cited_papers=[components(plotter.top_cited_papers())],
         most_cited_per_year_papers=[components(plotter.most_cited_per_year_papers())],
         fastest_growth_per_year_papers=[components(plotter.fastest_growth_per_year_papers())],

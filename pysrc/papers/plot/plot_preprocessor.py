@@ -5,6 +5,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
+from pysrc.papers.analysis.text import build_corpus
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.utils import cut_authors_list
 
@@ -268,3 +269,54 @@ class PlotPreprocessor:
                 if comp >= 0:
                     kwds_data.append((year, comp + 1, ', '.join(kwd)))
         return kwds_data
+
+    @staticmethod
+    def prepare_papers_data(
+            df, top_cited_papers, max_gain_papers, max_rel_gain_papers,
+            url_prefix,
+            comp=None, word=None, author=None, journal=None, papers_list=None
+    ):
+        # Filter by component
+        if comp is not None:
+            df = df[df['comp'].astype(int) == comp]
+        # Filter by word
+        if word is not None:
+            corpus = build_corpus(df)
+            df = df[[word.lower() in text for text in corpus]]
+        # Filter by author
+        if author is not None:
+            # Check if string was trimmed
+            if author.endswith('...'):
+                author = author[:-3]
+                df = df[[any([a.startswith(author) for a in authors]) for authors in df['authors']]]
+            else:
+                df = df[[author in authors for authors in df['authors']]]
+
+        # Filter by journal
+        if journal is not None:
+            # Check if string was trimmed
+            if journal.endswith('...'):
+                journal = journal[:-3]
+                df = df[[j.startswith(journal) for j in df['journal']]]
+            else:
+                df = df[df['journal'] == journal]
+
+        if papers_list == 'top':
+            df = df[[pid in top_cited_papers for pid in df['id']]]
+        if papers_list == 'year':
+            df = df[[pid in max_gain_papers for pid in df['id']]]
+        if papers_list == 'hot':
+            df = df[[pid in max_rel_gain_papers for pid in df['id']]]
+
+        result = []
+        for _, row in df.iterrows():
+            pid, title, authors, journal, year, total, doi, topic = \
+                row['id'], row['title'], row['authors'], row['journal'], \
+                row['year'], row['total'], str(row['doi']), row['comp'] + 1
+            if doi == 'None' or doi == 'nan':
+                doi = ''
+            # Don't trim or cut anything here, because this information can be exported
+            result.append(
+                (pid, title, authors, url_prefix + pid if url_prefix else None, journal, year, total, doi, topic)
+            )
+        return result

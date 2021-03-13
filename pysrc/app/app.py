@@ -6,11 +6,10 @@ import os
 import random
 import re
 import tempfile
-from urllib.parse import quote
-
 from celery.result import AsyncResult
 from flask import Flask, url_for, redirect, render_template, request, render_template_string, \
     send_from_directory, send_file
+from urllib.parse import quote
 
 from pysrc.app.admin.admin import configure_admin_functions
 from pysrc.app.predefined import save_predefined, load_predefined_viz_log, load_predefined_or_result_data
@@ -20,12 +19,12 @@ from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.celery.tasks_cache import get_or_cancel_task
 from pysrc.celery.tasks_main import find_paper_async, analyze_search_terms, analyze_id_list
 from pysrc.papers.analyzer import PapersAnalyzer
+from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
-from pysrc.papers.paper import prepare_paper_data, prepare_papers_data
+from pysrc.papers.plot.plotter_paper import prepare_paper_data
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.plot.plotter import Plotter
-from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.utils import zoom_name, trim, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE, ZOOM_OUT_TITLE
 from pysrc.version import VERSION
 
@@ -35,7 +34,6 @@ if PUBTRENDS_CONFIG.feature_review_enabled:
     from pysrc.review.app.review import REVIEW_ANALYSIS_TITLE, register_app_review
 else:
     REVIEW_ANALYSIS_TITLE = 'not_available'
-
 
 app = Flask(__name__)
 
@@ -405,6 +403,14 @@ def show_ids():
         if data is not None:
             logger.info(f'/papers success {log_request(request)}')
             export_name = re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{query}_{search_string}'.lower())).strip('_')
+            loader, url_prefix = Loaders.get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
+            analyzer = PapersAnalyzer(loader, PUBTRENDS_CONFIG)
+            analyzer.init(data)
+            papers_data = PlotPreprocessor.prepare_papers_data(
+                analyzer.df, analyzer.top_cited_papers, analyzer.max_gain_papers, analyzer.max_rel_gain_papers,
+                url_prefix,
+                comp, word, author, journal, papers_list
+            )
             return render_template('papers.html',
                                    version=VERSION,
                                    source=source,
@@ -413,7 +419,7 @@ def show_ids():
                                    limit=limit,
                                    sort=sort,
                                    export_name=export_name,
-                                   papers=prepare_papers_data(data, source, comp, word, author, journal, papers_list))
+                                   papers=papers_data)
     logger.error(f'/papers error {log_request(request)}')
     return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
 
