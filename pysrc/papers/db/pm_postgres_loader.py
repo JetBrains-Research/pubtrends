@@ -117,7 +117,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         if np.any(df[['id', 'title']].isna()):
             raise ValueError('Paper must have ID and title')
         logger.debug(f'Loaded {len(df)} papers')
-        return Loader.process_publications_dataframe(df)
+        return Loader.process_publications_dataframe(ids, df)
 
     def load_citations_by_year(self, ids):
         self.check_connection()

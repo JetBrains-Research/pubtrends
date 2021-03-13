@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 
 from pysrc.papers.db.article import AuxInfo, Author, Journal
@@ -76,8 +77,11 @@ COCITATIONS = [
     ['9', '4', '5', 1970], ['10', '4', '5', 1970]
 ]
 
+random_order = np.arange(0, len(REQUIRED_ARTICLES))
+np.random.shuffle(random_order)
 EXPECTED_PUB_DF = Loader.process_publications_dataframe(
-    pd.DataFrame([article.to_list() for article in REQUIRED_ARTICLES],
+    [article.pmid for article in REQUIRED_ARTICLES],
+    pd.DataFrame([REQUIRED_ARTICLES[i].to_list() for i in random_order],
                  columns=['id', 'title', 'doi', 'aux', 'abstract', 'year', 'type', 'authors', 'journal',
                           'keywords', 'mesh']))
 
@@ -90,6 +94,7 @@ EXPECTED_CIT_DF = pd.DataFrame(INNER_CITATIONS, columns=['id_out', 'id_in'])
 EXPECTED_COCIT_DF = pd.DataFrame(COCITATIONS, columns=['citing', 'cited_1', 'cited_2', 'year'])
 
 EXPECTED_PUB_DF_GIVEN_IDS = Loader.process_publications_dataframe(
+    [article.pmid for article in PART_OF_ARTICLES],
     pd.DataFrame([article.to_list() for article in PART_OF_ARTICLES],
                  columns=['id', 'title', 'doi', 'aux', 'abstract', 'year', 'type', 'authors', 'journal',
                           'keywords', 'mesh']))

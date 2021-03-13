@@ -1,5 +1,6 @@
 import html
 import json
+import numpy as np
 from abc import abstractmethod, ABCMeta
 
 from pysrc.papers.utils import extract_authors
@@ -78,7 +79,7 @@ class Loader(metaclass=ABCMeta):
         """
 
     @staticmethod
-    def process_publications_dataframe(pub_df):
+    def process_publications_dataframe(ids, pub_df):
         # Switch to string ids
         pub_df['id'] = pub_df['id'].apply(str)
         # Semantic Scholar stores aux in jsonb format, no json parsing required
@@ -94,4 +95,8 @@ class Loader(metaclass=ABCMeta):
         # Semantic Scholar specific hack
         if 'crc32id' in pub_df:
             pub_df['crc32id'] = pub_df['crc32id'].apply(int)
-        return pub_df
+
+        # Reorder dataframe
+        ids_order = {str(pid): index for index, pid in enumerate(ids)}
+        sort_ord = np.argsort([ids_order[pid] for pid in pub_df['id']])
+        return pub_df.iloc[sort_ord, :]

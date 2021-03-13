@@ -128,7 +128,7 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
                 logger.debug('Detected paper(s) without ID or title')
                 pub_df.dropna(subset=['id', 'title'], inplace=True)
                 logger.debug(f'Correct publications {len(pub_df)}')
-            pub_df = Loader.process_publications_dataframe(pub_df)
+            pub_df = Loader.process_publications_dataframe(ids, pub_df)
 
         return pub_df
 

@@ -119,14 +119,12 @@ class PapersAnalyzer:
 
     def analyze_papers(self, ids, query, task=None):
         """:return full log"""
-        self.ids = ids
-        self.query = query
-
         self.progress.info('Loading publication data', current=2, task=task)
+        self.query = query
         self.pub_df = self.loader.load_publications(ids)
         if len(self.pub_df) == 0:
             raise SearchError(f'Nothing found for ids: {ids}')
-        self.ids = set(self.pub_df['id'])  # Limit ids to existing papers only!
+        self.ids = list(self.pub_df['id'])  # Limit ids to existing papers only!
         self.n_papers = len(self.ids)
         self.pub_types = list(set(self.pub_df['type']))
 

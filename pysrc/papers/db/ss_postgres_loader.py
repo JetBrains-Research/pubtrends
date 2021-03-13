@@ -122,7 +122,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         pub_df['type'] = 'Article'
         pub_df['mesh'] = ''
         pub_df['keywords'] = ''
-        return Loader.process_publications_dataframe(pub_df)
+        return Loader.process_publications_dataframe(ids, pub_df)
 
     def load_citations_by_year(self, ids):
         self.check_connection()
