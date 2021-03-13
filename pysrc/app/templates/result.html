@@ -249,15 +249,6 @@
                         </a>
                     </li>
 
-                    <li class="nav-item row">
-                        <a class="nav-link no-padding-right" href="#papers" title="Papers">
-                            <img class="nav-icon" src="{{ url_for('static', filename='list.svg') }}"/>
-                        </a>
-                        <a class="nav-link d-none d-xl-block no-padding" href="#papers">
-                            Papers
-                        </a>
-                    </li>
-
                     {% if topics_analyzed %}
                     <li class="nav-item row">
                         <a class="nav-link no-padding-right" href="#highlights" title="Highlights">
@@ -374,35 +365,10 @@
                     <h2 class="card-header">Overview</h2>
                 </div>
                 <div class="card-body">
-                    <div class="row mb-3">
-                        <div class="col-sm-4">
-                            <div class="card">
-                                <div id="n_papers" class="card-body text-center">
-                                    <span class="stats-number"><b>{{ n_papers }}</b></span><br>
-                                    <span class="card-text">papers</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-4">
-                            <div id="n_citations" class="card">
-                                <div class="card-body text-center">
-                                    <span class="stats-number"><b>{{ n_citations }}</b></span><br>
-                                    <span class="card-text">citations</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-4">
-                            <div id="n_topics" class="card">
-                                <div class="card-body text-center">
-                                    <span class="stats-number"><b>{{ n_topics }}</b></span><br>
-                                    <span class="card-text">topics</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
+                    Total: <b>{{ n_papers }}</b> papers, <b>{{ n_topics }}</b> topics.
+                    <div class="row mt-2">
                         <div class="col-3 no-padding-right" style="min-width: 185px;">
-                            <strong>Word cloud</strong>
+                            <small><strong>Word cloud</strong></small>
                             <br>
                             <canvas id="papers_word_cloud" style="border:1px solid #eee; width: 100%; height: 100%;">
                                 Canvas is not supported in your browser.
@@ -415,14 +381,6 @@
                             {% endfor %}
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <div class="card mt-3">
-                <div class="card-title" id="papers">
-                    <h1 class="card-header">Papers</h1>
-                </div>
-                <div class="card-body">
                     <table id="papers-table" class="table table-sm table-bordered table-striped">
                         <thead>
                         <tr>
@@ -990,21 +948,8 @@
                 },
                 {
                     element: '#overview',
-                    intro: "The report starts with a general information about the topic of interest. " +
-                        "It shows total number of papers, citations, and general information like overall " +
-                        "publications dynamics, and most common words in the field."
-                },
-                {
-                    element: '#n_papers',
-                    intro: '{{n_papers}} papers were found and analyzed.'
-                },
-                {
-                    element: '#n_citations',
-                    intro: '{{n_citations}} is the summary number of all the citations of the papers.'
-                },
-                {
-                    element: '#n_topics',
-                    intro: "{{n_topics}} topics were found among the papers.<br>"
+                    intro: "The report starts with a general information. " +
+                        "It shows total number of papers and topics, publications dynamics, and most common words in the field."
                 },
                 {
                     element: '#papers_word_cloud',

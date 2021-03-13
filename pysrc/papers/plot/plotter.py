@@ -56,8 +56,8 @@ def visualize_analysis(analyzer):
     result = dict(
         topics_analyzed=False,
         n_papers=analyzer.n_papers,
-        n_citations=int(analyzer.df['total'].sum()),
-        n_topics=0,
+        n_topics=len(analyzer.components),
+        comp_other=analyzer.comp_other,
         papers=PlotPreprocessor.prepare_papers_data(
             analyzer.df.copy(), None, None, None, None, None, None, None, None, None
         ),
@@ -74,8 +74,6 @@ def visualize_analysis(analyzer):
         topics_hierarchy = plotter.topics_hierarchy()
         result.update(dict(
             topics_analyzed=True,
-            n_topics=len(analyzer.components),
-            comp_other=analyzer.comp_other,
             components_similarity=[components(plotter.heatmap_topics_similarity())],
             component_size_summary=[components(plotter.component_size_summary())],
             component_years_summary=[components(plotter.component_years_summary())],
