@@ -99,4 +99,4 @@ class Loader(metaclass=ABCMeta):
         # Reorder dataframe
         ids_order = {str(pid): index for index, pid in enumerate(ids)}
         sort_ord = np.argsort([ids_order[pid] for pid in pub_df['id']])
-        return pub_df.iloc[sort_ord, :]
+        return pub_df.iloc[sort_ord, :].reset_index(drop=True)
