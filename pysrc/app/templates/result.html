@@ -426,6 +426,7 @@
                     <table id="papers-table" class="table table-sm table-bordered table-striped">
                         <thead>
                         <tr>
+                            <th scope="col">#</th>
                             <th scope="col">Title</th>
                             <th scope="col">Doi</th>
                         </tr>
@@ -433,6 +434,7 @@
                         <tbody>
                         {% for id, title, authors, url, journal, year, total, doi, topic in papers %}
                         <tr>
+                            <th scope="row">{{ loop.index }}</th>
                             <td>{{ title }}</td>
                             <td>
                                 {% if doi != "" %}
