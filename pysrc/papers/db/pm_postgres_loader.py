@@ -63,44 +63,38 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         self.check_connection()
         noreviews_filter = "AND type != 'Review'" if noreviews else ''
         query_str = preprocess_search_query_for_postgres(query, self.config.min_search_words)
+
         # Disable stemming-based lookup for now, see: https://github.com/JetBrains-Research/pubtrends/issues/242
         exact_filter = no_stemming_filter(query_str)
 
+        by_citations = 'count DESC NULLS LAST'
+        by_relevance = 'ts_rank_cd(P.tsv, query) DESC'
+        by_year = 'year DESC NULLS LAST'
         if sort == SORT_MOST_RELEVANT:
-            query = f'''
-                SELECT P.pmid
-                FROM to_tsquery('{query_str}') query, PMPublications P
-                WHERE tsv @@ query {noreviews_filter} {exact_filter}
-                ORDER BY ts_rank_cd(P.tsv, query) DESC
-                LIMIT {limit};
-                '''
+            order = f'{by_relevance}, {by_citations}, {by_year}'
         elif sort == SORT_MOST_CITED:
-            query = f'''
-                SELECT P.pmid
-                FROM PMPublications P
-                    LEFT JOIN matview_pmcitations C
-                    ON P.pmid = C.pmid
-                WHERE tsv @@ to_tsquery('{query_str}') {noreviews_filter} {exact_filter}
-                ORDER BY count DESC NULLS LAST
-                LIMIT {limit};
-                '''
+            order = f'{by_citations}, {by_relevance}, {by_year}'
         elif sort == SORT_MOST_RECENT:
-            query = f'''
-                SELECT P.pmid
-                FROM to_tsquery('{query_str}') query, PMPublications P
-                WHERE tsv @@ query {noreviews_filter} {exact_filter}
-                ORDER BY year DESC NULLS LAST
-                LIMIT {limit};
-                '''
+            order = f'{by_year}, {by_relevance}, {by_citations}'
         else:
             raise ValueError(f'Illegal sort method: {sort}')
 
+        query = f'''
+            SELECT P.pmid 
+            FROM to_tsquery('{query_str}') query, 
+            PMPublications P
+            LEFT JOIN matview_pmcitations C 
+            ON P.pmid = C.pmid
+            WHERE tsv @@ query {noreviews_filter} {exact_filter}
+            ORDER BY {order}
+            LIMIT {limit};
+            '''
         with self.postgres_connection.cursor() as cursor:
             logger.debug(f'search query: {query}')
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(), columns=['pmid'])
-
-        return list(df['pmid'].astype(str))
+            df['pmid'] = df['pmid'].astype(str)
+            return list(df['pmid'])
 
     def load_publications(self, ids):
         self.check_connection()
