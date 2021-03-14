@@ -7,7 +7,7 @@ from pysrc.papers.db.loader import Loader
 from pysrc.papers.db.postgres_connector import PostgresConnector
 from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres, no_stemming_filter, \
     process_bibliographic_coupling_postgres, process_cocitations_postgres
-from pysrc.papers.utils import SORT_MOST_RELEVANT, SORT_MOST_CITED, SORT_MOST_RECENT, preprocess_doi, \
+from pysrc.papers.utils import SORT_MOST_CITED, SORT_MOST_RECENT, preprocess_doi, \
     preprocess_search_title
 
 logger = logging.getLogger(__name__)
@@ -68,14 +68,11 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         exact_filter = no_stemming_filter(query_str)
 
         by_citations = 'count DESC NULLS LAST'
-        by_relevance = 'ts_rank_cd(P.tsv, query) DESC'
         by_year = 'year DESC NULLS LAST'
-        if sort == SORT_MOST_RELEVANT:
-            order = f'{by_relevance}, {by_citations}, {by_year}'
-        elif sort == SORT_MOST_CITED:
-            order = f'{by_citations}, {by_relevance}, {by_year}'
+        if sort == SORT_MOST_CITED:
+            order = f'{by_citations}, {by_year}'
         elif sort == SORT_MOST_RECENT:
-            order = f'{by_year}, {by_relevance}, {by_citations}'
+            order = f'{by_year}, {by_citations}'
         else:
             raise ValueError(f'Illegal sort method: {sort}')
 
@@ -85,16 +82,20 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
             PMPublications P
             LEFT JOIN matview_pmcitations C 
             ON P.pmid = C.pmid
-            WHERE tsv @@ query {noreviews_filter} {exact_filter}
-            ORDER BY {order}
+            WHERE P.tsv @@ query {noreviews_filter} {exact_filter}
+            ORDER BY ts_rank_cd(P.tsv, query) DESC, {order}, P.pmid
             LIMIT {limit};
             '''
         with self.postgres_connection.cursor() as cursor:
             logger.debug(f'search query: {query}')
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(), columns=['pmid'])
-            df['pmid'] = df['pmid'].astype(str)
-            return list(df['pmid'])
+            # TODO [shpynov] query stays idle in transaction without this commit
+            # Further investigation is required
+            self.postgres_connection.commit()
+
+        df['pmid'] = df['pmid'].astype(str)
+        return list(df['pmid'])
 
     def load_publications(self, ids):
         self.check_connection()

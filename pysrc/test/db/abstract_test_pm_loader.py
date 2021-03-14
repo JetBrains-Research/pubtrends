@@ -4,7 +4,7 @@ import numpy as np
 from pandas.testing import assert_frame_equal
 from parameterized import parameterized
 
-from pysrc.papers.utils import SORT_MOST_RECENT, SORT_MOST_RELEVANT, SORT_MOST_CITED
+from pysrc.papers.utils import SORT_MOST_RECENT, SORT_MOST_CITED
 from pysrc.test.db.pm_test_articles import REQUIRED_ARTICLES, EXPECTED_PUB_DF, \
     EXPECTED_CIT_STATS_DF, INNER_CITATIONS, EXPECTED_CIT_DF, EXPECTED_COCIT_DF, EXPECTED_PUB_DF_GIVEN_IDS, \
     PART_OF_ARTICLES, EXPANDED_IDS_DF, EXPANDED_TOP_CITED_3_DF, EXPANDED_TOP_CITED_4_DF
@@ -99,15 +99,14 @@ class AbstractTestPubmedLoader(metaclass=ABCMeta):
         assert_frame_equal(self.getPublicationsDataframe(), EXPECTED_PUB_DF, 'Wrong publication data', check_like=True)
 
     @parameterized.expand([
-        ('Article', 1, SORT_MOST_RECENT, ['5']),
-        ('Abstract', 5, SORT_MOST_RELEVANT, ['2', '3']),
-        ('Article', 1, SORT_MOST_CITED, ['4']),
-        ('Article', 10, SORT_MOST_CITED, ['1', '10', '2', '3', '4', '5', '7', '8', '9']),
+        # ('Article', 1, SORT_MOST_RECENT, ['5']),
+        # ('Article', 1, SORT_MOST_CITED, ['4']),
+        ('Article', 10, SORT_MOST_CITED, ['4', '5', '3', '1', '2', '9', '10', '8', '7']),
     ])
     def test_search(self, query, limit, sort, expected_ids):
         # Use sorted to avoid ambiguity
         ids = self.getLoader().search(query, limit=limit, sort=sort)
-        self.assertListEqual(sorted(expected_ids), sorted(ids), 'Wrong IDs of papers')
+        self.assertListEqual(expected_ids, ids, 'Wrong IDs of papers')
 
     def test_search_noreviews(self):
         # Use sorted to avoid ambiguity

@@ -22,7 +22,6 @@ ZOOM_OUT_TITLE = 'expanded'
 PAPER_ANALYSIS_TITLE = 'paper-analysis'
 
 SORT_MOST_CITED = 'Most Cited'
-SORT_MOST_RELEVANT = 'Most Relevant'
 SORT_MOST_RECENT = 'Most Recent'
 
 MAX_TITLE_LENGTH = 200

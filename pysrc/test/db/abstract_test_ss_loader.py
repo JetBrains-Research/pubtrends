@@ -3,7 +3,7 @@ from abc import ABCMeta, abstractmethod
 from pandas.testing import assert_frame_equal
 from parameterized import parameterized
 
-from pysrc.papers.utils import SORT_MOST_RECENT, SORT_MOST_CITED, SORT_MOST_RELEVANT
+from pysrc.papers.utils import SORT_MOST_RECENT, SORT_MOST_CITED
 from pysrc.test.db.ss_test_articles import REQUIRED_CITATIONS, \
     EXPECTED_CIT_STATS_DF, EXPECTED_CIT_DF, EXPECTED_COCIT_DF, ARTICLES_LIST, EXPANDED_ARTICLES_DF
 
@@ -52,10 +52,6 @@ class AbstractTestSemanticScholarLoader(metaclass=ABCMeta):
         ('3 most recent', 3, SORT_MOST_RECENT, ['5a63b4199bb58992882b0bf60bc1b1b3f392e5a5',
                                                 '5451b1ef43678d473575bdfa7016d024146f2b53',
                                                 'cad767094c2c4fff5206793fd8674a10e7fba3fe']),
-        ('4 most relevant', 4, SORT_MOST_RELEVANT, ['cad767094c2c4fff5206793fd8674a10e7fba3fe',
-                                                    'e7cdbddc7af4b6138227139d714df28e2090bd5f',
-                                                    '3cf82f53a52867aaade081324dff65dd35b5b7eb',
-                                                    '5a63b4199bb58992882b0bf60bc1b1b3f392e5a5']),
         ('10 most cited', 10, SORT_MOST_CITED, ['3cf82f53a52867aaade081324dff65dd35b5b7eb',
                                                 '5451b1ef43678d473575bdfa7016d024146f2b53',
                                                 '5a63b4199bb58992882b0bf60bc1b1b3f392e5a5',

@@ -7,7 +7,7 @@ import pandas as pd
 from pysrc.papers.db.loader import Loader
 from pysrc.papers.db.neo4j_connector import Neo4jConnector
 from pysrc.papers.db.neo4j_utils import preprocess_search_query_for_neo4j
-from pysrc.papers.utils import SORT_MOST_CITED, SORT_MOST_RECENT, SORT_MOST_RELEVANT
+from pysrc.papers.utils import SORT_MOST_CITED, SORT_MOST_RECENT
 from pysrc.papers.utils import preprocess_doi, preprocess_search_title
 
 logger = logging.getLogger(__name__)
@@ -59,51 +59,38 @@ class PubmedNeo4jLoader(Neo4jConnector, Loader):
         query_str = preprocess_search_query_for_neo4j(query, self.config.min_search_words)
         noreviews_filter = 'WHERE node.type <> "Review"' if noreviews else ''
 
-        if sort == SORT_MOST_RELEVANT:
-            neo4j_query = f'''
-                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", '{query_str}') YIELD node, score
-                {noreviews_filter}
-                RETURN node.pmid as pmid
-                ORDER BY score DESC
-                LIMIT {limit};
-                '''
-        elif sort == SORT_MOST_CITED:
-            neo4j_query = f'''
-                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", '{query_str}') YIELD node
-                MATCH ()-[r:PMReferenced]->(in:PMPublication)
-                WHERE in.pmid = node.pmid
-                WITH node, COUNT(r) AS cnt
-                {noreviews_filter}
-                RETURN node.pmid as pmid
-                ORDER BY cnt DESC
-                LIMIT {limit};
-                '''
+        by_citations = 'cnt DESC'
+        by_year = 'node.year DESC'
+        if sort == SORT_MOST_CITED:
+            order = f'{by_citations}, {by_year}'
         elif sort == SORT_MOST_RECENT:
-            neo4j_query = f'''
-                CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", '{query_str}') YIELD node
-                {noreviews_filter}
-                RETURN node.pmid as pmid
-                ORDER BY node.year DESC
-                LIMIT {limit};
-                '''
+            order = f'{by_year}, {by_citations}'
         else:
             raise ValueError(f'Illegal sort method: {sort}')
 
+        # UNION is added because papers without any citations may be missing
+        query = f'''
+            CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", '{query_str}') YIELD node, score
+            MATCH ()-[r:PMReferenced]->(in:PMPublication)
+            WHERE in.pmid = node.pmid
+            WITH node, COUNT(r) AS cnt
+            {noreviews_filter}
+            RETURN node.pmid as pmid
+            ORDER BY {order}, pmid 
+            LIMIT {limit}
+            UNION
+            CALL db.index.fulltext.queryNodes("pmTitlesAndAbstracts", '{query_str}') YIELD node
+            {noreviews_filter}
+            RETURN node.pmid as pmid
+            ORDER BY node.year DESC, pmid
+            LIMIT {limit};
+            '''
+
         with self.neo4jdriver.session() as session:
-            ids = [str(r['pmid']) for r in session.run(neo4j_query)]
-
-        if sort == SORT_MOST_CITED and len(ids) < limit:
-            # Papers with any citations may be missing, append papers by relevance
-            additional_ids = self.search(query, limit=limit, sort=SORT_MOST_RELEVANT, noreviews=noreviews)
-            sids = set(ids)
-            for ai in additional_ids:
-                if ai in sids:
-                    continue
-                ids.append(ai)
-                if len(ids) == limit:
-                    return ids
-
-        return ids
+            df = pd.DataFrame(session.run(query), columns=['id'])
+            df['id'] = df['id'].apply(str)
+            df.drop_duplicates(inplace=True)
+        return list(df['id'])[:limit]
 
     def load_publications(self, ids):
         self.check_connection()

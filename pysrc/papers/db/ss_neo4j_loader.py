@@ -4,7 +4,7 @@ import re
 import numpy as np
 import pandas as pd
 
-from pysrc.papers.utils import SORT_MOST_CITED, SORT_MOST_RECENT, SORT_MOST_RELEVANT, preprocess_doi, crc32
+from pysrc.papers.utils import SORT_MOST_CITED, SORT_MOST_RECENT, preprocess_doi, crc32
 from .loader import Loader
 from .neo4j_connector import Neo4jConnector
 from .neo4j_utils import preprocess_search_query_for_neo4j
@@ -54,15 +54,7 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
 
         query_str = preprocess_search_query_for_neo4j(query, self.config.min_search_words)
 
-        if sort == SORT_MOST_RELEVANT:
-            neo4j_query = f'''
-                CALL db.index.fulltext.queryNodes("ssTitlesAndAbstracts", '{query_str}')
-                YIELD node, score
-                RETURN node.ssid as ssid
-                ORDER BY score DESC
-                LIMIT {limit};
-                '''
-        elif sort == SORT_MOST_CITED:
+        if sort == SORT_MOST_CITED:
             neo4j_query = f'''
                 CALL db.index.fulltext.queryNodes("ssTitlesAndAbstracts", '{query_str}') YIELD node
                 MATCH ()-[r:SSReferenced]->(in:SSPublication)
@@ -86,8 +78,8 @@ class SemanticScholarNeo4jLoader(Neo4jConnector, Loader):
             ids = [str(r['ssid']) for r in session.run(neo4j_query)]
 
         if sort == SORT_MOST_CITED and len(ids) < limit:
-            # Papers with any citations may be missing, append papers by relevance
-            additional_ids = self.search(query, limit=limit, sort=SORT_MOST_RELEVANT, noreviews=noreviews)
+            # Papers with any citations may be missing
+            additional_ids = self.search(query, limit=limit, sort=SORT_MOST_RECENT, noreviews=noreviews)
             sids = set(ids)
             for ai in additional_ids:
                 if ai in sids:
