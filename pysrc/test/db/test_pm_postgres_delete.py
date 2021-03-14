@@ -3,7 +3,7 @@ import unittest
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.pm_postgres_loader import PubmedPostgresLoader
 from pysrc.papers.db.pm_postgres_writer import PubmedPostgresWriter
-from pysrc.papers.utils import SORT_MOST_RELEVANT
+from pysrc.papers.utils import SORT_MOST_CITED
 from pysrc.test.db.pm_test_articles import REQUIRED_ARTICLES, ARTICLES, CITATIONS
 
 
@@ -36,11 +36,11 @@ class TestPubmedPostgresDelete(unittest.TestCase):
     def test_delete(self):
         self.writer.delete(['2'])
         self.assertListEqual(['3'],
-                             sorted(self.loader.search('Abstract', limit=5, sort=SORT_MOST_RELEVANT)),
+                             sorted(self.loader.search('Abstract', limit=5, sort=SORT_MOST_CITED)),
                              'Wrong IDs of papers')
         self.writer.delete(['3'])
         self.assertListEqual([],
-                             sorted(self.loader.search('Abstract', limit=5, sort=SORT_MOST_RELEVANT)),
+                             sorted(self.loader.search('Abstract', limit=5, sort=SORT_MOST_CITED)),
                              'Wrong IDs of papers')
 
 
