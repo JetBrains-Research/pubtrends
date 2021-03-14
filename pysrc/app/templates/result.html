@@ -387,8 +387,6 @@
                             <th scope="col">#</th>
                             <th scope="col">Title</th>
                             <th scope="col">Doi</th>
-                            <th scope="col">Cited</th>
-                            <th scope="col">Year</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -401,8 +399,6 @@
                                 <a class="link" href="https://doi.org/{{doi}}">{{ doi }}</a>
                                 {% endif %}
                             </td>
-                            <td>{{ total }}</td>
-                            <td>{{ year }}</td>
                         </tr>
                         {% endfor %}
                         </tbody>
