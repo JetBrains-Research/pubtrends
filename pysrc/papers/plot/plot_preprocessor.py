@@ -312,7 +312,7 @@ class PlotPreprocessor:
         for _, row in df.iterrows():
             pid, title, authors, journal, year, total, doi, topic = \
                 row['id'], row['title'], row['authors'], row['journal'], \
-                row['year'], row['total'], str(row['doi']), row['comp'] + 1
+                row['year'], int(row['total']), str(row['doi']), int(row['comp'] + 1)
             if doi == 'None' or doi == 'nan':
                 doi = ''
             # Don't trim or cut anything here, because this information can be exported
