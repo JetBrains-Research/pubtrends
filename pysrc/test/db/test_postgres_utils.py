@@ -61,11 +61,17 @@ class TestPostgresUtils(unittest.TestCase):
 
     def test_no_stemming_filter(self):
         self.assertEqual(
-            " AND ((LOWER(P.title) LIKE '%covid-19%' OR LOWER(P.abstract) LIKE '%covid-19%') OR "
-            "(LOWER(P.title) LIKE '%corona%' OR LOWER(P.abstract) LIKE '%corona%') AND "
-            "(LOWER(P.title) LIKE '%virus%' OR LOWER(P.abstract) LIKE '%virus%') OR "
-            "(LOWER(P.title) LIKE '%respiratory%' OR LOWER(P.abstract) LIKE '%respiratory%') AND "
-            "(LOWER(P.title) LIKE '%syndrome%' OR LOWER(P.abstract) LIKE '%syndrome%'))",
+            " AND (P.title IS NOT NULL "
+            "AND position('covid-19' in LOWER(P.title))>0 OR P.abstract IS NOT NULL "
+            "AND position('covid-19' in LOWER(P.abstract))>0 "
+            "OR P.title IS NOT NULL "
+            "AND position('corona' in LOWER(P.title))>0 AND position('virus' in LOWER(P.title))>0 "
+            "OR P.abstract IS NOT NULL "
+            "AND position('corona' in LOWER(P.abstract))>0 AND position('virus' in LOWER(P.abstract))>0 "
+            "OR P.title IS NOT NULL "
+            "AND position('respiratory' in LOWER(P.title))>0 AND position('syndrome' in LOWER(P.title))>0 "
+            "OR P.abstract IS NOT NULL "
+            "AND position('respiratory' in LOWER(P.abstract))>0 AND position('syndrome' in LOWER(P.abstract))>0)",
             no_stemming_filter('COVID-19 | Corona<->virus| Respiratory & Syndrome')
         )
 
