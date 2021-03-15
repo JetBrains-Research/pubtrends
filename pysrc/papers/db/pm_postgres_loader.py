@@ -69,10 +69,13 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
         by_citations = 'count DESC NULLS LAST'
         by_year = 'year DESC NULLS LAST'
+        # 2 divides the rank by the document length
+        # 4 divides the rank by the mean harmonic distance between extents (this is implemented only by ts_rank_cd)
+        # See https://www.postgresql.org/docs/12/textsearch-controls.html#TEXTSEARCH-RANKING
         if sort == SORT_MOST_CITED:
-            order = f'{by_citations}, ts_rank_cd(P.tsv, query) DESC, {by_year}'
+            order = f'{by_citations}, ts_rank_cd(P.tsv, query, 2|4) DESC, {by_year}'
         elif sort == SORT_MOST_RECENT:
-            order = f'{by_year}, ts_rank_cd(P.tsv, query) DESC, {by_citations}'
+            order = f'{by_year}, ts_rank_cd(P.tsv, query, 2|4) DESC, {by_citations}'
         else:
             raise ValueError(f'Illegal sort method: {sort}')
 
