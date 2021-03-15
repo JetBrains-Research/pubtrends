@@ -67,10 +67,13 @@ def preprocess_search_query_for_postgres(query, min_search_words):
 
 
 def no_stemming_filter(query_str):
-    return ' AND (' + ' OR '.join(' AND '.join(
-        f"(LOWER(P.title) LIKE '%{w.strip()}%' OR LOWER(P.abstract) LIKE '%{w.strip()}%')"
-        for w in re.split(r'(?:&|<->)+', q)
-    ) for q in query_str.lower().split('|')) + ')'
+    return ' AND (' + \
+           ' OR '.join(
+               ' AND '.join(f"position('{w.strip()}' in LOWER(P.title))>0" for w in re.split(r'(?:&|<->)+', q)) +
+               ' OR ' +
+               ' AND '.join(f"position('{w.strip()}' in LOWER(P.abstract))>0" for w in re.split(r'(?:&|<->)+', q))
+               for q in query_str.lower().split('|')) + \
+           ')'
 
 
 def process_cocitations_postgres(cursor):
