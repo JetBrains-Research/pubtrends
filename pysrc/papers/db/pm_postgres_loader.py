@@ -82,7 +82,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
             PMPublications P
             LEFT JOIN matview_pmcitations C 
             ON P.pmid = C.pmid
-            WHERE P.tsv @@ query {noreviews_filter} {exact_filter}
+            WHERE P.tsv @@ query AND ts_rank_cd(P.tsv, query) >= 1 {noreviews_filter} {exact_filter}
             ORDER BY {order}, P.pmid
             LIMIT {limit};
             '''
