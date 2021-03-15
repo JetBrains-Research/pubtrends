@@ -68,8 +68,8 @@ class PapersAnalyzer:
     # Max expand before filtration by citations and keywords
     EXPAND_LIMIT = 10000
     # Control citations count
-    EXPAND_CITATIONS_Q_LOW = 10
-    EXPAND_CITATIONS_Q_HIGH = 90
+    EXPAND_CITATIONS_Q_LOW = 5
+    EXPAND_CITATIONS_Q_HIGH = 95
     EXPAND_CITATIONS_SIGMA = 3
     # Take up to fraction of top similarity
     EXPAND_SIMILARITY_THRESHOLD = 0.3
