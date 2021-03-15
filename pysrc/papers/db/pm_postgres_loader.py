@@ -70,9 +70,9 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         by_citations = 'count DESC NULLS LAST'
         by_year = 'year DESC NULLS LAST'
         if sort == SORT_MOST_CITED:
-            order = f'{by_citations}, {by_year}'
+            order = f'{by_citations}, ts_rank_cd(P.tsv, query) DESC, {by_year}'
         elif sort == SORT_MOST_RECENT:
-            order = f'{by_year}, {by_citations}'
+            order = f'{by_year}, ts_rank_cd(P.tsv, query) DESC, {by_citations}'
         else:
             raise ValueError(f'Illegal sort method: {sort}')
 
@@ -83,7 +83,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
             LEFT JOIN matview_pmcitations C 
             ON P.pmid = C.pmid
             WHERE P.tsv @@ query {noreviews_filter} {exact_filter}
-            ORDER BY ts_rank_cd(P.tsv, query) DESC, {order}, P.pmid
+            ORDER BY {order}, P.pmid
             LIMIT {limit};
             '''
         with self.postgres_connection.cursor() as cursor:
