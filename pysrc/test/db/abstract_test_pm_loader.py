@@ -99,14 +99,17 @@ class AbstractTestPubmedLoader(metaclass=ABCMeta):
         assert_frame_equal(self.getPublicationsDataframe(), EXPECTED_PUB_DF, 'Wrong publication data', check_like=True)
 
     @parameterized.expand([
-        # ('Article', 1, SORT_MOST_RECENT, ['5']),
-        # ('Article', 1, SORT_MOST_CITED, ['4']),
-        ('Article', 10, SORT_MOST_CITED, ['4', '5', '3', '1', '2', '9', '10', '8', '7']),
+        ('Article', 1, SORT_MOST_RECENT, ['5']),
+        ('Article', 1, SORT_MOST_CITED, ['4']),
     ])
     def test_search(self, query, limit, sort, expected_ids):
-        # Use sorted to avoid ambiguity
         ids = self.getLoader().search(query, limit=limit, sort=sort)
         self.assertListEqual(expected_ids, ids, 'Wrong IDs of papers')
+
+    def test_search_wo_order(self):
+        ids = self.getLoader().search('Article', limit=10, sort=SORT_MOST_CITED)
+        self.assertListEqual(sorted(['1', '10', '2', '3', '4', '5', '7', '8', '9']),
+                             sorted(ids), 'Wrong IDs of papers')
 
     def test_search_noreviews(self):
         # Use sorted to avoid ambiguity
