@@ -18,7 +18,8 @@ class TestPostgresUtils(unittest.TestCase):
         ('Foo, Bar', 'Foo | Bar'),
         ('Foo, Bar Baz', 'Foo | Bar & Baz'),
         ('Foo, "Bar Baz"', 'Foo | Bar<->Baz'),
-        ('Foo, "Bar Baz" Bzzzz', 'Foo | Bar<->Baz & Bzzzz'),
+        (' Foo', 'Foo'),
+        ('Foo, "Bar Baz" Bzzzz, ', 'Foo | Bar<->Baz & Bzzzz'),
     ])
     def test_preprocess_search_valid_source(self, terms, expected):
         self.assertEqual(expected, preprocess_search_query_for_postgres(terms, 0))

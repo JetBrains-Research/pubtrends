@@ -8,6 +8,7 @@ from pysrc.papers.db.search_error import SearchError
 
 def preprocess_search_query_for_postgres(query, min_search_words):
     """ Preprocess search string for Postgres full text lookup """
+    query = query.strip(', ')  # Strip trailing spaces and commas
     if ',' in query:
         qor = ''
         for p in query.split(','):
