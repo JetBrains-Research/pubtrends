@@ -69,9 +69,13 @@ def preprocess_search_query_for_postgres(query, min_search_words):
 def no_stemming_filter(query_str):
     return ' AND (' + \
            ' OR '.join(
-               ' AND '.join(f"position('{w.strip()}' in LOWER(P.title))>0" for w in re.split(r'(?:&|<->)+', q)) +
+               'P.title IS NOT NULL AND ' +
+               ' AND '.join(
+                   f"position('{w.strip()}' in LOWER(P.title))>0" for w in re.split(r'(?:&|<->)+', q)) +
                ' OR ' +
-               ' AND '.join(f"position('{w.strip()}' in LOWER(P.abstract))>0" for w in re.split(r'(?:&|<->)+', q))
+               'P.abstract IS NOT NULL AND ' +
+               ' AND '.join(
+                   f"position('{w.strip()}' in LOWER(P.abstract))>0" for w in re.split(r'(?:&|<->)+', q))
                for q in query_str.lower().split('|')) + \
            ')'
 
