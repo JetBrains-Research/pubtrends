@@ -94,17 +94,19 @@ class PlotPreprocessor:
         df_counts['delta'] = 0
         dft = pd.DataFrame(columns=columns + ['y'])
         for _, r in df_local.iterrows():
-            id, title, year, type, total, authors, comp, _ = r  # Ignore count
+            pid, title, year, type, total, authors, comp, _ = r  # Ignore count
             if components_split:
                 cd = df_counts.loc[(comp, year, total)]
+                c, d = cd['count'], cd['delta']
+                df_counts.loc[(comp, year, total), 'delta'] += 1  # Increase delta for better layout
             else:
                 cd = df_counts.loc[(year, total)]
-            c, d = cd['count'], cd['delta']
+                c, d = cd['count'], cd['delta']
+                df_counts.loc[(year, total), 'delta'] += 1  # Increase delta for better layout
             # Make papers with same year and citations have different y values
-            dft.loc[len(dft)] = (id, title, year, type, total, authors, comp,
+            dft.loc[len(dft)] = (pid, title, year, type, total, authors, comp,
                                  # Fix to show not cited papers on log axis
                                  max(1, total) + (d - int(c / 2)) / float(c))
-            cd['delta'] += 1  # Increase delta
         df_local = dft
 
         # Size is based on the citations number, at least 1
