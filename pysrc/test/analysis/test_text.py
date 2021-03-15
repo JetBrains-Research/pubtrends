@@ -34,7 +34,7 @@ class TestText(unittest.TestCase):
         self.assertSequenceEqual(actual, expected)
 
     def test_corpus_vectorization(self):
-        self.assertEquals(
+        self.assertEqual(
             self.analyzer.corpus_terms,
             ['abstract', 'breakthrough', 'interesting', 'kw1', 'kw2', 'kw3', 'kw4', 'kw5', 'paper', 'term1', 'term2',
              'term3', 'term4', 'term5']
