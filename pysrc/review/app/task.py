@@ -8,6 +8,7 @@ from lazy import lazy
 
 import pysrc.review.config as cfg
 from pysrc.celery.pubtrends_celery import pubtrends_celery
+from pysrc.papers.analysis.citations import find_top_cited_papers
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.progress import Progress
@@ -68,7 +69,7 @@ def generate_review(data, source, num_papers, num_sents, progress, task):
         model, device = MODEL_CACHE.model_and_device
         progress.info('Configuring model for evaluation', current=3, task=task)
         model.eval()
-        top_cited_papers, top_cited_df = analyzer.find_top_cited_papers(
+        top_cited_papers, top_cited_df = find_top_cited_papers(
             analyzer.df, n_papers=int(num_papers)
         )
         progress.info(f'Processing abstracts for {len(top_cited_papers)} top cited papers', current=4, task=task)
