@@ -46,7 +46,7 @@ def prepare_paper_data(data, source, pid):
                 related_topics[c] = 1
         related_topics = map(
             lambda el: (', '.join(
-                [w[0] for w in analyzer.df_kwd[analyzer.df_kwd['comp'] == el[0]]['kwd'].values[0][:10]]
+                [w[0] for w in analyzer.kwd_df[analyzer.kwd_df['comp'] == el[0]]['kwd'].values[0][:10]]
             ), el[1]),
             sorted(related_topics.items(), key=lambda el: el[1], reverse=True)
         )

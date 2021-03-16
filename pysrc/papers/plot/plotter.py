@@ -337,7 +337,7 @@ class Plotter:
             plot.legend.location = "top_left"
 
             # Word cloud description of topic by titles and abstracts
-            kwds = get_topic_word_cloud_data(self.analyzer.df_kwd, comp)
+            kwds = get_topic_word_cloud_data(self.analyzer.kwd_df, comp)
             is_empty = len(kwds) == 0
             if is_empty:
                 kwds = {'N/A': 1}

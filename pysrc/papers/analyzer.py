@@ -197,7 +197,7 @@ class PapersAnalyzer:
         if len(self.similarity_graph.nodes()) == 0:
             self.progress.info('Not enough papers to process topics analysis', current=11, task=task)
             self.df['comp'] = 0  # Technical value for top authors and papers analysis
-            self.df_kwd = pd.DataFrame({'comp': [0], 'kwd': ['']})
+            self.kwd_df = pd.DataFrame({'comp': [0], 'kwd': ['']})
             self.structure_graph = nx.Graph()
         else:
             self.progress.info('Extracting topics from paper similarity graph', current=11, task=task)
@@ -223,7 +223,7 @@ class PapersAnalyzer:
                     for comp, vs in topics_description.items()]
             logger.debug('Components description')
             logger.debug('\n'.join(f'{comp}: {kwd}' for comp, kwd in kwds))
-            self.df_kwd = pd.DataFrame(kwds, columns=['comp', 'kwd'])
+            self.kwd_df = pd.DataFrame(kwds, columns=['comp', 'kwd'])
             # Build structure graph
             self.structure_graph = build_structure_graph(
                 self.df,
@@ -310,7 +310,7 @@ class PapersAnalyzer:
         return {
             'df': self.df.to_json(),
             'comp_other': self.comp_other,
-            'df_kwd': self.df_kwd.to_json(),
+            'kwd_df': self.kwd_df.to_json(),
             'citations_graph': json_graph.node_link_data(self.citations_graph),
             'similarity_graph': json_graph.node_link_data(self.similarity_graph),
             'structure_graph': json_graph.node_link_data(self.structure_graph),
@@ -338,12 +338,12 @@ class PapersAnalyzer:
         df = df.rename(columns=mapping)
 
         # Restore topic descriptions
-        df_kwd = pd.read_json(fields['df_kwd'])
+        kwd_df = pd.read_json(fields['kwd_df'])
 
         # Extra filter is applied to overcome split behaviour problem: split('') = [''] problem
-        df_kwd['kwd'] = [kwd.split(',') if kwd != '' else [] for kwd in df_kwd['kwd']]
-        df_kwd['kwd'] = df_kwd['kwd'].apply(lambda x: [el.split(':') for el in x])
-        df_kwd['kwd'] = df_kwd['kwd'].apply(lambda x: [(el[0], float(el[1])) for el in x])
+        kwd_df['kwd'] = [kwd.split(',') if kwd != '' else [] for kwd in kwd_df['kwd']]
+        kwd_df['kwd'] = kwd_df['kwd'].apply(lambda x: [el.split(':') for el in x])
+        kwd_df['kwd'] = kwd_df['kwd'].apply(lambda x: [(el[0], float(el[1])) for el in x])
 
         # Restore citation and structure graphs
         citations_graph = json_graph.node_link_graph(fields['citations_graph'])
@@ -358,7 +358,7 @@ class PapersAnalyzer:
         return {
             'df': df,
             'comp_other': comp_other,
-            'df_kwd': df_kwd,
+            'kwd_df': kwd_df,
             'citations_graph': citations_graph,
             'similarity_graph': similarity_graph,
             'structure_graph': structure_graph,
@@ -375,7 +375,7 @@ class PapersAnalyzer:
         self.df = loaded['df']
         self.comp_other = loaded['comp_other']
         # Used for components naming
-        self.df_kwd = loaded['df_kwd']
+        self.kwd_df = loaded['kwd_df']
         # Used for structure visualization
         self.citations_graph = loaded['citations_graph']
         self.similarity_graph = loaded['similarity_graph']

@@ -91,15 +91,15 @@ def compute_comps_tfidf(df, comps, corpus_counts, ignore_comp=None):
     return compute_tfidf(terms_freqs_per_comp)
 
 
-def get_topic_word_cloud_data(df_kwd, comp):
+def get_topic_word_cloud_data(kwd_df, comp):
     """
     Parse TF-IDF based tokens from text for given comp
-    :param df_kwd:
+    :param kwd_df:
     :param comp:
     :return:
     """
     kwds = {}
-    for pair in list(df_kwd[df_kwd['comp'] == comp]['kwd'])[0].split(','):
+    for pair in list(kwd_df[kwd_df['comp'] == comp]['kwd'])[0].split(','):
         if pair != '':  # Correctly process empty kwds encoding
             token, value = pair.split(':')
             for word in token.split(' '):

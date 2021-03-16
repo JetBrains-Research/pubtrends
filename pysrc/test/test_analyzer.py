@@ -101,7 +101,7 @@ class TestKeyPaperAnalyzerSingle(unittest.TestCase):
         dump = self.analyzer.dump()
         self.assertEqual(
             '{"comp":{"0":0},"kwd":{"0":"article:0.167,paper:0.167,kw1:0.167,term1:0.167,term2:0.167,term3:0.167"}}',
-            dump['df_kwd'])
+            dump['kwd_df'])
 
 
 class TestKeyPaperAnalyzerMissingPaper(unittest.TestCase):

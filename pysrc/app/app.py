@@ -324,7 +324,7 @@ def graph():
             analyzer = PapersAnalyzer(loader, PUBTRENDS_CONFIG)
             analyzer.init(data)
             topics_tags = {comp: ', '.join(
-                [w[0] for w in analyzer.df_kwd[analyzer.df_kwd['comp'] == comp]['kwd'].values[0][:10]]
+                [w[0] for w in analyzer.kwd_df[analyzer.kwd_df['comp'] == comp]['kwd'].values[0][:10]]
             ) for comp in sorted(set(analyzer.df['comp']))}
             if graph_type == "citations":
                 graph_cs = PlotPreprocessor.dump_citations_graph_cytoscape(analyzer.df, analyzer.citations_graph)
