@@ -50,17 +50,17 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
                 self.assertEqual(getattr(row, 'comp'), -1)
 
     def test_merge_citation_stats_paper_count(self):
-        df, _, _, _ = merge_citation_stats(self.analyzer.pub_df, self.analyzer.cit_stats_df)
+        df, _ = merge_citation_stats(self.analyzer.pub_df, self.analyzer.cit_stats_df)
         self.assertEqual(len(df), len(self.analyzer.pub_df))
 
     def test_merge_citation_stats_total_value_ge_0(self):
-        df, _, _, _ = merge_citation_stats(self.analyzer.pub_df, self.analyzer.cit_stats_df)
+        df, _ = merge_citation_stats(self.analyzer.pub_df, self.analyzer.cit_stats_df)
         added_columns = self.analyzer.cit_stats_df.columns
         self.assertFalse(np.any(df[added_columns].isna()), msg='NaN values in citation stats')
         self.assertTrue(np.all(df['total'] >= 0), msg='Negative total citations count')
 
     def test_merge_citation_stats_citation_years(self):
-        _, _, _, citation_years = merge_citation_stats(self.analyzer.pub_df, self.analyzer.cit_stats_df)
+        _, citation_years = merge_citation_stats(self.analyzer.pub_df, self.analyzer.cit_stats_df)
         self.assertCountEqual(citation_years, CITATION_YEARS)
 
 

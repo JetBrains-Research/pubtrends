@@ -31,6 +31,7 @@ class PredictAnalyzer(PapersAnalyzer):
             )
             if len(self.df) == 0:
                 raise RuntimeError("Failed to merge publications and citations")
+            self.min_year, self.max_year = self.df['year'].min(), self.df['year'].max()
 
             self.cit_df = self.loader.load_citations(self.ids)
 
