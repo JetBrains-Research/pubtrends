@@ -117,8 +117,8 @@ def get_frequent_tokens(df, query, fraction=0.1, min_tokens=20):
     :return: dictionary {token: frequency}
     """
     counter = nltk.Counter()
-    for text in df['title'] + ' ' + df['abstract'] + ' ' + df['keywords'] + ' ' + df['mesh']:
-        for token in tokenize(text, query):
+    for title, abstract, mesh, keywords in zip(df['title'], df['abstract'], df['keywords'], df['mesh']):
+        for token in tokenize(f'{title} {abstract} {keywords} {mesh}', query):
             counter[token] += 1
     result = {}
     tokens = len(counter)
