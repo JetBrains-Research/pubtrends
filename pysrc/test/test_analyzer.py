@@ -11,13 +11,13 @@ from pysrc.test.mock_loaders import MockLoader, \
     CITATION_YEARS, MockLoaderEmpty, MockLoaderSingle, BIBCOUPLING_DF, COCITATION_DF
 
 
-class TestKeyPaperAnalyzer(unittest.TestCase):
+class TestPapersAnalyzer(unittest.TestCase):
     PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
 
     @classmethod
     def setUpClass(cls):
         loader = MockLoader()
-        cls.analyzer = PapersAnalyzer(loader, TestKeyPaperAnalyzer.PUBTRENDS_CONFIG, test=True)
+        cls.analyzer = PapersAnalyzer(loader, TestPapersAnalyzer.PUBTRENDS_CONFIG, test=True)
         ids = cls.analyzer.search_terms(query='query')
         cls.analyzer.TOPIC_MIN_SIZE = 0  # Disable merging for tests
         cls.analyzer.analyze_papers(ids, 'query')
@@ -64,12 +64,12 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
         self.assertCountEqual(citation_years, CITATION_YEARS)
 
 
-class TestKeyPaperAnalyzerSingle(unittest.TestCase):
+class TestPapersAnalyzerSingle(unittest.TestCase):
     PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
 
     @classmethod
     def setUpClass(cls):
-        cls.analyzer = PapersAnalyzer(MockLoaderSingle(), TestKeyPaperAnalyzerSingle.PUBTRENDS_CONFIG, test=True)
+        cls.analyzer = PapersAnalyzer(MockLoaderSingle(), TestPapersAnalyzerSingle.PUBTRENDS_CONFIG, test=True)
         ids = cls.analyzer.search_terms(query='query')
         cls.analyzer.analyze_papers(ids, 'query')
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.ids)
@@ -100,27 +100,28 @@ class TestKeyPaperAnalyzerSingle(unittest.TestCase):
     def test_dump(self):
         dump = self.analyzer.dump()
         self.assertEqual(
-            '{"comp":{"0":0},"kwd":{"0":"article:0.167,paper:0.167,kw1:0.167,term1:0.167,term2:0.167,term3:0.167"}}',
+            '{"comp":{"0":0},'
+            '"kwd":{"0":"article:0.143,paper:0.143,term1:0.143,term2:0.143,term3:0.143,kw1:0.143,kw2:0.143"}}',
             dump['kwd_df'])
 
 
-class TestKeyPaperAnalyzerMissingPaper(unittest.TestCase):
+class TestPapersAnalyzerMissingPaper(unittest.TestCase):
     PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
 
     def test_missing_paper(self):
-        analyzer = PapersAnalyzer(MockLoaderSingle(), TestKeyPaperAnalyzerSingle.PUBTRENDS_CONFIG, test=True)
+        analyzer = PapersAnalyzer(MockLoaderSingle(), TestPapersAnalyzerSingle.PUBTRENDS_CONFIG, test=True)
         good_ids = list(analyzer.search_terms(query='query'))
         analyzer.analyze_papers(good_ids + ['non-existing-id'], 'query')
         self.assertEqual(good_ids, list(analyzer.ids))
 
 
-class TestKeyPaperAnalyzerEmpty(unittest.TestCase):
+class TestPapersAnalyzerEmpty(unittest.TestCase):
     PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
 
     @classmethod
     def setUpClass(cls):
         cls.analyzer = PapersAnalyzer(MockLoaderEmpty(),
-                                      TestKeyPaperAnalyzerEmpty.PUBTRENDS_CONFIG, test=True)
+                                      TestPapersAnalyzerEmpty.PUBTRENDS_CONFIG, test=True)
 
     def test_setup(self):
         with self.assertRaises(Exception):

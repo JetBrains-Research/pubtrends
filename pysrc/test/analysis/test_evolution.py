@@ -7,7 +7,7 @@ from pysrc.papers.analysis.graph import build_citation_graph
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.test.mock_loaders import MockLoader
-from pysrc.test.test_analyzer import TestKeyPaperAnalyzer
+from pysrc.test.test_analyzer import TestPapersAnalyzer
 
 
 class TestTopicEvolution(unittest.TestCase):
@@ -16,7 +16,7 @@ class TestTopicEvolution(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         loader = MockLoader()
-        cls.analyzer = PapersAnalyzer(loader, TestKeyPaperAnalyzer.PUBTRENDS_CONFIG, test=True)
+        cls.analyzer = PapersAnalyzer(loader, TestPapersAnalyzer.PUBTRENDS_CONFIG, test=True)
         ids = cls.analyzer.search_terms(query='query')
         cls.analyzer.analyze_papers(ids, 'query')
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.ids)
