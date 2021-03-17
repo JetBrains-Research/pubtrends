@@ -75,13 +75,17 @@ def generate_review(data, source, num_papers, num_sents, progress, task):
         progress.info(f'Processing abstracts for {len(top_cited_papers)} top cited papers', current=4, task=task)
         result = []
         for pid in top_cited_papers:
+            logger.info(f'Processing review for {pid}')
             cur_paper = top_cited_df[top_cited_df['id'] == pid]
+            logger.info(f'Found {len(cur_paper)} papers for id')
             title = cur_paper['title'].values[0]
             year = int(cur_paper['year'].values[0])
             cited = int(cur_paper['total'].values[0])
             abstract = cur_paper['abstract'].values[0]
+            logger.info(f'Length of abstract {len(abstract)}')
             topic = int(cur_paper['comp'].values[0] + 1)
             data = text_to_data(abstract, 512, model.tokenizer)
+            logger.info(f'Data to process {len(data)}')
             choose_from = []
             for article_ids, article_mask, article_seg, magic, sents in data:
                 input_ids = torch.tensor([article_ids]).to(device)
@@ -92,6 +96,7 @@ def generate_review(data, source, num_papers, num_sents, progress, task):
             to_add = sorted(choose_from, key=lambda x: -x[1])[:int(num_sents)]
             for sent, score in to_add:
                 result.append([title, year, cited, topic, sent, url_prefix + pid, float("{:.2f}".format(score))])
+            logger.info(f'Review result contains {len(result)} records')
         return result
     finally:
         REVIEW_LOCK.release()
