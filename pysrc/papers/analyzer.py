@@ -305,7 +305,7 @@ class PapersAnalyzer:
 
     def dump(self):
         """
-        Dump valuable fields of KeyPaperAnalyzer to JSON-serializable dict. Use 'load' to restore analyzer.
+        Dump valuable fields to JSON-serializable dict. Use 'load' to restore analyzer.
         """
         return {
             'df': self.df.to_json(),
@@ -314,16 +314,15 @@ class PapersAnalyzer:
             'citations_graph': json_graph.node_link_data(self.citations_graph),
             'similarity_graph': json_graph.node_link_data(self.similarity_graph),
             'structure_graph': json_graph.node_link_data(self.structure_graph),
-            'topics_dendrogram': self.topics_dendrogram,
-            'top_cited_papers': list(self.top_cited_papers),
-            'max_gain_papers': list(self.max_gain_papers),
-            'max_rel_gain_papers': list(self.max_rel_gain_papers),
+            'top_cited_papers': self.top_cited_papers,
+            'max_gain_papers': self.max_gain_papers,
+            'max_rel_gain_papers': self.max_rel_gain_papers,
         }
 
     @staticmethod
     def load(fields):
         """
-        Load valuable fields of KeyPaperAnalyzer from JSON-serializable dict. Use 'dump' to dump analyzer.
+        Load valuable fields from JSON-serializable dict. Use 'dump' to dump analyzer.
         """
         # Restore main dataframe
         df = pd.read_json(fields['df'])
@@ -349,11 +348,10 @@ class PapersAnalyzer:
         citations_graph = json_graph.node_link_graph(fields['citations_graph'])
         similarity_graph = json_graph.node_link_graph(fields['similarity_graph'])
         structure_graph = json_graph.node_link_graph(fields['structure_graph'])
-        topics_dendrogram = fields['topics_dendrogram']
 
-        top_cited_papers = set(fields['top_cited_papers'])
-        max_gain_papers = set(fields['max_gain_papers'])
-        max_rel_gain_papers = set(fields['max_rel_gain_papers'])
+        top_cited_papers = fields['top_cited_papers']
+        max_gain_papers = fields['max_gain_papers']
+        max_rel_gain_papers = fields['max_rel_gain_papers']
 
         return {
             'df': df,
@@ -362,14 +360,19 @@ class PapersAnalyzer:
             'citations_graph': citations_graph,
             'similarity_graph': similarity_graph,
             'structure_graph': structure_graph,
-            'topics_dendrogram': topics_dendrogram,
             'top_cited_papers': top_cited_papers,
             'max_gain_papers': max_gain_papers,
             'max_rel_gain_papers': max_rel_gain_papers
         }
 
     def init(self, fields):
-        # logger.debug(f'Loading\n{fields}')
+        """
+        Init analyzer with required fields.
+        NOTE: results page doesn't use dump/load for visualization.
+        Look for init calls in the codebase to find out useful fields for serialization.
+        :param fields: desearialized JSON
+        """
+        logger.debug(f'Loading\n{fields}')
         loaded = PapersAnalyzer.load(fields)
         logger.debug(f'Loaded\n{loaded}')
         self.df = loaded['df']
@@ -380,7 +383,6 @@ class PapersAnalyzer:
         self.citations_graph = loaded['citations_graph']
         self.similarity_graph = loaded['similarity_graph']
         self.structure_graph = loaded['structure_graph']
-        self.topics_dendrogram = loaded['topics_dendrogram']
         # Used for navigation
         self.top_cited_papers = loaded['top_cited_papers']
         self.max_gain_papers = loaded['max_gain_papers']

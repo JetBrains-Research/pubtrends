@@ -90,9 +90,9 @@ class TestPapersAnalyzerSingle(unittest.TestCase):
             'max_gain_df',
             'max_rel_gain_papers',
             'max_rel_gain_df',
-            # These are optional
-            # 'journal_stats',
-            # 'author_stats',
+            # These are optionaldd
+            'journal_stats',
+            'author_stats',
         ]
         for a in all_attrs:
             self.assertTrue(hasattr(self.analyzer, a), f'Missing attr {a}')
