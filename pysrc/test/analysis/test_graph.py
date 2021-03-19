@@ -1,12 +1,11 @@
 import unittest
 
 import networkx as nx
-import pandas as pd
 
-from pysrc.papers.analysis.graph import build_similarity_graph, build_citation_graph, local_sparse
+from pysrc.papers.analysis.graph import build_citation_graph, local_sparse
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
-from pysrc.test.mock_loaders import MockLoader, CITATION_GRAPH_NODES, CITATION_GRAPH_EDGES, SIMILARITY_GRAPH, \
+from pysrc.test.mock_loaders import MockLoader, CITATION_GRAPH_NODES, CITATION_GRAPH_EDGES, SIMILARITY_GRAPH_EDGES, \
     MockLoaderSingle
 
 
@@ -20,13 +19,6 @@ class TestBuildGraph(unittest.TestCase):
         ids = cls.analyzer.search_terms(query='query')
         cls.analyzer.TOPIC_MIN_SIZE = 0  # Disable merging for tests
         cls.analyzer.analyze_papers(ids, 'query')
-        # cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.ids)
-        # cls.analyzer.citations_graph = build_citation_graph(cls.analyzer.cit_df)
-        # cls.analyzer.bibliographic_coupling_df = loader.load_bibliographic_coupling(cls.analyzer.ids)
-        # cls.analyzer.similarity_graph = build_similarity_graph(
-        #     cls.analyzer.df, cls.analyzer.texts_similarity, cls.analyzer.citations_graph, cls.analyzer.cocit_grouped_df,
-        #     cls.analyzer.bibliographic_coupling_df
-        # )
 
     def test_build_citation_graph_nodes_count(self):
         self.assertEqual(self.analyzer.citations_graph.number_of_nodes(), len(CITATION_GRAPH_NODES))
@@ -42,7 +34,14 @@ class TestBuildGraph(unittest.TestCase):
 
     def test_build_similarity_graph_edges(self):
         edges = list(self.analyzer.similarity_graph.edges(data=True))
-        self.assertCountEqual(edges, SIMILARITY_GRAPH)
+        self.assertEquals(len(SIMILARITY_GRAPH_EDGES), len(edges), msg='size')
+        for expected, actual in zip(SIMILARITY_GRAPH_EDGES, edges):
+            self.assertEquals(expected[0], actual[0], msg='source')
+            self.assertEquals(expected[1], actual[1], msg='target')
+            for m in 'cocitation', 'text', 'similarity', 'citations', 'bibcoupling':
+                self.assertEquals(m in expected[2], m in actual[2], msg=f'{m} presence')
+                if m in expected[2]:
+                    self.assertAlmostEqual(expected[2][m], actual[2][m], msg=f'{m} value', delta=1e-3)
 
     def test_local_sparse(self):
         # Full graph on 4 nodes
@@ -56,7 +55,7 @@ class TestBuildGraph(unittest.TestCase):
         self.assertEqual([(0, 4), (4, 1), (4, 2), (4, 3)], list(empty.edges))
         self.assertEqual([(0, 3), (0, 4), (3, 4), (4, 1), (4, 2)], list(local_sparse(graph, 0.5).edges))
         self.assertEqual([(0, 1), (0, 2), (0, 3), (0, 4), (1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4)],
-                          list(local_sparse(graph, 1).edges))
+                         list(local_sparse(graph, 1).edges))
 
         # Add not connected edge
         graph.add_edge(10, 11, similarity=10)
