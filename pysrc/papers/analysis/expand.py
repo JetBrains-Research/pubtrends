@@ -111,7 +111,7 @@ def estimate_mesh(ids, loader):
     mesh_counter = Counter(mesh_stems)
     logger.debug(f'Mesh most common:\n' + ','.join(f'{k}:{"{0:.3f}".format(v / len(mesh_stems))}'
                                                    for k, v in mesh_counter.most_common(20)))
-    return mesh_stems, mesh_counter
+    return (mesh_stems, mesh_counter) if len(mesh_stems) > 0 else (None, None)
 
 
 def estimate_citations(ids, loader, q_low, q_high):
