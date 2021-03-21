@@ -3,9 +3,9 @@ from abc import ABCMeta, abstractmethod
 from pandas.testing import assert_frame_equal
 from parameterized import parameterized
 
-from pysrc.papers.utils import SORT_MOST_RECENT, SORT_MOST_CITED, SORT_MOST_RELEVANT
-from pysrc.test.db.ss_test_articles import required_citations, \
-    expected_cit_stats_df, expected_cit_df, expected_cocit_df, part_of_articles, expanded_articles_df
+from pysrc.papers.utils import SORT_MOST_RECENT, SORT_MOST_CITED
+from pysrc.test.db.ss_test_articles import REQUIRED_CITATIONS, \
+    EXPECTED_CIT_STATS_DF, EXPECTED_CIT_DF, EXPECTED_COCIT_DF, ARTICLES_LIST, EXPANDED_ARTICLES_DF
 
 
 # Don't make it subclass of unittest.TestCase to avoid tests execution
@@ -52,10 +52,6 @@ class AbstractTestSemanticScholarLoader(metaclass=ABCMeta):
         ('3 most recent', 3, SORT_MOST_RECENT, ['5a63b4199bb58992882b0bf60bc1b1b3f392e5a5',
                                                 '5451b1ef43678d473575bdfa7016d024146f2b53',
                                                 'cad767094c2c4fff5206793fd8674a10e7fba3fe']),
-        ('4 most relevant', 4, SORT_MOST_RELEVANT, ['cad767094c2c4fff5206793fd8674a10e7fba3fe',
-                                                    'e7cdbddc7af4b6138227139d714df28e2090bd5f',
-                                                    '3cf82f53a52867aaade081324dff65dd35b5b7eb',
-                                                    '5a63b4199bb58992882b0bf60bc1b1b3f392e5a5']),
         ('10 most cited', 10, SORT_MOST_CITED, ['3cf82f53a52867aaade081324dff65dd35b5b7eb',
                                                 '5451b1ef43678d473575bdfa7016d024146f2b53',
                                                 '5a63b4199bb58992882b0bf60bc1b1b3f392e5a5',
@@ -68,39 +64,36 @@ class AbstractTestSemanticScholarLoader(metaclass=ABCMeta):
         self.assertListEqual(sorted(expected), sorted(ids), name)
 
     def test_citations_stats_rows(self):
-        expected_rows = expected_cit_stats_df.shape[0]
+        expected_rows = EXPECTED_CIT_STATS_DF.shape[0]
         actual_rows = self.getCitationsStatsDataframe().shape[0]
         self.assertEqual(expected_rows, actual_rows, "Number of rows in citations statistics is incorrect")
 
     def test_load_citation_stats_data_frame(self):
-        assert_frame_equal(expected_cit_stats_df,
+        assert_frame_equal(EXPECTED_CIT_STATS_DF,
                            self.getCitationsStatsDataframe().sort_values(by=['id', 'year']).reset_index(drop=True),
                            "Citations statistics is incorrect",
                            check_like=True)
 
     def test_load_citations_count(self):
-        self.assertEqual(len(required_citations), len(self.getCitationsDataframe()), 'Wrong number of citations')
+        self.assertEqual(len(REQUIRED_CITATIONS), len(self.getCitationsDataframe()), 'Wrong number of citations')
 
     def test_load_citations_data_frame(self):
-        assert_frame_equal(expected_cit_df, self.getCitationsDataframe(), 'Wrong citation data', check_like=True)
+        assert_frame_equal(EXPECTED_CIT_DF, self.getCitationsDataframe(), 'Wrong citation data', check_like=True)
 
     def test_load_cocitations_count(self):
-        expected_rows = expected_cocit_df.shape[0]
+        expected_rows = EXPECTED_COCIT_DF.shape[0]
         actual_rows = self.getCoCitationsDataframe().shape[0]
         self.assertEqual(expected_rows, actual_rows, "Number of rows in co-citations dataframe is incorrect")
 
     def test_load_cocitations_data_frame(self):
         actual = self.getCoCitationsDataframe().sort_values(by=['citing', 'cited_1', 'cited_2']).reset_index(drop=True)
-        assert_frame_equal(expected_cocit_df, actual, "Co-citations dataframe is incorrect", check_like=True)
+        assert_frame_equal(EXPECTED_COCIT_DF, actual, "Co-citations dataframe is incorrect", check_like=True)
 
     def test_expand(self):
-        ids = list(map(lambda article: article.ssid, part_of_articles))
+        ids = list(map(lambda article: article.ssid, ARTICLES_LIST))
         actual = self.getLoader().expand(ids, 6)
-        expected = expanded_articles_df.sort_values(by=['total', 'id']).reset_index(drop=True)
+        expected = EXPANDED_ARTICLES_DF.sort_values(by=['total', 'id']).reset_index(drop=True)
         actual = actual.sort_values(by=['total', 'id']).reset_index(drop=True)
-        print(expected['id'])
-        print(actual['id'])
-        print(actual['total'])
         self.assertEqual(set(expected['id']), set(actual['id']))
         assert_frame_equal(
             expected,

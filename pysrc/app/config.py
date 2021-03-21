@@ -3,6 +3,7 @@ SECRET_KEY = '123456790'
 
 # Create in-memory database
 DATABASE_FILE = 'db.sqlite'
+# Configured from the code
 # SQLALCHEMY_DATABASE_URI = 'sqlite:///' + DATABASE_FILE
 SQLALCHEMY_ECHO = False
 
@@ -16,7 +17,7 @@ SECURITY_LOGIN_URL = "/login/"
 SECURITY_LOGOUT_URL = "/logout/"
 # SECURITY_REGISTER_URL = "/register/"
 
-SECURITY_POST_LOGIN_VIEW = "/admin/stats/"
+SECURITY_POST_LOGIN_VIEW = "/admin/"
 SECURITY_POST_LOGOUT_VIEW = "/"
 # SECURITY_POST_REGISTER_VIEW = "/admin/"
 

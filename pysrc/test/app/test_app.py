@@ -10,8 +10,8 @@ from celery.contrib.testing.worker import start_worker
 from celery.contrib.testing.tasks import ping
 
 from pysrc.app.app import app
-from pysrc.celery.tasks import celery
-from pysrc.papers import pubtrends_config
+from pysrc.celery.tasks import pubtrends_celery
+from pysrc.papers import config
 from pysrc.papers.db.pm_postgres_loader import PubmedPostgresLoader
 from pysrc.papers.db.pm_postgres_writer import PubmedPostgresWriter
 from pysrc.papers.utils import SORT_MOST_CITED
@@ -25,14 +25,14 @@ class TestApp(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        test_config = pubtrends_config.PubtrendsConfig(test=True)
+        test_config = config.PubtrendsConfig(test=True)
         cls.loader = PubmedPostgresLoader(test_config)
 
         # Configure celery not to use broker
-        celery.conf.broker_url = 'memory://'
-        celery.conf.result_backend = 'cache+memory://'
+        pubtrends_celery.conf.broker_url = 'memory://'
+        pubtrends_celery.conf.result_backend = 'cache+memory://'
 
-        cls.celery_worker = start_worker(celery, perform_ping_check=False)
+        cls.celery_worker = start_worker(pubtrends_celery, perform_ping_check=False)
         cls.celery_worker.__enter__()
 
         # Text search is not tested, imitating search results
@@ -76,6 +76,4 @@ class TestApp(unittest.TestCase):
             rv = c.get(f'/result?{args}')  # Result should be fine
             self.assertEqual(200, rv.status_code)
             response = rv.data.decode('utf-8')
-            self.assertTrue(re.findall('<div id="n_papers"(.*\n)+.*<b>9</b>', response))
-            self.assertTrue(re.findall('<div id="n_citations"(.*\n)+.*<b>15</b>', response))
-            self.assertTrue(re.findall('<div id="n_topics"(.*\n)+.*<b>1</b>', response))
+            self.assertTrue('Total: <b>10</b> papers, <b>1</b> topics.' in response)

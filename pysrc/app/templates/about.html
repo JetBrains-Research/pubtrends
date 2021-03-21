@@ -17,9 +17,18 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"
             integrity="sha512-efUTj3HdSPwWJ9gjfGR71X9cvsrthIA78/Fvd/IN+fttQVy7XWkOAXb295j8B3cmm/kFKVxjiNYzKw9IQJHIuQ=="
             crossorigin="anonymous"></script>
-    <script src="feedback.js"></script>
+    <script src="{{ url_for('static', filename='feedback.js') }}"></script>
+    <!--    <script src="../static/feedback.js"/>-->
+    <link rel="stylesheet" href="{{ url_for('static', filename='feedback.css') }}?v=1">
+    <!--    <link rel="stylesheet" href="../static/feedback.css"/>-->
 
-    <link rel="stylesheet" href="style.css"/>
+    <link rel="stylesheet" href="../static/style.css"/>
+    <script>
+        "use strict";
+        $(document).ready(function () {
+            createClickableFeedBackFormNoMessage("feedback-about-html-form", "feedback-about-html")
+        });
+    </script>
 </head>
 <body>
 <div class="container mt-2" role="main">
@@ -41,7 +50,7 @@
     </p>
 
     <h2>Workflow</h2>
-    <img class="mx-auto d-block" src="about_pubtrends_scheme.png" style="width: 100%; max-width: 900px;">
+    <img class="mx-auto d-block" src="../static/about_pubtrends_scheme.png" style="width: 100%; max-width: 900px;">
     <p>
         All the analysis starts with user-supplied search query or the paper of interest.<br>
         In case of search query, first of all most cited papers containing the search query are found. This set of
@@ -74,7 +83,8 @@
     </p>
     <h4>Report</h4>
     <p>
-        <img class="mx-auto d-block" src="about_humanaging_report.png" style="width: 100%; max-width: 900px"><br>
+        <img class="mx-auto d-block" src="../static/about_humanaging_report.png"
+             style="width: 100%; max-width: 900px"><br>
         The report page contains all the analytics and consists of several parts: Overview, Highlights, Topics,
         Trends, Publications, Authors, and Journals, etc. Side bar on the left of the page can be used for
         navigation.<br>
@@ -107,7 +117,8 @@
         clusters structure from Louvain Community detection algorithm and show similarities within each community
         applying Local Sparsification method to reduce number of edges, also we show most similar papers from
         different communities (topics).<br>
-        <img class="mx-auto d-block" src="about_humanaging_graph.png" style="width: 100%; max-width: 900px"><br>
+        <img class="mx-auto d-block" src="../static/about_humanaging_graph.png"
+             style="width: 100%; max-width: 900px"><br>
         This graph allows you to find out the most important spots. Hover on any nodes to view paper details, filter
         papers with dedicated filter field, configure visualization options and more. On the screenshot you can see
         papers coloured by different topics and the paper is highlighted with its similar neighbours.
@@ -127,7 +138,8 @@
         cloud is built from terms specific to the given topic with respect to others. These words are computed using
         TF-IDF normalization, a standard approach in the field of natural language processing. The more important word
         is the more significant fraction of papers contains it.<br>
-        <img class="mx-auto d-block" src="about_humanaging_topic_other.png" style="width: 100%; max-width: 900px">
+        <img class="mx-auto d-block" src="../static/about_humanaging_topic_other.png"
+             style="width: 100%; max-width: 900px">
     </p>
     <h4>Other</h4>
     <p>
@@ -152,29 +164,22 @@
         Feel free to fill the feedback form on the bottom of reports page or use emotions buttons to
         share your thoughts.
     </p>
-    <div class="mt-3">
-        <small class="text-muted">Was this useful?</small>
-        <div id="feedback-about" class="btn-group-horizontal">
-            <button type="button" class="btn btn-sm btn-feedback-yes"
-                    onclick="feedbackNoMessageForm(this, 1)">
-                <img src="smile.svg" alt="Yes"/>
-            </button>
-            <button type="button" class="btn btn-sm btn-feedback-meh"
-                    onclick="feedbackNoMessageForm(this, 0)">
-                <img src="meh.svg" alt="Not sure"/>
-            </button>
-            <button type="button" class="btn btn-sm btn-feedback-no"
-                    onclick="feedbackNoMessageForm(this, -1)">
-                <img src="frown.svg" alt="No"/>
-            </button>
-        </div>
-    </div>
+
 </div>
-<footer>
-    <p>version {{ version }}<br/>
-        &copy; 2019-2020 <a href="https://research.jetbrains.org/groups/biolabs"
-                            title="JetBrains Research BioLabs"
-                            target="_blank">JetBrains Research</a></p>
+<footer class="container">
+    <div class="row">
+        <div class="col-4">
+            <div id="feedback-about-html-form" class="float-left vertical-center" ></div>
+        </div>
+        <div class="col-4">
+            <p>version {{ version }}<br/>
+                &copy; 2019-2020 <a href="https://research.jetbrains.org/groups/biolabs"
+                                    title="JetBrains Research BioLabs"
+                                    target="_blank">JetBrains Research</a>
+            </p>
+        </div>
+        <div class="col-4"></div>
+    </div>
 </footer>
 </body>
 </html>

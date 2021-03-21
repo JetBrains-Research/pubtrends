@@ -14,6 +14,7 @@ class SSPubmedLoader(SemanticScholarNeo4jLoader):
         raise Exception('Use search_pubmed')
 
     def search_pubmed(self, limit, sort='random'):
+        self.check_connection()
         if sort == SORT_MOST_CITED:
             query = f'''
                 MATCH ()-[r:SSReferenced]->(node:SSPublication)

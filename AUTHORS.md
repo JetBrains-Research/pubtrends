@@ -7,6 +7,9 @@ Authors
 * [![icon][mail]](mailto:annasv209@gmail.com)
   [![icon][github]](https://github.com/annav1asova) 
   &nbsp; Anna Vlasova
+* [![icon][mail]](mailto:nikiannanik@gmail.com)
+  [![icon][github]](https://github.com/Javanochka) 
+  &nbsp; Anna Nikiforovskaya
 * [![icon][mail]](mailto:oleg.shpynov@gmail.com)
   [![icon][github]](https://github.com/olegs) 
   &nbsp; Oleg Shpynov

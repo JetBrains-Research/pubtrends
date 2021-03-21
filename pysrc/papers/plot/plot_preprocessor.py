@@ -5,7 +5,8 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-from pysrc.papers.analyzer import KeyPaperAnalyzer
+from pysrc.papers.analysis.text import build_corpus
+from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.utils import cut_authors_list
 
 logger = logging.getLogger(__name__)
@@ -29,7 +30,7 @@ class PlotPreprocessor:
         for u, v, data in similarity_graph.edges(data=True):
             sources[i] = u
             targets[i] = v
-            similarities[i] = KeyPaperAnalyzer.get_similarity(data)
+            similarities[i] = PapersAnalyzer.similarity(data)
             i += 1
         similarity_df = pd.DataFrame(data={'source': sources, 'target': targets, 'similarity': similarities})
 
@@ -93,17 +94,19 @@ class PlotPreprocessor:
         df_counts['delta'] = 0
         dft = pd.DataFrame(columns=columns + ['y'])
         for _, r in df_local.iterrows():
-            id, title, year, type, total, authors, comp, _ = r  # Ignore count
+            pid, title, year, type, total, authors, comp, _ = r  # Ignore count
             if components_split:
                 cd = df_counts.loc[(comp, year, total)]
+                c, d = cd['count'], cd['delta']
+                df_counts.loc[(comp, year, total), 'delta'] += 1  # Increase delta for better layout
             else:
                 cd = df_counts.loc[(year, total)]
-            c, d = cd['count'], cd['delta']
+                c, d = cd['count'], cd['delta']
+                df_counts.loc[(year, total), 'delta'] += 1  # Increase delta for better layout
             # Make papers with same year and citations have different y values
-            dft.loc[len(dft)] = (id, title, year, type, total, authors, comp,
+            dft.loc[len(dft)] = (pid, title, year, type, total, authors, comp,
                                  # Fix to show not cited papers on log axis
                                  max(1, total) + (d - int(c / 2)) / float(c))
-            cd['delta'] += 1  # Increase delta
         df_local = dft
 
         # Size is based on the citations number, at least 1
@@ -176,10 +179,12 @@ class PlotPreprocessor:
             attrs[node] = {
                 'title': sel['title'].values[0],
                 'abstract': sel['abstract'].values[0],
+                'keywords': sel['keywords'].values[0],
+                'mesh': sel['mesh'].values[0],
                 'authors': cut_authors_list(sel['authors'].values[0]),
                 'year': int(sel['year'].values[0]),
                 'cited': int(sel['total'].values[0]),
-                'topic': topic
+                'topic': topic,
             }
         nx.set_node_attributes(graph, attrs)
 
@@ -266,3 +271,54 @@ class PlotPreprocessor:
                 if comp >= 0:
                     kwds_data.append((year, comp + 1, ', '.join(kwd)))
         return kwds_data
+
+    @staticmethod
+    def prepare_papers_data(
+            df, top_cited_papers, max_gain_papers, max_rel_gain_papers,
+            url_prefix,
+            comp=None, word=None, author=None, journal=None, papers_list=None
+    ):
+        # Filter by component
+        if comp is not None:
+            df = df[df['comp'].astype(int) == comp]
+        # Filter by word
+        if word is not None:
+            corpus = build_corpus(df)
+            df = df[[word.lower() in text for text in corpus]]
+        # Filter by author
+        if author is not None:
+            # Check if string was trimmed
+            if author.endswith('...'):
+                author = author[:-3]
+                df = df[[any([a.startswith(author) for a in authors]) for authors in df['authors']]]
+            else:
+                df = df[[author in authors for authors in df['authors']]]
+
+        # Filter by journal
+        if journal is not None:
+            # Check if string was trimmed
+            if journal.endswith('...'):
+                journal = journal[:-3]
+                df = df[[j.startswith(journal) for j in df['journal']]]
+            else:
+                df = df[df['journal'] == journal]
+
+        if papers_list == 'top':
+            df = df[[pid in top_cited_papers for pid in df['id']]]
+        if papers_list == 'year':
+            df = df[[pid in max_gain_papers for pid in df['id']]]
+        if papers_list == 'hot':
+            df = df[[pid in max_rel_gain_papers for pid in df['id']]]
+
+        result = []
+        for _, row in df.iterrows():
+            pid, title, authors, journal, year, total, doi, topic = \
+                row['id'], row['title'], row['authors'], row['journal'], \
+                row['year'], int(row['total']), str(row['doi']), int(row['comp'] + 1)
+            if doi == 'None' or doi == 'nan':
+                doi = ''
+            # Don't trim or cut anything here, because this information can be exported
+            result.append(
+                (pid, title, authors, url_prefix + pid if url_prefix else None, journal, year, total, doi, topic)
+            )
+        return result

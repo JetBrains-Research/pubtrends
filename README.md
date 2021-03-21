@@ -176,10 +176,11 @@ Please ensure that you have Database configured, up and running.
 
 ### Web service
 
-1. Create necessary folders for logs and service database.
+1. Create necessary folders for logs, service database, etc. See `docker-compose.yml` for details.
     ```
     mkdir ~/.pubtrends/logs
     mkdir ~/.pubtrends/database
+    ...
     ```
 
 2. Start Redis
@@ -212,6 +213,10 @@ Please ensure that you have Database configured, up and running.
 
 ### Jupyter Notebook
    ```
+   # Configure paths
+   export PYTHONPATH=$PYTHONPATH:$(pwd)
+   
+   # Launch notebook
    jupyter notebook
    ```
 
@@ -303,19 +308,14 @@ Please ensure that you have configured and prepared the database(s).
    ```
 
 
-5. Create logs folder within deployment package folder
-   ```
-   mkdir logs
-   ```
-
-6. Create necessary folders.
+5. Create necessary folders for logs, service database, etc. See `docker-compose.yml` for details.
     ```
     mkdir ~/.pubtrends/logs
     mkdir ~/.pubtrends/database
-    mkdir ~/.pubtrends/predefined
+    ...
     ```
 
-7. Prepare SSL certificates files `privkey.pem` and `cert.pem` and optional CA-authority file `chain.pem`.\
+6. Prepare SSL certificates files `privkey.pem` and `cert.pem` and optional CA-authority file `chain.pem`.\
    You can generate a self-signed certificate for testing purposes by the command:
    
    ```
@@ -324,7 +324,7 @@ Please ensure that you have configured and prepared the database(s).
    openssl req -nodes -x509 -newkey rsa:4096 -keyout privkey.pem -out cert.pem -days 365 -subj '/CN=localhost'
    ```
  
-8. Launch pubtrends with docker-compose.
+7. Launch pubtrends with docker-compose.
     ```
     # start
     docker-compose up -d --build
@@ -336,6 +336,12 @@ Please ensure that you have configured and prepared the database(s).
     # inpect logs
     docker-compose logs
     ```
+
+## Release
+* Update `CHANGES.txt`
+* Update version in `dist.sh`
+* Launch `dist.sh`, `pubtrends-XXX.tar.gz` will be created in the `dist` directory.
+
 
 # Authors
 

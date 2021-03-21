@@ -1,11 +1,10 @@
 from bokeh.embed import components
 
-from pysrc.papers.analyzer import KeyPaperAnalyzer
-from pysrc.papers.pubtrends_config import PubtrendsConfig
+from pysrc.papers.analyzer import PapersAnalyzer
+from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.plot.plotter import Plotter
-from pysrc.papers.utils import (
-    trim, build_corpus, MAX_TITLE_LENGTH)
+from pysrc.papers.utils import trim, MAX_TITLE_LENGTH
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
@@ -18,7 +17,7 @@ def get_top_papers_id_title_year(papers, df, key, n=50):
 
 def prepare_paper_data(data, source, pid):
     loader, url_prefix = Loaders.get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
-    analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
+    analyzer = PapersAnalyzer(loader, PUBTRENDS_CONFIG)
     analyzer.init(data)
 
     plotter = Plotter()
@@ -47,7 +46,7 @@ def prepare_paper_data(data, source, pid):
                 related_topics[c] = 1
         related_topics = map(
             lambda el: (', '.join(
-                [w[0] for w in analyzer.df_kwd[analyzer.df_kwd['comp'] == el[0]]['kwd'].values[0][:10]]
+                [w[0] for w in analyzer.kwd_df[analyzer.kwd_df['comp'] == el[0]]['kwd'].values[0][:10]]
             ), el[1]),
             sorted(related_topics.items(), key=lambda el: el[1], reverse=True)
         )
@@ -73,7 +72,7 @@ def prepare_paper_data(data, source, pid):
                        analyzer.similarity_graph.edges[pid, v]['similarity']),
             list(analyzer.similarity_graph[pid])
         )
-        similar_papers = sorted(similar_papers, key=lambda x: x[2], reverse=True)[:50]
+        similar_papers = sorted(similar_papers, key=lambda x: x[3], reverse=True)[:50]
     else:
         similar_papers = None
 
@@ -111,55 +110,3 @@ def prepare_paper_data(data, source, pid):
                                        for pid, title, year in derivative_papers]
 
     return result
-
-
-def prepare_papers_data(data, source, comp=None, word=None, author=None, journal=None, papers_list=None):
-    loader, url_prefix = Loaders.get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
-    analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
-    analyzer.init(data)
-
-    df = analyzer.df.copy()
-    # Filter by component
-    if comp is not None:
-        df = df.loc[df['comp'].astype(int) == comp]
-    # Filter by word
-    if word is not None:
-        corpus = build_corpus(df)
-        df = df.loc[[word.lower() in text for text in corpus]]
-    # Filter by author
-    if author is not None:
-        # Check if string was trimmed
-        if author.endswith('...'):
-            author = author[:-3]
-            df = df.loc[[any([a.startswith(author) for a in authors]) for authors in df['authors']]]
-        else:
-            df = df.loc[[author in authors for authors in df['authors']]]
-
-    # Filter by journal
-    if journal is not None:
-        # Check if string was trimmed
-        if journal.endswith('...'):
-            journal = journal[:-3]
-            df = df.loc[[j.startswith(journal) for j in df['journal']]]
-        else:
-            df = df.loc[df['journal'] == journal]
-
-    if papers_list == 'top':
-        df = df.loc[[pid in analyzer.top_cited_papers for pid in df['id']]]
-    if papers_list == 'year':
-        df = df.loc[[pid in analyzer.max_gain_papers for pid in df['id']]]
-    if papers_list == 'hot':
-        df = df.loc[[pid in analyzer.max_rel_gain_papers for pid in df['id']]]
-
-    result = []
-    for _, row in df.iterrows():
-        pid, title, authors, journal, year, total, doi, topic = \
-            row['id'], row['title'], row['authors'], row['journal'], \
-            row['year'], row['total'], str(row['doi']), row['comp'] + 1
-        if doi == 'None' or doi == 'nan':
-            doi = ''
-        # Don't trim or cut anything here, because this information can be exported
-        result.append((pid, title, authors, url_prefix + pid, journal, year, total, doi, topic))
-
-    # Return list sorted by year
-    return sorted(result, key=lambda t: t[5], reverse=True)

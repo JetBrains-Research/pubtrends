@@ -51,12 +51,17 @@
     <!--    <script src="../static/wordcloud.js"/>-->
     <script src="{{ url_for('static', filename='text_utils.js') }}"></script>
     <!--    <script src="../static/text_utils.js"/>-->
+    <script src="{{ url_for('static', filename='papers.js') }}"></script>
+    <!--    <script src="../static/papers.js"/>-->
     <!-- Notify.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"
             integrity="sha512-efUTj3HdSPwWJ9gjfGR71X9cvsrthIA78/Fvd/IN+fttQVy7XWkOAXb295j8B3cmm/kFKVxjiNYzKw9IQJHIuQ=="
             crossorigin="anonymous"></script>
     <script src="{{ url_for('static', filename='feedback.js') }}"></script>
     <!--    <script src="../static/feedback.js"/>-->
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='feedback.css') }}?v=1">
+    <!--    <link rel="stylesheet" href="../static/feedback.css"/>-->
 
     <script>
         "use strict";
@@ -118,13 +123,25 @@
             window.open(url + '&jobid=' + jobid, '_blank');
         }
 
+        function review_callback(papersNumber, sentsNumber) {
+            const url = '/generate_review?query=' + normalize('{{ query }}') + '&source={{source}}&limit={{limit}}&sort={{sort}}';
+            // Decode jobid from URL
+            const jobid = new URL(window.location).searchParams.get('jobid');
+            window.open(url + '&jobid=' + jobid + '&papers_number=' + papersNumber + '&sents_number=' + sentsNumber, '_blank');
+        }
+
         $(document).ready(function () {
             // Mark search by default in datatables
             $.extend(true, $.fn.dataTable.defaults, {
                 mark: true
             });
 
+            // Disable formatter for the next section because of injections.
+            // Enable formatter control in File > Settings > Editor > Code Style
+            // @formatter:off
+
             // Setup datatables
+            window.papers_table = $('#papers-table').DataTable();
             $('#authors-table').DataTable();
             $('#journals-table').DataTable();
             {% if topic_evolution is defined %}
@@ -142,31 +159,53 @@
             {% endif %}
 
             // Process main word cloud
-            let words = JSON.parse(normalize('{{ papers_word_cloud }}'));
-            process_word_cloud('papers_word_cloud', $('#papers_word_cloud').outerWidth(), 335, 200, 300, words, papers_callback_word);
+            let word_records = JSON.parse(normalize('{{ papers_word_cloud }}'));
+            process_word_cloud('papers_word_cloud', $('#papers_word_cloud').outerWidth(),
+                335, 200, 300, word_records, papers_callback_word);
 
             // Process topics word clouds
             let cid = '';
-            {% for (script, div), word_cloud, zoom_in_callback in topics_info_and_word_cloud_and_callback %}
-                 words = JSON.parse(normalize('{{ word_cloud }}'));
+            {% for (script, div), word_cloud, is_empty, zoom_in_callback in topics_info_and_word_cloud_and_callback %}
+                 word_records = JSON.parse(normalize('{{ word_cloud }}'));
+                 // Ignore artificial tags for scale
+                 // word record [word, x, y, size, vertical, color]
+                word_records = word_records.filter(wr => !wr[0].startsWith("#"));
                  cid = 'topic_word_cloud_{{ loop.index }}';
-                 process_word_cloud(cid, $('#' + cid).outerWidth(), 335, 200, 300, words, papers_callback_word);
+                 if ({{ is_empty }}) {
+                     process_word_cloud(cid, $('#' + cid).outerWidth(), 335, 200, 300, word_records, null);
+                 } else {
+                    process_word_cloud(cid, $('#' + cid).outerWidth(), 335, 200, 300, word_records, papers_callback_word);
+                 }
             {% endfor %}
 
-            // Configure jobid for feedback
-            // Decode jobid from URL
-            const jobid = new URL(window.location).searchParams.get('jobid');
-            $('#feedback-jobid').val(jobid);
+            // @formatter:on
 
-            setTimeout(function() {
+            setTimeout(function () {
                 $.notify("See About ? for quick introduction.", {
                     className: "success",
                     position: "bottom right",
                     autoHideDelay: 15000
                 });
             }, 5000);
-        });
 
+            // Configure jobid for feedback for text message form, decode jobid from URL
+            const jobid = new URL(window.location).searchParams.get('jobid');
+            $('#feedback-jobid').val(jobid);
+
+            // Create clickable feedback forms
+            createClickableFeedBackForm("feedback-overview-form", "feedback-overview");
+            createClickableFeedBackForm("feedback-papers-list-form", "feedback-papers-list");
+            createClickableFeedBackForm("feedback-highlights-form", "feedback-highlights");
+            createClickableFeedBackForm("feedback-network-form", "feedback-network");
+            createClickableFeedBackForm("feedback-topics-form", "feedback-topics");
+            createClickableFeedBackForm("feedback-trends-form", "feedback-trends");
+            createClickableFeedBackForm("feedback-papers-form", "feedback-papers");
+            createClickableFeedBackForm("feedback-authors-form", "feedback-authors");
+            createClickableFeedBackForm("feedback-journals-form", "feedback-journals");
+            createClickableFeedBackForm("feedback-numbers-form", "feedback-numbers");
+            createClickableFeedBackForm("feedback-evolution-form", "feedback-evolution");
+            createClickableFeedBackForm("feedback-review-form", "feedback-review");
+        });
     </script>
 </head>
 <body>
@@ -209,6 +248,7 @@
                             Overview
                         </a>
                     </li>
+
                     {% if topics_analyzed %}
                     <li class="nav-item row">
                         <a class="nav-link no-padding-right" href="#highlights" title="Highlights">
@@ -251,6 +291,8 @@
                         </a>
                     </li>
                     {% endif %}
+
+                    {% if feature_authors_enabled %}
                     <li class="nav-item row">
                         <a class="nav-link no-padding-right" href="#authors" title="Authors">
                             <img src="{{ url_for('static', filename='users.svg') }}"/>
@@ -259,6 +301,9 @@
                             Authors
                         </a>
                     </li>
+                    {% endif %}
+
+                    {% if feature_journals_enabled %}
                     <li class="nav-item row">
                         <a class="nav-link no-padding-right" href="#journals" title="Journals">
                             <img class="nav-icon" src="{{ url_for('static', filename='book-open.svg') }}"/>
@@ -267,6 +312,9 @@
                             Journals
                         </a>
                     </li>
+                    {% endif %}
+
+                    {% if feature_numbers_enabled %}
                     <li class="nav-item row">
                         <a class="nav-link no-padding-right" href="#numbers" title="Numbers">
                             <img src="{{ url_for('static', filename='hash.svg') }}"/>
@@ -275,6 +323,9 @@
                             Numbers
                         </a>
                     </li>
+                    {% endif %}
+
+                    {% if feature_evolution_enabled %}
                     <li class="nav-item row">
                         <a class="nav-link no-padding-right" href="#evolution" title="Evolution">
                             <img src="{{ url_for('static', filename='compass.svg') }}"/>
@@ -283,6 +334,18 @@
                             Evolution
                         </a>
                     </li>
+                    {% endif %}
+
+                    {% if feature_review_enabled %}
+                    <li class="nav-item row">
+                        <a class="nav-link no-padding-right" href="#review" title="Review">
+                            <img class="nav-icon" src="{{ url_for('static', filename='list.svg') }}"/>
+                        </a>
+                        <a class="nav-link d-none d-xl-block no-padding" href="#review">
+                            Review
+                        </a>
+                    </li>
+                    {% endif %}
                     <li class="nav-item row">
                         <a class="nav-link no-padding-right" href="#feedback" title="Feedback">
                             <img class="nav-icon" src="{{ url_for('static', filename='edit.svg') }}"/>
@@ -297,40 +360,15 @@
 
         <!-- Main content -->
         <main class="col-lg-11 col-xl-8" role="main">
-            <div class="card mt-3">
+            <div class="card mt-3" autofocus>
                 <div class="card-title" id="overview">
                     <h2 class="card-header">Overview</h2>
                 </div>
                 <div class="card-body">
-                    <div class="row mb-3">
-                        <div class="col-sm-4">
-                            <div class="card">
-                                <div id="n_papers" class="card-body text-center">
-                                    <span class="stats-number"><b>{{ n_papers }}</b></span><br>
-                                    <span class="card-text">papers</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-4">
-                            <div id="n_citations" class="card">
-                                <div class="card-body text-center">
-                                    <span class="stats-number"><b>{{ n_citations }}</b></span><br>
-                                    <span class="card-text">citations</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-4">
-                            <div id="n_topics" class="card">
-                                <div class="card-body text-center">
-                                    <span class="stats-number"><b>{{ n_topics }}</b></span><br>
-                                    <span class="card-text">topics</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-3 no-padding-right" style="min-width: 185x;">
-                            <strong>Word cloud</strong>
+                    Total: <b>{{ n_papers }}</b> papers, <b>{{ n_topics }}</b> topics.
+                    <div class="row mt-2">
+                        <div class="col-3 no-padding-right" style="min-width: 185px;">
+                            <small><strong>Word cloud</strong></small>
                             <br>
                             <canvas id="papers_word_cloud" style="border:1px solid #eee; width: 100%; height: 100%;">
                                 Canvas is not supported in your browser.
@@ -343,6 +381,29 @@
                             {% endfor %}
                         </div>
                     </div>
+                    <table id="papers-table" class="table table-sm table-bordered table-striped">
+                        <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Title</th>
+                            <th scope="col">Doi</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for id, title, authors, url, journal, year, total, doi, topic in papers %}
+                        <tr>
+                            <th scope="row">{{ loop.index }}</th>
+                            <td>{{ title }}</td>
+                            <td>
+                                {% if doi != "" %}
+                                <a class="link" href="https://doi.org/{{doi}}">{{ doi }}</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+
                     <div id="search-in-papers" class="row">
                         <div class="col col-auto">
                             <input id="search-input" type="text" class="form-control"
@@ -350,38 +411,26 @@
                         </div>
                         <div class="col col-auto no-padding-left">
                             <button id="search_word" type="button" class="btn btn-light"
-                                    onclick="(function(){
-                                        papers_callback_word($('#search-input').val().trim())
-                                    })();">
+                                    onclick="papers_callback_word($('#search-input').val().trim());">
                                 <img src="{{ url_for('static', filename='search.svg') }}" alt=""/>&nbsp;Search
                             </button>
                         </div>
                     </div>
                     <div class="row mt-3">
                         <div class="col-auto">
-                            <button id="show_as_list" type="button" class="btn btn-light"
-                                    onclick="(function(){ papers_callback() })();">
-                                <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
+                            <button id="detailed_info" type="button" class="btn btn-light"
+                                    onclick="papers_callback();">
+                                Detailed info
+                            </button>
+                        </div>
+                        <div class="col-auto no-padding-left">
+                            <button id="export_to_csv" type="button" class="btn btn-light"
+                                    onclick="export_to_csv('papers-table', window.papers_table, '{{ export_name }}');">
+                                Export to CSV
                             </button>
                         </div>
                     </div>
-                    <div class="mt-3">
-                        <small class="text-muted">Was this useful?</small>
-                        <div id="feedback-overview" class="btn-group-horizontal">
-                            <button type="button" class="btn btn-sm btn-feedback-yes"
-                                    onclick="feedback(this, 1)">
-                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-meh"
-                                    onclick="feedback(this, 0)">
-                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-no"
-                                    onclick="feedback(this, -1)">
-                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                            </button>
-                        </div>
-                    </div>
+                    <div class="mt-3" id="feedback-papers-list-form"></div>
                 </div>
             </div>
 
@@ -396,7 +445,7 @@
                         Year reflects publication year of the original paper.
                     </p>
                     <button type="button" class="btn btn-light"
-                            onclick="(function(){ papers_callback_top_papers() })();">
+                            onclick="papers_callback_top_papers();">
                         <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
                     </button>
                     <div>
@@ -414,7 +463,7 @@
                         Different papers have different colors.
                     </p>
                     <button type="button" class="btn btn-light"
-                            onclick="(function(){ papers_callback_papers_of_the_year() })();">
+                            onclick="papers_callback_papers_of_the_year();">
                         <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
                     </button>
                     <div>
@@ -433,8 +482,8 @@
                         Different papers have different colors.
                     </p>
                     <button type="button" class="btn btn-light"
-                            onclick="(function(){ papers_callback_hot_papers() })();">
-                        <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
+                            onclick="papers_callback_hot_papers();">
+                        Show as list
                     </button>
                     <div>
                         {% for script, div in fastest_growth_per_year_papers %}
@@ -442,23 +491,7 @@
                         {{ div|safe }}
                         {% endfor %}
                     </div>
-                    <div class="mt-3">
-                        <small class="text-muted">Was this useful?</small>
-                        <div id="feedback-highlights" class="btn-group-horizontal">
-                            <button type="button" class="btn btn-sm btn-feedback-yes"
-                                    onclick="feedback(this, 1)">
-                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-meh"
-                                    onclick="feedback(this, 0)">
-                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-no"
-                                    onclick="feedback(this, -1)">
-                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                            </button>
-                        </div>
-                    </div>
+                    <div class="mt-3" id="feedback-highlights-form"></div>
                 </div>
             </div>
 
@@ -472,7 +505,7 @@
                         Explore citations between the papers of interest on the citations graph.
                     </p>
                     <button id="show_citations_graph" type="button" class="btn btn-light"
-                            onclick="(function(){ graph_callback('citations') })();">
+                            onclick="graph_callback('citations');">
                         Show citations graph
                     </button>
                     <hr>
@@ -484,26 +517,10 @@
                         Explore papers network, where similar papers are located together and connected.
                     </p>
                     <button id="show_similarity_graph" type="button" class="col-auto btn btn-light"
-                            onclick="(function(){ graph_callback('structure') })();">
+                            onclick="graph_callback('structure');">
                         Show similarity graph
                     </button>
-                    <div class="mt-3">
-                        <small class="text-muted">Was this useful?</small>
-                        <div id="feedback-network" class="btn-group-horizontal">
-                            <button type="button" class="btn btn-sm btn-feedback-yes"
-                                    onclick="feedback(this, 1)">
-                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-meh"
-                                    onclick="feedback(this, 0)">
-                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-no"
-                                    onclick="feedback(this, -1)">
-                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                            </button>
-                        </div>
-                    </div>
+                    <div class="mt-3" id="feedback-network-form"></div>
                 </div>
             </div>
 
@@ -543,23 +560,7 @@
                     {{ script|safe }}
                     {{ div|safe }}
                     {% endfor %}
-                    <div class="mt-3">
-                        <small class="text-muted">Was this useful?</small>
-                        <div id="feedback-topics" class="btn-group-horizontal">
-                            <button type="button" class="btn btn-sm btn-feedback-yes"
-                                    onclick="feedback(this, 1)">
-                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-meh"
-                                    onclick="feedback(this, 0)">
-                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-no"
-                                    onclick="feedback(this, -1)">
-                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                            </button>
-                        </div>
-                    </div>
+                    <div class="mt-3" id="feedback-topics-form"></div>
                 </div>
             </div>
 
@@ -587,23 +588,7 @@
                         {{ div|safe }}
                         {% endfor %}
                     </div>
-                    <div class="mt-3">
-                        <small class="text-muted">Was this useful?</small>
-                        <div id="feedback-trends" class="btn-group-horizontal">
-                            <button type="button" class="btn btn-sm btn-feedback-yes"
-                                    onclick="feedback(this, 1)">
-                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-meh"
-                                    onclick="feedback(this, 0)">
-                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-no"
-                                    onclick="feedback(this, -1)">
-                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                            </button>
-                        </div>
-                    </div>
+                    <div class="mt-3" id="feedback-trends-form"></div>
                 </div>
             </div>
 
@@ -618,7 +603,7 @@
                         Year reflects publication year of the original paper.
                     </p>
                     <div>
-                        {% for (script, div), word_cloud, zoom_in_callback in
+                        {% for (script, div), word_cloud, is_empty, zoom_in_callback in
                         topics_info_and_word_cloud_and_callback %}
                         <div id="topic-div-{{ loop.index }}">
                             <hr>
@@ -628,7 +613,7 @@
                                 - OTHER
                                 {% endif %}
                                 <button type="button" class="btn btn-light"
-                                        onclick="(function(){ papers_callback_component({{ loop.index }}); })();">
+                                        onclick="papers_callback_component({{ loop.index }});">
                                     <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as
                                     list
                                 </button>
@@ -667,27 +652,12 @@
                         <img src="{{ url_for('static', filename='zoom-out.svg') }}" alt="-"/>&nbsp;Zoom out to
                         related papers
                     </button>
-                    <div class="mt-3">
-                        <small class="text-muted">Was this useful?</small>
-                        <div id="feedback-papers" class="btn-group-horizontal">
-                            <button type="button" class="btn btn-sm btn-feedback-yes"
-                                    onclick="feedback(this, 1)">
-                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-meh"
-                                    onclick="feedback(this, 0)">
-                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-no"
-                                    onclick="feedback(this, -1)">
-                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                            </button>
-                        </div>
-                    </div>
+                    <div class="mt-3" id="feedback-papers-form"></div>
                 </div>
             </div>
             {% endif %}
 
+            {% if feature_authors_enabled is defined %}
             <div class="card mt-3">
                 <div class="card-title" id="authors">
                     <h1 class="card-header">Authors</h1>
@@ -715,7 +685,7 @@
                             <td>{{ row[0] }}</td>
                             <td>
                                 <button type="button" class="btn btn-link link"
-                                        onclick="(function(){ papers_callback_author('{{ row[0] }}');})();">
+                                        onclick="papers_callback_author('{{ row[0] }}');">
                                     {{ row[1] }}
                                 </button>
                             </td>
@@ -724,26 +694,12 @@
                         {% endfor %}
                         </tbody>
                     </table>
-                    <div class="mt-3">
-                        <small class="text-muted">Was this useful?</small>
-                        <div id="feedback-authors" class="btn-group-horizontal">
-                            <button type="button" class="btn btn-sm btn-feedback-yes"
-                                    onclick="feedback(this, 1)">
-                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-meh"
-                                    onclick="feedback(this, 0)">
-                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-no"
-                                    onclick="feedback(this, -1)">
-                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                            </button>
-                        </div>
-                    </div>
+                    <div class="mt-3" id="feedback-authors-form"></div>
                 </div>
             </div>
+            {% endif %}
 
+            {% if feature_journals_enabled %}
             <div class="card mt-3">
                 <div class="card-title" id="journals">
                     <h1 class="card-header">Journals</h1>
@@ -770,9 +726,8 @@
                             <th scope="row">{{ loop.index }}</th>
                             <td>{{ row[0] }}</td>
                             <td>
-                                <button type="button" class="btn btn-link link" onclick="(function(){
-                            papers_callback_journal('{{ row[0] }}');
-                        })();">{{ row[1] }}
+                                <button type="button" class="btn btn-link link"
+                                        onclick="papers_callback_journal('{{ row[0] }}');">{{ row[1] }}
                                 </button>
                             </td>
                             <td>{{ row[2]|safe }}</td>
@@ -780,26 +735,12 @@
                         {% endfor %}
                         </tbody>
                     </table>
-                    <div class="mt-3">
-                        <small class="text-muted">Was this useful?</small>
-                        <div id="feedback-journals" class="btn-group-horizontal">
-                            <button type="button" class="btn btn-sm btn-feedback-yes"
-                                    onclick="feedback(this, 1)">
-                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-meh"
-                                    onclick="feedback(this, 0)">
-                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-no"
-                                    onclick="feedback(this, -1)">
-                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                            </button>
-                        </div>
-                    </div>
+                    <div class="mt-3" id="feedback-journals-form"></div>
                 </div>
             </div>
+            {% endif %}
 
+            {% if feature_numbers_enabled %}
             <div class="card mt-3">
                 <div class="card-title" id="numbers">
                     <h1 class="card-header">Numbers</h1>
@@ -829,26 +770,12 @@
                         </tbody>
                     </table>
                     {% endif %}
-                    <div class="mt-3">
-                        <small class="text-muted">Was this useful?</small>
-                        <div id="feedback-numbers" class="btn-group-horizontal">
-                            <button type="button" class="btn btn-sm btn-feedback-yes"
-                                    onclick="feedback(this, 1)">
-                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-meh"
-                                    onclick="feedback(this, 0)">
-                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-no"
-                                    onclick="feedback(this, -1)">
-                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                            </button>
-                        </div>
-                    </div>
+                    <div class="mt-3" id="feedback-numbers-form"></div>
                 </div>
             </div>
+            {% endif %}
 
+            {% if feature_evolution_enabled %}
             <div class="card mt-3">
                 <div class="card-title" id="evolution">
                     <h1 class="card-header">Topic Evolution</h1>
@@ -888,28 +815,54 @@
                         </tbody>
                     </table>
                     {% endif %}
-                    <div class="mt-3">
-                        <small class="text-muted">Was this useful?</small>
-                        <div id="feedback-evolution" class="btn-group-horizontal">
-                            <button type="button" class="btn btn-sm btn-feedback-yes"
-                                    onclick="feedback(this, 1)">
-                                <img src="{{ url_for('static', filename='smile.svg') }}" alt="Yes"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-meh"
-                                    onclick="feedback(this, 0)">
-                                <img src="{{ url_for('static', filename='meh.svg') }}" alt="Not sure"/>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-feedback-no"
-                                    onclick="feedback(this, -1)">
-                                <img src="{{ url_for('static', filename='frown.svg') }}" alt="No"/>
-                            </button>
-                        </div>
-                    </div>
+                    <div class="mt-3" id="feedback-evolution-form"></div>
                     {% else %}
                     Failed to analyze topic evolution because year step is too big.
                     {% endif %}
                 </div>
             </div>
+            {% endif %}
+
+            {% if feature_review_enabled %}
+            <div class="card mt-3">
+                <div class="card-title" id="review">
+                    <h1 class="card-header">Review</h1>
+                </div>
+                <div class="card-body">
+                    <p>
+                        Generate a review for the chosen topic - a set of sentences from top cited papers <br>
+                        with the highest probability to be included in a real review paper.
+                    </p>
+                    <div class="row no-gutters align-items-center mb-3">
+                        <div class="col input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="number-papers-addon">Number of papers</span>
+                            </div>
+                            <input class="form-control form-control-borderless" type="number"
+                                   name="number-papers" id="papers-input"
+                                   value="10"
+                                   aria-describedby="number-papers-addon"
+                                   required>
+                        </div>
+                        <div class="col input-group ml-2">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="number-of-sents-addon">Sentences each</span>
+                            </div>
+                            <input class="form-control form-control-borderless" type="number"
+                                   name="number-of-sents" id="sents-input"
+                                   value="1"
+                                   aria-describedby="number-of-sents-addon"
+                                   required>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-secondary"
+                            onclick="review_callback($('#papers-input').val(), $('#sents-input').val());">
+                        Generate
+                    </button>
+                    <div class="mt-3" id="feedback-review-form"></div>
+                </div>
+            </div>
+            {% endif %}
 
             <div class="card mt-3">
                 <div class="card-title" id="feedback">
@@ -942,7 +895,7 @@
                                 We'll never share your email with anyone else.</small>
                         </div>
                         <div class="form-group">
-                            <button type="submit" class="btn btn-primary">Submit</button>
+                            <button type="submit" class="btn btn-secondary">Submit</button>
                         </div>
                         <div class="form-group">
                             <input type="hidden" class="form-control" id="feedback-jobid" name="jobid" value=""/>
@@ -981,6 +934,9 @@
 <script type="text/javascript">
     function startIntro() {
         var intro = introJs();
+        // Disable formatter for the next section because of injections.
+        // Enable formatter control in File > Settings > Editor > Code Style
+        // @formatter:off
         intro.setOptions({
             steps: [
                 {
@@ -992,21 +948,8 @@
                 },
                 {
                     element: '#overview',
-                    intro: "The report starts with a general information about the topic of interest. " +
-                        "It shows total number of papers, citations, and general information like overall " +
-                        "publications dynamics, and most common words in the field."
-                },
-                {
-                    element: '#n_papers',
-                    intro: '{{n_papers}} papers were found and analyzed.'
-                },
-                {
-                    element: '#n_citations',
-                    intro: '{{n_citations}} is the summary number of all the citations of the papers.'
-                },
-                {
-                    element: '#n_topics',
-                    intro: "{{n_topics}} topics were found among the papers.<br>"
+                    intro: "The report starts with a general information. " +
+                        "It shows total number of papers and topics, publications dynamics, and most common words in the field."
                 },
                 {
                     element: '#papers_word_cloud',
@@ -1014,12 +957,16 @@
                 },
                 {
                     element: '#search-in-papers',
-                    intro: "Or search anything in paper titles or abstracts."
+                    intro: "Search anything in paper titles or abstracts."
                 },
                 {
-                    element: '#show_as_list',
+                    element: '#detailed_info',
                     intro: "Click <img src=\"{{ url_for('static', filename='list.svg') }}\" alt=\"+\"/> " +
-                        "<em>Show as list</em> anytime to open the list of papers in a separate window."
+                        "<em>Detailed info</em> to open the list of papers in a separate window."
+                },
+                {
+                    element: '#export_to_csv',
+                    intro: "Export papers detailed information to CSV file"
                 },
                 {
                     element: '#highlights',
@@ -1053,6 +1000,8 @@
                         "about the papers. Click glyphs to open a page about corresponding paper in a " +
                         "new tab."
                 },
+
+                {% if features_authors_enabled %}
                 {
                     element: '#authors',
                     intro: "Information about authors and journals with the largest number of papers " +
@@ -1060,14 +1009,29 @@
                         "open all papers for a certain author or journal by clicking the corresponding " +
                         "number of papers."
                 },
+                {% endif %}
+
+                {% if features_numbers_enabled %}
                 {
                     element: '#numbers',
                     intro: "Explore quantitative features mentioned in papers!"
                 },
+                {% endif %}
+
+                {% if features_evolution_enabled %}
                 {
                     element: '#evolution',
                     intro: "Explore evolution of ideas in the field."
                 },
+                {% endif %}
+
+                {% if features_review_enabled %}
+                {
+                    element: '#review',
+                    intro: "Generate review - extractive summmarization."
+                },
+                {% endif %}
+
                 {
                     element: '#feedback',
                     intro: "Please help us to improve the service!<br>" +
@@ -1079,7 +1043,7 @@
                 }
             ]
         });
-
+        // @formatter:on
         intro.start();
     }
 

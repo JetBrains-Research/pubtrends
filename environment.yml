@@ -4,6 +4,7 @@ channels:
   - anaconda
   - conda-forge
   - bokeh
+  - pytorch
 dependencies:
   - bokeh=2.0.2
   - cachetools=3.1.1
@@ -22,13 +23,20 @@ dependencies:
   - networkx=2.4
   - python-louvain=0.13
   - scikit-learn=0.22.1
+  - pytorch=1.4.0
+  - transformers=3.1.0
+  - tensorboardx=2.1
+  - psutil=5.7.2
+  - unidecode=1.1.0
   - spacy=2.3.2
   - pip
   - pip:
       - gunicorn
       - redis
-      - neo4j==1.7.6
       - vine==1.3.0
+      - lazy==1.4
+      - rouge==1.0.0
+      - neo4j==1.7.6
       - flask-admin==1.5.6
       - flask-security==3.0.0
       - flask-sqlalchemy==2.4.1

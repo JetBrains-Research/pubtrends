@@ -1,67 +1,38 @@
 import unittest
 
 import numpy as np
-from parameterized import parameterized
+from pandas._testing import assert_frame_equal
 
-from pysrc.papers.analyzer import KeyPaperAnalyzer
-from pysrc.papers.pubtrends_config import PubtrendsConfig
+from pysrc.papers.analysis.citations import build_cocit_grouped_df, merge_citation_stats
+from pysrc.papers.analysis.graph import build_citation_graph
+from pysrc.papers.analyzer import PapersAnalyzer
+from pysrc.papers.config import PubtrendsConfig
 from pysrc.test.mock_loaders import MockLoader, \
-    CITATION_YEARS, EXPECTED_MAX_GAIN, EXPECTED_MAX_RELATIVE_GAIN, CITATION_GRAPH_NODES, CITATION_GRAPH_EDGES, \
-    MockLoaderEmpty, MockLoaderSingle, SIMILARITY_GRAPH
+    CITATION_YEARS, MockLoaderEmpty, MockLoaderSingle, BIBCOUPLING_DF, COCITATION_DF
 
 
-class TestKeyPaperAnalyzer(unittest.TestCase):
+class TestPapersAnalyzer(unittest.TestCase):
     PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
 
     @classmethod
     def setUpClass(cls):
         loader = MockLoader()
-        cls.analyzer = KeyPaperAnalyzer(loader, TestKeyPaperAnalyzer.PUBTRENDS_CONFIG, test=True)
+        cls.analyzer = PapersAnalyzer(loader, TestPapersAnalyzer.PUBTRENDS_CONFIG, test=True)
         ids = cls.analyzer.search_terms(query='query')
         cls.analyzer.TOPIC_MIN_SIZE = 0  # Disable merging for tests
         cls.analyzer.analyze_papers(ids, 'query')
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.ids)
-        cls.analyzer.citations_graph = cls.analyzer.build_citation_graph(cls.analyzer.cit_df)
+        cls.analyzer.citations_graph = build_citation_graph(cls.analyzer.cit_df)
         cls.analyzer.bibliographic_coupling_df = loader.load_bibliographic_coupling(cls.analyzer.ids)
 
-    def test_build_citation_graph_nodes_count(self):
-        self.assertEqual(self.analyzer.citations_graph.number_of_nodes(), len(CITATION_GRAPH_NODES))
+    def test_bibcoupling(self):
+        assert_frame_equal(BIBCOUPLING_DF, self.analyzer.bibliographic_coupling_df)
 
-    def test_build_citation_graph_edges_count(self):
-        self.assertEqual(self.analyzer.citations_graph.number_of_edges(), len(CITATION_GRAPH_EDGES))
-
-    def test_build_citation_graph_nodes(self):
-        self.assertCountEqual(list(self.analyzer.citations_graph.nodes()), CITATION_GRAPH_NODES)
-
-    def test_build_citation_graph_edges(self):
-        self.assertCountEqual(list(self.analyzer.citations_graph.edges()), CITATION_GRAPH_EDGES)
-
-    def test_build_similarity_graph_edges(self):
-        self.assertCountEqual(list(self.analyzer.similarity_graph.edges(data=True)), SIMILARITY_GRAPH)
-
-    def test_find_max_gain_papers_count(self):
-        max_gain_count = len(list(self.analyzer.max_gain_df['year'].values))
-        self.assertEqual(max_gain_count, len(EXPECTED_MAX_GAIN.keys()))
-
-    def test_find_max_gain_papers_years(self):
-        max_gain_years = list(self.analyzer.max_gain_df['year'].values)
-        self.assertCountEqual(max_gain_years, EXPECTED_MAX_GAIN.keys())
-
-    def test_find_max_gain_papers_ids(self):
-        max_gain = dict(self.analyzer.max_gain_df[['year', 'id']].values)
-        self.assertDictEqual(max_gain, EXPECTED_MAX_GAIN)
-
-    def test_find_max_relative_gain_papers_count(self):
-        max_rel_gain_count = len(list(self.analyzer.max_rel_gain_df['year'].values))
-        self.assertEqual(max_rel_gain_count, len(EXPECTED_MAX_RELATIVE_GAIN.keys()))
-
-    def test_find_max_relative_gain_papers_years(self):
-        max_rel_gain_years = list(self.analyzer.max_rel_gain_df['year'].values)
-        self.assertCountEqual(max_rel_gain_years, EXPECTED_MAX_RELATIVE_GAIN.keys())
-
-    def test_find_max_relative_gain_papers_ids(self):
-        max_rel_gain = dict(self.analyzer.max_rel_gain_df[['year', 'id']].values)
-        self.assertDictEqual(max_rel_gain, EXPECTED_MAX_RELATIVE_GAIN)
+    def test_cocitation(self):
+        df = build_cocit_grouped_df(self.analyzer.cocit_df)[
+            ['cited_1', 'cited_2', 'total']].reset_index(drop=True)
+        df.columns = ['cited_1', 'cited_2', 'total']
+        assert_frame_equal(COCITATION_DF, df)
 
     def test_merge_comps_paper_count(self):
         self.assertEqual(len(self.analyzer.df), len(self.analyzer.pub_df))
@@ -78,105 +49,31 @@ class TestKeyPaperAnalyzer(unittest.TestCase):
             if getattr(row, 'id') not in nodes:
                 self.assertEqual(getattr(row, 'comp'), -1)
 
-    @parameterized.expand([
-        ('threshold 5', 5, ['3', '1', '4', '2', '5']),
-        ('threshold 10', 10, ['3', '1', '4', '2', '5']),
-        ('limit-2', 2, ['3', '1']),
-        ('limit-4', 4, ['3', '1', '4', '2'])
-    ])
-    def test_find_top_cited_papers(self, name, max_papers, expected):
-        _, top_cited_df = self.analyzer.find_top_cited_papers(self.analyzer.df, n_papers=max_papers)
-        top_cited_papers = list(top_cited_df['id'].values)
-        self.assertListEqual(top_cited_papers, expected, name)
-
-    @parameterized.expand([
-        ('5_0', {1: 0, 2: 1, 3: 2, 4: 3, 5: 4}, 5, 0, ({1: 0, 2: 1, 3: 2, 4: 3, 5: 4}, 0)),
-        ('4_0', {1: 0, 2: 1, 3: 2, 4: 3, 5: 4}, 4, 0, ({1: 1, 2: 2, 3: 3, 4: 0, 5: 0}, 2)),
-        ('1_0', {1: 0, 2: 1, 3: 1, 4: 1, 5: 1}, 1, 0, ({1: 0, 2: 0, 3: 0, 4: 0, 5: 0}, 2)),
-        ('5_10', {1: 0, 2: 1, 3: 2, 4: 3, 5: 4}, 1, 10, ({1: 0, 2: 0, 3: 0, 4: 0, 5: 0}, 5)),
-    ])
-    def test_merge_components(self, name, partition, max_topics_number, topic_min_size, expected):
-        partition, n_components_merged = self.analyzer.merge_components(
-            partition, topic_min_size=topic_min_size, max_topics_number=max_topics_number)
-        expected_partition, expected_merged = expected
-        self.assertEqual(n_components_merged, expected_merged, name)
-        self.assertEqual(partition, expected_partition, name)
-
     def test_merge_citation_stats_paper_count(self):
-        df, _, _, _ = self.analyzer.merge_citation_stats(self.analyzer.pub_df, self.analyzer.cit_stats_df)
+        df, _ = merge_citation_stats(self.analyzer.pub_df, self.analyzer.cit_stats_df)
         self.assertEqual(len(df), len(self.analyzer.pub_df))
 
     def test_merge_citation_stats_total_value_ge_0(self):
-        df, _, _, _ = self.analyzer.merge_citation_stats(self.analyzer.pub_df, self.analyzer.cit_stats_df)
+        df, _ = merge_citation_stats(self.analyzer.pub_df, self.analyzer.cit_stats_df)
         added_columns = self.analyzer.cit_stats_df.columns
         self.assertFalse(np.any(df[added_columns].isna()), msg='NaN values in citation stats')
         self.assertTrue(np.all(df['total'] >= 0), msg='Negative total citations count')
 
     def test_merge_citation_stats_citation_years(self):
-        _, _, _, citation_years = self.analyzer.merge_citation_stats(self.analyzer.pub_df, self.analyzer.cit_stats_df)
+        _, citation_years = merge_citation_stats(self.analyzer.pub_df, self.analyzer.cit_stats_df)
         self.assertCountEqual(citation_years, CITATION_YEARS)
 
-    def test_get_most_cited_papers_for_comps(self):
-        comps = self.analyzer.get_most_cited_papers_for_comps(self.analyzer.df, self.analyzer.partition, 1)
-        self.assertDictEqual(comps, {0: ['3']})
 
-    def test_corpus_vectorization(self):
-        self.assertEquals(self.analyzer.corpus_ngrams,
-                          ['abstract', 'breakthrough', 'interesting', 'kw1', 'kw2', 'kw3', 'kw4', 'kw5', 'paper'])
-        self.assertTrue(np.array_equal(self.analyzer.corpus_counts.toarray(),
-                                       [[0, 0, 0, 1, 1, 0, 0, 0, 1],
-                                        [1, 0, 0, 0, 1, 1, 0, 0, 0],
-                                        [1, 0, 0, 0, 0, 1, 1, 0, 0],
-                                        [0, 0, 1, 0, 0, 0, 1, 1, 1],
-                                        [0, 1, 0, 1, 0, 0, 0, 1, 0]]))
-
-
-class TestKeyPaperAnalyzerSingle(unittest.TestCase):
+class TestPapersAnalyzerSingle(unittest.TestCase):
     PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
 
     @classmethod
     def setUpClass(cls):
-        cls.analyzer = KeyPaperAnalyzer(MockLoaderSingle(), TestKeyPaperAnalyzerSingle.PUBTRENDS_CONFIG, test=True)
+        cls.analyzer = PapersAnalyzer(MockLoaderSingle(), TestPapersAnalyzerSingle.PUBTRENDS_CONFIG, test=True)
         ids = cls.analyzer.search_terms(query='query')
         cls.analyzer.analyze_papers(ids, 'query')
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.ids)
-        cls.analyzer.citations_graph = cls.analyzer.build_citation_graph(cls.analyzer.cit_df)
-
-    def test_build_citation_graph_nodes_count(self):
-        self.assertEqual(self.analyzer.citations_graph.number_of_nodes(), 0)
-
-    def test_build_citation_graph_edges_count(self):
-        self.assertEqual(self.analyzer.citations_graph.number_of_edges(), 0)
-
-    def test_build_citation_graph_nodes(self):
-        self.assertCountEqual(list(self.analyzer.citations_graph.nodes()), [])
-
-    def test_build_citation_graph_edges(self):
-        self.assertCountEqual(list(self.analyzer.citations_graph.edges()), [])
-
-    def test_find_max_gain_papers_count(self):
-        max_gain_count = len(list(self.analyzer.max_gain_df['year'].values))
-        self.assertEqual(max_gain_count, len(EXPECTED_MAX_GAIN.keys()))
-
-    def test_find_max_gain_papers_years(self):
-        max_gain_years = list(self.analyzer.max_gain_df['year'].values)
-        self.assertCountEqual(max_gain_years, EXPECTED_MAX_GAIN.keys())
-
-    def test_find_max_gain_papers_ids(self):
-        max_gain = dict(self.analyzer.max_gain_df[['year', 'id']].values)
-        self.assertDictEqual(max_gain, {1972: '1', 1974: '1'})
-
-    def test_find_max_relative_gain_papers_count(self):
-        max_rel_gain_count = len(list(self.analyzer.max_rel_gain_df['year'].values))
-        self.assertEqual(max_rel_gain_count, len(EXPECTED_MAX_RELATIVE_GAIN.keys()))
-
-    def test_find_max_relative_gain_papers_years(self):
-        max_rel_gain_years = list(self.analyzer.max_rel_gain_df['year'].values)
-        self.assertCountEqual(max_rel_gain_years, EXPECTED_MAX_RELATIVE_GAIN.keys())
-
-    def test_find_max_relative_gain_papers_ids(self):
-        max_rel_gain = dict(self.analyzer.max_rel_gain_df[['year', 'id']].values)
-        self.assertDictEqual(max_rel_gain, {1972: '1', 1974: '1'})
+        cls.analyzer.citations_graph = build_citation_graph(cls.analyzer.cit_df)
 
     def test_attrs(self):
         all_attrs = [
@@ -193,6 +90,7 @@ class TestKeyPaperAnalyzerSingle(unittest.TestCase):
             'max_gain_df',
             'max_rel_gain_papers',
             'max_rel_gain_df',
+            # These are optionaldd
             'journal_stats',
             'author_stats',
         ]
@@ -201,26 +99,29 @@ class TestKeyPaperAnalyzerSingle(unittest.TestCase):
 
     def test_dump(self):
         dump = self.analyzer.dump()
-        self.assertEqual('{"comp":{"0":0},"kwd":{"0":"article:0.500,paper:0.500"}}', dump['df_kwd'])
+        self.assertEqual(
+            '{"comp":{"0":0},'
+            '"kwd":{"0":"article:0.143,paper:0.143,term1:0.143,term2:0.143,term3:0.143,kw1:0.143,kw2:0.143"}}',
+            dump['kwd_df'])
 
 
-class TestKeyPaperAnalyzerMissingPaper(unittest.TestCase):
+class TestPapersAnalyzerMissingPaper(unittest.TestCase):
     PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
 
     def test_missing_paper(self):
-        analyzer = KeyPaperAnalyzer(MockLoaderSingle(), TestKeyPaperAnalyzerSingle.PUBTRENDS_CONFIG, test=True)
+        analyzer = PapersAnalyzer(MockLoaderSingle(), TestPapersAnalyzerSingle.PUBTRENDS_CONFIG, test=True)
         good_ids = list(analyzer.search_terms(query='query'))
         analyzer.analyze_papers(good_ids + ['non-existing-id'], 'query')
         self.assertEqual(good_ids, list(analyzer.ids))
 
 
-class TestKeyPaperAnalyzerEmpty(unittest.TestCase):
+class TestPapersAnalyzerEmpty(unittest.TestCase):
     PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
 
     @classmethod
     def setUpClass(cls):
-        cls.analyzer = KeyPaperAnalyzer(MockLoaderEmpty(),
-                                        TestKeyPaperAnalyzerEmpty.PUBTRENDS_CONFIG, test=True)
+        cls.analyzer = PapersAnalyzer(MockLoaderEmpty(),
+                                      TestPapersAnalyzerEmpty.PUBTRENDS_CONFIG, test=True)
 
     def test_setup(self):
         with self.assertRaises(Exception):

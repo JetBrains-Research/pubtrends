@@ -1,11 +1,11 @@
 import unittest
 
-from pysrc.papers.pubtrends_config import PubtrendsConfig
+from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.ss_postgres_loader import SemanticScholarPostgresLoader
 from pysrc.papers.db.ss_postgres_writer import SemanticScholarPostgresWriter
 from pysrc.test.db.abstract_test_ss_loader import AbstractTestSemanticScholarLoader
-from pysrc.test.db.ss_test_articles import required_articles, extra_articles, required_citations, \
-    extra_citations
+from pysrc.test.db.ss_test_articles import REQUIRED_ARTICLES, EXTRA_ARTICLES, REQUIRED_CITATIONS, \
+    EXTRA_CITATIONS
 
 
 class TestSemanticScholarPostgresLoader(unittest.TestCase, AbstractTestSemanticScholarLoader):
@@ -17,12 +17,12 @@ class TestSemanticScholarPostgresLoader(unittest.TestCase, AbstractTestSemanticS
         cls.loader = TestSemanticScholarPostgresLoader.loader
 
         # Text search is not tested, imitating search results
-        cls.ids = list(map(lambda article: article.ssid, required_articles))
+        cls.ids = list(map(lambda article: article.ssid, REQUIRED_ARTICLES))
 
         writer = SemanticScholarPostgresWriter(TestSemanticScholarPostgresLoader.test_config)
         writer.init_semantic_scholar_database()
-        writer.insert_semantic_scholar_publications(required_articles + extra_articles)
-        writer.insert_semantic_scholar_citations(required_citations + extra_citations)
+        writer.insert_semantic_scholar_publications(REQUIRED_ARTICLES + EXTRA_ARTICLES)
+        writer.insert_semantic_scholar_citations(REQUIRED_CITATIONS + EXTRA_CITATIONS)
 
         # Get data via loader methods
         cls.pub_df = cls.loader.load_publications(cls.ids)

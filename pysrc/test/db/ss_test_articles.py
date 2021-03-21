@@ -40,14 +40,14 @@ article10 = SemanticScholarArticle(ssid='390f6fbb1f25bfbc53232e8248c581cdcc1fb9e
                                    title='Article 10 is here', abstract='Abstract 10',
                                    year=2017)
 
-required_articles = [article1, article2, article3, article4, article6, article7, article8, article9, article10]
-extra_articles = [article5]
-required_citations = [(article1, article4), (article1, article3), (article1, article8),
+REQUIRED_ARTICLES = [article1, article2, article3, article4, article6, article7, article8, article9, article10]
+EXTRA_ARTICLES = [article5]
+REQUIRED_CITATIONS = [(article1, article4), (article1, article3), (article1, article8),
                       (article3, article8), (article2, article4), (article2, article3),
                       (article6, article7), (article6, article10)]
-extra_citations = [(article5, article1)]
+EXTRA_CITATIONS = [(article5, article1)]
 
-citations_stats = [[article1.ssid, article5.year, 1],
+CITATIONS_STATS = [[article1.ssid, article5.year, 1],
                    [article3.ssid, article1.year, 1],
                    [article3.ssid, article2.year, 1],
                    [article4.ssid, article1.year, 1],
@@ -57,65 +57,27 @@ citations_stats = [[article1.ssid, article5.year, 1],
                    [article8.ssid, article3.year, 1],
                    [article10.ssid, article6.year, 1]]
 
-expected_cit_stats_df = pd.DataFrame(citations_stats, columns=['id', 'year', 'count']) \
+EXPECTED_CIT_STATS_DF = pd.DataFrame(CITATIONS_STATS, columns=['id', 'year', 'count']) \
     .sort_values(by=['id', 'year']).reset_index(drop=True)
 
-pub_df = pd.DataFrame.from_records([article.to_dict() for article in required_articles])
-pub_df.abstract = ''
+PUB_DF = pd.DataFrame.from_records([article.to_dict() for article in REQUIRED_ARTICLES])
+PUB_DF.abstract = ''
 
-expected_cit_df = pd.DataFrame([(article_out.ssid, article_in.ssid) for article_out, article_in in required_citations],
+EXPECTED_CIT_DF = pd.DataFrame([(article_out.ssid, article_in.ssid) for article_out, article_in in REQUIRED_CITATIONS],
                                columns=['id_out', 'id_in']).sort_values(by=['id_out', 'id_in']).reset_index(drop=True)
 
-citations_graph = nx.DiGraph()
-for citation in required_citations:
-    u, v = citation
-    citations_graph.add_edge(u.ssid, v.ssid)
+COCITATIONS_DATA = [[article6.ssid, article7.ssid, article10.ssid, article6.year],
+                    [article1.ssid, article4.ssid, article3.ssid, article1.year],
+                    [article2.ssid, article4.ssid, article3.ssid, article2.year],
+                    [article1.ssid, article8.ssid, article3.ssid, article1.year],
+                    [article1.ssid, article4.ssid, article8.ssid, article1.year]]
 
-expected_cgraph = nx.Graph()
-expected_cgraph.add_weighted_edges_from([(article7.ssid, article10.ssid, 1),
-                                         (article4.ssid, article3.ssid, 2),
-                                         (article3.ssid, article8.ssid, 1),
-                                         (article4.ssid, article8.ssid, 1)])
-
-raw_cocitations = [[article6.ssid, article7.ssid, article10.ssid, article6.year],
-                   [article1.ssid, article4.ssid, article3.ssid, article1.year],
-                   [article2.ssid, article4.ssid, article3.ssid, article2.year],
-                   [article1.ssid, article8.ssid, article3.ssid, article1.year],
-                   [article1.ssid, article4.ssid, article8.ssid, article1.year]]
-
-expected_cocit_df = pd.DataFrame(raw_cocitations, columns=['citing', 'cited_1', 'cited_2', 'year']) \
+EXPECTED_COCIT_DF = pd.DataFrame(COCITATIONS_DATA, columns=['citing', 'cited_1', 'cited_2', 'year']) \
     .sort_values(by=['citing', 'cited_1', 'cited_2']).reset_index(drop=True)
 
-cocitations = [[article7.ssid, article10.ssid, 1],
-               [article4.ssid, article3.ssid, 2],
-               [article3.ssid, article8.ssid, 1],
-               [article4.ssid, article8.ssid, 1]]
-
-cocitations_df = pd.DataFrame(cocitations, columns=['cited_1', 'cited_2', 'total']) \
-    .sort_values(by=['cited_1', 'cited_2']).reset_index(drop=True)
-
-bibliographic_coupling_df = \
-    pd.DataFrame([], columns=['citing_1', 'citing_2', 'total'])
-
-expected_cocit_and_cit_graph = nx.Graph()
-expected_cocit_and_cit_graph.add_weighted_edges_from([(article7.ssid, article10.ssid, 1),
-                                                      (article4.ssid, article3.ssid, 2),
-                                                      (article3.ssid, article8.ssid, 1.3),
-                                                      (article4.ssid, article8.ssid, 1),
-                                                      (article6.ssid, article7.ssid, 0.3),
-                                                      (article6.ssid, article10.ssid, 0.3),
-                                                      (article2.ssid, article3.ssid, 0.3),
-                                                      (article2.ssid, article4.ssid, 0.3),
-                                                      (article1.ssid, article4.ssid, 0.3),
-                                                      (article1.ssid, article3.ssid, 0.3),
-                                                      (article1.ssid, article8.ssid, 0.3)])
-
-part_of_articles = [article1, article4, article3, article8, article7, article10]
-expanded_articles_df = pd.DataFrame(
+ARTICLES_LIST = [article1, article4, article3, article8, article7, article10]
+EXPANDED_ARTICLES_DF = pd.DataFrame(
     [[article1.ssid, 1], [article6.ssid, 1], [article2.ssid, 1],
      [article4.ssid, 2], [article8.ssid, 2], [article3.ssid, 2]],
     columns=['id', 'total']
 )
-
-pub_df_given_ids = pd.DataFrame.from_records([article.to_dict() for article in part_of_articles]) \
-    .sort_values(by=['ssid']).reset_index(drop=True)

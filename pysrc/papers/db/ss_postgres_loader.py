@@ -7,7 +7,7 @@ from pysrc.papers.db.loader import Loader
 from pysrc.papers.db.postgres_connector import PostgresConnector
 from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres, \
     process_bibliographic_coupling_postgres, process_cocitations_postgres, no_stemming_filter
-from pysrc.papers.utils import crc32, SORT_MOST_RELEVANT, SORT_MOST_CITED, SORT_MOST_RECENT, preprocess_doi, \
+from pysrc.papers.utils import crc32, SORT_MOST_CITED, SORT_MOST_RECENT, preprocess_doi, \
     preprocess_search_title
 
 logger = logging.getLogger(__name__)
@@ -50,7 +50,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
 
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df = pd.DataFrame(cursor.fetchall(), columns=['id'], dtype=object)
+            df = pd.DataFrame(cursor.fetchall(), columns=['id'])
 
         return list(df['id'].astype(str))
 
@@ -62,15 +62,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         # Disable stemming-based lookup for now, see: https://github.com/JetBrains-Research/pubtrends/issues/242
         exact_filter = no_stemming_filter(query_str)
 
-        if sort == SORT_MOST_RELEVANT:
-            query = f'''
-                SELECT ssid
-                FROM to_tsquery('{query_str}') query, SSPublications P
-                WHERE tsv @@ query {exact_filter}
-                ORDER BY ts_rank_cd(P.tsv, query) DESC
-                LIMIT {limit};
-                '''
-        elif sort == SORT_MOST_CITED:
+        if sort == SORT_MOST_CITED:
             query = f'''
                 SELECT P.ssid
                 FROM to_tsquery('{query_str}') query, SSPublications P
@@ -94,7 +86,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
 
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            pub_df = pd.DataFrame(cursor.fetchall(), columns=['id'], dtype=object)
+            pub_df = pd.DataFrame(cursor.fetchall(), columns=['id'])
 
         # Duplicate rows may occur if crawler was stopped while parsing Semantic Scholar archive
         pub_df.drop_duplicates(subset='id', inplace=True)
@@ -122,7 +114,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         pub_df['type'] = 'Article'
         pub_df['mesh'] = ''
         pub_df['keywords'] = ''
-        return Loader.process_publications_dataframe(pub_df)
+        return Loader.process_publications_dataframe(ids, pub_df)
 
     def load_citations_by_year(self, ids):
         self.check_connection()
@@ -139,7 +131,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             cit_stats_df_from_query = pd.DataFrame(cursor.fetchall(),
-                                                   columns=['id', 'year', 'count'], dtype=object)
+                                                   columns=['id', 'year', 'count'])
 
         if np.any(cit_stats_df_from_query.isna()):
             raise ValueError('NaN values are not allowed in citation stats DataFrame')
@@ -163,7 +155,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
 
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df = pd.DataFrame(cursor.fetchall(), columns=['id'], dtype=object)
+            df = pd.DataFrame(cursor.fetchall(), columns=['id'])
         return list(df['id'].astype(str))
 
     def estimate_citations(self, ids):
@@ -182,7 +174,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             citations = pd.DataFrame(cursor.fetchall(),
-                                     columns=['id_out', 'id_in'], dtype=object)
+                                     columns=['id_out', 'id_in'])
 
         # TODO[shpynov] we can make it on DB side
         citations = citations[citations['id_out'].isin(ids)]
@@ -238,7 +230,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
                 '''
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df = pd.DataFrame(cursor.fetchall(), columns=['id', 'total'], dtype=object)
+            df = pd.DataFrame(cursor.fetchall(), columns=['id', 'total'])
         df['id'] = df['id'].astype(str)
         df.fillna(value=1, inplace=True)
         return df

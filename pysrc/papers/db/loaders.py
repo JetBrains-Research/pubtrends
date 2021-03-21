@@ -13,7 +13,7 @@ class Loaders:
     @staticmethod
     def source(loader, test=False):
         # Determine source to provide correct URLs to articles,
-        # see paper.py#get_loader_and_url_prefix
+        # see #get_loader_and_url_prefix
         # TODO: Bad design, refactor
         if isinstance(loader, PubmedNeo4jLoader) or \
                 isinstance(loader, PubmedPostgresLoader):

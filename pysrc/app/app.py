@@ -6,41 +6,34 @@ import os
 import random
 import re
 import tempfile
-from threading import Lock
+from celery.result import AsyncResult
+from flask import Flask, url_for, redirect, render_template, request, render_template_string, \
+    send_from_directory, send_file
 from urllib.parse import quote
 
-import flask_admin
-from celery.result import AsyncResult
-from flask import Flask, url_for, redirect, render_template, request, abort, render_template_string, \
-    send_from_directory, send_file, jsonify
-from flask_admin import helpers as admin_helpers, expose, BaseView
-from flask_security import Security, SQLAlchemyUserDatastore, \
-    UserMixin, RoleMixin, current_user
-from flask_security.utils import hash_password
-from flask_sqlalchemy import SQLAlchemy
-
-from pysrc.app.admin.feedback import prepare_feedback_data
-from pysrc.app.admin.stats import prepare_stats_data
-from pysrc.celery.tasks import celery, find_paper_async, analyze_search_terms, analyze_id_list
+from pysrc.app.admin.admin import configure_admin_functions
+from pysrc.app.predefined import save_predefined, load_predefined_viz_log, load_predefined_or_result_data
+from pysrc.app.utils import log_request, MAX_QUERY_LENGTH, SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, \
+    SOMETHING_WENT_WRONG_PAPER, SOMETHING_WENT_WRONG_TOPIC
+from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.celery.tasks_cache import get_or_cancel_task
-from pysrc.papers.analyzer import KeyPaperAnalyzer
-from pysrc.papers.pubtrends_config import PubtrendsConfig
+from pysrc.celery.tasks_main import find_paper_async, analyze_search_terms, analyze_id_list
+from pysrc.papers.analyzer import PapersAnalyzer
+from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
-from pysrc.papers.paper import prepare_paper_data, prepare_papers_data
+from pysrc.papers.plot.plotter_paper import prepare_paper_data
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.plot.plotter import Plotter
-from pysrc.papers.utils import zoom_name, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE, trim, ZOOM_OUT_TITLE
+from pysrc.papers.utils import zoom_name, trim, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE, ZOOM_OUT_TITLE
 from pysrc.version import VERSION
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
-MAX_QUERY_LENGTH = 60
-
-SOMETHING_WENT_WRONG_SEARCH = 'Something went wrong, please <a href="/">rerun</a> your search.'
-SOMETHING_WENT_WRONG_TOPIC = 'Something went wrong, please <a href="/">rerun</a> your topic analysis.'
-SOMETHING_WENT_WRONG_PAPER = 'Something went wrong, please <a href="/">rerun</a> your paper analysis.'
-ERROR_OCCURRED = "Error occurred. We're working on it. Please check back soon."
+if PUBTRENDS_CONFIG.feature_review_enabled:
+    from pysrc.review.app.review import REVIEW_ANALYSIS_TITLE, register_app_review
+else:
+    REVIEW_ANALYSIS_TITLE = 'not_available'
 
 app = Flask(__name__)
 
@@ -57,16 +50,6 @@ for p in LOG_PATHS:
 else:
     raise RuntimeError('Failed to configure main log file')
 
-PREDEFINED_PATHS = ['/predefined', os.path.expanduser('~/.pubtrends/predefined')]
-for p in PREDEFINED_PATHS:
-    if os.path.isdir(p):
-        predefined_path = p
-        break
-else:
-    raise RuntimeError('Failed to configure predefined searches dir')
-PREDEFINED_LOCK = Lock()
-
-
 logging.basicConfig(filename=logfile,
                     filemode='a',
                     format='[%(asctime)s,%(msecs)03d: %(levelname)s/%(name)s] %(message)s',
@@ -82,13 +65,8 @@ if __name__ != '__main__':
 logger = app.logger
 
 
-def log_request(r):
-    return f'addr:{r.remote_addr} args:{json.dumps(r.args)}'
-
-
 @app.route('/robots.txt')
 @app.route('/sitemap.xml')
-@app.route('/about.html')
 @app.route('/feedback.js')
 @app.route('/style.css')
 @app.route('/about_humanaging_graph.png')
@@ -152,66 +130,6 @@ def status():
     })
 
 
-def save_predefined(viz, data, log, jobid):
-    if jobid.startswith('predefined_'):
-        logger.info('Saving predefined search')
-        path = os.path.join(predefined_path, jobid)
-        try:
-            PREDEFINED_LOCK.acquire()
-            path_viz = f'{path}_viz.json.gz'
-            path_data = f'{path}_data.json.gz'
-            path_log = f'{path}_log.gz'
-            if not os.path.exists(path_viz):
-                with gzip.open(path_viz, 'w') as f:
-                    f.write(json.dumps(viz).encode('utf-8'))
-            if not os.path.exists(path_data):
-                with gzip.open(path_data, 'w') as f:
-                    f.write(json.dumps(data).encode('utf-8'))
-            if not os.path.exists(path_log):
-                with gzip.open(path_log, 'w') as f:
-                    f.write(log.encode('utf-8'))
-        finally:
-            PREDEFINED_LOCK.release()
-
-
-def load_predefined_viz_log(jobid):
-    if jobid.startswith('predefined_'):
-        logger.info('Trying to load predefined viz, log')
-        path = os.path.join(predefined_path, jobid)
-        path_viz = f'{path}_viz.json.gz'
-        path_log = f'{path}_log.gz'
-        try:
-            PREDEFINED_LOCK.acquire()
-            if os.path.exists(path_viz) and os.path.exists(path_log):
-                with gzip.open(path_viz, 'r') as f:
-                    viz = json.loads(f.read().decode('utf-8'))
-                with gzip.open(path_log, 'r') as f:
-                    log = f.read().decode('utf-8')
-                return viz, log
-        finally:
-            PREDEFINED_LOCK.release()
-    return None
-
-
-def load_predefined_or_result_data(jobid):
-    if jobid.startswith('predefined_'):
-        logger.info('Trying to load predefined data')
-        path = os.path.join(predefined_path, jobid)
-        path_data = f'{path}_data.json.gz'
-        try:
-            PREDEFINED_LOCK.acquire()
-            if os.path.exists(path_data):
-                with gzip.open(path_data, 'r') as f:
-                    return json.loads(f.read().decode('utf-8'))
-        finally:
-            PREDEFINED_LOCK.release()
-    job = AsyncResult(jobid, app=celery)
-    if job and job.state == 'SUCCESS':
-        viz, data, log = job.result
-        return data
-    return None
-
-
 @app.route('/result')
 def result():
     jobid = request.args.get('jobid')
@@ -223,7 +141,7 @@ def result():
     expand = request.args.get('expand')  # Fraction of papers to cover by references
     try:
         if jobid and query and source and limit is not None and sort is not None:
-            job = AsyncResult(jobid, app=celery)
+            job = AsyncResult(jobid, app=pubtrends_celery)
             if job and job.state == 'SUCCESS':
                 viz, data, log = job.result
                 save_predefined(viz, data, log, jobid)
@@ -304,7 +222,22 @@ def process():
                                    query=trim(query, MAX_QUERY_LENGTH), source=source,
                                    redirect_page="paper",  # redirect in case of success
                                    jobid=jobid, version=VERSION)
-        elif query:
+
+        elif analysis_type == REVIEW_ANALYSIS_TITLE:
+            logger.info(f'/process review {log_request(request)}')
+            limit = request.args.get('limit')
+            sort = request.args.get('sort')
+            return render_template('process.html',
+                                   redirect_args={
+                                       'query': quote(query), 'source': source,
+                                       'limit': limit, 'sort': sort,
+                                       'jobid': jobid},
+                                   query=trim(query, MAX_QUERY_LENGTH), source=source,
+                                   limit=limit, sort=sort,
+                                   redirect_page="review",  # redirect in case of success
+                                   jobid=jobid, version=VERSION)
+
+        elif query:  # This option should be the last default
             logger.info(f'/process regular search {log_request(request)}')
             limit = request.args.get('limit')
             sort = request.args.get('sort')
@@ -318,6 +251,7 @@ def process():
                                    limit=limit, sort=sort,
                                    redirect_page="result",  # redirect in case of success
                                    jobid=jobid, version=VERSION)
+
     logger.error(f'/process error {log_request(request)}')
     return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
 
@@ -354,7 +288,7 @@ def paper():
     limit = request.args.get('limit')
     try:
         if jobid and pid:
-            data = load_predefined_or_result_data(jobid)
+            data = load_predefined_or_result_data(jobid, pubtrends_celery)
             if data is not None:
                 logger.info(f'/paper success {log_request(request)}')
                 return render_template('paper.html', **prepare_paper_data(data, source, pid),
@@ -384,13 +318,13 @@ def graph():
     sort = request.args.get('sort')
     graph_type = request.args.get('type')
     if jobid:
-        data = load_predefined_or_result_data(jobid)
+        data = load_predefined_or_result_data(jobid, pubtrends_celery)
         if data is not None:
             loader, url_prefix = Loaders.get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
-            analyzer = KeyPaperAnalyzer(loader, PUBTRENDS_CONFIG)
+            analyzer = PapersAnalyzer(loader, PUBTRENDS_CONFIG)
             analyzer.init(data)
             topics_tags = {comp: ', '.join(
-                [w[0] for w in analyzer.df_kwd[analyzer.df_kwd['comp'] == comp]['kwd'].values[0][:10]]
+                [w[0] for w in analyzer.kwd_df[analyzer.kwd_df['comp'] == comp]['kwd'].values[0][:10]]
             ) for comp in sorted(set(analyzer.df['comp']))}
             if graph_type == "citations":
                 graph_cs = PlotPreprocessor.dump_citations_graph_cytoscape(analyzer.df, analyzer.citations_graph)
@@ -465,10 +399,18 @@ def show_ids():
         search_string += 'Hot Papers'
 
     if jobid:
-        data = load_predefined_or_result_data(jobid)
+        data = load_predefined_or_result_data(jobid, pubtrends_celery)
         if data is not None:
             logger.info(f'/papers success {log_request(request)}')
             export_name = re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{query}_{search_string}'.lower())).strip('_')
+            loader, url_prefix = Loaders.get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
+            analyzer = PapersAnalyzer(loader, PUBTRENDS_CONFIG)
+            analyzer.init(data)
+            papers_data = PlotPreprocessor.prepare_papers_data(
+                analyzer.df, analyzer.top_cited_papers, analyzer.max_gain_papers, analyzer.max_rel_gain_papers,
+                url_prefix,
+                comp, word, author, journal, papers_list
+            )
             return render_template('papers.html',
                                    version=VERSION,
                                    source=source,
@@ -477,7 +419,7 @@ def show_ids():
                                    limit=limit,
                                    sort=sort,
                                    export_name=export_name,
-                                   papers=prepare_papers_data(data, source, comp, word, author, journal, papers_list))
+                                   papers=papers_data)
     logger.error(f'/papers error {log_request(request)}')
     return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
 
@@ -487,7 +429,7 @@ def cancel():
     if len(request.args) > 0:
         jobid = request.values.get('jobid')
         if jobid:
-            celery.control.revoke(jobid, terminate=True)
+            pubtrends_celery.control.revoke(jobid, terminate=True)
             return json.dumps({
                 'state': 'CANCELLED',
                 'message': f'Successfully cancelled task {jobid}'
@@ -635,7 +577,7 @@ def export_results():
         limit = request.args.get('limit')
         sort = request.args.get('sort')
         if jobid and query and source and limit and source:
-            data = load_predefined_or_result_data(jobid)
+            data = load_predefined_or_result_data(jobid, pubtrends_celery)
             with tempfile.TemporaryDirectory() as tmpdir:
                 name = re.sub('_{2,}', '_',
                               re.sub('["\':,. ]', '_', f'{source}_{query}_{sort}_{limit}'.lower())).strip('_')
@@ -650,9 +592,14 @@ def export_results():
         return render_template_string(ERROR_OCCURRED), 500
 
 
-#######################
+@app.route('/about.html', methods=['GET'])
+def about():
+    return render_template('about.html', version=VERSION)
+
+
+##########################
 # Feedback functionality #
-#######################
+##########################
 
 @app.route('/feedback', methods=['POST'])
 def feedback():
@@ -679,159 +626,14 @@ def feedback():
 # Admin functionality #
 #######################
 
-# Configure flask-admin and flask-sqlalchemy
-app.config.from_pyfile('config.py')
+configure_admin_functions(app, logfile)
 
-# Deployment and development
-DATABASE_PATHS = ['/database', os.path.expanduser('~/.pubtrends/database')]
-for p in DATABASE_PATHS:
-    if os.path.isdir(p):
-        DATABASE_PATH = os.path.join(p, app.config['DATABASE_FILE'])
-        break
-else:
-    raise RuntimeError('Failed to configure service db path')
+#######################
+# Additional features #
+#######################
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + DATABASE_PATH
-db = SQLAlchemy(app)
-
-# Define models
-roles_users = db.Table(
-    'roles_users',
-    db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
-    db.Column('role_id', db.Integer(), db.ForeignKey('role.id'))
-)
-
-
-class Role(db.Model, RoleMixin):
-    id = db.Column(db.Integer(), primary_key=True)
-    name = db.Column(db.String(80), unique=True)
-    description = db.Column(db.String(255))
-
-    def __str__(self):
-        return self.name
-
-
-class User(db.Model, UserMixin):
-    id = db.Column(db.Integer, primary_key=True)
-    first_name = db.Column(db.String(255))
-    last_name = db.Column(db.String(255))
-    email = db.Column(db.String(255), unique=True)
-    password = db.Column(db.String(255))
-    active = db.Column(db.Boolean())
-    confirmed_at = db.Column(db.DateTime())
-    roles = db.relationship('Role', secondary=roles_users,
-                            backref=db.backref('users', lazy='dynamic'))
-
-    def __str__(self):
-        return self.email
-
-
-# Setup Flask-Security
-user_datastore = SQLAlchemyUserDatastore(db, User, Role)
-security = Security(app, user_datastore)
-
-
-def build_users_db():
-    """
-    Populate a small db with some example entries.
-    """
-    db.drop_all()
-    db.create_all()
-
-    with app.app_context():
-        user_role = Role(name='user')
-        admin_role = Role(name='admin')
-        db.session.add(user_role)
-        db.session.add(admin_role)
-        db.session.commit()
-
-        user_datastore.create_user(
-            first_name='Admin',
-            email='admin',
-            password=hash_password(PUBTRENDS_CONFIG.admin_password),
-            roles=[user_role, admin_role]
-        )
-        db.session.commit()
-    return
-
-
-# Build a sample db on the fly, if one does not exist yet.
-DB_LOCK = Lock()
-
-DB_LOCK.acquire()
-if not os.path.exists(DATABASE_PATH):
-    build_users_db()
-DB_LOCK.release()
-
-
-# UI
-class AdminStatsView(BaseView):
-    @expose('/')
-    def index(self):
-        stats_data = prepare_stats_data(logfile)
-        return self.render('admin/stats.html', version=VERSION, **stats_data)
-
-    def is_accessible(self):
-        return current_user.is_active and current_user.is_authenticated and current_user.has_role('admin')
-
-    def _handle_view(self, name, **kwargs):
-        """
-        Override builtin _handle_view in order to redirect users when a view is not accessible.
-        """
-        if not self.is_accessible():
-            if current_user.is_authenticated:
-                # permission denied
-                abort(403)
-            else:
-                # login
-                return redirect(url_for('security.login', next=request.url))
-
-
-class AdminFeedbackView(BaseView):
-    @expose('/')
-    def index(self):
-        feedback_data = prepare_feedback_data(logfile)
-        return self.render('admin/feedback.html', version=VERSION, **feedback_data)
-
-    def is_accessible(self):
-        return current_user.is_active and current_user.is_authenticated and current_user.has_role('admin')
-
-    def _handle_view(self, name, **kwargs):
-        """
-        Override builtin _handle_view in order to redirect users when a view is not accessible.
-        """
-        if not self.is_accessible():
-            if current_user.is_authenticated:
-                # permission denied
-                abort(403)
-            else:
-                # login
-                return redirect(url_for('security.login', next=request.url))
-
-
-# Create admin
-admin = flask_admin.Admin(
-    app,
-    'Pubtrends',
-    base_template='master.html',
-    template_mode='bootstrap3',
-)
-
-# Available views
-admin.add_view(AdminStatsView(name='Statistics', endpoint='stats'))
-admin.add_view(AdminFeedbackView(name='Feedback', endpoint='feedback'))
-
-
-# define a context processor for merging flask-admin's template context into the
-# flask-security views.
-@security.context_processor
-def security_context_processor():
-    return dict(
-        admin_base_template=admin.base_template,
-        admin_view=admin.index_view,
-        h=admin_helpers,
-        get_url=url_for
-    )
+if PUBTRENDS_CONFIG.feature_review_enabled:
+    register_app_review(app)
 
 
 # Application

@@ -7,7 +7,7 @@ from pysrc.papers.db.loader import Loader
 from pysrc.papers.db.postgres_connector import PostgresConnector
 from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres, no_stemming_filter, \
     process_bibliographic_coupling_postgres, process_cocitations_postgres
-from pysrc.papers.utils import SORT_MOST_RELEVANT, SORT_MOST_CITED, SORT_MOST_RECENT, preprocess_doi, \
+from pysrc.papers.utils import SORT_MOST_CITED, SORT_MOST_RECENT, preprocess_doi, \
     preprocess_search_title
 
 logger = logging.getLogger(__name__)
@@ -55,7 +55,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
+            df = pd.DataFrame(cursor.fetchall(), columns=['pmid'])
 
         return list(df['pmid'].astype(str))
 
@@ -63,44 +63,42 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         self.check_connection()
         noreviews_filter = "AND type != 'Review'" if noreviews else ''
         query_str = preprocess_search_query_for_postgres(query, self.config.min_search_words)
+
         # Disable stemming-based lookup for now, see: https://github.com/JetBrains-Research/pubtrends/issues/242
         exact_filter = no_stemming_filter(query_str)
 
-        if sort == SORT_MOST_RELEVANT:
-            query = f'''
-                SELECT P.pmid
-                FROM to_tsquery('{query_str}') query, PMPublications P
-                WHERE tsv @@ query {noreviews_filter} {exact_filter}
-                ORDER BY ts_rank_cd(P.tsv, query) DESC
-                LIMIT {limit};
-                '''
-        elif sort == SORT_MOST_CITED:
-            query = f'''
-                SELECT P.pmid
-                FROM PMPublications P
-                    LEFT JOIN matview_pmcitations C
-                    ON P.pmid = C.pmid
-                WHERE tsv @@ to_tsquery('{query_str}') {noreviews_filter} {exact_filter}
-                ORDER BY count DESC NULLS LAST
-                LIMIT {limit};
-                '''
+        by_citations = 'count DESC NULLS LAST'
+        by_year = 'year DESC NULLS LAST'
+        # 2 divides the rank by the document length
+        # 4 divides the rank by the mean harmonic distance between extents (this is implemented only by ts_rank_cd)
+        # See https://www.postgresql.org/docs/12/textsearch-controls.html#TEXTSEARCH-RANKING
+        if sort == SORT_MOST_CITED:
+            order = f'{by_citations}, ts_rank_cd(P.tsv, query, 2|4) DESC, {by_year}'
         elif sort == SORT_MOST_RECENT:
-            query = f'''
-                SELECT P.pmid
-                FROM to_tsquery('{query_str}') query, PMPublications P
-                WHERE tsv @@ query {noreviews_filter} {exact_filter}
-                ORDER BY year DESC NULLS LAST
-                LIMIT {limit};
-                '''
+            order = f'{by_year}, ts_rank_cd(P.tsv, query, 2|4) DESC, {by_citations}'
         else:
             raise ValueError(f'Illegal sort method: {sort}')
 
+        query = f'''
+            SELECT P.pmid 
+            FROM to_tsquery('{query_str}') query, 
+            PMPublications P
+            LEFT JOIN matview_pmcitations C 
+            ON P.pmid = C.pmid
+            WHERE P.tsv @@ query {noreviews_filter} {exact_filter}
+            ORDER BY {order}, P.pmid
+            LIMIT {limit};
+            '''
         with self.postgres_connection.cursor() as cursor:
             logger.debug(f'search query: {query}')
             cursor.execute(query)
-            df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
+            df = pd.DataFrame(cursor.fetchall(), columns=['pmid'])
+            # TODO [shpynov] query stays idle in transaction without this commit
+            # Further investigation is required
+            self.postgres_connection.commit()
 
-        return list(df['pmid'].astype(str))
+        df['pmid'] = df['pmid'].astype(str)
+        return list(df['pmid'])
 
     def load_publications(self, ids):
         self.check_connection()
@@ -113,12 +111,11 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(),
-                              columns=['id', 'title', 'abstract', 'year', 'type', 'keywords', 'mesh', 'doi', 'aux'],
-                              dtype=object)
+                              columns=['id', 'title', 'abstract', 'year', 'type', 'keywords', 'mesh', 'doi', 'aux'])
         if np.any(df[['id', 'title']].isna()):
             raise ValueError('Paper must have ID and title')
         logger.debug(f'Loaded {len(df)} papers')
-        return Loader.process_publications_dataframe(df)
+        return Loader.process_publications_dataframe(ids, df)
 
     def load_citations_by_year(self, ids):
         self.check_connection()
@@ -136,12 +133,12 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 GROUP BY id, year
                 LIMIT {self.config.max_number_of_citations};
             '''
-        logger.debug('load_citations_by_year query: ', query)
+        logger.debug(f'load_citations_by_year query: {query}')
 
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(),
-                              columns=['id', 'year', 'count'], dtype=object)
+                              columns=['id', 'year', 'count'])
 
         if np.any(df.isna()):
             raise ValueError('NaN values are not allowed in citation stats DataFrame')
@@ -167,7 +164,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df = pd.DataFrame(cursor.fetchall(), columns=['id'], dtype=object)
+            df = pd.DataFrame(cursor.fetchall(), columns=['id'])
         return list(df['id'].astype(str))
 
     def estimate_citations(self, ids):
@@ -186,7 +183,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
             df = pd.DataFrame(cursor.fetchall(), columns=['total'])
             df.fillna(value=1, inplace=True)  # matview_pmcitations ignores < 3 citations
 
-        return df['total'].mean(), df['total'].std()
+        return df['total']
 
     def load_citations(self, ids):
         self.check_connection()
@@ -201,7 +198,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(),
-                              columns=['id_out', 'id_in'], dtype=object)
+                              columns=['id_out', 'id_in'])
 
         if np.any(df.isna()):
             raise ValueError('Citation must have id_out and id_in')
@@ -257,7 +254,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
 
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df = pd.DataFrame(cursor.fetchall(), columns=['id', 'total'], dtype=object)
+            df = pd.DataFrame(cursor.fetchall(), columns=['id', 'total'])
         df['id'] = df['id'].astype(str)
         df.fillna(value=1, inplace=True)
         return df

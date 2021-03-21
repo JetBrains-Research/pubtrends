@@ -1,6 +1,6 @@
 {% extends 'admin/master.html' %}
 {% block head %}
-    {{ super() }}
+{{ super() }}
 <script src="https://code.jquery.com/jquery-3.3.1.min.js"
         integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT"
         crossorigin="anonymous"></script>
@@ -14,18 +14,18 @@
 <!--<script src="../../static/wordcloud.js"/>-->
 
 {% if word_cloud is defined %}
-    <script>
-        "use strict";
-        $(document).ready(function() {
-            var words = JSON.parse(normalize('{{ word_cloud }}'));
-            process_word_cloud('word_cloud', $('#word_cloud').outerWidth(), 600, 900, 600, words, null);
-        });
-    </script>
+<script>
+    "use strict";
+    $(document).ready(function () {
+        var words = JSON.parse(normalize('{{ word_cloud }}'));
+        process_word_cloud('word_cloud', $('#word_cloud').outerWidth(), 600, 900, 600, words, null);
+    });
+</script>
 {% endif %}
 
 {% endblock head %}
 {% block body %}
-    {{ super() }}
+{{ super() }}
 <h3>Terms searches</h3>
 Total: {{ total_terms_searches }}<br>
 Successful: {{ successful_searches }}<br>

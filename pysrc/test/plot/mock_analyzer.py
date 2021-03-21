@@ -24,10 +24,9 @@ class MockAnalyzer:
         mapping = {node: str(node) for node in self.similarity_graph.nodes()}
         self.similarity_graph = nx.relabel_nodes(self.similarity_graph, mapping, copy=False)
 
+        # Components are already in df
         self.components = [0, 1, 2]
         self.comp_other = 2
-        self.partition = {'15790588': 1, '18483325': 0, '19296127': 1, '22080730': 1, '24138928': 0, '27346616': 1,
-                          '28259012': 0, '28364215': 0, '28423572': 0, '29235933': 0, '31179760': 2}
         self.comp_sizes = {0: 6, 1: 4, 2: 1}
 
         # Load evolution DataFrame and keywords

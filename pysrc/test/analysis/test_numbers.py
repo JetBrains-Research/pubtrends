@@ -2,7 +2,7 @@ import unittest
 
 from parameterized import parameterized
 
-from pysrc.papers.extract_numbers import extract_metrics
+from pysrc.papers.analysis.numbers import extract_metrics
 
 
 class TestExtractNumbers(unittest.TestCase):
