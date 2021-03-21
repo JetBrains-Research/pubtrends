@@ -19,7 +19,8 @@ def pd_score(labels_true, labels_pred):
 
     diversity = np.sqrt(np.diag(contingency_row @ contingency_row.T))
     purity = np.diag(contingency_row @ contingency_col.T)
-    return np.mean(purity * diversity)
+    size_weights = row_sums / sum(row_sums)
+    return np.sum(purity * diversity * size_weights)
 
 
 def reg_v_score(labels_true, labels_pred, reg=0.01):
