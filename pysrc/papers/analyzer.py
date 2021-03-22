@@ -5,8 +5,8 @@ import numpy as np
 import pandas as pd
 from networkx.readwrite import json_graph
 
-from pysrc.papers.analysis.citations import find_top_cited_papers, find_max_gain_papers, find_max_relative_gain_papers, \
-    build_cit_stats_df, merge_citation_stats, build_cocit_grouped_df
+from pysrc.papers.analysis.citations import find_top_cited_papers, find_max_gain_papers, \
+    find_max_relative_gain_papers, build_cit_stats_df, merge_citation_stats, build_cocit_grouped_df
 from pysrc.papers.analysis.evolution import topic_evolution_analysis, topic_evolution_descriptions
 from pysrc.papers.analysis.graph import build_citation_graph, build_similarity_graph, build_structure_graph
 from pysrc.papers.analysis.metadata import popular_authors, popular_journals
@@ -292,6 +292,7 @@ class PapersAnalyzer:
         return \
             PapersAnalyzer.SIMILARITY_BIBLIOGRAPHIC_COUPLING * np.log1p(d.get('bibcoupling', 0)) + \
             PapersAnalyzer.SIMILARITY_COCITATION * np.log1p(d.get('cocitation', 0)) + \
+            PapersAnalyzer.SIMILARITY_CITATION * d.get('citation', 0) + \
             PapersAnalyzer.SIMILARITY_TEXT_CITATION * d.get('text', 0)
 
     @staticmethod
