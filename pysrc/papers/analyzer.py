@@ -33,13 +33,16 @@ class PapersAnalyzer:
 
     # Minimal number of common references, used to reduces similarity graph edges count
     # Value > 1 is especially useful while analysing single paper, removes meaningless connections by construction
-    SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN = 2
+    SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN = 1
 
     # Minimal number of common references, used to reduces similarity graph edges count
-    SIMILARITY_COCITATION_MIN = 2
+    SIMILARITY_COCITATION_MIN = 1
 
     # Minimal cosine similarity for potential text citation, used to reduce similarity graph edges count
-    SIMILARITY_TEXT_CITATION_MIN = 0.5
+    SIMILARITY_TEXT_CITATION_MIN = 0.1
+
+    # Max number of potential text citations for paper
+    SIMILARITY_TEXT_CITATION_N = 20
 
     # Reduce number of edges in smallest communities, i.e. topics
     STRUCTURE_LOW_LEVEL_SPARSITY = 0.5
@@ -138,7 +141,8 @@ class PapersAnalyzer:
 
         self.progress.info('Processing texts similarity', current=4, task=task)
         self.texts_similarity = analyze_texts_similarity(
-            self.pub_df, self.corpus_counts, self.SIMILARITY_TEXT_CITATION_MIN
+            self.pub_df, self.corpus_counts,
+            self.SIMILARITY_TEXT_CITATION_MIN, self.SIMILARITY_TEXT_CITATION_N
         )
 
         self.progress.info('Loading citations statistics by year', current=5, task=task)

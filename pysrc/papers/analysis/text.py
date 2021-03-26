@@ -1,5 +1,6 @@
 import logging
 import re
+from queue import PriorityQueue
 from threading import Lock
 
 import nltk
@@ -49,25 +50,27 @@ def vectorize_corpus(df, max_features, min_df, max_df):
     return vectorizer.get_feature_names(), counts
 
 
-def analyze_texts_similarity(df, corpus_vectors, min_threshold):
+def analyze_texts_similarity(df, corpus_vectors, min_threshold, max_similar):
     """
     Computes texts similarities based on cosine distance between texts vectors
     :param df: Papers dataframe
     :param corpus_vectors: Vectorized papers matrix
     :param min_threshold: Min similarity threshold to add it to result
-    :return: List[(similarity, index)] - list of similar papers
+    :param max_similar: Max similar papers
+    :return: PriorityQueue[(similarity, index)] - queue of similar papers
     """
     cos_similarities = cosine_similarity(corpus_vectors)
-    similarities = []
+    similarity_queues = [PriorityQueue(maxsize=max_similar) for _ in range(len(df))]
     # Adding text citations
     for i, pid1 in enumerate(df['id']):
-        paper_similarities = []
-        similarities.append(paper_similarities)
+        queue_i = similarity_queues[i]
         for j in range(i + 1, len(df)):
             similarity = cos_similarities[i, j]
             if np.isfinite(similarity) and similarity >= min_threshold:
-                paper_similarities.append((similarity, j))
-    return similarities
+                if queue_i.full():
+                    queue_i.get()  # Removes the element with lowest similarity
+                queue_i.put((similarity, j))
+    return similarity_queues
 
 
 def compute_comps_tfidf(df, comps, corpus_counts, ignore_comp=None):

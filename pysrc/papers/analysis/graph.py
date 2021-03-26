@@ -55,7 +55,9 @@ def build_similarity_graph(
     # Text similarity
     if len(df) >= 2:
         for i, pid1 in enumerate(df['id']):
-            for similarity, j in texts_similarity[i]:
+            similarity_queue = texts_similarity[i]
+            while not similarity_queue.empty():
+                similarity, j = similarity_queue.get()
                 pid2 = pids[j]
                 if result.has_edge(pid1, pid2):
                     pid1_pid2_edge = result[pid1][pid2]

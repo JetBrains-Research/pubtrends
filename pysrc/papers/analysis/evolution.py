@@ -1,4 +1,5 @@
 import logging
+from queue import PriorityQueue
 
 import community
 import networkx as nx
@@ -120,7 +121,7 @@ def topic_evolution_analysis(
 def filter_text_similarities(df, texts_similarity, year):
     texts_similarity_year = texts_similarity.copy()
     for idx in np.flatnonzero(df['year'].apply(int) > year):
-        texts_similarity_year[idx] = []  # Empty similarities for recent papers
+        texts_similarity_year[idx] = PriorityQueue(maxsize=0)  # Empty similarities for recent papers
     return texts_similarity_year
 
 
