@@ -76,4 +76,4 @@ class TestApp(unittest.TestCase):
             rv = c.get(f'/result?{args}')  # Result should be fine
             self.assertEqual(200, rv.status_code)
             response = rv.data.decode('utf-8')
-            self.assertTrue('Total: <b>10</b> papers, <b>1</b> topics.' in response)
+            self.assertTrue('<b>10</b> papers, <b>1</b> topics.' in response)
