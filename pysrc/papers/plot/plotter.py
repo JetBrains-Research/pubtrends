@@ -58,9 +58,6 @@ def visualize_analysis(analyzer):
         n_papers=analyzer.n_papers,
         n_topics=len(analyzer.components),
         comp_other=analyzer.comp_other,
-        papers=PlotPreprocessor.prepare_papers_data(
-            analyzer.df.copy(), None, None, None, None, None, None, None, None, None
-        ),
         export_name=re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{analyzer.query}'.lower())).strip('_'),
         top_cited_papers=[components(plotter.top_cited_papers())],
         most_cited_per_year_papers=[components(plotter.most_cited_per_year_papers())],
