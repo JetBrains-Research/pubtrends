@@ -72,11 +72,15 @@ class ArchiveParser(
                         .replace("\"", "").removeSurrounding("[", "]")
                 if (keywords == "") keywords = null
 
-                var year: Int?
-                if (jsonObject.get("year") == null) {
-                    year = null
+                val year: Int? = if (jsonObject.get("year") == null || jsonObject.get("year").toString() == "null") {
+                    null
                 } else {
-                    year = jsonObject.get("year").asInt
+                    try {
+                        jsonObject.get("year").asInt
+                    } catch (e: Exception) {
+                        logger.info("Skip year value: ${jsonObject.get("year")}")
+                        null
+                    }
                 }
 
                 val citationList = extractList(jsonObject.get("outCitations"))
