@@ -9,13 +9,13 @@ import org.jetbrains.exposed.sql.statements.expandArgs
 import org.jetbrains.exposed.sql.transactions.transaction
 
 open class SemanticScholarPostgresWriter(
-        host: String,
-        port: Int,
-        database: String,
-        username: String,
-        password: String
-)
-    : AbstractDBWriter<SemanticScholarArticle> {
+    host: String,
+    port: Int,
+    database: String,
+    username: String,
+    password: String,
+    private val finishFillDatabase: Boolean
+) : AbstractDBWriter<SemanticScholarArticle> {
     companion object Log4jSqlLogger : SqlLogger {
         private val logger = LogManager.getLogger(Log4jSqlLogger::class)
 
@@ -24,15 +24,13 @@ open class SemanticScholarPostgresWriter(
         }
     }
 
-    private var changed = false
-
     init {
 
         Database.connect(
-                url = "jdbc:postgresql://$host:$port/$database",
-                driver = "org.postgresql.Driver",
-                user = username,
-                password = password
+            url = "jdbc:postgresql://$host:$port/$database",
+            driver = "org.postgresql.Driver",
+            user = username,
+            password = password
         )
 
         transaction {
@@ -40,11 +38,11 @@ open class SemanticScholarPostgresWriter(
             SchemaUtils.create(SSPublications, SSCitations)
             exec("ALTER TABLE SSPublications ADD COLUMN IF NOT EXISTS tsv TSVECTOR;")
             exec(
-                    "CREATE INDEX IF NOT EXISTS " +
-                            "ss_title_abstract_index ON SSPublications using GIN (tsv);"
+                "CREATE INDEX IF NOT EXISTS " +
+                        "ss_title_abstract_index ON SSPublications using GIN (tsv);"
             )
             exec(
-                    """
+                """
                     create materialized view if not exists matview_sscitations as
                     SELECT ssid_in as ssid, crc32id_in as crc32id, COUNT(*) AS count
                     FROM SSCitations C
@@ -54,7 +52,7 @@ open class SemanticScholarPostgresWriter(
                     """
             )
             exec(
-                    """
+                """
                     CREATE INDEX IF NOT EXISTS
                     sspublications_ssid_year ON sspublications (ssid, year);
                     """
@@ -66,14 +64,13 @@ open class SemanticScholarPostgresWriter(
         transaction {
             addLogger(Log4jSqlLogger)
             exec(
-                    """
+                """
                     drop index if exists SSCitation_matview_index;
                     drop materialized view if exists matview_sscitations;
                     """
             )
             SchemaUtils.drop(SSPublications, SSCitations)
             exec("DROP INDEX IF EXISTS ss_title_abstract_index;")
-            changed = true
         }
     }
 
@@ -102,12 +99,11 @@ open class SemanticScholarPostgresWriter(
             // Update TSV vector
             val vals = articles.map { it.ssid }.joinToString(",") { "('$it', ${crc32id(it)})" }
             exec(
-                    "UPDATE SSPublications\n" +
-                            "set tsv = setweight(to_tsvector('english', coalesce(title, '')), 'A') || \n" +
-                            "   setweight(to_tsvector('english', coalesce(abstract, '')), 'B')\n" +
-                            "WHERE (ssid, crc32id) IN (VALUES $vals);"
+                "UPDATE SSPublications\n" +
+                        "set tsv = setweight(to_tsvector('english', coalesce(title, '')), 'A') || \n" +
+                        "   setweight(to_tsvector('english', coalesce(abstract, '')), 'B')\n" +
+                        "WHERE (ssid, crc32id) IN (VALUES $vals);"
             )
-            changed = true
         }
     }
 
@@ -117,13 +113,12 @@ open class SemanticScholarPostgresWriter(
     }
 
     override fun close() {
-        /**
-         * No actions to close db connection is required: Exposed should manage the connection pool.
-         */
-        if (changed) {
+        if (finishFillDatabase) {
+            logger.info("Refreshing matview_sscitations")
             transaction {
                 addLogger(PubmedPostgresWriter)
-                exec("""
+                exec(
+                    """
                     do
                     ${"$$"}
                     begin
@@ -132,8 +127,10 @@ open class SemanticScholarPostgresWriter(
                     END IF;
                     end;
                     ${"$$"};
-                    """)
+                    """
+                )
             }
+            logger.info("Done refreshing matview_sscitations")
         }
     }
 }

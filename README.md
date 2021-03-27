@@ -147,6 +147,7 @@ Instructions are for the corpus 2021-03-01.
          echo "$file" >> complete.txt
       fi;
    done
+   java -cp pubtrends.jar org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --finish
    ```
    
    * Windows 10 PowerShell
@@ -163,6 +164,7 @@ Instructions are for the corpus 2021-03-01.
           echo $file >> .\complete.txt
        }
    }
+   java -cp "pubtrends.jar" org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --finish
    ```
 
    Command line options supported:

@@ -18,31 +18,33 @@ class DBWriter {
         private val LOG = LogManager.getLogger("DBWriter")
 
         private val PUBMED_ARTICLE = PubmedArticle(
-                pmid = 1,
-                year = 1986,
-                title = "Test title 1",
-                abstract = "Test abstract 2",
-                aux = org.jetbrains.bio.pubtrends.pm.AuxInfo(
-                        authors = listOf(org.jetbrains.bio.pubtrends.pm.Author("Genius1")),
-                        journal = org.jetbrains.bio.pubtrends.pm.Journal("Pravda")
-                ),
-                keywords = listOf("Keyword1", "Keyword2"),
-                mesh = listOf("Term1", "Term2", "Term3"),
-                type = PublicationType.TechnicalReport
+            pmid = 1,
+            year = 1986,
+            title = "Test title 1",
+            abstract = "Test abstract 2",
+            aux = org.jetbrains.bio.pubtrends.pm.AuxInfo(
+                authors = listOf(org.jetbrains.bio.pubtrends.pm.Author("Genius1")),
+                journal = org.jetbrains.bio.pubtrends.pm.Journal("Pravda")
+            ),
+            keywords = listOf("Keyword1", "Keyword2"),
+            mesh = listOf("Term1", "Term2", "Term3"),
+            type = PublicationType.TechnicalReport
         )
 
         private val SEMANTIC_SCHOLAR_ARTICLE = SemanticScholarArticle(
-                ssid = "03029e4427cfe66c3da6257979dc2d5b6eb3a0e4",
-                pmid = 2252909,
-                title = "Test title 1",
-                abstract = "Test abstract 2",
-                year = 2020,
-                doi = "10.1101/2020.05.10.087023",
-                aux = AuxInfo(journal = Journal(name = "Nature Aging", volume = "1", pages = "1-6"),
-                        authors = listOf(Author(name = "Genius")),
-                        venue = "Nature",
-                        links = Links(pdfUrls = listOf("https://doi.org/10.1101/2020.05.10.087023"))
-                ))
+            ssid = "03029e4427cfe66c3da6257979dc2d5b6eb3a0e4",
+            pmid = 2252909,
+            title = "Test title 1",
+            abstract = "Test abstract 2",
+            year = 2020,
+            doi = "10.1101/2020.05.10.087023",
+            aux = AuxInfo(
+                journal = Journal(name = "Nature Aging", volume = "1", pages = "1-6"),
+                authors = listOf(Author(name = "Genius")),
+                venue = "Nature",
+                links = Links(pdfUrls = listOf("https://doi.org/10.1101/2020.05.10.087023"))
+            )
+        )
 
         @JvmStatic
         fun main(args: Array<String>) {
@@ -102,39 +104,40 @@ class DBWriter {
 
         private fun createSemanticScholarPostgresWriter(config: Properties): SemanticScholarPostgresWriter {
             return SemanticScholarPostgresWriter(
-                    config["test_postgres_host"]!!.toString(),
-                    config["test_postgres_port"]!!.toString().toInt(),
-                    config["test_postgres_database"]!!.toString(),
-                    config["test_postgres_username"]!!.toString(),
-                    config["test_postgres_password"]!!.toString()
+                config["test_postgres_host"]!!.toString(),
+                config["test_postgres_port"]!!.toString().toInt(),
+                config["test_postgres_database"]!!.toString(),
+                config["test_postgres_username"]!!.toString(),
+                config["test_postgres_password"]!!.toString(),
+                true
             )
         }
 
         private fun createSemanticScholarNeo4JWriter(config: Properties): SemanticScholarNeo4JWriter {
             return SemanticScholarNeo4JWriter(
-                    config["test_neo4j_host"]!!.toString(),
-                    config["test_neo4j_port"]!!.toString().toInt(),
-                    config["test_neo4j_username"]!!.toString(),
-                    config["test_neo4j_password"]!!.toString()
+                config["test_neo4j_host"]!!.toString(),
+                config["test_neo4j_port"]!!.toString().toInt(),
+                config["test_neo4j_username"]!!.toString(),
+                config["test_neo4j_password"]!!.toString()
             )
         }
 
         private fun createPubmedNeo4JWriter(config: Properties): PubmedNeo4JWriter {
             return PubmedNeo4JWriter(
-                    config["test_neo4j_host"]!!.toString(),
-                    config["test_neo4j_port"]!!.toString().toInt(),
-                    config["test_neo4j_username"]!!.toString(),
-                    config["test_neo4j_password"]!!.toString()
+                config["test_neo4j_host"]!!.toString(),
+                config["test_neo4j_port"]!!.toString().toInt(),
+                config["test_neo4j_username"]!!.toString(),
+                config["test_neo4j_password"]!!.toString()
             )
         }
 
         private fun createPubmedPostgresWriter(config: Properties): PubmedPostgresWriter {
             return PubmedPostgresWriter(
-                    config["test_postgres_host"]!!.toString(),
-                    config["test_postgres_port"]!!.toString().toInt(),
-                    config["test_postgres_database"]!!.toString(),
-                    config["test_postgres_username"]!!.toString(),
-                    config["test_postgres_password"]!!.toString()
+                config["test_postgres_host"]!!.toString(),
+                config["test_postgres_port"]!!.toString().toInt(),
+                config["test_postgres_database"]!!.toString(),
+                config["test_postgres_username"]!!.toString(),
+                config["test_postgres_password"]!!.toString()
             )
         }
     }

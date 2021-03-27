@@ -20,9 +20,10 @@ object SemanticScholarLoader {
 
         with(OptionParser()) {
             accepts("resetDatabase", "Reset Database")
+            accepts("finish", "Finish database loading, update indexes")
             accepts("fillDatabase", "Create and fill database with articles")
-                    .withRequiredArg()
-                    .withValuesConvertedBy(exists())
+                .withRequiredArg()
+                .withValuesConvertedBy(exists())
 
             acceptsAll(listOf("h", "?", "help"), "Show help").forHelp()
 
@@ -41,19 +42,20 @@ object SemanticScholarLoader {
             if (!(config["neo4j_host"]?.toString()).isNullOrBlank()) {
                 logger.info("Init Neo4j database connection")
                 dbWriter = SemanticScholarNeo4JWriter(
-                        config["neo4j_host"]!!.toString(),
-                        config["neo4j_port"]!!.toString().toInt(),
-                        config["neo4j_username"]!!.toString(),
-                        config["neo4j_password"]!!.toString()
+                    config["neo4j_host"]!!.toString(),
+                    config["neo4j_port"]!!.toString().toInt(),
+                    config["neo4j_username"]!!.toString(),
+                    config["neo4j_password"]!!.toString()
                 )
             } else if (!(config["postgres_host"]?.toString()).isNullOrBlank()) {
                 logger.info("Init Postgresql database connection")
                 dbWriter = SemanticScholarPostgresWriter(
-                        config["postgres_host"]!!.toString(),
-                        config["postgres_port"]!!.toString().toInt(),
-                        config["postgres_database"]!!.toString(),
-                        config["postgres_username"]!!.toString(),
-                        config["postgres_password"]!!.toString()
+                    config["postgres_host"]!!.toString(),
+                    config["postgres_port"]!!.toString().toInt(),
+                    config["postgres_database"]!!.toString(),
+                    config["postgres_username"]!!.toString(),
+                    config["postgres_password"]!!.toString(),
+                    "finish" in config
                 )
             } else {
                 throw IllegalStateException("No database configured")
@@ -72,11 +74,12 @@ object SemanticScholarLoader {
 
                     val file = File(options.valueOf("fillDatabase").toString())
                     logger.info("Started parsing articles $file")
-                    ArchiveParser(dbWriter, file,
-                            config["loader_batch_size"].toString().toInt(),
-                            collectStats,
-                            statsFile
-                            ).parse()
+                    ArchiveParser(
+                        dbWriter, file,
+                        config["loader_batch_size"].toString().toInt(),
+                        collectStats,
+                        statsFile
+                    ).parse()
                     logger.info("Finished parsing articles")
                 }
             }

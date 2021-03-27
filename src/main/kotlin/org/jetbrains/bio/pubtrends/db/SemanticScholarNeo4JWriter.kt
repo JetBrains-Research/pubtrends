@@ -13,10 +13,10 @@ import org.neo4j.driver.v1.GraphDatabase
  * TODO[shpynov] Consider refactoring.
  */
 open class SemanticScholarNeo4JWriter(
-        host: String,
-        port: Int,
-        username: String,
-        password: String
+    host: String,
+    port: Int,
+    username: String,
+    password: String
 ) : AbstractDBWriter<SemanticScholarArticle> {
 
     companion object {
