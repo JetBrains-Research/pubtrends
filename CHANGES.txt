@@ -3,6 +3,15 @@ Pubtrends changelog
 
 Here you can see the full list of changes between each release.
 
+Version 0.13
+------------
+Released on March 28, 2021
+
+ - Analyze list of papers
+ - Improved papers search - combine pharases with terms search
+ - Bugfixes
+
+
 Version 0.12
 ------------
 Released on March 1, 2021
