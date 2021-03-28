@@ -46,8 +46,8 @@ class PubtrendsConfig:
         self.max_number_of_bibliographic_coupling = params.getint('max_number_of_bibliographic_coupling')
         self.max_number_to_expand = params.getint('max_number_to_expand')
 
-        self.show_max_articles_options = [opt.strip() for opt in params['show_max_articles_options'].split(',')]
-        self.show_max_articles_default_value = params['show_max_articles_default_value'].strip()
+        self.show_max_articles_options = [int(opt.strip()) for opt in params['show_max_articles_options'].split(',')]
+        self.show_max_articles_default_value = int(params['show_max_articles_default_value'].strip())
         self.max_number_of_articles = max(self.show_max_articles_options)
 
         # Max allowed pending tasks

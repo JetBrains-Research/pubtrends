@@ -472,6 +472,7 @@ def index():
                            limits=PUBTRENDS_CONFIG.show_max_articles_options,
                            default_limit=PUBTRENDS_CONFIG.show_max_articles_default_value,
                            min_words_message=min_words_message,
+                           max_papers=PUBTRENDS_CONFIG.max_number_of_articles,
                            pm_enabled=PUBTRENDS_CONFIG.pm_enabled,
                            ss_enabled=PUBTRENDS_CONFIG.ss_enabled,
                            search_example_source=search_example_source,
@@ -518,6 +519,28 @@ def search_paper():
         return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
     except Exception as e:
         logger.error(f'/search_paper error', e)
+        return render_template_string(ERROR_OCCURRED), 500
+
+
+@app.route('/search_list', methods=['POST'])
+def search_list():
+    logger.info(f'/search_list {log_request(request)}')
+    data = request.form
+    try:
+        if 'source' in data and 'list' in data:
+            source = data.get('source')  # Pubmed or Semantic Scholar
+            ids_text = data.get('list')
+            id_list = [re.sub('[\'"]*', '', pid) for pid in re.split('[ \t\n,;\\.]+', ids_text) if pid]
+            id_list = id_list[:PUBTRENDS_CONFIG.max_number_of_articles]
+            job = analyze_id_list.delay(source, ids=id_list, query='List of papers', zoom=None,
+                                        test=app.config['TESTING'])
+            return redirect(url_for('.process', query='List', source=source,
+                                    limit=f'{len(id_list)} papers', sort='',
+                                    jobid=job.id))
+        logger.error(f'/search_list error {log_request(request)}')
+        return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
+    except Exception as e:
+        logger.error(f'/search_list error', e)
         return render_template_string(ERROR_OCCURRED), 500
 
 

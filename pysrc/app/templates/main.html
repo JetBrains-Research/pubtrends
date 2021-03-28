@@ -72,6 +72,11 @@
                        role="tab"
                        aria-controls="paper" aria-selected="false">Paper</a>
                 </li>
+                <li id="step1-3" class="nav-item">
+                    <a class="nav-link grey" id="papers-tab" data-toggle="tab" href="#papers"
+                       role="tab"
+                       aria-controls="paper" aria-selected="false">List of papers</a>
+                </li>
             </ul>
         </div>
         <div class="card-body">
@@ -190,7 +195,7 @@
                 <div class="tab-pane fade" id="paper" role="tabpanel" aria-labelledby="paper-tab">
                     <form action="search_paper" method="POST" class="needs-validation" novalidate>
                         <div class="row no-gutters align-items-center">
-                            <div id="stepP1" class="col-auto">
+                            <div class="col-auto">
                                 <select id="paper-key" class="form-control" name="key" required>
                                     <option disabled></option>
                                     <option value="title">Title</option>
@@ -198,7 +203,7 @@
                                     <option value="id">ID</option>
                                 </select>
                             </div>
-                            <div id="stepP2" class="col ml-2">
+                            <div class="col ml-2">
                                 <input class="form-control form-control-borderless" type="search"
                                        name="value" id="paper-input"
                                        placeholder="Enter paper details"
@@ -207,7 +212,7 @@
                                        required>
                             </div>
                             <!--end of col-->
-                            <div id="stepP3" class="col-auto ml-2">
+                            <div class="col-auto ml-2">
                                 <button class="btn btn-success" type="submit">Search</button>
                             </div>
                         </div>
@@ -255,6 +260,53 @@
                         </div>
                     </form>
                 </div>
+
+                <!-- Form for Mutliple Papers -->
+                <div class="tab-pane fade" id="papers" role="tabpanel" aria-labelledby="papers-tab">
+                    <form action="search_list" method="POST" class="needs-validation" novalidate>
+                        <div class="row no-gutters align-items-center">
+                            <div class="col-auto">
+                                IDs
+                            </div>
+                            <div class="col ml-2">
+                                <input class="form-control form-control-borderless" type="search"
+                                       name="list" id="papers-input"
+                                       placeholder="Enter list of paper ids. Maximum {{ max_papers }} papers."
+                                       aria-describedby="query-addon"
+                                       autofocus
+                                       required>
+                            </div>
+                            <!--end of col-->
+                            <div class="col-auto ml-2">
+                                <button class="btn btn-success" type="submit">Search</button>
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <a class="link" data-toggle="collapse" href="#collapseListAdvanced"
+                               role="button" aria-expanded="false">
+                                <small>Advanced settings</small>
+                            </a>
+                        </div>
+                        <div id="collapseListAdvanced" class="collapse mt-2">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col-4 input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text" id="papers-source-addon">Source</span>
+                                    </div>
+                                    <select class="form-control" name="source"
+                                            aria-describedby="source-addon">
+                                        {% if pm_enabled %}
+                                        <option>Pubmed</option>
+                                        {% endif %}
+                                        {% if ss_enabled %}
+                                        <option>Semantic Scholar</option>
+                                        {% endif %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </main>
@@ -297,6 +349,11 @@
                     element: '#step1-2',
                     intro: "Use the <em>Paper</em> tab to find most cited similar papers, important prior, " +
                         "and derivative works for the paper of interest. Search by DOI, title name and id is supported."
+                },
+                {
+                    element: '#step1-3',
+                    intro: "Use the <em>List of papers</em> tab to analyze papers by given list of ids.<br>" +
+                        "Ids should be separated by commas, semicolons, spaces or newlines."
                 },
                 {
                     element: '#step2',
