@@ -354,5 +354,6 @@ See [AUTHORS.md](AUTHORS.md) for a list of authors and contributors.
 * Project architecture [presentation](https://docs.google.com/presentation/d/131qvkEnzzmpx7-I0rz1om6TG7bMBtYwU9T1JNteRIEs/edit?usp=sharing) - summer 2019. 
 * Review generation [presentation](https://my.compscicenter.ru/media/projects/2019-autumn/844/presentations/participants.pdf) - fall 2019.
 * Extractive summarization [presentation](https://drive.google.com/file/d/1NnZ6JtJ2owtxFnuwKbARzOFM5_aHw6ls/view?usp=sharing) - spring 2020.
+* Paper ["Automatic generation of reviews of scientific papers"](https://arxiv.org/abs/2010.04147)
 * [Icons by Feather](https://feathericons.com/)
 
