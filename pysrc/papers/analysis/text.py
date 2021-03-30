@@ -84,8 +84,8 @@ def compute_comps_tfidf(df, comps, corpus_counts, ignore_comp=None):
     """
     logger.debug('Compute average terms counts per components')
     # Since some of the components may be skipped, use this dict for continuous indexes
-    comp_idx = dict(enumerate([c for c in comps if c != ignore_comp]))
-    terms_freqs_per_comp = np.zeros(shape=(len(comp_idx), corpus_counts.shape[1]), dtype=np.short)
+    comp_idx = {c: i for i, c in enumerate(c for c in comps if c != ignore_comp)}
+    terms_freqs_per_comp = np.zeros(shape=(len(comp_idx), corpus_counts.shape[1]), dtype=np.float)
     for comp, comp_pids in comps.items():
         if comp in comp_idx:  # Not ignored
             terms_freqs_per_comp[comp_idx[comp], :] = \
