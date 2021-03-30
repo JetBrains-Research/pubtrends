@@ -286,6 +286,7 @@ class PapersAnalyzer:
             else:
                 logger.debug('Not enough papers for topics evolution')
                 self.evolution_df = None
+                self.evolution_kwds = None
 
     @staticmethod
     def similarity(d):
