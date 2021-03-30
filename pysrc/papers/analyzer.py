@@ -225,8 +225,6 @@ class PapersAnalyzer:
             )
             kwds = [(comp, ','.join([f'{t}:{v:.3f}' for t, v in vs[:self.TOPIC_DESCRIPTION_WORDS]]))
                     for comp, vs in topics_description.items()]
-            logger.debug('Components description')
-            logger.debug('\n'.join(f'{comp}: {kwd}' for comp, kwd in kwds))
             self.kwd_df = pd.DataFrame(kwds, columns=['comp', 'kwd'])
             # Build structure graph
             self.structure_graph = build_structure_graph(
@@ -263,7 +261,6 @@ class PapersAnalyzer:
 
         if self.config.feature_numbers_enabled:
             if len(self.df) >= 0:
-                logger.debug('Perform numbers extraction')
                 self.progress.info('Extracting numbers from publication abstracts', current=20, task=task)
                 self.numbers_df = extract_numbers(self.df)
             else:
@@ -272,16 +269,15 @@ class PapersAnalyzer:
         if self.config.feature_evolution_enabled:
             if len(self.df) >= PapersAnalyzer.EVOLUTION_MIN_PAPERS:
                 logger.debug('Perform topic evolution analysis and get topic descriptions')
-                self.evolution_df, self.evolution_year_range = \
-                    topic_evolution_analysis(
-                        self.df, self.cit_df, self.cocit_df, self.bibliographic_coupling_df,
-                        self.texts_similarity, self.SIMILARITY_COCITATION_MIN,
-                        self.TOPIC_MIN_SIZE,
-                        self.TOPICS_MAX_NUMBER,
-                        similarity_func=self.similarity,
-                        evolution_step=self.EVOLUTION_STEP,
-                        progress=self.progress, current=21, task=task
-                    )
+                self.evolution_df, self.evolution_year_range = topic_evolution_analysis(
+                    self.df, self.cit_df, self.cocit_df, self.bibliographic_coupling_df,
+                    self.texts_similarity, self.SIMILARITY_COCITATION_MIN,
+                    self.TOPIC_MIN_SIZE,
+                    self.TOPICS_MAX_NUMBER,
+                    similarity_func=self.similarity,
+                    evolution_step=self.EVOLUTION_STEP,
+                    progress=self.progress, current=21, task=task
+                )
                 self.evolution_kwds = topic_evolution_descriptions(
                     self.df, self.evolution_df, self.evolution_year_range,
                     self.corpus_terms, self.corpus_counts, self.TOPIC_DESCRIPTION_WORDS,

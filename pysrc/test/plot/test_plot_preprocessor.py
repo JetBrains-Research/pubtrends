@@ -121,13 +121,11 @@ class TestPlotPreprocessor(unittest.TestCase):
             self.analyzer.evolution_df, self.analyzer.evolution_kwds, self.analyzer.n_steps
         )
 
-        expected_edges = [('2014 1', '2019 1', 3), ('2014 2', '2019 2', 2), ('2014 NPY', '2019 1', 1),
-                          ('2014 NPY', '2019 2', 4)]
-        expected_nodes_data = [('2019 1', '2019 shiftwork, estrogen, pattern, disturbance, cell'),
-                               ('2019 2', '2019 study, analysis, association, time, cpg'),
-                               ('2014 NPY', 'NPY'),
-                               ('2014 1', '2014 body, susceptibility, ieaa, risk, time'),
-                               ('2014 2', '2014 reaction, disturbance, pattern, study, rhythm')]
+        expected_edges = [('2021 1', '2045 1', 3), ('2021 1', '2045 2', 2), ('2021 NPY', '2045 1', 1),
+                          ('2021 NPY', '2045 2', 4)]
+        expected_nodes_data = [('2045 1', '2045 1 shiftwork,estrogen,pattern'),
+                               ('2045 2', '2045 2 study,analysis,association'), ('2021 NPY', 'NPY'),
+                               ('2021 1', '2021 1 rassf1a,tsg,datasets')]
         self.assertListEqual(nodes_data, expected_nodes_data, 'Wrong nodes data')
         self.assertCountEqual(edges, expected_edges, 'Wrong Sankey diagram edges')
         self.assertListEqual([el[0] for el in nodes_data], [el[0] for el in expected_nodes_data],
@@ -138,14 +136,9 @@ class TestPlotPreprocessor(unittest.TestCase):
             self.analyzer.evolution_kwds
         )
 
-        expected_keywords_data = [
-            (2014, 1, 'body, susceptibility, ieaa, risk, time, acceleration, gene, association, tumor, ageaccel, '
-                      'development, tissue, blood, study, age'),
-            (2014, 2, 'reaction, disturbance, pattern, study, rhythm, result, change, analysis, shiftwork, disruption, '
-                      'per2, per1, promoter, expression, gene'),
-            (2019, 1, 'shiftwork, estrogen, pattern, disturbance, cell, per2, disruption, night, analysis, study, '
-                      'rhythm, per1, promoter, expression, gene'),
-            (2019, 2, 'study, analysis, association, time, cpg, sample, development, ageaccel, type, blood, cell, '
-                      'acceleration, risk, tissue, age')]
-
+        expected_keywords_data = [(2021,
+                                   1,
+                                   'rassf1a, tsg, datasets, biopsy, apc, benign, mutation, measure, history'),
+                                  (2045, 1, 'shiftwork, estrogen, pattern, disturbance, cell, per2, disruption'),
+                                  (2045, 2, 'study, analysis, association')]
         self.assertEqual(expected_keywords_data, kwds_data)

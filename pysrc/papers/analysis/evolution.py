@@ -8,8 +8,7 @@ import pandas as pd
 
 from pysrc.papers.analysis.citations import build_cocit_grouped_df
 from pysrc.papers.analysis.graph import build_similarity_graph
-from pysrc.papers.analysis.text import compute_comps_tfidf
-from pysrc.papers.analysis.topics import merge_components
+from pysrc.papers.analysis.topics import merge_components, get_topics_description
 from pysrc.papers.utils import SEED
 
 logger = logging.getLogger(__name__)
@@ -32,8 +31,8 @@ def topic_evolution_analysis(
     :param bibliographic_coupling_df: Bibliographic coupling dataframe, already filtered by min_threshold
     :param texts_similarity: Texts similarity list
     :param cocit_min_threshold: Min cocitations threshold
-    :param topic_min_size: 
-    :param max_topics_number: 
+    :param topic_min_size:
+    :param max_topics_number:
     :param similarity_func:
     :param evolution_step: Evolution step
     :param progress:
@@ -53,10 +52,9 @@ def topic_evolution_analysis(
 
     progress.info(f'Studying evolution of topics in {min_year} - {max_year}', current=current, task=task)
 
-    logger.debug(f"Topics evolution years: {', '.join([str(year) for year in year_range])}")
-    years_processed = 1
-    evolution_series = [df['comp']]  # Evolution ends with the latest topic separation
-    for i, year in enumerate(year_range[1:]):
+    logger.debug(f"Topics evolution years: {year_range}")
+    evolution_series = [pd.Series(data=list(df['comp']), index=list(df['id']))]  # Evolution starts with the latest topic separation
+    for year in year_range[1:]:
         progress.info(f'Processing year {year}', current=current, task=task)
         logger.debug(f'Get ids earlier than year {year}')
         ids_year = set(df.loc[df['year'] <= year]['id'])
@@ -101,20 +99,21 @@ def topic_evolution_analysis(
             partition_louvain, topic_min_size=topic_min_size, max_topics_number=max_topics_number
         )
         evolution_series.append(pd.Series(p))
-        years_processed += 1
 
-    year_range = year_range[:years_processed]
-
-    evolution_df = pd.concat(evolution_series, axis=1).rename(
-        columns=dict(enumerate(year_range)))
-    evolution_df['current'] = evolution_df[max_year]
-    evolution_df = evolution_df[list(reversed(list(evolution_df.columns)))]
+    evolution_df = pd.concat(evolution_series, axis=1)
+    evolution_df.columns = year_range  # Set columns
+    evolution_df = evolution_df[reversed(evolution_df.columns)]  # Restore ascending order
 
     # Assign -1 to articles not published yet
-    evolution_df = evolution_df.fillna(-1.0)
+    evolution_df = evolution_df.fillna(-1)
+
+    # Correct types
+    evolution_df = evolution_df.astype(int)
 
     evolution_df = evolution_df.reset_index().rename(columns={'index': 'id'})
     evolution_df['id'] = evolution_df['id'].astype(str)
+
+    logger.debug(f'Successfully created evolution_df {list(evolution_df.columns)} for year_range: {year_range}')
     return evolution_df, year_range
 
 
@@ -154,45 +153,22 @@ def topic_evolution_descriptions(
         df, evolution_df, year_range, corpus_terms, corpus_counts, size,
         progress, current=0, task=None
 ):
-    # Topic evolution failed, no need to generate keywords
     if evolution_df is None or not year_range:
+        logger.debug('Topic evolution failed, evolution_df is None, no need to generate keywords')
         return None
 
-    progress.info('Generating evolution topics description by top cited papers',
-                  current=current, task=task)
+    progress.info('Generating evolution topics descriptions', current=current, task=task)
     try:  # Workaround for https://github.com/JetBrains-Research/pubtrends/issues/247
         evolution_kwds = {}
         for col in evolution_df:
             if col in year_range:
-                progress.info(f'Generating topics descriptions for year {col}',
-                              current=current, task=task)
-                if isinstance(col, (int, float)):
-                    evolution_df[col] = evolution_df[col].apply(int)
-                    comps = evolution_df.groupby(col)['id'].apply(list).to_dict()
-                    evolution_kwds[col] = get_evolution_topics_description(
-                        df, comps, corpus_terms, corpus_counts,
-                        size=size
-                    )
+                logger.debug(f'Generating topics descriptions for year {col}')
+                comps = evolution_df[[col, 'id']].groupby(col)['id'].apply(list).to_dict()
+                # Component -1 is not published yet, should be ignored
+                evolution_kwds[col] = get_topics_description(df, comps, corpus_terms, corpus_counts,
+                                                             query=None, n_words=size, ignore_comp=-1)
+        logger.debug(f'Successfully generated evolution_kwds')
         return evolution_kwds
     except Exception as e:
         logger.error('Error while computing evolution description', e)
         return None
-
-
-def get_evolution_topics_description(df, comps, corpus_terms, corpus_counts, size):
-    tfidf = compute_comps_tfidf(df, comps, corpus_counts, ignore_comp=-1)
-    kwd = {}
-    comp_idx = dict(enumerate([c for c in comps if c != -1]))  # -1 Not yet published
-    for comp in comps.keys():
-        if comp not in comp_idx:
-            # Generate no keywords for '-1' component
-            kwd[comp] = ''
-            continue
-
-        # Sort indices by tfidf value
-        # It might be faster to use np.argpartition instead of np.argsort
-        ind = np.argsort(tfidf[comp_idx[comp], :].toarray(), axis=1)
-
-        # Take tokens with the largest tfidf
-        kwd[comp_idx[comp]] = [corpus_terms[idx] for idx in ind[0, -size:]]
-    return kwd

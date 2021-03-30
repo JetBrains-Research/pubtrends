@@ -73,7 +73,7 @@ def analyze_texts_similarity(df, corpus_vectors, min_threshold, max_similar):
     return similarity_queues
 
 
-def compute_comps_tfidf(df, comps, corpus_counts, ignore_comp=None):
+def compute_comps_tfidf(df, comps, corpus_counts, ignore_comp):
     """
     Compute TFIDF for components based on average counts
     :param df: Papers dataframe
@@ -87,7 +87,7 @@ def compute_comps_tfidf(df, comps, corpus_counts, ignore_comp=None):
     comp_idx = {c: i for i, c in enumerate(c for c in comps if c != ignore_comp)}
     terms_freqs_per_comp = np.zeros(shape=(len(comp_idx), corpus_counts.shape[1]), dtype=np.float)
     for comp, comp_pids in comps.items():
-        if comp in comp_idx:  # Not ignored
+        if comp != ignore_comp:  # Not ignored
             terms_freqs_per_comp[comp_idx[comp], :] = \
                 np.sum(corpus_counts[np.flatnonzero(df['id'].isin(comp_pids)), :], axis=0) / len(comp_pids)
 

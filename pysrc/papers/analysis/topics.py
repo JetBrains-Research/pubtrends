@@ -2,8 +2,9 @@ import logging
 from collections import Counter
 
 import networkx as nx
+import numpy as np
 
-from pysrc.papers.analysis.text import compute_comps_tfidf, get_frequent_tokens
+from pysrc.papers.analysis.text import get_frequent_tokens, compute_tfidf
 from pysrc.papers.utils import SEED
 
 logger = logging.getLogger(__name__)
@@ -123,23 +124,46 @@ def merge_components(partition, topic_min_size, max_topics_number):
         return partition, 0
 
 
-def get_topics_description(df, comps, corpus_terms, corpus_counts, query, n_words):
-    if len(comps) == 1:
-        most_frequent = get_frequent_tokens(df, query)
-        return {0: list(sorted(most_frequent.items(), key=lambda kv: kv[1], reverse=True))[:n_words]}
+def get_topics_description(df, comps, corpus_terms, corpus_counts, query, n_words, ignore_comp=None):
+    logger.debug(f'Generating topics description, ignore_comp={ignore_comp}')
+    # Since some of the components may be skipped, use this dict for continuous indexes'
+    comp_idx = {c: i for i, c in enumerate(c for c in comps if c != ignore_comp)}
+    # In cases with less than 2 significant components, return  frequencies
+    if len(comp_idx) < 2:
+        comp = list(comp_idx.keys())[0]
+        if ignore_comp is None:
+            most_frequent = get_frequent_tokens(df, query)
+            return {comp: list(sorted(most_frequent.items(), key=lambda kv: kv[1], reverse=True))[:n_words]}
+        else:
+            most_frequent = get_frequent_tokens(df.loc[df['id'].isin(set(comps[comp]))], query)
+            return {comp: list(sorted(most_frequent.items(), key=lambda kv: kv[1], reverse=True))[:n_words],
+                    ignore_comp: []}
 
-    tfidf = compute_comps_tfidf(df, comps, corpus_counts)
+    logger.debug('Compute average terms counts per components')
+    # Since some of the components may be skipped, use this dict for continuous indexes
+    comp_idx = {c: i for i, c in enumerate(c for c in comps if c != ignore_comp)}
+    terms_freqs_per_comp = np.zeros(shape=(len(comp_idx), corpus_counts.shape[1]), dtype=np.float)
+    for comp, comp_pids in comps.items():
+        if comp != ignore_comp:  # Not ignored
+            terms_freqs_per_comp[comp_idx[comp], :] = \
+                np.sum(corpus_counts[np.flatnonzero(df['id'].isin(comp_pids)), :], axis=0) / len(comp_pids)
+
+    tfidf = compute_tfidf(terms_freqs_per_comp)
+
+    logger.debug('Take terms with the largest tfidf for topics')
     result = {}
-    for comp in comps.keys():
-        # Generate no keywords for '-1' component
-        if comp == -1:
-            result[comp] = ''
+    for comp, _ in comps.items():
+        if comp == ignore_comp:
+            result[comp] = []  # Ignored component
             continue
 
-        # Take indices with the largest tfidf
         counter = Counter()
-        for i, w in enumerate(corpus_terms):
-            counter[w] += tfidf[comp, i]
+        for i, t in enumerate(corpus_terms):
+            counter[t] += tfidf[comp_idx[comp], i]
         # Ignore terms with insignificant frequencies
         result[comp] = [(t, f) for t, f in counter.most_common(n_words) if f > 0]
+
+    kwds = [(comp, ','.join([f'{t}:{v:.3f}' for t, v in vs])) for comp, vs in result.items()]
+    logger.debug('Description\n' + '\n'.join(f'{comp}: {kwd}' for comp, kwd in kwds))
+
     return result

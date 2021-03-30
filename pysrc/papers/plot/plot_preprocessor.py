@@ -211,22 +211,21 @@ class PlotPreprocessor:
         return cytoscape_data
 
     @staticmethod
-    def topic_evolution_data(df, kwds, n_steps):
+    def topic_evolution_data(evolution_df, kwds, n_steps):
         def sort_nodes_key(node):
             y, c = node[0].split(' ')
             return int(y), 1 if c == 'NPY' else -int(c)
 
-        cols = df.columns[2:]
-        pairs = list(zip(cols, cols[1:]))
+        cols = evolution_df.columns[1:]  # Skip id
         nodes = set()
         edges = []
-        for now, then in pairs:
-            nodes_now = [f'{now} {PlotPreprocessor.evolution_topic_name(c)}' for c in df[now].unique()]
-            nodes_then = [f'{then} {PlotPreprocessor.evolution_topic_name(c)}' for c in df[then].unique()]
+        for now, then in list(zip(cols, cols[1:])):
+            nodes_now = [f'{now} {PlotPreprocessor.evolution_topic_name(c)}' for c in evolution_df[now].unique()]
+            nodes_then = [f'{then} {PlotPreprocessor.evolution_topic_name(c)}' for c in evolution_df[then].unique()]
 
             inner = {node: 0 for node in nodes_then}
             changes = {node: inner.copy() for node in nodes_now}
-            for pmid, comp in df.iterrows():
+            for pmid, comp in evolution_df.iterrows():
                 c_now, c_then = comp[now], comp[then]
                 changes[f'{now} {PlotPreprocessor.evolution_topic_name(c_now)}'][
                     f'{then} {PlotPreprocessor.evolution_topic_name(c_then)}'
@@ -245,10 +244,9 @@ class PlotPreprocessor:
             if c == 'NPY':
                 label = c
             else:
+                label = f'{year} {c}'
                 if n_steps < 4:
-                    label = f"{year} {', '.join(kwds[int(year)][int(c) - 1][:5])}"
-                else:
-                    label = f"{year} {c}"
+                    label += ' ' + ','.join(c for c, _ in kwds[int(year)][int(c) - 1][:3])
             nodes_data.append((node, label))
         nodes_data = sorted(nodes_data, key=sort_nodes_key, reverse=True)
 
@@ -268,8 +266,8 @@ class PlotPreprocessor:
         kwds_data = []
         for year, comps in kwds.items():
             for comp, kwd in comps.items():
-                if comp >= 0:
-                    kwds_data.append((year, comp + 1, ', '.join(kwd)))
+                if comp != -1:  # Not published yet
+                    kwds_data.append((year, comp + 1, ', '.join(k for k, _ in kwd)))
         return kwds_data
 
     @staticmethod

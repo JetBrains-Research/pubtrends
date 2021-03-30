@@ -106,13 +106,12 @@ def visualize_analysis(analyzer):
             ]
 
     if PUBTRENDS_CONFIG.feature_evolution_enabled:
-        if analyzer.similarity_graph.nodes():
-            evolution_result = plotter.topic_evolution()
-            if evolution_result is not None:
-                evolution_data, keywords_data = evolution_result
-                result['topic_evolution'] = [components(evolution_data)]
-                if keywords_data:
-                    result['topic_evolution_keywords'] = keywords_data
+        evolution_result = plotter.topic_evolution()
+        if evolution_result is not None:
+            evolution_data, keywords_data = evolution_result
+            result['topic_evolution'] = [components(evolution_data)]
+            result['topic_evolution_keywords'] = keywords_data
+
     return result
 
 
@@ -690,6 +689,9 @@ class Plotter:
         """
         # Topic evolution analysis failed, one step is not enough to analyze evolution
         if self.analyzer.evolution_df is None or not self.analyzer.evolution_kwds:
+            logger.debug(f'Topic evolution failure, '
+                         f'evolution_df is None: {self.analyzer.evolution_df is None}, '
+                         f'evolution_kwds is None: {self.analyzer.evolution_kwds is None}')
             return None
 
         n_steps = len(self.analyzer.evolution_df.columns) - 2
@@ -707,12 +709,10 @@ class Plotter:
 
         p = hv.render(topic_evolution, backend='bokeh')
         p.sizing_mode = 'stretch_width'
-        if n_steps > 3:
-            kwds_data = PlotPreprocessor.topic_evolution_keywords_data(
-                self.analyzer.evolution_kwds
-            )
-            return p, kwds_data
-        return p, None
+        kwds_data = PlotPreprocessor.topic_evolution_keywords_data(
+            self.analyzer.evolution_kwds
+        )
+        return p, kwds_data
 
     @staticmethod
     def word_cloud_prepare(wc):
@@ -750,3 +750,4 @@ class Plotter:
     @staticmethod
     def topics_palette(df):
         return dict([(k, v.to_hex()) for k, v in Plotter.topics_palette_rgb(df).items()])
+
