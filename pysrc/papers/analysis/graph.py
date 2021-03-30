@@ -110,7 +110,6 @@ def build_structure_graph(df, similarity_graph, similarity_func, comp_sparsity, 
         for ci, cc in enumerate(connected_components):
             for node in cc:
                 connected_map[node] = ci
-        logger.debug(f'Connected map {connected_map}')
 
         logger.debug('Processing edges within sparse graph')
         topic_similarity_sum = 0
