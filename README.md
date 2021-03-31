@@ -40,7 +40,8 @@ Ensure that file contains correct information about the database(s) (url, port, 
     docker build -t biolabs/pubtrends .
     ```
 
-4. Init Neo4j database and install APOC extension.
+4. When using Postgresql as DB skip this part. \
+   Init Neo4j database and install APOC extension.
     * Prepare folders
     ```
     mkdir -p $HOME/neo4j/data $HOME/neo4j/logs $HOME/neo4j/plugins
@@ -60,7 +61,8 @@ Ensure that file contains correct information about the database(s) (url, port, 
         neo4j:3.5 /bin/bash -c 'bin/neo4j-admin set-initial-password mysecretpassword'
     ```   
 
-5. Init PostgreSQL database.
+5. When using Neo4j as DB skip this part. \
+   Init PostgreSQL database.
     
     * Launch Docker image:
     ```
@@ -132,7 +134,8 @@ Updates - add crontab update every day at 22:00 with the command:
 ### Optional: Semantic Scholar
 
 Download Sample from [Semantic Scholar](https://www.semanticscholar.org/) or full archive. See Open Corpus.<br>
-Instructions are for the corpus 2021-03-01.
+Instructions are for the corpus 2021-03-01. \
+Replace `<PATH_TO_PUBTRENDS.JAR>` with actual path to Jar file.
 
    * Linux & Mac OS
    ```
@@ -142,7 +145,7 @@ Instructions are for the corpus 2021-03-01.
       if [[ -z $(grep "$file" complete.txt) ]]; then
          echo "Processing $file"
          wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2021-03-01/$file;
-         java -cp pubtrends.jar org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --fillDatabase $(pwd)/$file
+         java -cp <PATH_TO_PUBTRENDS.JAR> org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --fillDatabase $(pwd)/$file
          rm $file;
          echo "$file" >> complete.txt
       fi;
@@ -159,18 +162,13 @@ Instructions are for the corpus 2021-03-01.
        if ($sel -eq $null) {
           echo "Processing $file"
           curl.exe -o .\$file https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2021-03-01$file
-          java -cp "pubtrends.jar" org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --fillDatabase .\$file
+          java -cp <PATH_TO_PUBTRENDS.JAR> org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --fillDatabase .\$file
           del ./$file
           echo $file >> .\complete.txt
        }
    }
    java -cp "pubtrends.jar" org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --finish
    ```
-
-   Command line options supported:
-   * `resetDatabase` - clear current contents of the database (useful for development) 
-   * `fillDatabase` - create and fill database with Semantic Scholar data from file
-
 
 ## Development
 
@@ -269,7 +267,8 @@ Please ensure that you have configured and prepared the database(s).
 1. Modify file `config.properties` with information about the database(s). 
    File from the project folder is used in this case.
 
-2. Launch Neo4j database docker image.
+2. When using Postgres as DB skip this part. \
+   Launch Neo4j database docker image.
 
     ```
     docker run --name pubtrends-neo4j \
@@ -285,7 +284,8 @@ Please ensure that you have configured and prepared the database(s).
     
    See https://neo4j.com/developer/guide-performance-tuning/ for configuration details.
    
-3. Start PostgreSQL server.
+3. When using Neo4j as DB skip this part. \
+   Start PostgreSQL server.
 
     ```
     docker run --rm  --name pubtrends-postgres -p 5432:5432 \
