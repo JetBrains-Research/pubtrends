@@ -233,8 +233,10 @@ class PlotPreprocessor:
 
             for v in nodes_now:
                 for u in nodes_then:
-                    if changes[v][u] > 0:
-                        edges.append((v, u, changes[v][u]))
+                    n_papers = changes[v][u]
+                    if n_papers > 0:
+                        # Improve Sankey Diagram by hiding NPY papers, adding artificial edge
+                        edges.append((v, u, n_papers if not ('NPY' in u and 'NPY' in v) else 1))
                         nodes.add(v)
                         nodes.add(u)
 
