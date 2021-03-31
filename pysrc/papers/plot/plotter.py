@@ -703,7 +703,8 @@ class Plotter:
         value_dim = hv.Dimension('Amount', unit=None)
         nodes_ds = hv.Dataset(nodes_data, 'index', 'label')
         topic_evolution = hv.Sankey((edges, nodes_ds), ['From', 'To'], vdims=value_dim)
-        topic_evolution.opts(labels='label', width=PLOT_WIDTH, height=TALL_PLOT_HEIGHT,
+        topic_evolution.opts(labels='label',
+                             width=PLOT_WIDTH, height=max(TALL_PLOT_HEIGHT, len(self.analyzer.components) * 30),
                              show_values=False, cmap='tab20',
                              edge_color=dim('To').str(), node_color=dim('index').str())
 
