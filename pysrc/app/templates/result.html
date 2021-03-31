@@ -468,10 +468,14 @@
                     <p>
                         Explore citations between the papers of interest on the citations graph.
                     </p>
+                    {% if n_papers <= 2000 %}
                     <button id="show_citations_graph" type="button" class="btn btn-light"
                             onclick="graph_callback('citations');">
                         Show citations graph
                     </button>
+                    {% else %}
+                        Too many papers to visualize citations graph.
+                    {% endif %}
                     <hr>
                     <p>
                         Similarity between papers is computed based on <em>bibliographic coupling</em>,
@@ -480,10 +484,14 @@
                         <br>
                         Explore papers network, where similar papers are located together and connected.
                     </p>
+                    {% if n_papers <= 2000 %}
                     <button id="show_similarity_graph" type="button" class="col-auto btn btn-light"
                             onclick="graph_callback('structure');">
                         Show similarity graph
                     </button>
+                    {% else %}
+                    Too many papers to visualize similarity graph.
+                    {% endif %}
                     <div class="mt-3" id="feedback-network-form"></div>
                 </div>
             </div>
