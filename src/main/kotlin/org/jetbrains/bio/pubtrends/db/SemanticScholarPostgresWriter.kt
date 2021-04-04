@@ -120,13 +120,13 @@ open class SemanticScholarPostgresWriter(
                 exec(
                     """
                     do
-                    ${"$$"}
+                    $$
                     begin
                     IF exists (select matviewname from pg_matviews where matviewname = 'matview_sscitations') THEN
                         refresh materialized view matview_sscitations;
                     END IF;
                     end;
-                    ${"$$"};
+                    $$;
                     """
                 )
             }
