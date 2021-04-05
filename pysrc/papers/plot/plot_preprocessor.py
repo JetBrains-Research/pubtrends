@@ -4,6 +4,7 @@ from itertools import product as cart_product
 import networkx as nx
 import numpy as np
 import pandas as pd
+from more_itertools import unique_everseen
 
 from pysrc.papers.analysis.text import build_corpus
 from pysrc.papers.analyzer import PapersAnalyzer
@@ -322,3 +323,41 @@ class PlotPreprocessor:
                 (pid, title, authors, url_prefix + pid if url_prefix else None, journal, year, total, doi, topic)
             )
         return result
+
+    @staticmethod
+    def layout_dendrogram(dendrogram):
+        # Remove redundant levels from the dendrogram
+        rd = []
+        for i, level in enumerate(dendrogram):
+            if i == 0:
+                rd.append(level)
+            else:
+                if len(set(level.keys())) == len(set(level.values())):
+                    rd[i - 1] = {k: level[v] for k, v in rd[i - 1].items()}
+                else:
+                    rd.append(level)
+        dendrogram = rd
+        # Compute paths
+        paths = []
+        for i, level in enumerate(dendrogram):
+            if i == 0:
+                for k in level.keys():
+                    paths.append([k])
+            # Edges
+            for k, v in level.items():
+                for path in paths:
+                    if path[i] == k:
+                        path.append(v)
+        # Add root as last item
+        for path in paths:
+            path.append(0)
+        # Radix sort or paths to ensure no overlaps
+        for i in range(0, len(dendrogram) + 1):
+            paths.sort(key=lambda p: p[i])
+            # Reorder next level to keep order of previous if possible
+            if i != len(dendrogram):
+                order = dict((v, i) for i, v in enumerate(unique_everseen(p[i + 1] for p in paths)))
+                for p in paths:
+                    p[i + 1] = order[p[i + 1]]
+        leaves_order = dict((v, i) for i, v in enumerate(unique_everseen(p[0] for p in paths)))
+        return dendrogram, paths, leaves_order

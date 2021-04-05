@@ -603,50 +603,24 @@ class Plotter:
         if len(dendrogram) == 0:
             return None
 
-        # Remove redundant levels from the dendrogram
-        rd = []
-        for i, level in enumerate(dendrogram):
-            if i == 0:
-                rd.append(level)
-            else:
-                if len(set(level.keys())) == len(set(level.values())):
-                    rd[i - 1] = {k: level[v] for k, v in rd[i - 1].items()}
-                else:
-                    rd.append(level)
-        dendrogram = rd
+        # Cleanup dendrogram and reorder paths to avoid intersections
+        dendrogram, paths, leaves_order = PlotPreprocessor.layout_dendrogram(dendrogram)
 
+        # Configure dimensions
         w = len(set(dendrogram[0].keys())) * 10 + 10
+        dx = int(w / (len(dendrogram[0]) + 1))
         dy = 3
         p = figure(x_range=[-10, w + 10],
                    y_range=[-3, dy * (len(dendrogram) + 1)],
                    width=PLOT_WIDTH, height=100 * (len(dendrogram) + 1), tools=[])
 
-        paths = []
-        for i, level in enumerate(dendrogram):
-            if i == 0:
-                for k in level.keys():
-                    paths.append([k])
-            # Edges
-            for k, v in level.items():
-                for path in paths:
-                    if path[i] == k:
-                        path.append(v)
-        # Add root as last item
-        for path in paths:
-            path.append(0)
-
-        # Radix sort or paths to ensure no overlaps
-        for i in range(0, len(dendrogram) + 1):
-            paths.sort(key=lambda p: p[i])
-
         # Leaves coordinates
-        dx = int(w / (len(dendrogram[0]) + 1))
-        xs0 = dict([(v, (i + 1) * dx) for i, v in enumerate(unique_everseen([p[0] for p in paths]))])
+        leaves_xs = dict((v, (i + 1) * dx) for v, i in leaves_order.items())
 
         # Draw dendrogram
-        xs = xs0.copy()
+        xs = leaves_xs.copy()
         for i in range(1, len(dendrogram) + 2):
-            # Vertical lines
+            # Vertical lines (up from leaves to root)
             for _, x in xs.items():
                 p.line([x, x], [(i - 1) * dy, i * dy], line_color='black')
             new_xs = {}
@@ -662,12 +636,12 @@ class Plotter:
 
         # Draw leaves
         topics_colors = Plotter.topics_palette_rgb(self.analyzer.df)
-        for v, x in xs0.items():
+        for v, x in leaves_xs.items():
             p.circle(x=x, y=0, size=15, line_color="black", fill_color=topics_colors[v])
-        p.text(x=[x - 1 for _, x in xs0.items()],
-               y=[-1] * len(xs0),
-               text=[str(v + 1) for v, _ in xs0.items()],
-               text_baseline='middle', text_font_size='11pt')
+        p.text(x=[x - 0.5 for _, x in leaves_xs.items()],
+               y=[-1] * len(leaves_xs),
+               text=[str(v + 1) for v, _ in leaves_xs.items()],
+               text_baseline='middle', text_font_size='10pt')
 
         p.sizing_mode = 'stretch_width'
         p.axis.major_tick_line_color = None
