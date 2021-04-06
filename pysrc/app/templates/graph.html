@@ -469,18 +469,14 @@
                         } else if ('title' in data) {
                             // Paper
                             const topic = data.topic;
-                            let other = '';
                             // Disable formatter for the next section because of injections.
                             // Enable formatter control in File > Settings > Editor > Code Style
                             // @formatter:off
-                                if (topic === {{ topic_other }}) {
-                                    other = ' OTHER';
-                                }
                                 content.innerHTML = "<b>" + data.title + "</b><br>" +
                                     "<b>Author(s)</b> " + data.authors + "<br>" +
                                     "<b>Year</b> " + data.year + "<br>" +
                                     "<b>Cited</b> " + data.cited + "<br>" +
-                                    "<b>Topic</b> " + (topic + 1) + other + " " +
+                                    "<b>Topic</b> " + (topic + 1) + " " +
                                     '<svg width="16" height="16"><rect width="16" height="16" ' +
                                     'style="fill:' + topics_palette[topic] + '";/></svg><br>' +
                                     "<b>Tags</b> " + "<em>" + topics_description[topic] + "</em><br>" +
@@ -492,12 +488,8 @@
                             } else if ('topic' in data) {
                                 // Group
                                 const topic = data.topic;
-                                let other = '';
-                                if (topic === {{ topic_other }}) {
-                                    other = 'OTHER';
-                                }
                                 content.innerHTML =  "<b>These papers are not connected.</b><br>" +
-                                    "<b>Topic</b> " + (topic + 1) + " " + other + "<br>" +
+                                    "<b>Topic</b> " + (topic + 1) + "<br>" +
                                     "<b>Tags</b> " + "<em>" + topics_description[topic] + "</em>";
                             }
                             // @formatter:on

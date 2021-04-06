@@ -3,6 +3,7 @@ from collections import Counter
 
 import networkx as nx
 import numpy as np
+import pandas as pd
 
 from pysrc.papers.analysis.text import get_frequent_tokens, compute_tfidf
 from pysrc.papers.utils import SEED
@@ -20,7 +21,7 @@ def topic_analysis(similarity_graph, similarity_func, topic_min_size, max_topics
     :return: dendrogram, sorted_partition, comp_other, components, sorted_comp_sizes
     """
     connected_components = nx.number_connected_components(similarity_graph)
-    logger.debug(f'Relations graph has {connected_components} connected components')
+    logger.debug(f'Similarity graph has {connected_components} connected components')
 
     logger.debug('Compute aggregated similarity')
     for _, _, d in similarity_graph.edges(data=True):
@@ -31,97 +32,122 @@ def topic_analysis(similarity_graph, similarity_func, topic_min_size, max_topics
     dendrogram = community.generate_dendrogram(
         similarity_graph, weight='similarity', random_state=SEED
     )
-    # Smallest communities
-    partition_louvain = dendrogram[0]
-    logger.debug(f'Found {len(set(partition_louvain.values()))} components')
-    components = set(partition_louvain.values())
-    comp_sizes = {c: sum([partition_louvain[node] == c for node in partition_louvain.keys()]) for c in components}
-    logger.debug(f'Components: {comp_sizes}')
+
+    # Smallest communities by the Louvain algorithm
+    logger.debug(f'Found {len(set(dendrogram[0].values()))} components')
     if len(similarity_graph.edges) > 0:
-        logger.debug('Calculate modularity for partition')
-        modularity = community.modularity(partition_louvain, similarity_graph)
+        modularity = community.modularity(dendrogram[0], similarity_graph)
         logger.debug(f'Graph modularity (possible range is [-1, 1]): {modularity :.3f}')
 
-    # Reorder and merge small components to 'OTHER'
-    partition, n_components_merged = merge_components(
-        partition_louvain,
-        topic_min_size=topic_min_size,
-        max_topics_number=max_topics_number
+    # Merge small topics
+    similarity_matrix = compute_similarity_matrix(similarity_graph, similarity_func, dendrogram[0])
+    dendrogram, comp_sizes = merge_components(
+        dendrogram, similarity_matrix,
+        topic_min_size=topic_min_size, max_topics_number=max_topics_number
     )
+    return dendrogram[0], dendrogram[1:], comp_sizes
 
-    logger.debug('Sorting components by size descending')
-    components = set(partition.values())
-    comp_sizes = {c: sum([partition[node] == c for node in partition.keys()]) for c in components}
-    # Hack to sort map values by key
-    keysort = lambda seq: sorted(range(len(seq)), key=seq.__getitem__, reverse=True)
-    sorted_comps = list(keysort(list(comp_sizes.values())))
-    sort_order = dict(zip(sorted_comps, range(len(components))))
-    logger.debug(f'Components reordering by size: {sort_order}')
-    sorted_partition = {p: sort_order[c] for p, c in partition.items()}
-    sorted_comp_sizes = {c: comp_sizes[sort_order[c]] for c in range(len(comp_sizes))}
 
-    if n_components_merged > 0:
-        comp_other = sorted_comps.index(0)  # Other component is 0!
-    else:
-        comp_other = None
-    logger.debug(f'Component OTHER: {comp_other}')
+def compute_similarity_matrix(similarity_graph, similarity_func, partition):
+    logger.debug('Computing mean similarity of all edges between topics')
+    n_comps = len(set(partition.values()))
+    edges = len(similarity_graph.edges)
+    sources = [None] * edges
+    targets = [None] * edges
+    similarities = [0.0] * edges
+    i = 0
+    for u, v, data in similarity_graph.edges(data=True):
+        sources[i] = u
+        targets[i] = v
+        similarities[i] = similarity_func(data)
+        i += 1
+    df = pd.DataFrame(partition.items(), columns=['id', 'comp'])
+    similarity_df = pd.DataFrame(data={'source': sources, 'target': targets, 'similarity': similarities})
+    similarity_topics_df = similarity_df.merge(df, how='left', left_on='source', right_on='id') \
+        .merge(df, how='left', left_on='target', right_on='id')
+    logger.debug('Calculate mean similarity between for topics')
+    mean_similarity_topics_df = \
+        similarity_topics_df.groupby(['comp_x', 'comp_y'])['similarity'].mean().reset_index()
+    similarity_matrix = np.zeros(shape=(n_comps, n_comps))
+    for index, row in mean_similarity_topics_df.iterrows():
+        cx, cy = int(row['comp_x']), int(row['comp_y'])
+        similarity_matrix[cx, cy] = similarity_matrix[cy, cx] = row['similarity']
+    return similarity_matrix
+
+
+def merge_components(dendrogram, similarity_matrix, topic_min_size, max_topics_number):
+    """
+    Merge small topics to required number of topics and minimal size, reorder topics by size
+    :param dendrogram: Louvain clustering dendrogram
+    :param similarity_matrix: Mean similarity between components for partition
+    :param topic_min_size: Min number of papers in topic
+    :param max_topics_number: Max number of topics
+    :return: updated dendrogram, sorted_comp_sizes
+    """
+    logger.debug(f'Merging: max {max_topics_number} components with min size {topic_min_size}')
+    partition = dendrogram[0]
+    comp_sizes = {c: sum([partition[paper] == c for paper in partition.keys()])
+                  for c in (set(partition.values()))}
+    logger.debug(f'Dendrogram 1+ {dendrogram[1:]}')
+    logger.debug(f'{len(comp_sizes)} comps, comp_sizes: {comp_sizes}')
+
+    merge_index = 1
+    while len(comp_sizes) > 1 and \
+            (len(comp_sizes) > max_topics_number or min(comp_sizes.values()) < topic_min_size):
+        logger.debug(f'{merge_index}. Pick minimal and merge it with the closest by dendrogram and similarity')
+        merge_index += 1
+        min_comp = min(comp_sizes.keys(), key=lambda c: comp_sizes[c])
+        if len(dendrogram) > 1:
+            min_topic_parent = dendrogram[1][min_comp]
+            logger.debug(f'Min comp {min_comp} size {comp_sizes[min_comp]} parent {min_topic_parent}')
+            comps_same_parent = [c for c, p in dendrogram[1].items() if c != min_comp and p == min_topic_parent]
+        else:
+            comps_same_parent = []
+        if comps_same_parent:
+            comp_to_merge = max(comps_same_parent, key=lambda c: similarity_matrix[min_comp][c])
+            logger.debug(f'Merging with most similar comp {comp_to_merge} same parent')
+        else:
+            comp_to_merge = max([c for c in partition.values() if c != min_comp],
+                                key=lambda c: similarity_matrix[min_comp][c])
+            logger.debug(f'Merging with most similar comp {comp_to_merge}')
+        comp_update = min(min_comp, comp_to_merge)
+        comp_sizes[comp_update] = comp_sizes[min_comp] + comp_sizes[comp_to_merge]
+        if min_comp != comp_update:
+            del comp_sizes[min_comp]
+        else:
+            del comp_sizes[comp_to_merge]
+        logger.debug(f'Merged comps: {len(comp_sizes)}, updated comp_sizes: {comp_sizes}')
+        for (paper, c) in list(partition.items()):
+            if c == min_comp or c == comp_to_merge:
+                partition[paper] = comp_update
+
+        logger.debug('Update dendrogram')
+        for i in range(1, len(dendrogram)):
+            prev_level_values = set(dendrogram[i - 1].values())
+            for c in list(dendrogram[i].keys()):
+                if c not in prev_level_values:
+                    del dendrogram[i][c]
+        logger.debug('Update similarities')
+        for i in range(len(similarity_matrix)):
+            similarity_matrix[i, comp_update] = \
+                (similarity_matrix[i, min_comp] + similarity_matrix[i, comp_to_merge]) / 2
+            similarity_matrix[comp_update, i] = \
+                (similarity_matrix[min_comp, i] + similarity_matrix[comp_to_merge, i]) / 2
+
+    logger.debug('Sorting comps by size descending')
+    sorted_components = dict(
+        (c, i) for i, c in enumerate(sorted(set(comp_sizes), key=lambda c: comp_sizes[c], reverse=True))
+    )
+    logger.debug(f'Comps reordering by size: {sorted_components}')
+    dendrogram[0] = {paper: sorted_components[c] for paper, c in dendrogram[0].items()}
+    if len(dendrogram) > 1:
+        dendrogram[1] = {sorted_components[c]: p for c, p in dendrogram[1].items()}
+    sorted_comp_sizes = {c: sum([dendrogram[0][p] == c for p in dendrogram[0].keys()])
+                         for c in set(dendrogram[0].values())}
 
     for k, v in sorted_comp_sizes.items():
-        logger.debug(f'Component {k}: {v} ({int(100 * v / len(partition))}%)')
-
-    logger.debug('Update components dendrogram according to merged topics')
-    if len(dendrogram) >= 2:
-        rename_map = {}
-        for pid, v in partition_louvain.items():  # Pid -> smallest community
-            if v not in rename_map:
-                rename_map[v] = sorted_partition[pid]
-        comp_level = {rename_map[k]: v for k, v in dendrogram[1].items() if k in rename_map}
-
-        logger.debug('Add artificial path for OTHER component')
-        if comp_other is not None:
-            comp_level[comp_other] = -1
-            for d in dendrogram[2:]:
-                d[-1] = -1
-        comp_dendrogram = [comp_level] + dendrogram[2:]
-    else:
-        comp_dendrogram = []
-
-    return comp_dendrogram, sorted_partition, comp_other, components, sorted_comp_sizes
-
-
-def merge_components(partition, topic_min_size, max_topics_number):
-    logger.debug(f'Merging components to get max {max_topics_number} components into to "Other" component')
-    components = set(partition.values())
-    comp_sizes = {c: sum([partition[node] == c for node in partition.keys()]) for c in components}
-    sorted_comps = sorted(comp_sizes.keys(), key=lambda c: comp_sizes[c], reverse=True)
-    # Limit max number of topics
-    if len(components) > max_topics_number:
-        components_to_merge = set(sorted_comps[max_topics_number - 1:])
-    else:
-        components_to_merge = set()
-    # Merge tiny topics
-    for c, csize in comp_sizes.items():
-        if csize < topic_min_size:
-            components_to_merge.add(c)
-    if components_to_merge:
-        n_components_merged = len(components_to_merge)
-        logger.debug('Reassigning components')
-        partition_merged = {}
-        new_comps = {}
-        ci = 1  # Start with 1, OTHER component is 0
-        for node, comp in partition.items():
-            if comp in components_to_merge:
-                partition_merged[node] = 0  # Other
-                continue
-            if comp not in new_comps:
-                new_comps[comp] = ci
-                ci += 1
-            partition_merged[node] = new_comps[comp]
-        logger.debug(f'Got {len(set(partition_merged.values()))} components')
-        return partition_merged, n_components_merged
-    else:
-        logger.debug('No need to reassign components')
-        return partition, 0
+        logger.debug(f'Component {k}: {v} ({int(100 * v / len(dendrogram[0]))}%)')
+    return dendrogram, sorted_comp_sizes
 
 
 def get_topics_description(df, comps, corpus_terms, corpus_counts, query, n_words, ignore_comp=None):

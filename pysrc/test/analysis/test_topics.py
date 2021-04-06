@@ -1,9 +1,10 @@
 import unittest
+import numpy as np
 
 from parameterized import parameterized
 
 from pysrc.papers.analysis.graph import build_citation_graph
-from pysrc.papers.analysis.topics import merge_components
+from pysrc.papers.analysis.topics import merge_components, compute_similarity_matrix
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.test.mock_loaders import MockLoader
@@ -39,17 +40,27 @@ class TestTopics(unittest.TestCase):
                 self.assertEqual(getattr(row, 'comp'), -1)
 
     @parameterized.expand([
-        ('5_0', {1: 0, 2: 1, 3: 2, 4: 3, 5: 4}, 5, 0, ({1: 0, 2: 1, 3: 2, 4: 3, 5: 4}, 0)),
-        ('4_0', {1: 0, 2: 1, 3: 2, 4: 3, 5: 4}, 4, 0, ({1: 1, 2: 2, 3: 3, 4: 0, 5: 0}, 2)),
-        ('1_0', {1: 0, 2: 1, 3: 1, 4: 1, 5: 1}, 1, 0, ({1: 0, 2: 0, 3: 0, 4: 0, 5: 0}, 2)),
-        ('5_10', {1: 0, 2: 1, 3: 2, 4: 3, 5: 4}, 1, 10, ({1: 0, 2: 0, 3: 0, 4: 0, 5: 0}, 5)),
+        ('single', [{1: 0}], 5, 2, [{1: 0}]),
+        ('single_hierarchy', [{1: 0, 2: 1}, {0: 0, 1: 0}], 5, 2, [{1: 0, 2: 0}, {0: 0}]),
+        ('two', [{1: 0, 2: 0, 3: 1, 4: 1, 5: 1}], 5, 3, [{1: 0, 2: 0, 3: 0, 4: 0, 5: 0}]),
+        ('parent', [{1: 0, 2: 1, 3: 1, 4: 2, 5: 2}, {0: 1, 1: 0, 2: 1}], 5, 2,
+         [{1: 0, 2: 1, 3: 1, 4: 0, 5: 0}, {0: 1, 1: 0}]),
+        ('5_0', [{1: 0, 2: 1, 3: 2, 4: 3, 5: 4}], 5, 0, [{1: 0, 2: 1, 3: 2, 4: 3, 5: 4}]),
+        ('4_0', [{1: 0, 2: 1, 3: 2, 4: 3, 5: 4}], 4, 0, [{1: 0, 2: 0, 3: 1, 4: 2, 5: 3}]),
+        ('1_0', [{1: 0, 2: 1, 3: 1, 4: 1, 5: 1}], 10, 5, [{1: 0, 2: 0, 3: 0, 4: 0, 5: 0}]),
+        ('5_10', [{1: 0, 2: 1, 3: 2, 4: 3, 5: 4}], 1, 10, [{1: 0, 2: 0, 3: 0, 4: 0, 5: 0}]),
     ])
-    def test_merge_components(self, name, partition, max_topics_number, topic_min_size, expected):
-        partition, n_components_merged = merge_components(
-            partition, topic_min_size=topic_min_size, max_topics_number=max_topics_number)
-        expected_partition, expected_merged = expected
-        self.assertEqual(n_components_merged, expected_merged, name)
-        self.assertEqual(partition, expected_partition, name)
+    def test_merge_components(self, name, dendrogram, max_topics_number, topic_min_size, expected_partition):
+        n_comps = len(set(dendrogram[0].values()))
+        merge_components(dendrogram, np.zeros(shape=(n_comps, n_comps)),
+                         topic_min_size=topic_min_size, max_topics_number=max_topics_number)
+        self.assertEqual(dendrogram, expected_partition, name)
+
+    def test_heatmap_topics_similarity(self):
+        matrix = compute_similarity_matrix(self.analyzer.similarity_graph,
+                                           PapersAnalyzer.similarity, self.analyzer.partition)
+        similarities = np.array([[0.81587119, 0.45215167], [0.45215167, 1.88629436]])
+        self.assertTrue(np.allclose(similarities, matrix))
 
 
 if __name__ == '__main__':

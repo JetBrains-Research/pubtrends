@@ -515,9 +515,6 @@
                     {{ div|safe }}
                     {% endfor %}
                     <hr>
-                    <p>
-                        Topic sizes. <em>Note: small topics are merged to "Other".</em>
-                    </p>
                     <div>
                         {% for script, div in component_ratio %}
                         {{ script|safe }}
@@ -581,9 +578,6 @@
                             <hr>
                             <h2 id="topic-{{ loop.index }}" class="card-subtitle">
                                 Topic {{ loop.index }}
-                                {% if loop.index0 == comp_other %}
-                                - OTHER
-                                {% endif %}
                                 <button type="button" class="btn btn-light"
                                         onclick="papers_callback_component({{ loop.index }});">
                                     <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as

@@ -91,31 +91,6 @@ class TestPlotPreprocessor(unittest.TestCase):
         max_width = max_size * (self.analyzer.max_year - self.analyzer.min_year + 1)
         self.assertLessEqual(max_width, width, 'Horizontal overlap')
 
-    def test_heatmap_topics_similarity(self):
-        similarity_df, topics = PlotPreprocessor.topics_similarity_data(
-            self.analyzer.similarity_graph, self.analyzer.df, self.analyzer.comp_sizes
-        )
-
-        # Find data for comp_x=i and comp_y=j in DataFrame
-        def index(i, j):
-            return np.logical_and(similarity_df['comp_x'] == str(i), similarity_df['comp_y'] == str(j))
-
-        self.assertListEqual(topics, ['1', '2', '3'], 'Wrong topics')
-
-        expected_similarities = np.array([[1.53027646, 0.69314718, 0.],
-                                          [0.69314718, 1.31036669, 0.],
-                                          [0., 0., 0.]])
-
-        similarities = np.zeros(shape=(3, 3))
-        for i in range(3):
-            for j in range(3):
-                similarities[i, j] = similarity_df[index(i + 1, j + 1)]['similarity'].values[0]
-
-        for i in range(3):
-            for j in range(3):
-                self.assertAlmostEqual(expected_similarities[i, j], similarities[i, j], places=3,
-                                       msg=f'Wrong similarities for comp_x {i} and comp_y {j}')
-
     def test_topic_evolution_data(self):
         edges, nodes_data = PlotPreprocessor.topic_evolution_data(
             self.analyzer.evolution_df, self.analyzer.evolution_kwds, self.analyzer.n_steps

@@ -337,7 +337,6 @@ def graph():
                     limit=limit,
                     sort=sort,
                     citation_graph="true",
-                    topic_other=analyzer.comp_other or -1,
                     topics_palette_json=json.dumps(Plotter.topics_palette(analyzer.df)),
                     topics_description_json=json.dumps(topics_tags),
                     graph_cytoscape_json=json.dumps(graph_cs)
@@ -353,7 +352,6 @@ def graph():
                     limit=limit,
                     sort=sort,
                     citation_graph="false",
-                    topic_other=analyzer.comp_other or -1,
                     topics_palette_json=json.dumps(Plotter.topics_palette(analyzer.df)),
                     topics_description_json=json.dumps(topics_tags),
                     graph_cytoscape_json=json.dumps(graph_cs)

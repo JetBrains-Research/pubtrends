@@ -1,8 +1,11 @@
-import holoviews as hv
 import json
 import logging
-import numpy as np
+import math
 import re
+from string import Template
+
+import holoviews as hv
+import numpy as np
 from bokeh.colors import RGB
 from bokeh.core.properties import value
 from bokeh.embed import components
@@ -14,8 +17,6 @@ from bokeh.plotting import figure
 from bokeh.transform import factor_cmap
 from holoviews import dim
 from matplotlib import pyplot as plt
-from more_itertools import unique_everseen
-from string import Template
 from wordcloud import WordCloud
 
 from pysrc.papers.analysis.text import get_frequent_tokens, get_topic_word_cloud_data
@@ -57,7 +58,6 @@ def visualize_analysis(analyzer):
         topics_analyzed=False,
         n_papers=analyzer.n_papers,
         n_topics=len(analyzer.components),
-        comp_other=analyzer.comp_other,
         export_name=re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{analyzer.query}'.lower())).strip('_'),
         top_cited_papers=[components(plotter.top_cited_papers())],
         most_cited_per_year_papers=[components(plotter.most_cited_per_year_papers())],
@@ -206,7 +206,7 @@ class Plotter:
         logger.debug('Visualizing topics similarity with heatmap')
 
         similarity_df, topics = PlotPreprocessor.topics_similarity_data(
-            self.analyzer.similarity_graph, self.analyzer.df, self.analyzer.comp_sizes
+            self.analyzer.similarity_graph, self.analyzer.partition
         )
 
         step = 30
@@ -264,9 +264,7 @@ class Plotter:
         dummy_for_legend = [p.line(x=[1, 1], y=[1, 1], line_width=15, color=c, name='dummy_for_legend')
                             for c in self.comp_palette]
         legend = Legend(items=[
-            LegendItem(label=f'{c} OTHER' if int(c) - 1 == self.analyzer.comp_other else value(c),
-                       renderers=[dummy_for_legend[i]],
-                       index=i) for i, c in enumerate(components)
+            LegendItem(label=value(c), renderers=[dummy_for_legend[i]], index=i) for i, c in enumerate(components)
         ])
         p.add_layout(legend)
 

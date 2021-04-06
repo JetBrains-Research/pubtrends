@@ -7,6 +7,7 @@ import pandas as pd
 from more_itertools import unique_everseen
 
 from pysrc.papers.analysis.text import build_corpus
+from pysrc.papers.analysis.topics import compute_similarity_matrix
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.utils import cut_authors_list
 
@@ -16,39 +17,14 @@ logger = logging.getLogger(__name__)
 class PlotPreprocessor:
 
     @staticmethod
-    def topics_similarity_data(similarity_graph, df, comp_sizes):
-        logger.debug('Computing mean similarity of all edges between topics')
+    def topics_similarity_data(similarity_graph, partition):
+        similarity_matrix = compute_similarity_matrix(similarity_graph, PapersAnalyzer.similarity, partition)
+
         # c + 1 is used to start numbering with 1
-        components = list(map(str, [c + 1 for c in comp_sizes.keys()]))
+        components = [str(c + 1) for c in sorted(set(partition.values()))]
         n_comps = len(components)
-
-        logger.debug('Load edge data to DataFrame')
-        edges = len(similarity_graph.edges)
-        sources = [None] * edges
-        targets = [None] * edges
-        similarities = [0.0] * edges
-        i = 0
-        for u, v, data in similarity_graph.edges(data=True):
-            sources[i] = u
-            targets[i] = v
-            similarities[i] = PapersAnalyzer.similarity(data)
-            i += 1
-        similarity_df = pd.DataFrame(data={'source': sources, 'target': targets, 'similarity': similarities})
-
-        logger.debug('Assign each paper with corresponding component / topic')
-        similarity_topics_df = similarity_df.merge(df[['id', 'comp']], how='left', left_on='source', right_on='id') \
-            .merge(df[['id', 'comp']], how='left', left_on='target', right_on='id')
-
-        logger.debug('Calculate mean similarity between for topics')
-        mean_similarity_topics_df = \
-            similarity_topics_df.groupby(['comp_x', 'comp_y'])['similarity'].mean().reset_index()
-        similarity_matrix = [[0] * n_comps for _ in range(n_comps)]
-        for index, row in mean_similarity_topics_df.iterrows():
-            cx, cy = int(row['comp_x']), int(row['comp_y'])
-            similarity_matrix[cx][cy] = similarity_matrix[cy][cx] = row['similarity']
-
         similarity_topics_df = pd.DataFrame([
-            {'comp_x': i, 'comp_y': j, 'similarity': similarity_matrix[i][j]}
+            {'comp_x': i, 'comp_y': j, 'similarity': similarity_matrix[i, j]}
             for i, j in cart_product(range(n_comps), range(n_comps))
         ])
         similarity_topics_df['comp_x'] = similarity_topics_df['comp_x'].apply(lambda x: x + 1).astype(str)

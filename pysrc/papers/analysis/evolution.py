@@ -8,7 +8,7 @@ import pandas as pd
 
 from pysrc.papers.analysis.citations import build_cocit_grouped_df
 from pysrc.papers.analysis.graph import build_similarity_graph
-from pysrc.papers.analysis.topics import merge_components, get_topics_description
+from pysrc.papers.analysis.topics import merge_components, get_topics_description, compute_similarity_matrix
 from pysrc.papers.utils import SEED
 
 logger = logging.getLogger(__name__)
@@ -92,13 +92,15 @@ def topic_evolution_analysis(
             similarity_graph, weight='similarity', random_state=SEED
         )
         # Smallest communities
-        partition_louvain = dendrogram[0]
-        logger.debug(f'Found {len(set(partition_louvain.values()))} components')
-        # Reorder and merge small components to 'OTHER'
-        p, _ = merge_components(
-            partition_louvain, topic_min_size=topic_min_size, max_topics_number=max_topics_number
+        logger.debug(f'Found {len(set(dendrogram[0].values()))} components')
+
+        # Merge small topics
+        similarity_matrix = compute_similarity_matrix(similarity_graph, similarity_func, dendrogram[0])
+        dendrogram, _ = merge_components(
+            dendrogram, similarity_matrix,
+            topic_min_size=topic_min_size, max_topics_number=max_topics_number
         )
-        evolution_series.append(pd.Series(p))
+        evolution_series.append(pd.Series(dendrogram[0]))
 
     evolution_df = pd.concat(evolution_series, axis=1)
     evolution_df.columns = year_range  # Set columns

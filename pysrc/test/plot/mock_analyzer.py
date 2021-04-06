@@ -26,7 +26,7 @@ class MockAnalyzer:
 
         # Components are already in df
         self.components = [0, 1, 2]
-        self.comp_other = 2
+        self.partition = pd.Series(self.df['comp']).set_axis(self.df['id']).to_dict()
         self.comp_sizes = {0: 6, 1: 4, 2: 1}
 
         # Load evolution DataFrame and keywords

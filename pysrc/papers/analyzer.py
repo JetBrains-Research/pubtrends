@@ -205,17 +205,17 @@ class PapersAnalyzer:
             self.structure_graph = nx.Graph()
         else:
             self.progress.info('Extracting topics from paper similarity graph', current=11, task=task)
-            self.topics_dendrogram, partition, self.comp_other, self.components, self.comp_sizes = \
-                topic_analysis(
-                    self.similarity_graph,
-                    similarity_func=self.similarity,
-                    topic_min_size=self.TOPIC_MIN_SIZE,
-                    max_topics_number=self.TOPICS_MAX_NUMBER
-                )
-            self.df = self.add_to_dataframe(self.df, partition, col='comp', na=-1)
+            self.partition, self.topics_dendrogram, self.comp_sizes = topic_analysis(
+                self.similarity_graph,
+                similarity_func=self.similarity,
+                topic_min_size=self.TOPIC_MIN_SIZE,
+                max_topics_number=self.TOPICS_MAX_NUMBER
+            )
+            self.components = list(sorted(self.comp_sizes.keys()))
+            self.df = self.add_to_dataframe(self.df, self.partition, col='comp', na=-1)
 
             self.progress.info('Computing topics descriptions', current=12, task=task)
-            comp_pids = pd.DataFrame(partition.items(), columns=['id', 'comp']). \
+            comp_pids = pd.DataFrame(self.partition.items(), columns=['id', 'comp']). \
                 groupby('comp')['id'].apply(list).to_dict()
             topics_description = get_topics_description(
                 self.df, comp_pids,
@@ -311,7 +311,6 @@ class PapersAnalyzer:
         """
         return {
             'df': self.df.to_json(),
-            'comp_other': self.comp_other,
             'kwd_df': self.kwd_df.to_json(),
             'citations_graph': json_graph.node_link_data(self.citations_graph),
             'similarity_graph': json_graph.node_link_data(self.similarity_graph),
@@ -329,7 +328,6 @@ class PapersAnalyzer:
         # Restore main dataframe
         df = pd.read_json(fields['df'])
         df['id'] = df['id'].apply(str)
-        comp_other = fields['comp_other']
         mapping = {}
         for col in df.columns:
             try:
@@ -357,7 +355,6 @@ class PapersAnalyzer:
 
         return {
             'df': df,
-            'comp_other': comp_other,
             'kwd_df': kwd_df,
             'citations_graph': citations_graph,
             'similarity_graph': similarity_graph,
@@ -378,7 +375,6 @@ class PapersAnalyzer:
         loaded = PapersAnalyzer.load(fields)
         logger.debug(f'Loaded\n{loaded}')
         self.df = loaded['df']
-        self.comp_other = loaded['comp_other']
         # Used for components naming
         self.kwd_df = loaded['kwd_df']
         # Used for structure visualization
