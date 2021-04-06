@@ -173,20 +173,17 @@ class PapersAnalyzer:
         cocit_grouped_df = build_cocit_grouped_df(self.cocit_df)
         self.progress.info(f'Found {len(cocit_grouped_df)} co-cited pairs of papers', current=8, task=task)
         self.cocit_grouped_df = cocit_grouped_df[cocit_grouped_df['total'] >= self.SIMILARITY_COCITATION_MIN].copy()
-        self.progress.info(f'Filtering co-citations with min threshold '
-                           f'{self.SIMILARITY_COCITATION_MIN}', current=8, task=task)
-        self.progress.info(f'Filtered {len(self.cocit_grouped_df)} co-cited pairs of papers', current=8, task=task)
+        logger.debug(f'Filtered {len(self.cocit_grouped_df)} co-cited pairs of papers, '
+                     f'threshold {self.SIMILARITY_COCITATION_MIN}')
 
         self.progress.info('Processing bibliographic coupling for selected papers', current=9, task=task)
         bibliographic_coupling_df = self.loader.load_bibliographic_coupling(self.ids)
         self.progress.info(f'Found {len(bibliographic_coupling_df)} bibliographic coupling pairs of papers',
                            current=9, task=task)
-        self.progress.info(f'Filtering bibliographic coupling with min threshold '
-                           f'{self.SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN}', current=9, task=task)
         self.bibliographic_coupling_df = bibliographic_coupling_df[
             bibliographic_coupling_df['total'] >= self.SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN].copy()
-        self.progress.info(f'Filtered {len(self.bibliographic_coupling_df)} bibliographic coupling pairs of papers',
-                           current=9, task=task)
+        logger.debug(f'Filtered {len(self.bibliographic_coupling_df)} bibliographic coupling pairs of papers '
+                     f'threshold {self.SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN}')
 
         self.progress.info('Building papers similarity graph', current=10, task=task)
         self.similarity_graph = build_similarity_graph(

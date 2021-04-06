@@ -52,17 +52,17 @@ MAX_WORDS = 20
 def visualize_analysis(analyzer):
     # Initialize plotter after completion of analysis
     plotter = Plotter(analyzer=analyzer)
-    # Order is important here!
-    paper_statistics, word_cloud, zoom_out_callback = plotter.papers_statistics_and_word_cloud_and_callback()
+    word_cloud, zoom_out_callback = plotter.papers_word_cloud_and_callback()
+    export_name = re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{analyzer.query}'.lower())).strip('_')
     result = dict(
         topics_analyzed=False,
         n_papers=analyzer.n_papers,
         n_topics=len(analyzer.components),
-        export_name=re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{analyzer.query}'.lower())).strip('_'),
+        export_name=export_name,
         top_cited_papers=[components(plotter.top_cited_papers())],
         most_cited_per_year_papers=[components(plotter.most_cited_per_year_papers())],
         fastest_growth_per_year_papers=[components(plotter.fastest_growth_per_year_papers())],
-        papers_stats=[components(paper_statistics)],
+        papers_stats=[components(plotter.papers_by_year())],
         papers_word_cloud=Plotter.word_cloud_prepare(word_cloud),
         papers_zoom_out_callback=zoom_out_callback
     )
@@ -72,8 +72,8 @@ def visualize_analysis(analyzer):
         result.update(dict(
             topics_analyzed=True,
             components_similarity=[components(plotter.heatmap_topics_similarity())],
-            component_size_summary=[components(plotter.component_size_summary())],
-            component_years_summary=[components(plotter.component_years_summary())],
+            component_size_summary=[components(plotter.topics_by_year())],
+            component_years_summary=[components(plotter.topic_years_distribution())],
             topics_info_and_word_cloud_and_callback=[
                 (components(p), Plotter.word_cloud_prepare(wc), "true" if is_empty else "false", zoom_in_callback) for
                 (p, wc, is_empty, zoom_in_callback) in plotter.topics_info_and_word_cloud_and_callback()],
@@ -216,8 +216,7 @@ class Plotter:
                                    low=similarity_df.similarity.min(),
                                    high=similarity_df.similarity.max())
 
-        p = figure(title="Similarity between topics",
-                   x_range=topics, y_range=topics,
+        p = figure(x_range=topics, y_range=topics,
                    x_axis_location="below", plot_width=PLOT_WIDTH, plot_height=PAPERS_PLOT_HEIGHT,
                    tools=TOOLS, toolbar_location="right",
                    tooltips=[('Topic 1', '@comp_x'),
@@ -242,7 +241,7 @@ class Plotter:
         p.add_layout(color_bar, 'right')
         return p
 
-    def component_size_summary(self):
+    def topics_by_year(self):
         logger.debug('Summary component detailed info visualization')
 
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
@@ -251,7 +250,7 @@ class Plotter:
         )
 
         p = figure(x_range=[min_year - 1, max_year + 1], plot_width=PLOT_WIDTH, plot_height=SHORT_PLOT_HEIGHT,
-                   title="Topics by year", toolbar_location="right", tools=TOOLS,
+                   toolbar_location="right", tools=TOOLS,
                    tooltips=[('Topic', '$name'), ('Amount', '@$name')])
 
         # NOTE: VBar is invisible (alpha = 0) to provide tooltips on hover as stacked area does not support them
@@ -260,15 +259,9 @@ class Plotter:
         # VArea is actually displayed
         p.varea_stack(stackers=components, x='years', color=self.comp_palette, source=data, alpha=0.5)
 
-        # these are a dummy glyphs to help draw the legend
-        dummy_for_legend = [p.line(x=[1, 1], y=[1, 1], line_width=15, color=c, name='dummy_for_legend')
-                            for c in self.comp_palette]
-        legend = Legend(items=[
-            LegendItem(label=value(c), renderers=[dummy_for_legend[i]], index=i) for i, c in enumerate(components)
-        ])
-        p.add_layout(legend)
-
         p.sizing_mode = 'stretch_width'
+        p.xaxis.axis_label = 'Year'
+        p.yaxis.axis_label = 'Number of papers'
         p.y_range.start = 0
         p.xgrid.grid_line_color = None
         p.axis.minor_tick_line_color = None
@@ -278,8 +271,8 @@ class Plotter:
 
         return p
 
-    def component_years_summary(self):
-        logger.debug('Summary component year detailed info visualization')
+    def topic_years_distribution(self):
+        logger.debug('Topics publications year distribution visualization')
 
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
         components, data = PlotPreprocessor.component_size_summary_data(
@@ -297,7 +290,7 @@ class Plotter:
 
         # TODO[shpynov] Fix last x grid line later
         grid_style = {'grid_line_color': 'lightgray', 'grid_line_width': 1}
-        violin = hv.Violin((labels, values), 'Topic', 'Publications year')
+        violin = hv.Violin((labels, values), 'Topic', 'Publication year')
         violin.opts(width=PLOT_WIDTH, height=SHORT_PLOT_HEIGHT,
                     gridstyle=grid_style, show_grid=True,
                     violin_fill_color=dim('Topic').str(),
@@ -323,9 +316,9 @@ class Plotter:
             ))
             # Add type coloring
             ds.add([self.pub_types_colors_map[t] for t in df_comp['type']], 'color')
-            plot = self.__serve_scatter_article_layout(ds=ds,
-                                                       year_range=[min_year, max_year],
-                                                       title="Publications", width=PAPERS_PLOT_WIDTH)
+            plot = self.__serve_scatter_article_layout(
+                ds=ds, year_range=[min_year, max_year], width=PAPERS_PLOT_WIDTH
+            )
             plot.circle(x='year', y='y', fill_alpha=0.5, source=ds, size='size',
                         line_color='color', fill_color='color', legend_field='type')
             plot.legend.location = "top_left"
@@ -385,10 +378,9 @@ class Plotter:
         # Add type coloring
         ds.add([self.pub_types_colors_map[t] for t in self.analyzer.top_cited_df['type']], 'color')
 
-        plot = self.__serve_scatter_article_layout(ds=ds,
-                                                   year_range=[min_year, max_year],
-                                                   title=f'{len(self.analyzer.top_cited_df)} top cited papers',
-                                                   width=PLOT_WIDTH)
+        plot = self.__serve_scatter_article_layout(
+            ds=ds, year_range=[min_year, max_year], width=PLOT_WIDTH
+        )
 
         plot.circle(x='year', y='y', fill_alpha=0.5, source=ds, size='size',
                     line_color='color', fill_color='color', legend_field='type')
@@ -410,8 +402,7 @@ class Plotter:
         year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
         p = figure(tools=TOOLS, toolbar_location="right",
                    plot_width=PLOT_WIDTH, plot_height=SHORT_PLOT_HEIGHT, x_range=year_range,
-                   y_axis_type="log" if self.analyzer.max_gain_df['count'].max() > MAX_LINEAR_AXIS else "linear",
-                   title='Cited per year')
+                   y_axis_type="log" if self.analyzer.max_gain_df['count'].max() > MAX_LINEAR_AXIS else "linear")
         p.sizing_mode = 'stretch_width'
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Number of citations'
@@ -446,8 +437,8 @@ class Plotter:
         year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
         p = figure(tools=TOOLS, toolbar_location="right",
                    plot_width=PLOT_WIDTH, plot_height=SHORT_PLOT_HEIGHT, x_range=year_range,
-                   y_axis_type="log" if self.analyzer.max_rel_gain_df['rel_gain'].max() > MAX_LINEAR_AXIS else "linear",
-                   title='Fastest citations growth papers')
+                   y_axis_type="log" if self.analyzer.max_rel_gain_df['rel_gain'].max() > MAX_LINEAR_AXIS else "linear"
+                   )
         p.sizing_mode = 'stretch_width'
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Relative Gain of Citations'
@@ -481,19 +472,17 @@ class Plotter:
 
         return p
 
-    def papers_statistics_and_word_cloud_and_callback(self):
+    def papers_by_year(self):
         ds_stats = ColumnDataSource(PlotPreprocessor.papers_statistics_data(self.analyzer.df))
-
         year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
         p = figure(tools=TOOLS, toolbar_location="right",
                    plot_width=PAPERS_PLOT_WIDTH, plot_height=PAPERS_PLOT_HEIGHT,
-                   x_range=year_range, title='Papers per year')
+                   x_range=year_range)
         p.sizing_mode = 'stretch_width'
         p.y_range.start = 0
         p.xaxis.axis_label = 'Year'
-        p.yaxis.axis_label = 'Amount of papers'
+        p.yaxis.axis_label = 'Number of papers'
         p.hover.tooltips = [("Amount", '@counts'), ("Year", '@year')]
-
         if self.analyzer.min_year != self.analyzer.max_year:
             # NOTE: VBar is invisible (alpha=0) to provide tooltips, as in self.component_size_summary()
             p.vbar(x='year', width=0.8, top='counts', fill_alpha=0, line_alpha=0, source=ds_stats)
@@ -503,7 +492,9 @@ class Plotter:
         else:
             # NOTE: VBar is invisible (alpha=0) to provide tooltips, as in self.component_size_summary()
             p.vbar(x='year', width=0.8, top='counts', source=ds_stats)
+        return p
 
+    def papers_word_cloud_and_callback(self):
         # Build word cloud, size is proportional to token frequency
         kwds = get_frequent_tokens(self.analyzer.top_cited_df, query=None)
         wc = WordCloud(background_color="white", width=WORD_CLOUD_WIDTH, height=WORD_CLOUD_HEIGHT,
@@ -516,7 +507,7 @@ class Plotter:
         zoom_out_callback = self.zoom_callback(id_list, self.analyzer.source,
                                                zoom=ZOOM_OUT, query=self.analyzer.query)
 
-        return p, wc, zoom_out_callback
+        return wc, zoom_out_callback
 
     def author_statistics(self):
         authors = self.analyzer.author_stats['author']
@@ -546,12 +537,11 @@ class Plotter:
             for comp, count in zip(components[:top], counts[:top])
         ])
 
-    def __serve_scatter_article_layout(self, ds, year_range, title, width=PLOT_WIDTH):
+    def __serve_scatter_article_layout(self, ds, year_range, width=PLOT_WIDTH):
         min_year, max_year = year_range
         p = figure(tools=TOOLS, toolbar_location="right",
                    plot_width=width, plot_height=PAPERS_PLOT_HEIGHT,
-                   x_range=(min_year - 1, max_year + 1),
-                   title=title, y_axis_type="log")
+                   x_range=(min_year - 1, max_year + 1), y_axis_type="log")
         p.sizing_mode = 'stretch_width'
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Number of citations'
