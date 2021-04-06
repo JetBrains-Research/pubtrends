@@ -142,10 +142,10 @@ class Plotter:
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
 
-            // Max amount of papers to be opened, others will be ignored
-            var MAX_AMOUNT = 3;
+            // Max number of papers to be opened, others will be ignored
+            var MAX_PAPERS = 3;
 
-            for (var i = 0; i < Math.min(MAX_AMOUNT, selected.length); i++){
+            for (var i = 0; i < Math.min(MAX_PAPERS, selected.length); i++){
                 window.open(base + data['id'][selected[i]] + '&jobid=' + jobid, '_blank');
             }
         """)
@@ -251,7 +251,7 @@ class Plotter:
 
         p = figure(x_range=[min_year - 1, max_year + 1], plot_width=PLOT_WIDTH, plot_height=SHORT_PLOT_HEIGHT,
                    toolbar_location="right", tools=TOOLS,
-                   tooltips=[('Topic', '$name'), ('Amount', '@$name')])
+                   tooltips=[('Topic', '$name'), ('Percent', '@$name')])
 
         # NOTE: VBar is invisible (alpha = 0) to provide tooltips on hover as stacked area does not support them
         p.vbar_stack(components, x='years', width=0.9, color=self.comp_palette, source=data, alpha=0)
@@ -358,7 +358,7 @@ class Plotter:
         p = figure(plot_width=PLOT_WIDTH, plot_height=SHORT_PLOT_HEIGHT,
                    toolbar_location="right", tools=TOOLS, x_range=comps)
         p.vbar(x='comps', top='ratios', width=0.8, fill_alpha=0.5, color='colors', source=source)
-        p.hover.tooltips = [("Topic", '@comps'), ("Amount", '@ratios %')]
+        p.hover.tooltips = [("Topic", '@comps'), ("Percent", '@ratios %')]
         p.sizing_mode = 'stretch_width'
         p.xaxis.axis_label = 'Topic'
         p.yaxis.axis_label = 'Percentage of papers'
@@ -460,7 +460,7 @@ class Plotter:
         d = ColumnDataSource(PlotPreprocessor.article_citation_dynamics_data(df, pid))
 
         p = figure(tools=TOOLS, toolbar_location="right", plot_width=PLOT_WIDTH,
-                   plot_height=SHORT_PLOT_HEIGHT, title="Number of citations per Year")
+                   plot_height=SHORT_PLOT_HEIGHT)
         p.vbar(x='x', width=0.8, top='y', source=d, color='#A6CEE3', line_width=3)
         p.sizing_mode = 'stretch_width'
         p.xaxis.axis_label = "Year"
@@ -482,7 +482,7 @@ class Plotter:
         p.y_range.start = 0
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Number of papers'
-        p.hover.tooltips = [("Amount", '@counts'), ("Year", '@year')]
+        p.hover.tooltips = [("Papers", '@counts'), ("Year", '@year')]
         if self.analyzer.min_year != self.analyzer.max_year:
             # NOTE: VBar is invisible (alpha=0) to provide tooltips, as in self.component_size_summary()
             p.vbar(x='year', width=0.8, top='counts', fill_alpha=0, line_alpha=0, source=ds_stats)
@@ -662,7 +662,7 @@ class Plotter:
             self.analyzer.evolution_df, self.analyzer.evolution_kwds, n_steps
         )
 
-        value_dim = hv.Dimension('Amount', unit=None)
+        value_dim = hv.Dimension('Papers', unit=None)
         nodes_ds = hv.Dataset(nodes_data, 'index', 'label')
         topic_evolution = hv.Sankey((edges, nodes_ds), ['From', 'To'], vdims=value_dim)
         topic_evolution.opts(labels='label',

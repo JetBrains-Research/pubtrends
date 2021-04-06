@@ -101,7 +101,7 @@
             }, 5000);
 
             // Create clickable feedback forms
-            createClickableFeedBackForm("paper-feedback-citations-form", "paper-feedback-citations");
+            createClickableFeedBackForm("paper-feedback-paper-form", "paper-feedback-paper");
             createClickableFeedBackForm("paper-feedback-network-form", "paper-feedback-network");
             createClickableFeedBackForm("paper-feedback-similar-form", "paper-feedback-similar");
             createClickableFeedBackForm("paper-feedback-prior-form", "paper-feedback-prior");
@@ -159,14 +159,6 @@
                         </a>
                         <a class="nav-link d-none d-xl-block no-padding" href="#paper">
                             Paper
-                        </a>
-                    </li>
-                    <li class="nav-item row">
-                        <a class="nav-link no-padding-right" href="#citations" title="Citations">
-                            <img class="nav-icon" src="{{ url_for('static', filename='bar-chart-2.svg') }}"/>
-                        </a>
-                        <a class="nav-link d-none d-xl-block no-padding" href="#citations">
-                            Citations
                         </a>
                     </li>
 
@@ -267,21 +259,15 @@
                         <p class="mt-2">{{ abstract }}</p>
                         {% endif %}
                     </div>
-                </div>
-            </div>
-
-            <div class="card mt-3">
-                <div class="card-title" id="citations">
-                    <h1 class="card-header">Citations</h1>
-                </div>
-                <div class="card-body">
+                    <h5 class="card-subtitle mt-3">Citations</h5>
+                    <p class="mt-2">Number of citations per year for the paper.</p>
                     <div>
                         {% for script, div in citation_dynamics %}
                         {{ script|safe }}
                         {{ div|safe }}
                         {% endfor %}
                     </div>
-                    <div class="mt-3" id="paper-feedback-citations-form"></div>
+                    <div class="mt-3" id="paper-feedback-paper-form"></div>
                 </div>
             </div>
 
@@ -293,10 +279,14 @@
                     <p>
                         Explore references for the paper of interest on the citations graph.
                     </p>
+                    {% if n_papers <= 2000 %}
                     <button id="show_citations_graph" type="button" class="btn btn-light"
                             onclick="(function(){ graph_callback('citations') })();">
                         Show citations graph
                     </button>
+                    {% else %}
+                    Too many papers to visualize citations graph.
+                    {% endif %}
                     <hr>
                     <p>
                         Similarity between papers is computed based on <em>bibliographic coupling</em>,
@@ -305,10 +295,14 @@
                         <br>
                         Explore papers network, where similar papers are located together and connected.
                     </p>
+                    {% if n_papers <= 2000 %}
                     <button id="show_similarity_graph" type="button" class="col-auto btn btn-light"
                             onclick="(function(){ graph_callback('structure') })();">
                         Show similarity graph
                     </button>
+                    {% else %}
+                    Too many papers to visualize similarity graph.
+                    {% endif %}
                     <div class="mt-3" id="paper-feedback-network-form"></div>
                 </div>
             </div>
@@ -527,15 +521,12 @@
                 {
                     element: '#paper',
                     intro: 'Detailed information about the paper.<br>' +
-                        'Information about title, abstract, authors, journal and external references.'
+                        'Information about title, abstract, authors, journal and external references.<br>' +
+                        'Citations dynamics shows all indexed citations of the paper.'
                 },
                 {
                     element: '#result',
                     intro: 'Explore related papers and topics full analysis report.'
-                },
-                {
-                    element: '#citations',
-                    intro: 'Citations dynamics. Show all indexed citations of the paper.'
                 },
                 {
                     element: '#network',
