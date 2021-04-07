@@ -3,13 +3,13 @@ import logging
 import math
 import re
 from string import Template
+from math import pi, sin, cos, fabs
 
 import holoviews as hv
 import numpy as np
 from bokeh.colors import RGB
-from bokeh.core.properties import value
 from bokeh.embed import components
-from bokeh.models import ColumnDataSource, CustomJS, Legend, LegendItem
+from bokeh.models import ColumnDataSource, CustomJS
 # Tools used: hover,pan,tap,wheel_zoom,box_zoom,reset,save
 from bokeh.models import LinearColorMapper, PrintfTickFormatter, ColorBar
 from bokeh.models import NumeralTickFormatter
@@ -68,7 +68,6 @@ def visualize_analysis(analyzer):
     )
 
     if analyzer.similarity_graph.nodes():
-        topics_hierarchy = plotter.topics_hierarchy()
         result.update(dict(
             topics_analyzed=True,
             components_similarity=[components(plotter.heatmap_topics_similarity())],
@@ -79,8 +78,11 @@ def visualize_analysis(analyzer):
                 (p, wc, is_empty, zoom_in_callback) in plotter.topics_info_and_word_cloud_and_callback()],
             component_sizes=plotter.component_sizes(),
             component_ratio=[components(plotter.component_ratio())],
-            topics_hierarchy=[components(topics_hierarchy)] if topics_hierarchy is not None else []
         ))
+
+        topics_hierarchy_with_keywords = plotter.topics_hierarchy_with_keywords()
+        if topics_hierarchy_with_keywords:
+            result['topics_hierarchy_with_keywords'] = [components(topics_hierarchy_with_keywords)]
 
     # Configure additional features
     result.update(dict(
@@ -249,7 +251,8 @@ class Plotter:
             self.analyzer.df, self.analyzer.components, min_year, max_year
         )
 
-        p = figure(x_range=[min_year - 1, max_year + 1], plot_width=PLOT_WIDTH, plot_height=SHORT_PLOT_HEIGHT,
+        p = figure(x_range=[min_year - 1, max_year + 1],
+                   plot_width=PAPERS_PLOT_WIDTH, plot_height=PAPERS_PLOT_HEIGHT,
                    toolbar_location="right", tools=TOOLS,
                    tooltips=[('Topic', '$name'), ('Percent', '@$name')])
 
@@ -585,7 +588,7 @@ class Plotter:
     def dump_citations_graph_cytoscape(self):
         return PlotPreprocessor.dump_citations_graph_cytoscape(self.analyzer.df, self.analyzer.citations_graph)
 
-    def topics_hierarchy(self):
+    def topics_hierarchy_with_keywords(self):
         """ Plot topics hierarchy ignoring OTHER topic"""
         dendrogram = self.analyzer.topics_dendrogram
         if len(dendrogram) == 0:
@@ -595,41 +598,91 @@ class Plotter:
         dendrogram, paths, leaves_order = PlotPreprocessor.layout_dendrogram(dendrogram)
 
         # Configure dimensions
-        w = len(set(dendrogram[0].keys())) * 10 + 10
-        dx = int(w / (len(dendrogram[0]) + 1))
-        dy = 3
-        p = figure(x_range=[-10, w + 10],
-                   y_range=[-3, dy * (len(dendrogram) + 1)],
-                   width=PLOT_WIDTH, height=100 * (len(dendrogram) + 1), tools=[])
+        p = figure(x_range=[-140, 140],
+                   y_range=[-120, 120],
+                   tools="save",
+                   width=PLOT_WIDTH, height=int(PLOT_WIDTH * .75))
+        n_topics = len(leaves_order)
+        d_radius = 60 / (len(dendrogram) + 1)
+        d_degree = 2 * pi / n_topics
+        offset = 40
 
         # Leaves coordinates
-        leaves_xs = dict((v, (i + 1) * dx) for v, i in leaves_order.items())
+        leaves_degrees = dict((v, i * d_degree) for v, i in leaves_order.items())
 
-        # Draw dendrogram
-        xs = leaves_xs.copy()
+        # Draw dendrogram - from bottom to top
+        ds = leaves_degrees.copy()
         for i in range(1, len(dendrogram) + 2):
-            # Vertical lines (up from leaves to root)
-            for _, x in xs.items():
-                p.line([x, x], [(i - 1) * dy, i * dy], line_color='black')
-            new_xs = {}
+            next_ds = {}
             for path in paths:
-                if path[i] not in new_xs:
-                    new_xs[path[i]] = []
-                new_xs[path[i]].append(xs[path[i - 1]])
-            for v, pxs in new_xs.items():
-                if len(pxs) > 1:  # Horizontal connections
-                    p.line([pxs[0], pxs[-1]], [i * dy, i * dy], line_color='black')
-                new_xs[v] = np.mean(pxs)
-            xs = new_xs
+                if path[i] not in next_ds:
+                    next_ds[path[i]] = []
+                next_ds[path[i]].append(ds[path[i - 1]])
+            for v, nds in next_ds.items():
+                next_ds[v] = np.mean(nds)
+
+            for path in paths:
+                current_d = ds[path[i - 1]]
+                next_d = next_ds[path[i]]
+                p.line([cos(current_d) * d_radius * (len(dendrogram) + 2 - i),
+                        cos(next_d) * d_radius * (len(dendrogram) + 2 - i - 1)],
+                       [sin(current_d) * d_radius * (len(dendrogram) + 2 - i),
+                        sin(next_d) * d_radius * (len(dendrogram) + 2 - i - 1)],
+                       line_color='lightgray')
+            ds = next_ds
 
         # Draw leaves
         topics_colors = Plotter.topics_palette_rgb(self.analyzer.df)
-        for v, x in leaves_xs.items():
-            p.circle(x=x, y=0, size=15, line_color="black", fill_color=topics_colors[v])
-        p.text(x=[x - 0.5 for _, x in leaves_xs.items()],
-               y=[-1] * len(leaves_xs),
-               text=[str(v + 1) for v, _ in leaves_xs.items()],
+        xs = [cos(d) * d_radius * (len(dendrogram) + 1) for _, d in leaves_degrees.items()]
+        ys = [sin(d) * d_radius * (len(dendrogram) + 1) for _, d in leaves_degrees.items()]
+        sizes = [20 + int(min(10, math.log(self.analyzer.comp_sizes[v]))) for v, _ in leaves_degrees.items()]
+        comps = [v + 1 for v, _ in leaves_degrees.items()]
+        colors = [topics_colors[v] for v, _ in leaves_degrees.items()]
+        ds = ColumnDataSource(data=dict(x=xs, y=ys, size=sizes, comps=comps, color=colors))
+        p.circle(x='x', y='y', size='size', fill_color='color', line_color='black', source=ds)
+
+        # Topics labels
+        p.text(x=[cos(d) * d_radius * (len(dendrogram) + 1) - len(str(v + 1))
+                  for v, d in leaves_degrees.items()],
+               y=[sin(d) * d_radius * (len(dendrogram) + 1) for _, d in leaves_degrees.items()],
+               text=[str(v + 1) for v, _ in leaves_degrees.items()],
                text_baseline='middle', text_font_size='10pt')
+
+        # Show words for components - most popular words per component
+        topics = leaves_order.keys()
+        max_words = min(5, max(1, int(120 / n_topics)))
+        words2show = PlotPreprocessor.topics_words(self.analyzer.kwd_df, max_words, topics)
+
+        # Visualize words
+        cmap = Plotter.topics_palette_rgb(self.analyzer.df)
+        for v, d in leaves_degrees.items():
+            words = words2show[v]
+            word_radius = d_radius * (len(dendrogram) + 2) + 5
+            xs = []
+            ys = []
+            for i, word in enumerate(words):
+                wd = d + d_degree * (i - len(words) / 2) / len(words)
+                x = cos(wd) * word_radius
+                # Align words of the left semicircle
+                if pi / 2 <= wd < 3 * pi / 2:
+                    x -= 2 * len(word)  # Move by the approximate width of word, given 10pt font
+                elif pi / 3 <= wd < pi / 2:  # Scaled movement of neighborhood to avoid breaks
+                    x -= 2 * len(words) * fabs(pi / 3 - wd) / (pi / 6)
+                elif 3 * pi / 2 < wd < 5 * pi / 3:  # Scaled movement of neighborhood to avoid breaks
+                    x -= 2 * len(words) * fabs(5 * pi / 3 - wd) / (pi / 6)
+                xs.append(x)
+
+                # Compensate for additional dy
+                max_dy = pi / 6 * offset
+                y = sin(wd) * word_radius * (word_radius - max_dy / 2) / word_radius
+
+                # Additional offset to make vertical space around pi/2 and 3*pi/2
+                if pi / 3 <= wd < 2 * pi / 3:
+                    y += (pi / 6 - fabs(pi / 2 - wd)) * offset
+                elif 4 * pi / 3 <= wd < 5 * pi / 3:
+                    y -= (pi / 6 - fabs(3 * pi / 2 - wd)) * offset
+                ys.append(y)
+            p.text(x=xs, y=ys, text=words2show[v], text_baseline='middle', text_font_size='10pt', text_color=cmap[v])
 
         p.sizing_mode = 'stretch_width'
         p.axis.major_tick_line_color = None
@@ -646,8 +699,7 @@ class Plotter:
         Sankey diagram of topic evolution
         :return:
             if self.analyzer.evolution_df is None: None, as no evolution can be observed in 1 step
-            if number of steps < 3: Sankey diagram
-            else: Sankey diagram + table with keywords
+            Sankey diagram + table with keywords
         """
         # Topic evolution analysis failed, one step is not enough to analyze evolution
         if self.analyzer.evolution_df is None or not self.analyzer.evolution_kwds:
@@ -713,4 +765,3 @@ class Plotter:
     @staticmethod
     def topics_palette(df):
         return dict([(k, v.to_hex()) for k, v in Plotter.topics_palette_rgb(df).items()])
-

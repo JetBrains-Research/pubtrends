@@ -1,5 +1,6 @@
 import logging
 from itertools import product as cart_product
+from queue import PriorityQueue
 
 import networkx as nx
 import numpy as np
@@ -115,6 +116,29 @@ class PlotPreprocessor:
         x = [col for col in df.columns if isinstance(col, (int, float)) and col >= year]
         y = list(sel[x].values[0])
         return dict(x=x, y=y)
+
+    @staticmethod
+    def topics_words(kwd_df, max_words, topics):
+        kwds_queue = PriorityQueue()
+        for c in topics:
+            for pair in list(kwd_df[kwd_df['comp'] == c]['kwd'])[0].split(','):
+                if pair != '':  # Correctly process empty kwds encoding
+                    word, value = pair.split(':')
+                    kwds_queue.put((-float(value), c, word))
+        words2show = {}
+        seen_words = set()
+        added_words = 0
+        while not kwds_queue.empty() and added_words < len(topics) * max_words:
+            _, c, word = kwds_queue.get()
+            if word in seen_words:
+                continue
+            seen_words.add(word)
+            if c not in words2show:
+                words2show[c] = []
+            if len(words2show[c]) < max_words:
+                words2show[c].append(word)
+                added_words += 1
+        return words2show
 
     @staticmethod
     def dump_citations_graph_cytoscape(df, citations_graph):

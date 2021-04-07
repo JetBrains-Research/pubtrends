@@ -8,7 +8,6 @@ from bokeh.embed import components
 from bokeh.models import HoverTool
 from bokeh.plotting import figure
 from wordcloud import WordCloud
-
 from pysrc.papers.plot.plotter import Plotter
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"

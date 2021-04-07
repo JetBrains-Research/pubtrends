@@ -354,10 +354,12 @@
                     <h2 class="card-header">Overview</h2>
                 </div>
                 <div class="card-body">
-                    Found: <b>{{ n_papers }}</b> papers, <b>{{ n_topics }}</b> topics.<br>
-                    <button id="papers-list" type="button" class="btn btn-light mt-2"
+                    <p>
+                    Found <strong>{{ n_papers }}</strong> papers and <strong>{{ n_topics }}</strong> topics.
+                    </p>
+                    <button id="papers-list" type="button" class="btn btn-light"
                             onclick="papers_callback();">
-                        <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
+                        <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show all papers
                     </button>
                     <div class="row mt-2">
                         <div class="col-3 no-padding-right" style="min-width: 185px;">
@@ -370,10 +372,17 @@
                         <div class="col-9 no-padding-left">
                             <small><strong>&nbsp;&nbsp;&nbsp;Papers per year</strong></small>
                             <br>
+                            {% if component_size_summary is defined %}
+                            {% for script, div in component_size_summary %}
+                            {{ script|safe }}
+                            {{ div|safe }}
+                            {% endfor %}
+                            {% else %}
                             {% for script, div in papers_stats %}
                             {{ script|safe }}
                             {{ div|safe }}
                             {% endfor %}
+                            {% endif %}
                         </div>
                     </div>
                     <div id="search-in-papers" class="row">
@@ -388,6 +397,18 @@
                             </button>
                         </div>
                     </div>
+                    {% if topics_hierarchy_with_keywords is defined %}
+                    <hr>
+                    <p>
+                        Topic is a group of similar papers which share common ideas, describe common features, etc. <br>
+                        Topics hierarchy and keywords are shown below.
+                    </p>
+                    {% for script, div in topics_hierarchy_with_keywords %}
+                    {{ script|safe }}
+                    {{ div|safe }}
+                    {% endfor %}
+                    {% endif %}
+
                     <div class="mt-3" id="feedback-overview-form"></div>
                 </div>
             </div>
@@ -461,34 +482,15 @@
                 </div>
                 <div class="card-body">
                     <p>
-                        Topic is a group of papers which share common ideas, describe common features, etc.
-                        <br>
-                        Topics are extracted based on similarity between papers.
-                        <br>
-                        Similarity between papers is computed based on <em>bibliographic coupling</em>,
+                        Topics are extracted based on similarity between papers based on <em>bibliographic coupling</em>,
                         <em>co-citations</em>,<br>
                         <em>direct citations</em>, and <em>potential</em> citations based on text similarity.
                         <br>
                     </p>
-                    <p>
-                        Topics are organized hierarchically.
-                    </p>
-                    {% for script, div in topics_hierarchy %}
-                    {{ script|safe }}
-                    {{ div|safe }}
-                    {% endfor %}
                     <hr>
                     <p>Topics sizes are shown below.</p>
                     <div>
                         {% for script, div in component_ratio %}
-                        {{ script|safe }}
-                        {{ div|safe }}
-                        {% endfor %}
-                    </div>
-                    <hr/>
-                    <p>Dynamics of publications for topics is shown for the timeline.</p>
-                    <div>
-                        {% for script, div in component_size_summary %}
                         {{ script|safe }}
                         {{ div|safe }}
                         {% endfor %}
@@ -553,6 +555,7 @@
                                     </canvas>
                                 </div>
                                 <div class="col-9 no-padding-left" id="topic_chart_{{ loop.index }}">
+                                    <small><strong>&nbsp;&nbsp;&nbsp;Publications</strong></small>
                                     {{ script|safe }}
                                     {{ div|safe }}
                                 </div>
