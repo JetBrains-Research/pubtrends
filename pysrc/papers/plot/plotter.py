@@ -2,8 +2,8 @@ import json
 import logging
 import math
 import re
-from string import Template
 from math import pi, sin, cos, fabs
+from string import Template
 
 import holoviews as hv
 import numpy as np
@@ -24,7 +24,7 @@ from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.utils import LOCAL_BASE_URL, \
-    cut_authors_list, ZOOM_OUT, ZOOM_IN, zoom_name, trim, rgb2hex, MAX_TITLE_LENGTH
+    cut_authors_list, ZOOM_OUT, ZOOM_IN, zoom_name, trim, rgb2hex, MAX_TITLE_LENGTH, contrast_color
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
 hv.extension('bokeh')
@@ -598,14 +598,19 @@ class Plotter:
         dendrogram, paths, leaves_order = PlotPreprocessor.layout_dendrogram(dendrogram)
 
         # Configure dimensions
-        p = figure(x_range=[-140, 140],
-                   y_range=[-120, 120],
+        p = figure(x_range=[-190, 190],
+                   y_range=[-160, 160],
                    tools="save",
-                   width=PLOT_WIDTH, height=int(PLOT_WIDTH * .75))
+                   width=PLOT_WIDTH, height=int(PLOT_WIDTH * 0.8))
+        x_coefficient = 1.5  # Ellipse x coefficient
+        y_delta = 60  # Extra space near pi / 2 and 3 * pi / 2
         n_topics = len(leaves_order)
-        d_radius = 60 / (len(dendrogram) + 1)
+        radius = 80  # Radius of circular dendrogram
+        d_radius = radius / (len(dendrogram) + 1)
         d_degree = 2 * pi / n_topics
-        offset = 40
+        char_delta = 2  # Multiplier to compute approximate width of text
+        delta = 10  # Space between dendrogram and text
+        max_words = min(5, max(1, int(120 / n_topics)))
 
         # Leaves coordinates
         leaves_degrees = dict((v, i * d_degree) for v, i in leaves_order.items())
@@ -641,48 +646,55 @@ class Plotter:
         ds = ColumnDataSource(data=dict(x=xs, y=ys, size=sizes, comps=comps, color=colors))
         p.circle(x='x', y='y', size='size', fill_color='color', line_color='black', source=ds)
 
+        def contrast_color_rbg(rgb):
+            cr, cg, cb = contrast_color(rgb.r, rgb.g, rgb.b)
+            return RGB(cr, cg, cb)
+
         # Topics labels
-        p.text(x=[cos(d) * d_radius * (len(dendrogram) + 1) - len(str(v + 1))
+        p.text(x=[cos(d) * d_radius * (len(dendrogram) + 1) - char_delta * len(str(v + 1))
                   for v, d in leaves_degrees.items()],
                y=[sin(d) * d_radius * (len(dendrogram) + 1) for _, d in leaves_degrees.items()],
                text=[str(v + 1) for v, _ in leaves_degrees.items()],
-               text_baseline='middle', text_font_size='10pt')
+               text_baseline='middle', text_font_size='10pt',
+               text_color=contrast_color_rbg(topics_colors[v]))
 
         # Show words for components - most popular words per component
         topics = leaves_order.keys()
-        max_words = min(5, max(1, int(120 / n_topics)))
         words2show = PlotPreprocessor.topics_words(self.analyzer.kwd_df, max_words, topics)
 
         # Visualize words
-        cmap = Plotter.topics_palette_rgb(self.analyzer.df)
         for v, d in leaves_degrees.items():
             words = words2show[v]
-            word_radius = d_radius * (len(dendrogram) + 2) + 5
             xs = []
             ys = []
             for i, word in enumerate(words):
                 wd = d + d_degree * (i - len(words) / 2) / len(words)
-                x = cos(wd) * word_radius
+                # Make word degree in range 0 - 2 * pi
+                if wd < 0:
+                    wd += 2 * pi
+                elif wd > 2 * pi:
+                    wd -= 2 * pi
+                x = cos(wd) * (radius * x_coefficient + delta)
+
                 # Align words of the left semicircle
-                if pi / 2 <= wd < 3 * pi / 2:
-                    x -= 2 * len(word)  # Move by the approximate width of word, given 10pt font
-                elif pi / 3 <= wd < pi / 2:  # Scaled movement of neighborhood to avoid breaks
-                    x -= 2 * len(words) * fabs(pi / 3 - wd) / (pi / 6)
-                elif 3 * pi / 2 < wd < 5 * pi / 3:  # Scaled movement of neighborhood to avoid breaks
-                    x -= 2 * len(words) * fabs(5 * pi / 3 - wd) / (pi / 6)
+                if pi / 2 <= wd < 3 * pi / 2:  # Move right by width of word
+                    x -= char_delta * len(word)
+                elif pi / 3 <= wd < pi / 2:  # Move left to avoid break due to right move by width of word
+                    x -= char_delta * len(words) * fabs(pi / 3 - wd) / (pi / 6)
+                elif 3 * pi / 2 < wd < 5 * pi / 3:  # Move left to avoid break due to right move by width of word
+                    x -= char_delta * len(words) * fabs(5 * pi / 3 - wd) / (pi / 6)
                 xs.append(x)
 
-                # Compensate for additional dy
-                max_dy = pi / 6 * offset
-                y = sin(wd) * word_radius * (word_radius - max_dy / 2) / word_radius
-
-                # Additional offset to make vertical space around pi/2 and 3*pi/2
-                if pi / 3 <= wd < 2 * pi / 3:
-                    y += (pi / 6 - fabs(pi / 2 - wd)) * offset
-                elif 4 * pi / 3 <= wd < 5 * pi / 3:
-                    y -= (pi / 6 - fabs(3 * pi / 2 - wd)) * offset
+                y = sin(wd) * (radius + delta)
+                # Additional vertical space around pi/2 and 3*pi/2
+                if pi / 4 <= wd < 3 * pi / 4:
+                    y += (pi / 4 - fabs(pi / 2 - wd)) * y_delta
+                elif 5 * pi / 4 <= wd < 7 * pi / 4:
+                    y -= (pi / 4 - fabs(3 * pi / 2 - wd)) * y_delta
                 ys.append(y)
-            p.text(x=xs, y=ys, text=words2show[v], text_baseline='middle', text_font_size='10pt', text_color=cmap[v])
+
+            p.text(x=xs, y=ys, text=words2show[v], text_baseline='middle', text_font_size='10pt',
+                   text_color=topics_colors[v])
 
         p.sizing_mode = 'stretch_width'
         p.axis.major_tick_line_color = None
