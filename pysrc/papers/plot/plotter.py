@@ -664,6 +664,8 @@ class Plotter:
 
         # Visualize words
         for v, d in leaves_degrees.items():
+            if v not in words2show:  # No super-specific words for topic
+                continue
             words = words2show[v]
             xs = []
             ys = []
@@ -693,7 +695,7 @@ class Plotter:
                     y -= (pi / 4 - fabs(3 * pi / 2 - wd)) * y_delta
                 ys.append(y)
 
-            p.text(x=xs, y=ys, text=words2show[v], text_baseline='middle', text_font_size='10pt',
+            p.text(x=xs, y=ys, text=words, text_baseline='middle', text_font_size='10pt',
                    text_color=topics_colors[v])
 
         p.sizing_mode = 'stretch_width'
