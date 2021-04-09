@@ -3,9 +3,7 @@ import subprocess
 import unittest
 
 from pysrc.papers.config import PubtrendsConfig
-from pysrc.papers.db.pm_neo4j_loader import PubmedNeo4jLoader
 from pysrc.papers.db.pm_postgres_loader import PubmedPostgresLoader
-from pysrc.papers.db.ss_neo4j_loader import SemanticScholarNeo4jLoader
 from pysrc.papers.db.ss_postgres_loader import SemanticScholarPostgresLoader
 
 PUBTRENDS_JAR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../build/libs/pubtrends-dev.jar'))
@@ -46,17 +44,6 @@ class TestKotlinWriters(unittest.TestCase):
          'type': 'Article',
          'year': 2020}
 
-    def test_kotlin_pubmed_neo4j_writer(self):
-        self.assertTrue(os.path.exists(PUBTRENDS_JAR), f'File not found: {PUBTRENDS_JAR}')
-        subprocess.run(['java', '-cp', PUBTRENDS_JAR, 'org.jetbrains.bio.pubtrends.DBWriter', 'PubmedNeo4JWriter'])
-        loader = PubmedNeo4jLoader(PubtrendsConfig(True))
-        try:
-            pub_df = loader.load_publications(['1'])
-            actual = dict(zip(pub_df.columns, next(pub_df.iterrows())[1]))
-            self.assertEqual(actual, self.PUBMED_ARTICLE)
-        finally:
-            loader.close_connection()
-
     def test_kotlin_pubmed_postgres_writer(self):
         self.assertTrue(os.path.exists(PUBTRENDS_JAR), f'File not found: {PUBTRENDS_JAR}')
         subprocess.run(['java', '-cp', PUBTRENDS_JAR, 'org.jetbrains.bio.pubtrends.DBWriter', 'PubmedPostgresWriter'])
@@ -65,20 +52,6 @@ class TestKotlinWriters(unittest.TestCase):
             pub_df = loader.load_publications(['1'])
             actual = dict(zip(pub_df.columns, next(pub_df.iterrows())[1]))
             self.assertEqual(actual, self.PUBMED_ARTICLE)
-        finally:
-            loader.close_connection()
-
-    def test_kotlin_semantic_scholar_neo4j_writer(self):
-        self.assertTrue(os.path.exists(PUBTRENDS_JAR), f'File not found: {PUBTRENDS_JAR}')
-        subprocess.run(
-            ['java', '-cp', PUBTRENDS_JAR, 'org.jetbrains.bio.pubtrends.DBWriter', 'SemanticScholarNeo4JWriter'])
-        loader = SemanticScholarNeo4jLoader(PubtrendsConfig(True))
-        try:
-            pub_df = loader.load_publications(['03029e4427cfe66c3da6257979dc2d5b6eb3a0e4'])
-            actual = dict(zip(pub_df.columns, next(pub_df.iterrows())[1]))
-            expected = self.SEMANTIC_SCHOLAR_ARTICLE
-            expected.update(dict(keywords='', mesh=''))
-            self.assertEqual(actual, expected)
         finally:
             loader.close_connection()
 

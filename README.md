@@ -9,7 +9,6 @@ A tool for analysis of trends & pivotal points in the scientific literature.
 * Conda
 * Python 3.6+
 * Docker
-* Neo4j 3.5+ with APOC 3.5.0.4 (in Docker)
 * PostgreSQL 12 (in Docker)
 * Redis 5.0 (in Docker)
 
@@ -25,9 +24,6 @@ Ensure that file contains correct information about the database(s) (url, port, 
     source activate pubtrends
     ```
 
-    Workaround for "image not found" error during neo4j pip install on newest Mac OS Sierra:
-    `conda install -y conda-forge::ncurses`
-
     Download Nltk and Spacy resources
     ```
     source activate pubtrends \
@@ -40,29 +36,7 @@ Ensure that file contains correct information about the database(s) (url, port, 
     docker build -t biolabs/pubtrends .
     ```
 
-4. When using Postgresql as DB skip this part. \
-   Init Neo4j database and install APOC extension.
-    * Prepare folders
-    ```
-    mkdir -p $HOME/neo4j/data $HOME/neo4j/logs $HOME/neo4j/plugins
-    ```
-   * Download the [latest release](https://github.com/neo4j-contrib/neo4j-apoc-procedures/releases/tag/3.5.0.4) of APOC
-   * Place the binary JAR into your `$HOME/neo4j/plugins` folder
-   * Launch Neo4j docker image to init database and change default password.
-   
-    ```
-    mkdir $HOME/neo4j/data/
-    chmod a+rw $HOME/neo4j/data/
-    docker run --rm --name pubtrends-neo4j \
-        --publish=7474:7474 --publish=7687:7687 \
-        --volume=$HOME/neo4j/data:/var/lib/neo4j/data \
-        --volume=$HOME/neo4j/logs:/logs \
-        --volume=$HOME/neo4j/plugins:/plugins \
-        neo4j:3.5 /bin/bash -c 'bin/neo4j-admin set-initial-password mysecretpassword'
-    ```   
-
-5. When using Neo4j as DB skip this part. \
-   Init PostgreSQL database.
+4. Init PostgreSQL database.
     
     * Launch Docker image:
     ```
@@ -108,7 +82,7 @@ Use the following command to test and build JAR package:
 
 ## Papers downloading and processing
 
-Neo4j / PostgreSQL should be configured and launched.
+PostgreSQL should be configured and launched.
 
 ### Pubmed
 
@@ -224,15 +198,13 @@ Please ensure that you have Database configured, up and running.
 
 ## Testing
 
-1. Start Docker image with Neo4j / Postgres environment for tests (Kotlin and Python development)
+1. Start Docker image with Postgres environment for tests (Kotlin and Python development)
     ```
     docker run --rm --name pubtrends-test \
-    --publish=7474:7474 --publish=7687:7687 --publish=5432:5432 \
-    --volume=$(pwd):/pubtrends -d -t biolabs/pubtrends
+    --publish=5432:5432 --volume=$(pwd):/pubtrends -d -t biolabs/pubtrends
     ```
-
-    Check access to Neo4j web browser: `http://localhost:7474`
-    NOTE: please don't forget to stop the container afterwards.
+    
+   NOTE: don't forget to stop the container afterwards.
 
 2. Kotlin tests
 
@@ -250,7 +222,7 @@ Please ensure that you have Database configured, up and running.
 
     ```
     docker run --rm --volume=$(pwd):/pubtrends -t biolabs/pubtrends /bin/bash -c \
-    "/usr/lib/postgresql/12/bin/pg_ctl -D /home/user/postgres start; sudo neo4j start; \
+    "/usr/lib/postgresql/12/bin/pg_ctl -D /home/user/postgres start; \
     cd /pubtrends; mkdir ~/.pubtrends; cp config.properties ~/.pubtrends; \
     source activate pubtrends; pytest pysrc"
     ```
@@ -267,25 +239,7 @@ Please ensure that you have configured and prepared the database(s).
 1. Modify file `config.properties` with information about the database(s). 
    File from the project folder is used in this case.
 
-2. When using Postgres as DB skip this part. \
-   Launch Neo4j database docker image.
-
-    ```
-    docker run --name pubtrends-neo4j \
-        --publish=7474:7474 --publish=7687:7687 \
-        --volume=$HOME/neo4j/data:/var/lib/neo4j/data \
-        --volume=$HOME/neo4j/logs:/logs \
-        --volume=$HOME/neo4j/plugins:/plugins \
-        --env NEO4J_dbms_memory_pagecache_size=1G \
-        --env NEO4J_dbms_memory_heap_initial__size=1G \
-        --env NEO4J_dbms_memory_heap_max__size=4G \
-        -d neo4j:3.5
-    ```
-    
-   See https://neo4j.com/developer/guide-performance-tuning/ for configuration details.
-   
-3. When using Neo4j as DB skip this part. \
-   Start PostgreSQL server.
+2. Start PostgreSQL server.
 
     ```
     docker run --rm  --name pubtrends-postgres -p 5432:5432 \
@@ -305,20 +259,20 @@ Please ensure that you have configured and prepared the database(s).
     refresh materialized view matview_pmcitations;
     ``` 
    
-4. Build ready for deployment package with script `dist.sh`.
+3. Build ready for deployment package with script `dist.sh`.
    ```
    dist.sh build=build-number ga=google-analytics-id
    ```
 
 
-5. Create necessary folders for logs, service database, etc. See `docker-compose.yml` for details.
+4. Create necessary folders for logs, service database, etc. See `docker-compose.yml` for details.
     ```
     mkdir ~/.pubtrends/logs
     mkdir ~/.pubtrends/database
     ...
     ```
 
-6. Prepare SSL certificates files `privkey.pem` and `cert.pem` and optional CA-authority file `chain.pem`.\
+5. Optional: prepare SSL certificates files `privkey.pem` and `cert.pem` and optional CA-authority file `chain.pem`.\
    You can generate a self-signed certificate for testing purposes by the command:
    
    ```
@@ -327,7 +281,7 @@ Please ensure that you have configured and prepared the database(s).
    openssl req -nodes -x509 -newkey rsa:4096 -keyout privkey.pem -out cert.pem -days 365 -subj '/CN=localhost'
    ```
  
-7. Launch pubtrends with docker-compose.
+6. Launch pubtrends with docker-compose.
     ```
     # start
     docker-compose up -d --build

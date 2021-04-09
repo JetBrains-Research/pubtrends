@@ -4,7 +4,6 @@ import joptsimple.OptionParser
 import org.apache.logging.log4j.LogManager
 import org.jetbrains.bio.pubtrends.Config
 import org.jetbrains.bio.pubtrends.db.AbstractDBWriter
-import org.jetbrains.bio.pubtrends.db.PubmedNeo4JWriter
 import org.jetbrains.bio.pubtrends.db.PubmedPostgresWriter
 import java.nio.file.Files
 import kotlin.system.exitProcess
@@ -37,15 +36,7 @@ object PubmedLoader {
             logger.info("Config path: $configPath")
 
             val dbWriter: AbstractDBWriter<PubmedArticle>
-            if (!(config["neo4j_host"]?.toString()).isNullOrBlank()) {
-                logger.info("Init Neo4j database connection")
-                dbWriter = PubmedNeo4JWriter(
-                        config["neo4j_host"]!!.toString(),
-                        config["neo4j_port"]!!.toString().toInt(),
-                        config["neo4j_username"]!!.toString(),
-                        config["neo4j_password"]!!.toString()
-                )
-            } else if (!(config["postgres_host"]?.toString()).isNullOrBlank()) {
+            if (!(config["postgres_host"]?.toString()).isNullOrBlank()) {
                 logger.info("Init Postgresql database connection")
                 dbWriter = PubmedPostgresWriter(
                         config["postgres_host"]!!.toString(),

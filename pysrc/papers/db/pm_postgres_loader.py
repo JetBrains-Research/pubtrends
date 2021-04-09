@@ -28,7 +28,6 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         if key == 'id':
             key = 'pmid'
 
-            # We use integer PMIDs in neo4j, if value is not a valid integer -> no match
             try:
                 value = int(value)
             except ValueError:

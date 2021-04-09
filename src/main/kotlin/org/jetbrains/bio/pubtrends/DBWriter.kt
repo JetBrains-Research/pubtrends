@@ -1,9 +1,7 @@
 package org.jetbrains.bio.pubtrends
 
 import org.apache.logging.log4j.LogManager
-import org.jetbrains.bio.pubtrends.db.PubmedNeo4JWriter
 import org.jetbrains.bio.pubtrends.db.PubmedPostgresWriter
-import org.jetbrains.bio.pubtrends.db.SemanticScholarNeo4JWriter
 import org.jetbrains.bio.pubtrends.db.SemanticScholarPostgresWriter
 import org.jetbrains.bio.pubtrends.pm.PublicationType
 import org.jetbrains.bio.pubtrends.pm.PubmedArticle
@@ -54,16 +52,6 @@ class DBWriter {
             for (arg in args) {
                 LOG.info("Processing $arg")
                 when (arg) {
-                    PubmedNeo4JWriter::class.java.simpleName -> {
-                        createPubmedNeo4JWriter(config).use {
-                            LOG.info("Reset")
-                            it.reset()
-                        }
-                        createPubmedNeo4JWriter(config).use {
-                            LOG.info("Store")
-                            it.store(listOf(PUBMED_ARTICLE))
-                        }
-                    }
                     PubmedPostgresWriter::class.java.simpleName -> {
                         createPubmedPostgresWriter(config).use {
                             LOG.info("Reset")
@@ -72,16 +60,6 @@ class DBWriter {
                         createPubmedPostgresWriter(config).use {
                             LOG.info("Store")
                             it.store(listOf(PUBMED_ARTICLE))
-                        }
-                    }
-                    SemanticScholarNeo4JWriter::class.java.simpleName -> {
-                        createSemanticScholarNeo4JWriter(config).use {
-                            LOG.info("Reset")
-                            it.reset()
-                        }
-                        createSemanticScholarNeo4JWriter(config).use {
-                            LOG.info("Store")
-                            it.store(listOf(SEMANTIC_SCHOLAR_ARTICLE))
                         }
                     }
                     SemanticScholarPostgresWriter::class.java.simpleName -> {
@@ -110,24 +88,6 @@ class DBWriter {
                 config["test_postgres_username"]!!.toString(),
                 config["test_postgres_password"]!!.toString(),
                 true
-            )
-        }
-
-        private fun createSemanticScholarNeo4JWriter(config: Properties): SemanticScholarNeo4JWriter {
-            return SemanticScholarNeo4JWriter(
-                config["test_neo4j_host"]!!.toString(),
-                config["test_neo4j_port"]!!.toString().toInt(),
-                config["test_neo4j_username"]!!.toString(),
-                config["test_neo4j_password"]!!.toString()
-            )
-        }
-
-        private fun createPubmedNeo4JWriter(config: Properties): PubmedNeo4JWriter {
-            return PubmedNeo4JWriter(
-                config["test_neo4j_host"]!!.toString(),
-                config["test_neo4j_port"]!!.toString().toInt(),
-                config["test_neo4j_username"]!!.toString(),
-                config["test_neo4j_password"]!!.toString()
             )
         }
 

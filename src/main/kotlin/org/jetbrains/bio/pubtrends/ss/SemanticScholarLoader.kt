@@ -6,7 +6,6 @@ import joptsimple.ValueConverter
 import org.apache.logging.log4j.LogManager
 import org.jetbrains.bio.pubtrends.Config
 import org.jetbrains.bio.pubtrends.db.AbstractDBWriter
-import org.jetbrains.bio.pubtrends.db.SemanticScholarNeo4JWriter
 import org.jetbrains.bio.pubtrends.db.SemanticScholarPostgresWriter
 import java.io.File
 import java.nio.file.Path
@@ -39,15 +38,7 @@ object SemanticScholarLoader {
             logger.info("Config path: $configPath")
 
             val dbWriter: AbstractDBWriter<SemanticScholarArticle>
-            if (!(config["neo4j_host"]?.toString()).isNullOrBlank()) {
-                logger.info("Init Neo4j database connection")
-                dbWriter = SemanticScholarNeo4JWriter(
-                    config["neo4j_host"]!!.toString(),
-                    config["neo4j_port"]!!.toString().toInt(),
-                    config["neo4j_username"]!!.toString(),
-                    config["neo4j_password"]!!.toString()
-                )
-            } else if (!(config["postgres_host"]?.toString()).isNullOrBlank()) {
+            if (!(config["postgres_host"]?.toString()).isNullOrBlank()) {
                 logger.info("Init Postgresql database connection")
                 dbWriter = SemanticScholarPostgresWriter(
                     config["postgres_host"]!!.toString(),
