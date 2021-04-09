@@ -609,7 +609,7 @@ class Plotter:
         d_radius = radius / (len(dendrogram) + 1)
         d_degree = 2 * pi / n_topics
         char_delta = 2  # Multiplier to compute approximate width of text
-        delta = 10  # Space between dendrogram and text
+        delta = 15  # Space between dendrogram and text
         max_words = min(5, max(1, int(120 / n_topics)))
 
         # Leaves coordinates
@@ -676,17 +676,7 @@ class Plotter:
                     wd += 2 * pi
                 elif wd > 2 * pi:
                     wd -= 2 * pi
-                x = cos(wd) * (radius * x_coefficient + delta)
-
-                # Align words of the left semicircle
-                if pi / 2 <= wd < 3 * pi / 2:  # Move right by width of word
-                    x -= char_delta * len(word)
-                elif pi / 3 <= wd < pi / 2:  # Move left to avoid break due to right move by width of word
-                    x -= char_delta * len(words) * fabs(pi / 3 - wd) / (pi / 6)
-                elif 3 * pi / 2 < wd < 5 * pi / 3:  # Move left to avoid break due to right move by width of word
-                    x -= char_delta * len(words) * fabs(5 * pi / 3 - wd) / (pi / 6)
-                xs.append(x)
-
+                xs.append(cos(wd) * (radius * x_coefficient + delta))
                 y = sin(wd) * (radius + delta)
                 # Additional vertical space around pi/2 and 3*pi/2
                 if pi / 4 <= wd < 3 * pi / 4:
@@ -695,7 +685,14 @@ class Plotter:
                     y -= (pi / 4 - fabs(3 * pi / 2 - wd)) * y_delta
                 ys.append(y)
 
-            p.text(x=xs, y=ys, text=words, text_baseline='middle', text_font_size='10pt',
+            # Different text alignment for left | right parts
+            p.text(x=[x for x in xs if x > 0], y=[y for i, y in enumerate(ys) if xs[i] > 0],
+                   text=[w for i, w in enumerate(words) if xs[i] > 0],
+                   text_align='left', text_baseline='middle', text_font_size='10pt',
+                   text_color=topics_colors[v])
+            p.text(x=[x for x in xs if x <= 0], y=[y for i, y in enumerate(ys) if xs[i] <= 0],
+                   text=[w for i, w in enumerate(words) if xs[i] <= 0],
+                   text_align='right', text_baseline='middle', text_font_size='10pt',
                    text_color=topics_colors[v])
 
         p.sizing_mode = 'stretch_width'
