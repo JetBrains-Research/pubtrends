@@ -276,30 +276,22 @@ class Plotter:
 
     def topic_years_distribution(self):
         logger.debug('Topics publications year distribution visualization')
-
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
         components, data = PlotPreprocessor.component_size_summary_data(
             self.analyzer.df, self.analyzer.components, min_year, max_year
         )
-        labels = []
-        values = []
-        for c in components:
-            vs = data[c]
-            expanded_vs = []
-            for i, y in enumerate(range(min_year, max_year + 1)):
-                expanded_vs.extend([y for _ in range(vs[i])])
-            labels.extend([c for _ in range(len(expanded_vs))])
-            values.extend(expanded_vs)
-
-        # TODO[shpynov] Fix last x grid line later
-        grid_style = {'grid_line_color': 'lightgray', 'grid_line_width': 1}
-        violin = hv.Violin((labels, values), 'Topic', 'Publication year')
-        violin.opts(width=PLOT_WIDTH, height=SHORT_PLOT_HEIGHT,
-                    gridstyle=grid_style, show_grid=True,
-                    violin_fill_color=dim('Topic').str(),
-                    cmap=Plotter.factors_colormap(len(components)))
-        p = hv.render(violin, backend='bokeh')
+        source = ColumnDataSource(data=dict(x=[min_year - 1] + data['years'] + [max_year + 1]))
+        p = figure(y_range=components, plot_width=PLOT_WIDTH,
+                   x_range=(min_year - 1, max_year + 1), toolbar_location=None)
+        topics_colors = Plotter.topics_palette_rgb(self.analyzer.df)
+        for i, c in enumerate(reversed(components)):
+            source.add([(c, 0)] + [(c, d / 10) for d in data[c]] + [(c, 0)], c)
+            p.patch('x', c, color=topics_colors[i], alpha=0.6, line_color="black", source=source)
         p.sizing_mode = 'stretch_width'
+        p.outline_line_color = None
+        p.axis.minor_tick_line_color = None
+        p.axis.major_tick_line_color = None
+        p.axis.axis_line_color = None
         return p
 
     def topics_info_and_word_cloud_and_callback(self):
@@ -762,7 +754,7 @@ class Plotter:
     def topics_palette_rgb(df):
         n_comps = len(set(df['comp']))
         cmap = Plotter.factors_colormap(n_comps)
-        return dict([(i, Plotter.color_to_rgb(cmap(i))) for i in range(n_comps)])
+        return dict((i, Plotter.color_to_rgb(cmap(i))) for i in range(n_comps))
 
     @staticmethod
     def factors_colormap(n):
@@ -775,4 +767,4 @@ class Plotter:
 
     @staticmethod
     def topics_palette(df):
-        return dict([(k, v.to_hex()) for k, v in Plotter.topics_palette_rgb(df).items()])
+        return dict((k, v.to_hex()) for k, v in Plotter.topics_palette_rgb(df).items())
