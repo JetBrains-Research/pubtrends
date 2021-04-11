@@ -608,7 +608,6 @@ class Plotter:
         radius = 80  # Radius of circular dendrogram
         d_radius = radius / (len(dendrogram) + 1)
         d_degree = 2 * pi / n_topics
-        char_delta = 2  # Multiplier to compute approximate width of text
         delta = 15  # Space between dendrogram and text
         max_words = min(5, max(1, int(120 / n_topics)))
 
@@ -651,11 +650,10 @@ class Plotter:
             return RGB(cr, cg, cb)
 
         # Topics labels
-        p.text(x=[cos(d) * d_radius * (len(dendrogram) + 1) - char_delta * len(str(v + 1))
-                  for v, d in leaves_degrees.items()],
+        p.text(x=[cos(d) * d_radius * (len(dendrogram) + 1) for _, d in leaves_degrees.items()],
                y=[sin(d) * d_radius * (len(dendrogram) + 1) for _, d in leaves_degrees.items()],
                text=[str(v + 1) for v, _ in leaves_degrees.items()],
-               text_baseline='middle', text_font_size='10pt',
+               text_baseline='middle',  text_align='center', text_font_size='10pt',
                text_color=contrast_color_rbg(topics_colors[v]))
 
         # Show words for components - most popular words per component
