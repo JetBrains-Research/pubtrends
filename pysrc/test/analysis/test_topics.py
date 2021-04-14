@@ -40,21 +40,19 @@ class TestTopics(unittest.TestCase):
                 self.assertEqual(getattr(row, 'comp'), -1)
 
     @parameterized.expand([
-        ('single', [{1: 0}], 5, 2, [{1: 0}]),
-        ('single_hierarchy', [{1: 0, 2: 1}, {0: 0, 1: 0}], 5, 2, [{1: 0, 2: 0}, {0: 0}]),
-        ('two', [{1: 0, 2: 0, 3: 1, 4: 1, 5: 1}], 5, 3, [{1: 0, 2: 0, 3: 0, 4: 0, 5: 0}]),
-        ('parent', [{1: 0, 2: 1, 3: 1, 4: 2, 5: 2}, {0: 1, 1: 0, 2: 1}], 5, 2,
-         [{1: 0, 2: 1, 3: 1, 4: 0, 5: 0}, {0: 1, 1: 0}]),
-        ('5_0', [{1: 0, 2: 1, 3: 2, 4: 3, 5: 4}], 5, 0, [{1: 0, 2: 1, 3: 2, 4: 3, 5: 4}]),
-        ('4_0', [{1: 0, 2: 1, 3: 2, 4: 3, 5: 4}], 4, 0, [{1: 0, 2: 0, 3: 1, 4: 2, 5: 3}]),
-        ('1_0', [{1: 0, 2: 1, 3: 1, 4: 1, 5: 1}], 10, 5, [{1: 0, 2: 0, 3: 0, 4: 0, 5: 0}]),
-        ('5_10', [{1: 0, 2: 1, 3: 2, 4: 3, 5: 4}], 1, 10, [{1: 0, 2: 0, 3: 0, 4: 0, 5: 0}]),
+        ('single', {1: 0}, 5, 2, {1: 0}),
+        ('single_hierarchy', {1: 0, 2: 1}, 5, 2, {1: 0, 2: 0}),
+        ('two', {1: 0, 2: 0, 3: 1, 4: 1, 5: 1}, 5, 3, {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}),
+        ('5_0', {1: 0, 2: 1, 3: 2, 4: 3, 5: 4}, 5, 0, {1: 0, 2: 1, 3: 2, 4: 3, 5: 4}),
+        ('4_0', {1: 0, 2: 1, 3: 2, 4: 3, 5: 4}, 4, 0, {1: 0, 2: 0, 3: 2, 4: 3, 5: 4}),
+        ('1_0', {1: 0, 2: 1, 3: 1, 4: 1, 5: 1}, 10, 5, {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}),
+        ('5_10', {1: 0, 2: 1, 3: 2, 4: 3, 5: 4}, 1, 10, {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}),
     ])
-    def test_merge_components(self, name, dendrogram, max_topics_number, topic_min_size, expected_partition):
-        n_comps = len(set(dendrogram[0].values()))
-        merge_components(dendrogram, np.zeros(shape=(n_comps, n_comps)),
+    def test_merge_components(self, name, partition, max_topics_number, topic_min_size, expected_partition):
+        n_comps = len(set(partition.values()))
+        merge_components(partition, np.zeros(shape=(n_comps, n_comps)),
                          topic_min_size=topic_min_size, max_topics_number=max_topics_number)
-        self.assertEqual(dendrogram, expected_partition, name)
+        self.assertEqual(partition, expected_partition, name)
 
     def test_heatmap_topics_similarity(self):
         matrix = compute_similarity_matrix(self.analyzer.similarity_graph,

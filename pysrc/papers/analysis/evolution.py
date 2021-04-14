@@ -88,19 +88,15 @@ def topic_evolution_analysis(
             d['similarity'] = similarity_func(d)
 
         progress.info('Extracting topics from paper similarity graph', current=current, task=task)
-        dendrogram = community.generate_dendrogram(
+        partition_louvain = community.best_partition(
             similarity_graph, weight='similarity', random_state=SEED
         )
-        # Smallest communities
-        logger.debug(f'Found {len(set(dendrogram[0].values()))} components')
-
-        # Merge small topics
-        similarity_matrix = compute_similarity_matrix(similarity_graph, similarity_func, dendrogram[0])
-        dendrogram, _ = merge_components(
-            dendrogram, similarity_matrix,
+        similarity_matrix = compute_similarity_matrix(similarity_graph, similarity_func, partition_louvain)
+        merged_partition, _ = merge_components(
+            partition_louvain, similarity_matrix,
             topic_min_size=topic_min_size, max_topics_number=max_topics_number
         )
-        evolution_series.append(pd.Series(dendrogram[0]))
+        evolution_series.append(pd.Series(merged_partition))
 
     evolution_df = pd.concat(evolution_series, axis=1)
     evolution_df.columns = year_range  # Set columns

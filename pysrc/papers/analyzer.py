@@ -45,20 +45,21 @@ class PapersAnalyzer:
     SIMILARITY_TEXT_CITATION_N = 20
 
     # Reduce number of edges in smallest communities, i.e. topics
-    STRUCTURE_LOW_LEVEL_SPARSITY = 0.5
+    STRUCTURE_LOW_LEVEL_SPARSITY = 0.3
     # Limit number of edges between different topics to min number of inner edges * scale factor,
     # ignoring similarities less than average within groups
-    STRUCTURE_BETWEEN_TOPICS_SPARSITY = 0.3
+    STRUCTURE_BETWEEN_TOPICS_SPARSITY = 0.1
 
     # Global vectorization max vocabulary size
     VECTOR_WORDS = 10000
     # Terms with lower frequency will be ignored, remove rare words
-    VECTOR_MIN_DF = 0.01
+    VECTOR_MIN_DF = 0.001
     # Terms with higher frequency will be ignored, remove abundant stop words
     VECTOR_MAX_DF = 0.8
 
     TOPIC_MIN_SIZE = 10
-    TOPICS_MAX_NUMBER = 100
+    # Max number of topics should be "deliverable"
+    TOPICS_MAX_NUMBER = 30
 
     # Number of top cited papers in topic picked for description computation
     TOPIC_MOST_CITED_PAPERS = 50

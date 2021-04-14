@@ -2,8 +2,11 @@ import logging
 from math import floor
 from queue import PriorityQueue
 
+import community
 import networkx as nx
 import pandas as pd
+
+from pysrc.papers.utils import SEED
 
 logger = logging.getLogger(__name__)
 

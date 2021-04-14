@@ -326,17 +326,6 @@ class PlotPreprocessor:
 
     @staticmethod
     def layout_dendrogram(dendrogram):
-        # Remove redundant levels from the dendrogram
-        rd = []
-        for i, level in enumerate(dendrogram):
-            if i == 0:
-                rd.append(level)
-            else:
-                if len(set(level.keys())) == len(set(level.values())):
-                    rd[i - 1] = {k: level[v] for k, v in rd[i - 1].items()}
-                else:
-                    rd.append(level)
-        dendrogram = rd
         # Compute paths
         paths = []
         for i, level in enumerate(dendrogram):

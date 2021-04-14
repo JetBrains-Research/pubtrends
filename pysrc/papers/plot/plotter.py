@@ -639,7 +639,7 @@ class Plotter:
         topics_colors = Plotter.topics_palette_rgb(self.analyzer.df)
         xs = [cos(d) * d_radius * (len(dendrogram) + 1) for _, d in leaves_degrees.items()]
         ys = [sin(d) * d_radius * (len(dendrogram) + 1) for _, d in leaves_degrees.items()]
-        sizes = [20 + int(min(10, math.log(self.analyzer.comp_sizes[v]))) for v, _ in leaves_degrees.items()]
+        sizes = [20 + int(min(40, 5 * math.log(self.analyzer.comp_sizes[v]))) for v, _ in leaves_degrees.items()]
         comps = [v + 1 for v, _ in leaves_degrees.items()]
         colors = [topics_colors[v] for v, _ in leaves_degrees.items()]
         ds = ColumnDataSource(data=dict(x=xs, y=ys, size=sizes, comps=comps, color=colors))
