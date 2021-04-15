@@ -277,16 +277,23 @@ class Plotter:
     def topic_years_distribution(self):
         logger.debug('Topics publications year distribution visualization')
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
-        components, data = PlotPreprocessor.component_size_summary_data(
+        plot_components, data = PlotPreprocessor.component_size_summary_data(
             self.analyzer.df, self.analyzer.components, min_year, max_year
         )
         source = ColumnDataSource(data=dict(x=[min_year - 1] + data['years'] + [max_year + 1]))
-        p = figure(y_range=components, plot_width=PLOT_WIDTH,
+        plot_titles = []
+        words2show = PlotPreprocessor.topics_words(self.analyzer.kwd_df, 3, self.analyzer.components)
+        for c in self.analyzer.components:
+            percent = int(100 * self.analyzer.comp_sizes[int(c)] / len(self.analyzer.df))
+            plot_titles.append(f'#{c + 1} ({percent if percent > 0 else "<1"}%) {",".join(words2show[c])}')
+
+        p = figure(y_range=list(reversed(plot_titles)), plot_width=PLOT_WIDTH,
                    x_range=(min_year - 1, max_year + 1), toolbar_location=None)
         topics_colors = Plotter.topics_palette_rgb(self.analyzer.df)
-        for i, c in enumerate(reversed(components)):
-            source.add([(c, 0)] + [(c, d / 10) for d in data[c]] + [(c, 0)], c)
-            p.patch('x', c, color=topics_colors[i], alpha=0.6, line_color="black", source=source)
+        max_papers_per_year = max(max(data[pc]) for pc in plot_components)
+        for i, (pc, pt) in enumerate(zip(plot_components, plot_titles)):
+            source.add([(pt, 0)] + [(pt, d / max_papers_per_year) for d in data[pc]] + [(pt, 0)], pt)
+            p.patch('x', pt, color=topics_colors[i], alpha=0.6, line_color="black", source=source)
         p.sizing_mode = 'stretch_width'
         p.outline_line_color = None
         p.axis.minor_tick_line_color = None
