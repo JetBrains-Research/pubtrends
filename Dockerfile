@@ -20,7 +20,7 @@ USER root
 
 # Update all the packages
 RUN apt-get update --fix-missing \
-    && apt-get install -y curl bzip2 gnupg2 wget ca-certificates sudo
+    && apt-get install -y curl bzip2 gnupg2 wget ca-certificates sudo default-jre
 
 # Install Postgresql 12
 ENV TZ Europe/Moscow
