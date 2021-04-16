@@ -322,6 +322,40 @@
                 href="https://pubmed.ncbi.nlm.nih.gov/">PubMed®</a> database.<br>
         </div>
     </div>
+    <div class="card border-light mt-3">
+        <div class="card-body">
+            <a class="link" data-toggle="collapse" href="#collapseFeedback"
+               role="button" aria-expanded="false">
+                We'd love to hear your feedback!</small>
+            </a>
+            <form id="collapseFeedback" class="collapse" name="feedback-form" action="feedback" method="POST">
+                <div class="form-group">
+                    <label for="feedback-message">Message</label>
+                    <textarea class="form-control" id="feedback-message" name="message"
+                              rows="5" maxlength="2000"
+                              aria-describedby="emailHelp"
+                              placeholder="Enter message"></textarea>
+                    <small id="messageHelp" class="form-text text-muted">
+                        Max length: 2000.</small>
+                </div>
+                <div class="form-group">
+                    <label for="feedback-email">Email address</label>
+                    <input type="email" class="form-control" id="feedback-email" name="email"
+                           aria-describedby="emailHelp"
+                           placeholder="Enter email"/>
+                    <small id="emailHelp" class="form-text text-muted">
+                        We'll never share your email with anyone else.</small>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-secondary">Submit</button>
+                </div>
+                <div class="form-group">
+                    <input type="hidden" class="form-control" id="feedback-jobid" name="jobid" value=""/>
+                    <input type="hidden" class="form-control" name="type" value="main"/>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 <footer>
     <p>version {{ version }}<br/>
