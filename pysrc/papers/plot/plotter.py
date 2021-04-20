@@ -285,14 +285,15 @@ class Plotter:
         words2show = PlotPreprocessor.topics_words(self.analyzer.kwd_df, 3, self.analyzer.components)
         for c in self.analyzer.components:
             percent = int(100 * self.analyzer.comp_sizes[int(c)] / len(self.analyzer.df))
-            plot_titles.append(f'#{c + 1} ({percent if percent > 0 else "<1"}%) {",".join(words2show[c])}')
-
-        p = figure(y_range=list(reversed(plot_titles)), plot_width=PLOT_WIDTH,
+            plot_titles.append(f'#{c + 1} [{percent if percent > 0 else "<1"}%] {",".join(words2show[c])}')
+        # Fake additional y levels
+        p = figure(y_range=list(reversed(plot_titles)) + [' ', '  ', '   '],
+                   plot_width=PLOT_WIDTH, plot_height=30 * (len(plot_components) + 2),
                    x_range=(min_year - 1, max_year + 1), toolbar_location=None)
         topics_colors = Plotter.topics_palette_rgb(self.analyzer.df)
         max_papers_per_year = max(max(data[pc]) for pc in plot_components)
         for i, (pc, pt) in enumerate(zip(plot_components, plot_titles)):
-            source.add([(pt, 0)] + [(pt, d / max_papers_per_year) for d in data[pc]] + [(pt, 0)], pt)
+            source.add([(pt, 0)] + [(pt, 3 * d / max_papers_per_year) for d in data[pc]] + [(pt, 0)], pt)
             p.patch('x', pt, color=topics_colors[i], alpha=0.6, line_color="black", source=source)
         p.sizing_mode = 'stretch_width'
         p.outline_line_color = None
