@@ -37,18 +37,6 @@ class TestPlotPreprocessor(unittest.TestCase):
         for c in expected_components_data.keys():
             self.assertEqual(data[c], expected_components_data[c], f'Wrong component size list for component {c}')
 
-    def test_component_ratio(self):
-        comps, ratios = PlotPreprocessor.component_ratio_data(self.analyzer.df)
-        colors = [self.plotter.comp_palette[int(c) - 1] for c in comps]
-        source = ColumnDataSource(data=dict(comps=comps, ratios=ratios, colors=colors))
-
-        expected_comps = ['1', '2', '3']
-        expected_ratios = [54.545454, 36.363636, 9.090909]
-
-        self.assertEqual(comps, expected_comps, 'Wrong list of components')
-        for ratio, expected in zip(source.data['ratios'], expected_ratios):
-            self.assertAlmostEqual(ratio, expected, places=3, msg='Wrong component ratio')
-
     def test_paper_statistics_data(self):
         ds = ColumnDataSource(PlotPreprocessor.papers_statistics_data(self.analyzer.df))
 

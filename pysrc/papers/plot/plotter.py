@@ -38,15 +38,17 @@ MAX_JOURNAL_LENGTH = 100
 MAX_LINEAR_AXIS = 100
 
 PLOT_WIDTH = 870
+PAPERS_PLOT_WIDTH = 670
+
 SHORT_PLOT_HEIGHT = 300
 TALL_PLOT_HEIGHT = 600
-
-PAPERS_PLOT_WIDTH = 670
-PAPERS_PLOT_HEIGHT = 400
+PLOT_HEIGHT = 375
 
 WORD_CLOUD_WIDTH = 200
 WORD_CLOUD_HEIGHT = 300
-MAX_WORDS = 20
+
+TOPIC_WORD_CLOUD_KEYWORDS = 20
+TOPIC_KEYWORDS = 5
 
 
 def visualize_analysis(analyzer):
@@ -71,18 +73,13 @@ def visualize_analysis(analyzer):
         result.update(dict(
             topics_analyzed=True,
             components_similarity=[components(plotter.heatmap_topics_similarity())],
-            component_size_summary=[components(plotter.topics_by_year())],
-            component_years_summary=[components(plotter.topic_years_distribution())],
+            component_size_summary=[components(plotter.topic_years_distribution())],
+            topics_hierarchy=[components(plotter.topics_hierarchy())],
             topics_info_and_word_cloud_and_callback=[
                 (components(p), Plotter.word_cloud_prepare(wc), "true" if is_empty else "false", zoom_in_callback) for
                 (p, wc, is_empty, zoom_in_callback) in plotter.topics_info_and_word_cloud_and_callback()],
-            component_sizes=plotter.component_sizes(),
-            component_ratio=[components(plotter.component_ratio())],
+            component_sizes=plotter.component_sizes()
         ))
-
-        topics_hierarchy_with_keywords = plotter.topics_hierarchy_with_keywords()
-        if topics_hierarchy_with_keywords:
-            result['topics_hierarchy_with_keywords'] = [components(topics_hierarchy_with_keywords)]
 
     # Configure additional features
     result.update(dict(
@@ -219,7 +216,7 @@ class Plotter:
                                    high=similarity_df.similarity.max())
 
         p = figure(x_range=topics, y_range=topics,
-                   x_axis_location="below", plot_width=PLOT_WIDTH, plot_height=PAPERS_PLOT_HEIGHT,
+                   x_axis_location="below", plot_width=PLOT_WIDTH, plot_height=PLOT_HEIGHT,
                    tools=TOOLS, toolbar_location="right",
                    tooltips=[('Topic 1', '@comp_x'),
                              ('Topic 2', '@comp_y'),
@@ -243,63 +240,32 @@ class Plotter:
         p.add_layout(color_bar, 'right')
         return p
 
-    def topics_by_year(self):
-        logger.debug('Summary component detailed info visualization')
-
-        min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
-        components, data = PlotPreprocessor.component_size_summary_data(
-            self.analyzer.df, self.analyzer.components, min_year, max_year
-        )
-
-        p = figure(x_range=[min_year - 1, max_year + 1],
-                   plot_width=PAPERS_PLOT_WIDTH, plot_height=PAPERS_PLOT_HEIGHT,
-                   toolbar_location="right", tools=TOOLS,
-                   tooltips=[('Topic', '$name'), ('Percent', '@$name')])
-
-        # NOTE: VBar is invisible (alpha = 0) to provide tooltips on hover as stacked area does not support them
-        p.vbar_stack(components, x='years', width=0.9, color=self.comp_palette, source=data, alpha=0)
-
-        # VArea is actually displayed
-        p.varea_stack(stackers=components, x='years', color=self.comp_palette, source=data, alpha=0.5)
-
-        p.sizing_mode = 'stretch_width'
-        p.xaxis.axis_label = 'Year'
-        p.yaxis.axis_label = 'Number of papers'
-        p.y_range.start = 0
-        p.xgrid.grid_line_color = None
-        p.axis.minor_tick_line_color = None
-        p.outline_line_color = None
-        p.legend.location = "top_left"
-        p.legend.orientation = "horizontal"
-
-        return p
-
     def topic_years_distribution(self):
         logger.debug('Topics publications year distribution visualization')
-
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
-        components, data = PlotPreprocessor.component_size_summary_data(
+        plot_components, data = PlotPreprocessor.component_size_summary_data(
             self.analyzer.df, self.analyzer.components, min_year, max_year
         )
-        labels = []
-        values = []
-        for c in components:
-            vs = data[c]
-            expanded_vs = []
-            for i, y in enumerate(range(min_year, max_year + 1)):
-                expanded_vs.extend([y for _ in range(vs[i])])
-            labels.extend([c for _ in range(len(expanded_vs))])
-            values.extend(expanded_vs)
-
-        # TODO[shpynov] Fix last x grid line later
-        grid_style = {'grid_line_color': 'lightgray', 'grid_line_width': 1}
-        violin = hv.Violin((labels, values), 'Topic', 'Publication year')
-        violin.opts(width=PLOT_WIDTH, height=SHORT_PLOT_HEIGHT,
-                    gridstyle=grid_style, show_grid=True,
-                    violin_fill_color=dim('Topic').str(),
-                    cmap=Plotter.factors_colormap(len(components)))
-        p = hv.render(violin, backend='bokeh')
+        source = ColumnDataSource(data=dict(x=[min_year - 1] + data['years'] + [max_year + 1]))
+        plot_titles = []
+        words2show = PlotPreprocessor.topics_words(self.analyzer.kwd_df, TOPIC_KEYWORDS, self.analyzer.components)
+        for c in self.analyzer.components:
+            percent = int(100 * self.analyzer.comp_sizes[int(c)] / len(self.analyzer.df))
+            plot_titles.append(f'#{c + 1} [{percent if percent > 0 else "<1"}%] {",".join(words2show[c])}')
+        # Fake additional y levels
+        p = figure(y_range=list(reversed(plot_titles)) + [' ', '  ', '   '],
+                   plot_width=PLOT_WIDTH, plot_height=50 * (len(plot_components) + 2),
+                   x_range=(min_year - 1, max_year + 1), toolbar_location=None)
+        topics_colors = Plotter.topics_palette_rgb(self.analyzer.df)
+        max_papers_per_year = max(max(data[pc]) for pc in plot_components)
+        for i, (pc, pt) in enumerate(zip(plot_components, plot_titles)):
+            source.add([(pt, 0)] + [(pt, 3 * d / max_papers_per_year) for d in data[pc]] + [(pt, 0)], pt)
+            p.patch('x', pt, color=topics_colors[i], alpha=0.6, line_color="black", source=source)
         p.sizing_mode = 'stretch_width'
+        p.outline_line_color = None
+        p.axis.minor_tick_line_color = None
+        p.axis.major_tick_line_color = None
+        p.axis.axis_line_color = None
         return p
 
     def topics_info_and_word_cloud_and_callback(self):
@@ -335,7 +301,7 @@ class Plotter:
             color = (self.comp_colors[comp].r, self.comp_colors[comp].g, self.comp_colors[comp].b)
             wc = WordCloud(background_color="white", width=WORD_CLOUD_WIDTH, height=WORD_CLOUD_HEIGHT,
                            color_func=lambda *args, **kwargs: color,
-                           max_words=MAX_WORDS, min_font_size=10, max_font_size=30)
+                           max_words=TOPIC_WORD_CLOUD_KEYWORDS, min_font_size=10, max_font_size=30)
             wc.generate_from_frequencies(kwds)
 
             # Create Zoom In callback
@@ -352,26 +318,6 @@ class Plotter:
         assigned_comps = self.analyzer.df[self.analyzer.df['comp'] >= 0]
         d = dict(assigned_comps.groupby('comp')['id'].count())
         return [int(d[k]) for k in range(len(d))]
-
-    def component_ratio(self):
-        comps, ratios = PlotPreprocessor.component_ratio_data(self.analyzer.df)
-        colors = [self.comp_palette[int(c) - 1] for c in comps]
-        source = ColumnDataSource(data=dict(comps=comps, ratios=ratios, colors=colors))
-
-        p = figure(plot_width=PLOT_WIDTH, plot_height=SHORT_PLOT_HEIGHT,
-                   toolbar_location="right", tools=TOOLS, x_range=comps)
-        p.vbar(x='comps', top='ratios', width=0.8, fill_alpha=0.5, color='colors', source=source)
-        p.hover.tooltips = [("Topic", '@comps'), ("Percent", '@ratios %')]
-        p.sizing_mode = 'stretch_width'
-        p.xaxis.axis_label = 'Topic'
-        p.yaxis.axis_label = 'Percentage of papers'
-        p.xgrid.grid_line_color = None
-        p.ygrid.grid_line_color = None
-        p.axis.minor_tick_line_color = None
-        p.outline_line_color = None
-        p.js_on_event('tap', self.topic_callback(source))
-
-        return p
 
     def top_cited_papers(self):
         min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
@@ -479,7 +425,7 @@ class Plotter:
         ds_stats = ColumnDataSource(PlotPreprocessor.papers_statistics_data(self.analyzer.df))
         year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
         p = figure(tools=TOOLS, toolbar_location="right",
-                   plot_width=PAPERS_PLOT_WIDTH, plot_height=PAPERS_PLOT_HEIGHT,
+                   plot_width=PAPERS_PLOT_WIDTH, plot_height=PLOT_HEIGHT,
                    x_range=year_range)
         p.sizing_mode = 'stretch_width'
         p.y_range.start = 0
@@ -502,7 +448,7 @@ class Plotter:
         kwds = get_frequent_tokens(self.analyzer.top_cited_df, query=None)
         wc = WordCloud(background_color="white", width=WORD_CLOUD_WIDTH, height=WORD_CLOUD_HEIGHT,
                        color_func=lambda *args, **kwargs: 'black',
-                       max_words=MAX_WORDS, min_font_size=10, max_font_size=30)
+                       max_words=TOPIC_WORD_CLOUD_KEYWORDS, min_font_size=10, max_font_size=30)
         wc.generate_from_frequencies(kwds)
 
         # Create Zoom Out callback
@@ -543,7 +489,7 @@ class Plotter:
     def __serve_scatter_article_layout(self, ds, year_range, width=PLOT_WIDTH):
         min_year, max_year = year_range
         p = figure(tools=TOOLS, toolbar_location="right",
-                   plot_width=width, plot_height=PAPERS_PLOT_HEIGHT,
+                   plot_width=width, plot_height=PLOT_HEIGHT,
                    x_range=(min_year - 1, max_year + 1), y_axis_type="log")
         p.sizing_mode = 'stretch_width'
         p.xaxis.axis_label = 'Year'
@@ -588,7 +534,7 @@ class Plotter:
     def dump_citations_graph_cytoscape(self):
         return PlotPreprocessor.dump_citations_graph_cytoscape(self.analyzer.df, self.analyzer.citations_graph)
 
-    def topics_hierarchy_with_keywords(self):
+    def topics_hierarchy(self):
         """ Plot topics hierarchy ignoring OTHER topic"""
         dendrogram = self.analyzer.topics_dendrogram
         if len(dendrogram) == 0:
@@ -598,100 +544,41 @@ class Plotter:
         dendrogram, paths, leaves_order = PlotPreprocessor.layout_dendrogram(dendrogram)
 
         # Configure dimensions
-        p = figure(x_range=[-190, 190],
-                   y_range=[-160, 160],
-                   tools="save",
-                   width=PLOT_WIDTH, height=int(PLOT_WIDTH * 0.8))
-        x_coefficient = 1.5  # Ellipse x coefficient
-        y_delta = 60  # Extra space near pi / 2 and 3 * pi / 2
-        n_topics = len(leaves_order)
-        radius = 80  # Radius of circular dendrogram
-        d_radius = radius / (len(dendrogram) + 1)
-        d_degree = 2 * pi / n_topics
-        delta = 15  # Space between dendrogram and text
-        max_words = min(5, max(1, int(120 / n_topics)))
+        w = len(set(dendrogram[0].keys())) * 10 + 10
+        dx = int(w / (len(dendrogram[0]) + 1))
+        dy = 3
+        p = figure(x_range=[-10, w + 10],
+                   y_range=[-3, dy * (len(dendrogram) + 1)],
+                   width=PLOT_WIDTH, height=100 * (len(dendrogram) + 1), tools=[])
 
         # Leaves coordinates
-        leaves_degrees = dict((v, i * d_degree) for v, i in leaves_order.items())
+        leaves_xs = dict((v, (i + 1) * dx) for v, i in leaves_order.items())
 
-        # Draw dendrogram - from bottom to top
-        ds = leaves_degrees.copy()
+        # Draw dendrogram
+        xs = leaves_xs.copy()
         for i in range(1, len(dendrogram) + 2):
-            next_ds = {}
+            # Vertical lines (up from leaves to root)
+            for _, x in xs.items():
+                p.line([x, x], [(i - 1) * dy, i * dy], line_color='black')
+            new_xs = {}
             for path in paths:
-                if path[i] not in next_ds:
-                    next_ds[path[i]] = []
-                next_ds[path[i]].append(ds[path[i - 1]])
-            for v, nds in next_ds.items():
-                next_ds[v] = np.mean(nds)
-
-            for path in paths:
-                current_d = ds[path[i - 1]]
-                next_d = next_ds[path[i]]
-                p.line([cos(current_d) * d_radius * (len(dendrogram) + 2 - i),
-                        cos(next_d) * d_radius * (len(dendrogram) + 2 - i - 1)],
-                       [sin(current_d) * d_radius * (len(dendrogram) + 2 - i),
-                        sin(next_d) * d_radius * (len(dendrogram) + 2 - i - 1)],
-                       line_color='lightgray')
-            ds = next_ds
+                if path[i] not in new_xs:
+                    new_xs[path[i]] = []
+                new_xs[path[i]].append(xs[path[i - 1]])
+            for v, pxs in new_xs.items():
+                if len(pxs) > 1:  # Horizontal connections
+                    p.line([pxs[0], pxs[-1]], [i * dy, i * dy], line_color='black')
+                new_xs[v] = np.mean(pxs)
+            xs = new_xs
 
         # Draw leaves
         topics_colors = Plotter.topics_palette_rgb(self.analyzer.df)
-        xs = [cos(d) * d_radius * (len(dendrogram) + 1) for _, d in leaves_degrees.items()]
-        ys = [sin(d) * d_radius * (len(dendrogram) + 1) for _, d in leaves_degrees.items()]
-        sizes = [20 + int(min(40, 5 * math.log(self.analyzer.comp_sizes[v]))) for v, _ in leaves_degrees.items()]
-        comps = [v + 1 for v, _ in leaves_degrees.items()]
-        colors = [topics_colors[v] for v, _ in leaves_degrees.items()]
-        ds = ColumnDataSource(data=dict(x=xs, y=ys, size=sizes, comps=comps, color=colors))
-        p.circle(x='x', y='y', size='size', fill_color='color', line_color='black', source=ds)
-
-        def contrast_color_rbg(rgb):
-            cr, cg, cb = contrast_color(rgb.r, rgb.g, rgb.b)
-            return RGB(cr, cg, cb)
-
-        # Topics labels
-        p.text(x=[cos(d) * d_radius * (len(dendrogram) + 1) for _, d in leaves_degrees.items()],
-               y=[sin(d) * d_radius * (len(dendrogram) + 1) for _, d in leaves_degrees.items()],
-               text=[str(v + 1) for v, _ in leaves_degrees.items()],
-               text_baseline='middle',  text_align='center', text_font_size='10pt',
-               text_color=contrast_color_rbg(topics_colors[v]))
-
-        # Show words for components - most popular words per component
-        topics = leaves_order.keys()
-        words2show = PlotPreprocessor.topics_words(self.analyzer.kwd_df, max_words, topics)
-
-        # Visualize words
-        for v, d in leaves_degrees.items():
-            if v not in words2show:  # No super-specific words for topic
-                continue
-            words = words2show[v]
-            xs = []
-            ys = []
-            for i, word in enumerate(words):
-                wd = d + d_degree * (i - len(words) / 2) / len(words)
-                # Make word degree in range 0 - 2 * pi
-                if wd < 0:
-                    wd += 2 * pi
-                elif wd > 2 * pi:
-                    wd -= 2 * pi
-                xs.append(cos(wd) * (radius * x_coefficient + delta))
-                y = sin(wd) * (radius + delta)
-                # Additional vertical space around pi/2 and 3*pi/2
-                if pi / 4 <= wd < 3 * pi / 4:
-                    y += (pi / 4 - fabs(pi / 2 - wd)) * y_delta
-                elif 5 * pi / 4 <= wd < 7 * pi / 4:
-                    y -= (pi / 4 - fabs(3 * pi / 2 - wd)) * y_delta
-                ys.append(y)
-
-            # Different text alignment for left | right parts
-            p.text(x=[x for x in xs if x > 0], y=[y for i, y in enumerate(ys) if xs[i] > 0],
-                   text=[w for i, w in enumerate(words) if xs[i] > 0],
-                   text_align='left', text_baseline='middle', text_font_size='10pt',
-                   text_color=topics_colors[v])
-            p.text(x=[x for x in xs if x <= 0], y=[y for i, y in enumerate(ys) if xs[i] <= 0],
-                   text=[w for i, w in enumerate(words) if xs[i] <= 0],
-                   text_align='right', text_baseline='middle', text_font_size='10pt',
-                   text_color=topics_colors[v])
+        for v, x in leaves_xs.items():
+            p.circle(x=x, y=0, size=15, line_color="black", fill_color=topics_colors[v])
+        p.text(x=[x - 0.5 for _, x in leaves_xs.items()],
+               y=[-1] * len(leaves_xs),
+               text=[str(v + 1) for v, _ in leaves_xs.items()],
+               text_align='left', text_baseline='middle', text_font_size='10pt')
 
         p.sizing_mode = 'stretch_width'
         p.axis.major_tick_line_color = None
@@ -760,7 +647,7 @@ class Plotter:
     def topics_palette_rgb(df):
         n_comps = len(set(df['comp']))
         cmap = Plotter.factors_colormap(n_comps)
-        return dict([(i, Plotter.color_to_rgb(cmap(i))) for i in range(n_comps)])
+        return dict((i, Plotter.color_to_rgb(cmap(i))) for i in range(n_comps))
 
     @staticmethod
     def factors_colormap(n):
@@ -773,4 +660,4 @@ class Plotter:
 
     @staticmethod
     def topics_palette(df):
-        return dict([(k, v.to_hex()) for k, v in Plotter.topics_palette_rgb(df).items()])
+        return dict((k, v.to_hex()) for k, v in Plotter.topics_palette_rgb(df).items())
