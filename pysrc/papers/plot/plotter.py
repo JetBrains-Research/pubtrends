@@ -74,12 +74,15 @@ def visualize_analysis(analyzer):
             topics_analyzed=True,
             components_similarity=[components(plotter.heatmap_topics_similarity())],
             component_size_summary=[components(plotter.topic_years_distribution())],
-            topics_hierarchy=[components(plotter.topics_hierarchy())],
             topics_info_and_word_cloud_and_callback=[
                 (components(p), Plotter.word_cloud_prepare(wc), "true" if is_empty else "false", zoom_in_callback) for
                 (p, wc, is_empty, zoom_in_callback) in plotter.topics_info_and_word_cloud_and_callback()],
             component_sizes=plotter.component_sizes()
         ))
+
+        topics_hierarchy = plotter.topics_hierarchy()
+        if topics_hierarchy:
+            result['topics_hierarchy'] = [components(topics_hierarchy)]
 
     # Configure additional features
     result.update(dict(

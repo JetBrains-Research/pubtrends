@@ -396,6 +396,7 @@
                     <small><a class="link" data-toggle="collapse" href="#collapseTopics"
                        role="button" aria-expanded="false">More about topics</a></small>
                     <div id="collapseTopics" class="collapse mt-2">
+                        {% if topics_hierarchy is defined %}
                         <p>
                             Topics are computed based on hierarchical clustering.
                         </p>
@@ -403,6 +404,7 @@
                         {{ script|safe }}
                         {{ div|safe }}
                         {% endfor %}
+                        {% endif %}
                         <p>
                             Similarity between topics is an average similarity between the papers.
                         </p>
