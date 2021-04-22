@@ -191,11 +191,10 @@
             $('#feedback-jobid').val(jobid);
 
             // Create clickable feedback forms
-            createClickableFeedBackForm("feedback-overview-form", "feedback-overview");
+            createClickableFeedBackForm("feedback-papers-form", "feedback-papers");
             createClickableFeedBackForm("feedback-trends-form", "feedback-trends");
             createClickableFeedBackForm("feedback-network-form", "feedback-network");
             createClickableFeedBackForm("feedback-topics-form", "feedback-topics");
-            createClickableFeedBackForm("feedback-papers-form", "feedback-papers");
             createClickableFeedBackForm("feedback-authors-form", "feedback-authors");
             createClickableFeedBackForm("feedback-journals-form", "feedback-journals");
             createClickableFeedBackForm("feedback-numbers-form", "feedback-numbers");
@@ -237,11 +236,11 @@
             <div class="sidebar-sticky" id="sidebar">
                 <ul class="nav flex-column">
                     <li class="nav-item row">
-                        <a class="nav-link no-padding-right" href="#overview" title="Overview">
+                        <a class="nav-link no-padding-right" href="#overview" title="Papers">
                             <img class="nav-icon" src="{{ url_for('static', filename='home.svg') }}"/>
                         </a>
                         <a class="nav-link d-none d-xl-block no-padding" href="#overview">
-                            Overview
+                            Papers
                         </a>
                     </li>
 
@@ -341,8 +340,8 @@
         <!-- Main content -->
         <main class="col-lg-11 col-xl-8" role="main">
             <div class="card mt-3" autofocus>
-                <div class="card-title" id="overview">
-                    <h2 class="card-header">Overview</h2>
+                <div class="card-title" id="papers">
+                    <h2 class="card-header">Papers</h2>
                 </div>
                 <div class="card-body">
                     <p>
@@ -414,7 +413,7 @@
                     </div>
                     {% endif %}
 
-                    <div class="mt-3" id="feedback-overview-form"></div>
+                    <div class="mt-3" id="feedback-papers-form"></div>
                 </div>
             </div>
 
@@ -423,7 +422,7 @@
                     <h1 class="card-header">Trends</h1>
                 </div>
                 <div class="card-body">
-                    <h2 class="card-subtitle">Top Cited Papers</h2>
+                    <strong>Top Cited Papers</strong>
                     <p>
                         Top 50 cited papers are shown among all the papers for given search query.<br>
                         Year reflects publication year of the original paper.
@@ -440,7 +439,7 @@
                     </div>
                     <hr>
 
-                    <h2 class="card-subtitle">Top Cited Papers of the Year</h2>
+                    <strong>Top Cited Papers of the Year</strong>
                     <p>
                         For each year we show the paper which has the most significant number of citations in a
                         given year.<br>
@@ -458,7 +457,7 @@
                     </div>
                     <hr>
 
-                    <h2 class="card-subtitle">Hot Papers</h2>
+                    <strong>Hot Papers</strong>
                     <p>
                         For each year we show a recent paper which has the biggest growth in citations.<br>
                         Growth is computed as a fraction of citations count in particular year to the count in
@@ -536,7 +535,7 @@
                         <img src="{{ url_for('static', filename='zoom-out.svg') }}" alt="-"/>&nbsp;Zoom out to
                         related papers
                     </button>
-                    <div class="mt-3" id="feedback-papers-form"></div>
+                    <div class="mt-3" id="feedback-topics-form"></div>
                 </div>
             </div>
 
@@ -860,7 +859,7 @@
                     intro: "Results are organised into sections - different aspects of analysis."
                 },
                 {
-                    element: '#overview',
+                    element: '#papers',
                     intro: "The report starts with a general information. " +
                         "It shows total number of papers and topics, publications dynamics, and most common words in the field."
                 },
