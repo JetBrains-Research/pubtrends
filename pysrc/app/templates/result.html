@@ -263,15 +263,6 @@
                         </a>
                     </li>
                     <li class="nav-item row">
-                        <a class="nav-link no-padding-right" href="#publications" title="Publications">
-                            <img class="nav-icon" src="{{ url_for('static', filename='columns.svg') }}"/>
-                        </a>
-                        <a class="nav-link d-none d-xl-block no-padding" href="#publications">
-                            Publications
-                        </a>
-                    </li>
-
-                    <li class="nav-item row">
                         <a class="nav-link no-padding-right" href="#network" title="Network">
                             <img class="nav-icon" src="{{ url_for('static', filename='globe.svg') }}"/>
                         </a>
@@ -372,17 +363,10 @@
                         <div class="col-9 no-padding-left">
                             <small><strong>&nbsp;&nbsp;&nbsp;Papers per year</strong></small>
                             <br>
-                            {% if component_size_summary is defined %}
-                            {% for script, div in component_size_summary %}
-                            {{ script|safe }}
-                            {{ div|safe }}
-                            {% endfor %}
-                            {% else %}
                             {% for script, div in papers_stats %}
                             {{ script|safe }}
                             {{ div|safe }}
                             {% endfor %}
-                            {% endif %}
                         </div>
                     </div>
                     <div id="search-in-papers" class="row">
@@ -397,16 +381,37 @@
                             </button>
                         </div>
                     </div>
-                    {% if topics_hierarchy_with_keywords is defined %}
+                    {% if topics_analyzed %}
                     <hr>
                     <p>
                         Topic is a group of similar papers which share common ideas, describe common features, etc. <br>
-                        Topics hierarchy and keywords are shown below.
+                        Topics are extracted based on similarity between papers based on <em>bibliographic coupling</em>,
+                        <em>co-citations</em>,<br>
+                        <em>direct citations</em>, and <em>potential</em> citations based on text similarity.<br>
+                        Information about topics - keywords, sizes, publication years are shown below.<br>
                     </p>
-                    {% for script, div in topics_hierarchy_with_keywords %}
+                    {% for script, div in component_size_summary %}
                     {{ script|safe }}
                     {{ div|safe }}
                     {% endfor %}
+                    <small><a class="link" data-toggle="collapse" href="#collapseTopics"
+                       role="button" aria-expanded="false">More about topics</a></small>
+                    <div id="collapseTopics" class="collapse mt-2">
+                        <p>
+                            Topics are computed based on hierarchical clustering.
+                        </p>
+                        {% for script, div in topics_hierarchy %}
+                        {{ script|safe }}
+                        {{ div|safe }}
+                        {% endfor %}
+                        <p>
+                            Similarity between topics is an average similarity between the papers.
+                        </p>
+                        {% for script, div in components_similarity %}
+                        {{ script|safe }}
+                        {{ div|safe }}
+                        {% endfor %}
+                    </div>
                     {% endif %}
 
                     <div class="mt-3" id="feedback-overview-form"></div>
@@ -474,57 +479,14 @@
                 </div>
             </div>
 
-            {% if topics_analyzed %}
-
             <div class="card mt-3">
                 <div class="card-title" id="topics">
                     <h1 class="card-header">Topics</h1>
                 </div>
                 <div class="card-body">
                     <p>
-                        Topics are extracted based on similarity between papers based on <em>bibliographic coupling</em>,
-                        <em>co-citations</em>,<br>
-                        <em>direct citations</em>, and <em>potential</em> citations based on text similarity.
-                        <br>
-                    </p>
-                    <hr>
-                    <p>Topics sizes are shown below.</p>
-                    <div>
-                        {% for script, div in component_ratio %}
-                        {{ script|safe }}
-                        {{ div|safe }}
-                        {% endfor %}
-                    </div>
-                    <hr>
-                    <p>Summary publication year for topics.</p>
-                    <div>
-                        {% for script, div in component_years_summary %}
-                        {{ script|safe }}
-                        {{ div|safe }}
-                        {% endfor %}
-                    </div>
-                    <hr>
-                    <p>
-                        Similarity between topics is an average similarity between the papers.
-                    </p>
-                    {% for script, div in components_similarity %}
-                    {{ script|safe }}
-                    {{ div|safe }}
-                    {% endfor %}
-
-                    <div class="mt-3" id="feedback-topics-form"></div>
-                </div>
-            </div>
-
-            <div class="card mt-3">
-                <div class="card-title" id="publications">
-                    <h1 class="card-header">Publications</h1>
-                </div>
-                <div class="card-body">
-                    <p>
-                        Learn more about topics - most cited papers over time are shown for each topic.<br>
-                        Papers are sorted descending by citations number overall from bottom to top.<br>
-                        Year reflects publication year of the original paper.
+                        Papers for topics are sorted descending by citations number overall from bottom to top.<br>
+                        Word clouds show keywords specific for topics.
                     </p>
                     <div>
                         {% for (script, div), word_cloud, is_empty, zoom_in_callback in
@@ -609,8 +571,6 @@
                     <div class="mt-3" id="feedback-network-form"></div>
                 </div>
             </div>
-
-            {% endif %}
 
             {% if feature_authors_enabled is defined %}
             <div class="card mt-3">
@@ -823,7 +783,7 @@
                 </div>
                 <div class="card-body">
                     <p>
-                        Let's make the service better together!<br>
+                        We'd love to hear your feedback!<br>
                         Use the form below to tell us more about you and your opinion about the service,<br>
                         or click instant feedback buttons to share your feelings about particular report
                         section.<br>
@@ -980,12 +940,6 @@
                     intro: "Generate review - extractive summmarization."
                 },
                 {% endif %}
-
-                {
-                    element: '#feedback',
-                    intro: "Please help us to improve the service!<br>" +
-                        "Your feedback is very welcome."
-                },
                 {
                     intro: "Congratulations!<br>" +
                         "Now you are ready to explore scientific literature with PubTrends."
