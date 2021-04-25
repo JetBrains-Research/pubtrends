@@ -1,7 +1,9 @@
 PubTrends
 =========
 
-A tool for analysis of trends & pivotal points in the scientific literature.
+PubTrends is a scientific literature exploratory tool for analyzing topics of a research field and similar papers analysis.
+
+![Scheme](pysrc/app/static/about_pubtrends_scheme.png?raw=true "Title")
 
 ## Prerequisites
 
