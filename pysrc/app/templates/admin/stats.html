@@ -65,6 +65,7 @@ Average duration: {{ paper_searches_avg_duration }}
     <tr>
         <th scope="col">#</th>
         <th scope="col">Date</th>
+        <th scope="col">Source</th>
         <th scope="col">Search</th>
         <th scope="col">Duration</th>
         <th scope="col">Papers</th>
@@ -73,10 +74,11 @@ Average duration: {{ paper_searches_avg_duration }}
     </tr>
     </thead>
     <tbody>
-    {% for d, q, l, du, p, cg, sg in recent_searches %}
+    {% for d, s, q, l, du, p, cg, sg in recent_searches %}
     <tr>
         <th scope="row">{{ loop.index }}</th>
         <td>{{ d }}</td>
+        <td>{{ s }}</td>
         <td>
             <a class="link" href="{{ l }}">{{ q }}</a>
         </td>
@@ -96,15 +98,17 @@ Average duration: {{ paper_searches_avg_duration }}
     <tr>
         <th scope="col">#</th>
         <th scope="col">Date</th>
+        <th scope="col">Source</th>
         <th scope="col">Search</th>
         <th scope="col">Duration</th>
     </tr>
     </thead>
     <tbody>
-    {% for d, q, l, du in recent_papers %}
+    {% for d, s, q, l, du in recent_papers %}
     <tr>
         <th scope="row">{{ loop.index }}</th>
         <td>{{ d }}</td>
+        <td>{{ s }}</td>
         <td>
             <a class="link" href="{{ l }}">{{ q }}</a>
         </td>

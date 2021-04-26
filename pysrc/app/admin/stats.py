@@ -152,6 +152,7 @@ def prepare_stats_data(logfile):
         link = f'/result?{"&".join([f"{a}={v}" for a, v in args.items()])}'
         recent_searches_results.append((
             date.strftime('%Y-%m-%d %H:%M:%S'),
+            args['source'] if 'source' in args else '',
             args['query'],
             link,
             duration,
@@ -167,6 +168,12 @@ def prepare_stats_data(logfile):
         jobid = recent_papers.get()
         info = papers_infos[jobid]
         date, args = info['start'], info['args']
+        if 'query' in args:
+            title = args['query']
+        elif 'id' in args:
+            title = f'Id: {args["id"]}'
+        else:
+            title = 'N/A'
         if 'end' in info:
             duration = duration_string(info['end'] - date)
         else:
@@ -175,7 +182,8 @@ def prepare_stats_data(logfile):
         link = f'/paper?{"&".join([f"{a}={v}" for a, v in args.items()])}'
         recent_papers_results.append((
             date.strftime('%Y-%m-%d %H:%M:%S'),
-            args['query'] if 'query' in args else 'N/A',
+            args['source'] if 'source' in args else '',
+            title,
             link,
             duration,
         ))
