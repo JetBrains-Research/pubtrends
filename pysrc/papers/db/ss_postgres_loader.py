@@ -159,7 +159,21 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         return list(df['id'].astype(str))
 
     def estimate_citations(self, ids):
-        raise Exception('Not implemented yet')
+        self.check_connection()
+        query = f'''
+                SELECT count
+                FROM SSPublications P
+                    LEFT JOIN matview_sscitations C
+                    ON C.crc32id = P.crc32id and C.ssid = P.ssid 
+                WHERE (P.crc32id, P.ssid) in (VALUES {SemanticScholarPostgresLoader.ids2values(ids)});
+                '''
+
+        with self.postgres_connection.cursor() as cursor:
+            cursor.execute(query)
+            df = pd.DataFrame(cursor.fetchall(), columns=['total'])
+            df.fillna(value=1, inplace=True)  # matview_sscitations ignores < 3 citations
+
+        return df['total']
 
     def load_citations(self, ids):
         self.check_connection()
