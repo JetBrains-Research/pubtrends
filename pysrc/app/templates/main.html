@@ -56,7 +56,7 @@
                href="javascript:void(0);" onclick="startIntro();">Take a tour</a>
             <a class="btn btn-light ml-1"
                href="about.html"
-               target="_blank" role="button">Learn more</a>
+               target="_blank" role="button">About</a>
         </p>
     </div>
     <main class="card border-light mt-3" role="main">
@@ -174,21 +174,23 @@
                     </form>
                     <!-- Preprocessed example -->
                     Try one of our examples<br>
-                    {% for terms, hash in search_example_terms %}
-                    <form action="result" method="GET" class="inline">
-                        <input type="hidden" name="source" value="{{ search_example_source }}">
-                        <input type="hidden" name="sort" value="Most Cited">
-                        <input type="hidden" name="limit" value="{{ default_limit }}">
-                        <input type="hidden" name="noreviews" value="on">
-                        <input type="hidden" name="expand" value="20">
-                        <input type="hidden" name="jobid" value="predefined_{{ hash }}">
-                        <button type="submit" name="query" value="{{ terms }}"
-                                class="btn btn-sm btn-outline-secondary mt-2 mr-2"
-                                style="border-radius: 10px;">
-                            {{ terms }}
-                        </button>
-                    </form>
-                    {% endfor %}
+                    <div id="predefined" class="row ml-2">
+                        {% for terms, hash in search_example_terms %}
+                        <form action="result" method="GET" class="inline">
+                            <input type="hidden" name="source" value="{{ search_example_source }}">
+                            <input type="hidden" name="sort" value="Most Cited">
+                            <input type="hidden" name="limit" value="{{ default_limit }}">
+                            <input type="hidden" name="noreviews" value="on">
+                            <input type="hidden" name="expand" value="20">
+                            <input type="hidden" name="jobid" value="predefined_{{ hash }}">
+                            <button type="submit" name="query" value="{{ terms }}"
+                                    class="btn btn-sm btn-outline-secondary mt-2 mr-2"
+                                    style="border-radius: 10px;">
+                                {{ terms }}
+                            </button>
+                        </form>
+                        {% endfor %}
+                    </div>
                 </div>
 
                 <!-- Form for Paper -->
@@ -409,6 +411,10 @@
                     intro: "Click the <em>Search</em> button!<br>" +
                         "You will be redirected automatically to a results page once analysis is complete.<br>" +
                         "Click <em>About</em> button to learn about results."
+                },
+                {
+                    element: '#predefined',
+                    intro: "Or try one of precomputed examples."
                 }
             ]
         });
