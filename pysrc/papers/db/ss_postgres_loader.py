@@ -114,6 +114,8 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         pub_df['type'] = 'Article'
         pub_df['mesh'] = ''
         pub_df['keywords'] = ''
+        # Hack for missing year in SS, see https://github.com/JetBrains-Research/pubtrends/issues/258
+        pub_df['year'].fillna(1970, inplace=True)
         return Loader.process_publications_dataframe(ids, pub_df)
 
     def load_citations_by_year(self, ids):
