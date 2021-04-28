@@ -135,6 +135,8 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
             cit_stats_df_from_query = pd.DataFrame(cursor.fetchall(),
                                                    columns=['id', 'year', 'count'])
 
+        # Hack for missing year in SS
+        cit_stats_df_from_query['year'].fillna(1970, inplace=True)
         if np.any(cit_stats_df_from_query.isna()):
             raise ValueError('NaN values are not allowed in citation stats DataFrame')
 
