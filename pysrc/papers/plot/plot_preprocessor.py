@@ -57,11 +57,8 @@ class PlotPreprocessor:
 
     @staticmethod
     def article_view_data_source(df, min_year, max_year, components_split, width=760):
-        columns = ['id', 'title', 'year', 'type', 'total', 'authors', 'comp']
+        columns = ['id', 'title', 'year', 'type', 'total', 'authors', 'journal', 'comp']
         df_local = df[columns].copy()
-
-        # Replace NaN values with Undefined for tooltips
-        df_local['year'] = df_local['year'].replace(np.nan, "Undefined")
 
         # Correction of same year / total
         df_local['count'] = 1  # Temporarily column to count clashes
@@ -72,7 +69,7 @@ class PlotPreprocessor:
         df_counts['delta'] = 0
         dft = pd.DataFrame(columns=columns + ['y'])
         for _, r in df_local.iterrows():
-            pid, title, year, type, total, authors, comp, _ = r  # Ignore count
+            pid, title, year, type, total, authors, journal, comp, _ = r  # Ignore count
             if components_split:
                 cd = df_counts.loc[(comp, year, total)]
                 c, d = cd['count'], cd['delta']
@@ -82,7 +79,7 @@ class PlotPreprocessor:
                 c, d = cd['count'], cd['delta']
                 df_counts.loc[(year, total), 'delta'] += 1  # Increase delta for better layout
             # Make papers with same year and citations have different y values
-            dft.loc[len(dft)] = (pid, title, year, type, total, authors, comp,
+            dft.loc[len(dft)] = (pid, title, year, type, total, authors, journal, comp,
                                  # Fix to show not cited papers on log axis
                                  max(1, total) + (d - int(c / 2)) / float(c))
         df_local = dft

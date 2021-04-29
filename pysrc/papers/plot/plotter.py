@@ -341,7 +341,7 @@ class Plotter:
 
     def most_cited_per_year_papers(self):
         logger.debug('Different colors encode different papers')
-        cols = ['year', 'id', 'title', 'authors', 'paper_year', 'count']
+        cols = ['year', 'id', 'title', 'authors', 'journal', 'paper_year', 'count']
         most_cited_per_year_df = self.analyzer.max_gain_df[cols].replace(np.nan, "Undefined")
         most_cited_per_year_df['authors'] = most_cited_per_year_df['authors'].apply(
             lambda authors: cut_authors_list(authors)
@@ -361,6 +361,7 @@ class Plotter:
         p.yaxis.formatter = NumeralTickFormatter(format='0,0')
         p.hover.tooltips = self._html_tooltips([
             ("Author(s)", '@authors'),
+            ("Journal", '@journal'),
             ("Year", '@paper_year'),
             ("Cited by", '@count papers in @year')
         ])
@@ -376,7 +377,7 @@ class Plotter:
         logger.debug('Fastest growing papers per year')
         logger.debug('Growth(year) = Citation delta (year) / Citations previous year')
         logger.debug('Different colors encode different papers')
-        cols = ['year', 'id', 'title', 'authors', 'paper_year', 'rel_gain']
+        cols = ['year', 'id', 'title', 'authors', 'journal', 'paper_year', 'rel_gain']
         fastest_growth_per_year_df = self.analyzer.max_rel_gain_df[cols].replace(np.nan, "Undefined")
         fastest_growth_per_year_df['authors'] = fastest_growth_per_year_df['authors'].apply(
             lambda authors: cut_authors_list(authors)
@@ -397,6 +398,7 @@ class Plotter:
         p.yaxis.formatter = NumeralTickFormatter(format='0,0')
         p.hover.tooltips = self._html_tooltips([
             ("Author(s)", '@authors'),
+            ("Journal", '@journal'),
             ("Year", '@paper_year'),
             ("Relative Gain", '@rel_gain in @year')])
         p.js_on_event('tap', self.paper_callback(ds_max, self.analyzer.source))
@@ -501,6 +503,7 @@ class Plotter:
 
         p.hover.tooltips = self._html_tooltips([
             ("Author(s)", '@authors'),
+            ("Journal", '@journal'),
             ("Year", '@year'),
             ("Type", '@type'),
             ("Cited by", '@total paper(s) total')])
