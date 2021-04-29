@@ -40,8 +40,8 @@ def topic_evolution_analysis(
     :param task:
     :return:
     """
-    min_year = int(cocit_df['year'].min())
-    max_year = int(cocit_df['year'].max())
+    min_year = int(df['year'].min())
+    max_year = int(df['year'].max())
     year_range = list(np.arange(max_year, min_year - 1, step=-evolution_step).astype(int))
 
     # Cannot analyze evolution
@@ -53,7 +53,8 @@ def topic_evolution_analysis(
     progress.info(f'Studying evolution of topics in {min_year} - {max_year}', current=current, task=task)
 
     logger.debug(f"Topics evolution years: {year_range}")
-    evolution_series = [pd.Series(data=list(df['comp']), index=list(df['id']))]  # Evolution starts with the latest topic separation
+    # Evolution starts with the latest topic separation
+    evolution_series = [pd.Series(data=list(df['comp']), index=list(df['id']))]
     for year in year_range[1:]:
         progress.info(f'Processing year {year}', current=current, task=task)
         logger.debug(f'Get ids earlier than year {year}')
