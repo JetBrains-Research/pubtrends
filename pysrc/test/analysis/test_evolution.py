@@ -24,9 +24,9 @@ class TestTopicEvolution(unittest.TestCase):
         cls.analyzer.bibliographic_coupling_df = loader.load_bibliographic_coupling(cls.analyzer.ids)
 
     @parameterized.expand([
-        ('too large step', 10, True, None),
-        ('2 steps', 5, False, [1975, 1970]),
-        ('5 steps', 2, False, [1975, 1973, 1971, 1969, 1967])
+        ('too large step', 20, True, None),
+        ('3 steps', 5, False, [1975, 1970, 1965]),
+        ('7 steps', 2, False, [1975, 1973, 1971, 1969, 1967, 1965, 1963])
     ])
     def test_topic_evolution(self, name, step, expect_none, expected_year_range):
         evolution_df, year_range = topic_evolution_analysis(
@@ -63,7 +63,9 @@ class TestTopicEvolution(unittest.TestCase):
             self.analyzer.corpus_terms, self.analyzer.corpus_counts, PapersAnalyzer.TOPIC_DESCRIPTION_WORDS,
             self.analyzer.progress
         )
-        expected_topics_kwds = {1970: {
+        expected_topics_kwds = {1965: {
+            0: [('article', 0.2), ('term2', 0.2), ('term3', 0.2), ('kw2', 0.2), ('paper', 0.1), ('term1', 0.1),
+                ('kw1', 0.1), ('abstract', 0.1), ('term4', 0.1), ('kw3', 0.1)], -1: []}, 1970: {
             0: [('article', 0.2857142857142857), ('term3', 0.21428571428571427), ('term4', 0.21428571428571427),
                 ('paper', 0.14285714285714285), ('term1', 0.14285714285714285), ('term2', 0.14285714285714285),
                 ('kw2', 0.14285714285714285), ('abstract', 0.14285714285714285), ('kw3', 0.14285714285714285),
@@ -72,3 +74,7 @@ class TestTopicEvolution(unittest.TestCase):
                 ('term5', 0.2), ('paper', 0.13333333333333333), ('kw1', 0.13333333333333333),
                 ('kw2', 0.13333333333333333), ('abstract', 0.13333333333333333)], -1: []}}
         self.assertEquals(expected_topics_kwds, evolution_kwds)
+
+
+if __name__ == '__main__':
+    unittest.main()
