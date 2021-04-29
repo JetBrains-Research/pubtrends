@@ -95,8 +95,10 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
 
     def load_publications(self, ids):
         self.check_connection()
+        # We can possible have multiple records for a single paper!!!
+        # PostgreSQLUtil.kt#batchInsertOnDuplicateKeyUpdate is not used for Semantic Scholar
         query = f'''
-                SELECT P.ssid, P.crc32id, P.pmid, P.title, P.abstract, P.year, P.doi, P.aux
+                SELECT distinct on (P.ssid) P.ssid, P.crc32id, P.pmid, P.title, P.abstract, P.year, P.doi, P.aux
                 FROM SSPublications P
                 WHERE (P.crc32id, P.ssid) in (VALUES {SemanticScholarPostgresLoader.ids2values(ids)});
                 '''
