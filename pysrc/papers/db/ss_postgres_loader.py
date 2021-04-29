@@ -62,27 +62,28 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         # Disable stemming-based lookup for now, see: https://github.com/JetBrains-Research/pubtrends/issues/242
         exact_filter = no_stemming_filter(query_str)
 
+        by_citations = 'count DESC NULLS LAST'
+        by_year = 'year DESC NULLS LAST'
+        # 2 divides the rank by the document length
+        # 4 divides the rank by the mean harmonic distance between extents (this is implemented only by ts_rank_cd)
+        # See https://www.postgresql.org/docs/12/textsearch-controls.html#TEXTSEARCH-RANKING
         if sort == SORT_MOST_CITED:
-            query = f'''
-                SELECT P.ssid
-                FROM to_tsquery('{query_str}') query, SSPublications P
-                    LEFT JOIN matview_sscitations C
-                        ON C.ssid = P.ssid AND C.crc32id = P.crc32id
-                WHERE tsv @@ query {exact_filter}
-                GROUP BY P.ssid, P.crc32id
-                ORDER BY COUNT(*) DESC NULLS LAST
-                LIMIT {limit};
-                '''
+            order = f'{by_citations}, ts_rank_cd(P.tsv, query, 2|4) DESC, {by_year}'
         elif sort == SORT_MOST_RECENT:
-            query = f'''
-                SELECT ssid
-                FROM to_tsquery('{query_str}') query, SSPublications P
-                WHERE tsv @@ query {exact_filter}
-                ORDER BY year DESC NULLS LAST
-                LIMIT {limit};
-                '''
+            order = f'{by_year}, ts_rank_cd(P.tsv, query, 2|4) DESC, {by_citations}'
         else:
             raise ValueError(f'Illegal sort method: {sort}')
+
+        query = f'''
+            SELECT P.ssid 
+            FROM to_tsquery('{query_str}') query, 
+            SSPublications P
+            LEFT JOIN matview_sscitations C 
+            ON C.ssid = P.ssid AND C.crc32id = P.crc32id
+            WHERE P.tsv @@ query {exact_filter}
+            ORDER BY {order}, P.crc32id
+            LIMIT {limit};
+            '''
 
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
