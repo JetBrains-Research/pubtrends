@@ -189,8 +189,7 @@ class PapersAnalyzer:
         self.progress.info('Building papers similarity graph', current=10, task=task)
         self.similarity_graph = build_similarity_graph(
             self.df, self.texts_similarity,
-            self.citations_graph, self.cocit_grouped_df, self.bibliographic_coupling_df,
-            process_all_papers=True,
+            self.citations_graph, self.cocit_grouped_df, self.bibliographic_coupling_df
         )
         self.progress.info(f'Built similarity graph - {len(self.similarity_graph.nodes())} nodes and '
                            f'{len(self.similarity_graph.edges())} edges',

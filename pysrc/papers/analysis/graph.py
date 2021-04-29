@@ -20,8 +20,7 @@ def build_citation_graph(cit_df):
 
 
 def build_similarity_graph(
-        df, texts_similarity, citations_graph, cocit_df, bibliographic_coupling_df,
-        process_all_papers=True,
+        df, texts_similarity, citations_graph, cocit_df, bibliographic_coupling_df
 ):
     """
     Relationship graph is build using citation and text based methods.
@@ -75,11 +74,10 @@ def build_similarity_graph(
         else:
             result.add_edge(u, v, citation=1)
 
-    # Ensure all the papers are in the graph
-    if process_all_papers:
-        for pid in pids:
-            if not result.has_node(pid):
-                result.add_node(pid)
+    # Ensure all the papers are in the similarity graph graph
+    for pid in pids:
+        if not result.has_node(pid):
+            result.add_node(pid)
 
     return result
 

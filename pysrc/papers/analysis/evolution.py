@@ -58,7 +58,8 @@ def topic_evolution_analysis(
     for year in year_range[1:]:
         progress.info(f'Processing year {year}', current=current, task=task)
         logger.debug(f'Get ids earlier than year {year}')
-        ids_year = set(df.loc[df['year'] <= year]['id'])
+        df_year = df.loc[df['year'] <= year]
+        ids_year = set(df_year['id'])
 
         logger.debug('Use only citations earlier than year')
         citations_graph_year = filter_citations_graph(cit_df, ids_year)
@@ -70,15 +71,14 @@ def topic_evolution_analysis(
         bibliographic_coupling_df_year = filter_bibliographic_coupling_df(bibliographic_coupling_df, ids_year)
 
         logger.debug('Use similarities for papers earlier then year')
-        texts_similarity_year = filter_text_similarities(df, texts_similarity, year)
+        texts_similarity_year = filter_text_similarities(df_year, texts_similarity, year)
 
         progress.info('Building papers similarity graph', current=current, task=task)
         similarity_graph = build_similarity_graph(
-            df, texts_similarity_year,
+            df_year, texts_similarity_year,
             citations_graph_year,
             cocit_grouped_df_year,
             bibliographic_coupling_df_year,
-            process_all_papers=False,  # Dont add all the papers to the graph
         )
         progress.info(f'Built similarity graph - {len(similarity_graph.nodes())} nodes and '
                       f'{len(similarity_graph.edges())} edges',
