@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <head>
-    <title>PubTrends - Publication Analysis Service</title>
+    <title>PubTrends - Scientific Literature Explorer</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
@@ -49,7 +49,12 @@
     <div class="jumbotron border-light">
         <h1>PubTrends</h1>
         <p class="lead">
-            Explore research topics and analyze similar papers
+           Scientific literature explorer
+        </p>
+        <p>
+            Find publications by search query, view most cited papers, explore research topics and trends,<br>
+            analyze frequent keywords, and visualize graphs of citations and papers similarity.<br>
+            Find similar papers, important prior, and derivative works for the paper of interest.<br>
         </p>
         <p>
             <a id="tour-start" class="btn btn-light"
@@ -173,7 +178,7 @@
                         </div>
                     </form>
                     <!-- Preprocessed example -->
-                    Try one of our examples<br>
+                    Try one of examples<br>
                     <div id="predefined" class="row ml-2">
                         {% for terms, hash in search_example_terms %}
                         <form action="result" method="GET" class="inline">
@@ -312,51 +317,37 @@
             </div>
         </div>
     </main>
-    <div class="card border-light mt-3">
-        <div class="card-body">
-            Search publications by search query, find most cited and papers with fastest citations growth, explore
-            topics and trends,<br>
-            analyze frequent words and quantitative features in titles and abstracts, visualize graphs of citations and
-            papers similarity.<br>
-            Find most cited similar papers, important prior, and derivative works for the paper of interest.<br>
-            Pubtrends includes 30 million papers and 175 mln citations of biomedical literature from the <a
-                class="link"
-                href="https://pubmed.ncbi.nlm.nih.gov/">PubMed®</a> database.<br>
-        </div>
-    </div>
-    <div class="card border-light mt-3">
-        <div class="card-body">
-            <a class="link" data-toggle="collapse" href="#collapseFeedback"
-               role="button" aria-expanded="false">
-                We'd love to hear your feedback!</small>
-            </a>
-            <form id="collapseFeedback" class="collapse" name="feedback-form" action="feedback" method="POST">
-                <div class="form-group">
-                    <label for="feedback-message">Message</label>
-                    <textarea class="form-control" id="feedback-message" name="message"
-                              rows="5" maxlength="2000"
-                              aria-describedby="emailHelp"
-                              placeholder="Enter message"></textarea>
-                    <small id="messageHelp" class="form-text text-muted">
-                        Max length: 2000.</small>
-                </div>
-                <div class="form-group">
-                    <label for="feedback-email">Email address</label>
-                    <input type="email" class="form-control" id="feedback-email" name="email"
-                           aria-describedby="emailHelp"
-                           placeholder="Enter email"/>
-                    <small id="emailHelp" class="form-text text-muted">
-                        We'll never share your email with anyone else.</small>
-                </div>
-                <div class="form-group">
-                    <button type="submit" class="btn btn-secondary">Submit</button>
-                </div>
-                <div class="form-group">
-                    <input type="hidden" class="form-control" id="feedback-jobid" name="jobid" value=""/>
-                    <input type="hidden" class="form-control" name="type" value="main"/>
-                </div>
-            </form>
-        </div>
+    <div class="mt-2 ml-3">
+        <a class="link" data-toggle="collapse" href="#collapseFeedback"
+           role="button" aria-expanded="false">
+            We'd love to hear your feedback!</small>
+        </a>
+        <form id="collapseFeedback" class="collapse" name="feedback-form" action="feedback" method="POST">
+            <div class="form-group">
+                <label for="feedback-message">Message</label>
+                <textarea class="form-control" id="feedback-message" name="message"
+                          rows="5" maxlength="2000"
+                          aria-describedby="emailHelp"
+                          placeholder="Enter message"></textarea>
+                <small id="messageHelp" class="form-text text-muted">
+                    Max length: 2000.</small>
+            </div>
+            <div class="form-group">
+                <label for="feedback-email">Email address</label>
+                <input type="email" class="form-control" id="feedback-email" name="email"
+                       aria-describedby="emailHelp"
+                       placeholder="Enter email"/>
+                <small id="emailHelp" class="form-text text-muted">
+                    We'll never share your email with anyone else.</small>
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn btn-secondary">Submit</button>
+            </div>
+            <div class="form-group">
+                <input type="hidden" class="form-control" id="feedback-jobid" name="jobid" value=""/>
+                <input type="hidden" class="form-control" name="type" value="main"/>
+            </div>
+        </form>
     </div>
 </div>
 <footer>
@@ -372,7 +363,7 @@
         intro.setOptions({
             steps: [
                 {
-                    intro: "Welcome to PubTrends, a scientific literature explorer!<br>" +
+                    intro: "Welcome to PubTrends!<br>" +
                         "This quick tutorial will guide you through the features."
                 },
                 {
@@ -400,7 +391,7 @@
                     element: '#step3',
                     intro: "Additionally configure:" +
                         "<ul>" +
-                        "<li><em>Sort by</em>: papers ranking - relevance, recency or number of citations</li>" +
+                        "<li><em>Sort by</em>: papers ranking - most cited or most recent</li>" +
                         "<li><em>Search</em>: number of papers to look for</li>" +
                         "<li><em>Prefer no reviews</em>: ignore review papers in the search phase</li>" +
                         "<li><em>Expand %</em>: fraction of paper covered by references</li>" +
