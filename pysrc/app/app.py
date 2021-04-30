@@ -138,7 +138,7 @@ def result():
     limit = request.args.get('limit')
     sort = request.args.get('sort')
     noreviews = request.args.get('noreviews') == 'on'  # Include reviews in the initial search phase
-    expand = request.args.get('expand')  # Fraction of papers to cover by references
+    expand = request.args.get('expand') or 0  # Fraction of papers to cover by references
     try:
         if jobid and query and source and limit is not None and sort is not None:
             job = AsyncResult(jobid, app=pubtrends_celery)
