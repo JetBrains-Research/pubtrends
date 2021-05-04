@@ -126,7 +126,7 @@ Replace `<PATH_TO_PUBTRENDS.JAR>` with actual path to Jar file.
          echo "$file" >> complete.txt
       fi;
    done
-   java -cp pubtrends.jar org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --finish
+   java -cp <PATH_TO_PUBTRENDS.JAR> org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --finish
    ```
    
    * Windows 10 PowerShell
@@ -143,7 +143,7 @@ Replace `<PATH_TO_PUBTRENDS.JAR>` with actual path to Jar file.
           echo $file >> .\complete.txt
        }
    }
-   java -cp "pubtrends.jar" org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --finish
+   java -cp <PATH_TO_PUBTRENDS.JAR> org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --finish
    ```
 
 ## Development
