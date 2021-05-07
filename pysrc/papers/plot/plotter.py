@@ -1,8 +1,6 @@
 import json
 import logging
-import math
 import re
-from math import pi, sin, cos, fabs
 from string import Template
 
 import holoviews as hv
@@ -24,7 +22,7 @@ from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.utils import LOCAL_BASE_URL, \
-    cut_authors_list, ZOOM_OUT, ZOOM_IN, zoom_name, trim, rgb2hex, MAX_TITLE_LENGTH, contrast_color
+    cut_authors_list, ZOOM_OUT, ZOOM_IN, zoom_name, trim, rgb2hex, MAX_TITLE_LENGTH
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
 hv.extension('bokeh')
@@ -645,7 +643,7 @@ class Plotter:
     @staticmethod
     def factor_colors(factors):
         cmap = Plotter.factors_colormap(len(factors))
-        palette = [Plotter.color_to_rgb(cmap(i)) for i in range(len(factors))]
+        palette = [Plotter.color_to_rgb(cmap(i)).to_hex() for i in range(len(factors))]
         colors = factor_cmap('id', palette=palette, factors=factors)
         return colors
 
