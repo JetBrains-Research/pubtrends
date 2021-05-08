@@ -61,6 +61,19 @@ def prepare_stats_data(logfile):
                 terms_searches_dates.append(date)
                 terms.append(args['query'].replace(',', ' ').replace('[^a-zA-Z0-9]+', ' '))
 
+            if '/status failure' in line:
+                args = json.loads(re.sub(".*args:", "", line.strip()))
+                jobid = args['jobid']
+                if not jobid:
+                    continue
+                if jobid in searches_infos:
+                    info = searches_infos[jobid]
+                    info['status'] = 'Error'
+                    if 'Search error: True' in line:
+                        info['status'] = 'Not found'
+                    if 'end' not in info:
+                        info['end'] = date
+
             if '/result success addr:' in line:
                 args = json.loads(re.sub(".*args:", "", line.strip()))
                 jobid = args['jobid']
@@ -68,6 +81,7 @@ def prepare_stats_data(logfile):
                     continue
                 if jobid in searches_infos:
                     info = searches_infos[jobid]
+                    info['status'] = 'Ok'
                     if 'end' not in info:
                         info['end'] = date
 
@@ -119,6 +133,7 @@ def prepare_stats_data(logfile):
                     continue
                 if jobid in papers_infos:
                     info = papers_infos[jobid]
+                    info['status'] = 'Ok'
                     if 'end' not in info:
                         info['end'] = date
         except:
@@ -156,6 +171,7 @@ def prepare_stats_data(logfile):
             args['query'],
             link,
             duration,
+            info['status'] if 'status' in info else 'N/A',
             '+' if 'papers' in info else '-',
             '+' if 'graph_citations' in info else '-',
             '+' if 'graph_similarity' in info else '-',
@@ -186,6 +202,7 @@ def prepare_stats_data(logfile):
             title,
             link,
             duration,
+            info['status'] if 'status' in info else 'N/A',
         ))
     result['recent_papers'] = recent_papers_results[::-1]
 
@@ -197,15 +214,15 @@ def prepare_stats_data(logfile):
         result['word_cloud'] = Plotter.word_cloud_prepare(wc)
 
     # Terms search statistics
-    successful_searches = sum('end' in info for info in searches_infos.values())
-    result['successful_searches'] = successful_searches
+    finished_searches = sum('end' in info for info in searches_infos.values())
+    result['successful_searches'] = finished_searches
     duration = 0
     for info in searches_infos.values():
         if 'end' in info:
             duration += (info['end'] - info['start']).seconds
-    if successful_searches > 0:
+    if finished_searches > 0:
         result['searches_avg_duration'] = duration_string(
-            datetime.timedelta(seconds=int(duration / successful_searches))
+            datetime.timedelta(seconds=int(duration / finished_searches))
         )
     else:
         result['searches_avg_duration'] = 'N/A'
@@ -214,15 +231,15 @@ def prepare_stats_data(logfile):
     result['searches_graph_similarity_shown'] = sum('graph_similarity' in info for info in searches_infos.values())
 
     # Papers search statistics
-    successful_paper_searches = sum('end' in info for info in papers_infos.values())
-    result['paper_successful_searches'] = successful_paper_searches
+    finished_paper_searches = sum('end' in info for info in papers_infos.values())
+    result['paper_successful_searches'] = finished_paper_searches
     duration = 0
     for info in papers_infos.values():
         if 'end' in info:
             duration += (info['end'] - info['start']).seconds
-    if successful_paper_searches > 0:
+    if finished_paper_searches > 0:
         result['paper_searches_avg_duration'] = duration_string(
-            datetime.timedelta(seconds=int(duration / successful_paper_searches))
+            datetime.timedelta(seconds=int(duration / finished_paper_searches))
         )
     else:
         result['paper_searches_avg_duration'] = 'N/A'

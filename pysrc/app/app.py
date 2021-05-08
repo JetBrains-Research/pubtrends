@@ -103,10 +103,12 @@ def status():
                 'progress': 100
             })
         elif job_state == 'FAILURE':
+            is_search_error = isinstance(job_result, SearchError)
+            logger.info(f'/status failure. Search error: {is_search_error}. {log_request(request)}')
             return json.dumps({
                 'state': job_state,
                 'message': str(job_result).replace('\\n', '\n').replace('\\t', '\t'),
-                'search_error': isinstance(job_result, SearchError)
+                'search_error': is_search_error
             })
         elif job_state == 'STARTED':
             return json.dumps({
