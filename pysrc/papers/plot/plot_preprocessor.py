@@ -180,6 +180,7 @@ class PlotPreprocessor:
                 'keywords': sel['keywords'].values[0],
                 'mesh': sel['mesh'].values[0],
                 'authors': cut_authors_list(sel['authors'].values[0]),
+                'journal': sel['journal'].values[0],
                 'year': int(sel['year'].values[0]),
                 'cited': int(sel['total'].values[0]),
                 'topic': topic,
@@ -338,7 +339,7 @@ class PlotPreprocessor:
         for path in paths:
             path.append(0)
         # Radix sort or paths to ensure no overlaps
-        for i in range(0, len(dendrogram) + 1):
+        for i in range(len(dendrogram) + 1):
             paths.sort(key=lambda p: p[i])
             # Reorder next level to keep order of previous if possible
             if i != len(dendrogram):
