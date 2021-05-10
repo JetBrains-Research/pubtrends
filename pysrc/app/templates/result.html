@@ -546,28 +546,32 @@
                     <h1 class="card-header">Network</h1>
                 </div>
                 <div class="card-body">
-                    <p>
-                        Explore citations between the papers of interest on the citations graph.
-                    </p>
                     {% if n_papers <= 2000 %}
-                    <button id="show_citations_graph" type="button" class="btn btn-light"
-                            onclick="graph_callback('citations');">
-                        Show citations graph
-                    </button>
-                    {% else %}
-                    Too many papers to visualize citations graph.
-                    {% endif %}
+                    {% if structure_graph is defined %}
+                    <p>
+                        The graph below shows similarity network, most similar papers are connected.
+                    </p>
+                    {% for script, div in structure_graph %}
+                    {{ script|safe }}
+                    {{ div|safe }}
+                    {% endfor %}
                     <hr>
+                    {% endif %}
                     <p>
-                        Explore papers network, where similar papers are located together and connected.
+                        Explore citations graph and papers similarity network in the interactive viewers.
                     </p>
-                    {% if n_papers <= 2000 %}
-                    <button id="show_similarity_graph" type="button" class="col-auto btn btn-light"
-                            onclick="graph_callback('structure');">
-                        Show similarity graph
-                    </button>
+                    <div style="display: block">
+                        <button id="show_citations_graph" type="button" class="btn btn-light"
+                                onclick="graph_callback('citations');">
+                            Show citations graph
+                        </button>
+                        <button id="show_similarity_graph" type="button" class="ml-2 btn btn-light"
+                                onclick="graph_callback('structure');">
+                            Show similarity graph
+                        </button>
+                    </div>
                     {% else %}
-                    Too many papers to visualize similarity graph.
+                        Too many papers to visualize graphs.
                     {% endif %}
                     <div class="mt-3" id="feedback-network-form"></div>
                 </div>

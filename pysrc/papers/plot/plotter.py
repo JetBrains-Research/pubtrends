@@ -1,5 +1,6 @@
 import json
 import logging
+import networkx as nx
 import re
 from string import Template
 
@@ -8,9 +9,10 @@ import numpy as np
 from bokeh.colors import RGB
 from bokeh.embed import components
 from bokeh.models import ColumnDataSource, CustomJS
-# Tools used: hover,pan,tap,wheel_zoom,box_zoom,reset,save
+from bokeh.models import GraphRenderer, StaticLayoutProvider, Circle, HoverTool, MultiLine
 from bokeh.models import LinearColorMapper, PrintfTickFormatter, ColorBar
 from bokeh.models import NumeralTickFormatter
+from bokeh.models.graphs import NodesAndLinkedEdges
 from bokeh.plotting import figure
 from bokeh.transform import factor_cmap
 from holoviews import dim
@@ -75,7 +77,8 @@ def visualize_analysis(analyzer):
             topics_info_and_word_cloud_and_callback=[
                 (components(p), Plotter.word_cloud_prepare(wc), "true" if is_empty else "false", zoom_in_callback) for
                 (p, wc, is_empty, zoom_in_callback) in plotter.topics_info_and_word_cloud_and_callback()],
-            component_sizes=plotter.component_sizes()
+            component_sizes=plotter.component_sizes(),
+            structure_graph=[components(plotter.structure_graph())]
         ))
 
         topics_hierarchy = plotter.topics_hierarchy()
@@ -593,6 +596,92 @@ class Plotter:
         p.grid.grid_line_color = None
         p.outline_line_color = None
         return p
+
+    def structure_graph(self):
+        g = self.analyzer.structure_graph
+
+        pos = nx.spring_layout(g)
+        nodes = [a for a, _ in pos.items()]
+
+        graph = GraphRenderer()
+        comps = self.analyzer.df['comp']
+        cmap = Plotter.factors_colormap(len(set(comps)))
+        palette = dict(zip(set(comps), [Plotter.color_to_rgb(cmap(i)).to_hex()
+                                        for i in range(len(set(comps)))]))
+
+        graph.node_renderer.data_source.add(self.analyzer.df['id'], 'index')
+        graph.node_renderer.data_source.data['title'] = self.analyzer.df['title']
+        graph.node_renderer.data_source.data['authors'] = \
+            self.analyzer.df['authors'].apply(lambda authors: cut_authors_list(authors))
+        graph.node_renderer.data_source.data['journal'] = self.analyzer.df['journal']
+        graph.node_renderer.data_source.data['year'] = self.analyzer.df['year']
+        graph.node_renderer.data_source.data['cited'] = self.analyzer.df['total']
+        graph.node_renderer.data_source.data['size'] = [3 * np.log1p(c) for c in self.analyzer.df['total']]
+        graph.node_renderer.data_source.data['topic'] = [c + 1 for c in comps]
+        graph.node_renderer.data_source.data['color'] = [palette[c] for c in comps]
+        graph.edge_renderer.data_source.data = dict(start=[a for a, _ in g.edges],
+                                                    end=[a for _, a in g.edges])
+
+        # start of layout code
+        x = [v[0] for _, v in pos.items()]
+        y = [v[1] for _, v in pos.items()]
+        plot = figure(title="Papers similarity plot",
+                      width=PLOT_WIDTH,
+                      height=TALL_PLOT_HEIGHT,
+                      x_range=(min(x), max(x)), y_range=(min(y), max(y)),
+                      tools="pan,tap,wheel_zoom,box_zoom,reset,save")
+        plot.xaxis.major_tick_line_color = None  # turn off x-axis major ticks
+        plot.xaxis.minor_tick_line_color = None  # turn off x-axis minor ticks
+        plot.yaxis.major_tick_line_color = None  # turn off y-axis major ticks
+        plot.yaxis.minor_tick_line_color = None  # turn off y-axis minor ticks
+        plot.xaxis.major_label_text_font_size = '0pt'  # preferred method for removing tick labels
+        plot.yaxis.major_label_text_font_size = '0pt'  # preferred method for removing tick labels
+        plot.grid.grid_line_color = None
+        plot.outline_line_color = None
+
+        TOOLTIPS = """
+        <div style="max-width: 500px">
+            <div>
+                <span style="font-size: 12px; font-weight: bold;">@title</span>
+            </div>
+            <div>
+                <span style="font-size: 11px; font-weight: bold;">Author(s)</span>
+                <span style="font-size: 10px;">@authors</span>
+            </div>
+            <div>
+                <span style="font-size: 11px; font-weight: bold;">Journal</span>
+                <span style="font-size: 10px;">@journal</span>
+            </div>
+            <div>
+                <span style="font-size: 11px; font-weight: bold;">Year</span>
+                <span style="font-size: 10px;">@year</span>
+            </div>
+            <div>
+                <span style="font-size: 11px; font-weight: bold;">Cited</span>
+                <span style="font-size: 10px;">@cited</span>
+            </div>
+            <div>
+                <span style="font-size: 11px; font-weight: bold;">Topic</span>
+                <span style="font-size: 10px;">@topic</span>
+            </div>
+        </div>
+        """
+
+        plot.add_tools(HoverTool(tooltips=TOOLTIPS))
+
+        graph_layout = dict(zip(nodes, zip(x, y)))
+        graph.layout_provider = StaticLayoutProvider(graph_layout=graph_layout)
+
+        graph.node_renderer.glyph = Circle(size='size', fill_color='color')
+        graph.node_renderer.hover_glyph = Circle(size='size', fill_color='green')
+
+        graph.edge_renderer.glyph = MultiLine(line_color='grey', line_alpha=0.1, line_width=1)
+        graph.edge_renderer.hover_glyph = MultiLine(line_color='blue', line_alpha=1.0, line_width=3)
+
+        graph.inspection_policy = NodesAndLinkedEdges()
+
+        plot.renderers.append(graph)
+        return plot
 
     def topic_evolution(self):
         """
