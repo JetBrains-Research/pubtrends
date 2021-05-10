@@ -562,25 +562,26 @@
                     {% if n_papers <= 2000 %}
                     {% if structure_graph is defined %}
                     <p>
-                        The graph below shows similarity network, most similar papers are connected.
+                        The graph below shows similarity network, most similar papers are connected.<br>
+                        Color represents topic, size - total citations number.
                     </p>
                     {% for script, div in structure_graph %}
                     {{ script|safe }}
                     {{ div|safe }}
                     {% endfor %}
-                    <hr>
                     {% endif %}
+                    <br>
                     <p>
-                        Explore citations graph and papers similarity network in the interactive viewers.
+                        Explore citations graph and papers similarity network in the interactive graph viewer.
                     </p>
                     <div style="display: block">
-                        <button id="show_citations_graph" type="button" class="btn btn-light"
+                        <button type="button" class="btn btn-light"
                                 onclick="graph_callback('citations');">
-                            Show citations graph
+                            Explore citations graph
                         </button>
-                        <button id="show_similarity_graph" type="button" class="ml-2 btn btn-light"
+                        <button type="button" class="ml-2 btn btn-light"
                                 onclick="graph_callback('structure');">
-                            Show similarity graph
+                            Explore similarity graph
                         </button>
                     </div>
                     {% else %}
@@ -920,14 +921,9 @@
                         "new tab."
                 },
                 {
-                    element: '#show_citations_graph',
-                    intro: "Click <em>Show citations graph</em> to explore citations graph among the papers."
+                    element: '#network',
+                    intro: "View papers similarity network and explore graphs in interactive viewer."
                 },
-                {
-                    element: '#show_similarity_graph',
-                    intro: "Click <em>Show similarity graph</em> to explore overall papers similarity."
-                },
-
                 {% if features_authors_enabled %}
                 {
                     element: '#authors',

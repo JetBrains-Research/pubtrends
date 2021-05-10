@@ -1,11 +1,10 @@
 import json
 import logging
-import networkx as nx
 import re
 from string import Template
 
 import holoviews as hv
-from holoviews import opts
+import networkx as nx
 import numpy as np
 from bokeh.colors import RGB
 from bokeh.embed import components
@@ -17,6 +16,7 @@ from bokeh.models.graphs import NodesAndLinkedEdges
 from bokeh.plotting import figure
 from bokeh.transform import factor_cmap
 from holoviews import dim
+from holoviews import opts
 from matplotlib import pyplot as plt
 from wordcloud import WordCloud
 
@@ -673,24 +673,26 @@ class Plotter:
         graph.node_renderer.data_source.data['size'] = [1 + 3 * np.log1p(c) for c in self.analyzer.df['total']]
         graph.node_renderer.data_source.data['topic'] = [c + 1 for c in comps]
         graph.node_renderer.data_source.data['color'] = [palette[c] for c in comps]
-        graph.edge_renderer.data_source.data = dict(start=[a for a, _ in g.edges],
-                                                    end=[a for _, a in g.edges])
+
+        graph.edge_renderer.data_source.data = dict(start=[u for u, _ in g.edges],
+                                                    end=[v for _, v in g.edges])
 
         # start of layout code
         x = [v[0] for _, v in pos.items()]
         y = [v[1] for _, v in pos.items()]
-        plot = figure(width=PLOT_WIDTH,
-                      height=TALL_PLOT_HEIGHT,
-                      x_range=(min(x), max(x)), y_range=(min(y), max(y)),
-                      tools="pan,tap,wheel_zoom,box_zoom,reset,save")
-        plot.xaxis.major_tick_line_color = None  # turn off x-axis major ticks
-        plot.xaxis.minor_tick_line_color = None  # turn off x-axis minor ticks
-        plot.yaxis.major_tick_line_color = None  # turn off y-axis major ticks
-        plot.yaxis.minor_tick_line_color = None  # turn off y-axis minor ticks
-        plot.xaxis.major_label_text_font_size = '0pt'  # preferred method for removing tick labels
-        plot.yaxis.major_label_text_font_size = '0pt'  # preferred method for removing tick labels
-        plot.grid.grid_line_color = None
-        plot.outline_line_color = None
+        p = figure(width=PLOT_WIDTH,
+                   height=TALL_PLOT_HEIGHT,
+                   x_range=(min(x), max(x)), y_range=(min(y), max(y)),
+                   tools="pan,tap,wheel_zoom,box_zoom,reset,save")
+        p.xaxis.major_tick_line_color = None  # turn off x-axis major ticks
+        p.xaxis.minor_tick_line_color = None  # turn off x-axis minor ticks
+        p.yaxis.major_tick_line_color = None  # turn off y-axis major ticks
+        p.yaxis.minor_tick_line_color = None  # turn off y-axis minor ticks
+        p.xaxis.major_label_text_font_size = '0pt'  # preferred method for removing tick labels
+        p.yaxis.major_label_text_font_size = '0pt'  # preferred method for removing tick labels
+        p.grid.grid_line_color = None
+        p.outline_line_color = None
+        p.js_on_event('tap', self.paper_callback(graph.node_renderer.data_source, self.analyzer.source))
 
         TOOLTIPS = """
         <div style="max-width: 500px">
@@ -720,7 +722,7 @@ class Plotter:
         </div>
         """
 
-        plot.add_tools(HoverTool(tooltips=TOOLTIPS))
+        p.add_tools(HoverTool(tooltips=TOOLTIPS))
 
         graph_layout = dict(zip(nodes, zip(x, y)))
         graph.layout_provider = StaticLayoutProvider(graph_layout=graph_layout)
@@ -733,8 +735,8 @@ class Plotter:
 
         graph.inspection_policy = NodesAndLinkedEdges()
 
-        plot.renderers.append(graph)
-        return plot
+        p.renderers.append(graph)
+        return p
 
     def topic_evolution(self):
         """
