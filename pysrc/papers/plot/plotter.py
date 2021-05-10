@@ -69,7 +69,7 @@ def visualize_analysis(analyzer):
         papers_stats=[components(plotter.papers_by_year())],
         papers_word_cloud=Plotter.word_cloud_prepare(word_cloud),
         papers_zoom_out_callback=zoom_out_callback,
-        terms_frequencies=[components(plotter.plot_terms_frequencies(freq_kwds))]
+        keywords_frequencies=[components(plotter.plot_keywords_frequencies(freq_kwds))]
     )
 
     if analyzer.similarity_graph.nodes():
@@ -466,7 +466,7 @@ class Plotter:
 
         return wc, zoom_out_callback
 
-    def plot_terms_frequencies(self, freq_kwds):
+    def plot_keywords_frequencies(self, freq_kwds):
         keywords_df, years = PlotPreprocessor.frequent_terms_data(
             freq_kwds, self.analyzer.df, self.analyzer.corpus_terms, self.analyzer.corpus_counts
         )
