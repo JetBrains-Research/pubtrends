@@ -5,6 +5,7 @@ import re
 from string import Template
 
 import holoviews as hv
+from holoviews import opts
 import numpy as np
 from bokeh.colors import RGB
 from bokeh.embed import components
@@ -54,7 +55,8 @@ TOPIC_KEYWORDS = 5
 def visualize_analysis(analyzer):
     # Initialize plotter after completion of analysis
     plotter = Plotter(analyzer=analyzer)
-    word_cloud, zoom_out_callback = plotter.papers_word_cloud_and_callback()
+    freq_kwds = get_frequent_tokens(analyzer.top_cited_df, query=analyzer.query)
+    word_cloud, zoom_out_callback = plotter.papers_word_cloud_and_callback(freq_kwds)
     export_name = re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{analyzer.query}'.lower())).strip('_')
     result = dict(
         topics_analyzed=False,
@@ -66,7 +68,8 @@ def visualize_analysis(analyzer):
         fastest_growth_per_year_papers=[components(plotter.fastest_growth_per_year_papers())],
         papers_stats=[components(plotter.papers_by_year())],
         papers_word_cloud=Plotter.word_cloud_prepare(word_cloud),
-        papers_zoom_out_callback=zoom_out_callback
+        papers_zoom_out_callback=zoom_out_callback,
+        terms_frequencies=[components(plotter.plot_terms_frequencies(freq_kwds))]
     )
 
     if analyzer.similarity_graph.nodes():
@@ -449,13 +452,12 @@ class Plotter:
             p.vbar(x='year', width=0.8, top='counts', source=ds_stats)
         return p
 
-    def papers_word_cloud_and_callback(self):
+    def papers_word_cloud_and_callback(self, freq_kwds):
         # Build word cloud, size is proportional to token frequency
-        kwds = get_frequent_tokens(self.analyzer.top_cited_df, query=None)
         wc = WordCloud(background_color="white", width=WORD_CLOUD_WIDTH, height=WORD_CLOUD_HEIGHT,
                        color_func=lambda *args, **kwargs: 'black',
                        max_words=TOPIC_WORD_CLOUD_KEYWORDS, min_font_size=10, max_font_size=30)
-        wc.generate_from_frequencies(kwds)
+        wc.generate_from_frequencies(freq_kwds)
 
         # Create Zoom Out callback
         id_list = list(self.analyzer.df['id'])
@@ -463,6 +465,58 @@ class Plotter:
                                                zoom=ZOOM_OUT, query=self.analyzer.query)
 
         return wc, zoom_out_callback
+
+    def plot_terms_frequencies(self, freq_kwds):
+        keywords_df, years = PlotPreprocessor.frequent_terms_data(
+            freq_kwds, self.analyzer.df, self.analyzer.corpus_terms, self.analyzer.corpus_counts
+        )
+
+        # Define the value dimensions
+        max_numbers = keywords_df['number'].max()
+        vdim = hv.Dimension('number', range=(-10, max_numbers + 10))
+
+        # Define the dataset
+        ds = hv.Dataset(keywords_df, vdims=vdim)
+        curves = ds.to(hv.Curve, 'year', groupby='keyword').overlay().redim(
+            year=dict(range=(min(years) - 1, max(years) + 5)))
+
+        # Define a function to get the text annotations
+        max_year = ds['year'].max()
+        label_df = keywords_df[keywords_df.year == max_year].copy().reset_index(drop=True)
+
+        # Update layout for better labels representation
+        groups = label_df.groupby('number')['keyword'].apply(list).to_dict()
+        delta = max(5, max_numbers / 10)
+        deltas = {}
+        for i, row in label_df.iterrows():
+            papers, keyword, year = row
+            if papers in deltas:
+                deltas[papers] += delta
+            else:
+                deltas[papers] = -delta * (len(groups[papers]) - 1) / 2
+            label_df.loc[i, 'number'] = papers + deltas[papers]
+
+        label_df.sort_values(by='keyword', inplace=True)
+        labels = hv.Labels(label_df, ['year', 'number'], 'keyword')
+
+        overlay = curves * labels
+
+        cmap = Plotter.factors_colormap(len(label_df))
+        palette = [Plotter.color_to_rgb(cmap(i)).to_hex() for i in range(len(label_df))]
+        overlay.opts(
+            opts.Curve(show_frame=False, labelled=[], tools=['hover'],
+                       width=PLOT_WIDTH, height=PLOT_HEIGHT, show_legend=False,
+                       xticks=list(reversed(range(max(years), min(years), -5))),
+                       color=hv.Cycle(values=palette), alpha=0.3, line_width=2, show_grid=True),
+            opts.Labels(text_color='keyword', cmap=palette, text_align='left'),
+            opts.NdOverlay(batched=False,
+                           gridstyle={'grid_line_dash': [6, 4], 'grid_line_width': 1, 'grid_bounds': (0, 100)})
+        )
+        p = hv.render(overlay, backend='bokeh')
+        p.xaxis.axis_label = 'Year'
+        p.yaxis.axis_label = 'Number of papers'
+        p.sizing_mode = 'stretch_width'
+        return p
 
     def author_statistics(self):
         authors = self.analyzer.author_stats['author']
@@ -616,7 +670,7 @@ class Plotter:
         graph.node_renderer.data_source.data['journal'] = self.analyzer.df['journal']
         graph.node_renderer.data_source.data['year'] = self.analyzer.df['year']
         graph.node_renderer.data_source.data['cited'] = self.analyzer.df['total']
-        graph.node_renderer.data_source.data['size'] = [3 * np.log1p(c) for c in self.analyzer.df['total']]
+        graph.node_renderer.data_source.data['size'] = [1 + 3 * np.log1p(c) for c in self.analyzer.df['total']]
         graph.node_renderer.data_source.data['topic'] = [c + 1 for c in comps]
         graph.node_renderer.data_source.data['color'] = [palette[c] for c in comps]
         graph.edge_renderer.data_source.data = dict(start=[a for a, _ in g.edges],
@@ -625,8 +679,7 @@ class Plotter:
         # start of layout code
         x = [v[0] for _, v in pos.items()]
         y = [v[1] for _, v in pos.items()]
-        plot = figure(title="Papers similarity plot",
-                      width=PLOT_WIDTH,
+        plot = figure(width=PLOT_WIDTH,
                       height=TALL_PLOT_HEIGHT,
                       x_range=(min(x), max(x)), y_range=(min(y), max(y)),
                       tools="pan,tap,wheel_zoom,box_zoom,reset,save")

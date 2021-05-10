@@ -103,7 +103,7 @@ def get_topic_word_cloud_data(kwd_df, comp):
     """
     kwds = {}
     for pair in list(kwd_df[kwd_df['comp'] == comp]['kwd'])[0].split(','):
-        if pair != '':  # Correctly process empty kwds encoding
+        if pair != '':  # Correctly process empty freq_kwds encoding
             token, value = pair.split(':')
             for word in token.split(' '):
                 kwds[word] = float(value) + kwds.get(word, 0)

@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from more_itertools import unique_everseen
 
-from pysrc.papers.analysis.text import build_corpus
+from pysrc.papers.analysis.text import build_corpus, get_frequent_tokens
 from pysrc.papers.analysis.topics import compute_similarity_matrix
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.utils import cut_authors_list
@@ -119,7 +119,7 @@ class PlotPreprocessor:
         kwds_queue = PriorityQueue()
         for c in topics:
             for pair in list(kwd_df[kwd_df['comp'] == c]['kwd'])[0].split(','):
-                if pair != '':  # Correctly process empty kwds encoding
+                if pair != '':  # Correctly process empty freq_kwds encoding
                     word, value = pair.split(':')
                     kwds_queue.put((-float(value), c, word))
         words2show = {}
@@ -348,3 +348,35 @@ class PlotPreprocessor:
                     p[i + 1] = order[p[i + 1]]
         leaves_order = dict((v, i) for i, v in enumerate(unique_everseen(p[0] for p in paths)))
         return dendrogram, paths, leaves_order
+
+    @staticmethod
+    def frequent_terms_data(freq_kwds, df, corpus_terms, corpus_counts, terms=10):
+        logger.debug('Computing frequent terms')
+        freq_terms = [t for t, _ in list(freq_kwds.items())[:terms]]
+        
+        logger.debug('Grouping papers by year')
+        t = df[['year']].copy()
+        t['i'] = range(len(t))
+        papers_by_year = t[['year', 'i']].groupby('year')['i'].apply(list).to_dict()
+
+        logger.debug('Collecting numbers of papers with term per year')
+        binary_counts = corpus_counts.copy()
+        binary_counts[binary_counts.nonzero()] = 1
+        numbers_per_year = np.zeros(shape=(len(papers_by_year), len(corpus_terms)))
+        for i, (year, iss) in enumerate(papers_by_year.items()):
+            numbers_per_year[i, :] = binary_counts[iss].sum(axis=0)[0, :] # * 100 / len(iss)
+
+        logger.debug('Collect top keywords with maximum sum of numbers over years')
+        top_keyword_idxs = [corpus_terms.index(t) for t in freq_terms if t in corpus_terms]
+
+        logger.debug('Collecting dataframe with numbers for keywords')
+        years = [year for year, _ in papers_by_year.items()]
+        keyword_dfs = []
+        for idx in top_keyword_idxs:
+            keyword = corpus_terms[idx]
+            keyword_df = pd.DataFrame(data=numbers_per_year[:, idx].astype(int), columns=['number'])
+            keyword_df['keyword'] = keyword
+            keyword_df['year'] = years
+            keyword_dfs.append(keyword_df)
+        keywords_df = pd.concat(keyword_dfs, axis=0).reset_index(drop=True)
+        return keywords_df, years

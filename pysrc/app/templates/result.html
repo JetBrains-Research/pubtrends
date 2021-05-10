@@ -476,6 +476,19 @@
                         {{ div|safe }}
                         {% endfor %}
                     </div>
+
+                    <hr>
+                    <strong>Keyword frequencies</strong>
+                    <p>
+                        For each year we show a number of papers containing most frequent keywords.
+                    </p>
+                    <div>
+                        {% for script, div in terms_frequencies %}
+                        {{ script|safe }}
+                        {{ div|safe }}
+                        {% endfor %}
+                    </div>
+
                     <div class="mt-3" id="feedback-trends-form"></div>
                 </div>
             </div>
