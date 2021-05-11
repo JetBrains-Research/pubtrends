@@ -468,7 +468,7 @@ class Plotter:
         return wc, zoom_out_callback
 
     def plot_keywords_frequencies(self, freq_kwds):
-        keywords_df, years = PlotPreprocessor.frequent_terms_data(
+        keywords_df, years = PlotPreprocessor.frequent_keywords_data(
             freq_kwds, self.analyzer.df, self.analyzer.corpus_terms, self.analyzer.corpus_counts
         )
 

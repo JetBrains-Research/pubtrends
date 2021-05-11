@@ -350,9 +350,9 @@ class PlotPreprocessor:
         return dendrogram, paths, leaves_order
 
     @staticmethod
-    def frequent_terms_data(freq_kwds, df, corpus_terms, corpus_counts, terms=10):
+    def frequent_keywords_data(freq_kwds, df, corpus_terms, corpus_counts):
         logger.debug('Computing frequent terms')
-        freq_terms = [t for t, _ in list(freq_kwds.items())[:terms]]
+        keywords = [t for t, _ in freq_kwds.items()]
         
         logger.debug('Grouping papers by year')
         t = df[['year']].copy()
@@ -364,10 +364,10 @@ class PlotPreprocessor:
         binary_counts[binary_counts.nonzero()] = 1
         numbers_per_year = np.zeros(shape=(len(papers_by_year), len(corpus_terms)))
         for i, (year, iss) in enumerate(papers_by_year.items()):
-            numbers_per_year[i, :] = binary_counts[iss].sum(axis=0)[0, :] # * 100 / len(iss)
+            numbers_per_year[i, :] = binary_counts[iss].sum(axis=0)[0, :]
 
         logger.debug('Collect top keywords with maximum sum of numbers over years')
-        top_keyword_idxs = [corpus_terms.index(t) for t in freq_terms if t in corpus_terms]
+        top_keyword_idxs = [corpus_terms.index(t) for t in keywords if t in corpus_terms]
 
         logger.debug('Collecting dataframe with numbers for keywords')
         years = [year for year, _ in papers_by_year.items()]
