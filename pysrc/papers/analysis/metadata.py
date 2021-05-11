@@ -5,8 +5,6 @@ import networkx as nx
 import community
 import itertools
 
-from pysrc.papers.analysis.graph import local_sparse
-
 logger = logging.getLogger(__name__)
 
 
@@ -67,6 +65,7 @@ def split_df_list(df, target_column, separator):
     :return: a dataframe with each entry for the target column separated, with each element moved into a new row.
     The values in the other columns are duplicated across the newly divided rows.
     """
+
     def split_list_to_rows(row, row_accumulator, target_column, separator):
         split_row = row[target_column].split(separator)
         for s in split_row:
@@ -87,9 +86,7 @@ def build_authors_similarity_graph(
         cocit_grouped_df,
         bibliographic_coupling_df,
         author_papers,
-        min_author_papers,
-        e=0.3
-):
+        min_author_papers):
     logger.debug('Processing papers')
     result = nx.Graph()
     for _, row in df[['authors']].iterrows():
@@ -151,7 +148,7 @@ def build_authors_similarity_graph(
             if author_papers[a1] >= min_author_papers and author_papers[a2] >= min_author_papers:
                 update_edge(result, a1, a2, 'citation', 1)
 
-    return local_sparse(result, e)
+    return result
 
 
 def update_edge(graph, a1, a2, name, value):
@@ -181,7 +178,7 @@ def compute_authors_citations_and_papers(df):
         #     authors = authors if len(authors) <= 2 else [authors[0], authors[-1]]
         for a in authors:
             author_papers[a] = author_papers.get(a, 0) + 1
-            
+
     return author_citations, author_papers
 
 

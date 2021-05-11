@@ -20,6 +20,7 @@ from holoviews import opts
 from matplotlib import pyplot as plt
 from wordcloud import WordCloud
 
+from pysrc.papers.analysis.graph import local_sparse
 from pysrc.papers.analysis.text import get_frequent_tokens, get_topic_word_cloud_data
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
@@ -750,8 +751,9 @@ class Plotter:
         p.renderers.append(graph)
         return p
 
-    def authors_graph(self):
-        pos = nx.spring_layout(self.analyzer.authors_similarity_graph)
+    def authors_graph(self, e=0.1):
+        g = local_sparse(self.analyzer.authors_similarity_graph, e)
+        pos = nx.spring_layout(g)
         nodes = [a for a, _ in pos.items()]
         graph = GraphRenderer()
 
@@ -770,8 +772,8 @@ class Plotter:
         ]
         graph.node_renderer.data_source.data['cluster'] = clusters
         graph.node_renderer.data_source.data['color'] = [palette[self.analyzer.authors_clusters[n]] for n in nodes]
-        graph.edge_renderer.data_source.data = dict(start=[a for a, _ in self.analyzer.authors_similarity_graph.edges],
-                                                    end=[a for _, a in self.analyzer.authors_similarity_graph.edges])
+        graph.edge_renderer.data_source.data = dict(start=[a for a, _ in g.edges],
+                                                    end=[a for _, a in g.edges])
 
         # start of layout code
         x = [v[0] for _, v in pos.items()]
