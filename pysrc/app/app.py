@@ -153,6 +153,7 @@ def result():
                                        source=source,
                                        limit=limit,
                                        sort=sort,
+                                       max_graph_size=PUBTRENDS_CONFIG.max_graph_size,
                                        version=VERSION,
                                        log=log,
                                        **viz)
@@ -164,6 +165,7 @@ def result():
                                        source=source,
                                        limit=limit,
                                        sort=sort,
+                                       max_graph_size=PUBTRENDS_CONFIG.max_graph_size,
                                        version=VERSION,
                                        log=log,
                                        **viz)
@@ -293,7 +295,9 @@ def paper():
             data = load_predefined_or_result_data(jobid, pubtrends_celery)
             if data is not None:
                 logger.info(f'/paper success {log_request(request)}')
-                return render_template('paper.html', **prepare_paper_data(data, source, pid),
+                return render_template('paper.html',
+                                       **prepare_paper_data(data, source, pid),
+                                       max_graph_size=PUBTRENDS_CONFIG.max_graph_size,
                                        version=VERSION)
             else:
                 logger.info(f'/paper No job or out-of-date job, restart it {log_request(request)}')

@@ -44,6 +44,7 @@ class PubtrendsConfig:
         self.show_max_articles_options = [int(opt.strip()) for opt in params['show_max_articles_options'].split(',')]
         self.show_max_articles_default_value = int(params['show_max_articles_default_value'].strip())
         self.max_number_of_articles = max(self.show_max_articles_options)
+        self.max_graph_size = params.getint('max_graph_size')
 
         # Max allowed pending tasks
         self.celery_max_pending_tasks = params.getint('celery_max_pending_tasks')

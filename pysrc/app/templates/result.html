@@ -559,7 +559,7 @@
                     <h1 class="card-header">Network</h1>
                 </div>
                 <div class="card-body">
-                    {% if n_papers <= 2000 %}
+                    {% if n_papers <= {{ max_graph_size }} %}
                     {% if structure_graph is defined %}
                     <strong>Papers similarity</strong>
                     <p>

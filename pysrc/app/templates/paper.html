@@ -276,7 +276,7 @@
                     <h1 class="card-header">Network</h1>
                 </div>
                 <div class="card-body">
-                    {% if n_papers <= 2000 %}
+                    {% if n_papers <= {{ max_graph_size }} %}
                     <p>
                         Similarity between papers is computed based on <em>bibliographic coupling</em>,
                         <em>co-citations</em>,<br>
