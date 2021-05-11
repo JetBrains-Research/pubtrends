@@ -468,9 +468,9 @@ class Plotter:
 
         return wc, zoom_out_callback
 
-    def plot_keywords_frequencies(self, freq_kwds):
+    def plot_keywords_frequencies(self, freq_kwds, n=20):
         keywords_df, years = PlotPreprocessor.frequent_keywords_data(
-            freq_kwds, self.analyzer.df, self.analyzer.corpus_terms, self.analyzer.corpus_counts
+            freq_kwds, self.analyzer.df, self.analyzer.corpus_terms, self.analyzer.corpus_counts, n
         )
 
         # Define the value dimensions
@@ -498,9 +498,9 @@ class Plotter:
         palette = [Plotter.color_to_rgb(cmap(i)).to_hex() for i in range(len(label_df))]
         overlay.opts(
             opts.Curve(show_frame=False, labelled=[], tools=['hover'],
-                       width=PLOT_WIDTH, height=PLOT_HEIGHT, show_legend=False,
+                       width=PLOT_WIDTH, height=TALL_PLOT_HEIGHT, show_legend=False,
                        xticks=list(reversed(range(max(years), min(years), -5))),
-                       color=hv.Cycle(values=palette), alpha=0.3, line_width=2, show_grid=True),
+                       color=hv.Cycle(values=palette), alpha=0.8, line_width=2, show_grid=True),
             opts.Labels(text_color='keyword', cmap=palette, text_align='left'),
             opts.NdOverlay(batched=False,
                            gridstyle={'grid_line_dash': [6, 4], 'grid_line_width': 1, 'grid_bounds': (0, 100)})

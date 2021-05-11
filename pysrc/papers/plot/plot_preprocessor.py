@@ -350,9 +350,9 @@ class PlotPreprocessor:
         return dendrogram, paths, leaves_order
 
     @staticmethod
-    def frequent_keywords_data(freq_kwds, df, corpus_terms, corpus_counts):
+    def frequent_keywords_data(freq_kwds, df, corpus_terms, corpus_counts, n):
         logger.debug('Computing frequent terms')
-        keywords = [t for t, _ in freq_kwds.items()]
+        keywords = [t for t, _ in list(freq_kwds.items())[:n]]
         
         logger.debug('Grouping papers by year')
         t = df[['year']].copy()
