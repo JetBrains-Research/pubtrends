@@ -99,6 +99,7 @@ def visualize_analysis(analyzer):
 
     if PUBTRENDS_CONFIG.feature_authors_enabled:
         result['author_statistics'] = plotter.author_statistics()
+        result['authors_graph'] = [components(plotter.authors_graph())]
 
     if PUBTRENDS_CONFIG.feature_journals_enabled:
         result['journal_statistics'] = plotter.journal_statistics()
@@ -671,7 +672,7 @@ class Plotter:
         graph.node_renderer.data_source.data['journal'] = self.analyzer.df['journal']
         graph.node_renderer.data_source.data['year'] = self.analyzer.df['year']
         graph.node_renderer.data_source.data['cited'] = self.analyzer.df['total']
-        graph.node_renderer.data_source.data['size'] = [1 + 3 * np.log1p(c) for c in self.analyzer.df['total']]
+        graph.node_renderer.data_source.data['size'] = [1 + 2 * np.log1p(c) for c in self.analyzer.df['total']]
         graph.node_renderer.data_source.data['topic'] = [c + 1 for c in comps]
         graph.node_renderer.data_source.data['color'] = [palette[c] for c in comps]
 
@@ -736,6 +737,86 @@ class Plotter:
 
         graph.inspection_policy = NodesAndLinkedEdges()
 
+        p.renderers.append(graph)
+        return p
+
+    def authors_graph(self):
+        pos = nx.spring_layout(self.analyzer.authors_similarity_graph)
+        nodes = [a for a, _ in pos.items()]
+        graph = GraphRenderer()
+
+        clusters = [self.analyzer.authors_clusters[n] for n in nodes]
+        cmap = Plotter.factors_colormap(len(set(clusters)))
+        palette = dict(zip(set(clusters), [Plotter.color_to_rgb(cmap(i)).to_hex()
+                                           for i in range(len(set(self.analyzer.authors_clusters.values())))]))
+
+        graph.node_renderer.data_source.add(nodes, 'index')
+        graph.node_renderer.data_source.data['id'] = nodes
+        graph.node_renderer.data_source.data['cited'] = [self.analyzer.author_citations[n] for n in nodes]
+        graph.node_renderer.data_source.data['papers'] = [len(self.analyzer.author_papers[n]) for n in nodes]
+        graph.node_renderer.data_source.data['titles'] = ['\n'.join(self.analyzer.author_papers[n]) for n in nodes]
+        graph.node_renderer.data_source.data['size'] = [
+            1 + np.log1p(self.analyzer.author_citations[n]) * np.log1p(len(self.analyzer.author_papers[n]))
+            for n in nodes
+        ]
+        graph.node_renderer.data_source.data['cluster'] = clusters
+        graph.node_renderer.data_source.data['color'] = [palette[self.analyzer.authors_clusters[n]] for n in nodes]
+        graph.edge_renderer.data_source.data = dict(start=[a for a, _ in self.analyzer.authors_similarity_graph.edges],
+                                                    end=[a for _, a in self.analyzer.authors_similarity_graph.edges])
+
+        # start of layout code
+        x = [v[0] for _, v in pos.items()]
+        y = [v[1] for _, v in pos.items()]
+        p = figure(title="",
+                   width=PLOT_WIDTH,
+                   height=TALL_PLOT_HEIGHT,
+                   x_range=(min(x), max(x)), y_range=(min(y), max(y)),
+                   tools="pan,tap,wheel_zoom,box_zoom,reset,save")
+        p.xaxis.major_tick_line_color = None  # turn off x-axis major ticks
+        p.xaxis.minor_tick_line_color = None  # turn off x-axis minor ticks
+        p.yaxis.major_tick_line_color = None  # turn off y-axis major ticks
+        p.yaxis.minor_tick_line_color = None  # turn off y-axis minor ticks
+        p.xaxis.major_label_text_font_size = '0pt'  # preferred method for removing tick labels
+        p.yaxis.major_label_text_font_size = '0pt'  # preferred method for removing tick labels
+        p.grid.grid_line_color = None
+        p.outline_line_color = None
+
+        TOOLTIPS = """
+        <div style="max-width: 320px">
+            <div>
+                <span style="font-size: 12px; font-weight: bold;">@id</span>
+            </div>
+            <div>
+                <span style="font-size: 11px; font-weight: bold;">Papers</span>
+                <span style="font-size: 10px;">@papers</span>
+            </div>
+            <div>
+                <span style="font-size: 11px; font-weight: bold;">Cited</span>
+                <span style="font-size: 10px;">@cited</span>
+            </div>
+            <div>
+                <span style="font-size: 11px; font-weight: bold;">Cluster</span>
+                <span style="font-size: 10px;">@cluster</span>
+            </div>
+            <div>
+                <span style="font-size: 11px; font-weight: bold;">Titles</span>
+                <span style="font-size: 10px;">@titles</span>
+            </div>
+        </div>
+        """
+
+        p.add_tools(HoverTool(tooltips=TOOLTIPS))
+
+        graph_layout = dict(zip(nodes, zip(x, y)))
+        graph.layout_provider = StaticLayoutProvider(graph_layout=graph_layout)
+
+        graph.node_renderer.glyph = Circle(size='size', fill_color='color')
+        graph.node_renderer.hover_glyph = Circle(size='size', fill_color='green')
+
+        graph.edge_renderer.glyph = MultiLine(line_color='grey', line_alpha=0.1, line_width=1)
+        graph.edge_renderer.hover_glyph = MultiLine(line_color='blue', line_alpha=1.0, line_width=3)
+
+        graph.inspection_policy = NodesAndLinkedEdges()
         p.renderers.append(graph)
         return p
 

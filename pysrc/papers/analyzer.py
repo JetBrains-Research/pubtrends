@@ -9,7 +9,8 @@ from pysrc.papers.analysis.citations import find_top_cited_papers, find_max_gain
     find_max_relative_gain_papers, build_cit_stats_df, merge_citation_stats, build_cocit_grouped_df
 from pysrc.papers.analysis.evolution import topic_evolution_analysis, topic_evolution_descriptions
 from pysrc.papers.analysis.graph import build_citation_graph, build_similarity_graph, build_structure_graph
-from pysrc.papers.analysis.metadata import popular_authors, popular_journals
+from pysrc.papers.analysis.metadata import popular_authors, popular_journals, build_authors_similarity_graph, \
+    compute_authors_citations_and_papers, cluster_authors
 from pysrc.papers.analysis.numbers import extract_numbers
 from pysrc.papers.analysis.text import analyze_texts_similarity, vectorize_corpus
 from pysrc.papers.analysis.topics import topic_analysis, get_topics_description
@@ -251,6 +252,20 @@ class PapersAnalyzer:
         if self.config.feature_authors_enabled:
             self.progress.info("Finding popular authors", current=18, task=task)
             self.author_stats = popular_authors(self.df, n=self.POPULAR_AUTHORS)
+
+            self.progress.info("Analyzing groups of similar authors", current=18, task=task)
+            self.author_citations, self.author_papers = compute_authors_citations_and_papers(self.df)
+            min_author_papers = max(2, np.percentile([len(ap) for ap in self.author_papers.values()], 95))
+            self.authors_similarity_graph = build_authors_similarity_graph(
+                self.df, self.texts_similarity, self.citations_graph,
+                self.cocit_grouped_df, self.bibliographic_coupling_df,
+                self.author_papers, min_author_papers
+            )
+            logger.debug(f'Built top authors similarity graph - {len(self.authors_similarity_graph.nodes())} nodes '
+                         f'and {len(self.authors_similarity_graph.edges())} edges')
+            self.authors_clusters = cluster_authors(
+                self.authors_similarity_graph, self.author_papers, similarity_func=self.similarity
+            )
 
         if self.config.feature_journals_enabled:
             self.progress.info("Finding popular journals", current=19, task=task)

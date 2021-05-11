@@ -561,6 +561,7 @@
                 <div class="card-body">
                     {% if n_papers <= 2000 %}
                     {% if structure_graph is defined %}
+                    <strong>Papers similarity</strong>
                     <p>
                         The graph below shows similarity network, most similar papers are connected.<br>
                         Color represents topic, size - total citations number.
@@ -572,7 +573,7 @@
                     {% endif %}
                     <br>
                     <p>
-                        Explore citations graph and papers similarity network in the interactive graph viewer.
+                        Explore citations graph and papers similarity network in-depth in the interactive graph viewer.
                     </p>
                     <div style="display: block">
                         <button type="button" class="btn btn-light"
@@ -597,11 +598,25 @@
                     <h1 class="card-header">Authors</h1>
                 </div>
                 <div class="card-body">
+                    {% if authors_graph is defined %}
+                    <strong>Authors similarity</strong>
+                    <p>
+                        The graph below shows authors similarity network, most similar authors are connected.<br>
+                        Authors clustering is computed based on co-authorship and similarity between papers.<br>
+                        Color represents cluster, size - author papers and citations number.<br>
+                        <i>NOTE</i>: only authors with the top 5% number papers are shown.
+                    </p>
+                    {% for script, div in authors_graph %}
+                    {{ script|safe }}
+                    {{ div|safe }}
+                    {% endfor %}
+                    <hr>
+                    {% endif %}
+                    <strong>Authors topics</strong>
                     <p>
                         List of authors with the largest number of papers for given search query.<br>
                         The colors of the circles in the topics column indicate top 3 most common topics among
-                        these papers.<br>
-                        The topic circles are arranged according to the number of papers, in descending order.
+                        these papers.
                     </p>
                     <table id="authors-table" class="table table-sm table-bordered table-striped">
                         <thead>
@@ -639,11 +654,11 @@
                     <h1 class="card-header">Journals</h1>
                 </div>
                 <div class="card-body">
+                    <strong>Journals topics</strong>
                     <p>
                         List of journals with the largest number of papers for given search query.<br>
                         The colors of the circles in the topics column indicate top 3 most common topics among
-                        these papers.<br>
-                        The topic circles are arranged according to the number of papers, in descending order.
+                        these papers.
                     </p>
                     <table id="journals-table" class="table table-sm table-bordered table-striped">
                         <thead>
@@ -680,6 +695,7 @@
                     <h1 class="card-header">Numbers</h1>
                 </div>
                 <div class="card-body">
+                    <strong>Numbers and features</strong>
                     <p>
                         Quantitative features extracted from papers titles and abstracts, use search to filter the
                         table.
@@ -715,6 +731,7 @@
                     <h1 class="card-header">Topic Evolution</h1>
                 </div>
                 <div class="card-body">
+                    <strong>Topics over time</strong>
                     <p>
                         Topics extraction is performed longitudinally at several time points to detect merges and
                         splits
@@ -761,6 +778,7 @@
                     <h1 class="card-header">Review</h1>
                 </div>
                 <div class="card-body">
+                    <strong>Extractive summarization review</strong>
                     <p>
                         Generate a review for the chosen topic - a set of sentences from top cited papers <br>
                         with the highest probability to be included in a real review paper.
