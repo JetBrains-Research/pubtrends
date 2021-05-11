@@ -486,18 +486,8 @@ class Plotter:
         label_df = keywords_df[keywords_df.year == max_year].copy().reset_index(drop=True)
 
         # Update layout for better labels representation
-        groups = label_df.groupby('number')['keyword'].apply(list).to_dict()
-        delta = max(5, max_numbers / 10)
-        deltas = {}
-        for i, row in label_df.iterrows():
-            papers, keyword, year = row
-            if papers in deltas:
-                deltas[papers] += delta
-            else:
-                deltas[papers] = -delta * (len(groups[papers]) - 1) / 2
-            label_df.loc[i, 'number'] = papers + deltas[papers]
-
         label_df.sort_values(by='keyword', inplace=True)
+        label_df['number'] = [i * max_numbers / (len(label_df) - 1) for i in range(len(label_df))]
         labels = hv.Labels(label_df, ['year', 'number'], 'keyword')
 
         overlay = curves * labels
