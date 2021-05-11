@@ -504,9 +504,10 @@ class Plotter:
         label_df = keywords_df[keywords_df.year == max_year].copy().reset_index(drop=True)
 
         # Update layout for better labels representation
-        label_df.sort_values(by='keyword', inplace=True)
+        label_df.sort_values(by='number', inplace=True)
         if len(label_df) > 1:
             label_df['number'] = [i * max_numbers / (len(label_df) - 1) for i in range(len(label_df))]
+        label_df.sort_values(by='keyword', inplace=True)
         labels = hv.Labels(label_df, ['year', 'number'], 'keyword')
 
         overlay = curves * labels
@@ -742,7 +743,7 @@ class Plotter:
         graph.node_renderer.hover_glyph = Circle(size='size', fill_color='green')
 
         graph.edge_renderer.glyph = MultiLine(line_color='grey', line_alpha=0.1, line_width=1)
-        graph.edge_renderer.hover_glyph = MultiLine(line_color='blue', line_alpha=1.0, line_width=3)
+        graph.edge_renderer.hover_glyph = MultiLine(line_color='blue', line_alpha=1.0, line_width=2)
 
         graph.inspection_policy = NodesAndLinkedEdges()
 
@@ -819,7 +820,7 @@ class Plotter:
         graph.node_renderer.hover_glyph = Circle(size='size', fill_color='green')
 
         graph.edge_renderer.glyph = MultiLine(line_color='grey', line_alpha=0.1, line_width=1)
-        graph.edge_renderer.hover_glyph = MultiLine(line_color='blue', line_alpha=1.0, line_width=3)
+        graph.edge_renderer.hover_glyph = MultiLine(line_color='blue', line_alpha=1.0, line_width=2)
 
         graph.inspection_policy = NodesAndLinkedEdges()
         p.renderers.append(graph)
