@@ -24,8 +24,7 @@ from pysrc.papers.analysis.text import get_frequent_tokens, get_topic_word_cloud
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
-from pysrc.papers.utils import LOCAL_BASE_URL, \
-    cut_authors_list, ZOOM_OUT, ZOOM_IN, zoom_name, trim, rgb2hex, MAX_TITLE_LENGTH
+from pysrc.papers.utils import cut_authors_list, ZOOM_OUT, ZOOM_IN, zoom_name, trim, rgb2hex, MAX_TITLE_LENGTH
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
 hv.extension('bokeh')
@@ -139,22 +138,40 @@ class Plotter:
             )
 
     @staticmethod
-    def paper_callback(ds, source):
-        if source in ['Semantic Scholar', 'Pubmed']:
-            base = LOCAL_BASE_URL.substitute(source=source)
-        else:
-            raise ValueError(f"Wrong value of source: {source}")
-        return CustomJS(args=dict(ds=ds, base=base), code="""
+    def paper_callback(ds):
+        return CustomJS(args=dict(ds=ds), code="""
             var data = ds.data, selected = ds.selected.indices;
 
-            // Decode jobid from URL
+            // Decode params from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
+            const source = new URL(window.location).searchParams.get('source');
 
             // Max number of papers to be opened, others will be ignored
             var MAX_PAPERS = 3;
 
             for (var i = 0; i < Math.min(MAX_PAPERS, selected.length); i++){
-                window.open(base + data['id'][selected[i]] + '&jobid=' + jobid, '_blank');
+                window.open('/paper?source=' + source + '&id=' + data['id'][selected[i]] + '&jobid=' + jobid, '_blank');
+            }
+        """)
+
+    @staticmethod
+    def author_callback(ds):
+        return CustomJS(args=dict(ds=ds), code="""
+            var data = ds.data, selected = ds.selected.indices;
+
+            // Decode params from URL
+            const jobid = new URL(window.location).searchParams.get('jobid');
+            const source = new URL(window.location).searchParams.get('source');
+            const query = new URL(window.location).searchParams.get('query');
+            const limit = new URL(window.location).searchParams.get('limit');
+            const sort = new URL(window.location).searchParams.get('sort');
+
+            // Max number of authors to be opened, others will be ignored
+            var MAX_AUTHORS = 3;
+
+            for (var i = 0; i < Math.min(MAX_AUTHORS, selected.length); i++){
+                window.open('/papers?&query=' + query + '&source=' + source + '&limit=' + limit + '&sort=' + sort + 
+                '&author=' + data['id'][selected[i]] + '&jobid=' + jobid, '_blank');
             }
         """)
 
@@ -371,7 +388,7 @@ class Plotter:
             ("Year", '@paper_year'),
             ("Cited by", '@count papers in @year')
         ])
-        p.js_on_event('tap', self.paper_callback(ds_max, self.analyzer.source))
+        p.js_on_event('tap', self.paper_callback(ds_max))
         # Use explicit bottom for log scale as workaround
         # https://github.com/bokeh/bokeh/issues/6536
         bottom = self.analyzer.max_gain_df['count'].min() - 0.01 if len(self.analyzer.max_gain_df) else 0.0
@@ -407,7 +424,7 @@ class Plotter:
             ("Journal", '@journal'),
             ("Year", '@paper_year'),
             ("Relative Gain", '@rel_gain in @year')])
-        p.js_on_event('tap', self.paper_callback(ds_max, self.analyzer.source))
+        p.js_on_event('tap', self.paper_callback(ds_max))
         # Use explicit bottom for log scale as workaround
         # https://github.com/bokeh/bokeh/issues/6536
         bottom = self.analyzer.max_rel_gain_df['rel_gain'].min() - 0.01 if len(self.analyzer.max_rel_gain_df) else 0.0
@@ -555,7 +572,7 @@ class Plotter:
             ("Year", '@year'),
             ("Type", '@type'),
             ("Cited by", '@total paper(s) total')])
-        p.js_on_event('tap', self.paper_callback(ds, self.analyzer.source))
+        p.js_on_event('tap', self.paper_callback(ds))
 
         return p
 
@@ -686,9 +703,8 @@ class Plotter:
         p.yaxis.major_label_text_font_size = '0pt'  # preferred method for removing tick labels
         p.grid.grid_line_color = None
         p.outline_line_color = None
-        p.js_on_event('tap', self.paper_callback(graph.node_renderer.data_source, self.analyzer.source))
 
-        TOOLTIPS = """
+        tooltip = """
         <div style="max-width: 500px">
             <div>
                 <span style="font-size: 12px; font-weight: bold;">@title</span>
@@ -716,7 +732,8 @@ class Plotter:
         </div>
         """
 
-        p.add_tools(HoverTool(tooltips=TOOLTIPS))
+        p.add_tools(HoverTool(tooltips=tooltip))
+        p.js_on_event('tap', self.paper_callback(graph.node_renderer.data_source))
 
         graph_layout = dict(zip(nodes, zip(x, y)))
         graph.layout_provider = StaticLayoutProvider(graph_layout=graph_layout)
@@ -745,10 +762,9 @@ class Plotter:
         graph.node_renderer.data_source.add(nodes, 'index')
         graph.node_renderer.data_source.data['id'] = nodes
         graph.node_renderer.data_source.data['cited'] = [self.analyzer.author_citations[n] for n in nodes]
-        graph.node_renderer.data_source.data['papers'] = [len(self.analyzer.author_papers[n]) for n in nodes]
-        graph.node_renderer.data_source.data['titles'] = ['\n'.join(self.analyzer.author_papers[n]) for n in nodes]
+        graph.node_renderer.data_source.data['papers'] = [self.analyzer.author_papers[n] for n in nodes]
         graph.node_renderer.data_source.data['size'] = [
-            1 + np.log1p(self.analyzer.author_citations[n]) * np.log1p(len(self.analyzer.author_papers[n]))
+            1 + np.log1p(self.analyzer.author_citations[n]) * np.log1p(self.analyzer.author_papers[n])
             for n in nodes
         ]
         graph.node_renderer.data_source.data['cluster'] = clusters
@@ -773,8 +789,8 @@ class Plotter:
         p.grid.grid_line_color = None
         p.outline_line_color = None
 
-        TOOLTIPS = """
-        <div style="max-width: 320px">
+        tooltip = """
+        <div style="max-width: 500px">
             <div>
                 <span style="font-size: 12px; font-weight: bold;">@id</span>
             </div>
@@ -790,14 +806,11 @@ class Plotter:
                 <span style="font-size: 11px; font-weight: bold;">Cluster</span>
                 <span style="font-size: 10px;">@cluster</span>
             </div>
-            <div>
-                <span style="font-size: 11px; font-weight: bold;">Titles</span>
-                <span style="font-size: 10px;">@titles</span>
-            </div>
         </div>
         """
 
-        p.add_tools(HoverTool(tooltips=TOOLTIPS))
+        p.add_tools(HoverTool(tooltips=tooltip))
+        p.js_on_event('tap', self.author_callback(graph.node_renderer.data_source))
 
         graph_layout = dict(zip(nodes, zip(x, y)))
         graph.layout_provider = StaticLayoutProvider(graph_layout=graph_layout)

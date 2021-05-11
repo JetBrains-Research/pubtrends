@@ -255,7 +255,7 @@ class PapersAnalyzer:
 
             self.progress.info("Analyzing groups of similar authors", current=18, task=task)
             self.author_citations, self.author_papers = compute_authors_citations_and_papers(self.df)
-            min_author_papers = max(2, np.percentile([len(ap) for ap in self.author_papers.values()], 95))
+            min_author_papers = max(2, np.percentile(list(self.author_papers.values()), 95))
             self.authors_similarity_graph = build_authors_similarity_graph(
                 self.df, self.texts_similarity, self.citations_graph,
                 self.cocit_grouped_df, self.bibliographic_coupling_df,

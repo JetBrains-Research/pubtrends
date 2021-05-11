@@ -80,10 +80,16 @@ def split_df_list(df, target_column, separator):
     return new_df
 
 
-def build_authors_similarity_graph(df, texts_similarity, citations_graph, cocit_grouped_df, bibliographic_coupling_df,
-                                   author_papers, min_author_papers, e=0.1):
-    author_papers_number = {a: len(ps) for a, ps in author_papers.items()}
-
+def build_authors_similarity_graph(
+        df,
+        texts_similarity,
+        citations_graph,
+        cocit_grouped_df,
+        bibliographic_coupling_df,
+        author_papers,
+        min_author_papers,
+        e=0.3
+):
     logger.debug('Processing papers')
     result = nx.Graph()
     for _, row in df[['authors']].iterrows():
@@ -93,7 +99,7 @@ def build_authors_similarity_graph(df, texts_similarity, citations_graph, cocit_
             for j in range(i + 1, len(authors)):
                 a1 = authors[i]
                 a2 = authors[j]
-                if author_papers_number[a1] >= min_author_papers and author_papers_number[a2] >= min_author_papers:
+                if author_papers[a1] >= min_author_papers and author_papers[a2] >= min_author_papers:
                     update_edge(result, a1, a2, 'authorship', 1)
 
     logger.debug('Processing co-citations')
@@ -104,7 +110,7 @@ def build_authors_similarity_graph(df, texts_similarity, citations_graph, cocit_
         authors1 = authors1 if len(authors1) <= 2 else [authors1[0], authors1[-1]]
         authors2 = authors2 if len(authors2) <= 2 else [authors2[0], authors2[-1]]
         for a1, a2 in itertools.product(authors1, authors2):
-            if author_papers_number[a1] >= min_author_papers and author_papers_number[a2] >= min_author_papers:
+            if author_papers[a1] >= min_author_papers and author_papers[a2] >= min_author_papers:
                 update_edge(result, a1, a2, 'cocitation', cocitation)
 
     logger.debug('Bibliographic coupling')
@@ -116,7 +122,7 @@ def build_authors_similarity_graph(df, texts_similarity, citations_graph, cocit_
             authors1 = authors1 if len(authors1) <= 2 else [authors1[0], authors1[-1]]
             authors2 = authors2 if len(authors2) <= 2 else [authors2[0], authors2[-1]]
             for a1, a2 in itertools.product(authors1, authors2):
-                if author_papers_number[a1] >= min_author_papers and author_papers_number[a2] >= min_author_papers:
+                if author_papers[a1] >= min_author_papers and author_papers[a2] >= min_author_papers:
                     update_edge(result, a1, a2, 'bibcoupling', bibcoupling)
 
     logger.debug('Text similarity')
@@ -132,7 +138,7 @@ def build_authors_similarity_graph(df, texts_similarity, citations_graph, cocit_
                 authors1 = authors1 if len(authors1) <= 2 else [authors1[0], authors1[-1]]
                 authors2 = authors2 if len(authors2) <= 2 else [authors2[0], authors2[-1]]
                 for a1, a2 in itertools.product(authors1, authors2):
-                    if author_papers_number[a1] >= min_author_papers and author_papers_number[a2] >= min_author_papers:
+                    if author_papers[a1] >= min_author_papers and author_papers[a2] >= min_author_papers:
                         update_edge(result, a1, a2, 'text', similarity)
 
     logger.debug('Citations')
@@ -142,7 +148,7 @@ def build_authors_similarity_graph(df, texts_similarity, citations_graph, cocit_
         authors1 = authors1 if len(authors1) <= 2 else [authors1[0], authors1[-1]]
         authors2 = authors2 if len(authors2) <= 2 else [authors2[0], authors2[-1]]
         for a1, a2 in itertools.product(authors1, authors2):
-            if author_papers_number[a1] >= min_author_papers and author_papers_number[a2] >= min_author_papers:
+            if author_papers[a1] >= min_author_papers and author_papers[a2] >= min_author_papers:
                 update_edge(result, a1, a2, 'citation', 1)
 
     return local_sparse(result, e)
@@ -174,7 +180,7 @@ def compute_authors_citations_and_papers(df):
         authors = row['authors'].split(', ')
         #     authors = authors if len(authors) <= 2 else [authors[0], authors[-1]]
         for a in authors:
-            author_papers[a] = author_papers.get(a, []) + [row['title']]
+            author_papers[a] = author_papers.get(a, 0) + 1
             
     return author_citations, author_papers
 
