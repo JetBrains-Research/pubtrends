@@ -50,14 +50,13 @@ def topic_evolution_analysis(
                       current=current, task=task)
         return None, None
 
-    progress.info(f'Studying evolution of topics in {min_year} - {max_year}', current=current, task=task)
+    progress.info(f'Analyzing evolution of topics in {min_year} - {max_year}', current=current, task=task)
 
     logger.debug(f"Topics evolution years: {year_range}")
     # Evolution starts with the latest topic separation
     evolution_series = [pd.Series(data=list(df['comp']), index=list(df['id']))]
     for year in year_range[1:]:
-        progress.info(f'Processing year {year}', current=current, task=task)
-        logger.debug(f'Get ids earlier than year {year}')
+        logger.debug(f'Processing year {year}')
         df_year = df.loc[df['year'] <= year]
         ids_year = set(df_year['id'])
 
@@ -73,22 +72,21 @@ def topic_evolution_analysis(
         logger.debug('Use similarities for papers earlier then year')
         texts_similarity_year = filter_text_similarities(df_year, texts_similarity, year)
 
-        progress.info('Building papers similarity graph', current=current, task=task)
+        logger.debug('Building papers similarity graph')
         similarity_graph = build_similarity_graph(
             df_year, texts_similarity_year,
             citations_graph_year,
             cocit_grouped_df_year,
             bibliographic_coupling_df_year,
         )
-        progress.info(f'Built similarity graph - {len(similarity_graph.nodes())} nodes and '
-                      f'{len(similarity_graph.edges())} edges',
-                      current=current, task=task)
+        logger.debug(f'Built similarity graph - {len(similarity_graph.nodes())} nodes and '
+                     f'{len(similarity_graph.edges())} edges')
 
         logger.debug('Compute aggregated similarity')
         for _, _, d in similarity_graph.edges(data=True):
             d['similarity'] = similarity_func(d)
 
-        progress.info('Extracting topics from paper similarity graph', current=current, task=task)
+        logger.debug('Extracting topics from paper similarity graph')
         partition_louvain = community.best_partition(
             similarity_graph, weight='similarity', random_state=SEED
         )
