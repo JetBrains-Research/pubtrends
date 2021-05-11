@@ -99,7 +99,8 @@ def visualize_analysis(analyzer):
 
     if PUBTRENDS_CONFIG.feature_authors_enabled:
         result['author_statistics'] = plotter.author_statistics()
-        result['authors_graph'] = [components(plotter.authors_graph())]
+        if len(analyzer.authors_similarity_graph.nodes()) > 0:
+            result['authors_graph'] = [components(plotter.authors_graph())]
 
     if PUBTRENDS_CONFIG.feature_journals_enabled:
         result['journal_statistics'] = plotter.journal_statistics()
@@ -487,7 +488,8 @@ class Plotter:
 
         # Update layout for better labels representation
         label_df.sort_values(by='keyword', inplace=True)
-        label_df['number'] = [i * max_numbers / (len(label_df) - 1) for i in range(len(label_df))]
+        if len(label_df) > 1:
+            label_df['number'] = [i * max_numbers / (len(label_df) - 1) for i in range(len(label_df))]
         labels = hv.Labels(label_df, ['year', 'number'], 'keyword')
 
         overlay = curves * labels
