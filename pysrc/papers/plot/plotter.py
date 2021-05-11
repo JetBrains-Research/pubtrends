@@ -664,6 +664,7 @@ class Plotter:
                                         for i in range(len(set(comps)))]))
 
         graph.node_renderer.data_source.add(self.analyzer.df['id'], 'index')
+        graph.node_renderer.data_source.data['id'] = self.analyzer.df['id']
         graph.node_renderer.data_source.data['title'] = self.analyzer.df['title']
         graph.node_renderer.data_source.data['authors'] = \
             self.analyzer.df['authors'].apply(lambda authors: cut_authors_list(authors))
