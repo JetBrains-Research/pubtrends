@@ -751,29 +751,42 @@ class Plotter:
         p.renderers.append(graph)
         return p
 
-    def authors_graph(self, e=0.1):
-        g = local_sparse(self.analyzer.authors_similarity_graph, e)
+    def authors_graph(self, authors_per_group=20, e=0.5):
+        logger.debug(f'Collecting top productive authors only ({authors_per_group}) per group')
+        productive_authors = set([])
+        for group in set(self.analyzer.authors_clusters.values()):
+            authors = [a for a in self.analyzer.authors_clusters.keys() if self.analyzer.authors_clusters[a] == group]
+            authors.sort(key=lambda a: self.analyzer.authors_productivity[a], reverse=True)
+            top = authors[:authors_per_group]
+            logger.debug(f'#{group} ({len(authors)}) {", ".join(top)}, ...')
+            productive_authors.update(top)
+
+        logger.debug('Filtering authors graph')
+        filtered_graph = nx.Graph()
+        for (a1, a2, d) in self.analyzer.authors_similarity_graph.edges(data=True):
+            if a1 in productive_authors and a2 in productive_authors:
+                filtered_graph.add_edge(a1, a2, **d)
+        logger.debug(f'Built top authors graph - '
+                     f'{len(filtered_graph.nodes())} nodes and {len(filtered_graph.edges())} edges')
+
+        logger.debug(f'Making filtered graph sparse e={e}')
+        g = local_sparse(filtered_graph, e)
         pos = nx.spring_layout(g)
-        nodes = [a for a, _ in pos.items()]
+        authors = [a for a, _ in pos.items()]
         graph = GraphRenderer()
 
-        clusters = [self.analyzer.authors_clusters[n] for n in nodes]
+        clusters = [self.analyzer.authors_clusters[n] for n in authors]
         cmap = Plotter.factors_colormap(len(set(clusters)))
-        palette = dict(zip(set(clusters), [Plotter.color_to_rgb(cmap(i)).to_hex()
-                                           for i in range(len(set(self.analyzer.authors_clusters.values())))]))
+        palette = dict(zip(set(clusters), [Plotter.color_to_rgb(cmap(i)).to_hex() for i in range(len(set(clusters)))]))
 
-        graph.node_renderer.data_source.add(nodes, 'index')
-        graph.node_renderer.data_source.data['id'] = nodes
-        graph.node_renderer.data_source.data['cited'] = [self.analyzer.author_citations[n] for n in nodes]
-        graph.node_renderer.data_source.data['papers'] = [self.analyzer.author_papers[n] for n in nodes]
-        graph.node_renderer.data_source.data['size'] = [
-            1 + np.log1p(self.analyzer.author_citations[n]) * np.log1p(self.analyzer.author_papers[n])
-            for n in nodes
-        ]
+        graph.node_renderer.data_source.add(authors, 'index')
+        graph.node_renderer.data_source.data['id'] = authors
+        graph.node_renderer.data_source.data['cited'] = [self.analyzer.authors_citations[n] for n in authors]
+        graph.node_renderer.data_source.data['papers'] = [self.analyzer.authors_papers[n] for n in authors]
+        graph.node_renderer.data_source.data['size'] = [self.analyzer.authors_productivity[n] for n in authors]
         graph.node_renderer.data_source.data['cluster'] = clusters
-        graph.node_renderer.data_source.data['color'] = [palette[self.analyzer.authors_clusters[n]] for n in nodes]
-        graph.edge_renderer.data_source.data = dict(start=[a for a, _ in g.edges],
-                                                    end=[a for _, a in g.edges])
+        graph.node_renderer.data_source.data['color'] = [palette[self.analyzer.authors_clusters[n]] for n in authors]
+        graph.edge_renderer.data_source.data = dict(start=[a for a, _ in g.edges], end=[a for _, a in g.edges])
 
         # start of layout code
         x = [v[0] for _, v in pos.items()]
@@ -815,7 +828,7 @@ class Plotter:
         p.add_tools(HoverTool(tooltips=tooltip))
         p.js_on_event('tap', self.author_callback(graph.node_renderer.data_source))
 
-        graph_layout = dict(zip(nodes, zip(x, y)))
+        graph_layout = dict(zip(authors, zip(x, y)))
         graph.layout_provider = StaticLayoutProvider(graph_layout=graph_layout)
 
         graph.node_renderer.glyph = Circle(size='size', fill_color='color')

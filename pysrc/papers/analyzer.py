@@ -254,17 +254,19 @@ class PapersAnalyzer:
             self.author_stats = popular_authors(self.df, n=self.POPULAR_AUTHORS)
 
             self.progress.info("Analyzing groups of similar authors", current=18, task=task)
-            self.author_citations, self.author_papers = compute_authors_citations_and_papers(self.df)
-            min_author_papers = max(2, np.percentile(list(self.author_papers.values()), 95))
+            self.authors_citations, self.authors_papers = compute_authors_citations_and_papers(self.df)
+            self.authors_productivity = {a: np.log1p(self.authors_citations.get(a, 1)) * p
+                                         for a, p in self.authors_papers.items()}
+            min_author_productivity = np.percentile(list(self.authors_productivity.values()), 95)
             self.authors_similarity_graph = build_authors_similarity_graph(
                 self.df, self.texts_similarity, self.citations_graph,
                 self.cocit_grouped_df, self.bibliographic_coupling_df,
-                self.author_papers, min_author_papers
+                lambda a: self.authors_productivity[a] >= min_author_productivity
             )
-            logger.debug(f'Built top authors similarity graph - {len(self.authors_similarity_graph.nodes())} nodes '
+            logger.debug(f'Built similarity graph - {len(self.authors_similarity_graph.nodes())} nodes '
                          f'and {len(self.authors_similarity_graph.edges())} edges')
             self.authors_clusters = cluster_authors(
-                self.authors_similarity_graph, self.author_papers, similarity_func=self.similarity
+                self.authors_similarity_graph, similarity_func=self.similarity
             )
 
         if self.config.feature_journals_enabled:

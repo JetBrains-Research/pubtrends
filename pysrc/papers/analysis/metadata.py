@@ -85,8 +85,7 @@ def build_authors_similarity_graph(
         citations_graph,
         cocit_grouped_df,
         bibliographic_coupling_df,
-        author_papers,
-        min_author_papers):
+        check_author_func):
     logger.debug('Processing papers')
     result = nx.Graph()
     for _, row in df[['authors']].iterrows():
@@ -96,7 +95,7 @@ def build_authors_similarity_graph(
             for j in range(i + 1, len(authors)):
                 a1 = authors[i]
                 a2 = authors[j]
-                if author_papers[a1] >= min_author_papers and author_papers[a2] >= min_author_papers:
+                if check_author_func(a1) and check_author_func(a2):
                     update_edge(result, a1, a2, 'authorship', 1)
 
     logger.debug('Processing co-citations')
@@ -107,7 +106,7 @@ def build_authors_similarity_graph(
         authors1 = authors1 if len(authors1) <= 2 else [authors1[0], authors1[-1]]
         authors2 = authors2 if len(authors2) <= 2 else [authors2[0], authors2[-1]]
         for a1, a2 in itertools.product(authors1, authors2):
-            if author_papers[a1] >= min_author_papers and author_papers[a2] >= min_author_papers:
+            if check_author_func(a1) and check_author_func(a2):
                 update_edge(result, a1, a2, 'cocitation', cocitation)
 
     logger.debug('Bibliographic coupling')
@@ -119,7 +118,7 @@ def build_authors_similarity_graph(
             authors1 = authors1 if len(authors1) <= 2 else [authors1[0], authors1[-1]]
             authors2 = authors2 if len(authors2) <= 2 else [authors2[0], authors2[-1]]
             for a1, a2 in itertools.product(authors1, authors2):
-                if author_papers[a1] >= min_author_papers and author_papers[a2] >= min_author_papers:
+                if check_author_func(a1) and check_author_func(a2):
                     update_edge(result, a1, a2, 'bibcoupling', bibcoupling)
 
     logger.debug('Text similarity')
@@ -135,7 +134,7 @@ def build_authors_similarity_graph(
                 authors1 = authors1 if len(authors1) <= 2 else [authors1[0], authors1[-1]]
                 authors2 = authors2 if len(authors2) <= 2 else [authors2[0], authors2[-1]]
                 for a1, a2 in itertools.product(authors1, authors2):
-                    if author_papers[a1] >= min_author_papers and author_papers[a2] >= min_author_papers:
+                    if check_author_func(a1) and check_author_func(a2):
                         update_edge(result, a1, a2, 'text', similarity)
 
     logger.debug('Citations')
@@ -145,7 +144,7 @@ def build_authors_similarity_graph(
         authors1 = authors1 if len(authors1) <= 2 else [authors1[0], authors1[-1]]
         authors2 = authors2 if len(authors2) <= 2 else [authors2[0], authors2[-1]]
         for a1, a2 in itertools.product(authors1, authors2):
-            if author_papers[a1] >= min_author_papers and author_papers[a2] >= min_author_papers:
+            if check_author_func(a1) and check_author_func(a2):
                 update_edge(result, a1, a2, 'citation', 1)
 
     return result
@@ -182,11 +181,11 @@ def compute_authors_citations_and_papers(df):
     return author_citations, author_papers
 
 
-def cluster_authors(authors_graph, author_papers, similarity_func, coauthorship=100):
+def cluster_authors(authors_graph, similarity_func, coauthorship=1000):
     connected_components = nx.number_connected_components(authors_graph)
     logger.debug(f'Authors graph has {connected_components} connected components')
 
-    logger.debug('Compute aggregated similarity')
+    logger.debug('Compute aggregated similarity using co-authorship')
     for _, _, d in authors_graph.edges(data=True):
         d['similarity'] = coauthorship * d.get('authorship', 0) + similarity_func(d)
 
@@ -197,11 +196,5 @@ def cluster_authors(authors_graph, author_papers, similarity_func, coauthorship=
     logger.debug(f'Best partition {len(set(partition_louvain.values()))} components')
     components = set(partition_louvain.values())
     comp_sizes = {c: sum([partition_louvain[node] == c for node in partition_louvain.keys()]) for c in components}
-    logger.debug(f'Components: {comp_sizes}')
-
-    for group in sorted(set(partition_louvain.values())):
-        authors = [a for a in partition_louvain.keys() if partition_louvain[a] == group]
-        authors.sort(key=lambda a: author_papers[a], reverse=True)
-        top = authors[:10]
-        logger.debug(f'#{group} {", ".join(top)}, ...')
+    logger.debug(f'Clusters: {comp_sizes}')
     return partition_louvain
