@@ -751,7 +751,7 @@ class Plotter:
         p.renderers.append(graph)
         return p
 
-    def authors_graph(self, authors_per_group=20, e=0.5):
+    def authors_graph(self, authors_per_group=20, e=0.2):
         logger.debug(f'Collecting top productive authors only ({authors_per_group}) per group')
         productive_authors = set([])
         for group in set(self.analyzer.authors_clusters.values()):
@@ -783,7 +783,7 @@ class Plotter:
         graph.node_renderer.data_source.data['id'] = authors
         graph.node_renderer.data_source.data['cited'] = [self.analyzer.authors_citations[n] for n in authors]
         graph.node_renderer.data_source.data['papers'] = [self.analyzer.authors_papers[n] for n in authors]
-        graph.node_renderer.data_source.data['size'] = [self.analyzer.authors_productivity[n] for n in authors]
+        graph.node_renderer.data_source.data['size'] = [1 + self.analyzer.authors_productivity[n] / 5 for n in authors]
         graph.node_renderer.data_source.data['cluster'] = clusters
         graph.node_renderer.data_source.data['color'] = [palette[self.analyzer.authors_clusters[n]] for n in authors]
         graph.edge_renderer.data_source.data = dict(start=[a for a, _ in g.edges], end=[a for _, a in g.edges])
