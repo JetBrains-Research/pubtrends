@@ -761,16 +761,19 @@ class Plotter:
             logger.debug(f'#{group} ({len(authors)}) {", ".join(top)}, ...')
             productive_authors.update(top)
 
-        logger.debug('Filtering authors graph')
+        logger.debug(f'Filtering top authors graph authors_per_group={authors_per_group}')
         filtered_graph = nx.Graph()
         for (a1, a2, d) in self.analyzer.authors_similarity_graph.edges(data=True):
             if a1 in productive_authors and a2 in productive_authors:
                 filtered_graph.add_edge(a1, a2, **d)
-        logger.debug(f'Built top authors graph - '
+        logger.debug(f'Built filtered top authors graph - '
                      f'{len(filtered_graph.nodes())} nodes and {len(filtered_graph.edges())} edges')
 
         logger.debug(f'Making filtered graph sparse e={e}')
         g = local_sparse(filtered_graph, e)
+        logger.debug(f'Built filtered sparse graph - '
+                     f'{len(filtered_graph.nodes())} nodes and {len(filtered_graph.edges())} edges')
+
         pos = nx.spring_layout(g)
         authors = [a for a, _ in pos.items()]
         graph = GraphRenderer()
