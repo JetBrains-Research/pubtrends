@@ -102,7 +102,7 @@ def build_structure_graph(df, similarity_graph, similarity_func, comp_sparsity, 
         logger.debug(f'Processing component {c}')
         topic_sparse = local_sparse(similarity_graph.subgraph(comp_df['id']), e=comp_sparsity)
         connected_components = [cc for cc in nx.connected_components(topic_sparse)]
-        logger.debug(f'Connected components {connected_components}')
+        logger.debug(f'Connected components {len(connected_components)}')
         # Build a map node -> connected group
         connected_map = {}
         for ci, cc in enumerate(connected_components):
