@@ -772,7 +772,7 @@ class Plotter:
         logger.debug(f'Making filtered graph sparse e={e}')
         g = local_sparse(filtered_graph, e)
         logger.debug(f'Built filtered sparse graph - '
-                     f'{len(filtered_graph.nodes())} nodes and {len(filtered_graph.edges())} edges')
+                     f'{len(g.nodes())} nodes and {len(g.edges())} edges')
 
         pos = nx.spring_layout(g)
         authors = [a for a, _ in pos.items()]
