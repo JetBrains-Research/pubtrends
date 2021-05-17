@@ -172,6 +172,8 @@ def build_structure_graph(df, similarity_graph, similarity_func, comp_sparsity, 
 
 def local_sparse(graph, e):
     assert 0 <= e <= 1, f'Sparsity parameter {e} should be in 0..1'
+    if e == 1:
+        return graph
     result = nx.Graph()
     neighbours = {node: set(graph.neighbors(node)) for node in graph.nodes}
     sim_queues = {node: PriorityQueue(maxsize=floor(pow(len(neighbours[node]), e)))
