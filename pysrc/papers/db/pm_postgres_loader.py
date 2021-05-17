@@ -51,7 +51,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 FROM PMPublications P
                 WHERE {key} = {repr(value)};
             '''
-
+        logger.debug(f'find query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(), columns=['pmid'])
@@ -88,8 +88,8 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
             ORDER BY {order}, P.pmid
             LIMIT {limit};
             '''
+        logger.debug(f'search query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
-            logger.debug(f'search query: {query}')
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(), columns=['pmid'])
             # TODO [shpynov] query stays idle in transaction without this commit
@@ -107,6 +107,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 FROM PMPublications P
                 WHERE P.pmid IN (VALUES {vals});
                 '''
+        logger.debug(f'load_publications query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(),
@@ -132,8 +133,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 GROUP BY id, year
                 LIMIT {self.config.max_number_of_citations};
             '''
-        logger.debug(f'load_citations_by_year query: {query}')
-
+        logger.debug(f'load_citations_by_year query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(),
@@ -160,7 +160,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 ORDER BY MC.count DESC NULLS LAST
                 LIMIT {limit};
                 '''
-
+        logger.debug(f'load_references query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(), columns=['id'])
@@ -176,7 +176,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                     ON P.pmid = C.pmid
                 WHERE P.pmid in (VALUES {vals});
                 '''
-
+        logger.debug(f'estimate_citations query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(), columns=['total'])
@@ -193,7 +193,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                     ORDER BY id_out, id_in
                     LIMIT {self.config.max_number_of_citations};
                     '''
-
+        logger.debug(f'load_citations query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(),
@@ -219,6 +219,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                         LIMIT {self.config.max_number_of_cocitations};
                     '''
 
+        logger.debug(f'load_cocitations query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             df, lines = process_cocitations_postgres(cursor)
@@ -251,6 +252,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 LIMIT {limit};
                 '''
 
+        logger.debug(f'expand query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(), columns=['id', 'total'])
@@ -269,6 +271,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                     LIMIT {self.config.max_number_of_bibliographic_coupling};
                     '''
 
+        logger.debug(f'load_bibliographic_coupling query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             df, lines = process_bibliographic_coupling_postgres(cursor)

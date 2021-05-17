@@ -48,6 +48,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
                 WHERE {key} = {repr(value)};
             '''
 
+        logger.debug(f'find query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(), columns=['id'])
@@ -85,6 +86,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
             LIMIT {limit};
             '''
 
+        logger.debug(f'search query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             pub_df = pd.DataFrame(cursor.fetchall(), columns=['id'])
@@ -103,6 +105,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
                 FROM SSPublications P
                 WHERE (P.crc32id, P.ssid) in (VALUES {SemanticScholarPostgresLoader.ids2values(ids)});
                 '''
+        logger.debug(f'load_publications query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             pub_df = pd.DataFrame(cursor.fetchall(),
@@ -133,6 +136,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
                 LIMIT {self.config.max_number_of_citations};
             '''
 
+        logger.debug(f'load_citations_by_year query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             cit_stats_df_from_query = pd.DataFrame(cursor.fetchall(),
@@ -160,6 +164,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
                 LIMIT {limit};
                 '''
 
+        logger.debug(f'load_references query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(), columns=['id'])
@@ -175,6 +180,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
                 WHERE (P.crc32id, P.ssid) in (VALUES {SemanticScholarPostgresLoader.ids2values(ids)});
                 '''
 
+        logger.debug(f'estimate_citations query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(), columns=['total'])
@@ -192,6 +198,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
                     LIMIT {self.config.max_number_of_citations};
                     '''
 
+        logger.debug(f'load_citations query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             citations = pd.DataFrame(cursor.fetchall(),
@@ -223,6 +230,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
                 LIMIT {self.config.max_number_of_cocitations};
                 '''
 
+        logger.debug(f'load_cocitations query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             cocit_df, lines = process_cocitations_postgres(cursor)
@@ -249,6 +257,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
                 ORDER BY count DESC NULLS LAST
                 LIMIT {limit};
                 '''
+        logger.debug(f'expand query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(), columns=['id', 'total'])
@@ -268,6 +277,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
                         LIMIT {self.config.max_number_of_bibliographic_coupling};
                     '''
 
+        logger.debug(f'load_bibliographic_coupling query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             df, lines = process_bibliographic_coupling_postgres(cursor)
