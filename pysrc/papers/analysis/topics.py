@@ -123,32 +123,35 @@ def merge_components(partition, similarity_matrix, topic_min_size, max_topics_nu
     logger.debug(f'{len(comp_sizes)} comps, comp_sizes: {comp_sizes}')
 
     merge_index = 1
+    merge_order = []
     while len(comp_sizes) > 1 and \
             (len(comp_sizes) > max_topics_number or min(comp_sizes.values()) < topic_min_size):
-        logger.debug(f'{merge_index}. Pick minimal and merge it with the closest by similarity')
+        # logger.debug(f'{merge_index}. Pick minimal and merge it with the closest by similarity')
         merge_index += 1
         min_comp = min(comp_sizes.keys(), key=lambda c: comp_sizes[c])
         comp_to_merge = max([c for c in partition.values() if c != min_comp],
                             key=lambda c: similarity_matrix[min_comp][c])
-        logger.debug(f'Merging with most similar comp {comp_to_merge}')
+        # logger.debug(f'Merging with most similar comp {comp_to_merge}')
         comp_update = min(min_comp, comp_to_merge)
         comp_sizes[comp_update] = comp_sizes[min_comp] + comp_sizes[comp_to_merge]
         if min_comp != comp_update:
+            merge_order.append((min_comp, comp_update))
             del comp_sizes[min_comp]
         else:
+            merge_order.append((comp_to_merge, comp_update))
             del comp_sizes[comp_to_merge]
-        logger.debug(f'Merged comps: {len(comp_sizes)}, updated comp_sizes: {comp_sizes}')
+        # logger.debug(f'Merged comps: {len(comp_sizes)}, updated comp_sizes: {comp_sizes}')
         for (paper, c) in list(partition.items()):
             if c == min_comp or c == comp_to_merge:
                 partition[paper] = comp_update
 
-        logger.debug('Update similarities')
+        # logger.debug('Update similarities')
         for i in range(len(similarity_matrix)):
             similarity_matrix[i, comp_update] = \
                 (similarity_matrix[i, min_comp] + similarity_matrix[i, comp_to_merge]) / 2
             similarity_matrix[comp_update, i] = \
                 (similarity_matrix[min_comp, i] + similarity_matrix[comp_to_merge, i]) / 2
-
+    logger.debug(f'Merge done in {merge_index} steps.\nOrder: {merge_order}')
     logger.debug('Sorting comps by size descending')
     sorted_components = dict(
         (c, i) for i, c in enumerate(sorted(set(comp_sizes), key=lambda c: comp_sizes[c], reverse=True))
