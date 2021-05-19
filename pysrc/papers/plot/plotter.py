@@ -672,8 +672,8 @@ class Plotter:
         graph = GraphRenderer()
         comps = self.analyzer.df['comp']
         cmap = Plotter.factors_colormap(len(set(comps)))
-        palette = dict(zip(set(comps), [Plotter.color_to_rgb(cmap(i)).to_hex()
-                                        for i in range(len(set(comps)))]))
+        palette = dict(zip(sorted(set(comps)), [Plotter.color_to_rgb(cmap(i)).to_hex()
+                                                for i in range(len(set(comps)))]))
 
         graph.node_renderer.data_source.add(self.analyzer.df['id'], 'index')
         graph.node_renderer.data_source.data['id'] = self.analyzer.df['id']
@@ -693,9 +693,12 @@ class Plotter:
         # start of layout code
         x = [v[0] for _, v in pos.items()]
         y = [v[1] for _, v in pos.items()]
+        xrange = max(x) - min(x)
+        yrange = max(y) - min(y)
         p = figure(width=PLOT_WIDTH,
                    height=TALL_PLOT_HEIGHT,
-                   x_range=(min(x), max(x)), y_range=(min(y), max(y)),
+                   x_range=(min(x) - 0.05 * xrange, max(x) + 0.05 * xrange),
+                   y_range=(min(y) - 0.05 * yrange, max(y) + 0.05 * yrange),
                    tools="pan,tap,wheel_zoom,box_zoom,reset,save")
         p.xaxis.major_tick_line_color = None  # turn off x-axis major ticks
         p.xaxis.minor_tick_line_color = None  # turn off x-axis minor ticks
@@ -794,10 +797,13 @@ class Plotter:
         # start of layout code
         x = [v[0] for _, v in pos.items()]
         y = [v[1] for _, v in pos.items()]
+        xrange = max(x) - min(x)
+        yrange = max(y) - min(y)
         p = figure(title="",
                    width=PLOT_WIDTH,
                    height=TALL_PLOT_HEIGHT,
-                   x_range=(min(x), max(x)), y_range=(min(y), max(y)),
+                   x_range=(min(x) - 0.05 * xrange, max(x) + 0.05 * xrange),
+                   y_range=(min(y) - 0.05 * yrange, max(y) + 0.05 * yrange),
                    tools="pan,tap,wheel_zoom,box_zoom,reset,save")
         p.xaxis.major_tick_line_color = None  # turn off x-axis major ticks
         p.xaxis.minor_tick_line_color = None  # turn off x-axis minor ticks
