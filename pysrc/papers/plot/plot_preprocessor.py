@@ -1,7 +1,7 @@
 import logging
 from itertools import product as cart_product
 from queue import PriorityQueue
-
+from statsmodels.nonparametric.smoothers_lowess import lowess
 import networkx as nx
 import numpy as np
 import pandas as pd
@@ -351,7 +351,7 @@ class PlotPreprocessor:
 
     @staticmethod
     def frequent_keywords_data(freq_kwds, df, corpus_terms, corpus_counts, n):
-        logger.debug('Computing frequent terms')
+        logger.debug('Computing frequencies of terms')
         keywords = [t for t, _ in list(freq_kwds.items())[:n]]
         
         logger.debug('Grouping papers by year')
@@ -366,15 +366,17 @@ class PlotPreprocessor:
         for i, (year, iss) in enumerate(papers_by_year.items()):
             numbers_per_year[i, :] = binary_counts[iss].sum(axis=0)[0, :]
 
-        logger.debug('Collect top keywords with maximum sum of numbers over years')
+        logger.debug('Collecting top keywords with maximum sum of numbers over years')
         top_keyword_idxs = [corpus_terms.index(t) for t in keywords if t in corpus_terms]
 
-        logger.debug('Collecting dataframe with numbers for keywords')
+        logger.debug('Collecting dataframe with smoothed numbers for keywords with local weighted regression')
         years = [year for year, _ in papers_by_year.items()]
         keyword_dfs = []
         for idx in top_keyword_idxs:
             keyword = corpus_terms[idx]
-            keyword_df = pd.DataFrame(data=numbers_per_year[:, idx].astype(int), columns=['number'])
+            numbers = numbers_per_year[:, idx]
+            numbers = lowess(numbers, years, frac=0.2, return_sorted=False)
+            keyword_df = pd.DataFrame(data=numbers.astype(int), columns=['number'])
             keyword_df['keyword'] = keyword
             keyword_df['year'] = years
             keyword_dfs.append(keyword_df)
