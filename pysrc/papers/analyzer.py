@@ -261,7 +261,7 @@ class PapersAnalyzer:
             self.authors_similarity_graph = build_authors_similarity_graph(
                 self.df, self.texts_similarity, self.citations_graph,
                 self.cocit_grouped_df, self.bibliographic_coupling_df,
-                lambda a: self.authors_productivity[a] >= min_author_productivity
+                check_author_func=lambda a: self.authors_productivity[a] >= min_author_productivity
             )
             logger.debug(f'Built similarity graph - {len(self.authors_similarity_graph.nodes())} nodes '
                          f'and {len(self.authors_similarity_graph.edges())} edges')

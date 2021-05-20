@@ -85,12 +85,14 @@ def build_authors_similarity_graph(
         citations_graph,
         cocit_grouped_df,
         bibliographic_coupling_df,
-        check_author_func):
+        first_last_only=True,
+        check_author_func=lambda a: True):
     logger.debug('Processing papers')
     result = nx.Graph()
     for _, row in df[['authors']].iterrows():
         authors = row[0].split(', ')
-        authors = authors if len(authors) <= 2 else [authors[0], authors[-1]]
+        if first_last_only:
+            authors = authors if len(authors) <= 2 else [authors[0], authors[-1]]
         for i in range(len(authors)):
             for j in range(i + 1, len(authors)):
                 a1 = authors[i]
@@ -103,8 +105,9 @@ def build_authors_similarity_graph(
         start, end, cocitation = str(el[0]), str(el[1]), float(el[2])
         authors1 = df.loc[df['id'] == start]['authors'].values[0].split(', ')
         authors2 = df.loc[df['id'] == end]['authors'].values[0].split(', ')
-        authors1 = authors1 if len(authors1) <= 2 else [authors1[0], authors1[-1]]
-        authors2 = authors2 if len(authors2) <= 2 else [authors2[0], authors2[-1]]
+        if first_last_only:
+            authors1 = authors1 if len(authors1) <= 2 else [authors1[0], authors1[-1]]
+            authors2 = authors2 if len(authors2) <= 2 else [authors2[0], authors2[-1]]
         for a1, a2 in itertools.product(authors1, authors2):
             if check_author_func(a1) and check_author_func(a2):
                 update_edge(result, a1, a2, 'cocitation', cocitation)
@@ -115,8 +118,9 @@ def build_authors_similarity_graph(
             start, end, bibcoupling = str(el[0]), str(el[1]), float(el[2])
             authors1 = df.loc[df['id'] == start]['authors'].values[0].split(', ')
             authors2 = df.loc[df['id'] == end]['authors'].values[0].split(', ')
-            authors1 = authors1 if len(authors1) <= 2 else [authors1[0], authors1[-1]]
-            authors2 = authors2 if len(authors2) <= 2 else [authors2[0], authors2[-1]]
+            if first_last_only:
+                authors1 = authors1 if len(authors1) <= 2 else [authors1[0], authors1[-1]]
+                authors2 = authors2 if len(authors2) <= 2 else [authors2[0], authors2[-1]]
             for a1, a2 in itertools.product(authors1, authors2):
                 if check_author_func(a1) and check_author_func(a2):
                     update_edge(result, a1, a2, 'bibcoupling', bibcoupling)
@@ -131,8 +135,9 @@ def build_authors_similarity_graph(
                 pid2 = pids[j]
                 authors1 = df.loc[df['id'] == pid1]['authors'].values[0].split(', ')
                 authors2 = df.loc[df['id'] == pid2]['authors'].values[0].split(', ')
-                authors1 = authors1 if len(authors1) <= 2 else [authors1[0], authors1[-1]]
-                authors2 = authors2 if len(authors2) <= 2 else [authors2[0], authors2[-1]]
+                if first_last_only:
+                    authors1 = authors1 if len(authors1) <= 2 else [authors1[0], authors1[-1]]
+                    authors2 = authors2 if len(authors2) <= 2 else [authors2[0], authors2[-1]]
                 for a1, a2 in itertools.product(authors1, authors2):
                     if check_author_func(a1) and check_author_func(a2):
                         update_edge(result, a1, a2, 'text', similarity)
@@ -141,8 +146,9 @@ def build_authors_similarity_graph(
     for u, v in citations_graph.edges:
         authors1 = df.loc[df['id'] == u]['authors'].values[0].split(', ')
         authors2 = df.loc[df['id'] == v]['authors'].values[0].split(', ')
-        authors1 = authors1 if len(authors1) <= 2 else [authors1[0], authors1[-1]]
-        authors2 = authors2 if len(authors2) <= 2 else [authors2[0], authors2[-1]]
+        if first_last_only:
+            authors1 = authors1 if len(authors1) <= 2 else [authors1[0], authors1[-1]]
+            authors2 = authors2 if len(authors2) <= 2 else [authors2[0], authors2[-1]]
         for a1, a2 in itertools.product(authors1, authors2):
             if check_author_func(a1) and check_author_func(a2):
                 update_edge(result, a1, a2, 'citation', 1)
