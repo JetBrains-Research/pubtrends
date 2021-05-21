@@ -829,49 +829,45 @@ class Plotter:
         p.renderers.append(graph)
         return p
 
-    def authors_graph(self, authors_per_group=20, e=0.2):
+    def authors_graph(self, authors_per_group=20):
+        authors_df = self.analyzer.authors_df
+        authors_similarity_graph = self.analyzer.authors_similarity_graph
         logger.debug(f'Collecting top productive authors only ({authors_per_group}) per group')
-        productive_authors = set([])
-        for group in set(self.analyzer.authors_clusters.values()):
-            authors = [a for a in self.analyzer.authors_clusters.keys() if self.analyzer.authors_clusters[a] == group]
-            authors.sort(key=lambda a: self.analyzer.authors_productivity[a], reverse=True)
-            top = authors[:authors_per_group]
-            logger.debug(f'#{group} ({len(authors)}) {", ".join(top)}, ...')
-            productive_authors.update(top)
+        top_authors = set([])
+        for group in set(authors_df['cluster']):
+            group_authors = authors_df.loc[authors_df['cluster'] == group]
+            top = group_authors.sort_values(by=['productivity'], ascending=False).head(authors_per_group)['author']
+            logger.debug(f'#{group} ({len(group_authors)}) {", ".join(top)}, ...')
+            top_authors.update(top)
+        top_authors_df = authors_df.loc[authors_df['author'].isin(top_authors)]
 
-        logger.debug(f'Filtering top authors graph authors_per_group={authors_per_group}')
-        filtered_graph = nx.Graph()
-        for (a1, a2, d) in self.analyzer.authors_similarity_graph.edges(data=True):
-            if a1 in productive_authors and a2 in productive_authors:
-                filtered_graph.add_edge(a1, a2, **d)
+        logger.debug(f'Filtering authors graph authors_per_group={authors_per_group}')
+        top_authors_graph = nx.Graph()
+        for (a1, a2, d) in authors_similarity_graph.edges(data=True):
+            if a1 in top_authors and a2 in top_authors:
+                top_authors_graph.add_edge(a1, a2, **d)
         logger.debug(f'Built filtered top authors graph - '
-                     f'{len(filtered_graph.nodes())} nodes and {len(filtered_graph.edges())} edges')
+                     f'{len(top_authors_graph.nodes())} nodes and {len(top_authors_graph.edges())} edges')
 
-        logger.debug(f'Making filtered graph sparse e={e}')
-        g = local_sparse(filtered_graph, e)
-        logger.debug(f'Built filtered sparse graph - '
-                     f'{len(g.nodes())} nodes and {len(g.edges())} edges')
-
-        pos = nx.spring_layout(g)
-        authors = [a for a, _ in pos.items()]
         graph = GraphRenderer()
-
-        clusters = [self.analyzer.authors_clusters[n] for n in authors]
+        clusters = top_authors_df['cluster']
         cmap = Plotter.factors_colormap(len(set(clusters)))
         palette = dict(zip(set(clusters), [Plotter.color_to_rgb(cmap(i)).to_hex() for i in range(len(set(clusters)))]))
 
+        authors = top_authors_df['author']
         graph.node_renderer.data_source.add(authors, 'index')
         graph.node_renderer.data_source.data['id'] = authors
-        graph.node_renderer.data_source.data['cited'] = [self.analyzer.authors_citations[n] for n in authors]
-        graph.node_renderer.data_source.data['papers'] = [self.analyzer.authors_papers[n] for n in authors]
-        graph.node_renderer.data_source.data['size'] = [1 + self.analyzer.authors_productivity[n] / 5 for n in authors]
+        graph.node_renderer.data_source.data['cited'] = top_authors_df['cited']
+        graph.node_renderer.data_source.data['papers'] = top_authors_df['papers']
+        graph.node_renderer.data_source.data['size'] = \
+            top_authors_df['productivity'] * 20 / top_authors_df['productivity'].max() + 5
         graph.node_renderer.data_source.data['cluster'] = clusters
-        graph.node_renderer.data_source.data['color'] = [palette[self.analyzer.authors_clusters[n]] for n in authors]
-        graph.edge_renderer.data_source.data = dict(start=[a for a, _ in g.edges], end=[a for _, a in g.edges])
+        graph.node_renderer.data_source.data['color'] = [palette[c] for c in clusters]
+        graph.edge_renderer.data_source.data = dict(start=[a for a, _ in top_authors_graph.edges],
+                                                    end=[a for _, a in top_authors_graph.edges])
 
         # start of layout code
-        x = [v[0] for _, v in pos.items()]
-        y = [v[1] for _, v in pos.items()]
+        x, y = top_authors_df['x'], top_authors_df['y']
         xrange = max(x) - min(x)
         yrange = max(y) - min(y)
         p = figure(title="",

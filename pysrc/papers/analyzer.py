@@ -11,7 +11,7 @@ from pysrc.papers.analysis.citations import find_top_cited_papers, find_max_gain
 from pysrc.papers.analysis.evolution import topic_evolution_analysis, topic_evolution_descriptions
 from pysrc.papers.analysis.graph import build_citation_graph, build_similarity_graph, node2vec
 from pysrc.papers.analysis.metadata import popular_authors, popular_journals, build_authors_similarity_graph, \
-    compute_authors_citations_and_papers, cluster_authors
+    compute_authors_citations_and_papers
 from pysrc.papers.analysis.numbers import extract_numbers
 from pysrc.papers.analysis.text import analyze_texts_similarity, vectorize_corpus
 from pysrc.papers.analysis.topics import get_topics_description, cluster_embeddings
@@ -251,20 +251,38 @@ class PapersAnalyzer:
             self.author_stats = popular_authors(self.df, n=self.POPULAR_AUTHORS)
 
             self.progress.info("Analyzing groups of similar authors", current=18, task=task)
-            self.authors_citations, self.authors_papers = compute_authors_citations_and_papers(self.df)
-            self.authors_productivity = {a: np.log1p(self.authors_citations.get(a, 1)) * p
-                                         for a, p in self.authors_papers.items()}
-            min_author_productivity = np.percentile(list(self.authors_productivity.values()), 95)
-            self.authors_similarity_graph = build_authors_similarity_graph(
-                self.df, self.texts_similarity, self.citations_graph,
-                self.cocit_grouped_df, self.bibliographic_coupling_df,
-                check_author_func=lambda a: self.authors_productivity[a] >= min_author_productivity
-            )
+            authors_citations, authors_papers = compute_authors_citations_and_papers(self.df)
+            authors_productivity = {a: np.log1p(authors_citations.get(a, 1)) * p for a, p in authors_papers.items()}
+            mean_threshold = np.percentile(list(authors_productivity.values()), 90)
+            self.authors_similarity_graph = build_authors_similarity_graph(self.df, self.cocit_grouped_df,
+                                                                           self.bibliographic_coupling_df,
+                                                                           self.citations_graph,
+                                                                           self.texts_similarity,
+                                                                           check_author_func=lambda a:
+                                                                           authors_productivity[a] >= mean_threshold)
             logger.debug(f'Built similarity graph - {len(self.authors_similarity_graph.nodes())} nodes '
                          f'and {len(self.authors_similarity_graph.edges())} edges')
-            self.authors_clusters = cluster_authors(
-                self.authors_similarity_graph, similarity_func=self.similarity
+            logger.debug('Compute embeddings for aggregated similarity using co-authorship')
+            authors_node_ids, authors_weighted_node_embeddings = node2vec(
+                self.authors_similarity_graph,
+                weight_func=lambda d: 100 * d.get('authorship', 0) + PapersAnalyzer.similarity(d)
             )
+            logger.debug('Apply t-SNE transformation on node embeddings')
+            authors_weighted_node_embeddings_2d = TSNE(n_components=2, random_state=42).fit_transform(
+                authors_weighted_node_embeddings
+            )
+            logger.debug('Clustering authors')
+            authors_clusters, _ = cluster_embeddings(
+                authors_weighted_node_embeddings, self.TOPIC_MIN_SIZE / 3, self.TOPICS_MAX_NUMBER * 3
+            )
+            # Build dataframe combining information about authors and projected coordinates
+            self.authors_df = pd.DataFrame(dict(author=authors_node_ids,
+                                                x=authors_weighted_node_embeddings_2d[:, 0],
+                                                y=authors_weighted_node_embeddings_2d[:, 1],
+                                                cluster=authors_clusters))
+            self.authors_df['cited'] = [authors_citations[a] for a in self.authors_df['author']]
+            self.authors_df['papers'] = [authors_papers[a] for a in self.authors_df['author']]
+            self.authors_df['productivity'] = [authors_productivity[a] for a in self.authors_df['author']]
 
         if self.config.feature_journals_enabled:
             self.progress.info("Finding popular journals", current=19, task=task)

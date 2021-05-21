@@ -1,9 +1,9 @@
 import logging
+
+import itertools
+import networkx as nx
 import numpy as np
 import pandas as pd
-import networkx as nx
-import community
-import itertools
 
 logger = logging.getLogger(__name__)
 
@@ -79,14 +79,9 @@ def split_df_list(df, target_column, separator):
     return new_df
 
 
-def build_authors_similarity_graph(
-        df,
-        texts_similarity,
-        citations_graph,
-        cocit_grouped_df,
-        bibliographic_coupling_df,
-        first_last_only=True,
-        check_author_func=lambda a: True):
+def build_authors_similarity_graph(df,
+                                   cocit_grouped_df, bibcoupling_df, citations_graph, texts_similarity,
+                                   first_last_only=True, check_author_func=lambda a: True):
     logger.debug('Processing papers')
     result = nx.Graph()
     for _, row in df[['authors']].iterrows():
@@ -113,8 +108,8 @@ def build_authors_similarity_graph(
                 update_edge(result, a1, a2, 'cocitation', cocitation)
 
     logger.debug('Bibliographic coupling')
-    if len(bibliographic_coupling_df) > 0:
-        for el in bibliographic_coupling_df[['citing_1', 'citing_2', 'total']].values:
+    if len(bibcoupling_df) > 0:
+        for el in bibcoupling_df[['citing_1', 'citing_2', 'total']].values:
             start, end, bibcoupling = str(el[0]), str(el[1]), float(el[2])
             authors1 = df.loc[df['id'] == start]['authors'].values[0].split(', ')
             authors2 = df.loc[df['id'] == end]['authors'].values[0].split(', ')
@@ -185,22 +180,3 @@ def compute_authors_citations_and_papers(df):
             author_papers[a] = author_papers.get(a, 0) + 1
 
     return author_citations, author_papers
-
-
-def cluster_authors(authors_graph, similarity_func, coauthorship=1000):
-    connected_components = nx.number_connected_components(authors_graph)
-    logger.debug(f'Authors graph has {connected_components} connected components')
-
-    logger.debug('Compute aggregated similarity using co-authorship')
-    for _, _, d in authors_graph.edges(data=True):
-        d['similarity'] = coauthorship * d.get('authorship', 0) + similarity_func(d)
-
-    logger.debug('Graph clustering via Louvain community algorithm')
-    partition_louvain = community.best_partition(
-        authors_graph, weight='similarity', random_state=42
-    )
-    logger.debug(f'Best partition {len(set(partition_louvain.values()))} components')
-    components = set(partition_louvain.values())
-    comp_sizes = {c: sum([partition_louvain[node] == c for node in partition_louvain.keys()]) for c in components}
-    logger.debug(f'Clusters: {comp_sizes}')
-    return partition_louvain
