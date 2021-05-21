@@ -89,7 +89,7 @@ class PapersAnalyzer:
         self.source = Loaders.source(self.loader, test)
 
     def total_steps(self):
-        return 21 + 1  # One extra step for visualization
+        return 12 + 1  # One extra step for visualization
 
     def teardown(self):
         self.progress.remove_handler()
@@ -101,17 +101,14 @@ class PapersAnalyzer:
                               'all the query wrapped in "" for phrasal search')
         limit = limit or self.config.max_number_of_articles
         sort = sort or SORT_MOST_CITED
-        self.progress.info(f'Searching {limit} {sort.lower()} publications matching {query}',
+        noreviews_msg = ", not reviews" if noreviews else ""
+        self.progress.info(f'Searching {limit} {sort.lower()} publications matching <{query}>{noreviews_msg}',
                            current=1, task=task)
-        if noreviews:
-            self.progress.info('Preferring non review papers', current=1, task=task)
-
         ids = self.loader.search(query, limit=limit, sort=sort, noreviews=noreviews)
         if len(ids) == 0:
             raise SearchError(f"Nothing found for search query: {query}")
         else:
-            self.progress.info(f'Found {len(ids)} publications in the local database', current=1,
-                               task=task)
+            logger.debug(f'Found {len(ids)} publications in the local database')
         return ids
 
     def load_references(self, pid, limit):
@@ -139,16 +136,15 @@ class PapersAnalyzer:
             max_df=PapersAnalyzer.VECTOR_MAX_DF
         )
 
-        self.progress.info('Processing texts similarity', current=4, task=task)
+        logger.debug('Analyzing texts similarity')
         self.texts_similarity = analyze_texts_similarity(
             self.pub_df, self.corpus_counts,
             self.SIMILARITY_TEXT_CITATION_MIN, self.SIMILARITY_TEXT_CITATION_N
         )
 
-        self.progress.info('Loading citations statistics by year', current=5, task=task)
+        self.progress.info('Loading citations statistics for papers', current=4, task=task)
         cits_by_year_df = self.loader.load_citations_by_year(self.ids)
-        self.progress.info(f'Found {len(cits_by_year_df)} records of citations by year',
-                           current=5, task=task)
+        logger.debug(f'Found {len(cits_by_year_df)} records of citations by year')
 
         self.cit_stats_df = build_cit_stats_df(cits_by_year_df, self.n_papers)
         if len(self.cit_stats_df) == 0:
@@ -158,49 +154,47 @@ class PapersAnalyzer:
 
         # Load data about citations between given papers (excluding outer papers)
         # IMPORTANT: cit_df may contain not all the publications for query
-        self.progress.info('Loading citations data', current=6, task=task)
+        logger.debug('Loading citations data')
         self.cit_df = self.loader.load_citations(self.ids)
-        self.progress.info(f'Found {len(self.cit_df)} citations between papers', current=5, task=task)
+        logger.debug(f'Found {len(self.cit_df)} citations between papers')
 
-        self.progress.info('Building citation graph', current=7, task=task)
+        self.progress.info('Analyzing citations and papers similarity graphs', current=5, task=task)
         self.citations_graph = build_citation_graph(self.cit_df)
-        self.progress.info(f'Built citation graph - {len(self.citations_graph.nodes())} nodes and '
-                           f'{len(self.citations_graph.edges())} edges',
-                           current=7, task=task)
+        logger.debug(f'Built citation graph - {len(self.citations_graph.nodes())} nodes and '
+                     f'{len(self.citations_graph.edges())} edges')
 
-        self.progress.info('Calculating co-citations for selected papers', current=8, task=task)
+        logger.debug('Calculating co-citations for selected papers')
         self.cocit_df = self.loader.load_cocitations(self.ids)
         cocit_grouped_df = build_cocit_grouped_df(self.cocit_df)
-        self.progress.info(f'Found {len(cocit_grouped_df)} co-cited pairs of papers', current=8, task=task)
+        logger.debug(f'Found {len(cocit_grouped_df)} co-cited pairs of papers')
         self.cocit_grouped_df = cocit_grouped_df[cocit_grouped_df['total'] >= self.SIMILARITY_COCITATION_MIN].copy()
         logger.debug(f'Filtered {len(self.cocit_grouped_df)} co-cited pairs of papers, '
                      f'threshold {self.SIMILARITY_COCITATION_MIN}')
 
-        self.progress.info('Processing bibliographic coupling for selected papers', current=9, task=task)
+        logger.debug('Processing bibliographic coupling for selected papers')
         bibliographic_coupling_df = self.loader.load_bibliographic_coupling(self.ids)
-        self.progress.info(f'Found {len(bibliographic_coupling_df)} bibliographic coupling pairs of papers',
-                           current=9, task=task)
+        logger.debug(f'Found {len(bibliographic_coupling_df)} bibliographic coupling pairs of papers')
         self.bibliographic_coupling_df = bibliographic_coupling_df[
             bibliographic_coupling_df['total'] >= self.SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN].copy()
         logger.debug(f'Filtered {len(self.bibliographic_coupling_df)} bibliographic coupling pairs of papers '
                      f'threshold {self.SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN}')
 
-        self.progress.info('Building papers similarity graph', current=10, task=task)
+        logger.debug('Building papers similarity graph')
         self.similarity_graph = build_similarity_graph(
             self.df, self.texts_similarity,
             self.citations_graph, self.cocit_grouped_df, self.bibliographic_coupling_df,
         )
-        self.progress.info(f'Built similarity graph - {len(self.similarity_graph.nodes())} nodes and '
-                           f'{len(self.similarity_graph.edges())} edges',
-                           current=10, task=task)
+        logger.debug(f'Built similarity graph - {len(self.similarity_graph.nodes())} nodes and '
+                     f'{len(self.similarity_graph.edges())} edges')
 
         if len(self.similarity_graph.nodes()) == 0:
-            self.progress.info('Not enough papers to process topics analysis', current=11, task=task)
+            self.progress.info('Not enough papers to process topics analysis', current=6, task=task)
             self.df['comp'] = 0  # Technical value for top authors and papers analysis
             self.kwd_df = pd.DataFrame({'comp': [0], 'kwd': ['']})
         else:
-            self.progress.info('Extracting topics from paper similarity graph', current=11, task=task)
-            node_ids, node_embeddings = node2vec(self.similarity_graph, weight_func=PapersAnalyzer.similarity)
+            self.progress.info('Extracting topics from paper similarity graph', current=6, task=task)
+            node_ids, node_embeddings = node2vec(self.similarity_graph,
+                                                 weight_func=PapersAnalyzer.similarity, walk_length=100)
             logger.debug('Apply t-SNE transformation on node embeddings')
             tsne = TSNE(n_components=2, random_state=42)
             weighted_node_embeddings_2d = tsne.fit_transform(node_embeddings)
@@ -217,7 +211,7 @@ class PapersAnalyzer:
             self.comp_sizes = Counter(self.clusters)
             self.components = list(sorted(set(self.clusters)))
 
-            self.progress.info('Computing topics descriptions', current=12, task=task)
+            self.progress.info('Analyzing topics descriptions', current=7, task=task)
             comp_pids = pd.DataFrame(self.partition.items(), columns=['id', 'comp']). \
                 groupby('comp')['id'].apply(list).to_dict()
             topics_description = get_topics_description(
@@ -234,23 +228,24 @@ class PapersAnalyzer:
             for _, _, d in self.similarity_graph.edges(data=True):
                 d['similarity'] = PapersAnalyzer.similarity(d)
 
-        self.progress.info('Identifying top cited papers', current=15, task=task)
+        self.progress.info('Identifying top papers', current=8, task=task)
+        logger.debug('Top cited papers')
         self.top_cited_papers, self.top_cited_df = find_top_cited_papers(self.df, self.TOP_CITED_PAPERS)
 
-        self.progress.info('Identifying top cited papers for each year', current=16, task=task)
+        logger.debug('Top cited papers per year')
         self.max_gain_papers, self.max_gain_df = find_max_gain_papers(self.df, self.citation_years)
 
-        self.progress.info('Identifying hot papers of the year', current=17, task=task)
+        logger.debug('Hot paper per year')
         self.max_rel_gain_papers, self.max_rel_gain_df = find_max_relative_gain_papers(
             self.df, self.citation_years
         )
 
         # Additional analysis steps
         if self.config.feature_authors_enabled:
-            self.progress.info("Finding popular authors", current=18, task=task)
+            self.progress.info("Analyzing authors", current=9, task=task)
             self.author_stats = popular_authors(self.df, n=self.POPULAR_AUTHORS)
 
-            self.progress.info("Analyzing groups of similar authors", current=18, task=task)
+            logger.debug("Analyzing groups of similar authors")
             authors_citations, authors_papers = compute_authors_citations_and_papers(self.df)
             authors_productivity = {a: np.log1p(authors_citations.get(a, 1)) * p for a, p in authors_papers.items()}
             mean_threshold = np.percentile(list(authors_productivity.values()), 90)
@@ -265,7 +260,8 @@ class PapersAnalyzer:
             logger.debug('Compute embeddings for aggregated similarity using co-authorship')
             authors_node_ids, authors_weighted_node_embeddings = node2vec(
                 self.authors_similarity_graph,
-                weight_func=lambda d: 100 * d.get('authorship', 0) + PapersAnalyzer.similarity(d)
+                weight_func=lambda d: 100 * d.get('authorship', 0) + PapersAnalyzer.similarity(d),
+                walk_length=50,
             )
             logger.debug('Apply t-SNE transformation on node embeddings')
             authors_weighted_node_embeddings_2d = TSNE(n_components=2, random_state=42).fit_transform(
@@ -285,12 +281,12 @@ class PapersAnalyzer:
             self.authors_df['productivity'] = [authors_productivity[a] for a in self.authors_df['author']]
 
         if self.config.feature_journals_enabled:
-            self.progress.info("Finding popular journals", current=19, task=task)
+            self.progress.info("Analyzing popular journals", current=10, task=task)
             self.journal_stats = popular_journals(self.df, n=self.POPULAR_JOURNALS)
 
         if self.config.feature_numbers_enabled:
             if len(self.df) >= 0:
-                self.progress.info('Extracting numbers from publication abstracts', current=20, task=task)
+                self.progress.info('Extracting quantitative features from abstracts texts', current=11, task=task)
                 self.numbers_df = extract_numbers(self.df)
             else:
                 logger.debug('Not enough papers for numbers extraction')
@@ -305,12 +301,12 @@ class PapersAnalyzer:
                     self.TOPICS_MAX_NUMBER,
                     similarity_func=self.similarity,
                     evolution_step=self.EVOLUTION_STEP,
-                    progress=self.progress, current=21, task=task
+                    progress=self.progress, current=12, task=task
                 )
                 self.evolution_kwds = topic_evolution_descriptions(
                     self.df, self.evolution_df, self.evolution_year_range,
                     self.corpus_terms, self.corpus_counts, self.TOPIC_DESCRIPTION_WORDS,
-                    self.progress, current=21, task=task
+                    self.progress, current=12, task=task
                 )
             else:
                 logger.debug('Not enough papers for topics evolution')

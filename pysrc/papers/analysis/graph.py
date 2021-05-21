@@ -106,7 +106,7 @@ def local_sparse(graph, e):
     return result
 
 
-def node2vec(graph, weight_func):
+def node2vec(graph, weight_func, walk_length=100):
     logger.debug('Translating nx graph into stellar graph representation')
     g_weighted = nx.Graph()
     for u, v, data in graph.edges(data=True):
@@ -121,7 +121,6 @@ def node2vec(graph, weight_func):
     logger.debug(sg.info())
 
     logger.debug('Performing random walks')
-    walk_length = 100  # maximum length of a random walk
     rw = BiasedRandomWalk(sg)
 
     weighted_walks = rw.run(
