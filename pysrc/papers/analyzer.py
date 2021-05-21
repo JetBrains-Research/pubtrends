@@ -242,7 +242,7 @@ class PapersAnalyzer:
 
         # Additional analysis steps
         if self.config.feature_authors_enabled:
-            self.progress.info("Analyzing authors", current=9, task=task)
+            self.progress.info("Analyzing authors and groups", current=9, task=task)
             self.author_stats = popular_authors(self.df, n=self.POPULAR_AUTHORS)
 
             logger.debug("Analyzing groups of similar authors")
