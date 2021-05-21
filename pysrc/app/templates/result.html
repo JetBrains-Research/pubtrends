@@ -393,18 +393,20 @@
                     {{ script|safe }}
                     {{ div|safe }}
                     {% endfor %}
+                    {% if topics_hierarchy is defined %}
+                    <hr>
+                    <p>
+                        Topics are computed based on hierarchical clustering.
+                    </p>
+                    {% for script, div in topics_hierarchy %}
+                    {{ script|safe }}
+                    {{ div|safe }}
+                    {% endfor %}
+                    {% endif %}
+
                     <small><a class="link" data-toggle="collapse" href="#collapseTopics"
                        role="button" aria-expanded="false">More about topics</a></small>
                     <div id="collapseTopics" class="collapse mt-2">
-                        {% if topics_hierarchy is defined %}
-                        <p>
-                            Topics are computed based on hierarchical clustering.
-                        </p>
-                        {% for script, div in topics_hierarchy %}
-                        {{ script|safe }}
-                        {{ div|safe }}
-                        {% endfor %}
-                        {% endif %}
                         <p>
                             Similarity between topics is an average similarity between the papers.
                         </p>
@@ -574,7 +576,8 @@
                     {% endif %}
                     <br>
                     <p>
-                        Explore citations graph and papers similarity network in-depth in the interactive graph viewer.
+                        Explore citations graph and papers similarity network in-depth in the interactive graph viewer.<br>
+                        Filter papers by keywords, apply different coloring schemes and view similarity details.
                     </p>
                     <div style="display: block">
                         <button type="button" class="btn btn-light"
