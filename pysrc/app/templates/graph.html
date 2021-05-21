@@ -58,17 +58,24 @@
     <script>
         "use strict";
 
-        const LAYOUT = {
+        const CG_LAYOUT = {
             name: 'fcose',
             animate: false,
             idealEdgeLength: edge => 100,
         };
 
+
+        const PR_LAYOUT = {
+            name: 'preset',
+            animate: false,
+        };
+
+
         const CG_EDGE_STYLE = {
-            "width": 1,
+            "width": 0.1,
             "curve-style": "bezier",
             "target-arrow-shape": "triangle",
-            "arrow-scale": 1,
+            "arrow-scale": 0.1,
             "line-color": "#000000",
             "opacity": 0.2
         };
@@ -77,9 +84,9 @@
             "width": function (edge) {
                 let data = edge.data();
                 if ('similarity' in data) {
-                    return Math.max(1, Math.min(10, Math.log1p(data.similarity)));
+                    return (Math.max(1, Math.min(10, Math.log1p(data.similarity)))) / 10;
                 }
-                return 0.2;
+                return 0.01;
             },
             "curve-style": "haystack",
             "line-color": function (edge) {
@@ -208,6 +215,13 @@
                 const elements = JSON.parse({{ graph_cytoscape_json | tojson }});
                 // @formatter:on
 
+            let layout;
+            if (citation_graph) {
+                layout = CG_LAYOUT;
+            } else {
+                layout = PR_LAYOUT;
+            }
+
             let edge_style;
             if (citation_graph) {
                 edge_style = CG_EDGE_STYLE;
@@ -261,7 +275,7 @@
 
             let cy = window.cy = cytoscape({
                 container: document.getElementById('cy'),
-                layout: LAYOUT,
+                layout: layout,
                 style: [
                     {
                         selector: "node",
@@ -269,20 +283,20 @@
                             "width": function (node) {
                                 const data = node.data();
                                 if ('cited' in data) {
-                                    return 10 + 5 * Math.min(10, Math.floor(Math.log1p(data.cited)));
+                                    return data.cited * 20 / max_cited + 5;
                                 } else {
-                                    return 5;
+                                    return 5 / 10;
                                 }
                             },
                             "height": function (node) {
                                 const data = node.data();
                                 if ('cited' in data) {
-                                    return 10 + 5 * Math.min(10, Math.floor(Math.log1p(data.cited)));
+                                    return data.cited * 20 / max_cited + 5;
                                 } else {
-                                    return 5;
+                                    return 5 / 10;
                                 }
                             },
-                            "border-width": 1,
+                            "border-width": 0.1,
                             "border-color": "black",
                             "opacity": 0.7,
                         }
@@ -291,7 +305,7 @@
                     {
                         selector: 'node.analyzed',
                         style: {
-                            'border-width': '4px',
+                            'border-width': '0.2px',
                             'opacity': '1.0 !important'
                         }
                     },
@@ -385,21 +399,9 @@
                         }
                     },
                     {
-                        selector: "node.group",
-                        style: {
-                            "background-opacity": 0.1,
-                            "border-color": function (node) {
-                                return topics_palette[node.data().topic];
-                            },
-                            "background-color": function (node) {
-                                return topics_palette[node.data().topic];
-                            }
-                        }
-                    },
-                    {
                         selector: 'node.highlight',
                         style: {
-                            'border-width': '3px',
+                            'border-width': '0.2px',
                             'opacity': '1.0 !important'
                         }
                     },
@@ -486,12 +488,6 @@
                                     {% else %}
                                         "<b>Centrality</b> " + Number(data.centrality).toFixed(3);
                                     {% endif %}
-                            } else if ('topic' in data) {
-                                // Group
-                                const topic = data.topic;
-                                content.innerHTML =  "<b>These papers are not connected.</b><br>" +
-                                    "<b>Topic</b> " + (topic + 1) + "<br>" +
-                                    "<b>Tags</b> " + "<em>" + topics_description[topic] + "</em>";
                             }
                             // @formatter:on
                         return content;

@@ -18,6 +18,7 @@ from pysrc.app.utils import log_request, MAX_QUERY_LENGTH, SOMETHING_WENT_WRONG_
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.celery.tasks_cache import get_or_cancel_task
 from pysrc.celery.tasks_main import find_paper_async, analyze_search_terms, analyze_id_list
+from pysrc.papers.analysis.graph import local_sparse
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
@@ -348,7 +349,9 @@ def graph():
                     graph_cytoscape_json=json.dumps(graph_cs)
                 )
             else:
-                graph_cs = PlotPreprocessor.dump_structure_graph_cytoscape(analyzer.df, analyzer.structure_graph)
+                graph_cs = PlotPreprocessor.dump_structure_graph_cytoscape(
+                    analyzer.df, local_sparse(analyzer.similarity_graph, PapersAnalyzer.STRUCTURE_SPARSITY)
+                )
                 logger.info(f'/graph success structure {log_request(request)}')
                 return render_template(
                     'graph.html',

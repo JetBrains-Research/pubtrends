@@ -1,19 +1,20 @@
 import logging
+from collections import Counter
 
-import networkx as nx
 import numpy as np
 import pandas as pd
 from networkx.readwrite import json_graph
+from sklearn.manifold import TSNE
 
 from pysrc.papers.analysis.citations import find_top_cited_papers, find_max_gain_papers, \
     find_max_relative_gain_papers, build_cit_stats_df, merge_citation_stats, build_cocit_grouped_df
 from pysrc.papers.analysis.evolution import topic_evolution_analysis, topic_evolution_descriptions
-from pysrc.papers.analysis.graph import build_citation_graph, build_similarity_graph, build_structure_graph
+from pysrc.papers.analysis.graph import build_citation_graph, build_similarity_graph, node2vec
 from pysrc.papers.analysis.metadata import popular_authors, popular_journals, build_authors_similarity_graph, \
     compute_authors_citations_and_papers, cluster_authors
 from pysrc.papers.analysis.numbers import extract_numbers
 from pysrc.papers.analysis.text import analyze_texts_similarity, vectorize_corpus
-from pysrc.papers.analysis.topics import topic_analysis, get_topics_description
+from pysrc.papers.analysis.topics import get_topics_description, cluster_embeddings
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.progress import Progress
@@ -39,17 +40,14 @@ class PapersAnalyzer:
     # Minimal number of common references, used to reduces similarity graph edges count
     SIMILARITY_COCITATION_MIN = 1
 
-    # Minimal cosine similarity for potential text citation, used to reduce similarity graph edges count
-    SIMILARITY_TEXT_CITATION_MIN = 0.1
+    # Minimal cosine similarity for potential text citation, top 50% of cosine similarity between cited papers
+    SIMILARITY_TEXT_CITATION_MIN = 0.3
 
     # Max number of potential text citations for paper
-    SIMILARITY_TEXT_CITATION_N = 20
+    SIMILARITY_TEXT_CITATION_N = 50
 
-    # Reduce number of edges in smallest communities, i.e. topics
-    STRUCTURE_LOW_LEVEL_SPARSITY = 0.3
-    # Limit number of edges between different topics to min number of inner edges * scale factor,
-    # ignoring similarities less than average within groups
-    STRUCTURE_BETWEEN_TOPICS_SPARSITY = 0.1
+    # Reduce number of edges in similarity graph
+    STRUCTURE_SPARSITY = 0.3
 
     # Global vectorization max vocabulary size
     VECTOR_WORDS = 10000
@@ -190,7 +188,7 @@ class PapersAnalyzer:
         self.progress.info('Building papers similarity graph', current=10, task=task)
         self.similarity_graph = build_similarity_graph(
             self.df, self.texts_similarity,
-            self.citations_graph, self.cocit_grouped_df, self.bibliographic_coupling_df
+            self.citations_graph, self.cocit_grouped_df, self.bibliographic_coupling_df,
         )
         self.progress.info(f'Built similarity graph - {len(self.similarity_graph.nodes())} nodes and '
                            f'{len(self.similarity_graph.edges())} edges',
@@ -200,17 +198,24 @@ class PapersAnalyzer:
             self.progress.info('Not enough papers to process topics analysis', current=11, task=task)
             self.df['comp'] = 0  # Technical value for top authors and papers analysis
             self.kwd_df = pd.DataFrame({'comp': [0], 'kwd': ['']})
-            self.structure_graph = nx.Graph()
         else:
             self.progress.info('Extracting topics from paper similarity graph', current=11, task=task)
-            self.partition, self.topics_dendrogram, self.comp_sizes = topic_analysis(
-                self.similarity_graph,
-                similarity_func=self.similarity,
-                topic_min_size=self.TOPIC_MIN_SIZE,
-                max_topics_number=self.TOPICS_MAX_NUMBER
+            node_ids, node_embeddings = node2vec(self.similarity_graph, weight_func=PapersAnalyzer.similarity)
+            logger.debug('Apply t-SNE transformation on node embeddings')
+            tsne = TSNE(n_components=2, random_state=42)
+            weighted_node_embeddings_2d = tsne.fit_transform(node_embeddings)
+            pid_indx = dict(zip(self.df['id'], self.df.index))
+            indx = [pid_indx[pid] for pid in node_ids]
+            self.df['x'] = pd.Series(index=indx, data=weighted_node_embeddings_2d[:, 0])
+            self.df['y'] = pd.Series(index=indx, data=weighted_node_embeddings_2d[:, 1])
+            # Memoize clusters because of order
+            self.clusters, self.dendrogram_children = cluster_embeddings(
+                node_embeddings, self.TOPIC_MIN_SIZE, self.TOPICS_MAX_NUMBER
             )
-            self.components = list(sorted(self.comp_sizes.keys()))
-            self.df = self.add_to_dataframe(self.df, self.partition, col='comp', na=-1)
+            self.df['comp'] = pd.Series(index=indx, data=self.clusters)
+            self.partition = dict(zip(self.df['id'], self.df['comp']))
+            self.comp_sizes = Counter(self.clusters)
+            self.components = list(sorted(set(self.clusters)))
 
             self.progress.info('Computing topics descriptions', current=12, task=task)
             comp_pids = pd.DataFrame(self.partition.items(), columns=['id', 'comp']). \
@@ -224,18 +229,10 @@ class PapersAnalyzer:
             kwds = [(comp, ','.join([f'{t}:{v:.3f}' for t, v in vs[:self.TOPIC_DESCRIPTION_WORDS]]))
                     for comp, vs in topics_description.items()]
             self.kwd_df = pd.DataFrame(kwds, columns=['comp', 'kwd'])
-            # Build structure graph
-            self.structure_graph = build_structure_graph(
-                self.df,
-                self.similarity_graph,
-                similarity_func=self.similarity,
-                comp_sparsity=self.STRUCTURE_LOW_LEVEL_SPARSITY,
-                between_comp_sparsity=self.STRUCTURE_BETWEEN_TOPICS_SPARSITY
-            )
 
-        self.progress.info('Performing PageRank analysis', current=14, task=task)
-        pr = nx.pagerank(self.citations_graph, alpha=0.5, tol=1e-9)
-        self.df = self.add_to_dataframe(self.df, pr, col='pagerank', na=0.0)
+            logger.debug('Compute aggregated similarity')
+            for _, _, d in self.similarity_graph.edges(data=True):
+                d['similarity'] = PapersAnalyzer.similarity(d)
 
         self.progress.info('Identifying top cited papers', current=15, task=task)
         self.top_cited_papers, self.top_cited_df = find_top_cited_papers(self.df, self.TOP_CITED_PAPERS)
@@ -328,7 +325,6 @@ class PapersAnalyzer:
             'kwd_df': self.kwd_df.to_json(),
             'citations_graph': json_graph.node_link_data(self.citations_graph),
             'similarity_graph': json_graph.node_link_data(self.similarity_graph),
-            'structure_graph': json_graph.node_link_data(self.structure_graph),
             'top_cited_papers': self.top_cited_papers,
             'max_gain_papers': self.max_gain_papers,
             'max_rel_gain_papers': self.max_rel_gain_papers,
@@ -361,7 +357,6 @@ class PapersAnalyzer:
         # Restore citation and structure graphs
         citations_graph = json_graph.node_link_graph(fields['citations_graph'])
         similarity_graph = json_graph.node_link_graph(fields['similarity_graph'])
-        structure_graph = json_graph.node_link_graph(fields['structure_graph'])
 
         top_cited_papers = fields['top_cited_papers']
         max_gain_papers = fields['max_gain_papers']
@@ -372,7 +367,6 @@ class PapersAnalyzer:
             'kwd_df': kwd_df,
             'citations_graph': citations_graph,
             'similarity_graph': similarity_graph,
-            'structure_graph': structure_graph,
             'top_cited_papers': top_cited_papers,
             'max_gain_papers': max_gain_papers,
             'max_rel_gain_papers': max_rel_gain_papers
@@ -394,7 +388,6 @@ class PapersAnalyzer:
         # Used for structure visualization
         self.citations_graph = loaded['citations_graph']
         self.similarity_graph = loaded['similarity_graph']
-        self.structure_graph = loaded['structure_graph']
         # Used for navigation
         self.top_cited_papers = loaded['top_cited_papers']
         self.max_gain_papers = loaded['max_gain_papers']

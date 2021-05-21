@@ -1,7 +1,10 @@
 import json
 import logging
 import re
+from collections import Counter
 from string import Template
+import math
+from math import pi, sin, cos, fabs
 
 import holoviews as hv
 import networkx as nx
@@ -22,10 +25,12 @@ from wordcloud import WordCloud
 
 from pysrc.papers.analysis.graph import local_sparse
 from pysrc.papers.analysis.text import get_frequent_tokens, get_topic_word_cloud_data
+from pysrc.papers.analysis.topics import convert_clusters_dendrogram_to_paths, compute_clusters_dendrogram_children
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
-from pysrc.papers.utils import cut_authors_list, ZOOM_OUT, ZOOM_IN, zoom_name, trim, rgb2hex, MAX_TITLE_LENGTH
+from pysrc.papers.utils import cut_authors_list, ZOOM_OUT, ZOOM_IN, zoom_name, trim, rgb2hex, MAX_TITLE_LENGTH, \
+    contrast_color
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
 hv.extension('bokeh')
@@ -84,7 +89,7 @@ def visualize_analysis(analyzer):
             structure_graph=[components(plotter.structure_graph())]
         ))
 
-        topics_hierarchy = plotter.topics_hierarchy()
+        topics_hierarchy = plotter.topics_hierarchy_with_keywords()
         if topics_hierarchy:
             result['topics_hierarchy'] = [components(topics_hierarchy)]
 
@@ -607,51 +612,123 @@ class Plotter:
     def dump_citations_graph_cytoscape(self):
         return PlotPreprocessor.dump_citations_graph_cytoscape(self.analyzer.df, self.analyzer.citations_graph)
 
-    def topics_hierarchy(self):
-        """ Plot topics hierarchy ignoring OTHER topic"""
-        dendrogram = self.analyzer.topics_dendrogram
-        if len(dendrogram) == 0:
-            return None
-
-        # Cleanup dendrogram and reorder paths to avoid intersections
-        dendrogram, paths, leaves_order = PlotPreprocessor.layout_dendrogram(dendrogram)
+    def topics_hierarchy_with_keywords(self):
+        kwd_df = self.analyzer.kwd_df
+        comp_sizes = Counter(self.analyzer.df['comp'])
+        logger.debug('Computing dendrogram for clusters')
+        clusters_dendrogram_children = compute_clusters_dendrogram_children(self.analyzer.clusters,
+                                                                            self.analyzer.dendrogram_children)
+        paths, leaves_order = convert_clusters_dendrogram_to_paths(self.analyzer.clusters,
+                                                                   clusters_dendrogram_children)
 
         # Configure dimensions
-        w = len(set(dendrogram[0].keys())) * 10 + 10
-        dx = int(w / (len(dendrogram[0]) + 1))
-        dy = 3
-        p = figure(x_range=[-10, w + 10],
-                   y_range=[-3, dy * (len(dendrogram) + 1)],
-                   width=PLOT_WIDTH, height=100 * (len(dendrogram) + 1), tools=[])
+        p = figure(x_range=[-190, 190],
+                   y_range=[-160, 160],
+                   tools="save",
+                   width=PLOT_WIDTH, height=int(PLOT_WIDTH * 0.8))
+        x_coefficient = 1.5  # Ellipse x coefficient
+        y_delta = 60  # Extra space near pi / 2 and 3 * pi / 2
+        n_topics = len(leaves_order)
+        radius = 80  # Radius of circular dendrogram
+        dendrogram_len = len(paths[0])
+        d_radius = radius / dendrogram_len
+        d_degree = 2 * pi / n_topics
+        delta = 3  # Space between dendrogram and text
+        max_words = min(5, max(1, int(120 / n_topics)))
 
         # Leaves coordinates
-        leaves_xs = dict((v, (i + 1) * dx) for v, i in leaves_order.items())
+        leaves_degrees = dict((v, i * d_degree) for v, i in leaves_order.items())
 
-        # Draw dendrogram
-        xs = leaves_xs.copy()
-        for i in range(1, len(dendrogram) + 2):
-            # Vertical lines (up from leaves to root)
-            for _, x in xs.items():
-                p.line([x, x], [(i - 1) * dy, i * dy], line_color='black')
-            new_xs = {}
+        # Draw levels
+        for i in range(1, dendrogram_len):
+            p.ellipse(0, 0, fill_alpha=0, line_color='lightgray', line_alpha=0.5,
+                      width=2 * d_radius * i,
+                      height=2 * d_radius * i,
+                      line_dash='dotted')
+
+        # Draw dendrogram - from bottom to top
+        ds = leaves_degrees.copy()
+        for i in range(1, dendrogram_len):
+            next_ds = {}
             for path in paths:
-                if path[i] not in new_xs:
-                    new_xs[path[i]] = []
-                new_xs[path[i]].append(xs[path[i - 1]])
-            for v, pxs in new_xs.items():
-                if len(pxs) > 1:  # Horizontal connections
-                    p.line([pxs[0], pxs[-1]], [i * dy, i * dy], line_color='black')
-                new_xs[v] = np.mean(pxs)
-            xs = new_xs
+                if path[i] not in next_ds:
+                    next_ds[path[i]] = []
+                next_ds[path[i]].append(ds[path[i - 1]])
+            for v, nds in next_ds.items():
+                next_ds[v] = np.mean(nds)
+
+            for path in paths:
+                current_d = ds[path[i - 1]]
+                next_d = next_ds[path[i]]
+                p.line([cos(current_d) * d_radius * (dendrogram_len - i),
+                        cos(next_d) * d_radius * (dendrogram_len - i - 1)],
+                       [sin(current_d) * d_radius * (dendrogram_len - i),
+                        sin(next_d) * d_radius * (dendrogram_len - i - 1)],
+                       line_color='lightgray')
+            ds = next_ds
+
+        # Draw center
+        p.circle(x=0, y=0, size=2, fill_color='gray', line_color='gray')
 
         # Draw leaves
-        topics_colors = Plotter.topics_palette_rgb(self.analyzer.df)
-        for v, x in leaves_xs.items():
-            p.circle(x=x, y=0, size=15, line_color="black", fill_color=topics_colors[v])
-        p.text(x=[x - 0.5 for _, x in leaves_xs.items()],
-               y=[-1] * len(leaves_xs),
-               text=[str(v + 1) for v, _ in leaves_xs.items()],
-               text_align='left', text_baseline='middle', text_font_size='10pt')
+        n_comps = len(comp_sizes)
+        cmap = Plotter.factors_colormap(n_comps)
+        topics_colors = dict((i, Plotter.color_to_rgb(cmap(i))) for i in range(n_comps))
+        xs = [cos(d) * d_radius * (dendrogram_len - 1) for _, d in leaves_degrees.items()]
+        ys = [sin(d) * d_radius * (dendrogram_len - 1) for _, d in leaves_degrees.items()]
+        sizes = [20 + int(min(10, math.log(comp_sizes[v]))) for v, _ in leaves_degrees.items()]
+        comps = [v + 1 for v, _ in leaves_degrees.items()]
+        colors = [topics_colors[v] for v, _ in leaves_degrees.items()]
+        ds = ColumnDataSource(data=dict(x=xs, y=ys, size=sizes, comps=comps, color=colors))
+        p.circle(x='x', y='y', size='size', fill_color='color', line_color='black', source=ds)
+
+        def contrast_color_rbg(rgb):
+            cr, cg, cb = contrast_color(rgb.r, rgb.g, rgb.b)
+            return RGB(cr, cg, cb)
+
+        # Topics labels
+        p.text(x=[cos(d) * d_radius * (dendrogram_len - 1) for _, d in leaves_degrees.items()],
+               y=[sin(d) * d_radius * (dendrogram_len - 1) for _, d in leaves_degrees.items()],
+               text=[str(v + 1) for v, _ in leaves_degrees.items()],
+               text_align='center', text_baseline='middle', text_font_size='10pt',
+               text_color=contrast_color_rbg(topics_colors[v]))
+
+        # Show words for components - most popular words per component
+        topics = leaves_order.keys()
+        words2show = PlotPreprocessor.topics_words(kwd_df, max_words, topics)
+
+        # Visualize words
+        for v, d in leaves_degrees.items():
+            if v not in words2show:  # No super-specific words for topic
+                continue
+            words = words2show[v]
+            xs = []
+            ys = []
+            for i, word in enumerate(words):
+                wd = d + d_degree * (i - len(words) / 2) / len(words)
+                # Make word degree in range 0 - 2 * pi
+                if wd < 0:
+                    wd += 2 * pi
+                elif wd > 2 * pi:
+                    wd -= 2 * pi
+                xs.append(cos(wd) * (radius * x_coefficient + delta))
+                y = sin(wd) * (radius + delta)
+                # Additional vertical space around pi/2 and 3*pi/2
+                if pi / 4 <= wd < 3 * pi / 4:
+                    y += (pi / 4 - fabs(pi / 2 - wd)) * y_delta
+                elif 5 * pi / 4 <= wd < 7 * pi / 4:
+                    y -= (pi / 4 - fabs(3 * pi / 2 - wd)) * y_delta
+                ys.append(y)
+
+            # Different text alignment for left | right parts
+            p.text(x=[x for x in xs if x > 0], y=[y for i, y in enumerate(ys) if xs[i] > 0],
+                   text=[w for i, w in enumerate(words) if xs[i] > 0],
+                   text_align='left', text_baseline='middle', text_font_size='10pt',
+                   text_color=topics_colors[v])
+            p.text(x=[x for x in xs if x <= 0], y=[y for i, y in enumerate(ys) if xs[i] <= 0],
+                   text=[w for i, w in enumerate(words) if xs[i] <= 0],
+                   text_align='right', text_baseline='middle', text_font_size='10pt',
+                   text_color=topics_colors[v])
 
         p.sizing_mode = 'stretch_width'
         p.axis.major_tick_line_color = None
@@ -664,26 +741,25 @@ class Plotter:
         return p
 
     def structure_graph(self):
-        g = self.analyzer.structure_graph
-
-        pos = nx.spring_layout(g)
-        nodes = [a for a, _ in pos.items()]
-
+        g = local_sparse(self.analyzer.similarity_graph, 0.5)
+        df = self.analyzer.df
+        nodes = df['id']
+        comps = df['comp']
         graph = GraphRenderer()
-        comps = self.analyzer.df['comp']
         cmap = Plotter.factors_colormap(len(set(comps)))
         palette = dict(zip(sorted(set(comps)), [Plotter.color_to_rgb(cmap(i)).to_hex()
                                                 for i in range(len(set(comps)))]))
 
-        graph.node_renderer.data_source.add(self.analyzer.df['id'], 'index')
-        graph.node_renderer.data_source.data['id'] = self.analyzer.df['id']
-        graph.node_renderer.data_source.data['title'] = self.analyzer.df['title']
+        graph.node_renderer.data_source.add(df['id'], 'index')
+        graph.node_renderer.data_source.data['id'] = df['id']
+        graph.node_renderer.data_source.data['title'] = df['title']
         graph.node_renderer.data_source.data['authors'] = \
-            self.analyzer.df['authors'].apply(lambda authors: cut_authors_list(authors))
-        graph.node_renderer.data_source.data['journal'] = self.analyzer.df['journal']
-        graph.node_renderer.data_source.data['year'] = self.analyzer.df['year']
-        graph.node_renderer.data_source.data['cited'] = self.analyzer.df['total']
-        graph.node_renderer.data_source.data['size'] = [1 + 2 * np.log1p(c) for c in self.analyzer.df['total']]
+            df['authors'].apply(lambda authors: cut_authors_list(authors))
+        graph.node_renderer.data_source.data['journal'] = df['journal']
+        graph.node_renderer.data_source.data['year'] = df['year']
+        graph.node_renderer.data_source.data['cited'] = df['total']
+        # Limit size
+        graph.node_renderer.data_source.data['size'] = df['total'] * 20 / df['total'].max() + 5
         graph.node_renderer.data_source.data['topic'] = [c + 1 for c in comps]
         graph.node_renderer.data_source.data['color'] = [palette[c] for c in comps]
 
@@ -691,8 +767,7 @@ class Plotter:
                                                     end=[v for _, v in g.edges])
 
         # start of layout code
-        x = [v[0] for _, v in pos.items()]
-        y = [v[1] for _, v in pos.items()]
+        x, y = df['x'], df['y']
         xrange = max(x) - min(x)
         yrange = max(y) - min(y)
         p = figure(width=PLOT_WIDTH,
@@ -743,11 +818,11 @@ class Plotter:
         graph_layout = dict(zip(nodes, zip(x, y)))
         graph.layout_provider = StaticLayoutProvider(graph_layout=graph_layout)
 
-        graph.node_renderer.glyph = Circle(size='size', fill_color='color')
-        graph.node_renderer.hover_glyph = Circle(size='size', fill_color='green')
+        graph.node_renderer.glyph = Circle(size='size', fill_alpha=0.7, line_alpha=0.7, fill_color='color')
+        graph.node_renderer.hover_glyph = Circle(size='size', fill_alpha=1.0, line_alpha=1.0, fill_color='color')
 
         graph.edge_renderer.glyph = MultiLine(line_color='grey', line_alpha=0.1, line_width=1)
-        graph.edge_renderer.hover_glyph = MultiLine(line_color='blue', line_alpha=1.0, line_width=2)
+        graph.edge_renderer.hover_glyph = MultiLine(line_color='grey', line_alpha=1.0, line_width=2)
 
         graph.inspection_policy = NodesAndLinkedEdges()
 
@@ -840,11 +915,11 @@ class Plotter:
         graph_layout = dict(zip(authors, zip(x, y)))
         graph.layout_provider = StaticLayoutProvider(graph_layout=graph_layout)
 
-        graph.node_renderer.glyph = Circle(size='size', fill_color='color')
-        graph.node_renderer.hover_glyph = Circle(size='size', fill_color='green')
+        graph.node_renderer.glyph = Circle(size='size', fill_alpha=0.7, line_alpha=0.7, fill_color='color')
+        graph.node_renderer.hover_glyph = Circle(size='size', fill_alpha=1.0, line_alpha=1.0, fill_color='color')
 
         graph.edge_renderer.glyph = MultiLine(line_color='grey', line_alpha=0.1, line_width=1)
-        graph.edge_renderer.hover_glyph = MultiLine(line_color='blue', line_alpha=1.0, line_width=2)
+        graph.edge_renderer.hover_glyph = MultiLine(line_color='grey', line_alpha=1.0, line_width=2)
 
         graph.inspection_policy = NodesAndLinkedEdges()
         p.renderers.append(graph)

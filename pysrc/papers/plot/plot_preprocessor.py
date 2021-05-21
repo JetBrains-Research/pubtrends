@@ -1,13 +1,14 @@
 import logging
-from itertools import product as cart_product
 from queue import PriorityQueue
-from statsmodels.nonparametric.smoothers_lowess import lowess
+
 import networkx as nx
 import numpy as np
 import pandas as pd
+from itertools import product as cart_product
 from more_itertools import unique_everseen
+from statsmodels.nonparametric.smoothers_lowess import lowess
 
-from pysrc.papers.analysis.text import build_corpus, get_frequent_tokens
+from pysrc.papers.analysis.text import build_corpus
 from pysrc.papers.analysis.topics import compute_similarity_matrix
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.utils import cut_authors_list
@@ -141,17 +142,16 @@ class PlotPreprocessor:
     def dump_citations_graph_cytoscape(df, citations_graph):
         logger.debug('Mapping citations graph to cytoscape JS')
         graph = citations_graph.copy()
-        # Put all the nodes into the graph
+        # Ensure all the nodes are in the graph
         for node in df['id']:
             if not graph.has_node(node):
                 graph.add_node(node)
+        pr = nx.pagerank(graph, alpha=0.5, tol=1e-9)
         cytoscape_graph = PlotPreprocessor.dump_to_cytoscape(df, graph)
         logger.debug('Set pagerank for citations graph')
-        pids = set(df['id'])
         for node_cs in cytoscape_graph['nodes']:
             nid = node_cs['data']['id']
-            if nid in pids:
-                node_cs['data']['pagerank'] = float(df.loc[df['id'] == nid]['pagerank'].values[0])
+            node_cs['data']['pagerank'] = pr[nid]
         return cytoscape_graph
 
     @staticmethod
@@ -160,11 +160,12 @@ class PlotPreprocessor:
         cytoscape_graph = PlotPreprocessor.dump_to_cytoscape(df, structure_graph.copy())
         logger.debug('Set centrality for structure graph')
         centrality = nx.algorithms.centrality.degree_centrality(structure_graph)
-        pids = set(df['id'])
         for node_cs in cytoscape_graph['nodes']:
             nid = node_cs['data']['id']
-            if nid in pids:
-                node_cs['data']['centrality'] = centrality[nid]
+            sel = df.loc[df['id'] == nid]
+            node_cs['data']['centrality'] = centrality[nid]
+            # Adjust vertical axis with bokeh graph
+            node_cs['position'] = dict(x=sel['x'].values[0] * 10, y=-sel['y'].values[0] * 10)
         return cytoscape_graph
 
     @staticmethod
@@ -186,28 +187,7 @@ class PlotPreprocessor:
                 'topic': topic,
             }
         nx.set_node_attributes(graph, attrs)
-
-        logger.debug('Group not connected nodes into groups')
-        topic_groups = set()
-        cytoscape_data = nx.cytoscape_data(graph)['elements']
-        for node_cs in cytoscape_data['nodes']:
-            nid = node_cs['data']['id']
-            if graph.degree(nid) == 0:
-                topic = node_cs['data']['topic']
-                if topic not in topic_groups:
-                    topic_group = {
-                        'group': 'nodes',
-                        'data': {
-                            'id': f'topic_{topic}',
-                            'topic': topic,
-                        },
-                        'classes': 'group'
-                    }
-                    topic_groups.add(topic)
-                    cytoscape_data['nodes'].append(topic_group)
-                node_cs['data']['parent'] = f'topic_{topic}'
-        logger.debug('Done dumping graph to cytoscape JS')
-        return cytoscape_data
+        return nx.cytoscape_data(graph)['elements']
 
     @staticmethod
     def topic_evolution_data(evolution_df, kwds, n_steps):

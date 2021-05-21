@@ -56,10 +56,10 @@ def prepare_paper_data(data, source, pid):
     # Citations graph is limited by only the nodes in pub_df
     if analyzer.citations_graph.has_node(pid):
         derivative_papers = get_top_papers_id_title_year(
-            analyzer.citations_graph.predecessors(pid), analyzer.df, key='pagerank'
+            analyzer.citations_graph.predecessors(pid), analyzer.df, key='total'
         )
         prior_papers = get_top_papers_id_title_year(
-            analyzer.citations_graph.successors(pid), analyzer.df, key='pagerank'
+            analyzer.citations_graph.successors(pid), analyzer.df, key='total'
         )
     else:
         prior_papers = derivative_papers = []
