@@ -229,9 +229,7 @@ Please ensure that you have Database configured, up and running.
     docker run --rm --volume=$(pwd):/pubtrends -t biolabs/pubtrends-test /bin/bash -c \
     "/usr/lib/postgresql/12/bin/pg_ctl -D /home/user/postgres start; \
     cd /pubtrends; mkdir ~/.pubtrends; cp config.properties ~/.pubtrends; \
-    source activate pubtrends; \
-    pip list --outdated --format=freeze | grep Flask | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 pip install -U \ 
-    pytest pysrc"
+    source activate pubtrends; pytest pysrc"
     ```
 
 ## Deployment
