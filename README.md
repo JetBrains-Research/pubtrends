@@ -35,9 +35,10 @@ Ensure that file contains correct information about the database(s) (url, port, 
     && python -m spacy download en_core_web_sm
     ```
 
-3. Build `biolabs/pubtrends` Docker image (available on Docker hub).
+3. Build base Docker image `biolabs/pubtrends` and nested image `biolabs/pubtrends-test` for testing.
     ```
-    docker build -t biolabs/pubtrends .
+    docker build -f docker/main/Dockerfile -t biolabs/pubtrends .
+    docker build -f docker/main/Dockerfile -t biolabs/pubtrends-test . 
     ```
 
 4. Init PostgreSQL database.
@@ -205,7 +206,7 @@ Please ensure that you have Database configured, up and running.
 1. Start Docker image with Postgres environment for tests (Kotlin and Python development)
     ```
     docker run --rm --name pubtrends-test \
-    --publish=5432:5432 --volume=$(pwd):/pubtrends -d -t biolabs/pubtrends
+    --publish=5432:5432 --volume=$(pwd):/pubtrends -d -t biolabs/pubtrends-test
     ```
     
    NOTE: don't forget to stop the container afterwards.
@@ -225,10 +226,12 @@ Please ensure that you have Database configured, up and running.
 4. Python tests within Docker (ensure that `./build/libs/pubtrends-dev.jar` file is present)
 
     ```
-    docker run --rm --volume=$(pwd):/pubtrends -t biolabs/pubtrends /bin/bash -c \
+    docker run --rm --volume=$(pwd):/pubtrends -t biolabs/pubtrends-test /bin/bash -c \
     "/usr/lib/postgresql/12/bin/pg_ctl -D /home/user/postgres start; \
     cd /pubtrends; mkdir ~/.pubtrends; cp config.properties ~/.pubtrends; \
-    source activate pubtrends; pytest pysrc"
+    source activate pubtrends; \
+    pip list --outdated --format=freeze | grep Flask | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 pip install -U \ 
+    pytest pysrc"
     ```
 
 ## Deployment
