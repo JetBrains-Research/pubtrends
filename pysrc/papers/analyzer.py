@@ -197,8 +197,9 @@ class PapersAnalyzer:
             self.kwd_df = pd.DataFrame({'comp': [0], 'kwd': ['']})
 
         else:
+            self.progress.info('Extracting topics from paper similarity graph', current=6, task=task)
             if len(self.similarity_graph.nodes()) <= PapersAnalyzer.TOPIC_MIN_SIZE:
-                self.progress.info('Extracting topics from paper similarity graph', current=6, task=task)
+                logger.debug('Small similarity graph - single topic')
                 pos = nx.spring_layout(self.similarity_graph, weight='similarity')
                 nodes = [a for a, _ in pos.items()]
                 x = [v[0] for _, v in pos.items()]
@@ -214,7 +215,7 @@ class PapersAnalyzer:
                 self.comp_sizes = Counter(self.clusters)
                 self.components = list(sorted(set(self.clusters)))
             else:
-                self.progress.info('Extracting topics from paper similarity graph with node2vec', current=6, task=task)
+                logger.debug('Extracting topics from paper similarity graph with node2vec')
                 node_ids, node_embeddings = node2vec(self.similarity_graph,
                                                      weight_func=PapersAnalyzer.similarity, walk_length=100)
                 logger.debug('Apply t-SNE transformation on node embeddings')
