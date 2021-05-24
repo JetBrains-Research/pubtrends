@@ -103,7 +103,7 @@ class PapersAnalyzer:
         limit = limit or self.config.max_number_of_articles
         sort = sort or SORT_MOST_CITED
         noreviews_msg = ", not reviews" if noreviews else ""
-        self.progress.info(f'Searching {limit} {sort.lower()} publications matching <{query}>{noreviews_msg}',
+        self.progress.info(f'Searching {limit} {sort.lower()} publications matching {query}{noreviews_msg}',
                            current=1, task=task)
         ids = self.loader.search(query, limit=limit, sort=sort, noreviews=noreviews)
         if len(ids) == 0:
