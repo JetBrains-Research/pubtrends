@@ -123,7 +123,7 @@ class PlotPreprocessor:
                 if pair != '':  # Correctly process empty freq_kwds encoding
                     word, value = pair.split(':')
                     kwds_queue.put((-float(value), c, word))
-        words2show = {}
+        words2show = {c: [] for c in topics}
         seen_words = set()
         added_words = 0
         while not kwds_queue.empty() and added_words < len(topics) * max_words:
@@ -131,8 +131,6 @@ class PlotPreprocessor:
             if word in seen_words:
                 continue
             seen_words.add(word)
-            if c not in words2show:
-                words2show[c] = []
             if len(words2show[c]) < max_words:
                 words2show[c].append(word)
                 added_words += 1
