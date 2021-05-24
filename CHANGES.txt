@@ -3,6 +3,16 @@ Pubtrends changelog
 
 Here you can see the full list of changes between each release.
 
+Version 0.16
+------------
+Released on May 24, 2021
+
+-- Use graph embeddings for detecting similar papers
+-- Improved papers graph visualization in tSNE coordinates of embeddings
+-- Identify groups of similar authors
+-- Small updates and bugfixes
+
+
 Version 0.15
 ------------
 Released on April 9, 2021
