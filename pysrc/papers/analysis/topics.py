@@ -142,8 +142,9 @@ def get_topics_description(df, comps, corpus_terms, corpus_counts, query, n_word
 
 
 def cluster_embeddings(weighted_node_embeddings, min_cluster_size, max_clusters):
-    logger.debug('Looking for an appropriate number of clusters')
-    r = max_clusters + 1
+    logger.debug('Looking for an appropriate number of clusters,'
+                 f'min_cluster_size={min_cluster_size}, max_clusters={max_clusters}')
+    r = min(max_clusters, weighted_node_embeddings.shape[0]) + 1
     l = 1
 
     while l < r - 2:
@@ -157,6 +158,8 @@ def cluster_embeddings(weighted_node_embeddings, min_cluster_size, max_clusters)
             l = n_clusters
         else:
             break
+    else:
+        return [0] * weighted_node_embeddings.shape[0], None
 
     logger.debug(f'Number of clusters = {n_clusters}')
     logger.debug('Reorder clusters by size descending')

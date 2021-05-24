@@ -45,19 +45,22 @@ BIBLIOGRAPHIC_COUPLING_DATA = [['3', '4', 2],
 BIBCOUPLING_DF = pd.DataFrame(BIBLIOGRAPHIC_COUPLING_DATA, columns=['citing_1', 'citing_2', 'total'])
 
 SIMILARITY_GRAPH_EDGES = [('1', '2', {'cocitation': 3.0, 'text': 0.5000000000000001, 'similarity': 1.8862943611198908}),
-                          ('1', '3', {'text': 0.1666666666666667, 'citation': 1, 'similarity': 0.29166666666666674}),
                           ('1', '4', {'text': 0.3086066999241838, 'citation': 1, 'similarity': 0.4336066999241838}),
                           ('1', '5', {'text': 0.5000000000000001, 'citation': 1, 'similarity': 0.6250000000000001}),
-                          ('2', '4', {'text': 0.1543033499620919, 'citation': 1, 'similarity': 0.27930334996209194}),
-                          ('2', '5', {'text': 0.1666666666666667, 'citation': 1, 'similarity': 0.29166666666666674}),
-                          ('2', '3', {'text': 0.6666666666666669, 'citation': 1, 'similarity': 0.7916666666666669}), (
-                          '3', '4', {'cocitation': 1.0, 'bibcoupling': 2.0, 'text': 0.4629100498862757,
-                                     'similarity': 1.2933837665297347}), ('3', '5', {'bibcoupling': 2.0,
-                                                                                     'text': 0.1666666666666667,
-                                                                                     'citation': 1,
-                                                                                     'similarity': 0.4289932027501805}),
-                          ('4', '5', {'bibcoupling': 2.0, 'text': 0.4629100498862757, 'citation': 1,
-                                      'similarity': 0.7252365859697895})]
+                          ('1', '3', {'citation': 1, 'similarity': 0.125}),
+                          ('2', '3', {'text': 0.6666666666666669, 'citation': 1, 'similarity': 0.7916666666666669}),
+                          ('2', '4', {'citation': 1, 'similarity': 0.125}),
+                          ('2', '5', {'citation': 1, 'similarity': 0.125}), ('3', '4',
+                                                                             {'cocitation': 1.0, 'bibcoupling': 2.0,
+                                                                              'text': 0.4629100498862757,
+                                                                              'similarity': 1.2933837665297347}),
+                          ('3', '5', {'bibcoupling': 2.0, 'citation': 1, 'similarity': 0.26232653608351375}),
+                          ('4', '5',
+                           {
+                               'bibcoupling': 2.0,
+                               'text': 0.4629100498862757,
+                               'citation': 1,
+                               'similarity': 0.7252365859697895})]
 EXPECTED_MAX_GAIN = {1972: '3', 1974: '1'}
 EXPECTED_MAX_RELATIVE_GAIN = {1972: '3', 1974: '4'}
 
@@ -126,13 +129,17 @@ class MockLoaderSingle(Loader):
         raise Exception('Not implemented')
 
     def load_citations(self, ids=None):
-        return pd.DataFrame([], columns=['id_out', 'id_in'])
+        return pd.DataFrame(columns=['id_out', 'id_in'], dtype=object)
 
     def load_cocitations(self, ids=None):
-        return pd.DataFrame([], columns=['citing', 'cited_1', 'cited_2', 'year'])
+        df = pd.DataFrame(columns=['citing', 'cited_1', 'cited_2', 'year'], dtype=object)
+        df['year'] = df['year'].astype(int)
+        return df
 
     def load_bibliographic_coupling(self, ids=None):
-        return pd.DataFrame([], columns=['citing_1', 'citing_2', 'total'])
+        df = pd.DataFrame(columns=['citing_1', 'citing_2', 'total'], dtype=object)
+        df['total'] = df['total'].astype(int)
+        return df
 
 
 class MockLoaderEmpty(Loader):

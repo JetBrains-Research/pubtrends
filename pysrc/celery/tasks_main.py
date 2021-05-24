@@ -1,3 +1,5 @@
+import logging
+
 from celery import current_task
 
 from pysrc.celery.pubtrends_celery import pubtrends_celery

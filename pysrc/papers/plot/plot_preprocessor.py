@@ -68,9 +68,9 @@ class PlotPreprocessor:
         else:
             df_counts = df_local[['year', 'total', 'count']].groupby(['year', 'total']).sum()
         df_counts['delta'] = 0
-        dft = pd.DataFrame(columns=columns + ['y'])
+        dft = pd.DataFrame(columns=columns + ['y'], dtype=object)
         for _, r in df_local.iterrows():
-            pid, title, year, type, total, authors, journal, comp, _ = r  # Ignore count
+            pid, title, year, type, total, authors, journal, comp, _ = r
             if components_split:
                 cd = df_counts.loc[(comp, year, total)]
                 c, d = cd['count'], cd['delta']

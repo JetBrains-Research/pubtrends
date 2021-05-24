@@ -7,6 +7,10 @@ RELATIONS_GRAPH_GRAPHML = 'pysrc/test/test_data/similarity_graph.graphml'
 DF_CSV = 'pysrc/test/test_data/df.csv'
 EVOLUTION_DF_CSV = 'pysrc/test/test_data/evolution_df.csv'
 EVOLUTION_KEYWORDS_JSON = 'pysrc/test/test_data/evolution_keywords.json'
+# RELATIONS_GRAPH_GRAPHML = '/Users/Oleg.Shpynov/work/pubtrends/pysrc/test/test_data/similarity_graph.graphml'
+# DF_CSV = '/Users/Oleg.Shpynov/work/pubtrends/pysrc/test/test_data/df.csv'
+# EVOLUTION_DF_CSV = '/Users/Oleg.Shpynov/work/pubtrends/pysrc/test/test_data/evolution_df.csv'
+# EVOLUTION_KEYWORDS_JSON = '/Users/Oleg.Shpynov/work/pubtrends/pysrc/test/test_data/evolution_keywords.json'
 
 
 class MockAnalyzer:

@@ -51,7 +51,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         logger.debug(f'find query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df = pd.DataFrame(cursor.fetchall(), columns=['id'])
+            df = pd.DataFrame(cursor.fetchall(), columns=['id'], dtype='object')
 
         return list(df['id'].astype(str))
 

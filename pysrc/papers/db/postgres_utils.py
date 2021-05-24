@@ -108,7 +108,7 @@ def process_bibliographic_coupling_postgres(cursor):
         for i in range(len(citing_list)):
             for j in range(i + 1, len(citing_list)):
                 data.append((str(citing_list[i]), str(citing_list[j]), 1))
-    df = pd.DataFrame(data, columns=['citing_1', 'citing_2', 'total'])
+    df = pd.DataFrame(data, columns=['citing_1', 'citing_2', 'total'], dtype=object)
     if lines > 0:
         df = df.groupby(['citing_1', 'citing_2']).sum().reset_index()
     return df, lines

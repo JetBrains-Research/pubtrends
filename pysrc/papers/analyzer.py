@@ -3,6 +3,7 @@ from collections import Counter
 
 import numpy as np
 import pandas as pd
+import networkx as nx
 from networkx.readwrite import json_graph
 from sklearn.manifold import TSNE
 
@@ -186,30 +187,51 @@ class PapersAnalyzer:
         )
         logger.debug(f'Built similarity graph - {len(self.similarity_graph.nodes())} nodes and '
                      f'{len(self.similarity_graph.edges())} edges')
+        logger.debug('Compute aggregated similarity')
+        for _, _, d in self.similarity_graph.edges(data=True):
+            d['similarity'] = PapersAnalyzer.similarity(d)
 
         if len(self.similarity_graph.nodes()) == 0:
             self.progress.info('Not enough papers to process topics analysis', current=6, task=task)
             self.df['comp'] = 0  # Technical value for top authors and papers analysis
             self.kwd_df = pd.DataFrame({'comp': [0], 'kwd': ['']})
+
         else:
-            self.progress.info('Extracting topics from paper similarity graph', current=6, task=task)
-            node_ids, node_embeddings = node2vec(self.similarity_graph,
-                                                 weight_func=PapersAnalyzer.similarity, walk_length=100)
-            logger.debug('Apply t-SNE transformation on node embeddings')
-            tsne = TSNE(n_components=2, random_state=42)
-            weighted_node_embeddings_2d = tsne.fit_transform(node_embeddings)
-            pid_indx = dict(zip(self.df['id'], self.df.index))
-            indx = [pid_indx[pid] for pid in node_ids]
-            self.df['x'] = pd.Series(index=indx, data=weighted_node_embeddings_2d[:, 0])
-            self.df['y'] = pd.Series(index=indx, data=weighted_node_embeddings_2d[:, 1])
-            # Memoize clusters because of order
-            self.clusters, self.dendrogram_children = cluster_embeddings(
-                node_embeddings, self.TOPIC_MIN_SIZE, self.TOPICS_MAX_NUMBER
-            )
-            self.df['comp'] = pd.Series(index=indx, data=self.clusters)
-            self.partition = dict(zip(self.df['id'], self.df['comp']))
-            self.comp_sizes = Counter(self.clusters)
-            self.components = list(sorted(set(self.clusters)))
+            if len(self.similarity_graph.nodes()) <= PapersAnalyzer.TOPIC_MIN_SIZE:
+                self.progress.info('Extracting topics from paper similarity graph', current=6, task=task)
+                pos = nx.spring_layout(self.similarity_graph, weight='similarity')
+                nodes = [a for a, _ in pos.items()]
+                x = [v[0] for _, v in pos.items()]
+                y = [v[1] for _, v in pos.items()]
+                pid_indx = dict(zip(self.df['id'], self.df.index))
+                indx = [pid_indx[pid] for pid in nodes]
+                self.df['x'] = pd.Series(index=indx, data=x)
+                self.df['y'] = pd.Series(index=indx, data=y)
+                # Memoize clusters because of order
+                self.df['comp'] = 0
+                self.clusters, self.dendrogram_children = self.df['comp'], None
+                self.partition = dict(zip(self.df['id'], self.df['comp']))
+                self.comp_sizes = Counter(self.clusters)
+                self.components = list(sorted(set(self.clusters)))
+            else:
+                self.progress.info('Extracting topics from paper similarity graph with node2vec', current=6, task=task)
+                node_ids, node_embeddings = node2vec(self.similarity_graph,
+                                                     weight_func=PapersAnalyzer.similarity, walk_length=100)
+                logger.debug('Apply t-SNE transformation on node embeddings')
+                tsne = TSNE(n_components=2, random_state=42)
+                weighted_node_embeddings_2d = tsne.fit_transform(node_embeddings)
+                pid_indx = dict(zip(self.df['id'], self.df.index))
+                indx = [pid_indx[pid] for pid in node_ids]
+                self.df['x'] = pd.Series(index=indx, data=weighted_node_embeddings_2d[:, 0])
+                self.df['y'] = pd.Series(index=indx, data=weighted_node_embeddings_2d[:, 1])
+                # Memoize clusters because of order
+                self.clusters, self.dendrogram_children = cluster_embeddings(
+                    node_embeddings, self.TOPIC_MIN_SIZE, self.TOPICS_MAX_NUMBER
+                )
+                self.df['comp'] = pd.Series(index=indx, data=self.clusters)
+                self.partition = dict(zip(self.df['id'], self.df['comp']))
+                self.comp_sizes = Counter(self.clusters)
+                self.components = list(sorted(set(self.clusters)))
 
             self.progress.info('Analyzing topics descriptions', current=7, task=task)
             comp_pids = pd.DataFrame(self.partition.items(), columns=['id', 'comp']). \
@@ -223,10 +245,6 @@ class PapersAnalyzer:
             kwds = [(comp, ','.join([f'{t}:{v:.3f}' for t, v in vs[:self.TOPIC_DESCRIPTION_WORDS]]))
                     for comp, vs in topics_description.items()]
             self.kwd_df = pd.DataFrame(kwds, columns=['comp', 'kwd'])
-
-            logger.debug('Compute aggregated similarity')
-            for _, _, d in self.similarity_graph.edges(data=True):
-                d['similarity'] = PapersAnalyzer.similarity(d)
 
         self.progress.info('Identifying top papers', current=8, task=task)
         logger.debug('Top cited papers')
@@ -255,30 +273,35 @@ class PapersAnalyzer:
                                                                            self.texts_similarity,
                                                                            check_author_func=lambda a:
                                                                            authors_productivity[a] >= mean_threshold)
-            logger.debug(f'Built similarity graph - {len(self.authors_similarity_graph.nodes())} nodes '
+            logger.debug(f'Built authors similarity graph - {len(self.authors_similarity_graph.nodes())} nodes '
                          f'and {len(self.authors_similarity_graph.edges())} edges')
-            logger.debug('Compute embeddings for aggregated similarity using co-authorship')
-            authors_node_ids, authors_weighted_node_embeddings = node2vec(
-                self.authors_similarity_graph,
-                weight_func=lambda d: 100 * d.get('authorship', 0) + PapersAnalyzer.similarity(d),
-                walk_length=50,
-            )
-            logger.debug('Apply t-SNE transformation on node embeddings')
-            authors_weighted_node_embeddings_2d = TSNE(n_components=2, random_state=42).fit_transform(
-                authors_weighted_node_embeddings
-            )
-            logger.debug('Clustering authors')
-            authors_clusters, _ = cluster_embeddings(
-                authors_weighted_node_embeddings, self.TOPIC_MIN_SIZE / 3, self.TOPICS_MAX_NUMBER * 3
-            )
-            # Build dataframe combining information about authors and projected coordinates
-            self.authors_df = pd.DataFrame(dict(author=authors_node_ids,
-                                                x=authors_weighted_node_embeddings_2d[:, 0],
-                                                y=authors_weighted_node_embeddings_2d[:, 1],
-                                                cluster=authors_clusters))
-            self.authors_df['cited'] = [authors_citations[a] for a in self.authors_df['author']]
-            self.authors_df['papers'] = [authors_papers[a] for a in self.authors_df['author']]
-            self.authors_df['productivity'] = [authors_productivity[a] for a in self.authors_df['author']]
+            if len(self.authors_similarity_graph.nodes) > 0:
+                logger.debug('Compute embeddings for aggregated similarity using co-authorship')
+                authors_node_ids, authors_weighted_node_embeddings = node2vec(
+                    self.authors_similarity_graph,
+                    weight_func=lambda d: 100 * d.get('authorship', 0) + PapersAnalyzer.similarity(d),
+                    walk_length=50,
+                )
+
+                logger.debug('Apply t-SNE transformation on node embeddings')
+                authors_weighted_node_embeddings_2d = TSNE(n_components=2, random_state=42).fit_transform(
+                    authors_weighted_node_embeddings
+                )
+                logger.debug('Clustering authors')
+                authors_clusters, _ = cluster_embeddings(
+                    authors_weighted_node_embeddings, self.TOPIC_MIN_SIZE / 3, self.TOPICS_MAX_NUMBER * 3
+                )
+                # Build dataframe combining information about authors and projected coordinates
+                self.authors_df = pd.DataFrame(dict(author=authors_node_ids,
+                                                    x=authors_weighted_node_embeddings_2d[:, 0],
+                                                    y=authors_weighted_node_embeddings_2d[:, 1],
+                                                    cluster=authors_clusters))
+                self.authors_df['cited'] = [authors_citations[a] for a in self.authors_df['author']]
+                self.authors_df['papers'] = [authors_papers[a] for a in self.authors_df['author']]
+                self.authors_df['productivity'] = [authors_productivity[a] for a in self.authors_df['author']]
+            else:
+                logger.debug('Cannot analyze empty authors graph')
+                self.authors_df = None
 
         if self.config.feature_journals_enabled:
             self.progress.info("Analyzing popular journals", current=10, task=task)

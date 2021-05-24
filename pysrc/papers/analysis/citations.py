@@ -69,6 +69,8 @@ def build_cit_stats_df(cits_by_year_df, n_papers):
 
 def build_cocit_grouped_df(cocit_df):
     logger.debug('Aggregating co-citations')
+    if len(cocit_df) == 0:
+        return pd.DataFrame(data=[], columns=['cited_1', 'cited_2', 'year', 'total'], dtype=object)
     cocit_grouped_df = cocit_df.groupby(['cited_1', 'cited_2', 'year']).count().reset_index()
     cocit_grouped_df = cocit_grouped_df.pivot_table(index=['cited_1', 'cited_2'],
                                                     columns=['year'], values=['citing']).reset_index()

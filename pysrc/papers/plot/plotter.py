@@ -616,6 +616,8 @@ class Plotter:
         kwd_df = self.analyzer.kwd_df
         comp_sizes = Counter(self.analyzer.df['comp'])
         logger.debug('Computing dendrogram for clusters')
+        if self.analyzer.dendrogram_children is None:
+            return None
         clusters_dendrogram_children = compute_clusters_dendrogram_children(self.analyzer.clusters,
                                                                             self.analyzer.dendrogram_children)
         paths, leaves_order = convert_clusters_dendrogram_to_paths(self.analyzer.clusters,
@@ -831,6 +833,8 @@ class Plotter:
 
     def authors_graph(self, authors_per_group=20):
         authors_df = self.analyzer.authors_df
+        if authors_df is None:
+            return None
         authors_similarity_graph = self.analyzer.authors_similarity_graph
         logger.debug(f'Collecting top productive authors only ({authors_per_group}) per group')
         top_authors = set([])

@@ -54,7 +54,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         logger.debug(f'find query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df = pd.DataFrame(cursor.fetchall(), columns=['pmid'])
+            df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
 
         return list(df['pmid'].astype(str))
 
@@ -91,7 +91,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         logger.debug(f'search query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df = pd.DataFrame(cursor.fetchall(), columns=['pmid'])
+            df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
             # TODO [shpynov] query stays idle in transaction without this commit
             # Further investigation is required
             self.postgres_connection.commit()
@@ -163,7 +163,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         logger.debug(f'load_references query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df = pd.DataFrame(cursor.fetchall(), columns=['id'])
+            df = pd.DataFrame(cursor.fetchall(), columns=['id'], dtype=object)
         return list(df['id'].astype(str))
 
     def estimate_citations(self, ids):

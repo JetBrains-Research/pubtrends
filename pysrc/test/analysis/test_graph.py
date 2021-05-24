@@ -34,7 +34,7 @@ class TestBuildGraph(unittest.TestCase):
 
     def test_build_similarity_graph_edges(self):
         edges = list(self.analyzer.similarity_graph.edges(data=True))
-        print(edges)
+        # print(edges)
         self.assertEquals(len(SIMILARITY_GRAPH_EDGES), len(edges), msg='size')
         for expected, actual in zip(SIMILARITY_GRAPH_EDGES, edges):
             self.assertEquals(expected[0], actual[0], msg='source')
