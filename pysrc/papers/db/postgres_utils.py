@@ -91,7 +91,7 @@ def process_cocitations_postgres(cursor):
         for i in range(len(cited_list)):
             for j in range(i + 1, len(cited_list)):
                 data.append((str(citing), str(cited_list[i]), str(cited_list[j]), year))
-    df = pd.DataFrame(data, columns=['citing', 'cited_1', 'cited_2', 'year'])
+    df = pd.DataFrame(data, columns=['citing', 'cited_1', 'cited_2', 'year'], dtype=object)
     # Hack for missing year in SS, see https://github.com/JetBrains-Research/pubtrends/issues/258
     df['year'].fillna(1970, inplace=True)
     df['year'] = df['year'].astype(int)
