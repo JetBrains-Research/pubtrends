@@ -7,7 +7,7 @@ channels:
   - stellargraph
   - pytorch
 dependencies:
-  - bokeh=2.3.2
+  - bokeh=2.0.2
   - cachetools=4.1.1
   - celery=4.4.0
   - flask=1.1.2
