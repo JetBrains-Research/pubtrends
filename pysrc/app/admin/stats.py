@@ -261,7 +261,7 @@ def duration_seconds(seconds):
 
 
 def prepare_timeseries(dates, title):
-    df_terms_searches = pd.DataFrame({'date': dates, 'count': 1})
+    df_terms_searches = pd.DataFrame({'date': dates, 'count': 1}, dtype=object)
     df_terms_searches_grouped = df_terms_searches.groupby(pd.Grouper(key='date', freq='D')).sum()
     p = figure(plot_width=PLOT_WIDTH, plot_height=PLOT_HEIGHT, tools=TOOLS,
                x_axis_type='datetime', title=title)
