@@ -179,8 +179,8 @@ def result():
         else:
             logger.error(f'/result error wrong request {log_request(request)}')
             return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
-    except Exception as e:
-        logger.error(f'/result error', e)
+    except Exception:
+        logger.exception(f'/result exception')
         return render_template_string(ERROR_OCCURRED), 500
 
 
@@ -311,8 +311,8 @@ def paper():
         else:
             logger.error(f'/paper error wrong request {log_request(request)}')
             return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
-    except Exception as e:
-        logger.error(f'/paper error', e)
+    except Exception:
+        logger.exception(f'/paper exception')
         return render_template_string(ERROR_OCCURRED), 500
 
 
@@ -505,8 +505,8 @@ def search_terms():
                                     jobid=job.id))
         logger.error(f'/search_terms error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_TOPIC), 400
-    except Exception as e:
-        logger.error(f'/search_terms error', e)
+    except Exception:
+        logger.exception(f'/search_terms exception')
         return render_template_string(ERROR_OCCURRED), 500
 
 
@@ -524,8 +524,8 @@ def search_paper():
             return redirect(url_for('.process', source=source, key=key, value=value, jobid=job.id, limit=limit))
         logger.error(f'/search_paper error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
-    except Exception as e:
-        logger.error(f'/search_paper error', e)
+    except Exception:
+        logger.exception(f'/search_paper exception')
         return render_template_string(ERROR_OCCURRED), 500
 
 
@@ -546,8 +546,8 @@ def search_list():
                                     jobid=job.id))
         logger.error(f'/search_list error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
-    except Exception as e:
-        logger.error(f'/search_list error', e)
+    except Exception:
+        logger.exception(f'/search_list exception')
         return render_template_string(ERROR_OCCURRED), 500
 
 
@@ -570,8 +570,8 @@ def search_pubmed_paper_by_title():
             ])
         logger.error(f'/search_paper_by_title error missing title {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
-    except Exception as e:
-        logger.error(f'/search_paper_by_title error', e)
+    except Exception:
+        logger.exception(f'/search_paper_by_title exception')
         return render_template_string(ERROR_OCCURRED), 500
 
 
@@ -592,8 +592,8 @@ def process_ids():
             return redirect(url_for('.process', query=query, analysis_type=analysis_type, source=source, jobid=job.id))
         logger.error(f'/process_ids error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
-    except Exception as e:
-        logger.error(f'/process_ids error', e)
+    except Exception:
+        logger.exception(f'/process_ids exception')
         return render_template_string(ERROR_OCCURRED), 500
 
 
@@ -617,8 +617,8 @@ def export_results():
                 return send_file(path, as_attachment=True)
         logger.error(f'/export_results error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
-    except Exception as e:
-        logger.error(f'/export_results error', e)
+    except Exception:
+        logger.exception(f'/export_results exception')
         return render_template_string(ERROR_OCCURRED), 500
 
 
