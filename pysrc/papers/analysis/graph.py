@@ -106,7 +106,7 @@ def local_sparse(graph, e):
     return result
 
 
-def node2vec(graph, weight_func, walk_length=100):
+def node2vec(graph, weight_func, walk_length=100, walks_per_node=10, vector_size=32):
     logger.debug('Translating nx graph into stellar graph representation')
     g_weighted = nx.Graph()
     for u, v, data in graph.edges(data=True):
@@ -126,7 +126,7 @@ def node2vec(graph, weight_func, walk_length=100):
     weighted_walks = rw.run(
         nodes=sg.nodes(),  # root nodes
         length=walk_length,  # maximum length of a random walk
-        n=10,  # number of random walks per root node
+        n=walks_per_node,  # number of random walks per root node
         p=0.5,  # Defines (unormalised) probability, 1/p, of returning to source node
         q=2.0,  # Defines (unormalised) probability, 1/q, for moving away from source node
         weighted=True,  # for weighted random walks
@@ -135,7 +135,7 @@ def node2vec(graph, weight_func, walk_length=100):
     logger.debug(f'Number of random walks: {len(weighted_walks)}')
     logger.debug('Representation learning using word2vec')
     weighted_model = Word2Vec(
-        weighted_walks, size=128, window=5, min_count=0, sg=1, workers=1, iter=1
+        weighted_walks, size=vector_size, window=5, min_count=0, sg=1, workers=1, iter=1
     )
     # Retrieve node embeddings and corresponding subjects
     return weighted_model.wv.index2word, weighted_model.wv.vectors

@@ -217,7 +217,7 @@ class PapersAnalyzer:
             else:
                 logger.debug('Extracting topics from paper similarity graph with node2vec')
                 node_ids, node_embeddings = node2vec(self.similarity_graph,
-                                                     weight_func=PapersAnalyzer.similarity, walk_length=100)
+                                                     weight_func=PapersAnalyzer.similarity)
                 logger.debug('Apply t-SNE transformation on node embeddings')
                 tsne = TSNE(n_components=2, random_state=42)
                 weighted_node_embeddings_2d = tsne.fit_transform(node_embeddings)
@@ -281,7 +281,7 @@ class PapersAnalyzer:
                 authors_node_ids, authors_weighted_node_embeddings = node2vec(
                     self.authors_similarity_graph,
                     weight_func=lambda d: 100 * d.get('authorship', 0) + PapersAnalyzer.similarity(d),
-                    walk_length=50,
+                    walk_length=50
                 )
 
                 logger.debug('Apply t-SNE transformation on node embeddings')
