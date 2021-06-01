@@ -147,6 +147,9 @@ def cluster_embeddings(weighted_node_embeddings, min_cluster_size, max_clusters)
     r = min(max_clusters, weighted_node_embeddings.shape[0]) + 1
     l = 1
 
+    if l >= r - 2:
+        return [0] * weighted_node_embeddings.shape[0], None
+
     while l < r - 2:
         n_clusters = int((l + r) / 2)
         model = AgglomerativeClustering(n_clusters=n_clusters).fit(weighted_node_embeddings)
@@ -158,8 +161,6 @@ def cluster_embeddings(weighted_node_embeddings, min_cluster_size, max_clusters)
             l = n_clusters
         else:
             break
-    else:
-        return [0] * weighted_node_embeddings.shape[0], None
 
     logger.debug(f'Number of clusters = {n_clusters}')
     logger.debug('Reorder clusters by size descending')
