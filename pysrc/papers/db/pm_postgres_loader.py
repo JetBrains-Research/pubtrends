@@ -111,7 +111,9 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(),
-                              columns=['id', 'title', 'abstract', 'year', 'type', 'keywords', 'mesh', 'doi', 'aux'])
+                              columns=['id', 'title', 'abstract', 'year',
+                                       'type', 'keywords', 'mesh', 'doi', 'aux'],
+                              dtype=object)
         if np.any(df[['id', 'title']].isna()):
             raise ValueError('Paper must have ID and title')
         logger.debug(f'Loaded {len(df)} papers')
@@ -137,7 +139,8 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(),
-                              columns=['id', 'year', 'count'])
+                              columns=['id', 'year', 'count'],
+                              dtype=object)
 
         if np.any(df.isna()):
             raise ValueError('NaN values are not allowed in citation stats DataFrame')
@@ -179,7 +182,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         logger.debug(f'estimate_citations query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df = pd.DataFrame(cursor.fetchall(), columns=['total'])
+            df = pd.DataFrame(cursor.fetchall(), columns=['total'], dtype=object)
             df.fillna(value=1, inplace=True)  # matview_pmcitations ignores < 3 citations
 
         return df['total']
@@ -197,7 +200,8 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(),
-                              columns=['id_out', 'id_in'])
+                              columns=['id_out', 'id_in'],
+                              dtype=object)
 
         if np.any(df.isna()):
             raise ValueError('Citation must have id_out and id_in')
@@ -255,7 +259,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         logger.debug(f'expand query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df = pd.DataFrame(cursor.fetchall(), columns=['id', 'total'])
+            df = pd.DataFrame(cursor.fetchall(), columns=['id', 'total'], dtype=object)
         df['id'] = df['id'].astype(str)
         df.fillna(value=1, inplace=True)
         return df

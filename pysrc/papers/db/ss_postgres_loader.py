@@ -51,7 +51,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         logger.debug(f'find query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df = pd.DataFrame(cursor.fetchall(), columns=['id'], dtype='object')
+            df = pd.DataFrame(cursor.fetchall(), columns=['id'], dtype=object)
 
         return list(df['id'].astype(str))
 
@@ -89,7 +89,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         logger.debug(f'search query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            pub_df = pd.DataFrame(cursor.fetchall(), columns=['id'])
+            pub_df = pd.DataFrame(cursor.fetchall(), columns=['id'], dtype=object)
 
         # Duplicate rows may occur if crawler was stopped while parsing Semantic Scholar archive
         pub_df.drop_duplicates(subset='id', inplace=True)
@@ -109,7 +109,8 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             pub_df = pd.DataFrame(cursor.fetchall(),
-                                  columns=['id', 'crc32id', 'pmid', 'title', 'abstract', 'year', 'doi', 'aux'],
+                                  columns=['id', 'crc32id', 'pmid', 'title', 'abstract',
+                                           'year', 'doi', 'aux'],
                                   dtype=object)
 
         if np.any(pub_df[['id', 'crc32id', 'title']].isna()):
@@ -140,7 +141,8 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             cit_stats_df_from_query = pd.DataFrame(cursor.fetchall(),
-                                                   columns=['id', 'year', 'count'])
+                                                   columns=['id', 'year', 'count'],
+                                                   dtype=object)
 
         # Hack for missing year in SS
         cit_stats_df_from_query.dropna(subset=['year'], inplace=True)
@@ -167,7 +169,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         logger.debug(f'load_references query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df = pd.DataFrame(cursor.fetchall(), columns=['id'])
+            df = pd.DataFrame(cursor.fetchall(), columns=['id'], dtype=object)
         return list(df['id'].astype(str))
 
     def estimate_citations(self, ids):
@@ -183,7 +185,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         logger.debug(f'estimate_citations query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df = pd.DataFrame(cursor.fetchall(), columns=['total'])
+            df = pd.DataFrame(cursor.fetchall(), columns=['total'], dtype=object)
             df.fillna(value=1, inplace=True)  # matview_sscitations ignores < 3 citations
 
         return df['total']
@@ -202,7 +204,8 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             citations = pd.DataFrame(cursor.fetchall(),
-                                     columns=['id_out', 'id_in'])
+                                     columns=['id_out', 'id_in'],
+                                     dtype=object)
 
         # TODO[shpynov] we can make it on DB side
         citations = citations[citations['id_out'].isin(ids)]
@@ -260,7 +263,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         logger.debug(f'expand query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df = pd.DataFrame(cursor.fetchall(), columns=['id', 'total'])
+            df = pd.DataFrame(cursor.fetchall(), columns=['id', 'total'], dtype=object)
         df['id'] = df['id'].astype(str)
         df.fillna(value=1, inplace=True)
         return df
