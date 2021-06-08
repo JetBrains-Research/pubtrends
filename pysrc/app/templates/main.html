@@ -45,18 +45,20 @@
 
         $(document).ready(function () {
             $('#source-selector').change(function() {
+                const noreviews_checkbox = $("#noreviews");
+                const expand_field = $("#expand");
                 if ($(this).val() === "Semantic Scholar") {
-                    $("#noreviews").prop("checked", false);
-                    $("#noreviews").prop("disabled", true);
-                    $("#expand").val(0);
-                    $("#expand-hidden").val(0);
-                    $("#expand").prop("disabled", true);
+                    noreviews_checkbox.prop("checked", false);
+                    noreviews_checkbox.prop("readonly", true);
+                    noreviews_checkbox.attr("disabled", "disabled");
+                    expand_field.val(0);
+                    expand_field.prop("readonly", true);
                 } else {
-                    $("#noreviews").prop("checked", true);
-                    $("#noreviews").prop("disabled", false);
-                    $("#expand").val(20);
-                    $("#expand-hidden").val(20);
-                    $("#expand").prop("disabled", false);
+                    noreviews_checkbox.prop("checked", true);
+                    noreviews_checkbox.prop("readonly", false);
+                    noreviews_checkbox.attr("disabled", "");
+                    expand_field.val(20);
+                    expand_field.prop("readonly", false);
                 }
             });
         });
