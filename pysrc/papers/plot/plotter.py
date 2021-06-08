@@ -104,8 +104,6 @@ def visualize_analysis(analyzer):
 
     if PUBTRENDS_CONFIG.feature_authors_enabled:
         result['author_statistics'] = plotter.author_statistics()
-        if len(analyzer.authors_similarity_graph.nodes()) > 0:
-            result['authors_graph'] = [components(plotter.authors_graph())]
 
     if PUBTRENDS_CONFIG.feature_journals_enabled:
         result['journal_statistics'] = plotter.journal_statistics()

@@ -264,46 +264,6 @@ class PapersAnalyzer:
             self.progress.info("Analyzing authors and groups", current=9, task=task)
             self.author_stats = popular_authors(self.df, n=self.POPULAR_AUTHORS)
 
-            logger.debug("Analyzing groups of similar authors")
-            authors_citations, authors_papers = compute_authors_citations_and_papers(self.df)
-            authors_productivity = {a: np.log1p(authors_citations.get(a, 1)) * p for a, p in authors_papers.items()}
-            mean_threshold = np.percentile(list(authors_productivity.values()), 90)
-            self.authors_similarity_graph = build_authors_similarity_graph(self.df, self.cocit_grouped_df,
-                                                                           self.bibliographic_coupling_df,
-                                                                           self.citations_graph,
-                                                                           self.texts_similarity,
-                                                                           check_author_func=lambda a:
-                                                                           authors_productivity[a] >= mean_threshold)
-            logger.debug(f'Built authors similarity graph - {len(self.authors_similarity_graph.nodes())} nodes '
-                         f'and {len(self.authors_similarity_graph.edges())} edges')
-            if len(self.authors_similarity_graph.nodes) > 0:
-                logger.debug('Compute embeddings for aggregated similarity using co-authorship')
-                authors_node_ids, authors_weighted_node_embeddings = node2vec(
-                    self.authors_similarity_graph,
-                    weight_func=lambda d: 100 * d.get('authorship', 0) + PapersAnalyzer.similarity(d),
-                    walk_length=50
-                )
-
-                logger.debug('Apply t-SNE transformation on node embeddings')
-                authors_weighted_node_embeddings_2d = TSNE(n_components=2, random_state=42).fit_transform(
-                    authors_weighted_node_embeddings
-                )
-                logger.debug('Clustering authors')
-                authors_clusters, _ = cluster_embeddings(
-                    authors_weighted_node_embeddings, self.TOPIC_MIN_SIZE / 3, self.TOPICS_MAX_NUMBER * 3
-                )
-                # Build dataframe combining information about authors and projected coordinates
-                self.authors_df = pd.DataFrame(dict(author=authors_node_ids,
-                                                    x=authors_weighted_node_embeddings_2d[:, 0],
-                                                    y=authors_weighted_node_embeddings_2d[:, 1],
-                                                    cluster=authors_clusters))
-                self.authors_df['cited'] = [authors_citations[a] for a in self.authors_df['author']]
-                self.authors_df['papers'] = [authors_papers[a] for a in self.authors_df['author']]
-                self.authors_df['productivity'] = [authors_productivity[a] for a in self.authors_df['author']]
-            else:
-                logger.debug('Cannot analyze empty authors graph')
-                self.authors_df = None
-
         if self.config.feature_journals_enabled:
             self.progress.info("Analyzing popular journals", current=10, task=task)
             self.journal_stats = popular_journals(self.df, n=self.POPULAR_JOURNALS)

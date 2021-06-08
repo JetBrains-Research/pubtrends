@@ -602,20 +602,6 @@
                     <h1 class="card-header">Authors</h1>
                 </div>
                 <div class="card-body">
-                    {% if authors_graph is defined %}
-                    <strong>Authors similarity</strong>
-                    <p>
-                        The graph below shows authors similarity network, most similar authors are connected.<br>
-                        Authors clustering is computed based on co-authorship and similarity between papers.<br>
-                        Color represents cluster, size - author papers and citations number.<br>
-                        <i>NOTE</i>: only authors with the top number of papers are shown.
-                    </p>
-                    {% for script, div in authors_graph %}
-                    {{ script|safe }}
-                    {{ div|safe }}
-                    {% endfor %}
-                    <hr>
-                    {% endif %}
                     <strong>Authors papers and topics</strong>
                     <p>
                         List of authors with the largest number of papers for given search query.<br>
