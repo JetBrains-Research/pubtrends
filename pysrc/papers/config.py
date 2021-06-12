@@ -24,11 +24,6 @@ class PubtrendsConfig:
             raise RuntimeError(f'Configuration file not found among: {self.CONFIG_PATHS}')
         params = config_parser['params']
 
-        self.neo4j_host = params['neo4j_host' if not test else 'test_neo4j_host']
-        self.neo4j_port = params['neo4j_port' if not test else 'test_neo4j_port']
-        self.neo4j_username = params['neo4j_username' if not test else 'test_neo4j_username']
-        self.neo4j_password = params['neo4j_password' if not test else 'test_neo4j_password']
-
         self.postgres_host = params['postgres_host' if not test else 'test_postgres_host']
         self.postgres_port = params['postgres_port' if not test else 'test_postgres_port']
         self.postgres_username = params['postgres_username' if not test else 'test_postgres_username']
@@ -47,9 +42,10 @@ class PubtrendsConfig:
         self.max_number_of_bibliographic_coupling = params.getint('max_number_of_bibliographic_coupling')
         self.max_number_to_expand = params.getint('max_number_to_expand')
 
-        self.show_max_articles_options = [opt.strip() for opt in params['show_max_articles_options'].split(',')]
-        self.show_max_articles_default_value = params['show_max_articles_default_value'].strip()
+        self.show_max_articles_options = [int(opt.strip()) for opt in params['show_max_articles_options'].split(',')]
+        self.show_max_articles_default_value = int(params['show_max_articles_default_value'].strip())
         self.max_number_of_articles = max(self.show_max_articles_options)
+        self.max_graph_size = params.getint('max_graph_size')
 
         # Max allowed pending tasks
         self.celery_max_pending_tasks = params.getint('celery_max_pending_tasks')

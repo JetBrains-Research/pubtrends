@@ -1,6 +1,5 @@
 import logging
 import re
-from collections import Counter
 
 import math
 import pandas as pd

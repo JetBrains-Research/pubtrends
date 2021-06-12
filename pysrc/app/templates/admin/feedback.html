@@ -11,15 +11,17 @@
     <thead>
     <tr>
         <th scope="col">#</th>
+        <th scope="col">Date</th>
         <th scope="col">Type</th>
         <th scope="col">Message</th>
         <th scope="col">Email</th>
     </tr>
     </thead>
     <tbody>
-    {% for t, m, e in messages %}
+    {% for d, t, m, e in messages %}
     <tr>
         <th scope="row">{{ loop.index }}</th>
+        <td>{{ d }}</td>
         <td>{{ t }}</td>
         <td>{{ m }}</td>
         <td>{{ e }}</td>
@@ -34,15 +36,17 @@
     <thead>
     <tr>
         <th scope="col">#</th>
+        <th scope="col">Date</th>
         <th scope="col">Key</th>
         <th scope="col">Value</th>
         <th scope="col">Query</th>
     </tr>
     </thead>
     <tbody>
-    {% for k, v, q in emotions %}
+    {% for d, k, v, q in emotions %}
     <tr>
         <th scope="row">{{ loop.index }}</th>
+        <td>{{ d }}</td>
         <td>{{ k }}</td>
         <td>{{ v }}</td>
         <td>{{ q }}</td>

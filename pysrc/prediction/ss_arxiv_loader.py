@@ -1,12 +1,14 @@
 import logging
 
-from pysrc.papers.db.ss_neo4j_loader import SemanticScholarNeo4jLoader
+import pandas as pd
+
+from pysrc.papers.db.ss_postgres_loader import SemanticScholarPostgresLoader
 from pysrc.papers.utils import SORT_MOST_CITED, SORT_MOST_RECENT
 
 logger = logging.getLogger(__name__)
 
 
-class SSArxivLoader(SemanticScholarNeo4jLoader):
+class SSArxivLoader(SemanticScholarPostgresLoader):
     def __init__(self, config):
         super(SSArxivLoader, self).__init__(config)
 
@@ -14,35 +16,34 @@ class SSArxivLoader(SemanticScholarNeo4jLoader):
         raise Exception('Use search_arxiv')
 
     def search_arxiv(self, limit, sort='random'):
-        self.check_connection()
+        # TODO: implement arxiv filtration here!!!
         if sort == SORT_MOST_CITED:
             query = f'''
-                MATCH ()-[r:SSReferenced]->(node:SSPublication)
-                WHERE toLower(node.aux) CONTAINS "arxiv"
-                WITH node, COUNT(r) AS cnt
-                RETURN node.ssid as ssid
-                ORDER BY cnt DESC
+                SELECT P.ssid
+                FROM SSPublications P 
+                LEFT JOIN matview_sscitations C
+                ON C.ssid = P.ssid AND C.crc32id = P.crc32id
+                WHERE P.pmid IS NOT NULL
+                GROUP BY P.ssid, P.crc32id
+                ORDER BY COUNT(*) DESC NULLS LAST
                 LIMIT {limit};
                 '''
         elif sort == SORT_MOST_RECENT:
             query = f'''
-                MATCH (node:SSPublication)
-                WHERE toLower(node.aux) CONTAINS "arxiv"
-                RETURN node.ssid as ssid
-                ORDER BY node.date DESC
+                SELECT ssid
+                SSPublications P
+                WHERE P.pmid IS NOT NULL
+                ORDER BY year DESC NULLS LAST
                 LIMIT {limit};
                 '''
         else:
-            query = f'''
-                MATCH (node:SSPublication)
-                WHERE toLower(node.aux) CONTAINS "arxiv"
-                RETURN node.ssid as ssid
-                LIMIT {limit};
-            '''
+            raise ValueError(f'Illegal sort method: {sort}')
 
-        logger.debug(f'Search query\n{query}')
+        with self.postgres_connection.cursor() as cursor:
+            cursor.execute(query)
+            pub_df = pd.DataFrame(cursor.fetchall(), columns=['id'])
 
-        with self.neo4jdriver.session() as session:
-            ids = [str(r['ssid']) for r in session.run(query)]
+        # Duplicate rows may occur if crawler was stopped while parsing Semantic Scholar archive
+        pub_df.drop_duplicates(subset='id', inplace=True)
 
-        return ids
+        return list(pub_df['id'].values)

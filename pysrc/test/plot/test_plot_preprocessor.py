@@ -37,28 +37,16 @@ class TestPlotPreprocessor(unittest.TestCase):
         for c in expected_components_data.keys():
             self.assertEqual(data[c], expected_components_data[c], f'Wrong component size list for component {c}')
 
-    def test_component_ratio(self):
-        comps, ratios = PlotPreprocessor.component_ratio_data(self.analyzer.df)
-        colors = [self.plotter.comp_palette[int(c) - 1] for c in comps]
-        source = ColumnDataSource(data=dict(comps=comps, ratios=ratios, colors=colors))
-
-        expected_comps = ['1', '2', '3']
-        expected_ratios = [54.545454, 36.363636, 9.090909]
-
-        self.assertEqual(comps, expected_comps, 'Wrong list of components')
-        for ratio, expected in zip(source.data['ratios'], expected_ratios):
-            self.assertAlmostEqual(ratio, expected, places=3, msg='Wrong component ratio')
-
     def test_paper_statistics_data(self):
         ds = ColumnDataSource(PlotPreprocessor.papers_statistics_data(self.analyzer.df))
 
-        expected_years = [2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019]
-        expected_counts = [1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 6, 2, 2]
+        expected_years = list(range(1970, 2020))
+        expected_counts = [1] + [0] * 34 + [1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 6, 2, 2]
 
         self.assertEqual(list(ds.data['year']), expected_years, 'Wrong list of years')
         self.assertEqual(list(ds.data['counts']), expected_counts, 'Wrong list of paper counts')
 
-    def test_article_view_data_sourceSplit(self):
+    def test_article_view_data_source_split(self):
         width = 760
         lbefore = len(set(zip(self.analyzer.df['year'], self.analyzer.df['total'])))
         ds = ColumnDataSource(PlotPreprocessor.article_view_data_source(
@@ -91,43 +79,16 @@ class TestPlotPreprocessor(unittest.TestCase):
         max_width = max_size * (self.analyzer.max_year - self.analyzer.min_year + 1)
         self.assertLessEqual(max_width, width, 'Horizontal overlap')
 
-    def test_heatmap_topics_similarity(self):
-        similarity_df, topics = PlotPreprocessor.topics_similarity_data(
-            self.analyzer.similarity_graph, self.analyzer.df, self.analyzer.comp_sizes
-        )
-
-        # Find data for comp_x=i and comp_y=j in DataFrame
-        def index(i, j):
-            return np.logical_and(similarity_df['comp_x'] == str(i), similarity_df['comp_y'] == str(j))
-
-        self.assertListEqual(topics, ['1', '2', '3'], 'Wrong topics')
-
-        expected_similarities = np.array([[1.53027646, 0.69314718, 0.],
-                                          [0.69314718, 1.31036669, 0.],
-                                          [0., 0., 0.]])
-
-        similarities = np.zeros(shape=(3, 3))
-        for i in range(3):
-            for j in range(3):
-                similarities[i, j] = similarity_df[index(i + 1, j + 1)]['similarity'].values[0]
-
-        for i in range(3):
-            for j in range(3):
-                self.assertAlmostEqual(expected_similarities[i, j], similarities[i, j], places=3,
-                                       msg=f'Wrong similarities for comp_x {i} and comp_y {j}')
-
     def test_topic_evolution_data(self):
         edges, nodes_data = PlotPreprocessor.topic_evolution_data(
             self.analyzer.evolution_df, self.analyzer.evolution_kwds, self.analyzer.n_steps
         )
 
-        expected_edges = [('2014 1', '2019 1', 3), ('2014 2', '2019 2', 2), ('2014 NPY', '2019 1', 1),
-                          ('2014 NPY', '2019 2', 4)]
-        expected_nodes_data = [('2019 1', '2019 shiftwork, estrogen, pattern, disturbance, cell'),
-                               ('2019 2', '2019 study, analysis, association, time, cpg'),
-                               ('2014 NPY', 'NPY'),
-                               ('2014 1', '2014 body, susceptibility, ieaa, risk, time'),
-                               ('2014 2', '2014 reaction, disturbance, pattern, study, rhythm')]
+        expected_edges = [('2021 1', '2045 1', 3), ('2021 1', '2045 2', 2), ('2021 NPY', '2045 1', 1),
+                          ('2021 NPY', '2045 2', 4)]
+        expected_nodes_data = [('2045 1', '2045 1 shiftwork,estrogen,pattern'),
+                               ('2045 2', '2045 2 study,analysis,association'), ('2021 NPY', 'NPY'),
+                               ('2021 1', '2021 1 rassf1a,tsg,datasets')]
         self.assertListEqual(nodes_data, expected_nodes_data, 'Wrong nodes data')
         self.assertCountEqual(edges, expected_edges, 'Wrong Sankey diagram edges')
         self.assertListEqual([el[0] for el in nodes_data], [el[0] for el in expected_nodes_data],
@@ -138,14 +99,13 @@ class TestPlotPreprocessor(unittest.TestCase):
             self.analyzer.evolution_kwds
         )
 
-        expected_keywords_data = [
-            (2014, 1, 'body, susceptibility, ieaa, risk, time, acceleration, gene, association, tumor, ageaccel, '
-                      'development, tissue, blood, study, age'),
-            (2014, 2, 'reaction, disturbance, pattern, study, rhythm, result, change, analysis, shiftwork, disruption, '
-                      'per2, per1, promoter, expression, gene'),
-            (2019, 1, 'shiftwork, estrogen, pattern, disturbance, cell, per2, disruption, night, analysis, study, '
-                      'rhythm, per1, promoter, expression, gene'),
-            (2019, 2, 'study, analysis, association, time, cpg, sample, development, ageaccel, type, blood, cell, '
-                      'acceleration, risk, tissue, age')]
-
+        expected_keywords_data = [(2021,
+                                   1,
+                                   'rassf1a, tsg, datasets, biopsy, apc, benign, mutation, measure, history'),
+                                  (2045, 1, 'shiftwork, estrogen, pattern, disturbance, cell, per2, disruption'),
+                                  (2045, 2, 'study, analysis, association')]
         self.assertEqual(expected_keywords_data, kwds_data)
+
+
+if __name__ == '__main__':
+    unittest.main()

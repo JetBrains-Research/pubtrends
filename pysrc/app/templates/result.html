@@ -51,15 +51,14 @@
     <!--    <script src="../static/wordcloud.js"/>-->
     <script src="{{ url_for('static', filename='text_utils.js') }}"></script>
     <!--    <script src="../static/text_utils.js"/>-->
-    <script src="{{ url_for('static', filename='papers.js') }}"></script>
-    <!--    <script src="../static/papers.js"/>-->
+
     <!-- Notify.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"
             integrity="sha512-efUTj3HdSPwWJ9gjfGR71X9cvsrthIA78/Fvd/IN+fttQVy7XWkOAXb295j8B3cmm/kFKVxjiNYzKw9IQJHIuQ=="
             crossorigin="anonymous"></script>
+    <!-- Feedback -->
     <script src="{{ url_for('static', filename='feedback.js') }}"></script>
     <!--    <script src="../static/feedback.js"/>-->
-
     <link rel="stylesheet" href="{{ url_for('static', filename='feedback.css') }}?v=1">
     <!--    <link rel="stylesheet" href="../static/feedback.css"/>-->
 
@@ -141,7 +140,6 @@
             // @formatter:off
 
             // Setup datatables
-            window.papers_table = $('#papers-table').DataTable();
             $('#authors-table').DataTable();
             $('#journals-table').DataTable();
             {% if topic_evolution is defined %}
@@ -193,13 +191,10 @@
             $('#feedback-jobid').val(jobid);
 
             // Create clickable feedback forms
-            createClickableFeedBackForm("feedback-overview-form", "feedback-overview");
-            createClickableFeedBackForm("feedback-papers-list-form", "feedback-papers-list");
-            createClickableFeedBackForm("feedback-highlights-form", "feedback-highlights");
+            createClickableFeedBackForm("feedback-papers-form", "feedback-papers");
+            createClickableFeedBackForm("feedback-trends-form", "feedback-trends");
             createClickableFeedBackForm("feedback-network-form", "feedback-network");
             createClickableFeedBackForm("feedback-topics-form", "feedback-topics");
-            createClickableFeedBackForm("feedback-trends-form", "feedback-trends");
-            createClickableFeedBackForm("feedback-papers-form", "feedback-papers");
             createClickableFeedBackForm("feedback-authors-form", "feedback-authors");
             createClickableFeedBackForm("feedback-journals-form", "feedback-journals");
             createClickableFeedBackForm("feedback-numbers-form", "feedback-numbers");
@@ -241,29 +236,21 @@
             <div class="sidebar-sticky" id="sidebar">
                 <ul class="nav flex-column">
                     <li class="nav-item row">
-                        <a class="nav-link no-padding-right" href="#overview" title="Overview">
+                        <a class="nav-link no-padding-right" href="#papers" title="Papers">
                             <img class="nav-icon" src="{{ url_for('static', filename='home.svg') }}"/>
                         </a>
-                        <a class="nav-link d-none d-xl-block no-padding" href="#overview">
-                            Overview
+                        <a class="nav-link d-none d-xl-block no-padding" href="#papers">
+                            Papers
                         </a>
                     </li>
 
                     {% if topics_analyzed %}
                     <li class="nav-item row">
-                        <a class="nav-link no-padding-right" href="#highlights" title="Highlights">
+                        <a class="nav-link no-padding-right" href="#trends" title="Trends">
                             <img class="nav-icon" src="{{ url_for('static', filename='bar-chart-2.svg') }}"/>
                         </a>
-                        <a class="nav-link d-none d-xl-block no-padding" href="#highlights">
-                            Highlights
-                        </a>
-                    </li>
-                    <li class="nav-item row">
-                        <a class="nav-link no-padding-right" href="#network" title="Network">
-                            <img class="nav-icon" src="{{ url_for('static', filename='globe.svg') }}"/>
-                        </a>
-                        <a class="nav-link d-none d-xl-block no-padding" href="#network">
-                            Network
+                        <a class="nav-link d-none d-xl-block no-padding" href="#trends">
+                            Trends
                         </a>
                     </li>
                     <li class="nav-item row">
@@ -275,19 +262,11 @@
                         </a>
                     </li>
                     <li class="nav-item row">
-                        <a class="nav-link no-padding-right" href="#trends" title="Trends">
-                            <img class="nav-icon" src="{{ url_for('static', filename='trending-up.svg') }}"/>
+                        <a class="nav-link no-padding-right" href="#network" title="Network">
+                            <img class="nav-icon" src="{{ url_for('static', filename='globe.svg') }}"/>
                         </a>
-                        <a class="nav-link d-none d-xl-block no-padding" href="#trends">
-                            Trends
-                        </a>
-                    </li>
-                    <li class="nav-item row">
-                        <a class="nav-link no-padding-right" href="#publications" title="Publications">
-                            <img class="nav-icon" src="{{ url_for('static', filename='columns.svg') }}"/>
-                        </a>
-                        <a class="nav-link d-none d-xl-block no-padding" href="#publications">
-                            Publications
+                        <a class="nav-link d-none d-xl-block no-padding" href="#network">
+                            Network
                         </a>
                     </li>
                     {% endif %}
@@ -361,49 +340,34 @@
         <!-- Main content -->
         <main class="col-lg-11 col-xl-8" role="main">
             <div class="card mt-3" autofocus>
-                <div class="card-title" id="overview">
-                    <h2 class="card-header">Overview</h2>
+                <div class="card-title" id="papers">
+                    <h2 class="card-header">Papers</h2>
                 </div>
                 <div class="card-body">
-                    Total: <b>{{ n_papers }}</b> papers, <b>{{ n_topics }}</b> topics.
+                    <p>
+                        Analyzed <strong>{{ n_papers }}</strong> papers and <strong>{{ n_topics }}</strong> topics.
+                    </p>
+                    <button id="papers-list" type="button" class="btn btn-light"
+                            onclick="papers_callback();">
+                        <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show all papers
+                    </button>
                     <div class="row mt-2">
                         <div class="col-3 no-padding-right" style="min-width: 185px;">
-                            <small><strong>Word cloud</strong></small>
+                            <small><strong>Frequent words</strong></small>
                             <br>
                             <canvas id="papers_word_cloud" style="border:1px solid #eee; width: 100%; height: 100%;">
                                 Canvas is not supported in your browser.
                             </canvas>
                         </div>
                         <div class="col-9 no-padding-left">
+                            <small><strong>&nbsp;&nbsp;&nbsp;Papers per year</strong></small>
+                            <br>
                             {% for script, div in papers_stats %}
                             {{ script|safe }}
                             {{ div|safe }}
                             {% endfor %}
                         </div>
                     </div>
-                    <table id="papers-table" class="table table-sm table-bordered table-striped">
-                        <thead>
-                        <tr>
-                            <th scope="col">#</th>
-                            <th scope="col">Title</th>
-                            <th scope="col">Doi</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {% for id, title, authors, url, journal, year, total, doi, topic in papers %}
-                        <tr>
-                            <th scope="row">{{ loop.index }}</th>
-                            <td>{{ title }}</td>
-                            <td>
-                                {% if doi != "" %}
-                                <a class="link" href="https://doi.org/{{doi}}">{{ doi }}</a>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-
                     <div id="search-in-papers" class="row">
                         <div class="col col-auto">
                             <input id="search-input" type="text" class="form-control"
@@ -416,30 +380,53 @@
                             </button>
                         </div>
                     </div>
-                    <div class="row mt-3">
-                        <div class="col-auto">
-                            <button id="detailed_info" type="button" class="btn btn-light"
-                                    onclick="papers_callback();">
-                                Detailed info
-                            </button>
-                        </div>
-                        <div class="col-auto no-padding-left">
-                            <button id="export_to_csv" type="button" class="btn btn-light"
-                                    onclick="export_to_csv('papers-table', window.papers_table, '{{ export_name }}');">
-                                Export to CSV
-                            </button>
-                        </div>
+                    {% if topics_analyzed %}
+                    <hr>
+                    <p>
+                        Topic is a group of similar papers which share common ideas, describe common features, etc. <br>
+                        Topics are extracted based on similarity between papers based on <em>bibliographic coupling</em>,
+                        <em>co-citations</em>,<br>
+                        <em>direct citations</em>, and <em>potential</em> citations based on text similarity.<br>
+                        Information about topics - keywords, sizes, publication years are shown below.<br>
+                    </p>
+                    {% for script, div in component_size_summary %}
+                    {{ script|safe }}
+                    {{ div|safe }}
+                    {% endfor %}
+                    <small><a class="link" data-toggle="collapse" href="#collapseTopics"
+                       role="button" aria-expanded="false">More about topics</a></small>
+                    <div id="collapseTopics" class="collapse mt-2">
+                        {% if topics_hierarchy is defined %}
+                        <hr>
+                        <p>
+                            Topics are computed based on hierarchical clustering.
+                        </p>
+                        {% for script, div in topics_hierarchy %}
+                        {{ script|safe }}
+                        {{ div|safe }}
+                        {% endfor %}
+                        {% endif %}
+                        <hr>
+                        <p>
+                            Similarity between topics is computed as average similarity between the papers.
+                        </p>
+                        {% for script, div in components_similarity %}
+                        {{ script|safe }}
+                        {{ div|safe }}
+                        {% endfor %}
                     </div>
-                    <div class="mt-3" id="feedback-papers-list-form"></div>
+                    {% endif %}
+
+                    <div class="mt-3" id="feedback-papers-form"></div>
                 </div>
             </div>
 
             <div class="card mt-3">
-                <div class="card-title" id="highlights">
-                    <h1 class="card-header">Highlights</h1>
+                <div class="card-title" id="trends">
+                    <h1 class="card-header">Trends</h1>
                 </div>
                 <div class="card-body">
-                    <h2 class="card-subtitle">Top Cited Papers</h2>
+                    <strong>Top Cited Papers</strong>
                     <p>
                         Top 50 cited papers are shown among all the papers for given search query.<br>
                         Year reflects publication year of the original paper.
@@ -456,7 +443,7 @@
                     </div>
                     <hr>
 
-                    <h2 class="card-subtitle">Top Cited Papers of the Year</h2>
+                    <strong>Top Cited Papers of the Year</strong>
                     <p>
                         For each year we show the paper which has the most significant number of citations in a
                         given year.<br>
@@ -474,7 +461,7 @@
                     </div>
                     <hr>
 
-                    <h2 class="card-subtitle">Hot Papers</h2>
+                    <strong>Hot Papers</strong>
                     <p>
                         For each year we show a recent paper which has the biggest growth in citations.<br>
                         Growth is computed as a fraction of citations count in particular year to the count in
@@ -491,36 +478,21 @@
                         {{ div|safe }}
                         {% endfor %}
                     </div>
-                    <div class="mt-3" id="feedback-highlights-form"></div>
-                </div>
-            </div>
 
-            {% if topics_analyzed %}
-            <div class="card mt-3">
-                <div class="card-title" id="network">
-                    <h1 class="card-header">Network</h1>
-                </div>
-                <div class="card-body">
-                    <p>
-                        Explore citations between the papers of interest on the citations graph.
-                    </p>
-                    <button id="show_citations_graph" type="button" class="btn btn-light"
-                            onclick="graph_callback('citations');">
-                        Show citations graph
-                    </button>
                     <hr>
+                    <strong>Keyword frequencies</strong>
                     <p>
-                        Similarity between papers is computed based on <em>bibliographic coupling</em>,
-                        <em>co-citations</em>,<br>
-                        <em>direct citations</em>, and <em>potential</em> citations based on text similarity.
-                        <br>
-                        Explore papers network, where similar papers are located together and connected.
+                        For each year we show a number of papers containing most frequent keywords.<br>
+                        <i>NOTE</i>: the plot is slightly smoothed.
                     </p>
-                    <button id="show_similarity_graph" type="button" class="col-auto btn btn-light"
-                            onclick="graph_callback('structure');">
-                        Show similarity graph
-                    </button>
-                    <div class="mt-3" id="feedback-network-form"></div>
+                    <div>
+                        {% for script, div in keywords_frequencies %}
+                        {{ script|safe }}
+                        {{ div|safe }}
+                        {% endfor %}
+                    </div>
+
+                    <div class="mt-3" id="feedback-trends-form"></div>
                 </div>
             </div>
 
@@ -530,77 +502,8 @@
                 </div>
                 <div class="card-body">
                     <p>
-                        Topic is a group of papers which share common ideas, describe common features, etc.
-                        <br>
-                        Topics are extracted based on similarity between papers.
-                        <br>
-                    </p>
-                    <p>
-                        Similarity between topics is an average similarity between the papers.
-                    </p>
-                    {% for script, div in components_similarity %}
-                    {{ script|safe }}
-                    {{ div|safe }}
-                    {% endfor %}
-                    <hr>
-                    <p>
-                        Topic sizes. <em>Note: small topics are merged to "Other".</em>
-                    </p>
-                    <div>
-                        {% for script, div in component_ratio %}
-                        {{ script|safe }}
-                        {{ div|safe }}
-                        {% endfor %}
-                    </div>
-                    <hr>
-                    <p>
-                        Topics are organized hierarchically.
-                    </p>
-                    {% for script, div in topics_hierarchy %}
-                    {{ script|safe }}
-                    {{ div|safe }}
-                    {% endfor %}
-                    <div class="mt-3" id="feedback-topics-form"></div>
-                </div>
-            </div>
-
-            <div class="card mt-3">
-                <div class="card-title" id="trends">
-                    <h1 class="card-header">Trends</h1>
-                </div>
-                <div class="card-body">
-                    <h2 class="card-subtitle">Topics summary</h2>
-                    <p>
-                        Explore the evolution of trends - dynamics is shown for the timeline.<br>
-                        Colors are the same as in the previous diagram.
-                    </p>
-                    <div>
-                        {% for script, div in component_size_summary %}
-                        {{ script|safe }}
-                        {{ div|safe }}
-                        {% endfor %}
-                    </div>
-                    <hr>
-                    <p>Summary publication year for topics.</p>
-                    <div>
-                        {% for script, div in component_years_summary %}
-                        {{ script|safe }}
-                        {{ div|safe }}
-                        {% endfor %}
-                    </div>
-                    <div class="mt-3" id="feedback-trends-form"></div>
-                </div>
-            </div>
-
-            <div class="card mt-3">
-                <div class="card-title" id="publications">
-                    <h1 class="card-header">Publications</h1>
-                </div>
-                <div class="card-body">
-                    <p>
-                        Learn more about topics - most cited papers over time are shown for each topic.<br>
-                        Papers are sorted descending by citations number overall from bottom to top.<br>
-                        Year reflects publication year of the original paper.
+                        Papers for topics are sorted descending by citations number overall from bottom to top.<br>
+                        Word clouds show keywords specific for topics.
                     </p>
                     <div>
                         {% for (script, div), word_cloud, is_empty, zoom_in_callback in
@@ -609,9 +512,6 @@
                             <hr>
                             <h2 id="topic-{{ loop.index }}" class="card-subtitle">
                                 Topic {{ loop.index }}
-                                {% if loop.index0 == comp_other %}
-                                - OTHER
-                                {% endif %}
                                 <button type="button" class="btn btn-light"
                                         onclick="papers_callback_component({{ loop.index }});">
                                     <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as
@@ -626,7 +526,7 @@
                             Number of papers: {{ component_sizes[loop.index - 1] }}
                             <div class="row">
                                 <div class="col-3 no-padding-right" style="min-width: 185px;">
-                                    <strong>Word cloud</strong>
+                                    <small><strong>Topic words</strong></small>
                                     <br>
                                     <canvas id="topic_word_cloud_{{ loop.index }}"
                                             style="border:1px solid #eee; width: 100%; height: 100%;">
@@ -634,6 +534,7 @@
                                     </canvas>
                                 </div>
                                 <div class="col-9 no-padding-left" id="topic_chart_{{ loop.index }}">
+                                    <small><strong>&nbsp;&nbsp;&nbsp;Publications</strong></small>
                                     {{ script|safe }}
                                     {{ div|safe }}
                                 </div>
@@ -652,22 +553,60 @@
                         <img src="{{ url_for('static', filename='zoom-out.svg') }}" alt="-"/>&nbsp;Zoom out to
                         related papers
                     </button>
-                    <div class="mt-3" id="feedback-papers-form"></div>
+                    <div class="mt-3" id="feedback-topics-form"></div>
                 </div>
             </div>
-            {% endif %}
 
-            {% if feature_authors_enabled is defined %}
+            <div class="card mt-3">
+                <div class="card-title" id="network">
+                    <h1 class="card-header">Network</h1>
+                </div>
+                <div class="card-body">
+                    {% if n_papers <= max_graph_size %}
+                    {% if structure_graph is defined %}
+                    <strong>Papers similarity</strong>
+                    <p>
+                        The graph below shows similarity network, most similar papers are connected.<br>
+                        Color represents topic, size - total citations number.
+                    </p>
+                    {% for script, div in structure_graph %}
+                    {{ script|safe }}
+                    {{ div|safe }}
+                    {% endfor %}
+                    {% endif %}
+                    <br>
+                    <p>
+                        Explore citations graph and papers similarity network in-depth in the interactive graph viewer.<br>
+                        Filter papers by keywords, apply different coloring schemes and view similarity details.
+                    </p>
+                    <div style="display: block">
+                        <button type="button" class="btn btn-light"
+                                onclick="graph_callback('citations');">
+                            Explore citations graph
+                        </button>
+                        <button type="button" class="ml-2 btn btn-light"
+                                onclick="graph_callback('structure');">
+                            Explore similarity graph
+                        </button>
+                    </div>
+                    {% else %}
+                        Too many papers to visualize graphs.
+                    {% endif %}
+                    <div class="mt-3" id="feedback-network-form"></div>
+                </div>
+            </div>
+
+            {% if feature_authors_enabled %}
             <div class="card mt-3">
                 <div class="card-title" id="authors">
                     <h1 class="card-header">Authors</h1>
                 </div>
                 <div class="card-body">
+                    <strong>Authors papers and topics</strong>
                     <p>
                         List of authors with the largest number of papers for given search query.<br>
                         The colors of the circles in the topics column indicate top 3 most common topics among
-                        these papers.<br>
-                        The topic circles are arranged according to the number of papers, in descending order.
+                        these papers.
                     </p>
                     <table id="authors-table" class="table table-sm table-bordered table-striped">
                         <thead>
@@ -705,11 +644,11 @@
                     <h1 class="card-header">Journals</h1>
                 </div>
                 <div class="card-body">
+                    <strong>Journals topics</strong>
                     <p>
                         List of journals with the largest number of papers for given search query.<br>
                         The colors of the circles in the topics column indicate top 3 most common topics among
-                        these papers.<br>
-                        The topic circles are arranged according to the number of papers, in descending order.
+                        these papers.
                     </p>
                     <table id="journals-table" class="table table-sm table-bordered table-striped">
                         <thead>
@@ -746,6 +685,7 @@
                     <h1 class="card-header">Numbers</h1>
                 </div>
                 <div class="card-body">
+                    <strong>Numbers and features</strong>
                     <p>
                         Quantitative features extracted from papers titles and abstracts, use search to filter the
                         table.
@@ -781,6 +721,7 @@
                     <h1 class="card-header">Topic Evolution</h1>
                 </div>
                 <div class="card-body">
+                    <strong>Topics over time</strong>
                     <p>
                         Topics extraction is performed longitudinally at several time points to detect merges and
                         splits
@@ -793,7 +734,6 @@
                     {{ script|safe }}
                     {{ div|safe }}
                     {% endfor %}
-                    {% if topic_evolution_keywords is defined %}
                     <table id="topic_evolution_keywords" class="table table-sm table-bordered table-striped">
                         <thead>
                         <tr>
@@ -814,10 +754,9 @@
                         {% endfor %}
                         </tbody>
                     </table>
-                    {% endif %}
                     <div class="mt-3" id="feedback-evolution-form"></div>
                     {% else %}
-                    Failed to analyze topic evolution because year step is too big.
+                    Topics evolution is not available.
                     {% endif %}
                 </div>
             </div>
@@ -829,6 +768,7 @@
                     <h1 class="card-header">Review</h1>
                 </div>
                 <div class="card-body">
+                    <strong>Extractive summarization review</strong>
                     <p>
                         Generate a review for the chosen topic - a set of sentences from top cited papers <br>
                         with the highest probability to be included in a real review paper.
@@ -870,7 +810,7 @@
                 </div>
                 <div class="card-body">
                     <p>
-                        Let's make the service better together!<br>
+                        We'd love to hear your feedback!<br>
                         Use the form below to tell us more about you and your opinion about the service,<br>
                         or click instant feedback buttons to share your feelings about particular report
                         section.<br>
@@ -927,7 +867,7 @@
 </div>
 <footer>
     <p>version {{ version }}<br/>
-        &copy; 2019-2020 <a href="https://research.jetbrains.org/groups/biolabs"
+        &copy; 2021 <a href="https://research.jetbrains.org/groups/biolabs"
                             title="JetBrains Research BioLabs"
                             target="_blank">JetBrains Research</a></p>
 </footer>
@@ -947,9 +887,14 @@
                     intro: "Results are organised into sections - different aspects of analysis."
                 },
                 {
-                    element: '#overview',
+                    element: '#papers',
                     intro: "The report starts with a general information. " +
                         "It shows total number of papers and topics, publications dynamics, and most common words in the field."
+                },
+                {
+                    element: '#papers-list',
+                    intro: "Click <img src=\"{{ url_for('static', filename='list.svg') }}\" alt=\"+\"/> " +
+                        "<em>Show as list</em> to open the list of papers in a separate window."
                 },
                 {
                     element: '#papers_word_cloud',
@@ -960,26 +905,9 @@
                     intro: "Search anything in paper titles or abstracts."
                 },
                 {
-                    element: '#detailed_info',
-                    intro: "Click <img src=\"{{ url_for('static', filename='list.svg') }}\" alt=\"+\"/> " +
-                        "<em>Detailed info</em> to open the list of papers in a separate window."
-                },
-                {
-                    element: '#export_to_csv',
-                    intro: "Export papers detailed information to CSV file"
-                },
-                {
-                    element: '#highlights',
-                    intro: "Highlights section contains information about most notable papers. " +
+                    element: '#trends',
+                    intro: "Trends section contains information about most notable papers. " +
                         "Top cited papers, papers of the year, and hot papers are shown in a dedicated sections."
-                },
-                {
-                    element: '#show_citations_graph',
-                    intro: "Click <em>Show citations graph</em> to explore citations graph among the papers."
-                },
-                {
-                    element: '#show_similarity_graph',
-                    intro: "Click <em>Show similarity graph</em> to explore overall papers similarity."
                 },
                 {
                     element: '#topics',
@@ -1000,7 +928,10 @@
                         "about the papers. Click glyphs to open a page about corresponding paper in a " +
                         "new tab."
                 },
-
+                {
+                    element: '#network',
+                    intro: "View papers similarity network and explore graphs in interactive viewer."
+                },
                 {% if features_authors_enabled %}
                 {
                     element: '#authors',
@@ -1031,12 +962,6 @@
                     intro: "Generate review - extractive summmarization."
                 },
                 {% endif %}
-
-                {
-                    element: '#feedback',
-                    intro: "Please help us to improve the service!<br>" +
-                        "Your feedback is very welcome."
-                },
                 {
                     intro: "Congratulations!<br>" +
                         "Now you are ready to explore scientific literature with PubTrends."

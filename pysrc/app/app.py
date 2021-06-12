@@ -18,6 +18,7 @@ from pysrc.app.utils import log_request, MAX_QUERY_LENGTH, SOMETHING_WENT_WRONG_
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.celery.tasks_cache import get_or_cancel_task
 from pysrc.celery.tasks_main import find_paper_async, analyze_search_terms, analyze_id_list
+from pysrc.papers.analysis.graph import local_sparse
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
@@ -103,10 +104,12 @@ def status():
                 'progress': 100
             })
         elif job_state == 'FAILURE':
+            is_search_error = isinstance(job_result, SearchError)
+            logger.info(f'/status failure. Search error: {is_search_error}. {log_request(request)}')
             return json.dumps({
                 'state': job_state,
                 'message': str(job_result).replace('\\n', '\n').replace('\\t', '\t'),
-                'search_error': isinstance(job_result, SearchError)
+                'search_error': is_search_error
             })
         elif job_state == 'STARTED':
             return json.dumps({
@@ -138,7 +141,7 @@ def result():
     limit = request.args.get('limit')
     sort = request.args.get('sort')
     noreviews = request.args.get('noreviews') == 'on'  # Include reviews in the initial search phase
-    expand = request.args.get('expand')  # Fraction of papers to cover by references
+    expand = request.args.get('expand') or 0  # Fraction of papers to cover by references
     try:
         if jobid and query and source and limit is not None and sort is not None:
             job = AsyncResult(jobid, app=pubtrends_celery)
@@ -151,6 +154,7 @@ def result():
                                        source=source,
                                        limit=limit,
                                        sort=sort,
+                                       max_graph_size=PUBTRENDS_CONFIG.max_graph_size,
                                        version=VERSION,
                                        log=log,
                                        **viz)
@@ -162,6 +166,7 @@ def result():
                                        source=source,
                                        limit=limit,
                                        sort=sort,
+                                       max_graph_size=PUBTRENDS_CONFIG.max_graph_size,
                                        version=VERSION,
                                        log=log,
                                        **viz)
@@ -174,8 +179,8 @@ def result():
         else:
             logger.error(f'/result error wrong request {log_request(request)}')
             return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
-    except Exception as e:
-        logger.error(f'/result error', e)
+    except Exception:
+        logger.exception(f'/result exception')
         return render_template_string(ERROR_OCCURRED), 500
 
 
@@ -291,7 +296,9 @@ def paper():
             data = load_predefined_or_result_data(jobid, pubtrends_celery)
             if data is not None:
                 logger.info(f'/paper success {log_request(request)}')
-                return render_template('paper.html', **prepare_paper_data(data, source, pid),
+                return render_template('paper.html',
+                                       **prepare_paper_data(data, source, pid),
+                                       max_graph_size=PUBTRENDS_CONFIG.max_graph_size,
                                        version=VERSION)
             else:
                 logger.info(f'/paper No job or out-of-date job, restart it {log_request(request)}')
@@ -304,8 +311,8 @@ def paper():
         else:
             logger.error(f'/paper error wrong request {log_request(request)}')
             return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
-    except Exception as e:
-        logger.error(f'/paper error', e)
+    except Exception:
+        logger.exception(f'/paper exception')
         return render_template_string(ERROR_OCCURRED), 500
 
 
@@ -337,13 +344,14 @@ def graph():
                     limit=limit,
                     sort=sort,
                     citation_graph="true",
-                    topic_other=analyzer.comp_other or -1,
                     topics_palette_json=json.dumps(Plotter.topics_palette(analyzer.df)),
                     topics_description_json=json.dumps(topics_tags),
                     graph_cytoscape_json=json.dumps(graph_cs)
                 )
             else:
-                graph_cs = PlotPreprocessor.dump_structure_graph_cytoscape(analyzer.df, analyzer.structure_graph)
+                graph_cs = PlotPreprocessor.dump_structure_graph_cytoscape(
+                    analyzer.df, local_sparse(analyzer.similarity_graph, PapersAnalyzer.STRUCTURE_SPARSITY)
+                )
                 logger.info(f'/graph success structure {log_request(request)}')
                 return render_template(
                     'graph.html',
@@ -353,7 +361,6 @@ def graph():
                     limit=limit,
                     sort=sort,
                     citation_graph="false",
-                    topic_other=analyzer.comp_other or -1,
                     topics_palette_json=json.dumps(Plotter.topics_palette(analyzer.df)),
                     topics_description_json=json.dumps(topics_tags),
                     graph_cytoscape_json=json.dumps(graph_cs)
@@ -472,6 +479,7 @@ def index():
                            limits=PUBTRENDS_CONFIG.show_max_articles_options,
                            default_limit=PUBTRENDS_CONFIG.show_max_articles_default_value,
                            min_words_message=min_words_message,
+                           max_papers=PUBTRENDS_CONFIG.max_number_of_articles,
                            pm_enabled=PUBTRENDS_CONFIG.pm_enabled,
                            ss_enabled=PUBTRENDS_CONFIG.ss_enabled,
                            search_example_source=search_example_source,
@@ -497,8 +505,8 @@ def search_terms():
                                     jobid=job.id))
         logger.error(f'/search_terms error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_TOPIC), 400
-    except Exception as e:
-        logger.error(f'/search_terms error', e)
+    except Exception:
+        logger.exception(f'/search_terms exception')
         return render_template_string(ERROR_OCCURRED), 500
 
 
@@ -516,8 +524,30 @@ def search_paper():
             return redirect(url_for('.process', source=source, key=key, value=value, jobid=job.id, limit=limit))
         logger.error(f'/search_paper error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
-    except Exception as e:
-        logger.error(f'/search_paper error', e)
+    except Exception:
+        logger.exception(f'/search_paper exception')
+        return render_template_string(ERROR_OCCURRED), 500
+
+
+@app.route('/search_list', methods=['POST'])
+def search_list():
+    logger.info(f'/search_list {log_request(request)}')
+    data = request.form
+    try:
+        if 'source' in data and 'list' in data:
+            source = data.get('source')  # Pubmed or Semantic Scholar
+            ids_text = data.get('list')
+            id_list = [re.sub('[\'"]*', '', pid) for pid in re.split('[ \t\n,;\\.]+', ids_text) if pid]
+            id_list = id_list[:PUBTRENDS_CONFIG.max_number_of_articles]
+            job = analyze_id_list.delay(source, ids=id_list, query='List of papers', zoom=None,
+                                        test=app.config['TESTING'])
+            return redirect(url_for('.process', query='List', source=source,
+                                    limit=f'{len(id_list)} papers', sort='',
+                                    jobid=job.id))
+        logger.error(f'/search_list error {log_request(request)}')
+        return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
+    except Exception:
+        logger.exception(f'/search_list exception')
         return render_template_string(ERROR_OCCURRED), 500
 
 
@@ -540,8 +570,8 @@ def search_pubmed_paper_by_title():
             ])
         logger.error(f'/search_paper_by_title error missing title {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
-    except Exception as e:
-        logger.error(f'/search_paper_by_title error', e)
+    except Exception:
+        logger.exception(f'/search_paper_by_title exception')
         return render_template_string(ERROR_OCCURRED), 500
 
 
@@ -562,8 +592,8 @@ def process_ids():
             return redirect(url_for('.process', query=query, analysis_type=analysis_type, source=source, jobid=job.id))
         logger.error(f'/process_ids error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
-    except Exception as e:
-        logger.error(f'/process_ids error', e)
+    except Exception:
+        logger.exception(f'/process_ids exception')
         return render_template_string(ERROR_OCCURRED), 500
 
 
@@ -587,8 +617,8 @@ def export_results():
                 return send_file(path, as_attachment=True)
         logger.error(f'/export_results error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
-    except Exception as e:
-        logger.error(f'/export_results error', e)
+    except Exception:
+        logger.exception(f'/export_results exception')
         return render_template_string(ERROR_OCCURRED), 500
 
 

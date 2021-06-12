@@ -6,7 +6,8 @@ services:
       dockerfile: pysrc/app/Dockerfile
     restart: always
     ports:
-      - "443:4433"
+      - "443:8888"
+      - "80:8888"
     depends_on:
       - redis
     volumes:
@@ -28,4 +29,9 @@ services:
       - ~/.pubtrends/.cache:/home/user/.cache
   redis:
     image: redis:5.0
+    volumes:
+      - ~/.pubtrends/logs:/log
+    # This command is use to process huge analysis results of 40k+ papers
+    command: redis-server --timeout 0 --client-output-buffer-limit normal 0 0 0
+
 

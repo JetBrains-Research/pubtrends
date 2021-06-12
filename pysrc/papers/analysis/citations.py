@@ -20,18 +20,18 @@ def find_max_gain_papers(df, citation_years):
             sel = df[df[year] == max_gain]
             max_gain_data.append([year, str(sel['id'].values[0]),
                                   sel['title'].values[0],
+                                  sel['journal'].values[0],
                                   sel['authors'].values[0],
                                   sel['year'].values[0], max_gain])
 
     max_gain_df = pd.DataFrame(max_gain_data,
-                               columns=['year', 'id', 'title', 'authors',
-                                        'paper_year', 'count'])
+                               columns=['year', 'id', 'title', 'journal', 'authors', 'paper_year', 'count'])
     return list(max_gain_df['id'].values), max_gain_df
 
 
 def find_max_relative_gain_papers(df, citation_years):
     current_sum = pd.Series(np.zeros(len(df), ))
-    df_rel = df.loc[:, ['id', 'title', 'authors', 'year']]
+    df_rel = df.loc[:, ['id', 'title', 'journal', 'authors', 'year']]
     for year in citation_years:
         df_rel[year] = df[year] / (current_sum + (current_sum == 0))
         current_sum += df[year]
@@ -44,12 +44,12 @@ def find_max_relative_gain_papers(df, citation_years):
             sel = df_rel[df_rel[year] == max_rel_gain]
             max_rel_gain_data.append([year, str(sel['id'].values[0]),
                                       sel['title'].values[0],
+                                      sel['journal'].values[0],
                                       sel['authors'].values[0],
                                       sel['year'].values[0], max_rel_gain])
 
     max_rel_gain_df = pd.DataFrame(max_rel_gain_data,
-                                   columns=['year', 'id', 'title', 'authors',
-                                            'paper_year', 'rel_gain'])
+                                   columns=['year', 'id', 'title', 'journal', 'authors', 'paper_year', 'rel_gain'])
     return list(max_rel_gain_df['id']), max_rel_gain_df
 
 
@@ -69,6 +69,8 @@ def build_cit_stats_df(cits_by_year_df, n_papers):
 
 def build_cocit_grouped_df(cocit_df):
     logger.debug('Aggregating co-citations')
+    if len(cocit_df) == 0:
+        return pd.DataFrame(data=[], columns=['cited_1', 'cited_2', 'year', 'total'], dtype=object)
     cocit_grouped_df = cocit_df.groupby(['cited_1', 'cited_2', 'year']).count().reset_index()
     cocit_grouped_df = cocit_grouped_df.pivot_table(index=['cited_1', 'cited_2'],
                                                     columns=['year'], values=['citing']).reset_index()

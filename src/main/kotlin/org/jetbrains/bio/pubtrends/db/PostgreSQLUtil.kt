@@ -18,7 +18,7 @@ internal val jsonMapper = ObjectMapper()
  */
 
 fun <T : Any> Table.jsonb(name: String, klass: Class<T>, jsonMapper: ObjectMapper): Column<T> =
-        registerColumn(name, Json(klass, jsonMapper))
+    registerColumn(name, Json(klass, jsonMapper))
 
 
 private class Json<out T : Any>(private val klass: Class<T>, private val jsonMapper: ObjectMapper) : ColumnType() {
@@ -54,9 +54,9 @@ class PGEnum<T : Enum<T>>(enumTypeName: String, enumValue: T?) : PGobject() {
 }
 
 class BatchInsertUpdateOnDuplicate(
-        table: Table,
-        private val column: Column<*>,
-        private val onDupUpdate: List<Column<*>>
+    table: Table,
+    private val column: Column<*>,
+    private val onDupUpdate: List<Column<*>>
 ) : BatchInsertStatement(table, false) {
     override fun prepareSQL(transaction: Transaction): String {
         val onUpdateSQL = if (onDupUpdate.isNotEmpty()) {
@@ -71,9 +71,9 @@ class BatchInsertUpdateOnDuplicate(
 }
 
 fun <T : Table, E> T.batchInsertOnDuplicateKeyUpdate(
-        data: List<E>,
-        column: Column<*>,
-        onDupUpdateColumns: List<Column<*>>, body: T.(BatchInsertUpdateOnDuplicate, E) -> Unit
+    data: List<E>,
+    column: Column<*>,
+    onDupUpdateColumns: List<Column<*>>, body: T.(BatchInsertUpdateOnDuplicate, E) -> Unit
 ): List<Int> {
     return data.takeIf { it.isNotEmpty() }?.let {
         val insert = BatchInsertUpdateOnDuplicate(this, column, onDupUpdateColumns)
@@ -84,15 +84,12 @@ fun <T : Table, E> T.batchInsertOnDuplicateKeyUpdate(
         TransactionManager.current().exec(insert)
         columns.firstOrNull { it.columnType.isAutoInc }?.let { idCol ->
             insert.generatedKey?.mapNotNull {
-                val value = it[idCol]
-                when (value) {
+                when (val value = it[idCol]) {
                     is Long -> value.toInt()
                     is Int -> value
                     null -> null
-                    else -> error(
-                            "can't find primary key of type Int or Long; " +
-                                    "map['$idCol']='$value' (where map='$it')"
-                    )
+                    else ->
+                        error("can't find primary key of type Int or Long; map['$idCol']='$value' (where map='$it')")
                 }
             }
         }

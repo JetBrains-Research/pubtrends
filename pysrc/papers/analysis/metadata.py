@@ -1,5 +1,9 @@
+import logging
+
 import numpy as np
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 
 def popular_journals(df, n):
@@ -59,6 +63,7 @@ def split_df_list(df, target_column, separator):
     :return: a dataframe with each entry for the target column separated, with each element moved into a new row.
     The values in the other columns are duplicated across the newly divided rows.
     """
+
     def split_list_to_rows(row, row_accumulator, target_column, separator):
         split_row = row[target_column].split(separator)
         for s in split_row:
@@ -70,3 +75,14 @@ def split_df_list(df, target_column, separator):
     df.apply(split_list_to_rows, axis=1, args=(new_rows, target_column, separator))
     new_df = pd.DataFrame(new_rows)
     return new_df
+
+
+def update_edge(graph, a1, a2, name, value):
+    if a1 == a2:
+        return
+    if a1 > a2:
+        a1, a2 = a2, a1
+    if not graph.has_edge(a1, a2):
+        graph.add_edge(a1, a2)
+    edge = graph[a1][a2]
+    edge[name] = edge.get(name, 0) + value

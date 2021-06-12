@@ -101,7 +101,7 @@
             }, 5000);
 
             // Create clickable feedback forms
-            createClickableFeedBackForm("paper-feedback-citations-form", "paper-feedback-citations");
+            createClickableFeedBackForm("paper-feedback-paper-form", "paper-feedback-paper");
             createClickableFeedBackForm("paper-feedback-network-form", "paper-feedback-network");
             createClickableFeedBackForm("paper-feedback-similar-form", "paper-feedback-similar");
             createClickableFeedBackForm("paper-feedback-prior-form", "paper-feedback-prior");
@@ -159,14 +159,6 @@
                         </a>
                         <a class="nav-link d-none d-xl-block no-padding" href="#paper">
                             Paper
-                        </a>
-                    </li>
-                    <li class="nav-item row">
-                        <a class="nav-link no-padding-right" href="#citations" title="Citations">
-                            <img class="nav-icon" src="{{ url_for('static', filename='bar-chart-2.svg') }}"/>
-                        </a>
-                        <a class="nav-link d-none d-xl-block no-padding" href="#citations">
-                            Citations
                         </a>
                     </li>
 
@@ -267,21 +259,15 @@
                         <p class="mt-2">{{ abstract }}</p>
                         {% endif %}
                     </div>
-                </div>
-            </div>
-
-            <div class="card mt-3">
-                <div class="card-title" id="citations">
-                    <h1 class="card-header">Citations</h1>
-                </div>
-                <div class="card-body">
+                    <h5 class="card-subtitle mt-3">Citations</h5>
+                    <p class="mt-2">Number of citations per year for the paper.</p>
                     <div>
                         {% for script, div in citation_dynamics %}
                         {{ script|safe }}
                         {{ div|safe }}
                         {% endfor %}
                     </div>
-                    <div class="mt-3" id="paper-feedback-citations-form"></div>
+                    <div class="mt-3" id="paper-feedback-paper-form"></div>
                 </div>
             </div>
 
@@ -290,25 +276,29 @@
                     <h1 class="card-header">Network</h1>
                 </div>
                 <div class="card-body">
-                    <p>
-                        Explore references for the paper of interest on the citations graph.
-                    </p>
-                    <button id="show_citations_graph" type="button" class="btn btn-light"
-                            onclick="(function(){ graph_callback('citations') })();">
-                        Show citations graph
-                    </button>
-                    <hr>
+                    {% if n_papers <= max_graph_size %}
                     <p>
                         Similarity between papers is computed based on <em>bibliographic coupling</em>,
                         <em>co-citations</em>,<br>
                         <em>direct citations</em>, and <em>potential</em> citations based on text similarity.
                         <br>
-                        Explore papers network, where similar papers are located together and connected.
                     </p>
-                    <button id="show_similarity_graph" type="button" class="col-auto btn btn-light"
-                            onclick="(function(){ graph_callback('structure') })();">
-                        Show similarity graph
-                    </button>
+                    <p>
+                        Explore citations graph and papers similarity network in the interactive graph viewer.
+                    </p>
+                    <div style="display: block">
+                        <button type="button" class="btn btn-light"
+                                onclick="graph_callback('citations');">
+                            Explore citations graph
+                        </button>
+                        <button type="button" class="ml-2 btn btn-light"
+                                onclick="graph_callback('structure');">
+                            Explore similarity graph
+                        </button>
+                    </div>
+                    {% else %}
+                    Too many papers to visualize graphs.
+                    {% endif %}
                     <div class="mt-3" id="paper-feedback-network-form"></div>
                 </div>
             </div>
@@ -465,7 +455,7 @@
                 </div>
                 <div class="card-body">
                     <p>
-                        Let's make the service better together!<br>
+                        We'd love to hear your feedback!<br>
                         Use the form below to tell us more about you and your opinion about the service,<br>
                         or click instant feedback buttons to share your feelings about particular report section.<br>
                         Also you can optionally leave your email to contact you later.<br>
@@ -506,7 +496,7 @@
 </div>
 <footer>
     <p>version {{ version }}<br/>
-        &copy; 2019-2020 <a href="https://research.jetbrains.org/groups/biolabs"
+        &copy; 2021 <a href="https://research.jetbrains.org/groups/biolabs"
                             title="JetBrains Research BioLabs"
                             target="_blank">JetBrains Research</a></p>
 </footer>
@@ -527,15 +517,12 @@
                 {
                     element: '#paper',
                     intro: 'Detailed information about the paper.<br>' +
-                        'Information about title, abstract, authors, journal and external references.'
+                        'Information about title, abstract, authors, journal and external references.<br>' +
+                        'Citations dynamics shows all indexed citations of the paper.'
                 },
                 {
                     element: '#result',
                     intro: 'Explore related papers and topics full analysis report.'
-                },
-                {
-                    element: '#citations',
-                    intro: 'Citations dynamics. Show all indexed citations of the paper.'
                 },
                 {
                     element: '#network',

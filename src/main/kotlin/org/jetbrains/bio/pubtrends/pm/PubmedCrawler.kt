@@ -2,7 +2,6 @@ package org.jetbrains.bio.pubtrends.pm
 
 import kotlinx.coroutines.TimeoutCancellationException
 import org.apache.logging.log4j.LogManager
-import org.neo4j.driver.v1.exceptions.ServiceUnavailableException
 import java.io.*
 import java.nio.file.Files
 import java.nio.file.Path
@@ -86,9 +85,6 @@ class PubmedCrawler(
             throw PubmedCrawlerException(e)
         } catch (e: TimeoutCancellationException) {
             logger.error("Download timed out")
-            throw PubmedCrawlerException(e)
-        } catch (e: ServiceUnavailableException) {
-            logger.error("Lost connection to neo4j database")
             throw PubmedCrawlerException(e)
         } finally {
             if (tempDirectory.exists()) {

@@ -1,3 +1,4 @@
+import datetime
 import json
 import re
 from collections import Counter
@@ -15,6 +16,10 @@ def prepare_feedback_data(logfile):
     for line in open(logfile).readlines():
         if 'INFO' not in line:
             continue
+        search_date = re.search('[\\d-]+ [\\d:]+,\\d+', line)
+        if search_date is None:
+            continue
+        date = datetime.datetime.strptime(search_date.group(0), '%Y-%m-%d %H:%M:%S,%f')
         if '/process regular search addr:' in line:
             args = json.loads(re.sub(".*args:", "", line.strip()))
             jobid = args['jobid']
@@ -34,7 +39,8 @@ def prepare_feedback_data(logfile):
             if 'type' in fb:  # Messages
                 if recent_messages.full():
                     recent_messages.get()  # Free some space
-                recent_messages.put((fb['type'], fb['message'], fb['email']))
+                recent_messages.put((date.strftime('%Y-%m-%d %H:%M:%S'),
+                                     fb['type'], fb['message'], fb['email']))
             else:  # Emotions
                 val = fb['value']
                 if val == '1':
@@ -47,7 +53,8 @@ def prepare_feedback_data(logfile):
                 if 'jobid' in fb and fb['jobid'] in queries:
                     if recent_emotions.full():
                         recent_emotions.get()  # Free some space
-                    recent_emotions.put((fb['key'], val_str, queries[fb['jobid']]))
+                    recent_emotions.put((date.strftime('%Y-%m-%d %H:%M:%S'),
+                                         fb['key'], val_str, queries[fb['jobid']]))
         except:
             pass
 

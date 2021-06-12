@@ -95,10 +95,10 @@ def expand_ids(
             logger.debug('Nothing expanded after mesh filtration')
             return ids
         else:
-            progress.info(f'Expanded to {len(ids) + len(new_ids)} papers', current=current, task=task)
+            logger.debug(f'Expanded to {len(ids) + len(new_ids)} papers')
             return ids + new_mesh_ids
     else:
-        progress.info(f'Expanded to {len(ids) + len(new_ids)} papers', current=current, task=task)
+        logger.debug(f'Expanded to {len(ids) + len(new_ids)} papers')
         return ids + new_ids
 
 

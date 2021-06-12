@@ -28,7 +28,6 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         if key == 'id':
             key = 'pmid'
 
-            # We use integer PMIDs in neo4j, if value is not a valid integer -> no match
             try:
                 value = int(value)
             except ValueError:
@@ -52,10 +51,10 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 FROM PMPublications P
                 WHERE {key} = {repr(value)};
             '''
-
+        logger.debug(f'find query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df = pd.DataFrame(cursor.fetchall(), columns=['pmid'])
+            df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
 
         return list(df['pmid'].astype(str))
 
@@ -89,10 +88,10 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
             ORDER BY {order}, P.pmid
             LIMIT {limit};
             '''
+        logger.debug(f'search query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
-            logger.debug(f'search query: {query}')
             cursor.execute(query)
-            df = pd.DataFrame(cursor.fetchall(), columns=['pmid'])
+            df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
             # TODO [shpynov] query stays idle in transaction without this commit
             # Further investigation is required
             self.postgres_connection.commit()
@@ -108,10 +107,13 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 FROM PMPublications P
                 WHERE P.pmid IN (VALUES {vals});
                 '''
+        logger.debug(f'load_publications query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(),
-                              columns=['id', 'title', 'abstract', 'year', 'type', 'keywords', 'mesh', 'doi', 'aux'])
+                              columns=['id', 'title', 'abstract', 'year',
+                                       'type', 'keywords', 'mesh', 'doi', 'aux'],
+                              dtype=object)
         if np.any(df[['id', 'title']].isna()):
             raise ValueError('Paper must have ID and title')
         logger.debug(f'Loaded {len(df)} papers')
@@ -133,12 +135,12 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 GROUP BY id, year
                 LIMIT {self.config.max_number_of_citations};
             '''
-        logger.debug(f'load_citations_by_year query: {query}')
-
+        logger.debug(f'load_citations_by_year query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(),
-                              columns=['id', 'year', 'count'])
+                              columns=['id', 'year', 'count'],
+                              dtype=object)
 
         if np.any(df.isna()):
             raise ValueError('NaN values are not allowed in citation stats DataFrame')
@@ -161,10 +163,10 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 ORDER BY MC.count DESC NULLS LAST
                 LIMIT {limit};
                 '''
-
+        logger.debug(f'load_references query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df = pd.DataFrame(cursor.fetchall(), columns=['id'])
+            df = pd.DataFrame(cursor.fetchall(), columns=['id'], dtype=object)
         return list(df['id'].astype(str))
 
     def estimate_citations(self, ids):
@@ -177,10 +179,10 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                     ON P.pmid = C.pmid
                 WHERE P.pmid in (VALUES {vals});
                 '''
-
+        logger.debug(f'estimate_citations query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df = pd.DataFrame(cursor.fetchall(), columns=['total'])
+            df = pd.DataFrame(cursor.fetchall(), columns=['total'], dtype=object)
             df.fillna(value=1, inplace=True)  # matview_pmcitations ignores < 3 citations
 
         return df['total']
@@ -194,11 +196,12 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                     ORDER BY id_out, id_in
                     LIMIT {self.config.max_number_of_citations};
                     '''
-
+        logger.debug(f'load_citations query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(),
-                              columns=['id_out', 'id_in'])
+                              columns=['id_out', 'id_in'],
+                              dtype=object)
 
         if np.any(df.isna()):
             raise ValueError('Citation must have id_out and id_in')
@@ -220,6 +223,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                         LIMIT {self.config.max_number_of_cocitations};
                     '''
 
+        logger.debug(f'load_cocitations query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             df, lines = process_cocitations_postgres(cursor)
@@ -252,9 +256,10 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 LIMIT {limit};
                 '''
 
+        logger.debug(f'expand query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df = pd.DataFrame(cursor.fetchall(), columns=['id', 'total'])
+            df = pd.DataFrame(cursor.fetchall(), columns=['id', 'total'], dtype=object)
         df['id'] = df['id'].astype(str)
         df.fillna(value=1, inplace=True)
         return df
@@ -270,6 +275,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                     LIMIT {self.config.max_number_of_bibliographic_coupling};
                     '''
 
+        logger.debug(f'load_bibliographic_coupling query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             df, lines = process_bibliographic_coupling_postgres(cursor)

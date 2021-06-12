@@ -95,6 +95,5 @@ class TestPopularPapersSingle(unittest.TestCase):
         self.assertDictEqual(max_rel_gain, {1972: '1', 1974: '1'})
 
 
-
 if __name__ == '__main__':
     unittest.main()

@@ -56,10 +56,10 @@ def prepare_paper_data(data, source, pid):
     # Citations graph is limited by only the nodes in pub_df
     if analyzer.citations_graph.has_node(pid):
         derivative_papers = get_top_papers_id_title_year(
-            analyzer.citations_graph.predecessors(pid), analyzer.df, key='pagerank'
+            analyzer.citations_graph.predecessors(pid), analyzer.df, key='total'
         )
         prior_papers = get_top_papers_id_title_year(
-            analyzer.citations_graph.successors(pid), analyzer.df, key='pagerank'
+            analyzer.citations_graph.successors(pid), analyzer.df, key='total'
         )
     else:
         prior_papers = derivative_papers = []
@@ -76,20 +76,10 @@ def prepare_paper_data(data, source, pid):
     else:
         similar_papers = None
 
-    result = {
-        'title': title,
-        'trimmed_title': trim(title, MAX_TITLE_LENGTH),
-        'authors': authors,
-        'journal': journal,
-        'year': year,
-        'topic': topic,
-        'doi': doi,
-        'mesh': mesh,
-        'keywords': keywords,
-        'url': url_prefix + pid,
-        'source': source,
-        'citation_dynamics': [components(plotter.paper_citations_per_year(analyzer.df, str(pid)))],
-    }
+    result = dict(title=title, trimmed_title=trim(title, MAX_TITLE_LENGTH), authors=authors, journal=journal, year=year,
+                  topic=topic, doi=doi, mesh=mesh, keywords=keywords, url=url_prefix + pid, source=source,
+                  n_papers=len(analyzer.df),
+                  citation_dynamics=[components(plotter.paper_citations_per_year(analyzer.df, str(pid)))])
     if similar_papers:
         result['similar_papers'] = [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid, year, f'{similarity:.3f}')
                                     for pid, title, year, similarity in similar_papers]

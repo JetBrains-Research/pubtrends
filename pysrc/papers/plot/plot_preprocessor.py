@@ -1,11 +1,15 @@
 import logging
-from itertools import product as cart_product
+from queue import PriorityQueue
 
 import networkx as nx
 import numpy as np
 import pandas as pd
+from itertools import product as cart_product
+from more_itertools import unique_everseen
+from statsmodels.nonparametric.smoothers_lowess import lowess
 
 from pysrc.papers.analysis.text import build_corpus
+from pysrc.papers.analysis.topics import compute_similarity_matrix
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.utils import cut_authors_list
 
@@ -15,39 +19,14 @@ logger = logging.getLogger(__name__)
 class PlotPreprocessor:
 
     @staticmethod
-    def topics_similarity_data(similarity_graph, df, comp_sizes):
-        logger.debug('Computing mean similarity of all edges between topics')
+    def topics_similarity_data(similarity_graph, partition):
+        similarity_matrix = compute_similarity_matrix(similarity_graph, PapersAnalyzer.similarity, partition)
+
         # c + 1 is used to start numbering with 1
-        components = list(map(str, [c + 1 for c in comp_sizes.keys()]))
+        components = [str(c + 1) for c in sorted(set(partition.values()))]
         n_comps = len(components)
-
-        logger.debug('Load edge data to DataFrame')
-        edges = len(similarity_graph.edges)
-        sources = [None] * edges
-        targets = [None] * edges
-        similarities = [0.0] * edges
-        i = 0
-        for u, v, data in similarity_graph.edges(data=True):
-            sources[i] = u
-            targets[i] = v
-            similarities[i] = PapersAnalyzer.similarity(data)
-            i += 1
-        similarity_df = pd.DataFrame(data={'source': sources, 'target': targets, 'similarity': similarities})
-
-        logger.debug('Assign each paper with corresponding component / topic')
-        similarity_topics_df = similarity_df.merge(df[['id', 'comp']], how='left', left_on='source', right_on='id') \
-            .merge(df[['id', 'comp']], how='left', left_on='target', right_on='id')
-
-        logger.debug('Calculate mean similarity between for topics')
-        mean_similarity_topics_df = \
-            similarity_topics_df.groupby(['comp_x', 'comp_y'])['similarity'].mean().reset_index()
-        similarity_matrix = [[0] * n_comps for _ in range(n_comps)]
-        for index, row in mean_similarity_topics_df.iterrows():
-            cx, cy = int(row['comp_x']), int(row['comp_y'])
-            similarity_matrix[cx][cy] = similarity_matrix[cy][cx] = row['similarity']
-
         similarity_topics_df = pd.DataFrame([
-            {'comp_x': i, 'comp_y': j, 'similarity': similarity_matrix[i][j]}
+            {'comp_x': i, 'comp_y': j, 'similarity': similarity_matrix[i, j]}
             for i, j in cart_product(range(n_comps), range(n_comps))
         ])
         similarity_topics_df['comp_x'] = similarity_topics_df['comp_x'].apply(lambda x: x + 1).astype(str)
@@ -79,11 +58,8 @@ class PlotPreprocessor:
 
     @staticmethod
     def article_view_data_source(df, min_year, max_year, components_split, width=760):
-        columns = ['id', 'title', 'year', 'type', 'total', 'authors', 'comp']
+        columns = ['id', 'title', 'year', 'type', 'total', 'authors', 'journal', 'comp']
         df_local = df[columns].copy()
-
-        # Replace NaN values with Undefined for tooltips
-        df_local['year'] = df_local['year'].replace(np.nan, "Undefined")
 
         # Correction of same year / total
         df_local['count'] = 1  # Temporarily column to count clashes
@@ -92,9 +68,9 @@ class PlotPreprocessor:
         else:
             df_counts = df_local[['year', 'total', 'count']].groupby(['year', 'total']).sum()
         df_counts['delta'] = 0
-        dft = pd.DataFrame(columns=columns + ['y'])
+        dft = pd.DataFrame(columns=columns + ['y'], dtype=object)
         for _, r in df_local.iterrows():
-            pid, title, year, type, total, authors, comp, _ = r  # Ignore count
+            pid, title, year, type, total, authors, journal, comp, _ = r
             if components_split:
                 cd = df_counts.loc[(comp, year, total)]
                 c, d = cd['count'], cd['delta']
@@ -104,7 +80,7 @@ class PlotPreprocessor:
                 c, d = cd['count'], cd['delta']
                 df_counts.loc[(year, total), 'delta'] += 1  # Increase delta for better layout
             # Make papers with same year and citations have different y values
-            dft.loc[len(dft)] = (pid, title, year, type, total, authors, comp,
+            dft.loc[len(dft)] = (pid, title, year, type, total, authors, journal, comp,
                                  # Fix to show not cited papers on log axis
                                  max(1, total) + (d - int(c / 2)) / float(c))
         df_local = dft
@@ -140,20 +116,40 @@ class PlotPreprocessor:
         return dict(x=x, y=y)
 
     @staticmethod
+    def topics_words(kwd_df, max_words, topics):
+        kwds_queue = PriorityQueue()
+        for c in topics:
+            for pair in list(kwd_df[kwd_df['comp'] == c]['kwd'])[0].split(','):
+                if pair != '':  # Correctly process empty freq_kwds encoding
+                    word, value = pair.split(':')
+                    kwds_queue.put((-float(value), c, word))
+        words2show = {c: [] for c in topics}
+        seen_words = set()
+        added_words = 0
+        while not kwds_queue.empty() and added_words < len(topics) * max_words:
+            _, c, word = kwds_queue.get()
+            if word in seen_words:
+                continue
+            seen_words.add(word)
+            if len(words2show[c]) < max_words:
+                words2show[c].append(word)
+                added_words += 1
+        return words2show
+
+    @staticmethod
     def dump_citations_graph_cytoscape(df, citations_graph):
         logger.debug('Mapping citations graph to cytoscape JS')
         graph = citations_graph.copy()
-        # Put all the nodes into the graph
+        # Ensure all the nodes are in the graph
         for node in df['id']:
             if not graph.has_node(node):
                 graph.add_node(node)
+        pr = nx.pagerank(graph, alpha=0.5, tol=1e-9)
         cytoscape_graph = PlotPreprocessor.dump_to_cytoscape(df, graph)
         logger.debug('Set pagerank for citations graph')
-        pids = set(df['id'])
         for node_cs in cytoscape_graph['nodes']:
             nid = node_cs['data']['id']
-            if nid in pids:
-                node_cs['data']['pagerank'] = float(df.loc[df['id'] == nid]['pagerank'].values[0])
+            node_cs['data']['pagerank'] = pr[nid]
         return cytoscape_graph
 
     @staticmethod
@@ -162,11 +158,12 @@ class PlotPreprocessor:
         cytoscape_graph = PlotPreprocessor.dump_to_cytoscape(df, structure_graph.copy())
         logger.debug('Set centrality for structure graph')
         centrality = nx.algorithms.centrality.degree_centrality(structure_graph)
-        pids = set(df['id'])
         for node_cs in cytoscape_graph['nodes']:
             nid = node_cs['data']['id']
-            if nid in pids:
-                node_cs['data']['centrality'] = centrality[nid]
+            sel = df.loc[df['id'] == nid]
+            node_cs['data']['centrality'] = centrality[nid]
+            # Adjust vertical axis with bokeh graph
+            node_cs['position'] = dict(x=sel['x'].values[0] * 10, y=-sel['y'].values[0] * 10)
         return cytoscape_graph
 
     @staticmethod
@@ -182,51 +179,30 @@ class PlotPreprocessor:
                 'keywords': sel['keywords'].values[0],
                 'mesh': sel['mesh'].values[0],
                 'authors': cut_authors_list(sel['authors'].values[0]),
+                'journal': sel['journal'].values[0],
                 'year': int(sel['year'].values[0]),
                 'cited': int(sel['total'].values[0]),
                 'topic': topic,
             }
         nx.set_node_attributes(graph, attrs)
-
-        logger.debug('Group not connected nodes into groups')
-        topic_groups = set()
-        cytoscape_data = nx.cytoscape_data(graph)['elements']
-        for node_cs in cytoscape_data['nodes']:
-            nid = node_cs['data']['id']
-            if graph.degree(nid) == 0:
-                topic = node_cs['data']['topic']
-                if topic not in topic_groups:
-                    topic_group = {
-                        'group': 'nodes',
-                        'data': {
-                            'id': f'topic_{topic}',
-                            'topic': topic,
-                        },
-                        'classes': 'group'
-                    }
-                    topic_groups.add(topic)
-                    cytoscape_data['nodes'].append(topic_group)
-                node_cs['data']['parent'] = f'topic_{topic}'
-        logger.debug('Done dumping graph to cytoscape JS')
-        return cytoscape_data
+        return nx.cytoscape_data(graph)['elements']
 
     @staticmethod
-    def topic_evolution_data(df, kwds, n_steps):
+    def topic_evolution_data(evolution_df, kwds, n_steps):
         def sort_nodes_key(node):
             y, c = node[0].split(' ')
             return int(y), 1 if c == 'NPY' else -int(c)
 
-        cols = df.columns[2:]
-        pairs = list(zip(cols, cols[1:]))
+        cols = evolution_df.columns[1:]  # Skip id
         nodes = set()
         edges = []
-        for now, then in pairs:
-            nodes_now = [f'{now} {PlotPreprocessor.evolution_topic_name(c)}' for c in df[now].unique()]
-            nodes_then = [f'{then} {PlotPreprocessor.evolution_topic_name(c)}' for c in df[then].unique()]
+        for now, then in list(zip(cols, cols[1:])):
+            nodes_now = [f'{now} {PlotPreprocessor.evolution_topic_name(c)}' for c in evolution_df[now].unique()]
+            nodes_then = [f'{then} {PlotPreprocessor.evolution_topic_name(c)}' for c in evolution_df[then].unique()]
 
             inner = {node: 0 for node in nodes_then}
             changes = {node: inner.copy() for node in nodes_now}
-            for pmid, comp in df.iterrows():
+            for pmid, comp in evolution_df.iterrows():
                 c_now, c_then = comp[now], comp[then]
                 changes[f'{now} {PlotPreprocessor.evolution_topic_name(c_now)}'][
                     f'{then} {PlotPreprocessor.evolution_topic_name(c_then)}'
@@ -234,8 +210,10 @@ class PlotPreprocessor:
 
             for v in nodes_now:
                 for u in nodes_then:
-                    if changes[v][u] > 0:
-                        edges.append((v, u, changes[v][u]))
+                    n_papers = changes[v][u]
+                    if n_papers > 0:
+                        # Improve Sankey Diagram by hiding NPY papers, adding artificial edge
+                        edges.append((v, u, n_papers if not ('NPY' in u and 'NPY' in v) else 1))
                         nodes.add(v)
                         nodes.add(u)
 
@@ -245,10 +223,9 @@ class PlotPreprocessor:
             if c == 'NPY':
                 label = c
             else:
+                label = f'{year} {c}'
                 if n_steps < 4:
-                    label = f"{year} {', '.join(kwds[int(year)][int(c) - 1][:5])}"
-                else:
-                    label = f"{year} {c}"
+                    label += ' ' + ','.join(c for c, _ in kwds[int(year)][int(c) - 1][:3])
             nodes_data.append((node, label))
         nodes_data = sorted(nodes_data, key=sort_nodes_key, reverse=True)
 
@@ -268,8 +245,8 @@ class PlotPreprocessor:
         kwds_data = []
         for year, comps in kwds.items():
             for comp, kwd in comps.items():
-                if comp >= 0:
-                    kwds_data.append((year, comp + 1, ', '.join(kwd)))
+                if comp != -1:  # Not published yet
+                    kwds_data.append((year, comp + 1, ', '.join(k for k, _ in kwd)))
         return kwds_data
 
     @staticmethod
@@ -322,3 +299,64 @@ class PlotPreprocessor:
                 (pid, title, authors, url_prefix + pid if url_prefix else None, journal, year, total, doi, topic)
             )
         return result
+
+    @staticmethod
+    def layout_dendrogram(dendrogram):
+        # Compute paths
+        paths = []
+        for i, level in enumerate(dendrogram):
+            if i == 0:
+                for k in level.keys():
+                    paths.append([k])
+            # Edges
+            for k, v in level.items():
+                for path in paths:
+                    if path[i] == k:
+                        path.append(v)
+        # Add root as last item
+        for path in paths:
+            path.append(0)
+        # Radix sort or paths to ensure no overlaps
+        for i in range(len(dendrogram) + 1):
+            paths.sort(key=lambda p: p[i])
+            # Reorder next level to keep order of previous if possible
+            if i != len(dendrogram):
+                order = dict((v, i) for i, v in enumerate(unique_everseen(p[i + 1] for p in paths)))
+                for p in paths:
+                    p[i + 1] = order[p[i + 1]]
+        leaves_order = dict((v, i) for i, v in enumerate(unique_everseen(p[0] for p in paths)))
+        return dendrogram, paths, leaves_order
+
+    @staticmethod
+    def frequent_keywords_data(freq_kwds, df, corpus_terms, corpus_counts, n):
+        logger.debug('Computing frequencies of terms')
+        keywords = [t for t, _ in list(freq_kwds.items())[:n]]
+        
+        logger.debug('Grouping papers by year')
+        t = df[['year']].copy()
+        t['i'] = range(len(t))
+        papers_by_year = t[['year', 'i']].groupby('year')['i'].apply(list).to_dict()
+
+        logger.debug('Collecting numbers of papers with term per year')
+        binary_counts = corpus_counts.copy()
+        binary_counts[binary_counts.nonzero()] = 1
+        numbers_per_year = np.zeros(shape=(len(papers_by_year), len(corpus_terms)))
+        for i, (year, iss) in enumerate(papers_by_year.items()):
+            numbers_per_year[i, :] = binary_counts[iss].sum(axis=0)[0, :]
+
+        logger.debug('Collecting top keywords with maximum sum of numbers over years')
+        top_keyword_idxs = [corpus_terms.index(t) for t in keywords if t in corpus_terms]
+
+        logger.debug('Collecting dataframe with smoothed numbers for keywords with local weighted regression')
+        years = [year for year, _ in papers_by_year.items()]
+        keyword_dfs = []
+        for idx in top_keyword_idxs:
+            keyword = corpus_terms[idx]
+            numbers = numbers_per_year[:, idx]
+            numbers = lowess(numbers, years, frac=0.2, return_sorted=False)
+            keyword_df = pd.DataFrame(data=numbers.astype(int), columns=['number'])
+            keyword_df['keyword'] = keyword
+            keyword_df['year'] = years
+            keyword_dfs.append(keyword_df)
+        keywords_df = pd.concat(keyword_dfs, axis=0).reset_index(drop=True)
+        return keywords_df, years

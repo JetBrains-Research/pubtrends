@@ -3,6 +3,39 @@ Pubtrends changelog
 
 Here you can see the full list of changes between each release.
 
+Version 0.16
+------------
+Released on May 24, 2021
+
+-- Use graph embeddings for detecting similar papers
+-- Improved papers graph visualization in tSNE coordinates of embeddings
+-- Identify groups of similar authors
+-- Small updates and bugfixes
+
+
+Version 0.15
+------------
+Released on April 9, 2021
+
+-- Removed Neo4j DB backend
+
+Version 0.14
+------------
+Released on April 7, 2021
+
+-- Reworked results page
+-- Show joint topics and keyword diagram
+-- Bugfixes
+
+Version 0.13
+------------
+Released on March 28, 2021
+
+ - Analyze list of papers
+ - Improved papers search - combine pharases with terms search
+ - Bugfixes
+
+
 Version 0.12
 ------------
 Released on March 1, 2021

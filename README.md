@@ -1,7 +1,11 @@
+[![JetBrains Research](https://jb.gg/badges/research.svg)](https://confluence.jetbrains.com/display/ALL/JetBrains+on+GitHub)
+
 PubTrends
 =========
 
-A tool for analysis of trends & pivotal points in the scientific literature.
+PubTrends is a scientific literature exploratory tool for analyzing topics of a research field and similar papers analysis.
+
+![Scheme](pysrc/app/static/about_pubtrends_scheme.png?raw=true "Title")
 
 ## Prerequisites
 
@@ -9,7 +13,6 @@ A tool for analysis of trends & pivotal points in the scientific literature.
 * Conda
 * Python 3.6+
 * Docker
-* Neo4j 3.5+ with APOC 3.5.0.4 (in Docker)
 * PostgreSQL 12 (in Docker)
 * Redis 5.0 (in Docker)
 
@@ -25,9 +28,6 @@ Ensure that file contains correct information about the database(s) (url, port, 
     source activate pubtrends
     ```
 
-    Workaround for "image not found" error during neo4j pip install on newest Mac OS Sierra:
-    `conda install -y conda-forge::ncurses`
-
     Download Nltk and Spacy resources
     ```
     source activate pubtrends \
@@ -35,32 +35,13 @@ Ensure that file contains correct information about the database(s) (url, port, 
     && python -m spacy download en_core_web_sm
     ```
 
-3. Build `biolabs/pubtrends` Docker image (available on Docker hub).
+3. Build base Docker image `biolabs/pubtrends` and nested image `biolabs/pubtrends-test` for testing.
     ```
-    docker build -t biolabs/pubtrends .
+    docker build -f docker/main/Dockerfile -t biolabs/pubtrends .
+    docker build -f docker/main/Dockerfile -t biolabs/pubtrends-test . 
     ```
 
-4. Init Neo4j database and install APOC extension.
-    * Prepare folders
-    ```
-    mkdir -p $HOME/neo4j/data $HOME/neo4j/logs $HOME/neo4j/plugins
-    ```
-   * Download the [latest release](https://github.com/neo4j-contrib/neo4j-apoc-procedures/releases/tag/3.5.0.4) of APOC
-   * Place the binary JAR into your `$HOME/neo4j/plugins` folder
-   * Launch Neo4j docker image to init database and change default password.
-   
-    ```
-    mkdir $HOME/neo4j/data/
-    chmod a+rw $HOME/neo4j/data/
-    docker run --rm --name pubtrends-neo4j \
-        --publish=7474:7474 --publish=7687:7687 \
-        --volume=$HOME/neo4j/data:/var/lib/neo4j/data \
-        --volume=$HOME/neo4j/logs:/logs \
-        --volume=$HOME/neo4j/plugins:/plugins \
-        neo4j:3.5 /bin/bash -c 'bin/neo4j-admin set-initial-password mysecretpassword'
-    ```   
-
-5. Init PostgreSQL database.
+4. Init PostgreSQL database.
     
     * Launch Docker image:
     ```
@@ -106,7 +87,7 @@ Use the following command to test and build JAR package:
 
 ## Papers downloading and processing
 
-Neo4j / PostgreSQL should be configured and launched.
+PostgreSQL should be configured and launched.
 
 ### Pubmed
 
@@ -131,43 +112,42 @@ Updates - add crontab update every day at 22:00 with the command:
 
 ### Optional: Semantic Scholar
 
-Download Sample from [Semantic Scholar](https://www.semanticscholar.org/) or full archive. 
+Download Sample from [Semantic Scholar](https://www.semanticscholar.org/) or full archive. See Open Corpus.<br>
+Instructions are for the corpus 2021-03-01. \
+Replace `<PATH_TO_PUBTRENDS.JAR>` with actual path to Jar file.
 
    * Linux & Mac OS
    ```
-   wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2020-01-01/manifest.txt
+   wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2021-03-01/manifest.txt
    echo "" > complete.txt
    cat manifest.txt | grep corpus | while read -r file; do 
       if [[ -z $(grep "$file" complete.txt) ]]; then
          echo "Processing $file"
-         wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2020-01-01/$file;
-         java -cp build/libs/pubtrends-dev.jar org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --fillDatabase $(pwd)/$file
+         wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2021-03-01/$file;
+         java -cp <PATH_TO_PUBTRENDS.JAR> org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --fillDatabase $(pwd)/$file
          rm $file;
          echo "$file" >> complete.txt
       fi;
    done
+   java -cp <PATH_TO_PUBTRENDS.JAR> org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --finish
    ```
    
    * Windows 10 PowerShell
    ```
-   curl.exe -o .\manifest.txt https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2020-01-01/manifest.txt 
+   curl.exe -o .\manifest.txt https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2021-03-01/manifest.txt 
    echo "" > .\complete.txt
    foreach ($file in Get-Content .\manifest.txt) {
        $sel = Select-String -Path .\complete.txt -Pattern $file
        if ($sel -eq $null) {
           echo "Processing $file"
-          curl.exe -o .\$file https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2020-01-01/$file
-          java -cp "C:\Users\oleg\work\pubtrends\build\libs\pubtrends-dev.jar" org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --fillDatabase .\$file
+          curl.exe -o .\$file https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2021-03-01$file
+          java -cp <PATH_TO_PUBTRENDS.JAR> org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --fillDatabase .\$file
           del ./$file
           echo $file >> .\complete.txt
        }
    }
+   java -cp <PATH_TO_PUBTRENDS.JAR> org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --finish
    ```
-
-   Command line options supported:
-   * `resetDatabase` - clear current contents of the database (useful for development) 
-   * `fillDatabase` - create and fill database with Semantic Scholar data from file
-
 
 ## Development
 
@@ -223,15 +203,13 @@ Please ensure that you have Database configured, up and running.
 
 ## Testing
 
-1. Start Docker image with Neo4j / Postgres environment for tests (Kotlin and Python development)
+1. Start Docker image with Postgres environment for tests (Kotlin and Python development)
     ```
     docker run --rm --name pubtrends-test \
-    --publish=7474:7474 --publish=7687:7687 --publish=5432:5432 \
-    --volume=$(pwd):/pubtrends -d -t biolabs/pubtrends
+    --publish=5432:5432 --volume=$(pwd):/pubtrends -d -t biolabs/pubtrends-test
     ```
-
-    Check access to Neo4j web browser: `http://localhost:7474`
-    NOTE: please don't forget to stop the container afterwards.
+    
+   NOTE: don't forget to stop the container afterwards.
 
 2. Kotlin tests
 
@@ -248,8 +226,8 @@ Please ensure that you have Database configured, up and running.
 4. Python tests within Docker (ensure that `./build/libs/pubtrends-dev.jar` file is present)
 
     ```
-    docker run --rm --volume=$(pwd):/pubtrends -t biolabs/pubtrends /bin/bash -c \
-    "/usr/lib/postgresql/12/bin/pg_ctl -D /home/user/postgres start; sudo neo4j start; \
+    docker run --rm --volume=$(pwd):/pubtrends -t biolabs/pubtrends-test /bin/bash -c \
+    "/usr/lib/postgresql/12/bin/pg_ctl -D /home/user/postgres start; \
     cd /pubtrends; mkdir ~/.pubtrends; cp config.properties ~/.pubtrends; \
     source activate pubtrends; pytest pysrc"
     ```
@@ -266,23 +244,7 @@ Please ensure that you have configured and prepared the database(s).
 1. Modify file `config.properties` with information about the database(s). 
    File from the project folder is used in this case.
 
-2. Launch Neo4j database docker image.
-
-    ```
-    docker run --name pubtrends-neo4j \
-        --publish=7474:7474 --publish=7687:7687 \
-        --volume=$HOME/neo4j/data:/var/lib/neo4j/data \
-        --volume=$HOME/neo4j/logs:/logs \
-        --volume=$HOME/neo4j/plugins:/plugins \
-        --env NEO4J_dbms_memory_pagecache_size=1G \
-        --env NEO4J_dbms_memory_heap_initial__size=1G \
-        --env NEO4J_dbms_memory_heap_max__size=4G \
-        -d neo4j:3.5
-    ```
-    
-   See https://neo4j.com/developer/guide-performance-tuning/ for configuration details.
-   
-3. Start PostgreSQL server.
+2. Start PostgreSQL server.
 
     ```
     docker run --rm  --name pubtrends-postgres -p 5432:5432 \
@@ -302,20 +264,20 @@ Please ensure that you have configured and prepared the database(s).
     refresh materialized view matview_pmcitations;
     ``` 
    
-4. Build ready for deployment package with script `dist.sh`.
+3. Build ready for deployment package with script `dist.sh`.
    ```
    dist.sh build=build-number ga=google-analytics-id
    ```
 
 
-5. Create necessary folders for logs, service database, etc. See `docker-compose.yml` for details.
+4. Create necessary folders for logs, service database, etc. See `docker-compose.yml` for details.
     ```
     mkdir ~/.pubtrends/logs
     mkdir ~/.pubtrends/database
     ...
     ```
 
-6. Prepare SSL certificates files `privkey.pem` and `cert.pem` and optional CA-authority file `chain.pem`.\
+5. Optional: prepare SSL certificates files `privkey.pem` and `cert.pem` and optional CA-authority file `chain.pem`.\
    You can generate a self-signed certificate for testing purposes by the command:
    
    ```
@@ -324,7 +286,7 @@ Please ensure that you have configured and prepared the database(s).
    openssl req -nodes -x509 -newkey rsa:4096 -keyout privkey.pem -out cert.pem -days 365 -subj '/CN=localhost'
    ```
  
-7. Launch pubtrends with docker-compose.
+6. Launch pubtrends with docker-compose.
     ```
     # start
     docker-compose up -d --build
@@ -351,5 +313,6 @@ See [AUTHORS.md](AUTHORS.md) for a list of authors and contributors.
 * Project architecture [presentation](https://docs.google.com/presentation/d/131qvkEnzzmpx7-I0rz1om6TG7bMBtYwU9T1JNteRIEs/edit?usp=sharing) - summer 2019. 
 * Review generation [presentation](https://my.compscicenter.ru/media/projects/2019-autumn/844/presentations/participants.pdf) - fall 2019.
 * Extractive summarization [presentation](https://drive.google.com/file/d/1NnZ6JtJ2owtxFnuwKbARzOFM5_aHw6ls/view?usp=sharing) - spring 2020.
+* Paper ["Automatic generation of reviews of scientific papers"](https://arxiv.org/abs/2010.04147)
 * [Icons by Feather](https://feathericons.com/)
 

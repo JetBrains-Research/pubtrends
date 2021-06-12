@@ -41,10 +41,6 @@ project(':') {
         compile 'com.opencsv:opencsv:4.6'
         compile 'com.google.code.gson:gson:2.2.4'
         compile 'net.sf.jopt-simple:jopt-simple:5.0.4'
-        compile 'org.neo4j:neo4j:3.5.11'
-        compile 'org.neo4j:neo4j-bolt:3.5.11'
-        compile 'org.neo4j.driver:neo4j-java-driver:1.7.5'
-        compile 'org.neo4j.procedure:apoc:3.5.0.5'
 
         compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.9'
         compile group: 'commons-codec', name: 'commons-codec', version: '1.9'

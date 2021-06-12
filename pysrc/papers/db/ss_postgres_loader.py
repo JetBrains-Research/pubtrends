@@ -48,9 +48,10 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
                 WHERE {key} = {repr(value)};
             '''
 
+        logger.debug(f'find query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df = pd.DataFrame(cursor.fetchall(), columns=['id'])
+            df = pd.DataFrame(cursor.fetchall(), columns=['id'], dtype=object)
 
         return list(df['id'].astype(str))
 
@@ -62,31 +63,33 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         # Disable stemming-based lookup for now, see: https://github.com/JetBrains-Research/pubtrends/issues/242
         exact_filter = no_stemming_filter(query_str)
 
+        by_citations = 'count DESC NULLS LAST'
+        by_year = 'year DESC NULLS LAST'
+        # 2 divides the rank by the document length
+        # 4 divides the rank by the mean harmonic distance between extents (this is implemented only by ts_rank_cd)
+        # See https://www.postgresql.org/docs/12/textsearch-controls.html#TEXTSEARCH-RANKING
         if sort == SORT_MOST_CITED:
-            query = f'''
-                SELECT P.ssid
-                FROM to_tsquery('{query_str}') query, SSPublications P
-                    LEFT JOIN matview_sscitations C
-                        ON C.ssid = P.ssid AND C.crc32id = P.crc32id
-                WHERE tsv @@ query {exact_filter}
-                GROUP BY P.ssid, P.crc32id
-                ORDER BY COUNT(*) DESC NULLS LAST
-                LIMIT {limit};
-                '''
+            order = f'{by_citations}, ts_rank_cd(P.tsv, query, 2|4) DESC, {by_year}'
         elif sort == SORT_MOST_RECENT:
-            query = f'''
-                SELECT ssid
-                FROM to_tsquery('{query_str}') query, SSPublications P
-                WHERE tsv @@ query {exact_filter}
-                ORDER BY year DESC NULLS LAST
-                LIMIT {limit};
-                '''
+            order = f'{by_year}, ts_rank_cd(P.tsv, query, 2|4) DESC, {by_citations}'
         else:
             raise ValueError(f'Illegal sort method: {sort}')
 
+        query = f'''
+            SELECT P.ssid 
+            FROM to_tsquery('{query_str}') query, 
+            SSPublications P
+            LEFT JOIN matview_sscitations C 
+            ON C.ssid = P.ssid AND C.crc32id = P.crc32id
+            WHERE P.tsv @@ query {exact_filter}
+            ORDER BY {order}, P.crc32id
+            LIMIT {limit};
+            '''
+
+        logger.debug(f'search query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            pub_df = pd.DataFrame(cursor.fetchall(), columns=['id'])
+            pub_df = pd.DataFrame(cursor.fetchall(), columns=['id'], dtype=object)
 
         # Duplicate rows may occur if crawler was stopped while parsing Semantic Scholar archive
         pub_df.drop_duplicates(subset='id', inplace=True)
@@ -95,15 +98,19 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
 
     def load_publications(self, ids):
         self.check_connection()
+        # We can possible have multiple records for a single paper!!!
+        # PostgreSQLUtil.kt#batchInsertOnDuplicateKeyUpdate is not used for Semantic Scholar
         query = f'''
-                SELECT P.ssid, P.crc32id, P.pmid, P.title, P.abstract, P.year, P.doi, P.aux
+                SELECT distinct on (P.ssid) P.ssid, P.crc32id, P.pmid, P.title, P.abstract, P.year, P.doi, P.aux
                 FROM SSPublications P
                 WHERE (P.crc32id, P.ssid) in (VALUES {SemanticScholarPostgresLoader.ids2values(ids)});
                 '''
+        logger.debug(f'load_publications query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             pub_df = pd.DataFrame(cursor.fetchall(),
-                                  columns=['id', 'crc32id', 'pmid', 'title', 'abstract', 'year', 'doi', 'aux'],
+                                  columns=['id', 'crc32id', 'pmid', 'title', 'abstract',
+                                           'year', 'doi', 'aux'],
                                   dtype=object)
 
         if np.any(pub_df[['id', 'crc32id', 'title']].isna()):
@@ -114,6 +121,8 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         pub_df['type'] = 'Article'
         pub_df['mesh'] = ''
         pub_df['keywords'] = ''
+        # Hack for missing year in SS, see https://github.com/JetBrains-Research/pubtrends/issues/258
+        pub_df['year'].fillna(1970, inplace=True)
         return Loader.process_publications_dataframe(ids, pub_df)
 
     def load_citations_by_year(self, ids):
@@ -128,11 +137,15 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
                 LIMIT {self.config.max_number_of_citations};
             '''
 
+        logger.debug(f'load_citations_by_year query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             cit_stats_df_from_query = pd.DataFrame(cursor.fetchall(),
-                                                   columns=['id', 'year', 'count'])
+                                                   columns=['id', 'year', 'count'],
+                                                   dtype=object)
 
+        # Hack for missing year in SS
+        cit_stats_df_from_query.dropna(subset=['year'], inplace=True)
         if np.any(cit_stats_df_from_query.isna()):
             raise ValueError('NaN values are not allowed in citation stats DataFrame')
 
@@ -153,13 +166,29 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
                 LIMIT {limit};
                 '''
 
+        logger.debug(f'load_references query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df = pd.DataFrame(cursor.fetchall(), columns=['id'])
+            df = pd.DataFrame(cursor.fetchall(), columns=['id'], dtype=object)
         return list(df['id'].astype(str))
 
     def estimate_citations(self, ids):
-        raise Exception('Not implemented yet')
+        self.check_connection()
+        query = f'''
+                SELECT count
+                FROM SSPublications P
+                    LEFT JOIN matview_sscitations C
+                    ON C.crc32id = P.crc32id and C.ssid = P.ssid 
+                WHERE (P.crc32id, P.ssid) in (VALUES {SemanticScholarPostgresLoader.ids2values(ids)});
+                '''
+
+        logger.debug(f'estimate_citations query: {query[:1000]}')
+        with self.postgres_connection.cursor() as cursor:
+            cursor.execute(query)
+            df = pd.DataFrame(cursor.fetchall(), columns=['total'], dtype=object)
+            df.fillna(value=1, inplace=True)  # matview_sscitations ignores < 3 citations
+
+        return df['total']
 
     def load_citations(self, ids):
         self.check_connection()
@@ -171,10 +200,12 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
                     LIMIT {self.config.max_number_of_citations};
                     '''
 
+        logger.debug(f'load_citations query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             citations = pd.DataFrame(cursor.fetchall(),
-                                     columns=['id_out', 'id_in'])
+                                     columns=['id_out', 'id_in'],
+                                     dtype=object)
 
         # TODO[shpynov] we can make it on DB side
         citations = citations[citations['id_out'].isin(ids)]
@@ -202,6 +233,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
                 LIMIT {self.config.max_number_of_cocitations};
                 '''
 
+        logger.debug(f'load_cocitations query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             cocit_df, lines = process_cocitations_postgres(cursor)
@@ -228,9 +260,10 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
                 ORDER BY count DESC NULLS LAST
                 LIMIT {limit};
                 '''
+        logger.debug(f'expand query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df = pd.DataFrame(cursor.fetchall(), columns=['id', 'total'])
+            df = pd.DataFrame(cursor.fetchall(), columns=['id', 'total'], dtype=object)
         df['id'] = df['id'].astype(str)
         df.fillna(value=1, inplace=True)
         return df
@@ -247,6 +280,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
                         LIMIT {self.config.max_number_of_bibliographic_coupling};
                     '''
 
+        logger.debug(f'load_bibliographic_coupling query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             df, lines = process_bibliographic_coupling_postgres(cursor)

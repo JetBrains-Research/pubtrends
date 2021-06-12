@@ -1,5 +1,6 @@
 import logging
 import re
+from queue import PriorityQueue
 from threading import Lock
 
 import nltk
@@ -49,28 +50,30 @@ def vectorize_corpus(df, max_features, min_df, max_df):
     return vectorizer.get_feature_names(), counts
 
 
-def analyze_texts_similarity(df, corpus_vectors, min_threshold):
+def analyze_texts_similarity(df, corpus_vectors, min_threshold, max_similar):
     """
     Computes texts similarities based on cosine distance between texts vectors
     :param df: Papers dataframe
     :param corpus_vectors: Vectorized papers matrix
     :param min_threshold: Min similarity threshold to add it to result
-    :return: List[(similarity, index)] - list of similar papers
+    :param max_similar: Max similar papers
+    :return: PriorityQueue[(similarity, index)] - queue of similar papers
     """
     cos_similarities = cosine_similarity(corpus_vectors)
-    similarities = []
+    similarity_queues = [PriorityQueue(maxsize=max_similar) for _ in range(len(df))]
     # Adding text citations
     for i, pid1 in enumerate(df['id']):
-        paper_similarities = []
-        similarities.append(paper_similarities)
+        queue_i = similarity_queues[i]
         for j in range(i + 1, len(df)):
             similarity = cos_similarities[i, j]
             if np.isfinite(similarity) and similarity >= min_threshold:
-                paper_similarities.append((similarity, j))
-    return similarities
+                if queue_i.full():
+                    queue_i.get()  # Removes the element with lowest similarity
+                queue_i.put((similarity, j))
+    return similarity_queues
 
 
-def compute_comps_tfidf(df, comps, corpus_counts, ignore_comp=None):
+def compute_comps_tfidf(df, comps, corpus_counts, ignore_comp):
     """
     Compute TFIDF for components based on average counts
     :param df: Papers dataframe
@@ -81,10 +84,10 @@ def compute_comps_tfidf(df, comps, corpus_counts, ignore_comp=None):
     """
     logger.debug('Compute average terms counts per components')
     # Since some of the components may be skipped, use this dict for continuous indexes
-    comp_idx = dict(enumerate([c for c in comps if c != ignore_comp]))
-    terms_freqs_per_comp = np.zeros(shape=(len(comp_idx), corpus_counts.shape[1]), dtype=np.short)
+    comp_idx = {c: i for i, c in enumerate(c for c in comps if c != ignore_comp)}
+    terms_freqs_per_comp = np.zeros(shape=(len(comp_idx), corpus_counts.shape[1]), dtype=np.float)
     for comp, comp_pids in comps.items():
-        if comp in comp_idx:  # Not ignored
+        if comp != ignore_comp:  # Not ignored
             terms_freqs_per_comp[comp_idx[comp], :] = \
                 np.sum(corpus_counts[np.flatnonzero(df['id'].isin(comp_pids)), :], axis=0) / len(comp_pids)
 
@@ -100,7 +103,7 @@ def get_topic_word_cloud_data(kwd_df, comp):
     """
     kwds = {}
     for pair in list(kwd_df[kwd_df['comp'] == comp]['kwd'])[0].split(','):
-        if pair != '':  # Correctly process empty kwds encoding
+        if pair != '':  # Correctly process empty freq_kwds encoding
             token, value = pair.split(':')
             for word in token.split(' '):
                 kwds[word] = float(value) + kwds.get(word, 0)

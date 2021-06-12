@@ -6,7 +6,6 @@ from string import Template
 import pandas as pd
 from matplotlib import colors
 
-LOCAL_BASE_URL = Template('/paper?source=$source&id=')
 PUBMED_ARTICLE_BASE_URL = 'https://www.ncbi.nlm.nih.gov/pubmed/?term='
 SEMANTIC_SCHOLAR_BASE_URL = 'https://www.semanticscholar.org/paper/'
 
@@ -102,3 +101,19 @@ def rgb2hex(color):
     else:
         r, g, b = color
     return "#{0:02x}{1:02x}{2:02x}".format(int(r), int(g), int(b))
+
+
+def hex2rgb(color):
+    return [int(color[pos:pos + 2], 16) for pos in range(1, 7, 2)]
+
+
+def contrast_color(r, g, b):
+    """
+    Light foreground for dark background and vice verse.
+    Idea Taken from https://stackoverflow.com/a/1855903/418358
+    """
+    # Counting the perceptive luminance - human eye favors green color...
+    if 1 - (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.5:
+        return 0, 0, 0
+    else:
+        return 255, 255, 255
