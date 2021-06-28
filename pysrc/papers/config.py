@@ -71,13 +71,13 @@ DEFAULT_ANALYZER_SETTINGS_DICT = dict(
 
     # ...bibliographic coupling (BC) was the most accurate,  followed by co-citation (CC).
     # Direct citation (DC) was a distant third among the three...
-    SIMILARITY_BIBLIOGRAPHIC_COUPLING=2,  # Limited by number of references
+    SIMILARITY_BIBLIOGRAPHIC_COUPLING=0.125,  # Limited by number of references
     SIMILARITY_COCITATION=1,  # Limiter by number of co-citations
-    SIMILARITY_CITATION=0.5,  # Limited by 1 citation
-    SIMILARITY_TEXT_CITATION=10,  # Limited by cosine similarity <= 1
+    SIMILARITY_CITATION=0.125,  # Limited by 1 citation
+    SIMILARITY_TEXT_CITATION=1,  # Limited by cosine similarity <= 1
 
-    SIMILARITY_TEXT_MIN=0.5,  # Minimal cosine similarity for potential text citation
-    SIMILARITY_TEXT_CITATION_N=10,  # Max number of potential text citations for paper
+    SIMILARITY_TEXT_CITATION_MIN=0.3,  # Minimal cosine similarity for potential text citation
+    SIMILARITY_TEXT_CITATION_N=50,  # Max number of potential text citations for paper
 
     # Reduce number of edges in smallest communities, i.e. topics
     STRUCTURE_LOW_LEVEL_SPARSITY=0.5,

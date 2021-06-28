@@ -1,12 +1,10 @@
 import numpy as np
 import pandas as pd
 
-from pysrc.papers.analysis.graph import build_similarity_graph
-from pysrc.papers.analysis.topics import topic_analysis
-from pysrc.papers.analysis.text import vectorize_corpus, compute_tfidf, analyze_texts_similarity
+from pysrc.papers.analysis.graph import node2vec
+from pysrc.papers.analysis.topics import cluster_embeddings
+from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import AnalyzerSettings
-
-PUB_DF_COLUMNS = ['id', 'title', 'abstract', 'year', 'type', 'keywords', 'mesh', 'doi', 'aux']
 
 
 def get_direct_references_subgraph(analyzer, pmid):
@@ -31,48 +29,25 @@ def get_similarity_func(similarity_bibliographic_coupling, similarity_cocitation
     return inner
 
 
-def recalculate_topic_analysis(analyzer, graph=None, settings=AnalyzerSettings()):
+def topic_analysis_node2vec(analyzer, subgraph, **settings):
     """
-    Rerun topic analysis for a given similarity graph and settings.
+    Rerun topic analysis based on node2vec for a given similarity graph and settings.
     """
-    if not graph:
-        graph = analyzer.similarity_graph
-    similarity_func = get_similarity_func(settings.SIMILARITY_BIBLIOGRAPHIC_COUPLING,
-                                          settings.SIMILARITY_COCITATION,
-                                          settings.SIMILARITY_CITATION,
-                                          settings.SIMILARITY_TEXT_CITATION)
-    topics_dendrogram, partition, comp_other, components, comp_sizes = \
-        topic_analysis(graph, similarity_func,
-                       topic_min_size=settings.TOPIC_MIN_SIZE,
-                       max_topics_number=settings.TOPICS_MAX_NUMBER)
-    return partition
+    node_ids, node_embeddings = node2vec(subgraph,
+                                         weight_func=PapersAnalyzer.similarity,
+                                         walk_length=settings['walk_length'], 
+                                         walks_per_node=settings['walks_per_node'], 
+                                         vector_size=settings['vector_size'])
+    clusters, _ = cluster_embeddings(
+        node_embeddings, settings['topic_min_size'], settings['topics_max_number']
+    )
+    return dict(zip(node_ids, clusters))
 
 
 def rebuild_similarity_graph(analyzer, min_cocitation=0):
     """
-    Restores missing data based on the analyzer dump and rebuilds similarity graph applying
-    scaling to bibliographic coupling and co-citations.
+    Rebuild similarity graph only with edges that have cocitation > min_cocitations
     """
-    analyzer.ids = set(analyzer.df['id'])
-    analyzer.n_papers = len(analyzer.ids)
-    analyzer.pub_types = list(set(analyzer.df['type']))
-    analyzer.query = 'restored from PubTrends export'
-
-    analyzer.pub_df = analyzer.df[PUB_DF_COLUMNS]
-
-    analyzer.components = set(analyzer.df['comp'].unique())
-    if -1 in analyzer.components:
-        analyzer.components.remove(-1)
-
-    settings = AnalyzerSettings()
-    analyzer.corpus_ngrams, analyzer.corpus_counts = \
-        vectorize_corpus(analyzer.pub_df,
-                         max_features=settings.VECTOR_WORDS,
-                         min_df=settings.VECTOR_MIN_DF, max_df=settings.VECTOR_MAX_DF)
-    tfidf = compute_tfidf(analyzer.corpus_counts)
-    analyzer.texts_similarity = analyze_texts_similarity(analyzer.pub_df, tfidf,
-                                                         settings.SIMILARITY_TEXT_MIN)
-
     cocit_data = []
     bibcoupling_data = []
     for cited_1, cited_2, data in analyzer.similarity_graph.edges(data=True):

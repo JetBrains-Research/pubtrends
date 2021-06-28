@@ -1,4 +1,5 @@
 import logging
+from functools import lru_cache
 from queue import PriorityQueue
 
 import networkx as nx
@@ -106,6 +107,7 @@ def local_sparse(graph, e):
     return result
 
 
+@lru_cache(maxsize=1000)
 def node2vec(graph, weight_func, walk_length=100, walks_per_node=10, vector_size=32):
     logger.debug('Translating nx graph into stellar graph representation')
     g_weighted = nx.Graph()
