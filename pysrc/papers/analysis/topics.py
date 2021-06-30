@@ -155,12 +155,11 @@ def cluster_embeddings(weighted_node_embeddings, min_cluster_size, max_clusters)
         model = AgglomerativeClustering(n_clusters=n_clusters).fit(weighted_node_embeddings)
         clusters_counter = Counter(model.labels_)
         min_size = clusters_counter.most_common()[-1][1]
-        if min_size < min_cluster_size:
+        num_clusters = len(clusters_counter.keys())
+        if min_size < min_cluster_size or num_clusters > max_clusters:
             r = n_clusters + 1
-        elif min_size > max_clusters:
-            l = n_clusters
         else:
-            break
+            l = n_clusters
 
     logger.debug(f'Number of clusters = {n_clusters}')
     logger.debug('Reorder clusters by size descending')

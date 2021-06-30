@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 
-from pysrc.papers.analysis.graph import node2vec
-from pysrc.papers.analysis.topics import cluster_embeddings
+from functools import lru_cache
+
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import AnalyzerSettings
 
@@ -18,6 +18,7 @@ def get_direct_references_subgraph(analyzer, pmid):
     return analyzer.similarity_graph.subgraph(references)
 
 
+@lru_cache(maxsize=1000)
 def get_similarity_func(similarity_bibliographic_coupling, similarity_cocitation,
                         similarity_citation, similarity_text_citation):
     def inner(d):
@@ -27,21 +28,6 @@ def get_similarity_func(similarity_bibliographic_coupling, similarity_cocitation
                similarity_text_citation * d.get('text', 0)
 
     return inner
-
-
-def topic_analysis_node2vec(analyzer, subgraph, **settings):
-    """
-    Rerun topic analysis based on node2vec for a given similarity graph and settings.
-    """
-    node_ids, node_embeddings = node2vec(subgraph,
-                                         weight_func=PapersAnalyzer.similarity,
-                                         walk_length=settings['walk_length'], 
-                                         walks_per_node=settings['walks_per_node'], 
-                                         vector_size=settings['vector_size'])
-    clusters, _ = cluster_embeddings(
-        node_embeddings, settings['topic_min_size'], settings['topics_max_number']
-    )
-    return dict(zip(node_ids, clusters))
 
 
 def rebuild_similarity_graph(analyzer, min_cocitation=0):
