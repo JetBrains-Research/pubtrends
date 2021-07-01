@@ -1,4 +1,13 @@
-## Nature Reviews Reference Clustering
+# Nature Reviews Reference Clustering
+
+## How To Use Grid Search
+
+1. Put all the JSONs exported from PubTrends into `pubtrends_export` folder.
+2. Launch `src/grid_search_optimization.ipynb`.
+3. Choose the parameter grid.
+4. Use Cell > Run All to run grid search, results will be saved automatically.
+
+## Ground Truth Clustering Collection
 
 **Current status: 40/40 papers processed, 99.9% references mapped (other seem to be erroneous)**
 
