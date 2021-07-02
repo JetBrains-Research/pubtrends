@@ -32,6 +32,8 @@ param_grid = [
         'similarity_text': weight_range.copy(),
         'method': ['louvain'],
         'resolution': resolution.copy(),
+        'topic_min_size': topic_min_size.copy(),
+        'topics_max_number': topics_max_number.copy(),
     },
     {
         'similarity_bibliographic_coupling': [1],
@@ -40,6 +42,8 @@ param_grid = [
         'similarity_text': weight_range.copy(),
         'method': ['louvain'],
         'resolution': resolution.copy(),
+        'topic_min_size': topic_min_size.copy(),
+        'topics_max_number': topics_max_number.copy(),
     },
     {
         'similarity_bibliographic_coupling': [0],
@@ -48,6 +52,8 @@ param_grid = [
         'similarity_text': weight_range.copy(),
         'method': ['louvain'],
         'resolution': resolution.copy(),
+        'topic_min_size': topic_min_size.copy(),
+        'topics_max_number': topics_max_number.copy(),
     },
     {
         'method': ['lda'],
@@ -154,6 +160,7 @@ def topic_analysis_lda(analyzer, subgraph, **settings):
 
 
 # Louvain
+import numpy as np
 import community
 
 from pysrc.papers.utils import SEED
@@ -181,8 +188,105 @@ def topic_analysis_louvain(analyzer, similarity_graph, **settings):
     partition_louvain = community.best_partition(
         similarity_graph, weight='similarity', random_state=SEED, resolution=settings['resolution']
     )
+    logging.debug(f'Best partition {len(set(partition_louvain.values()))} components')
+    components = set(partition_louvain.values())
+    comp_sizes = {c: sum([partition_louvain[node] == c for node in partition_louvain.keys()]) for c in components}
+    logging.debug(f'Components: {comp_sizes}')
 
-    return partition_louvain
+    if len(similarity_graph.edges) > 0:
+        modularity = community.modularity(partition_louvain, similarity_graph)
+        logging.debug(f'Graph modularity (possible range is [-1, 1]): {modularity :.3f}')
+
+    logging.debug('Merge small components')
+    similarity_matrix = compute_similarity_matrix(similarity_graph, similarity_func, partition_louvain)
+    merged_partition, comp_sizes = merge_components(
+        partition_louvain, similarity_matrix,
+        topic_min_size=settings['topic_min_size'], max_topics_number=settings['topics_max_number']
+    )
+
+    return merged_partition
+
+
+def compute_similarity_matrix(similarity_graph, similarity_func, partition):
+    logging.debug('Computing mean similarity of all edges between topics')
+    n_comps = len(set(partition.values()))
+    edges = len(similarity_graph.edges)
+    sources = [None] * edges
+    targets = [None] * edges
+    similarities = [0.0] * edges
+    i = 0
+    for u, v, data in similarity_graph.edges(data=True):
+        sources[i] = u
+        targets[i] = v
+        similarities[i] = similarity_func(data)
+        i += 1
+    df = pd.DataFrame(partition.items(), columns=['id', 'comp'])
+    similarity_df = pd.DataFrame(data={'source': sources, 'target': targets, 'similarity': similarities})
+    similarity_topics_df = similarity_df.merge(df, how='left', left_on='source', right_on='id') \
+        .merge(df, how='left', left_on='target', right_on='id')
+    logging.debug('Calculate mean similarity between for topics')
+    mean_similarity_topics_df = \
+        similarity_topics_df.groupby(['comp_x', 'comp_y'])['similarity'].mean().reset_index()
+    similarity_matrix = np.zeros(shape=(n_comps, n_comps))
+    for index, row in mean_similarity_topics_df.iterrows():
+        cx, cy = int(row['comp_x']), int(row['comp_y'])
+        similarity_matrix[cx, cy] = similarity_matrix[cy, cx] = row['similarity']
+    return similarity_matrix
+
+
+def merge_components(partition, similarity_matrix, topic_min_size, max_topics_number):
+    """
+    Merge small topics to required number of topics and minimal size, reorder topics by size
+    :param partition: Partition, dict paper id -> component
+    :param similarity_matrix: Mean similarity between components for partition
+    :param topic_min_size: Min number of papers in topic
+    :param max_topics_number: Max number of topics
+    :return: merged_partition, sorted_comp_sizes
+    """
+    logging.debug(f'Merging: max {max_topics_number} components with min size {topic_min_size}')
+    comp_sizes = {c: sum([partition[paper] == c for paper in partition.keys()])
+                  for c in (set(partition.values()))}
+    logging.debug(f'{len(comp_sizes)} comps, comp_sizes: {comp_sizes}')
+
+    merge_index = 1
+    while len(comp_sizes) > 1 and \
+            (len(comp_sizes) > max_topics_number or min(comp_sizes.values()) < topic_min_size):
+        logging.debug(f'{merge_index}. Pick minimal and merge it with the closest by similarity')
+        merge_index += 1
+        min_comp = min(comp_sizes.keys(), key=lambda c: comp_sizes[c])
+        comp_to_merge = max([c for c in partition.values() if c != min_comp],
+                            key=lambda c: similarity_matrix[min_comp][c])
+        logging.debug(f'Merging with most similar comp {comp_to_merge}')
+        comp_update = min(min_comp, comp_to_merge)
+        comp_sizes[comp_update] = comp_sizes[min_comp] + comp_sizes[comp_to_merge]
+        if min_comp != comp_update:
+            del comp_sizes[min_comp]
+        else:
+            del comp_sizes[comp_to_merge]
+        logging.debug(f'Merged comps: {len(comp_sizes)}, updated comp_sizes: {comp_sizes}')
+        for (paper, c) in list(partition.items()):
+            if c == min_comp or c == comp_to_merge:
+                partition[paper] = comp_update
+
+        logging.debug('Update similarities')
+        for i in range(len(similarity_matrix)):
+            similarity_matrix[i, comp_update] = \
+                (similarity_matrix[i, min_comp] + similarity_matrix[i, comp_to_merge]) / 2
+            similarity_matrix[comp_update, i] = \
+                (similarity_matrix[min_comp, i] + similarity_matrix[comp_to_merge, i]) / 2
+
+    logging.debug('Sorting comps by size descending')
+    sorted_components = dict(
+        (c, i) for i, c in enumerate(sorted(set(comp_sizes), key=lambda c: comp_sizes[c], reverse=True))
+    )
+    logging.debug(f'Comps reordering by size: {sorted_components}')
+    merged_partition = {paper: sorted_components[c] for paper, c in partition.items()}
+    sorted_comp_sizes = {c: sum([merged_partition[p] == c for p in merged_partition.keys()])
+                         for c in set(merged_partition.values())}
+
+    for k, v in sorted_comp_sizes.items():
+        logging.debug(f'Component {k}: {v} ({int(100 * v / len(merged_partition))}%)')
+    return merged_partition, sorted_comp_sizes
 
 
 # Node2vec
@@ -368,7 +472,8 @@ if __name__ == '__main__':
     logger.info('All tasks are finished')
 
     results_df.fillna(0, inplace=True)
-    results_df.drop(columns=['check_cached_data'], inplace=True)
+    if 'check_cached_data' in results_df.columns:
+        results_df.drop(columns=['check_cached_data'], inplace=True)
     results_df.to_csv(f'{OUTPUT_NAME}.csv', index=False)
 
     with open(f'{OUTPUT_NAME}.json', 'w') as f:
