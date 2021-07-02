@@ -6,10 +6,10 @@ celery_app = Celery('grid_search', backend='redis://localhost:6379', broker='red
 # (might consume a LOT of space)
 SAVE_PARTITION = True
 
-weight_range = [1, 2, 4, 8]
+weight_range = [0, 1, 10]
 topic_min_size = [5, 10]
-topics_max_number = [10, 20]
-resolution = [0.6, 0.8, 1]
+topics_max_number = [5, 10, 20, 30]
+resolution = [0.8, 1]
 
 param_grid = [
     {
@@ -27,28 +27,8 @@ param_grid = [
     },
     {
         'similarity_bibliographic_coupling': weight_range.copy(),
-        'similarity_cocitation': [1],
+        'similarity_cocitation': weight_range.copy(),
         'similarity_citation': weight_range.copy(),
-        'similarity_text': weight_range.copy(),
-        'method': ['louvain'],
-        'resolution': resolution.copy(),
-        'topic_min_size': topic_min_size.copy(),
-        'topics_max_number': topics_max_number.copy(),
-    },
-    {
-        'similarity_bibliographic_coupling': [1],
-        'similarity_cocitation': [0],
-        'similarity_citation': weight_range.copy(),
-        'similarity_text': weight_range.copy(),
-        'method': ['louvain'],
-        'resolution': resolution.copy(),
-        'topic_min_size': topic_min_size.copy(),
-        'topics_max_number': topics_max_number.copy(),
-    },
-    {
-        'similarity_bibliographic_coupling': [0],
-        'similarity_cocitation': [0],
-        'similarity_citation': [1],
         'similarity_text': weight_range.copy(),
         'method': ['louvain'],
         'resolution': resolution.copy(),
@@ -58,8 +38,8 @@ param_grid = [
     {
         'method': ['lda'],
         'max_df': [0.8],
-        'min_df': [0.001],
-        'max_features': [1000],
+        'min_df': [1e-3, 1e-4],
+        'max_features': [1000, 5000],
         'topic_min_size': topic_min_size.copy(),
         'topics_max_number': topics_max_number.copy(),
         'check_cached_data': [False],  # for local testing, cache should work fine
@@ -88,7 +68,6 @@ ch.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-
 
 # LDA
 from collections import Counter
@@ -360,8 +339,17 @@ def run_grid_search(analyzer, subgraph, ground_truth, metrics, param_grid, save_
     parameter_grid = ParameterGrid(param_grid)
     grid_size = len(parameter_grid)
     for i, param_values in enumerate(parameter_grid):
+        # Ignore all zeros
+        if ('similarity_bibliographic_coupling' in param_values and
+                param_values['similarity_bibliographic_coupling'] == 0 and
+                'similarity_cocitation' in param_values and
+                param_values['similarity_cocitation'] == 0 and
+                'similarity_citation' in param_values and
+                param_values['similarity_citation'] == 0 and
+                'similarity_text' in param_values and
+                param_values['similarity_text'] == 0):
+            continue
         partition = topic_analysis(analyzer, subgraph, **param_values)
-
         if save_partition:
             param_partition = param_values.copy()
             param_partition['partition'] = partition
@@ -403,6 +391,7 @@ def run_single_parameter(pmid):
         analyzer, subgraph, ground_truth, metrics, param_grid, save_partition=SAVE_PARTITION
     )
 
+
 metrics = [adjusted_mutual_info_score, pd_score, reg_v_score]
 
 import json
@@ -424,8 +413,10 @@ if __name__ == '__main__':
         celery_app.conf.CELERYD_POOL = 'prefork'
         celery_app.worker_main()
 
+
     # Create a thread and run the workers in it
     import threading
+
     t = threading.Thread(target=run_worker)
     t.setDaemon(True)
     t.start()
