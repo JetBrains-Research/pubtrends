@@ -16,8 +16,7 @@ def lru_ttl_cache_with_callback(maxsize, timeout, remove_callback):
     * Single argument user function is supported
     """
 
-    assert maxsize is not None and maxsize > 0, \
-        f"lru_ttl_cache_with_callback: expected maxsize>0: {maxsize}"
+    assert maxsize is not None and maxsize > 0, f'expected maxsize>0: {maxsize}'
 
     def decorating_function(user_function):
         return _lru_ttl_cache_with_callback(user_function,
@@ -47,8 +46,8 @@ def _lru_ttl_cache_with_callback(user_function, maxsize, update_delta, remove_ca
         with lock:
             now = datetime.utcnow()
             if now >= next_update:
-                logger.debug('_lru_ttl_cache_with_callback: expire cleanup')
-                expire(now)
+                logger.debug('expire cleanup')
+                _expire(now)
                 next_update = now + update_delta
 
             link = cache.get(key)
@@ -61,14 +60,14 @@ def _lru_ttl_cache_with_callback(user_function, maxsize, update_delta, remove_ca
                 last[NEXT] = root[PREV] = link
                 link[PREV] = last
                 link[NEXT] = root
-                logger.debug(f'_lru_ttl_cache_with_callback: update timestamp for {key}')
+                logger.debug(f'update timestamp for {key}')
                 link[TIMESTAMP] = now
                 return result
 
             result = user_function(key)
-            logger.debug(f'_lru_ttl_cache_with_callback: new key {key}')
+            logger.debug(f'new key {key}')
             if full:
-                logger.debug('Full')
+                logger.debug('cache is full')
                 # Use the old root to store the new key and result.
                 oldroot = root
                 oldroot[KEY] = key
@@ -76,9 +75,8 @@ def _lru_ttl_cache_with_callback(user_function, maxsize, update_delta, remove_ca
                 root = oldroot[NEXT]
                 oldkey = root[KEY]
                 root[KEY] = root[RESULT] = root[TIMESTAMP] = None
-                # Now update the cache dictionary.
+                logger.debug(f'full cleanup {oldkey}')
                 del cache[oldkey]
-                logger.debug(f'_celery_tasks_cache: full remove {oldkey}')
                 remove_callback(oldkey)
 
                 # Save the potentially reentrant cache[key] assignment
@@ -96,21 +94,21 @@ def _lru_ttl_cache_with_callback(user_function, maxsize, update_delta, remove_ca
             return result
 
     def size():
-        # Use the cache_len bound method instead of the len() function
-        # which could potentially be wrapped in an lru_cache itself.
-        return cache.__len__()
+        with lock:
+            return cache.__len__()
 
     def keys():
-        return list(cache.keys())
+        with lock:
+            return list(cache.keys())
 
-    def expire(now):
+    def _expire(now):
         nonlocal root, full
         link = root
         link_next = link[NEXT]
         while link_next is not root:
             if link_next[KEY] is not None and now > link_next[TIMESTAMP] + update_delta:
                 key = link_next[KEY]
-                logger.debug(f'_celery_tasks_cache: expired {key}')
+                logger.debug(f'expired {key}')
                 del cache[key]
                 remove_callback(key)
                 link_next_next = link_next[NEXT]
@@ -121,8 +119,8 @@ def _lru_ttl_cache_with_callback(user_function, maxsize, update_delta, remove_ca
                 link = link_next
                 link_next = link_next[NEXT]
 
-        assert link_next is root, '_lru_ttl_cache_with_callback: expire procedure failed, expected root'
-        assert root[KEY] is None, '_lru_ttl_cache_with_callback: root should not contain any key'
+        assert link_next is root, 'expire procedure failed, expected root'
+        assert root[KEY] is None, 'root should not contain any key'
 
         # Use the cache_len bound method instead of the len() function
         # which could potentially be wrapped in an lru_cache itself.
