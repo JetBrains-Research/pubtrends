@@ -36,7 +36,6 @@
         let retries = 0;
         let cancelled = false;
         let last_progress;
-        let last_log_message;
 
         function check_status() {
             if (cancelled) {
@@ -85,10 +84,7 @@
                             const href = `/{{ redirect_page }}?${args_list.join('&')}`;
                             window.location.replace(href);
                         } else {
-                            if (last_log_message !== response.log) {
-                                $('#log').html(response.log);
-                                last_log_message = response.log;
-                            }
+                            $('#log').html(response.log);
                             setTimeout(check_status, TIMEOUT);
                         }
                     } else {
@@ -168,8 +164,8 @@
 <footer>
     <p>version {{ version }}<br/>
         &copy; 2021 <a href="https://research.jetbrains.org/groups/biolabs"
-                            title="JetBrains Research BioLabs"
-                            target="_blank">JetBrains Research</a></p>
+                       title="JetBrains Research BioLabs"
+                       target="_blank">JetBrains Research</a></p>
 </footer>
 </body>
 </html>
