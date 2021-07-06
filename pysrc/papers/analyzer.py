@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import networkx as nx
 from networkx.readwrite import json_graph
-from sklearn.manifold import TSNE
+from umap import UMAP
 
 from pysrc.papers.analysis.citations import find_top_cited_papers, find_max_gain_papers, \
     find_max_relative_gain_papers, build_cit_stats_df, merge_citation_stats, build_cocit_grouped_df
@@ -216,14 +216,15 @@ class PapersAnalyzer:
             else:
                 logger.debug('Extracting topics from paper similarity graph with node2vec')
                 node_ids, node_embeddings = node2vec(self.similarity_graph,
-                                                     weight_func=PapersAnalyzer.similarity)
-                logger.debug('Apply t-SNE transformation on node embeddings')
-                tsne = TSNE(n_components=2, random_state=42)
-                weighted_node_embeddings_2d = tsne.fit_transform(node_embeddings)
+                                                     weight_func=PapersAnalyzer.similarity,
+                                                     walk_length=16, walks_per_node=64, vector_size=32)
+                logger.debug('Apply UMAP transformation on node embeddings')
+                umap = UMAP(n_components=2, random_state=42)
+                node_embeddings_2d = umap.fit_transform(node_embeddings)
                 pid_indx = dict(zip(self.df['id'], self.df.index))
                 indx = [pid_indx[pid] for pid in node_ids]
-                self.df['x'] = pd.Series(index=indx, data=weighted_node_embeddings_2d[:, 0])
-                self.df['y'] = pd.Series(index=indx, data=weighted_node_embeddings_2d[:, 1])
+                self.df['x'] = pd.Series(index=indx, data=node_embeddings_2d[:, 0])
+                self.df['y'] = pd.Series(index=indx, data=node_embeddings_2d[:, 1])
                 # Memoize clusters because of order
                 self.clusters, self.dendrogram_children = cluster_and_sort(
                     node_embeddings, self.TOPIC_MIN_SIZE, self.TOPICS_MAX_NUMBER
