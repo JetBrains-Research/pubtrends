@@ -2,10 +2,12 @@ import logging
 from queue import PriorityQueue
 
 import networkx as nx
-from gensim.models import Word2Vec
 from math import floor
-from stellargraph import StellarGraph
-from stellargraph.data import BiasedRandomWalk
+from node2vec import Node2Vec
+
+# Avoid info message about compilation flags
+import tensorflow as tf
+tf.get_logger().setLevel('ERROR')
 
 logger = logging.getLogger(__name__)
 
@@ -106,8 +108,8 @@ def local_sparse(graph, e):
     return result
 
 
-def node2vec(graph, weight_func, walk_length=100, walks_per_node=10, vector_size=32):
-    logger.debug('Translating nx graph into stellar graph representation')
+def node2vec(graph, weight_func, walk_length, walks_per_node, vector_size):
+    logger.debug('Creating weighted graph')
     g_weighted = nx.Graph()
     for u, v, data in graph.edges(data=True):
         g_weighted.add_edge(u, v, weight=weight_func(data))
@@ -117,25 +119,12 @@ def node2vec(graph, weight_func, walk_length=100, walks_per_node=10, vector_size
         if not g_weighted.has_node(v):
             g_weighted.add_node(v)
 
-    sg = StellarGraph.from_networkx(g_weighted, node_type_default="id", edge_type_default="similarity")
-    logger.debug(sg.info())
-
     logger.debug('Performing random walks')
-    rw = BiasedRandomWalk(sg)
-
-    weighted_walks = rw.run(
-        nodes=sg.nodes(),  # root nodes
-        length=walk_length,  # maximum length of a random walk
-        n=walks_per_node,  # number of random walks per root node
-        p=0.5,  # Defines (unormalised) probability, 1/p, of returning to source node
-        q=2.0,  # Defines (unormalised) probability, 1/q, for moving away from source node
-        weighted=True,  # for weighted random walks
-        seed=42,  # random seed fixed for reproducibility
+    # Precompute probabilities and generate walks - **ON WINDOWS ONLY WORKS WITH workers=1**
+    n2v = Node2Vec(
+        g_weighted, p=0.5, q=2.0,
+        dimensions=vector_size, walk_length=walk_length, num_walks=walks_per_node, workers=1
     )
-    logger.debug(f'Number of random walks: {len(weighted_walks)}')
-    logger.debug('Representation learning using word2vec')
-    weighted_model = Word2Vec(
-        weighted_walks, size=vector_size, window=5, min_count=0, sg=1, workers=1, iter=1
-    )
-    # Retrieve node embeddings and corresponding subjects
-    return weighted_model.wv.index2word, weighted_model.wv.vectors
+    logger.debug('Performing word2vec emdeddings')
+    model = n2v.fit(window=5, min_count=0, workers=1)
+    return model.wv.index_to_key, model.wv.vectors
