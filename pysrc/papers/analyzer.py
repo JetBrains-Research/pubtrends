@@ -58,7 +58,7 @@ class PapersAnalyzer:
 
     TOPIC_MIN_SIZE = 10
     # Max number of topics should be "deliverable"
-    TOPICS_MAX_NUMBER = 30
+    TOPICS_MAX_NUMBER = 20
 
     # Number of top cited papers in topic picked for description computation
     TOPIC_MOST_CITED_PAPERS = 50
