@@ -46,7 +46,7 @@ app = Flask(__name__)
 LOG_PATHS = ['/logs', os.path.expanduser('~/.pubtrends/logs')]
 for p in LOG_PATHS:
     if os.path.isdir(p):
-        logfile = os.path.join(p, 'pubtrends.log')
+        logfile = os.path.join(p, 'app.log')
         break
 else:
     raise RuntimeError('Failed to configure main log file')
