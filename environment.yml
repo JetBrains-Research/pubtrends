@@ -7,7 +7,7 @@ channels:
   - stellargraph
   - pytorch
 dependencies:
-  - bokeh=2.0.2
+  - bokeh=2.3.2
   - cachetools=4.1.1
   - celery=4.4.0
   - flask=1.1.2
@@ -15,7 +15,7 @@ dependencies:
   - flask-security=3.0.0
   - flask-sqlalchemy=2.4.1
   - ipywidgets=7.5.1
-  - holoviews=1.13.2
+  - holoviews=1.14.4
   - gensim=3.8.3
   - matplotlib=3.2.1
   - networkx=2.4
@@ -32,7 +32,6 @@ dependencies:
   - seaborn=0.11.1
   - spacy=2.3.2
   - statsmodels=0.12.2
-  - stellargraph=1.2.1
   - sqlalchemy=1.3.23
   - sqlite=3.33.0
   - tqdm=4.50.2
@@ -48,5 +47,6 @@ dependencies:
       - rouge==1.0.0
       - email-validator==1.1.0
       - text2num==2.2.1
+      - node2vec==0.4.3
       - teamcity-messages
       - pytest-flake8
