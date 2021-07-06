@@ -38,7 +38,7 @@ Ensure that file contains correct information about the database(s) (url, port, 
 3. Build base Docker image `biolabs/pubtrends` and nested image `biolabs/pubtrends-test` for testing.
     ```
     docker build -f docker/main/Dockerfile -t biolabs/pubtrends .
-    docker build -f docker/main/Dockerfile -t biolabs/pubtrends-test . 
+    docker build -f docker/test/Dockerfile -t biolabs/pubtrends-test . 
     ```
 
 4. Init PostgreSQL database.
