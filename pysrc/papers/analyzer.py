@@ -14,7 +14,7 @@ from pysrc.papers.analysis.graph import build_citation_graph, build_similarity_g
 from pysrc.papers.analysis.metadata import popular_authors, popular_journals
 from pysrc.papers.analysis.numbers import extract_numbers
 from pysrc.papers.analysis.text import analyze_texts_similarity, vectorize_corpus
-from pysrc.papers.analysis.topics import get_topics_description, cluster_embeddings
+from pysrc.papers.analysis.topics import get_topics_description, cluster_and_sort
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.progress import Progress
@@ -225,7 +225,7 @@ class PapersAnalyzer:
                 self.df['x'] = pd.Series(index=indx, data=weighted_node_embeddings_2d[:, 0])
                 self.df['y'] = pd.Series(index=indx, data=weighted_node_embeddings_2d[:, 1])
                 # Memoize clusters because of order
-                self.clusters, self.dendrogram_children = cluster_embeddings(
+                self.clusters, self.dendrogram_children = cluster_and_sort(
                     node_embeddings, self.TOPIC_MIN_SIZE, self.TOPICS_MAX_NUMBER
                 )
                 self.df['comp'] = pd.Series(index=indx, data=self.clusters)

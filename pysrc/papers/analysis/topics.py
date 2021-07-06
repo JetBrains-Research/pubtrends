@@ -141,26 +141,30 @@ def get_topics_description(df, comps, corpus_terms, corpus_counts, query, n_word
     return result
 
 
-def cluster_embeddings(weighted_node_embeddings, min_cluster_size, max_clusters):
+def cluster_and_sort(x, min_cluster_size, max_clusters):
+    """
+    :param x: object representations (X x Features)
+    :param min_cluster_size:
+    :param max_clusters:
+    :return: List[cluster], Hierarchical dendrogram of splits.
+    """
     logger.debug('Looking for an appropriate number of clusters,'
                  f'min_cluster_size={min_cluster_size}, max_clusters={max_clusters}')
-    r = min(max_clusters, weighted_node_embeddings.shape[0]) + 1
+    r = min(max_clusters, x.shape[0]) + 1
     l = 1
 
     if l >= r - 2:
-        return [0] * weighted_node_embeddings.shape[0], None
+        return [0] * x.shape[0], None
 
     while l < r - 2:
         n_clusters = int((l + r) / 2)
-        model = AgglomerativeClustering(n_clusters=n_clusters).fit(weighted_node_embeddings)
+        model = AgglomerativeClustering(n_clusters=n_clusters).fit(x)
         clusters_counter = Counter(model.labels_)
         min_size = clusters_counter.most_common()[-1][1]
-        if min_size < min_cluster_size:
+        if min_size < min_cluster_size or len(clusters_counter.keys()) > max_clusters:
             r = n_clusters + 1
-        elif min_size > max_clusters:
-            l = n_clusters
         else:
-            break
+            l = n_clusters
 
     logger.debug(f'Number of clusters = {n_clusters}')
     logger.debug('Reorder clusters by size descending')
