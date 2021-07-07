@@ -25,56 +25,104 @@ celery_app = Celery('grid_search', backend='redis://localhost:6379', broker='red
 # (might consume a LOT of space)
 SAVE_PARTITION = True
 
-weight_range = [0, 1, 3, 10]
-topic_min_size = [5, 10]
+weight_range = [1, 10, 100]
+topic_min_size = [5]
 topics_max_number = [10, 20]
-resolution = [0.8, 1]
+resolution = [0.8]
+
+node2vec_params1 = {
+    'method': ['node2vec'],
+    'similarity_bibliographic_coupling': weight_range.copy(),
+    'similarity_cocitation': weight_range.copy(),
+    'similarity_citation': weight_range.copy(),
+    'similarity_text': weight_range.copy(),
+    'walk_length': [128],
+    'walks_per_node': [16],
+    'vector_size': [32],
+    'topic_min_size': topic_min_size.copy(),
+    'topics_max_number': topics_max_number.copy(),
+    'check_cached_data': [False],  # for local testing, cache should work fine
+}
+node2vec_params2 = {
+    'method': ['node2vec'],
+    'similarity_bibliographic_coupling': weight_range.copy(),
+    'similarity_cocitation': weight_range.copy(),
+    'similarity_citation': weight_range.copy(),
+    'similarity_text': weight_range.copy(),
+    'walk_length': [32],
+    'walks_per_node': [64],
+    'vector_size': [32],
+    'topic_min_size': topic_min_size.copy(),
+    'topics_max_number': topics_max_number.copy(),
+    'check_cached_data': [False],  # for local testing, cache should work fine
+}
+
+louvain_params = {
+    'similarity_bibliographic_coupling': weight_range.copy(),
+    'similarity_cocitation': weight_range.copy(),
+    'similarity_citation': weight_range.copy(),
+    'similarity_text': weight_range.copy(),
+    'method': ['louvain'],
+    'resolution': resolution.copy(),
+    'topic_min_size': topic_min_size.copy(),
+    'topics_max_number': topics_max_number.copy(),
+}
+lda_params = {
+    'method': ['lda'],
+    'max_df': [0.8],
+    'min_df': [0.001],
+    'max_features': [10000],
+    'topic_min_size': topic_min_size.copy(),
+    'topics_max_number': topics_max_number.copy(),
+    'check_cached_data': [False],  # for local testing, cache should work fine
+}
 
 param_grid = [
-    {
-        'method': ['node2vec'],
-        'similarity_bibliographic_coupling': weight_range.copy(),
-        'similarity_cocitation': weight_range.copy(),
-        'similarity_citation': weight_range.copy(),
-        'similarity_text': weight_range.copy(),
-        'walk_length': [16],
-        'walks_per_node': [32, 64],
-        'vector_size': [32],
-        'topic_min_size': topic_min_size.copy(),
-        'topics_max_number': topics_max_number.copy(),
-        'check_cached_data': [False],  # for local testing, cache should work fine
-    },
-    {
-        'similarity_bibliographic_coupling': weight_range.copy(),
-        'similarity_cocitation': weight_range.copy(),
-        'similarity_citation': weight_range.copy(),
-        'similarity_text': weight_range.copy(),
-        'method': ['louvain'],
-        'resolution': resolution.copy(),
-        'topic_min_size': topic_min_size.copy(),
-        'topics_max_number': topics_max_number.copy(),
-    },
-    {
-        'method': ['lda'],
-        'max_df': [0.8],
-        'min_df': [0.001],
-        'max_features': [10000],
-        'topic_min_size': topic_min_size.copy(),
-        'topics_max_number': topics_max_number.copy(),
-        'check_cached_data': [False],  # for local testing, cache should work fine
-    }
+    node2vec_params1,
+    louvain_params,
+    lda_params
 ]
+
+
+def param(i):
+    if i == 0:
+        return 'similarity_bibliographic_coupling'
+    elif i == 1:
+        return 'similarity_cocitation'
+    elif i == 2:
+        return 'similarity_citation'
+    else:
+        return 'similarity_text'
+
+
+# Add zero's combinations
+for i in range(4):
+    pi = param(i)
+    param_grid.extend([
+        dict(node2vec_params1, **{pi: [0]}),
+        dict(node2vec_params2, **{pi: [0]}),
+        dict(louvain_params, **{pi: [0]})
+    ])
+    for j in range(i + 1, 4):
+        pj = param(j)
+        param_grid.extend([
+            dict(node2vec_params1, **{pi: [0], pj: [0]}),
+            dict(node2vec_params2, **{pi: [0], pj: [0]}),
+            dict(louvain_params, **{pi: [0], pj: [0]})
+        ])
+        for k in range(j + 1, 4):
+            pk = param(k)
+            param_grid.extend([
+                dict(node2vec_params1, **{pi: [0], pj: [0], pk: [0]}),
+                dict(node2vec_params2, **{pi: [0], pj: [0], pk: [0]}),
+                dict(louvain_params, **{pi: [0], pj: [0], pk: [0]})
+            ])
 
 print('Parameters grid size', len(ParameterGrid(param_grid)))
 
 # Configure logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
-ch.setFormatter(formatter)
-logger.addHandler(ch)
 
 
 @lru_cache(maxsize=1000)
@@ -331,7 +379,7 @@ def topic_analysis(analyzer, subgraph, method, **method_params):
         raise ValueError('Unknown clustering method')
 
 
-def run_grid_search(analyzer, subgraph, ground_truth, metrics, param_grid, save_partition=False):
+def run_grid_search(pmid, analyzer, subgraph, ground_truth, metrics, param_grid, save_partition=False):
     # Accumulate grid results for all hierarchy levels
     grid_results = []
     partitions = []
@@ -339,16 +387,6 @@ def run_grid_search(analyzer, subgraph, ground_truth, metrics, param_grid, save_
     parameter_grid = ParameterGrid(param_grid)
     grid_size = len(parameter_grid)
     for i, param_values in enumerate(parameter_grid):
-        # Ignore all zeros
-        if ('similarity_bibliographic_coupling' in param_values and
-                param_values['similarity_bibliographic_coupling'] == 0 and
-                'similarity_cocitation' in param_values and
-                param_values['similarity_cocitation'] == 0 and
-                'similarity_citation' in param_values and
-                param_values['similarity_citation'] == 0 and
-                'similarity_text' in param_values and
-                param_values['similarity_text'] == 0):
-            continue
         partition = topic_analysis(analyzer, subgraph, **param_values)
         if save_partition:
             param_partition = param_values.copy()
@@ -388,7 +426,7 @@ def run_single_parameter(pmid):
                                                     uniqueness_method='unique_only')
     subgraph = get_direct_references_subgraph(analyzer, pmid)
     return run_grid_search(
-        analyzer, subgraph, ground_truth, metrics, param_grid, save_partition=SAVE_PARTITION
+        pmid, analyzer, subgraph, ground_truth, metrics, param_grid, save_partition=SAVE_PARTITION
     )
 
 
