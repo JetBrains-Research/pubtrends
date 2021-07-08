@@ -6,7 +6,7 @@ channels:
   - bokeh
   - pytorch
 dependencies:
-  - bokeh=2.3.2
+  - bokeh=2.1.1
   - cachetools=4.1.1
   - celery=4.4.0
   - flask=1.1.2
@@ -47,5 +47,6 @@ dependencies:
       - email-validator==1.1.3
       - text2num==2.4.0
       - node2vec==0.4.3
+      - python-Levenshtein==0.12.2 # Fix warning from gensim
       - teamcity-messages==1.29
       - pytest-flake8==1.0.7
