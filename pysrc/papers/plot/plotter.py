@@ -373,15 +373,14 @@ class Plotter:
         most_cited_per_year_df['authors'] = most_cited_per_year_df['authors'].apply(
             lambda authors: cut_authors_list(authors)
         )
-        ds_max = ColumnDataSource(most_cited_per_year_df)
-
         factors = self.analyzer.max_gain_df['id'].unique()
         colors = self.factor_colors(factors)
 
-        year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
+        most_cited_counts = most_cited_per_year_df['count']
         p = figure(tools=TOOLS, toolbar_location="right",
-                   plot_width=PLOT_WIDTH, plot_height=SHORT_PLOT_HEIGHT, x_range=year_range,
-                   y_axis_type="log" if self.analyzer.max_gain_df['count'].max() > MAX_LINEAR_AXIS else "linear")
+                   plot_width=PLOT_WIDTH, plot_height=SHORT_PLOT_HEIGHT,
+                   x_range=(self.analyzer.min_year - 1, self.analyzer.max_year + 1),
+                   y_axis_type="log" if most_cited_counts.max() > MAX_LINEAR_AXIS else "linear")
         p.sizing_mode = 'stretch_width'
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Number of citations'
@@ -392,12 +391,14 @@ class Plotter:
             ("Year", '@paper_year'),
             ("Cited by", '@count papers in @year')
         ])
-        p.js_on_event('tap', self.paper_callback(ds_max))
+        most_cited_per_year_df['count'] = most_cited_per_year_df['count'].astype(float)
+        ds = ColumnDataSource(most_cited_per_year_df)
+        p.js_on_event('tap', self.paper_callback(ds))
         # Use explicit bottom for log scale as workaround
         # https://github.com/bokeh/bokeh/issues/6536
-        bottom = self.analyzer.max_gain_df['count'].min() - 0.01 if len(self.analyzer.max_gain_df) else 0.0
+        bottom = most_cited_counts.min() - 0.01
         p.vbar(x='year', width=0.8, top='count', bottom=bottom,
-               fill_alpha=0.5, source=ds_max, fill_color=colors, line_color=colors)
+               fill_alpha=0.5, source=ds, fill_color=colors, line_color=colors)
         return p
 
     def fastest_growth_per_year_papers(self):
@@ -409,16 +410,15 @@ class Plotter:
         fastest_growth_per_year_df['authors'] = fastest_growth_per_year_df['authors'].apply(
             lambda authors: cut_authors_list(authors)
         )
-        ds_max = ColumnDataSource(fastest_growth_per_year_df)
 
         factors = self.analyzer.max_rel_gain_df['id'].astype(str).unique()
         colors = self.factor_colors(factors)
 
-        year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
+        fastest_rel_gains = fastest_growth_per_year_df['rel_gain']
         p = figure(tools=TOOLS, toolbar_location="right",
-                   plot_width=PLOT_WIDTH, plot_height=SHORT_PLOT_HEIGHT, x_range=year_range,
-                   y_axis_type="log" if self.analyzer.max_rel_gain_df['rel_gain'].max() > MAX_LINEAR_AXIS else "linear"
-                   )
+                   plot_width=PLOT_WIDTH, plot_height=SHORT_PLOT_HEIGHT,
+                   x_range=(self.analyzer.min_year - 1, self.analyzer.max_year + 1),
+                   y_axis_type="log" if fastest_rel_gains.max() > MAX_LINEAR_AXIS else "linear")
         p.sizing_mode = 'stretch_width'
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Relative Gain of Citations'
@@ -428,21 +428,21 @@ class Plotter:
             ("Journal", '@journal'),
             ("Year", '@paper_year'),
             ("Relative Gain", '@rel_gain in @year')])
-        p.js_on_event('tap', self.paper_callback(ds_max))
+        ds = ColumnDataSource(fastest_growth_per_year_df)
+        p.js_on_event('tap', self.paper_callback(ds))
         # Use explicit bottom for log scale as workaround
         # https://github.com/bokeh/bokeh/issues/6536
-        bottom = self.analyzer.max_rel_gain_df['rel_gain'].min() - 0.01 if len(self.analyzer.max_rel_gain_df) else 0.0
-        p.vbar(x='year', width=0.8, top='rel_gain', bottom=bottom, source=ds_max,
+        bottom = fastest_rel_gains.min() - 0.01
+        p.vbar(x='year', width=0.8, top='rel_gain', bottom=bottom, source=ds,
                fill_alpha=0.5, fill_color=colors, line_color=colors)
         return p
 
     @staticmethod
     def paper_citations_per_year(df, pid):
-        d = ColumnDataSource(PlotPreprocessor.article_citation_dynamics_data(df, pid))
-
+        ds = ColumnDataSource(PlotPreprocessor.article_citation_dynamics_data(df, pid))
         p = figure(tools=TOOLS, toolbar_location="right", plot_width=PLOT_WIDTH,
                    plot_height=SHORT_PLOT_HEIGHT)
-        p.vbar(x='x', width=0.8, top='y', source=d, color='#A6CEE3', line_width=3)
+        p.vbar(x='x', width=0.8, top='y', source=ds, color='#A6CEE3', line_width=3)
         p.sizing_mode = 'stretch_width'
         p.xaxis.axis_label = "Year"
         p.yaxis.axis_label = "Number of citations"
@@ -455,10 +455,9 @@ class Plotter:
 
     def papers_by_year(self):
         ds_stats = ColumnDataSource(PlotPreprocessor.papers_statistics_data(self.analyzer.df))
-        year_range = [self.analyzer.min_year - 1, self.analyzer.max_year + 1]
         p = figure(tools=TOOLS, toolbar_location="right",
                    plot_width=PAPERS_PLOT_WIDTH, plot_height=PLOT_HEIGHT,
-                   x_range=year_range)
+                   x_range=(self.analyzer.min_year - 1, self.analyzer.max_year + 1))
         p.sizing_mode = 'stretch_width'
         p.y_range.start = 0
         p.xaxis.axis_label = 'Year'
@@ -622,8 +621,8 @@ class Plotter:
                                                                    clusters_dendrogram_children)
 
         # Configure dimensions
-        p = figure(x_range=[-190, 190],
-                   y_range=[-160, 160],
+        p = figure(x_range=(-190, 190),
+                   y_range=(-160, 160),
                    tools="save",
                    width=PLOT_WIDTH, height=int(PLOT_WIDTH * 0.8))
         x_coefficient = 1.5  # Ellipse x coefficient
