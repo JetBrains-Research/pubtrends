@@ -12,7 +12,8 @@ LABEL email = "os@jetbrains.com"
 
 # Install required packages and cleanup
 RUN DEBIAN_FRONTEND="noninteractive" apt-get update --fix-missing \
-    && apt-get install --no-install-recommends -y curl bzip2 gnupg2 wget ca-certificates sudo \
+    && apt-get install --no-install-recommends -y \
+        build-essential curl bzip2 gnupg2 wget ca-certificates sudo \
     && apt-get clean \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
