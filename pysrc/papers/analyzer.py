@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import networkx as nx
 from networkx.readwrite import json_graph
-from umap import UMAP
+from sklearn.manifold import TSNE
 
 from pysrc.papers.analysis.citations import find_top_cited_papers, find_max_gain_papers, \
     find_max_relative_gain_papers, build_cit_stats_df, merge_citation_stats, build_cocit_grouped_df
@@ -218,9 +218,9 @@ class PapersAnalyzer:
                 node_ids, node_embeddings = node2vec(self.similarity_graph,
                                                      weight_func=PapersAnalyzer.similarity,
                                                      walk_length=16, walks_per_node=64, vector_size=32)
-                logger.debug('Apply UMAP transformation on node embeddings')
-                umap = UMAP(n_components=2, random_state=42)
-                node_embeddings_2d = umap.fit_transform(node_embeddings)
+                logger.debug('Apply TSNE transformation on node embeddings')
+                tsne = TSNE(n_components=2, random_state=42)
+                node_embeddings_2d = tsne.fit_transform(node_embeddings)
                 pid_indx = dict(zip(self.df['id'], self.df.index))
                 indx = [pid_indx[pid] for pid in node_ids]
                 self.df['x'] = pd.Series(index=indx, data=node_embeddings_2d[:, 0])
