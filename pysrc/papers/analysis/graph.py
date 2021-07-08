@@ -123,7 +123,8 @@ def node2vec(graph, weight_func, walk_length, walks_per_node, vector_size):
     # Precompute probabilities and generate walks - **ON WINDOWS ONLY WORKS WITH workers=1**
     n2v = Node2Vec(
         g_weighted, p=0.5, q=2.0,
-        dimensions=vector_size, walk_length=walk_length, num_walks=walks_per_node, workers=1
+        dimensions=vector_size, walk_length=walk_length, num_walks=walks_per_node, workers=1,
+        quiet=True
     )
     logger.debug('Performing word2vec emdeddings')
     model = n2v.fit(window=5, min_count=0, workers=1)
