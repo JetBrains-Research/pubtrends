@@ -159,7 +159,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
                 SELECT C.pmid_in AS pmid
-                FROM PMCitations C JOIN matview_pmcitations MC
+                FROM SSCitations C JOIN matview_sscitations MC
                     ON C.pmid_in = MC.pmid
                 WHERE (C.crc32id_out, C.ssid_out) in (VALUES {SemanticScholarPostgresLoader.ids2values([pid])})
                 ORDER BY MC.count DESC NULLS LAST
