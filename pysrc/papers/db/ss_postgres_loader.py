@@ -158,9 +158,9 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         self.check_connection()
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
-                SELECT C.pmid_in AS pmid
+                SELECT C.ssid_in AS ssid
                 FROM SSCitations C JOIN matview_sscitations MC
-                    ON C.pmid_in = MC.pmid
+                    ON C.ssid_in = MC.ssid
                 WHERE (C.crc32id_out, C.ssid_out) in (VALUES {SemanticScholarPostgresLoader.ids2values([pid])})
                 ORDER BY MC.count DESC NULLS LAST
                 LIMIT {limit};
