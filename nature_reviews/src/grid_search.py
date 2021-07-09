@@ -1,4 +1,23 @@
+import logging
+from collections import Counter
+from functools import lru_cache
+
+import community
+import numpy as np
 from celery import Celery
+from sklearn.decomposition import LatentDirichletAllocation
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.metrics import v_measure_score
+from sklearn.metrics.cluster import adjusted_mutual_info_score
+from sklearn.model_selection import ParameterGrid
+
+from pysrc.papers.analysis.graph import node2vec
+from pysrc.papers.analysis.text import build_corpus
+from pysrc.papers.analysis.topics import cluster_embeddings
+from pysrc.papers.utils import SEED
+from utils.analysis import get_direct_references_subgraph, align_clusterings_for_sklearn
+from utils.io import load_analyzer, load_clustering, get_review_pmids
+from utils.preprocessing import preprocess_clustering, get_clustering_level
 
 celery_app = Celery('grid_search', backend='redis://localhost:6379', broker='redis://localhost:6379')
 
@@ -6,20 +25,20 @@ celery_app = Celery('grid_search', backend='redis://localhost:6379', broker='red
 # (might consume a LOT of space)
 SAVE_PARTITION = True
 
-weight_range = [0, 1, 10]
+weight_range = [0, 1, 3, 10]
 topic_min_size = [5, 10]
-topics_max_number = [5, 10, 20, 30]
+topics_max_number = [10, 20]
 resolution = [0.8, 1]
 
 param_grid = [
     {
         'method': ['node2vec'],
         'similarity_bibliographic_coupling': weight_range.copy(),
-        'similarity_cocitation': [1],
+        'similarity_cocitation': weight_range.copy(),
         'similarity_citation': weight_range.copy(),
         'similarity_text': weight_range.copy(),
-        'walk_length': [64],
-        'walks_per_node': [32],
+        'walk_length': [16],
+        'walks_per_node': [32, 64],
         'vector_size': [32],
         'topic_min_size': topic_min_size.copy(),
         'topics_max_number': topics_max_number.copy(),
@@ -38,27 +57,15 @@ param_grid = [
     {
         'method': ['lda'],
         'max_df': [0.8],
-        'min_df': [1e-3, 1e-4],
-        'max_features': [1000, 5000],
+        'min_df': [0.001],
+        'max_features': [10000],
         'topic_min_size': topic_min_size.copy(),
         'topics_max_number': topics_max_number.copy(),
         'check_cached_data': [False],  # for local testing, cache should work fine
     }
 ]
 
-from sklearn.model_selection import ParameterGrid
-
 print('Parameters grid size', len(ParameterGrid(param_grid)))
-
-import logging
-
-from sklearn.metrics.cluster import adjusted_mutual_info_score
-from sklearn.model_selection import ParameterGrid
-
-from utils.analysis import get_direct_references_subgraph, align_clusterings_for_sklearn
-from utils.io import load_analyzer, load_clustering, get_review_pmids
-from utils.metrics import pd_score, reg_v_score
-from utils.preprocessing import preprocess_clustering, get_clustering_level
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -69,16 +76,21 @@ formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
+
+@lru_cache(maxsize=1000)
+def get_similarity_func(similarity_bibliographic_coupling, similarity_cocitation,
+                        similarity_citation, similarity_text_citation):
+    def inner(d):
+        # Ignore single cocitation because of review paper
+        return similarity_bibliographic_coupling * np.log1p(d.get('bibcoupling', 0)) + \
+               similarity_cocitation * (np.log1p(max(0, d.get('cocitation', 0) - 1))) + \
+               similarity_citation * d.get('citation', 0) + \
+               similarity_text_citation * d.get('text', 0)
+
+    return inner
+
+
 # LDA
-from collections import Counter
-from functools import lru_cache
-
-from pysrc.papers.analysis.text import build_corpus
-
-from sklearn.decomposition import LatentDirichletAllocation
-from sklearn.feature_extraction.text import CountVectorizer
-
-
 def cluster_lda(X, min_cluster_size, max_clusters):
     logging.debug('Looking for an appropriate number of clusters,'
                   f'min_cluster_size={min_cluster_size}, max_clusters={max_clusters}')
@@ -139,14 +151,6 @@ def topic_analysis_lda(analyzer, subgraph, **settings):
 
 
 # Louvain
-import numpy as np
-import community
-
-from pysrc.papers.utils import SEED
-
-from nature_reviews.src.utils.analysis import get_similarity_func
-
-
 def topic_analysis_louvain(analyzer, similarity_graph, **settings):
     """
     Performs clustering of similarity topics with different cluster resolution
@@ -269,10 +273,6 @@ def merge_components(partition, similarity_matrix, topic_min_size, max_topics_nu
 
 
 # Node2vec
-from pysrc.papers.analysis.graph import node2vec
-from pysrc.papers.analysis.topics import cluster_embeddings
-
-
 @lru_cache(maxsize=1000)
 def pre_proc_node2vec(
         subgraph,
@@ -392,7 +392,13 @@ def run_single_parameter(pmid):
     )
 
 
-metrics = [adjusted_mutual_info_score, pd_score, reg_v_score]
+def reg_v_score(labels_true, labels_pred, reg=0.01):
+    v_score = v_measure_score(labels_true, labels_pred)
+    n_clusters = len(set(labels_pred))
+    return v_score - reg * n_clusters
+
+
+metrics = [adjusted_mutual_info_score, reg_v_score]
 
 import json
 import logging
@@ -402,7 +408,7 @@ import pandas as pd
 from celery.result import AsyncResult
 
 # Without extension
-OUTPUT_NAME = 'grid_search_node2vec_2021-07-02'
+OUTPUT_NAME = 'grid_search_node2vec_2021-07-09'
 
 if __name__ == '__main__':
 
@@ -452,12 +458,9 @@ if __name__ == '__main__':
                     'pmid': pmid,
                     'partitions': partitions
                 })
-                logger.info(f'({len(partitions_overall)} / {n_reviews}) {pmid} - done')
+                logger.info(f'Done {pmid}')
 
-        print('.', end='')
-        i += 1
-        if i % 100 == 0:
-            print('\n')
+        logger.info(f'Done {len(partitions_overall)} / {n_reviews}')
         tasks = tasks_alive
         time.sleep(60)
     logger.info('All tasks are finished')
