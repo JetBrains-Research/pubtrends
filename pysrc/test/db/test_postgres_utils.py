@@ -13,7 +13,7 @@ class TestPostgresUtils(unittest.TestCase):
         ('Foo Bar', 'Foo & Bar'),
         ('"Foo Bar"', 'Foo<->Bar'),
         ('Foo-Bar', 'Foo-Bar'),
-        ('&^Foo-Bar', 'Foo-Bar'),
+        ('&^Foo-Bar', '&^Foo-Bar'),
         ("Alzheimer's disease", 'Alzheimer & disease'),
         ('Foo, Bar', 'Foo | Bar'),
         ('Foo, Bar Baz', 'Foo | Bar & Baz'),
@@ -75,6 +75,10 @@ class TestPostgresUtils(unittest.TestCase):
             "AND position('respiratory' in LOWER(P.abstract))>0 AND position('syndrome' in LOWER(P.abstract))>0)",
             no_stemming_filter('COVID-19 | Corona<->virus| Respiratory & Syndrome')
         )
+
+    def test_non_english_query(self):
+        self.assertEqual('ОЧЕНЬ & СТРАШНАЯ & БОЛЕЗНЬ',
+                         preprocess_search_query_for_postgres('ОЧЕНЬ СТРАШНАЯ БОЛЕЗНЬ', 0))
 
     def test_preprocess_search_illegal_string(self):
         with self.assertRaises(Exception):

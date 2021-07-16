@@ -19,14 +19,12 @@ def preprocess_search_query_for_postgres(query, min_search_words):
         return qor
 
     # Whitespaces normalization, see #215
-    processed = re.sub('[ ]{2,}', ' ', query.strip())
+    processed = re.sub('[ ]{2,}|\t+', ' ', query.strip())
     if len(processed) == 0:
         raise SearchError('Empty query')
 
-    processed = re.sub('[^0-9a-zA-Z\'"\\-\\.+ ]', '', processed)  # Remove unknown symbols
     if len(processed) == 0:
-        raise SearchError('Illegal character(s), only English letters, numbers, '
-                          f'and +- signs are supported. Query: {query}')
+        raise SearchError('Empty query')
 
     # Check query complexity
     if len(re.split('[ -]', processed)) < min_search_words:
