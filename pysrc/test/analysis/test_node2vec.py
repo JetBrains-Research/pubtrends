@@ -6,7 +6,7 @@ from parameterized import parameterized
 
 from pysrc.papers.analysis.graph import build_citation_graph
 from pysrc.papers.analysis.citations import find_top_cited_papers
-from pysrc.papers.analysis.node2vec import _precompute, _random_walks
+from pysrc.papers.analysis.node2vec import _precompute, _random_walks, node2vec
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.test.mock_loaders import MockLoader, \
@@ -47,6 +47,16 @@ class TestNode2Vec(unittest.TestCase):
                           [1, 2, 1], [2, 1, 2], [3, 2, 1],
                           [1, 2, 1], [2, 1, 2], [3, 2, 1],
                           [1, 2, 1], [2, 1, 2], [3, 2, 1]], walks)
+
+    def test_node2vec_triangle_weighted(self):
+        graph = nx.Graph()
+        graph.add_edge(1, 2, weight=100)
+        graph.add_edge(2, 3, weight=10)
+        graph.add_edge(3, 1, weight=1)
+        idx, vec = node2vec(graph, weight_func=lambda d: d['weight'],
+                            walk_length=3, walks_per_node=5, vector_size=8, seed=42)
+        self.assertEqual([2, 1, 3], idx)
+        self.assertEqual((3, 8), vec.shape)
 
 
 if __name__ == '__main__':

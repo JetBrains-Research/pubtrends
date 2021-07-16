@@ -73,7 +73,7 @@ def _random_walks(nodes, adjacency_map, probabilities_first_step, probabilities,
     return walks
 
 
-def node2vec(graph, weight_func, walk_length=100, walks_per_node=10, vector_size=64):
+def node2vec(graph, weight_func, walk_length=100, walks_per_node=10, vector_size=64, seed=42):
     logger.debug('Creating weighted graph')
     g_weighted = nx.Graph()
     for u, v, data in graph.edges(data=True):
@@ -92,13 +92,14 @@ def node2vec(graph, weight_func, walk_length=100, walks_per_node=10, vector_size
     adjacency_map, probabilities_first_step, probabilities = _precompute(g_weighted)
     walks = _random_walks(
         list(g_weighted.nodes), adjacency_map, probabilities_first_step, probabilities,
-        walks_per_node, walk_length
+        walks_per_node, walk_length,
+        seed=seed
     )
 
     logger.debug('Performing word2vec embeddings')
     logging.getLogger('node2vec.py').setLevel('ERROR')  # Disable logging
     w2v = Word2Vec(
-        walks, vector_size=vector_size, window=5, min_count=0, sg=1, workers=1, epochs=1
+        walks, vector_size=vector_size, window=5, min_count=0, sg=1, workers=1, epochs=1, seed=seed
     )
     # Retrieve node embeddings and corresponding subjects
-    return w2v.wv.index2word, w2v.wv.vectors
+    return w2v.wv.index_to_key, w2v.wv.vectors
