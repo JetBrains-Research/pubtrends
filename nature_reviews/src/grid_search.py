@@ -30,7 +30,7 @@ topic_min_size = [5]
 topics_max_number = [10, 20]
 resolution = [0.8]
 
-node2vec_params1 = {
+node2vec_params = {
     'method': ['node2vec'],
     'similarity_bibliographic_coupling': weight_range.copy(),
     'similarity_cocitation': weight_range.copy(),
@@ -38,25 +38,11 @@ node2vec_params1 = {
     'similarity_text': weight_range.copy(),
     'walk_length': [128],
     'walks_per_node': [16],
-    'vector_size': [32],
+    'vector_size': [64],
     'topic_min_size': topic_min_size.copy(),
     'topics_max_number': topics_max_number.copy(),
     'check_cached_data': [False],  # for local testing, cache should work fine
 }
-node2vec_params2 = {
-    'method': ['node2vec'],
-    'similarity_bibliographic_coupling': weight_range.copy(),
-    'similarity_cocitation': weight_range.copy(),
-    'similarity_citation': weight_range.copy(),
-    'similarity_text': weight_range.copy(),
-    'walk_length': [32],
-    'walks_per_node': [64],
-    'vector_size': [32],
-    'topic_min_size': topic_min_size.copy(),
-    'topics_max_number': topics_max_number.copy(),
-    'check_cached_data': [False],  # for local testing, cache should work fine
-}
-
 louvain_params = {
     'similarity_bibliographic_coupling': weight_range.copy(),
     'similarity_cocitation': weight_range.copy(),
@@ -78,7 +64,7 @@ lda_params = {
 }
 
 param_grid = [
-    node2vec_params1,
+    node2vec_params,
     louvain_params,
     lda_params
 ]
@@ -99,22 +85,19 @@ def param(i):
 for i in range(4):
     pi = param(i)
     param_grid.extend([
-        dict(node2vec_params1, **{pi: [0]}),
-        dict(node2vec_params2, **{pi: [0]}),
+        dict(node2vec_params, **{pi: [0]}),
         dict(louvain_params, **{pi: [0]})
     ])
     for j in range(i + 1, 4):
         pj = param(j)
         param_grid.extend([
-            dict(node2vec_params1, **{pi: [0], pj: [0]}),
-            dict(node2vec_params2, **{pi: [0], pj: [0]}),
+            dict(node2vec_params, **{pi: [0], pj: [0]}),
             dict(louvain_params, **{pi: [0], pj: [0]})
         ])
         for k in range(j + 1, 4):
             pk = param(k)
             param_grid.extend([
-                dict(node2vec_params1, **{pi: [0], pj: [0], pk: [0]}),
-                dict(node2vec_params2, **{pi: [0], pj: [0], pk: [0]}),
+                dict(node2vec_params, **{pi: [0], pj: [0], pk: [0]}),
                 dict(louvain_params, **{pi: [0], pj: [0], pk: [0]})
             ])
 
