@@ -12,13 +12,13 @@ tf.get_logger().setLevel('ERROR')
 logger = logging.getLogger(__name__)
 
 
-def precompute(graph, weight_key='weight', p=0.5, q=2.0):
+def _precompute(graph, weight_key='weight', p=0.5, q=2.0):
     """
     p=0.5,  # Defines (unormalised) probability, 1/p, of returning to source node
     q=2.0,  # Defines (unormalised) probability, 1/q, for moving away from source node
     """
-    adjacency_map = {node: [] for node in graph.nodes()}
-    probabilities_first_step = {node: dict() for node in graph.nodes()}  # No returning back option
+    adjacency_map = dict()
+    probabilities_first_step = dict()  # No returning back option
     probabilities = {node: dict() for node in graph.nodes()}
 
     for node in graph.nodes:
@@ -28,7 +28,7 @@ def precompute(graph, weight_key='weight', p=0.5, q=2.0):
         first_travel_weights = []
         for neighbor in neighbors:
             first_travel_weights.append(graph[node][neighbor].get(weight_key, 1))
-        probabilities_first_step[node] = normalize(first_travel_weights)
+        probabilities_first_step[node] = _normalize(first_travel_weights)
 
         for neighbor in neighbors:
             walk_weights = []
@@ -40,12 +40,12 @@ def precompute(graph, weight_key='weight', p=0.5, q=2.0):
                 else:
                     ss_weight = graph[neighbor][neighbor2].get(weight_key, 1) * 1 / q
                 walk_weights.append(ss_weight)
-            probabilities[neighbor][node] = normalize(walk_weights)
+            probabilities[neighbor][node] = _normalize(walk_weights)
 
     return adjacency_map, probabilities_first_step, probabilities
 
 
-def normalize(values):
+def _normalize(values):
     values = np.array(values)
     if values.sum() != 0:
         return values / values.sum()
@@ -53,7 +53,8 @@ def normalize(values):
         return values
 
 
-def random_walks(nodes, adjacency_map, probabilities_first_step, probabilities, walks_per_node, walk_length):
+def _random_walks(nodes, adjacency_map, probabilities_first_step, probabilities, walks_per_node, walk_length, seed=42):
+    np.random.seed(seed)
     walks = []
     for i in range(walks_per_node):
         # Start a random walk from every node
@@ -61,12 +62,13 @@ def random_walks(nodes, adjacency_map, probabilities_first_step, probabilities, 
             # Perform walk
             walk = [node]
             while len(walk) < walk_length:
-                neighbors = adjacency_map[node]
+                neighbors = adjacency_map[walk[-1]]
                 # Dead end nodes
                 if not len(neighbors):
                     break
-                probabilities = probabilities_first_step if len(walk) == 1 else probabilities
-                walk.append(np.random.choice(neighbors, size=1, p=probabilities)[0])
+                next_probabilities = probabilities_first_step[walk[-1]] \
+                    if len(walk) == 1 else probabilities[walk[-1]][walk[-2]]
+                walk.append(np.random.choice(neighbors, size=1, p=next_probabilities)[0])
             walks.append(walk)
     return walks
 
@@ -87,8 +89,8 @@ def node2vec(graph, weight_func, walk_length=100, walks_per_node=10, vector_size
             g_weighted.add_node(v)
 
     logger.debug('Precomputing random walk probabilities')
-    adjacency_map, probabilities_first_step, probabilities = precompute(g_weighted)
-    walks = random_walks(
+    adjacency_map, probabilities_first_step, probabilities = _precompute(g_weighted)
+    walks = _random_walks(
         list(g_weighted.nodes), adjacency_map, probabilities_first_step, probabilities,
         walks_per_node, walk_length
     )
