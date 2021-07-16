@@ -3,7 +3,6 @@ import logging
 import networkx as nx
 import numpy as np
 
-
 # Avoid info message about compilation flags
 import tensorflow as tf
 from gensim.models import Word2Vec
@@ -13,22 +12,25 @@ tf.get_logger().setLevel('ERROR')
 logger = logging.getLogger(__name__)
 
 
-def compute_probabilities(graph, weight_key='weight', p=0.5, q=2.0):
+def precompute(graph, weight_key='weight', p=0.5, q=2.0):
     """
     p=0.5,  # Defines (unormalised) probability, 1/p, of returning to source node
     q=2.0,  # Defines (unormalised) probability, 1/q, for moving away from source node
     """
+    adjacency_map = {node: [] for node in graph.nodes()}
     probabilities_first_step = {node: dict() for node in graph.nodes()}  # No returning back option
     probabilities = {node: dict() for node in graph.nodes()}
 
     for node in graph.nodes:
-        # Calculate first_travel weights for node
+        neighbors = list(graph.neighbors(node))
+        adjacency_map[node] = neighbors
+
         first_travel_weights = []
-        for neighbor in graph.neighbors(node):
+        for neighbor in neighbors:
             first_travel_weights.append(graph[node][neighbor].get(weight_key, 1))
         probabilities_first_step[node] = normalize(first_travel_weights)
 
-        for neighbor in graph.neighbors(node):
+        for neighbor in neighbors:
             walk_weights = []
             for neighbor2 in graph.neighbors(neighbor):
                 if neighbor2 == node:  # Backwards probability
@@ -40,7 +42,7 @@ def compute_probabilities(graph, weight_key='weight', p=0.5, q=2.0):
                 walk_weights.append(ss_weight)
             probabilities[neighbor][node] = normalize(walk_weights)
 
-    return probabilities_first_step, probabilities
+    return adjacency_map, probabilities_first_step, probabilities
 
 
 def normalize(values):
@@ -51,15 +53,15 @@ def normalize(values):
         return values
 
 
-def random_walks(graph, probabilities_first_step, probabilities, walks_per_node, walk_length):
+def random_walks(nodes, adjacency_map, probabilities_first_step, probabilities, walks_per_node, walk_length):
     walks = []
     for i in range(walks_per_node):
         # Start a random walk from every node
-        for nodes in graph.nodes:
+        for node in nodes:
             # Perform walk
-            walk = [nodes]
+            walk = [node]
             while len(walk) < walk_length:
-                neighbors = graph.neighbors(nodes)
+                neighbors = adjacency_map[node]
                 # Dead end nodes
                 if not len(neighbors):
                     break
@@ -85,8 +87,11 @@ def node2vec(graph, weight_func, walk_length=100, walks_per_node=10, vector_size
             g_weighted.add_node(v)
 
     logger.debug('Precomputing random walk probabilities')
-    probabilities_first_step, probabilities = compute_probabilities(g_weighted)
-    walks = random_walks(g_weighted, probabilities_first_step, probabilities, walks_per_node, walk_length)
+    adjacency_map, probabilities_first_step, probabilities = precompute(g_weighted)
+    walks = random_walks(
+        list(g_weighted.nodes), adjacency_map, probabilities_first_step, probabilities,
+        walks_per_node, walk_length
+    )
 
     logger.debug('Performing word2vec embeddings')
     logging.getLogger('node2vec.py').setLevel('ERROR')  # Disable logging
