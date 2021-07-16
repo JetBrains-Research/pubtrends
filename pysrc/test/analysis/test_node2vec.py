@@ -25,7 +25,7 @@ class TestNode2Vec(unittest.TestCase):
         graph.add_node(4)
         am, psfs, ps = _precompute(graph, weight_key='weight')
         walks = _random_walks(list(graph.nodes), am, psfs, ps, walks_per_node=1, walk_length=3)
-        self.assertEqual([[1, 2, 3], [2, 3, 2], [3, 2, 1], [4]], walks)
+        self.assertEqual([[1, 2, 1], [2, 3, 1], [3, 2, 1], [4]], walks)
 
     def test_walk_triangle_weighted(self):
         graph = nx.Graph()
@@ -34,11 +34,11 @@ class TestNode2Vec(unittest.TestCase):
         graph.add_edge(3, 1, weight=1)
         am, psfs, ps = _precompute(graph, weight_key='weight')
         walks = _random_walks(list(graph.nodes), am, psfs, ps, walks_per_node=5, walk_length=3)
-        self.assertEqual([[1, 2, 1], [2, 1, 2], [3, 2, 1],
-                          [1, 2, 1], [2, 1, 2], [3, 2, 3],
-                          [1, 2, 1], [2, 1, 2], [3, 2, 1],
-                          [1, 2, 1], [2, 1, 2], [3, 2, 1],
-                          [1, 2, 1], [2, 1, 2], [3, 2, 1]], walks)
+        self.assertEqual([[1, 3, 2], [2, 3, 1], [3, 1, 3],
+                          [1, 3, 2], [2, 3, 1], [3, 1, 3],
+                          [1, 3, 1], [2, 3, 1], [3, 1, 3],
+                          [1, 3, 1], [2, 3, 1], [3, 1, 3],
+                          [1, 3, 1], [2, 3, 1], [3, 1, 3]], walks)
 
     def test_node2vec_triangle_weighted(self):
         graph = nx.Graph()
@@ -47,7 +47,7 @@ class TestNode2Vec(unittest.TestCase):
         graph.add_edge(3, 1, weight=1)
         idx, vec = node2vec(graph, weight_func=lambda d: d['weight'],
                             walk_length=3, walks_per_node=5, vector_size=8, seed=42)
-        self.assertEqual([2, 1, 3], idx)
+        self.assertEqual([3, 1, 2], idx)
         self.assertEqual((3, 8), vec.shape)
 
     def test_node2vec_weighted(self):

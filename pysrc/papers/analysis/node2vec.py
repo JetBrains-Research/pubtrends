@@ -49,10 +49,8 @@ def _normalize(values):
     s = values.sum()
     if s == 1:
         return values
-    elif s == 0:
-        raise Exception("Zero sum weights")
     else:
-        return values / s * (1 + 1e-30)  # Ensure that sum is <= 1
+        return values / (s + 1e-10)  # Ensure that sum is <= 1
 
 
 def _random_walks(
