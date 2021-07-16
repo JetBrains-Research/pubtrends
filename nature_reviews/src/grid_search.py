@@ -11,7 +11,7 @@ from sklearn.metrics import v_measure_score
 from sklearn.metrics.cluster import adjusted_mutual_info_score
 from sklearn.model_selection import ParameterGrid
 
-from pysrc.papers.analysis.graph import node2vec
+from pysrc.papers.analysis.node2vec import node2vec
 from pysrc.papers.analysis.text import build_corpus
 from pysrc.papers.analysis.topics import cluster_embeddings
 from pysrc.papers.utils import SEED
@@ -36,13 +36,10 @@ node2vec_params = {
     'similarity_cocitation': weight_range.copy(),
     'similarity_citation': weight_range.copy(),
     'similarity_text': weight_range.copy(),
-    'walk_length': [128],
-    'walks_per_node': [16],
-    'vector_size': [64],
     'topic_min_size': topic_min_size.copy(),
     'topics_max_number': topics_max_number.copy(),
-    'check_cached_data': [False],  # for local testing, cache should work fine
 }
+
 louvain_params = {
     'similarity_bibliographic_coupling': weight_range.copy(),
     'similarity_cocitation': weight_range.copy(),
@@ -53,6 +50,7 @@ louvain_params = {
     'topic_min_size': topic_min_size.copy(),
     'topics_max_number': topics_max_number.copy(),
 }
+
 lda_params = {
     'method': ['lda'],
     'max_df': [0.8],
@@ -60,7 +58,6 @@ lda_params = {
     'max_features': [10000],
     'topic_min_size': topic_min_size.copy(),
     'topics_max_number': topics_max_number.copy(),
-    'check_cached_data': [False],  # for local testing, cache should work fine
 }
 
 param_grid = [
@@ -167,13 +164,6 @@ def topic_analysis_lda(analyzer, subgraph, **settings):
                               max_df=settings['max_df'],
                               min_df=settings['min_df'],
                               max_features=settings['max_features'])
-
-    # Check the cached data
-    if settings['check_cached_data']:
-        n = subgraph.number_of_nodes()
-        assert X.shape[0] == n
-        assert X.shape[1] <= settings['max_features']
-        assert list(sorted(subgraph.nodes())) == sorted(node_ids)
 
     clusters = cluster_lda(X, min_cluster_size=settings['topic_min_size'],
                            max_clusters=settings['topics_max_number'])
@@ -310,19 +300,12 @@ def pre_proc_node2vec(
         similarity_bibliographic_coupling,
         similarity_cocitation,
         similarity_citation,
-        similarity_text_citation,
-        walk_length,
-        walks_per_node,
-        vector_size):
+        similarity_text_citation):
     similarity_func = get_similarity_func(similarity_bibliographic_coupling,
                                           similarity_cocitation,
                                           similarity_citation,
                                           similarity_text_citation)
-    node_ids, node_embeddings = node2vec(subgraph,
-                                         weight_func=similarity_func,
-                                         walk_length=walk_length,
-                                         walks_per_node=walks_per_node,
-                                         vector_size=vector_size)
+    node_ids, node_embeddings = node2vec(subgraph, weight_func=similarity_func)
     return node_embeddings, node_ids
 
 
@@ -332,14 +315,7 @@ def topic_analysis_node2vec(analyzer, subgraph, **settings):
     """
     node_embeddings, node_ids = pre_proc_node2vec(
         subgraph, settings['similarity_bibliographic_coupling'], settings['similarity_cocitation'],
-        settings['similarity_citation'], settings['similarity_text'], settings['walk_length'],
-        settings['walks_per_node'], settings['vector_size'])
-
-    if settings['check_cached_data']:
-        n = subgraph.number_of_nodes()
-        assert node_embeddings.shape[0] == n
-        assert node_embeddings.shape[1] <= settings['vector_size']
-        assert list(sorted(subgraph.nodes())) == sorted(node_ids)
+        settings['similarity_citation'], settings['similarity_text'])
 
     clusters, _ = cluster_embeddings(
         node_embeddings, settings['topic_min_size'], settings['topics_max_number']
@@ -487,8 +463,6 @@ if __name__ == '__main__':
     logger.info('All tasks are finished')
 
     results_df.fillna(0, inplace=True)
-    if 'check_cached_data' in results_df.columns:
-        results_df.drop(columns=['check_cached_data'], inplace=True)
     results_df.to_csv(f'{OUTPUT_NAME}.csv', index=False)
 
     with open(f'{OUTPUT_NAME}.json', 'w') as f:
