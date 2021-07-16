@@ -100,8 +100,11 @@ def node2vec(graph, weight_func, walk_length=100, walks_per_node=10, vector_size
     for u, v, data in graph.edges(data=True):
         w = weight_func(data)
         if np.isnan(w):
-            raise Exception(f"ERROR weight {w}")
-        g_weighted.add_edge(u, v, weight=w)
+            raise Exception(f'Weight is NaN {w}')
+        elif w < 0:
+            raise Exception(f'Weight is < 0 {w}')
+        elif w != 0:
+            g_weighted.add_edge(u, v, weight=w)
 
     # Ensure all the nodes present
     for v in graph.nodes:
