@@ -10,8 +10,9 @@ from sklearn.manifold import TSNE
 from pysrc.papers.analysis.citations import find_top_cited_papers, find_max_gain_papers, \
     find_max_relative_gain_papers, build_cit_stats_df, merge_citation_stats, build_cocit_grouped_df
 from pysrc.papers.analysis.evolution import topic_evolution_analysis, topic_evolution_descriptions
-from pysrc.papers.analysis.graph import build_citation_graph, build_similarity_graph, node2vec
+from pysrc.papers.analysis.graph import build_citation_graph, build_similarity_graph
 from pysrc.papers.analysis.metadata import popular_authors, popular_journals
+from pysrc.papers.analysis.node2vec import node2vec
 from pysrc.papers.analysis.numbers import extract_numbers
 from pysrc.papers.analysis.text import analyze_texts_similarity, vectorize_corpus
 from pysrc.papers.analysis.topics import get_topics_description, cluster_embeddings
