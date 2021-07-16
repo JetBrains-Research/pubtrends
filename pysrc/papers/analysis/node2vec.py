@@ -82,11 +82,8 @@ def _random_walks(
                     raise Exception(f'Illegal probabilities for node {node}, '
                                     f'neighbors size {len(neighbors)}, '
                                     f'probabilities {len(next_probabilities)}')
-                if np.sum(next_probabilities) > 1:
-                    raise Exception(f"Probabilities sum > 1, but {np.sum(next_probabilities)} "
-                                    f"for node {node}: {next_probabilities}")
-                # Workaround for np.random.choice issue: probabilities do not sum to 1.from
-                # Use np.random.multinomial with constraintL sum should sum to <=1
+                # Workaround for np.random.choice issue: probabilities do not sum to 1
+                # Use np.random.multinomial with constraint that sum to <=1
                 choice = np.random.multinomial(1, next_probabilities)[0]
                 if choice < len(neighbors):
                     walk.append(neighbors[choice])
