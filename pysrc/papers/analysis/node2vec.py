@@ -2,7 +2,6 @@ import logging
 
 import networkx as nx
 import numpy as np
-
 # Avoid info message about compilation flags
 import tensorflow as tf
 from gensim.models import Word2Vec
@@ -46,14 +45,25 @@ def _precompute(graph, weight_key='weight', p=0.5, q=2.0):
 
 
 def _normalize(values):
-    values = np.array(values)
-    if values.sum() != 0:
-        return values / values.sum()
-    else:
+    values = np.asarray(values).astype('float64')
+    s = values.sum()
+    if s == 1:
         return values
+    elif s == 0:
+        raise Exception("Zero sum weights")
+    else:
+        return values / s * (1 + 1e-30)  # Ensure that sum is <= 1
 
 
-def _random_walks(nodes, adjacency_map, probabilities_first_step, probabilities, walks_per_node, walk_length, seed=42):
+def _random_walks(
+        nodes,
+        adjacency_map,
+        probabilities_first_step,
+        probabilities,
+        walks_per_node,
+        walk_length,
+        seed=42
+):
     np.random.seed(seed)
     walks = []
     for i in range(walks_per_node):
@@ -68,7 +78,21 @@ def _random_walks(nodes, adjacency_map, probabilities_first_step, probabilities,
                     break
                 next_probabilities = probabilities_first_step[walk[-1]] \
                     if len(walk) == 1 else probabilities[walk[-1]][walk[-2]]
-                walk.append(np.random.choice(neighbors, size=1, p=next_probabilities)[0])
+                if len(neighbors) != len(next_probabilities):
+                    raise Exception(f'Illegal probabilities for node {node}, '
+                                    f'neighbors size {len(neighbors)}, '
+                                    f'probabilities {len(next_probabilities)}')
+                if np.sum(next_probabilities) > 1:
+                    raise Exception(f"Probabilities sum > 1, but {np.sum(next_probabilities)} "
+                                    f"for node {node}: {next_probabilities}")
+                # Workaround for np.random.choice issue: probabilities do not sum to 1.from
+                # Use np.random.multinomial with constraintL sum should sum to <=1
+                choice = np.random.multinomial(1, next_probabilities)[0]
+                if choice < len(neighbors):
+                    walk.append(neighbors[choice])
+                else:
+                    # Fallback for last artificial choice in multinomial
+                    walk.append(np.random.choice(neighbors))
             walks.append(walk)
     return walks
 

@@ -1,16 +1,8 @@
 import unittest
 
 import networkx as nx
-import numpy as np
-from parameterized import parameterized
 
-from pysrc.papers.analysis.graph import build_citation_graph
-from pysrc.papers.analysis.citations import find_top_cited_papers
 from pysrc.papers.analysis.node2vec import _precompute, _random_walks, node2vec
-from pysrc.papers.analyzer import PapersAnalyzer
-from pysrc.papers.config import PubtrendsConfig
-from pysrc.test.mock_loaders import MockLoader, \
-    EXPECTED_MAX_GAIN, EXPECTED_MAX_RELATIVE_GAIN, MockLoaderSingle
 
 
 class TestNode2Vec(unittest.TestCase):
@@ -57,6 +49,19 @@ class TestNode2Vec(unittest.TestCase):
                             walk_length=3, walks_per_node=5, vector_size=8, seed=42)
         self.assertEqual([2, 1, 3], idx)
         self.assertEqual((3, 8), vec.shape)
+
+    def test_node2vec_weighted(self):
+        graph = nx.Graph()
+        for i in range(1, 11):
+            j = 2
+            while i * j < 11:
+                graph.add_edge(i, i * j, weight=i + j)
+                j += 1
+            graph.add_edge(0, i, weight=1)
+        idx, vec = node2vec(graph, weight_func=lambda d: d['weight'],
+                            walk_length=3, walks_per_node=5, vector_size=8, seed=42)
+        # self.assertEqual([2, 1, 3], idx)
+        # self.assertEqual((3, 8), vec.shape)
 
 
 if __name__ == '__main__':
