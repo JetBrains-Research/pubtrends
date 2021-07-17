@@ -3,6 +3,7 @@ from math import floor
 from queue import PriorityQueue
 
 import networkx as nx
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -101,3 +102,22 @@ def local_sparse(graph, e):
             if not result.has_edge(u, v):
                 result.add_edge(u, v, **graph.edges[u, v])
     return result
+
+
+def to_weighted_graph(graph, weight_func):
+    logger.debug('Creating weighted graph')
+    g = nx.Graph()
+    for u, v, data in graph.edges(data=True):
+        w = weight_func(data)
+        if np.isnan(w):
+            raise Exception(f'Weight is NaN {w}')
+        elif w < 0:
+            raise Exception(f'Weight is < 0 {w}')
+        elif w != 0:
+            g.add_edge(u, v, weight=w)
+    # Ensure all the nodes present
+    for v in graph.nodes:
+        if not g.has_node(v):
+            logger.info(f'Adding isolated vertex {v}')
+            g.add_node(v)
+    return g
