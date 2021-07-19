@@ -11,6 +11,7 @@ from sklearn.metrics import v_measure_score
 from sklearn.metrics.cluster import adjusted_mutual_info_score
 from sklearn.model_selection import ParameterGrid
 
+from pysrc.papers.analysis.graph import to_weighted_graph
 from pysrc.papers.analysis.node2vec import node2vec
 from pysrc.papers.analysis.text import build_corpus
 from pysrc.papers.analysis.topics import cluster_embeddings
@@ -21,12 +22,15 @@ from utils.preprocessing import preprocess_clustering, get_clustering_level
 
 celery_app = Celery('grid_search', backend='redis://localhost:6379', broker='redis://localhost:6379')
 
+# Without extension
+OUTPUT_NAME = 'grid_search_node2vec_2021-07-19'
+
 # Save all generated partitions for further investigation
 # (might consume a LOT of space)
 SAVE_PARTITION = True
 
-weight_range = [1, 10, 100]
-topic_min_size = [5]
+weight_range = [1, 3, 10]
+topic_min_size = [5, 10]
 topics_max_number = [10, 20]
 resolution = [0.8]
 
@@ -36,6 +40,9 @@ node2vec_params = {
     'similarity_cocitation': weight_range.copy(),
     'similarity_citation': weight_range.copy(),
     'similarity_text': weight_range.copy(),
+    'walk_length': [100],
+    'walks_per_node': [10],
+    'vector_size': [64],
     'topic_min_size': topic_min_size.copy(),
     'topics_max_number': topics_max_number.copy(),
 }
@@ -300,22 +307,29 @@ def pre_proc_node2vec(
         similarity_bibliographic_coupling,
         similarity_cocitation,
         similarity_citation,
-        similarity_text_citation):
+        similarity_text_citation,
+        walk_length,
+        walks_per_node,
+        vector_size):
     similarity_func = get_similarity_func(similarity_bibliographic_coupling,
                                           similarity_cocitation,
                                           similarity_citation,
                                           similarity_text_citation)
-    node_ids, node_embeddings = node2vec(subgraph, weight_func=similarity_func)
-    return node_embeddings, node_ids
+    node_ids, node_embeddings = node2vec(to_weighted_graph(subgraph, weight_func=similarity_func),
+                                         walk_length=walk_length,
+                                         walks_per_node=walks_per_node,
+                                         vector_size=vector_size)
+    return node_ids, node_embeddings
 
 
 def topic_analysis_node2vec(analyzer, subgraph, **settings):
     """
     Rerun topic analysis based on node2vec for a given similarity graph and settings.
     """
-    node_embeddings, node_ids = pre_proc_node2vec(
+    node_ids, node_embeddings = pre_proc_node2vec(
         subgraph, settings['similarity_bibliographic_coupling'], settings['similarity_cocitation'],
-        settings['similarity_citation'], settings['similarity_text'])
+        settings['similarity_citation'], settings['similarity_text'], settings['walk_length'],
+        settings['walks_per_node'], settings['vector_size'])
 
     clusters, _ = cluster_embeddings(
         node_embeddings, settings['topic_min_size'], settings['topics_max_number']
@@ -403,9 +417,6 @@ import time
 
 import pandas as pd
 from celery.result import AsyncResult
-
-# Without extension
-OUTPUT_NAME = 'grid_search_node2vec_2021-07-09'
 
 if __name__ == '__main__':
 

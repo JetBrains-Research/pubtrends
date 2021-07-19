@@ -118,6 +118,6 @@ def to_weighted_graph(graph, weight_func):
     # Ensure all the nodes present
     for v in graph.nodes:
         if not g.has_node(v):
-            logger.info(f'Adding isolated vertex {v}')
+            logger.debug(f'Adding isolated vertex {v}')
             g.add_node(v)
     return g
