@@ -1,13 +1,9 @@
 import logging
+from math import floor
 from queue import PriorityQueue
 
 import networkx as nx
-from math import floor
-from node2vec import Node2Vec
-
-# Avoid info message about compilation flags
-import tensorflow as tf
-tf.get_logger().setLevel('ERROR')
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -108,24 +104,20 @@ def local_sparse(graph, e):
     return result
 
 
-def node2vec(graph, weight_func, walk_length, walks_per_node, vector_size):
+def to_weighted_graph(graph, weight_func):
     logger.debug('Creating weighted graph')
-    g_weighted = nx.Graph()
+    g = nx.Graph()
     for u, v, data in graph.edges(data=True):
-        g_weighted.add_edge(u, v, weight=weight_func(data))
-
+        w = weight_func(data)
+        if np.isnan(w):
+            raise Exception(f'Weight is NaN {w}')
+        elif w < 0:
+            raise Exception(f'Weight is < 0 {w}')
+        elif w != 0:
+            g.add_edge(u, v, weight=w)
     # Ensure all the nodes present
     for v in graph.nodes:
-        if not g_weighted.has_node(v):
-            g_weighted.add_node(v)
-
-    logger.debug('Performing random walks')
-    # Precompute probabilities and generate walks - **ON WINDOWS ONLY WORKS WITH workers=1**
-    n2v = Node2Vec(
-        g_weighted, p=0.5, q=2.0,
-        dimensions=vector_size, walk_length=walk_length, num_walks=walks_per_node, workers=1,
-        quiet=True
-    )
-    logger.debug('Performing word2vec emdeddings')
-    model = n2v.fit(window=5, min_count=0, workers=1)
-    return model.wv.index_to_key, model.wv.vectors
+        if not g.has_node(v):
+            logger.debug(f'Adding isolated vertex {v}')
+            g.add_node(v)
+    return g

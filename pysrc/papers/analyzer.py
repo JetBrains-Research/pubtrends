@@ -10,8 +10,9 @@ from sklearn.manifold import TSNE
 from pysrc.papers.analysis.citations import find_top_cited_papers, find_max_gain_papers, \
     find_max_relative_gain_papers, build_cit_stats_df, merge_citation_stats, build_cocit_grouped_df
 from pysrc.papers.analysis.evolution import topic_evolution_analysis, topic_evolution_descriptions
-from pysrc.papers.analysis.graph import build_citation_graph, build_similarity_graph, node2vec
+from pysrc.papers.analysis.graph import build_citation_graph, build_similarity_graph, to_weighted_graph
 from pysrc.papers.analysis.metadata import popular_authors, popular_journals
+from pysrc.papers.analysis.node2vec import node2vec
 from pysrc.papers.analysis.numbers import extract_numbers
 from pysrc.papers.analysis.text import analyze_texts_similarity, vectorize_corpus
 from pysrc.papers.analysis.topics import get_topics_description, cluster_and_sort
@@ -215,9 +216,8 @@ class PapersAnalyzer:
                 self.components = list(sorted(set(self.clusters)))
             else:
                 logger.debug('Extracting topics from paper similarity graph with node2vec')
-                node_ids, node_embeddings = node2vec(self.similarity_graph,
-                                                     weight_func=PapersAnalyzer.similarity,
-                                                     walk_length=16, walks_per_node=64, vector_size=32)
+                g = to_weighted_graph(self.similarity_graph, weight_func=PapersAnalyzer.similarity)
+                node_ids, node_embeddings = node2vec(g)
                 logger.debug('Apply TSNE transformation on node embeddings')
                 tsne = TSNE(n_components=2, random_state=42)
                 node_embeddings_2d = tsne.fit_transform(node_embeddings)
