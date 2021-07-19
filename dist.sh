@@ -28,6 +28,7 @@ cp environment.yml "${PTV}"/
 cp Dockerfile "${PTV}"/
 cp config.properties "${PTV}"/
 cp docker-compose.yml "${PTV}"/
+cp gunicorn.sh "${PTV}"/
 cp -r pysrc "${PTV}"/
 
 echo "Update config VERSION"
