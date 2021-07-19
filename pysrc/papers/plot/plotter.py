@@ -820,7 +820,7 @@ class Plotter:
         graph.node_renderer.glyph = Circle(size='size', fill_alpha=0.7, line_alpha=0.7, fill_color='color')
         graph.node_renderer.hover_glyph = Circle(size='size', fill_alpha=1.0, line_alpha=1.0, fill_color='color')
 
-        graph.edge_renderer.glyph = MultiLine(line_color='grey', line_alpha=0.1, line_width=1)
+        graph.edge_renderer.glyph = MultiLine(line_color='lightgrey', line_alpha=0.5, line_width=1)
         graph.edge_renderer.hover_glyph = MultiLine(line_color='grey', line_alpha=1.0, line_width=2)
 
         graph.inspection_policy = NodesAndLinkedEdges()
