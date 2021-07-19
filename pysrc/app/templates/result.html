@@ -254,19 +254,19 @@
                         </a>
                     </li>
                     <li class="nav-item row">
-                        <a class="nav-link no-padding-right" href="#topics" title="Topics">
-                            <img class="nav-icon" src="{{ url_for('static', filename='tag.svg') }}"/>
-                        </a>
-                        <a class="nav-link d-none d-xl-block no-padding" href="#topics">
-                            Topics
-                        </a>
-                    </li>
-                    <li class="nav-item row">
                         <a class="nav-link no-padding-right" href="#network" title="Network">
                             <img class="nav-icon" src="{{ url_for('static', filename='globe.svg') }}"/>
                         </a>
                         <a class="nav-link d-none d-xl-block no-padding" href="#network">
                             Network
+                        </a>
+                    </li>
+                    <li class="nav-item row">
+                        <a class="nav-link no-padding-right" href="#topics" title="Topics">
+                            <img class="nav-icon" src="{{ url_for('static', filename='tag.svg') }}"/>
+                        </a>
+                        <a class="nav-link d-none d-xl-block no-padding" href="#topics">
+                            Topics
                         </a>
                     </li>
                     {% endif %}
@@ -497,6 +497,45 @@
             </div>
 
             <div class="card mt-3">
+                <div class="card-title" id="network">
+                    <h1 class="card-header">Network</h1>
+                </div>
+                <div class="card-body">
+                    {% if n_papers <= max_graph_size %}
+                    {% if structure_graph is defined %}
+                    <strong>Papers similarity</strong>
+                    <p>
+                        The graph below shows similarity network, most similar papers are connected.<br>
+                        Color represents topic, size - total citations number.
+                    </p>
+                    {% for script, div in structure_graph %}
+                    {{ script|safe }}
+                    {{ div|safe }}
+                    {% endfor %}
+                    {% endif %}
+                    <br>
+                    <p>
+                        Explore citations graph and papers similarity network in-depth in the interactive graph viewer.<br>
+                        Filter papers by keywords, apply different coloring schemes and view similarity details.
+                    </p>
+                    <div style="display: block">
+                        <button type="button" class="btn btn-light"
+                                onclick="graph_callback('citations');">
+                            Explore citations graph
+                        </button>
+                        <button type="button" class="ml-2 btn btn-light"
+                                onclick="graph_callback('structure');">
+                            Explore similarity graph
+                        </button>
+                    </div>
+                    {% else %}
+                    Too many papers to visualize graphs.
+                    {% endif %}
+                    <div class="mt-3" id="feedback-network-form"></div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
                 <div class="card-title" id="topics">
                     <h1 class="card-header">Topics</h1>
                 </div>
@@ -554,45 +593,6 @@
                         related papers
                     </button>
                     <div class="mt-3" id="feedback-topics-form"></div>
-                </div>
-            </div>
-
-            <div class="card mt-3">
-                <div class="card-title" id="network">
-                    <h1 class="card-header">Network</h1>
-                </div>
-                <div class="card-body">
-                    {% if n_papers <= max_graph_size %}
-                    {% if structure_graph is defined %}
-                    <strong>Papers similarity</strong>
-                    <p>
-                        The graph below shows similarity network, most similar papers are connected.<br>
-                        Color represents topic, size - total citations number.
-                    </p>
-                    {% for script, div in structure_graph %}
-                    {{ script|safe }}
-                    {{ div|safe }}
-                    {% endfor %}
-                    {% endif %}
-                    <br>
-                    <p>
-                        Explore citations graph and papers similarity network in-depth in the interactive graph viewer.<br>
-                        Filter papers by keywords, apply different coloring schemes and view similarity details.
-                    </p>
-                    <div style="display: block">
-                        <button type="button" class="btn btn-light"
-                                onclick="graph_callback('citations');">
-                            Explore citations graph
-                        </button>
-                        <button type="button" class="ml-2 btn btn-light"
-                                onclick="graph_callback('structure');">
-                            Explore similarity graph
-                        </button>
-                    </div>
-                    {% else %}
-                        Too many papers to visualize graphs.
-                    {% endif %}
-                    <div class="mt-3" id="feedback-network-form"></div>
                 </div>
             </div>
 
@@ -910,9 +910,13 @@
                         "Top cited papers, papers of the year, and hot papers are shown in a dedicated sections."
                 },
                 {
+                    element: '#network',
+                    intro: "View papers similarity network and explore graphs in interactive viewer."
+                },
+                {
                     element: '#topics',
                     intro: "Topic is a group of papers which share common ideas, describe common features, etc.<br>" +
-                        "Topics are extracted based on citations graph and text analysis."
+                        "Topics are extracted based on similarity graph analysis."
                 },
                 {
                     element: '#topic-1',
@@ -927,10 +931,6 @@
                     intro: "Hover over glyphs to check out tooltips that contain general information " +
                         "about the papers. Click glyphs to open a page about corresponding paper in a " +
                         "new tab."
-                },
-                {
-                    element: '#network',
-                    intro: "View papers similarity network and explore graphs in interactive viewer."
                 },
                 {% if features_authors_enabled %}
                 {
