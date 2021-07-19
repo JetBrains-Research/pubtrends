@@ -61,7 +61,7 @@
         const CG_LAYOUT = {
             name: 'fcose',
             animate: false,
-            idealEdgeLength: edge => 100,
+            idealEdgeLength: 100,
         };
 
 
@@ -77,7 +77,7 @@
             "target-arrow-shape": "triangle",
             "arrow-scale": 0.1,
             "line-color": "#000000",
-            "opacity": 0.2
+            "opacity": 0.5
         };
 
         const PR_EDGE_STYLE = {
@@ -86,7 +86,7 @@
                 if ('similarity' in data) {
                     return (Math.max(1, Math.min(10, Math.log1p(data.similarity)))) / 10;
                 }
-                return 0.01;
+                return 0.1;
             },
             "curve-style": "haystack",
             "line-color": function (edge) {
@@ -118,7 +118,7 @@
                 }
                 return "#000000";
             },
-            "opacity": 0.2
+            "opacity": 0.5
         };
 
         function rgbToHex(r, g, b) {
