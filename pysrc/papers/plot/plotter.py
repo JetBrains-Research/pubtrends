@@ -740,7 +740,7 @@ class Plotter:
         return p
 
     def structure_graph(self):
-        g = local_sparse(self.analyzer.similarity_graph, 0.5)
+        g = local_sparse(self.analyzer.similarity_graph, 0.2)
         df = self.analyzer.df
         nodes = df['id']
         comps = df['comp']
