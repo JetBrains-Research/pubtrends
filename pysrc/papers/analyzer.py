@@ -90,7 +90,7 @@ class PapersAnalyzer:
         self.source = Loaders.source(self.loader, test)
 
     def total_steps(self):
-        return 12 + 1  # One extra step for visualization
+        return 15 + 1  # One extra step for visualization
 
     def teardown(self):
         self.progress.remove_handler()
@@ -155,16 +155,15 @@ class PapersAnalyzer:
 
         # Load data about citations between given papers (excluding outer papers)
         # IMPORTANT: cit_df may contain not all the publications for query
-        logger.debug('Loading citations data')
+        self.progress.info('Loading citations information', current=5, task=task)
         self.cit_df = self.loader.load_citations(self.ids)
         logger.debug(f'Found {len(self.cit_df)} citations between papers')
 
-        self.progress.info('Analyzing citations and papers similarity graphs', current=5, task=task)
         self.citations_graph = build_citation_graph(self.cit_df)
         logger.debug(f'Built citation graph - {len(self.citations_graph.nodes())} nodes and '
                      f'{len(self.citations_graph.edges())} edges')
 
-        logger.debug('Calculating co-citations for selected papers')
+        self.progress.info('Calculating co-citations for selected papers', current=6, task=task)
         self.cocit_df = self.loader.load_cocitations(self.ids)
         cocit_grouped_df = build_cocit_grouped_df(self.cocit_df)
         logger.debug(f'Found {len(cocit_grouped_df)} co-cited pairs of papers')
@@ -172,7 +171,7 @@ class PapersAnalyzer:
         logger.debug(f'Filtered {len(self.cocit_grouped_df)} co-cited pairs of papers, '
                      f'threshold {self.SIMILARITY_COCITATION_MIN}')
 
-        logger.debug('Processing bibliographic coupling for selected papers')
+        self.progress.info('Processing bibliographic coupling for selected papers', current=7, task=task)
         bibliographic_coupling_df = self.loader.load_bibliographic_coupling(self.ids)
         logger.debug(f'Found {len(bibliographic_coupling_df)} bibliographic coupling pairs of papers')
         self.bibliographic_coupling_df = bibliographic_coupling_df[
@@ -180,7 +179,7 @@ class PapersAnalyzer:
         logger.debug(f'Filtered {len(self.bibliographic_coupling_df)} bibliographic coupling pairs of papers '
                      f'threshold {self.SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN}')
 
-        logger.debug('Building papers similarity graph')
+        self.progress.info('Analyzing papers similarity graph', current=8, task=task)
         self.similarity_graph = build_similarity_graph(
             self.df, self.texts_similarity,
             self.citations_graph, self.cocit_grouped_df, self.bibliographic_coupling_df,
@@ -192,12 +191,12 @@ class PapersAnalyzer:
             d['similarity'] = PapersAnalyzer.similarity(d)
 
         if len(self.similarity_graph.nodes()) == 0:
-            self.progress.info('Not enough papers to process topics analysis', current=6, task=task)
+            self.progress.info('Not enough papers to process topics analysis', current=9, task=task)
             self.df['comp'] = 0  # Technical value for top authors and papers analysis
             self.kwd_df = pd.DataFrame({'comp': [0], 'kwd': ['']})
 
         else:
-            self.progress.info('Extracting topics from paper similarity graph', current=6, task=task)
+            self.progress.info('Extracting topics from paper similarity graph', current=9, task=task)
             if len(self.similarity_graph.nodes()) <= PapersAnalyzer.TOPIC_MIN_SIZE:
                 logger.debug('Small similarity graph - single topic')
                 pos = nx.spring_layout(self.similarity_graph, weight='similarity')
@@ -234,7 +233,7 @@ class PapersAnalyzer:
                 self.comp_sizes = Counter(self.clusters)
                 self.components = list(sorted(set(self.clusters)))
 
-            self.progress.info('Analyzing topics descriptions', current=7, task=task)
+            self.progress.info('Analyzing topics descriptions', current=10, task=task)
             comp_pids = pd.DataFrame(self.partition.items(), columns=['id', 'comp']). \
                 groupby('comp')['id'].apply(list).to_dict()
             topics_description = get_topics_description(
@@ -247,7 +246,7 @@ class PapersAnalyzer:
                     for comp, vs in topics_description.items()]
             self.kwd_df = pd.DataFrame(kwds, columns=['comp', 'kwd'])
 
-        self.progress.info('Identifying top papers', current=8, task=task)
+        self.progress.info('Identifying top papers', current=11, task=task)
         logger.debug('Top cited papers')
         self.top_cited_papers, self.top_cited_df = find_top_cited_papers(self.df, self.TOP_CITED_PAPERS)
 
@@ -261,16 +260,16 @@ class PapersAnalyzer:
 
         # Additional analysis steps
         if self.config.feature_authors_enabled:
-            self.progress.info("Analyzing authors and groups", current=9, task=task)
+            self.progress.info("Analyzing authors and groups", current=12, task=task)
             self.author_stats = popular_authors(self.df, n=self.POPULAR_AUTHORS)
 
         if self.config.feature_journals_enabled:
-            self.progress.info("Analyzing popular journals", current=10, task=task)
+            self.progress.info("Analyzing popular journals", current=13, task=task)
             self.journal_stats = popular_journals(self.df, n=self.POPULAR_JOURNALS)
 
         if self.config.feature_numbers_enabled:
             if len(self.df) >= 0:
-                self.progress.info('Extracting quantitative features from abstracts texts', current=11, task=task)
+                self.progress.info('Extracting quantitative features from abstracts texts', current=14, task=task)
                 self.numbers_df = extract_numbers(self.df)
             else:
                 logger.debug('Not enough papers for numbers extraction')
@@ -285,12 +284,12 @@ class PapersAnalyzer:
                     self.TOPICS_MAX_NUMBER,
                     similarity_func=self.similarity,
                     evolution_step=self.EVOLUTION_STEP,
-                    progress=self.progress, current=12, task=task
+                    progress=self.progress, current=15, task=task
                 )
                 self.evolution_kwds = topic_evolution_descriptions(
                     self.df, self.evolution_df, self.evolution_year_range,
                     self.corpus_terms, self.corpus_counts, self.TOPIC_DESCRIPTION_WORDS,
-                    self.progress, current=12, task=task
+                    self.progress, current=15, task=task
                 )
             else:
                 logger.debug('Not enough papers for topics evolution')
