@@ -270,12 +270,12 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
 
     def load_bibliographic_coupling(self, ids):
         self.check_connection()
-        query = f'''WITH X AS (SELECT ssid_out, ssid_in
+        query = f'''WITH X AS (SELECT ssid_out, ssid_in, crc32id_in
                         FROM sscitations C
                         WHERE (crc32id_out, ssid_out) IN (VALUES  {SemanticScholarPostgresLoader.ids2values(ids)}))
                         SELECT ssid_in, ARRAY_AGG(ssid_out) as citing_list
                         FROM X
-                        GROUP BY ssid_in
+                        GROUP BY crc32id_in, ssid_in
                         HAVING COUNT(*) >= 2
                         LIMIT {self.config.max_number_of_bibliographic_coupling};
                     '''
