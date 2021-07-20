@@ -283,3 +283,28 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         logger.debug(f'Loaded {lines} lines of bibliographic coupling info')
 
         return df
+
+    def load_first_n(self, limit, order: str = None):
+        self.check_connection()
+        if order is None:
+            query = f'''
+                SELECT pmid
+                FROM PMPublications P
+                ORDER BY year DESC NULLS LAST
+                LIMIT {limit};
+            '''
+        else:
+            query = f'''
+                SELECT pmid
+                FROM PMPublications P
+                ORDER BY {order} DESC NULLS LAST
+                LIMIT {limit};
+            '''
+        logger.debug(f'load_first_n query: {query[:1000]}')
+        with self.postgres_connection.cursor() as cursor:
+            cursor.execute(query)
+            pub_df = pd.DataFrame(cursor.fetchall(), columns=['id'])
+
+        pub_df.drop_duplicates(subset='id', inplace=True)
+
+        return list(pub_df['id'].values)
