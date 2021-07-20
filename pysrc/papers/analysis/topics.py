@@ -184,7 +184,7 @@ def cluster_and_sort(x, min_cluster_size, max_clusters):
     """
     logger.debug('Looking for an appropriate number of clusters,'
                  f'min_cluster_size={min_cluster_size}, max_clusters={max_clusters}')
-    r = min(max_clusters, x.shape[0]) + 1
+    r = min(int(x.shape[0] / min_cluster_size), max_clusters) + 1
     l = 1
 
     if l >= r - 2:
