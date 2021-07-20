@@ -1,5 +1,5 @@
 import logging
-from math import floor
+from math import ceil
 from queue import PriorityQueue
 
 import networkx as nx
@@ -85,7 +85,7 @@ def local_sparse(graph, e):
         return graph
     result = nx.Graph()
     neighbours = {node: set(graph.neighbors(node)) for node in graph.nodes}
-    sim_queues = {node: PriorityQueue(maxsize=floor(pow(len(neighbours[node]), e)))
+    sim_queues = {node: PriorityQueue(maxsize=ceil(pow(len(neighbours[node]), e)))
                   for node in graph.nodes}
     for (u, v, s) in graph.edges(data='similarity'):
         qu = sim_queues[u]

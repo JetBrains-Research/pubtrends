@@ -26,6 +26,7 @@ from wordcloud import WordCloud
 from pysrc.papers.analysis.graph import local_sparse
 from pysrc.papers.analysis.text import get_frequent_tokens, get_topic_word_cloud_data
 from pysrc.papers.analysis.topics import convert_clusters_dendrogram_to_paths, compute_clusters_dendrogram_children
+from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
@@ -740,7 +741,7 @@ class Plotter:
         return p
 
     def structure_graph(self):
-        g = local_sparse(self.analyzer.similarity_graph, 0.2)
+        g = local_sparse(self.analyzer.similarity_graph, PapersAnalyzer.STRUCTURE_SPARSITY)
         df = self.analyzer.df
         nodes = df['id']
         comps = df['comp']
