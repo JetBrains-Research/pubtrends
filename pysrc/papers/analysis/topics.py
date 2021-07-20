@@ -141,7 +141,7 @@ def get_topics_description(df, comps, corpus_terms, corpus_counts, query, n_word
     return result
 
 
-def cluster_and_sort_(x, min_cluster_size, max_clusters):
+def cluster_and_sort(x, min_cluster_size, max_clusters):
     """
     :param x: object representations (X x Features)
     :param min_cluster_size:
