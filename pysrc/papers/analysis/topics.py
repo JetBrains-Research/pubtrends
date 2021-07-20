@@ -141,7 +141,7 @@ def get_topics_description(df, comps, corpus_terms, corpus_counts, query, n_word
     return result
 
 
-def cluster_and_sort(x, min_cluster_size, max_clusters):
+def cluster_and_sort_(x, min_cluster_size, max_clusters):
     """
     :param x: object representations (X x Features)
     :param min_cluster_size:
@@ -156,17 +156,25 @@ def cluster_and_sort(x, min_cluster_size, max_clusters):
     if l >= r - 2:
         return [0] * x.shape[0], None
 
+    prev_min_size = None
     while l < r - 2:
         n_clusters = int((l + r) / 2)
-        model = AgglomerativeClustering(n_clusters=n_clusters).fit(x)
+        logger.debug(f'l = {l}; r = {r}; n_clusters = {n_clusters}')
+        model = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward').fit(x)
         clusters_counter = Counter(model.labels_)
+        assert len(clusters_counter.keys()) == n_clusters, "Incorrect clusters number"
         min_size = clusters_counter.most_common()[-1][1]
-        if min_size < min_cluster_size or len(clusters_counter.keys()) > max_clusters:
+        # Track previous_min_size to cope with situation with super distant tiny clusters
+        if prev_min_size != min_size and min_size < min_cluster_size or n_clusters > max_clusters:
+            logger.debug(f'prev_min_size({prev_min_size}) != min_size({min_size}) < {min_cluster_size} or '
+                         f'n_clusters = {n_clusters}  > {max_clusters}')
             r = n_clusters + 1
         else:
             l = n_clusters
+        prev_min_size = min_size
 
     logger.debug(f'Number of clusters = {n_clusters}')
+    logger.debug(f'Min cluster size = {prev_min_size}')
     logger.debug('Reorder clusters by size descending')
     reorder_map = {c: i for i, (c, _) in enumerate(clusters_counter.most_common())}
     return [reorder_map[c] for c in model.labels_], model.children_
