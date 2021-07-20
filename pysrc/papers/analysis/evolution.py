@@ -1,16 +1,13 @@
 import logging
 from queue import PriorityQueue
 
-import community
 import networkx as nx
 import numpy as np
 import pandas as pd
 
 from pysrc.papers.analysis.citations import build_cocit_grouped_df
 from pysrc.papers.analysis.graph import build_similarity_graph
-from pysrc.papers.analysis.topics import merge_components, get_topics_description, compute_similarity_matrix, \
-    louvain
-from pysrc.papers.utils import SEED
+from pysrc.papers.analysis.topics import get_topics_description, louvain
 
 logger = logging.getLogger(__name__)
 
