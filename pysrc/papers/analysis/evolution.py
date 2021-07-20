@@ -8,7 +8,8 @@ import pandas as pd
 
 from pysrc.papers.analysis.citations import build_cocit_grouped_df
 from pysrc.papers.analysis.graph import build_similarity_graph
-from pysrc.papers.analysis.topics import merge_components, get_topics_description, compute_similarity_matrix
+from pysrc.papers.analysis.topics import merge_components, get_topics_description, compute_similarity_matrix, \
+    louvain
 from pysrc.papers.utils import SEED
 
 logger = logging.getLogger(__name__)
@@ -82,18 +83,11 @@ def topic_evolution_analysis(
         logger.debug(f'Built similarity graph - {len(similarity_graph.nodes())} nodes and '
                      f'{len(similarity_graph.edges())} edges')
 
-        logger.debug('Compute aggregated similarity')
-        for _, _, d in similarity_graph.edges(data=True):
-            d['similarity'] = similarity_func(d)
-
-        logger.debug('Extracting topics from paper similarity graph')
-        partition_louvain = community.best_partition(
-            similarity_graph, weight='similarity', random_state=SEED
-        )
-        similarity_matrix = compute_similarity_matrix(similarity_graph, similarity_func, partition_louvain)
-        merged_partition, _ = merge_components(
-            partition_louvain, similarity_matrix,
-            topic_min_size=topic_min_size, max_topics_number=max_topics_number
+        merged_partition, _ = louvain(
+            similarity_graph,
+            similarity_func=similarity_func,
+            topic_min_size=topic_min_size,
+            max_topics_number=max_topics_number
         )
         evolution_series.append(pd.Series(merged_partition))
 

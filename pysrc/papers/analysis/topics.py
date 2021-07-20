@@ -1,14 +1,48 @@
 import logging
 from collections import Counter
 
+import community
+import networkx as nx
 import numpy as np
 import pandas as pd
-from more_itertools import unique_everseen
-from sklearn.cluster import AgglomerativeClustering
 
+from pysrc.papers.analysis.graph import to_weighted_graph
 from pysrc.papers.analysis.text import get_frequent_tokens, compute_tfidf
 
 logger = logging.getLogger(__name__)
+
+
+def louvain(similarity_graph, similarity_func, topic_min_size, max_topics_number):
+    """
+    Performs clustering of similarity topics, merging small topics into Other component
+    :param similarity_graph: Similarity graph
+    :param similarity_func: Function to compute aggregated similarity between nodes in similarity graph
+    :param topic_min_size:
+    :param max_topics_number:
+    :return: comp_partition, comp_sizes
+    """
+    g = to_weighted_graph(similarity_graph, similarity_func)
+    logger.debug(f'Similarity graph has {nx.number_connected_components(g)} connected components')
+    logger.debug('Graph clustering via Louvain community algorithm')
+    partition_louvain = community.best_partition(
+        g, weight='similarity', random_state=42
+    )
+    logger.debug(f'Best partition {len(set(partition_louvain.values()))} components')
+    components = set(partition_louvain.values())
+    sizes = {c1: sum([partition_louvain[node] == c1 for node in partition_louvain.keys()]) for c1 in components}
+    logger.debug(f'Components: {sizes}')
+    if len(g.edges) > 0:
+        modularity = community.modularity(partition_louvain, g)
+        logger.debug(f'Graph modularity (possible range is [-1, 1]): {modularity :.3f}')
+
+    logger.debug('Merge small components')
+    similarity_matrix = compute_similarity_matrix(g, similarity_func, partition_louvain)
+    comp_partition, comp_sizes = merge_components(
+        partition_louvain, similarity_matrix,
+        topic_min_size=topic_min_size, max_topics_number=max_topics_number
+    )
+
+    return comp_partition, comp_sizes
 
 
 def compute_similarity_matrix(similarity_graph, similarity_func, partition):
@@ -48,8 +82,7 @@ def merge_components(partition, similarity_matrix, topic_min_size, max_topics_nu
     :return: merged_partition, sorted_comp_sizes
     """
     logger.debug(f'Merging: max {max_topics_number} components with min size {topic_min_size}')
-    comp_sizes = {c: sum([partition[paper] == c for paper in partition.keys()])
-                  for c in (set(partition.values()))}
+    comp_sizes = Counter(partition.values())
     logger.debug(f'{len(comp_sizes)} comps, comp_sizes: {comp_sizes}')
 
     merge_index = 1
@@ -88,8 +121,7 @@ def merge_components(partition, similarity_matrix, topic_min_size, max_topics_nu
     )
     logger.debug(f'Comps reordering by size: {sorted_components}')
     merged_partition = {paper: sorted_components[c] for paper, c in partition.items()}
-    sorted_comp_sizes = {c: sum([merged_partition[p] == c for p in merged_partition.keys()])
-                         for c in set(merged_partition.values())}
+    sorted_comp_sizes = Counter(merged_partition.values())
 
     for k, v in sorted_comp_sizes.items():
         logger.debug(f'Component {k}: {v} ({int(100 * v / len(merged_partition))}%)')
@@ -139,97 +171,3 @@ def get_topics_description(df, comps, corpus_terms, corpus_counts, query, n_word
     logger.debug('Description\n' + '\n'.join(f'{comp}: {kwd}' for comp, kwd in kwds))
 
     return result
-
-
-def cluster_and_sort(x, min_cluster_size, max_clusters):
-    """
-    :param x: object representations (X x Features)
-    :param min_cluster_size:
-    :param max_clusters:
-    :return: List[cluster], Hierarchical dendrogram of splits.
-    """
-    logger.debug('Looking for an appropriate number of clusters,'
-                 f'min_cluster_size={min_cluster_size}, max_clusters={max_clusters}')
-    r = min(max_clusters, x.shape[0]) + 1
-    l = 1
-
-    if l >= r - 2:
-        return [0] * x.shape[0], None
-
-    prev_min_size = None
-    while l < r - 2:
-        n_clusters = int((l + r) / 2)
-        logger.debug(f'l = {l}; r = {r}; n_clusters = {n_clusters}')
-        model = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward').fit(x)
-        clusters_counter = Counter(model.labels_)
-        assert len(clusters_counter.keys()) == n_clusters, "Incorrect clusters number"
-        min_size = clusters_counter.most_common()[-1][1]
-        # Track previous_min_size to cope with situation with super distant tiny clusters
-        if prev_min_size != min_size and min_size < min_cluster_size or n_clusters > max_clusters:
-            logger.debug(f'prev_min_size({prev_min_size}) != min_size({min_size}) < {min_cluster_size} or '
-                         f'n_clusters = {n_clusters}  > {max_clusters}')
-            r = n_clusters + 1
-        else:
-            l = n_clusters
-        prev_min_size = min_size
-
-    logger.debug(f'Number of clusters = {n_clusters}')
-    logger.debug(f'Min cluster size = {prev_min_size}')
-    logger.debug('Reorder clusters by size descending')
-    reorder_map = {c: i for i, (c, _) in enumerate(clusters_counter.most_common())}
-    return [reorder_map[c] for c in model.labels_], model.children_
-
-
-def compute_clusters_dendrogram_children(clusters, children):
-    leaves_map = dict(enumerate(clusters))
-    nodes_map = {}
-    clusters_children = []
-    for i, (u, v) in enumerate(children):
-        u_cluster = leaves_map[u] if u in leaves_map else nodes_map[u]
-        v_cluster = leaves_map[v] if v in leaves_map else nodes_map[v]
-        node = len(leaves_map) + i
-        if u_cluster is not None and v_cluster is not None:
-            if u_cluster != v_cluster:
-                nodes_map[node] = None  # Different clusters
-                clusters_children.append((u, v, node))
-            else:
-                nodes_map[node] = u_cluster
-        else:
-            nodes_map[node] = None  # Different clusters
-            clusters_children.append((u, v, node))
-
-    def rwc(v):
-        if v in leaves_map:
-            return leaves_map[v]
-        elif v in nodes_map:
-            res = nodes_map[v]
-            return res if res is not None else v
-        else:
-            return v
-
-    # Rename nodes to clusters
-    result = [(rwc(u), rwc(v), rwc(n)) for u, v, n in clusters_children]
-    logger.debug(f'Clusters based dendrogram children {result}')
-    return result
-
-
-def convert_clusters_dendrogram_to_paths(clusters, children):
-    logger.debug('Converting agglomerate clustering clusters dendrogram format to path for visualization')
-    paths = [[p] for p in sorted(set(clusters))]
-    for i, (u, v, n) in enumerate(children):
-        for p in paths:
-            if p[i] == u or p[i] == v:
-                p.append(n)
-            else:
-                p.append(p[i])
-    logger.debug(f'Paths {paths}')
-    logger.debug('Radix sort or paths to ensure no overlaps')
-    for i in range(len(children)):
-        paths.sort(key=lambda p: p[i])
-        # Reorder next level to keep order of previous if possible
-        if i != len(children):
-            order = dict((v, i) for i, v in enumerate(unique_everseen(p[i + 1] for p in paths)))
-            for p in paths:
-                p[i + 1] = order[p[i + 1]]
-    leaves_order = dict((v, i) for i, v in enumerate(unique_everseen(p[0] for p in paths)))
-    return paths, leaves_order
