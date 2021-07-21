@@ -1,3 +1,4 @@
+import logging
 import re
 
 import pandas as pd
@@ -5,9 +6,11 @@ from nltk import SnowballStemmer
 
 from pysrc.papers.db.search_error import SearchError
 
+logger = logging.getLogger(__name__)
+
 
 def preprocess_search_query_for_postgres(query, min_search_words):
-    """ Preprocess search string for Postgres full text lookup """
+    logger.debug(f'Preprocess search string for Postgres full text lookup query: {query}')
     query = query.strip(', ')  # Strip trailing spaces and commas
     if ',' in query:
         qor = ''
@@ -84,16 +87,21 @@ def process_cocitations_postgres(cursor):
     lines = 0
     for row in cursor:
         lines += 1
+        if lines % 100 == 1:
+            logger.debug(f'Processed {lines} lines of cocitations')
         citing, year, cited_list = row
         cited_list.sort()
         for i in range(len(cited_list)):
             for j in range(i + 1, len(cited_list)):
                 data.append((str(citing), str(cited_list[i]), str(cited_list[j]), year))
     df = pd.DataFrame(data, columns=['citing', 'cited_1', 'cited_2', 'year'], dtype=object)
+    logger.debug(f'Total {lines} lines of cocitations info')
+    logger.debug(f'Total df size {len(df)}')
+
     # Hack for missing year in SS, see https://github.com/JetBrains-Research/pubtrends/issues/258
     df['year'].fillna(1970, inplace=True)
     df['year'] = df['year'].astype(int)
-    return df, lines
+    return df
 
 
 def process_bibliographic_coupling_postgres(cursor):
@@ -101,12 +109,17 @@ def process_bibliographic_coupling_postgres(cursor):
     lines = 0
     for row in cursor:
         lines += 1
+        if lines % 100 == 1:
+            logger.debug(f'Processed {lines} lines of bibliographic coupling')
         _, citing_list = row
         citing_list.sort()
         for i in range(len(citing_list)):
             for j in range(i + 1, len(citing_list)):
                 data.append((str(citing_list[i]), str(citing_list[j]), 1))
     df = pd.DataFrame(data, columns=['citing_1', 'citing_2', 'total'], dtype=object)
+    logger.debug(f'Total {lines} lines of bibliographic coupling info')
+    logger.debug(f'Df size {len(df)}')
     if lines > 0:
         df = df.groupby(['citing_1', 'citing_2']).sum().reset_index()
-    return df, lines
+        logger.debug(f'Total df size {len(df)}')
+    return df

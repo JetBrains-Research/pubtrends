@@ -236,7 +236,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         logger.debug(f'load_cocitations query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            cocit_df, lines = process_cocitations_postgres(cursor)
+            cocit_df = process_cocitations_postgres(cursor)
 
         if np.any(cocit_df[['citing', 'cited_1', 'cited_2']].isna()):
             raise ValueError('NaN values are not allowed in ids of co-citation DataFrame')
@@ -283,7 +283,6 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         logger.debug(f'load_bibliographic_coupling query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df, lines = process_bibliographic_coupling_postgres(cursor)
+            df = process_bibliographic_coupling_postgres(cursor)
 
-        logger.debug(f'Loaded {lines} lines of bibliographic coupling info')
         return df

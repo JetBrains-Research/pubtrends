@@ -226,12 +226,10 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         logger.debug(f'load_cocitations query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df, lines = process_cocitations_postgres(cursor)
+            df = process_cocitations_postgres(cursor)
 
         if np.any(df[['citing', 'cited_1', 'cited_2']].isna()):
             raise ValueError('NaN values are not allowed in ids of co-citation DataFrame')
-
-        logger.debug(f'Loaded {lines} lines of citing info')
 
         return df
 
@@ -278,8 +276,5 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         logger.debug(f'load_bibliographic_coupling query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df, lines = process_bibliographic_coupling_postgres(cursor)
-
-        logger.debug(f'Loaded {lines} lines of bibliographic coupling info')
-
+            df = process_bibliographic_coupling_postgres(cursor)
         return df
