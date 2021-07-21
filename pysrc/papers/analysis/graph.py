@@ -79,7 +79,7 @@ def build_similarity_graph(
     return sg
 
 
-def local_sparse(graph, e):
+def local_sparse(graph, e, key='weight'):
     assert 0 <= e <= 1, f'Sparsity parameter {e} should be in 0..1'
     if e == 1:
         return graph
@@ -87,7 +87,7 @@ def local_sparse(graph, e):
     neighbours = {node: set(graph.neighbors(node)) for node in graph.nodes}
     sim_queues = {node: PriorityQueue(maxsize=ceil(pow(len(neighbours[node]), e)))
                   for node in graph.nodes}
-    for (u, v, s) in graph.edges(data='similarity'):
+    for (u, v, s) in graph.edges(data=key):
         qu = sim_queues[u]
         if qu.full():
             qu.get()  # Removes the element with lowest similarity
@@ -104,7 +104,7 @@ def local_sparse(graph, e):
     return result
 
 
-def to_weighted_graph(graph, weight_func):
+def to_weighted_graph(graph, weight_func, key='weight'):
     logger.debug('Creating weighted graph')
     g = nx.Graph()
     for u, v, data in graph.edges(data=True):
@@ -114,7 +114,7 @@ def to_weighted_graph(graph, weight_func):
         elif w < 0:
             raise Exception(f'Weight is < 0 {w}')
         elif w != 0:
-            g.add_edge(u, v, weight=w)
+            g.add_edge(u, v, **{key: w})
     # Ensure all the nodes present
     for v in graph.nodes:
         if not g.has_node(v):

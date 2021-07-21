@@ -27,7 +27,7 @@ def louvain(similarity_graph, similarity_func, topic_min_size, max_topics_number
     logger.debug(f'Similarity graph has {nx.number_connected_components(g)} connected components')
     logger.debug('Graph clustering via Louvain community algorithm')
     partition_louvain = community.best_partition(
-        g, weight='similarity', random_state=42
+        g, weight='weight', random_state=42
     )
     logger.debug(f'Best partition {len(set(partition_louvain.values()))} components')
     components = set(partition_louvain.values())

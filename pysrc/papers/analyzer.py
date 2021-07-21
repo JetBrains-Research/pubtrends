@@ -10,7 +10,7 @@ from sklearn.manifold import TSNE
 from pysrc.papers.analysis.citations import find_top_cited_papers, find_max_gain_papers, \
     find_max_relative_gain_papers, build_cit_stats_df, merge_citation_stats, build_cocit_grouped_df
 from pysrc.papers.analysis.evolution import topic_evolution_analysis, topic_evolution_descriptions
-from pysrc.papers.analysis.graph import build_citation_graph, build_similarity_graph, to_weighted_graph
+from pysrc.papers.analysis.graph import build_citation_graph, build_similarity_graph, to_weighted_graph, local_sparse
 from pysrc.papers.analysis.metadata import popular_authors, popular_journals
 from pysrc.papers.analysis.node2vec import node2vec
 from pysrc.papers.analysis.numbers import extract_numbers
@@ -186,10 +186,6 @@ class PapersAnalyzer:
         )
         logger.debug(f'Built similarity graph - {len(self.similarity_graph.nodes())} nodes and '
                      f'{len(self.similarity_graph.edges())} edges')
-        logger.debug('Compute aggregated similarity')
-        for _, _, d in self.similarity_graph.edges(data=True):
-            d['similarity'] = PapersAnalyzer.similarity(d)
-
         if len(self.similarity_graph.nodes()) == 0:
             self.progress.info('Not enough papers to process topics analysis', current=9, task=task)
             self.df['comp'] = 0  # Technical value for top authors and papers analysis
@@ -216,7 +212,14 @@ class PapersAnalyzer:
             else:
                 logger.debug('Extracting topics from paper similarity graph with node2vec')
                 g = to_weighted_graph(self.similarity_graph, weight_func=PapersAnalyzer.similarity)
-                node_ids, node_embeddings = node2vec(g)
+                logger.debug('Preparing sparse weighted graph')
+                e = 1.0
+                gs = local_sparse(g, e)
+                while e > 0.1 and len(gs.edges) / len(gs.nodes) > 50:
+                    e -= 0.1
+                    gs = local_sparse(g, e)
+                logger.debug(f'Sparse graph for node2vec e={e} nodes={len(gs.nodes)} edges={len(gs.edges)}')
+                node_ids, node_embeddings = node2vec(gs)
                 logger.debug('Apply TSNE transformation on node embeddings')
                 tsne = TSNE(n_components=2, random_state=42)
                 node_embeddings_2d = tsne.fit_transform(node_embeddings)

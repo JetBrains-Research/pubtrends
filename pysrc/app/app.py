@@ -349,8 +349,14 @@ def graph():
                     graph_cytoscape_json=json.dumps(graph_cs)
                 )
             else:
+                logger.debug('Computing aggregated similarity graph')
+                sg = analyzer.similarity_graph.copy()
+                for _, _, d in sg.edges(data=True):
+                    d['similarity'] = PapersAnalyzer.similarity(d)
+                logger.debug('Computing sparse graph')
+                sg = local_sparse(sg, PapersAnalyzer.STRUCTURE_SPARSITY, key='similarity')
                 graph_cs = PlotPreprocessor.dump_structure_graph_cytoscape(
-                    analyzer.df, local_sparse(analyzer.similarity_graph, PapersAnalyzer.STRUCTURE_SPARSITY)
+                    analyzer.df, sg
                 )
                 logger.info(f'/graph success structure {log_request(request)}')
                 return render_template(
