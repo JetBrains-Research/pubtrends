@@ -355,10 +355,10 @@ def graph():
                     d['similarity'] = PapersAnalyzer.similarity(d)
                 logger.debug('Computing sparse graph')
                 sg = local_sparse(sg, PapersAnalyzer.STRUCTURE_SPARSITY, key='similarity')
-                graph_cs = PlotPreprocessor.dump_structure_graph_cytoscape(
+                graph_cs = PlotPreprocessor.dump_similarity_graph_cytoscape(
                     analyzer.df, sg
                 )
-                logger.info(f'/graph success structure {log_request(request)}')
+                logger.info(f'/graph success similarity {log_request(request)}')
                 return render_template(
                     'graph.html',
                     version=VERSION,

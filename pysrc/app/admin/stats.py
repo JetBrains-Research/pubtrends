@@ -105,7 +105,7 @@ def prepare_stats_data(logfile):
                     if 'graph_citations' not in info:
                         info['graph_citations'] = True
 
-            if '/graph success structure addr:' in line:
+            if '/graph success similarity addr:' in line:
                 args = json.loads(re.sub(".*args:", "", line.strip()))
                 jobid = args['jobid']
                 if not jobid:

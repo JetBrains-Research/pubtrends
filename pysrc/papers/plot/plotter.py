@@ -87,7 +87,7 @@ def visualize_analysis(analyzer):
                 (components(p), Plotter.word_cloud_prepare(wc), "true" if is_empty else "false", zoom_in_callback) for
                 (p, wc, is_empty, zoom_in_callback) in plotter.topics_info_and_word_cloud_and_callback()],
             component_sizes=plotter.component_sizes(),
-            structure_graph=[components(plotter.structure_graph())]
+            similarity_graph=[components(plotter.plot_similarity_graph())]
         ))
 
         topics_hierarchy = plotter.topics_hierarchy_with_keywords()
@@ -740,7 +740,7 @@ class Plotter:
         p.outline_line_color = None
         return p
 
-    def structure_graph(self):
+    def plot_similarity_graph(self):
         g = local_sparse(self.analyzer.similarity_graph, PapersAnalyzer.STRUCTURE_SPARSITY)
         df = self.analyzer.df
         nodes = df['id']

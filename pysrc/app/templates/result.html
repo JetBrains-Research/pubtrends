@@ -504,13 +504,13 @@
                 </div>
                 <div class="card-body">
                     {% if n_papers <= max_graph_size %}
-                    {% if structure_graph is defined %}
+                    {% if similarity_graph is defined %}
                     <strong>Papers similarity</strong>
                     <p>
                         The graph below shows similarity network, most similar papers are connected.<br>
                         Color represents topic, size - total citations number.
                     </p>
-                    {% for script, div in structure_graph %}
+                    {% for script, div in similarity_graph %}
                     {{ script|safe }}
                     {{ div|safe }}
                     {% endfor %}
@@ -526,7 +526,7 @@
                             Explore citations graph
                         </button>
                         <button type="button" class="ml-2 btn btn-light"
-                                onclick="graph_callback('structure');">
+                                onclick="graph_callback('similarity');">
                             Explore similarity graph
                         </button>
                     </div>
