@@ -44,19 +44,17 @@
         }, false);
 
         $(document).ready(function () {
-            $('#source-selector').change(function() {
+            $('#search-source-selector').change(function() {
                 const noreviews_checkbox = $("#noreviews");
                 const expand_field = $("#expand");
                 if ($(this).val() === "Semantic Scholar") {
                     noreviews_checkbox.prop("checked", false);
-                    noreviews_checkbox.prop("readonly", true);
                     noreviews_checkbox.attr("disabled", "disabled");
                     expand_field.val(0);
                     expand_field.prop("readonly", true);
                 } else {
                     noreviews_checkbox.prop("checked", true);
-                    noreviews_checkbox.prop("readonly", false);
-                    noreviews_checkbox.attr("disabled", "");
+                    noreviews_checkbox.removeAttr("disabled")
                     expand_field.val(20);
                     expand_field.prop("readonly", false);
                 }
@@ -127,6 +125,22 @@
                             </div>
                             <!--end of col-->
                         </div>
+                        <div class="mt-3 row no-gutters align-items-center">
+                            <div class="col-4 input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text" id="search-source-addon">Database</span>
+                                </div>
+                                <select id="search-source-selector" class="form-control" name="source"
+                                        aria-describedby="search-source-addon">
+                                    {% if pm_enabled %}
+                                    <option>Pubmed</option>
+                                    {% endif %}
+                                    {% if ss_enabled %}
+                                    <option>Semantic Scholar</option>
+                                    {% endif %}
+                                </select>
+                            </div>
+                        </div>
                         <div class="mt-2">
                             <a id="step3" class="link" data-toggle="collapse" href="#collapseSearchAdvanced"
                                role="button" aria-expanded="false">
@@ -136,20 +150,6 @@
                         <div id="collapseSearchAdvanced" class="collapse mt-2">
                             <div class="row no-gutters align-items-center">
                                 <div class="col input-group">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text" id="source-addon">Source</span>
-                                    </div>
-                                    <select id="source-selector" class="form-control" name="source"
-                                            aria-describedby="source-addon">
-                                        {% if pm_enabled %}
-                                        <option>Pubmed</option>
-                                        {% endif %}
-                                        {% if ss_enabled %}
-                                        <option>Semantic Scholar</option>
-                                        {% endif %}
-                                    </select>
-                                </div>
-                                <div class="ml-2 col input-group">
                                     <div class="input-group-prepend">
                                         <span class="input-group-text" id="sort-addon">Sort By</span>
                                     </div>
@@ -248,6 +248,22 @@
                                 <button class="btn btn-success" type="submit">Search</button>
                             </div>
                         </div>
+                        <div class="mt-3 row no-gutters align-items-center">
+                            <div class="col-4 input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text" id="paper-source-addon">Database</span>
+                                </div>
+                                <select class="form-control" name="source"
+                                        aria-describedby="paper-source-addon">
+                                    {% if pm_enabled %}
+                                    <option>Pubmed</option>
+                                    {% endif %}
+                                    {% if ss_enabled %}
+                                    <option>Semantic Scholar</option>
+                                    {% endif %}
+                                </select>
+                            </div>
+                        </div>
                         <div class="mt-2">
                             <a class="link" data-toggle="collapse" href="#collapsePaperAdvanced"
                                role="button" aria-expanded="false">
@@ -257,20 +273,6 @@
                         <div id="collapsePaperAdvanced" class="collapse mt-2">
                             <div class="row no-gutters align-items-center">
                                 <div class="col-4 input-group">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text" id="paper-source-addon">Source</span>
-                                    </div>
-                                    <select class="form-control" name="source"
-                                            aria-describedby="source-addon">
-                                        {% if pm_enabled %}
-                                        <option>Pubmed</option>
-                                        {% endif %}
-                                        {% if ss_enabled %}
-                                        <option>Semantic Scholar</option>
-                                        {% endif %}
-                                    </select>
-                                </div>
-                                <div class="ml-2 col-4 input-group">
                                     <div class="input-group-prepend">
                                         <span class="input-group-text" id="paper-amount-addon">Search</span>
                                     </div>
@@ -297,14 +299,14 @@
                 <div class="tab-pane fade" id="papers" role="tabpanel" aria-labelledby="papers-tab">
                     <form action="search_list" method="POST" class="needs-validation" novalidate>
                         <div class="row no-gutters align-items-center">
-                            <div class="col-auto">
-                                IDs
-                            </div>
-                            <div class="col ml-2">
+                            <div class="col input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text" id="ids-addon">IDs</span>
+                                </div>
                                 <input class="form-control form-control-borderless" type="search"
                                        name="list" id="papers-input"
                                        placeholder="Enter list of paper ids. Maximum {{ max_papers }} papers."
-                                       aria-describedby="query-addon"
+                                       aria-describedby="ids-addon"
                                        autofocus
                                        required>
                             </div>
@@ -313,28 +315,20 @@
                                 <button class="btn btn-success" type="submit">Search</button>
                             </div>
                         </div>
-                        <div class="mt-2">
-                            <a class="link" data-toggle="collapse" href="#collapseListAdvanced"
-                               role="button" aria-expanded="false">
-                                <small>Advanced settings</small>
-                            </a>
-                        </div>
-                        <div id="collapseListAdvanced" class="collapse mt-2">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col-4 input-group">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text" id="papers-source-addon">Source</span>
-                                    </div>
-                                    <select class="form-control" name="source"
-                                            aria-describedby="source-addon">
-                                        {% if pm_enabled %}
-                                        <option>Pubmed</option>
-                                        {% endif %}
-                                        {% if ss_enabled %}
-                                        <option>Semantic Scholar</option>
-                                        {% endif %}
-                                    </select>
+                        <div class="mt-3 row no-gutters align-items-center">
+                            <div class="col-4 input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text" id="papers-source-addon">Database</span>
                                 </div>
+                                <select class="form-control" name="source"
+                                        aria-describedby="papers-source-addon">
+                                    {% if pm_enabled %}
+                                    <option>Pubmed</option>
+                                    {% endif %}
+                                    {% if ss_enabled %}
+                                    <option>Semantic Scholar</option>
+                                    {% endif %}
+                                </select>
                             </div>
                         </div>
                     </form>
