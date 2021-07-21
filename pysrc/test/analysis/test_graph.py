@@ -69,6 +69,15 @@ class TestBuildGraph(unittest.TestCase):
         graph.add_edge(10, 11, similarity=10)
         self.assertEqual([(0, 4), (4, 1), (4, 2), (4, 3), (10, 11)], list(local_sparse(graph, 0).edges))
 
+    def test_isolated_edges_sparse(self):
+        # Full graph on 4 nodes
+        graph = nx.DiGraph()
+        graph.add_node(1)
+        graph.add_node(2)
+        graph.add_node(3)
+
+        self.assertEqual([1, 2, 3], list(local_sparse(graph, 0).nodes))
+
 
 class TestBuildGraphSingle(unittest.TestCase):
     PUBTRENDS_CONFIG = PubtrendsConfig(test=True)

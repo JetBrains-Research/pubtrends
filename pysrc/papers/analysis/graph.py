@@ -85,22 +85,26 @@ def local_sparse(graph, e, key='weight'):
         return graph
     result = nx.Graph()
     neighbours = {node: set(graph.neighbors(node)) for node in graph.nodes}
-    sim_queues = {node: PriorityQueue(maxsize=ceil(pow(len(neighbours[node]), e)))
-                  for node in graph.nodes}
+    priority_queues = {node: PriorityQueue(maxsize=ceil(pow(len(neighbours[node]), e)))
+                       for node in graph.nodes}
     for (u, v, s) in graph.edges(data=key):
-        qu = sim_queues[u]
+        qu = priority_queues[u]
         if qu.full():
             qu.get()  # Removes the element with lowest similarity
         qu.put((s, v))
-        qv = sim_queues[v]
+        qv = priority_queues[v]
         if qv.full():
             qv.get()  # Removes the element with lowest similarity
         qv.put((s, u))
-    for u, q in sim_queues.items():
+    for u, q in priority_queues.items():
         while not q.empty():
             s, v = q.get()
             if not result.has_edge(u, v):
                 result.add_edge(u, v, **graph.edges[u, v])
+    # Ensure all the nodes present
+    for v in graph.nodes:
+        if not result.has_node(v):
+            result.add_node(v)
     return result
 
 
@@ -118,6 +122,5 @@ def to_weighted_graph(graph, weight_func, key='weight'):
     # Ensure all the nodes present
     for v in graph.nodes:
         if not g.has_node(v):
-            logger.debug(f'Adding isolated vertex {v}')
             g.add_node(v)
     return g
