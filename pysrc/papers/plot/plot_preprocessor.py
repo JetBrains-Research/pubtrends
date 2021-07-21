@@ -157,13 +157,14 @@ class PlotPreprocessor:
         logger.debug('Mapping structure graph to cytoscape JS')
         cytoscape_graph = PlotPreprocessor.dump_to_cytoscape(df, similarity_graph.copy())
         logger.debug('Set centrality for structure graph')
+        maxy = df['y'].max()
         centrality = nx.algorithms.centrality.degree_centrality(similarity_graph)
         for node_cs in cytoscape_graph['nodes']:
             nid = node_cs['data']['id']
             sel = df.loc[df['id'] == nid]
             node_cs['data']['centrality'] = centrality[nid]
             # Adjust vertical axis with bokeh graph
-            node_cs['position'] = dict(x=sel['x'].values[0] * 10, y=sel['y'].values[0] * 10)
+            node_cs['position'] = dict(x=sel['x'].values[0] * 7, y=(maxy - sel['y'].values[0]) * 7)
         return cytoscape_graph
 
     @staticmethod
