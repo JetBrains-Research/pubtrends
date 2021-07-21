@@ -39,7 +39,7 @@ class TestBuildGraph(unittest.TestCase):
         for expected, actual in zip(SIMILARITY_GRAPH_EDGES, edges):
             self.assertEquals(expected[0], actual[0], msg='source')
             self.assertEquals(expected[1], actual[1], msg='target')
-            for m in 'cocitation', 'text', 'similarity', 'citations', 'bibcoupling':
+            for m in 'cocitation', 'text', 'citations', 'bibcoupling':
                 self.assertEquals(m in expected[2], m in actual[2], msg=f'{m} presence')
                 if m in expected[2]:
                     self.assertAlmostEqual(expected[2][m], actual[2][m], msg=f'{m} value', delta=1e-3)
