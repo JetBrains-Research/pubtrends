@@ -25,7 +25,8 @@ def find_max_gain_papers(df, citation_years):
                                   sel['year'].values[0], max_gain])
 
     max_gain_df = pd.DataFrame(max_gain_data,
-                               columns=['year', 'id', 'title', 'journal', 'authors', 'paper_year', 'count'])
+                               columns=['year', 'id', 'title', 'journal', 'authors', 'paper_year', 'count'],
+                               dtype=object)
     return list(max_gain_df['id'].values), max_gain_df
 
 
@@ -49,7 +50,8 @@ def find_max_relative_gain_papers(df, citation_years):
                                       sel['year'].values[0], max_rel_gain])
 
     max_rel_gain_df = pd.DataFrame(max_rel_gain_data,
-                                   columns=['year', 'id', 'title', 'journal', 'authors', 'paper_year', 'rel_gain'])
+                                   columns=['year', 'id', 'title', 'journal', 'authors', 'paper_year', 'rel_gain'],
+                                   dtype=object)
     return list(max_rel_gain_df['id']), max_rel_gain_df
 
 
