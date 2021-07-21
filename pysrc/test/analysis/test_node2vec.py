@@ -12,10 +12,9 @@ class TestNode2Vec(unittest.TestCase):
         graph.add_node(1)
         graph.add_node(2)
         graph.add_node(3)
-        am, ps1, ps2 = _precompute(graph)
-        self.assertEqual({1: [], 2: [], 3: []}, am)
+        ps1, ps2 = _precompute(graph)
         self.assertEqual({1: [], 2: [], 3: []}, {k: v.tolist() for k, v in ps1.items()})
-        self.assertEqual([[1], [2], [3], [1], [2], [3]], _random_walks(list(graph.nodes), am, ps1, ps2, 2, 10))
+        self.assertEqual([[1], [2], [3], [1], [2], [3]], _random_walks(graph, ps1, ps2, 2, 10))
 
     def test_walk_triangle(self):
         graph = nx.Graph()
@@ -23,8 +22,8 @@ class TestNode2Vec(unittest.TestCase):
         graph.add_edge(2, 3, weight=1)
         graph.add_edge(3, 1, weight=1)
         graph.add_node(4)
-        am, ps1, ps2 = _precompute(graph)
-        walks = _random_walks(list(graph.nodes), am, ps1, ps2, walks_per_node=1, walk_length=3, seed=42)
+        ps1, ps2 = _precompute(graph)
+        walks = _random_walks(graph, ps1, ps2, walks_per_node=1, walk_length=3, seed=42)
         self.assertEqual([[1, 2, 3], [2, 3, 2], [3, 2, 1], [4]], walks)
 
     def test_walk_triangle_weighted(self):
@@ -32,8 +31,8 @@ class TestNode2Vec(unittest.TestCase):
         graph.add_edge(1, 2, weight=100)
         graph.add_edge(2, 3, weight=10)
         graph.add_edge(3, 1, weight=1)
-        am, ps1, ps2 = _precompute(graph)
-        walks = _random_walks(list(graph.nodes), am, ps1, ps2, walks_per_node=5, walk_length=3, seed=42)
+        ps1, ps2 = _precompute(graph)
+        walks = _random_walks(graph, ps1, ps2, walks_per_node=5, walk_length=3, seed=42)
         self.assertEqual([[1, 2, 1], [2, 1, 2], [3, 2, 1],
                           [1, 2, 1], [2, 1, 2], [3, 2, 3],
                           [1, 2, 1], [2, 1, 2], [3, 2, 1],
