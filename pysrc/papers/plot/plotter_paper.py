@@ -1,3 +1,4 @@
+import logging
 from bokeh.embed import components
 
 from pysrc.papers.analyzer import PapersAnalyzer
@@ -7,6 +8,8 @@ from pysrc.papers.plot.plotter import Plotter
 from pysrc.papers.utils import trim, MAX_TITLE_LENGTH
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
+
+logger = logging.getLogger(__name__)
 
 
 def get_top_papers_id_title_year(papers, df, key, n=50):
@@ -22,7 +25,7 @@ def prepare_paper_data(data, source, pid):
 
     plotter = Plotter()
 
-    # Extract data for the current paper
+    logger.debug('Extracting data for the current paper')
     sel = analyzer.df[analyzer.df['id'] == pid]
     title = sel['title'].values[0]
     authors = sel['authors'].values[0]
@@ -35,10 +38,11 @@ def prepare_paper_data(data, source, pid):
     if doi == 'None' or doi == 'nan':
         doi = ''
 
-    # Estimate related topics for the paper
-    if analyzer.similarity_graph.nodes() and analyzer.similarity_graph.has_node(pid):
+    logger.debug('Estimate related topics for the paper')
+    sg = analyzer.similarity_graph
+    if sg.nodes() and sg.has_node(pid):
         related_topics = {}
-        for v in analyzer.similarity_graph[pid]:
+        for v in sg[pid]:
             c = analyzer.df[analyzer.df['id'] == v]['comp'].values[0]
             if c in related_topics:
                 related_topics[c] += 1
@@ -64,13 +68,18 @@ def prepare_paper_data(data, source, pid):
     else:
         prior_papers = derivative_papers = []
 
-    if analyzer.similarity_graph.nodes() and analyzer.similarity_graph.has_node(pid):
+    logger.debug('Computing aggregated similarity graph')
+    sg = analyzer.similarity_graph.copy()
+    for _, _, d in sg.edges(data=True):
+        d['similarity'] = PapersAnalyzer.similarity(d)
+
+    if sg.nodes() and sg.has_node(pid):
         similar_papers = map(
             lambda v: (analyzer.df[analyzer.df['id'] == v]['id'].values[0],
                        analyzer.df[analyzer.df['id'] == v]['title'].values[0],
                        analyzer.df[analyzer.df['id'] == v]['year'].values[0],
-                       analyzer.similarity_graph.edges[pid, v]['similarity']),
-            list(analyzer.similarity_graph[pid])
+                       sg.edges[pid, v]['similarity']),
+            list(sg[pid])
         )
         similar_papers = sorted(similar_papers, key=lambda x: x[3], reverse=True)[:50]
     else:
