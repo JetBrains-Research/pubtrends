@@ -82,13 +82,14 @@ def expand_ids(
                 fcs.append([pid, True, 0.0, title, ''])
 
         fcs.sort(key=lambda v: v[2], reverse=True)
-        sim_threshold = fcs[0][2] * min_keywords_similarity  # Compute keywords similarity threshold as a fraction of top
+        # Compute keywords similarity threshold as a fraction of top
+        sim_threshold = fcs[0][2] * min_keywords_similarity
         for v in fcs:
             v[1] = v[1] or v[2] > sim_threshold
 
-        logger.debug('Pid\tOk\tSimilarity\tTitle\tMesh\n' +
-                     '\n'.join(f'{p}\t{"+" if a else "-"}\t{int(s)}\t{t}\t{m}' for
-                               p, a, s, t, m in fcs))
+        # logger.debug('Pid\tOk\tSimilarity\tTitle\tMesh\n' +
+        #              '\n'.join(f'{p}\t{"+" if a else "-"}\t{int(s)}\t{t}\t{m}' for
+        #                        p, a, s, t, m in fcs))
         new_mesh_ids = [v[0] for v in fcs if v[1]][:limit]
         logger.debug(f'Similar by mesh papers: {len(new_mesh_ids)}')
         if len(new_mesh_ids) == 0:  # Nothing to add
