@@ -84,9 +84,9 @@
             "width": function (edge) {
                 let data = edge.data();
                 if ('similarity' in data) {
-                    return (Math.max(1, Math.min(10, Math.log1p(data.similarity)))) / 10;
+                    return (Math.max(1, Math.min(10, Math.log1p(data.similarity)))) / 5;
                 }
-                return 0.1;
+                return 0.2;
             },
             "curve-style": "haystack",
             "line-color": function (edge) {
@@ -285,7 +285,7 @@
                                 if ('cited' in data) {
                                     return data.cited * 20 / max_cited + 5;
                                 } else {
-                                    return 5 / 10;
+                                    return 5;
                                 }
                             },
                             "height": function (node) {
@@ -293,10 +293,10 @@
                                 if ('cited' in data) {
                                     return data.cited * 20 / max_cited + 5;
                                 } else {
-                                    return 5 / 10;
+                                    return 5;
                                 }
                             },
-                            "border-width": 0.1,
+                            "border-width": 1.0,
                             "border-color": "black",
                             "opacity": 0.7,
                         }
@@ -305,7 +305,7 @@
                     {
                         selector: 'node.analyzed',
                         style: {
-                            'border-width': '0.2px',
+                            'border-width': '2.0',
                             'opacity': '1.0 !important'
                         }
                     },
@@ -401,7 +401,7 @@
                     {
                         selector: 'node.highlight',
                         style: {
-                            'border-width': '0.2px',
+                            'border-width': '2.0',
                             'opacity': '1.0 !important'
                         }
                     },
@@ -424,7 +424,7 @@
                     {
                         selector: 'edge.semitransp',
                         style: {
-                            'opacity': '0.1 !important'
+                            'opacity': '0.2 !important'
                         }
                     },
                 ],
