@@ -269,20 +269,22 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         return df
 
     def load_bibliographic_coupling(self, ids):
-        self.check_connection()
-        query = f'''WITH X AS (SELECT ssid_out, ssid_in, crc32id_in
-                        FROM sscitations C
-                        WHERE (crc32id_out, ssid_out) IN (VALUES  {SemanticScholarPostgresLoader.ids2values(ids)}))
-                        SELECT ssid_in, ARRAY_AGG(ssid_out) as citing_list
-                        FROM X
-                        GROUP BY crc32id_in, ssid_in
-                        HAVING COUNT(*) >= 2
-                        LIMIT {self.config.max_number_of_bibliographic_coupling};
-                    '''
-
-        logger.debug(f'load_bibliographic_coupling query: {query[:1000]}')
-        with self.postgres_connection.cursor() as cursor:
-            cursor.execute(query)
-            df = process_bibliographic_coupling_postgres(cursor)
-
-        return df
+        # Workaround for Loading bibliographic coupling takes too long for 1k papers in Semantic Scholar #273
+        return pd.DataFrame(columns=['citing_1', 'citing_2', 'total'], dtype=object)
+        # self.check_connection()
+        # query = f'''WITH X AS (SELECT ssid_out, ssid_in, crc32id_in
+        #                 FROM sscitations C
+        #                 WHERE (crc32id_out, ssid_out) IN (VALUES  {SemanticScholarPostgresLoader.ids2values(ids)}))
+        #                 SELECT ssid_in, ARRAY_AGG(ssid_out) as citing_list
+        #                 FROM X
+        #                 GROUP BY crc32id_in, ssid_in
+        #                 HAVING COUNT(*) >= 2
+        #                 LIMIT {self.config.max_number_of_bibliographic_coupling};
+        #             '''
+        #
+        # logger.debug(f'load_bibliographic_coupling query: {query[:1000]}')
+        # with self.postgres_connection.cursor() as cursor:
+        #     cursor.execute(query)
+        #     df = process_bibliographic_coupling_postgres(cursor)
+        #
+        # return df
