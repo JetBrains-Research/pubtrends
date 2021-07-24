@@ -783,6 +783,7 @@ class Plotter:
         p.yaxis.major_label_text_font_size = '0pt'  # preferred method for removing tick labels
         p.grid.grid_line_color = None
         p.outline_line_color = None
+        p.sizing_mode = 'stretch_width'
 
         tooltip = """
         <div style="max-width: 500px">
