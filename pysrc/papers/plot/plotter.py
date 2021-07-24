@@ -741,7 +741,7 @@ class Plotter:
         return p
 
     def plot_similarity_graph(self):
-        g = local_sparse(self.analyzer.similarity_graph, PapersAnalyzer.STRUCTURE_SPARSITY)
+        g = local_sparse(self.analyzer.similarity_graph, PapersAnalyzer.SIMILARITY_SPARSITY)
         df = self.analyzer.df
         nodes = df['id']
         comps = df['comp']

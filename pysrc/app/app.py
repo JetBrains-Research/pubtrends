@@ -354,7 +354,7 @@ def graph():
                 for _, _, d in sg.edges(data=True):
                     d['similarity'] = PapersAnalyzer.similarity(d)
                 logger.debug('Computing sparse graph')
-                sg = local_sparse(sg, PapersAnalyzer.STRUCTURE_SPARSITY, key='similarity')
+                sg = local_sparse(sg, PapersAnalyzer.SIMILARITY_SPARSITY, key='similarity')
                 graph_cs = PlotPreprocessor.dump_similarity_graph_cytoscape(
                     analyzer.df, sg
                 )

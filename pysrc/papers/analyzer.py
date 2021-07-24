@@ -27,12 +27,11 @@ logger = logging.getLogger(__name__)
 class PapersAnalyzer:
     TOP_CITED_PAPERS = 50
 
-    # ...bibliographic coupling (BC) was the most accurate,  followed by co-citation (CC).
-    # Direct citation (DC) was a distant third among the three...
-    SIMILARITY_BIBLIOGRAPHIC_COUPLING = 0.125  # Limited by number of references, applied to log
-    SIMILARITY_COCITATION = 1  # Limiter by number of co-citations, applied to log
-    SIMILARITY_CITATION = 0.125  # Limited by 1 citation
-    SIMILARITY_TEXT_CITATION = 1  # Limited by cosine similarity <= 1
+    # These coefficients were estimated using
+    SIMILARITY_BIBLIOGRAPHIC_COUPLING = 1  # Limited by number of references, applied to log
+    SIMILARITY_COCITATION = 2  # Limiter by number of co-citations, applied to log
+    SIMILARITY_CITATION = 2  # Limited by 1 citation
+    SIMILARITY_TEXT_CITATION = 4  # Limited by cosine similarity <= 1
 
     # Minimal number of common references, used to reduces similarity graph edges count
     # Value > 1 is especially useful while analysing single paper, removes meaningless connections by construction
@@ -48,7 +47,7 @@ class PapersAnalyzer:
     SIMILARITY_TEXT_CITATION_N = 50
 
     # Reduce number of edges in similarity graph
-    STRUCTURE_SPARSITY = 0.3
+    SIMILARITY_SPARSITY = 0.3
 
     # Global vectorization max vocabulary size
     VECTOR_WORDS = 10000
@@ -56,6 +55,9 @@ class PapersAnalyzer:
     VECTOR_MIN_DF = 0.001
     # Terms with higher frequency will be ignored, remove abundant stop words
     VECTOR_MAX_DF = 0.8
+
+    # Limit max edges to nodes threshold for similarity graph in node2vec
+    MAX_EDGES_TO_NODES_NODE2VEC = 50
 
     TOPIC_MIN_SIZE = 10
     # Max number of topics should be "deliverable"
@@ -215,7 +217,7 @@ class PapersAnalyzer:
                 logger.debug('Preparing sparse weighted graph')
                 e = 1.0
                 gs = local_sparse(g, e)
-                while e > 0.1 and len(gs.edges) / len(gs.nodes) > 50:
+                while e > 0.1 and len(gs.edges) / len(gs.nodes) > self.MAX_EDGES_TO_NODES_NODE2VEC:
                     e -= 0.1
                     gs = local_sparse(g, e)
                 logger.debug(f'Sparse graph for node2vec e={e} nodes={len(gs.nodes)} edges={len(gs.edges)}')
