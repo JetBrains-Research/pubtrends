@@ -156,8 +156,8 @@ class PapersAnalyzer:
         logger.debug(f'Found {len(self.cit_df)} citations between papers')
 
         self.citations_graph = build_citation_graph(self.df, self.cit_df)
-        logger.debug(f'Built citation graph - {len(self.citations_graph.nodes())} nodes and '
-                     f'{len(self.citations_graph.edges())} edges')
+        logger.debug(f'Built citation graph - {self.citations_graph.number_of_nodes()} nodes and '
+                     f'{self.citations_graph.number_of_edges()} edges')
 
         self.progress.info('Calculating co-citations for selected papers', current=6, task=task)
         self.cocit_df = self.loader.load_cocitations(self.ids)
@@ -180,9 +180,9 @@ class PapersAnalyzer:
             self.df, self.texts_similarity,
             self.citations_graph, self.cocit_grouped_df, self.bibliographic_coupling_df,
         )
-        logger.debug(f'Built similarity graph - {len(self.similarity_graph.nodes())} nodes and '
-                     f'{len(self.similarity_graph.edges())} edges')
-        if len(self.similarity_graph.nodes()) == 0:
+        logger.debug(f'Built similarity graph - {self.similarity_graph.number_of_nodes()} nodes and '
+                     f'{self.similarity_graph.number_of_edges()} edges')
+        if self.similarity_graph.number_of_nodes() == 0:
             self.progress.info('Not enough papers to process topics analysis', current=9, task=task)
             self.df['comp'] = 0  # Technical value for top authors and papers analysis
             self.kwd_df = pd.DataFrame({'comp': [0], 'kwd': ['']})
@@ -197,7 +197,7 @@ class PapersAnalyzer:
             self.df['y'] = pd.Series(index=indx, data=ys)
 
             self.progress.info('Extracting topics from paper similarity graph', current=9, task=task)
-            if len(self.similarity_graph.nodes()) <= PapersAnalyzer.TOPIC_MIN_SIZE:
+            if self.similarity_graph.number_of_nodes() <= PapersAnalyzer.TOPIC_MIN_SIZE:
                 logger.debug('Small similarity graph - single topic')
                 self.df['comp'] = 0
                 self.topics_dendrogram = None

@@ -134,7 +134,7 @@ def to_weighted_graph(graph, weight_func, key='weight'):
 
 
 def layout_similarity_graph(similarity_graph, similarity_func, topic_min_size):
-    if len(similarity_graph.nodes()) <= topic_min_size:
+    if similarity_graph.number_of_nodes() <= topic_min_size:
         logger.debug('Preparing spring layout for similarity graph')
         pos = nx.spring_layout(similarity_graph, weight='weight')
         nodes = [a for a, _ in pos.items()]
@@ -147,10 +147,10 @@ def layout_similarity_graph(similarity_graph, similarity_func, topic_min_size):
         e = 1.0
         gs = local_sparse(wsg, e)
         # Limit total number of edges to estimate walk probabilities
-        while e > 0.1 and len(gs.edges) / len(gs.nodes) > 50:
+        while e > 0.1 and gs.number_of_edges() / gs.number_of_nodes() > 50:
             e -= 0.1
             gs = local_sparse(wsg, e)
-        logger.debug(f'Sparse graph for node2vec e={e} nodes={len(gs.nodes)} edges={len(gs.edges)}')
+        logger.debug(f'Sparse graph for node2vec e={e} nodes={gs.number_of_nodes()} edges={gs.number_of_edges()}')
         node_ids, node_embeddings = node2vec(gs)
         logger.debug('Apply TSNE transformation on node embeddings')
         tsne = TSNE(n_components=2, random_state=42)

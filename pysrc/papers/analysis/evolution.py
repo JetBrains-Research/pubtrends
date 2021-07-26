@@ -77,8 +77,8 @@ def topic_evolution_analysis(
             cocit_grouped_df_year,
             bibliographic_coupling_df_year,
         )
-        logger.debug(f'Built similarity graph - {len(similarity_graph.nodes())} nodes and '
-                     f'{len(similarity_graph.edges())} edges')
+        logger.debug(f'Built similarity graph - {similarity_graph.number_of_nodes()} nodes and '
+                     f'{similarity_graph.number_of_edges()} edges')
 
         merged_partition, _, _ = louvain(
             similarity_graph,

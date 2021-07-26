@@ -7,7 +7,6 @@ from math import pi, sin, cos, fabs
 from string import Template
 
 import holoviews as hv
-import networkx as nx
 import numpy as np
 from bokeh.colors import RGB
 from bokeh.embed import components
@@ -825,100 +824,6 @@ class Plotter:
 
         graph.inspection_policy = NodesAndLinkedEdges()
 
-        p.renderers.append(graph)
-        return p
-
-    def authors_graph(self, authors_per_group=20):
-        authors_df = self.analyzer.authors_df
-        if authors_df is None:
-            return None
-        authors_similarity_graph = self.analyzer.authors_similarity_graph
-        logger.debug(f'Collecting top productive authors only ({authors_per_group}) per group')
-        top_authors = set([])
-        for group in set(authors_df['cluster']):
-            group_authors = authors_df.loc[authors_df['cluster'] == group]
-            top = group_authors.sort_values(by=['productivity'], ascending=False).head(authors_per_group)['author']
-            logger.debug(f'#{group} ({len(group_authors)}) {", ".join(top)}, ...')
-            top_authors.update(top)
-        top_authors_df = authors_df.loc[authors_df['author'].isin(top_authors)]
-
-        logger.debug(f'Filtering authors graph authors_per_group={authors_per_group}')
-        top_authors_graph = nx.Graph()
-        for (a1, a2, d) in authors_similarity_graph.edges(data=True):
-            if a1 in top_authors and a2 in top_authors:
-                top_authors_graph.add_edge(a1, a2, **d)
-        logger.debug(f'Built filtered top authors graph - '
-                     f'{len(top_authors_graph.nodes())} nodes and {len(top_authors_graph.edges())} edges')
-
-        graph = GraphRenderer()
-        clusters = top_authors_df['cluster']
-        cmap = Plotter.factors_colormap(len(set(clusters)))
-        palette = dict(zip(set(clusters), [Plotter.color_to_rgb(cmap(i)).to_hex() for i in range(len(set(clusters)))]))
-
-        authors = top_authors_df['author']
-        graph.node_renderer.data_source.add(authors, 'index')
-        graph.node_renderer.data_source.data['id'] = authors
-        graph.node_renderer.data_source.data['cited'] = top_authors_df['cited']
-        graph.node_renderer.data_source.data['papers'] = top_authors_df['papers']
-        graph.node_renderer.data_source.data['size'] = \
-            top_authors_df['productivity'] * 20 / top_authors_df['productivity'].max() + 5
-        graph.node_renderer.data_source.data['cluster'] = clusters
-        graph.node_renderer.data_source.data['color'] = [palette[c] for c in clusters]
-        graph.edge_renderer.data_source.data = dict(start=[a for a, _ in top_authors_graph.edges],
-                                                    end=[a for _, a in top_authors_graph.edges])
-
-        # start of layout code
-        x, y = top_authors_df['x'], top_authors_df['y']
-        xrange = max(x) - min(x)
-        yrange = max(y) - min(y)
-        p = figure(title="",
-                   width=PLOT_WIDTH,
-                   height=TALL_PLOT_HEIGHT,
-                   x_range=(min(x) - 0.05 * xrange, max(x) + 0.05 * xrange),
-                   y_range=(min(y) - 0.05 * yrange, max(y) + 0.05 * yrange),
-                   tools="pan,tap,wheel_zoom,box_zoom,reset,save")
-        p.xaxis.major_tick_line_color = None  # turn off x-axis major ticks
-        p.xaxis.minor_tick_line_color = None  # turn off x-axis minor ticks
-        p.yaxis.major_tick_line_color = None  # turn off y-axis major ticks
-        p.yaxis.minor_tick_line_color = None  # turn off y-axis minor ticks
-        p.xaxis.major_label_text_font_size = '0pt'  # preferred method for removing tick labels
-        p.yaxis.major_label_text_font_size = '0pt'  # preferred method for removing tick labels
-        p.grid.grid_line_color = None
-        p.outline_line_color = None
-
-        tooltip = """
-        <div style="max-width: 500px">
-            <div>
-                <span style="font-size: 12px; font-weight: bold;">@id</span>
-            </div>
-            <div>
-                <span style="font-size: 11px; font-weight: bold;">Papers</span>
-                <span style="font-size: 10px;">@papers</span>
-            </div>
-            <div>
-                <span style="font-size: 11px; font-weight: bold;">Cited</span>
-                <span style="font-size: 10px;">@cited</span>
-            </div>
-            <div>
-                <span style="font-size: 11px; font-weight: bold;">Cluster</span>
-                <span style="font-size: 10px;">@cluster</span>
-            </div>
-        </div>
-        """
-
-        p.add_tools(HoverTool(tooltips=tooltip))
-        p.js_on_event('tap', self.author_callback(graph.node_renderer.data_source))
-
-        graph_layout = dict(zip(authors, zip(x, y)))
-        graph.layout_provider = StaticLayoutProvider(graph_layout=graph_layout)
-
-        graph.node_renderer.glyph = Circle(size='size', fill_alpha=0.7, line_alpha=0.7, fill_color='color')
-        graph.node_renderer.hover_glyph = Circle(size='size', fill_alpha=1.0, line_alpha=1.0, fill_color='color')
-
-        graph.edge_renderer.glyph = MultiLine(line_color='grey', line_alpha=0.1, line_width=1)
-        graph.edge_renderer.hover_glyph = MultiLine(line_color='grey', line_alpha=1.0, line_width=2)
-
-        graph.inspection_policy = NodesAndLinkedEdges()
         p.renderers.append(graph)
         return p
 
