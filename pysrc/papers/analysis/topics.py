@@ -25,27 +25,27 @@ def louvain(similarity_graph, similarity_func, topic_min_size, max_topics_number
     wsg = to_weighted_graph(similarity_graph, similarity_func)
     logger.debug(f'Similarity graph has {nx.number_connected_components(wsg)} connected components')
     logger.debug('Graph clustering via Louvain community algorithm')
-    partition_louvain = community.best_partition(
+    partition = community.best_partition(
         wsg, weight='weight', random_state=SEED
     )
-    logger.debug(f'Best partition {len(set(partition_louvain.values()))} components')
-    components = set(partition_louvain.values())
-    sizes = {c1: sum([partition_louvain[node] == c1 for node in partition_louvain.keys()]) for c1 in components}
+    logger.debug(f'Best partition {len(set(partition.values()))} components')
+    components = set(partition.values())
+    sizes = {c1: sum([partition[node] == c1 for node in partition.keys()]) for c1 in components}
     logger.debug(f'Components: {sizes}')
     if len(wsg.edges) > 0:
-        modularity = community.modularity(partition_louvain, wsg)
+        modularity = community.modularity(partition, wsg)
         logger.debug(f'Graph modularity (possible range is [-1, 1]): {modularity :.3f}')
 
     logger.debug('Merge small components')
-    similarity_matrix = compute_similarity_matrix(wsg, similarity_func, partition_louvain)
+    similarity_matrix = compute_similarity_matrix(similarity_graph, similarity_func, partition)
     comp_partition, comp_sizes = merge_components(
-        partition_louvain, similarity_matrix,
+        partition, similarity_matrix,
         topic_min_size=topic_min_size, max_topics_number=max_topics_number
     )
 
     logger.debug('Compute partition the Louvain algorithm')
     dendrogram = community.generate_dendrogram(
-        similarity_graph, weight='similarity', random_state=SEED
+        wsg, weight='weight', random_state=SEED
     )
 
     logger.debug('Update components partition according to merged components')
