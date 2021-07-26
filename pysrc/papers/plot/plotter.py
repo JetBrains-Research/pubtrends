@@ -1,9 +1,6 @@
 import json
 import logging
-import math
 import re
-from collections import Counter
-from math import pi, sin, cos, fabs
 from string import Template
 
 import holoviews as hv
@@ -87,10 +84,6 @@ def visualize_analysis(analyzer):
             component_sizes=plotter.component_sizes(),
             similarity_graph=[components(plotter.plot_similarity_graph())]
         ))
-
-        topics_hierarchy = plotter.topics_hierarchy_with_keywords()
-        if topics_hierarchy:
-            result['topics_hierarchy'] = [components(topics_hierarchy)]
 
     # Configure additional features
     result.update(dict(
@@ -607,133 +600,6 @@ class Plotter:
 
     def dump_citations_graph_cytoscape(self):
         return PlotPreprocessor.dump_citations_graph_cytoscape(self.analyzer.df, self.analyzer.citations_graph)
-
-    def topics_hierarchy_with_keywords(self):
-        if self.analyzer.topics_dendrogram is None:
-            return None
-        kwd_df = self.analyzer.kwd_df
-        comp_sizes = Counter(self.analyzer.df['comp'])
-        # Cleanup dendrogram and reorder paths to avoid intersections
-        dendrogram, paths, leaves_order = PlotPreprocessor.layout_dendrogram(self.analyzer.topics_dendrogram)
-
-        # Configure dimensions
-        p = figure(x_range=(-190, 190),
-                   y_range=(-160, 160),
-                   tools="save",
-                   width=PLOT_WIDTH, height=int(PLOT_WIDTH * 0.8))
-        x_coefficient = 1.5  # Ellipse x coefficient
-        y_delta = 60  # Extra space near pi / 2 and 3 * pi / 2
-        n_topics = len(leaves_order)
-        radius = 80  # Radius of circular dendrogram
-        dendrogram_len = len(paths[0])
-        d_radius = radius / dendrogram_len
-        d_degree = 2 * pi / n_topics
-        delta = 3  # Space between dendrogram and text
-        max_words = min(5, max(1, int(120 / n_topics)))
-
-        # Leaves coordinates
-        leaves_degrees = dict((v, i * d_degree) for v, i in leaves_order.items())
-
-        # Draw levels
-        for i in range(1, dendrogram_len):
-            p.ellipse(0, 0, fill_alpha=0, line_color='lightgray', line_alpha=0.5,
-                      width=2 * d_radius * i,
-                      height=2 * d_radius * i,
-                      line_dash='dotted')
-
-        # Draw dendrogram - from bottom to top
-        ds = leaves_degrees.copy()
-        for i in range(1, dendrogram_len):
-            next_ds = {}
-            for path in paths:
-                if path[i] not in next_ds:
-                    next_ds[path[i]] = []
-                next_ds[path[i]].append(ds[path[i - 1]])
-            for v, nds in next_ds.items():
-                next_ds[v] = np.mean(nds)
-
-            for path in paths:
-                current_d = ds[path[i - 1]]
-                next_d = next_ds[path[i]]
-                p.line([cos(current_d) * d_radius * (dendrogram_len - i),
-                        cos(next_d) * d_radius * (dendrogram_len - i - 1)],
-                       [sin(current_d) * d_radius * (dendrogram_len - i),
-                        sin(next_d) * d_radius * (dendrogram_len - i - 1)],
-                       line_color='lightgray')
-            ds = next_ds
-
-        # Draw center
-        p.circle(x=0, y=0, size=2, fill_color='gray', line_color='gray')
-
-        # Draw leaves
-        n_comps = len(comp_sizes)
-        cmap = Plotter.factors_colormap(n_comps)
-        topics_colors = dict((i, Plotter.color_to_rgb(cmap(i))) for i in range(n_comps))
-        xs = [cos(d) * d_radius * (dendrogram_len - 1) for _, d in leaves_degrees.items()]
-        ys = [sin(d) * d_radius * (dendrogram_len - 1) for _, d in leaves_degrees.items()]
-        sizes = [20 + int(min(10, math.log(comp_sizes[v]))) for v, _ in leaves_degrees.items()]
-        comps = [v + 1 for v, _ in leaves_degrees.items()]
-        colors = [topics_colors[v] for v, _ in leaves_degrees.items()]
-        ds = ColumnDataSource(data=dict(x=xs, y=ys, size=sizes, comps=comps, color=colors))
-        p.circle(x='x', y='y', size='size', fill_color='color', line_color='black', source=ds)
-
-        def contrast_color_rbg(rgb):
-            cr, cg, cb = contrast_color(rgb.r, rgb.g, rgb.b)
-            return RGB(cr, cg, cb)
-
-        # Topics labels
-        p.text(x=[cos(d) * d_radius * (dendrogram_len - 1) for _, d in leaves_degrees.items()],
-               y=[sin(d) * d_radius * (dendrogram_len - 1) for _, d in leaves_degrees.items()],
-               text=[str(v + 1) for v, _ in leaves_degrees.items()],
-               text_align='center', text_baseline='middle', text_font_size='10pt',
-               text_color=contrast_color_rbg(topics_colors[v]))
-
-        # Show words for components - most popular words per component
-        topics = leaves_order.keys()
-        words2show = PlotPreprocessor.topics_words(kwd_df, max_words, topics)
-
-        # Visualize words
-        for v, d in leaves_degrees.items():
-            if v not in words2show:  # No super-specific words for topic
-                continue
-            words = words2show[v]
-            xs = []
-            ys = []
-            for i, word in enumerate(words):
-                wd = d + d_degree * (i - len(words) / 2) / len(words)
-                # Make word degree in range 0 - 2 * pi
-                if wd < 0:
-                    wd += 2 * pi
-                elif wd > 2 * pi:
-                    wd -= 2 * pi
-                xs.append(cos(wd) * (radius * x_coefficient + delta))
-                y = sin(wd) * (radius + delta)
-                # Additional vertical space around pi/2 and 3*pi/2
-                if pi / 4 <= wd < 3 * pi / 4:
-                    y += (pi / 4 - fabs(pi / 2 - wd)) * y_delta
-                elif 5 * pi / 4 <= wd < 7 * pi / 4:
-                    y -= (pi / 4 - fabs(3 * pi / 2 - wd)) * y_delta
-                ys.append(y)
-
-            # Different text alignment for left | right parts
-            p.text(x=[x for x in xs if x > 0], y=[y for i, y in enumerate(ys) if xs[i] > 0],
-                   text=[w for i, w in enumerate(words) if xs[i] > 0],
-                   text_align='left', text_baseline='middle', text_font_size='10pt',
-                   text_color=topics_colors[v])
-            p.text(x=[x for x in xs if x <= 0], y=[y for i, y in enumerate(ys) if xs[i] <= 0],
-                   text=[w for i, w in enumerate(words) if xs[i] <= 0],
-                   text_align='right', text_baseline='middle', text_font_size='10pt',
-                   text_color=topics_colors[v])
-
-        p.sizing_mode = 'stretch_width'
-        p.axis.major_tick_line_color = None
-        p.axis.minor_tick_line_color = None
-        p.axis.major_label_text_color = None
-        p.axis.major_label_text_font_size = '0pt'
-        p.axis.axis_line_color = None
-        p.grid.grid_line_color = None
-        p.outline_line_color = None
-        return p
 
     def plot_similarity_graph(self):
         logger.debug('Preparing sparse similarity graph')

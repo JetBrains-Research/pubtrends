@@ -200,13 +200,12 @@ class PapersAnalyzer:
             if self.similarity_graph.number_of_nodes() <= PapersAnalyzer.TOPIC_MIN_SIZE:
                 logger.debug('Small similarity graph - single topic')
                 self.df['comp'] = 0
-                self.topics_dendrogram = None
                 self.partition = dict(zip(self.df['id'], self.df['comp']))
                 self.comp_sizes = Counter(self.df['comp'])
                 self.components = [0]
             else:
                 logger.debug('Extracting topics from paper similarity graph')
-                self.partition, self.topics_dendrogram, self.comp_sizes = louvain(
+                self.partition, self.comp_sizes = louvain(
                     self.similarity_graph,
                     similarity_func=self.similarity,
                     topic_min_size=self.TOPIC_MIN_SIZE,

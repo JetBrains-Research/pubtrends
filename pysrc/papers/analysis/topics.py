@@ -20,7 +20,7 @@ def louvain(similarity_graph, similarity_func, topic_min_size, max_topics_number
     :param similarity_func: Function to compute aggregated similarity between nodes in similarity graph
     :param topic_min_size:
     :param max_topics_number:
-    :return: comp_partition, comp_dendrogram, comp_sizes
+    :return: comp_partition, comp_sizes
     """
     wsg = to_weighted_graph(similarity_graph, similarity_func)
     logger.debug(f'Similarity graph has {nx.number_connected_components(wsg)} connected components')
@@ -42,38 +42,7 @@ def louvain(similarity_graph, similarity_func, topic_min_size, max_topics_number
         partition, similarity_matrix,
         topic_min_size=topic_min_size, max_topics_number=max_topics_number
     )
-
-    logger.debug('Compute partition the Louvain algorithm')
-    dendrogram = community.generate_dendrogram(
-        wsg, weight='weight', random_state=SEED
-    )
-
-    logger.debug('Update components partition according to merged components')
-    if len(dendrogram) >= 2:
-        rename_map = {}
-        for pid, c in comp_partition.items():
-            rename_map[dendrogram[0][pid]] = c
-        comp_level = {rename_map[k]: v for k, v in dendrogram[1].items()}
-        comp_dendrogram = cleanup_dendrogram([comp_level] + dendrogram[2:])
-    else:
-        comp_dendrogram = []
-
-    return comp_partition, comp_dendrogram, comp_sizes
-
-
-def cleanup_dendrogram(dendrogram):
-    """Remove redundant levels from the partition"""
-    rd = []
-    for i, level in enumerate(dendrogram):
-        if i == 0:
-            rd.append(level)
-        else:
-            # Omit redundant level
-            if len(set(level.keys())) == len(set(level.values())):
-                rd[i - 1] = {k: level[v] for k, v in rd[i - 1].items()}
-            else:
-                rd.append(level)
-    return rd
+    return comp_partition, comp_sizes
 
 
 def compute_similarity_matrix(similarity_graph, similarity_func, partition):
