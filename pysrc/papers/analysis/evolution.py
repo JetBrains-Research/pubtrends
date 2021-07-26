@@ -80,7 +80,7 @@ def topic_evolution_analysis(
         logger.debug(f'Built similarity graph - {len(similarity_graph.nodes())} nodes and '
                      f'{len(similarity_graph.edges())} edges')
 
-        merged_partition, _ = louvain(
+        merged_partition, _, _ = louvain(
             similarity_graph,
             similarity_func=similarity_func,
             topic_min_size=topic_min_size,

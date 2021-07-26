@@ -3,19 +3,16 @@ from collections import Counter
 
 import numpy as np
 import pandas as pd
-import networkx as nx
 from networkx.readwrite import json_graph
-from sklearn.manifold import TSNE
 
 from pysrc.papers.analysis.citations import find_top_cited_papers, find_max_gain_papers, \
     find_max_relative_gain_papers, build_cit_stats_df, merge_citation_stats, build_cocit_grouped_df
 from pysrc.papers.analysis.evolution import topic_evolution_analysis, topic_evolution_descriptions
-from pysrc.papers.analysis.graph import build_citation_graph, build_similarity_graph, to_weighted_graph, local_sparse
+from pysrc.papers.analysis.graph import build_citation_graph, build_similarity_graph, layout_similarity_graph
 from pysrc.papers.analysis.metadata import popular_authors, popular_journals
-from pysrc.papers.analysis.node2vec import node2vec
 from pysrc.papers.analysis.numbers import extract_numbers
 from pysrc.papers.analysis.text import analyze_texts_similarity, vectorize_corpus
-from pysrc.papers.analysis.topics import get_topics_description, cluster_and_sort
+from pysrc.papers.analysis.topics import get_topics_description, louvain
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.progress import Progress
@@ -55,9 +52,6 @@ class PapersAnalyzer:
     VECTOR_MIN_DF = 0.001
     # Terms with higher frequency will be ignored, remove abundant stop words
     VECTOR_MAX_DF = 0.8
-
-    # Limit max edges to nodes threshold for similarity graph in node2vec
-    MAX_EDGES_TO_NODES_NODE2VEC = 50
 
     TOPIC_MIN_SIZE = 10
     # Max number of topics should be "deliverable"
@@ -192,51 +186,34 @@ class PapersAnalyzer:
             self.progress.info('Not enough papers to process topics analysis', current=9, task=task)
             self.df['comp'] = 0  # Technical value for top authors and papers analysis
             self.kwd_df = pd.DataFrame({'comp': [0], 'kwd': ['']})
-
         else:
+            logger.debug('Visualizing similarity graph')
+            nodes, xs, ys = layout_similarity_graph(
+                self.similarity_graph, PapersAnalyzer.similarity, PapersAnalyzer.TOPIC_MIN_SIZE
+            )
+            pid_indx = dict(zip(self.df['id'], self.df.index))
+            indx = [pid_indx[pid] for pid in nodes]
+            self.df['x'] = pd.Series(index=indx, data=xs)
+            self.df['y'] = pd.Series(index=indx, data=ys)
+
             self.progress.info('Extracting topics from paper similarity graph', current=9, task=task)
             if len(self.similarity_graph.nodes()) <= PapersAnalyzer.TOPIC_MIN_SIZE:
                 logger.debug('Small similarity graph - single topic')
-                pos = nx.spring_layout(self.similarity_graph, weight='similarity')
-                nodes = [a for a, _ in pos.items()]
-                x = [v[0] for _, v in pos.items()]
-                y = [v[1] for _, v in pos.items()]
-                pid_indx = dict(zip(self.df['id'], self.df.index))
-                indx = [pid_indx[pid] for pid in nodes]
-                self.df['x'] = pd.Series(index=indx, data=x)
-                self.df['y'] = pd.Series(index=indx, data=y)
-                # Memoize clusters because of order
                 self.df['comp'] = 0
-                self.clusters, self.dendrogram_children = self.df['comp'], None
+                self.topics_dendrogram = None
                 self.partition = dict(zip(self.df['id'], self.df['comp']))
-                self.comp_sizes = Counter(self.clusters)
-                self.components = list(sorted(set(self.clusters)))
+                self.comp_sizes = Counter(self.df['comp'])
+                self.components = [0]
             else:
-                logger.debug('Extracting topics from paper similarity graph with node2vec')
-                g = to_weighted_graph(self.similarity_graph, weight_func=PapersAnalyzer.similarity)
-                logger.debug('Preparing sparse weighted graph')
-                e = 1.0
-                gs = local_sparse(g, e)
-                while e > 0.1 and len(gs.edges) / len(gs.nodes) > self.MAX_EDGES_TO_NODES_NODE2VEC:
-                    e -= 0.1
-                    gs = local_sparse(g, e)
-                logger.debug(f'Sparse graph for node2vec e={e} nodes={len(gs.nodes)} edges={len(gs.edges)}')
-                node_ids, node_embeddings = node2vec(gs)
-                logger.debug('Apply TSNE transformation on node embeddings')
-                tsne = TSNE(n_components=2, random_state=42)
-                node_embeddings_2d = tsne.fit_transform(node_embeddings)
-                pid_indx = dict(zip(self.df['id'], self.df.index))
-                indx = [pid_indx[pid] for pid in node_ids]
-                self.df['x'] = pd.Series(index=indx, data=node_embeddings_2d[:, 0])
-                self.df['y'] = pd.Series(index=indx, data=node_embeddings_2d[:, 1])
-                # Memoize clusters because of order
-                self.clusters, self.dendrogram_children = cluster_and_sort(
-                    node_embeddings, self.TOPIC_MIN_SIZE, self.TOPICS_MAX_NUMBER
+                logger.debug('Extracting topics from paper similarity graph')
+                self.partition, self.topics_dendrogram, self.comp_sizes = louvain(
+                    self.similarity_graph,
+                    similarity_func=self.similarity,
+                    topic_min_size=self.TOPIC_MIN_SIZE,
+                    max_topics_number=self.TOPICS_MAX_NUMBER
                 )
-                self.df['comp'] = pd.Series(index=indx, data=self.clusters)
-                self.partition = dict(zip(self.df['id'], self.df['comp']))
-                self.comp_sizes = Counter(self.clusters)
-                self.components = list(sorted(set(self.clusters)))
+                self.df['comp'] = [self.partition[pid] for pid in self.df['id']]
+                self.components = list(sorted(self.comp_sizes.keys()))
 
             self.progress.info('Analyzing topics descriptions', current=10, task=task)
             comp_pids = pd.DataFrame(self.partition.items(), columns=['id', 'comp']). \
@@ -308,15 +285,6 @@ class PapersAnalyzer:
             PapersAnalyzer.SIMILARITY_COCITATION * np.log1p(d.get('cocitation', 0)) + \
             PapersAnalyzer.SIMILARITY_CITATION * d.get('citation', 0) + \
             PapersAnalyzer.SIMILARITY_TEXT_CITATION * d.get('text', 0)
-
-    @staticmethod
-    def add_to_dataframe(df, data, col, na):
-        assert col not in df, f'Column {col} already is in dataframe'
-        t = pd.Series(data).reset_index().rename(columns={'index': 'id', 0: col})
-        t['id'] = t['id'].astype(str)
-        df_merged = pd.merge(df, t, on='id', how='outer')
-        df_merged[col] = df_merged[col].fillna(na)
-        return df_merged
 
     def dump(self):
         """

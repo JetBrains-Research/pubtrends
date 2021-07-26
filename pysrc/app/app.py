@@ -18,7 +18,7 @@ from pysrc.app.utils import log_request, MAX_QUERY_LENGTH, SOMETHING_WENT_WRONG_
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.celery.tasks_cache import get_or_cancel_task
 from pysrc.celery.tasks_main import find_paper_async, analyze_search_terms, analyze_id_list
-from pysrc.papers.analysis.graph import local_sparse
+from pysrc.papers.analysis.graph import local_sparse, to_weighted_graph
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
@@ -349,12 +349,9 @@ def graph():
                     graph_cytoscape_json=json.dumps(graph_cs)
                 )
             else:
-                logger.debug('Computing aggregated similarity graph')
-                sg = analyzer.similarity_graph.copy()
-                for _, _, d in sg.edges(data=True):
-                    d['similarity'] = PapersAnalyzer.similarity(d)
-                logger.debug('Computing sparse graph')
-                sg = local_sparse(sg, PapersAnalyzer.SIMILARITY_SPARSITY, key='similarity')
+                logger.debug('Computing sparse similarity graph')
+                sg = local_sparse(to_weighted_graph(analyzer.similarity_graph, PapersAnalyzer.similarity),
+                                  PapersAnalyzer.SIMILARITY_SPARSITY)
                 graph_cs = PlotPreprocessor.dump_similarity_graph_cytoscape(
                     analyzer.df, sg
                 )

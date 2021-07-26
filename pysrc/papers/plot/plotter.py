@@ -1,10 +1,10 @@
 import json
 import logging
+import math
 import re
 from collections import Counter
-from string import Template
-import math
 from math import pi, sin, cos, fabs
+from string import Template
 
 import holoviews as hv
 import networkx as nx
@@ -23,9 +23,8 @@ from holoviews import opts
 from matplotlib import pyplot as plt
 from wordcloud import WordCloud
 
-from pysrc.papers.analysis.graph import local_sparse
+from pysrc.papers.analysis.graph import local_sparse, to_weighted_graph
 from pysrc.papers.analysis.text import get_frequent_tokens, get_topic_word_cloud_data
-from pysrc.papers.analysis.topics import convert_clusters_dendrogram_to_paths, compute_clusters_dendrogram_children
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
@@ -611,15 +610,12 @@ class Plotter:
         return PlotPreprocessor.dump_citations_graph_cytoscape(self.analyzer.df, self.analyzer.citations_graph)
 
     def topics_hierarchy_with_keywords(self):
+        if self.analyzer.topics_dendrogram is None:
+            return None
         kwd_df = self.analyzer.kwd_df
         comp_sizes = Counter(self.analyzer.df['comp'])
-        logger.debug('Computing dendrogram for clusters')
-        if self.analyzer.dendrogram_children is None:
-            return None
-        clusters_dendrogram_children = compute_clusters_dendrogram_children(self.analyzer.clusters,
-                                                                            self.analyzer.dendrogram_children)
-        paths, leaves_order = convert_clusters_dendrogram_to_paths(self.analyzer.clusters,
-                                                                   clusters_dendrogram_children)
+        # Cleanup dendrogram and reorder paths to avoid intersections
+        dendrogram, paths, leaves_order = PlotPreprocessor.layout_dendrogram(self.analyzer.topics_dendrogram)
 
         # Configure dimensions
         p = figure(x_range=(-190, 190),
@@ -741,17 +737,19 @@ class Plotter:
         return p
 
     def plot_similarity_graph(self):
-        g = local_sparse(self.analyzer.similarity_graph, PapersAnalyzer.SIMILARITY_SPARSITY)
+        logger.debug('Preparing sparse similarity graph')
+        gs = local_sparse(to_weighted_graph(self.analyzer.similarity_graph, PapersAnalyzer.similarity),
+                          PapersAnalyzer.SIMILARITY_SPARSITY)
         df = self.analyzer.df
-        nodes = df['id']
+        pids = df['id']
         comps = df['comp']
         graph = GraphRenderer()
         cmap = Plotter.factors_colormap(len(set(comps)))
         palette = dict(zip(sorted(set(comps)), [Plotter.color_to_rgb(cmap(i)).to_hex()
                                                 for i in range(len(set(comps)))]))
 
-        graph.node_renderer.data_source.add(df['id'], 'index')
-        graph.node_renderer.data_source.data['id'] = df['id']
+        graph.node_renderer.data_source.add(pids, 'index')
+        graph.node_renderer.data_source.data['id'] = pids
         graph.node_renderer.data_source.data['title'] = df['title']
         graph.node_renderer.data_source.data['authors'] = \
             df['authors'].apply(lambda authors: cut_authors_list(authors))
@@ -763,17 +761,17 @@ class Plotter:
         graph.node_renderer.data_source.data['topic'] = [c + 1 for c in comps]
         graph.node_renderer.data_source.data['color'] = [palette[c] for c in comps]
 
-        graph.edge_renderer.data_source.data = dict(start=[u for u, _ in g.edges],
-                                                    end=[v for _, v in g.edges])
+        graph.edge_renderer.data_source.data = dict(start=[u for u, _ in gs.edges],
+                                                    end=[v for _, v in gs.edges])
 
         # start of layout code
-        x, y = df['x'], df['y']
-        xrange = max(x) - min(x)
-        yrange = max(y) - min(y)
+        xs, ys = df['x'], df['y']
+        xrange = max(xs) - min(xs)
+        yrange = max(ys) - min(ys)
         p = figure(width=PLOT_WIDTH,
                    height=TALL_PLOT_HEIGHT,
-                   x_range=(min(x) - 0.05 * xrange, max(x) + 0.05 * xrange),
-                   y_range=(min(y) - 0.05 * yrange, max(y) + 0.05 * yrange),
+                   x_range=(min(xs) - 0.05 * xrange, max(xs) + 0.05 * xrange),
+                   y_range=(min(ys) - 0.05 * yrange, max(ys) + 0.05 * yrange),
                    tools="pan,tap,wheel_zoom,box_zoom,reset,save")
         p.xaxis.major_tick_line_color = None  # turn off x-axis major ticks
         p.xaxis.minor_tick_line_color = None  # turn off x-axis minor ticks
@@ -816,7 +814,7 @@ class Plotter:
         p.add_tools(HoverTool(tooltips=tooltip))
         p.js_on_event('tap', self.paper_callback(graph.node_renderer.data_source))
 
-        graph_layout = dict(zip(nodes, zip(x, y)))
+        graph_layout = dict(zip(pids, zip(xs, ys)))
         graph.layout_provider = StaticLayoutProvider(graph_layout=graph_layout)
 
         graph.node_renderer.glyph = Circle(size='size', fill_alpha=0.7, line_alpha=0.7, fill_color='color')

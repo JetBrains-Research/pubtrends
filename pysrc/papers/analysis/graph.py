@@ -4,6 +4,9 @@ from queue import PriorityQueue
 
 import networkx as nx
 import numpy as np
+from sklearn.manifold import TSNE
+
+from pysrc.papers.analysis.node2vec import node2vec
 
 logger = logging.getLogger(__name__)
 
@@ -124,3 +127,27 @@ def to_weighted_graph(graph, weight_func, key='weight'):
         if not g.has_node(v):
             g.add_node(v)
     return g
+
+
+def layout_similarity_graph(similarity_graph, similarity_func, topic_min_size):
+    if len(similarity_graph.nodes()) <= topic_min_size:
+        logger.debug('Preparing spring layout for similarity graph')
+        pos = nx.spring_layout(similarity_graph, weight='weight')
+        nodes = [a for a, _ in pos.items()]
+        xs = [v[0] for _, v in pos.items()]
+        ys = [v[1] for _, v in pos.items()]
+        return nodes, xs, ys
+    else:
+        logger.debug('Preparing node2vec + tsne layout for similarity graph')
+        wsg = to_weighted_graph(similarity_graph, similarity_func)
+        e = 1.0
+        gs = local_sparse(wsg, e)
+        while e > 0.1 and len(gs.edges) / len(gs.nodes) > 20:
+            e -= 0.1
+            gs = local_sparse(wsg, e)
+        logger.debug(f'Sparse graph for node2vec e={e} nodes={len(gs.nodes)} edges={len(gs.edges)}')
+        node_ids, node_embeddings = node2vec(gs)
+        logger.debug('Apply TSNE transformation on node embeddings')
+        tsne = TSNE(n_components=2, random_state=42)
+        node_embeddings_2d = tsne.fit_transform(node_embeddings)
+        return node_ids, node_embeddings_2d[:, 0], node_embeddings_2d[:, 1]

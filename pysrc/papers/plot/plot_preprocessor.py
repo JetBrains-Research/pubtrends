@@ -1,10 +1,10 @@
 import logging
+from itertools import product as cart_product
 from queue import PriorityQueue
 
 import networkx as nx
 import numpy as np
 import pandas as pd
-from itertools import product as cart_product
 from more_itertools import unique_everseen
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
@@ -332,7 +332,7 @@ class PlotPreprocessor:
     def frequent_keywords_data(freq_kwds, df, corpus_terms, corpus_counts, n):
         logger.debug('Computing frequencies of terms')
         keywords = [t for t, _ in list(freq_kwds.items())[:n]]
-        
+
         logger.debug('Grouping papers by year')
         t = df[['year']].copy()
         t['i'] = range(len(t))
