@@ -58,8 +58,8 @@ class TestTopics(unittest.TestCase):
         matrix = compute_similarity_matrix(self.analyzer.similarity_graph,
                                            PapersAnalyzer.similarity, self.analyzer.partition)
         # print(matrix)
-        similarities = np.array([[0.63925146]])
-        self.assertTrue(np.allclose(similarities, matrix))
+        similarities = np.array([[3.506]])
+        self.assertTrue(np.allclose(similarities, matrix, rtol=1e-3))
 
 
 if __name__ == '__main__':
