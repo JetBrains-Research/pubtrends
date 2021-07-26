@@ -11,11 +11,15 @@ from pysrc.papers.analysis.node2vec import node2vec
 logger = logging.getLogger(__name__)
 
 
-def build_citation_graph(cit_df):
+def build_citation_graph(df, cit_df):
     cg = nx.DiGraph()
     for index, row in cit_df.iterrows():
         v, u = row['id_out'], row['id_in']
         cg.add_edge(v, u)
+    # Ensure all the nodes are in the graph
+    for node in df['id']:
+        if not cg.has_node(node):
+            cg.add_node(node)
     return cg
 
 
@@ -142,7 +146,8 @@ def layout_similarity_graph(similarity_graph, similarity_func, topic_min_size):
         wsg = to_weighted_graph(similarity_graph, similarity_func)
         e = 1.0
         gs = local_sparse(wsg, e)
-        while e > 0.1 and len(gs.edges) / len(gs.nodes) > 20:
+        # Limit total number of edges to estimate walk probabilities
+        while e > 0.1 and len(gs.edges) / len(gs.nodes) > 50:
             e -= 0.1
             gs = local_sparse(wsg, e)
         logger.debug(f'Sparse graph for node2vec e={e} nodes={len(gs.nodes)} edges={len(gs.edges)}')

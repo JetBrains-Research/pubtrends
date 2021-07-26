@@ -88,16 +88,16 @@ class TestBuildGraphSingle(unittest.TestCase):
         ids = cls.analyzer.search_terms(query='query')
         cls.analyzer.analyze_papers(ids, 'query')
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.ids)
-        cls.analyzer.citations_graph = build_citation_graph(cls.analyzer.cit_df)
+        cls.analyzer.citations_graph = build_citation_graph(cls.analyzer.df, cls.analyzer.cit_df)
 
     def test_build_citation_graph_nodes_count(self):
-        self.assertEqual(self.analyzer.citations_graph.number_of_nodes(), 0)
+        self.assertEqual(self.analyzer.citations_graph.number_of_nodes(), 1)
 
     def test_build_citation_graph_edges_count(self):
         self.assertEqual(self.analyzer.citations_graph.number_of_edges(), 0)
 
     def test_build_citation_graph_nodes(self):
-        self.assertCountEqual(list(self.analyzer.citations_graph.nodes()), [])
+        self.assertEqual(list(self.analyzer.citations_graph.nodes()), ['1'])
 
     def test_build_citation_graph_edges(self):
         self.assertCountEqual(list(self.analyzer.citations_graph.edges()), [])

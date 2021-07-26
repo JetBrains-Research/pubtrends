@@ -132,7 +132,7 @@
         function showTopics() {
             cy.nodes().forEach(function (ele) {
                 if ('title' in ele.data()) {
-                    ele.removeClass('topic cited year pagerank centrality');
+                    ele.removeClass('topic cited year');
                     ele.addClass('topic');
                 }
             });
@@ -164,7 +164,7 @@
         function showCited() {
             cy.nodes().forEach(function (ele) {
                 if ('title' in ele.data()) {
-                    ele.removeClass('topic cited year pagerank centrality');
+                    ele.removeClass('topic cited year');
                     ele.addClass('cited');
                 }
             });
@@ -174,33 +174,11 @@
         function showYear() {
             cy.nodes().forEach(function (ele) {
                 if ('title' in ele.data()) {
-                    ele.removeClass('topic cited year pagerank centrality');
+                    ele.removeClass('topic cited year');
                     ele.addClass('year');
                 }
             });
             showRange(window.min_year, window.max_year);
-        }
-
-        function showPagerank() {
-            cy.nodes().forEach(function (ele) {
-                if ('title' in ele.data()) {
-                    ele.removeClass('topic cited year pagerank centrality');
-                    ele.addClass('pagerank');
-                }
-            });
-            showRange(Number(window.min_pagerank.toString()).toFixed(2),
-                Number(window.max_pagerank.toString()).toFixed(2));
-        }
-
-        function showCentrality() {
-            cy.nodes().forEach(function (ele) {
-                if ('title' in ele.data()) {
-                    ele.removeClass('topic cited year pagerank centrality');
-                    ele.addClass('centrality');
-                }
-            });
-            showRange(Number(window.min_centrality.toString()).toFixed(2),
-                Number(window.max_centrality.toString()).toFixed(2));
         }
 
         $(window).on("load", function () {
@@ -234,10 +212,6 @@
             let max_year = 0;
             let min_cited = 100000;
             let max_cited = 0;
-            let min_pagerank = 100000;
-            let max_pagerank = -100000;
-            let min_centrality = 100000;
-            let max_centrality = -100000;
             elements['nodes'].forEach(function (ele) {
                 let data = ele['data'];
                 if ('year' in data) {
@@ -247,14 +221,6 @@
                 if ('cited' in data) {
                     min_cited = Math.min(data.cited, min_cited);
                     max_cited = Math.max(data.cited, max_cited);
-                }
-                if ('pagerank' in data) {
-                    min_pagerank = Math.min(data.pagerank, min_pagerank);
-                    max_pagerank = Math.max(data.pagerank, max_pagerank);
-                }
-                if ('centrality' in data) {
-                    min_centrality = Math.min(data.centrality, min_centrality);
-                    max_centrality = Math.max(data.centrality, max_centrality);
                 }
             });
             // Save variables
@@ -267,11 +233,6 @@
             $.notify.addStyle('html_title', {
                 html: "<div class='title' data-notify-html='title'/>"
             });
-
-            window.min_pagerank = min_pagerank;
-            window.max_pagerank = max_pagerank;
-            window.min_centrality = min_centrality;
-            window.max_centrality = max_centrality;
 
             let cy = window.cy = cytoscape({
                 container: document.getElementById('cy'),
@@ -335,44 +296,6 @@
                                         dy = 1;
                                     }
                                     return rgbToHex(0, Math.floor(255 * dy), 0);
-                                } else {
-                                    return "#FFFFFF"
-                                }
-                            },
-                        }
-                    },
-                    {
-                        selector: "node.pagerank",
-                        style: {
-                            "background-color": function (node) {
-                                let data = node.data();
-                                if ('pagerank' in data) {
-                                    let dp;
-                                    if (max_pagerank > min_pagerank) {
-                                        dp = (data.pagerank - min_pagerank) / (max_pagerank - min_pagerank);
-                                    } else {
-                                        dp = 1;
-                                    }
-                                    return rgbToHex(0, Math.floor(255 * dp), 0);
-                                } else {
-                                    return "#FFFFFF"
-                                }
-                            },
-                        }
-                    },
-                    {
-                        selector: "node.centrality",
-                        style: {
-                            "background-color": function (node) {
-                                let data = node.data();
-                                if ('centrality' in data) {
-                                    let dc;
-                                    if (max_centrality > min_centrality) {
-                                        dc = (data.centrality - min_centrality) / (max_centrality - min_centrality);
-                                    } else {
-                                        dc = 1;
-                                    }
-                                    return rgbToHex(0, Math.floor(255 * dc), 0);
                                 } else {
                                     return "#FFFFFF"
                                 }
@@ -482,12 +405,7 @@
                                     "<b>Topic</b> " + (topic + 1) + " " +
                                     '<svg width="16" height="16"><rect width="16" height="16" ' +
                                     'style="fill:' + topics_palette[topic] + '";/></svg><br>' +
-                                    "<b>Tags</b> " + "<em>" + topics_description[topic] + "</em><br>" +
-                                    {% if citation_graph == 'true' %}
-                                        "<b>Pagerank</b> " + Number(data.pagerank).toFixed(3);
-                                    {% else %}
-                                        "<b>Centrality</b> " + Number(data.centrality).toFixed(3);
-                                    {% endif %}
+                                    "<b>Tags</b> " + "<em>" + topics_description[topic] + "</em>";
                             }
                             // @formatter:on
                         return content;
@@ -773,20 +691,13 @@
                             <a class="dropdown-item" onclick="showTopics();" href="javascript:void(0);">Topic</a>
                             <a class="dropdown-item" onclick="showCited();" href="javascript:void(0);">Cited</a>
                             <a class="dropdown-item" onclick="showYear();" href="javascript:void(0);">Year</a>
-                            {% if citation_graph == 'true' %}
-                            <a class="dropdown-item" onclick="showPagerank();" href="javascript:void(0);">
-                                Pagerank
-                            </a>
-                            {% else %}
-                            <a class="dropdown-item" onclick="showCentrality();" href="javascript:void(0);">
-                                Centrality
-                            </a>
-                            {% endif %}
                             <hr>
+                            {% if citation_graph != 'true' %}
                             <div class="dropdown-item">
                                 <input type="checkbox" id="connectTopics" checked="true">
                                 <label for="connectTopics">Connect topics</label>
                             </div>
+                            {% endif %}
                             <a id="reset" class="dropdown-item" content="Reset"
                                href="javascript:void(0);" onclick="reset();">
                                 <img class="nav-icon" width="16px"
@@ -878,7 +789,7 @@
                 {
                     element: '#dropdownMenuButton',
                     intro: 'Change graph view.<br>' +
-                        'Colors can represent topics, number of citations, publication year, pagerank or centrality.<br>' +
+                        'Colors can represent topics, number of citations, or publication year.<br>' +
                         '<svg width="16" height="16"><rect width="16" height="16" style="fill:#000000;"/></svg> min - ' +
                         '<svg width="16" height="16"><rect width="16" height="16" style="fill:#00FF00;"/></svg> max<br>' +
                         'Connect topics: whether edges between different topics are shown.'

@@ -139,30 +139,16 @@ class PlotPreprocessor:
     @staticmethod
     def dump_citations_graph_cytoscape(df, citations_graph):
         logger.debug('Mapping citations graph to cytoscape JS')
-        graph = citations_graph.copy()
-        # Ensure all the nodes are in the graph
-        for node in df['id']:
-            if not graph.has_node(node):
-                graph.add_node(node)
-        pr = nx.pagerank(graph, alpha=0.5, tol=1e-9)
-        cytoscape_graph = PlotPreprocessor.dump_to_cytoscape(df, graph)
-        logger.debug('Set pagerank for citations graph')
-        for node_cs in cytoscape_graph['nodes']:
-            nid = node_cs['data']['id']
-            node_cs['data']['pagerank'] = pr[nid]
-        return cytoscape_graph
+        return PlotPreprocessor.dump_to_cytoscape(df, citations_graph)
 
     @staticmethod
     def dump_similarity_graph_cytoscape(df, similarity_graph):
         logger.debug('Mapping structure graph to cytoscape JS')
         cytoscape_graph = PlotPreprocessor.dump_to_cytoscape(df, similarity_graph.copy())
-        logger.debug('Set centrality for structure graph')
         maxy = df['y'].max()
-        centrality = nx.algorithms.centrality.degree_centrality(similarity_graph)
         for node_cs in cytoscape_graph['nodes']:
             nid = node_cs['data']['id']
             sel = df.loc[df['id'] == nid]
-            node_cs['data']['centrality'] = centrality[nid]
             # Adjust vertical axis with bokeh graph
             node_cs['position'] = dict(x=sel['x'].values[0] * 7, y=(maxy - sel['y'].values[0]) * 7)
         return cytoscape_graph

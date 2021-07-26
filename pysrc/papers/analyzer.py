@@ -155,7 +155,7 @@ class PapersAnalyzer:
         self.cit_df = self.loader.load_citations(self.ids)
         logger.debug(f'Found {len(self.cit_df)} citations between papers')
 
-        self.citations_graph = build_citation_graph(self.cit_df)
+        self.citations_graph = build_citation_graph(self.df, self.cit_df)
         logger.debug(f'Built citation graph - {len(self.citations_graph.nodes())} nodes and '
                      f'{len(self.citations_graph.edges())} edges')
 

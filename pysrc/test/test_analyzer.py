@@ -22,7 +22,7 @@ class TestPapersAnalyzer(unittest.TestCase):
         cls.analyzer.TOPIC_MIN_SIZE = 0  # Disable merging for tests
         cls.analyzer.analyze_papers(ids, 'query')
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.ids)
-        cls.analyzer.citations_graph = build_citation_graph(cls.analyzer.cit_df)
+        cls.analyzer.citations_graph = build_citation_graph(cls.analyzer.df, cls.analyzer.cit_df)
         cls.analyzer.bibliographic_coupling_df = loader.load_bibliographic_coupling(cls.analyzer.ids)
 
     def test_bibcoupling(self):
@@ -73,7 +73,7 @@ class TestPapersAnalyzerSingle(unittest.TestCase):
         ids = cls.analyzer.search_terms(query='query')
         cls.analyzer.analyze_papers(ids, 'query')
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.ids)
-        cls.analyzer.citations_graph = build_citation_graph(cls.analyzer.cit_df)
+        cls.analyzer.citations_graph = build_citation_graph(cls.analyzer.df, cls.analyzer.cit_df)
 
     def test_attrs(self):
         all_attrs = [
