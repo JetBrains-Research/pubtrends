@@ -1,37 +1,17 @@
 import logging
-from itertools import product as cart_product
-from queue import PriorityQueue
 
 import networkx as nx
 import numpy as np
 import pandas as pd
-from more_itertools import unique_everseen
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
 from pysrc.papers.analysis.text import build_corpus
-from pysrc.papers.analysis.topics import compute_similarity_matrix
-from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.utils import cut_authors_list
 
 logger = logging.getLogger(__name__)
 
 
 class PlotPreprocessor:
-
-    @staticmethod
-    def topics_similarity_data(similarity_graph, partition):
-        similarity_matrix = compute_similarity_matrix(similarity_graph, PapersAnalyzer.similarity, partition)
-
-        # c + 1 is used to start numbering with 1
-        components = [str(c + 1) for c in sorted(set(partition.values()))]
-        n_comps = len(components)
-        similarity_topics_df = pd.DataFrame([
-            {'comp_x': i, 'comp_y': j, 'similarity': similarity_matrix[i, j]}
-            for i, j in cart_product(range(n_comps), range(n_comps))
-        ])
-        similarity_topics_df['comp_x'] = similarity_topics_df['comp_x'].apply(lambda x: x + 1).astype(str)
-        similarity_topics_df['comp_y'] = similarity_topics_df['comp_y'].apply(lambda x: x + 1).astype(str)
-        return similarity_topics_df, components
 
     @staticmethod
     def component_ratio_data(df):
@@ -114,27 +94,6 @@ class PlotPreprocessor:
         x = [col for col in df.columns if isinstance(col, (int, float)) and col >= year]
         y = list(sel[x].values[0])
         return dict(x=x, y=y)
-
-    @staticmethod
-    def topics_words(kwd_df, max_words, topics):
-        kwds_queue = PriorityQueue()
-        for c in topics:
-            for pair in list(kwd_df[kwd_df['comp'] == c]['kwd'])[0].split(','):
-                if pair != '':  # Correctly process empty freq_kwds encoding
-                    word, value = pair.split(':')
-                    kwds_queue.put((-float(value), c, word))
-        words2show = {c: [] for c in topics}
-        seen_words = set()
-        added_words = 0
-        while not kwds_queue.empty() and added_words < len(topics) * max_words:
-            _, c, word = kwds_queue.get()
-            if word in seen_words:
-                continue
-            seen_words.add(word)
-            if len(words2show[c]) < max_words:
-                words2show[c].append(word)
-                added_words += 1
-        return words2show
 
     @staticmethod
     def dump_citations_graph_cytoscape(df, citations_graph):

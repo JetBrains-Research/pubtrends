@@ -9,7 +9,6 @@ from bokeh.colors import RGB
 from bokeh.embed import components
 from bokeh.models import ColumnDataSource, CustomJS
 from bokeh.models import GraphRenderer, StaticLayoutProvider, Circle, HoverTool, MultiLine
-from bokeh.models import LinearColorMapper, PrintfTickFormatter, ColorBar
 from bokeh.models import NumeralTickFormatter
 from bokeh.models.graphs import NodesAndLinkedEdges
 from bokeh.plotting import figure
@@ -25,8 +24,7 @@ from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
-from pysrc.papers.utils import cut_authors_list, ZOOM_OUT, ZOOM_IN, zoom_name, trim, rgb2hex, MAX_TITLE_LENGTH, \
-    contrast_color
+from pysrc.papers.utils import cut_authors_list, ZOOM_OUT, ZOOM_IN, zoom_name, trim, rgb2hex, MAX_TITLE_LENGTH
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
 hv.extension('bokeh')
@@ -76,7 +74,6 @@ def visualize_analysis(analyzer):
     if analyzer.similarity_graph.nodes():
         result.update(dict(
             topics_analyzed=True,
-            components_similarity=[components(plotter.heatmap_topics_similarity())],
             component_size_summary=[components(plotter.topic_years_distribution())],
             topics_info_and_word_cloud_and_callback=[
                 (components(p), Plotter.word_cloud_prepare(wc), "true" if is_empty else "false", zoom_in_callback) for
@@ -222,45 +219,6 @@ class Plotter:
 
         form.submit();
         """
-
-    def heatmap_topics_similarity(self):
-        logger.debug('Visualizing topics similarity with heatmap')
-
-        similarity_df, topics = PlotPreprocessor.topics_similarity_data(
-            self.analyzer.similarity_graph, self.analyzer.partition
-        )
-
-        step = 30
-        cmap = plt.cm.get_cmap('PuBu', step)
-        colors = [RGB(*[round(c * 255) for c in cmap(i)[:3]]) for i in range(step)]
-        mapper = LinearColorMapper(palette=colors,
-                                   low=similarity_df.similarity.min(),
-                                   high=similarity_df.similarity.max())
-
-        p = figure(x_range=topics, y_range=topics,
-                   x_axis_location="below", plot_width=PLOT_WIDTH, plot_height=PLOT_HEIGHT,
-                   tools=TOOLS, toolbar_location="right",
-                   tooltips=[('Topic 1', '@comp_x'),
-                             ('Topic 2', '@comp_y'),
-                             ('Similarity', '@similarity')])
-
-        p.sizing_mode = 'stretch_width'
-        p.grid.grid_line_color = None
-        p.axis.axis_line_color = None
-        p.axis.major_tick_line_color = None
-        p.axis.major_label_text_font_size = "10pt"
-        p.axis.major_label_standoff = 0
-
-        p.rect(x="comp_x", y="comp_y", width=1, height=1,
-               source=similarity_df,
-               fill_color={'field': 'similarity', 'transform': mapper},
-               line_color=None)
-
-        color_bar = ColorBar(color_mapper=mapper, major_label_text_font_size="10pt",
-                             formatter=PrintfTickFormatter(format="%.2f"),
-                             label_standoff=11, border_line_color=None, location=(0, 0))
-        p.add_layout(color_bar, 'right')
-        return p
 
     def topic_years_distribution(self):
         logger.debug('Topics publications year distribution visualization')
