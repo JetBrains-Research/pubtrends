@@ -1,6 +1,7 @@
 import json
 import logging
 import re
+from collections import Counter
 from string import Template
 
 import holoviews as hv
@@ -59,8 +60,8 @@ def visualize_analysis(analyzer):
     export_name = re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{analyzer.query}'.lower())).strip('_')
     result = dict(
         topics_analyzed=False,
-        n_papers=analyzer.n_papers,
-        n_topics=len(analyzer.components),
+        n_papers=len(analyzer.df),
+        n_topics=len(set(analyzer.df['comp'])),
         export_name=export_name,
         top_cited_papers=[components(plotter.top_cited_papers())],
         most_cited_per_year_papers=[components(plotter.most_cited_per_year_papers())],
@@ -222,21 +223,27 @@ class Plotter:
 
     def topic_years_distribution(self):
         logger.debug('Topics publications year distribution visualization')
-        min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
+        min_year, max_year = self.analyzer.df['year'].min(), self.analyzer.df['year'].max()
         plot_components, data = PlotPreprocessor.component_size_summary_data(
-            self.analyzer.df, self.analyzer.components, min_year, max_year
+            self.analyzer.df, set(self.analyzer.df['comp']), min_year, max_year
         )
+        return self._topics_years_distribution(self.analyzer.df, self.analyzer.kwd_df, plot_components, data,
+                                               min_year, max_year)
+
+    @staticmethod
+    def _topics_years_distribution(df, kwd_df, plot_components, data, min_year, max_year):
         source = ColumnDataSource(data=dict(x=[min_year - 1] + data['years'] + [max_year + 1]))
         plot_titles = []
-        words2show = PlotPreprocessor.topics_words(self.analyzer.kwd_df, TOPIC_KEYWORDS, self.analyzer.components)
-        for c in self.analyzer.components:
-            percent = int(100 * self.analyzer.comp_sizes[int(c)] / len(self.analyzer.df))
+        words2show = PlotPreprocessor.topics_words(kwd_df, TOPIC_KEYWORDS)
+        comp_sizes = Counter(df['comp'])
+        for c in sorted(set(df['comp'])):
+            percent = int(100 * comp_sizes[int(c)] / len(df))
             plot_titles.append(f'#{c + 1} [{percent if percent > 0 else "<1"}%] {",".join(words2show[c])}')
         # Fake additional y levels
         p = figure(y_range=list(reversed(plot_titles)) + [' ', '  ', '   '],
                    plot_width=PLOT_WIDTH, plot_height=50 * (len(plot_components) + 2),
                    x_range=(min_year - 1, max_year + 1), toolbar_location=None)
-        topics_colors = Plotter.topics_palette_rgb(self.analyzer.df)
+        topics_colors = Plotter.topics_palette_rgb(df)
         max_papers_per_year = max(max(data[pc]) for pc in plot_components)
         for i, (pc, pt) in enumerate(zip(plot_components, plot_titles)):
             source.add([(pt, 0)] + [(pt, 3 * d / max_papers_per_year) for d in data[pc]] + [(pt, 0)], pt)
@@ -252,14 +259,11 @@ class Plotter:
         logger.debug('Per component detailed info visualization')
 
         # Prepare layouts
-        n_comps = len(self.analyzer.components)
         result = []
 
-        min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
-        for comp in range(n_comps):
+        min_year, max_year = self.analyzer.df['year'].min(), self.analyzer.df['year'].max()
+        for comp in sorted(set(self.analyzer.df['comp'])):
             df_comp = self.analyzer.df[self.analyzer.df['comp'] == comp]
-            if len(df_comp) == 0:
-                continue
             ds = ColumnDataSource(PlotPreprocessor.article_view_data_source(
                 df_comp, min_year, max_year, True, width=PAPERS_PLOT_WIDTH
             ))
@@ -295,12 +299,11 @@ class Plotter:
         return result
 
     def component_sizes(self):
-        assigned_comps = self.analyzer.df[self.analyzer.df['comp'] >= 0]
-        d = dict(assigned_comps.groupby('comp')['id'].count())
-        return [int(d[k]) for k in range(len(d))]
+        # Convert int64 to int
+        return {k: int(v) for k, v in dict(self.analyzer.df.groupby('comp')['id'].count()).items()}
 
     def top_cited_papers(self):
-        min_year, max_year = self.analyzer.min_year, self.analyzer.max_year
+        min_year, max_year = self.analyzer.df['year'].min(), self.analyzer.df['year'].max()
         ds = ColumnDataSource(PlotPreprocessor.article_view_data_source(
             self.analyzer.top_cited_df, min_year, max_year, False, width=PAPERS_PLOT_WIDTH
         ))
@@ -327,15 +330,16 @@ class Plotter:
         colors = self.factor_colors(factors)
 
         most_cited_counts = most_cited_per_year_df['count']
+        min_year, max_year = self.analyzer.df['year'].min(), self.analyzer.df['year'].max()
         p = figure(tools=TOOLS, toolbar_location="right",
                    plot_width=PLOT_WIDTH, plot_height=SHORT_PLOT_HEIGHT,
-                   x_range=(self.analyzer.min_year - 1, self.analyzer.max_year + 1),
+                   x_range=(min_year - 1, max_year + 1),
                    y_axis_type="log" if most_cited_counts.max() > MAX_LINEAR_AXIS else "linear")
         p.sizing_mode = 'stretch_width'
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Number of citations'
         p.yaxis.formatter = NumeralTickFormatter(format='0,0')
-        p.hover.tooltips = self._html_tooltips([
+        p.hover.tooltips = self._paper_html_tooltips([
             ("Author(s)", '@authors'),
             ("Journal", '@journal'),
             ("Year", '@paper_year'),
@@ -365,15 +369,16 @@ class Plotter:
         colors = self.factor_colors(factors)
 
         fastest_rel_gains = fastest_growth_per_year_df['rel_gain']
+        min_year, max_year = self.analyzer.df['year'].min(), self.analyzer.df['year'].max()
         p = figure(tools=TOOLS, toolbar_location="right",
                    plot_width=PLOT_WIDTH, plot_height=SHORT_PLOT_HEIGHT,
-                   x_range=(self.analyzer.min_year - 1, self.analyzer.max_year + 1),
+                   x_range=(min_year - 1, max_year + 1),
                    y_axis_type="log" if fastest_rel_gains.max() > MAX_LINEAR_AXIS else "linear")
         p.sizing_mode = 'stretch_width'
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Relative Gain of Citations'
         p.yaxis.formatter = NumeralTickFormatter(format='0,0')
-        p.hover.tooltips = self._html_tooltips([
+        p.hover.tooltips = self._paper_html_tooltips([
             ("Author(s)", '@authors'),
             ("Journal", '@journal'),
             ("Year", '@paper_year'),
@@ -405,15 +410,16 @@ class Plotter:
 
     def papers_by_year(self):
         ds_stats = ColumnDataSource(PlotPreprocessor.papers_statistics_data(self.analyzer.df))
+        min_year, max_year = self.analyzer.df['year'].min(), self.analyzer.df['year'].max()
         p = figure(tools=TOOLS, toolbar_location="right",
                    plot_width=PAPERS_PLOT_WIDTH, plot_height=PLOT_HEIGHT,
-                   x_range=(self.analyzer.min_year - 1, self.analyzer.max_year + 1))
+                   x_range=(min_year - 1, max_year + 1))
         p.sizing_mode = 'stretch_width'
         p.y_range.start = 0
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Number of papers'
         p.hover.tooltips = [("Papers", '@counts'), ("Year", '@year')]
-        if self.analyzer.min_year != self.analyzer.max_year:
+        if min_year != max_year:
             # NOTE: VBar is invisible (alpha=0) to provide tooltips, as in self.component_size_summary()
             p.vbar(x='year', width=0.8, top='counts', fill_alpha=0, line_alpha=0, source=ds_stats)
             # VArea is actually displayed
@@ -520,7 +526,7 @@ class Plotter:
         p.yaxis.axis_label = 'Number of citations'
         p.yaxis.formatter = NumeralTickFormatter(format='0,0')
 
-        p.hover.tooltips = self._html_tooltips([
+        p.hover.tooltips = self._paper_html_tooltips([
             ("Author(s)", '@authors'),
             ("Journal", '@journal'),
             ("Year", '@year'),
@@ -530,14 +536,10 @@ class Plotter:
 
         return p
 
-    def _add_pmid(self, tips_list):
+    def _paper_html_tooltips(self, tips_list):
         if self.analyzer.source == "pubmed":
             tips_list.insert(0, ("PMID", '@id'))
-
-        return tips_list
-
-    def _html_tooltips(self, tips_list):
-        tips_list = self._add_pmid(tips_list)
+        tips_list = tips_list
 
         style_caption = Template('<span style="font-size: 12px;color:dodgerblue;">$caption:</span>')
         style_value = Template('<span style="font-size: 11px;">$value</span>')
@@ -555,9 +557,6 @@ class Plotter:
                </div>
             '''
         return html_tooltips_str
-
-    def dump_citations_graph_cytoscape(self):
-        return PlotPreprocessor.dump_citations_graph_cytoscape(self.analyzer.df, self.analyzer.citations_graph)
 
     def plot_similarity_graph(self):
         logger.debug('Preparing sparse similarity graph')
@@ -578,7 +577,8 @@ class Plotter:
             df['authors'].apply(lambda authors: cut_authors_list(authors))
         graph.node_renderer.data_source.data['journal'] = df['journal']
         graph.node_renderer.data_source.data['year'] = df['year']
-        graph.node_renderer.data_source.data['cited'] = df['total']
+        graph.node_renderer.data_source.data['total'] = df['total']
+        graph.node_renderer.data_source.data['type'] = df['type']
         # Limit size
         graph.node_renderer.data_source.data['size'] = df['total'] * 20 / df['total'].max() + 5
         graph.node_renderer.data_source.data['topic'] = [c + 1 for c in comps]
@@ -606,35 +606,13 @@ class Plotter:
         p.outline_line_color = None
         p.sizing_mode = 'stretch_width'
 
-        tooltip = """
-        <div style="max-width: 500px">
-            <div>
-                <span style="font-size: 12px; font-weight: bold;">@title</span>
-            </div>
-            <div>
-                <span style="font-size: 11px; font-weight: bold;">Author(s)</span>
-                <span style="font-size: 10px;">@authors</span>
-            </div>
-            <div>
-                <span style="font-size: 11px; font-weight: bold;">Journal</span>
-                <span style="font-size: 10px;">@journal</span>
-            </div>
-            <div>
-                <span style="font-size: 11px; font-weight: bold;">Year</span>
-                <span style="font-size: 10px;">@year</span>
-            </div>
-            <div>
-                <span style="font-size: 11px; font-weight: bold;">Cited</span>
-                <span style="font-size: 10px;">@cited</span>
-            </div>
-            <div>
-                <span style="font-size: 11px; font-weight: bold;">Topic</span>
-                <span style="font-size: 10px;">@topic</span>
-            </div>
-        </div>
-        """
-
-        p.add_tools(HoverTool(tooltips=tooltip))
+        p.add_tools(HoverTool(tooltips=self._paper_html_tooltips([
+            ("Author(s)", '@authors'),
+            ("Journal", '@journal'),
+            ("Year", '@year'),
+            ("Type", '@type'),
+            ("Topic", '@topic'),
+            ("Cited by", '@total paper(s) total')])))
         p.js_on_event('tap', self.paper_callback(graph.node_renderer.data_source))
 
         graph_layout = dict(zip(pids, zip(xs, ys)))
@@ -675,7 +653,7 @@ class Plotter:
         nodes_ds = hv.Dataset(nodes_data, 'index', 'label')
         topic_evolution = hv.Sankey((edges, nodes_ds), ['From', 'To'], vdims=value_dim)
         topic_evolution.opts(labels='label',
-                             width=PLOT_WIDTH, height=max(TALL_PLOT_HEIGHT, len(self.analyzer.components) * 30),
+                             width=PLOT_WIDTH, height=max(TALL_PLOT_HEIGHT, len(set(self.analyzer.df['comp'])) * 30),
                              show_values=False, cmap='tab20',
                              edge_color=dim('To').str(), node_color=dim('index').str())
 

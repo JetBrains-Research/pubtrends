@@ -1,24 +1,20 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>{{query}} at {{source}} {{limit}} {{sort}} - PubTrends</title>
+    <title>Papers</title>
     <meta charset="utf-8">
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT"
+            crossorigin="anonymous"></script>
+
     <link rel="stylesheet"
           href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
           integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
           crossorigin="anonymous">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css"
-          integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt"
-          crossorigin="anonymous">
-    <script src="https://code.jquery.com/jquery-3.3.1.min.js"
-            integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT"
-            crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
-            integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
-            crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
             integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
             crossorigin="anonymous"></script>
+
     <!-- Cytoscape -->
     <script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
 
@@ -28,82 +24,12 @@
     <script src="https://unpkg.com/tippy.js@4.3.5/umd/index.all.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/tippy.js@4.3.5/index.css"/>
 
-
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1"/>
-    <!--     <link rel="stylesheet" href="../static/style.css"/> -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='result.css') }}?v=1"/>
-    <!--     <link rel="stylesheet" href="../static/result.css"/> -->
-    <script src="{{ url_for('static', filename='text_utils.js') }}"></script>
-    <!--<script src="../../static/text_utils.js"/>-->
-    <script src="{{ url_for('static', filename='feedback.js') }}"></script>
-    <!--    <script src="../static/feedback.js"/>-->
-    <link rel="stylesheet" href="{{ url_for('static', filename='feedback.css') }}?v=1">
-    <!--    <link rel="stylesheet" href="../static/feedback.css"/>-->
-
-    <!-- IntroJS feature tour -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.9.3/introjs.css"
-          integrity="sha256-OYXGS5m4oWZAAqoAKpf7Y3bIdzdd9jBfly/xCavEpGw=" crossorigin="anonymous"/>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.9.3/intro.js"
-            integrity="sha256-SPZP/x8QDPEhRlpJjet4AD5X4ergPWcxjhMn73SwyOE="
-            crossorigin="anonymous"></script>
-
     <!-- Notify.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"
             integrity="sha512-efUTj3HdSPwWJ9gjfGR71X9cvsrthIA78/Fvd/IN+fttQVy7XWkOAXb295j8B3cmm/kFKVxjiNYzKw9IQJHIuQ=="
             crossorigin="anonymous"></script>
-
     <script>
         "use strict";
-
-        const CIT_EDGE_STYLE = {
-            "width": 0.5,
-            "curve-style": "bezier",
-            "target-arrow-shape": "triangle",
-            "arrow-scale": 0.5,
-            "line-color": "#BBBBBB",
-            "opacity": 0.2
-        };
-
-        const SIM_EDGE_STYLE = {
-            "width": function (edge) {
-                let data = edge.data();
-                if ('similarity' in data) {
-                    return (Math.max(5, Math.min(20, data.similarity / 5))) / 5;
-                }
-                return 1;
-            },
-            "curve-style": "haystack",
-            "line-color": function (edge) {
-                let data = edge.data();
-                let bibcoupling = 0;
-                if ('bibcoupling' in data) {
-                    bibcoupling = data.bibcoupling;
-                }
-                let cocitation = 0;
-                if ('cocitation' in data) {
-                    cocitation = data.cocitation;
-                }
-                let citation = 0;
-                if ('citation' in data) {
-                    citation = data.citation;
-                }
-                let text = 0;
-                if ('text' in data) {
-                    text = data.text;
-                }
-                if (cocitation > 0 && cocitation >= Math.max(bibcoupling, citation, text)) {
-                    return "#2ECC71" //214, 234, 248
-                }
-                if (bibcoupling > 0 && bibcoupling >= Math.max(cocitation, citation, text)) {
-                    return "#9B59B6"; //218, 247, 166
-                }
-                if (citation > 0 && citation >= Math.max(cocitation, bibcoupling, text)) {
-                    return "#3498DB"; //235, 222, 240
-                }
-                return "#BDC3C7";
-            },
-            "opacity": 0.1
-        };
 
         function rgbToHex(r, g, b) {
             return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
@@ -167,18 +93,10 @@
             // Disable formatter for the next section because of injections.
             // Enable formatter control in File > Settings > Editor > Code Style
             // @formatter:off
-                const citation_graph = {{ citation_graph }};
                 const topics_palette = window.topics_palette = JSON.parse({{ topics_palette_json | tojson }});
                 const topics_description = JSON.parse({{topics_description_json | tojson }});
                 const elements = JSON.parse({{ graph_cytoscape_json | tojson }});
                 // @formatter:on
-
-            let edge_style;
-            if (citation_graph) {
-                edge_style = CIT_EDGE_STYLE;
-            } else {
-                edge_style = SIM_EDGE_STYLE;
-            }
 
             // Compute min/max params for palette
             let min_year = 3000;
@@ -233,17 +151,9 @@
                                     return 5;
                                 }
                             },
-                            "border-width": 0.5,
+                            "border-width": 1.0,
                             "border-color": "black",
                             "opacity": 0.7,
-                        }
-                    },
-                    <!-- In case of Paper Analyzer highlight analyzed paper -->
-                    {
-                        selector: 'node.analyzed',
-                        style: {
-                            'border-width': '1.0',
-                            'opacity': '1.0 !important'
                         }
                     },
                     {
@@ -300,31 +210,37 @@
                     {
                         selector: 'node.highlight',
                         style: {
-                            'border-width': '1.0',
+                            'border-width': '2.0',
                             'opacity': '1.0 !important'
                         }
                     },
                     {
                         selector: 'node.semitransp',
                         style: {
-                            'opacity': 0.1
+                            'opacity': 0.2
                         }
                     },
                     {
                         selector: "edge",
-                        style: edge_style
+                        style: {
+                            "width": 0.5,
+                            "curve-style": "haystack",
+                            "line-color": "lightgray",
+                            "opacity": 0.5
+                        }
                     },
                     {
                         selector: 'edge.highlight',
                         style: {
-                            'width': '1.0 !important',
-                            'opacity': '1.0 !important'
+                            "width": 1,
+                            "line-color": "gray",
+                            'opacity': 0.8,
                         }
                     },
                     {
                         selector: 'edge.semitransp',
                         style: {
-                            'opacity': '0.01 !important'
+                            'opacity': 0.1
                         }
                     },
                 ],
@@ -342,33 +258,7 @@
                     content: () => {
                         let content = document.createElement('div');
                         let data = ele.data();
-                        if ('similarity' in data) {
-                            // Graph similarity
-                            let bibcoupling = 0;
-                            if ('bibcoupling' in data) {
-                                bibcoupling = data.bibcoupling;
-                            }
-                            let cocitation = 0;
-                            if ('cocitation' in data) {
-                                cocitation = data.cocitation;
-                            }
-                            let citation = 0;
-                            if ('citation' in data) {
-                                citation = data.citation;
-                            }
-                            let text = 0;
-                            if ('text' in data) {
-                                text = data.text;
-                            }
-
-                            content.innerHTML = "Similarity is computed based on citations " +
-                                "and text similarity between papers.<br>" +
-                                "The bigger value the more similar papers are." + "<br>" +
-                                "<b>Co-citation</b> " + cocitation + "<br>" +
-                                "<b>Bibliographic coupling</b> " + bibcoupling + "<br>" +
-                                "<b>Citation</b> " + citation + "<br>" +
-                                "<b>Text similarity</b> " + Number(text).toFixed(2) + "<br>";
-                        } else if ('title' in data) {
+                        if ('title' in data) {
                             // Paper
                             const topic = data.topic;
                             // Disable formatter for the next section because of injections.
@@ -406,14 +296,13 @@
                     let inside = false;
                     ele.bind('mouseover', (event) => {
                         inside = true;
-                        // Show hover after two seconds
                         setTimeout(
                             function () {
                                 if (inside) {
                                     event.target.tippy.show();
                                 }
                             },
-                            1000
+                            300
                         );
                     });
                     ele.unbind('mouseout');
@@ -426,24 +315,16 @@
 
             cy.ready(function () {
                 // Add info popup on hover
-                if (citation_graph) {
-                    addPopper(cy.nodes());
-                } else {
-                    addPopper(cy.nodes().filter(function (ele) {
-                        return 'topic' in ele.data();
-                    }));
-                    addPopper(cy.edges().filter(function (ele) {
-                        return 'similarity' in ele.data();
-                    }));
-                }
+                addPopper(cy.nodes().filter(function (ele) {
+                    return 'topic' in ele.data();
+                }));
                 // Open paper details on click
                 cy.nodes().on('click', function (event) {
                     let data = event.target.data();
                     if ('title' in data) {
                         event.stopPropagation();
                         // Decode jobid from URL
-                        const jobid = new URL(window.location).searchParams.get('jobid');
-                        window.open('/paper?source={{source}}&id=' + data.id + '&jobid=' + jobid, '_blank');
+                        window.open('https://www.ncbi.nlm.nih.gov/pubmed/?term=' + data.id, '_blank');
                     }
                 });
                 // Highlight node and neighbours on hover
@@ -557,25 +438,6 @@
                 }
             });
 
-            // Connections between topics
-            let topicsConnections = new Set();
-            cy.edges().forEach(function (ele) {
-                let data = ele.data();
-                let sourceData = cy.nodes().filter(ele => ele.data().id === data.source).first().data();
-                let targetData = cy.nodes().filter(ele => ele.data().id === data.target).first().data();
-                if ('topic' in sourceData && 'topic' in targetData && sourceData.topic !== targetData.topic) {
-                    topicsConnections.add(ele);
-                }
-            });
-
-            $('#connectTopics').change(
-                function () {
-                    if ($(this).is(':checked')) {
-                        topicsConnections.forEach(ele => cy.add(ele));
-                    } else {
-                        cy.remove(cy.edges().filter(ele => topicsConnections.has(ele)));
-                    }
-                });
         });
 
         function getFilter() {
@@ -597,12 +459,13 @@
                 let data = ele.data();
                 if ('title' in data) {
                     if (data.title.toLowerCase().includes(filter) ||
-                        data.abstract.toLowerCase().includes(filter) ||
+                        data.journal.toLowerCase().includes(filter) ||
                         data.authors.toLowerCase().includes(filter) ||
-                        data.year.toString().includes(filter) ||
-                        data.keywords.toString().includes(filter) ||
-                        data.mesh.toString().includes(filter) ||
-                        filter.startsWith("topic") && (data.topic + 1).toString() === filter.substr(5).trim()) {
+                        // These are heavy
+                        data.abstract.toLowerCase().includes(filter) ||
+                        data.mesh.toLowerCase().includes(filter) ||
+                        data.keywords.toLowerCase().includes(filter) ||
+                        data.year.toString().includes(filter)) {
                         ele.removeClass('semitransp');
                         ele.addClass('highlight');
                     } else {
@@ -613,25 +476,6 @@
             });
         }
 
-        function result() {
-            const url = '/result?query=' + normalize('{{ query }}') + '&source={{source}}&limit={{limit}}&sort={{sort}}';
-            // Decode jobid from URL
-            const jobid = new URL(window.location).searchParams.get('jobid');
-            window.open(url + '&jobid=' + jobid, '_blank');
-        }
-
-        $(document).ready(function () {
-            createClickableFeedBackFormNoMessage("feedback-graph-html-form", "feedback-graph-html")
-
-            setTimeout(function () {
-                $.notify("See About for quick introduction.", {
-                    className: "success",
-                    position: "bottom right",
-                    autoHideDelay: 15000
-                });
-            }, 5000);
-        });
-
     </script>
 </head>
 
@@ -641,15 +485,7 @@
     <div class="row container-fluid no-padding-right">
         <div class="col no-padding">
             <div class="row ml-3">
-                <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
-                <ol class="breadcrumb bg-light search-query col-auto">
-                    <li class="breadcrumb-item vertical-center">{{ source }}</li>
-                    <li class="breadcrumb-item vertical-center">
-                        <a id="result" href="javascript:void(0);" class="link" onclick="result();"><strong>{{ query
-                            }}</strong></a>
-                    </li>
-                    <li class="breadcrumb-item vertical-center">{{ limit }} {{ sort }}</li>
-                </ol>
+                <a id="pubtrends" class="navbar-brand" href="/">Papers</a>
                 <div class="col justify-content-end row">
                     <div class="col-auto">
                         <input id="search-input" type="text" class="form-control"
@@ -666,106 +502,13 @@
                             <a class="dropdown-item" onclick="showTopics();" href="javascript:void(0);">Topic</a>
                             <a class="dropdown-item" onclick="showCited();" href="javascript:void(0);">Cited</a>
                             <a class="dropdown-item" onclick="showYear();" href="javascript:void(0);">Year</a>
-                            <hr>
-                            {% if citation_graph != 'true' %}
-                            <div class="dropdown-item">
-                                <input type="checkbox" id="connectTopics" checked="true">
-                                <label for="connectTopics">Connect topics</label>
-                            </div>
-                            {% endif %}
                         </div>
                     </div>
-
-                    <a class="btn btn-secondary col-auto ml-2 mr-3" content="About"
-                       href="javascript:void(0);" onclick="startIntro();">About</a>
                 </div>
             </div>
         </div>
     </div>
 </nav>
-<div class="container-fluid">
-    <div id="cy" role="main" style="height: 85vh; margin-bottom: 2rem">Loading...</div>
-</div>
-<footer class="container">
-    <div class="row">
-        <div class="col-4">
-            <div id="feedback-graph-html-form" class="float-left vertical-center"></div>
-        </div>
-        <div class="col-4">
-            <p>version {{ version }}<br/>
-                &copy; 2021 <a href="https://research.jetbrains.org/groups/biolabs"
-                               title="JetBrains Research BioLabs"
-                               target="_blank">JetBrains Research</a>
-            </p>
-        </div>
-        <div class="col-4"></div>
-    </div>
-</footer>
-<script type="text/javascript">
-    function startIntro() {
-        var intro = introJs();
-        // Disable formatter for the next section because of injections.
-        // Enable formatter control in File > Settings > Editor > Code Style
-        // @formatter:off
-            // Boolean value if we are visualizing citations graph (true) of similarity graph (false)
-            const citation_graph = {{ citation_graph }};
-            // @formatter:on
-
-        let description;
-        if (citation_graph) {
-            description = "Citations graph shows citations among papers.<br>" +
-                "Papers are visualized as nodes, citations as edges. " +
-                "Node size encodes citations count. See Color menu for node color options.<br>" +
-                "Similar papers are highlighted on hover.<br>" +
-                "Use <strong>F</strong> to freeze highlighting, <strong>Escape</strong> to unfreeze."
-        } else {
-            description = "Similarity graph represents similarity among papers.<br>" +
-                "Papers are visualized as nodes, similarities as edges. " +
-                "Node size shows paper citations count, see Color menu for node colors options. <br>" +
-                "Edge width shows papers similarity, the thicker the more similar papers are.<br>" +
-                "Similar papers are highlighted on hover.<br>" +
-                "Use <strong>F</strong> to freeze highlighting, <strong>Escape</strong> to unfreeze.<br>" +
-                "Edge color - similarity type.<br>" +
-                '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(46,204,113,0.5);"/></svg>' +
-                "&nbsp;<em>Co-citation</em>" +
-                "<br>" +
-                '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(155,89,182,0.5);"/></svg>' +
-                "&nbsp;<em>Bibliographic coupling</em> " +
-                "<br>" +
-                '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(52,152,219,0.5);"/></svg>' +
-                "&nbsp;<em>Citation</em>" +
-                "<br>" +
-                '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(189,195,199,0.5);"/></svg>' +
-                "&nbsp;<em>Text similarity</em>";
-        }
-        intro.setOptions({
-            steps: [
-                {
-                    intro: description
-                },
-                {
-                    element: '#result',
-                    intro: "Open full analysis report.<br>" +
-                        "Learn more about topics, most cited papers, etc."
-                },
-                {
-                    element: '#search-input',
-                    intro: 'Filter papers by text.<br>' +
-                        'Title, abstract and publication year are used in full text search.<br>' +
-                        'Hit <em>enter</em> to execute, empty input to reset.'
-                },
-                {
-                    element: '#dropdownMenuButton',
-                    intro: 'Change graph view.<br>' +
-                        'Colors can represent topics, number of citations, or publication year.<br>' +
-                        '<svg width="16" height="16"><rect width="16" height="16" style="fill:#000000;"/></svg> min - ' +
-                        '<svg width="16" height="16"><rect width="16" height="16" style="fill:#00FF00;"/></svg> max<br>' +
-                        'Connect topics: whether edges between different topics are shown.'
-                }
-            ]
-        });
-        intro.start();
-    }
-</script>
+<div id="cy" style="height: 100vh;"></div>
 </body>
 </html>

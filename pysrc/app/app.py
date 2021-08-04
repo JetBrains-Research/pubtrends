@@ -352,6 +352,13 @@ def graph():
                 logger.debug('Computing sparse similarity graph')
                 sg = local_sparse(to_weighted_graph(analyzer.similarity_graph, PapersAnalyzer.similarity),
                                   PapersAnalyzer.SIMILARITY_SPARSITY)
+                logger.debug('Restoring nescessary edges')
+                for i, j in sg.edges():
+                    d = analyzer.similarity_graph.get_edge_data(i, j)
+                    for k, v in d.items():
+                        sg[i][j][k] = v
+                    sg[i][j]['similarity'] = PapersAnalyzer.similarity(d)
+
                 graph_cs = PlotPreprocessor.dump_similarity_graph_cytoscape(
                     analyzer.df, sg
                 )

@@ -98,18 +98,25 @@ class PlotPreprocessor:
     @staticmethod
     def dump_citations_graph_cytoscape(df, citations_graph):
         logger.debug('Mapping citations graph to cytoscape JS')
-        return PlotPreprocessor.dump_to_cytoscape(df, citations_graph)
+        citations_graph = citations_graph.copy()
+        cytoscape_graph = PlotPreprocessor.dump_to_cytoscape(df, citations_graph)
+        pos = nx.spring_layout(citations_graph)
+        for node_cs in cytoscape_graph['nodes']:
+            nid = node_cs['data']['id']
+            node_cs['position'] = dict(x=int(pos[nid][0] * 300), y=int(pos[nid][1] * 200))
+        return cytoscape_graph
 
     @staticmethod
     def dump_similarity_graph_cytoscape(df, similarity_graph):
         logger.debug('Mapping structure graph to cytoscape JS')
-        cytoscape_graph = PlotPreprocessor.dump_to_cytoscape(df, similarity_graph.copy())
+        similarity_graph = similarity_graph.copy()
+        cytoscape_graph = PlotPreprocessor.dump_to_cytoscape(df, similarity_graph)
         maxy = df['y'].max()
         for node_cs in cytoscape_graph['nodes']:
             nid = node_cs['data']['id']
             sel = df.loc[df['id'] == nid]
             # Adjust vertical axis with bokeh graph
-            node_cs['position'] = dict(x=sel['x'].values[0] * 7, y=(maxy - sel['y'].values[0]) * 7)
+            node_cs['position'] = dict(x=int(sel['x'].values[0] * 10), y=int((maxy - sel['y'].values[0]) * 4))
         return cytoscape_graph
 
     @staticmethod
@@ -118,20 +125,31 @@ class PlotPreprocessor:
         attrs = {}
         for node in df['id']:
             sel = df[df['id'] == node]
-            topic = int(sel['comp'].values[0])
-            attrs[node] = {
-                'title': sel['title'].values[0],
-                'abstract': sel['abstract'].values[0],
-                'keywords': sel['keywords'].values[0],
-                'mesh': sel['mesh'].values[0],
-                'authors': cut_authors_list(sel['authors'].values[0]),
-                'journal': sel['journal'].values[0],
-                'year': int(sel['year'].values[0]),
-                'cited': int(sel['total'].values[0]),
-                'topic': topic,
-            }
+            attrs[node] = dict(
+                title=sel['title'].values[0],
+                authors=cut_authors_list(sel['authors'].values[0]),
+                journal=sel['journal'].values[0],
+                year=int(sel['year'].values[0]),
+                cited=int(sel['total'].values[0]),
+                topic=int(sel['comp'].values[0]),
+                # These can be heavy
+                abstract=sel['abstract'].values[0],
+                mesh=sel['mesh'].values[0],
+                keywords=sel['keywords'].values[0],
+            )
         nx.set_node_attributes(graph, attrs)
         return nx.cytoscape_data(graph)['elements']
+
+    @staticmethod
+    def topics_words(kwd_df, max_words):
+        words2show = {}
+        for _, row in kwd_df.iterrows():
+            comp, kwds = row[0], row[1]
+            if kwds != '':  # Correctly process empty freq_kwds encoding
+                words2show[comp] = [p.split(':')[0] for p in kwds.split(',')[:max_words]]
+            else:
+                words2show[comp] = []
+        return words2show
 
     @staticmethod
     def topic_evolution_data(evolution_df, kwds, n_steps):

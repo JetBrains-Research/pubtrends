@@ -20,7 +20,7 @@ def louvain(similarity_graph, similarity_func, topic_min_size, max_topics_number
     :param similarity_func: Function to compute aggregated similarity between nodes in similarity graph
     :param topic_min_size:
     :param max_topics_number:
-    :return: comp_partition, comp_sizes
+    :return: comp_partition
     """
     wsg = to_weighted_graph(similarity_graph, similarity_func)
     logger.debug(f'Similarity graph has {nx.number_connected_components(wsg)} connected components')
@@ -38,11 +38,11 @@ def louvain(similarity_graph, similarity_func, topic_min_size, max_topics_number
 
     logger.debug('Merge small components')
     similarity_matrix = compute_similarity_matrix(similarity_graph, similarity_func, partition)
-    comp_partition, comp_sizes = merge_components(
+    comp_partition = merge_components(
         partition, similarity_matrix,
         topic_min_size=topic_min_size, max_topics_number=max_topics_number
     )
-    return comp_partition, comp_sizes
+    return comp_partition
 
 
 def compute_similarity_matrix(similarity_graph, similarity_func, partition):
@@ -79,7 +79,7 @@ def merge_components(partition, similarity_matrix, topic_min_size, max_topics_nu
     :param similarity_matrix: Mean similarity between components for partition
     :param topic_min_size: Min number of papers in topic
     :param max_topics_number: Max number of topics
-    :return: merged_partition, sorted_comp_sizes
+    :return: merged_partition
     """
     logger.debug(f'Merging: max {max_topics_number} components with min size {topic_min_size}')
     comp_sizes = Counter(partition.values())
@@ -121,11 +121,9 @@ def merge_components(partition, similarity_matrix, topic_min_size, max_topics_nu
     )
     logger.debug(f'Comps reordering by size: {sorted_components}')
     merged_partition = {paper: sorted_components[c] for paper, c in partition.items()}
-    sorted_comp_sizes = Counter(merged_partition.values())
-
-    for k, v in sorted_comp_sizes.items():
+    for k, v in Counter(merged_partition.values()).items():
         logger.debug(f'Component {k}: {v} ({int(100 * v / len(merged_partition))}%)')
-    return merged_partition, sorted_comp_sizes
+    return merged_partition
 
 
 def get_topics_description(df, comps, corpus_terms, corpus_counts, query, n_words, ignore_comp=None):
