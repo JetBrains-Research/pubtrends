@@ -147,10 +147,13 @@ def get_topics_description(df, comps, corpus_terms, corpus_counts, query, n_word
             return {comp: list(sorted(most_frequent.items(), key=lambda kv: kv[1], reverse=True))[:n_words],
                     ignore_comp: []}
 
+    # Use df indices instead of paper ids
+    comps_ids = {comp: df['id'].isin(comp_pids) for comp, comp_pids in comps}
+
     if method == 'tfidf':
-        result = get_topics_description_tfidf(df, comps, corpus_terms, corpus_counts, n_words, ignore_comp=None)
+        result = get_topics_description_tfidf(comps_ids, corpus_terms, corpus_counts, n_words, ignore_comp=ignore_comp)
     elif method == 'cosine':
-        result = get_topics_description_cosine(df, comps, corpus_terms, corpus_counts, n_words, ignore_comp=None)
+        result = get_topics_description_cosine(comps_ids, corpus_terms, corpus_counts, n_words, ignore_comp=ignore_comp)
     else:
         raise ValueError(f'Bad method for generating topic descriptions: {method}')
 
@@ -160,7 +163,7 @@ def get_topics_description(df, comps, corpus_terms, corpus_counts, query, n_word
     return result
 
 
-def get_topics_description_tfidf(df, comps, corpus_terms, corpus_counts, n_words, ignore_comp=None):
+def get_topics_description_tfidf(comps, corpus_terms, corpus_counts, n_words, ignore_comp=None):
     """
     Select words from abstracts with maximal tfidf across components
     """
@@ -168,10 +171,10 @@ def get_topics_description_tfidf(df, comps, corpus_terms, corpus_counts, n_words
     # Since some of the components may be skipped, use this dict for continuous indexes
     comp_idx = {c: i for i, c in enumerate(c for c in comps if c != ignore_comp)}
     terms_freqs_per_comp = np.zeros(shape=(len(comp_idx), corpus_counts.shape[1]), dtype=np.float)
-    for comp, comp_pids in comps.items():
+    for comp, comp_ids in comps.items():
         if comp != ignore_comp:  # Not ignored
             terms_freqs_per_comp[comp_idx[comp], :] = \
-                np.sum(corpus_counts[np.flatnonzero(df['id'].isin(comp_pids)), :], axis=0) / len(comp_pids)
+                np.sum(corpus_counts[np.flatnonzero(comp_ids), :], axis=0) / len(comp_ids)
 
     tfidf = compute_tfidf(terms_freqs_per_comp)
 
@@ -191,7 +194,7 @@ def get_topics_description_tfidf(df, comps, corpus_terms, corpus_counts, n_words
     return result
 
 
-def get_topics_description_cosine(df, comps, corpus_terms, corpus_counts, n_words, ignore_comp=None):
+def get_topics_description_cosine(comps, corpus_terms, corpus_counts, n_words, ignore_comp=None):
     """
     Select words with the frequency closer that is the closest to the 'ideal' frequency vector
     ([0, ..., 0, 1, 0, ..., 0]) in terms of cosine distance
@@ -200,10 +203,10 @@ def get_topics_description_cosine(df, comps, corpus_terms, corpus_counts, n_word
     # Since some of the components may be skipped, use this dict for continuous indexes
     comp_idx = {c: i for i, c in enumerate(c for c in comps if c != ignore_comp)}
     terms_freqs_per_comp = np.zeros(shape=(len(comp_idx), corpus_counts.shape[1]), dtype=np.float)
-    for comp, comp_pids in comps.items():
+    for comp, comp_ids in comps.items():
         if comp != ignore_comp:  # Not ignored
             terms_freqs_per_comp[comp_idx[comp], :] = \
-                np.sum(corpus_counts[np.flatnonzero(df['id'].isin(comp_pids)), :], axis=0)
+                np.sum(corpus_counts[np.flatnonzero(comp_ids), :], axis=0)
 
     # Calculate total number of occurrences for each word
     terms_freqs_total = np.sum(terms_freqs_per_comp, axis=0)
@@ -213,7 +216,7 @@ def get_topics_description_cosine(df, comps, corpus_terms, corpus_counts, n_word
     terms_freqs_per_comp = terms_freqs_per_comp / terms_freqs_norm
 
     logger.debug('Take frequent terms that have the most descriptive frequency vector for topics')
-    # Calculate cosine distance between the frequency vector and [0, ..., 0, 1, 0, ..., 0]
+    # Calculate cosine distance between the frequency vector and [0, ..., 0, 1, 0, ..., 0] for each cluster
     cluster_mask = np.eye(len(comp_idx))
     distance = terms_freqs_per_comp.T @ cluster_mask
     # Add some weight for more frequent terms to get rid of extremely rare ones in the top
