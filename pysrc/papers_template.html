@@ -22,6 +22,7 @@
     <script src="https://unpkg.com/popper.js@1.14.7/dist/umd/popper.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/cytoscape-popper@1.0.4/cytoscape-popper.min.js"></script>
     <script src="https://unpkg.com/tippy.js@4.3.5/umd/index.all.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/tippy.js@4.3.5/themes/light.css"/>
     <link rel="stylesheet" href="https://unpkg.com/tippy.js@4.3.5/index.css"/>
 
     <!-- Notify.js -->
@@ -38,24 +39,50 @@
         function showTopics() {
             cy.nodes().forEach(function (ele) {
                 if ('title' in ele.data()) {
-                    ele.removeClass('topic cited year');
+                    ele.removeClass('topic year');
                     ele.addClass('topic');
                 }
             });
             // Close all notifications
             $('.notifyjs-wrapper').trigger('notify-hide');
+            let content = '<p><small>';
+            console.info(topics_description);
+            console.info(topics_palette);
+            for (let [topic, description] of Object.entries(topics_description)) {
+                content += '#' + (parseInt(topic) + 1).toString() +
+                    ' <svg width="10" height="10"><rect width="10" height="10" ' +
+                    'style="fill:' + topics_palette[topic] + '";/></svg> ' + description + '<br style="line-height: 50%;">';
+            }
+            content += '</small></p>';
+            console.info(content);
+            $.notify({
+                title: $(content)
+            }, {
+                style: 'html_title',
+                autoHide: false,
+                position: 'bottom right',
+                showDuration: 0,
+                hideDuration: 0,
+                clickToHide: false
+            });
         }
 
-        function showRange(minValue, maxValue) {
+        function showYear() {
+            cy.nodes().forEach(function (ele) {
+                if ('title' in ele.data()) {
+                    ele.removeClass('topic year');
+                    ele.addClass('year');
+                }
+            });
             // Close all notifications
             $('.notifyjs-wrapper').trigger('notify-hide');
             $.notify({
                 title:
                     $('<p>' +
                         '<svg width="16" height="16"><rect width="16" height="16" style="fill:#000000;"/></svg> ' +
-                        minValue + ' - ' +
+                        window.min_year + ' - ' +
                         '<svg width="16" height="16"><rect width="16" height="16" style="fill:#00FF00;"/></svg> ' +
-                        maxValue +
+                        window.max_year +
                         '</p>')
             }, {
                 style: 'html_title',
@@ -67,26 +94,6 @@
             });
         }
 
-        function showCited() {
-            cy.nodes().forEach(function (ele) {
-                if ('title' in ele.data()) {
-                    ele.removeClass('topic cited year');
-                    ele.addClass('cited');
-                }
-            });
-            showRange(window.min_cited, window.max_cited);
-        }
-
-        function showYear() {
-            cy.nodes().forEach(function (ele) {
-                if ('title' in ele.data()) {
-                    ele.removeClass('topic cited year');
-                    ele.addClass('year');
-                }
-            });
-            showRange(window.min_year, window.max_year);
-        }
-
         $(window).on("load", function () {
             document.getElementById('cy').innerHTML = "";
 
@@ -94,7 +101,7 @@
             // Enable formatter control in File > Settings > Editor > Code Style
             // @formatter:off
                 const topics_palette = window.topics_palette = JSON.parse({{ topics_palette_json | tojson }});
-                const topics_description = JSON.parse({{topics_description_json | tojson }});
+                const topics_description = window.topics_description = JSON.parse({{topics_description_json | tojson }});
                 const elements = JSON.parse({{ graph_cytoscape_json | tojson }});
                 // @formatter:on
 
@@ -114,6 +121,30 @@
                     max_cited = Math.max(data.cited, max_cited);
                 }
             });
+
+            let topics_xs = new Map();
+            let topics_ys = new Map();
+            elements['nodes'].forEach(function (ele) {
+                let topic = ele['data']['topic'];
+                let pos = ele['position'];
+                if (!topics_xs.has(topic)) {
+                    topics_xs.set(topic, []);
+                    topics_ys.set(topic, []);
+                }
+                topics_xs.get(topic).push(pos.x);
+                topics_ys.get(topic).push(pos.y);
+            });
+            for (let [topic, xs] of topics_xs.entries()) {
+                let ys = topics_ys.get(topic);
+                let x = xs.reduce((acc, v) => acc + v, 0) / xs.length;
+                let y = ys.reduce((acc, v) => acc + v, 0) / ys.length;
+                elements['nodes'].push({
+                    data: {name: "#" + (parseInt(topic) + 1).toString()},
+                    position: {x: x, y: y},
+                    classes: "topic-center"
+                });
+            }
+
             // Save variables
             window.min_year = min_year;
             window.max_year = max_year;
@@ -170,6 +201,23 @@
                         }
                     },
                     {
+                        selector: "node.topic-center",
+                        style: {
+                            "content": "data(name)",
+                            "font-size": "11px",
+                            "text-valign": "center",
+                            "text-halign": "center",
+                            "background-color": "white",
+                            "text-outline-color": "black",
+                            "text-outline-width": "2px",
+                            "color": "#fff",
+                            "overlay-padding": "6px",
+                            "z-index": "10",
+                            "text-background-color": "white",
+                            "opacity": "1.0 !important"
+                        }
+                    },
+                    {
                         selector: "node.year",
                         style: {
                             "background-color": function (node) {
@@ -178,25 +226,6 @@
                                     let dy;
                                     if (max_year > min_year) {
                                         dy = (data.year - min_year) / (max_year - min_year);
-                                    } else {
-                                        dy = 1;
-                                    }
-                                    return rgbToHex(0, Math.floor(255 * dy), 0);
-                                } else {
-                                    return "#FFFFFF"
-                                }
-                            },
-                        }
-                    },
-                    {
-                        selector: "node.cited",
-                        style: {
-                            "background-color": function (node) {
-                                let data = node.data();
-                                if ('cited' in data) {
-                                    let dy;
-                                    if (max_cited > min_cited) {
-                                        dy = (data.cited - min_cited) / (max_cited - min_cited);
                                     } else {
                                         dy = 1;
                                     }
@@ -255,26 +284,27 @@
                 let ref = ele.popperRef(); // used only for positioning
 
                 ele.tippy = tippy(ref, { // tippy options:
+                    theme: 'light',
                     content: () => {
                         let content = document.createElement('div');
                         let data = ele.data();
-                        if ('title' in data) {
-                            // Paper
-                            const topic = data.topic;
-                            // Disable formatter for the next section because of injections.
-                            // Enable formatter control in File > Settings > Editor > Code Style
-                            // @formatter:off
-                                content.innerHTML = "<b>" + data.title + "</b><br>" +
-                                    "<b>Author(s)</b> " + data.authors + "<br>" +
-                                    "<b>Journal</b> " + data.journal + "<br>" +
-                                    "<b>Year</b> " + data.year + "<br>" +
-                                    "<b>Cited</b> " + data.cited + "<br>" +
-                                    "<b>Topic</b> " + (topic + 1) + " " +
-                                    '<svg width="16" height="16"><rect width="16" height="16" ' +
-                                    'style="fill:' + topics_palette[topic] + '";/></svg><br>' +
-                                    "<b>Tags</b> " + "<em>" + topics_description[topic] + "</em>";
-                            }
-                            // @formatter:on
+                        // Disable formatter for the next section because of injections.
+                        // Enable formatter control in File > Settings > Editor > Code Style
+                        // @formatter:off
+                        content.innerHTML = "<p><small>" +
+                            "<b>" + data.title + "</b><br>" +
+                            "<b>Author(s)</b> " + data.authors + "<br>" +
+                            "<b>Journal</b> " + data.journal + "<br>" +
+                            "<b>Year</b> " + data.year + "<br>" +
+                            "<b>Cited</b> " + data.cited + "<br>" +
+                            "<b>Mesh</b> " + data.mesh + "<br>" +
+                            "<b>Keywords</b> " + data.keywords + "<br>" +
+                            "<b>Topic</b> " + (data.topic + 1) + " " +
+                            '<svg width="16" height="16"><rect width="16" height="16" ' +
+                            'style="fill:' + topics_palette[data.topic] + '";/></svg> ' +
+                            topics_description[data.topic] +
+                            "</small></p>";
+                        // @formatter:on
                         return content;
                     },
                     trigger: 'manual' // manual mode is required here, because of cytoscape
@@ -364,51 +394,6 @@
                         cy.edges().difference(neighborEdges).removeClass('semitransp');
                     }
                 });
-
-                // Highlight edges and neighbours on hover
-                cy.on('mouseover', 'edge', function (event) {
-                    if (window.freeze || getFilter() !== "") {
-                        return;
-                    }
-                    let sel = event.target;
-                    sel.addClass('highlight');
-                    let neighborNodes = sel.connectedNodes();
-                    cy.nodes().filter(function (ele) {
-                        return ele !== sel && ele.hasClass('dataset');
-                    }).difference(neighborNodes).addClass('semitransp');
-                    cy.edges().difference(sel).addClass('semitransp');
-                    neighborNodes.addClass('highlight');
-                });
-                cy.on('mouseout', 'edge', function (event) {
-                    if (window.freeze || getFilter() !== "") {
-                        return;
-                    }
-                    let sel = event.target;
-                    sel.removeClass('highlight');
-                    let neighborNodes = sel.connectedNodes();
-                    neighborNodes.removeClass('highlight');
-                    cy.nodes().filter(function (ele) {
-                        return ele !== sel && ele.hasClass('dataset');
-                    }).difference(neighborNodes).removeClass('semitransp');
-                    sel.removeClass('highlight');
-                    cy.edges().difference(sel).removeClass('semitransp');
-                });
-
-                <!-- Highlight analyzed paper -->
-                if ("{{ limit }}" === "related" && "{{ sort }}" === "papers") {
-                    let title = normalize('{{ query }}');
-                    if (title.endsWith("...")) {
-                        title = title.replace("...", "");
-                    }
-                    cy.nodes().forEach(function (ele) {
-                        let data = ele.data();
-                        if ('title' in data) {
-                            if (data.title.startsWith(title)) {
-                                ele.addClass('analyzed');
-                            }
-                        }
-                    });
-                }
             });
             window.freeze = false;
             // Close all tippy
@@ -418,7 +403,7 @@
                     if (window.freeze) {
                         // Unfreeze hover highlighting
                         window.freeze = false;
-                        inputChange();
+                        searchChanged();
                         $.notify("Escape pressed. Revert to normal highlighting mode.", {
                             className: "success",
                             position: "bottom right"
@@ -438,13 +423,20 @@
                 }
             });
 
+            $('#searchTitles').change(searchChanged);
+            $('#searchAbstracts').change(searchChanged);
+            $('#searchAuthors').change(searchChanged);
+            $('#searchJournals').change(searchChanged);
+            $('#searchMesh').change(searchChanged);
+            $('#searchKeywords').change(searchChanged);
+
         });
 
         function getFilter() {
             return $.trim($("#search-input").val()).toLowerCase();
         }
 
-        function inputChange() {
+        function searchChanged() {
             const filter = getFilter();
             if (filter === "") {
                 window.cy.nodes().filter(function (ele) {
@@ -458,14 +450,12 @@
             window.cy.nodes().forEach(function (ele) {
                 let data = ele.data();
                 if ('title' in data) {
-                    if (data.title.toLowerCase().includes(filter) ||
-                        data.journal.toLowerCase().includes(filter) ||
-                        data.authors.toLowerCase().includes(filter) ||
-                        // These are heavy
-                        data.abstract.toLowerCase().includes(filter) ||
-                        data.mesh.toLowerCase().includes(filter) ||
-                        data.keywords.toLowerCase().includes(filter) ||
-                        data.year.toString().includes(filter)) {
+                    if ($('#searchTitles').is(':checked') && data.title.toLowerCase().includes(filter) ||
+                        $('#searchJournals').is(':checked') && data.journal.toLowerCase().includes(filter) ||
+                        $('#searchAuthors').is(':checked') && data.authors.toLowerCase().includes(filter) ||
+                        $('#searchAbstracts').is(':checked') && data.abstract.toLowerCase().includes(filter) ||
+                        $('#searchMesh').is(':checked') && data.mesh.toLowerCase().includes(filter) ||
+                        $('#searchKeywords').is(':checked') && data.keywords.toLowerCase().includes(filter)) {
                         ele.removeClass('semitransp');
                         ele.addClass('highlight');
                     } else {
@@ -481,34 +471,47 @@
 
 <body>
 <!-- Fixed navbar -->
-<nav class="navbar navbar-light bg-light fixed-top border-bottom no-padding-right">
-    <div class="row container-fluid no-padding-right">
-        <div class="col no-padding">
-            <div class="row ml-3">
-                <a id="pubtrends" class="navbar-brand" href="/">Papers</a>
-                <div class="col justify-content-end row">
-                    <div class="col-auto">
-                        <input id="search-input" type="text" class="form-control"
-                               placeholder="Search..." aria-label="Search for..."
-                               oninput="inputChange();">
-                    </div>
-                    <div class="dropdown col-auto no-padding">
-                        <button class="btn btn-secondary dropdown-toggle" type="button"
-                                id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true"
-                                aria-expanded="false">
-                            View
-                        </button>
-                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                            <a class="dropdown-item" onclick="showTopics();" href="javascript:void(0);">Topic</a>
-                            <a class="dropdown-item" onclick="showCited();" href="javascript:void(0);">Cited</a>
-                            <a class="dropdown-item" onclick="showYear();" href="javascript:void(0);">Year</a>
-                        </div>
-                    </div>
-                </div>
+<nav class="navbar navbar-light bg-light fixed-top border-bottom ">
+    <div class="row container-fluid">
+        <div class="col-auto">
+            <span class="d-flex align-items-center">
+                <input id="search-input" type="text" class="form-control"
+                       placeholder="Search..." aria-label="Search for..."
+                       oninput="searchChanged();"/>
+                &nbsp;in
+
+                <input type="checkbox" id="searchTitles" class="ml-3 mr-2" checked="checked"/>
+                <label style="margin: auto" for="searchTitles">Titles</label>
+
+                <input type="checkbox" id="searchAbstracts" class="ml-3 mr-2" checked="checked"/>
+                <label style="margin: auto" for="searchAbstracts">Abstracts</label>
+
+                <input type="checkbox" id="searchAuthors" class="ml-3 mr-2"/>
+                <label style="margin: auto" for="searchAuthors">Authors</label>
+
+                <input type="checkbox" id="searchJournals" class="ml-3 mr-2"/>
+                <label style="margin: auto" for="searchJournals">Journals</label>
+
+                <input type="checkbox" id="searchMesh" class="ml-3 mr-2"/>
+                <label style="margin: auto" for="searchMesh">Mesh</label>
+
+                <input type="checkbox" id="searchKeywords" class="ml-3 mr-2"/>
+                <label for="searchKeywords" style="margin: auto">Keywords</label>
+            </span>
+        </div>
+        <div class="dropdown col-auto">
+            <button class="btn btn-secondary dropdown-toggle" type="button"
+                    id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true"
+                    aria-expanded="false">
+                Show
+            </button>
+            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                <a class="dropdown-item" onclick="showTopics();" href="javascript:void(0);">Topic</a>
+                <a class="dropdown-item" onclick="showYear();" href="javascript:void(0);">Year</a>
             </div>
         </div>
     </div>
 </nav>
-<div id="cy" style="height: 100vh;"></div>
+<div id="cy" style="height: 100vh; width: 80vw;"></div>
 </body>
 </html>

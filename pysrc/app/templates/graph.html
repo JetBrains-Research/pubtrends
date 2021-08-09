@@ -27,6 +27,7 @@
     <script src="https://cdn.jsdelivr.net/npm/cytoscape-popper@1.0.4/cytoscape-popper.min.js"></script>
     <script src="https://unpkg.com/tippy.js@4.3.5/umd/index.all.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/tippy.js@4.3.5/index.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/tippy.js@4.3.5/themes/light.css"/>
 
 
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1"/>
@@ -112,7 +113,7 @@
         function showTopics() {
             cy.nodes().forEach(function (ele) {
                 if ('title' in ele.data()) {
-                    ele.removeClass('topic cited year');
+                    ele.removeClass('topic year');
                     ele.addClass('topic');
                 }
             });
@@ -120,17 +121,23 @@
             $('.notifyjs-wrapper').trigger('notify-hide');
         }
 
-        function showRange(minValue, maxValue) {
+        function showYear() {
+            cy.nodes().forEach(function (ele) {
+                if ('title' in ele.data()) {
+                    ele.removeClass('topic year');
+                    ele.addClass('year');
+                }
+            });
             // Close all notifications
             $('.notifyjs-wrapper').trigger('notify-hide');
             $.notify({
                 title:
-                    $('<p>' +
+                    $('<p><small>' +
                         '<svg width="16" height="16"><rect width="16" height="16" style="fill:#000000;"/></svg> ' +
-                        minValue + ' - ' +
+                        window.min_year + ' - ' +
                         '<svg width="16" height="16"><rect width="16" height="16" style="fill:#00FF00;"/></svg> ' +
-                        maxValue +
-                        '</p>')
+                        window.max_year +
+                        '</small></p>')
             }, {
                 style: 'html_title',
                 autoHide: false,
@@ -139,26 +146,6 @@
                 hideDuration: 0,
                 clickToHide: false
             });
-        }
-
-        function showCited() {
-            cy.nodes().forEach(function (ele) {
-                if ('title' in ele.data()) {
-                    ele.removeClass('topic cited year');
-                    ele.addClass('cited');
-                }
-            });
-            showRange(window.min_cited, window.max_cited);
-        }
-
-        function showYear() {
-            cy.nodes().forEach(function (ele) {
-                if ('title' in ele.data()) {
-                    ele.removeClass('topic cited year');
-                    ele.addClass('year');
-                }
-            });
-            showRange(window.min_year, window.max_year);
         }
 
         $(window).on("load", function () {
@@ -279,25 +266,6 @@
                         }
                     },
                     {
-                        selector: "node.cited",
-                        style: {
-                            "background-color": function (node) {
-                                let data = node.data();
-                                if ('cited' in data) {
-                                    let dy;
-                                    if (max_cited > min_cited) {
-                                        dy = (data.cited - min_cited) / (max_cited - min_cited);
-                                    } else {
-                                        dy = 1;
-                                    }
-                                    return rgbToHex(0, Math.floor(255 * dy), 0);
-                                } else {
-                                    return "#FFFFFF"
-                                }
-                            },
-                        }
-                    },
-                    {
                         selector: 'node.highlight',
                         style: {
                             'border-width': '1.0',
@@ -339,6 +307,7 @@
                 let ref = ele.popperRef(); // used only for positioning
 
                 ele.tippy = tippy(ref, { // tippy options:
+                    theme: 'light',
                     content: () => {
                         let content = document.createElement('div');
                         let data = ele.data();
@@ -361,28 +330,31 @@
                                 text = data.text;
                             }
 
-                            content.innerHTML = "Similarity is computed based on citations " +
+                            content.innerHTML = "<p><small>Similarity is computed based on citations " +
                                 "and text similarity between papers.<br>" +
                                 "The bigger value the more similar papers are." + "<br>" +
                                 "<b>Co-citation</b> " + cocitation + "<br>" +
                                 "<b>Bibliographic coupling</b> " + bibcoupling + "<br>" +
                                 "<b>Citation</b> " + citation + "<br>" +
-                                "<b>Text similarity</b> " + Number(text).toFixed(2) + "<br>";
+                                "<b>Text similarity</b> " + Number(text).toFixed(2) + "</small></p>";
                         } else if ('title' in data) {
                             // Paper
-                            const topic = data.topic;
                             // Disable formatter for the next section because of injections.
                             // Enable formatter control in File > Settings > Editor > Code Style
                             // @formatter:off
-                                content.innerHTML = "<b>" + data.title + "</b><br>" +
-                                    "<b>Author(s)</b> " + data.authors + "<br>" +
-                                    "<b>Journal</b> " + data.journal + "<br>" +
-                                    "<b>Year</b> " + data.year + "<br>" +
-                                    "<b>Cited</b> " + data.cited + "<br>" +
-                                    "<b>Topic</b> " + (topic + 1) + " " +
-                                    '<svg width="16" height="16"><rect width="16" height="16" ' +
-                                    'style="fill:' + topics_palette[topic] + '";/></svg><br>' +
-                                    "<b>Tags</b> " + "<em>" + topics_description[topic] + "</em>";
+                            content.innerHTML = "<p><small>" +
+                                "<b>" + data.title + "</b><br>" +
+                                "<b>Author(s)</b> " + data.authors + "<br>" +
+                                "<b>Journal</b> " + data.journal + "<br>" +
+                                "<b>Year</b> " + data.year + "<br>" +
+                                "<b>Cited</b> " + data.cited + "<br>" +
+                                "<b>Mesh</b> " + data.mesh + "<br>" +
+                                "<b>Keywords</b> " + data.keywords + "<br>" +
+                                "<b>Topic</b> " + (data.topic + 1) + " " +
+                                '<svg width="16" height="16"><rect width="16" height="16" ' +
+                                'style="fill:' + topics_palette[data.topic] + '";/></svg> ' +
+                                topics_description[data.topic] +
+                                "</small></p>";
                             }
                             // @formatter:on
                         return content;
@@ -537,7 +509,7 @@
                     if (window.freeze) {
                         // Unfreeze hover highlighting
                         window.freeze = false;
-                        inputChange();
+                        searchChanged();
                         $.notify("Escape pressed. Revert to normal highlighting mode.", {
                             className: "success",
                             position: "bottom right"
@@ -576,13 +548,21 @@
                         cy.remove(cy.edges().filter(ele => topicsConnections.has(ele)));
                     }
                 });
+
+            $('#searchTitles').change(searchChanged);
+            $('#searchAbstracts').change(searchChanged);
+            $('#searchAuthors').change(searchChanged);
+            $('#searchJournals').change(searchChanged);
+            $('#searchMesh').change(searchChanged);
+            $('#searchKeywords').change(searchChanged);
+
         });
 
         function getFilter() {
             return $.trim($("#search-input").val()).toLowerCase();
         }
 
-        function inputChange() {
+        function searchChanged() {
             const filter = getFilter();
             if (filter === "") {
                 window.cy.nodes().filter(function (ele) {
@@ -596,13 +576,12 @@
             window.cy.nodes().forEach(function (ele) {
                 let data = ele.data();
                 if ('title' in data) {
-                    if (data.title.toLowerCase().includes(filter) ||
-                        data.abstract.toLowerCase().includes(filter) ||
-                        data.authors.toLowerCase().includes(filter) ||
-                        data.year.toString().includes(filter) ||
-                        data.keywords.toString().includes(filter) ||
-                        data.mesh.toString().includes(filter) ||
-                        filter.startsWith("topic") && (data.topic + 1).toString() === filter.substr(5).trim()) {
+                    if ($('#searchTitles').is(':checked') && data.title.toLowerCase().includes(filter) ||
+                        $('#searchJournals').is(':checked') && data.journal.toLowerCase().includes(filter) ||
+                        $('#searchAuthors').is(':checked') && data.authors.toLowerCase().includes(filter) ||
+                        $('#searchAbstracts').is(':checked') && data.abstract.toLowerCase().includes(filter) ||
+                        $('#searchMesh').is(':checked') && data.mesh.toLowerCase().includes(filter) ||
+                        $('#searchKeywords').is(':checked') && data.keywords.toLowerCase().includes(filter)) {
                         ele.removeClass('semitransp');
                         ele.addClass('highlight');
                     } else {
@@ -652,9 +631,32 @@
                 </ol>
                 <div class="col justify-content-end row">
                     <div class="col-auto">
-                        <input id="search-input" type="text" class="form-control"
-                               placeholder="Search..." aria-label="Search for..."
-                               oninput="inputChange();">
+                        <div class="col-auto">
+            <span class="d-flex align-items-center">
+                <input id="search-input" type="text" class="form-control"
+                       placeholder="Search..." aria-label="Search for..."
+                       oninput="searchChanged();"/>
+                &nbsp;in
+
+                <input type="checkbox" id="searchTitles" class="ml-3 mr-2" checked="checked"/>
+                <label style="margin: auto" for="searchTitles">Titles</label>
+
+                <input type="checkbox" id="searchAbstracts" class="ml-3 mr-2" checked="checked"/>
+                <label style="margin: auto" for="searchAbstracts">Abstracts</label>
+
+                <input type="checkbox" id="searchAuthors" class="ml-3 mr-2"/>
+                <label style="margin: auto" for="searchAuthors">Authors</label>
+
+                <input type="checkbox" id="searchJournals" class="ml-3 mr-2"/>
+                <label style="margin: auto" for="searchJournals">Journals</label>
+
+                <input type="checkbox" id="searchMesh" class="ml-3 mr-2"/>
+                <label style="margin: auto" for="searchMesh">Mesh</label>
+
+                <input type="checkbox" id="searchKeywords" class="ml-3 mr-2"/>
+                <label for="searchKeywords" style="margin: auto">Keywords</label>
+            </span>
+                        </div>
                     </div>
                     <div class="dropdown col-auto no-padding">
                         <button class="btn btn-secondary dropdown-toggle" type="button"
@@ -664,12 +666,11 @@
                         </button>
                         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                             <a class="dropdown-item" onclick="showTopics();" href="javascript:void(0);">Topic</a>
-                            <a class="dropdown-item" onclick="showCited();" href="javascript:void(0);">Cited</a>
                             <a class="dropdown-item" onclick="showYear();" href="javascript:void(0);">Year</a>
                             <hr>
                             {% if citation_graph != 'true' %}
                             <div class="dropdown-item">
-                                <input type="checkbox" id="connectTopics" checked="true">
+                                <input type="checkbox" id="connectTopics" checked="checked">
                                 <label for="connectTopics">Connect topics</label>
                             </div>
                             {% endif %}
@@ -750,14 +751,12 @@
                 },
                 {
                     element: '#search-input',
-                    intro: 'Filter papers by text.<br>' +
-                        'Title, abstract and publication year are used in full text search.<br>' +
-                        'Hit <em>enter</em> to execute, empty input to reset.'
+                    intro: 'Search papers containing text in title, abstracts, etc.'
                 },
                 {
                     element: '#dropdownMenuButton',
                     intro: 'Change graph view.<br>' +
-                        'Colors can represent topics, number of citations, or publication year.<br>' +
+                        'Colors can represent topics or publication year.<br>' +
                         '<svg width="16" height="16"><rect width="16" height="16" style="fill:#000000;"/></svg> min - ' +
                         '<svg width="16" height="16"><rect width="16" height="16" style="fill:#00FF00;"/></svg> max<br>' +
                         'Connect topics: whether edges between different topics are shown.'
