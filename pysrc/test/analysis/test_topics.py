@@ -71,7 +71,7 @@ class TestTopics(unittest.TestCase):
         comps = {0: [0], 1: [1], 2: [2]}
         corpus_terms = ['frequent', 'rare-1', 'rare-2']
         corpus_counts = np.array([
-            [30, 0,  0],    # 'frequent' x 30
+            [30, 0,  0],   # 'frequent' x 30
             [30, 15, 0],   # 'frequent' x 30 + 'rare-1' x 15
             [30, 0,  15],  # 'frequent' x 30 + 'rare-2' x 15
         ])
