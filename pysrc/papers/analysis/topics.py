@@ -196,7 +196,7 @@ def get_topics_description_tfidf(comps, corpus_terms, corpus_counts, n_words, ig
 
 def get_topics_description_cosine(comps, corpus_terms, corpus_counts, n_words, ignore_comp=None):
     """
-    Select words with the frequency closer that is the closest to the 'ideal' frequency vector
+    Select words with the frequency vector that is the closest to the 'ideal' frequency vector
     ([0, ..., 0, 1, 0, ..., 0]) in terms of cosine distance
     """
     logger.debug('Compute average terms counts per components')
