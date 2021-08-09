@@ -252,6 +252,8 @@ class PapersAnalyzer:
 
         if self.config.feature_evolution_enabled:
             if len(self.df) >= PapersAnalyzer.EVOLUTION_MIN_PAPERS:
+                self.progress.info(f'Analyzing evolution of topics {self.df["id"].min()} - {self.df["id"].max()}',
+                                   current=15, task=task)
                 logger.debug('Perform topic evolution analysis and get topic descriptions')
                 self.evolution_df, self.evolution_year_range = topic_evolution_analysis(
                     self.df, self.cit_df, self.cocit_df, self.bibliographic_coupling_df,
@@ -260,7 +262,6 @@ class PapersAnalyzer:
                     self.TOPICS_MAX_NUMBER,
                     similarity_func=self.similarity,
                     evolution_step=self.EVOLUTION_STEP,
-                    progress=self.progress, current=15, task=task
                 )
                 self.evolution_kwds = topic_evolution_descriptions(
                     self.df, self.evolution_df, self.evolution_year_range,

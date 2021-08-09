@@ -13,13 +13,9 @@ logger = logging.getLogger(__name__)
 
 
 def topic_evolution_analysis(
-        df,
-        cit_df, cocit_df, bibliographic_coupling_df, texts_similarity,
-        cocit_min_threshold,
-        topic_min_size, max_topics_number,
-        similarity_func,
-        evolution_step,
-        progress, current=0, task=None
+        df, cit_df, cocit_df, bibliographic_coupling_df, texts_similarity,
+        cocit_min_threshold, topic_min_size, max_topics_number, similarity_func,
+        evolution_step
 ):
     """
     Main method of evolution analysis
@@ -33,10 +29,7 @@ def topic_evolution_analysis(
     :param max_topics_number:
     :param similarity_func:
     :param evolution_step: Evolution step
-    :param progress:
-    :param current:
-    :param task:
-    :return:
+    :return: evolution_df, year_range
     """
     min_year = int(df['year'].min())
     max_year = int(df['year'].max())
@@ -44,11 +37,10 @@ def topic_evolution_analysis(
 
     # Cannot analyze evolution
     if len(year_range) < 2:
-        progress.info(f'Year step is too big to analyze evolution of topics in {min_year} - {max_year}',
-                      current=current, task=task)
+        logger.info(f'Year step is too big to analyze evolution of topics in {min_year} - {max_year}')
         return None, None
 
-    progress.info(f'Analyzing evolution of topics in {min_year} - {max_year}', current=current, task=task)
+    logger.info(f'Analyzing evolution of topics in {min_year} - {max_year}')
 
     logger.debug(f"Topics evolution years: {year_range}")
     # Evolution starts with the latest topic separation
