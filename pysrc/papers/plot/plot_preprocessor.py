@@ -1,37 +1,17 @@
 import logging
-from itertools import product as cart_product
-from queue import PriorityQueue
 
 import networkx as nx
 import numpy as np
 import pandas as pd
-from more_itertools import unique_everseen
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
 from pysrc.papers.analysis.text import build_corpus
-from pysrc.papers.analysis.topics import compute_similarity_matrix
-from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.utils import cut_authors_list
 
 logger = logging.getLogger(__name__)
 
 
 class PlotPreprocessor:
-
-    @staticmethod
-    def topics_similarity_data(similarity_graph, partition):
-        similarity_matrix = compute_similarity_matrix(similarity_graph, PapersAnalyzer.similarity, partition)
-
-        # c + 1 is used to start numbering with 1
-        components = [str(c + 1) for c in sorted(set(partition.values()))]
-        n_comps = len(components)
-        similarity_topics_df = pd.DataFrame([
-            {'comp_x': i, 'comp_y': j, 'similarity': similarity_matrix[i, j]}
-            for i, j in cart_product(range(n_comps), range(n_comps))
-        ])
-        similarity_topics_df['comp_x'] = similarity_topics_df['comp_x'].apply(lambda x: x + 1).astype(str)
-        similarity_topics_df['comp_y'] = similarity_topics_df['comp_y'].apply(lambda x: x + 1).astype(str)
-        return similarity_topics_df, components
 
     @staticmethod
     def component_ratio_data(df):
@@ -116,41 +96,27 @@ class PlotPreprocessor:
         return dict(x=x, y=y)
 
     @staticmethod
-    def topics_words(kwd_df, max_words, topics):
-        kwds_queue = PriorityQueue()
-        for c in topics:
-            for pair in list(kwd_df[kwd_df['comp'] == c]['kwd'])[0].split(','):
-                if pair != '':  # Correctly process empty freq_kwds encoding
-                    word, value = pair.split(':')
-                    kwds_queue.put((-float(value), c, word))
-        words2show = {c: [] for c in topics}
-        seen_words = set()
-        added_words = 0
-        while not kwds_queue.empty() and added_words < len(topics) * max_words:
-            _, c, word = kwds_queue.get()
-            if word in seen_words:
-                continue
-            seen_words.add(word)
-            if len(words2show[c]) < max_words:
-                words2show[c].append(word)
-                added_words += 1
-        return words2show
-
-    @staticmethod
     def dump_citations_graph_cytoscape(df, citations_graph):
         logger.debug('Mapping citations graph to cytoscape JS')
-        return PlotPreprocessor.dump_to_cytoscape(df, citations_graph)
+        citations_graph = citations_graph.copy()
+        cytoscape_graph = PlotPreprocessor.dump_to_cytoscape(df, citations_graph)
+        pos = nx.spring_layout(citations_graph)
+        for node_cs in cytoscape_graph['nodes']:
+            nid = node_cs['data']['id']
+            node_cs['position'] = dict(x=int(pos[nid][0] * 300), y=int(pos[nid][1] * 200))
+        return cytoscape_graph
 
     @staticmethod
     def dump_similarity_graph_cytoscape(df, similarity_graph):
         logger.debug('Mapping structure graph to cytoscape JS')
-        cytoscape_graph = PlotPreprocessor.dump_to_cytoscape(df, similarity_graph.copy())
+        similarity_graph = similarity_graph.copy()
+        cytoscape_graph = PlotPreprocessor.dump_to_cytoscape(df, similarity_graph)
         maxy = df['y'].max()
         for node_cs in cytoscape_graph['nodes']:
             nid = node_cs['data']['id']
             sel = df.loc[df['id'] == nid]
             # Adjust vertical axis with bokeh graph
-            node_cs['position'] = dict(x=sel['x'].values[0] * 7, y=(maxy - sel['y'].values[0]) * 7)
+            node_cs['position'] = dict(x=int(sel['x'].values[0] * 10), y=int((maxy - sel['y'].values[0]) * 4))
         return cytoscape_graph
 
     @staticmethod
@@ -159,20 +125,31 @@ class PlotPreprocessor:
         attrs = {}
         for node in df['id']:
             sel = df[df['id'] == node]
-            topic = int(sel['comp'].values[0])
-            attrs[node] = {
-                'title': sel['title'].values[0],
-                'abstract': sel['abstract'].values[0],
-                'keywords': sel['keywords'].values[0],
-                'mesh': sel['mesh'].values[0],
-                'authors': cut_authors_list(sel['authors'].values[0]),
-                'journal': sel['journal'].values[0],
-                'year': int(sel['year'].values[0]),
-                'cited': int(sel['total'].values[0]),
-                'topic': topic,
-            }
+            attrs[node] = dict(
+                title=sel['title'].values[0],
+                authors=cut_authors_list(sel['authors'].values[0]),
+                journal=sel['journal'].values[0],
+                year=int(sel['year'].values[0]),
+                cited=int(sel['total'].values[0]),
+                topic=int(sel['comp'].values[0]),
+                # These can be heavy
+                abstract=sel['abstract'].values[0],
+                mesh=sel['mesh'].values[0],
+                keywords=sel['keywords'].values[0],
+            )
         nx.set_node_attributes(graph, attrs)
         return nx.cytoscape_data(graph)['elements']
+
+    @staticmethod
+    def topics_words(kwd_df, max_words):
+        words2show = {}
+        for _, row in kwd_df.iterrows():
+            comp, kwds = row[0], row[1]
+            if kwds != '':  # Correctly process empty freq_kwds encoding
+                words2show[comp] = [p.split(':')[0] for p in kwds.split(',')[:max_words]]
+            else:
+                words2show[comp] = []
+        return words2show
 
     @staticmethod
     def topic_evolution_data(evolution_df, kwds, n_steps):

@@ -19,9 +19,9 @@ class TestTopicEvolution(unittest.TestCase):
         cls.analyzer = PapersAnalyzer(loader, TestPapersAnalyzer.PUBTRENDS_CONFIG, test=True)
         ids = cls.analyzer.search_terms(query='query')
         cls.analyzer.analyze_papers(ids, 'query')
-        cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.ids)
+        cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.df['id'])
         cls.analyzer.citations_graph = build_citation_graph(cls.analyzer.df, cls.analyzer.cit_df)
-        cls.analyzer.bibliographic_coupling_df = loader.load_bibliographic_coupling(cls.analyzer.ids)
+        cls.analyzer.bibliographic_coupling_df = loader.load_bibliographic_coupling(cls.analyzer.df['id'])
 
     @parameterized.expand([
         ('too large step', 20, True, None),

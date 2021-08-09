@@ -20,9 +20,9 @@ class TestPopularPapers(unittest.TestCase):
         ids = cls.analyzer.search_terms(query='query')
         cls.analyzer.TOPIC_MIN_SIZE = 0  # Disable merging for tests
         cls.analyzer.analyze_papers(ids, 'query')
-        cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.ids)
+        cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.df['id'])
         cls.analyzer.citations_graph = build_citation_graph(cls.analyzer.df, cls.analyzer.cit_df)
-        cls.analyzer.bibliographic_coupling_df = loader.load_bibliographic_coupling(cls.analyzer.ids)
+        cls.analyzer.bibliographic_coupling_df = loader.load_bibliographic_coupling(cls.analyzer.df['id'])
 
     def test_find_max_gain_papers_count(self):
         max_gain_count = len(list(self.analyzer.max_gain_df['year'].values))
@@ -68,7 +68,7 @@ class TestPopularPapersSingle(unittest.TestCase):
         cls.analyzer = PapersAnalyzer(MockLoaderSingle(), TestPopularPapersSingle.PUBTRENDS_CONFIG, test=True)
         ids = cls.analyzer.search_terms(query='query')
         cls.analyzer.analyze_papers(ids, 'query')
-        cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.ids)
+        cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.df['id'])
 
     def test_find_max_gain_papers_count(self):
         max_gain_count = len(list(self.analyzer.max_gain_df['year'].values))

@@ -87,7 +87,7 @@ class TestBuildGraphSingle(unittest.TestCase):
         cls.analyzer = PapersAnalyzer(MockLoaderSingle(), TestBuildGraphSingle.PUBTRENDS_CONFIG, test=True)
         ids = cls.analyzer.search_terms(query='query')
         cls.analyzer.analyze_papers(ids, 'query')
-        cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.ids)
+        cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.df['id'])
         cls.analyzer.citations_graph = build_citation_graph(cls.analyzer.df, cls.analyzer.cit_df)
 
     def test_build_citation_graph_nodes_count(self):

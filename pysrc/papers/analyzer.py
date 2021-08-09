@@ -121,8 +121,7 @@ class PapersAnalyzer:
         self.pub_df = self.loader.load_publications(ids)
         if len(self.pub_df) == 0:
             raise SearchError(f'Nothing found for ids: {ids}')
-        self.ids = list(self.pub_df['id'])  # Limit ids to existing papers only!
-        self.n_papers = len(self.ids)
+        ids = list(self.pub_df['id'])  # Limit ids to existing papers only!
         self.pub_types = list(set(self.pub_df['type']))
 
         self.progress.info('Analyzing title and abstract texts', current=3, task=task)
@@ -140,19 +139,18 @@ class PapersAnalyzer:
         )
 
         self.progress.info('Loading citations statistics for papers', current=4, task=task)
-        cits_by_year_df = self.loader.load_citations_by_year(self.ids)
+        cits_by_year_df = self.loader.load_citations_by_year(ids)
         logger.debug(f'Found {len(cits_by_year_df)} records of citations by year')
 
-        self.cit_stats_df = build_cit_stats_df(cits_by_year_df, self.n_papers)
+        self.cit_stats_df = build_cit_stats_df(cits_by_year_df, len(ids))
         if len(self.cit_stats_df) == 0:
             logger.warning('No citations of papers were found')
         self.df, self.citation_years = merge_citation_stats(self.pub_df, self.cit_stats_df)
-        self.min_year, self.max_year = self.df['year'].min(), self.df['year'].max()
 
         # Load data about citations between given papers (excluding outer papers)
         # IMPORTANT: cit_df may contain not all the publications for query
         self.progress.info('Loading citations information', current=5, task=task)
-        self.cit_df = self.loader.load_citations(self.ids)
+        self.cit_df = self.loader.load_citations(ids)
         logger.debug(f'Found {len(self.cit_df)} citations between papers')
 
         self.citations_graph = build_citation_graph(self.df, self.cit_df)
@@ -160,7 +158,7 @@ class PapersAnalyzer:
                      f'{self.citations_graph.number_of_edges()} edges')
 
         self.progress.info('Calculating co-citations for selected papers', current=6, task=task)
-        self.cocit_df = self.loader.load_cocitations(self.ids)
+        self.cocit_df = self.loader.load_cocitations(ids)
         cocit_grouped_df = build_cocit_grouped_df(self.cocit_df)
         logger.debug(f'Found {len(cocit_grouped_df)} co-cited pairs of papers')
         self.cocit_grouped_df = cocit_grouped_df[cocit_grouped_df['total'] >= self.SIMILARITY_COCITATION_MIN].copy()
@@ -168,7 +166,7 @@ class PapersAnalyzer:
                      f'threshold {self.SIMILARITY_COCITATION_MIN}')
 
         self.progress.info('Processing bibliographic coupling for selected papers', current=7, task=task)
-        bibliographic_coupling_df = self.loader.load_bibliographic_coupling(self.ids)
+        bibliographic_coupling_df = self.loader.load_bibliographic_coupling(ids)
         logger.debug(f'Found {len(bibliographic_coupling_df)} bibliographic coupling pairs of papers')
         self.bibliographic_coupling_df = bibliographic_coupling_df[
             bibliographic_coupling_df['total'] >= self.SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN].copy()
@@ -201,18 +199,15 @@ class PapersAnalyzer:
                 logger.debug('Small similarity graph - single topic')
                 self.df['comp'] = 0
                 self.partition = dict(zip(self.df['id'], self.df['comp']))
-                self.comp_sizes = Counter(self.df['comp'])
-                self.components = [0]
             else:
                 logger.debug('Extracting topics from paper similarity graph')
-                self.partition, self.comp_sizes = louvain(
+                self.partition = louvain(
                     self.similarity_graph,
                     similarity_func=self.similarity,
                     topic_min_size=self.TOPIC_MIN_SIZE,
                     max_topics_number=self.TOPICS_MAX_NUMBER
                 )
                 self.df['comp'] = [self.partition[pid] for pid in self.df['id']]
-                self.components = list(sorted(self.comp_sizes.keys()))
 
             self.progress.info('Analyzing topics descriptions', current=10, task=task)
             comp_pids = pd.DataFrame(self.partition.items(), columns=['id', 'comp']). \
