@@ -149,8 +149,8 @@ def get_topics_description(df, comps, corpus_terms, corpus_counts, query, n_word
             return {comp: list(sorted(most_frequent.items(), key=lambda kv: kv[1], reverse=True))[:n_words],
                     ignore_comp: []}
 
-    # Use df indices instead of paper ids
-    comps_ids = {comp: df['id'].isin(comp_pids) for comp, comp_pids in comps}
+    # Pass paper indices (for corpus_terms and corpus_counts) instead of paper ids
+    comps_ids = {comp: list(np.flatnonzero(df['id'].isin(comp_pids))) for comp, comp_pids in comps.items()}
 
     if method == 'tfidf':
         result = get_topics_description_tfidf(comps_ids, corpus_terms, corpus_counts, n_words, ignore_comp=ignore_comp)
@@ -172,11 +172,11 @@ def get_topics_description_tfidf(comps, corpus_terms, corpus_counts, n_words, ig
     logger.debug('Compute average terms counts per components')
     # Since some of the components may be skipped, use this dict for continuous indexes
     comp_idx = {c: i for i, c in enumerate(c for c in comps if c != ignore_comp)}
-    terms_freqs_per_comp = np.zeros(shape=(len(comp_idx), corpus_counts.shape[1]), dtype=np.float)
+    terms_freqs_per_comp = np.zeros(shape=(len(comp_idx), corpus_counts.shape[1]), dtype=float)
     for comp, comp_ids in comps.items():
         if comp != ignore_comp:  # Not ignored
             terms_freqs_per_comp[comp_idx[comp], :] = \
-                np.sum(corpus_counts[np.flatnonzero(comp_ids), :], axis=0) / len(comp_ids)
+                np.sum(corpus_counts[comp_ids, :], axis=0) / len(comp_ids)
 
     tfidf = compute_tfidf(terms_freqs_per_comp)
 
@@ -208,7 +208,7 @@ def get_topics_description_cosine(comps, corpus_terms, corpus_counts, n_words, i
     for comp, comp_ids in comps.items():
         if comp != ignore_comp:  # Not ignored
             terms_freqs_per_comp[comp_idx[comp], :] = \
-                np.sum(corpus_counts[np.flatnonzero(comp_ids), :], axis=0)
+                np.sum(corpus_counts[comp_ids, :], axis=0)
 
     # Calculate total number of occurrences for each word
     terms_freqs_total = np.sum(terms_freqs_per_comp, axis=0)
@@ -226,8 +226,12 @@ def get_topics_description_cosine(comps, corpus_terms, corpus_counts, n_words, i
 
     result = {}
     for comp in comps.keys():
+        if comp == ignore_comp:
+            result[comp] = []  # Ignored component
+            continue
+
         c = comp_idx[comp]   # Get the continuous index
         cluster_terms_idx = np.argsort(-adjusted_distance[c, :])[:n_words].tolist()
-        result[c] = [(corpus_terms[i], adjusted_distance[c, i]) for i in cluster_terms_idx]
+        result[comp] = [(corpus_terms[i], adjusted_distance[c, i]) for i in cluster_terms_idx]
 
     return result

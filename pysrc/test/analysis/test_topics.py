@@ -1,10 +1,12 @@
 import unittest
 import numpy as np
+import pandas as pd
 
 from parameterized import parameterized
 
 from pysrc.papers.analysis.graph import build_citation_graph
-from pysrc.papers.analysis.topics import merge_components, compute_similarity_matrix
+from pysrc.papers.analysis.topics import merge_components, compute_similarity_matrix, get_topics_description, \
+                                         get_topics_description_tfidf, get_topics_description_cosine
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.test.mock_loaders import MockLoader
@@ -60,6 +62,70 @@ class TestTopics(unittest.TestCase):
         # print(matrix)
         similarities = np.array([[3.506]])
         self.assertTrue(np.allclose(similarities, matrix, rtol=1e-3))
+
+    @staticmethod
+    def _get_topics_description_data():
+        df = pd.DataFrame([['0'], ['1'], ['2']], columns=['id'])
+        query = 'test'
+        comps_pids = {0: ['0'], 1: ['1'], 2: ['2']}
+        comps = {0: [0], 1: [1], 2: [2]}
+        corpus_terms = ['frequent', 'rare-1', 'rare-2']
+        corpus_counts = np.array([
+            [30, 0,  0],    # 'frequent' x 30
+            [30, 15, 0],   # 'frequent' x 30 + 'rare-1' x 15
+            [30, 0,  15],  # 'frequent' x 30 + 'rare-2' x 15
+        ])
+
+        return df, query, comps_pids, comps, corpus_terms, corpus_counts
+
+    def _compare_topics_descriptions(self, result, expected_result, name):
+        self.assertEqual(result.keys(), expected_result.keys(), f'{name}: bad indices of components')
+
+        for comp, data in result.items():
+            expected_data = expected_result[comp]
+
+            words = [v[0] for v in data]
+            expected_words = [v[0] for v in expected_data]
+            self.assertEqual(words, expected_words, f'{name}: words do not match for component {comp}')
+
+            weights = np.array([v[1] for v in data])
+            expected_weights = np.array([v[1] for v in expected_data])
+            self.assertTrue(np.allclose(weights, expected_weights, rtol=1e-3),
+                            f'{name}: weights do not match for component {comp}')
+
+    @parameterized.expand([
+        ('1word_all', 1, None, {0: [('frequent', 1.0)], 1: [('frequent', 0.763)], 2: [('frequent', 0.763)]}),
+        ('2word_ignore0', 2, 0, {0: [],
+                                 1: [('frequent', 0.818), ('rare-1', 0.575)],
+                                 2: [('frequent', 0.818), ('rare-2', 0.575)]}),
+    ])
+    def test_get_topics_description_tfidf(self, name, n_words, ignore_comp, expected_result):
+        _, _, _, comps, corpus_terms, corpus_counts = TestTopics._get_topics_description_data()
+
+        result = get_topics_description_tfidf(comps, corpus_terms, corpus_counts, n_words, ignore_comp=ignore_comp)
+        self._compare_topics_descriptions(result, expected_result, name)
+
+    @parameterized.expand([
+        ('1word_all', 1, None, {0: [('frequent', 2.598)], 1: [('rare-1', 2.708)], 2: [('rare-2', 2.708)]}),
+        ('2word_ignore0', 2, 0, {0: [],
+                                 1: [('frequent', 2.895), ('rare-1', 2.708)],
+                                 2: [('frequent', 2.895), ('rare-2', 2.708)]}),
+    ])
+    def test_get_topics_description_cosine(self, name, n_words, ignore_comp, expected_result):
+        _, _, _, comps, corpus_terms, corpus_counts = TestTopics._get_topics_description_data()
+
+        result = get_topics_description_cosine(comps, corpus_terms, corpus_counts, n_words, ignore_comp=ignore_comp)
+        self._compare_topics_descriptions(result, expected_result, name)
+
+    @parameterized.expand([
+        ('tfidf', 1, {0: [('frequent', 1.0)], 1: [('frequent', 0.763)], 2: [('frequent', 0.763)]}),
+        ('cosine', 1, {0: [('frequent', 2.598)], 1: [('rare-1', 2.708)], 2: [('rare-2', 2.708)]}),
+    ])
+    def test_get_topics_description(self, method, n_words, expected_result):
+        df, query, comps, _, corpus_terms, corpus_counts = TestTopics._get_topics_description_data()
+
+        result = get_topics_description(df, comps, corpus_terms, corpus_counts, query, n_words, method=method)
+        self._compare_topics_descriptions(result, expected_result, method)
 
 
 if __name__ == '__main__':
