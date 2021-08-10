@@ -34,8 +34,7 @@ class TestTopicEvolution(unittest.TestCase):
             self.analyzer.bibliographic_coupling_df,
             self.analyzer.texts_similarity, PapersAnalyzer.SIMILARITY_COCITATION_MIN, PapersAnalyzer.TOPIC_MIN_SIZE,
             PapersAnalyzer.TOPICS_MAX_NUMBER, similarity_func=PapersAnalyzer.similarity,
-            evolution_step=step,
-            progress=self.analyzer.progress
+            evolution_step=step
         )
 
         if expect_none:
@@ -54,8 +53,7 @@ class TestTopicEvolution(unittest.TestCase):
             self.analyzer.bibliographic_coupling_df,
             self.analyzer.texts_similarity, PapersAnalyzer.SIMILARITY_COCITATION_MIN, PapersAnalyzer.TOPIC_MIN_SIZE,
             PapersAnalyzer.TOPICS_MAX_NUMBER, similarity_func=PapersAnalyzer.similarity,
-            evolution_step=5,
-            progress=self.analyzer.progress
+            evolution_step=5
         )
 
         evolution_kwds = topic_evolution_descriptions(
