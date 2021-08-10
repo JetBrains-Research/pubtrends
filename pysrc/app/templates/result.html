@@ -496,11 +496,11 @@
                         Filter papers by keywords, apply different coloring schemes and view similarity details.
                     </p>
                     <div style="display: block">
-                        <button type="button" class="btn btn-light"
+                        <button type="button" class="btn btn-light mr-2"
                                 onclick="graph_callback('citations');">
                             Explore citations graph
                         </button>
-                        <button type="button" class="ml-2 btn btn-light"
+                        <button type="button" class="btn btn-light"
                                 onclick="graph_callback('similarity');">
                             Explore similarity graph
                         </button>
@@ -751,7 +751,7 @@
                         with the highest probability to be included in a real review paper.
                     </p>
                     <div class="row no-gutters align-items-center mb-3">
-                        <div class="col input-group">
+                        <div class="col input-group mr-2">
                             <div class="input-group-prepend">
                                 <span class="input-group-text" id="number-papers-addon">Number of papers</span>
                             </div>
@@ -761,7 +761,7 @@
                                    aria-describedby="number-papers-addon"
                                    required>
                         </div>
-                        <div class="col input-group ml-2">
+                        <div class="col input-group">
                             <div class="input-group-prepend">
                                 <span class="input-group-text" id="number-of-sents-addon">Sentences each</span>
                             </div>
@@ -822,13 +822,13 @@
                 </div>
             </div>
             <div class="mt-3 ml-3" id="log">
-                <a class="btn btn-light" data-toggle="collapse" href="#collapseLog"
+                <a class="btn btn-light mr-1" data-toggle="collapse" href="#collapseLog"
                    role="button" aria-expanded="false"
                    aria-controls="collapseCocitations">
                     Logs
                 </a>
                 <a href="javascript:void(0);"
-                   class="ml-1 btn btn-light"
+                   class="btn btn-light"
                    role="button" onclick="export_data();">
                     Export
                 </a>

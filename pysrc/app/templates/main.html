@@ -75,9 +75,9 @@
             Explore similar papers, important prior, and derivative works for the paper of interest.<br>
         </p>
         <p>
-            <a id="tour-start" class="btn btn-light"
+            <a id="tour-start" class="btn btn-light mr-1"
                href="javascript:void(0);" onclick="startIntro();">Take a tour</a>
-            <a class="btn btn-light ml-1"
+            <a class="btn btn-light"
                href="about.html"
                target="_blank" role="button">About</a>
         </p>
@@ -107,9 +107,9 @@
                 <!-- Form for Search -->
                 <div class="tab-pane fade show active" id="topic" role="tabpanel"
                      aria-labelledby="topic-tab">
-                    <form action="search_terms" method="POST" class="mb-2 needs-validation" novalidate>
+                    <form action="search_terms" method="POST" class="mb-2 mr-1 needs-validation" novalidate>
                         <div class="row no-gutters align-items-center">
-                            <div id="step2" class="col input-group">
+                            <div id="step2" class="col input-group mr-2">
                                 <div class="input-group-prepend">
                                     <span class="input-group-text" id="query-addon">Query</span>
                                 </div>
@@ -120,7 +120,7 @@
                                        autofocus required>
                             </div>
                             <!--end of col-->
-                            <div id="step4" class="col-auto ml-2">
+                            <div id="step4" class="col-auto">
                                 <button class="btn btn-success" type="submit">Search</button>
                             </div>
                             <!--end of col-->
@@ -149,7 +149,7 @@
                         </div>
                         <div id="collapseSearchAdvanced" class="collapse mt-2">
                             <div class="row no-gutters align-items-center">
-                                <div class="col input-group">
+                                <div class="col input-group mr-2">
                                     <div class="input-group-prepend">
                                         <span class="input-group-text" id="sort-addon">Sort By</span>
                                     </div>
@@ -159,7 +159,7 @@
                                         <option>Most Recent</option>
                                     </select>
                                 </div>
-                                <div class="ml-2 col input-group">
+                                <div class="col input-group">
                                     <div class="input-group-prepend">
                                         <span class="input-group-text" id="amount-addon">Search</span>
                                     </div>
@@ -179,27 +179,27 @@
                                 </div>
                             </div>
                             <div class="row no-gutters align-items-center mt-2">
-                                <div class="col input-group">
+                                <div class="col input-group mr-2">
                                     <label style="margin-top: auto;margin-bottom: auto">
                                         <input type="checkbox" checked="checked" name="noreviews" id="noreviews">
                                         <span class="checkmark">Prefer no reviews</span>
                                     </label>
                                 </div>
-                                <div class="ml-2 col input-group d-flex align-items-center">
-                                    <label for="expand" style="margin-top: auto;margin-bottom: auto">
+                                <div class="col input-group d-flex align-items-center mr-2">
+                                    <label for="expand" class="mr-1" style="margin-top: auto;margin-bottom: auto">
                                         Expand by references %
                                     </label>
-                                    <input id="expand" name="expand" class="ml-1 form-control" type="number"
+                                    <input id="expand" name="expand" class="form-control" type="number"
                                            min="0" max="100" step="10" value="20"/>
                                 </div>
-                                <div class="ml-2 col input-group">
+                                <div class="col input-group">
                                 </div>
                             </div>
                         </div>
                     </form>
                     <!-- Preprocessed example -->
                     {{ search_example_message }}<br>
-                    <div id="predefined" class="row ml-1">
+                    <div id="predefined" class="row">
                         {% for terms, hash in search_example_terms %}
                         <form action="result" method="GET" class="inline">
                             <input type="hidden" name="source" value="{{ search_example_source }}">
@@ -227,7 +227,7 @@
                 <div class="tab-pane fade" id="paper" role="tabpanel" aria-labelledby="paper-tab">
                     <form action="search_paper" method="POST" class="needs-validation" novalidate>
                         <div class="row no-gutters align-items-center">
-                            <div class="col-auto">
+                            <div class="col-auto mr-2">
                                 <select id="paper-key" class="form-control" name="key" required>
                                     <option disabled></option>
                                     <option value="title">Title</option>
@@ -235,7 +235,7 @@
                                     <option value="id">ID</option>
                                 </select>
                             </div>
-                            <div class="col ml-2">
+                            <div class="col-auto mr-2">
                                 <input class="form-control form-control-borderless" type="search"
                                        name="value" id="paper-input"
                                        placeholder="Enter paper details"
@@ -244,7 +244,7 @@
                                        required>
                             </div>
                             <!--end of col-->
-                            <div class="col-auto ml-2">
+                            <div class="col-auto">
                                 <button class="btn btn-success" type="submit">Search</button>
                             </div>
                         </div>
@@ -299,7 +299,7 @@
                 <div class="tab-pane fade" id="papers" role="tabpanel" aria-labelledby="papers-tab">
                     <form action="search_list" method="POST" class="needs-validation" novalidate>
                         <div class="row no-gutters align-items-center">
-                            <div class="col input-group">
+                            <div class="col-auto input-group mr-2">
                                 <div class="input-group-prepend">
                                     <span class="input-group-text" id="ids-addon">IDs</span>
                                 </div>
@@ -311,7 +311,7 @@
                                        required>
                             </div>
                             <!--end of col-->
-                            <div class="col-auto ml-2">
+                            <div class="col-auto">
                                 <button class="btn btn-success" type="submit">Search</button>
                             </div>
                         </div>
