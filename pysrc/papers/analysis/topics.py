@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from pysrc.papers.analysis.graph import to_weighted_graph
-from pysrc.papers.analysis.text import get_frequent_tokens, compute_tfidf
+from pysrc.papers.analysis.text import get_frequent_tokens
 from pysrc.papers.utils import SEED
 
 logger = logging.getLogger(__name__)
@@ -126,12 +126,10 @@ def merge_components(partition, similarity_matrix, topic_min_size, max_topics_nu
     return merged_partition
 
 
-def get_topics_description(df, comps, corpus_terms, corpus_counts, query, n_words, method='tfidf', ignore_comp=None):
+def get_topics_description(df, comps, corpus_terms, corpus_counts, query, n_words, ignore_comp=None):
     """
-    Get words from abstracts that describe the components best using two methods:
-    :param method:
-      * 'tfidf' - select words with maximal tfidf across components
-      * 'cosine' - closest to the 'ideal' frequency vector - [0, ..., 0, 1, 0, ..., 0] in terms of cosine distance
+    Get words from abstracts that describe the components the best way
+    using closest to the 'ideal' frequency vector - [0, ..., 0, 1, 0, ..., 0] in terms of cosine distance
     """
     logger.debug(f'Generating topics description, ignore_comp={ignore_comp}')
     # Since some of the components may be skipped, use this dict for continuous indexes'
@@ -149,52 +147,14 @@ def get_topics_description(df, comps, corpus_terms, corpus_counts, query, n_word
 
     # Pass paper indices (for corpus_terms and corpus_counts) instead of paper ids
     comps_ids = {comp: list(np.flatnonzero(df['id'].isin(comp_pids))) for comp, comp_pids in comps.items()}
-
-    if method == 'tfidf':
-        result = get_topics_description_tfidf(comps_ids, corpus_terms, corpus_counts, n_words, ignore_comp=ignore_comp)
-    elif method == 'cosine':
-        result = get_topics_description_cosine(comps_ids, corpus_terms, corpus_counts, n_words, ignore_comp=ignore_comp)
-    else:
-        raise ValueError(f'Bad method for generating topic descriptions: {method}')
-
+    result = _get_topics_description_cosine(comps_ids, corpus_terms, corpus_counts, n_words, ignore_comp=ignore_comp)
     kwds = [(comp, ','.join([f'{t}:{v:.3f}' for t, v in vs])) for comp, vs in result.items()]
     logger.debug('Description\n' + '\n'.join(f'{comp}: {kwd}' for comp, kwd in kwds))
 
     return result
 
 
-def get_topics_description_tfidf(comps, corpus_terms, corpus_counts, n_words, ignore_comp=None):
-    """
-    Select words from abstracts with maximal tfidf across components
-    """
-    logger.debug('Compute average terms counts per components')
-    # Since some of the components may be skipped, use this dict for continuous indexes
-    comp_idx = {c: i for i, c in enumerate(c for c in comps if c != ignore_comp)}
-    terms_freqs_per_comp = np.zeros(shape=(len(comp_idx), corpus_counts.shape[1]), dtype=float)
-    for comp, comp_ids in comps.items():
-        if comp != ignore_comp:  # Not ignored
-            terms_freqs_per_comp[comp_idx[comp], :] = \
-                np.sum(corpus_counts[comp_ids, :], axis=0) / len(comp_ids)
-
-    tfidf = compute_tfidf(terms_freqs_per_comp)
-
-    logger.debug('Take terms with the largest tfidf for topics')
-    result = {}
-    for comp, _ in comps.items():
-        if comp == ignore_comp:
-            result[comp] = []  # Ignored component
-            continue
-
-        counter = Counter()
-        for i, t in enumerate(corpus_terms):
-            counter[t] += tfidf[comp_idx[comp], i]
-        # Ignore terms with insignificant frequencies
-        result[comp] = [(t, f) for t, f in counter.most_common(n_words) if f > 0]
-
-    return result
-
-
-def get_topics_description_cosine(comps, corpus_terms, corpus_counts, n_words, ignore_comp=None):
+def _get_topics_description_cosine(comps, corpus_terms, corpus_counts, n_words, ignore_comp=None):
     """
     Select words with the frequency vector that is the closest to the 'ideal' frequency vector
     ([0, ..., 0, 1, 0, ..., 0]) in terms of cosine distance
@@ -228,7 +188,7 @@ def get_topics_description_cosine(comps, corpus_terms, corpus_counts, n_words, i
             result[comp] = []  # Ignored component
             continue
 
-        c = comp_idx[comp]   # Get the continuous index
+        c = comp_idx[comp]  # Get the continuous index
         cluster_terms_idx = np.argsort(-adjusted_distance[c, :])[:n_words].tolist()
         result[comp] = [(corpus_terms[i], adjusted_distance[c, i]) for i in cluster_terms_idx]
 
