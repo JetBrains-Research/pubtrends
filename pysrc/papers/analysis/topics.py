@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from pysrc.papers.analysis.graph import to_weighted_graph
-from pysrc.papers.analysis.text import get_frequent_tokens, compute_tfidf
+from pysrc.papers.analysis.text import get_frequent_tokens
 from pysrc.papers.utils import SEED
 
 logger = logging.getLogger(__name__)
@@ -127,6 +127,10 @@ def merge_components(partition, similarity_matrix, topic_min_size, max_topics_nu
 
 
 def get_topics_description(df, comps, corpus_terms, corpus_counts, query, n_words, ignore_comp=None):
+    """
+    Get words from abstracts that describe the components the best way
+    using closest to the 'ideal' frequency vector - [0, ..., 0, 1, 0, ..., 0] in terms of cosine distance
+    """
     logger.debug(f'Generating topics description, ignore_comp={ignore_comp}')
     # Since some of the components may be skipped, use this dict for continuous indexes'
     comp_idx = {c: i for i, c in enumerate(c for c in comps if c != ignore_comp)}
@@ -141,31 +145,51 @@ def get_topics_description(df, comps, corpus_terms, corpus_counts, query, n_word
             return {comp: list(sorted(most_frequent.items(), key=lambda kv: kv[1], reverse=True))[:n_words],
                     ignore_comp: []}
 
+    # Pass paper indices (for corpus_terms and corpus_counts) instead of paper ids
+    comps_ids = {comp: list(np.flatnonzero(df['id'].isin(comp_pids))) for comp, comp_pids in comps.items()}
+    result = _get_topics_description_cosine(comps_ids, corpus_terms, corpus_counts, n_words, ignore_comp=ignore_comp)
+    kwds = [(comp, ','.join([f'{t}:{v:.3f}' for t, v in vs])) for comp, vs in result.items()]
+    logger.debug('Description\n' + '\n'.join(f'{comp}: {kwd}' for comp, kwd in kwds))
+
+    return result
+
+
+def _get_topics_description_cosine(comps, corpus_terms, corpus_counts, n_words, ignore_comp=None):
+    """
+    Select words with the frequency vector that is the closest to the 'ideal' frequency vector
+    ([0, ..., 0, 1, 0, ..., 0]) in terms of cosine distance
+    """
     logger.debug('Compute average terms counts per components')
     # Since some of the components may be skipped, use this dict for continuous indexes
     comp_idx = {c: i for i, c in enumerate(c for c in comps if c != ignore_comp)}
     terms_freqs_per_comp = np.zeros(shape=(len(comp_idx), corpus_counts.shape[1]), dtype=np.float)
-    for comp, comp_pids in comps.items():
+    for comp, comp_ids in comps.items():
         if comp != ignore_comp:  # Not ignored
             terms_freqs_per_comp[comp_idx[comp], :] = \
-                np.sum(corpus_counts[np.flatnonzero(df['id'].isin(comp_pids)), :], axis=0) / len(comp_pids)
+                np.sum(corpus_counts[comp_ids, :], axis=0)
 
-    tfidf = compute_tfidf(terms_freqs_per_comp)
+    # Calculate total number of occurrences for each word
+    terms_freqs_total = np.sum(terms_freqs_per_comp, axis=0)
 
-    logger.debug('Take terms with the largest tfidf for topics')
+    # Normalize frequency vector for each word to have length of 1
+    terms_freqs_norm = np.sqrt(np.diag(terms_freqs_per_comp.T @ terms_freqs_per_comp))
+    terms_freqs_per_comp = terms_freqs_per_comp / terms_freqs_norm
+
+    logger.debug('Take frequent terms that have the most descriptive frequency vector for topics')
+    # Calculate cosine distance between the frequency vector and [0, ..., 0, 1, 0, ..., 0] for each cluster
+    cluster_mask = np.eye(len(comp_idx))
+    distance = terms_freqs_per_comp.T @ cluster_mask
+    # Add some weight for more frequent terms to get rid of extremely rare ones in the top
+    adjusted_distance = distance.T * np.log(terms_freqs_total)
+
     result = {}
-    for comp, _ in comps.items():
+    for comp in comps.keys():
         if comp == ignore_comp:
             result[comp] = []  # Ignored component
             continue
 
-        counter = Counter()
-        for i, t in enumerate(corpus_terms):
-            counter[t] += tfidf[comp_idx[comp], i]
-        # Ignore terms with insignificant frequencies
-        result[comp] = [(t, f) for t, f in counter.most_common(n_words) if f > 0]
-
-    kwds = [(comp, ','.join([f'{t}:{v:.3f}' for t, v in vs])) for comp, vs in result.items()]
-    logger.debug('Description\n' + '\n'.join(f'{comp}: {kwd}' for comp, kwd in kwds))
+        c = comp_idx[comp]  # Get the continuous index
+        cluster_terms_idx = np.argsort(-adjusted_distance[c, :])[:n_words].tolist()
+        result[comp] = [(corpus_terms[i], adjusted_distance[c, i]) for i in cluster_terms_idx]
 
     return result
