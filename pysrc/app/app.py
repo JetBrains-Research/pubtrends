@@ -6,10 +6,11 @@ import os
 import random
 import re
 import tempfile
+from urllib.parse import quote
+
 from celery.result import AsyncResult
 from flask import Flask, url_for, redirect, render_template, request, render_template_string, \
     send_from_directory, send_file
-from urllib.parse import quote
 
 from pysrc.app.admin.admin import configure_admin_functions
 from pysrc.app.predefined import save_predefined, load_predefined_viz_log, load_predefined_or_result_data
@@ -18,14 +19,14 @@ from pysrc.app.utils import log_request, MAX_QUERY_LENGTH, SOMETHING_WENT_WRONG_
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.celery.tasks_cache import get_or_cancel_task
 from pysrc.celery.tasks_main import find_paper_async, analyze_search_terms, analyze_id_list
-from pysrc.papers.analysis.graph import local_sparse, to_weighted_graph
+from pysrc.papers.analysis.graph import to_weighted_graph, sparse_graph
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
-from pysrc.papers.plot.plotter_paper import prepare_paper_data
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.plot.plotter import Plotter
+from pysrc.papers.plot.plotter_paper import prepare_paper_data
 from pysrc.papers.utils import zoom_name, trim, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE, ZOOM_OUT_TITLE
 from pysrc.version import VERSION
 
@@ -350,9 +351,9 @@ def graph():
                 )
             else:
                 logger.debug('Computing sparse similarity graph')
-                sg = local_sparse(to_weighted_graph(analyzer.similarity_graph, PapersAnalyzer.similarity),
-                                  PapersAnalyzer.SIMILARITY_SPARSITY)
-                logger.debug('Restoring nescessary edges')
+                sg = sparse_graph(to_weighted_graph(analyzer.similarity_graph, PapersAnalyzer.similarity),
+                                  PapersAnalyzer.SIMILARITY_GRAPH_EDGES_TO_NODES)
+                logger.debug('Restoring necessary edges')
                 for i, j in sg.edges():
                     d = analyzer.similarity_graph.get_edge_data(i, j)
                     for k, v in d.items():

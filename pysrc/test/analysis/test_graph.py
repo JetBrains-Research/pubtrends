@@ -2,7 +2,7 @@ import unittest
 
 import networkx as nx
 
-from pysrc.papers.analysis.graph import build_citation_graph, local_sparse
+from pysrc.papers.analysis.graph import build_citation_graph, _local_sparse
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.test.mock_loaders import MockLoader, CITATION_GRAPH_NODES, CITATION_GRAPH_EDGES, SIMILARITY_GRAPH_EDGES, \
@@ -51,23 +51,19 @@ class TestBuildGraph(unittest.TestCase):
             for j in range(i + 1, 5):
                 graph.add_edge(i, j, similarity=1)
 
-        self.assertEqual([(0, 3), (0, 4), (3, 1), (3, 2), (3, 4), (4, 1), (4, 2)], list(local_sparse(graph, 0.1).edges))
-        self.assertEqual([(0, 3), (0, 4), (3, 1), (3, 2), (3, 4), (4, 1), (4, 2)], list(local_sparse(graph, 0.5).edges))
-        self.assertEqual([(0, 1),
-                          (0, 2),
-                          (0, 3),
-                          (0, 4),
-                          (1, 2),
-                          (1, 3),
-                          (1, 4),
-                          (2, 3),
-                          (2, 4),
+        self.assertEqual([(0, 3), (0, 4), (3, 1), (3, 2), (3, 4), (4, 1), (4, 2)],
+                         list(_local_sparse(graph, 0.1).edges))
+        self.assertEqual([(0, 3), (0, 4), (3, 1), (3, 2), (3, 4), (4, 1), (4, 2)],
+                         list(_local_sparse(graph, 0.5).edges))
+        self.assertEqual([(0, 1), (0, 2), (0, 3), (0, 4),
+                          (1, 2), (1, 3), (1, 4),
+                          (2, 3), (2, 4),
                           (3, 4)],
-                         list(local_sparse(graph, 1).edges))
+                         list(_local_sparse(graph, 1).edges))
 
         # Add not connected edge
         graph.add_edge(10, 11, similarity=10)
-        self.assertEqual([(0, 4), (4, 1), (4, 2), (4, 3), (10, 11)], list(local_sparse(graph, 0).edges))
+        self.assertEqual([(0, 4), (4, 1), (4, 2), (4, 3), (10, 11)], list(_local_sparse(graph, 0).edges))
 
     def test_isolated_edges_sparse(self):
         # Full graph on 4 nodes
@@ -76,7 +72,7 @@ class TestBuildGraph(unittest.TestCase):
         graph.add_node(2)
         graph.add_node(3)
 
-        self.assertEqual([1, 2, 3], list(local_sparse(graph, 0).nodes))
+        self.assertEqual([1, 2, 3], list(_local_sparse(graph, 0).nodes))
 
 
 class TestBuildGraphSingle(unittest.TestCase):

@@ -1,5 +1,4 @@
 import logging
-from collections import Counter
 
 import numpy as np
 import pandas as pd
@@ -44,12 +43,12 @@ class PapersAnalyzer:
     SIMILARITY_TEXT_CITATION_N = 50
 
     # Reduce number of edges in similarity graph
-    SIMILARITY_SPARSITY = 0.3
+    SIMILARITY_GRAPH_EDGES_TO_NODES = 5
 
     # Global vectorization max vocabulary size
     VECTOR_WORDS = 10000
     # Terms with lower frequency will be ignored, remove rare words
-    VECTOR_MIN_DF = 0.001
+    VECTOR_MIN_DF = 0.01
     # Terms with higher frequency will be ignored, remove abundant stop words
     VECTOR_MAX_DF = 0.8
 

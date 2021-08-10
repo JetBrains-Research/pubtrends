@@ -19,7 +19,7 @@ from holoviews import opts
 from matplotlib import pyplot as plt
 from wordcloud import WordCloud
 
-from pysrc.papers.analysis.graph import local_sparse, to_weighted_graph
+from pysrc.papers.analysis.graph import to_weighted_graph, sparse_graph
 from pysrc.papers.analysis.text import get_frequent_tokens, get_topic_word_cloud_data
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
@@ -560,8 +560,8 @@ class Plotter:
 
     def plot_similarity_graph(self):
         logger.debug('Preparing sparse similarity graph')
-        gs = local_sparse(to_weighted_graph(self.analyzer.similarity_graph, PapersAnalyzer.similarity),
-                          PapersAnalyzer.SIMILARITY_SPARSITY)
+        gs = sparse_graph(to_weighted_graph(self.analyzer.similarity_graph, PapersAnalyzer.similarity),
+                          PapersAnalyzer.SIMILARITY_GRAPH_EDGES_TO_NODES)
         df = self.analyzer.df
         pids = df['id']
         comps = df['comp']

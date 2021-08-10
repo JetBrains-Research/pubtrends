@@ -86,7 +86,18 @@ def build_similarity_graph(
     return sg
 
 
-def local_sparse(graph, e, key='weight'):
+def sparse_graph(graph, max_edges_to_nodes, key='weight'):
+    e = 1.0
+    gs = _local_sparse(graph, e, key)
+    # Limit total number of edges to estimate walk probabilities
+    while e > 0.1 and gs.number_of_edges() / gs.number_of_nodes() > max_edges_to_nodes:
+        e -= 0.1
+        gs = _local_sparse(graph, e, key)
+    logger.debug(f'Sparse graph e={e} nodes={gs.number_of_nodes()} edges={gs.number_of_edges()}')
+    return gs
+
+
+def _local_sparse(graph, e, key='weight'):
     assert 0 <= e <= 1, f'Sparsity parameter {e} should be in 0..1'
     if e == 1:
         return graph
@@ -133,7 +144,7 @@ def to_weighted_graph(graph, weight_func, key='weight'):
     return g
 
 
-def layout_similarity_graph(similarity_graph, similarity_func, topic_min_size):
+def layout_similarity_graph(similarity_graph, similarity_func, topic_min_size, max_edges_to_nodes=50):
     if similarity_graph.number_of_nodes() <= topic_min_size:
         logger.debug('Preparing spring layout for similarity graph')
         pos = nx.spring_layout(similarity_graph, weight='weight')
@@ -144,13 +155,8 @@ def layout_similarity_graph(similarity_graph, similarity_func, topic_min_size):
     else:
         logger.debug('Preparing node2vec + tsne layout for similarity graph')
         wsg = to_weighted_graph(similarity_graph, similarity_func)
-        e = 1.0
-        gs = local_sparse(wsg, e)
-        # Limit total number of edges to estimate walk probabilities
-        while e > 0.1 and gs.number_of_edges() / gs.number_of_nodes() > 50:
-            e -= 0.1
-            gs = local_sparse(wsg, e)
-        logger.debug(f'Sparse graph for node2vec e={e} nodes={gs.number_of_nodes()} edges={gs.number_of_edges()}')
+        # Limit edges to nodes ratio in sparse similarity graph
+        gs = sparse_graph(wsg, max_edges_to_nodes=max_edges_to_nodes)
         node_ids, node_embeddings = node2vec(gs)
         logger.debug('Apply TSNE transformation on node embeddings')
         tsne = TSNE(n_components=2, random_state=42)
