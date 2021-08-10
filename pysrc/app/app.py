@@ -25,7 +25,7 @@ from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
-from pysrc.papers.plot.plotter import Plotter
+from pysrc.papers.plot.plotter import Plotter, TOPIC_KEYWORDS
 from pysrc.papers.plot.plotter_paper import prepare_paper_data
 from pysrc.papers.utils import zoom_name, trim, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE, ZOOM_OUT_TITLE
 from pysrc.version import VERSION
@@ -331,8 +331,8 @@ def graph():
             loader, url_prefix = Loaders.get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
             analyzer = PapersAnalyzer(loader, PUBTRENDS_CONFIG)
             analyzer.init(data)
-            topics_tags = {comp: ', '.join(
-                [w[0] for w in analyzer.kwd_df[analyzer.kwd_df['comp'] == comp]['kwd'].values[0][:10]]
+            topics_tags = {comp: ','.join(
+                [w[0] for w in analyzer.kwd_df[analyzer.kwd_df['comp'] == comp]['kwd'].values[0][:TOPIC_KEYWORDS]]
             ) for comp in sorted(set(analyzer.df['comp']))}
             if graph_type == "citations":
                 graph_cs = PlotPreprocessor.dump_citations_graph_cytoscape(analyzer.df, analyzer.citations_graph)

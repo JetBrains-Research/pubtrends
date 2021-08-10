@@ -119,6 +119,26 @@
             });
             // Close all notifications
             $('.notifyjs-wrapper').trigger('notify-hide');
+            const h = $(window).height();
+            const s = Math.min(13, Math.round(7 * h / 800 * 80 / (Object.keys(topics_palette).length + 1))).toString()
+            let content = '<p style="line-height: 35%;font-size:' + s + 'px">';
+            for (let [topic, description] of Object.entries(topics_description)) {
+                content += '<svg width="' + s + '" height="' + s + '">' +
+                    '<rect width="' + s + '" height="' + s + '" ' +
+                    'style="fill:' + topics_palette[topic] + '";/></svg> ' +
+                    '#' + (parseInt(topic) + 1).toString() + ' ' + description + '<br>';
+            }
+            content += '</p>';
+            $.notify({
+                title: $(content)
+            }, {
+                style: 'html_title',
+                autoHide: false,
+                position: 'bottom right',
+                showDuration: 0,
+                hideDuration: 0,
+                clickToHide: false
+            });
         }
 
         function showYear() {
@@ -154,11 +174,11 @@
             // Disable formatter for the next section because of injections.
             // Enable formatter control in File > Settings > Editor > Code Style
             // @formatter:off
-                const citation_graph = {{ citation_graph }};
-                const topics_palette = window.topics_palette = JSON.parse({{ topics_palette_json | tojson }});
-                const topics_description = JSON.parse({{topics_description_json | tojson }});
-                const elements = JSON.parse({{ graph_cytoscape_json | tojson }});
-                // @formatter:on
+            const citation_graph = {{ citation_graph }};
+            const topics_palette = window.topics_palette = JSON.parse({{ topics_palette_json | tojson }});
+            const topics_description = window.topics_description = JSON.parse({{topics_description_json | tojson }});
+            const elements = JSON.parse({{ graph_cytoscape_json | tojson }});
+            // @formatter:on
 
             let edge_style;
             if (citation_graph) {
@@ -188,6 +208,32 @@
             window.max_year = max_year;
             window.min_cited = min_cited;
             window.max_cited = max_cited;
+
+            // Compute topics centers
+            if (!citation_graph) {
+                let topics_xs = new Map();
+                let topics_ys = new Map();
+                elements['nodes'].forEach(function (ele) {
+                    let topic = ele['data']['topic'];
+                    let pos = ele['position'];
+                    if (!topics_xs.has(topic)) {
+                        topics_xs.set(topic, []);
+                        topics_ys.set(topic, []);
+                    }
+                    topics_xs.get(topic).push(pos.x);
+                    topics_ys.get(topic).push(pos.y);
+                });
+                for (let [topic, xs] of topics_xs.entries()) {
+                    let ys = topics_ys.get(topic);
+                    let x = xs.reduce((acc, v) => acc + v, 0) / xs.length;
+                    let y = ys.reduce((acc, v) => acc + v, 0) / ys.length;
+                    elements['nodes'].push({
+                        data: {name: "#" + (parseInt(topic) + 1).toString()},
+                        position: {x: x, y: y},
+                        classes: "topic-center"
+                    });
+                }
+            }
 
             //add a new style 'html_title'
             $.notify.addStyle('html_title', {
@@ -244,6 +290,23 @@
                                     return '#FFFFFF'
                                 }
                             },
+                        }
+                    },
+                    {
+                        selector: "node.topic-center",
+                        style: {
+                            "content": "data(name)",
+                            "font-size": "13px",
+                            "text-valign": "center",
+                            "text-halign": "center",
+                            "background-color": "black",
+                            "text-outline-color": "white",
+                            "text-outline-width": "4px",
+                            "color": "black",
+                            "overlay-padding": "8px",
+                            "z-index": "10",
+                            "text-background-color": "black",
+                            "opacity": "1.0 !important"
                         }
                     },
                     {
@@ -312,7 +375,7 @@
                         let content = document.createElement('div');
                         let data = ele.data();
                         if ('similarity' in data) {
-                            // Graph similarity
+                            // Edge similarity
                             let bibcoupling = 0;
                             if ('bibcoupling' in data) {
                                 bibcoupling = data.bibcoupling;
@@ -329,21 +392,21 @@
                             if ('text' in data) {
                                 text = data.text;
                             }
-
-                            content.innerHTML = "<p><small>Similarity is computed based on citations " +
-                                "and text similarity between papers.<br>" +
-                                "The bigger value the more similar papers are." + "<br>" +
+                            content.innerHTML = "<div><small><b>Similarity</b><br>" +
+                                "Similarity is computed based on citations and text similarity between papers. " +
+                                "The bigger value the more similar." +
+                                "<br><p style='text-align:left;'>" +
                                 "<b>Co-citation</b> " + cocitation + "<br>" +
                                 "<b>Bibliographic coupling</b> " + bibcoupling + "<br>" +
                                 "<b>Citation</b> " + citation + "<br>" +
-                                "<b>Text similarity</b> " + Number(text).toFixed(2) + "</small></p>";
+                                "<b>Text similarity</b> " + Number(text).toFixed(2) + "</p></small></div>";
                         } else if ('title' in data) {
                             // Paper
                             // Disable formatter for the next section because of injections.
                             // Enable formatter control in File > Settings > Editor > Code Style
                             // @formatter:off
-                            content.innerHTML = "<p><small>" +
-                                "<b>" + data.title + "</b><br>" +
+                            content.innerHTML = "<div><small>" +
+                                "<b>" + data.title + "</b><br><p style='text-align:left;'>" +
                                 "<b>Author(s)</b> " + data.authors + "<br>" +
                                 "<b>Journal</b> " + data.journal + "<br>" +
                                 "<b>Year</b> " + data.year + "<br>" +
@@ -354,7 +417,7 @@
                                 '<svg width="16" height="16"><rect width="16" height="16" ' +
                                 'style="fill:' + topics_palette[data.topic] + '";/></svg> ' +
                                 topics_description[data.topic] +
-                                "</small></p>";
+                                "</p></small></div>";
                             }
                             // @formatter:on
                         return content;
@@ -708,9 +771,9 @@
         // Disable formatter for the next section because of injections.
         // Enable formatter control in File > Settings > Editor > Code Style
         // @formatter:off
-            // Boolean value if we are visualizing citations graph (true) of similarity graph (false)
-            const citation_graph = {{ citation_graph }};
-            // @formatter:on
+        // Boolean value if we are visualizing citations graph (true) of similarity graph (false)
+        const citation_graph = {{ citation_graph }};
+        // @formatter:on
 
         let description;
         if (citation_graph) {

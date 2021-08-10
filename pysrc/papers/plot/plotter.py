@@ -8,7 +8,7 @@ import holoviews as hv
 import numpy as np
 from bokeh.colors import RGB
 from bokeh.embed import components
-from bokeh.models import ColumnDataSource, CustomJS
+from bokeh.models import ColumnDataSource, CustomJS, LabelSet
 from bokeh.models import GraphRenderer, StaticLayoutProvider, Circle, HoverTool, MultiLine
 from bokeh.models import NumeralTickFormatter
 from bokeh.models.graphs import NodesAndLinkedEdges
@@ -627,6 +627,16 @@ class Plotter:
         graph.inspection_policy = NodesAndLinkedEdges()
 
         p.renderers.append(graph)
+
+        # Add Labels
+        lxs = [df.loc[df['comp'] == c]['x'].mean() for c in sorted(set(comps))]
+        lys = [df.loc[df['comp'] == c]['y'].mean() for c in sorted(set(comps))]
+        comp_labels = [f"#{c + 1}" for c in sorted(set(comps))]
+        source = ColumnDataSource({'x': lxs, 'y': lys, 'name': comp_labels})
+        labels = LabelSet(x='x', y='y', text='name', source=source,
+                          background_fill_color='white', text_font_size='11px', background_fill_alpha=.9)
+        p.renderers.append(labels)
+
         return p
 
     def topic_evolution(self):
