@@ -3,6 +3,18 @@ Pubtrends changelog
 
 Here you can see the full list of changes between each release.
 
+Version 0.17
+------------
+Released on Aug 10, 2021
+
+-- Improved topics descriptions based on cosine similarities
+-- Use similarity and clustering parameters according to the nature reviews benchmark,
+   see https://dl.acm.org/doi/10.1145/3459930.3469501
+-- Papers filtering in graph representation based on specific fields
+-- Show topics centers and tags in interactive viewer
+-- Small updates and bugfixes
+
+
 Version 0.16
 ------------
 Released on May 24, 2021
