@@ -14,18 +14,6 @@ logger = logging.getLogger(__name__)
 class PlotPreprocessor:
 
     @staticmethod
-    def component_ratio_data(df):
-        assigned_comps = df[df['comp'] >= 0]
-        comp_size = dict(assigned_comps.groupby('comp')['id'].count())
-        total_papers = sum(assigned_comps['comp'] >= 0)
-        comps = list(comp_size.keys())
-        ratios = [100 * comp_size[c] / total_papers for c in comps]
-
-        # c + 1 is used to start numbering from 1
-        comps = list(map(str, [c + 1 for c in comps]))
-        return comps, ratios
-
-    @staticmethod
     def component_size_summary_data(df, comps, min_year, max_year):
         n_comps = len(comps)
         components = [str(i + 1) for i in range(n_comps)]

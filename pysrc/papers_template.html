@@ -45,16 +45,16 @@
             });
             // Close all notifications
             $('.notifyjs-wrapper').trigger('notify-hide');
-            let content = '<p><small>';
-            console.info(topics_description);
-            console.info(topics_palette);
+            const h = $(window).height();
+            const s = Math.min(13, Math.round(7 * h / 800 * 80 / (Object.keys(topics_palette).length + 1))).toString()
+            let content = '<p style="line-height: 35%;font-size:' + s + 'px">';
             for (let [topic, description] of Object.entries(topics_description)) {
-                content += '#' + (parseInt(topic) + 1).toString() +
-                    ' <svg width="10" height="10"><rect width="10" height="10" ' +
-                    'style="fill:' + topics_palette[topic] + '";/></svg> ' + description + '<br style="line-height: 50%;">';
+                content += '<svg width="' + s + '" height="' + s + '">' +
+                    '<rect width="' + s + '" height="' + s + '" ' +
+                    'style="fill:' + topics_palette[topic] + '";/></svg> '  +
+                    '#' + (parseInt(topic) + 1).toString() + ' ' + description + '<br>';
             }
-            content += '</small></p>';
-            console.info(content);
+            content += '</p>';
             $.notify({
                 title: $(content)
             }, {
@@ -204,16 +204,16 @@
                         selector: "node.topic-center",
                         style: {
                             "content": "data(name)",
-                            "font-size": "11px",
+                            "font-size": "13px",
                             "text-valign": "center",
                             "text-halign": "center",
-                            "background-color": "white",
-                            "text-outline-color": "black",
-                            "text-outline-width": "2px",
-                            "color": "#fff",
-                            "overlay-padding": "6px",
+                            "background-color": "black",
+                            "text-outline-color": "white",
+                            "text-outline-width": "4px",
+                            "color": "black",
+                            "overlay-padding": "8px",
                             "z-index": "10",
-                            "text-background-color": "white",
+                            "text-background-color": "black",
                             "opacity": "1.0 !important"
                         }
                     },
@@ -246,7 +246,7 @@
                     {
                         selector: 'node.semitransp',
                         style: {
-                            'opacity': 0.2
+                            'opacity': 0.1
                         }
                     },
                     {
@@ -291,7 +291,7 @@
                         // Disable formatter for the next section because of injections.
                         // Enable formatter control in File > Settings > Editor > Code Style
                         // @formatter:off
-                        content.innerHTML = "<p><small>" +
+                        content.innerHTML = '<p><small>' +
                             "<b>" + data.title + "</b><br>" +
                             "<b>Author(s)</b> " + data.authors + "<br>" +
                             "<b>Journal</b> " + data.journal + "<br>" +
