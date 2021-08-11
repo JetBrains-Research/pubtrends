@@ -107,7 +107,7 @@
                 <!-- Form for Search -->
                 <div class="tab-pane fade show active" id="topic" role="tabpanel"
                      aria-labelledby="topic-tab">
-                    <form action="search_terms" method="POST" class="mb-2 mr-1 needs-validation" novalidate>
+                    <form action="search_terms" method="POST" class="mb-2 needs-validation" novalidate>
                         <div class="row no-gutters align-items-center">
                             <div id="step2" class="col input-group mr-2">
                                 <div class="input-group-prepend">
@@ -199,7 +199,7 @@
                     </form>
                     <!-- Preprocessed example -->
                     {{ search_example_message }}<br>
-                    <div id="predefined" class="row">
+                    <div id="predefined" class="row ml-1">
                         {% for terms, hash in search_example_terms %}
                         <form action="result" method="GET" class="inline">
                             <input type="hidden" name="source" value="{{ search_example_source }}">

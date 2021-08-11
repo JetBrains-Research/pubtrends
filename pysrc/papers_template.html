@@ -37,6 +37,7 @@
         }
 
         function showTopics() {
+            window.show_mode = 'topics';
             cy.nodes().forEach(function (ele) {
                 if ('title' in ele.data()) {
                     ele.removeClass('topic year');
@@ -68,6 +69,7 @@
         }
 
         function showYear() {
+            window.show_mode = 'year';
             cy.nodes().forEach(function (ele) {
                 if ('title' in ele.data()) {
                     ele.removeClass('topic year');
@@ -100,10 +102,12 @@
             // Disable formatter for the next section because of injections.
             // Enable formatter control in File > Settings > Editor > Code Style
             // @formatter:off
-                const topics_palette = window.topics_palette = JSON.parse({{ topics_palette_json | tojson }});
-                const topics_description = window.topics_description = JSON.parse({{topics_description_json | tojson }});
-                const elements = JSON.parse({{ graph_cytoscape_json | tojson }});
-                // @formatter:on
+            const topics_palette = window.topics_palette = JSON.parse({{ topics_palette_json | tojson }});
+            const topics_description = window.topics_description = JSON.parse({{topics_description_json | tojson }});
+            const elements = JSON.parse({{ graph_cytoscape_json | tojson }});
+            // @formatter:on
+
+            window.papers_number = elements['nodes'].length;
 
             // Compute min/max params for palette
             let min_year = 3000;
@@ -292,19 +296,19 @@
                         // Disable formatter for the next section because of injections.
                         // Enable formatter control in File > Settings > Editor > Code Style
                         // @formatter:off
-                        content.innerHTML = '<p><small>' +
+                        content.innerHTML = "<p style='text-align:left;'><small>" +
                             "<b>" + data.title + "</b><br>" +
-                            "<b>Author(s)</b> " + data.authors + "<br>" +
-                            "<b>Journal</b> " + data.journal + "<br>" +
-                            "<b>Year</b> " + data.year + "<br>" +
-                            "<b>Cited</b> " + data.cited + "<br>" +
-                            "<b>Mesh</b> " + data.mesh + "<br>" +
-                            "<b>Keywords</b> " + data.keywords + "<br>" +
-                            "<b>Topic</b> " + (data.topic + 1) + " " +
+                            '<span style="color:dodgerblue;">Author(s)</span>: ' + data.authors + "<br>" +
+                            '<span style="color:dodgerblue;">Journal(s)</span>: ' + data.journal + "<br>" +
+                            '<span style="color:dodgerblue;">Year</span>: ' + data.year + "<br>" +
+                            '<span style="color:dodgerblue;">Cited by </span>: ' + data.cited + " paper(s) total<br>" +
+                            '<span style="color:dodgerblue;">Mesh</span>: ' + data.mesh + "<br>" +
+                            '<span style="color:dodgerblue;">Keywords</span>: ' + data.keywords + "<br>" +
+                            '<span style="color:dodgerblue;">Topic</span>: ' + (data.topic + 1) + " " +
                             '<svg width="16" height="16"><rect width="16" height="16" ' +
                             'style="fill:' + topics_palette[data.topic] + '";/></svg> ' +
                             topics_description[data.topic] +
-                            "</small></p>";
+                            "</small></>p>";
                         // @formatter:on
                         return content;
                     },
@@ -446,8 +450,15 @@
                     ele.removeClass('highlight');
                     ele.removeClass('semitransp');
                 });
-                return
+                if (show_mode === 'topics') {
+                    showTopics();
+                } else {
+                    showYear();
+                }
+                return;
             }
+
+            let matches = 0;
             window.cy.nodes().forEach(function (ele) {
                 let data = ele.data();
                 if ('title' in data) {
@@ -465,8 +476,19 @@
                     }
                 }
             });
+            // Close all notifications
+            $('.notifyjs-wrapper').trigger('notify-hide');
+            $.notify({
+                title: $('<p><small>' + matches.toString() + " of " + papers_number.toString() + '</small></p>')
+            }, {
+                style: 'html_title',
+                autoHide: false,
+                position: 'bottom right',
+                showDuration: 0,
+                hideDuration: 0,
+                clickToHide: false
+            })
         }
-
     </script>
 </head>
 

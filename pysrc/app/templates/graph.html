@@ -111,6 +111,7 @@
         }
 
         function showTopics() {
+            window.show_mode = 'topics';
             cy.nodes().forEach(function (ele) {
                 if ('title' in ele.data()) {
                     ele.removeClass('topic year');
@@ -142,6 +143,7 @@
         }
 
         function showYear() {
+            window.show_mode = 'year';
             cy.nodes().forEach(function (ele) {
                 if ('title' in ele.data()) {
                     ele.removeClass('topic year');
@@ -179,6 +181,7 @@
             const topics_description = window.topics_description = JSON.parse({{topics_description_json | tojson }});
             const elements = JSON.parse({{ graph_cytoscape_json | tojson }});
             // @formatter:on
+            window.papers_number = elements['nodes'].length;
 
             let edge_style;
             if (citation_graph) {
@@ -392,32 +395,32 @@
                             if ('text' in data) {
                                 text = data.text;
                             }
-                            content.innerHTML = "<div><small><b>Similarity</b><br>" +
+                            content.innerHTML = "<p style='text-align:left;'><small><b>Similarity</b><br>" +
                                 "Similarity is computed based on citations and text similarity between papers. " +
-                                "The bigger value the more similar." +
-                                "<br><p style='text-align:left;'>" +
-                                "<b>Co-citation</b> " + cocitation + "<br>" +
-                                "<b>Bibliographic coupling</b> " + bibcoupling + "<br>" +
-                                "<b>Citation</b> " + citation + "<br>" +
-                                "<b>Text similarity</b> " + Number(text).toFixed(2) + "</p></small></div>";
+                                "The bigger value the more similar.<br>" +
+                                '<span style="color:dodgerblue;">Co-citations</span>: ' + cocitation + "<br>" +
+                                '<span style="color:dodgerblue;">Bibliographic coupling</span>: ' + bibcoupling + "<br>" +
+                                '<span style="color:dodgerblue;">Citation</span>: ' + citation + "<br>" +
+                                '<span style="color:dodgerblue;">Text similarity</span>: ' +
+                                Number(text).toFixed(2) + "</small></p>";
                         } else if ('title' in data) {
                             // Paper
                             // Disable formatter for the next section because of injections.
                             // Enable formatter control in File > Settings > Editor > Code Style
                             // @formatter:off
-                            content.innerHTML = "<div><small>" +
-                                "<b>" + data.title + "</b><br><p style='text-align:left;'>" +
-                                "<b>Author(s)</b> " + data.authors + "<br>" +
-                                "<b>Journal</b> " + data.journal + "<br>" +
-                                "<b>Year</b> " + data.year + "<br>" +
-                                "<b>Cited</b> " + data.cited + "<br>" +
-                                "<b>Mesh</b> " + data.mesh + "<br>" +
-                                "<b>Keywords</b> " + data.keywords + "<br>" +
-                                "<b>Topic</b> " + (data.topic + 1) + " " +
+                            content.innerHTML = "<p style='text-align:left;'><small>" +
+                                "<b>" + data.title + "</b><br>" +
+                                '<span style="color:dodgerblue;">Author(s)</span>: ' + data.authors + "<br>" +
+                                '<span style="color:dodgerblue;">Journal(s)</span>: ' + data.journal + "<br>" +
+                                '<span style="color:dodgerblue;">Year</span>: ' + data.year + "<br>" +
+                                '<span style="color:dodgerblue;">Cited by </span>: ' + data.cited + " paper(s) total<br>" +
+                                '<span style="color:dodgerblue;">Mesh</span>: ' + data.mesh + "<br>" +
+                                '<span style="color:dodgerblue;">Keywords</span>: ' + data.keywords + "<br>" +
+                                '<span style="color:dodgerblue;">Topic</span>: ' + (data.topic + 1) + " " +
                                 '<svg width="16" height="16"><rect width="16" height="16" ' +
                                 'style="fill:' + topics_palette[data.topic] + '";/></svg> ' +
                                 topics_description[data.topic] +
-                                "</p></small></div>";
+                                "</small></>p>";
                             }
                             // @formatter:on
                         return content;
@@ -634,8 +637,15 @@
                     ele.removeClass('highlight');
                     ele.removeClass('semitransp');
                 });
-                return
+                // Restore notification
+                if (show_mode === 'topics') {
+                    showTopics();
+                } else {
+                    showYear();
+                }
+                return;
             }
+            let matches = 0;
             window.cy.nodes().forEach(function (ele) {
                 let data = ele.data();
                 if ('title' in data) {
@@ -647,12 +657,25 @@
                         $('#searchKeywords').is(':checked') && data.keywords.toLowerCase().includes(filter)) {
                         ele.removeClass('semitransp');
                         ele.addClass('highlight');
+                        matches += 1;
                     } else {
                         ele.removeClass('highlight');
                         ele.addClass('semitransp');
                     }
                 }
             });
+            // Close all notifications
+            $('.notifyjs-wrapper').trigger('notify-hide');
+            $.notify({
+                title: $('<p><small>' + matches.toString() + " of " + papers_number.toString() + '</small></p>')
+            }, {
+                style: 'html_title',
+                autoHide: false,
+                position: 'bottom right',
+                showDuration: 0,
+                hideDuration: 0,
+                clickToHide: false
+            })
         }
 
         function result() {
@@ -695,30 +718,30 @@
                 <div class="col justify-content-end row">
                     <div class="col-auto">
                         <div class="col-auto">
-            <span class="d-flex align-items-center">
-                <input id="search-input" type="text" class="form-control" style="min-width: 100px;"
-                       placeholder="Search..." aria-label="Search for..."
-                       oninput="searchChanged();"/>
-                &nbsp;in
+                            <span class="d-flex align-items-center">
+                                <input id="search-input" type="text" class="form-control" style="min-width: 100px;"
+                                       placeholder="Search..." aria-label="Search for..."
+                                       oninput="searchChanged();"/>
+                                &nbsp;in
 
-                <input type="checkbox" id="searchTitles" class="ml-3 mr-2" checked="checked"/>
-                <label style="margin: auto" for="searchTitles">Titles</label>
+                                <input type="checkbox" id="searchTitles" class="ml-3 mr-2" checked="checked"/>
+                                <label style="margin: auto" for="searchTitles">Titles</label>
 
-                <input type="checkbox" id="searchAbstracts" class="ml-3 mr-2" checked="checked"/>
-                <label style="margin: auto" for="searchAbstracts">Abstracts</label>
+                                <input type="checkbox" id="searchAbstracts" class="ml-3 mr-2" checked="checked"/>
+                                <label style="margin: auto" for="searchAbstracts">Abstracts</label>
 
-                <input type="checkbox" id="searchAuthors" class="ml-3 mr-2"/>
-                <label style="margin: auto" for="searchAuthors">Authors</label>
+                                <input type="checkbox" id="searchAuthors" class="ml-3 mr-2"/>
+                                <label style="margin: auto" for="searchAuthors">Authors</label>
 
-                <input type="checkbox" id="searchJournals" class="ml-3 mr-2"/>
-                <label style="margin: auto" for="searchJournals">Journals</label>
+                                <input type="checkbox" id="searchJournals" class="ml-3 mr-2"/>
+                                <label style="margin: auto" for="searchJournals">Journals</label>
 
-                <input type="checkbox" id="searchMesh" class="ml-3 mr-2"/>
-                <label style="margin: auto" for="searchMesh">Mesh</label>
+                                <input type="checkbox" id="searchMesh" class="ml-3 mr-2"/>
+                                <label style="margin: auto" for="searchMesh">Mesh</label>
 
-                <input type="checkbox" id="searchKeywords" class="ml-3 mr-2"/>
-                <label for="searchKeywords" style="margin: auto">Keywords</label>
-            </span>
+                                <input type="checkbox" id="searchKeywords" class="ml-3 mr-2"/>
+                                <label for="searchKeywords" style="margin: auto">Keywords</label>
+                            </span>
                         </div>
                     </div>
                     <div class="dropdown col-auto no-padding mr-2">
