@@ -458,37 +458,41 @@
                 return;
             }
 
-            let matches = 0;
-            window.cy.nodes().forEach(function (ele) {
-                let data = ele.data();
-                if ('title' in data) {
-                    if ($('#searchTitles').is(':checked') && data.title.toLowerCase().includes(filter) ||
-                        $('#searchJournals').is(':checked') && data.journal.toLowerCase().includes(filter) ||
-                        $('#searchAuthors').is(':checked') && data.authors.toLowerCase().includes(filter) ||
-                        $('#searchAbstracts').is(':checked') && data.abstract.toLowerCase().includes(filter) ||
-                        $('#searchMesh').is(':checked') && data.mesh.toLowerCase().includes(filter) ||
-                        $('#searchKeywords').is(':checked') && data.keywords.toLowerCase().includes(filter)) {
-                        ele.removeClass('semitransp');
-                        ele.addClass('highlight');
-                        matches += 1;
-                    } else {
-                        ele.removeClass('highlight');
-                        ele.addClass('semitransp');
+            // Batch update
+            window.cy.batch( function() {
+                let matches = 0;
+                window.cy.nodes().forEach(function (ele) {
+                    let data = ele.data();
+                    if ('title' in data) {
+                        if ($('#searchTitles').is(':checked') && data.title.toLowerCase().includes(filter) ||
+                            $('#searchJournals').is(':checked') && data.journal.toLowerCase().includes(filter) ||
+                            $('#searchAuthors').is(':checked') && data.authors.toLowerCase().includes(filter) ||
+                            $('#searchAbstracts').is(':checked') && data.abstract.toLowerCase().includes(filter) ||
+                            $('#searchMesh').is(':checked') && data.mesh.toLowerCase().includes(filter) ||
+                            $('#searchKeywords').is(':checked') && data.keywords.toLowerCase().includes(filter)) {
+                            ele.removeClass('semitransp');
+                            ele.addClass('highlight');
+                            matches += 1;
+                        } else {
+                            ele.removeClass('highlight');
+                            ele.addClass('semitransp');
+                        }
                     }
-                }
+                })
+
+                // Close all notifications
+                $('.notifyjs-wrapper').trigger('notify-hide');
+                $.notify({
+                    title: $('<p><small>' + matches.toString() + " of " + papers_number.toString() + '</small></p>')
+                }, {
+                    style: 'html_title',
+                    autoHide: false,
+                    position: 'bottom right',
+                    showDuration: 0,
+                    hideDuration: 0,
+                    clickToHide: false
+                });
             });
-            // Close all notifications
-            $('.notifyjs-wrapper').trigger('notify-hide');
-            $.notify({
-                title: $('<p><small>' + matches.toString() + " of " + papers_number.toString() + '</small></p>')
-            }, {
-                style: 'html_title',
-                autoHide: false,
-                position: 'bottom right',
-                showDuration: 0,
-                hideDuration: 0,
-                clickToHide: false
-            })
         }
     </script>
 </head>
@@ -536,6 +540,6 @@
         </div>
     </div>
 </nav>
-<div id="cy" style="height: 100vh; width: 80vw;"></div>
+<div id="cy" style="height: 100vh;"></div>
 </body>
 </html>
