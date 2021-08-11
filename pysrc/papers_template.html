@@ -470,6 +470,7 @@
                         $('#searchKeywords').is(':checked') && data.keywords.toLowerCase().includes(filter)) {
                         ele.removeClass('semitransp');
                         ele.addClass('highlight');
+                        matches += 1;
                     } else {
                         ele.removeClass('highlight');
                         ele.addClass('semitransp');
