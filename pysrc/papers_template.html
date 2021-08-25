@@ -49,11 +49,11 @@
             const h = $(window).height();
             const s = Math.min(13, Math.round(7 * h / 800 * 80 / (Object.keys(topics_palette).length + 1))).toString()
             let content = '<p style="line-height: 35%;font-size:' + s + 'px">';
-            for (let [topic, description] of Object.entries(topics_description)) {
+            for (let [topic, tags] of Object.entries(topics_tags)) {
                 content += '<svg width="' + s + '" height="' + s + '">' +
                     '<rect width="' + s + '" height="' + s + '" ' +
                     'style="fill:' + topics_palette[topic] + '";/></svg> '  +
-                    '#' + (parseInt(topic) + 1).toString() + ' ' + description + '<br>';
+                    '#' + (parseInt(topic) + 1).toString() + ' ' + tags + '<br>';
             }
             content += '</p>';
             $.notify({
@@ -103,7 +103,8 @@
             // Enable formatter control in File > Settings > Editor > Code Style
             // @formatter:off
             const topics_palette = window.topics_palette = JSON.parse({{ topics_palette_json | tojson }});
-            const topics_description = window.topics_description = JSON.parse({{topics_description_json | tojson }});
+            const topics_tags = window.topics_tags = JSON.parse({{topics_tags_json | tojson }});
+            const topics_meshs = window.topics_meshs = JSON.parse({{topics_meshs_json | tojson }});
             const elements = JSON.parse({{ graph_cytoscape_json | tojson }});
             // @formatter:on
 
@@ -306,9 +307,10 @@
                             '<span style="color:dodgerblue;">Keywords</span>: ' + data.keywords + "<br>" +
                             '<span style="color:dodgerblue;">Topic</span>: ' + (data.topic + 1) + " " +
                             '<svg width="16" height="16"><rect width="16" height="16" ' +
-                            'style="fill:' + topics_palette[data.topic] + '";/></svg> ' +
-                            topics_description[data.topic] +
-                            "</small></>p>";
+                            'style="fill:' + topics_palette[data.topic] + '";/></svg><br>' +
+                            '<span style="color:dodgerblue;">Topic Tags</span>:: ' + topics_tags[data.topic] + '<br>' +
+                            '<span style="color:dodgerblue;">Topic Mesh</span>: ' + topics_meshs[data.topic] +
+                            "</small></p>";
                         // @formatter:on
                         return content;
                     },
