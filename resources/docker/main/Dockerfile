@@ -37,7 +37,7 @@ USER user
 RUN conda install -c conda-forge mamba
 
 # Install required dependencies
-COPY ../../environment.yml /home/user/environment.yml
+COPY ../../../environment.yml /home/user/environment.yml
 RUN mamba env update -f /home/user/environment.yml \
     && mamba clean -afy
 
