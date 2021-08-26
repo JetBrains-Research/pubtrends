@@ -448,29 +448,27 @@ class Plotter:
         keywords_df, years = PlotPreprocessor.frequent_keywords_data(
             freq_kwds, self.analyzer.df, self.analyzer.corpus_terms, self.analyzer.corpus_counts, n
         )
+        return self.plot_keywords_timeline(keywords_df, years)
 
+    @staticmethod
+    def plot_keywords_timeline(keywords_df, years):
         # Define the value dimensions
         max_numbers = keywords_df['number'].max()
         vdim = hv.Dimension('number', range=(-10, max_numbers + 10))
-
         # Define the dataset
         ds = hv.Dataset(keywords_df, vdims=vdim)
         curves = ds.to(hv.Curve, 'year', groupby='keyword').overlay().redim(
             year=dict(range=(min(years) - 1, max(years) + 5)))
-
         # Define a function to get the text annotations
         max_year = ds['year'].max()
         label_df = keywords_df[keywords_df.year == max_year].copy().reset_index(drop=True)
-
         # Update layout for better labels representation
         label_df.sort_values(by='number', inplace=True)
         if len(label_df) > 1:
             label_df['number'] = [i * max_numbers / (len(label_df) - 1) for i in range(len(label_df))]
         label_df.sort_values(by='keyword', inplace=True)
         labels = hv.Labels(label_df, ['year', 'number'], 'keyword')
-
         overlay = curves * labels
-
         cmap = Plotter.factors_colormap(len(label_df))
         palette = [Plotter.color_to_rgb(cmap(i)).to_hex() for i in range(len(label_df))]
         overlay.opts(
