@@ -211,14 +211,14 @@ class PapersAnalyzer:
             self.progress.info('Analyzing topics descriptions', current=10, task=task)
             comp_pids = pd.DataFrame(self.partition.items(), columns=['id', 'comp']). \
                 groupby('comp')['id'].apply(list).to_dict()
-            topics_description = get_topics_description(
+            self.topics_description = get_topics_description(
                 self.df, comp_pids,
                 self.corpus_terms, self.corpus_counts,
                 query=query,
                 n_words=self.TOPIC_DESCRIPTION_WORDS
             )
             kwds = [(comp, ','.join([f'{t}:{v:.3f}' for t, v in vs[:self.TOPIC_DESCRIPTION_WORDS]]))
-                    for comp, vs in topics_description.items()]
+                    for comp, vs in self.topics_description.items()]
             self.kwd_df = pd.DataFrame(kwds, columns=['comp', 'kwd'])
 
         self.progress.info('Identifying top papers', current=11, task=task)

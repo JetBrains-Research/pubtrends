@@ -577,11 +577,17 @@ class Plotter:
         graph.node_renderer.data_source.data['year'] = df['year']
         graph.node_renderer.data_source.data['total'] = df['total']
         graph.node_renderer.data_source.data['type'] = df['type']
-        # Limit size
-        graph.node_renderer.data_source.data['size'] = df['total'] * 20 / df['total'].max() + 5
+        graph.node_renderer.data_source.data['mesh'] = df['mesh']
+        graph.node_renderer.data_source.data['keywords'] = df['keywords']
         graph.node_renderer.data_source.data['topic'] = [c + 1 for c in comps]
+        graph.node_renderer.data_source.data['topic_tags'] = \
+            [','.join(t for t, _ in self.analyzer.topics_description[c][:5]) for c in comps]
+
+        # Aesthetics
+        graph.node_renderer.data_source.data['size'] = df['total'] * 20 / df['total'].max() + 5
         graph.node_renderer.data_source.data['color'] = [palette[c] for c in comps]
 
+        # Edges
         graph.edge_renderer.data_source.data = dict(start=[u for u, _ in gs.edges],
                                                     end=[v for _, v in gs.edges])
 
@@ -609,8 +615,12 @@ class Plotter:
             ("Journal", '@journal'),
             ("Year", '@year'),
             ("Type", '@type'),
+            ("Cited by", '@total paper(s) total'),
+            ("Mesh", '@mesh'),
+            ("Keywords", '@keywords'),
             ("Topic", '@topic'),
-            ("Cited by", '@total paper(s) total')])))
+            ("Topic tags", '@topic_tags'),
+        ])))
         p.js_on_event('tap', self.paper_callback(graph.node_renderer.data_source))
 
         graph_layout = dict(zip(pids, zip(xs, ys)))
