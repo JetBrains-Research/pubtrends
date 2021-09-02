@@ -36,23 +36,38 @@
             return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
         }
 
-        function showTopics() {
-            window.show_mode = 'topics';
+        function colorTopics() {
+            window.color_mode = 'topics';
             cy.nodes().forEach(function (ele) {
                 if ('title' in ele.data()) {
                     ele.removeClass('topic year');
                     ele.addClass('topic');
                 }
             });
+            showNone();
+        }
+
+        function colorYear() {
+            window.color_mode = 'year';
+            cy.nodes().forEach(function (ele) {
+                if ('title' in ele.data()) {
+                    ele.removeClass('topic year');
+                    ele.addClass('year');
+                }
+            });
+            showYear();
+        }
+
+        function showDescription(description) {
             // Close all notifications
             $('.notifyjs-wrapper').trigger('notify-hide');
             const h = $(window).height();
             const s = Math.min(13, Math.round(7 * h / 800 * 80 / (Object.keys(topics_palette).length + 1))).toString()
-            let content = '<p style="line-height: 35%;font-size:' + s + 'px">';
-            for (let [topic, tags] of Object.entries(topics_tags)) {
+            let content = '<p style="background-color:white;color:black;line-height: 35%;font-size:' + s + 'px";>';
+            for (let [topic, tags] of Object.entries(description)) {
                 content += '<svg width="' + s + '" height="' + s + '">' +
                     '<rect width="' + s + '" height="' + s + '" ' +
-                    'style="fill:' + topics_palette[topic] + '";/></svg> '  +
+                    'style="fill:' + topics_palette[topic] + '";/></svg> ' +
                     '#' + (parseInt(topic) + 1).toString() + ' ' + tags + '<br>';
             }
             content += '</p>';
@@ -68,14 +83,20 @@
             });
         }
 
+        function showKeywords() {
+            showDescription(topics_tags);
+        }
+
+        function showMeshTerms() {
+            showDescription(topics_meshs);
+        }
+
+        function showNone() {
+            // Close all notifications
+            $('.notifyjs-wrapper').trigger('notify-hide');
+        }
+
         function showYear() {
-            window.show_mode = 'year';
-            cy.nodes().forEach(function (ele) {
-                if ('title' in ele.data()) {
-                    ele.removeClass('topic year');
-                    ele.addClass('year');
-                }
-            });
             // Close all notifications
             $('.notifyjs-wrapper').trigger('notify-hide');
             $.notify({
@@ -320,7 +341,7 @@
             }
 
             // Topic based colouring by default
-            showTopics();
+            colorTopics();
 
             // Save all created tippy
             let tippys = [];
@@ -452,10 +473,10 @@
                     ele.removeClass('highlight');
                     ele.removeClass('semitransp');
                 });
-                if (show_mode === 'topics') {
-                    showTopics();
+                if (color_mode === 'topics') {
+                    colorTopics();
                 } else {
-                    showYear();
+                    colorYear();
                 }
                 return;
             }
@@ -529,16 +550,30 @@
                 <label for="searchKeywords" style="margin: auto">Keywords</label>
             </span>
         </div>
-        <div class="dropdown col-auto">
-            <button class="btn btn-secondary dropdown-toggle" type="button"
-                    id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true"
+        <div class="col-auto row">
+        <div class="dropdown">
+            <button class="btn btn-secondary dropdown-toggle mr-2" type="button"
+                    id="dropdownMenuButtonColor" data-toggle="dropdown" aria-haspopup="true"
                     aria-expanded="false">
-                Show
+               Color
             </button>
-            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                <a class="dropdown-item" onclick="showTopics();" href="javascript:void(0);">Topic</a>
-                <a class="dropdown-item" onclick="showYear();" href="javascript:void(0);">Year</a>
+            <div class="dropdown-menu" aria-labelledby="dropdownMenuButtonColor">
+                <a class="dropdown-item" onclick="colorTopics();" href="javascript:void(0);">Topics</a>
+                <a class="dropdown-item" onclick="colorYear();" href="javascript:void(0);">Years</a>
             </div>
+        </div>
+        <div class="dropdown ">
+            <button class="btn btn-secondary dropdown-toggle" type="button"
+                    id="dropdownMenuButtonDescription" data-toggle="dropdown" aria-haspopup="true"
+                    aria-expanded="false">
+                Description
+            </button>
+            <div class="dropdown-menu" aria-labelledby="dropdownMenuButtonDescription">
+                <a class="dropdown-item" onclick="showKeywords();" href="javascript:void(0);">Keywords</a>
+                <a class="dropdown-item" onclick="showMeshTerms();" href="javascript:void(0);">Mesh terms</a>
+                <a class="dropdown-item" onclick="showNone();" href="javascript:void(0);">Hide</a>
+            </div>
+        </div>
         </div>
     </div>
 </nav>
