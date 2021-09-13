@@ -185,11 +185,11 @@ class PapersAnalyzer:
             self.kwd_df = pd.DataFrame({'comp': [0], 'kwd': ['']})
         else:
             logger.debug('Visualizing similarity graph')
-            nodes, xs, ys = layout_similarity_graph(
+            self.sparse_similarity_graph, self.node_ids, self.node_embeddings, xs, ys = layout_similarity_graph(
                 self.similarity_graph, PapersAnalyzer.similarity, PapersAnalyzer.TOPIC_MIN_SIZE
             )
             pid_indx = dict(zip(self.df['id'], self.df.index))
-            indx = [pid_indx[pid] for pid in nodes]
+            indx = [pid_indx[pid] for pid in self.node_ids]
             self.df['x'] = pd.Series(index=indx, data=xs)
             self.df['y'] = pd.Series(index=indx, data=ys)
 
