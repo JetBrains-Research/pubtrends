@@ -221,7 +221,7 @@ class PapersAnalyzer:
                     for comp, vs in self.topics_description.items()]
             self.kwd_df = pd.DataFrame(kwds, columns=['comp', 'kwd'])
 
-        self.progress.info('Identifying top papers', current=11, task=task)
+        self.progress.info('Identifying top cited papers', current=11, task=task)
         logger.debug('Top cited papers')
         self.top_cited_papers, self.top_cited_df = find_top_cited_papers(self.df, self.TOP_CITED_PAPERS)
 

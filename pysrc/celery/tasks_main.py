@@ -58,7 +58,7 @@ def analyze_id_list(source, ids, zoom, query, limit=None, test=False):
     config = PubtrendsConfig(test=test)
     loader = Loaders.get_loader(source, config)
     analyzer = PapersAnalyzer(loader, config)
-    analyzer.progress.info('Analyzing list of papers', current=0, task=current_task)
+    analyzer.progress.info('Analyzing paper(s)', current=0, task=current_task)
     try:
         if zoom == ZOOM_OUT:
             ids = expand_ids(
