@@ -5,6 +5,11 @@ PubTrends
 
 PubTrends is a scientific literature exploratory tool for analyzing topics of a research field and similar papers analysis.
 
+**Open Access Paper**: [https://doi.org/10.1145/3459930.3469501](https://doi.org/10.1145/3459930.3469501) \
+Poster is available [here](https://drive.google.com/file/d/1SeqJtJtaHSO6YihG2905boOEYL1NiSP1/view?usp=sharing). \
+*Citation: Shpynov, O. and Nikolai, K., 2021, August. PubTrends: a scientific literature explorer. In
+Proceedings of the 12th ACM Conference on Bioinformatics, Computational Biology, and Health Informatics (pp. 1-1).*
+
 ![Scheme](pysrc/app/static/about_pubtrends_scheme.png?raw=true "Title")
 
 ## Prerequisites
