@@ -31,7 +31,7 @@ services:
     image: redis:5.0
     volumes:
       - ~/.pubtrends/logs:/log
-    # This command is use to process huge analysis results of 40k+ papers
+    # This command is used to process huge analysis results of 40k+ papers
     command: redis-server --timeout 0 --client-output-buffer-limit normal 0 0 0
 
 
