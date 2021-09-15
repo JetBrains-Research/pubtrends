@@ -566,30 +566,6 @@ def search_list():
         return render_template_string(ERROR_OCCURRED), 500
 
 
-@app.route('/search_pubmed_paper_by_title', methods=['GET'])
-def search_pubmed_paper_by_title():
-    logger.info(f'/search_paper_by_title {log_request(request)}')
-    title = request.values.get('title')
-    try:
-        if title:
-            logger.info(f'/search_paper_by_title {log_request(request)}')
-            # Sync call
-            loader = Loaders.get_loader('Pubmed', PUBTRENDS_CONFIG)
-            ids = loader.find('title', title)
-            if not ids:
-                return json.dumps([])
-            papers = loader.load_publications(ids)
-            return json.dumps([
-                papers.to_dict(orient='records'),
-                [dict(references=loader.load_references(pid, 1000)) for pid in ids]
-            ])
-        logger.error(f'/search_paper_by_title error missing title {log_request(request)}')
-        return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
-    except Exception:
-        logger.exception(f'/search_paper_by_title exception')
-        return render_template_string(ERROR_OCCURRED), 500
-
-
 @app.route('/process_ids', methods=['POST'])
 def process_ids():
     logger.info(f'/process_ids {log_request(request)}')
