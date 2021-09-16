@@ -60,4 +60,5 @@ class PubtrendsConfig:
         self.feature_numbers_enabled = params.getboolean('feature_numbers_enabled')
         self.feature_evolution_enabled = params.getboolean('feature_evolution_enabled')
         self.feature_review_enabled = params.getboolean('feature_review_enabled')
+        self.feature_pm_advanced_search_enabled = params.getboolean('feature_pm_advanced_search_enabled')
 

@@ -6,6 +6,7 @@ import os
 import random
 import re
 import tempfile
+import time
 from urllib.parse import quote
 
 from celery.result import AsyncResult
@@ -18,8 +19,10 @@ from pysrc.app.utils import log_request, MAX_QUERY_LENGTH, SOMETHING_WENT_WRONG_
     SOMETHING_WENT_WRONG_PAPER, SOMETHING_WENT_WRONG_TOPIC
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.celery.tasks_cache import get_or_cancel_task
-from pysrc.celery.tasks_main import find_paper_async, analyze_search_terms, analyze_id_list
+from pysrc.celery.tasks_main import find_paper_async, analyze_search_terms, analyze_id_list, \
+    analyze_pubmed_advanced_search
 from pysrc.papers.analysis.graph import to_weighted_graph, sparse_graph
+from pysrc.papers.analysis.pm_advanced import FILES_WITH_DESCRIPTIONS
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
@@ -27,7 +30,8 @@ from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.plot.plotter import Plotter, TOPIC_KEYWORDS
 from pysrc.papers.plot.plotter_paper import prepare_paper_data
-from pysrc.papers.utils import zoom_name, trim, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE, ZOOM_OUT_TITLE
+from pysrc.papers.utils import zoom_name, trim, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE, ZOOM_OUT_TITLE, \
+    human_readable_size
 from pysrc.version import VERSION
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
@@ -241,6 +245,18 @@ def process():
                                    query=trim(query, MAX_QUERY_LENGTH), source=source,
                                    limit=limit, sort=sort,
                                    redirect_page="review",  # redirect in case of success
+                                   jobid=jobid, version=VERSION)
+        elif analysis_type == 'search_pubmed_advanced':
+            logger.info(f'/process review {log_request(request)}')
+            limit = request.args.get('limit')
+            return render_template('process.html',
+                                   redirect_args={
+                                       'query': quote(query),
+                                       'limit': limit, 'sort': '',
+                                       'jobid': jobid},
+                                   query=trim(query, MAX_QUERY_LENGTH), source=source,
+                                   limit=limit, sort='',
+                                   redirect_page="result_search_pubmed_advanced",  # redirect in case of success
                                    jobid=jobid, version=VERSION)
 
         elif query:  # This option should be the last default
@@ -495,6 +511,7 @@ def index():
                            min_words_message=min_words_message,
                            max_papers=PUBTRENDS_CONFIG.max_number_of_articles,
                            pm_enabled=PUBTRENDS_CONFIG.pm_enabled,
+                           feature_pm_advanced_search_enabled=PUBTRENDS_CONFIG.feature_pm_advanced_search_enabled,
                            ss_enabled=PUBTRENDS_CONFIG.ss_enabled,
                            search_example_message=search_example_message,
                            search_example_source=search_example_source,
@@ -585,6 +602,69 @@ def process_ids():
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception:
         logger.exception(f'/process_ids exception')
+        return render_template_string(ERROR_OCCURRED), 500
+
+
+@app.route('/search_pubmed_advanced', methods=['POST'])
+def search_pubmed_advanced():
+    logger.info(f'/search_pubmed_advanced {log_request(request)}')
+    query = request.form.get('query')
+    limit = request.form.get('limit')
+
+    try:
+        if query and limit:
+            job = analyze_pubmed_advanced_search.delay(
+                query=query, limit=limit,
+                test=app.config['TESTING']
+            )
+            return redirect(url_for('.process', query=query, analysis_type='search_pubmed_advanced',
+                                    limit=limit, source='Pubmed', jobid=job.id))
+        logger.error(f'/search_pubmed_advanced error {log_request(request)}')
+        return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
+    except Exception:
+        logger.exception(f'/search_pubmed_advanced exception')
+        return render_template_string(ERROR_OCCURRED), 500
+
+
+@app.route('/result_search_pubmed_advanced', methods=['GET'])
+def result_search_pubmed_advanced():
+    logger.info(f'/result_search_pubmed_advanced {log_request(request)}')
+    jobid = request.args.get('jobid')
+    query = request.args.get('query')
+    limit = request.args.get('limit')
+    try:
+        if jobid and query and limit:
+            job = AsyncResult(jobid, app=pubtrends_celery)
+            if job and job.state == 'SUCCESS':
+                query_folder = job.result
+                if 'file' in request.args:
+                    file = request.args.get('file')
+                    return send_file(os.path.join(query_folder, file), as_attachment=True, attachment_filename=file)
+                else:
+                    available_files = list(sorted(os.listdir(query_folder)))
+                    file_infos = []
+                    qq = quote(query)
+                    # IMPORTANT: only files from description are showed
+                    for f, d in FILES_WITH_DESCRIPTIONS.items():
+                        if f in available_files:
+                            full_path = os.path.join(query_folder, f)
+                            if os.path.exists(full_path):
+                                url = f'/result_search_pubmed_advanced?file={f}&jobid={jobid}&limit={limit}&query={qq}'
+                                file_infos.append((f, url, d,
+                                                   time.ctime(os.path.getmtime(full_path)),
+                                                   human_readable_size(os.path.getsize(full_path))))
+
+                    return render_template('pmadvsrch.html',
+                                           query=trim(query, MAX_QUERY_LENGTH),
+                                           full_query=query,
+                                           source='Pubmed',
+                                           limit=limit,
+                                           file_infos=file_infos,
+                                           version=VERSION)
+        logger.error(f'/search_pubmed_advanced error {log_request(request)}')
+        return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
+    except Exception:
+        logger.exception(f'/search_pubmed_advanced exception')
         return render_template_string(ERROR_OCCURRED), 500
 
 

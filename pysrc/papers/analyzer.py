@@ -114,7 +114,6 @@ class PapersAnalyzer:
         return references
 
     def analyze_papers(self, ids, query, task=None):
-        """:return full log"""
         self.progress.info('Loading publication data', current=2, task=task)
         self.query = query
         self.pub_df = self.loader.load_publications(ids)
@@ -185,7 +184,7 @@ class PapersAnalyzer:
             self.kwd_df = pd.DataFrame({'comp': [0], 'kwd': ['']})
         else:
             logger.debug('Visualizing similarity graph')
-            self.sparse_similarity_graph, self.node_ids, self.node_embeddings, xs, ys = layout_similarity_graph(
+            self.weighted_similarity_graph, self.node_ids, self.node_embeddings, xs, ys = layout_similarity_graph(
                 self.similarity_graph, PapersAnalyzer.similarity, PapersAnalyzer.TOPIC_MIN_SIZE
             )
             pid_indx = dict(zip(self.df['id'], self.df.index))

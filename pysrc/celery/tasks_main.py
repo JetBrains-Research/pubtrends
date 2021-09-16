@@ -1,15 +1,14 @@
-import logging
-
 from celery import current_task
 
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.papers.analysis.expand import expand_ids
+from pysrc.papers.analysis.pm_advanced import PubmedAdvancedAnalyzer
 from pysrc.papers.analyzer import PapersAnalyzer
+from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plotter import visualize_analysis
 from pysrc.papers.progress import Progress
-from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.utils import SORT_MOST_CITED, ZOOM_OUT, PAPER_ANALYSIS
 
 
@@ -123,5 +122,19 @@ def find_paper_async(source, key, value, test=False):
             raise SearchError('Found no papers matching specified key - value pair')
         else:
             raise SearchError('Found multiple papers matching your search, please try to be more specific')
+    finally:
+        loader.close_connection()
+
+
+@pubtrends_celery.task(name='analyze_pubmed_advanced_search')
+def analyze_pubmed_advanced_search(query, limit, test=False):
+    config = PubtrendsConfig(test=test)
+    loader = Loaders.get_loader('Pubmed', config)
+    analyzer = PubmedAdvancedAnalyzer(loader, config)
+    try:
+        analyzer.analyze_pubmed_advanced_search(query, limit,  task=current_task)
+        analyzer.progress.done(task=current_task)
+        analyzer.teardown()
+        return analyzer.query_folder
     finally:
         loader.close_connection()

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{query}} at {{source}} {{limit}} - PubTrends</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet"
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
+          crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css"
+          integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt"
+          crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT"
+            crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+            integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+            crossorigin="anonymous"></script>
+    <!-- DataTables with search -->
+    <script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.21/js/dataTables.bootstrap4.min.js"></script>
+    <link href="https://cdn.datatables.net/1.10.21/css/dataTables.bootstrap4.min.css"
+          rel="stylesheet" type="text/css">
+    <!-- DataTables search highlight -->
+    <script src="https://cdn.jsdelivr.net/g/mark.js(jquery.mark.min.js)"></script>
+    <script src="https://cdn.datatables.net/plug-ins/1.10.13/features/mark.js/datatables.mark.js"></script>
+    <link href="https://cdn.datatables.net/plug-ins/1.10.13/features/mark.js/datatables.mark.min.css"
+          type="text/css">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1"/>
+    <!--         <link rel="stylesheet" href="../static/style.css"/>-->
+    <link rel="stylesheet" href="{{ url_for('static', filename='result.css') }}?v=1"/>
+    <!--         <link rel="stylesheet" href="../static/result.css"/>-->
+
+    <script>
+        "use strict";
+        $(document).ready(function () {
+            // Mark search by default in datatables
+            $.extend(true, $.fn.dataTable.defaults, {
+                mark: true
+            });
+        });
+    </script>
+</head>
+<body>
+
+<!-- Fixed navbar -->
+<nav class="navbar navbar-light bg-light fixed-top border-bottom">
+    <div class="row container-fluid">
+        <div class="col-lg-1 col-xl-1">
+            <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
+        </div>
+        <div class="col-lg-11 col-xl-11"></div>
+    </div>
+</nav>
+
+<div class="container-fluid">
+    <div class="row justify-content-md-center">
+        <main class="col-auto" role="main">
+            <div class="mt-3">
+                <p>
+                    <strong>Query</strong>: {{ full_query }}<br>
+                    <strong>Limit</strong>: {{ limit }}
+                </p>
+                <table id="files" class="table table-sm table-bordered table-striped">
+                    <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">File</th>
+                        <th scope="col">Description</th>
+                        <th scope="col">Date</th>
+                        <th scope="col">Size</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for file, url, description, date, size in file_infos %}
+                    <tr>
+                        <th scope="row">{{ loop.index }}</th>
+                        <td><a href="{{ url }}" target="_blank" title="{{ description }}">{{ file }}</a></td>
+                        <td>{{ description }}</td>
+                        <td>{{ date }}</td>
+                        <td>{{ size }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+</div>
+
+
+<footer class="container">
+    <div class="row">
+        <div class="col-4">
+            <div id="feedback-papers-html-form" class="float-left vertical-center"></div>
+        </div>
+        <div class="col-4">
+            <p>version {{ version }}<br/>
+                &copy; 2021 <a href="https://research.jetbrains.org/groups/biolabs"
+                               title="JetBrains Research BioLabs"
+                               target="_blank">JetBrains Research</a>
+            </p>
+        </div>
+        <div class="col-4"></div>
+    </div>
+</footer>
+</body>
+</html>

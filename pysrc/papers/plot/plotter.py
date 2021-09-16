@@ -339,7 +339,7 @@ class Plotter:
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Number of citations'
         p.yaxis.formatter = NumeralTickFormatter(format='0,0')
-        p.hover.tooltips = self._paper_html_tooltips([
+        p.hover.tooltips = self._paper_html_tooltips(self.analyzer.source, [
             ("Author(s)", '@authors'),
             ("Journal", '@journal'),
             ("Year", '@paper_year'),
@@ -378,7 +378,7 @@ class Plotter:
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Relative Gain of Citations'
         p.yaxis.formatter = NumeralTickFormatter(format='0,0')
-        p.hover.tooltips = self._paper_html_tooltips([
+        p.hover.tooltips = self._paper_html_tooltips(self.analyzer.source, [
             ("Author(s)", '@authors'),
             ("Journal", '@journal'),
             ("Year", '@paper_year'),
@@ -524,7 +524,7 @@ class Plotter:
         p.yaxis.axis_label = 'Number of citations'
         p.yaxis.formatter = NumeralTickFormatter(format='0,0')
 
-        p.hover.tooltips = self._paper_html_tooltips([
+        p.hover.tooltips = Plotter._paper_html_tooltips(self.analyzer.source, [
             ("Author(s)", '@authors'),
             ("Journal", '@journal'),
             ("Year", '@year'),
@@ -534,9 +534,12 @@ class Plotter:
 
         return p
 
-    def _paper_html_tooltips(self, tips_list):
-        if self.analyzer.source == "pubmed":
+    @staticmethod
+    def _paper_html_tooltips(source, tips_list):
+        if source == "pubmed":
             tips_list.insert(0, ("PMID", '@id'))
+        else:
+            tips_list.insert(0, ("ID", '@id'))
         tips_list = tips_list
 
         style_caption = Template('<span style="font-size: 12px;color:dodgerblue;">$caption:</span>')
@@ -610,7 +613,7 @@ class Plotter:
         p.outline_line_color = None
         p.sizing_mode = 'stretch_width'
 
-        p.add_tools(HoverTool(tooltips=self._paper_html_tooltips([
+        p.add_tools(HoverTool(tooltips=self._paper_html_tooltips(self.analyzer.source, [
             ("Author(s)", '@authors'),
             ("Journal", '@journal'),
             ("Year", '@year'),

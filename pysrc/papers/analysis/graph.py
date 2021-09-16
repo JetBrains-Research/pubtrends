@@ -146,7 +146,7 @@ def to_weighted_graph(graph, weight_func, key='weight'):
 
 def layout_similarity_graph(similarity_graph, similarity_func, topic_min_size, max_edges_to_nodes=50):
     """
-    :return: Sparse similarity graph, node_ids, node2vec embeddings, xs, ys
+    :return: Weighted similarity graph, node_ids, node2vec embeddings, xs, ys
     """
     if similarity_graph.number_of_nodes() <= topic_min_size:
         logger.debug('Preparing spring layout for similarity graph')
@@ -164,4 +164,4 @@ def layout_similarity_graph(similarity_graph, similarity_func, topic_min_size, m
         logger.debug('Apply TSNE transformation on node embeddings')
         tsne = TSNE(n_components=2, random_state=42)
         node_embeddings_2d = tsne.fit_transform(node_embeddings)
-        return gs, node_ids, node_embeddings, node_embeddings_2d[:, 0], node_embeddings_2d[:, 1]
+        return wsg, node_ids, node_embeddings, node_embeddings_2d[:, 0], node_embeddings_2d[:, 1]

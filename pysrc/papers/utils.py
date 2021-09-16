@@ -106,3 +106,10 @@ def rgb2hex(color):
 def hex2rgb(color):
     return [int(color[pos:pos + 2], 16) for pos in range(1, 7, 2)]
 
+
+def human_readable_size(size):
+    for unit in ['B', 'KB', 'MB', 'GB']:
+        if size < 1024.0 or unit == 'GB':
+            break
+        size /= 1024.0
+    return f'{int(size)} {unit}'

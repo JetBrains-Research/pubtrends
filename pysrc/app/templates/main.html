@@ -44,7 +44,7 @@
         }, false);
 
         $(document).ready(function () {
-            $('#search-source-selector').change(function() {
+            $('#search-source-selector').change(function () {
                 const noreviews_checkbox = $("#noreviews");
                 const expand_field = $("#expand");
                 if ($(this).val() === "Semantic Scholar") {
@@ -67,7 +67,7 @@
     <div class="jumbotron border-light">
         <h1>PubTrends</h1>
         <p class="lead">
-           Scientific literature explorer
+            Scientific literature explorer
         </p>
         <p>
             Find publications by search query, view most cited papers, explore research topics and trends,<br>
@@ -98,8 +98,15 @@
                 <li id="step1-3" class="nav-item">
                     <a class="nav-link grey" id="papers-tab" data-toggle="tab" href="#papers"
                        role="tab"
-                       aria-controls="paper" aria-selected="false">List of papers</a>
+                       aria-controls="papers" aria-selected="false">List of papers</a>
                 </li>
+                {% if pm_enabled and feature_pm_advanced_search_enabled %}
+                <li id="step1-4" class="nav-item">
+                    <a class="nav-link grey" id="pubmed-search-tab" data-toggle="tab" href="#pubmed-search"
+                       role="tab"
+                       aria-controls="pubmed-search" aria-selected="false">Pubmed advanced search</a>
+                </li>
+                {% endif %}
             </ul>
         </div>
         <div class="card-body">
@@ -114,7 +121,7 @@
                                     <span class="input-group-text" id="query-addon">Query</span>
                                 </div>
                                 <input class="form-control form-control-borderless" type="search"
-                                       name="query" id="terms-input"
+                                       name="query"
                                        placeholder="{{min_words_message}}Use double quotes for phrase search, join queries by commas."
                                        aria-describedby="query-addon"
                                        autofocus required>
@@ -206,11 +213,11 @@
                             <input type="hidden" name="sort" value="Most Cited">
                             <input type="hidden" name="limit" value="{{ default_limit }}">
                             {% if search_example_source == "Semantic Scholar" %}
-                                <input type="hidden" name="noreviews" value="off">
-                                <input type="hidden" name="expand" value="0">
+                            <input type="hidden" name="noreviews" value="off">
+                            <input type="hidden" name="expand" value="0">
                             {% else %}
-                                <input type="hidden" name="noreviews" value="on">
-                                <input type="hidden" name="expand" value="20">
+                            <input type="hidden" name="noreviews" value="on">
+                            <input type="hidden" name="expand" value="20">
                             {% endif %}
                             <input type="hidden" name="jobid" value="predefined_{{ hash }}">
                             <button type="submit" name="query" value="{{ terms }}"
@@ -333,6 +340,44 @@
                         </div>
                     </form>
                 </div>
+
+                <!-- Form for Advanced Pubmed Search -->
+                {% if pm_enabled and feature_pm_advanced_search_enabled %}
+                <div class="tab-pane fade" id="pubmed-search" role="tabpanel" aria-labelledby="pubmed-search-tab">
+                    <form action="search_pubmed_advanced" method="POST" class="mb-2 needs-validation" novalidate>
+                        <div class="row no-gutters align-items-center">
+                            <div class="col input-group mr-2">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text" id="query-pubmed-advanced-search-addon">Query</span>
+                                </div>
+                                <input class="form-control form-control-borderless" type="search"
+                                       name="query"
+                                       placeholder="Enter Pubmed search query"
+                                       aria-describedby="query-pubmed-advanced-search-addon"
+                                       autofocus required>
+                            </div>
+                            <!--end of col-->
+                            <div class="col-auto">
+                                <button class="btn btn-success" type="submit">Search</button>
+                            </div>
+                            <!--end of col-->
+                        </div>
+                        <div class="mt-3 row no-gutters align-items-center">
+                            <div class="col-4 input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text" id="pubmed-advanced-search-limit">Limit</span>
+                                </div>
+                                <select class="form-control" name="limit"
+                                        aria-describedby="pubmed-advanced-search-limit">
+                                    <option selected>100000</option>
+                                    <option>50000</option>
+                                    <option>10000</option>
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                {% endif %}
             </div>
         </div>
     </main>
@@ -340,8 +385,8 @@
 <footer>
     <p>version {{ version }}<br/>
         &copy; 2021 <a href="https://research.jetbrains.org/groups/biolabs"
-                            title="JetBrains Research BioLabs"
-                            target="_blank">JetBrains Research</a></p>
+                       title="JetBrains Research BioLabs"
+                       target="_blank">JetBrains Research</a></p>
 </footer>
 
 <script type="text/javascript">
