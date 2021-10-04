@@ -145,7 +145,7 @@ def analyze_pubmed_search_files(query, limit, test=False):
     try:
         analyzer.progress.info(f"Searching Pubmed query: '{query}', limit {limit}", current=1, task=current_task)
         ids = pubmed_search(query, limit)
-        analyzer.analyze_ids(ids, query, limit, task=current_task)
+        analyzer.analyze_ids(ids, 'Pubmed', query, limit, task=current_task)
         analyzer.progress.done(task=current_task)
         analyzer.teardown()
         return analyzer.query_folder

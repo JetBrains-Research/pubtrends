@@ -121,7 +121,7 @@ def index():
                            min_words_message=min_words_message,
                            max_papers=PUBTRENDS_CONFIG.max_number_of_articles,
                            pm_enabled=PUBTRENDS_CONFIG.pm_enabled,
-                           feature_pm_advanced_search_enabled=PUBTRENDS_CONFIG.feature_pm_advanced_search_enabled,
+                           save_to_files_enabled=PUBTRENDS_CONFIG.save_to_files_enabled,
                            ss_enabled=PUBTRENDS_CONFIG.ss_enabled,
                            search_example_message=search_example_message,
                            search_example_source=search_example_source,
@@ -180,25 +180,27 @@ def search_paper():
         return render_template_string(ERROR_OCCURRED), 500
 
 
-@app.route('/search_pubmed_advanced', methods=['POST'])
-def search_pubmed_advanced():
-    logger.info(f'/search_pubmed_advanced {log_request(request)}')
+@app.route('/search_pubmed', methods=['POST'])
+def search_pubmed():
+    logger.info(f'/search_pubmed {log_request(request)}')
     query = request.form.get('query')
     limit = request.form.get('limit')
-    advanced = request.form.get('advanced') == 'on'
+    files = request.form.get('files') == 'on'
     try:
         if query and limit:
-            if advanced:
+            if files:
+                # Save results to files
                 job = analyze_pubmed_search_files.delay(query=query, limit=limit, test=app.config['TESTING'])
                 return redirect(url_for('.process', query=query, analysis_type=ANALYSIS_FILES_TITLE,
                                         sort='', limit=limit, source='Pubmed', jobid=job.id))
             else:
+                # Regular analysis with pubmed search
                 job = analyze_pubmed_search.delay(query=query, limit=limit, test=app.config['TESTING'])
                 return redirect(url_for('.process', source='Pubmed', query=query, limit=limit, sort='', jobid=job.id))
-        logger.error(f'/search_pubmed_advanced error {log_request(request)}')
+        logger.error(f'/search_pubmed error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception as e:
-        logger.exception(f'/search_pubmed_advanced exception {e}')
+        logger.exception(f'/search_pubmed exception {e}')
         return render_template_string(ERROR_OCCURRED), 500
 
 

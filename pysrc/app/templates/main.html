@@ -300,7 +300,7 @@
                 <!-- Form for Advanced Pubmed Search -->
                 {% if pm_enabled %}
                 <div class="tab-pane fade" id="pubmed-search" role="tabpanel" aria-labelledby="pubmed-search-tab">
-                    <form action="search_pubmed_advanced" method="POST" class="mb-2 needs-validation" novalidate>
+                    <form action="search_pubmed" method="POST" class="mb-2 needs-validation" novalidate>
                         <div class="row no-gutters align-items-center">
                             <div class="col input-group mr-2">
                                 <div class="input-group-prepend">
@@ -334,11 +334,11 @@
                                     {% endfor %}
                                 </select>
                             </div>
-                            {% if feature_pm_advanced_search_enabled %}
+                            {% if save_to_files_enabled %}
                             <div class="col input-group">
                                 <label style="margin-top: auto;margin-bottom: auto">
-                                    <input type="checkbox" checked="checked" name="advanced" id="advanced">
-                                    <span class="checkmark">Advanced html reports</span>
+                                    <input type="checkbox" checked="checked" name="files" id="files">
+                                    <span class="checkmark">Save results as html reports</span>
                                 </label>
                             </div>
                             {% endif %}

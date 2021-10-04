@@ -38,7 +38,7 @@ from pysrc.papers.utils import cut_authors_list
 
 logger = logging.getLogger(__name__)
 
-ANALYSIS_FILES_TITLE = 'analysis-files'
+ANALYSIS_FILES_TITLE = 'files'
 
 # Deployment and development
 SEARCH_RESULTS_PATHS = ['/search_results', os.path.expanduser('~/.pubtrends/search_results')]
@@ -56,9 +56,9 @@ class AnalyzerFiles:
     def teardown(self):
         self.progress.remove_handler()
 
-    def analyze_ids(self, ids, query, limit, task=None):
+    def analyze_ids(self, ids, source, query, limit, task=None):
         self.query = query
-        self.query_folder = self.query_to_folder(query)
+        self.query_folder = self.query_to_folder(source, query, limit)
         logger.info(f'Query folder: {self.query_folder}')
         self.progress.info(f'Found {len(ids)} papers', current=1, task=task)
         path_ids = os.path.join(self.query_folder, 'ids.txt')
@@ -313,8 +313,9 @@ class AnalyzerFiles:
         else:
             raise RuntimeError(f'Search results folder not found among: {SEARCH_RESULTS_PATHS}')
 
-    def query_to_folder(self, query):
-        folder = os.path.join(self.search_results_folder, preprocess_text(query).replace(' ', '_'))
+    def query_to_folder(self, source, query, limit):
+        folder = os.path.join(self.search_results_folder,
+                              preprocess_text(f'{source}_{query}_{limit}').replace(' ', '_'))
         if not os.path.exists(folder):
             os.mkdir(folder)
         return folder
