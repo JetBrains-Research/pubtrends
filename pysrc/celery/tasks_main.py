@@ -1,16 +1,16 @@
 from logging import getLogger
 
 from celery import current_task
+from pysrc.papers.analyzer_files import AnalyzerFiles
 
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.papers.analysis.expand import expand_ids
-from pysrc.papers.analysis.pm_advanced import PubmedAdvancedAnalyzer, pubmed_search
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plotter import visualize_analysis
-from pysrc.papers.utils import SORT_MOST_CITED, ZOOM_OUT, PAPER_ANALYSIS
+from pysrc.papers.utils import SORT_MOST_CITED, ZOOM_OUT, PAPER_ANALYSIS, pubmed_search
 
 logger = getLogger(__name__)
 
@@ -119,7 +119,7 @@ def analyze_search_paper(source, key, value, test=False):
         loader = Loaders.get_loader(source, PubtrendsConfig(test=test))
         result = loader.find(key, value)
         if len(result) == 1:
-            return analyze_id_list.delay(
+            return _analyze_id_list(
                 source, ids=result, zoom=PAPER_ANALYSIS, query='Paper', limit='', test=test, task=current_task
             )
         elif len(result) == 0:
@@ -137,13 +137,15 @@ def analyze_pubmed_search(query, limit=None, test=False):
     return _analyze_id_list('Pubmed', ids, zoom=None, query=query, limit=limit, test=test, task=current_task)
 
 
-@pubtrends_celery.task(name='analyze_pubmed_advanced_search')
-def analyze_pubmed_advanced_search(query, limit, test=False):
+@pubtrends_celery.task(name='analyze_pubmed_search_files')
+def analyze_pubmed_search_files(query, limit, test=False):
     config = PubtrendsConfig(test=test)
     loader = Loaders.get_loader('Pubmed', config)
-    analyzer = PubmedAdvancedAnalyzer(loader, config)
+    analyzer = AnalyzerFiles(loader, config)
     try:
-        analyzer.analyze_pubmed_advanced_search(query, limit, task=current_task)
+        analyzer.progress.info(f"Searching Pubmed query: '{query}', limit {limit}", current=1, task=current_task)
+        ids = pubmed_search(query, limit)
+        analyzer.analyze_ids(ids, query, limit, task=current_task)
         analyzer.progress.done(task=current_task)
         analyzer.teardown()
         return analyzer.query_folder

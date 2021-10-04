@@ -1,23 +1,22 @@
 import json
 import logging
-import math
 import os
 from collections import Counter
-from itertools import product
-from math import sin, cos, pi, fabs
 
 import jinja2
+import math
 import networkx as nx
 import numpy as np
 import pandas as pd
-from Bio import Entrez
 from bokeh.colors import RGB
 from bokeh.io import reset_output
 from bokeh.models import ColumnDataSource, ColorBar, PrintfTickFormatter, LinearColorMapper
 from bokeh.models import GraphRenderer, StaticLayoutProvider, Circle, HoverTool, MultiLine, LabelSet
 from bokeh.models.graphs import NodesAndLinkedEdges
 from bokeh.plotting import figure, output_file, save
+from itertools import product
 from lazy import lazy
+from math import sin, cos, pi, fabs
 from matplotlib import pyplot as plt
 from more_itertools import unique_everseen
 from sklearn.cluster import AgglomerativeClustering
@@ -39,16 +38,13 @@ from pysrc.papers.utils import cut_authors_list
 
 logger = logging.getLogger(__name__)
 
-
-SEARCH_PUBMED_ADVANCED = 'search_pubmed_advanced'
-
-Entrez.email = 'os@jetbrains.com'
+ANALYSIS_FILES_TITLE = 'analysis-files'
 
 # Deployment and development
-PUBMED_ADVANCED_SEARCH_PATHS = ['/pubmed_advanced_search', os.path.expanduser('~/.pubtrends/pubmed_advanced_search')]
+SEARCH_RESULTS_PATHS = ['/search_results', os.path.expanduser('~/.pubtrends/search_results')]
 
 
-class PubmedAdvancedAnalyzer:
+class AnalyzerFiles:
 
     def __init__(self, loader, config, test=False):
         self.config = config
@@ -60,21 +56,16 @@ class PubmedAdvancedAnalyzer:
     def teardown(self):
         self.progress.remove_handler()
 
-    def analyze_pubmed_advanced_search(self, query, limit, task=None):
-        self.progress.info('Searching publications in Pubmed', current=1, task=task)
+    def analyze_ids(self, ids, query, limit, task=None):
         self.query = query
         self.query_folder = self.query_to_folder(query)
         logger.info(f'Query folder: {self.query_folder}')
-        ids = pubmed_search(query, limit)
         self.progress.info(f'Found {len(ids)} papers', current=1, task=task)
-        path_pmid = os.path.join(self.query_folder, 'pmid.txt')
-        logger.info(f'Pubmed Ids saved to {path_pmid}')
-        with open(path_pmid, 'w') as f:
+        path_ids = os.path.join(self.query_folder, 'ids.txt')
+        logger.info(f'Ids saved to {path_ids}')
+        with open(path_ids, 'w') as f:
             f.write('\n'.join(ids))
-
-        self.analyze_ids(ids, task)
-
-    def analyze_ids(self, ids, task=None):
+            
         self.progress.info('Loading publications from database', current=2, task=task)
         self.pub_df = self.loader.load_publications(ids)
         self.pub_types = list(set(self.pub_df['type']))
@@ -313,17 +304,17 @@ class PubmedAdvancedAnalyzer:
         self.progress.done('Done analysis', task=task)
 
     @lazy
-    def pubmed_advanced_search_results_folder(self):
-        logger.info('Preparing pubmed advanced search folder')
-        for path in PUBMED_ADVANCED_SEARCH_PATHS:
+    def search_results_folder(self):
+        logger.info('Preparing search results folder')
+        for path in SEARCH_RESULTS_PATHS:
             if os.path.exists(path):
                 logger.info(f'Search results will be stored at {path}')
                 return path
         else:
-            raise RuntimeError(f'Pubmed advanced search results folder not found among: {PUBMED_ADVANCED_SEARCH_PATHS}')
+            raise RuntimeError(f'Search results folder not found among: {SEARCH_RESULTS_PATHS}')
 
     def query_to_folder(self, query):
-        folder = os.path.join(self.pubmed_advanced_search_results_folder, preprocess_text(query).replace(' ', '_'))
+        folder = os.path.join(self.search_results_folder, preprocess_text(query).replace(' ', '_'))
         if not os.path.exists(folder):
             os.mkdir(folder)
         return folder
@@ -851,7 +842,7 @@ def save_sim_papers_graph_interactive(gs, df, clusters_description, mesh_cluster
 
 
 FILES_WITH_DESCRIPTIONS = {
-    'pmid.txt': 'List of PMIDs returned by Pubmed search request',
+    'ids.txt': 'List of ids returned by search request',
 
     'papers.csv': 'Detailed information about papers used for analysis',
     'mesh.csv': 'Information about MESH terms for each topic',
@@ -871,8 +862,3 @@ FILES_WITH_DESCRIPTIONS = {
     'topics_similarity.html': 'Similarity between papers within topics',
     'topics_sizes.html': 'Topics sizes',
 }
-
-
-def pubmed_search(query, limit):
-    handle = Entrez.esearch(db='pubmed', retmax=str(limit), retmode='xml', term=query)
-    return Entrez.read(handle)['IdList']

@@ -168,7 +168,7 @@ Please ensure that you have Database configured, up and running.
     mkdir ~/.pubtrends/.cache
     mkdir ~/.pubtrends/predefined
     mkdir ~/.pubtrends/ssl
-    mkdir ~/.pubtrends/pubmed_advanced_search
+    mkdir ~/.pubtrends/search_results
     ```
 
 2. Start Redis

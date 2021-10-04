@@ -20,9 +20,9 @@ from pysrc.app.utils import log_request, MAX_QUERY_LENGTH, SOMETHING_WENT_WRONG_
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.celery.tasks_cache import get_or_cancel_task
 from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, analyze_id_list, \
-    analyze_pubmed_advanced_search, analyze_pubmed_search
+    analyze_pubmed_search_files, analyze_pubmed_search
 from pysrc.papers.analysis.graph import to_weighted_graph, sparse_graph
-from pysrc.papers.analysis.pm_advanced import FILES_WITH_DESCRIPTIONS, SEARCH_PUBMED_ADVANCED
+from pysrc.papers.analyzer_files import FILES_WITH_DESCRIPTIONS, ANALYSIS_FILES_TITLE
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
@@ -71,6 +71,10 @@ if __name__ != '__main__':
 logger = app.logger
 
 
+#############
+# Main page #
+#############
+
 @app.route('/robots.txt')
 @app.route('/sitemap.xml')
 @app.route('/feedback.js')
@@ -84,6 +88,225 @@ logger = app.logger
 @app.route('/frown.svg')
 def static_from_root():
     return send_from_directory(app.static_folder, request.path[1:])
+
+
+@app.route('/')
+def index():
+    search_example_message = ''
+    search_example_source = ''
+    search_example_terms = []
+    sources = []
+    if PUBTRENDS_CONFIG.pm_enabled:
+        sources.append('pm')
+    if PUBTRENDS_CONFIG.ss_enabled:
+        sources.append('ss')
+    if len(sources):
+        choice = random.choice(sources)
+        if choice == 'pm':
+            search_example_source = 'Pubmed'
+            search_example_terms = PUBTRENDS_CONFIG.pm_search_example_terms
+        if choice == 'ss':
+            search_example_source = 'Semantic Scholar'
+            search_example_terms = PUBTRENDS_CONFIG.ss_search_example_terms
+        search_example_message = 'Try one of our examples for ' + search_example_source
+    search_example_terms = [(t, hashlib.md5(t.encode('utf-8')).hexdigest()) for t in search_example_terms]
+    if PUBTRENDS_CONFIG.min_search_words > 1:
+        min_words_message = f'Minimum {PUBTRENDS_CONFIG.min_search_words} words per query. '
+    else:
+        min_words_message = ''
+    return render_template('main.html',
+                           version=VERSION,
+                           limits=PUBTRENDS_CONFIG.show_max_articles_options,
+                           default_limit=PUBTRENDS_CONFIG.show_max_articles_default_value,
+                           min_words_message=min_words_message,
+                           max_papers=PUBTRENDS_CONFIG.max_number_of_articles,
+                           pm_enabled=PUBTRENDS_CONFIG.pm_enabled,
+                           feature_pm_advanced_search_enabled=PUBTRENDS_CONFIG.feature_pm_advanced_search_enabled,
+                           ss_enabled=PUBTRENDS_CONFIG.ss_enabled,
+                           search_example_message=search_example_message,
+                           search_example_source=search_example_source,
+                           search_example_terms=search_example_terms)
+
+
+@app.route('/about.html', methods=['GET'])
+def about():
+    return render_template('about.html', version=VERSION)
+
+
+############################
+# Search form POST methods #
+############################
+
+@app.route('/search_terms', methods=['POST'])
+def search_terms():
+    logger.info(f'/search_terms {log_request(request)}')
+    query = request.form.get('query')  # Original search query
+    source = request.form.get('source')  # Pubmed or Semantic Scholar
+    sort = request.form.get('sort')  # Sort order
+    limit = request.form.get('limit')  # Limit
+    noreviews = request.form.get('noreviews') == 'on'  # Include reviews in the initial search phase
+    expand = request.form.get('expand')  # Fraction of papers to cover by references
+    try:
+        if query and source and sort and limit and expand:
+            job = analyze_search_terms.delay(source, query=query, limit=int(limit), sort=sort,
+                                             noreviews=noreviews, expand=int(expand) / 100,
+                                             test=app.config['TESTING'])
+            return redirect(url_for('.process', query=query, source=source, limit=limit, sort=sort,
+                                    noreviews=noreviews, expand=expand,
+                                    jobid=job.id))
+        logger.error(f'/search_terms error {log_request(request)}')
+        return render_template_string(SOMETHING_WENT_WRONG_TOPIC), 400
+    except Exception as e:
+        logger.exception(f'/search_terms exception {e}')
+        return render_template_string(ERROR_OCCURRED), 500
+
+
+@app.route('/search_paper', methods=['POST'])
+def search_paper():
+    logger.info(f'/search_paper {log_request(request)}')
+    data = request.form
+    try:
+        if 'source' in data and 'key' in data and 'value' in data:
+            source = data.get('source')  # Pubmed or Semantic Scholar
+            key = data.get('key')
+            value = data.get('value')
+            job = analyze_search_paper.delay(source, key, value, test=app.config['TESTING'])
+            return redirect(url_for('.process', query=f'Paper {key}={value}', analysis_type=PAPER_ANALYSIS_TITLE,
+                                    key=key, value=value, source=source, jobid=job.id))
+        logger.error(f'/search_paper error {log_request(request)}')
+        return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
+    except Exception as e:
+        logger.exception(f'/search_paper exception {e}')
+        return render_template_string(ERROR_OCCURRED), 500
+
+
+@app.route('/search_pubmed_advanced', methods=['POST'])
+def search_pubmed_advanced():
+    logger.info(f'/search_pubmed_advanced {log_request(request)}')
+    query = request.form.get('query')
+    limit = request.form.get('limit')
+    advanced = request.form.get('advanced') == 'on'
+    try:
+        if query and limit:
+            if advanced:
+                job = analyze_pubmed_search_files.delay(query=query, limit=limit, test=app.config['TESTING'])
+                return redirect(url_for('.process', query=query, analysis_type=ANALYSIS_FILES_TITLE,
+                                        sort='', limit=limit, source='Pubmed', jobid=job.id))
+            else:
+                job = analyze_pubmed_search.delay(query=query, limit=limit, test=app.config['TESTING'])
+                return redirect(url_for('.process', source='Pubmed', query=query, limit=limit, sort='', jobid=job.id))
+        logger.error(f'/search_pubmed_advanced error {log_request(request)}')
+        return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
+    except Exception as e:
+        logger.exception(f'/search_pubmed_advanced exception {e}')
+        return render_template_string(ERROR_OCCURRED), 500
+
+
+@app.route('/process_ids', methods=['POST'])
+def process_ids():
+    logger.info(f'/process_ids {log_request(request)}')
+    source = request.form.get('source')  # Pubmed or Semantic Scholar
+    query = request.form.get('query')  # Original search query
+    try:
+        if source and query and 'id_list' in request.form:
+            id_list = request.form.get('id_list').split(',')
+            zoom = request.form.get('zoom')
+            analysis_type = zoom_name(zoom)
+            job = analyze_id_list.delay(
+                source, ids=id_list, zoom=int(zoom), query=query, limit=None,
+                test=app.config['TESTING']
+            )
+            return redirect(url_for('.process', query=query, analysis_type=analysis_type, source=source, jobid=job.id))
+        logger.error(f'/process_ids error {log_request(request)}')
+        return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
+    except Exception as e:
+        logger.exception(f'/process_ids exception {e}')
+        return render_template_string(ERROR_OCCURRED), 500
+
+
+####################################
+# Analysis progress and cancelling #
+####################################
+
+@app.route('/process')
+def process():
+    """ Rendering process.html for task being queued or executed at the moment """
+    if len(request.args) > 0:
+        jobid = request.values.get('jobid')
+
+        if not jobid:
+            logger.error(f'/process error wrong request {log_request(request)}')
+            return render_template_string(SOMETHING_WENT_WRONG_SEARCH)
+
+        query = request.args.get('query') or ''
+        analysis_type = request.values.get('analysis_type')
+        source = request.values.get('source')
+
+        if analysis_type in [ZOOM_IN_TITLE, ZOOM_OUT_TITLE]:
+            logger.info(f'/process zoom processing {log_request(request)}')
+            return render_template('process.html',
+                                   redirect_args={'query': quote(query), 'source': source, 'jobid': jobid,
+                                                  'limit': analysis_type, 'sort': ''},
+                                   query=trim(query, MAX_QUERY_LENGTH), source=source, limit=analysis_type, sort='',
+                                   redirect_page='result',  # redirect in case of success
+                                   jobid=jobid, version=VERSION)
+
+        elif analysis_type == PAPER_ANALYSIS_TITLE:
+            logger.info(f'/process paper analysis {log_request(request)}')
+            key = request.args.get('key')
+            value = request.args.get('value')
+            return render_template('process.html',
+                                   redirect_args={'source': source, 'jobid': jobid,
+                                                  'limit': '', 'sort': '', 'key': key, 'value': value},
+                                   query=trim(query, MAX_QUERY_LENGTH), source=source,
+                                   redirect_page='paper',  # redirect in case of success
+                                   jobid=jobid, version=VERSION)
+
+        elif analysis_type == REVIEW_ANALYSIS_TITLE:
+            logger.info(f'/process review {log_request(request)}')
+            limit = request.args.get('limit')
+            sort = request.args.get('sort')
+            return render_template('process.html',
+                                   redirect_args={
+                                       'query': quote(query), 'source': source,
+                                       'limit': limit, 'sort': sort,
+                                       'jobid': jobid},
+                                   query=trim(query, MAX_QUERY_LENGTH), source=source,
+                                   limit=limit, sort=sort,
+                                   redirect_page='review',  # redirect in case of success
+                                   jobid=jobid, version=VERSION)
+
+        elif analysis_type == ANALYSIS_FILES_TITLE:
+            logger.info(f'/process files {log_request(request)}')
+            limit = request.args.get('limit')
+            return render_template('process.html',
+                                   redirect_args={
+                                       'source': source,
+                                       'query': quote(query),
+                                       'limit': limit, 'sort': '',
+                                       'jobid': jobid},
+                                   query=trim(query, MAX_QUERY_LENGTH), source=source,
+                                   limit=limit, sort='',
+                                   redirect_page='result_files',  # redirect in case of success
+                                   jobid=jobid, version=VERSION)
+
+        elif query:  # This option should be the last default
+            logger.info(f'/process regular search {log_request(request)}')
+            limit = request.args.get('limit')
+            sort = request.args.get('sort')
+            return render_template('process.html',
+                                   redirect_args={
+                                       'query': quote(query), 'source': source,
+                                       'limit': limit, 'sort': sort,
+                                       'jobid': jobid
+                                   },
+                                   query=trim(query, MAX_QUERY_LENGTH), source=source,
+                                   limit=limit, sort=sort,
+                                   redirect_page='result',  # redirect in case of success
+                                   jobid=jobid, version=VERSION)
+
+    logger.error(f'/process error {log_request(request)}')
+    return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
 
 
 @app.route('/status')
@@ -139,6 +362,32 @@ def status():
     })
 
 
+@app.route('/cancel')
+def cancel():
+    if len(request.args) > 0:
+        jobid = request.values.get('jobid')
+        if jobid:
+            pubtrends_celery.control.revoke(jobid, terminate=True)
+            return json.dumps({
+                'state': 'CANCELLED',
+                'message': f'Successfully cancelled task {jobid}'
+            })
+        else:
+            return json.dumps({
+                'state': 'FAILURE',
+                'message': f'Failed to cancel task {jobid}'
+            })
+    return json.dumps({
+        'state': 'FAILURE',
+        'message': 'Unknown task id'
+    })
+
+
+####################################
+# Results handlers #
+####################################
+
+
 @app.route('/result')
 def result():
     jobid = request.args.get('jobid')
@@ -187,117 +436,6 @@ def result():
             return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception as e:
         logger.exception(f'/result exception {e}')
-        return render_template_string(ERROR_OCCURRED), 500
-
-
-@app.route('/process')
-def process():
-    """ Rendering process.html for task being queued or executed at the moment """
-    if len(request.args) > 0:
-        jobid = request.values.get('jobid')
-
-        if not jobid:
-            logger.error(f'/process error wrong request {log_request(request)}')
-            return render_template_string(SOMETHING_WENT_WRONG_SEARCH)
-
-        query = request.args.get('query') or ''
-        analysis_type = request.values.get('analysis_type')
-        source = request.values.get('source')
-
-        if analysis_type in [ZOOM_IN_TITLE, ZOOM_OUT_TITLE]:
-            logger.info(f'/process zoom processing {log_request(request)}')
-            return render_template('process.html',
-                                   redirect_args={'query': quote(query), 'source': source, 'jobid': jobid,
-                                                  'limit': analysis_type, 'sort': ''},
-                                   query=trim(query, MAX_QUERY_LENGTH), source=source, limit=analysis_type, sort='',
-                                   redirect_page='result',  # redirect in case of success
-                                   jobid=jobid, version=VERSION)
-
-        elif analysis_type == PAPER_ANALYSIS_TITLE:
-            logger.info(f'/process paper analysis {log_request(request)}')
-            key = request.args.get('key')
-            value = request.args.get('value')
-            return render_template('process.html',
-                                   redirect_args={'source': source, 'jobid': jobid,
-                                                  'limit': '', 'sort': '', 'key': key, 'value': value},
-                                   query=trim(query, MAX_QUERY_LENGTH), source=source,
-                                   redirect_page='paper',  # redirect in case of success
-                                   jobid=jobid, version=VERSION)
-
-        elif analysis_type == REVIEW_ANALYSIS_TITLE:
-            logger.info(f'/process review {log_request(request)}')
-            limit = request.args.get('limit')
-            sort = request.args.get('sort')
-            return render_template('process.html',
-                                   redirect_args={
-                                       'query': quote(query), 'source': source,
-                                       'limit': limit, 'sort': sort,
-                                       'jobid': jobid},
-                                   query=trim(query, MAX_QUERY_LENGTH), source=source,
-                                   limit=limit, sort=sort,
-                                   redirect_page='review',  # redirect in case of success
-                                   jobid=jobid, version=VERSION)
-        elif analysis_type == SEARCH_PUBMED_ADVANCED:
-            logger.info(f'/process review {log_request(request)}')
-            limit = request.args.get('limit')
-            return render_template('process.html',
-                                   redirect_args={
-                                       'query': quote(query),
-                                       'limit': limit, 'sort': '',
-                                       'jobid': jobid},
-                                   query=trim(query, MAX_QUERY_LENGTH), source=source,
-                                   limit=limit, sort='',
-                                   redirect_page='result_search_pubmed_advanced',  # redirect in case of success
-                                   jobid=jobid, version=VERSION)
-
-        elif query:  # This option should be the last default
-            logger.info(f'/process regular search {log_request(request)}')
-            limit = request.args.get('limit')
-            sort = request.args.get('sort')
-            return render_template('process.html',
-                                   redirect_args={
-                                       'query': quote(query), 'source': source,
-                                       'limit': limit, 'sort': sort,
-                                       'jobid': jobid
-                                   },
-                                   query=trim(query, MAX_QUERY_LENGTH), source=source,
-                                   limit=limit, sort=sort,
-                                   redirect_page='result',  # redirect in case of success
-                                   jobid=jobid, version=VERSION)
-
-    logger.error(f'/process error {log_request(request)}')
-    return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
-
-
-@app.route('/paper')
-def paper():
-    jobid = request.values.get('jobid')
-    source = request.args.get('source')
-    query = request.args.get('query')
-    key = request.args.get('key')
-    value = request.args.get('value')
-    try:
-        if jobid:
-            data = load_predefined_or_result_data(jobid, pubtrends_celery)
-            if data is not None:
-                logger.info(f'/paper success {log_request(request)}')
-                return render_template('paper.html',
-                                       **prepare_paper_data(data, source),
-                                       max_graph_size=PUBTRENDS_CONFIG.max_graph_size,
-                                       version=VERSION)
-            else:
-                logger.info(f'/paper No job or out-of-date job, restart it {log_request(request)}')
-                job = analyze_search_paper.apply_async(
-                    args=[source, key, value, app.config['TESTING']],
-                    task_id=jobid
-                )
-                return redirect(url_for('.process', query=query, analysis_type=PAPER_ANALYSIS_TITLE,
-                                        source=source, jobid=job.id))
-        else:
-            logger.error(f'/paper error wrong request {log_request(request)}')
-            return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
-    except Exception as e:
-        logger.exception(f'/paper exception {e}')
         return render_template_string(ERROR_OCCURRED), 500
 
 
@@ -367,6 +505,38 @@ def graph():
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
 
 
+@app.route('/paper')
+def paper():
+    jobid = request.values.get('jobid')
+    source = request.args.get('source')
+    query = request.args.get('query')
+    key = request.args.get('key')
+    value = request.args.get('value')
+    try:
+        if jobid:
+            data = load_predefined_or_result_data(jobid, pubtrends_celery)
+            if data is not None:
+                logger.info(f'/paper success {log_request(request)}')
+                return render_template('paper.html',
+                                       **prepare_paper_data(data, source),
+                                       max_graph_size=PUBTRENDS_CONFIG.max_graph_size,
+                                       version=VERSION)
+            else:
+                logger.info(f'/paper No job or out-of-date job, restart it {log_request(request)}')
+                job = analyze_search_paper.apply_async(
+                    args=[source, key, value, app.config['TESTING']],
+                    task_id=jobid
+                )
+                return redirect(url_for('.process', query=query, analysis_type=PAPER_ANALYSIS_TITLE,
+                                        source=source, jobid=job.id))
+        else:
+            logger.error(f'/paper error wrong request {log_request(request)}')
+            return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
+    except Exception as e:
+        logger.exception(f'/paper exception {e}')
+        return render_template_string(ERROR_OCCURRED), 500
+
+
 @app.route('/papers')
 def show_ids():
     jobid = request.values.get('jobid')
@@ -426,156 +596,10 @@ def show_ids():
     return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
 
 
-@app.route('/cancel')
-def cancel():
-    if len(request.args) > 0:
-        jobid = request.values.get('jobid')
-        if jobid:
-            pubtrends_celery.control.revoke(jobid, terminate=True)
-            return json.dumps({
-                'state': 'CANCELLED',
-                'message': f'Successfully cancelled task {jobid}'
-            })
-        else:
-            return json.dumps({
-                'state': 'FAILURE',
-                'message': f'Failed to cancel task {jobid}'
-            })
-    return json.dumps({
-        'state': 'FAILURE',
-        'message': 'Unknown task id'
-    })
-
-
-# Index page
-@app.route('/')
-def index():
-    search_example_message = ''
-    search_example_source = ''
-    search_example_terms = []
-    sources = []
-    if PUBTRENDS_CONFIG.pm_enabled:
-        sources.append('pm')
-    if PUBTRENDS_CONFIG.ss_enabled:
-        sources.append('ss')
-    if len(sources):
-        choice = random.choice(sources)
-        if choice == 'pm':
-            search_example_source = 'Pubmed'
-            search_example_terms = PUBTRENDS_CONFIG.pm_search_example_terms
-        if choice == 'ss':
-            search_example_source = 'Semantic Scholar'
-            search_example_terms = PUBTRENDS_CONFIG.ss_search_example_terms
-        search_example_message = 'Try one of our examples for ' + search_example_source
-    search_example_terms = [(t, hashlib.md5(t.encode('utf-8')).hexdigest()) for t in search_example_terms]
-    if PUBTRENDS_CONFIG.min_search_words > 1:
-        min_words_message = f'Minimum {PUBTRENDS_CONFIG.min_search_words} words per query. '
-    else:
-        min_words_message = ''
-    return render_template('main.html',
-                           version=VERSION,
-                           limits=PUBTRENDS_CONFIG.show_max_articles_options,
-                           default_limit=PUBTRENDS_CONFIG.show_max_articles_default_value,
-                           min_words_message=min_words_message,
-                           max_papers=PUBTRENDS_CONFIG.max_number_of_articles,
-                           pm_enabled=PUBTRENDS_CONFIG.pm_enabled,
-                           feature_pm_advanced_search_enabled=PUBTRENDS_CONFIG.feature_pm_advanced_search_enabled,
-                           ss_enabled=PUBTRENDS_CONFIG.ss_enabled,
-                           search_example_message=search_example_message,
-                           search_example_source=search_example_source,
-                           search_example_terms=search_example_terms)
-
-
-@app.route('/search_terms', methods=['POST'])
-def search_terms():
-    logger.info(f'/search_terms {log_request(request)}')
-    query = request.form.get('query')  # Original search query
-    source = request.form.get('source')  # Pubmed or Semantic Scholar
-    sort = request.form.get('sort')  # Sort order
-    limit = request.form.get('limit')  # Limit
-    noreviews = request.form.get('noreviews') == 'on'  # Include reviews in the initial search phase
-    expand = request.form.get('expand')  # Fraction of papers to cover by references
-    try:
-        if query and source and sort and limit and expand:
-            job = analyze_search_terms.delay(source, query=query, limit=int(limit), sort=sort,
-                                             noreviews=noreviews, expand=int(expand) / 100,
-                                             test=app.config['TESTING'])
-            return redirect(url_for('.process', query=query, source=source, limit=limit, sort=sort,
-                                    noreviews=noreviews, expand=expand,
-                                    jobid=job.id))
-        logger.error(f'/search_terms error {log_request(request)}')
-        return render_template_string(SOMETHING_WENT_WRONG_TOPIC), 400
-    except Exception as e:
-        logger.exception(f'/search_terms exception {e}')
-        return render_template_string(ERROR_OCCURRED), 500
-
-
-@app.route('/search_paper', methods=['POST'])
-def search_paper():
-    logger.info(f'/search_paper {log_request(request)}')
-    data = request.form
-    try:
-        if 'source' in data and 'key' in data and 'value' in data:
-            source = data.get('source')  # Pubmed or Semantic Scholar
-            key = data.get('key')
-            value = data.get('value')
-            job = analyze_search_paper.delay(source, key, value, test=app.config['TESTING'])
-            return redirect(url_for('.process', query=f'Paper: {key}={value}', analysis_type=PAPER_ANALYSIS_TITLE,
-                                    key=key, value=value, source=source, jobid=job.id))
-        logger.error(f'/search_paper error {log_request(request)}')
-        return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
-    except Exception as e:
-        logger.exception(f'/search_paper exception {e}')
-        return render_template_string(ERROR_OCCURRED), 500
-
-
-@app.route('/process_ids', methods=['POST'])
-def process_ids():
-    logger.info(f'/process_ids {log_request(request)}')
-    source = request.form.get('source')  # Pubmed or Semantic Scholar
-    query = request.form.get('query')  # Original search query
-    try:
-        if source and query and 'id_list' in request.form:
-            id_list = request.form.get('id_list').split(',')
-            zoom = request.form.get('zoom')
-            analysis_type = zoom_name(zoom)
-            job = analyze_id_list.delay(
-                source, ids=id_list, zoom=int(zoom), query=query, limit=None,
-                test=app.config['TESTING']
-            )
-            return redirect(url_for('.process', query=query, analysis_type=analysis_type, source=source, jobid=job.id))
-        logger.error(f'/process_ids error {log_request(request)}')
-        return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
-    except Exception as e:
-        logger.exception(f'/process_ids exception {e}')
-        return render_template_string(ERROR_OCCURRED), 500
-
-
-@app.route('/search_pubmed_advanced', methods=['POST'])
-def search_pubmed_advanced():
-    logger.info(f'/search_pubmed_advanced {log_request(request)}')
-    query = request.form.get('query')
-    limit = request.form.get('limit')
-    advanced = request.form.get('advanced') == 'on'
-    try:
-        if query and limit:
-            if advanced:
-                job = analyze_pubmed_advanced_search.delay(query=query, limit=limit, test=app.config['TESTING'])
-                return redirect(url_for('.process', query=query, analysis_type=SEARCH_PUBMED_ADVANCED,
-                                        sort='', limit=limit, source='Pubmed', jobid=job.id))
-            else:
-                job = analyze_pubmed_search.delay(query=query, limit=limit, test=app.config['TESTING'])
-                return redirect(url_for('.process', source='Pubmed', query=query, limit=limit, sort='', jobid=job.id))
-        logger.error(f'/search_pubmed_advanced error {log_request(request)}')
-        return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
-    except Exception as e:
-        logger.exception(f'/search_pubmed_advanced exception {e}')
-        return render_template_string(ERROR_OCCURRED), 500
-
-
-@app.route('/result_search_pubmed_advanced', methods=['GET'])
-def result_search_pubmed_advanced():
-    logger.info(f'/result_search_pubmed_advanced {log_request(request)}')
+@app.route('/result_files', methods=['GET'])
+def result_files():
+    logger.info(f'/result_files {log_request(request)}')
+    source = request.args.get('source')
     jobid = request.args.get('jobid')
     query = request.args.get('query')
     limit = request.args.get('limit')
@@ -596,22 +620,22 @@ def result_search_pubmed_advanced():
                         if f in available_files:
                             full_path = os.path.join(query_folder, f)
                             if os.path.exists(full_path):
-                                url = f'/result_search_pubmed_advanced?file={f}&jobid={jobid}&limit={limit}&query={qq}'
+                                url = f'/result_files?file={f}&jobid={jobid}&query={qq}&source={source}&limit={limit}'
                                 file_infos.append((f, url, d,
                                                    time.ctime(os.path.getmtime(full_path)),
                                                    human_readable_size(os.path.getsize(full_path))))
 
-                    return render_template('pmadvsrch.html',
+                    return render_template('result_files.html',
                                            query=trim(query, MAX_QUERY_LENGTH),
                                            full_query=query,
-                                           source='Pubmed',
+                                           source=source,
                                            limit=limit,
                                            file_infos=file_infos,
                                            version=VERSION)
-        logger.error(f'/search_pubmed_advanced error {log_request(request)}')
+        logger.error(f'/result_files error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception as e:
-        logger.exception(f'/search_pubmed_advanced exception {e}')
+        logger.exception(f'/result_files exception {e}')
         return render_template_string(ERROR_OCCURRED), 500
 
 
@@ -638,11 +662,6 @@ def export_results():
     except Exception as e:
         logger.exception(f'/export_results exception {e}')
         return render_template_string(ERROR_OCCURRED), 500
-
-
-@app.route('/about.html', methods=['GET'])
-def about():
-    return render_template('about.html', version=VERSION)
 
 
 ##########################
