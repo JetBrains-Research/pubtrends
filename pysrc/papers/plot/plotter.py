@@ -69,8 +69,11 @@ def visualize_analysis(analyzer):
         papers_stats=[components(plotter.papers_by_year())],
         papers_word_cloud=Plotter.word_cloud_prepare(word_cloud),
         papers_zoom_out_callback=zoom_out_callback,
-        keywords_frequencies=[components(plotter.plot_keywords_frequencies(freq_kwds))]
     )
+
+    keywords_frequencies = plotter.plot_keywords_frequencies(freq_kwds)
+    if keywords_frequencies is not None:
+        result['keywords_frequencies'] = [components(keywords_frequencies)]
 
     if analyzer.similarity_graph.nodes():
         result.update(dict(
@@ -448,6 +451,8 @@ class Plotter:
         keywords_df, years = PlotPreprocessor.frequent_keywords_data(
             freq_kwds, self.analyzer.df, self.analyzer.corpus_terms, self.analyzer.corpus_counts, n
         )
+        if len(years) <= 3:
+            return None
         return self.plot_keywords_timeline(keywords_df, years)
 
     @staticmethod

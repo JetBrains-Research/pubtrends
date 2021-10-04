@@ -303,7 +303,9 @@ class PubmedAdvancedAnalyzer:
         logging.info(f'Save frequent tokens to file {path_terms_timeline}')
         freq_kwds = get_frequent_tokens(self.top_cited_df, query=self.query)
         output_file(filename=path_terms_timeline, title="Terms timeline")
-        save(plotter.plot_keywords_frequencies(freq_kwds))
+        keywords_frequencies = plotter.plot_keywords_frequencies(freq_kwds)
+        if keywords_frequencies is not None:
+            save(keywords_frequencies)
         reset_output()
 
         self.progress.done('Done analysis', task=task)
