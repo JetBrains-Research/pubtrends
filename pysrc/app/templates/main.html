@@ -95,13 +95,8 @@
                        role="tab"
                        aria-controls="paper" aria-selected="false">Paper</a>
                 </li>
+                {% if pm_enabled %}
                 <li id="step1-3" class="nav-item">
-                    <a class="nav-link grey" id="papers-tab" data-toggle="tab" href="#papers"
-                       role="tab"
-                       aria-controls="papers" aria-selected="false">List of papers</a>
-                </li>
-                {% if pm_enabled and feature_pm_advanced_search_enabled %}
-                <li id="step1-4" class="nav-item">
                     <a class="nav-link grey" id="pubmed-search-tab" data-toggle="tab" href="#pubmed-search"
                        role="tab"
                        aria-controls="pubmed-search" aria-selected="false">Pubmed advanced search</a>
@@ -168,7 +163,7 @@
                                 </div>
                                 <div class="col input-group">
                                     <div class="input-group-prepend">
-                                        <span class="input-group-text" id="amount-addon">Search</span>
+                                        <span class="input-group-text" id="amount-addon">Limit</span>
                                     </div>
                                     <select class="form-control" aria-describedby="amount-addon"
                                             name="limit">
@@ -302,58 +297,19 @@
                     </form>
                 </div>
 
-                <!-- Form for Mutliple Papers -->
-                <div class="tab-pane fade" id="papers" role="tabpanel" aria-labelledby="papers-tab">
-                    <form action="search_list" method="POST" class="needs-validation" novalidate>
-                        <div class="row no-gutters align-items-center">
-                            <div class="col input-group mr-2">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text" id="ids-addon">IDs</span>
-                                </div>
-                                <input class="form-control form-control-borderless" type="search"
-                                       name="list" id="papers-input"
-                                       placeholder="Enter list of paper ids. Maximum {{ max_papers }} papers."
-                                       aria-describedby="ids-addon"
-                                       autofocus
-                                       required>
-                            </div>
-                            <!--end of col-->
-                            <div class="col-auto">
-                                <button class="btn btn-success" type="submit">Search</button>
-                            </div>
-                        </div>
-                        <div class="mt-3 row no-gutters align-items-center">
-                            <div class="col-4 input-group">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text" id="papers-source-addon">Database</span>
-                                </div>
-                                <select class="form-control" name="source"
-                                        aria-describedby="papers-source-addon">
-                                    {% if pm_enabled %}
-                                    <option>Pubmed</option>
-                                    {% endif %}
-                                    {% if ss_enabled %}
-                                    <option>Semantic Scholar</option>
-                                    {% endif %}
-                                </select>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-
                 <!-- Form for Advanced Pubmed Search -->
-                {% if pm_enabled and feature_pm_advanced_search_enabled %}
+                {% if pm_enabled %}
                 <div class="tab-pane fade" id="pubmed-search" role="tabpanel" aria-labelledby="pubmed-search-tab">
                     <form action="search_pubmed_advanced" method="POST" class="mb-2 needs-validation" novalidate>
                         <div class="row no-gutters align-items-center">
                             <div class="col input-group mr-2">
                                 <div class="input-group-prepend">
-                                    <span class="input-group-text" id="query-pubmed-advanced-search-addon">Query</span>
+                                    <span class="input-group-text" id="query-pubmed-search-addon">Query</span>
                                 </div>
                                 <input class="form-control form-control-borderless" type="search"
                                        name="query"
                                        placeholder="Enter Pubmed search query"
-                                       aria-describedby="query-pubmed-advanced-search-addon"
+                                       aria-describedby="query-pubmed-search-addon"
                                        autofocus required>
                             </div>
                             <!--end of col-->
@@ -363,17 +319,29 @@
                             <!--end of col-->
                         </div>
                         <div class="mt-3 row no-gutters align-items-center">
-                            <div class="col-4 input-group">
+                            <div class="col-4 input-group mr-2">
                                 <div class="input-group-prepend">
                                     <span class="input-group-text" id="pubmed-advanced-search-limit">Limit</span>
                                 </div>
                                 <select class="form-control" name="limit"
                                         aria-describedby="pubmed-advanced-search-limit">
-                                    <option selected>100000</option>
-                                    <option>50000</option>
-                                    <option>10000</option>
+                                    {% for limit in limits %}
+                                    {% if limit == default_limit %}
+                                    <option selected>{{ limit }}</option>
+                                    {% else %}
+                                    <option>{{ limit }}</option>
+                                    {% endif %}
+                                    {% endfor %}
                                 </select>
                             </div>
+                            {% if feature_pm_advanced_search_enabled %}
+                            <div class="col input-group">
+                                <label style="margin-top: auto;margin-bottom: auto">
+                                    <input type="checkbox" checked="checked" name="advanced" id="advanced">
+                                    <span class="checkmark">Advanced html reports</span>
+                                </label>
+                            </div>
+                            {% endif %}
                         </div>
                     </form>
                 </div>
@@ -409,11 +377,12 @@
                     intro: "Use the <em>Paper</em> tab to find most cited similar papers, important prior, " +
                         "and derivative works for the paper of interest. Search by DOI, title name and id is supported."
                 },
+                {% if pm_enabled %}
                 {
                     element: '#step1-3',
-                    intro: "Use the <em>List of papers</em> tab to analyze papers by given list of ids.<br>" +
-                        "Ids should be separated by commas, semicolons, spaces or newlines."
+                    intro: "Use the <em>Pubmed advanced search</em> tab to analyze papers by given pubmed search query."
                 },
+                {% endif %}
                 {
                     element: '#step2',
                     intro: "Enter search query to define the research area of interest.<br>" +
@@ -424,7 +393,7 @@
                     intro: "Additionally configure:" +
                         "<ul>" +
                         "<li><em>Sort by</em>: papers ranking - most cited or most recent</li>" +
-                        "<li><em>Search</em>: number of papers to look for</li>" +
+                        "<li><em>Limit</em>: number of papers to look for</li>" +
                         "<li><em>Prefer no reviews</em>: ignore review papers in the search phase</li>" +
                         "<li><em>Expand %</em>: fraction of paper covered by references</li>" +
                         "</ul>"

@@ -18,14 +18,14 @@ def get_top_papers_id_title_year(papers, df, key, n=50):
             for el in sorted(citing_papers, key=lambda x: x[1], reverse=True)[:n]]
 
 
-def prepare_paper_data(data, source, pid):
+def prepare_paper_data(data, source):
     loader, url_prefix = Loaders.get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
     analyzer = PapersAnalyzer(loader, PUBTRENDS_CONFIG)
     analyzer.init(data)
-
     plotter = Plotter()
 
     logger.debug('Extracting data for the current paper')
+    pid = analyzer.df['id'].values[0]  # Analyzed paper is number one
     sel = analyzer.df[analyzer.df['id'] == pid]
     title = sel['title'].values[0]
     authors = sel['authors'].values[0]

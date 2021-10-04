@@ -39,6 +39,9 @@ from pysrc.papers.utils import cut_authors_list
 
 logger = logging.getLogger(__name__)
 
+
+SEARCH_PUBMED_ADVANCED = 'search_pubmed_advanced'
+
 Entrez.email = 'os@jetbrains.com'
 
 # Deployment and development
@@ -62,8 +65,7 @@ class PubmedAdvancedAnalyzer:
         self.query = query
         self.query_folder = self.query_to_folder(query)
         logger.info(f'Query folder: {self.query_folder}')
-        handle = Entrez.esearch(db='pubmed', retmax=str(limit), retmode='xml', term=query)
-        ids = Entrez.read(handle)['IdList']
+        ids = pubmed_search(query, limit)
         self.progress.info(f'Found {len(ids)} papers', current=1, task=task)
         path_pmid = os.path.join(self.query_folder, 'pmid.txt')
         logger.info(f'Pubmed Ids saved to {path_pmid}')
@@ -309,7 +311,6 @@ class PubmedAdvancedAnalyzer:
         reset_output()
 
         self.progress.done('Done analysis', task=task)
-
 
     @lazy
     def pubmed_advanced_search_results_folder(self):
@@ -870,3 +871,8 @@ FILES_WITH_DESCRIPTIONS = {
     'topics_similarity.html': 'Similarity between papers within topics',
     'topics_sizes.html': 'Topics sizes',
 }
+
+
+def pubmed_search(query, limit):
+    handle = Entrez.esearch(db='pubmed', retmax=str(limit), retmode='xml', term=query)
+    return Entrez.read(handle)['IdList']

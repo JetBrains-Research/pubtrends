@@ -19,10 +19,10 @@ from pysrc.app.utils import log_request, MAX_QUERY_LENGTH, SOMETHING_WENT_WRONG_
     SOMETHING_WENT_WRONG_PAPER, SOMETHING_WENT_WRONG_TOPIC
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.celery.tasks_cache import get_or_cancel_task
-from pysrc.celery.tasks_main import find_paper_async, analyze_search_terms, analyze_id_list, \
-    analyze_pubmed_advanced_search
+from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, analyze_id_list, \
+    analyze_pubmed_advanced_search, analyze_pubmed_search
 from pysrc.papers.analysis.graph import to_weighted_graph, sparse_graph
-from pysrc.papers.analysis.pm_advanced import FILES_WITH_DESCRIPTIONS
+from pysrc.papers.analysis.pm_advanced import FILES_WITH_DESCRIPTIONS, SEARCH_PUBMED_ADVANCED
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
@@ -88,6 +88,7 @@ def static_from_root():
 
 @app.route('/status')
 def status():
+    """ Check tasks status being executed by Celery """
     jobid = request.values.get('jobid')
     if jobid:
         job = get_or_cancel_task(jobid)
@@ -191,6 +192,7 @@ def result():
 
 @app.route('/process')
 def process():
+    """ Rendering process.html for task being queued or executed at the moment """
     if len(request.args) > 0:
         jobid = request.values.get('jobid')
 
@@ -201,36 +203,25 @@ def process():
         query = request.args.get('query') or ''
         analysis_type = request.values.get('analysis_type')
         source = request.values.get('source')
-        key = request.args.get('key')
-        value = request.args.get('value')
-        id = request.args.get('id')
 
-        if key and value:
-            logger.info(f'/process key:value search {log_request(request)}')
-            query = f'Paper {key}: {value}'
-            return render_template('process.html',
-                                   redirect_args={'query': quote(query), 'source': source, 'jobid': jobid,
-                                                  'limit': request.args.get('limit'), 'sort': ''},
-                                   query=trim(query, MAX_QUERY_LENGTH), source=source,
-                                   redirect_page="process_paper",  # redirect in case of success
-                                   jobid=jobid, version=VERSION)
-
-        elif analysis_type in [ZOOM_IN_TITLE, ZOOM_OUT_TITLE]:
+        if analysis_type in [ZOOM_IN_TITLE, ZOOM_OUT_TITLE]:
             logger.info(f'/process zoom processing {log_request(request)}')
             return render_template('process.html',
                                    redirect_args={'query': quote(query), 'source': source, 'jobid': jobid,
                                                   'limit': analysis_type, 'sort': ''},
                                    query=trim(query, MAX_QUERY_LENGTH), source=source, limit=analysis_type, sort='',
-                                   redirect_page="result",  # redirect in case of success
+                                   redirect_page='result',  # redirect in case of success
                                    jobid=jobid, version=VERSION)
 
         elif analysis_type == PAPER_ANALYSIS_TITLE:
             logger.info(f'/process paper analysis {log_request(request)}')
+            key = request.args.get('key')
+            value = request.args.get('value')
             return render_template('process.html',
-                                   redirect_args={'source': source, 'jobid': jobid, 'id': id,
-                                                  'limit': '', 'sort': ''},
+                                   redirect_args={'source': source, 'jobid': jobid,
+                                                  'limit': '', 'sort': '', 'key': key, 'value': value},
                                    query=trim(query, MAX_QUERY_LENGTH), source=source,
-                                   redirect_page="paper",  # redirect in case of success
+                                   redirect_page='paper',  # redirect in case of success
                                    jobid=jobid, version=VERSION)
 
         elif analysis_type == REVIEW_ANALYSIS_TITLE:
@@ -244,9 +235,9 @@ def process():
                                        'jobid': jobid},
                                    query=trim(query, MAX_QUERY_LENGTH), source=source,
                                    limit=limit, sort=sort,
-                                   redirect_page="review",  # redirect in case of success
+                                   redirect_page='review',  # redirect in case of success
                                    jobid=jobid, version=VERSION)
-        elif analysis_type == 'search_pubmed_advanced':
+        elif analysis_type == SEARCH_PUBMED_ADVANCED:
             logger.info(f'/process review {log_request(request)}')
             limit = request.args.get('limit')
             return render_template('process.html',
@@ -256,7 +247,7 @@ def process():
                                        'jobid': jobid},
                                    query=trim(query, MAX_QUERY_LENGTH), source=source,
                                    limit=limit, sort='',
-                                   redirect_page="result_search_pubmed_advanced",  # redirect in case of success
+                                   redirect_page='result_search_pubmed_advanced',  # redirect in case of success
                                    jobid=jobid, version=VERSION)
 
         elif query:  # This option should be the last default
@@ -271,60 +262,37 @@ def process():
                                    },
                                    query=trim(query, MAX_QUERY_LENGTH), source=source,
                                    limit=limit, sort=sort,
-                                   redirect_page="result",  # redirect in case of success
+                                   redirect_page='result',  # redirect in case of success
                                    jobid=jobid, version=VERSION)
 
     logger.error(f'/process error {log_request(request)}')
     return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
 
 
-@app.route('/process_paper')
-def process_paper():
-    jobid = request.values.get('jobid')
-    source = request.values.get('source')
-    query = request.values.get('query')
-    if jobid:
-        job = get_or_cancel_task(jobid)
-        if job and job.state == 'SUCCESS':
-            id_list = job.result
-            logger.info(f'/process_paper single paper analysis {log_request(request)}')
-            job = analyze_id_list.delay(
-                source, ids=id_list, zoom=PAPER_ANALYSIS, query=query, limit=request.values.get('limit'),
-                test=app.config['TESTING']
-            )
-            return redirect(url_for('.process', query=query, analysis_type=PAPER_ANALYSIS_TITLE,
-                                    id=id_list[0], source=source, jobid=job.id))
-        logger.error(f'/process_paper error job is not success {log_request(request)}')
-        return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
-    else:
-        logger.error(f'/process_paper error wrong request no jobid {log_request(request)}')
-        return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
-
-
 @app.route('/paper')
 def paper():
     jobid = request.values.get('jobid')
     source = request.args.get('source')
-    pid = request.args.get('id')
     query = request.args.get('query')
-    limit = request.args.get('limit')
+    key = request.args.get('key')
+    value = request.args.get('value')
     try:
-        if jobid and pid:
+        if jobid:
             data = load_predefined_or_result_data(jobid, pubtrends_celery)
             if data is not None:
                 logger.info(f'/paper success {log_request(request)}')
                 return render_template('paper.html',
-                                       **prepare_paper_data(data, source, pid),
+                                       **prepare_paper_data(data, source),
                                        max_graph_size=PUBTRENDS_CONFIG.max_graph_size,
                                        version=VERSION)
             else:
                 logger.info(f'/paper No job or out-of-date job, restart it {log_request(request)}')
-                job = analyze_id_list.apply_async(
-                    args=[source, [pid], PAPER_ANALYSIS, query, limit, app.config['TESTING']],
+                job = analyze_search_paper.apply_async(
+                    args=[source, key, value, app.config['TESTING']],
                     task_id=jobid
                 )
                 return redirect(url_for('.process', query=query, analysis_type=PAPER_ANALYSIS_TITLE,
-                                        id=pid, source=source, jobid=job.id))
+                                        source=source, jobid=job.id))
         else:
             logger.error(f'/paper error wrong request {log_request(request)}')
             return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
@@ -551,35 +519,13 @@ def search_paper():
             source = data.get('source')  # Pubmed or Semantic Scholar
             key = data.get('key')
             value = data.get('value')
-            limit = data.get('limit')
-            job = find_paper_async.delay(source, key, value, test=app.config['TESTING'])
-            return redirect(url_for('.process', source=source, key=key, value=value, jobid=job.id, limit=limit))
+            job = analyze_search_paper.delay(source, key, value, test=app.config['TESTING'])
+            return redirect(url_for('.process', query=f'Paper: {key}={value}', analysis_type=PAPER_ANALYSIS_TITLE,
+                                    key=key, value=value, source=source, jobid=job.id))
         logger.error(f'/search_paper error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
     except Exception:
         logger.exception(f'/search_paper exception')
-        return render_template_string(ERROR_OCCURRED), 500
-
-
-@app.route('/search_list', methods=['POST'])
-def search_list():
-    logger.info(f'/search_list {log_request(request)}')
-    data = request.form
-    try:
-        if 'source' in data and 'list' in data:
-            source = data.get('source')  # Pubmed or Semantic Scholar
-            ids_text = data.get('list')
-            id_list = [re.sub('[\'"]*', '', pid) for pid in re.split('[ \t\n,;\\.]+', ids_text) if pid]
-            id_list = id_list[:PUBTRENDS_CONFIG.max_number_of_articles]
-            job = analyze_id_list.delay(source, ids=id_list, query='List of papers', zoom=None,
-                                        test=app.config['TESTING'])
-            return redirect(url_for('.process', query='List', source=source,
-                                    limit=f'{len(id_list)} papers', sort='',
-                                    jobid=job.id))
-        logger.error(f'/search_list error {log_request(request)}')
-        return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
-    except Exception:
-        logger.exception(f'/search_list exception')
         return render_template_string(ERROR_OCCURRED), 500
 
 
@@ -610,15 +556,20 @@ def search_pubmed_advanced():
     logger.info(f'/search_pubmed_advanced {log_request(request)}')
     query = request.form.get('query')
     limit = request.form.get('limit')
-
+    advanced = request.form.get('advanced') == 'on'
     try:
         if query and limit:
-            job = analyze_pubmed_advanced_search.delay(
-                query=query, limit=limit,
-                test=app.config['TESTING']
-            )
-            return redirect(url_for('.process', query=query, analysis_type='search_pubmed_advanced',
-                                    limit=limit, source='Pubmed', jobid=job.id))
+            if advanced:
+                job = analyze_pubmed_advanced_search.delay(
+                    query=query, limit=limit,
+                    test=app.config['TESTING']
+                )
+                return redirect(url_for('.process', query=query, analysis_type=SEARCH_PUBMED_ADVANCED,
+                                        limit=limit, source='Pubmed', jobid=job.id))
+            else:
+                job = analyze_pubmed_search.delay('Pubmed', query=query, limit=limit,
+                                                  test=app.config['TESTING'])
+                return redirect(url_for('.process', source='Pubmed', query=query, limit=limit, sort='', jobid=job.id))
         logger.error(f'/search_pubmed_advanced error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception:
