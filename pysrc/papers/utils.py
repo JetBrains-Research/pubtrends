@@ -1,10 +1,12 @@
-import binascii
 import logging
 import re
-from string import Template
 
+import binascii
 import pandas as pd
+from Bio import Entrez
 from matplotlib import colors
+
+Entrez.email = 'os@jetbrains.com'
 
 PUBMED_ARTICLE_BASE_URL = 'https://www.ncbi.nlm.nih.gov/pubmed/?term='
 SEMANTIC_SCHOLAR_BASE_URL = 'https://www.semanticscholar.org/paper/'
@@ -113,3 +115,8 @@ def human_readable_size(size):
             break
         size /= 1024.0
     return f'{int(size)} {unit}'
+
+
+def pubmed_search(query, limit):
+    handle = Entrez.esearch(db='pubmed', retmax=str(limit), retmode='xml', term=query)
+    return Entrez.read(handle)['IdList']
