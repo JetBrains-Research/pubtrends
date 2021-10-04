@@ -20,7 +20,7 @@ from pysrc.app.utils import log_request, MAX_QUERY_LENGTH, SOMETHING_WENT_WRONG_
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.celery.tasks_cache import get_or_cancel_task
 from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, analyze_id_list, \
-    analyze_pubmed_search_files, analyze_pubmed_search
+    analyze_pubmed_search_files, analyze_pubmed_search, analyze_search_terms_files
 from pysrc.papers.analysis.graph import to_weighted_graph, sparse_graph
 from pysrc.papers.analyzer_files import FILES_WITH_DESCRIPTIONS, ANALYSIS_FILES_TITLE
 from pysrc.papers.analyzer import PapersAnalyzer
@@ -144,16 +144,41 @@ def search_terms():
     source = request.form.get('source')  # Pubmed or Semantic Scholar
     sort = request.form.get('sort')  # Sort order
     limit = request.form.get('limit')  # Limit
+    pubmed_syntax = request.form.get('pubmed-syntax') == 'on'
     noreviews = request.form.get('noreviews') == 'on'  # Include reviews in the initial search phase
     expand = request.form.get('expand')  # Fraction of papers to cover by references
+    files = request.form.get('files') == 'on'
+
     try:
+        # PubMed syntax
+        if query and source and limit and pubmed_syntax:
+            if files:
+                # Save results to files
+                job = analyze_pubmed_search_files.delay(query=query, limit=limit, test=app.config['TESTING'])
+                return redirect(url_for('.process', query=query, analysis_type=ANALYSIS_FILES_TITLE,
+                                        sort='', limit=limit, source='Pubmed', jobid=job.id))
+            else:
+                # Regular analysis
+                job = analyze_pubmed_search.delay(query=query, limit=limit, test=app.config['TESTING'])
+                return redirect(url_for('.process', source='Pubmed', query=query, limit=limit, sort='', jobid=job.id))
+
+        # Regular search syntax
         if query and source and sort and limit and expand:
-            job = analyze_search_terms.delay(source, query=query, limit=int(limit), sort=sort,
-                                             noreviews=noreviews, expand=int(expand) / 100,
-                                             test=app.config['TESTING'])
-            return redirect(url_for('.process', query=query, source=source, limit=limit, sort=sort,
-                                    noreviews=noreviews, expand=expand,
-                                    jobid=job.id))
+            if files:
+                # Save results to files
+                job = analyze_search_terms_files.delay(source, query=query, limit=int(limit), sort=sort,
+                                                       noreviews=noreviews, expand=int(expand) / 100,
+                                                       test=app.config['TESTING'])
+                return redirect(url_for('.process', query=query, analysis_type=ANALYSIS_FILES_TITLE,
+                                        sort=sort, limit=limit, source=source, jobid=job.id))
+            else:
+                # Regular analysis
+                job = analyze_search_terms.delay(source, query=query, limit=int(limit), sort=sort,
+                                                 noreviews=noreviews, expand=int(expand) / 100,
+                                                 test=app.config['TESTING'])
+                return redirect(url_for('.process', query=query, source=source, limit=limit, sort=sort,
+                                        noreviews=noreviews, expand=expand,
+                                        jobid=job.id))
         logger.error(f'/search_terms error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_TOPIC), 400
     except Exception as e:
@@ -177,30 +202,6 @@ def search_paper():
         return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
     except Exception as e:
         logger.exception(f'/search_paper exception {e}')
-        return render_template_string(ERROR_OCCURRED), 500
-
-
-@app.route('/search_pubmed', methods=['POST'])
-def search_pubmed():
-    logger.info(f'/search_pubmed {log_request(request)}')
-    query = request.form.get('query')
-    limit = request.form.get('limit')
-    files = request.form.get('files') == 'on'
-    try:
-        if query and limit:
-            if files:
-                # Save results to files
-                job = analyze_pubmed_search_files.delay(query=query, limit=limit, test=app.config['TESTING'])
-                return redirect(url_for('.process', query=query, analysis_type=ANALYSIS_FILES_TITLE,
-                                        sort='', limit=limit, source='Pubmed', jobid=job.id))
-            else:
-                # Regular analysis with pubmed search
-                job = analyze_pubmed_search.delay(query=query, limit=limit, test=app.config['TESTING'])
-                return redirect(url_for('.process', source='Pubmed', query=query, limit=limit, sort='', jobid=job.id))
-        logger.error(f'/search_pubmed error {log_request(request)}')
-        return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
-    except Exception as e:
-        logger.exception(f'/search_pubmed exception {e}')
         return render_template_string(ERROR_OCCURRED), 500
 
 

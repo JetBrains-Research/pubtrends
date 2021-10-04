@@ -44,19 +44,41 @@
         }, false);
 
         $(document).ready(function () {
+            const noreviews_checkbox = $("#noreviews");
+            const expand_field = $("#expand");
+            function advanced_disable() {
+                noreviews_checkbox.prop("checked", false);
+                noreviews_checkbox.attr("disabled", "disabled");
+                expand_field.val(0);
+                expand_field.prop("readonly", true);
+            };
+            function advanced_enable() {
+                noreviews_checkbox.prop("checked", true);
+                noreviews_checkbox.removeAttr("disabled")
+                expand_field.val(20);
+                expand_field.prop("readonly", false);
+            };
+
             $('#search-source-selector').change(function () {
-                const noreviews_checkbox = $("#noreviews");
-                const expand_field = $("#expand");
                 if ($(this).val() === "Semantic Scholar") {
-                    noreviews_checkbox.prop("checked", false);
-                    noreviews_checkbox.attr("disabled", "disabled");
-                    expand_field.val(0);
-                    expand_field.prop("readonly", true);
+                    advanced_disable();
+                    $("#pubmed-syntax-div").hide();
+                    $("#pubmed-syntax").prop("checked", false);
+                    $("#search-input-field").prop("placeholder", "{{min_words_message}}Use double quotes for phrase search, join queries by commas.");
                 } else {
-                    noreviews_checkbox.prop("checked", true);
-                    noreviews_checkbox.removeAttr("disabled")
-                    expand_field.val(20);
-                    expand_field.prop("readonly", false);
+                    advanced_enable();
+                    $("#pubmed-syntax-div").show();
+                }
+            });
+            $("#pubmed-syntax").change(function () {
+                if ($("#pubmed-syntax").prop("checked") === true) {
+                    $("#search-input-field").prop("placeholder", "Use PubMed search syntax.");
+                    advanced_disable();
+                    $("#sort-selector").attr("disabled", "disabled");
+                } else {
+                    $("#search-input-field").prop("placeholder", "{{min_words_message}}Use double quotes for phrase search, join queries by commas.");
+                    advanced_enable();
+                    $("#sort-selector").removeAttr("disabled");
                 }
             });
         });
@@ -95,13 +117,6 @@
                        role="tab"
                        aria-controls="paper" aria-selected="false">Paper</a>
                 </li>
-                {% if pm_enabled %}
-                <li id="step1-3" class="nav-item">
-                    <a class="nav-link grey" id="pubmed-search-tab" data-toggle="tab" href="#pubmed-search"
-                       role="tab"
-                       aria-controls="pubmed-search" aria-selected="false">Pubmed search</a>
-                </li>
-                {% endif %}
             </ul>
         </div>
         <div class="card-body">
@@ -115,7 +130,7 @@
                                 <div class="input-group-prepend">
                                     <span class="input-group-text" id="query-addon">Query</span>
                                 </div>
-                                <input class="form-control form-control-borderless" type="search"
+                                <input id="search-input-field" class="form-control form-control-borderless" type="search"
                                        name="query"
                                        placeholder="{{min_words_message}}Use double quotes for phrase search, join queries by commas."
                                        aria-describedby="query-addon"
@@ -128,7 +143,7 @@
                             <!--end of col-->
                         </div>
                         <div class="mt-3 row no-gutters align-items-center">
-                            <div class="col-4 input-group">
+                            <div id="step2-2" class="col-4 input-group mr-2">
                                 <div class="input-group-prepend">
                                     <span class="input-group-text" id="search-source-addon">Database</span>
                                 </div>
@@ -141,6 +156,12 @@
                                     <option>Semantic Scholar</option>
                                     {% endif %}
                                 </select>
+                            </div>
+                            <div id="pubmed-syntax-div" class="col input-group mr-2">
+                                <label style="margin-top: auto;margin-bottom: auto">
+                                    <input type="checkbox" name="pubmed-syntax" id="pubmed-syntax">
+                                    <span class="checkmark">PubMed syntax</span>
+                                </label>
                             </div>
                         </div>
                         <div class="mt-2">
@@ -155,7 +176,7 @@
                                     <div class="input-group-prepend">
                                         <span class="input-group-text" id="sort-addon">Sort By</span>
                                     </div>
-                                    <select class="form-control" name="sort"
+                                    <select id="sort-selector" class="form-control" name="sort"
                                             aria-describedby="sort-addon">
                                         <option>Most Cited</option>
                                         <option>Most Recent</option>
@@ -196,6 +217,14 @@
                                 </div>
                                 <div class="col input-group">
                                 </div>
+                            </div>
+                            <div class="row no-gutters align-items-center mt-2">
+                            <div class="col input-group">
+                                <label style="margin-top: auto;margin-bottom: auto">
+                                    <input type="checkbox" name="files" id="files">
+                                    <span class="checkmark">Save analysis html reports</span>
+                                </label>
+                            </div>
                             </div>
                         </div>
                     </form>
@@ -296,56 +325,6 @@
                         </div>
                     </form>
                 </div>
-
-                <!-- Form for Advanced Pubmed Search -->
-                {% if pm_enabled %}
-                <div class="tab-pane fade" id="pubmed-search" role="tabpanel" aria-labelledby="pubmed-search-tab">
-                    <form action="search_pubmed" method="POST" class="mb-2 needs-validation" novalidate>
-                        <div class="row no-gutters align-items-center">
-                            <div class="col input-group mr-2">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text" id="query-pubmed-search-addon">Query</span>
-                                </div>
-                                <input class="form-control form-control-borderless" type="search"
-                                       name="query"
-                                       placeholder="Enter Pubmed search query"
-                                       aria-describedby="query-pubmed-search-addon"
-                                       autofocus required>
-                            </div>
-                            <!--end of col-->
-                            <div class="col-auto">
-                                <button class="btn btn-success" type="submit">Search</button>
-                            </div>
-                            <!--end of col-->
-                        </div>
-                        <div class="mt-3 row no-gutters align-items-center">
-                            <div class="col-4 input-group mr-2">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text" id="pubmed-advanced-search-limit">Limit</span>
-                                </div>
-                                <select class="form-control" name="limit"
-                                        aria-describedby="pubmed-advanced-search-limit">
-                                    {% for limit in limits %}
-                                    {% if limit == default_limit %}
-                                    <option selected>{{ limit }}</option>
-                                    {% else %}
-                                    <option>{{ limit }}</option>
-                                    {% endif %}
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            {% if save_to_files_enabled %}
-                            <div class="col input-group">
-                                <label style="margin-top: auto;margin-bottom: auto">
-                                    <input type="checkbox" checked="checked" name="files" id="files">
-                                    <span class="checkmark">Save results as html reports</span>
-                                </label>
-                            </div>
-                            {% endif %}
-                        </div>
-                    </form>
-                </div>
-                {% endif %}
             </div>
         </div>
     </main>
@@ -377,26 +356,18 @@
                     intro: "Use the <em>Paper</em> tab to find most cited similar papers, important prior, " +
                         "and derivative works for the paper of interest. Search by DOI, title name and id is supported."
                 },
-                {% if pm_enabled %}
-                {
-                    element: '#step1-3',
-                    intro: "Use the <em>Pubmed search</em> tab to analyze papers by given pubmed search query."
-                },
-                {% endif %}
                 {
                     element: '#step2',
-                    intro: "Enter search query to define the research area of interest.<br>" +
-                        "{{min_words_message}}Use double quotes for phrase search, join queries by commas."
+                    intro: "Enter search query to define the research area of interest."
+                },
+                {
+                    element: '#step2-2',
+                    intro: "Select publications database to work with."
                 },
                 {
                     element: '#step3',
-                    intro: "Additionally configure:" +
-                        "<ul>" +
-                        "<li><em>Sort by</em>: papers ranking - most cited or most recent</li>" +
-                        "<li><em>Limit</em>: number of papers to look for</li>" +
-                        "<li><em>Prefer no reviews</em>: ignore review papers in the search phase</li>" +
-                        "<li><em>Expand %</em>: fraction of paper covered by references</li>" +
-                        "</ul>"
+                    intro: "Additionally configure papers limit and ranking, filter out review papers, etc.<br>" +
+                        "Use save analysis html reports to create downloadable report files."
                 },
                 {
                     element: '#step4',

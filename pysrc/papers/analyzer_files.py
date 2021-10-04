@@ -33,7 +33,6 @@ from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.plot.plotter import Plotter
-from pysrc.papers.progress import Progress
 from pysrc.papers.utils import cut_authors_list
 
 logger = logging.getLogger(__name__)
@@ -44,14 +43,16 @@ ANALYSIS_FILES_TITLE = 'files'
 SEARCH_RESULTS_PATHS = ['/search_results', os.path.expanduser('~/.pubtrends/search_results')]
 
 
-class AnalyzerFiles:
+class AnalyzerFiles(PapersAnalyzer):
 
     def __init__(self, loader, config, test=False):
-        self.config = config
-        self.progress = Progress(18)
+        super(AnalyzerFiles, self).__init__(loader, config)
 
         self.loader = loader
         self.source = Loaders.source(self.loader, test)
+
+    def total_steps(self):
+        return 18
 
     def teardown(self):
         self.progress.remove_handler()

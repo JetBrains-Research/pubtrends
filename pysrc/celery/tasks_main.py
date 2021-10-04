@@ -52,6 +52,38 @@ def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, e
     return visualization, dump, analyzer.progress.log()
 
 
+@pubtrends_celery.task(name='analyze_search_terms_files')
+def analyze_search_terms_files(source, query, sort=None, limit=None, noreviews=True, expand=0.5, test=False):
+    config = PubtrendsConfig(test=test)
+    loader = Loaders.get_loader(source, config)
+    analyzer = AnalyzerFiles(loader, config)
+    analyzer.progress.info('Analyzing search query', current=0, task=current_task)
+    try:
+        sort = sort or SORT_MOST_CITED
+        limit = limit or analyzer.config.show_max_articles_default_value
+        ids = analyzer.search_terms(query, limit=limit, sort=sort,
+                                    noreviews=noreviews,
+                                    task=current_task)
+        if ids and expand != 0:
+            ids = expand_ids(
+                ids,
+                min(int(min(len(ids), limit) * (1 + expand)), analyzer.config.max_number_to_expand),
+                loader,
+                PapersAnalyzer.EXPAND_LIMIT,
+                PapersAnalyzer.EXPAND_CITATIONS_Q_LOW,
+                PapersAnalyzer.EXPAND_CITATIONS_Q_HIGH,
+                PapersAnalyzer.EXPAND_CITATIONS_SIGMA,
+                PapersAnalyzer.EXPAND_SIMILARITY_THRESHOLD,
+                analyzer.progress, current=2, task=current_task
+            )
+        analyzer.analyze_ids(ids, source, query, limit, task=current_task)
+        analyzer.progress.done(task=current_task)
+        analyzer.teardown()
+        return analyzer.query_folder
+    finally:
+        loader.close_connection()
+
+
 @pubtrends_celery.task(name='analyze_id_list')
 def analyze_id_list(source, ids, zoom, query, limit=None, test=False):
     return _analyze_id_list(source, ids, zoom, query, limit, test, current_task)
