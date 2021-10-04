@@ -16,6 +16,7 @@ services:
       - ~/.pubtrends/database:/database
       - ~/.pubtrends/ssl:/ssl:ro
       - ~/.pubtrends/predefined:/predefined
+      - ~/.pubtrends/search_results:/search_results
   worker:
     build:
       context: .
