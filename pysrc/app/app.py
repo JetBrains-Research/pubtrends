@@ -30,7 +30,7 @@ from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.plot.plotter import Plotter, TOPIC_KEYWORDS
 from pysrc.papers.plot.plotter_paper import prepare_paper_data
-from pysrc.papers.utils import zoom_name, trim, PAPER_ANALYSIS, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE, ZOOM_OUT_TITLE, \
+from pysrc.papers.utils import zoom_name, trim, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE, ZOOM_OUT_TITLE, \
     human_readable_size
 from pysrc.version import VERSION
 
