@@ -54,13 +54,16 @@ def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, e
 
 @pubtrends_celery.task(name='analyze_id_list')
 def analyze_id_list(source, ids, zoom, query, limit=None, test=False):
+    return _analyze_id_list(source, ids, zoom, query, limit, test, current_task)
+
+
+def _analyze_id_list(source, ids, zoom, query, limit=None, test=False, task=None):
     if len(ids) == 0:
         raise RuntimeError("Empty papers list")
-
     config = PubtrendsConfig(test=test)
     loader = Loaders.get_loader(source, config)
     analyzer = PapersAnalyzer(loader, config)
-    analyzer.progress.info('Analyzing paper(s)', current=0, task=current_task)
+    analyzer.progress.info('Analyzing paper(s)', current=0, task=task)
     try:
         if zoom == ZOOM_OUT:
             ids = expand_ids(
@@ -72,7 +75,7 @@ def analyze_id_list(source, ids, zoom, query, limit=None, test=False):
                 PapersAnalyzer.EXPAND_CITATIONS_Q_HIGH,
                 PapersAnalyzer.EXPAND_CITATIONS_SIGMA,
                 PapersAnalyzer.EXPAND_SIMILARITY_THRESHOLD,
-                analyzer.progress, current=1, task=current_task
+                analyzer.progress, current=1, task=task
             )
         elif zoom == PAPER_ANALYSIS:
             if limit:
@@ -93,18 +96,18 @@ def analyze_id_list(source, ids, zoom, query, limit=None, test=False):
                 PapersAnalyzer.EXPAND_CITATIONS_Q_HIGH,
                 PapersAnalyzer.EXPAND_CITATIONS_SIGMA,
                 PapersAnalyzer.EXPAND_SIMILARITY_THRESHOLD,
-                analyzer.progress, current=1, task=current_task
+                analyzer.progress, current=1, task=task
             )
         else:
             ids = ids  # Leave intact
-        analyzer.analyze_papers(ids, query, task=current_task)
+        analyzer.analyze_papers(ids, query, task=task)
     finally:
         loader.close_connection()
 
-    analyzer.progress.info('Visualizing', current=analyzer.progress.total - 1, task=current_task)
+    analyzer.progress.info('Visualizing', current=analyzer.progress.total - 1, task=task)
     visualization = visualize_analysis(analyzer)
     dump = analyzer.dump()
-    analyzer.progress.done(task=current_task)
+    analyzer.progress.done(task=task)
     analyzer.teardown()
     return visualization, dump, analyzer.progress.log()
 
@@ -117,8 +120,7 @@ def analyze_search_paper(source, key, value, test=False):
         result = loader.find(key, value)
         if len(result) == 1:
             return analyze_id_list.delay(
-                source, ids=result, zoom=PAPER_ANALYSIS, query='Paper', limit='',
-                test=test
+                source, ids=result, zoom=PAPER_ANALYSIS, query='Paper', limit='', test=test, task=current_task
             )
         elif len(result) == 0:
             raise SearchError('Found no papers matching specified key - value pair')
@@ -132,7 +134,7 @@ def analyze_search_paper(source, key, value, test=False):
 def analyze_pubmed_search(query, limit=None, test=False):
     logger.info(f"Searching Pubmed query: '{query}', limit {limit}")
     ids = pubmed_search(query, limit)
-    return analyze_id_list('Pubmed', ids, zoom=None, query=query, limit=limit, test=test)
+    return _analyze_id_list('Pubmed', ids, zoom=None, query=query, limit=limit, test=test, task=current_task)
 
 
 @pubtrends_celery.task(name='analyze_pubmed_advanced_search')

@@ -560,15 +560,11 @@ def search_pubmed_advanced():
     try:
         if query and limit:
             if advanced:
-                job = analyze_pubmed_advanced_search.delay(
-                    query=query, limit=limit,
-                    test=app.config['TESTING']
-                )
+                job = analyze_pubmed_advanced_search.delay(query=query, limit=limit, test=app.config['TESTING'])
                 return redirect(url_for('.process', query=query, analysis_type=SEARCH_PUBMED_ADVANCED,
-                                        limit=limit, source='Pubmed', jobid=job.id))
+                                        sort='', limit=limit, source='Pubmed', jobid=job.id))
             else:
-                job = analyze_pubmed_search.delay('Pubmed', query=query, limit=limit,
-                                                  test=app.config['TESTING'])
+                job = analyze_pubmed_search.delay(query=query, limit=limit, test=app.config['TESTING'])
                 return redirect(url_for('.process', source='Pubmed', query=query, limit=limit, sort='', jobid=job.id))
         logger.error(f'/search_pubmed_advanced error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
