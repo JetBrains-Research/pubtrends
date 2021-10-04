@@ -165,8 +165,8 @@ class AnalyzerFiles:
         logger.debug(f'Built similarity graph - {self.similarity_graph.number_of_nodes()} nodes and '
                      f'{self.similarity_graph.number_of_edges()} edges')
 
-        self.progress.info(f'Visualizing similarity graph with {self.similarity_graph.number_of_nodes()} nodes'
-                           f'and {self.similarity_graph.number_of_edges()}', current=12, task=task)
+        self.progress.info(f'Visualizing similarity graph with {self.similarity_graph.number_of_nodes()} nodes '
+                           f'and {self.similarity_graph.number_of_edges()} edges', current=12, task=task)
         self.weighted_similarity_graph, self.node_ids, self.node_embeddings, xs, ys = layout_similarity_graph(
             self.similarity_graph, PapersAnalyzer.similarity, PapersAnalyzer.TOPIC_MIN_SIZE
         )
@@ -280,7 +280,7 @@ class AnalyzerFiles:
 
         path_papers_graph_interactive = os.path.join(self.query_folder, 'papers_interactive.html')
         logging.info(f'Saving papers similarity graph for cytoscape.js {path_papers_graph_interactive}')
-        template_path = os.path.realpath(os.path.join(__file__, '../../../papers_template.html'))
+        template_path = os.path.realpath(os.path.join(__file__, '../../papers_template.html'))
         save_sim_papers_graph_interactive(self.sparse_similarity_graph, self.df, clusters_description,
                                           mesh_clusters_description, template_path, path_papers_graph_interactive)
 
