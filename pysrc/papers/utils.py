@@ -6,8 +6,6 @@ import pandas as pd
 from Bio import Entrez
 from matplotlib import colors
 
-Entrez.email = 'os@jetbrains.com'
-
 PUBMED_ARTICLE_BASE_URL = 'https://www.ncbi.nlm.nih.gov/pubmed/?term='
 SEMANTIC_SCHOLAR_BASE_URL = 'https://www.semanticscholar.org/paper/'
 
