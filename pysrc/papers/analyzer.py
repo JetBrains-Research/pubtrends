@@ -104,7 +104,7 @@ class PapersAnalyzer:
         if len(ids) == 0:
             raise SearchError(f"Nothing found for search query: {query}")
         else:
-            logger.debug(f'Found {len(ids)} publications in the local database')
+            self.progress.info(f'Found {len(ids)} publications in the database', current=1, task=task)
         return ids
 
     def load_references(self, pid, limit):
@@ -119,6 +119,8 @@ class PapersAnalyzer:
         self.pub_df = self.loader.load_publications(ids)
         if len(self.pub_df) == 0:
             raise SearchError(f'Nothing found for ids: {ids}')
+        else:
+            self.progress.info(f'Found {len(self.pub_df)} papers in database', current=2, task=task)
         ids = list(self.pub_df['id'])  # Limit ids to existing papers only!
         self.pub_types = list(set(self.pub_df['type']))
 
@@ -152,8 +154,8 @@ class PapersAnalyzer:
         logger.debug(f'Found {len(self.cit_df)} citations between papers')
 
         self.citations_graph = build_citation_graph(self.df, self.cit_df)
-        logger.debug(f'Built citation graph - {self.citations_graph.number_of_nodes()} nodes and '
-                     f'{self.citations_graph.number_of_edges()} edges')
+        self.progress.info(f'Built citation graph - {self.citations_graph.number_of_nodes()} nodes and '
+                           f'{self.citations_graph.number_of_edges()} edges', current=5, task=task)
 
         self.progress.info('Calculating co-citations for selected papers', current=6, task=task)
         self.cocit_df = self.loader.load_cocitations(ids)
@@ -176,8 +178,8 @@ class PapersAnalyzer:
             self.df, self.texts_similarity,
             self.citations_graph, self.cocit_grouped_df, self.bibliographic_coupling_df,
         )
-        logger.debug(f'Built similarity graph - {self.similarity_graph.number_of_nodes()} nodes and '
-                     f'{self.similarity_graph.number_of_edges()} edges')
+        self.progress.info(f'Built similarity graph - {self.similarity_graph.number_of_nodes()} nodes and '
+                           f'{self.similarity_graph.number_of_edges()} edges', current=8, task=task)
         if self.similarity_graph.number_of_nodes() == 0:
             self.progress.info('Not enough papers to process topics analysis', current=9, task=task)
             self.df['comp'] = 0  # Technical value for top authors and papers analysis
@@ -207,7 +209,8 @@ class PapersAnalyzer:
                 )
                 self.df['comp'] = [self.partition[pid] for pid in self.df['id']]
 
-            self.progress.info('Analyzing topics descriptions', current=10, task=task)
+            self.progress.info(f'Analyzing {len(set(self.partition.values()))} topics descriptions',
+                               current=10, task=task)
             comp_pids = pd.DataFrame(self.partition.items(), columns=['id', 'comp']). \
                 groupby('comp')['id'].apply(list).to_dict()
             self.topics_description = get_topics_description(
