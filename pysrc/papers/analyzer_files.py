@@ -120,16 +120,17 @@ class AnalyzerFiles(PapersAnalyzer):
         logger.info('Computing mesh terms')
         mesh_corpus_terms, mesh_corpus_counts = vectorize_mesh_terms(self.df, mesh_counter)
 
-        logger.info('Analyzing mesh terms timeline')
-        freq_meshs = get_frequent_mesh_terms(self.top_cited_df)
-        keywords_df, years = PlotPreprocessor.frequent_keywords_data(
-            freq_meshs, self.df, mesh_corpus_terms, mesh_corpus_counts, 20
-        )
-        path_mesh_terms_timeline = os.path.join(self.query_folder, 'timeline_mesh_terms.html')
-        logging.info(f'Save frequent mesh terms to file {path_mesh_terms_timeline}')
-        output_file(filename=path_mesh_terms_timeline, title="Mesh terms timeline")
-        save(Plotter.plot_keywords_timeline(keywords_df, years))
-        reset_output()
+        if len(mesh_corpus_terms) > 0:
+            logger.info('Analyzing mesh terms timeline')
+            freq_meshs = get_frequent_mesh_terms(self.top_cited_df)
+            keywords_df, years = PlotPreprocessor.frequent_keywords_data(
+                freq_meshs, self.df, mesh_corpus_terms, mesh_corpus_counts, 20
+            )
+            path_mesh_terms_timeline = os.path.join(self.query_folder, 'timeline_mesh_terms.html')
+            logging.info(f'Save frequent mesh terms to file {path_mesh_terms_timeline}')
+            output_file(filename=path_mesh_terms_timeline, title="Mesh terms timeline")
+            save(Plotter.plot_keywords_timeline(keywords_df, years))
+            reset_output()
 
         self.progress.info('Analyzing papers text similarities', current=8, task=task)
         self.texts_similarity = analyze_texts_similarity(
@@ -368,10 +369,11 @@ def vectorize_mesh_terms(df, mesh_counter, max_features=1000, min_df=0.01, max_d
                 if mt in features_map:
                     counts[i, features_map[mt]] = 1
     logger.debug(f'Vectorized corpus size {counts.shape}')
-    terms_counts = np.asarray(np.sum(counts, axis=0)).reshape(-1)
-    terms_freqs = terms_counts / len(df)
-    logger.debug(f'Terms frequencies min={terms_freqs.min()}, max={terms_freqs.max()}, '
-                 f'mean={terms_freqs.mean()}, std={terms_freqs.std()}')
+    if counts.shape[1] != 0:
+        terms_counts = np.asarray(np.sum(counts, axis=0)).reshape(-1)
+        terms_freqs = terms_counts / len(df)
+        logger.debug(f'Terms frequencies min={terms_freqs.min()}, max={terms_freqs.max()}, '
+                     f'mean={terms_freqs.mean()}, std={terms_freqs.std()}')
     return features, counts
 
 
