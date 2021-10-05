@@ -3,6 +3,15 @@ Pubtrends changelog
 
 Here you can see the full list of changes between each release.
 
+Version 0.18
+------------
+Released on Oct 5, 2021
+
+-- Support Pubmed search syntax including AND, OR, etc.
+-- Show analysis results as downloadable html files
+-- Reworked single paper analysis with single background task
+-- Small fixes
+
 Version 0.17
 ------------
 Released on Aug 10, 2021
