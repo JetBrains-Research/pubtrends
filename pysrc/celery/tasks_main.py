@@ -10,7 +10,7 @@ from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plotter import visualize_analysis
-from pysrc.papers.utils import SORT_MOST_CITED, ZOOM_OUT, PAPER_ANALYSIS, pubmed_search
+from pysrc.papers.utils import SORT_MOST_CITED, pubmed_search, PAPER_ANALYSIS_TYPE, IDS_ANALYSIS_TYPE
 
 logger = getLogger(__name__)
 
@@ -85,11 +85,11 @@ def analyze_search_terms_files(source, query, sort=None, limit=None, noreviews=T
 
 
 @pubtrends_celery.task(name='analyze_id_list')
-def analyze_id_list(source, ids, zoom, query, limit=None, test=False):
-    return _analyze_id_list(source, ids, zoom, query, limit, test, current_task)
+def analyze_id_list(source, ids, query, analysis_type, limit=None, test=False):
+    return _analyze_id_list(source, ids, query, analysis_type, limit, test, current_task)
 
 
-def _analyze_id_list(source, ids, zoom, query, limit=None, test=False, task=None):
+def _analyze_id_list(source, ids, query, analysis_type=IDS_ANALYSIS_TYPE, limit=None, test=False, task=None):
     if len(ids) == 0:
         raise RuntimeError("Empty papers list")
     config = PubtrendsConfig(test=test)
@@ -97,31 +97,14 @@ def _analyze_id_list(source, ids, zoom, query, limit=None, test=False, task=None
     analyzer = PapersAnalyzer(loader, config)
     analyzer.progress.info('Analyzing paper(s)', current=0, task=task)
     try:
-        if zoom == ZOOM_OUT:
-            ids = expand_ids(
-                ids,
-                min(len(ids) + PapersAnalyzer.EXPAND_ZOOM_OUT, analyzer.config.max_number_to_expand),
-                loader,
-                PapersAnalyzer.EXPAND_LIMIT,
-                PapersAnalyzer.EXPAND_CITATIONS_Q_LOW,
-                PapersAnalyzer.EXPAND_CITATIONS_Q_HIGH,
-                PapersAnalyzer.EXPAND_CITATIONS_SIGMA,
-                PapersAnalyzer.EXPAND_SIMILARITY_THRESHOLD,
-                analyzer.progress, current=1, task=task
-            )
-        elif zoom == PAPER_ANALYSIS:
-            if limit:
-                limit = int(limit)
-            else:
-                limit = 0
+        if analysis_type == PAPER_ANALYSIS_TYPE:
+            limit = int(limit) if limit else analyzer.config.max_number_to_expand
             # Fetch references at first, but in some cases paper may have empty references
-            ids = ids + analyzer.load_references(
-                ids[0], limit=limit if limit > 0 else analyzer.config.max_number_to_expand
-            )
+            ids = ids + analyzer.load_references(ids[0], limit=limit)
             # And then expand
             ids = expand_ids(
                 ids,
-                limit if limit > 0 else analyzer.config.max_number_to_expand,
+                limit,
                 loader,
                 PapersAnalyzer.EXPAND_LIMIT,
                 PapersAnalyzer.EXPAND_CITATIONS_Q_LOW,
@@ -130,8 +113,10 @@ def _analyze_id_list(source, ids, zoom, query, limit=None, test=False, task=None
                 PapersAnalyzer.EXPAND_SIMILARITY_THRESHOLD,
                 analyzer.progress, current=1, task=task
             )
-        else:
+        elif analysis_type == IDS_ANALYSIS_TYPE:
             ids = ids  # Leave intact
+        else:
+            raise Exception(f'Illegal analysis type {analysis_type}')
         analyzer.analyze_papers(ids, query, task=task)
     finally:
         loader.close_connection()
@@ -152,7 +137,8 @@ def analyze_search_paper(source, key, value, test=False):
         result = loader.find(key, value)
         if len(result) == 1:
             return _analyze_id_list(
-                source, ids=result, zoom=PAPER_ANALYSIS, query='Paper', limit='', test=test, task=current_task
+                source, ids=result, query=f'Paper {key}={value}', analysis_type=PAPER_ANALYSIS_TYPE, limit='',
+                test=test, task=current_task
             )
         elif len(result) == 0:
             raise SearchError('Found no papers matching specified key - value pair')
@@ -166,7 +152,8 @@ def analyze_search_paper(source, key, value, test=False):
 def analyze_pubmed_search(query, limit=None, test=False):
     logger.info(f"Searching Pubmed query: '{query}', limit {limit}")
     ids = pubmed_search(query, limit)
-    return _analyze_id_list('Pubmed', ids, zoom=None, query=query, limit=limit, test=test, task=current_task)
+    return _analyze_id_list('Pubmed', ids, query=query, analysis_type=IDS_ANALYSIS_TYPE, limit=limit,
+                            test=test, task=current_task)
 
 
 @pubtrends_celery.task(name='analyze_pubmed_search_files')

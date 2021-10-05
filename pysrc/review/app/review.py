@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
-REVIEW_ANALYSIS_TITLE = 'review'
+REVIEW_ANALYSIS_TYPE = 'review'
 
 
 def register_app_review(app):
@@ -36,7 +36,7 @@ def register_app_review(app):
                 data = load_predefined_or_result_data(jobid, pubtrends_celery)
                 if data is not None:
                     job = prepare_review_data_async.delay(data, source, num_papers, num_sents)
-                    return redirect(url_for('.process', analysis_type=REVIEW_ANALYSIS_TITLE, jobid=job.id,
+                    return redirect(url_for('.process', analysis_type=REVIEW_ANALYSIS_TYPE, jobid=job.id,
                                             query=query, source=source, limit=limit, sort=sort))
             logger.error(f'/result error {log_request(request)}')
             return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400

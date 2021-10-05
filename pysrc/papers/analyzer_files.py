@@ -38,7 +38,7 @@ from pysrc.papers.utils import cut_authors_list
 
 logger = logging.getLogger(__name__)
 
-ANALYSIS_FILES_TITLE = 'files'
+ANALYSIS_FILES_TYPE = 'files'
 
 # Deployment and development
 SEARCH_RESULTS_PATHS = ['/search_results', os.path.expanduser('~/.pubtrends/search_results')]

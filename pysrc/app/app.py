@@ -22,7 +22,7 @@ from pysrc.celery.tasks_cache import get_or_cancel_task
 from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, analyze_id_list, \
     analyze_pubmed_search_files, analyze_pubmed_search, analyze_search_terms_files
 from pysrc.papers.analysis.graph import to_weighted_graph, sparse_graph
-from pysrc.papers.analyzer_files import FILES_WITH_DESCRIPTIONS, ANALYSIS_FILES_TITLE
+from pysrc.papers.analyzer_files import FILES_WITH_DESCRIPTIONS, ANALYSIS_FILES_TYPE
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
@@ -30,16 +30,15 @@ from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.plot.plotter import Plotter, TOPIC_KEYWORDS
 from pysrc.papers.plot.plotter_paper import prepare_paper_data
-from pysrc.papers.utils import zoom_name, trim, ZOOM_IN_TITLE, PAPER_ANALYSIS_TITLE, ZOOM_OUT_TITLE, \
-    human_readable_size
+from pysrc.papers.utils import trim, IDS_ANALYSIS_TYPE, PAPER_ANALYSIS_TYPE, human_readable_size
 from pysrc.version import VERSION
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
 if PUBTRENDS_CONFIG.feature_review_enabled:
-    from pysrc.review.app.review import REVIEW_ANALYSIS_TITLE, register_app_review
+    from pysrc.review.app.review import REVIEW_ANALYSIS_TYPE, register_app_review
 else:
-    REVIEW_ANALYSIS_TITLE = 'not_available'
+    REVIEW_ANALYSIS_TYPE = 'not_available'
 
 app = Flask(__name__)
 
@@ -155,7 +154,7 @@ def search_terms():
             if files:
                 # Save results to files
                 job = analyze_pubmed_search_files.delay(query=query, limit=limit, test=app.config['TESTING'])
-                return redirect(url_for('.process', query=query, analysis_type=ANALYSIS_FILES_TITLE,
+                return redirect(url_for('.process', query=query, analysis_type=ANALYSIS_FILES_TYPE,
                                         sort='', limit=limit, source='Pubmed', jobid=job.id))
             else:
                 # Regular analysis
@@ -169,7 +168,7 @@ def search_terms():
                 job = analyze_search_terms_files.delay(source, query=query, limit=int(limit), sort=sort,
                                                        noreviews=noreviews, expand=int(expand) / 100,
                                                        test=app.config['TESTING'])
-                return redirect(url_for('.process', query=query, analysis_type=ANALYSIS_FILES_TITLE,
+                return redirect(url_for('.process', query=query, analysis_type=ANALYSIS_FILES_TYPE,
                                         sort=sort, limit=limit, source=source, jobid=job.id))
             else:
                 # Regular analysis
@@ -196,7 +195,7 @@ def search_paper():
             key = data.get('key')
             value = data.get('value')
             job = analyze_search_paper.delay(source, key, value, test=app.config['TESTING'])
-            return redirect(url_for('.process', query=f'Paper {key}={value}', analysis_type=PAPER_ANALYSIS_TITLE,
+            return redirect(url_for('.process', query=f'Paper {key}={value}', analysis_type=PAPER_ANALYSIS_TYPE,
                                     key=key, value=value, source=source, jobid=job.id))
         logger.error(f'/search_paper error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
@@ -213,10 +212,9 @@ def process_ids():
     try:
         if source and query and 'id_list' in request.form:
             id_list = request.form.get('id_list').split(',')
-            zoom = request.form.get('zoom')
-            analysis_type = zoom_name(zoom)
+            analysis_type = request.form.get('analysis_type')
             job = analyze_id_list.delay(
-                source, ids=id_list, zoom=int(zoom), query=query, limit=None,
+                source, ids=id_list, query=query, analysis_type=analysis_type, limit=None,
                 test=app.config['TESTING']
             )
             return redirect(url_for('.process', query=query, analysis_type=analysis_type, source=source, jobid=job.id))
@@ -245,8 +243,8 @@ def process():
         analysis_type = request.values.get('analysis_type')
         source = request.values.get('source')
 
-        if analysis_type in [ZOOM_IN_TITLE, ZOOM_OUT_TITLE]:
-            logger.info(f'/process zoom processing {log_request(request)}')
+        if analysis_type == IDS_ANALYSIS_TYPE:
+            logger.info(f'/process ids {log_request(request)}')
             return render_template('process.html',
                                    redirect_args={'query': quote(query), 'source': source, 'jobid': jobid,
                                                   'limit': analysis_type, 'sort': ''},
@@ -254,7 +252,7 @@ def process():
                                    redirect_page='result',  # redirect in case of success
                                    jobid=jobid, version=VERSION)
 
-        elif analysis_type == PAPER_ANALYSIS_TITLE:
+        elif analysis_type == PAPER_ANALYSIS_TYPE:
             logger.info(f'/process paper analysis {log_request(request)}')
             key = request.args.get('key')
             value = request.args.get('value')
@@ -265,7 +263,7 @@ def process():
                                    redirect_page='paper',  # redirect in case of success
                                    jobid=jobid, version=VERSION)
 
-        elif analysis_type == REVIEW_ANALYSIS_TITLE:
+        elif analysis_type == REVIEW_ANALYSIS_TYPE:
             logger.info(f'/process review {log_request(request)}')
             limit = request.args.get('limit')
             sort = request.args.get('sort')
@@ -279,7 +277,7 @@ def process():
                                    redirect_page='review',  # redirect in case of success
                                    jobid=jobid, version=VERSION)
 
-        elif analysis_type == ANALYSIS_FILES_TITLE:
+        elif analysis_type == ANALYSIS_FILES_TYPE:
             logger.info(f'/process files {log_request(request)}')
             limit = request.args.get('limit')
             return render_template('process.html',
@@ -530,7 +528,7 @@ def paper():
                     args=[source, key, value, app.config['TESTING']],
                     task_id=jobid
                 )
-                return redirect(url_for('.process', query=query, analysis_type=PAPER_ANALYSIS_TITLE,
+                return redirect(url_for('.process', query=query, analysis_type=PAPER_ANALYSIS_TYPE,
                                         source=source, jobid=job.id))
         else:
             logger.error(f'/paper error wrong request {log_request(request)}')

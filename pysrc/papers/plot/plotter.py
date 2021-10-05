@@ -25,7 +25,7 @@ from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
-from pysrc.papers.utils import cut_authors_list, ZOOM_OUT, ZOOM_IN, zoom_name, trim, rgb2hex, MAX_TITLE_LENGTH
+from pysrc.papers.utils import cut_authors_list, trim, rgb2hex, MAX_TITLE_LENGTH, IDS_ANALYSIS_TYPE
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
 hv.extension('bokeh')
@@ -56,7 +56,7 @@ def visualize_analysis(analyzer):
     # Initialize plotter after completion of analysis
     plotter = Plotter(analyzer=analyzer)
     freq_kwds = get_frequent_tokens(analyzer.top_cited_df, query=analyzer.query)
-    word_cloud, zoom_out_callback = plotter.papers_word_cloud_and_callback(freq_kwds)
+    word_cloud = plotter.papers_word_cloud(freq_kwds)
     export_name = re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{analyzer.query}'.lower())).strip('_')
     result = dict(
         topics_analyzed=False,
@@ -68,7 +68,6 @@ def visualize_analysis(analyzer):
         fastest_growth_per_year_papers=[components(plotter.fastest_growth_per_year_papers())],
         papers_stats=[components(plotter.papers_by_year())],
         papers_word_cloud=Plotter.word_cloud_prepare(word_cloud),
-        papers_zoom_out_callback=zoom_out_callback,
     )
 
     keywords_frequencies = plotter.plot_keywords_frequencies(freq_kwds)
@@ -185,9 +184,7 @@ class Plotter:
         """)
 
     @staticmethod
-    def zoom_callback(id_list, source, zoom, query):
-        # check zoom value
-        zoom_name(zoom)
+    def zoom_in_callback(id_list, source, query):
         # submit list of ids and database name to the main page using invisible form
         # IMPORTANT: no double quotes!
         return f"""
@@ -211,8 +208,8 @@ class Plotter:
 
         var input = document.createElement('input');
         input.type = 'hidden';
-        input.name = 'zoom';
-        input.value = '{zoom}';
+        input.name = 'analysis_type';
+        input.value = '{IDS_ANALYSIS_TYPE}';
         form.appendChild(input);
 
         var input = document.createElement('input');
@@ -293,9 +290,8 @@ class Plotter:
 
             # Create Zoom In callback
             id_list = list(df_comp['id'])
-            zoom_in_callback = self.zoom_callback(id_list, self.analyzer.source,
-                                                  zoom=ZOOM_IN,
-                                                  query=self.analyzer.query)
+            zoom_in_callback = self.zoom_in_callback(id_list, self.analyzer.source,
+                                                     query=self.analyzer.query)
 
             result.append((plot, wc, is_empty, zoom_in_callback))
 
@@ -433,19 +429,13 @@ class Plotter:
             p.vbar(x='year', width=0.8, top='counts', source=ds_stats)
         return p
 
-    def papers_word_cloud_and_callback(self, freq_kwds):
+    def papers_word_cloud(self, freq_kwds):
         # Build word cloud, size is proportional to token frequency
         wc = WordCloud(background_color="white", width=WORD_CLOUD_WIDTH, height=WORD_CLOUD_HEIGHT,
                        color_func=lambda *args, **kwargs: 'black',
                        max_words=TOPIC_WORD_CLOUD_KEYWORDS, min_font_size=10, max_font_size=30)
         wc.generate_from_frequencies(freq_kwds)
-
-        # Create Zoom Out callback
-        id_list = list(self.analyzer.df['id'])
-        zoom_out_callback = self.zoom_callback(id_list, self.analyzer.source,
-                                               zoom=ZOOM_OUT, query=self.analyzer.query)
-
-        return wc, zoom_out_callback
+        return wc
 
     def plot_keywords_frequencies(self, freq_kwds, n=20):
         keywords_df, years = PlotPreprocessor.frequent_keywords_data(

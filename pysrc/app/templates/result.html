@@ -558,17 +558,6 @@
                         </div>
                         {% endfor %}
                     </div>
-                    <hr>
-                    <p>
-                        Explore related papers by taking into account all the prior and derivative referencing and citing relationships
-                        for papers of interest.<br>
-                        <strong>WARNING</strong>: analysis can be slow.
-                    </p>
-                    <button type="button" class="btn btn-light"
-                            onclick="(function(){ {{ papers_zoom_out_callback|safe }} })();">
-                        <img src="{{ url_for('static', filename='zoom-out.svg') }}" alt="-"/>&nbsp;Zoom out to
-                        related papers
-                    </button>
                     <div class="mt-3" id="feedback-topics-form"></div>
                 </div>
             </div>

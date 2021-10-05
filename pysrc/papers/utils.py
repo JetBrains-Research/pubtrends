@@ -9,16 +9,8 @@ from matplotlib import colors
 PUBMED_ARTICLE_BASE_URL = 'https://www.ncbi.nlm.nih.gov/pubmed/?term='
 SEMANTIC_SCHOLAR_BASE_URL = 'https://www.semanticscholar.org/paper/'
 
-# IMPORTANT
-# KeyPaperAnalyzer.launch() performs "zoom - 1" expand operations if id_list is given.
-# This allows to perform zoom out in case of regular zoom out action and double in case of single paper analysis.
-ZOOM_IN = 0
-ZOOM_OUT = 1
-PAPER_ANALYSIS = 2
-
-ZOOM_IN_TITLE = 'detailed'
-ZOOM_OUT_TITLE = 'expanded'
-PAPER_ANALYSIS_TITLE = 'paper-analysis'
+IDS_ANALYSIS_TYPE = 'detailed'
+PAPER_ANALYSIS_TYPE = 'paper'
 
 SORT_MOST_CITED = 'Most Cited'
 SORT_MOST_RECENT = 'Most Recent'
@@ -28,16 +20,6 @@ MAX_TITLE_LENGTH = 200
 SEED = 19700101
 
 log = logging.getLogger(__name__)
-
-
-def zoom_name(zoom):
-    if int(zoom) == ZOOM_IN:
-        return ZOOM_IN_TITLE
-    elif int(zoom) == ZOOM_OUT:
-        return ZOOM_OUT_TITLE
-    elif int(zoom) == PAPER_ANALYSIS:
-        return PAPER_ANALYSIS_TITLE
-    raise ValueError(f'Illegal zoom key value: {zoom}')
 
 
 def cut_authors_list(authors, limit=10):
