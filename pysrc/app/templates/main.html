@@ -46,12 +46,14 @@
         $(document).ready(function () {
             const noreviews_checkbox = $("#noreviews");
             const expand_field = $("#expand");
+
             function advanced_disable() {
                 noreviews_checkbox.prop("checked", false);
                 noreviews_checkbox.attr("disabled", "disabled");
                 expand_field.val(0);
                 expand_field.prop("readonly", true);
             };
+
             function advanced_enable() {
                 noreviews_checkbox.prop("checked", true);
                 noreviews_checkbox.removeAttr("disabled")
@@ -130,7 +132,8 @@
                                 <div class="input-group-prepend">
                                     <span class="input-group-text" id="query-addon">Query</span>
                                 </div>
-                                <input id="search-input-field" class="form-control form-control-borderless" type="search"
+                                <input id="search-input-field" class="form-control form-control-borderless"
+                                       type="search"
                                        name="query"
                                        placeholder="{{min_words_message}}Use double quotes for phrase search, join queries by commas."
                                        aria-describedby="query-addon"
@@ -219,12 +222,12 @@
                                 </div>
                             </div>
                             <div class="row no-gutters align-items-center mt-2">
-                            <div class="col input-group">
-                                <label style="margin-top: auto;margin-bottom: auto">
-                                    <input type="checkbox" name="files" id="files">
-                                    <span class="checkmark">Save analysis html reports</span>
-                                </label>
-                            </div>
+                                <div class="col input-group">
+                                    <label style="margin-top: auto;margin-bottom: auto">
+                                        <input type="checkbox" name="files" id="files">
+                                        <span class="checkmark">Save analysis html reports</span>
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </form>
@@ -305,7 +308,7 @@
                             <div class="row no-gutters align-items-center">
                                 <div class="col-4 input-group">
                                     <div class="input-group-prepend">
-                                        <span class="input-group-text" id="paper-amount-addon">Search</span>
+                                        <span class="input-group-text" id="paper-amount-addon">Limit</span>
                                     </div>
                                     <select class="form-control" aria-describedby="amount-addon"
                                             name="limit">
@@ -339,6 +342,9 @@
 <script type="text/javascript">
     function startIntro() {
         var intro = introJs();
+        // Disable formatter for the next section because of injections.
+        // Enable formatter control in File > Settings > Editor > Code Style
+        // @formatter:off
         intro.setOptions({
             steps: [
                 {
@@ -364,6 +370,12 @@
                     element: '#step2-2',
                     intro: "Select publications database to work with."
                 },
+                {% if pm_enabled %}
+                {
+                    element: '#pubmed-syntax-div',
+                    intro: "You can use Pubmed search syntax including AND, OR, fields etc."
+                },
+                {% endif %}
                 {
                     element: '#step3',
                     intro: "Additionally configure papers limit and ranking, filter out review papers, etc.<br>" +
@@ -380,7 +392,8 @@
                     intro: "Or try one of precomputed examples."
                 }
             ]
-        });
+    });
+        // @formatter:on
 
         intro.start();
     }
