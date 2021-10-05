@@ -1,3 +1,4 @@
+import hashlib
 import json
 import logging
 import os
@@ -314,9 +315,12 @@ class AnalyzerFiles(PapersAnalyzer):
         else:
             raise RuntimeError(f'Search results folder not found among: {SEARCH_RESULTS_PATHS}')
 
-    def query_to_folder(self, source, query, limit):
-        folder = os.path.join(self.search_results_folder,
-                              preprocess_text(f'{source}_{query}_{limit}').replace(' ', '_'))
+    def query_to_folder(self, source, query, limit, max_folder_length=100):
+        folder_name = preprocess_text(f'{source}_{query}_{limit}').replace(' ', '_')
+        if len(folder_name) > max_folder_length:
+            folder_name = folder_name[:(max_folder_length - 32 - 1)] + '_' + \
+                          hashlib.md5(folder_name.encode('utf-8')).hexdigest()
+        folder = os.path.join(self.search_results_folder, folder_name)
         if not os.path.exists(folder):
             os.mkdir(folder)
         return folder
