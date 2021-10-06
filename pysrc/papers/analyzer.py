@@ -11,7 +11,7 @@ from pysrc.papers.analysis.graph import build_citation_graph, build_similarity_g
 from pysrc.papers.analysis.metadata import popular_authors, popular_journals
 from pysrc.papers.analysis.numbers import extract_numbers
 from pysrc.papers.analysis.text import analyze_texts_similarity, vectorize_corpus
-from pysrc.papers.analysis.topics import get_topics_description, louvain
+from pysrc.papers.analysis.topics import get_topics_description, cluster_and_sort
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.progress import Progress
@@ -23,7 +23,14 @@ logger = logging.getLogger(__name__)
 class PapersAnalyzer:
     TOP_CITED_PAPERS = 50
 
-    # These coefficients were estimated using
+    # These coefficients were estimated in the paper: https://dl.acm.org/doi/10.1145/3459930.3469501
+    # Poster: https://drive.google.com/file/d/1SeqJtJtaHSO6YihG2905boOEYL1NiSP1/view
+    # Features are originally taken from papers:
+    # 1) Which type of citation analysis generates the most accurate taxonomy of
+    #   scientific and technical knowledge? (https://arxiv.org/pdf/1511.05078.pdf)
+    #   ...bibliographic coupling (BC) was the most accurate,  followed by co-citation (CC).
+    #   Direct citation (DC) was a distant third among the three...
+    # 2) Exploiting potential citation papers in scholarly paper recommendation. In: JCDL (2013)
     SIMILARITY_BIBLIOGRAPHIC_COUPLING = 1  # Limited by number of references, applied to log
     SIMILARITY_COCITATION = 2  # Limiter by number of co-citations, applied to log
     SIMILARITY_CITATION = 2  # Limited by 1 citation
@@ -52,7 +59,7 @@ class PapersAnalyzer:
     # Terms with higher frequency will be ignored, remove abundant stop words
     VECTOR_MAX_DF = 0.8
 
-    TOPIC_MIN_SIZE = 10
+    TOPIC_MIN_SIZE = 20
     # Max number of topics should be "deliverable"
     TOPICS_MAX_NUMBER = 20
 
@@ -201,13 +208,11 @@ class PapersAnalyzer:
                 self.partition = dict(zip(self.df['id'], self.df['comp']))
             else:
                 logger.debug('Extracting topics from paper similarity graph')
-                self.partition = louvain(
-                    self.similarity_graph,
-                    similarity_func=self.similarity,
-                    topic_min_size=self.TOPIC_MIN_SIZE,
-                    max_topics_number=self.TOPICS_MAX_NUMBER
-                )
-                self.df['comp'] = [self.partition[pid] for pid in self.df['id']]
+                self.clusters, self.dendrogram_children = cluster_and_sort(self.node_embeddings,
+                                                                           PapersAnalyzer.TOPIC_MIN_SIZE,
+                                                                           PapersAnalyzer.TOPICS_MAX_NUMBER)
+                self.df['comp'] = pd.Series(index=indx, data=self.clusters, dtype=int)
+                self.partition = dict(zip(self.df['id'], self.df['comp']))
 
             self.progress.info(f'Analyzing {len(set(self.partition.values()))} topics descriptions',
                                current=10, task=task)
@@ -253,7 +258,7 @@ class PapersAnalyzer:
 
         if self.config.feature_evolution_enabled:
             if len(self.df) >= PapersAnalyzer.EVOLUTION_MIN_PAPERS:
-                self.progress.info(f'Analyzing evolution of topics {self.df["id"].min()} - {self.df["id"].max()}',
+                self.progress.info(f'Analyzing evolution of topics {self.df["year"].min()} - {self.df["year"].max()}',
                                    current=15, task=task)
                 logger.debug('Perform topic evolution analysis and get topic descriptions')
                 self.evolution_df, self.evolution_year_range = topic_evolution_analysis(
@@ -345,9 +350,8 @@ class PapersAnalyzer:
         Look for init calls in the codebase to find out useful fields for serialization.
         :param fields: desearialized JSON
         """
-        logger.debug(f'Loading\n{fields}')
+        logger.debug('Loading analyzer')
         loaded = PapersAnalyzer.load(fields)
-        logger.debug(f'Loaded\n{loaded}')
         self.df = loaded['df']
         # Used for components naming
         self.kwd_df = loaded['kwd_df']

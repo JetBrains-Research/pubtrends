@@ -5,7 +5,7 @@ import pandas as pd
 from parameterized import parameterized
 
 from pysrc.papers.analysis.graph import build_citation_graph
-from pysrc.papers.analysis.topics import merge_components, compute_similarity_matrix, _get_topics_description_cosine
+from pysrc.papers.analysis.topics import compute_similarity_matrix, _get_topics_description_cosine
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.test.mock_loaders import MockLoader
@@ -40,20 +40,6 @@ class TestTopics(unittest.TestCase):
             if getattr(row, 'id') not in nodes:
                 self.assertEqual(getattr(row, 'comp'), -1)
 
-    @parameterized.expand([
-        ('single', {1: 0}, 5, 2, {1: 0}),
-        ('single_hierarchy', {1: 0, 2: 1}, 5, 2, {1: 0, 2: 0}),
-        ('two', {1: 0, 2: 0, 3: 1, 4: 1, 5: 1}, 5, 3, {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}),
-        ('5_0', {1: 0, 2: 1, 3: 2, 4: 3, 5: 4}, 5, 0, {1: 0, 2: 1, 3: 2, 4: 3, 5: 4}),
-        ('4_0', {1: 0, 2: 1, 3: 2, 4: 3, 5: 4}, 4, 0, {1: 0, 2: 0, 3: 2, 4: 3, 5: 4}),
-        ('1_0', {1: 0, 2: 1, 3: 1, 4: 1, 5: 1}, 10, 5, {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}),
-        ('5_10', {1: 0, 2: 1, 3: 2, 4: 3, 5: 4}, 1, 10, {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}),
-    ])
-    def test_merge_components(self, name, partition, max_topics_number, topic_min_size, expected_partition):
-        n_comps = len(set(partition.values()))
-        merge_components(partition, np.zeros(shape=(n_comps, n_comps)),
-                         topic_min_size=topic_min_size, max_topics_number=max_topics_number)
-        self.assertEqual(partition, expected_partition, name)
 
     def test_heatmap_topics_similarity(self):
         matrix = compute_similarity_matrix(self.analyzer.similarity_graph,

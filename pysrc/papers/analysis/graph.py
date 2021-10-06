@@ -26,18 +26,7 @@ def build_citation_graph(df, cit_df):
 def build_similarity_graph(
         df, texts_similarity, citations_graph, cocit_df, bibliographic_coupling_df
 ):
-    """
-    Similarity graph is built using citation and text based methods.
-
-    See papers:
-    Which type of citation analysis generates the most accurate taxonomy of
-    scientific and technical knowledge? (https://arxiv.org/pdf/1511.05078.pdf)
-    ...bibliographic coupling (BC) was the most accurate,  followed by co-citation (CC).
-    Direct citation (DC) was a distant third among the three...
-
-    Sugiyama, K., Kan, M.Y.:
-    Exploiting potential citation papers in scholarly paper recommendation. In: JCDL (2013)
-    """
+    """ Similarity graph is built using citation graph and text based methods. """
     pids = list(df['id'])
 
     sg = nx.Graph()
@@ -148,16 +137,16 @@ def layout_similarity_graph(similarity_graph, similarity_func, topic_min_size, m
     """
     :return: Weighted similarity graph, node_ids, node2vec embeddings, xs, ys
     """
+    wsg = to_weighted_graph(similarity_graph, similarity_func)
     if similarity_graph.number_of_nodes() <= topic_min_size:
         logger.debug('Preparing spring layout for similarity graph')
         pos = nx.spring_layout(similarity_graph, weight='weight')
         nodes = [a for a, _ in pos.items()]
         xs = [v[0] for _, v in pos.items()]
         ys = [v[1] for _, v in pos.items()]
-        return None, nodes, None, xs, ys
+        return wsg, nodes, np.zeros(shape=(len(nodes), 0), dtype=np.float), xs, ys
     else:
         logger.debug('Preparing node2vec + tsne layout for similarity graph')
-        wsg = to_weighted_graph(similarity_graph, similarity_func)
         # Limit edges to nodes ratio in sparse similarity graph
         gs = sparse_graph(wsg, max_edges_to_nodes=max_edges_to_nodes)
         node_ids, node_embeddings = node2vec(gs)

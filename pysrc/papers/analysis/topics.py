@@ -1,48 +1,13 @@
 import logging
 from collections import Counter
 
-import community
-import networkx as nx
 import numpy as np
 import pandas as pd
+from sklearn.cluster import AgglomerativeClustering
 
-from pysrc.papers.analysis.graph import to_weighted_graph
 from pysrc.papers.analysis.text import get_frequent_tokens
-from pysrc.papers.utils import SEED
 
 logger = logging.getLogger(__name__)
-
-
-def louvain(similarity_graph, similarity_func, topic_min_size, max_topics_number):
-    """
-    Performs clustering of similarity topics, merging small topics into Other component
-    :param similarity_graph: Similarity graph
-    :param similarity_func: Function to compute aggregated similarity between nodes in similarity graph
-    :param topic_min_size:
-    :param max_topics_number:
-    :return: comp_partition
-    """
-    wsg = to_weighted_graph(similarity_graph, similarity_func)
-    logger.debug(f'Similarity graph has {nx.number_connected_components(wsg)} connected components')
-    logger.debug('Graph clustering via Louvain community algorithm')
-    partition = community.best_partition(
-        wsg, weight='weight', random_state=SEED
-    )
-    logger.debug(f'Best partition {len(set(partition.values()))} components')
-    components = set(partition.values())
-    sizes = {c1: sum([partition[node] == c1 for node in partition.keys()]) for c1 in components}
-    logger.debug(f'Components: {sizes}')
-    if len(wsg.edges) > 0:
-        modularity = community.modularity(partition, wsg)
-        logger.debug(f'Graph modularity (possible range is [-1, 1]): {modularity :.3f}')
-
-    logger.debug('Merge small components')
-    similarity_matrix = compute_similarity_matrix(similarity_graph, similarity_func, partition)
-    comp_partition = merge_components(
-        partition, similarity_matrix,
-        topic_min_size=topic_min_size, max_topics_number=max_topics_number
-    )
-    return comp_partition
 
 
 def compute_similarity_matrix(similarity_graph, similarity_func, partition):
@@ -72,58 +37,45 @@ def compute_similarity_matrix(similarity_graph, similarity_func, partition):
     return similarity_matrix
 
 
-def merge_components(partition, similarity_matrix, topic_min_size, max_topics_number):
+def cluster_and_sort(x, min_cluster_size, max_clusters):
     """
-    Merge small topics to required number of topics and minimal size, reorder topics by size
-    :param partition: Partition, dict paper id -> component
-    :param similarity_matrix: Mean similarity between components for partition
-    :param topic_min_size: Min number of papers in topic
-    :param max_topics_number: Max number of topics
-    :return: merged_partition
+    :param x: object representations (X x Features)
+    :param min_cluster_size:
+    :param max_clusters:
+    :return: List[cluster], Hierarchical dendrogram of splits.
     """
-    logger.debug(f'Merging: max {max_topics_number} components with min size {topic_min_size}')
-    comp_sizes = Counter(partition.values())
-    logger.debug(f'{len(comp_sizes)} comps, comp_sizes: {comp_sizes}')
+    logger.debug('Looking for an appropriate number of clusters,'
+                 f'min_cluster_size={min_cluster_size}, max_clusters={max_clusters}')
+    if x.shape[1] == 0:
+        return [0] * x.shape[0], None
+    r = min(int(x.shape[0] / min_cluster_size), max_clusters) + 1
+    l = 1
 
-    merge_index = 1
-    merge_order = []
-    while len(comp_sizes) > 1 and \
-            (len(comp_sizes) > max_topics_number or min(comp_sizes.values()) < topic_min_size):
-        # logger.debug(f'{merge_index}. Pick minimal and merge it with the closest by similarity')
-        merge_index += 1
-        min_comp = min(comp_sizes.keys(), key=lambda c: comp_sizes[c])
-        comp_to_merge = max([c for c in partition.values() if c != min_comp],
-                            key=lambda c: similarity_matrix[min_comp][c])
-        # logger.debug(f'Merging with most similar comp {comp_to_merge}')
-        comp_update = min(min_comp, comp_to_merge)
-        comp_sizes[comp_update] = comp_sizes[min_comp] + comp_sizes[comp_to_merge]
-        if min_comp != comp_update:
-            merge_order.append((min_comp, comp_update))
-            del comp_sizes[min_comp]
+    if l >= r - 2:
+        return [0] * x.shape[0], None
+
+    prev_min_size = None
+    while l < r - 2:
+        n_clusters = int((l + r) / 2)
+        logger.debug(f'l = {l}; r = {r}; n_clusters = {n_clusters}')
+        model = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward').fit(x)
+        clusters_counter = Counter(model.labels_)
+        assert len(clusters_counter.keys()) == n_clusters, "Incorrect clusters number"
+        min_size = clusters_counter.most_common()[-1][1]
+        # Track previous_min_size to cope with situation with super distant tiny clusters
+        if prev_min_size != min_size and min_size < min_cluster_size or n_clusters > max_clusters:
+            logger.debug(f'prev_min_size({prev_min_size}) != min_size({min_size}) < {min_cluster_size} or '
+                         f'n_clusters = {n_clusters}  > {max_clusters}')
+            r = n_clusters + 1
         else:
-            merge_order.append((comp_to_merge, comp_update))
-            del comp_sizes[comp_to_merge]
-        # logger.debug(f'Merged comps: {len(comp_sizes)}, updated comp_sizes: {comp_sizes}')
-        for (paper, c) in list(partition.items()):
-            if c == min_comp or c == comp_to_merge:
-                partition[paper] = comp_update
+            l = n_clusters
+        prev_min_size = min_size
 
-        # logger.debug('Update similarities')
-        for i in range(len(similarity_matrix)):
-            similarity_matrix[i, comp_update] = \
-                (similarity_matrix[i, min_comp] + similarity_matrix[i, comp_to_merge]) / 2
-            similarity_matrix[comp_update, i] = \
-                (similarity_matrix[min_comp, i] + similarity_matrix[comp_to_merge, i]) / 2
-    logger.debug(f'Merge done in {merge_index} steps.\nOrder: {merge_order}')
-    logger.debug('Sorting comps by size descending')
-    sorted_components = dict(
-        (c, i) for i, c in enumerate(sorted(set(comp_sizes), key=lambda c: comp_sizes[c], reverse=True))
-    )
-    logger.debug(f'Comps reordering by size: {sorted_components}')
-    merged_partition = {paper: sorted_components[c] for paper, c in partition.items()}
-    for k, v in Counter(merged_partition.values()).items():
-        logger.debug(f'Component {k}: {v} ({int(100 * v / len(merged_partition))}%)')
-    return merged_partition
+    logger.debug(f'Number of clusters = {n_clusters}')
+    logger.debug(f'Min cluster size = {prev_min_size}')
+    logger.debug('Reorder clusters by size descending')
+    reorder_map = {c: i for i, (c, _) in enumerate(clusters_counter.most_common())}
+    return [reorder_map[c] for c in model.labels_], model.children_
 
 
 def get_topics_description(df, comps, corpus_terms, corpus_counts, query, n_words, ignore_comp=None):

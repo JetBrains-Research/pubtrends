@@ -1,11 +1,13 @@
 import hashlib
 import json
 import logging
+import math
 import os
 from collections import Counter
+from itertools import product
+from math import sin, cos, pi, fabs
 
 import jinja2
-import math
 import networkx as nx
 import numpy as np
 import pandas as pd
@@ -15,12 +17,9 @@ from bokeh.models import ColumnDataSource, ColorBar, PrintfTickFormatter, Linear
 from bokeh.models import GraphRenderer, StaticLayoutProvider, Circle, HoverTool, MultiLine, LabelSet
 from bokeh.models.graphs import NodesAndLinkedEdges
 from bokeh.plotting import figure, output_file, save
-from itertools import product
 from lazy import lazy
-from math import sin, cos, pi, fabs
 from matplotlib import pyplot as plt
 from more_itertools import unique_everseen
-from sklearn.cluster import AgglomerativeClustering
 
 from pysrc.papers.analysis.citations import find_top_cited_papers, build_cit_stats_df, merge_citation_stats, \
     build_cocit_grouped_df
@@ -28,7 +27,7 @@ from pysrc.papers.analysis.graph import build_citation_graph, build_similarity_g
     sparse_graph
 from pysrc.papers.analysis.text import analyze_texts_similarity, vectorize_corpus, preprocess_text
 from pysrc.papers.analysis.text import get_frequent_tokens
-from pysrc.papers.analysis.topics import get_topics_description, compute_similarity_matrix
+from pysrc.papers.analysis.topics import get_topics_description, compute_similarity_matrix, cluster_and_sort
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
@@ -45,6 +44,9 @@ SEARCH_RESULTS_PATHS = ['/search_results', os.path.expanduser('~/.pubtrends/sear
 
 
 class AnalyzerFiles(PapersAnalyzer):
+
+    # Increase max number of topics
+    TOPICS_MAX_NUMBER = 40
 
     def __init__(self, loader, config, test=False):
         super(AnalyzerFiles, self).__init__(loader, config)
@@ -179,7 +181,9 @@ class AnalyzerFiles(PapersAnalyzer):
         self.df['y'] = pd.Series(index=indx, data=ys)
 
         self.progress.info('Extracting topics from paper similarity graph', current=13, task=task)
-        clusters, dendrogram_children = cluster_and_sort(self.node_embeddings, 30, 50)
+        clusters, dendrogram_children = cluster_and_sort(self.node_embeddings,
+                                                         PapersAnalyzer.TOPIC_MIN_SIZE,
+                                                         self.TOPICS_MAX_NUMBER)
         self.df['comp'] = pd.Series(index=indx, data=clusters, dtype=int)
 
         path_topics_sizes = os.path.join(self.query_folder, 'topics_sizes.html')
@@ -388,45 +392,6 @@ def get_frequent_mesh_terms(df, fraction=0.1, min_tokens=20):
     for token, cnt in counter.most_common(max(min_tokens, int(tokens * fraction))):
         result[token] = cnt / tokens
     return result
-
-
-def cluster_and_sort(x, min_cluster_size, max_clusters):
-    """
-    :param x: object representations (X x Features)
-    :param min_cluster_size:
-    :param max_clusters:
-    :return: List[cluster], Hierarchical dendrogram of splits.
-    """
-    logger.debug('Looking for an appropriate number of clusters,'
-                 f'min_cluster_size={min_cluster_size}, max_clusters={max_clusters}')
-    r = min(int(x.shape[0] / min_cluster_size), max_clusters) + 1
-    l = 1
-
-    if l >= r - 2:
-        return [0] * x.shape[0], None
-
-    prev_min_size = None
-    while l < r - 2:
-        n_clusters = int((l + r) / 2)
-        logger.debug(f'l = {l}; r = {r}; n_clusters = {n_clusters}')
-        model = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward').fit(x)
-        clusters_counter = Counter(model.labels_)
-        assert len(clusters_counter.keys()) == n_clusters, "Incorrect clusters number"
-        min_size = clusters_counter.most_common()[-1][1]
-        # Track previous_min_size to cope with situation with super distant tiny clusters
-        if prev_min_size != min_size and min_size < min_cluster_size or n_clusters > max_clusters:
-            logger.debug(f'prev_min_size({prev_min_size}) != min_size({min_size}) < {min_cluster_size} or '
-                         f'n_clusters = {n_clusters}  > {max_clusters}')
-            r = n_clusters + 1
-        else:
-            l = n_clusters
-        prev_min_size = min_size
-
-    logger.debug(f'Number of clusters = {n_clusters}')
-    logger.debug(f'Min cluster size = {prev_min_size}')
-    logger.debug('Reorder clusters by size descending')
-    reorder_map = {c: i for i, (c, _) in enumerate(clusters_counter.most_common())}
-    return [reorder_map[c] for c in model.labels_], model.children_
 
 
 def components_ratio_data(df):

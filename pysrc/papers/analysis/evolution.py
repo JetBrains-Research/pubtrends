@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 
 from pysrc.papers.analysis.citations import build_cocit_grouped_df
-from pysrc.papers.analysis.graph import build_similarity_graph
-from pysrc.papers.analysis.topics import get_topics_description, louvain
+from pysrc.papers.analysis.graph import build_similarity_graph, layout_similarity_graph
+from pysrc.papers.analysis.topics import get_topics_description, cluster_and_sort
 
 logger = logging.getLogger(__name__)
 
@@ -46,8 +46,8 @@ def topic_evolution_analysis(
     # Evolution starts with the latest topic separation
     evolution_series = [pd.Series(data=list(df['comp']), index=list(df['id']))]
     for year in year_range[1:]:
-        logger.debug(f'Processing year {year}')
         df_year = df.loc[df['year'] <= year]
+        logger.debug(f'Processing {len(df_year)} papers older than year {year}')
         ids_year = set(df_year['id'])
 
         logger.debug('Use only citations earlier than year')
@@ -72,13 +72,12 @@ def topic_evolution_analysis(
         logger.debug(f'Built similarity graph - {similarity_graph.number_of_nodes()} nodes and '
                      f'{similarity_graph.number_of_edges()} edges')
 
-        merged_partition = louvain(
-            similarity_graph,
-            similarity_func=similarity_func,
-            topic_min_size=topic_min_size,
-            max_topics_number=max_topics_number
+        weighted_similarity_graph, node_ids, node_embeddings, xs, ys = layout_similarity_graph(
+            similarity_graph, similarity_func, topic_min_size
         )
-        evolution_series.append(pd.Series(merged_partition))
+        clusters, _ = cluster_and_sort(node_embeddings, topic_min_size, max_topics_number)
+        partition = dict(zip(node_ids, clusters))
+        evolution_series.append(pd.Series(partition))
 
     evolution_df = pd.concat(evolution_series, axis=1)
     evolution_df.columns = year_range  # Set columns
