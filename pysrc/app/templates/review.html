@@ -121,19 +121,16 @@
 <body>
 
 <!-- Fixed navbar -->
-<nav class="navbar navbar-light bg-light fixed-top border-bottom">
-    <div class="row container-fluid">
-        <div class="col-lg-1 col-xl-2 no-padding vertical-center mr-3">
+<nav class="navbar navbar-light bg-light fixed-top border-bottom no-padding-right">
+    <div class="row container-fluid no-padding-right">
+        <div class="col-lg-1 col-xl-2 no-padding-left">
             <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
         </div>
-        <div class="col-lg-11 col-xl-10 no-padding">
-            <div class="row">
-                <ol class="breadcrumb bg-light search-query col-auto">
+        <div class="col-lg-11 col-xl-10 no-padding-left no-padding-right">
+            <div class="no-padding-left d-flex justify-content-between">
+                <ol class="breadcrumb bg-light search-query">
                     <li class="breadcrumb-item vertical-center">{{ source }}</li>
-                    <li class="breadcrumb-item vertical-center">
-                        <a id="result" href="javascript:void(0);" class="link" onclick="result();"><strong>{{ query
-                            }}</strong></a>
-                    </li>
+                    <li class="breadcrumb-item vertical-center"><strong>{{ query }}</strong></li>
                     <li class="breadcrumb-item vertical-center">{{ limit }} {{ sort }}</li>
                 </ol>
             </div>
@@ -155,8 +152,8 @@
                     </div>
                     <div class="card-body">
                         <p>
-                            This table shows the resulting review - a set of sentences from top cited papers <br>
-                            with the highest probability to be included in a real review.<br>
+                            Review is a set of sentences from top cited papers with the highest probability to be
+                            included in a real review.<br>
                             The higher score the better sentence.
                         </p>
                         <br>
@@ -203,8 +200,8 @@
 <footer>
     <p>version {{ version }}<br/>
         &copy; 2021 <a href="https://research.jetbrains.org/groups/biolabs"
-                            title="JetBrains Research BioLabs"
-                            target="_blank">JetBrains Research</a></p>
+                       title="JetBrains Research BioLabs"
+                       target="_blank">JetBrains Research</a></p>
 </footer>
 </body>
 </html>

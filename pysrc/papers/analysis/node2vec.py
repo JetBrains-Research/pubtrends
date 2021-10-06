@@ -1,11 +1,7 @@
 import logging
 
 import numpy as np
-# Avoid info message about compilation flags
-import tensorflow as tf
 from gensim.models import Word2Vec
-
-tf.get_logger().setLevel('ERROR')
 
 logger = logging.getLogger(__name__)
 

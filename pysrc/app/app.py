@@ -36,7 +36,7 @@ from pysrc.version import VERSION
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
 if PUBTRENDS_CONFIG.feature_review_enabled:
-    from pysrc.review.app.review import REVIEW_ANALYSIS_TYPE, register_app_review
+    from pysrc.review.app.app import REVIEW_ANALYSIS_TYPE, register_app_review
 else:
     REVIEW_ANALYSIS_TYPE = 'not_available'
 

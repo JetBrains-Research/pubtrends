@@ -38,7 +38,7 @@ def register_app_review(app):
                     job = prepare_review_data_async.delay(data, source, num_papers, num_sents)
                     return redirect(url_for('.process', analysis_type=REVIEW_ANALYSIS_TYPE, jobid=job.id,
                                             query=query, source=source, limit=limit, sort=sort))
-            logger.error(f'/result error {log_request(request)}')
+            logger.error(f'/generate_review error {log_request(request)}')
             return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
         except Exception as e:
             logger.error(f'/generate_review error', e)
@@ -46,26 +46,29 @@ def register_app_review(app):
 
     @app.route('/review')
     def review():
-        jobid = request.args.get('jobid')
-        query = request.args.get('query')
-        source = request.args.get('source')
-        limit = request.args.get('limit')
-        sort = request.args.get('sort')
-        if jobid:
-            job = AsyncResult(jobid, app=pubtrends_celery)
-            if job and job.state == 'SUCCESS':
-                review_res = job.result
-                export_name = re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{query}_review'.lower().strip('_')))
-                return render_template('review.html',
-                                       query=trim(query, MAX_QUERY_LENGTH),
-                                       source=source,
-                                       limit=limit,
-                                       sort=sort,
-                                       version=VERSION,
-                                       review_array=review_res,
-                                       export_name=export_name)
-        else:
-            logger.error(f'/result error {log_request(request)}')
-            return render_template_string("Something went wrong..."), 400
-
-
+        logger.info(f'/review {log_request(request)}')
+        try:
+            jobid = request.args.get('jobid')
+            query = request.args.get('query')
+            source = request.args.get('source')
+            limit = request.args.get('limit')
+            sort = request.args.get('sort')
+            if jobid:
+                job = AsyncResult(jobid, app=pubtrends_celery)
+                if job and job.state == 'SUCCESS':
+                    review_res = job.result
+                    export_name = re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{query}_review'.lower().strip('_')))
+                    return render_template('review.html',
+                                           query=trim(query, MAX_QUERY_LENGTH),
+                                           source=source,
+                                           limit=limit,
+                                           sort=sort,
+                                           version=VERSION,
+                                           review_array=review_res,
+                                           export_name=export_name)
+            else:
+                logger.error(f'/review error {log_request(request)}')
+                return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
+        except Exception as e:
+            logger.error(f'/review error', e)
+            return render_template_string(ERROR_OCCURRED), 500

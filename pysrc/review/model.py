@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 def load_model(model_type, froze_strategy, article_len, features=False):
+    logger.info(f'Loading model {model_type} {froze_strategy} {article_len} {features}')
     model = Summarizer(model_type, article_len, features)
     model.expand_posembs_ifneed()
     model.froze_backbone(froze_strategy)
@@ -31,31 +32,35 @@ class Summarizer(nn.Module):
     encdec_ids_mask: torch.Tensor
 
     def __init__(self, model_type, article_len, with_features=False, num_features=10):
+        logger.info('Creating Summarizer')
         super(Summarizer, self).__init__()
 
         self.article_len = article_len
-
         if model_type == 'bert':
+            logger.info('Initializing Bert')
             self.backbone, self.tokenizer, BOS, EOS, PAD = self.initialize_bert()
         elif model_type == 'roberta':
+            logger.info('Initializing Roberta')
             self.backbone, self.tokenizer, BOS, EOS, PAD = self.initialize_roberta()
         else:
             raise Exception(f"Wrong model_type argument: {model_type}")
 
         if with_features:
+            logger.info('Init sequential features')
             self.features = nn.Sequential(nn.Linear(num_features, 100),
                                           nn.ReLU(),
                                           nn.Linear(100, 100),
                                           nn.ReLU(),
                                           nn.Linear(100, 50))
         else:
+            logger.info('No sequential features')
             self.features = None
 
         self.PAD = SpecToken(PAD, convert_token_to_id(self.tokenizer, PAD))
         self.artBOS = SpecToken(BOS, convert_token_to_id(self.tokenizer, BOS))
         self.artEOS = SpecToken(EOS, convert_token_to_id(self.tokenizer, EOS))
 
-        # add special tokens tokenizer
+        logger.info('Add special tokens tokenizer')
         self.tokenizer.add_special_tokens({'additional_special_tokens': ["<sum>", "</sent>", "</sum>"]})
         self.vocab_size = len(self.tokenizer)
         self.sumBOS = SpecToken("<sum>", convert_token_to_id(self.tokenizer, "<sum>"))
@@ -63,7 +68,7 @@ class Summarizer(nn.Module):
         self.sumEOA = SpecToken("</sum>", convert_token_to_id(self.tokenizer, "</sum>"))
         self.backbone.resize_token_embeddings(200 + self.vocab_size)
 
-        # tokenizer
+        logger.info('Init tokenizer')
         self.tokenizer.PAD = self.PAD
         self.tokenizer.artBOS = self.artBOS
         self.tokenizer.artEOS = self.artEOS
@@ -72,8 +77,8 @@ class Summarizer(nn.Module):
         self.tokenizer.sumEOA = self.sumEOA
         self.vocab_size = len(self.tokenizer)
 
-        # initialize backbone emb pulling
         def backbone_forward(input_ids, input_mask, input_segment, input_pos):
+            logger.debug('Initialize backbone emb pulling')
             return self.backbone(
                 input_ids=input_ids,
                 attention_mask=input_mask,
@@ -83,19 +88,19 @@ class Summarizer(nn.Module):
 
         self.encoder = lambda *args: backbone_forward(*args)[0]
 
-        # initialize decoder
+        logger.debug('Initialize decoder')
         if not with_features:
             self.decoder = Classifier(cfg.d_hidden)
         else:
             self.decoder = Classifier(cfg.d_hidden + 50)
 
     def expand_posembs_ifneed(self):
-        logger.info(f'Max embs{self.backbone.config.max_position_embeddings} Paper length {self.article_len}')
+        logger.debug(f'Max embs {self.backbone.config.max_position_embeddings} Paper length {self.article_len}')
         if self.article_len > self.backbone.config.max_position_embeddings:
-            logger.info("OK")
+            logger.debug("OK")
             old_maxlen = self.backbone.config.max_position_embeddings
             old_w = self.backbone.embeddings.position_embeddings.weight
-            logger.info(f"Backbone pos embeddings expanded from {old_maxlen} upto {self.article_len}")
+            logger.debug(f"Backbone pos embeddings expanded from {old_maxlen} upto {self.article_len}")
             self.backbone.embeddings.position_embeddings = \
                 nn.Embedding(self.article_len, self.backbone.config.hidden_size)
             self.backbone.embeddings.position_embeddings.weight[:old_maxlen].data.copy_(old_w)
@@ -104,11 +109,12 @@ class Summarizer(nn.Module):
 
     @staticmethod
     def initialize_bert():
+        logger.info('Loading bert backbone from pretrained')
         backbone = BertModel.from_pretrained(
             "bert-base-uncased", output_hidden_states=False
         )
+        logger.info('Initializing bert tokenizer')
         tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
-
         BOS = "[CLS]"
         EOS = "[SEP]"
         PAD = "[PAD]"
@@ -116,15 +122,18 @@ class Summarizer(nn.Module):
 
     @staticmethod
     def initialize_roberta():
+        logger.info('Loading roberta backbone from pretrained')
         backbone = RobertaModel.from_pretrained(
             'roberta-base', output_hidden_states=False
         )
         # initialize token type emb, by default roberta doesn't have it
+        logger.info('Initializing embeddings and vocab')
         backbone.config.type_vocab_size = 2
         backbone.embeddings.token_type_embeddings = nn.Embedding(2, backbone.config.hidden_size)
         backbone.embeddings.token_type_embeddings.weight.data.normal_(
             mean=0.0, std=backbone.config.initializer_range
         )
+        logger.info('Initializing roberta tokenizer')
         tokenizer = RobertaTokenizer.from_pretrained('roberta-base', do_lower_case=True)
         BOS = "<s>"
         EOS = "</s>"
@@ -136,6 +145,7 @@ class Summarizer(nn.Module):
 
         :param model_path: str
         """
+        logger.info(f'Save model to {model_path}')
         if not self.features:
             state = {
                 'encoder_dict': self.backbone.state_dict(),
@@ -151,18 +161,24 @@ class Summarizer(nn.Module):
         torch.save(state, model_path)
 
     def load(self, model_path):
+        logger.info(f'Loading model from {model_path}')
         state = torch.load(model_path, map_location=lambda storage, location: storage)
+        logger.info('Init backbone')
         self.backbone.load_state_dict(state['encoder_dict'])
+        logger.info('Init decoder')
         self.decoder.load_state_dict(state['decoder_dict'])
         if self.features:
+            logger.info('Init features')
             self.features.load_state_dict(state['features_dict'])
 
     def froze_backbone(self, froze_strategy):
         if froze_strategy == 'froze_all':
+            logger.info('Froze backbone all')
             for name, param in self.backbone.named_parameters():
                 param.requires_grad_(False)
 
         elif froze_strategy == 'unfroze_last4':
+            logger.info('Unfroze backbone last4')
             for name, param in self.backbone.named_parameters():
                 param.requires_grad_(True if (
                         'encoder.layer.11' in name or
@@ -172,6 +188,7 @@ class Summarizer(nn.Module):
                 ) else False)
 
         elif froze_strategy == 'unfroze_all':
+            logger.info('Unfroze all')
             for param in self.backbone.parameters():
                 param.requires_grad_(True)
 
@@ -179,7 +196,7 @@ class Summarizer(nn.Module):
             raise RuntimeError(f"incorrect froze_strategy argument: {froze_strategy}")
 
     def unfroze_head(self):
-
+        logger.info('Unfrozing head')
         for name, param in self.decoder.named_parameters():
             param.requires_grad_(True)
 
