@@ -129,7 +129,7 @@ def filter_citations_graph(cit_df, ids_year):
 
 
 def topic_evolution_descriptions(
-        df, evolution_df, year_range, corpus_terms, corpus_counts, size,
+        df, evolution_df, year_range, corpus_terms, corpus_counts, stems_map, size,
         progress, current=0, task=None
 ):
     if evolution_df is None or not year_range:
@@ -144,8 +144,8 @@ def topic_evolution_descriptions(
                 logger.debug(f'Generating topics descriptions for year {col}')
                 comps = evolution_df[[col, 'id']].groupby(col)['id'].apply(list).to_dict()
                 # Component -1 is not published yet, should be ignored
-                evolution_kwds[col] = get_topics_description(df, comps, corpus_terms, corpus_counts,
-                                                             query=None, n_words=size, ignore_comp=-1)
+                evolution_kwds[col] = get_topics_description(df, comps, corpus_terms, corpus_counts, stems_map,
+                                                             n_words=size, ignore_comp=-1)
         logger.debug(f'Successfully generated evolution_kwds')
         return evolution_kwds
     except Exception as e:

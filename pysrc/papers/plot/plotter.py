@@ -19,8 +19,8 @@ from holoviews import opts
 from matplotlib import pyplot as plt
 from wordcloud import WordCloud
 
-from pysrc.papers.analysis.graph import to_weighted_graph, sparse_graph
-from pysrc.papers.analysis.text import get_frequent_tokens, get_topic_word_cloud_data
+from pysrc.papers.analysis.graph import sparse_graph
+from pysrc.papers.analysis.text import get_frequent_tokens
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
@@ -55,7 +55,7 @@ TOPIC_KEYWORDS = 5
 def visualize_analysis(analyzer):
     # Initialize plotter after completion of analysis
     plotter = Plotter(analyzer=analyzer)
-    freq_kwds = get_frequent_tokens(analyzer.top_cited_df, query=analyzer.query)
+    freq_kwds = get_frequent_tokens(analyzer.top_cited_df, analyzer.stems_map)
     word_cloud = plotter.papers_word_cloud(freq_kwds)
     export_name = re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{analyzer.query}'.lower())).strip('_')
     result = dict(
@@ -277,7 +277,7 @@ class Plotter:
             plot.legend.location = "top_left"
 
             # Word cloud description of topic by titles and abstracts
-            kwds = get_topic_word_cloud_data(self.analyzer.kwd_df, comp)
+            kwds = Plotter.get_topic_word_cloud_data(self.analyzer.kwd_df, comp)
             is_empty = len(kwds) == 0
             if is_empty:
                 kwds = {'N/A': 1}
@@ -556,8 +556,7 @@ class Plotter:
 
     def plot_similarity_graph(self):
         logger.debug('Preparing sparse similarity graph')
-        gs = sparse_graph(to_weighted_graph(self.analyzer.similarity_graph, PapersAnalyzer.similarity),
-                          PapersAnalyzer.SIMILARITY_GRAPH_EDGES_TO_NODES)
+        gs = sparse_graph(self.analyzer.weighted_similarity_graph, PapersAnalyzer.SIMILARITY_GRAPH_EDGES_TO_NODES)
         df = self.analyzer.df
         pids = df['id']
         comps = df['comp']
@@ -679,6 +678,16 @@ class Plotter:
             self.analyzer.evolution_kwds
         )
         return p, kwds_data
+
+    @staticmethod
+    def get_topic_word_cloud_data(kwd_df, comp):
+        kwds = {}
+        for pair in list(kwd_df[kwd_df['comp'] == comp]['kwd'])[0].split(','):
+            if pair != '':  # Correctly process empty freq_kwds encoding
+                token, value = pair.split(':')
+                for word in token.split(' '):
+                    kwds[word] = float(value) + kwds.get(word, 0)
+        return kwds
 
     @staticmethod
     def word_cloud_prepare(wc):

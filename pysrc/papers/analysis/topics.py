@@ -78,7 +78,7 @@ def cluster_and_sort(x, min_cluster_size, max_clusters):
     return [reorder_map[c] for c in model.labels_], model.children_
 
 
-def get_topics_description(df, comps, corpus_terms, corpus_counts, query, n_words, ignore_comp=None):
+def get_topics_description(df, comps, corpus_terms, corpus_counts, stems_map, n_words, ignore_comp=None):
     """
     Get words from abstracts that describe the components the best way
     using closest to the 'ideal' frequency vector - [0, ..., 0, 1, 0, ..., 0] in terms of cosine distance
@@ -86,14 +86,14 @@ def get_topics_description(df, comps, corpus_terms, corpus_counts, query, n_word
     logger.debug(f'Generating topics description, ignore_comp={ignore_comp}')
     # Since some of the components may be skipped, use this dict for continuous indexes'
     comp_idx = {c: i for i, c in enumerate(c for c in comps if c != ignore_comp)}
-    # In cases with less than 2 significant components, return  frequencies
+    # In cases with less than 2 components, return frequencies
     if len(comp_idx) < 2:
         comp = list(comp_idx.keys())[0]
         if ignore_comp is None:
-            most_frequent = get_frequent_tokens(df, query)
+            most_frequent = get_frequent_tokens(df, stems_map)
             return {comp: list(sorted(most_frequent.items(), key=lambda kv: kv[1], reverse=True))[:n_words]}
         else:
-            most_frequent = get_frequent_tokens(df.loc[df['id'].isin(set(comps[comp]))], query)
+            most_frequent = get_frequent_tokens(df.loc[df['id'].isin(set(comps[comp]))], stems_map)
             return {comp: list(sorted(most_frequent.items(), key=lambda kv: kv[1], reverse=True))[:n_words],
                     ignore_comp: []}
 

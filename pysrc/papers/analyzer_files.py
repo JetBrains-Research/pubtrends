@@ -98,7 +98,7 @@ class AnalyzerFiles(PapersAnalyzer):
         self.top_cited_papers, self.top_cited_df = find_top_cited_papers(self.df, PapersAnalyzer.TOP_CITED_PAPERS)
 
         self.progress.info('Analyzing title and abstract texts', current=6, task=task)
-        self.corpus_terms, self.corpus_counts = vectorize_corpus(
+        self.corpus_terms, self.corpus_counts, self.stems_map = vectorize_corpus(
             self.pub_df,
             max_features=PapersAnalyzer.VECTOR_WORDS,
             min_df=PapersAnalyzer.VECTOR_MIN_DF,
@@ -169,7 +169,7 @@ class AnalyzerFiles(PapersAnalyzer):
         logger.debug(f'Built similarity graph - {self.similarity_graph.number_of_nodes()} nodes and '
                      f'{self.similarity_graph.number_of_edges()} edges')
 
-        self.progress.info(f'Visualizing similarity graph with {self.similarity_graph.number_of_nodes()} nodes '
+        self.progress.info(f'Analyzing similarity graph with {self.similarity_graph.number_of_nodes()} nodes '
                            f'and {self.similarity_graph.number_of_edges()} edges', current=12, task=task)
         self.weighted_similarity_graph = to_weighted_graph(self.similarity_graph, PapersAnalyzer.similarity)
         self.node_ids, self.node_embeddings, xs, ys = layout_similarity_graph(
@@ -210,8 +210,7 @@ class AnalyzerFiles(PapersAnalyzer):
 
         clusters_description = get_topics_description(
             self.df, clusters_pids,
-            self.corpus_terms, self.corpus_counts,
-            query=self.query,
+            self.corpus_terms, self.corpus_counts, self.stems_map,
             n_words=PapersAnalyzer.TOPIC_DESCRIPTION_WORDS
         )
 
@@ -228,8 +227,7 @@ class AnalyzerFiles(PapersAnalyzer):
         clusters_pids = pd.DataFrame(dict(id=self.node_ids, comp=clusters)).groupby('comp')['id'].apply(list).to_dict()
         mesh_clusters_description = get_topics_description(
             self.df, clusters_pids,
-            mesh_corpus_terms, mesh_corpus_counts,
-            query=None,
+            mesh_corpus_terms, mesh_corpus_counts, None,
             n_words=PapersAnalyzer.TOPIC_DESCRIPTION_WORDS
         )
 
@@ -301,7 +299,7 @@ class AnalyzerFiles(PapersAnalyzer):
 
         path_terms_timeline = os.path.join(self.query_folder, "timeline_terms.html")
         logging.info(f'Save frequent tokens to file {path_terms_timeline}')
-        freq_kwds = get_frequent_tokens(self.top_cited_df, query=self.query)
+        freq_kwds = get_frequent_tokens(self.top_cited_df)
         output_file(filename=path_terms_timeline, title="Terms timeline")
         keywords_frequencies = plotter.plot_keywords_frequencies(freq_kwds)
         if keywords_frequencies is not None:

@@ -133,7 +133,7 @@ class PapersAnalyzer:
         self.pub_types = list(set(self.pub_df['type']))
 
         self.progress.info('Analyzing title and abstract texts', current=3, task=task)
-        self.corpus_terms, self.corpus_counts = vectorize_corpus(
+        self.corpus_terms, self.corpus_counts, self.stems_map = vectorize_corpus(
             self.pub_df,
             max_features=PapersAnalyzer.VECTOR_WORDS,
             min_df=PapersAnalyzer.VECTOR_MIN_DF,
@@ -193,7 +193,7 @@ class PapersAnalyzer:
             self.df['comp'] = 0  # Technical value for top authors and papers analysis
             self.kwd_df = pd.DataFrame({'comp': [0], 'kwd': ['']})
         else:
-            logger.debug('Visualizing similarity graph')
+            logger.debug('Analyzing similarity graph')
             self.weighted_similarity_graph = to_weighted_graph(self.similarity_graph, PapersAnalyzer.similarity)
             self.node_ids, self.node_embeddings, xs, ys = layout_similarity_graph(
                 self.weighted_similarity_graph, PapersAnalyzer.TOPIC_MIN_SIZE
@@ -222,8 +222,7 @@ class PapersAnalyzer:
                 groupby('comp')['id'].apply(list).to_dict()
             self.topics_description = get_topics_description(
                 self.df, comp_pids,
-                self.corpus_terms, self.corpus_counts,
-                query=query,
+                self.corpus_terms, self.corpus_counts, self.stems_map,
                 n_words=self.TOPIC_DESCRIPTION_WORDS
             )
             kwds = [(comp, ','.join([f'{t}:{v:.3f}' for t, v in vs[:self.TOPIC_DESCRIPTION_WORDS]]))
@@ -273,7 +272,7 @@ class PapersAnalyzer:
                 )
                 self.evolution_kwds = topic_evolution_descriptions(
                     self.df, self.evolution_df, self.evolution_year_range,
-                    self.corpus_terms, self.corpus_counts, self.TOPIC_DESCRIPTION_WORDS,
+                    self.corpus_terms, self.corpus_counts, self.stems_map, self.TOPIC_DESCRIPTION_WORDS,
                     self.progress, current=15, task=task
                 )
             else:

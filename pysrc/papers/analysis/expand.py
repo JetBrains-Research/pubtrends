@@ -3,7 +3,7 @@ from collections import Counter
 
 import numpy as np
 
-from pysrc.papers.analysis.text import tokens_stems
+from pysrc.papers.analysis.text import stemmed_tokens
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,7 @@ def expand_ids(
             mesh = row['mesh']
             keywords = row['keywords']
             title = row['title']
-            new_mesh_stems = [s for s, _ in tokens_stems((mesh + ' ' + keywords).replace(',', ' '))]
+            new_mesh_stems = [s for s, _ in stemmed_tokens((mesh + ' ' + keywords).replace(',', ' '))]
             if new_mesh_stems:
                 # Estimate fold change of similarity vs random single paper
                 similarity = sum([mesh_counter[s] / (len(mesh_stems) / len(ids)) for s in new_mesh_stems])
@@ -106,7 +106,7 @@ def expand_ids(
 def estimate_mesh(ids, loader):
     logger.debug(f'Estimating mesh and keywords terms to keep the theme')
     publications = loader.load_publications(ids)
-    mesh_stems = [s for s, _ in tokens_stems(
+    mesh_stems = [s for s, _ in stemmed_tokens(
         ' '.join(publications['mesh'] + ' ' + publications['keywords']).replace(',', ' ')
     )]
     mesh_counter = Counter(mesh_stems)

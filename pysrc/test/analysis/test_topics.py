@@ -40,12 +40,11 @@ class TestTopics(unittest.TestCase):
             if getattr(row, 'id') not in nodes:
                 self.assertEqual(getattr(row, 'comp'), -1)
 
-
     def test_heatmap_topics_similarity(self):
         matrix = compute_similarity_matrix(self.analyzer.similarity_graph,
                                            PapersAnalyzer.similarity, self.analyzer.partition)
         # print(matrix)
-        similarities = np.array([[3.506]])
+        similarities = np.array([[3.583]])
         self.assertTrue(np.allclose(similarities, matrix, rtol=1e-3))
 
     @staticmethod
