@@ -38,7 +38,7 @@ class TestText(unittest.TestCase):
             self.analyzer.corpus_terms,
             ['abstract', 'kw1', 'kw2', 'kw3', 'kw4', 'kw5', 'paper', 'term1', 'term2', 'term3', 'term4', 'term5']
         )
-        print(self.analyzer.corpus_counts.toarray())
+        # print(self.analyzer.corpus_counts.toarray())
         self.assertTrue(np.array_equal(
             self.analyzer.corpus_counts.toarray(),
             [[0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0],

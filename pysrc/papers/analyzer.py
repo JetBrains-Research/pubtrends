@@ -183,8 +183,9 @@ class PapersAnalyzer:
 
         self.progress.info('Analyzing papers similarity graph', current=8, task=task)
         self.similarity_graph = build_similarity_graph(
-            self.df, self.texts_similarity,
+            self.df,
             self.citations_graph, self.cocit_grouped_df, self.bibliographic_coupling_df,
+            self.texts_similarity
         )
         self.progress.info(f'Built similarity graph - {self.similarity_graph.number_of_nodes()} nodes and '
                            f'{self.similarity_graph.number_of_edges()} edges', current=8, task=task)
@@ -264,7 +265,8 @@ class PapersAnalyzer:
                 logger.debug('Perform topic evolution analysis and get topic descriptions')
                 self.evolution_df, self.evolution_year_range = topic_evolution_analysis(
                     self.df, self.cit_df, self.cocit_df, self.bibliographic_coupling_df,
-                    self.texts_similarity, self.SIMILARITY_COCITATION_MIN,
+                    self.text_sim_inds, self.text_sim_vals,
+                    self.SIMILARITY_COCITATION_MIN,
                     self.TOPIC_MIN_SIZE,
                     self.TOPICS_MAX_NUMBER,
                     similarity_func=self.similarity,

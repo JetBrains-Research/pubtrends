@@ -1,5 +1,4 @@
 import logging
-from queue import PriorityQueue
 
 import networkx as nx
 import numpy as np
@@ -13,7 +12,8 @@ logger = logging.getLogger(__name__)
 
 
 def topic_evolution_analysis(
-        df, cit_df, cocit_df, bibliographic_coupling_df, texts_similarity,
+        df, cit_df, cocit_df, bibliographic_coupling_df,
+        texts_similarity,
         cocit_min_threshold, topic_min_size, max_topics_number, similarity_func,
         evolution_step
 ):
@@ -23,7 +23,7 @@ def topic_evolution_analysis(
     :param cit_df: Citations dataframe
     :param cocit_df: Cocitations dataframe
     :param bibliographic_coupling_df: Bibliographic coupling dataframe, already filtered by min_threshold
-    :param texts_similarity: Texts similarity list
+    :param texts_similarity: Text similarity
     :param cocit_min_threshold: Min cocitations threshold
     :param topic_min_size:
     :param max_topics_number:
@@ -60,14 +60,15 @@ def topic_evolution_analysis(
         bibliographic_coupling_df_year = filter_bibliographic_coupling_df(bibliographic_coupling_df, ids_year)
 
         logger.debug('Use similarities for papers earlier then year')
-        texts_similarity_year = filter_text_similarities(df_year, texts_similarity, year)
+        texts_similarity_year = filter_text_similarities(df_year, year, texts_similarity)
 
         logger.debug('Building papers similarity graph')
         similarity_graph = build_similarity_graph(
-            df_year, texts_similarity_year,
+            df_year,
             citations_graph_year,
             cocit_grouped_df_year,
             bibliographic_coupling_df_year,
+            texts_similarity_year
         )
         logger.debug(f'Built similarity graph - {similarity_graph.number_of_nodes()} nodes and '
                      f'{similarity_graph.number_of_edges()} edges')
@@ -96,10 +97,12 @@ def topic_evolution_analysis(
     return evolution_df, year_range
 
 
-def filter_text_similarities(df, texts_similarity, year):
-    texts_similarity_year = texts_similarity.copy()
-    for idx in np.flatnonzero(df['year'].apply(int) > year):
-        texts_similarity_year[idx] = PriorityQueue(maxsize=0)  # Empty similarities for recent papers
+def filter_text_similarities(df, year, texts_similarity):
+    ids_year = set(np.flatnonzero(df['year'].apply(int) <= year))
+    texts_similarity_year = []
+    for i, sims in enumerate(texts_similarity):
+        if i in ids_year:
+            texts_similarity_year.append([(j, cs) for j, cs in sims if j in ids_year])
     return texts_similarity_year
 
 

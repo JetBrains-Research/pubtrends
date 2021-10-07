@@ -24,7 +24,8 @@ def build_citation_graph(df, cit_df):
 
 
 def build_similarity_graph(
-        df, texts_similarity, citations_graph, cocit_df, bibliographic_coupling_df
+        df, citations_graph, cocit_df, bibliographic_coupling_df,
+        texts_similarity
 ):
     """ Similarity graph is built using citation graph and text based methods. """
     pids = list(df['id'])
@@ -50,15 +51,13 @@ def build_similarity_graph(
     # Text similarity
     if len(df) >= 2:
         for i, pid1 in enumerate(df['id']):
-            similarity_queue = texts_similarity[i]
-            while not similarity_queue.empty():
-                similarity, j = similarity_queue.get()
+            for j, cos_similarity in texts_similarity[i]:
                 pid2 = pids[j]
                 if sg.has_edge(pid1, pid2):
                     pid1_pid2_edge = sg[pid1][pid2]
-                    pid1_pid2_edge['text'] = similarity
+                    pid1_pid2_edge['text'] = cos_similarity
                 else:
-                    sg.add_edge(pid1, pid2, text=similarity)
+                    sg.add_edge(pid1, pid2, text=cos_similarity)
 
     # Citations
     for u, v in citations_graph.edges:

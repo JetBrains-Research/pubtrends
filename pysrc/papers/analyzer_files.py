@@ -163,8 +163,9 @@ class AnalyzerFiles(PapersAnalyzer):
 
         self.progress.info('Analyzing papers similarity graph', current=12, task=task)
         self.similarity_graph = build_similarity_graph(
-            self.df, self.texts_similarity,
+            self.df,
             self.citations_graph, self.cocit_grouped_df, self.bibliographic_coupling_df,
+            self.texts_similarity
         )
         logger.debug(f'Built similarity graph - {self.similarity_graph.number_of_nodes()} nodes and '
                      f'{self.similarity_graph.number_of_edges()} edges')
@@ -299,7 +300,7 @@ class AnalyzerFiles(PapersAnalyzer):
 
         path_terms_timeline = os.path.join(self.query_folder, "timeline_terms.html")
         logging.info(f'Save frequent tokens to file {path_terms_timeline}')
-        freq_kwds = get_frequent_tokens(self.top_cited_df)
+        freq_kwds = get_frequent_tokens(self.top_cited_df, self.stems_map)
         output_file(filename=path_terms_timeline, title="Terms timeline")
         keywords_frequencies = plotter.plot_keywords_frequencies(freq_kwds)
         if keywords_frequencies is not None:

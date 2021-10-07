@@ -1,6 +1,5 @@
 import logging
 import re
-from queue import PriorityQueue
 from threading import Lock
 
 import nltk
@@ -57,20 +56,20 @@ def analyze_texts_similarity(df, corpus_vectors, min_threshold, max_similar):
     :param corpus_vectors: Vectorized papers matrix
     :param min_threshold: Min similarity threshold to add it to result
     :param max_similar: Max similar papers
-    :return: PriorityQueue[(similarity, index)] - queue of similar papers
+    :return: list_of_list of (top similar papers, cos similarity)
     """
     cos_similarities = cosine_similarity(corpus_vectors)
-    similarity_queues = [PriorityQueue(maxsize=max_similar) for _ in range(len(df))]
-    # Adding text citations
-    for i, pid1 in enumerate(df['id']):
-        queue_i = similarity_queues[i]
-        for j in range(i + 1, len(df)):
-            similarity = cos_similarities[i, j]
-            if np.isfinite(similarity) and similarity >= min_threshold:
-                if queue_i.full():
-                    queue_i.get()  # Removes the element with lowest similarity
-                queue_i.put((similarity, j))
-    return similarity_queues
+    for i in range(len(df)):
+        cos_similarities[i, i] = 0  # Ignore self-similarity
+
+    text_similarities = []
+    max_similarities_indices = np.argsort(cos_similarities)[::, -max_similar:].tolist()
+    for i, similar_inds in enumerate(max_similarities_indices):
+        # Filter by threshold among top similar
+        text_similarities.append([(j, cs) for j, cs in
+                                  zip(similar_inds, [cos_similarities[i, j] for j in similar_inds])
+                                  if cs >= min_threshold])
+    return text_similarities
 
 
 def get_frequent_tokens(df, stems_map, fraction=0.1, min_tokens=20):
