@@ -214,7 +214,7 @@ Please ensure that you have Database configured, up and running.
 1. Start Docker image with Postgres environment for tests (Kotlin and Python development)
     ```
     docker run --rm --name pubtrends-test \
-    --publish=5432:5432 --volume=$(pwd):/pubtrends -d -t biolabs/pubtrends-test
+    --publish=5432:5432 --volume=$(pwd):/pubtrends -i -t biolabs/pubtrends-test
     ```
     
    NOTE: don't forget to stop the container afterwards.
