@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from pysrc.papers.analysis.citations import build_cocit_grouped_df
-from pysrc.papers.analysis.graph import build_similarity_graph, layout_similarity_graph
+from pysrc.papers.analysis.graph import build_similarity_graph, layout_similarity_graph, to_weighted_graph
 from pysrc.papers.analysis.topics import get_topics_description, cluster_and_sort
 
 logger = logging.getLogger(__name__)
@@ -71,9 +71,9 @@ def topic_evolution_analysis(
         )
         logger.debug(f'Built similarity graph - {similarity_graph.number_of_nodes()} nodes and '
                      f'{similarity_graph.number_of_edges()} edges')
-
-        weighted_similarity_graph, node_ids, node_embeddings, xs, ys = layout_similarity_graph(
-            similarity_graph, similarity_func, topic_min_size
+        weighted_similarity_graph = to_weighted_graph(similarity_graph, similarity_func)
+        node_ids, node_embeddings, xs, ys = layout_similarity_graph(
+            weighted_similarity_graph, topic_min_size
         )
         clusters, _ = cluster_and_sort(node_embeddings, topic_min_size, max_topics_number)
         partition = dict(zip(node_ids, clusters))

@@ -7,7 +7,8 @@ from networkx.readwrite import json_graph
 from pysrc.papers.analysis.citations import find_top_cited_papers, find_max_gain_papers, \
     find_max_relative_gain_papers, build_cit_stats_df, merge_citation_stats, build_cocit_grouped_df
 from pysrc.papers.analysis.evolution import topic_evolution_analysis, topic_evolution_descriptions
-from pysrc.papers.analysis.graph import build_citation_graph, build_similarity_graph, layout_similarity_graph
+from pysrc.papers.analysis.graph import build_citation_graph, build_similarity_graph, layout_similarity_graph, \
+    to_weighted_graph
 from pysrc.papers.analysis.metadata import popular_authors, popular_journals
 from pysrc.papers.analysis.numbers import extract_numbers
 from pysrc.papers.analysis.text import analyze_texts_similarity, vectorize_corpus
@@ -193,8 +194,9 @@ class PapersAnalyzer:
             self.kwd_df = pd.DataFrame({'comp': [0], 'kwd': ['']})
         else:
             logger.debug('Visualizing similarity graph')
-            self.weighted_similarity_graph, self.node_ids, self.node_embeddings, xs, ys = layout_similarity_graph(
-                self.similarity_graph, PapersAnalyzer.similarity, PapersAnalyzer.TOPIC_MIN_SIZE
+            self.weighted_similarity_graph = to_weighted_graph(self.similarity_graph, PapersAnalyzer.similarity)
+            self.node_ids, self.node_embeddings, xs, ys = layout_similarity_graph(
+                self.weighted_similarity_graph, PapersAnalyzer.TOPIC_MIN_SIZE
             )
             pid_indx = dict(zip(self.df['id'], self.df.index))
             indx = [pid_indx[pid] for pid in self.node_ids]

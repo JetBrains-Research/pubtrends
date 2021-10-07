@@ -133,24 +133,23 @@ def to_weighted_graph(graph, weight_func, key='weight'):
     return g
 
 
-def layout_similarity_graph(similarity_graph, similarity_func, topic_min_size, max_edges_to_nodes=50):
+def layout_similarity_graph(weighted_similarity_graph, topic_min_size, max_edges_to_nodes=50):
     """
-    :return: Weighted similarity graph, node_ids, node2vec embeddings, xs, ys
+    :return: node_ids, node2vec embeddings, xs, ys
     """
-    wsg = to_weighted_graph(similarity_graph, similarity_func)
-    if similarity_graph.number_of_nodes() <= topic_min_size:
+    if weighted_similarity_graph.number_of_nodes() <= topic_min_size:
         logger.debug('Preparing spring layout for similarity graph')
-        pos = nx.spring_layout(similarity_graph, weight='weight')
+        pos = nx.spring_layout(weighted_similarity_graph, weight='weight')
         nodes = [a for a, _ in pos.items()]
         xs = [v[0] for _, v in pos.items()]
         ys = [v[1] for _, v in pos.items()]
-        return wsg, nodes, np.zeros(shape=(len(nodes), 0), dtype=np.float), xs, ys
+        return nodes, np.zeros(shape=(len(nodes), 0), dtype=np.float), xs, ys
     else:
         logger.debug('Preparing node2vec + tsne layout for similarity graph')
         # Limit edges to nodes ratio in sparse similarity graph
-        gs = sparse_graph(wsg, max_edges_to_nodes=max_edges_to_nodes)
+        gs = sparse_graph(weighted_similarity_graph, max_edges_to_nodes=max_edges_to_nodes)
         node_ids, node_embeddings = node2vec(gs)
         logger.debug('Apply TSNE transformation on node embeddings')
         tsne = TSNE(n_components=2, random_state=42)
         node_embeddings_2d = tsne.fit_transform(node_embeddings)
-        return wsg, node_ids, node_embeddings, node_embeddings_2d[:, 0], node_embeddings_2d[:, 1]
+        return node_ids, node_embeddings, node_embeddings_2d[:, 0], node_embeddings_2d[:, 1]

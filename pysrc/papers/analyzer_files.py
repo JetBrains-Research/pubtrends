@@ -24,7 +24,7 @@ from more_itertools import unique_everseen
 from pysrc.papers.analysis.citations import find_top_cited_papers, build_cit_stats_df, merge_citation_stats, \
     build_cocit_grouped_df
 from pysrc.papers.analysis.graph import build_citation_graph, build_similarity_graph, layout_similarity_graph, \
-    sparse_graph
+    sparse_graph, to_weighted_graph
 from pysrc.papers.analysis.text import analyze_texts_similarity, vectorize_corpus, preprocess_text
 from pysrc.papers.analysis.text import get_frequent_tokens
 from pysrc.papers.analysis.topics import get_topics_description, compute_similarity_matrix, cluster_and_sort
@@ -44,7 +44,6 @@ SEARCH_RESULTS_PATHS = ['/search_results', os.path.expanduser('~/.pubtrends/sear
 
 
 class AnalyzerFiles(PapersAnalyzer):
-
     # Increase max number of topics
     TOPICS_MAX_NUMBER = 40
 
@@ -69,7 +68,7 @@ class AnalyzerFiles(PapersAnalyzer):
         logger.info(f'Ids saved to {path_ids}')
         with open(path_ids, 'w') as f:
             f.write('\n'.join(ids))
-            
+
         self.progress.info('Loading publications from database', current=2, task=task)
         self.pub_df = self.loader.load_publications(ids)
         self.pub_types = list(set(self.pub_df['type']))
@@ -172,8 +171,9 @@ class AnalyzerFiles(PapersAnalyzer):
 
         self.progress.info(f'Visualizing similarity graph with {self.similarity_graph.number_of_nodes()} nodes '
                            f'and {self.similarity_graph.number_of_edges()} edges', current=12, task=task)
-        self.weighted_similarity_graph, self.node_ids, self.node_embeddings, xs, ys = layout_similarity_graph(
-            self.similarity_graph, PapersAnalyzer.similarity, PapersAnalyzer.TOPIC_MIN_SIZE
+        self.weighted_similarity_graph = to_weighted_graph(self.similarity_graph, PapersAnalyzer.similarity)
+        self.node_ids, self.node_embeddings, xs, ys = layout_similarity_graph(
+            self.weighted_similarity_graph, PapersAnalyzer.TOPIC_MIN_SIZE
         )
         pid_indx = dict(zip(self.df['id'], self.df.index))
         indx = [pid_indx[pid] for pid in self.node_ids]
