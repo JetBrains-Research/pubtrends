@@ -265,7 +265,7 @@ class PapersAnalyzer:
                 logger.debug('Perform topic evolution analysis and get topic descriptions')
                 self.evolution_df, self.evolution_year_range = topic_evolution_analysis(
                     self.df, self.cit_df, self.cocit_df, self.bibliographic_coupling_df,
-                    self.text_sim_inds, self.text_sim_vals,
+                    self.texts_similarity,
                     self.SIMILARITY_COCITATION_MIN,
                     self.TOPIC_MIN_SIZE,
                     self.TOPICS_MAX_NUMBER,
