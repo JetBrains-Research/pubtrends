@@ -35,7 +35,7 @@ class TestText(unittest.TestCase):
 
     def test_corpus_vectorization(self):
         self.assertEqual(
-            self.analyzer.corpus_terms,
+            self.analyzer.corpus_tokens,
             ['abstract', 'kw1', 'kw2', 'kw3', 'kw4', 'kw5', 'paper', 'term1', 'term2', 'term3', 'term4', 'term5']
         )
         # print(self.analyzer.corpus_counts.toarray())

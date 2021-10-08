@@ -6,7 +6,7 @@ from gensim.models import Word2Vec
 logger = logging.getLogger(__name__)
 
 
-def node2vec(graph, p=0.5, q=2.0, walk_length=32, walks_per_node=5, vector_size=32, key='weight', seed=None):
+def node2vec(graph, p=0.5, q=2.0, walk_length=32, walks_per_node=5, vector_size=32, key='weight', seed=42):
     """
     :param graph: Undirected weighted networkx graph
     :param p: Defines (unormalised) probability, 1/p, of returning to source node

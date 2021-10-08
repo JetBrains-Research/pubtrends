@@ -20,12 +20,14 @@ from bokeh.plotting import figure, output_file, save
 from lazy import lazy
 from matplotlib import pyplot as plt
 from more_itertools import unique_everseen
+from sklearn.manifold import TSNE
 
 from pysrc.papers.analysis.citations import find_top_cited_papers, build_cit_stats_df, merge_citation_stats, \
     build_cocit_grouped_df
-from pysrc.papers.analysis.graph import build_citation_graph, build_similarity_graph, layout_similarity_graph, \
+from pysrc.papers.analysis.graph import build_citation_graph, build_similarity_graph, \
     sparse_graph, to_weighted_graph
-from pysrc.papers.analysis.text import analyze_texts_similarity, vectorize_corpus, preprocess_text
+from pysrc.papers.analysis.node2vec import node2vec
+from pysrc.papers.analysis.text import texts_embeddings, vectorize_corpus, preprocess_text, word2vec_tokens
 from pysrc.papers.analysis.text import get_frequent_tokens
 from pysrc.papers.analysis.topics import get_topics_description, compute_similarity_matrix, cluster_and_sort
 from pysrc.papers.analyzer import PapersAnalyzer
@@ -133,10 +135,20 @@ class AnalyzerFiles(PapersAnalyzer):
             save(Plotter.plot_keywords_timeline(keywords_df, years))
             reset_output()
 
-        self.progress.info('Analyzing papers text similarities', current=8, task=task)
-        self.texts_similarity = analyze_texts_similarity(
-            self.pub_df, self.corpus_counts,
-            PapersAnalyzer.SIMILARITY_TEXT_CITATION_MIN, PapersAnalyzer.SIMILARITY_TEXT_CITATION_N
+        self.progress.info('Analyzing title and abstract texts', current=8, task=task)
+        self.corpus_tokens, self.corpus_counts, self.stems_tokens_map = vectorize_corpus(
+            self.pub_df,
+            max_features=PapersAnalyzer.VECTOR_WORDS,
+            min_df=PapersAnalyzer.VECTOR_MIN_DF,
+            max_df=PapersAnalyzer.VECTOR_MAX_DF
+        )
+        logger.debug('Analyzing tokens embeddings')
+        self.corpus_tokens_embedding = word2vec_tokens(
+            self.pub_df, self.corpus_tokens, self.stems_tokens_map
+        )
+        logger.debug('Analyzing texts embeddings')
+        self.texts_embeddings = texts_embeddings(
+            self.corpus_counts, self.corpus_tokens_embedding
         )
 
         self.progress.info('Building citation graph', current=9, task=task)
@@ -163,29 +175,36 @@ class AnalyzerFiles(PapersAnalyzer):
 
         self.progress.info('Analyzing papers similarity graph', current=12, task=task)
         self.similarity_graph = build_similarity_graph(
-            self.df,
-            self.citations_graph, self.cocit_grouped_df, self.bibliographic_coupling_df,
-            self.texts_similarity
+            self.df, self.citations_graph, self.cocit_grouped_df, self.bibliographic_coupling_df,
         )
         logger.debug(f'Built similarity graph - {self.similarity_graph.number_of_nodes()} nodes and '
                      f'{self.similarity_graph.number_of_edges()} edges')
 
         self.progress.info(f'Analyzing similarity graph with {self.similarity_graph.number_of_nodes()} nodes '
                            f'and {self.similarity_graph.number_of_edges()} edges', current=12, task=task)
+        logger.debug('Analyzing similarity graph embeddings')
         self.weighted_similarity_graph = to_weighted_graph(self.similarity_graph, PapersAnalyzer.similarity)
-        self.node_ids, self.node_embeddings, xs, ys = layout_similarity_graph(
-            self.weighted_similarity_graph, PapersAnalyzer.TOPIC_MIN_SIZE
-        )
-        pid_indx = dict(zip(self.df['id'], self.df.index))
-        indx = [pid_indx[pid] for pid in self.node_ids]
-        self.df['x'] = pd.Series(index=indx, data=xs)
-        self.df['y'] = pd.Series(index=indx, data=ys)
+        gs = sparse_graph(self.weighted_similarity_graph)
+        node_ids, node_embeddings = node2vec(gs)
+        pindx = {pid: i for i, pid in enumerate(self.df['id'])}
+        self.graph_embeddings = node_embeddings[[pindx[pid] for pid in node_ids], :]
 
-        self.progress.info('Extracting topics from paper similarity graph', current=13, task=task)
-        clusters, dendrogram_children = cluster_and_sort(self.node_embeddings,
+        logger.debug('Computing aggregated graph and text embeddings for papers')
+        self.papers_embeddings = np.concatenate(
+            (self.graph_embeddings * PapersAnalyzer.GRAPH_EMBEDDINGS_FACTOR,
+             self.texts_embeddings * PapersAnalyzer.TEXT_EMBEDDINGS_FACTOR), axis=1)
+
+        logger.debug('Apply TSNE transformation on papers embeddings')
+        tsne_embeddings_2d = TSNE(n_components=2, random_state=42).fit_transform(self.papers_embeddings)
+        self.df['x'] = tsne_embeddings_2d[:, 0]
+        self.df['y'] = tsne_embeddings_2d[:, 1]
+
+        self.progress.info('Extracting topics from papers', current=13, task=task)
+        clusters, dendrogram_children = cluster_and_sort(self.papers_embeddings,
                                                          PapersAnalyzer.TOPIC_MIN_SIZE,
                                                          self.TOPICS_MAX_NUMBER)
-        self.df['comp'] = pd.Series(index=indx, data=clusters, dtype=int)
+        self.df['comp'] = clusters
+        clusters_pids = pd.DataFrame(dict(id=self.df['id'], comp=clusters)).groupby('comp')['id'].apply(list).to_dict()
 
         path_topics_sizes = os.path.join(self.query_folder, 'topics_sizes.html')
         logging.info(f'Save topics ratios to file {path_topics_sizes}')
@@ -207,8 +226,6 @@ class AnalyzerFiles(PapersAnalyzer):
 
         self.progress.info('Analyzing topics descriptions', current=14, task=task)
         print('Computing clusters keywords')
-        clusters_pids = pd.DataFrame(dict(id=self.node_ids, comp=clusters)).groupby('comp')['id'].apply(list).to_dict()
-
         clusters_description = get_topics_description(
             self.df, clusters_pids,
             self.corpus_terms, self.corpus_counts, self.stems_map,
@@ -225,7 +242,6 @@ class AnalyzerFiles(PapersAnalyzer):
         del t
 
         self.progress.info('Analyzing topics descriptions with MESH terms', current=15, task=task)
-        clusters_pids = pd.DataFrame(dict(id=self.node_ids, comp=clusters)).groupby('comp')['id'].apply(list).to_dict()
         mesh_clusters_description = get_topics_description(
             self.df, clusters_pids,
             mesh_corpus_terms, mesh_corpus_counts, None,

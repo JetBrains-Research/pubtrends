@@ -23,10 +23,7 @@ def build_citation_graph(df, cit_df):
     return cg
 
 
-def build_similarity_graph(
-        df, citations_graph, cocit_df, bibliographic_coupling_df,
-        texts_similarity
-):
+def build_similarity_graph(df, citations_graph, cocit_df, bibliographic_coupling_df):
     """ Similarity graph is built using citation graph and text based methods. """
     pids = list(df['id'])
 
@@ -48,23 +45,12 @@ def build_similarity_graph(
             else:
                 sg.add_edge(start, end, bibcoupling=bibcoupling)
 
-    # Text similarity
-    if len(df) >= 2:
-        for i, pid1 in enumerate(df['id']):
-            for j, cos_similarity in texts_similarity[i]:
-                pid2 = pids[j]
-                if sg.has_edge(pid1, pid2):
-                    pid1_pid2_edge = sg[pid1][pid2]
-                    pid1_pid2_edge['text'] = cos_similarity
-                else:
-                    sg.add_edge(pid1, pid2, text=cos_similarity)
-
     # Citations
-    for u, v in citations_graph.edges:
-        if sg.has_edge(u, v):
-            sg[u][v]['citation'] = 1
+    for start, end in citations_graph.edges:
+        if sg.has_edge(start, end):
+            sg[start][end]['citation'] = 1
         else:
-            sg.add_edge(u, v, citation=1)
+            sg.add_edge(start, end, citation=1)
 
     # Ensure all the papers are in the similarity graph graph
     for pid in pids:
@@ -74,10 +60,10 @@ def build_similarity_graph(
     return sg
 
 
-def sparse_graph(graph, max_edges_to_nodes, key='weight'):
+def sparse_graph(graph, max_edges_to_nodes=50, key='weight'):
+    logger.debug(f'Limit total number of edges to max_edges_to_nodes={max_edges_to_nodes}')
     e = 1.0
     gs = _local_sparse(graph, e, key)
-    # Limit total number of edges to estimate walk probabilities
     while e > 0.1 and gs.number_of_edges() / gs.number_of_nodes() > max_edges_to_nodes:
         e -= 0.1
         gs = _local_sparse(graph, e, key)
@@ -130,25 +116,3 @@ def to_weighted_graph(graph, weight_func, key='weight'):
         if not g.has_node(v):
             g.add_node(v)
     return g
-
-
-def layout_similarity_graph(weighted_similarity_graph, topic_min_size, max_edges_to_nodes=50):
-    """
-    :return: node_ids, node2vec embeddings, xs, ys
-    """
-    if weighted_similarity_graph.number_of_nodes() <= topic_min_size:
-        logger.debug('Preparing spring layout for similarity graph')
-        pos = nx.spring_layout(weighted_similarity_graph, weight='weight')
-        nodes = [a for a, _ in pos.items()]
-        xs = [v[0] for _, v in pos.items()]
-        ys = [v[1] for _, v in pos.items()]
-        return nodes, np.zeros(shape=(len(nodes), 0), dtype=np.float), xs, ys
-    else:
-        logger.debug('Preparing node2vec + tsne layout for similarity graph')
-        # Limit edges to nodes ratio in sparse similarity graph
-        gs = sparse_graph(weighted_similarity_graph, max_edges_to_nodes=max_edges_to_nodes)
-        node_ids, node_embeddings = node2vec(gs)
-        logger.debug('Apply TSNE transformation on node embeddings')
-        tsne = TSNE(n_components=2, random_state=42)
-        node_embeddings_2d = tsne.fit_transform(node_embeddings)
-        return node_ids, node_embeddings, node_embeddings_2d[:, 0], node_embeddings_2d[:, 1]

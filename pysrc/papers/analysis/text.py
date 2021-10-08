@@ -4,10 +4,10 @@ from threading import Lock
 
 import nltk
 import numpy as np
+from gensim.models import Word2Vec
 from nltk import word_tokenize, WordNetLemmatizer, SnowballStemmer
 from nltk.corpus import wordnet, stopwords
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 
 logger = logging.getLogger(__name__)
 
@@ -28,62 +28,40 @@ def vectorize_corpus(df, max_features, min_df, max_df):
     Create vectorization for papers in df.
     :param df: papers dataframe
     :param max_features: Maximum vocabulary size
-    :param min_df: Ignore terms with frequency lower than given threshold
-    :param max_df: Ignore terms with frequency higher than given threshold
+    :param min_df: Ignore tokens with frequency lower than given threshold
+    :param max_df: Ignore tokens with frequency higher than given threshold
     :return: Return vocabulary, term counts and Stems to token map.
     """
-    corpus, stems_map = build_corpus(df)
+    papers_corpus, stems_tokens_map = build_stemmed_corpus(df)
+    logger.debug(f'Vectorize corpus')
     vectorizer = CountVectorizer(
         min_df=min_df,
         max_df=max_df if len(df) > 1 else 1.0,  # For tests
         max_features=max_features,
-        tokenizer=lambda t: tokenize(t, stems_map)
+        tokenizer=lambda t: tokenize(t, stems_tokens_map)
     )
-    logger.debug(f'Vectorization min_df={min_df} max_df={max_df} max_features={max_features}')
-    counts = vectorizer.fit_transform(corpus)
+    counts = vectorizer.fit_transform(papers_corpus)
     logger.debug(f'Vectorized corpus size {counts.shape}')
-    terms_counts = np.asarray(np.sum(counts, axis=0)).reshape(-1)
-    terms_freqs = terms_counts / len(df)
-    logger.debug(f'Terms frequencies min={terms_freqs.min()}, max={terms_freqs.max()}, '
-                 f'mean={terms_freqs.mean()}, std={terms_freqs.std()}')
-    return vectorizer.get_feature_names(), counts, stems_map
+    tokens_counts = np.asarray(np.sum(counts, axis=0)).reshape(-1)
+    tokens_freqs = tokens_counts / len(df)
+    logger.debug(f'Tokens frequencies min={tokens_freqs.min()}, max={tokens_freqs.max()}, '
+                 f'mean={tokens_freqs.mean()}, std={tokens_freqs.std()}')
+    corpus_tokens = vectorizer.get_feature_names()
+    return corpus_tokens, counts, stems_tokens_map
 
 
-def analyze_texts_similarity(df, corpus_vectors, min_threshold, max_similar):
-    """
-    Computes texts similarities based on cosine distance between texts vectors
-    :param df: Papers dataframe
-    :param corpus_vectors: Vectorized papers matrix
-    :param min_threshold: Min similarity threshold to add it to result
-    :param max_similar: Max similar papers
-    :return: list_of_list of (top similar papers, cos similarity)
-    """
-    cos_similarities = cosine_similarity(corpus_vectors)
-    for i in range(len(df)):
-        cos_similarities[i, i] = 0  # Ignore self-similarity
-
-    text_similarities = []
-    max_similarities_indices = np.argsort(cos_similarities)[::, -max_similar:].tolist()
-    for i, similar_inds in enumerate(max_similarities_indices):
-        # Filter by threshold among top similar
-        text_similarities.append([(j, cs) for j, cs in
-                                  zip(similar_inds, [cos_similarities[i, j] for j in similar_inds])
-                                  if cs >= min_threshold])
-    return text_similarities
-
-
-def get_frequent_tokens(df, stems_map, fraction=0.1, min_tokens=20):
+def get_frequent_tokens(df, stems_tokens_map, fraction=0.1, min_tokens=20):
     """
     Compute tokens weighted frequencies
     :param df: papers dataframe
-    :param stems_map Mapping from stems to words
+    :param stems_tokens_map Mapping from stems to tokens
     :param fraction: fraction of most common tokens
     :param min_tokens: minimal number of tokens to return
     :return: dictionary {token: frequency}
     """
     counter = nltk.Counter()
-    for title, abstract, mesh, keywords in zip(df['title'], df['abstract'], df['keywords'], df['mesh']):
-        for token in tokenize(f'{title} {abstract} {keywords} {mesh}', stems_map):
+    for title, abstract, mesh, keywords in zip(df['title'], df['abstract'], df['mesh'], df['keywords']):
+        for token in tokenize(f'{title} {abstract} {mesh} {keywords}', stems_tokens_map):
             counter[token] += 1
     result = {}
     tokens = len(counter)
@@ -137,39 +115,79 @@ def preprocess_text(text):
     return text
 
 
-def build_corpus(df):
+def build_stemmed_corpus(df):
     logger.info(f'Building corpus from {len(df)} papers')
     logger.info(f'Processing lemmas and stemming for all papers')
-    df_stems_and_tokens = [
-        stemmed_tokens(preprocess_text(f'{title} {abstract} {keywords} {mesh}'), min_token_length=3)
-        for title, abstract, mesh, keywords in
-        zip(df['title'], df['abstract'], df['keywords'], df['mesh'])
+    papers_stems_and_tokens = [
+        stemmed_tokens(preprocess_text(f'{title} {abstract} {mesh} {keywords}'))
+        for title, abstract, mesh, keywords in zip(df['title'], df['abstract'], df['mesh'], df['keywords'])
     ]
     logger.info('Creating global shortest stemming to tokens map')
-    stems_map = build_stemming_map(flatten(df_stems_and_tokens))
+    stems_tokens_map = build_stems_to_tokens_map(flatten(papers_stems_and_tokens))
     logger.info('Creating stemmed corpus')
-    return [' '.join([stems_map[s] for s, _ in stemmed]) for stemmed in df_stems_and_tokens], stems_map
+    return [' '.join(stems_tokens_map[s] for s, _ in stemmed) for stemmed in papers_stems_and_tokens], stems_tokens_map
+
+
+def tokenize(text, stems_tokens_map=None, min_token_length=3):
+    stems_and_tokens = stemmed_tokens(preprocess_text(text), min_token_length)
+    if stems_tokens_map is None:
+        return [t for _, t in stems_and_tokens]
+    else:
+        return [stems_tokens_map[s] for s, _ in stems_and_tokens if s in stems_tokens_map]
+
+
+def build_stems_to_tokens_map(stems_and_tokens):
+    """ Substitute each stem with the shortest similar word """
+    stems_tokens_map = {}
+    for stem, token in stems_and_tokens:
+        if stem in stems_tokens_map:
+            if len(stems_tokens_map[stem]) > len(token):
+                stems_tokens_map[stem] = token
+        else:
+            stems_tokens_map[stem] = token
+    return stems_tokens_map
+
+
+def word2vec_tokens(df, corpus_tokens, stems_tokens_map, vector_size=32):
+    logger.debug(f'Compute words embeddings with word2vec')
+    corpus_tokens_set = set(corpus_tokens)
+    logger.debug('Collecting sentences across texts')
+    sentences = []
+    for field in ['title', 'abstract', 'mesh', 'keywords']:
+        for text in df[field]:
+            for sentence in text.split('.'):
+                if len(sentence.strip()) > 0:
+                    sentences.append([
+                        stems_tokens_map[s] for s, _ in stemmed_tokens(preprocess_text(sentence.strip()))
+                        if s in stems_tokens_map and stems_tokens_map[s] in corpus_tokens_set
+                    ])
+    # print(sentences)
+    logger.debug('Training word2vec model')
+    w2v = Word2Vec(sentences, vector_size=vector_size, min_count=0, workers=1, epochs=10, seed=42)
+    logger.debug('Retrieve word embeddings, corresponding subjects and reorder according to corpus_terms')
+    corpus_terms_indx = {t: i for i, t in enumerate(corpus_tokens)}
+    return w2v.wv.vectors[[corpus_terms_indx[t] for t in w2v.wv.index_to_key], :]
+
+
+def texts_embeddings(corpus_counts, tokens_w2v_embeddings):
+    """
+    Computes texts embeddings as TF-IDF weighted average of word2vec words embeddings.
+    :param corpus_counts: Vectorized papers matrix
+    :param tokens_w2v_embeddings: Tokens word2vec embeddings
+    :return: numpy array [publications x embeddings]
+    """
+    logger.debug('Compute TF-IDF on tokens counts')
+    tfidf_transformer = TfidfTransformer()
+    tfidf = tfidf_transformer.fit_transform(corpus_counts)
+    logger.debug(f'TFIDF shape {tfidf.shape}')
+
+    logger.debug('Compute text embeddings as TF-IDF weighted average of word2vec tokens embeddings')
+    texts_embeddings = np.array(
+        [np.mean([np.multiply(tokens_w2v_embeddings[w], tfidf[i, w]) for w in range(tfidf.shape[1])], axis=0) for i in
+         range(tfidf.shape[0])])
+    logger.debug(f'Texts embeddings shape: {texts_embeddings.shape}')
+    return texts_embeddings
 
 
 def flatten(t):
     return [item for sublist in t for item in sublist]
-
-
-def tokenize(text, stems_map=None, min_token_length=3):
-    stems_and_tokens = stemmed_tokens(preprocess_text(text), min_token_length)
-    if stems_map is None:
-        return [t for _, t in stems_and_tokens]
-    else:
-        return [stems_map[s] for s, _ in stems_and_tokens if s in stems_map]
-
-
-def build_stemming_map(stems_and_tokens):
-    """ Substitute each stem with the shortest similar word """
-    stems_map = {}
-    for stem, token in stems_and_tokens:
-        if stem in stems_map:
-            if len(stems_map[stem]) > len(token):
-                stems_map[stem] = token
-        else:
-            stems_map[stem] = token
-    return stems_map
