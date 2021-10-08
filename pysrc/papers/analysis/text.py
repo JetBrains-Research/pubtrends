@@ -151,22 +151,25 @@ def build_stems_to_tokens_map(stems_and_tokens):
 def word2vec_tokens(df, corpus_tokens, stems_tokens_map, vector_size=32):
     logger.debug(f'Compute words embeddings with word2vec')
     corpus_tokens_set = set(corpus_tokens)
-    logger.debug('Collecting sentences across texts')
+    logger.debug('Collecting sentences across dataset')
     sentences = []
-    for field in ['title', 'abstract', 'mesh', 'keywords']:
-        for text in df[field]:
-            for sentence in text.split('.'):
+    for _, row in df.iterrows():
+        for field in ['title', 'abstract', 'mesh', 'keywords']:
+            for sentence in row[field].split('.'):
                 if len(sentence.strip()) > 0:
                     sentences.append([
                         stems_tokens_map[s] for s, _ in stemmed_tokens(preprocess_text(sentence.strip()))
                         if s in stems_tokens_map and stems_tokens_map[s] in corpus_tokens_set
                     ])
-    # print(sentences)
     logger.debug('Training word2vec model')
     w2v = Word2Vec(sentences, vector_size=vector_size, min_count=0, workers=1, epochs=10, seed=42)
     logger.debug('Retrieve word embeddings, corresponding subjects and reorder according to corpus_terms')
-    corpus_terms_indx = {t: i for i, t in enumerate(corpus_tokens)}
-    return w2v.wv.vectors[[corpus_terms_indx[t] for t in w2v.wv.index_to_key], :]
+    ids, embeddings = w2v.wv.index_to_key, w2v.wv.vectors
+    indx = {t: i for i, t in enumerate(ids)}
+    return np.array([
+        embeddings[indx[t]] if t in indx else np.zeros(embeddings.shape[1])  # Process missing
+        for t in corpus_tokens
+    ])
 
 
 def texts_embeddings(corpus_counts, tokens_w2v_embeddings):

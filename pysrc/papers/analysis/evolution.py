@@ -67,9 +67,7 @@ def topic_evolution_analysis(
                      f'{similarity_graph.number_of_edges()} edges')
         weighted_similarity_graph = to_weighted_graph(similarity_graph, similarity_func)
         gs = sparse_graph(weighted_similarity_graph)
-        node_ids, node_embeddings_year = node2vec(gs)
-        pindx = {pid: i for i, pid in enumerate(df_year['id'])}
-        graph_embeddings_year = node_embeddings_year[[pindx[pid] for pid in node_ids], :]
+        graph_embeddings_year = node2vec(df_year['id'], gs)
 
         logger.debug('Computing aggregated graph and text embeddings for papers')
         papers_embeddings = np.concatenate(

@@ -46,7 +46,7 @@ class PapersAnalyzer:
     SIMILARITY_COCITATION_MIN = 1
 
     # Papers embeddings is a concatenation of graph and text embeddings times corresponding factors
-    GRAPH_EMBEDDINGS_FACTOR = 10
+    GRAPH_EMBEDDINGS_FACTOR = 1
     TEXT_EMBEDDINGS_FACTOR = 1
 
     # Reduce number of edges in similarity graph
@@ -190,9 +190,7 @@ class PapersAnalyzer:
         logger.debug('Analyzing similarity graph embeddings')
         self.weighted_similarity_graph = to_weighted_graph(self.similarity_graph, PapersAnalyzer.similarity)
         gs = sparse_graph(self.weighted_similarity_graph)
-        node_ids, node_embeddings = node2vec(gs)
-        pindx = {pid: i for i, pid in enumerate(self.df['id'])}
-        self.graph_embeddings = node_embeddings[[pindx[pid] for pid in node_ids], :]
+        self.graph_embeddings = node2vec(self.df['id'], gs)
 
         logger.debug('Computing aggregated graph and text embeddings for papers')
         self.papers_embeddings = np.concatenate(

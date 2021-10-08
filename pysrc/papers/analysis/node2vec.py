@@ -6,8 +6,9 @@ from gensim.models import Word2Vec
 logger = logging.getLogger(__name__)
 
 
-def node2vec(graph, p=0.5, q=2.0, walk_length=32, walks_per_node=5, vector_size=32, key='weight', seed=42):
+def node2vec(ids, graph, p=0.5, q=2.0, walk_length=32, walks_per_node=5, vector_size=32, key='weight', seed=42):
     """
+    :param ids: Ids or nodes for embedding
     :param graph: Undirected weighted networkx graph
     :param p: Defines (unormalised) probability, 1/p, of returning to source node
     :param q: Defines (unormalised) probability, 1/q, for moving away from source node
@@ -32,8 +33,13 @@ def node2vec(graph, p=0.5, q=2.0, walk_length=32, walks_per_node=5, vector_size=
     w2v = Word2Vec(
         walks, vector_size=vector_size, window=5, min_count=0, sg=1, workers=1, epochs=1, seed=seed
     )
-    # Retrieve node embeddings and corresponding subjects
-    return w2v.wv.index_to_key, w2v.wv.vectors
+    logger.debug('Retrieve word embeddings, corresponding subjects and reorder according to ids')
+    node_ids, node_embeddings = w2v.wv.index_to_key, w2v.wv.vectors
+    indx = {pid: i for i, pid in enumerate(node_ids)}
+    return np.array([
+        node_embeddings[indx[pid]] if pid in indx else np.zeros(node_embeddings.shape[1])  # Process missing
+        for pid in ids
+    ])
 
 
 def _precompute(graph, key='weight', p=0.5, q=2.0):
