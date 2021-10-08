@@ -84,21 +84,23 @@
         }
 
         function showKeywords() {
+            window.description = 'tags';
             showDescription(topics_tags);
         }
 
         function showMeshTerms() {
+            window.description = 'mesh';
             showDescription(topics_meshs);
         }
 
         function showNone() {
             // Close all notifications
             $('.notifyjs-wrapper').trigger('notify-hide');
+            window.description = 'none';
         }
 
         function showYear() {
-            // Close all notifications
-            $('.notifyjs-wrapper').trigger('notify-hide');
+            showNone();
             $.notify({
                 title:
                     $('<p>' +
@@ -342,6 +344,7 @@
 
             // Topic based colouring by default
             colorTopics();
+            showKeywords();
 
             // Save all created tippy
             let tippys = [];
@@ -475,6 +478,12 @@
                 });
                 if (color_mode === 'topics') {
                     colorTopics();
+                    if (window.description === 'tags') {
+                        showKeywords();
+                    }
+                    if (window.description === 'mesh') {
+                        showMeshTerms();
+                    }
                 } else {
                     colorYear();
                 }

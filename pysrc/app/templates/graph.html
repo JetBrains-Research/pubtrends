@@ -88,17 +88,13 @@
                 if ('citation' in data) {
                     citation = data.citation;
                 }
-                let text = 0;
-                if ('text' in data) {
-                    text = data.text;
-                }
-                if (cocitation > 0 && cocitation >= Math.max(bibcoupling, citation, text)) {
+                if (cocitation > 0 && cocitation >= Math.max(bibcoupling, citation)) {
                     return "#2ECC71" //214, 234, 248
                 }
-                if (bibcoupling > 0 && bibcoupling >= Math.max(cocitation, citation, text)) {
+                if (bibcoupling > 0 && bibcoupling >= Math.max(cocitation, citation)) {
                     return "#9B59B6"; //218, 247, 166
                 }
-                if (citation > 0 && citation >= Math.max(cocitation, bibcoupling, text)) {
+                if (citation > 0 && citation >= Math.max(cocitation, bibcoupling)) {
                     return "#3498DB"; //235, 222, 240
                 }
                 return "#BDC3C7";
@@ -391,18 +387,11 @@
                             if ('citation' in data) {
                                 citation = data.citation;
                             }
-                            let text = 0;
-                            if ('text' in data) {
-                                text = data.text;
-                            }
                             content.innerHTML = "<p style='text-align:left;'><small><b>Similarity</b><br>" +
                                 "Similarity is computed based on citations and text similarity between papers. " +
-                                "The bigger value the more similar.<br>" +
                                 '<span style="color:dodgerblue;">Co-citations</span>: ' + cocitation + "<br>" +
                                 '<span style="color:dodgerblue;">Bibliographic coupling</span>: ' + bibcoupling + "<br>" +
-                                '<span style="color:dodgerblue;">Citation</span>: ' + citation + "<br>" +
-                                '<span style="color:dodgerblue;">Text similarity</span>: ' +
-                                Number(text).toFixed(2) + "</small></p>";
+                                '<span style="color:dodgerblue;">Citation</span>: ' + citation + "</p>";
                         } else if ('title' in data) {
                             // Paper
                             // Disable formatter for the next section because of injections.
@@ -638,7 +627,7 @@
                     ele.removeClass('semitransp');
                 });
                 // Restore notification
-                if (color_mode === 'topics') {
+                if (window.show_mode === 'topics') {
                     showTopics();
                 } else {
                     showYear();
@@ -820,10 +809,7 @@
                 "&nbsp;<em>Bibliographic coupling</em> " +
                 "<br>" +
                 '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(52,152,219,0.5);"/></svg>' +
-                "&nbsp;<em>Citation</em>" +
-                "<br>" +
-                '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(189,195,199,0.5);"/></svg>' +
-                "&nbsp;<em>Text similarity</em>";
+                "&nbsp;<em>Citation</em>";
         }
         intro.setOptions({
             steps: [
