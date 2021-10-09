@@ -57,15 +57,14 @@ def cluster_and_sort(x, min_cluster_size, max_clusters):
     prev_min_size = None
     while l < r - 2:
         n_clusters = int((l + r) / 2)
-        logger.debug(f'l = {l}; r = {r}; n_clusters = {n_clusters}')
         model = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward').fit(x)
         clusters_counter = Counter(model.labels_)
-        assert len(clusters_counter.keys()) == n_clusters, "Incorrect clusters number"
         min_size = clusters_counter.most_common()[-1][1]
-        # Track previous_min_size to cope with situation with super distant tiny clusters
-        if prev_min_size != min_size and min_size < min_cluster_size or n_clusters > max_clusters:
-            logger.debug(f'prev_min_size({prev_min_size}) != min_size({min_size}) < {min_cluster_size} or '
-                         f'n_clusters = {n_clusters}  > {max_clusters}')
+        logger.debug(f'l={l}, r={r}, n_clusters={n_clusters}, min_cluster_size={min_cluster_size}, '
+                     f'prev_min_size={prev_min_size}, min_size={min_size}')
+        if min_size < min_cluster_size:
+            if prev_min_size is not None and min_size <= prev_min_size:
+                break
             r = n_clusters + 1
         else:
             l = n_clusters
