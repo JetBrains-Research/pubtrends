@@ -38,7 +38,8 @@ def vectorize_corpus(df, max_features, min_df, max_df):
         min_df=min_df,
         max_df=max_df if len(df) > 1 else 1.0,  # For tests
         max_features=max_features,
-        tokenizer=lambda t: tokenize(t, stems_tokens_map)
+        preprocessor=lambda t: t,
+        tokenizer=lambda t: t
     )
     counts = vectorizer.fit_transform(papers_corpus)
     logger.debug(f'Vectorized corpus size {counts.shape}')
@@ -94,16 +95,15 @@ def get_wordnet_pos(treebank_tag):
 
 def stemmed_tokens(text, min_token_length=3):
     tokenized = word_tokenize(text)
-    interesting_tokens = [(token, pos) for token, pos in nltk.pos_tag(tokenized) if
-                          token not in STOP_WORDS_SET and is_noun_or_adj(pos)]
-    # Apply lemmatizer to fix plurals, etc
+    # Ignore stop words, take into accounts nouns and adjectives, fix plural forms
     lemmatizer = WordNetLemmatizer()
-    lemmatized_tokens = filter(lambda t: len(t) >= min_token_length,
-                               [lemmatizer.lemmatize(w, pos=get_wordnet_pos(pos)) for w, pos in interesting_tokens])
+    lemmas = [lemmatizer.lemmatize(token, pos=get_wordnet_pos(pos))
+              for token, pos in nltk.pos_tag(tokenized)
+              if len(token) > min_token_length and token not in STOP_WORDS_SET and is_noun_or_adj(pos)]
 
     # Apply stemming to reduce word length
     stemmer = SnowballStemmer('english')
-    return [(stemmer.stem(token), token) for token in lemmatized_tokens]
+    return [(stemmer.stem(token), token) for token in lemmas]
 
 
 def preprocess_text(text):
@@ -125,7 +125,7 @@ def build_stemmed_corpus(df):
     logger.info('Creating global shortest stemming to tokens map')
     stems_tokens_map = build_stems_to_tokens_map(flatten(papers_stems_and_tokens))
     logger.info('Creating stemmed corpus')
-    return [' '.join(stems_tokens_map[s] for s, _ in stemmed) for stemmed in papers_stems_and_tokens], stems_tokens_map
+    return [[stems_tokens_map[s] for s, _ in stemmed] for stemmed in papers_stems_and_tokens], stems_tokens_map
 
 
 def tokenize(text, stems_tokens_map=None, min_token_length=3):
@@ -155,12 +155,11 @@ def word2vec_tokens(df, corpus_tokens, stems_tokens_map, vector_size=32):
     sentences = []
     for _, row in df.iterrows():
         for field in ['title', 'abstract', 'mesh', 'keywords']:
-            for sentence in row[field].split('.'):
-                if len(sentence.strip()) > 0:
-                    sentences.append([
-                        stems_tokens_map[s] for s, _ in stemmed_tokens(preprocess_text(sentence.strip()))
-                        if s in stems_tokens_map and stems_tokens_map[s] in corpus_tokens_set
-                    ])
+            sentences.extend(
+                flatten([stems_tokens_map[s] for s, _ in
+                         stemmed_tokens(preprocess_text(sentence.strip()))
+                         if s in stems_tokens_map and stems_tokens_map[s] in corpus_tokens_set
+                         ] for sentence in row[field].split('.') if len(sentence.strip()) > 0))
     logger.debug('Training word2vec model')
     w2v = Word2Vec(sentences, vector_size=vector_size, min_count=0, workers=1, epochs=10, seed=42)
     logger.debug('Retrieve word embeddings, corresponding subjects and reorder according to corpus_terms')
@@ -174,20 +173,17 @@ def word2vec_tokens(df, corpus_tokens, stems_tokens_map, vector_size=32):
 
 def texts_embeddings(corpus_counts, tokens_w2v_embeddings):
     """
-    Computes texts embeddings as TF-IDF weighted average of word2vec words embeddings.
+    Computes texts embeddings as weighted average of word2vec words embeddings.
     :param corpus_counts: Vectorized papers matrix
     :param tokens_w2v_embeddings: Tokens word2vec embeddings
     :return: numpy array [publications x embeddings]
     """
-    logger.debug('Compute TF-IDF on tokens counts')
-    tfidf_transformer = TfidfTransformer()
-    tfidf = tfidf_transformer.fit_transform(corpus_counts)
-    logger.debug(f'TFIDF shape {tfidf.shape}')
-
-    logger.debug('Compute text embeddings as TF-IDF weighted average of word2vec tokens embeddings')
-    texts_embeddings = np.array(
-        [np.mean([np.multiply(tokens_w2v_embeddings[w], tfidf[i, w]) for w in range(tfidf.shape[1])], axis=0) for i in
-         range(tfidf.shape[0])])
+    logger.debug('Compute text embeddings as weighted average of word2vec tokens embeddings')
+    texts_embeddings = np.array([
+        np.mean([np.multiply(tokens_w2v_embeddings[t], corpus_counts[pid, t])
+                 for t in range(corpus_counts.shape[1])], axis=0)
+        for pid in range(corpus_counts.shape[0])
+    ])
     logger.debug(f'Texts embeddings shape: {texts_embeddings.shape}')
     return texts_embeddings
 

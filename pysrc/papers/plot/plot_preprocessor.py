@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
-from pysrc.papers.analysis.text import build_stemmed_corpus
+from pysrc.papers.analysis.text import build_stemmed_corpus, tokenize
 from pysrc.papers.utils import cut_authors_list
 
 logger = logging.getLogger(__name__)
@@ -212,8 +212,8 @@ class PlotPreprocessor:
             df = df[df['comp'].astype(int) == comp]
         # Filter by word
         if word is not None:
-            corpus = build_stemmed_corpus(df)
-            df = df[[word.lower() in text for text in corpus]]
+            corpus, _ = build_stemmed_corpus(df)
+            df = df[[tokenize(word)[0] in text for text in corpus]]
         # Filter by author
         if author is not None:
             # Check if string was trimmed
