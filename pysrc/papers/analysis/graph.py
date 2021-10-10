@@ -4,9 +4,6 @@ from queue import PriorityQueue
 
 import networkx as nx
 import numpy as np
-from sklearn.manifold import TSNE
-
-from pysrc.papers.analysis.node2vec import node2vec
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +57,7 @@ def build_similarity_graph(df, citations_graph, cocit_df, bibliographic_coupling
     return sg
 
 
-def sparse_graph(graph, max_edges_to_nodes=50, key='weight'):
+def sparse_graph(graph, max_edges_to_nodes=30, key='weight'):
     logger.debug(f'Limit total number of edges to max_edges_to_nodes={max_edges_to_nodes}')
     e = 1.0
     gs = _local_sparse(graph, e, key)
