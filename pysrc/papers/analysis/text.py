@@ -1,3 +1,4 @@
+from itertools import chain
 import logging
 import re
 from threading import Lock
@@ -123,7 +124,7 @@ def build_stemmed_corpus(df):
         for title, abstract, mesh, keywords in zip(df['title'], df['abstract'], df['mesh'], df['keywords'])
     ]
     logger.info('Creating global shortest stemming to tokens map')
-    stems_tokens_map = build_stems_to_tokens_map(flatten(papers_stems_and_tokens))
+    stems_tokens_map = build_stems_to_tokens_map(chain(*papers_stems_and_tokens))
     logger.info('Creating stemmed corpus')
     return [[stems_tokens_map[s] for s, _ in stemmed] for stemmed in papers_stems_and_tokens], stems_tokens_map
 
@@ -152,41 +153,43 @@ def word2vec_tokens(df, corpus_tokens, stems_tokens_map, vector_size=32):
     logger.debug(f'Compute words embeddings with word2vec')
     corpus_tokens_set = set(corpus_tokens)
     logger.debug('Collecting sentences across dataset')
-    sentences = []
-    for _, row in df.iterrows():
-        for field in ['title', 'abstract', 'mesh', 'keywords']:
-            sentences.extend(
-                flatten([stems_tokens_map[s] for s, _ in
-                         stemmed_tokens(preprocess_text(sentence.strip()))
-                         if s in stems_tokens_map and stems_tokens_map[s] in corpus_tokens_set
-                         ] for sentence in row[field].split('.') if len(sentence.strip()) > 0))
+    # Using generators and flattening for speed purposes
+    # NOTE: we split mesh and keywords by , into separate sentences
+    sentences = chain.from_iterable(
+        filter(lambda l: len(l) > 0, (
+            [
+                stems_tokens_map[s] for s, _ in stemmed_tokens(preprocess_text(sentence.strip()))
+                if s in stems_tokens_map and stems_tokens_map[s] in corpus_tokens_set
+            ] for sentence in f'{title}.{abstract}.{mesh}.{keywords}'.split('.') if len(sentence.strip()) > 0
+        )) for title, abstract, mesh, keywords in
+        zip(df['title'], df['abstract'], df['mesh'].replace(',', '.'), df['keywords'].replace(',', '.'))
+    )
     logger.debug('Training word2vec model')
     w2v = Word2Vec(sentences, vector_size=vector_size, min_count=0, workers=1, epochs=10, seed=42)
     logger.debug('Retrieve word embeddings, corresponding subjects and reorder according to corpus_terms')
     ids, embeddings = w2v.wv.index_to_key, w2v.wv.vectors
     indx = {t: i for i, t in enumerate(ids)}
     return np.array([
-        embeddings[indx[t]] if t in indx else np.zeros(embeddings.shape[1])  # Process missing
+        embeddings[indx[t]] if t in indx else np.zeros(embeddings.shape[1])  # Process missing embeddings
         for t in corpus_tokens
     ])
 
 
 def texts_embeddings(corpus_counts, tokens_w2v_embeddings):
     """
-    Computes texts embeddings as weighted average of word2vec words embeddings.
+    Computes texts embeddings as TF-IDF weighted average of word2vec words embeddings.
     :param corpus_counts: Vectorized papers matrix
     :param tokens_w2v_embeddings: Tokens word2vec embeddings
     :return: numpy array [publications x embeddings]
     """
-    logger.debug('Compute text embeddings as weighted average of word2vec tokens embeddings')
-    texts_embeddings = np.array([
-        np.mean([np.multiply(tokens_w2v_embeddings[t], corpus_counts[pid, t])
-                 for t in range(corpus_counts.shape[1])], axis=0)
-        for pid in range(corpus_counts.shape[0])
-    ])
+    logger.debug('Compute TF-IDF on tokens counts')
+    tfidf_transformer = TfidfTransformer()
+    tfidf = tfidf_transformer.fit_transform(corpus_counts)
+    logger.debug(f'TFIDF shape {tfidf.shape}')
+
+    logger.debug('Compute text embeddings as TF-IDF weighted average of word2vec tokens embeddings')
+    texts_embeddings = np.array(
+        [np.mean([np.multiply(tokens_w2v_embeddings[w], tfidf[i, w]) for w in range(tfidf.shape[1])], axis=0) for i in
+         range(tfidf.shape[0])])
     logger.debug(f'Texts embeddings shape: {texts_embeddings.shape}')
     return texts_embeddings
-
-
-def flatten(t):
-    return [item for sublist in t for item in sublist]
