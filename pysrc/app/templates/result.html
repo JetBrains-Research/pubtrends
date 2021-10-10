@@ -482,7 +482,8 @@
                     {% if papers_graph is defined %}
                     <strong>Papers similarity</strong>
                     <p>
-                        The graph below shows papers similarity network.<br>
+                        The graph below shows papers similarity network. Similar papers are located closely.<br>
+                        Edges represent co-citations, common references and citations between papers.<br>
                         Color represents topic, size - total citations number.
                     </p>
                     {% for script, div in papers_graph %}
