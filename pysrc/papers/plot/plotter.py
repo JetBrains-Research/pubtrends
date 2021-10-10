@@ -298,8 +298,9 @@ class Plotter:
         return result
 
     def component_sizes(self):
-        # Convert int64 to int
-        return {k: int(v) for k, v in dict(self.analyzer.df.groupby('comp')['id'].count()).items()}
+        assigned_comps = self.analyzer.df[self.analyzer.df['comp'] >= 0]
+        d = dict(assigned_comps.groupby('comp')['id'].count())
+        return [int(d[k]) for k in range(len(d))]
 
     def top_cited_papers(self):
         min_year, max_year = self.analyzer.df['year'].min(), self.analyzer.df['year'].max()
