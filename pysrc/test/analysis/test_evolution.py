@@ -30,8 +30,10 @@ class TestTopicEvolution(unittest.TestCase):
         evolution_df, year_range = topic_evolution_analysis(
             self.analyzer.df, self.analyzer.cit_df, self.analyzer.cocit_df,
             self.analyzer.bibliographic_coupling_df,
-            self.analyzer.texts_similarity, PapersAnalyzer.SIMILARITY_COCITATION_MIN, PapersAnalyzer.TOPIC_MIN_SIZE,
-            PapersAnalyzer.TOPICS_MAX_NUMBER, similarity_func=PapersAnalyzer.similarity,
+            PapersAnalyzer.SIMILARITY_COCITATION_MIN, PapersAnalyzer.similarity,
+            self.analyzer.corpus_counts, self.analyzer.corpus_tokens_embedding,
+            PapersAnalyzer.GRAPH_EMBEDDINGS_FACTOR, PapersAnalyzer.TEXT_EMBEDDINGS_FACTOR,
+            PapersAnalyzer.TOPIC_MIN_SIZE, PapersAnalyzer.TOPICS_MAX_NUMBER,
             evolution_step=step
         )
 
@@ -49,8 +51,10 @@ class TestTopicEvolution(unittest.TestCase):
         evolution_df, year_range = topic_evolution_analysis(
             self.analyzer.df, self.analyzer.cit_df, self.analyzer.cocit_df,
             self.analyzer.bibliographic_coupling_df,
-            self.analyzer.texts_similarity, PapersAnalyzer.SIMILARITY_COCITATION_MIN, PapersAnalyzer.TOPIC_MIN_SIZE,
-            PapersAnalyzer.TOPICS_MAX_NUMBER, similarity_func=PapersAnalyzer.similarity,
+            PapersAnalyzer.SIMILARITY_COCITATION_MIN, PapersAnalyzer.similarity,
+            self.analyzer.corpus_counts, self.analyzer.corpus_tokens_embedding,
+            PapersAnalyzer.GRAPH_EMBEDDINGS_FACTOR, PapersAnalyzer.TEXT_EMBEDDINGS_FACTOR,
+            PapersAnalyzer.TOPIC_MIN_SIZE, PapersAnalyzer.TOPICS_MAX_NUMBER,
             evolution_step=5
         )
 
@@ -59,16 +63,17 @@ class TestTopicEvolution(unittest.TestCase):
             self.analyzer.corpus_tokens, self.analyzer.corpus_counts, None, PapersAnalyzer.TOPIC_DESCRIPTION_WORDS,
             self.analyzer.progress
         )
+        # print(evolution_kwds)
         expected_topics_kwds = {1965: {
-            0: [('article', 0.2), ('term2', 0.2), ('term3', 0.2), ('kw2', 0.2), ('paper', 0.1), ('term1', 0.1),
-                ('kw1', 0.1), ('abstract', 0.1), ('term4', 0.1), ('kw3', 0.1)], -1: []}, 1970: {
-            0: [('article', 0.2857142857142857), ('term3', 0.21428571428571427), ('term4', 0.21428571428571427),
-                ('paper', 0.14285714285714285), ('term1', 0.14285714285714285), ('term2', 0.14285714285714285),
-                ('kw2', 0.14285714285714285), ('abstract', 0.14285714285714285), ('kw3', 0.14285714285714285),
-                ('term5', 0.14285714285714285)], -1: []}, 1975: {
-            0: [('article', 0.3333333333333333), ('term1', 0.2), ('term2', 0.2), ('term3', 0.2), ('term4', 0.2),
-                ('term5', 0.2), ('paper', 0.13333333333333333), ('kw1', 0.13333333333333333),
-                ('kw2', 0.13333333333333333), ('abstract', 0.13333333333333333)], -1: []}}
+            0: [('article', 0.2857142857142857), ('term2', 0.2857142857142857), ('term3', 0.2857142857142857),
+                ('paper', 0.14285714285714285), ('term1', 0.14285714285714285), ('abstract', 0.14285714285714285),
+                ('term4', 0.14285714285714285)], -1: []}, 1970: {
+            0: [('article', 0.4444444444444444), ('term3', 0.3333333333333333), ('term4', 0.3333333333333333),
+                ('paper', 0.2222222222222222), ('term1', 0.2222222222222222), ('term2', 0.2222222222222222),
+                ('abstract', 0.2222222222222222), ('term5', 0.2222222222222222), ('interesting', 0.1111111111111111)],
+            -1: []}, 1975: {
+            0: [('article', 0.5), ('term1', 0.3), ('term2', 0.3), ('term3', 0.3), ('term4', 0.3), ('term5', 0.3),
+                ('paper', 0.2), ('abstract', 0.2), ('interesting', 0.1), ('breakthrough', 0.1)], -1: []}}
         self.assertEquals(expected_topics_kwds, evolution_kwds)
 
 

@@ -191,10 +191,14 @@ class PapersAnalyzer:
             (self.graph_embeddings * PapersAnalyzer.GRAPH_EMBEDDINGS_FACTOR,
              self.texts_embeddings * PapersAnalyzer.TEXT_EMBEDDINGS_FACTOR), axis=1)
 
-        logger.debug('Apply TSNE transformation on papers embeddings')
-        tsne_embeddings_2d = TSNE(n_components=2, random_state=42).fit_transform(self.papers_embeddings)
-        self.df['x'] = tsne_embeddings_2d[:, 0]
-        self.df['y'] = tsne_embeddings_2d[:, 1]
+        if len(self.df) > 1:
+            logger.debug('Apply TSNE transformation on papers embeddings')
+            tsne_embeddings_2d = TSNE(n_components=2, random_state=42).fit_transform(self.papers_embeddings)
+            self.df['x'] = tsne_embeddings_2d[:, 0]
+            self.df['y'] = tsne_embeddings_2d[:, 1]
+        else:
+            self.df['x'] = 0
+            self.df['y'] = 0
 
         self.progress.info('Extracting topics from papers text and graph similarity', current=8, task=task)
         if self.papers_graph.number_of_nodes() <= PapersAnalyzer.TOPIC_MIN_SIZE:
@@ -209,18 +213,18 @@ class PapersAnalyzer:
             self.df['comp'] = self.clusters
             self.partition = dict(zip(self.df['id'], self.df['comp']))
 
-            self.progress.info(f'Analyzing {len(set(self.partition.values()))} topics descriptions',
-                               current=9, task=task)
-            comp_pids = pd.DataFrame(self.partition.items(), columns=['id', 'comp']). \
-                groupby('comp')['id'].apply(list).to_dict()
-            self.topics_description = get_topics_description(
-                self.df, comp_pids,
-                self.corpus_tokens, self.corpus_counts, self.stems_tokens_map,
-                n_words=self.TOPIC_DESCRIPTION_WORDS
-            )
-            kwds = [(comp, ','.join([f'{t}:{v:.3f}' for t, v in vs[:self.TOPIC_DESCRIPTION_WORDS]]))
-                    for comp, vs in self.topics_description.items()]
-            self.kwd_df = pd.DataFrame(kwds, columns=['comp', 'kwd'])
+        self.progress.info(f'Analyzing {len(set(self.partition.values()))} topics descriptions',
+                           current=9, task=task)
+        comp_pids = pd.DataFrame(self.partition.items(), columns=['id', 'comp']). \
+            groupby('comp')['id'].apply(list).to_dict()
+        self.topics_description = get_topics_description(
+            self.df, comp_pids,
+            self.corpus_tokens, self.corpus_counts, self.stems_tokens_map,
+            n_words=self.TOPIC_DESCRIPTION_WORDS
+        )
+        kwds = [(comp, ','.join([f'{t}:{v:.3f}' for t, v in vs[:self.TOPIC_DESCRIPTION_WORDS]]))
+                for comp, vs in self.topics_description.items()]
+        self.kwd_df = pd.DataFrame(kwds, columns=['comp', 'kwd'])
 
         self.progress.info('Identifying top cited papers', current=10, task=task)
         logger.debug('Top cited papers')

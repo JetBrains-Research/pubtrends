@@ -41,14 +41,10 @@ BIBLIOGRAPHIC_COUPLING_DATA = [['3', '4', 2],
                                ['4', '5', 2]]
 BIBCOUPLING_DF = pd.DataFrame(BIBLIOGRAPHIC_COUPLING_DATA, columns=['citing_1', 'citing_2', 'total'])
 
-PAPERS_GRAPH_EDGES = [('1', '2', {'cocitation': 3.0, 'text': 0.5000000000000001}),
-                          ('1', '4', {'text': 0.3333333333333334, 'citation': 1}),
-                          ('1', '5', {'text': 0.5477225575051662, 'citation': 1}), ('1', '3', {'citation': 1}),
-                          ('2', '3', {'text': 0.6666666666666669, 'citation': 1}), ('2', '4', {'citation': 1}),
-                          ('2', '5', {'citation': 1}),
-                          ('3', '4', {'cocitation': 1.0, 'bibcoupling': 2.0, 'text': 0.5000000000000001}),
-                          ('3', '5', {'bibcoupling': 2.0, 'citation': 1}),
-                          ('4', '5', {'bibcoupling': 2.0, 'text': 0.5477225575051662, 'citation': 1})]
+PAPERS_GRAPH_EDGES = [('1', '2', {'cocitation': 3}), ('1', '4', {'citation': 1}), ('1', '3', {'citation': 1}),
+                      ('1', '5', {'citation': 1}), ('2', '4', {'citation': 1}), ('2', '3', {'citation': 1}),
+                      ('2', '5', {'citation': 1}), ('3', '4', {'cocitation': 1, 'bibcoupling': 2}),
+                      ('3', '5', {'bibcoupling': 2, 'citation': 1}), ('4', '5', {'bibcoupling': 2, 'citation': 1})]
 EXPECTED_MAX_GAIN = {1972: '3', 1974: '1'}
 EXPECTED_MAX_RELATIVE_GAIN = {1972: '3', 1974: '4'}
 

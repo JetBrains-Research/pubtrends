@@ -42,7 +42,7 @@ class TestTopics(unittest.TestCase):
         matrix = compute_similarity_matrix(self.analyzer.papers_graph,
                                            PapersAnalyzer.similarity, self.analyzer.partition)
         # print(matrix)
-        similarities = np.array([[3.583]])
+        similarities = np.array([[2.345]])
         self.assertTrue(np.allclose(similarities, matrix, rtol=1e-3))
 
     @staticmethod

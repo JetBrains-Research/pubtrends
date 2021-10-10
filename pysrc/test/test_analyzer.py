@@ -95,8 +95,7 @@ class TestPapersAnalyzerSingle(unittest.TestCase):
     def test_dump(self):
         dump = self.analyzer.dump()
         self.assertEqual(
-            '{"comp":{"0":0},'
-            '"kwd":{"0":"article:0.143,paper:0.143,term1:0.143,term2:0.143,term3:0.143,kw1:0.143,kw2:0.143"}}',
+            '{"comp":{"0":0},"kwd":{"0":"article:0.200,paper:0.200,term1:0.200,term2:0.200,term3:0.200"}}',
             dump['kwd_df'])
 
 
