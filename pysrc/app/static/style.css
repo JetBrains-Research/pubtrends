@@ -1,3 +1,8 @@
+html {
+    /* default font-size is 16px - this is set in the default browser stylesheet */
+    font-size: 14px;
+}
+
 .jumbotron {
     /*background: rgba(0, 0, 0, 0.05);*/
     border-radius: 4px;
