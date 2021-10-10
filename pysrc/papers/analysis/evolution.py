@@ -5,30 +5,23 @@ import numpy as np
 import pandas as pd
 
 from pysrc.papers.analysis.citations import build_cocit_grouped_df
-from pysrc.papers.analysis.graph import build_similarity_graph, layout_similarity_graph, to_weighted_graph
+from pysrc.papers.analysis.graph import build_similarity_graph, to_weighted_graph, sparse_graph
+from pysrc.papers.analysis.node2vec import node2vec
+from pysrc.papers.analysis.text import texts_embeddings
 from pysrc.papers.analysis.topics import get_topics_description, cluster_and_sort
 
 logger = logging.getLogger(__name__)
 
 
 def topic_evolution_analysis(
-        df, cit_df, cocit_df, bibliographic_coupling_df,
-        texts_similarity,
-        cocit_min_threshold, topic_min_size, max_topics_number, similarity_func,
+        df, cit_df, cocit_df, bibliographic_coupling_df, cocit_min_threshold, similarity_func,
+        corpus_counts, corpus_tokens_embedding,
+        graph_embedding_factor, text_embedding_factor,
+        topic_min_size, max_topics_number,
         evolution_step
 ):
     """
     Main method of evolution analysis
-    :param df: Full dataframe with papers information
-    :param cit_df: Citations dataframe
-    :param cocit_df: Cocitations dataframe
-    :param bibliographic_coupling_df: Bibliographic coupling dataframe, already filtered by min_threshold
-    :param texts_similarity: Text similarity
-    :param cocit_min_threshold: Min cocitations threshold
-    :param topic_min_size:
-    :param max_topics_number:
-    :param similarity_func:
-    :param evolution_step: Evolution step
     :return: evolution_df, year_range
     """
     min_year = int(df['year'].min())
@@ -54,30 +47,36 @@ def topic_evolution_analysis(
         citations_graph_year = filter_citations_graph(cit_df, ids_year)
 
         logger.debug('Use only co-citations earlier than year')
-        cocit_grouped_df_year = filter_cocit_grouped_df(cocit_df, cocit_min_threshold, year)
+        cocit_grouped_df_year = filter_cocit_grouped_df(cocit_df, cocit_min_threshold, ids_year)
 
         logger.debug('Use bibliographic coupling earlier then year')
         bibliographic_coupling_df_year = filter_bibliographic_coupling_df(bibliographic_coupling_df, ids_year)
 
-        logger.debug('Use similarities for papers earlier then year')
-        texts_similarity_year = filter_text_similarities(df_year, year, texts_similarity)
+        logger.debug('Filtering text counts and embeddings for papers earlier then year')
+        corpus_counts_year = corpus_counts[np.flatnonzero(df['year'] <= year), :]
+        logger.debug('Analyzing texts embeddings')
+        texts_embeddings_year = texts_embeddings(
+            corpus_counts_year, corpus_tokens_embedding
+        )
 
         logger.debug('Building papers similarity graph')
         similarity_graph = build_similarity_graph(
-            df_year,
-            citations_graph_year,
-            cocit_grouped_df_year,
-            bibliographic_coupling_df_year,
-            texts_similarity_year
+            df_year, citations_graph_year, cocit_grouped_df_year, bibliographic_coupling_df_year,
         )
         logger.debug(f'Built similarity graph - {similarity_graph.number_of_nodes()} nodes and '
                      f'{similarity_graph.number_of_edges()} edges')
         weighted_similarity_graph = to_weighted_graph(similarity_graph, similarity_func)
-        node_ids, node_embeddings, xs, ys = layout_similarity_graph(
-            weighted_similarity_graph, topic_min_size
-        )
-        clusters, _ = cluster_and_sort(node_embeddings, topic_min_size, max_topics_number)
-        partition = dict(zip(node_ids, clusters))
+        gs = sparse_graph(weighted_similarity_graph)
+        graph_embeddings_year = node2vec(df_year['id'], gs)
+
+        logger.debug('Computing aggregated graph and text embeddings for papers')
+        papers_embeddings = np.concatenate(
+            (graph_embeddings_year * graph_embedding_factor,
+             texts_embeddings_year * text_embedding_factor), axis=1)
+
+        logger.debug('Extracting topics from papers')
+        clusters, _ = cluster_and_sort(papers_embeddings, topic_min_size, max_topics_number)
+        partition = dict(zip(df_year['id'], clusters))
         evolution_series.append(pd.Series(partition))
 
     evolution_df = pd.concat(evolution_series, axis=1)
@@ -97,27 +96,19 @@ def topic_evolution_analysis(
     return evolution_df, year_range
 
 
-def filter_text_similarities(df, year, texts_similarity):
-    ids_year = set(np.flatnonzero(df['year'].apply(int) <= year))
-    texts_similarity_year = []
-    for i, sims in enumerate(texts_similarity):
-        if i in ids_year:
-            texts_similarity_year.append([(j, cs) for j, cs in sims if j in ids_year])
-    return texts_similarity_year
-
-
 def filter_bibliographic_coupling_df(bibliographic_coupling_df, ids_year):
     bibliographic_coupling_df_year = bibliographic_coupling_df.loc[
-        np.logical_and(
-            bibliographic_coupling_df['citing_1'].isin(ids_year),
-            bibliographic_coupling_df['citing_2'].isin(ids_year)
-        )
-    ]
+        (bibliographic_coupling_df['citing_1'].isin(ids_year)) &
+        (bibliographic_coupling_df['citing_2'].isin(ids_year))
+        ]
     return bibliographic_coupling_df_year
 
 
-def filter_cocit_grouped_df(cocit_df, cocit_min_threshold, year):
-    cocit_grouped_df_year = build_cocit_grouped_df(cocit_df.loc[cocit_df['year'] <= year])
+def filter_cocit_grouped_df(cocit_df, cocit_min_threshold, ids_year):
+    cocit_df_year = cocit_df.loc[
+        (cocit_df['citing'].isin(ids_year)) & (cocit_df['cited_1'].isin(ids_year)) &
+        (cocit_df['cited_2'].isin(ids_year))]
+    cocit_grouped_df_year = build_cocit_grouped_df(cocit_df_year)
     cocit_grouped_df_year = cocit_grouped_df_year[cocit_grouped_df_year['total'] >= cocit_min_threshold]
     return cocit_grouped_df_year
 

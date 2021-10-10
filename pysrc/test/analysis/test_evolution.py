@@ -58,7 +58,7 @@ class TestTopicEvolution(unittest.TestCase):
 
         evolution_kwds = topic_evolution_descriptions(
             self.analyzer.df, evolution_df, year_range,
-            self.analyzer.corpus_terms, self.analyzer.corpus_counts, None, PapersAnalyzer.TOPIC_DESCRIPTION_WORDS,
+            self.analyzer.corpus_tokens, self.analyzer.corpus_counts, None, PapersAnalyzer.TOPIC_DESCRIPTION_WORDS,
             self.analyzer.progress
         )
         expected_topics_kwds = {1965: {

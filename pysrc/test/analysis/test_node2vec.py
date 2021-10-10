@@ -44,8 +44,7 @@ class TestNode2Vec(unittest.TestCase):
         graph.add_edge(1, 2, weight=100)
         graph.add_edge(2, 3, weight=10)
         graph.add_edge(3, 1, weight=1)
-        idx, vec = node2vec(graph, walk_length=3, walks_per_node=5, vector_size=8, seed=42)
-        self.assertEqual([2, 1, 3], idx)
+        vec = node2vec([1, 2, 3], graph, walk_length=3, walks_per_node=5, vector_size=8, seed=42)
         self.assertEqual((3, 8), vec.shape)
 
     def test_node2vec_weighted(self):
@@ -56,8 +55,7 @@ class TestNode2Vec(unittest.TestCase):
                 graph.add_edge(i, i * j, weight=i + j)
                 j += 1
             graph.add_edge(0, i, weight=1)
-        idx, vec = node2vec(graph, walk_length=3, walks_per_node=5, vector_size=128, seed=42)
-        self.assertEqual([1, 10, 3, 6, 8, 2, 9, 5, 4, 0, 7], idx)
+        vec = node2vec(range(11), graph, walk_length=3, walks_per_node=5, vector_size=128, seed=42)
         self.assertEqual((11, 128), vec.shape)
 
 

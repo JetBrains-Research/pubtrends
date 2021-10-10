@@ -3,15 +3,17 @@ import logging
 import numpy as np
 import pandas as pd
 from networkx.readwrite import json_graph
+from sklearn.manifold import TSNE
 
 from pysrc.papers.analysis.citations import find_top_cited_papers, find_max_gain_papers, \
     find_max_relative_gain_papers, build_cit_stats_df, merge_citation_stats, build_cocit_grouped_df
 from pysrc.papers.analysis.evolution import topic_evolution_analysis, topic_evolution_descriptions
-from pysrc.papers.analysis.graph import build_citation_graph, build_similarity_graph, layout_similarity_graph, \
-    to_weighted_graph
+from pysrc.papers.analysis.graph import build_citation_graph, build_similarity_graph, \
+    to_weighted_graph, sparse_graph
 from pysrc.papers.analysis.metadata import popular_authors, popular_journals
+from pysrc.papers.analysis.node2vec import node2vec
 from pysrc.papers.analysis.numbers import extract_numbers
-from pysrc.papers.analysis.text import analyze_texts_similarity, vectorize_corpus
+from pysrc.papers.analysis.text import texts_embeddings, vectorize_corpus, word2vec_tokens
 from pysrc.papers.analysis.topics import get_topics_description, cluster_and_sort
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
@@ -35,7 +37,6 @@ class PapersAnalyzer:
     SIMILARITY_BIBLIOGRAPHIC_COUPLING = 1  # Limited by number of references, applied to log
     SIMILARITY_COCITATION = 2  # Limiter by number of co-citations, applied to log
     SIMILARITY_CITATION = 2  # Limited by 1 citation
-    SIMILARITY_TEXT_CITATION = 4  # Limited by cosine similarity <= 1
 
     # Minimal number of common references, used to reduces similarity graph edges count
     # Value > 1 is especially useful while analysing single paper, removes meaningless connections by construction
@@ -44,20 +45,18 @@ class PapersAnalyzer:
     # Minimal number of common references, used to reduces similarity graph edges count
     SIMILARITY_COCITATION_MIN = 1
 
-    # Minimal cosine similarity for potential text citation, top 50% of cosine similarity between cited papers
-    SIMILARITY_TEXT_CITATION_MIN = 0.3
-
-    # Max number of potential text citations for paper
-    SIMILARITY_TEXT_CITATION_N = 50
+    # Papers embeddings is a concatenation of graph and text embeddings times corresponding factors
+    GRAPH_EMBEDDINGS_FACTOR = 1
+    TEXT_EMBEDDINGS_FACTOR = 1
 
     # Reduce number of edges in similarity graph
     SIMILARITY_GRAPH_EDGES_TO_NODES = 5
 
     # Global vectorization max vocabulary size
-    VECTOR_WORDS = 10000
+    VECTOR_WORDS = 1000
     # Terms with lower frequency will be ignored, remove rare words
     VECTOR_MIN_DF = 0.01
-    # Terms with higher frequency will be ignored, remove abundant stop words
+    # Terms with higher frequency will be ignored, remove abundant words
     VECTOR_MAX_DF = 0.8
 
     TOPIC_MIN_SIZE = 20
@@ -80,7 +79,6 @@ class PapersAnalyzer:
     EXPAND_CITATIONS_SIGMA = 3
     # Take up to fraction of top similarity
     EXPAND_SIMILARITY_THRESHOLD = 0.3
-    EXPAND_ZOOM_OUT = 100
 
     EVOLUTION_MIN_PAPERS = 100
     EVOLUTION_STEP = 10
@@ -133,17 +131,19 @@ class PapersAnalyzer:
         self.pub_types = list(set(self.pub_df['type']))
 
         self.progress.info('Analyzing title and abstract texts', current=3, task=task)
-        self.corpus_terms, self.corpus_counts, self.stems_map = vectorize_corpus(
+        self.corpus_tokens, self.corpus_counts, self.stems_tokens_map = vectorize_corpus(
             self.pub_df,
             max_features=PapersAnalyzer.VECTOR_WORDS,
             min_df=PapersAnalyzer.VECTOR_MIN_DF,
             max_df=PapersAnalyzer.VECTOR_MAX_DF
         )
-
-        logger.debug('Analyzing texts similarity')
-        self.texts_similarity = analyze_texts_similarity(
-            self.pub_df, self.corpus_counts,
-            self.SIMILARITY_TEXT_CITATION_MIN, self.SIMILARITY_TEXT_CITATION_N
+        logger.debug('Analyzing tokens embeddings')
+        self.corpus_tokens_embedding = word2vec_tokens(
+            self.pub_df, self.corpus_tokens, self.stems_tokens_map
+        )
+        logger.debug('Analyzing texts embeddings')
+        self.texts_embeddings = texts_embeddings(
+            self.corpus_counts, self.corpus_tokens_embedding
         )
 
         self.progress.info('Loading citations statistics for papers', current=4, task=task)
@@ -183,39 +183,37 @@ class PapersAnalyzer:
 
         self.progress.info('Analyzing papers similarity graph', current=8, task=task)
         self.similarity_graph = build_similarity_graph(
-            self.df,
-            self.citations_graph, self.cocit_grouped_df, self.bibliographic_coupling_df,
-            self.texts_similarity
+            self.df, self.citations_graph, self.cocit_grouped_df, self.bibliographic_coupling_df,
         )
         self.progress.info(f'Built similarity graph - {self.similarity_graph.number_of_nodes()} nodes and '
                            f'{self.similarity_graph.number_of_edges()} edges', current=8, task=task)
-        if self.similarity_graph.number_of_nodes() == 0:
-            self.progress.info('Not enough papers to process topics analysis', current=9, task=task)
-            self.df['comp'] = 0  # Technical value for top authors and papers analysis
-            self.kwd_df = pd.DataFrame({'comp': [0], 'kwd': ['']})
-        else:
-            logger.debug('Analyzing similarity graph')
-            self.weighted_similarity_graph = to_weighted_graph(self.similarity_graph, PapersAnalyzer.similarity)
-            self.node_ids, self.node_embeddings, xs, ys = layout_similarity_graph(
-                self.weighted_similarity_graph, PapersAnalyzer.TOPIC_MIN_SIZE
-            )
-            pid_indx = dict(zip(self.df['id'], self.df.index))
-            indx = [pid_indx[pid] for pid in self.node_ids]
-            self.df['x'] = pd.Series(index=indx, data=xs)
-            self.df['y'] = pd.Series(index=indx, data=ys)
+        logger.debug('Analyzing similarity graph embeddings')
+        self.weighted_similarity_graph = to_weighted_graph(self.similarity_graph, PapersAnalyzer.similarity)
+        gs = sparse_graph(self.weighted_similarity_graph)
+        self.graph_embeddings = node2vec(self.df['id'], gs)
 
-            self.progress.info('Extracting topics from paper similarity graph', current=9, task=task)
-            if self.similarity_graph.number_of_nodes() <= PapersAnalyzer.TOPIC_MIN_SIZE:
-                logger.debug('Small similarity graph - single topic')
-                self.df['comp'] = 0
-                self.partition = dict(zip(self.df['id'], self.df['comp']))
-            else:
-                logger.debug('Extracting topics from paper similarity graph')
-                self.clusters, self.dendrogram_children = cluster_and_sort(self.node_embeddings,
-                                                                           PapersAnalyzer.TOPIC_MIN_SIZE,
-                                                                           PapersAnalyzer.TOPICS_MAX_NUMBER)
-                self.df['comp'] = pd.Series(index=indx, data=self.clusters, dtype=int)
-                self.partition = dict(zip(self.df['id'], self.df['comp']))
+        logger.debug('Computing aggregated graph and text embeddings for papers')
+        self.papers_embeddings = np.concatenate(
+            (self.graph_embeddings * PapersAnalyzer.GRAPH_EMBEDDINGS_FACTOR,
+             self.texts_embeddings * PapersAnalyzer.TEXT_EMBEDDINGS_FACTOR), axis=1)
+
+        logger.debug('Apply TSNE transformation on papers embeddings')
+        tsne_embeddings_2d = TSNE(n_components=2, random_state=42).fit_transform(self.papers_embeddings)
+        self.df['x'] = tsne_embeddings_2d[:, 0]
+        self.df['y'] = tsne_embeddings_2d[:, 1]
+
+        self.progress.info('Extracting topics from paper', current=9, task=task)
+        if self.similarity_graph.number_of_nodes() <= PapersAnalyzer.TOPIC_MIN_SIZE:
+            logger.debug('Small similarity graph - single topic')
+            self.df['comp'] = 0
+            self.partition = dict(zip(self.df['id'], self.df['comp']))
+        else:
+            logger.debug('Extracting topics from papers embeddings')
+            self.clusters, self.dendrogram_children = cluster_and_sort(self.papers_embeddings,
+                                                                       PapersAnalyzer.TOPIC_MIN_SIZE,
+                                                                       PapersAnalyzer.TOPICS_MAX_NUMBER)
+            self.df['comp'] = self.clusters
+            self.partition = dict(zip(self.df['id'], self.df['comp']))
 
             self.progress.info(f'Analyzing {len(set(self.partition.values()))} topics descriptions',
                                current=10, task=task)
@@ -223,7 +221,7 @@ class PapersAnalyzer:
                 groupby('comp')['id'].apply(list).to_dict()
             self.topics_description = get_topics_description(
                 self.df, comp_pids,
-                self.corpus_terms, self.corpus_counts, self.stems_map,
+                self.corpus_tokens, self.corpus_counts, self.stems_tokens_map,
                 n_words=self.TOPIC_DESCRIPTION_WORDS
             )
             kwds = [(comp, ','.join([f'{t}:{v:.3f}' for t, v in vs[:self.TOPIC_DESCRIPTION_WORDS]]))
@@ -264,17 +262,16 @@ class PapersAnalyzer:
                                    current=15, task=task)
                 logger.debug('Perform topic evolution analysis and get topic descriptions')
                 self.evolution_df, self.evolution_year_range = topic_evolution_analysis(
-                    self.df, self.cit_df, self.cocit_df, self.bibliographic_coupling_df,
-                    self.texts_similarity,
-                    self.SIMILARITY_COCITATION_MIN,
-                    self.TOPIC_MIN_SIZE,
-                    self.TOPICS_MAX_NUMBER,
-                    similarity_func=self.similarity,
-                    evolution_step=self.EVOLUTION_STEP,
+                    self.df, self.cit_df, self.cocit_df, self.bibliographic_coupling_df, self.SIMILARITY_COCITATION_MIN,
+                    self.similarity,
+                    self.corpus_counts, self.corpus_tokens_embedding,
+                    PapersAnalyzer.GRAPH_EMBEDDINGS_FACTOR, PapersAnalyzer.TEXT_EMBEDDINGS_FACTOR,
+                    PapersAnalyzer.TOPIC_MIN_SIZE, PapersAnalyzer.TOPICS_MAX_NUMBER,
+                    self.EVOLUTION_STEP,
                 )
                 self.evolution_kwds = topic_evolution_descriptions(
                     self.df, self.evolution_df, self.evolution_year_range,
-                    self.corpus_terms, self.corpus_counts, self.stems_map, self.TOPIC_DESCRIPTION_WORDS,
+                    self.corpus_tokens, self.corpus_counts, self.stems_tokens_map, self.TOPIC_DESCRIPTION_WORDS,
                     self.progress, current=15, task=task
                 )
             else:
@@ -287,8 +284,7 @@ class PapersAnalyzer:
         return \
             PapersAnalyzer.SIMILARITY_BIBLIOGRAPHIC_COUPLING * np.log1p(d.get('bibcoupling', 0)) + \
             PapersAnalyzer.SIMILARITY_COCITATION * np.log1p(d.get('cocitation', 0)) + \
-            PapersAnalyzer.SIMILARITY_CITATION * d.get('citation', 0) + \
-            PapersAnalyzer.SIMILARITY_TEXT_CITATION * d.get('text', 0)
+            PapersAnalyzer.SIMILARITY_CITATION * d.get('citation', 0)
 
     def dump(self):
         """
