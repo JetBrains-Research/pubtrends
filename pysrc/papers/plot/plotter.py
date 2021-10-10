@@ -74,7 +74,7 @@ def visualize_analysis(analyzer):
     if keywords_frequencies is not None:
         result['keywords_frequencies'] = [components(keywords_frequencies)]
 
-    if analyzer.similarity_graph.nodes():
+    if analyzer.papers_graph.nodes():
         result.update(dict(
             topics_analyzed=True,
             component_size_summary=[components(plotter.topic_years_distribution())],
@@ -82,7 +82,7 @@ def visualize_analysis(analyzer):
                 (components(p), Plotter.word_cloud_prepare(wc), "true" if is_empty else "false", zoom_in_callback) for
                 (p, wc, is_empty, zoom_in_callback) in plotter.topics_info_and_word_cloud_and_callback()],
             component_sizes=plotter.component_sizes(),
-            similarity_graph=[components(plotter.plot_similarity_graph())]
+            papers_graph=[components(plotter.plot_papers_graph())]
         ))
 
     # Configure additional features
@@ -123,7 +123,7 @@ class Plotter:
         self.analyzer = analyzer
 
         if self.analyzer:
-            if self.analyzer.similarity_graph.nodes():
+            if self.analyzer.papers_graph.nodes():
                 self.comp_colors = Plotter.topics_palette_rgb(self.analyzer.df)
                 self.comp_palette = list(self.comp_colors.values())
 
@@ -484,7 +484,7 @@ class Plotter:
     def author_statistics(self):
         authors = self.analyzer.author_stats['author']
         sums = self.analyzer.author_stats['sum']
-        if self.analyzer.similarity_graph.nodes():
+        if self.analyzer.papers_graph.nodes():
             topics = self.analyzer.author_stats.apply(
                 lambda row: self._to_colored_circle(row['comp'], row['counts'], row['sum']), axis=1)
         else:
@@ -494,7 +494,7 @@ class Plotter:
     def journal_statistics(self):
         journals = self.analyzer.journal_stats['journal']
         sums = self.analyzer.journal_stats['sum']
-        if self.analyzer.similarity_graph.nodes():
+        if self.analyzer.papers_graph.nodes():
             topics = self.analyzer.journal_stats.apply(
                 lambda row: self._to_colored_circle(row['comp'], row['counts'], row['sum']), axis=1)
         else:
@@ -554,9 +554,9 @@ class Plotter:
             '''
         return html_tooltips_str
 
-    def plot_similarity_graph(self):
-        logger.debug('Preparing sparse similarity graph')
-        gs = sparse_graph(self.analyzer.weighted_similarity_graph, PapersAnalyzer.SIMILARITY_GRAPH_EDGES_TO_NODES)
+    def plot_papers_graph(self):
+        logger.debug('Preparing sparse graph')
+        gs = sparse_graph(self.analyzer.weighted_similarity_graph, PapersAnalyzer.PAPERS_GRAPH_EDGES_TO_NODES)
         df = self.analyzer.df
         pids = df['id']
         comps = df['comp']

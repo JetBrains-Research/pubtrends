@@ -2,7 +2,6 @@ import unittest
 
 from parameterized import parameterized
 
-from pysrc.papers.analysis.graph import build_citation_graph
 from pysrc.papers.analysis.citations import find_top_cited_papers
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
@@ -21,7 +20,6 @@ class TestPopularPapers(unittest.TestCase):
         cls.analyzer.TOPIC_MIN_SIZE = 0  # Disable merging for tests
         cls.analyzer.analyze_papers(ids, 'query')
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.df['id'])
-        cls.analyzer.citations_graph = build_citation_graph(cls.analyzer.df, cls.analyzer.cit_df)
         cls.analyzer.bibliographic_coupling_df = loader.load_bibliographic_coupling(cls.analyzer.df['id'])
 
     def test_find_max_gain_papers_count(self):

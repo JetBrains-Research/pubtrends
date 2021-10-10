@@ -97,8 +97,7 @@
     Next step is known as the Bibliometrics analysis, i.e. citations graph analysis, collecting co-citations (when a
     pair of papers are cited together), bibliographic coupling (number of common references in a pair of papers),
     and possible citations based on texts similarity. These values are combined into aggregated similarity score
-    and are used to build similarity graph. Both citations and similarity graphs are available for
-    additional exploration in interactive graph viewer.<br>
+    and are used to build papers graph. Papers graphs is available for additional exploration in interactive viewer.<br>
     </p>
     <p>
         Finally, user gets full report covering all the aspects of analysis.
@@ -125,9 +124,7 @@
         contains a summary plot of papers per year. Please note that the word cloud component is clickable, and
         you can navigate to documents containing the selected word. Articles can be viewed as a plain list, as
         well.<br>
-        Topics were computed by hierarchical clustering of papers
-        similarity graph, where similarity is computed based on citations information and paper titles and
-        abstracts.<br>
+        Topics were computed by hierarchical clustering of papers embeddings based on text and graph embeddings.<br>
     </p>
     <h4 id="trends">Trends</h4>
     <p>
@@ -184,8 +181,7 @@
         most important prior and derivative works. User can use title name of DOI for paper identification. The service
         will search for paper, analyze connected papers and proceed one step further by references to find out which
         of the connected papers have co-citations, common references, etc. When the set of papers
-        is collected, both citations and similarity graphs are built. User can explore these graphs in
-        integrated viewer.
+        is collected, papers similarity is analyzed.
     </p>
     <hr>
     <h3>Your feedback is welcome</h3>

@@ -24,9 +24,6 @@ CITATION_YEARS = [1972, 1974]
 CITATION_DATA = [['4', '1'], ['3', '1'], ['4', '2'], ['3', '2'],
                  ['5', '1'], ['5', '2'], ['5', '3'], ['5', '4']]
 
-CITATION_GRAPH_NODES = ['1', '2', '3', '4', '5']
-CITATION_GRAPH_EDGES = [(e[0], e[1]) for e in CITATION_DATA]
-
 COCITATION_DATA = [['3', '1', '2', 1967],
                    ['4', '1', '2', 1968],
                    ['5', '1', '2', 1975],
@@ -44,7 +41,7 @@ BIBLIOGRAPHIC_COUPLING_DATA = [['3', '4', 2],
                                ['4', '5', 2]]
 BIBCOUPLING_DF = pd.DataFrame(BIBLIOGRAPHIC_COUPLING_DATA, columns=['citing_1', 'citing_2', 'total'])
 
-SIMILARITY_GRAPH_EDGES = [('1', '2', {'cocitation': 3.0, 'text': 0.5000000000000001}),
+PAPERS_GRAPH_EDGES = [('1', '2', {'cocitation': 3.0, 'text': 0.5000000000000001}),
                           ('1', '4', {'text': 0.3333333333333334, 'citation': 1}),
                           ('1', '5', {'text': 0.5477225575051662, 'citation': 1}), ('1', '3', {'citation': 1}),
                           ('2', '3', {'text': 0.6666666666666669, 'citation': 1}), ('2', '4', {'citation': 1}),

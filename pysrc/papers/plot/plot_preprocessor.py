@@ -84,21 +84,10 @@ class PlotPreprocessor:
         return dict(x=x, y=y)
 
     @staticmethod
-    def dump_citations_graph_cytoscape(df, citations_graph):
-        logger.debug('Mapping citations graph to cytoscape JS')
-        citations_graph = citations_graph.copy()
-        cytoscape_graph = PlotPreprocessor.dump_to_cytoscape(df, citations_graph)
-        pos = nx.spring_layout(citations_graph)
-        for node_cs in cytoscape_graph['nodes']:
-            nid = node_cs['data']['id']
-            node_cs['position'] = dict(x=int(pos[nid][0] * 300), y=int(pos[nid][1] * 200))
-        return cytoscape_graph
-
-    @staticmethod
-    def dump_similarity_graph_cytoscape(df, similarity_graph):
+    def dump_similarity_graph_cytoscape(df, papers_graph):
         logger.debug('Mapping structure graph to cytoscape JS')
-        similarity_graph = similarity_graph.copy()
-        cytoscape_graph = PlotPreprocessor.dump_to_cytoscape(df, similarity_graph)
+        papers_graph = papers_graph.copy()
+        cytoscape_graph = PlotPreprocessor.dump_to_cytoscape(df, papers_graph)
         maxy = df['y'].max()
         for node_cs in cytoscape_graph['nodes']:
             nid = node_cs['data']['id']

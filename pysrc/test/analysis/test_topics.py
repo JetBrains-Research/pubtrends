@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 from parameterized import parameterized
 
-from pysrc.papers.analysis.graph import build_citation_graph
 from pysrc.papers.analysis.topics import compute_similarity_matrix, _get_topics_description_cosine
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
@@ -22,26 +21,25 @@ class TestTopics(unittest.TestCase):
         cls.analyzer.TOPIC_MIN_SIZE = 0  # Disable merging for tests
         cls.analyzer.analyze_papers(ids, 'query')
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.df['id'])
-        cls.analyzer.citations_graph = build_citation_graph(cls.analyzer.df, cls.analyzer.cit_df)
         cls.analyzer.bibliographic_coupling_df = loader.load_bibliographic_coupling(cls.analyzer.df['id'])
 
     def test_merge_comps_paper_count(self):
         self.assertEqual(len(self.analyzer.df), len(self.analyzer.pub_df))
 
     def test_topic_analysis_all_nodes_assigned(self):
-        nodes = self.analyzer.similarity_graph.nodes()
+        nodes = self.analyzer.papers_graph.nodes()
         for row in self.analyzer.df.itertuples():
             if getattr(row, 'id') in nodes:
                 self.assertGreaterEqual(getattr(row, 'comp'), 0)
 
     def test_topic_analysis_missing_nodes_set_to_default(self):
-        nodes = self.analyzer.similarity_graph.nodes()
+        nodes = self.analyzer.papers_graph.nodes()
         for row in self.analyzer.df.itertuples():
             if getattr(row, 'id') not in nodes:
                 self.assertEqual(getattr(row, 'comp'), -1)
 
     def test_heatmap_topics_similarity(self):
-        matrix = compute_similarity_matrix(self.analyzer.similarity_graph,
+        matrix = compute_similarity_matrix(self.analyzer.papers_graph,
                                            PapersAnalyzer.similarity, self.analyzer.partition)
         # print(matrix)
         similarities = np.array([[3.583]])

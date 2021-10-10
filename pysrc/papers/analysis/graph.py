@@ -8,20 +8,7 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
-def build_citation_graph(df, cit_df):
-    cg = nx.DiGraph()
-    for index, row in cit_df.iterrows():
-        v, u = row['id_out'], row['id_in']
-        cg.add_edge(v, u)
-    # Ensure all the nodes are in the graph
-    for node in df['id']:
-        if not cg.has_node(node):
-            cg.add_node(node)
-    return cg
-
-
-def build_similarity_graph(df, citations_graph, cocit_df, bibliographic_coupling_df):
-    """ Similarity graph is built using citation graph and text based methods. """
+def build_papers_graph(df, cit_df, cocit_df, bibliographic_coupling_df):
     pids = list(df['id'])
 
     sg = nx.Graph()
@@ -29,27 +16,27 @@ def build_similarity_graph(df, citations_graph, cocit_df, bibliographic_coupling
     # during graph visualization
 
     # Co-citations
-    for el in cocit_df[['cited_1', 'cited_2', 'total']].values:
-        start, end, cocitation = str(el[0]), str(el[1]), float(el[2])
+    for start, end, cocitation in zip(cocit_df['cited_1'], cocit_df['cited_2'], cocit_df['total']):
         sg.add_edge(start, end, cocitation=cocitation)
 
     # Bibliographic coupling
     if len(bibliographic_coupling_df) > 0:
-        for el in bibliographic_coupling_df[['citing_1', 'citing_2', 'total']].values:
-            start, end, bibcoupling = str(el[0]), str(el[1]), float(el[2])
+        for start, end, bibcoupling in zip(bibliographic_coupling_df['citing_1'],
+                                           bibliographic_coupling_df['citing_2'],
+                                           bibliographic_coupling_df['total']):
             if sg.has_edge(start, end):
                 sg[start][end]['bibcoupling'] = bibcoupling
             else:
                 sg.add_edge(start, end, bibcoupling=bibcoupling)
 
     # Citations
-    for start, end in citations_graph.edges:
+    for start, end in zip(cit_df['id_out'], cit_df['id_in']):
         if sg.has_edge(start, end):
             sg[start][end]['citation'] = 1
         else:
             sg.add_edge(start, end, citation=1)
 
-    # Ensure all the papers are in the similarity graph graph
+    # Ensure all the papers are in the graph
     for pid in pids:
         if not sg.has_node(pid):
             sg.add_node(pid)

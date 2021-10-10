@@ -95,16 +95,6 @@ def prepare_stats_data(logfile):
                     if 'papers' not in info:
                         info['papers'] = True
 
-            if '/graph success citations addr:' in line:
-                args = json.loads(re.sub(".*args:", "", line.strip()))
-                jobid = args['jobid']
-                if not jobid:
-                    continue
-                if jobid in searches_infos:
-                    info = searches_infos[jobid]
-                    if 'graph_citations' not in info:
-                        info['graph_citations'] = True
-
             if '/graph success similarity addr:' in line:
                 args = json.loads(re.sub(".*args:", "", line.strip()))
                 jobid = args['jobid']
@@ -112,8 +102,8 @@ def prepare_stats_data(logfile):
                     continue
                 if jobid in searches_infos:
                     info = searches_infos[jobid]
-                    if 'graph_similarity' not in info:
-                        info['graph_similarity'] = True
+                    if 'graph' not in info:
+                        info['graph'] = True
 
             if '/process paper analysis addr:' in line:
                 paper_searches_dates.append(date)
@@ -173,8 +163,7 @@ def prepare_stats_data(logfile):
             duration,
             info['status'] if 'status' in info else 'N/A',
             '+' if 'papers' in info else '-',
-            '+' if 'graph_citations' in info else '-',
-            '+' if 'graph_similarity' in info else '-',
+            '+' if 'graph' in info else '-',
         ))
     result['recent_searches'] = recent_searches_results[::-1]
 
@@ -227,8 +216,7 @@ def prepare_stats_data(logfile):
     else:
         result['searches_avg_duration'] = 'N/A'
     result['searches_papers_shown'] = sum('papers' in info for info in searches_infos.values())
-    result['searches_graph_citations_shown'] = sum('graph_citations' in info for info in searches_infos.values())
-    result['searches_graph_similarity_shown'] = sum('graph_similarity' in info for info in searches_infos.values())
+    result['searches_graph_shown'] = sum('graph' in info for info in searches_infos.values())
 
     # Papers search statistics
     finished_paper_searches = sum('end' in info for info in papers_infos.values())

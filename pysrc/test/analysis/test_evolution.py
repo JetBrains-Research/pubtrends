@@ -3,7 +3,6 @@ import unittest
 from parameterized import parameterized
 
 from pysrc.papers.analysis.evolution import topic_evolution_analysis, topic_evolution_descriptions
-from pysrc.papers.analysis.graph import build_citation_graph
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.test.mock_loaders import MockLoader
@@ -20,7 +19,6 @@ class TestTopicEvolution(unittest.TestCase):
         ids = cls.analyzer.search_terms(query='query')
         cls.analyzer.analyze_papers(ids, 'query')
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.df['id'])
-        cls.analyzer.citations_graph = build_citation_graph(cls.analyzer.df, cls.analyzer.cit_df)
         cls.analyzer.bibliographic_coupling_df = loader.load_bibliographic_coupling(cls.analyzer.df['id'])
 
     @parameterized.expand([

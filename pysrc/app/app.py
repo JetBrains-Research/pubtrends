@@ -447,7 +447,6 @@ def graph():
     source = request.args.get('source')
     limit = request.args.get('limit')
     sort = request.args.get('sort')
-    graph_type = request.args.get('type')
     if jobid:
         data = load_predefined_or_result_data(jobid, pubtrends_celery)
         if data is not None:
@@ -457,48 +456,31 @@ def graph():
             topics_tags = {comp: ','.join(
                 [w[0] for w in analyzer.kwd_df[analyzer.kwd_df['comp'] == comp]['kwd'].values[0][:TOPIC_KEYWORDS]]
             ) for comp in sorted(set(analyzer.df['comp']))}
-            if graph_type == "citations":
-                graph_cs = PlotPreprocessor.dump_citations_graph_cytoscape(analyzer.df, analyzer.citations_graph)
-                logger.info(f'/graph success citations {log_request(request)}')
-                return render_template(
-                    'graph.html',
-                    version=VERSION,
-                    source=source,
-                    query=trim(query, MAX_QUERY_LENGTH),
-                    limit=limit,
-                    sort=sort,
-                    citation_graph="true",
-                    topics_palette_json=json.dumps(Plotter.topics_palette(analyzer.df)),
-                    topics_description_json=json.dumps(topics_tags),
-                    graph_cytoscape_json=json.dumps(graph_cs)
-                )
-            else:
-                logger.debug('Computing sparse similarity graph')
-                sg = sparse_graph(to_weighted_graph(analyzer.similarity_graph, PapersAnalyzer.similarity),
-                                  PapersAnalyzer.SIMILARITY_GRAPH_EDGES_TO_NODES)
-                logger.debug('Restoring necessary edges')
-                for i, j in sg.edges():
-                    d = analyzer.similarity_graph.get_edge_data(i, j)
-                    for k, v in d.items():
-                        sg[i][j][k] = v
-                    sg[i][j]['similarity'] = PapersAnalyzer.similarity(d)
+            logger.debug('Computing sparse graph')
+            sg = sparse_graph(to_weighted_graph(analyzer.papers_graph, PapersAnalyzer.similarity),
+                              PapersAnalyzer.PAPERS_GRAPH_EDGES_TO_NODES)
+            logger.debug('Restoring necessary edges')
+            for i, j in sg.edges():
+                d = analyzer.papers_graph.get_edge_data(i, j)
+                for k, v in d.items():
+                    sg[i][j][k] = v
+                sg[i][j]['similarity'] = PapersAnalyzer.similarity(d)
 
-                graph_cs = PlotPreprocessor.dump_similarity_graph_cytoscape(
-                    analyzer.df, sg
-                )
-                logger.info(f'/graph success similarity {log_request(request)}')
-                return render_template(
-                    'graph.html',
-                    version=VERSION,
-                    source=source,
-                    query=trim(query, MAX_QUERY_LENGTH),
-                    limit=limit,
-                    sort=sort,
-                    citation_graph="false",
-                    topics_palette_json=json.dumps(Plotter.topics_palette(analyzer.df)),
-                    topics_description_json=json.dumps(topics_tags),
-                    graph_cytoscape_json=json.dumps(graph_cs)
-                )
+            graph_cs = PlotPreprocessor.dump_similarity_graph_cytoscape(
+                analyzer.df, sg
+            )
+            logger.info(f'/graph success similarity {log_request(request)}')
+            return render_template(
+                'graph.html',
+                version=VERSION,
+                source=source,
+                query=trim(query, MAX_QUERY_LENGTH),
+                limit=limit,
+                sort=sort,
+                topics_palette_json=json.dumps(Plotter.topics_palette(analyzer.df)),
+                topics_description_json=json.dumps(topics_tags),
+                graph_cytoscape_json=json.dumps(graph_cs)
+            )
         logger.error(f'/graph error job id {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     else:

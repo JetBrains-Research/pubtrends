@@ -39,7 +39,7 @@ def prepare_paper_data(data, source):
         doi = ''
 
     logger.debug('Estimate related topics for the paper')
-    sg = analyzer.similarity_graph
+    sg = analyzer.papers_graph
     if sg.nodes() and sg.has_node(pid):
         related_topics = {}
         for v in sg[pid]:
@@ -57,19 +57,16 @@ def prepare_paper_data(data, source):
     else:
         related_topics = None
 
-    # Citations graph is limited by only the nodes in pub_df
-    if analyzer.citations_graph.has_node(pid):
-        derivative_papers = get_top_papers_id_title_year(
-            analyzer.citations_graph.predecessors(pid), analyzer.df, key='total'
-        )
-        prior_papers = get_top_papers_id_title_year(
-            analyzer.citations_graph.successors(pid), analyzer.df, key='total'
-        )
-    else:
-        prior_papers = derivative_papers = []
+    # Citations is limited by only the nodes in pub_df
+    derivative_papers = get_top_papers_id_title_year(
+        analyzer.cit_df.loc[analyzer.cit_df['id_in'] == pid]['id_out'], analyzer.df, key='total'
+    )
+    prior_papers = get_top_papers_id_title_year(
+        analyzer.cit_df.loc[analyzer.cit_df['id_out'] == pid]['id_in'], analyzer.df, key='total'
+    )
 
-    logger.debug('Computing aggregated similarity graph')
-    sg = analyzer.similarity_graph.copy()
+    logger.debug('Computing aggregated graph')
+    sg = analyzer.papers_graph.copy()
     for _, _, d in sg.edges(data=True):
         d['similarity'] = PapersAnalyzer.similarity(d)
 

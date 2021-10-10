@@ -24,11 +24,11 @@ from sklearn.manifold import TSNE
 
 from pysrc.papers.analysis.citations import find_top_cited_papers, build_cit_stats_df, merge_citation_stats, \
     build_cocit_grouped_df
-from pysrc.papers.analysis.graph import build_citation_graph, build_similarity_graph, \
+from pysrc.papers.analysis.graph import build_papers_graph, \
     sparse_graph, to_weighted_graph
 from pysrc.papers.analysis.node2vec import node2vec
-from pysrc.papers.analysis.text import texts_embeddings, vectorize_corpus, preprocess_text, word2vec_tokens
 from pysrc.papers.analysis.text import get_frequent_tokens
+from pysrc.papers.analysis.text import texts_embeddings, vectorize_corpus, preprocess_text, word2vec_tokens
 from pysrc.papers.analysis.topics import get_topics_description, compute_similarity_matrix, cluster_and_sort
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.db.loaders import Loaders
@@ -151,12 +151,7 @@ class AnalyzerFiles(PapersAnalyzer):
             self.corpus_counts, self.corpus_tokens_embedding
         )
 
-        self.progress.info('Building citation graph', current=9, task=task)
-        self.citations_graph = build_citation_graph(self.df, self.cit_df)
-        logger.debug(f'Built citation graph - {self.citations_graph.number_of_nodes()} nodes and '
-                     f'{self.citations_graph.number_of_edges()} edges')
-
-        self.progress.info('Calculating co-citations for selected papers', current=10, task=task)
+        self.progress.info('Calculating co-citations for selected papers', current=9, task=task)
         self.cocit_df = self.loader.load_cocitations(ids)
         cocit_grouped_df = build_cocit_grouped_df(self.cocit_df)
         logger.debug(f'Found {len(cocit_grouped_df)} co-cited pairs of papers')
@@ -165,7 +160,7 @@ class AnalyzerFiles(PapersAnalyzer):
         logger.debug(f'Filtered {len(self.cocit_grouped_df)} co-cited pairs of papers, '
                      f'threshold {PapersAnalyzer.SIMILARITY_COCITATION_MIN}')
 
-        self.progress.info('Processing bibliographic coupling for selected papers', current=11, task=task)
+        self.progress.info('Processing bibliographic coupling for selected papers', current=10, task=task)
         bibliographic_coupling_df = self.loader.load_bibliographic_coupling(ids)
         logger.debug(f'Found {len(bibliographic_coupling_df)} bibliographic coupling pairs of papers')
         self.bibliographic_coupling_df = bibliographic_coupling_df[
@@ -173,17 +168,17 @@ class AnalyzerFiles(PapersAnalyzer):
         logger.debug(f'Filtered {len(self.bibliographic_coupling_df)} bibliographic coupling pairs of papers '
                      f'threshold {PapersAnalyzer.SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN}')
 
-        self.progress.info('Analyzing papers similarity graph', current=12, task=task)
-        self.similarity_graph = build_similarity_graph(
-            self.df, self.citations_graph, self.cocit_grouped_df, self.bibliographic_coupling_df,
+        self.progress.info('Analyzing papers graph', current=11, task=task)
+        self.papers_graph = build_papers_graph(
+            self.df, self.cit_df, self.cocit_grouped_df, self.bibliographic_coupling_df,
         )
-        logger.debug(f'Built similarity graph - {self.similarity_graph.number_of_nodes()} nodes and '
-                     f'{self.similarity_graph.number_of_edges()} edges')
+        logger.debug(f'Built papers graph - {self.papers_graph.number_of_nodes()} nodes and '
+                     f'{self.papers_graph.number_of_edges()} edges')
 
-        self.progress.info(f'Analyzing similarity graph with {self.similarity_graph.number_of_nodes()} nodes '
-                           f'and {self.similarity_graph.number_of_edges()} edges', current=12, task=task)
-        logger.debug('Analyzing similarity graph embeddings')
-        self.weighted_similarity_graph = to_weighted_graph(self.similarity_graph, PapersAnalyzer.similarity)
+        self.progress.info(f'Analyzing papers graph with {self.papers_graph.number_of_nodes()} nodes '
+                           f'and {self.papers_graph.number_of_edges()} edges', current=12, task=task)
+        logger.debug('Analyzing papers graph embeddings')
+        self.weighted_similarity_graph = to_weighted_graph(self.papers_graph, PapersAnalyzer.similarity)
         gs = sparse_graph(self.weighted_similarity_graph)
         self.graph_embeddings = node2vec(self.df['id'], gs)
 
@@ -212,7 +207,7 @@ class AnalyzerFiles(PapersAnalyzer):
 
         clusters_partition = dict(zip(self.df['id'], self.df['comp']))
         similarity_df, topics = topics_similarity_data(
-            self.similarity_graph, clusters_partition
+            self.papers_graph, clusters_partition
         )
         similarity_df['type'] = ['Inside' if x == y else 'Outside'
                                  for (x, y) in zip(similarity_df['comp_x'], similarity_df['comp_y'])]
@@ -293,13 +288,13 @@ class AnalyzerFiles(PapersAnalyzer):
         self.progress.info('Preparing papers graphs', current=16, task=task)
         self.sparse_similarity_graph = sparse_graph(self.weighted_similarity_graph, max_edges_to_nodes=5)
         path_papers_graph = os.path.join(self.query_folder, 'papers.html')
-        logging.info(f'Saving papers similarity graph for bokeh {path_papers_graph}')
-        output_file(filename=path_papers_graph, title="Papers similarity graph")
-        save(similarity_graph(self.sparse_similarity_graph, self.df, plot_width=1200, plot_height=1200))
+        logging.info(f'Saving papers graph for bokeh {path_papers_graph}')
+        output_file(filename=path_papers_graph, title="Papers graph")
+        save(papers_graph(self.sparse_similarity_graph, self.df, plot_width=1200, plot_height=1200))
         reset_output()
 
         path_papers_graph_interactive = os.path.join(self.query_folder, 'papers_interactive.html')
-        logging.info(f'Saving papers similarity graph for cytoscape.js {path_papers_graph_interactive}')
+        logging.info(f'Saving papers graph for cytoscape.js {path_papers_graph_interactive}')
         template_path = os.path.realpath(os.path.join(__file__, '../../papers_template.html'))
         save_sim_papers_graph_interactive(self.sparse_similarity_graph, self.df, clusters_description,
                                           mesh_clusters_description, template_path, path_papers_graph_interactive)
@@ -439,8 +434,8 @@ def plot_components_ratio(df, plot_width=1200, plot_height=400):
     return p
 
 
-def topics_similarity_data(similarity_graph, partition):
-    similarity_matrix = compute_similarity_matrix(similarity_graph, PapersAnalyzer.similarity, partition)
+def topics_similarity_data(papers_graph, partition):
+    similarity_matrix = compute_similarity_matrix(papers_graph, PapersAnalyzer.similarity, partition)
 
     # c + 1 is used to start numbering with 1
     components = [str(c + 1) for c in sorted(set(partition.values()))]
@@ -680,7 +675,7 @@ def topics_hierarchy_with_keywords(df, kwd_df, clusters, dendrogram_children,
     return p
 
 
-def similarity_graph(g, df, plot_width=600, plot_height=600):
+def papers_graph(g, df, plot_width=600, plot_height=600):
     nodes = df['id']
     graph = GraphRenderer()
     comps = df['comp']
@@ -769,7 +764,7 @@ def similarity_graph(g, df, plot_width=600, plot_height=600):
 
 def save_sim_papers_graph_interactive(gs, df, clusters_description, mesh_clusters_description,
                                       template_path, path):
-    logging.info('Saving papers similarity graph for cytoscape.js')
+    logging.info('Saving papers graph for cytoscape.js')
 
     topics_tags = {c: ','.join(t for t, _ in clusters_description[c][:5]) for c in sorted(set(df['comp']))}
     topics_meshs = {c: ','.join(t for t, _ in mesh_clusters_description[c][:5]) for c in sorted(set(df['comp']))}

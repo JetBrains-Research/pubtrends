@@ -2,11 +2,10 @@ import unittest
 
 import networkx as nx
 
-from pysrc.papers.analysis.graph import build_citation_graph, _local_sparse
+from pysrc.papers.analysis.graph import _local_sparse
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
-from pysrc.test.mock_loaders import MockLoader, CITATION_GRAPH_NODES, CITATION_GRAPH_EDGES, SIMILARITY_GRAPH_EDGES, \
-    MockLoaderSingle
+from pysrc.test.mock_loaders import MockLoader, PAPERS_GRAPH_EDGES, MockLoaderSingle
 
 
 class TestBuildGraph(unittest.TestCase):
@@ -20,23 +19,11 @@ class TestBuildGraph(unittest.TestCase):
         cls.analyzer.TOPIC_MIN_SIZE = 0  # Disable merging for tests
         cls.analyzer.analyze_papers(ids, 'query')
 
-    def test_build_citation_graph_nodes_count(self):
-        self.assertEqual(self.analyzer.citations_graph.number_of_nodes(), len(CITATION_GRAPH_NODES))
-
-    def test_build_citation_graph_edges_count(self):
-        self.assertEqual(self.analyzer.citations_graph.number_of_edges(), len(CITATION_GRAPH_EDGES))
-
-    def test_build_citation_graph_nodes(self):
-        self.assertCountEqual(list(self.analyzer.citations_graph.nodes()), CITATION_GRAPH_NODES)
-
-    def test_build_citation_graph_edges(self):
-        self.assertCountEqual(list(self.analyzer.citations_graph.edges()), CITATION_GRAPH_EDGES)
-
     def test_build_similarity_graph_edges(self):
-        edges = list(self.analyzer.similarity_graph.edges(data=True))
+        edges = list(self.analyzer.papers_graph.edges(data=True))
         # print(edges)
-        self.assertEquals(len(SIMILARITY_GRAPH_EDGES), len(edges), msg='size')
-        for expected, actual in zip(SIMILARITY_GRAPH_EDGES, edges):
+        self.assertEquals(len(PAPERS_GRAPH_EDGES), len(edges), msg='size')
+        for expected, actual in zip(PAPERS_GRAPH_EDGES, edges):
             self.assertEquals(expected[0], actual[0], msg='source')
             self.assertEquals(expected[1], actual[1], msg='target')
             for m in 'cocitation', 'text', 'citations', 'bibcoupling':
@@ -84,19 +71,6 @@ class TestBuildGraphSingle(unittest.TestCase):
         ids = cls.analyzer.search_terms(query='query')
         cls.analyzer.analyze_papers(ids, 'query')
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.df['id'])
-        cls.analyzer.citations_graph = build_citation_graph(cls.analyzer.df, cls.analyzer.cit_df)
-
-    def test_build_citation_graph_nodes_count(self):
-        self.assertEqual(self.analyzer.citations_graph.number_of_nodes(), 1)
-
-    def test_build_citation_graph_edges_count(self):
-        self.assertEqual(self.analyzer.citations_graph.number_of_edges(), 0)
-
-    def test_build_citation_graph_nodes(self):
-        self.assertEqual(list(self.analyzer.citations_graph.nodes()), ['1'])
-
-    def test_build_citation_graph_edges(self):
-        self.assertCountEqual(list(self.analyzer.citations_graph.edges()), [])
 
 
 if __name__ == "__main__":

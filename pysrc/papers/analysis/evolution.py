@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from pysrc.papers.analysis.citations import build_cocit_grouped_df
-from pysrc.papers.analysis.graph import build_similarity_graph, to_weighted_graph, sparse_graph
+from pysrc.papers.analysis.graph import build_papers_graph, to_weighted_graph, sparse_graph
 from pysrc.papers.analysis.node2vec import node2vec
 from pysrc.papers.analysis.text import texts_embeddings
 from pysrc.papers.analysis.topics import get_topics_description, cluster_and_sort
@@ -44,7 +44,7 @@ def topic_evolution_analysis(
         ids_year = set(df_year['id'])
 
         logger.debug('Use only citations earlier than year')
-        citations_graph_year = filter_citations_graph(cit_df, ids_year)
+        cit_df_year = filter_cit_df(cit_df, ids_year)
 
         logger.debug('Use only co-citations earlier than year')
         cocit_grouped_df_year = filter_cocit_grouped_df(cocit_df, cocit_min_threshold, ids_year)
@@ -59,13 +59,13 @@ def topic_evolution_analysis(
             corpus_counts_year, corpus_tokens_embedding
         )
 
-        logger.debug('Building papers similarity graph')
-        similarity_graph = build_similarity_graph(
-            df_year, citations_graph_year, cocit_grouped_df_year, bibliographic_coupling_df_year,
+        logger.debug('Building papers graph')
+        papers_graph = build_papers_graph(
+            df_year, cit_df_year, cocit_grouped_df_year, bibliographic_coupling_df_year,
         )
-        logger.debug(f'Built similarity graph - {similarity_graph.number_of_nodes()} nodes and '
-                     f'{similarity_graph.number_of_edges()} edges')
-        weighted_similarity_graph = to_weighted_graph(similarity_graph, similarity_func)
+        logger.debug(f'Built papers graph - {papers_graph.number_of_nodes()} nodes and '
+                     f'{papers_graph.number_of_edges()} edges')
+        weighted_similarity_graph = to_weighted_graph(papers_graph, similarity_func)
         gs = sparse_graph(weighted_similarity_graph)
         graph_embeddings_year = node2vec(df_year['id'], gs)
 
@@ -97,11 +97,10 @@ def topic_evolution_analysis(
 
 
 def filter_bibliographic_coupling_df(bibliographic_coupling_df, ids_year):
-    bibliographic_coupling_df_year = bibliographic_coupling_df.loc[
+    return bibliographic_coupling_df.loc[
         (bibliographic_coupling_df['citing_1'].isin(ids_year)) &
         (bibliographic_coupling_df['citing_2'].isin(ids_year))
         ]
-    return bibliographic_coupling_df_year
 
 
 def filter_cocit_grouped_df(cocit_df, cocit_min_threshold, ids_year):
@@ -113,13 +112,8 @@ def filter_cocit_grouped_df(cocit_df, cocit_min_threshold, ids_year):
     return cocit_grouped_df_year
 
 
-def filter_citations_graph(cit_df, ids_year):
-    citations_graph_year = nx.DiGraph()
-    for index, row in cit_df.iterrows():
-        v, u = row['id_out'], row['id_in']
-        if v in ids_year and u in ids_year:
-            citations_graph_year.add_edge(v, u)
-    return citations_graph_year
+def filter_cit_df(cit_df, ids_year):
+    return cit_df.loc[(cit_df['id_out'].isin(ids_year)) & (cit_df['id_in'].isin(ids_year))]
 
 
 def topic_evolution_descriptions(

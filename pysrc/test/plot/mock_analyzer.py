@@ -3,11 +3,11 @@ import json
 import networkx as nx
 import pandas as pd
 
-RELATIONS_GRAPH_GRAPHML = 'pysrc/test/test_data/similarity_graph.graphml'
+RELATIONS_GRAPH_GRAPHML = 'pysrc/test/test_data/papers_graph.graphml'
 DF_CSV = 'pysrc/test/test_data/df.csv'
 EVOLUTION_DF_CSV = 'pysrc/test/test_data/evolution_df.csv'
 EVOLUTION_KEYWORDS_JSON = 'pysrc/test/test_data/evolution_keywords.json'
-# RELATIONS_GRAPH_GRAPHML = '/Users/Oleg.Shpynov/work/pubtrends/pysrc/test/test_data/similarity_graph.graphml'
+# RELATIONS_GRAPH_GRAPHML = '/Users/Oleg.Shpynov/work/pubtrends/pysrc/test/test_data/papers_graph.graphml'
 # DF_CSV = '/Users/Oleg.Shpynov/work/pubtrends/pysrc/test/test_data/df.csv'
 # EVOLUTION_DF_CSV = '/Users/Oleg.Shpynov/work/pubtrends/pysrc/test/test_data/evolution_df.csv'
 # EVOLUTION_KEYWORDS_JSON = '/Users/Oleg.Shpynov/work/pubtrends/pysrc/test/test_data/evolution_keywords.json'
@@ -24,9 +24,9 @@ class MockAnalyzer:
         self.max_year = 2019
 
         # Load co-citation graph and convert nodes to str
-        self.similarity_graph = nx.read_graphml(RELATIONS_GRAPH_GRAPHML)
-        mapping = {node: str(node) for node in self.similarity_graph.nodes()}
-        self.similarity_graph = nx.relabel_nodes(self.similarity_graph, mapping, copy=False)
+        self.papers_graph = nx.read_graphml(RELATIONS_GRAPH_GRAPHML)
+        mapping = {node: str(node) for node in self.papers_graph.nodes()}
+        self.papers_graph = nx.relabel_nodes(self.papers_graph, mapping, copy=False)
 
         # Components are already in df
         self.components = [0, 1, 2]

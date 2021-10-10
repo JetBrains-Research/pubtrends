@@ -116,11 +116,11 @@
             window.open(url + '&jobid=' + jobid, '_blank');
         }
 
-        function graph_callback(graphType) {
+        function graph_callback() {
             const url = '/graph?query=' + normalize('{{ title }}') + '&source={{source}}&limit=related&sort=papers';
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
-            window.open(url + '&type=' + graphType + '&jobid=' + jobid, '_blank');
+            window.open(url + '&jobid=' + jobid, '_blank');
         }
 
     </script>
@@ -284,18 +284,11 @@
                         <br>
                     </p>
                     <p>
-                        Explore citations graph and papers similarity network in the interactive graph viewer.
+                        Explore papers similarity network in the interactive graph viewer.
                     </p>
-                    <div style="display: block">
-                        <button type="button" class="btn btn-light mr-2"
-                                onclick="graph_callback('citations');">
-                            Explore citations graph
-                        </button>
-                        <button type="button" class="btn btn-light"
-                                onclick="graph_callback('structure');">
-                            Explore similarity graph
-                        </button>
-                    </div>
+                    <button type="button" class="btn btn-light" onclick="graph_callback();">
+                        Explore
+                    </button>
                     {% else %}
                     Too many papers to visualize graphs.
                     {% endif %}

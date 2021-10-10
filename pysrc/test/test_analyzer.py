@@ -4,7 +4,6 @@ import numpy as np
 from pandas._testing import assert_frame_equal
 
 from pysrc.papers.analysis.citations import build_cocit_grouped_df, merge_citation_stats
-from pysrc.papers.analysis.graph import build_citation_graph
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.test.mock_loaders import MockLoader, \
@@ -22,7 +21,6 @@ class TestPapersAnalyzer(unittest.TestCase):
         cls.analyzer.TOPIC_MIN_SIZE = 0  # Disable merging for tests
         cls.analyzer.analyze_papers(ids, 'query')
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.df['id'])
-        cls.analyzer.citations_graph = build_citation_graph(cls.analyzer.df, cls.analyzer.cit_df)
         cls.analyzer.bibliographic_coupling_df = loader.load_bibliographic_coupling(cls.analyzer.df['id'])
 
     def test_bibcoupling(self):
@@ -38,13 +36,13 @@ class TestPapersAnalyzer(unittest.TestCase):
         self.assertEqual(len(self.analyzer.df), len(self.analyzer.pub_df))
 
     def test_topic_analysis_all_nodes_assigned(self):
-        nodes = self.analyzer.similarity_graph.nodes()
+        nodes = self.analyzer.papers_graph.nodes()
         for row in self.analyzer.df.itertuples():
             if getattr(row, 'id') in nodes:
                 self.assertGreaterEqual(getattr(row, 'comp'), 0)
 
     def test_topic_analysis_missing_nodes_set_to_default(self):
-        nodes = self.analyzer.similarity_graph.nodes()
+        nodes = self.analyzer.papers_graph.nodes()
         for row in self.analyzer.df.itertuples():
             if getattr(row, 'id') not in nodes:
                 self.assertEqual(getattr(row, 'comp'), -1)
@@ -73,7 +71,6 @@ class TestPapersAnalyzerSingle(unittest.TestCase):
         ids = cls.analyzer.search_terms(query='query')
         cls.analyzer.analyze_papers(ids, 'query')
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.df['id'])
-        cls.analyzer.citations_graph = build_citation_graph(cls.analyzer.df, cls.analyzer.cit_df)
 
     def test_attrs(self):
         all_attrs = [

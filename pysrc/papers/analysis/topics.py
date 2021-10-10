@@ -10,15 +10,15 @@ from pysrc.papers.analysis.text import get_frequent_tokens
 logger = logging.getLogger(__name__)
 
 
-def compute_similarity_matrix(similarity_graph, similarity_func, partition):
+def compute_similarity_matrix(papers_graph, similarity_func, partition):
     logger.debug('Computing mean similarity of all edges between topics')
     n_comps = len(set(partition.values()))
-    edges = len(similarity_graph.edges)
+    edges = len(papers_graph.edges)
     sources = [None] * edges
     targets = [None] * edges
     similarities = [0.0] * edges
     i = 0
-    for u, v, data in similarity_graph.edges(data=True):
+    for u, v, data in papers_graph.edges(data=True):
         sources[i] = u
         targets[i] = v
         similarities[i] = similarity_func(data)
