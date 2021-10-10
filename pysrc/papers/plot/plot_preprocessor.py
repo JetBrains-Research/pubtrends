@@ -201,8 +201,10 @@ class PlotPreprocessor:
             df = df[df['comp'].astype(int) == comp]
         # Filter by word
         if word is not None:
-            corpus, _ = build_stemmed_corpus(df)
-            df = df[[tokenize(word)[0] in text for text in corpus]]
+            df = df[(df['title'].str.contains(word, case=False)) |
+                    (df['abstract'].str.contains(word, case=False)) |
+                    (df['mesh'].str.contains(word, case=False)) |
+                    (df['keywords'].str.contains(word, case=False))]
         # Filter by author
         if author is not None:
             # Check if string was trimmed
