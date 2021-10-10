@@ -3,6 +3,17 @@ Pubtrends changelog
 
 Here you can see the full list of changes between each release.
 
+Version 0.19
+------------
+Released on Oct 10, 2021
+
+-- Use combined text and graph embeddings for papers analysis
+-- Get rid of citations graph visualization
+-- Disabled zoom out functionality, reworked execution
+-- Fixed review generation functionality
+-- Reduced default font size
+-- Various other bugfixes
+
 Version 0.18
 ------------
 Released on Oct 5, 2021
