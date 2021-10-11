@@ -204,19 +204,16 @@ class PapersAnalyzer:
         if self.papers_graph.number_of_nodes() <= PapersAnalyzer.TOPIC_MIN_SIZE:
             logger.debug('Small graph - single topic')
             self.df['comp'] = 0
-            self.partition = dict(zip(self.df['id'], self.df['comp']))
         else:
             logger.debug('Extracting topics from papers embeddings')
-            self.clusters, self.dendrogram_children = cluster_and_sort(self.papers_embeddings,
-                                                                       PapersAnalyzer.TOPIC_MIN_SIZE,
-                                                                       PapersAnalyzer.TOPICS_MAX_NUMBER)
-            self.df['comp'] = self.clusters
-            self.partition = dict(zip(self.df['id'], self.df['comp']))
+            clusters, _ = cluster_and_sort(self.papers_embeddings,
+                                           PapersAnalyzer.TOPIC_MIN_SIZE,
+                                           PapersAnalyzer.TOPICS_MAX_NUMBER)
+            self.df['comp'] = clusters
 
-        self.progress.info(f'Analyzing {len(set(self.partition.values()))} topics descriptions',
+        self.progress.info(f'Analyzing {len(set(self.df["comp"]))} topics descriptions',
                            current=9, task=task)
-        comp_pids = pd.DataFrame(self.partition.items(), columns=['id', 'comp']). \
-            groupby('comp')['id'].apply(list).to_dict()
+        comp_pids = self.df[['id', 'comp']].groupby('comp')['id'].apply(list).to_dict()
         self.topics_description = get_topics_description(
             self.df, comp_pids,
             self.corpus_tokens, self.corpus_counts, self.stems_tokens_map,

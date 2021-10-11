@@ -29,7 +29,7 @@ from pysrc.papers.analysis.graph import build_papers_graph, \
 from pysrc.papers.analysis.node2vec import node2vec
 from pysrc.papers.analysis.text import get_frequent_tokens
 from pysrc.papers.analysis.text import texts_embeddings, vectorize_corpus, preprocess_text, word2vec_tokens
-from pysrc.papers.analysis.topics import get_topics_description, compute_similarity_matrix, cluster_and_sort
+from pysrc.papers.analysis.topics import get_topics_description, compute_topics_similarity_matrix, cluster_and_sort
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
@@ -189,17 +189,14 @@ class AnalyzerFiles(PapersAnalyzer):
                                                          PapersAnalyzer.TOPIC_MIN_SIZE,
                                                          self.TOPICS_MAX_NUMBER)
         self.df['comp'] = clusters
-        clusters_pids = pd.DataFrame(dict(id=self.df['id'], comp=clusters)).groupby('comp')['id'].apply(list).to_dict()
-
         path_topics_sizes = os.path.join(self.query_folder, 'topics_sizes.html')
         logging.info(f'Save topics ratios to file {path_topics_sizes}')
         output_file(filename=path_topics_sizes, title="Topics sizes")
         save(plot_components_ratio(self.df))
         reset_output()
 
-        clusters_partition = dict(zip(self.df['id'], self.df['comp']))
         similarity_df, topics = topics_similarity_data(
-            self.papers_graph, clusters_partition
+            self.papers_embeddings, self.df['comp']
         )
         similarity_df['type'] = ['Inside' if x == y else 'Outside'
                                  for (x, y) in zip(similarity_df['comp_x'], similarity_df['comp_y'])]
@@ -211,6 +208,7 @@ class AnalyzerFiles(PapersAnalyzer):
 
         self.progress.info('Analyzing topics descriptions', current=13, task=task)
         print('Computing clusters keywords')
+        clusters_pids = self.df[['id', 'comp']].groupby('comp')['id'].apply(list).to_dict()
         clusters_description = get_topics_description(
             self.df, clusters_pids,
             self.corpus_terms, self.corpus_counts, self.stems_map,
@@ -426,11 +424,11 @@ def plot_components_ratio(df, plot_width=1200, plot_height=400):
     return p
 
 
-def topics_similarity_data(papers_graph, partition):
-    similarity_matrix = compute_similarity_matrix(papers_graph, PapersAnalyzer.similarity, partition)
+def topics_similarity_data(papers_embeddings, comps):
+    similarity_matrix = compute_topics_similarity_matrix(papers_embeddings, comps)
 
     # c + 1 is used to start numbering with 1
-    components = [str(c + 1) for c in sorted(set(partition.values()))]
+    components = [str(c + 1) for c in sorted(set(comps))]
     n_comps = len(components)
     similarity_topics_df = pd.DataFrame([
         {'comp_x': i, 'comp_y': j, 'similarity': similarity_matrix[i, j]}

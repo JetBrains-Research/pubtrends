@@ -2,38 +2,25 @@ import logging
 from collections import Counter
 
 import numpy as np
-import pandas as pd
 from sklearn.cluster import AgglomerativeClustering
+from sklearn.metrics.pairwise import cosine_similarity
 
 from pysrc.papers.analysis.text import get_frequent_tokens
 
 logger = logging.getLogger(__name__)
 
 
-def compute_similarity_matrix(papers_graph, similarity_func, partition):
-    logger.debug('Computing mean similarity of all edges between topics')
-    n_comps = len(set(partition.values()))
-    edges = len(papers_graph.edges)
-    sources = [None] * edges
-    targets = [None] * edges
-    similarities = [0.0] * edges
-    i = 0
-    for u, v, data in papers_graph.edges(data=True):
-        sources[i] = u
-        targets[i] = v
-        similarities[i] = similarity_func(data)
-        i += 1
-    df = pd.DataFrame(partition.items(), columns=['id', 'comp'])
-    similarity_df = pd.DataFrame(data={'source': sources, 'target': targets, 'similarity': similarities})
-    similarity_topics_df = similarity_df.merge(df, how='left', left_on='source', right_on='id') \
-        .merge(df, how='left', left_on='target', right_on='id')
-    logger.debug('Calculate mean similarity between for topics')
-    mean_similarity_topics_df = \
-        similarity_topics_df.groupby(['comp_x', 'comp_y'])['similarity'].mean().reset_index()
+def compute_topics_similarity_matrix(papers_embeddings, comps):
+    logger.debug('Computing mean cosine similarity between topics embeddings')
+    n_comps = len(set(comps))
+    cos_similarities = cosine_similarity(papers_embeddings)
     similarity_matrix = np.zeros(shape=(n_comps, n_comps))
-    for index, row in mean_similarity_topics_df.iterrows():
-        cx, cy = int(row['comp_x']), int(row['comp_y'])
-        similarity_matrix[cx, cy] = similarity_matrix[cy, cx] = row['similarity']
+    for i in range(n_comps):
+        i_indx = np.flatnonzero([c == i for c in comps])
+        for j in range(i, n_comps):
+            j_indx = np.flatnonzero([c == j for c in comps])
+            mean_similarity = np.mean(cos_similarities[np.flatnonzero(cos_similarities[i_indx, j_indx])])
+            similarity_matrix[i, j] = similarity_matrix[j, i] = mean_similarity
     return similarity_matrix
 
 

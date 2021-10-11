@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from parameterized import parameterized
 
-from pysrc.papers.analysis.topics import compute_similarity_matrix, _get_topics_description_cosine
+from pysrc.papers.analysis.topics import compute_topics_similarity_matrix, _get_topics_description_cosine
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.test.mock_loaders import MockLoader
@@ -39,10 +39,9 @@ class TestTopics(unittest.TestCase):
                 self.assertEqual(getattr(row, 'comp'), -1)
 
     def test_heatmap_topics_similarity(self):
-        matrix = compute_similarity_matrix(self.analyzer.papers_graph,
-                                           PapersAnalyzer.similarity, self.analyzer.partition)
+        matrix = compute_topics_similarity_matrix(self.analyzer.papers_embeddings, self.analyzer.df['comp'])
         # print(matrix)
-        similarities = np.array([[2.345]])
+        similarities = np.array([[0.3945848]])
         self.assertTrue(np.allclose(similarities, matrix, rtol=1e-3))
 
     @staticmethod
