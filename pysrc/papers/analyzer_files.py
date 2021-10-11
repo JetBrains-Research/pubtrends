@@ -56,7 +56,7 @@ class AnalyzerFiles(PapersAnalyzer):
         self.source = Loaders.source(self.loader, test)
 
     def total_steps(self):
-        return 18
+        return 17
 
     def teardown(self):
         self.progress.remove_handler()
@@ -106,6 +106,14 @@ class AnalyzerFiles(PapersAnalyzer):
             min_df=PapersAnalyzer.VECTOR_MIN_DF,
             max_df=PapersAnalyzer.VECTOR_MAX_DF
         )
+        logger.debug('Analyzing tokens embeddings')
+        self.corpus_tokens_embedding = word2vec_tokens(
+            self.pub_df, self.corpus_tokens, self.stems_tokens_map
+        )
+        logger.debug('Analyzing texts embeddings')
+        self.texts_embeddings = texts_embeddings(
+            self.corpus_counts, self.corpus_tokens_embedding
+        )
 
         self.progress.info('Analyzing MESH terms', current=7, task=task)
         mesh_counter = Counter()
@@ -135,23 +143,7 @@ class AnalyzerFiles(PapersAnalyzer):
             save(Plotter.plot_keywords_timeline(keywords_df, years))
             reset_output()
 
-        self.progress.info('Analyzing title and abstract texts', current=8, task=task)
-        self.corpus_tokens, self.corpus_counts, self.stems_tokens_map = vectorize_corpus(
-            self.pub_df,
-            max_features=PapersAnalyzer.VECTOR_WORDS,
-            min_df=PapersAnalyzer.VECTOR_MIN_DF,
-            max_df=PapersAnalyzer.VECTOR_MAX_DF
-        )
-        logger.debug('Analyzing tokens embeddings')
-        self.corpus_tokens_embedding = word2vec_tokens(
-            self.pub_df, self.corpus_tokens, self.stems_tokens_map
-        )
-        logger.debug('Analyzing texts embeddings')
-        self.texts_embeddings = texts_embeddings(
-            self.corpus_counts, self.corpus_tokens_embedding
-        )
-
-        self.progress.info('Calculating co-citations for selected papers', current=9, task=task)
+        self.progress.info('Calculating co-citations for selected papers', current=8, task=task)
         self.cocit_df = self.loader.load_cocitations(ids)
         cocit_grouped_df = build_cocit_grouped_df(self.cocit_df)
         logger.debug(f'Found {len(cocit_grouped_df)} co-cited pairs of papers')
@@ -160,7 +152,7 @@ class AnalyzerFiles(PapersAnalyzer):
         logger.debug(f'Filtered {len(self.cocit_grouped_df)} co-cited pairs of papers, '
                      f'threshold {PapersAnalyzer.SIMILARITY_COCITATION_MIN}')
 
-        self.progress.info('Processing bibliographic coupling for selected papers', current=10, task=task)
+        self.progress.info('Processing bibliographic coupling for selected papers', current=9, task=task)
         bibliographic_coupling_df = self.loader.load_bibliographic_coupling(ids)
         logger.debug(f'Found {len(bibliographic_coupling_df)} bibliographic coupling pairs of papers')
         self.bibliographic_coupling_df = bibliographic_coupling_df[
@@ -168,7 +160,7 @@ class AnalyzerFiles(PapersAnalyzer):
         logger.debug(f'Filtered {len(self.bibliographic_coupling_df)} bibliographic coupling pairs of papers '
                      f'threshold {PapersAnalyzer.SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN}')
 
-        self.progress.info('Analyzing papers graph', current=11, task=task)
+        self.progress.info('Analyzing papers graph', current=10, task=task)
         self.papers_graph = build_papers_graph(
             self.df, self.cit_df, self.cocit_grouped_df, self.bibliographic_coupling_df,
         )
@@ -176,7 +168,7 @@ class AnalyzerFiles(PapersAnalyzer):
                      f'{self.papers_graph.number_of_edges()} edges')
 
         self.progress.info(f'Analyzing papers graph with {self.papers_graph.number_of_nodes()} nodes '
-                           f'and {self.papers_graph.number_of_edges()} edges', current=12, task=task)
+                           f'and {self.papers_graph.number_of_edges()} edges', current=11, task=task)
         logger.debug('Analyzing papers graph embeddings')
         self.weighted_similarity_graph = to_weighted_graph(self.papers_graph, PapersAnalyzer.similarity)
         gs = sparse_graph(self.weighted_similarity_graph)
@@ -192,7 +184,7 @@ class AnalyzerFiles(PapersAnalyzer):
         self.df['x'] = tsne_embeddings_2d[:, 0]
         self.df['y'] = tsne_embeddings_2d[:, 1]
 
-        self.progress.info('Extracting topics from papers', current=13, task=task)
+        self.progress.info('Extracting topics from papers', current=12, task=task)
         clusters, dendrogram_children = cluster_and_sort(self.papers_embeddings,
                                                          PapersAnalyzer.TOPIC_MIN_SIZE,
                                                          self.TOPICS_MAX_NUMBER)
@@ -217,7 +209,7 @@ class AnalyzerFiles(PapersAnalyzer):
         save(heatmap_topics_similarity(similarity_df, topics))
         reset_output()
 
-        self.progress.info('Analyzing topics descriptions', current=14, task=task)
+        self.progress.info('Analyzing topics descriptions', current=13, task=task)
         print('Computing clusters keywords')
         clusters_description = get_topics_description(
             self.df, clusters_pids,
@@ -234,7 +226,7 @@ class AnalyzerFiles(PapersAnalyzer):
         t.to_csv(path_tags, index=False)
         del t
 
-        self.progress.info('Analyzing topics descriptions with MESH terms', current=15, task=task)
+        self.progress.info('Analyzing topics descriptions with MESH terms', current=14, task=task)
         mesh_clusters_description = get_topics_description(
             self.df, clusters_pids,
             mesh_corpus_terms, mesh_corpus_counts, None,
@@ -285,7 +277,7 @@ class AnalyzerFiles(PapersAnalyzer):
         t.to_csv(path_papers, index=False)
         del t
 
-        self.progress.info('Preparing papers graphs', current=16, task=task)
+        self.progress.info('Preparing papers graphs', current=15, task=task)
         self.sparse_similarity_graph = sparse_graph(self.weighted_similarity_graph, max_edges_to_nodes=5)
         path_papers_graph = os.path.join(self.query_folder, 'papers.html')
         logging.info(f'Saving papers graph for bokeh {path_papers_graph}')
@@ -299,7 +291,7 @@ class AnalyzerFiles(PapersAnalyzer):
         save_sim_papers_graph_interactive(self.sparse_similarity_graph, self.df, clusters_description,
                                           mesh_clusters_description, template_path, path_papers_graph_interactive)
 
-        self.progress.info('Other analyses', current=17, task=task)
+        self.progress.info('Other analyses', current=16, task=task)
         plotter = Plotter(self)
         path_timeline = os.path.join(self.query_folder, 'timeline.html')
         logging.info(f'Save timeline to {path_timeline}')
