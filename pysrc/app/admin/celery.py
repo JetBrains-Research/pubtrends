@@ -8,6 +8,6 @@ def prepare_celery_data(app):
 
 def pp(tasks):
     return '\n'.join(
-        f"{t['id']} {t['name']} {','.join(t['args'])} "
+        f"{t['id']} {t['name']} {','.join(str(a) for a in t['args'])} "
         f"{','.join(str(k) + ':' + str(v) for k, v in t['kwargs'].items())}"
         for t in tasks)
