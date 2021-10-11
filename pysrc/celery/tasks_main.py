@@ -20,7 +20,7 @@ def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, e
     config = PubtrendsConfig(test=test)
     loader = Loaders.get_loader(source, config)
     analyzer = PapersAnalyzer(loader, config)
-    analyzer.progress.info('Analyzing search query', current=0, task=current_task)
+    analyzer.progress.info('Analyzing search query', current=1, task=current_task)
     try:
         sort = sort or SORT_MOST_CITED
         limit = limit or analyzer.config.show_max_articles_default_value
@@ -57,7 +57,7 @@ def analyze_search_terms_files(source, query, sort=None, limit=None, noreviews=T
     config = PubtrendsConfig(test=test)
     loader = Loaders.get_loader(source, config)
     analyzer = AnalyzerFiles(loader, config)
-    analyzer.progress.info('Analyzing search query', current=0, task=current_task)
+    analyzer.progress.info('Analyzing search query', current=1, task=current_task)
     try:
         sort = sort or SORT_MOST_CITED
         limit = limit or analyzer.config.show_max_articles_default_value
@@ -86,16 +86,16 @@ def analyze_search_terms_files(source, query, sort=None, limit=None, noreviews=T
 
 @pubtrends_celery.task(name='analyze_id_list')
 def analyze_id_list(source, ids, query, analysis_type, limit=None, test=False):
-    return _analyze_id_list(source, ids, query, analysis_type, limit, test, current_task)
-
-
-def _analyze_id_list(source, ids, query, analysis_type=IDS_ANALYSIS_TYPE, limit=None, test=False, task=None):
-    if len(ids) == 0:
-        raise RuntimeError("Empty papers list")
     config = PubtrendsConfig(test=test)
     loader = Loaders.get_loader(source, config)
     analyzer = PapersAnalyzer(loader, config)
-    analyzer.progress.info('Analyzing paper(s)', current=0, task=task)
+    return _analyze_id_list(analyzer, source, ids, query, analysis_type, limit, current_task)
+
+
+def _analyze_id_list(analyzer, source, ids, query, analysis_type=IDS_ANALYSIS_TYPE, limit=None, task=None):
+    if len(ids) == 0:
+        raise RuntimeError("Empty papers list")
+    analyzer.progress.info(f'Analyzing paper(s) from {source}', current=1, task=task)
     try:
         if analysis_type == PAPER_ANALYSIS_TYPE:
             limit = int(limit) if limit else analyzer.config.max_number_to_expand
@@ -105,7 +105,7 @@ def _analyze_id_list(source, ids, query, analysis_type=IDS_ANALYSIS_TYPE, limit=
             ids = expand_ids(
                 ids,
                 limit,
-                loader,
+                analyzer.loader,
                 PapersAnalyzer.EXPAND_LIMIT,
                 PapersAnalyzer.EXPAND_CITATIONS_Q_LOW,
                 PapersAnalyzer.EXPAND_CITATIONS_Q_HIGH,
@@ -119,7 +119,7 @@ def _analyze_id_list(source, ids, query, analysis_type=IDS_ANALYSIS_TYPE, limit=
             raise Exception(f'Illegal analysis type {analysis_type}')
         analyzer.analyze_papers(ids, query, task=task)
     finally:
-        loader.close_connection()
+        analyzer.loader.close_connection()
 
     analyzer.progress.info('Visualizing', current=analyzer.progress.total - 1, task=task)
     visualization = visualize_analysis(analyzer)
@@ -131,17 +131,20 @@ def _analyze_id_list(source, ids, query, analysis_type=IDS_ANALYSIS_TYPE, limit=
 
 @pubtrends_celery.task(name='analyze_search_paper')
 def analyze_search_paper(source, key, value, test=False):
+    config = PubtrendsConfig(test=test)
+    loader = Loaders.get_loader(source, config)
+    analyzer = PapersAnalyzer(loader, config)
+    analyzer.progress.info(f"Searching for a publication with {key} '{value}'", current=1, task=current_task)
     try:
-        logger.info(f"Searching for a publication with {key} '{value}'")
-        loader = Loaders.get_loader(source, PubtrendsConfig(test=test))
         result = loader.find(key, value)
         if len(result) == 1:
             return _analyze_id_list(
+                analyzer,
                 source, ids=result, query=f'Paper {key}={value}', analysis_type=PAPER_ANALYSIS_TYPE, limit='',
-                test=test, task=current_task
+                task=current_task
             )
         elif len(result) == 0:
-            raise SearchError('Found no papers matching specified key - value pair')
+            raise SearchError(f'Found no papers with {key}={value}')
         else:
             raise SearchError('Found multiple papers matching your search, please try to be more specific')
     finally:
@@ -150,10 +153,13 @@ def analyze_search_paper(source, key, value, test=False):
 
 @pubtrends_celery.task(name='analyze_pubmed_search')
 def analyze_pubmed_search(query, limit=None, test=False):
-    logger.info(f"Searching Pubmed query: '{query}', limit {limit}")
+    config = PubtrendsConfig(test=test)
+    loader = Loaders.get_loader('Pubmed', config)
+    analyzer = PapersAnalyzer(loader, config)
+    analyzer.progress.info(f"Searching Pubmed query: '{query}', limit {limit}", current=1, task=current_task)
     ids = pubmed_search(query, limit)
-    return _analyze_id_list('Pubmed', ids, query=query, analysis_type=IDS_ANALYSIS_TYPE, limit=limit,
-                            test=test, task=current_task)
+    return _analyze_id_list(analyzer, 'Pubmed', ids, query=query, analysis_type=IDS_ANALYSIS_TYPE, limit=limit,
+                            task=current_task)
 
 
 @pubtrends_celery.task(name='analyze_pubmed_search_files')
