@@ -15,11 +15,10 @@ def compute_topics_similarity_matrix(papers_embeddings, comps):
     n_comps = len(set(comps))
     cos_similarities = cosine_similarity(papers_embeddings)
     similarity_matrix = np.zeros(shape=(n_comps, n_comps))
+    indx = {i: np.flatnonzero([c == i for c in comps]).tolist() for i in range(n_comps)}
     for i in range(n_comps):
-        i_indx = np.flatnonzero([c == i for c in comps])
         for j in range(i, n_comps):
-            j_indx = np.flatnonzero([c == j for c in comps])
-            mean_similarity = np.mean(cos_similarities[np.flatnonzero(cos_similarities[i_indx, j_indx])])
+            mean_similarity = np.mean(cos_similarities[indx[i], indx[j]])
             similarity_matrix[i, j] = similarity_matrix[j, i] = mean_similarity
     return similarity_matrix
 
