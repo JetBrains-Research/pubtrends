@@ -44,7 +44,7 @@ def build_papers_graph(df, cit_df, cocit_df, bibliographic_coupling_df):
     return sg
 
 
-def sparse_graph(graph, max_edges_to_nodes=30, key='weight'):
+def sparse_graph(graph, max_edges_to_nodes=64, key='weight'):
     logger.debug(f'Limit total number of edges to max_edges_to_nodes={max_edges_to_nodes}')
     e = 1.0
     gs = _local_sparse(graph, e, key)
