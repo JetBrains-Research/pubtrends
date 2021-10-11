@@ -100,7 +100,7 @@ class AnalyzerFiles(PapersAnalyzer):
         self.top_cited_papers, self.top_cited_df = find_top_cited_papers(self.df, PapersAnalyzer.TOP_CITED_PAPERS)
 
         self.progress.info('Analyzing title and abstract texts', current=6, task=task)
-        self.corpus_terms, self.corpus_counts, self.stems_map = vectorize_corpus(
+        self.corpus_tokens, self.corpus_counts, self.stems_tokens_map = vectorize_corpus(
             self.pub_df,
             max_features=PapersAnalyzer.VECTOR_WORDS,
             min_df=PapersAnalyzer.VECTOR_MIN_DF,
@@ -211,7 +211,7 @@ class AnalyzerFiles(PapersAnalyzer):
         clusters_pids = self.df[['id', 'comp']].groupby('comp')['id'].apply(list).to_dict()
         clusters_description = get_topics_description(
             self.df, clusters_pids,
-            self.corpus_terms, self.corpus_counts, self.stems_map,
+            self.corpus_tokens, self.corpus_counts, self.stems_map,
             n_words=PapersAnalyzer.TOPIC_DESCRIPTION_WORDS
         )
 
