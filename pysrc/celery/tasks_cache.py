@@ -23,7 +23,7 @@ def get_or_cancel_task(jobid):
 
 def _celery_revoke_pending_task(jobid):
     task = AsyncResult(jobid, app=pubtrends_celery)
-    if task is not None and task.state in {'STARTED', 'PENDING'}:
+    if task is not None and task.state in {'PENDING', 'STARTED', 'PROGRESS'}:
         logger.debug(f'REVOKE Celery task: {jobid}')
         pubtrends_celery.control.revoke(jobid, terminate=True)
 
