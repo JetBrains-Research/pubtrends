@@ -149,7 +149,7 @@ def build_stems_to_tokens_map(stems_and_tokens):
     return stems_tokens_map
 
 
-def word2vec_tokens(df, corpus_tokens, stems_tokens_map, vector_size=32):
+def word2vec_tokens(df, corpus_tokens, stems_tokens_map, vector_size=64):
     logger.debug(f'Compute words embeddings with word2vec')
     corpus_tokens_set = set(corpus_tokens)
     logger.debug('Collecting sentences across dataset')

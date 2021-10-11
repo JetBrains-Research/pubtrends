@@ -6,7 +6,7 @@ from gensim.models import Word2Vec
 logger = logging.getLogger(__name__)
 
 
-def node2vec(ids, graph, p=0.5, q=2.0, walk_length=32, walks_per_node=5, vector_size=32, key='weight', seed=42):
+def node2vec(ids, graph, p=0.5, q=2.0, walk_length=32, walks_per_node=5, vector_size=64, key='weight', seed=42):
     """
     :param ids: Ids or nodes for embedding
     :param graph: Undirected weighted networkx graph
