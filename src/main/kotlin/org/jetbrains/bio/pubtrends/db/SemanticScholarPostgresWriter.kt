@@ -57,6 +57,11 @@ open class SemanticScholarPostgresWriter(
                     sspublications_ssid_year ON sspublications (ssid, year);
                     """
             )
+            exec(
+                """                    
+                    create index sspublications_doi_index on sspublications using hash (doi);                    
+                    """
+            )
         }
     }
 
