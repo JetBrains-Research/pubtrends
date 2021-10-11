@@ -211,7 +211,7 @@ class AnalyzerFiles(PapersAnalyzer):
         clusters_pids = self.df[['id', 'comp']].groupby('comp')['id'].apply(list).to_dict()
         clusters_description = get_topics_description(
             self.df, clusters_pids,
-            self.corpus_tokens, self.corpus_counts, self.stems_map,
+            self.corpus_tokens, self.corpus_counts, self.stems_tokens_map,
             n_words=PapersAnalyzer.TOPIC_DESCRIPTION_WORDS
         )
 
@@ -299,7 +299,7 @@ class AnalyzerFiles(PapersAnalyzer):
 
         path_terms_timeline = os.path.join(self.query_folder, "timeline_terms.html")
         logging.info(f'Save frequent tokens to file {path_terms_timeline}')
-        freq_kwds = get_frequent_tokens(self.top_cited_df, self.stems_map)
+        freq_kwds = get_frequent_tokens(self.top_cited_df, self.stems_tokens_map)
         output_file(filename=path_terms_timeline, title="Terms timeline")
         keywords_frequencies = plotter.plot_keywords_frequencies(freq_kwds)
         if keywords_frequencies is not None:
