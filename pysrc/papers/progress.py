@@ -3,6 +3,10 @@ from io import StringIO
 
 
 class Progress:
+    """
+    IMPORTANT! Progress initialization is required to change job state into PROGRESS,
+    so that it's execution will be shown in '/process' app handler.
+    """
 
     def __init__(self, total):
         self.stream = StringIO()
