@@ -511,7 +511,7 @@ def paper():
                     args=[source, key, value, app.config['TESTING']], task_id=jobid
                 )
                 return redirect(url_for('.process', query=f'Paper {key}={value}', analysis_type=PAPER_ANALYSIS_TYPE,
-                                        source=source, jobid=jobid))
+                                        source=source, key=key, value=value, jobid=jobid))
         else:
             logger.error(f'/paper error wrong request {log_request(request)}')
             return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
