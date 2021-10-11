@@ -285,14 +285,15 @@ class PapersAnalyzer:
         """
         Dump valuable fields to JSON-serializable dict. Use 'load' to restore analyzer.
         """
-        return {
-            'df': self.df.to_json(),
-            'kwd_df': self.kwd_df.to_json(),
-            'papers_graph': json_graph.node_link_data(self.papers_graph),
-            'top_cited_papers': self.top_cited_papers,
-            'max_gain_papers': self.max_gain_papers,
-            'max_rel_gain_papers': self.max_rel_gain_papers,
-        }
+        return dict(
+            df=self.df.to_json(),
+            cit_df=self.cit_df.to_json(),
+            kwd_df=self.kwd_df.to_json(),
+            papers_graph=json_graph.node_link_data(self.papers_graph),
+            top_cited_papers=self.top_cited_papers,
+            max_gain_papers=self.max_gain_papers,
+            max_rel_gain_papers=self.max_rel_gain_papers
+        )
 
     @staticmethod
     def load(fields):
@@ -309,6 +310,7 @@ class PapersAnalyzer:
             except ValueError:
                 mapping[col] = col
         df = df.rename(columns=mapping)
+        cit_df = pd.read_json(fields['cit_df'])
 
         # Restore topic descriptions
         kwd_df = pd.read_json(fields['kwd_df'])
@@ -325,14 +327,15 @@ class PapersAnalyzer:
         max_gain_papers = fields['max_gain_papers']
         max_rel_gain_papers = fields['max_rel_gain_papers']
 
-        return {
-            'df': df,
-            'kwd_df': kwd_df,
-            'papers_graph': papers_graph,
-            'top_cited_papers': top_cited_papers,
-            'max_gain_papers': max_gain_papers,
-            'max_rel_gain_papers': max_rel_gain_papers
-        }
+        return dict(
+            df=df,
+            cit_df=cit_df,
+            kwd_df=kwd_df,
+            papers_graph=papers_graph,
+            top_cited_papers=top_cited_papers,
+            max_gain_papers=max_gain_papers,
+            max_rel_gain_papers=max_rel_gain_papers
+        )
 
     def init(self, fields):
         """
@@ -344,6 +347,7 @@ class PapersAnalyzer:
         logger.debug('Loading analyzer')
         loaded = PapersAnalyzer.load(fields)
         self.df = loaded['df']
+        self.cit_df = loaded['cit_df']
         # Used for components naming
         self.kwd_df = loaded['kwd_df']
         # Used for network visualization
