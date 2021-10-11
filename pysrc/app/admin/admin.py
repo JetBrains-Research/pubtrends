@@ -8,6 +8,7 @@ from flask_security.utils import hash_password
 from flask_sqlalchemy import SQLAlchemy
 import os
 
+from pysrc.app.admin.celery import prepare_celery_data
 from pysrc.app.admin.feedback import prepare_feedback_data
 from pysrc.app.admin.stats import prepare_stats_data
 from pysrc.papers.config import PubtrendsConfig
@@ -27,7 +28,7 @@ else:
     raise RuntimeError('Failed to configure service db path')
 
 
-def configure_admin_functions(app, logfile):
+def configure_admin_functions(app, celery_app, logfile):
     """Configures flask-admin and flask-sqlalchemy"""
     app.config.from_pyfile('config.py')
     service_database_path = os.path.join(SERVICE_DATABASE_PATH, app.config['DATABASE_FILE'])
@@ -135,6 +136,28 @@ def configure_admin_functions(app, logfile):
                     # login
                     return redirect(url_for('security.login', next=request.url))
 
+    class AdminCeleryView(BaseView):
+        @expose('/')
+        def index(self):
+            celery_data = prepare_celery_data(celery_app)
+            return self.render('admin/celery.html', version=VERSION, **celery_data)
+
+        def is_accessible(self):
+            return current_user.is_active and current_user.is_authenticated and current_user.has_role('admin')
+
+        def _handle_view(self, name, **kwargs):
+            """
+            Override builtin _handle_view in order to redirect users when a view is not accessible.
+            """
+            if not self.is_accessible():
+                if current_user.is_authenticated:
+                    # permission denied
+                    abort(403)
+                else:
+                    # login
+                    return redirect(url_for('security.login', next=request.url))
+
+
     # Create admin
     admin = Admin(
         app,
@@ -146,6 +169,7 @@ def configure_admin_functions(app, logfile):
     # Available views
     admin.add_view(AdminStatsView(name='Statistics', endpoint='stats'))
     admin.add_view(AdminFeedbackView(name='Feedback', endpoint='feedback'))
+    admin.add_view(AdminCeleryView(name='Celery', endpoint='celery'))
 
     # define a context processor for merging flask-admin's template context into the flask-security views.
     @security.context_processor

@@ -427,8 +427,10 @@ def result():
                                        log=log,
                                        **viz)
             logger.info(f'/result No job or out-of-date job, restart it {log_request(request)}')
-            analyze_search_terms.apply_async(args=[source, query, sort, int(limit), noreviews, int(expand) / 100],
-                                             task_id=jobid, test=app.config['TESTING'])
+            analyze_search_terms.apply_async(
+                args=[source, query, sort, int(limit), noreviews, int(expand) / 100, app.config['TESTING']],
+                task_id=jobid
+            )
             return redirect(url_for('.process', query=query, source=source, limit=limit, sort=sort,
                                     noreviews=noreviews, expand=expand,
                                     jobid=jobid))
@@ -492,7 +494,6 @@ def graph():
 def paper():
     jobid = request.values.get('jobid')
     source = request.args.get('source')
-    query = request.args.get('query')
     key = request.args.get('key')
     value = request.args.get('value')
     try:
@@ -506,12 +507,11 @@ def paper():
                                        version=VERSION)
             else:
                 logger.info(f'/paper No job or out-of-date job, restart it {log_request(request)}')
-                job = analyze_search_paper.apply_async(
-                    args=[source, key, value, app.config['TESTING']],
-                    task_id=jobid
+                analyze_search_paper.apply_async(
+                    args=[source, key, value, app.config['TESTING']], task_id=jobid
                 )
-                return redirect(url_for('.process', query=query, analysis_type=PAPER_ANALYSIS_TYPE,
-                                        source=source, jobid=job.id))
+                return redirect(url_for('.process', query=f'Paper {key}={value}', analysis_type=PAPER_ANALYSIS_TYPE,
+                                        source=source, jobid=jobid))
         else:
             logger.error(f'/paper error wrong request {log_request(request)}')
             return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
@@ -676,7 +676,7 @@ def feedback():
 # Admin functionality #
 #######################
 
-configure_admin_functions(app, logfile)
+configure_admin_functions(app, pubtrends_celery, logfile)
 
 #######################
 # Additional features #
