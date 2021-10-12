@@ -10,13 +10,18 @@ from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plotter import visualize_analysis
-from pysrc.papers.utils import SORT_MOST_CITED, pubmed_search, PAPER_ANALYSIS_TYPE, IDS_ANALYSIS_TYPE
+from pysrc.papers.utils import SORT_MOST_CITED, pubmed_search, PAPER_ANALYSIS_TYPE, IDS_ANALYSIS_TYPE, \
+    preprocess_doi, is_doi
 
 logger = getLogger(__name__)
+
+DOI_WRONG_SEARCH = 'Search query looks like DOI, please <a href="/#paper-tab">rerun</a> paper analysis.' 
 
 
 @pubtrends_celery.task(name='analyze_search_terms')
 def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, expand=0.5, test=False):
+    if is_doi(query):
+        raise SearchError()
     config = PubtrendsConfig(test=test)
     loader = Loaders.get_loader(source, config)
     analyzer = PapersAnalyzer(loader, config)
@@ -54,6 +59,8 @@ def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, e
 
 @pubtrends_celery.task(name='analyze_search_terms_files')
 def analyze_search_terms_files(source, query, sort=None, limit=None, noreviews=True, expand=0.5, test=False):
+    if is_doi(preprocess_doi(query)):
+        raise SearchError(DOI_WRONG_SEARCH)
     config = PubtrendsConfig(test=test)
     loader = Loaders.get_loader(source, config)
     analyzer = AnalyzerFiles(loader, config)
@@ -94,7 +101,7 @@ def analyze_id_list(source, ids, query, analysis_type, limit=None, test=False):
 
 def _analyze_id_list(analyzer, source, ids, query, analysis_type=IDS_ANALYSIS_TYPE, limit=None, test=False, task=None):
     if len(ids) == 0:
-        raise RuntimeError("Empty papers list")
+        raise RuntimeError('Empty papers list')
     analyzer.progress.info(f'Analyzing paper(s) from {source}', current=1, task=task)
     try:
         if analysis_type == PAPER_ANALYSIS_TYPE:
@@ -131,10 +138,12 @@ def _analyze_id_list(analyzer, source, ids, query, analysis_type=IDS_ANALYSIS_TY
 
 @pubtrends_celery.task(name='analyze_search_paper')
 def analyze_search_paper(source, key, value, test=False):
+    if key != 'doi' and is_doi(preprocess_doi(value)):
+        raise SearchError(DOI_WRONG_SEARCH)
     config = PubtrendsConfig(test=test)
     loader = Loaders.get_loader(source, config)
     analyzer = PapersAnalyzer(loader, config)
-    analyzer.progress.info(f"Searching for a publication with {key} '{value}'", current=1, task=current_task)
+    analyzer.progress.info(f'Searching for a publication with {key}={value}', current=1, task=current_task)
     try:
         result = loader.find(key, value)
         if len(result) == 1:
@@ -144,19 +153,21 @@ def analyze_search_paper(source, key, value, test=False):
                 test=test, task=current_task
             )
         elif len(result) == 0:
-            raise SearchError(f'Found no papers with {key}={value}')
+            raise SearchError(f'No papers found with {key}={value}')
         else:
-            raise SearchError('Found multiple papers matching your search, please try to be more specific')
+            raise SearchError(f'Multiple papers found matching {key}={value}, please be more specific')
     finally:
         loader.close_connection()
 
 
 @pubtrends_celery.task(name='analyze_pubmed_search')
 def analyze_pubmed_search(query, limit=None, test=False):
+    if is_doi(preprocess_doi(query)):
+        raise SearchError(DOI_WRONG_SEARCH)
     config = PubtrendsConfig(test=test)
     loader = Loaders.get_loader('Pubmed', config)
     analyzer = PapersAnalyzer(loader, config)
-    analyzer.progress.info(f"Searching Pubmed query: '{query}', limit {limit}", current=1, task=current_task)
+    analyzer.progress.info(f"Searching Pubmed query: {query}, limit {limit}", current=1, task=current_task)
     ids = pubmed_search(query, limit)
     return _analyze_id_list(analyzer, 'Pubmed', ids, query=query, analysis_type=IDS_ANALYSIS_TYPE, limit=limit,
                             test=test, task=current_task)
@@ -164,11 +175,13 @@ def analyze_pubmed_search(query, limit=None, test=False):
 
 @pubtrends_celery.task(name='analyze_pubmed_search_files')
 def analyze_pubmed_search_files(query, limit, test=False):
+    if is_doi(preprocess_doi(query)):
+        raise SearchError(DOI_WRONG_SEARCH)
     config = PubtrendsConfig(test=test)
     loader = Loaders.get_loader('Pubmed', config)
     analyzer = AnalyzerFiles(loader, config)
     try:
-        analyzer.progress.info(f"Searching Pubmed query: '{query}', limit {limit}", current=1, task=current_task)
+        analyzer.progress.info(f"Searching Pubmed query: {query}, limit {limit}", current=1, task=current_task)
         ids = pubmed_search(query, limit)
         analyzer.analyze_ids(ids, 'Pubmed', query, limit, test=test, task=current_task)
         analyzer.progress.done(task=current_task)

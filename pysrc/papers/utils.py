@@ -65,6 +65,16 @@ def preprocess_doi(line):
     return doi.strip('/')
 
 
+def is_doi(text):
+    """
+    Checks if text matches doi
+    See https://www.crossref.org/blog/dois-and-matching-regular-expressions/
+    :param text: text to check
+    :return:
+    """
+    return re.search('10.\\d{4,9}/[-._;()/:a-z0-9A-Z]+', text.lower())
+
+
 def preprocess_search_title(line):
     """
     Title processing similar to PubmedXMLParser - special characters removal
