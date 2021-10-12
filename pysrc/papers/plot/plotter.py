@@ -222,6 +222,7 @@ class Plotter:
         """
 
     def topic_years_distribution(self):
+        logger.debug('Processing topic_years_distribution')
         logger.debug('Topics publications year distribution visualization')
         min_year, max_year = self.analyzer.df['year'].min(), self.analyzer.df['year'].max()
         plot_components, data = PlotPreprocessor.component_size_summary_data(
@@ -256,7 +257,7 @@ class Plotter:
         return p
 
     def topics_info_and_word_cloud_and_callback(self):
-        logger.debug('Per component detailed info visualization')
+        logger.debug('Processing topics_info_and_word_cloud_and_callback')
 
         # Prepare layouts
         result = []
@@ -298,11 +299,13 @@ class Plotter:
         return result
 
     def component_sizes(self):
+        logger.debug('Processing component_sizes')
         assigned_comps = self.analyzer.df[self.analyzer.df['comp'] >= 0]
         d = dict(assigned_comps.groupby('comp')['id'].count())
         return [int(d[k]) for k in range(len(d))]
 
     def top_cited_papers(self):
+        logger.debug('Processing top_cited_papers')
         min_year, max_year = self.analyzer.df['year'].min(), self.analyzer.df['year'].max()
         ds = ColumnDataSource(PlotPreprocessor.article_view_data_source(
             self.analyzer.top_cited_df, min_year, max_year, False, width=PAPERS_PLOT_WIDTH
@@ -320,7 +323,7 @@ class Plotter:
         return plot
 
     def most_cited_per_year_papers(self):
-        logger.debug('Different colors encode different papers')
+        logger.debug('Processing most_cited_per_year_papers')
         cols = ['year', 'id', 'title', 'authors', 'journal', 'paper_year', 'count']
         most_cited_per_year_df = self.analyzer.max_gain_df[cols].replace(np.nan, "Undefined")
         most_cited_per_year_df['authors'] = most_cited_per_year_df['authors'].apply(
@@ -356,7 +359,7 @@ class Plotter:
         return p
 
     def fastest_growth_per_year_papers(self):
-        logger.debug('Fastest growing papers per year')
+        logger.debug('Processing fastest_growth_per_year_papers')
         logger.debug('Growth(year) = Citation delta (year) / Citations previous year')
         logger.debug('Different colors encode different papers')
         cols = ['year', 'id', 'title', 'authors', 'journal', 'paper_year', 'rel_gain']
@@ -394,6 +397,7 @@ class Plotter:
 
     @staticmethod
     def paper_citations_per_year(df, pid):
+        logger.debug('Processing paper_citations_per_year')
         ds = ColumnDataSource(PlotPreprocessor.article_citation_dynamics_data(df, pid))
         p = figure(tools=TOOLS, toolbar_location="right", plot_width=PLOT_WIDTH,
                    plot_height=SHORT_PLOT_HEIGHT)
@@ -409,6 +413,7 @@ class Plotter:
         return p
 
     def papers_by_year(self):
+        logger.debug('Processing papers_by_year')
         ds_stats = ColumnDataSource(PlotPreprocessor.papers_statistics_data(self.analyzer.df))
         min_year, max_year = self.analyzer.df['year'].min(), self.analyzer.df['year'].max()
         p = figure(tools=TOOLS, toolbar_location="right",
@@ -439,6 +444,7 @@ class Plotter:
         return wc
 
     def plot_keywords_frequencies(self, freq_kwds, n=20):
+        logger.debug('Processing plot_keywords_frequencies')
         keywords_df, years = PlotPreprocessor.frequent_keywords_data(
             freq_kwds, self.analyzer.df, self.analyzer.corpus_tokens, self.analyzer.corpus_counts, n
         )
@@ -448,6 +454,7 @@ class Plotter:
 
     @staticmethod
     def plot_keywords_timeline(keywords_df, years):
+        logger.debug('Processing plot_keywords_timeline')
         # Define the value dimensions
         max_numbers = keywords_df['number'].max()
         vdim = hv.Dimension('number', range=(-10, max_numbers + 10))
@@ -483,6 +490,7 @@ class Plotter:
         return p
 
     def author_statistics(self):
+        logger.debug('Processing author_statistics')
         authors = self.analyzer.author_stats['author']
         sums = self.analyzer.author_stats['sum']
         if self.analyzer.papers_graph.nodes():
@@ -493,6 +501,7 @@ class Plotter:
         return list(zip([trim(a, MAX_AUTHOR_LENGTH) for a in authors], sums, topics))
 
     def journal_statistics(self):
+        logger.debug('Processing journal_statistics')
         journals = self.analyzer.journal_stats['journal']
         sums = self.analyzer.journal_stats['sum']
         if self.analyzer.papers_graph.nodes():
@@ -556,7 +565,7 @@ class Plotter:
         return html_tooltips_str
 
     def plot_papers_graph(self):
-        logger.debug('Preparing sparse graph')
+        logger.debug('Processing plot_papers_graph')
         gs = sparse_graph(self.analyzer.weighted_similarity_graph, PapersAnalyzer.PAPERS_GRAPH_EDGES_TO_NODES)
         df = self.analyzer.df
         pids = df['id']
@@ -652,6 +661,7 @@ class Plotter:
             if self.analyzer.evolution_df is None: None, as no evolution can be observed in 1 step
             Sankey diagram + table with keywords
         """
+        logger.debug('Processing topic_evolution')
         # Topic evolution analysis failed, one step is not enough to analyze evolution
         if self.analyzer.evolution_df is None or not self.analyzer.evolution_kwds:
             logger.debug(f'Topic evolution failure, '
