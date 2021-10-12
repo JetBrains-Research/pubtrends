@@ -6,6 +6,28 @@
 {% block body %}
 {{ super() }}
 
+<h3>Emotions summary</h3>
+<table class="table table-sm table-bordered table-striped">
+    <thead>
+    <tr>
+        <th scope="col">#</th>
+        <th scope="col">Key</th>
+        <th scope="col">Average</th>
+        <th scope="col">Count</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for k, a, c in emotions_summary %}
+    <tr>
+        <th scope="row">{{ loop.index }}</th>
+        <td>{{ k }}</td>
+        <td>{{ a }}</td>
+        <td>{{ c }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
 <h3>Messages</h3>
 <table class="table table-sm table-bordered table-striped">
     <thead>
@@ -31,6 +53,7 @@
 </table>
 <small class="form-text text-muted">{{recent}} recent.</small>
 
+
 <h3>Recent emotions</h3>
 <table class="table table-sm table-bordered table-striped">
     <thead>
@@ -55,27 +78,5 @@
     </tbody>
 </table>
 <small class="form-text text-muted">{{recent}} recent.</small>
-
-<h3>Emotions summary</h3>
-<table class="table table-sm table-bordered table-striped">
-    <thead>
-    <tr>
-        <th scope="col">#</th>
-        <th scope="col">Key</th>
-        <th scope="col">Value</th>
-        <th scope="col">Count</th>
-    </tr>
-    </thead>
-    <tbody>
-    {% for k, v, c in emotions_summary %}
-    <tr>
-        <th scope="row">{{ loop.index }}</th>
-        <td>{{ k }}</td>
-        <td>{{ v }}</td>
-        <td>{{ c }}</td>
-    </tr>
-    {% endfor %}
-    </tbody>
-</table>
 
 {% endblock body %}
