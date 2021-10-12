@@ -153,17 +153,19 @@ def word2vec_tokens(df, corpus_tokens, stems_tokens_map, vector_size=64):
     logger.debug(f'Compute words embeddings with word2vec')
     corpus_tokens_set = set(corpus_tokens)
     logger.debug('Collecting sentences across dataset')
-    # Using generators and flattening for speed purposes
-    # NOTE: we split mesh and keywords by , into separate sentences
-    sentences = chain.from_iterable(
-        filter(lambda l: len(l) > 0, (
+    sentences = list(chain.from_iterable(  # flatten iterable of lists
+        filter(
+            lambda l: len(l) >= 5,  # Ignore short sentences
             [
-                stems_tokens_map[s] for s, _ in stemmed_tokens(preprocess_text(sentence.strip()))
-                if s in stems_tokens_map and stems_tokens_map[s] in corpus_tokens_set
-            ] for sentence in f'{title}.{abstract}.{mesh}.{keywords}'.split('.') if len(sentence.strip()) > 0
-        )) for title, abstract, mesh, keywords in
+                [
+                    stems_tokens_map[s] for s, _ in stemmed_tokens(preprocess_text(sentence.strip()))
+                    if s in stems_tokens_map and stems_tokens_map[s] in corpus_tokens_set
+                ] for sentence in f'{title}.{abstract}.{mesh}.{keywords}'.split('.') if len(sentence.strip()) > 0
+            ]
+        ) for title, abstract, mesh, keywords in
+        # NOTE: we split mesh and keywords by commas into separate sentences
         zip(df['title'], df['abstract'], df['mesh'].replace(',', '.'), df['keywords'].replace(',', '.'))
-    )
+    ))
     logger.debug('Training word2vec model')
     w2v = Word2Vec(sentences, vector_size=vector_size, min_count=0, workers=1, epochs=10, seed=42)
     logger.debug('Retrieve word embeddings, corresponding subjects and reorder according to corpus_terms')
@@ -188,8 +190,9 @@ def texts_embeddings(corpus_counts, tokens_w2v_embeddings):
     logger.debug(f'TFIDF shape {tfidf.shape}')
 
     logger.debug('Compute text embeddings as TF-IDF weighted average of word2vec tokens embeddings')
-    texts_embeddings = np.array(
-        [np.mean([np.multiply(tokens_w2v_embeddings[w], tfidf[i, w]) for w in range(tfidf.shape[1])], axis=0) for i in
-         range(tfidf.shape[0])])
+    texts_embeddings = np.array([
+        np.mean([np.multiply(tokens_w2v_embeddings[w], tfidf[i, w]) for w in range(tfidf.shape[1])], axis=0)
+        for i in range(tfidf.shape[0])
+    ])
     logger.debug(f'Texts embeddings shape: {texts_embeddings.shape}')
     return texts_embeddings
