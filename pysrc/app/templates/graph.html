@@ -367,9 +367,10 @@
                                 citation = data.citation;
                             }
                             content.innerHTML = "<p style='text-align:left;'><small><b>Similarity</b><br>" +
-                                "Similarity is computed based on citations and text similarity between papers. " +
+                                "Similarity is computed based on citations <br>" +
+                                "and text similarity between papers.<br>" +
                                 '<span style="color:dodgerblue;">Co-citations</span>: ' + cocitation + "<br>" +
-                                '<span style="color:dodgerblue;">Bibliographic coupling</span>: ' + bibcoupling + "<br>" +
+                                '<span style="color:dodgerblue;">Common references</span>: ' + bibcoupling + "<br>" +
                                 '<span style="color:dodgerblue;">Citation</span>: ' + citation + "</p>";
                         } else if ('title' in data) {
                             // Paper
@@ -388,7 +389,7 @@
                                 '<svg width="16" height="16"><rect width="16" height="16" ' +
                                 'style="fill:' + topics_palette[data.topic] + '";/></svg> ' +
                                 topics_description[data.topic] +
-                                "</small></>p>";
+                                "</small></p>";
                             }
                             // @formatter:on
                         return content;
@@ -759,7 +760,7 @@
                     intro: "Papers graph represents similarity among papers.<br>" +
                         "Papers are visualized as nodes, similarities as edges. " +
                         "Node size shows paper citations count, see Color menu for node colors options. <br>" +
-                        "Edge width shows papers similarity, the thicker the more similar papers are.<br>" +
+                        "Edge width shows papers graph similarity, the thicker the more similar papers are.<br>" +
                         "Similar papers are highlighted on hover.<br>" +
                         "Use <strong>F</strong> to freeze highlighting, <strong>Escape</strong> to unfreeze.<br>" +
                         "Edge color - similarity type.<br>" +
@@ -767,7 +768,7 @@
                         "&nbsp;<em>Co-citation</em>" +
                         "<br>" +
                         '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(155,89,182,0.5);"/></svg>' +
-                        "&nbsp;<em>Bibliographic coupling</em> " +
+                        "&nbsp;<em>Common references</em> " +
                         "<br>" +
                         '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(52,152,219,0.5);"/></svg>' +
                         "&nbsp;<em>Citation</em>"
