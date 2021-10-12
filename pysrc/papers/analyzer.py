@@ -53,7 +53,7 @@ class PapersAnalyzer:
     PAPERS_GRAPH_EDGES_TO_NODES = 5
 
     # Global vectorization max vocabulary size
-    VECTOR_WORDS = 1000
+    VECTOR_WORDS = 10000
     # Terms with lower frequency will be ignored, remove rare words
     VECTOR_MIN_DF = 0.01
     # Terms with higher frequency will be ignored, remove abundant words
