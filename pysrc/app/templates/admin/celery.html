@@ -6,13 +6,13 @@
 {% block body %}
 {{ super() }}
 
-<h3>Celery active jobs</h3>
+<h3>Active jobs</h3>
 <pre>{{ active }}</pre>
 
-<h3>Celery scheduled jobs</h3>
+<h3>Scheduled jobs</h3>
 <pre>{{ scheduled }}</pre>
 
-<h3>Celery revoked jobs</h3>
+<h3>Revoked jobs</h3>
 <pre>{{ revoked }}</pre>
 
 {% endblock body %}
