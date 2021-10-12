@@ -191,7 +191,7 @@ def texts_embeddings(corpus_counts, tokens_w2v_embeddings):
 
     logger.debug('Compute text embeddings as TF-IDF weighted average of word2vec tokens embeddings')
     texts_embeddings = np.array([
-        np.mean([np.multiply(tokens_w2v_embeddings[w], tfidf[i, w]) for w in range(tfidf.shape[1])], axis=0)
+        np.mean([tokens_w2v_embeddings[w] * tfidf[i, w] for w in range(tfidf.shape[1])], axis=0)
         for i in range(tfidf.shape[0])
     ])
     logger.debug(f'Texts embeddings shape: {texts_embeddings.shape}')
