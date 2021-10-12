@@ -17,7 +17,7 @@ class TestTopicEvolution(unittest.TestCase):
         loader = MockLoader()
         cls.analyzer = PapersAnalyzer(loader, TestPapersAnalyzer.PUBTRENDS_CONFIG, test=True)
         ids = cls.analyzer.search_terms(query='query')
-        cls.analyzer.analyze_papers(ids, 'query')
+        cls.analyzer.analyze_papers(ids, 'query', test=True)
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.df['id'])
         cls.analyzer.bibliographic_coupling_df = loader.load_bibliographic_coupling(cls.analyzer.df['id'])
 

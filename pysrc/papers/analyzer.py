@@ -55,7 +55,7 @@ class PapersAnalyzer:
     # Global vectorization max vocabulary size
     VECTOR_WORDS = 10000
     # Terms with lower frequency will be ignored, remove rare words
-    VECTOR_MIN_DF = 0.01
+    VECTOR_MIN_DF = 0.001
     # Terms with higher frequency will be ignored, remove abundant words
     VECTOR_MAX_DF = 0.8
 
@@ -119,7 +119,7 @@ class PapersAnalyzer:
         logger.debug(f'Loaded {len(references)} references')
         return references
 
-    def analyze_papers(self, ids, query, task=None):
+    def analyze_papers(self, ids, query, test=False, task=None):
         self.progress.info('Loading publication data', current=2, task=task)
         self.query = query
         self.pub_df = self.loader.load_publications(ids)
@@ -135,11 +135,12 @@ class PapersAnalyzer:
             self.pub_df,
             max_features=PapersAnalyzer.VECTOR_WORDS,
             min_df=PapersAnalyzer.VECTOR_MIN_DF,
-            max_df=PapersAnalyzer.VECTOR_MAX_DF
+            max_df=PapersAnalyzer.VECTOR_MAX_DF,
+            test=test
         )
         logger.debug('Analyzing tokens embeddings')
         self.corpus_tokens_embedding = word2vec_tokens(
-            self.pub_df, self.corpus_tokens, self.stems_tokens_map
+            self.pub_df, self.corpus_tokens, self.stems_tokens_map, test=test
         )
         logger.debug('Analyzing texts embeddings')
         self.texts_embeddings = texts_embeddings(

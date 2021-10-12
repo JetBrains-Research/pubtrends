@@ -16,7 +16,7 @@ class TestText(unittest.TestCase):
         cls.analyzer = PapersAnalyzer(loader, TestText.PUBTRENDS_CONFIG, test=True)
         ids = cls.analyzer.search_terms(query='query')
         cls.analyzer.TOPIC_MIN_SIZE = 0  # Disable merging for tests
-        cls.analyzer.analyze_papers(ids, 'query')
+        cls.analyzer.analyze_papers(ids, 'query', test=True)
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.df['id'])
         cls.analyzer.bibliographic_coupling_df = loader.load_bibliographic_coupling(cls.analyzer.df['id'])
 
@@ -35,6 +35,7 @@ class TestText(unittest.TestCase):
         self.assertEqual(
             self.analyzer.corpus_tokens,
             ['abstract',
+             'article',
              'breakthrough',
              'interesting',
              'paper',
@@ -47,8 +48,8 @@ class TestText(unittest.TestCase):
         # print(self.analyzer.corpus_counts.toarray())
         self.assertTrue(np.array_equal(
             self.analyzer.corpus_counts.toarray(),
-            [[0, 0, 0, 1, 1, 1, 1, 0, 0],
-             [1, 0, 0, 0, 0, 1, 1, 1, 0],
-             [1, 0, 0, 0, 0, 0, 1, 1, 1],
-             [0, 0, 1, 1, 1, 0, 0, 1, 1],
-             [0, 1, 0, 0, 1, 1, 0, 0, 1]]))
+            [[0, 1, 0, 0, 1, 1, 1, 1, 0, 0],
+             [1, 1, 0, 0, 0, 0, 1, 1, 1, 0],
+             [1, 1, 0, 0, 0, 0, 0, 1, 1, 1],
+             [0, 1, 0, 1, 1, 1, 0, 0, 1, 1],
+             [0, 1, 1, 0, 0, 1, 1, 0, 0, 1]]))

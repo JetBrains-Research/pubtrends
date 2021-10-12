@@ -61,7 +61,7 @@ class AnalyzerFiles(PapersAnalyzer):
     def teardown(self):
         self.progress.remove_handler()
 
-    def analyze_ids(self, ids, source, query, limit, task=None):
+    def analyze_ids(self, ids, source, query, limit, test=False, task=None):
         self.query = query
         self.query_folder = self.query_to_folder(source, query, limit)
         logger.info(f'Query folder: {self.query_folder}')
@@ -104,11 +104,12 @@ class AnalyzerFiles(PapersAnalyzer):
             self.pub_df,
             max_features=PapersAnalyzer.VECTOR_WORDS,
             min_df=PapersAnalyzer.VECTOR_MIN_DF,
-            max_df=PapersAnalyzer.VECTOR_MAX_DF
+            max_df=PapersAnalyzer.VECTOR_MAX_DF,
+            test=test
         )
         logger.debug('Analyzing tokens embeddings')
         self.corpus_tokens_embedding = word2vec_tokens(
-            self.pub_df, self.corpus_tokens, self.stems_tokens_map
+            self.pub_df, self.corpus_tokens, self.stems_tokens_map, test=test
         )
         logger.debug('Analyzing texts embeddings')
         self.texts_embeddings = texts_embeddings(

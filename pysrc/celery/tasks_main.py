@@ -39,7 +39,7 @@ def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, e
                 PapersAnalyzer.EXPAND_SIMILARITY_THRESHOLD,
                 analyzer.progress, current=2, task=current_task
             )
-        analyzer.analyze_papers(ids, query, task=current_task)
+        analyzer.analyze_papers(ids, query, test=test, task=current_task)
     finally:
         loader.close_connection()
 
@@ -76,7 +76,7 @@ def analyze_search_terms_files(source, query, sort=None, limit=None, noreviews=T
                 PapersAnalyzer.EXPAND_SIMILARITY_THRESHOLD,
                 analyzer.progress, current=2, task=current_task
             )
-        analyzer.analyze_ids(ids, source, query, limit, task=current_task)
+        analyzer.analyze_ids(ids, source, query, limit, test=test, task=current_task)
         analyzer.progress.done(task=current_task)
         analyzer.teardown()
         return analyzer.query_folder
@@ -89,10 +89,10 @@ def analyze_id_list(source, ids, query, analysis_type, limit=None, test=False):
     config = PubtrendsConfig(test=test)
     loader = Loaders.get_loader(source, config)
     analyzer = PapersAnalyzer(loader, config)
-    return _analyze_id_list(analyzer, source, ids, query, analysis_type, limit, current_task)
+    return _analyze_id_list(analyzer, source, ids, query, analysis_type, limit, test, current_task)
 
 
-def _analyze_id_list(analyzer, source, ids, query, analysis_type=IDS_ANALYSIS_TYPE, limit=None, task=None):
+def _analyze_id_list(analyzer, source, ids, query, analysis_type=IDS_ANALYSIS_TYPE, limit=None, test=False, task=None):
     if len(ids) == 0:
         raise RuntimeError("Empty papers list")
     analyzer.progress.info(f'Analyzing paper(s) from {source}', current=1, task=task)
@@ -117,7 +117,7 @@ def _analyze_id_list(analyzer, source, ids, query, analysis_type=IDS_ANALYSIS_TY
             ids = ids  # Leave intact
         else:
             raise Exception(f'Illegal analysis type {analysis_type}')
-        analyzer.analyze_papers(ids, query, task=task)
+        analyzer.analyze_papers(ids, query, test=test, task=task)
     finally:
         analyzer.loader.close_connection()
 
@@ -141,7 +141,7 @@ def analyze_search_paper(source, key, value, test=False):
             return _analyze_id_list(
                 analyzer,
                 source, ids=result, query=f'Paper {key}={value}', analysis_type=PAPER_ANALYSIS_TYPE, limit='',
-                task=current_task
+                test=test, task=current_task
             )
         elif len(result) == 0:
             raise SearchError(f'Found no papers with {key}={value}')
@@ -159,7 +159,7 @@ def analyze_pubmed_search(query, limit=None, test=False):
     analyzer.progress.info(f"Searching Pubmed query: '{query}', limit {limit}", current=1, task=current_task)
     ids = pubmed_search(query, limit)
     return _analyze_id_list(analyzer, 'Pubmed', ids, query=query, analysis_type=IDS_ANALYSIS_TYPE, limit=limit,
-                            task=current_task)
+                            test=test, task=current_task)
 
 
 @pubtrends_celery.task(name='analyze_pubmed_search_files')
@@ -170,7 +170,7 @@ def analyze_pubmed_search_files(query, limit, test=False):
     try:
         analyzer.progress.info(f"Searching Pubmed query: '{query}', limit {limit}", current=1, task=current_task)
         ids = pubmed_search(query, limit)
-        analyzer.analyze_ids(ids, 'Pubmed', query, limit, task=current_task)
+        analyzer.analyze_ids(ids, 'Pubmed', query, limit, test=test, task=current_task)
         analyzer.progress.done(task=current_task)
         analyzer.teardown()
         return analyzer.query_folder

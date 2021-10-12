@@ -19,7 +19,7 @@ class TestPapersAnalyzer(unittest.TestCase):
         cls.analyzer = PapersAnalyzer(loader, TestPapersAnalyzer.PUBTRENDS_CONFIG, test=True)
         ids = cls.analyzer.search_terms(query='query')
         cls.analyzer.TOPIC_MIN_SIZE = 0  # Disable merging for tests
-        cls.analyzer.analyze_papers(ids, 'query')
+        cls.analyzer.analyze_papers(ids, 'query', test=True)
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.df['id'])
         cls.analyzer.bibliographic_coupling_df = loader.load_bibliographic_coupling(cls.analyzer.df['id'])
 
@@ -69,7 +69,7 @@ class TestPapersAnalyzerSingle(unittest.TestCase):
     def setUpClass(cls):
         cls.analyzer = PapersAnalyzer(MockLoaderSingle(), TestPapersAnalyzerSingle.PUBTRENDS_CONFIG, test=True)
         ids = cls.analyzer.search_terms(query='query')
-        cls.analyzer.analyze_papers(ids, 'query')
+        cls.analyzer.analyze_papers(ids, 'query', test=True)
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.df['id'])
 
     def test_attrs(self):
@@ -105,7 +105,7 @@ class TestPapersAnalyzerMissingPaper(unittest.TestCase):
     def test_missing_paper(self):
         analyzer = PapersAnalyzer(MockLoaderSingle(), TestPapersAnalyzerSingle.PUBTRENDS_CONFIG, test=True)
         good_ids = list(analyzer.search_terms(query='query'))
-        analyzer.analyze_papers(good_ids + ['non-existing-id'], 'query')
+        analyzer.analyze_papers(good_ids + ['non-existing-id'], 'query', test=True)
         self.assertEqual(good_ids, list(analyzer.df['id']))
 
 
@@ -120,7 +120,7 @@ class TestPapersAnalyzerEmpty(unittest.TestCase):
     def test_setup(self):
         with self.assertRaises(Exception):
             ids = self.analyzer.search_terms(query='query')
-            self.analyzer.analyze_papers(ids, query='query', task=None)
+            self.analyzer.analyze_papers(ids, query='query', test=True)
 
 
 if __name__ == '__main__':

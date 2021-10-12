@@ -24,7 +24,7 @@ STOP_WORDS_SET = set(stopwords.words('english'))
 NLTK_LOCK = Lock()
 
 
-def vectorize_corpus(df, max_features, min_df, max_df):
+def vectorize_corpus(df, max_features, min_df, max_df, test=False):
     """
     Create vectorization for papers in df.
     :param df: papers dataframe
@@ -37,7 +37,7 @@ def vectorize_corpus(df, max_features, min_df, max_df):
     logger.debug(f'Vectorize corpus')
     vectorizer = CountVectorizer(
         min_df=min_df,
-        max_df=max_df if len(df) > 1 else 1.0,  # For tests
+        max_df=max_df if not test else 1.0,
         max_features=max_features,
         preprocessor=lambda t: t,
         tokenizer=lambda t: t
@@ -149,13 +149,13 @@ def build_stems_to_tokens_map(stems_and_tokens):
     return stems_tokens_map
 
 
-def word2vec_tokens(df, corpus_tokens, stems_tokens_map, vector_size=64):
+def word2vec_tokens(df, corpus_tokens, stems_tokens_map, vector_size=64, test=False):
     logger.debug(f'Compute words embeddings with word2vec')
     corpus_tokens_set = set(corpus_tokens)
     logger.debug('Collecting sentences across dataset')
     sentences = list(chain.from_iterable(  # flatten iterable of lists
         filter(
-            lambda l: len(l) >= 5,  # Ignore short sentences
+            lambda l: len(l) >= 3 if not test else 1,  # Ignore short sentences
             [
                 [
                     stems_tokens_map[s] for s, _ in stemmed_tokens(preprocess_text(sentence.strip()))

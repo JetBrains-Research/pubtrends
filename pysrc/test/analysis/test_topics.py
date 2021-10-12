@@ -19,7 +19,7 @@ class TestTopics(unittest.TestCase):
         cls.analyzer = PapersAnalyzer(loader, TestTopics.PUBTRENDS_CONFIG, test=True)
         ids = cls.analyzer.search_terms(query='query')
         cls.analyzer.TOPIC_MIN_SIZE = 0  # Disable merging for tests
-        cls.analyzer.analyze_papers(ids, 'query')
+        cls.analyzer.analyze_papers(ids, 'query', test=True)
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.df['id'])
         cls.analyzer.bibliographic_coupling_df = loader.load_bibliographic_coupling(cls.analyzer.df['id'])
 
@@ -41,7 +41,7 @@ class TestTopics(unittest.TestCase):
     def test_heatmap_topics_similarity(self):
         matrix = compute_topics_similarity_matrix(self.analyzer.papers_embeddings, self.analyzer.df['comp'])
         # print(matrix)
-        similarities = np.array([[0.3400937]])
+        similarities = np.array([[0.34057575]])
         self.assertTrue(np.allclose(similarities, matrix, rtol=1e-3))
 
     @staticmethod

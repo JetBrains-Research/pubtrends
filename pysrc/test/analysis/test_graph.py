@@ -17,7 +17,7 @@ class TestBuildGraph(unittest.TestCase):
         cls.analyzer = PapersAnalyzer(loader, TestBuildGraph.PUBTRENDS_CONFIG, test=True)
         ids = cls.analyzer.search_terms(query='query')
         cls.analyzer.TOPIC_MIN_SIZE = 0  # Disable merging for tests
-        cls.analyzer.analyze_papers(ids, 'query')
+        cls.analyzer.analyze_papers(ids, 'query', test=True)
 
     def test_build_similarity_graph_edges(self):
         edges = list(self.analyzer.papers_graph.edges(data=True))
@@ -69,7 +69,7 @@ class TestBuildGraphSingle(unittest.TestCase):
     def setUpClass(cls):
         cls.analyzer = PapersAnalyzer(MockLoaderSingle(), TestBuildGraphSingle.PUBTRENDS_CONFIG, test=True)
         ids = cls.analyzer.search_terms(query='query')
-        cls.analyzer.analyze_papers(ids, 'query')
+        cls.analyzer.analyze_papers(ids, 'query', test=True)
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.df['id'])
 
 

@@ -18,7 +18,7 @@ class TestPopularPapers(unittest.TestCase):
         cls.analyzer = PapersAnalyzer(loader, TestPopularPapers.PUBTRENDS_CONFIG, test=True)
         ids = cls.analyzer.search_terms(query='query')
         cls.analyzer.TOPIC_MIN_SIZE = 0  # Disable merging for tests
-        cls.analyzer.analyze_papers(ids, 'query')
+        cls.analyzer.analyze_papers(ids, 'query', test=True)
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.df['id'])
         cls.analyzer.bibliographic_coupling_df = loader.load_bibliographic_coupling(cls.analyzer.df['id'])
 
@@ -65,7 +65,7 @@ class TestPopularPapersSingle(unittest.TestCase):
     def setUpClass(cls):
         cls.analyzer = PapersAnalyzer(MockLoaderSingle(), TestPopularPapersSingle.PUBTRENDS_CONFIG, test=True)
         ids = cls.analyzer.search_terms(query='query')
-        cls.analyzer.analyze_papers(ids, 'query')
+        cls.analyzer.analyze_papers(ids, 'query', test=True)
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.df['id'])
 
     def test_find_max_gain_papers_count(self):
