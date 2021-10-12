@@ -87,7 +87,7 @@ def process_cocitations_postgres(cursor):
     lines = 0
     for row in cursor:
         lines += 1
-        if lines % 100 == 1:
+        if lines % 1000 == 1:
             logger.debug(f'Processed {lines} lines of cocitations')
         citing, year, cited_list = row
         cited_list.sort()
@@ -109,7 +109,7 @@ def process_bibliographic_coupling_postgres(cursor):
     lines = 0
     for row in cursor:
         lines += 1
-        if lines % 100 == 1:
+        if lines % 1000 == 1:
             logger.debug(f'Processed {lines} lines of bibliographic coupling')
         _, citing_list = row
         citing_list.sort()

@@ -54,7 +54,7 @@ def _precompute(graph, key='weight', p=0.5, q=2.0):
     probabilities2 = {node: dict() for node in graph.nodes()}
 
     for i, node in enumerate(graph.nodes()):
-        if i % 100 == 1:
+        if i % 1000 == 1:
             logger.debug(f'Analyzed probabilities for {i} nodes')
         neighbors = list(graph.neighbors(node))
 
