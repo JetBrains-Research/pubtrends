@@ -57,7 +57,7 @@ class TestPapersAnalyzerSingle(unittest.TestCase):
         all_attrs = [
             'df',
             'query',
-            'papers_graph',
+            'sparse_papers_graph',
             'pub_types',
             'cit_stats_df',
             'cit_df',

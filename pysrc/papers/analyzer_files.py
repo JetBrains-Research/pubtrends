@@ -282,18 +282,18 @@ class AnalyzerFiles(PapersAnalyzer):
         del t
 
         self.progress.info('Preparing papers graphs', current=15, task=task)
-        self.sparse_similarity_graph = sparse_graph(self.weighted_similarity_graph,
-                                                    max_edges_to_nodes=PapersAnalyzer.PAPERS_GRAPH_EDGES_TO_NODES)
+        logger.debug('Prepare sparse graph for visualization')
+        self.sparse_papers_graph = self.prepare_sparse_papers_graph(self.papers_graph, self.weighted_similarity_graph)
         path_papers_graph = os.path.join(self.query_folder, 'papers.html')
         logging.info(f'Saving papers graph for bokeh {path_papers_graph}')
         output_file(filename=path_papers_graph, title="Papers graph")
-        save(papers_graph(self.sparse_similarity_graph, self.df, plot_width=1200, plot_height=1200))
+        save(papers_graph(self.sparse_papers_graph, self.df, plot_width=1200, plot_height=1200))
         reset_output()
 
         path_papers_graph_interactive = os.path.join(self.query_folder, 'papers_interactive.html')
         logging.info(f'Saving papers graph for cytoscape.js {path_papers_graph_interactive}')
         template_path = os.path.realpath(os.path.join(__file__, '../../papers_template.html'))
-        save_sim_papers_graph_interactive(self.sparse_similarity_graph, self.df, clusters_description,
+        save_sim_papers_graph_interactive(self.sparse_papers_graph, self.df, clusters_description,
                                           mesh_clusters_description, template_path, path_papers_graph_interactive)
 
         self.progress.info('Other analyses', current=16, task=task)

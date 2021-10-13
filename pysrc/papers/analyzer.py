@@ -188,6 +188,8 @@ class PapersAnalyzer:
                            f'{self.papers_graph.number_of_edges()} edges', current=7, task=task)
         logger.debug('Analyzing papers graph embeddings')
         self.weighted_similarity_graph = to_weighted_graph(self.papers_graph, PapersAnalyzer.similarity)
+        logger.debug('Prepare sparse graph for visualization')
+        self.sparse_papers_graph = self.prepare_sparse_papers_graph(self.papers_graph, self.weighted_similarity_graph)
 
         if PapersAnalyzer.GRAPH_EMBEDDINGS_FACTOR != 0:
             gs = sparse_graph(self.weighted_similarity_graph)
@@ -284,6 +286,16 @@ class PapersAnalyzer:
                 self.evolution_kwds = None
 
     @staticmethod
+    def prepare_sparse_papers_graph(papers_graph, weighted_similarity_graph):
+        sparse_papers_graph = sparse_graph(weighted_similarity_graph, PapersAnalyzer.PAPERS_GRAPH_EDGES_TO_NODES)
+        for i, j in sparse_papers_graph.edges():
+            d = papers_graph.get_edge_data(i, j)
+            for k, v in d.items():
+                sparse_papers_graph[i][j][k] = v
+            sparse_papers_graph[i][j]['similarity'] = PapersAnalyzer.similarity(d)
+        return sparse_papers_graph
+
+    @staticmethod
     def similarity(d):
         return \
             PapersAnalyzer.SIMILARITY_BIBLIOGRAPHIC_COUPLING * np.log1p(d.get('bibcoupling', 0)) + \
@@ -298,7 +310,7 @@ class PapersAnalyzer:
             df=self.df.to_json(),
             cit_df=self.cit_df.to_json(),
             kwd_df=self.kwd_df.to_json(),
-            papers_graph=json_graph.node_link_data(self.papers_graph),
+            sparse_papers_graph=json_graph.node_link_data(self.sparse_papers_graph),
             top_cited_papers=self.top_cited_papers,
             max_gain_papers=self.max_gain_papers,
             max_rel_gain_papers=self.max_rel_gain_papers
@@ -330,7 +342,7 @@ class PapersAnalyzer:
         kwd_df['kwd'] = kwd_df['kwd'].apply(lambda x: [(el[0], float(el[1])) for el in x])
 
         # Restore citation and structure graphs
-        papers_graph = json_graph.node_link_graph(fields['papers_graph'])
+        sparse_papers_graph = json_graph.node_link_graph(fields['sparse_papers_graph'])
 
         top_cited_papers = fields['top_cited_papers']
         max_gain_papers = fields['max_gain_papers']
@@ -340,7 +352,7 @@ class PapersAnalyzer:
             df=df,
             cit_df=cit_df,
             kwd_df=kwd_df,
-            papers_graph=papers_graph,
+            sparse_papers_graph=sparse_papers_graph,
             top_cited_papers=top_cited_papers,
             max_gain_papers=max_gain_papers,
             max_rel_gain_papers=max_rel_gain_papers
@@ -351,7 +363,7 @@ class PapersAnalyzer:
         Init analyzer with required fields.
         NOTE: results page doesn't use dump/load for visualization.
         Look for init calls in the codebase to find out useful fields for serialization.
-        :param fields: desearialized JSON
+        :param fields: deserialized JSON
         """
         logger.debug('Loading analyzer')
         loaded = PapersAnalyzer.load(fields)
@@ -360,7 +372,7 @@ class PapersAnalyzer:
         # Used for components naming
         self.kwd_df = loaded['kwd_df']
         # Used for network visualization
-        self.papers_graph = loaded['papers_graph']
+        self.sparse_papers_graph = loaded['sparse_papers_graph']
         # Used for navigation
         self.top_cited_papers = loaded['top_cited_papers']
         self.max_gain_papers = loaded['max_gain_papers']

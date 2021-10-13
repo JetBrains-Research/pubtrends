@@ -21,9 +21,8 @@ from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.celery.tasks_cache import get_or_cancel_task
 from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, analyze_id_list, \
     analyze_pubmed_search_files, analyze_pubmed_search, analyze_search_terms_files
-from pysrc.papers.analysis.graph import to_weighted_graph, sparse_graph
-from pysrc.papers.analyzer_files import FILES_WITH_DESCRIPTIONS, ANALYSIS_FILES_TYPE
 from pysrc.papers.analyzer import PapersAnalyzer
+from pysrc.papers.analyzer_files import FILES_WITH_DESCRIPTIONS, ANALYSIS_FILES_TYPE
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
@@ -459,17 +458,8 @@ def graph():
                 [w[0] for w in analyzer.kwd_df[analyzer.kwd_df['comp'] == comp]['kwd'].values[0][:TOPIC_KEYWORDS]]
             ) for comp in sorted(set(analyzer.df['comp']))}
             logger.debug('Computing sparse graph')
-            sg = sparse_graph(to_weighted_graph(analyzer.papers_graph, PapersAnalyzer.similarity),
-                              PapersAnalyzer.PAPERS_GRAPH_EDGES_TO_NODES)
-            logger.debug('Restoring necessary edges')
-            for i, j in sg.edges():
-                d = analyzer.papers_graph.get_edge_data(i, j)
-                for k, v in d.items():
-                    sg[i][j][k] = v
-                sg[i][j]['similarity'] = PapersAnalyzer.similarity(d)
-
             graph_cs = PlotPreprocessor.dump_similarity_graph_cytoscape(
-                analyzer.df, sg
+                analyzer.df, analyzer.sparse_papers_graph
             )
             logger.info(f'/graph success similarity {log_request(request)}')
             return render_template(
