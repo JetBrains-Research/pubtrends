@@ -39,10 +39,9 @@ def prepare_paper_data(data, source):
         doi = ''
 
     logger.debug('Estimate related topics for the paper')
-    sg = analyzer.papers_graph
-    if sg.nodes() and sg.has_node(pid):
+    if analyzer.sparse_papers_graph.nodes() and analyzer.sparse_papers_graph.has_node(pid):
         related_topics = {}
-        for v in sg[pid]:
+        for v in analyzer.sparse_papers_graph[pid]:
             c = analyzer.df[analyzer.df['id'] == v]['comp'].values[0]
             if c in related_topics:
                 related_topics[c] += 1
@@ -66,17 +65,13 @@ def prepare_paper_data(data, source):
     )
 
     logger.debug('Computing aggregated graph')
-    sg = analyzer.papers_graph.copy()
-    for _, _, d in sg.edges(data=True):
-        d['similarity'] = PapersAnalyzer.similarity(d)
-
-    if sg.nodes() and sg.has_node(pid):
+    if analyzer.sparse_papers_graph.nodes() and analyzer.sparse_papers_graph.has_node(pid):
         similar_papers = map(
             lambda v: (analyzer.df[analyzer.df['id'] == v]['id'].values[0],
                        analyzer.df[analyzer.df['id'] == v]['title'].values[0],
                        analyzer.df[analyzer.df['id'] == v]['year'].values[0],
-                       sg.edges[pid, v]['similarity']),
-            list(sg[pid])
+                       analyzer.sparse_papers_graph.edges[pid, v]['similarity']),
+            list(analyzer.sparse_papers_graph[pid])
         )
         similar_papers = sorted(similar_papers, key=lambda x: x[3], reverse=True)[:50]
     else:
