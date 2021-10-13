@@ -567,7 +567,7 @@ class Plotter:
 
     def plot_papers_graph(self):
         logger.debug('Processing plot_papers_graph')
-        gs = sparse_graph(self.analyzer.weighted_similarity_graph, PapersAnalyzer.PAPERS_GRAPH_EDGES_TO_NODES)
+        gs = self.analyzer.sparse_papers_graph
         df = self.analyzer.df
         pids = df['id']
         comps = df['comp']
