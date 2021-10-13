@@ -4,7 +4,7 @@ import logging
 import math
 import os
 from collections import Counter
-from itertools import product
+from itertools import product, chain
 from math import sin, cos, pi, fabs
 
 import jinja2
@@ -100,7 +100,7 @@ class AnalyzerFiles(PapersAnalyzer):
         self.top_cited_papers, self.top_cited_df = find_top_cited_papers(self.df, PapersAnalyzer.TOP_CITED_PAPERS)
 
         self.progress.info('Analyzing title and abstract texts', current=6, task=task)
-        self.corpus_tokens, self.corpus_counts, self.stems_tokens_map = vectorize_corpus(
+        self.corpus, self.corpus_tokens, self.corpus_counts = vectorize_corpus(
             self.pub_df,
             max_features=PapersAnalyzer.VECTOR_WORDS,
             min_df=PapersAnalyzer.VECTOR_MIN_DF,
@@ -109,7 +109,7 @@ class AnalyzerFiles(PapersAnalyzer):
         )
         logger.debug('Analyzing tokens embeddings')
         self.corpus_tokens_embedding = word2vec_tokens(
-            self.pub_df, self.corpus_tokens, self.stems_tokens_map, test=test
+            self.corpus, self.corpus_tokens, test=test
         )
         logger.debug('Analyzing texts embeddings')
         self.texts_embeddings = texts_embeddings(
@@ -130,13 +130,13 @@ class AnalyzerFiles(PapersAnalyzer):
         reset_output()
 
         logger.info('Computing mesh terms')
-        mesh_corpus_terms, mesh_corpus_counts = vectorize_mesh_terms(self.df, mesh_counter)
+        mesh_corpus_tokens, mesh_corpus_counts = vectorize_mesh_tokens(self.df, mesh_counter)
 
-        if len(mesh_corpus_terms) > 0:
+        if len(mesh_corpus_tokens) > 0:
             logger.info('Analyzing mesh terms timeline')
             freq_meshs = get_frequent_mesh_terms(self.top_cited_df)
             keywords_df, years = PlotPreprocessor.frequent_keywords_data(
-                freq_meshs, self.df, mesh_corpus_terms, mesh_corpus_counts, 20
+                freq_meshs, self.df, mesh_corpus_tokens, mesh_corpus_counts, 20
             )
             path_mesh_terms_timeline = os.path.join(self.query_folder, 'timeline_mesh_terms.html')
             logging.info(f'Save frequent mesh terms to file {path_mesh_terms_timeline}')
@@ -212,7 +212,7 @@ class AnalyzerFiles(PapersAnalyzer):
         clusters_pids = self.df[['id', 'comp']].groupby('comp')['id'].apply(list).to_dict()
         clusters_description = get_topics_description(
             self.df, clusters_pids,
-            self.corpus_tokens, self.corpus_counts, self.stems_tokens_map,
+            self.corpus, self.corpus_tokens, self.corpus_counts,
             n_words=PapersAnalyzer.TOPIC_DESCRIPTION_WORDS
         )
 
@@ -226,9 +226,14 @@ class AnalyzerFiles(PapersAnalyzer):
         del t
 
         self.progress.info('Analyzing topics descriptions with MESH terms', current=14, task=task)
+        mesh_corpus = [
+            [[mesh_corpus_tokens[i]] * int(mc) for i, mc in
+             enumerate(np.asarray(mesh_corpus_counts[pid, :]).reshape(-1)) if mc > 0]
+            for pid in range(mesh_corpus_counts.shape[0])
+        ]
         mesh_clusters_description = get_topics_description(
             self.df, clusters_pids,
-            mesh_corpus_terms, mesh_corpus_counts, None,
+            mesh_corpus, mesh_corpus_tokens, mesh_corpus_counts,
             n_words=PapersAnalyzer.TOPIC_DESCRIPTION_WORDS
         )
 
@@ -277,7 +282,8 @@ class AnalyzerFiles(PapersAnalyzer):
         del t
 
         self.progress.info('Preparing papers graphs', current=15, task=task)
-        self.sparse_similarity_graph = sparse_graph(self.weighted_similarity_graph, max_edges_to_nodes=5)
+        self.sparse_similarity_graph = sparse_graph(self.weighted_similarity_graph,
+                                                    max_edges_to_nodes=PapersAnalyzer.PAPERS_GRAPH_EDGES_TO_NODES)
         path_papers_graph = os.path.join(self.query_folder, 'papers.html')
         logging.info(f'Saving papers graph for bokeh {path_papers_graph}')
         output_file(filename=path_papers_graph, title="Papers graph")
@@ -300,7 +306,7 @@ class AnalyzerFiles(PapersAnalyzer):
 
         path_terms_timeline = os.path.join(self.query_folder, "timeline_terms.html")
         logging.info(f'Save frequent tokens to file {path_terms_timeline}')
-        freq_kwds = get_frequent_tokens(self.top_cited_df, self.stems_tokens_map)
+        freq_kwds = get_frequent_tokens(chain(*chain(*self.corpus)))
         output_file(filename=path_terms_timeline, title="Terms timeline")
         keywords_frequencies = plotter.plot_keywords_frequencies(freq_kwds)
         if keywords_frequencies is not None:
@@ -353,7 +359,8 @@ def plot_mesh_terms(mesh_counter, top=100, plot_width=1200, plot_height=400):
     return p
 
 
-def vectorize_mesh_terms(df, mesh_counter, max_features=1000, min_df=0.01, max_df=0.8):
+def vectorize_mesh_tokens(df, mesh_counter, max_features=1000,
+                          min_df=0.1, max_df=PapersAnalyzer.VECTOR_MAX_DF):
     logger.debug(f'Vectorization mesh terms min_df={min_df} max_df={max_df} max_features={max_features}')
     features = []
     for mt, count in mesh_counter.most_common():
@@ -366,17 +373,17 @@ def vectorize_mesh_terms(df, mesh_counter, max_features=1000, min_df=0.01, max_d
     logging.debug(f'Total {len(features)} mesh terms filtered')
 
     counts = np.asmatrix(np.zeros(shape=(len(df), len(features))))
-    for i, mesh_terms in enumerate(df['mesh']):
-        if mesh_terms:
-            for mt in mesh_terms.split(','):
+    for i, mesh_tokens in enumerate(df['mesh']):
+        if mesh_tokens:
+            for mt in mesh_tokens.split(','):
                 if mt in features_map:
                     counts[i, features_map[mt]] = 1
     logger.debug(f'Vectorized corpus size {counts.shape}')
     if counts.shape[1] != 0:
-        terms_counts = np.asarray(np.sum(counts, axis=0)).reshape(-1)
-        terms_freqs = terms_counts / len(df)
-        logger.debug(f'Terms frequencies min={terms_freqs.min()}, max={terms_freqs.max()}, '
-                     f'mean={terms_freqs.mean()}, std={terms_freqs.std()}')
+        tokens_counts = np.asarray(np.sum(counts, axis=0)).reshape(-1)
+        tokens_freqs = tokens_counts / len(df)
+        logger.debug(f'Terms frequencies min={tokens_freqs.min()}, max={tokens_freqs.max()}, '
+                     f'mean={tokens_freqs.mean()}, std={tokens_freqs.std()}')
     return features, counts
 
 

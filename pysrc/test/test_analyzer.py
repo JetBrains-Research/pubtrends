@@ -1,13 +1,12 @@
 import unittest
 
-import numpy as np
 from pandas._testing import assert_frame_equal
 
-from pysrc.papers.analysis.citations import build_cocit_grouped_df, merge_citation_stats
+from pysrc.papers.analysis.citations import build_cocit_grouped_df
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.test.mock_loaders import MockLoader, \
-    CITATION_YEARS, MockLoaderEmpty, MockLoaderSingle, BIBCOUPLING_DF, COCITATION_DF
+    MockLoaderEmpty, MockLoaderSingle, BIBCOUPLING_DF, COCITATION_DF
 
 
 class TestPapersAnalyzer(unittest.TestCase):
@@ -32,9 +31,6 @@ class TestPapersAnalyzer(unittest.TestCase):
         df.columns = ['cited_1', 'cited_2', 'total']
         assert_frame_equal(COCITATION_DF, df)
 
-    def test_merge_comps_paper_count(self):
-        self.assertEqual(len(self.analyzer.df), len(self.analyzer.pub_df))
-
     def test_topic_analysis_all_nodes_assigned(self):
         nodes = self.analyzer.papers_graph.nodes()
         for row in self.analyzer.df.itertuples():
@@ -46,21 +42,6 @@ class TestPapersAnalyzer(unittest.TestCase):
         for row in self.analyzer.df.itertuples():
             if getattr(row, 'id') not in nodes:
                 self.assertEqual(getattr(row, 'comp'), -1)
-
-    def test_merge_citation_stats_paper_count(self):
-        df, _ = merge_citation_stats(self.analyzer.pub_df, self.analyzer.cit_stats_df)
-        self.assertEqual(len(df), len(self.analyzer.pub_df))
-
-    def test_merge_citation_stats_total_value_ge_0(self):
-        df, _ = merge_citation_stats(self.analyzer.pub_df, self.analyzer.cit_stats_df)
-        added_columns = self.analyzer.cit_stats_df.columns
-        self.assertFalse(np.any(df[added_columns].isna()), msg='NaN values in citation stats')
-        self.assertTrue(np.all(df['total'] >= 0), msg='Negative total citations count')
-
-    def test_merge_citation_stats_citation_years(self):
-        _, citation_years = merge_citation_stats(self.analyzer.pub_df, self.analyzer.cit_stats_df)
-        self.assertCountEqual(citation_years, CITATION_YEARS)
-
 
 class TestPapersAnalyzerSingle(unittest.TestCase):
     PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
@@ -74,8 +55,9 @@ class TestPapersAnalyzerSingle(unittest.TestCase):
 
     def test_attrs(self):
         all_attrs = [
-            'pub_df',
+            'df',
             'query',
+            'papers_graph',
             'pub_types',
             'cit_stats_df',
             'cit_df',
@@ -85,9 +67,6 @@ class TestPapersAnalyzerSingle(unittest.TestCase):
             'max_gain_df',
             'max_rel_gain_papers',
             'max_rel_gain_df',
-            # These are optional
-            'journal_stats',
-            'author_stats',
         ]
         for a in all_attrs:
             self.assertTrue(hasattr(self.analyzer, a), f'Missing attr {a}')

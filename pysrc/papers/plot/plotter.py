@@ -2,6 +2,7 @@ import json
 import logging
 import re
 from collections import Counter
+from itertools import chain
 from string import Template
 
 import holoviews as hv
@@ -55,7 +56,7 @@ TOPIC_KEYWORDS = 5
 def visualize_analysis(analyzer):
     # Initialize plotter after completion of analysis
     plotter = Plotter(analyzer=analyzer)
-    freq_kwds = get_frequent_tokens(analyzer.df, analyzer.stems_tokens_map)
+    freq_kwds = get_frequent_tokens(chain(*chain(*analyzer.corpus)))
     word_cloud = plotter.papers_word_cloud(freq_kwds)
     export_name = re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{analyzer.query}'.lower())).strip('_')
     result = dict(

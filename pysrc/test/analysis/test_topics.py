@@ -23,9 +23,6 @@ class TestTopics(unittest.TestCase):
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.df['id'])
         cls.analyzer.bibliographic_coupling_df = loader.load_bibliographic_coupling(cls.analyzer.df['id'])
 
-    def test_merge_comps_paper_count(self):
-        self.assertEqual(len(self.analyzer.df), len(self.analyzer.pub_df))
-
     def test_topic_analysis_all_nodes_assigned(self):
         nodes = self.analyzer.papers_graph.nodes()
         for row in self.analyzer.df.itertuples():
@@ -41,7 +38,7 @@ class TestTopics(unittest.TestCase):
     def test_heatmap_topics_similarity(self):
         matrix = compute_topics_similarity_matrix(self.analyzer.papers_embeddings, self.analyzer.df['comp'])
         # print(matrix)
-        similarities = np.array([[0.34057575]])
+        similarities = np.array([[0.34513875]])
         self.assertTrue(np.allclose(similarities, matrix, rtol=1e-3))
 
     @staticmethod

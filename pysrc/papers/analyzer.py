@@ -46,7 +46,8 @@ class PapersAnalyzer:
     SIMILARITY_COCITATION_MIN = 1
 
     # Papers embeddings is a concatenation of graph and text embeddings times corresponding factors
-    GRAPH_EMBEDDINGS_FACTOR = 1
+    # Graph embeddings produce more clear topics separation, so it goes with bigger coefficient
+    GRAPH_EMBEDDINGS_FACTOR = 5
     TEXT_EMBEDDINGS_FACTOR = 1
 
     # Reduce number of edges in papers graph
@@ -122,30 +123,33 @@ class PapersAnalyzer:
     def analyze_papers(self, ids, query, test=False, task=None):
         self.progress.info('Loading publication data', current=2, task=task)
         self.query = query
-        self.pub_df = self.loader.load_publications(ids)
-        if len(self.pub_df) == 0:
+        self.df = self.loader.load_publications(ids)
+        if len(self.df) == 0:
             raise SearchError(f'Nothing found for ids: {ids}')
         else:
-            self.progress.info(f'Found {len(self.pub_df)} papers in database', current=2, task=task)
-        ids = list(self.pub_df['id'])  # Limit ids to existing papers only!
-        self.pub_types = list(set(self.pub_df['type']))
+            self.progress.info(f'Found {len(self.df)} papers in database', current=2, task=task)
+        ids = list(self.df['id'])  # Limit ids to existing papers only!
+        self.pub_types = list(set(self.df['type']))
 
         self.progress.info('Analyzing title and abstract texts', current=3, task=task)
-        self.corpus_tokens, self.corpus_counts, self.stems_tokens_map = vectorize_corpus(
-            self.pub_df,
+        self.corpus, self.corpus_tokens, self.corpus_counts = vectorize_corpus(
+            self.df,
             max_features=PapersAnalyzer.VECTOR_WORDS,
             min_df=PapersAnalyzer.VECTOR_MIN_DF,
             max_df=PapersAnalyzer.VECTOR_MAX_DF,
             test=test
         )
-        logger.debug('Analyzing tokens embeddings')
-        self.corpus_tokens_embedding = word2vec_tokens(
-            self.pub_df, self.corpus_tokens, self.stems_tokens_map, test=test
-        )
-        logger.debug('Analyzing texts embeddings')
-        self.texts_embeddings = texts_embeddings(
-            self.corpus_counts, self.corpus_tokens_embedding
-        )
+        if PapersAnalyzer.TEXT_EMBEDDINGS_FACTOR != 0:
+            logger.debug('Analyzing tokens embeddings')
+            self.corpus_tokens_embedding = word2vec_tokens(
+                self.corpus, self.corpus_tokens, test=test
+            )
+            logger.debug('Analyzing texts embeddings')
+            self.texts_embeddings = texts_embeddings(
+                self.corpus_counts, self.corpus_tokens_embedding
+            )
+        else:
+            self.texts_embeddings = np.zeros(shape=(len(self.df), 0))
 
         self.progress.info('Loading citations for papers', current=4, task=task)
         logger.debug('Loading citations by year statistics')
@@ -155,7 +159,7 @@ class PapersAnalyzer:
         self.cit_stats_df = build_cit_stats_df(cits_by_year_df, len(ids))
         if len(self.cit_stats_df) == 0:
             logger.warning('No citations of papers were found')
-        self.df, self.citation_years = merge_citation_stats(self.pub_df, self.cit_stats_df)
+        self.df, self.citation_years = merge_citation_stats(self.df, self.cit_stats_df)
         logger.debug('Loading citations information')
         self.cit_df = self.loader.load_citations(ids)
         logger.debug(f'Found {len(self.cit_df)} citations between papers')
@@ -184,8 +188,12 @@ class PapersAnalyzer:
                            f'{self.papers_graph.number_of_edges()} edges', current=7, task=task)
         logger.debug('Analyzing papers graph embeddings')
         self.weighted_similarity_graph = to_weighted_graph(self.papers_graph, PapersAnalyzer.similarity)
-        gs = sparse_graph(self.weighted_similarity_graph)
-        self.graph_embeddings = node2vec(self.df['id'], gs)
+
+        if PapersAnalyzer.GRAPH_EMBEDDINGS_FACTOR != 0:
+            gs = sparse_graph(self.weighted_similarity_graph)
+            self.graph_embeddings = node2vec(self.df['id'], gs)
+        else:
+            self.graph_embeddings = np.zeros(shape=(len(self.df), 0))
 
         logger.debug('Computing aggregated graph and text embeddings for papers')
         self.papers_embeddings = np.concatenate(
@@ -217,7 +225,7 @@ class PapersAnalyzer:
         comp_pids = self.df[['id', 'comp']].groupby('comp')['id'].apply(list).to_dict()
         self.topics_description = get_topics_description(
             self.df, comp_pids,
-            self.corpus_tokens, self.corpus_counts, self.stems_tokens_map,
+            self.corpus, self.corpus_tokens, self.corpus_counts,
             n_words=self.TOPIC_DESCRIPTION_WORDS
         )
         kwds = [(comp, ','.join([f'{t}:{v:.3f}' for t, v in vs[:self.TOPIC_DESCRIPTION_WORDS]]))
@@ -267,7 +275,7 @@ class PapersAnalyzer:
                 )
                 self.evolution_kwds = topic_evolution_descriptions(
                     self.df, self.evolution_df, self.evolution_year_range,
-                    self.corpus_tokens, self.corpus_counts, self.stems_tokens_map, self.TOPIC_DESCRIPTION_WORDS,
+                    self.corpus, self.corpus_tokens, self.corpus_counts, self.TOPIC_DESCRIPTION_WORDS,
                     self.progress, current=14, task=task
                 )
             else:

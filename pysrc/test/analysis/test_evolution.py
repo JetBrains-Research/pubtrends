@@ -60,7 +60,8 @@ class TestTopicEvolution(unittest.TestCase):
 
         evolution_kwds = topic_evolution_descriptions(
             self.analyzer.df, evolution_df, year_range,
-            self.analyzer.corpus_tokens, self.analyzer.corpus_counts, None, PapersAnalyzer.TOPIC_DESCRIPTION_WORDS,
+            self.analyzer.corpus, self.analyzer.corpus_tokens, self.analyzer.corpus_counts,
+            PapersAnalyzer.TOPIC_DESCRIPTION_WORDS,
             self.analyzer.progress
         )
         # print(evolution_kwds)
@@ -71,7 +72,8 @@ class TestTopicEvolution(unittest.TestCase):
             0: [('article', 0.4444444444444444), ('term3', 0.3333333333333333), ('term4', 0.3333333333333333),
                 ('paper', 0.2222222222222222), ('term1', 0.2222222222222222), ('term2', 0.2222222222222222),
                 ('abstract', 0.2222222222222222), ('term5', 0.2222222222222222), ('interesting', 0.1111111111111111)],
-            -1: []}, 1975: {
+            -1: []},
+            1975: {
             0: [('article', 0.5), ('term1', 0.3), ('term2', 0.3), ('term3', 0.3), ('term4', 0.3), ('term5', 0.3),
                 ('paper', 0.2), ('abstract', 0.2), ('interesting', 0.1), ('breakthrough', 0.1)], -1: []}}
         self.assertEquals(expected_topics_kwds, evolution_kwds)

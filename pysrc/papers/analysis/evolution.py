@@ -42,32 +42,37 @@ def topic_evolution_analysis(
         df_year = df.loc[df['year'] <= year]
         logger.debug(f'Processing {len(df_year)} papers older than year {year}')
         ids_year = set(df_year['id'])
+        if text_embedding_factor != 0:
+            logger.debug('Filtering text counts and embeddings for papers earlier then year')
+            corpus_counts_year = corpus_counts[np.flatnonzero(df['year'] <= year), :]
+            logger.debug('Analyzing texts embeddings')
+            texts_embeddings_year = texts_embeddings(
+                corpus_counts_year, corpus_tokens_embedding
+            )
+        else:
+            texts_embeddings_year = np.zeros(shape=(len(df_year), 0))
 
-        logger.debug('Use only citations earlier than year')
-        cit_df_year = filter_cit_df(cit_df, ids_year)
+        if graph_embedding_factor != 0:
+            logger.debug('Use only citations earlier than year')
+            cit_df_year = filter_cit_df(cit_df, ids_year)
 
-        logger.debug('Use only co-citations earlier than year')
-        cocit_grouped_df_year = filter_cocit_grouped_df(cocit_df, cocit_min_threshold, ids_year)
+            logger.debug('Use only co-citations earlier than year')
+            cocit_grouped_df_year = filter_cocit_grouped_df(cocit_df, cocit_min_threshold, ids_year)
 
-        logger.debug('Use bibliographic coupling earlier then year')
-        bibliographic_coupling_df_year = filter_bibliographic_coupling_df(bibliographic_coupling_df, ids_year)
+            logger.debug('Use bibliographic coupling earlier then year')
+            bibliographic_coupling_df_year = filter_bibliographic_coupling_df(bibliographic_coupling_df, ids_year)
 
-        logger.debug('Filtering text counts and embeddings for papers earlier then year')
-        corpus_counts_year = corpus_counts[np.flatnonzero(df['year'] <= year), :]
-        logger.debug('Analyzing texts embeddings')
-        texts_embeddings_year = texts_embeddings(
-            corpus_counts_year, corpus_tokens_embedding
-        )
-
-        logger.debug('Building papers graph')
-        papers_graph = build_papers_graph(
-            df_year, cit_df_year, cocit_grouped_df_year, bibliographic_coupling_df_year,
-        )
-        logger.debug(f'Built papers graph - {papers_graph.number_of_nodes()} nodes and '
-                     f'{papers_graph.number_of_edges()} edges')
-        weighted_similarity_graph = to_weighted_graph(papers_graph, similarity_func)
-        gs = sparse_graph(weighted_similarity_graph)
-        graph_embeddings_year = node2vec(df_year['id'], gs)
+            logger.debug('Building papers graph')
+            papers_graph = build_papers_graph(
+                df_year, cit_df_year, cocit_grouped_df_year, bibliographic_coupling_df_year,
+            )
+            logger.debug(f'Built papers graph - {papers_graph.number_of_nodes()} nodes and '
+                         f'{papers_graph.number_of_edges()} edges')
+            weighted_similarity_graph = to_weighted_graph(papers_graph, similarity_func)
+            gs = sparse_graph(weighted_similarity_graph)
+            graph_embeddings_year = node2vec(df_year['id'], gs)
+        else:
+            graph_embeddings_year = np.zeros(shape=(len(df_year), 0))
 
         logger.debug('Computing aggregated graph and text embeddings for papers')
         papers_embeddings = np.concatenate(
@@ -117,7 +122,7 @@ def filter_cit_df(cit_df, ids_year):
 
 
 def topic_evolution_descriptions(
-        df, evolution_df, year_range, corpus_terms, corpus_counts, stems_map, size,
+        df, evolution_df, year_range, corpus, corpus_tokens, corpus_counts, size,
         progress, current=0, task=None
 ):
     if evolution_df is None or not year_range:
@@ -125,17 +130,13 @@ def topic_evolution_descriptions(
         return None
 
     progress.info('Generating evolution topics descriptions', current=current, task=task)
-    try:  # Workaround for https://github.com/JetBrains-Research/pubtrends/issues/247
-        evolution_kwds = {}
-        for col in evolution_df:
-            if col in year_range:
-                logger.debug(f'Generating topics descriptions for year {col}')
-                comps = evolution_df[[col, 'id']].groupby(col)['id'].apply(list).to_dict()
-                # Component -1 is not published yet, should be ignored
-                evolution_kwds[col] = get_topics_description(df, comps, corpus_terms, corpus_counts, stems_map,
-                                                             n_words=size, ignore_comp=-1)
-        logger.debug(f'Successfully generated evolution_kwds')
-        return evolution_kwds
-    except Exception as e:
-        logger.error('Error while computing evolution description', e)
-        return None
+    evolution_kwds = {}
+    for col in evolution_df:
+        if col in year_range:
+            logger.debug(f'Generating topics descriptions for year {col}')
+            comps = evolution_df[[col, 'id']].groupby(col)['id'].apply(list).to_dict()
+            # Component -1 is not published yet, should be ignored
+            evolution_kwds[col] = get_topics_description(df, comps, corpus, corpus_tokens, corpus_counts,
+                                                         n_words=size, ignore_comp=-1)
+    logger.debug(f'Successfully generated evolution_kwds')
+    return evolution_kwds
