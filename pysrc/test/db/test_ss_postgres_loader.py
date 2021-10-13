@@ -95,9 +95,10 @@ class TestSemanticScholarPostgresLoader(unittest.TestCase):
     @parameterized.expand([
         ('id search', 'id', '5451b1ef43678d473575bdfa7016d024146f2b53', ['5451b1ef43678d473575bdfa7016d024146f2b53']),
         ('id spaces', 'id', ' 5451b1ef43678d473575bdfa7016d024146f2b53 ', ['5451b1ef43678d473575bdfa7016d024146f2b53']),
-        ('title search - lower case', 'title', 'can find using search', ['cad767094c2c4fff5206793fd8674a10e7fba3fe']),
-        ('title search - Title Case', 'title', 'Can Find Using Search', ['cad767094c2c4fff5206793fd8674a10e7fba3fe']),
-        ('title search with spaces', 'title', ' Can Find Using Search ', ['cad767094c2c4fff5206793fd8674a10e7fba3fe']),
+        ('title search - lower case', 'title', 'can find using search.', ['cad767094c2c4fff5206793fd8674a10e7fba3fe']),
+        ('title search - Title Case', 'title', 'Can Find Using Search.', ['cad767094c2c4fff5206793fd8674a10e7fba3fe']),
+        ('title search with spaces', 'title', ' Can Find Using Search. ', ['cad767094c2c4fff5206793fd8674a10e7fba3fe']),
+        ('title search no dot', 'title', 'Can Find Using Search', ['cad767094c2c4fff5206793fd8674a10e7fba3fe']),
         ('dx.doi.org search', 'doi', 'http://dx.doi.org/10.000/0000', ['5451b1ef43678d473575bdfa7016d024146f2b53']),
         ('doi.org search', 'doi', 'http://doi.org/10.000/0000', ['5451b1ef43678d473575bdfa7016d024146f2b53']),
         ('doi search', 'doi', '10.000/0000', ['5451b1ef43678d473575bdfa7016d024146f2b53']),

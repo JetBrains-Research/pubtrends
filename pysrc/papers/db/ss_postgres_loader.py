@@ -34,10 +34,11 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
 
         # Use dedicated text index to search title.
         if key == 'title':
+            value = value.rstrip('.')   # do not require trailing dot
             query = f'''
                 SELECT ssid
                 FROM to_tsquery('english', \'''{value}\''') query, SSPublications P
-                WHERE tsv @@ query AND LOWER(title) = LOWER('{value}');
+                WHERE tsv @@ query AND TRIM(TRAILING '.' FROM LOWER(title)) = LOWER('{value}');
             '''
         else:
             query = f'''

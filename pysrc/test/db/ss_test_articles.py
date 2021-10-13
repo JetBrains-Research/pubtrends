@@ -8,7 +8,7 @@ article1 = SemanticScholarArticle(ssid='5451b1ef43678d473575bdfa7016d024146f2b53
                                   year=1999, doi='10.000/0000')
 
 article2 = SemanticScholarArticle(ssid='cad767094c2c4fff5206793fd8674a10e7fba3fe', crc32id=984465402, pmid=None,
-                                  title='Can find using search', abstract='Abstract 1',
+                                  title='Can find using search.', abstract='Abstract 1',
                                   year=1980)
 
 article3 = SemanticScholarArticle(ssid='e7cdbddc7af4b6138227139d714df28e2090bd5f', crc32id=17079054, pmid=None,
