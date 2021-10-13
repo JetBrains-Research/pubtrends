@@ -19,7 +19,7 @@ class TestBuildGraph(unittest.TestCase):
         cls.analyzer.TOPIC_MIN_SIZE = 0  # Disable merging for tests
         cls.analyzer.analyze_papers(ids, 'query', test=True)
 
-    def test_build_similarity_graph_edges(self):
+    def test_build_papers_graph(self):
         edges = list(self.analyzer.papers_graph.edges(data=True))
         # print(edges)
         self.assertEquals(len(PAPERS_GRAPH_EDGES), len(edges), msg='size')
@@ -38,19 +38,20 @@ class TestBuildGraph(unittest.TestCase):
             for j in range(i + 1, 5):
                 graph.add_edge(i, j, similarity=1)
 
-        self.assertEqual([(0, 3), (0, 4), (3, 1), (3, 2), (3, 4), (4, 1), (4, 2)],
-                         list(_local_sparse(graph, 0.1).edges))
-        self.assertEqual([(0, 3), (0, 4), (3, 1), (3, 2), (3, 4), (4, 1), (4, 2)],
-                         list(_local_sparse(graph, 0.5).edges))
+        self.assertEqual([(0, 1), (0, 2), (1, 2), (1, 3), (2, 3), (2, 4), (3, 4)],
+                         list(_local_sparse(graph, 0.1, key='similarity').edges))
+        self.assertEqual([(0, 1), (0, 2), (1, 2), (1, 3), (2, 3), (2, 4), (3, 4)],
+                         list(_local_sparse(graph, 0.5, key='similarity').edges))
         self.assertEqual([(0, 1), (0, 2), (0, 3), (0, 4),
                           (1, 2), (1, 3), (1, 4),
                           (2, 3), (2, 4),
                           (3, 4)],
-                         list(_local_sparse(graph, 1).edges))
+                         list(_local_sparse(graph, 1, key='similarity').edges))
 
         # Add not connected edge
         graph.add_edge(10, 11, similarity=10)
-        self.assertEqual([(0, 4), (4, 1), (4, 2), (4, 3), (10, 11)], list(_local_sparse(graph, 0).edges))
+        self.assertEqual([(0, 1), (1, 2), (2, 3), (3, 4), (10, 11)],
+                         list(_local_sparse(graph, 0, key='similarity').edges))
 
     def test_isolated_edges_sparse(self):
         # Full graph on 4 nodes
@@ -59,7 +60,7 @@ class TestBuildGraph(unittest.TestCase):
         graph.add_node(2)
         graph.add_node(3)
 
-        self.assertEqual([1, 2, 3], list(_local_sparse(graph, 0).nodes))
+        self.assertEqual([1, 2, 3], list(_local_sparse(graph, 0, key='similarity').nodes))
 
 
 class TestBuildGraphSingle(unittest.TestCase):

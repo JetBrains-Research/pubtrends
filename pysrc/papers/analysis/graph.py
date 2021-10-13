@@ -1,6 +1,5 @@
 import logging
 from math import ceil
-from queue import PriorityQueue
 
 import networkx as nx
 import numpy as np
@@ -60,27 +59,18 @@ def _local_sparse(graph, e, key='weight'):
     assert 0 <= e <= 1, f'Sparsity parameter {e} should be in 0..1'
     if e == 1:
         return graph
-    priority_queues = {n: PriorityQueue(maxsize=ceil(pow(len(list(graph.neighbors(n))), e))) for n in graph.nodes}
-    for (u, v, s) in graph.edges(data=key):
-        qu = priority_queues[u]
-        if qu.full():
-            qu.get()  # Removes the element with lowest similarity
-        qu.put((s, v))
-        qv = priority_queues[v]
-        if qv.full():
-            qv.get()  # Removes the element with lowest similarity
-        qv.put((s, u))
-    # Build sparse graph
     result = nx.Graph()
-    for u, q in priority_queues.items():
-        while not q.empty():
-            s, v = q.get()
-            if not result.has_edge(u, v):
-                result.add_edge(u, v, **graph.edges[u, v])
+    # Start from nodes with max number of neighbors
+    for n in sorted(graph.nodes(), key=lambda x: len(list(graph.neighbors(x))), reverse=True):
+        neighbors_data = sorted(list([(x, graph.get_edge_data(n, x)) for x in graph.neighbors(n)]),
+                                key=lambda x: x[1][key], reverse=True)
+        for x, data in neighbors_data[:ceil(pow(len(list(neighbors_data)), e))]:
+            if not result.has_edge(n, x):
+                result.add_edge(n, x, **data)
     # Ensure all the nodes present
-    for v in graph.nodes:
-        if not result.has_node(v):
-            result.add_node(v)
+    for n in graph.nodes():
+        if not result.has_node(n):
+            result.add_node(n)
     return result
 
 
