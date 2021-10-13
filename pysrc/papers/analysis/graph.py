@@ -44,12 +44,13 @@ def build_papers_graph(df, cit_df, cocit_df, bibliographic_coupling_df):
     return sg
 
 
-def sparse_graph(graph, max_edges_to_nodes=64, key='weight'):
-    logger.debug(f'Limit total number of edges to max_edges_to_nodes={max_edges_to_nodes}')
+def sparse_graph(graph, max_edges_to_nodes=32, key='weight'):
+    logger.debug(f'Limit edges to nodes by max_edges_to_nodes={max_edges_to_nodes}, '
+                 f'current={graph.number_of_edges() / graph.number_of_nodes()}')
     e = 1.0
     gs = _local_sparse(graph, e, key)
     while e > 0.1 and gs.number_of_edges() / gs.number_of_nodes() > max_edges_to_nodes:
-        e -= 0.1
+        e /= 2
         gs = _local_sparse(graph, e, key)
     logger.debug(f'Sparse graph e={e} nodes={gs.number_of_nodes()} edges={gs.number_of_edges()}')
     return gs
@@ -59,10 +60,7 @@ def _local_sparse(graph, e, key='weight'):
     assert 0 <= e <= 1, f'Sparsity parameter {e} should be in 0..1'
     if e == 1:
         return graph
-    result = nx.Graph()
-    neighbours = {node: set(graph.neighbors(node)) for node in graph.nodes}
-    priority_queues = {node: PriorityQueue(maxsize=ceil(pow(len(neighbours[node]), e)))
-                       for node in graph.nodes}
+    priority_queues = {n: PriorityQueue(maxsize=ceil(pow(len(list(graph.neighbors(n))), e))) for n in graph.nodes}
     for (u, v, s) in graph.edges(data=key):
         qu = priority_queues[u]
         if qu.full():
@@ -72,6 +70,8 @@ def _local_sparse(graph, e, key='weight'):
         if qv.full():
             qv.get()  # Removes the element with lowest similarity
         qv.put((s, u))
+    # Build sparse graph
+    result = nx.Graph()
     for u, q in priority_queues.items():
         while not q.empty():
             s, v = q.get()
