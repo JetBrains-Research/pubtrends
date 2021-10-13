@@ -87,17 +87,20 @@ class TestPostgresUtils(unittest.TestCase):
             preprocess_search_query_for_postgres('&&&', 2)
 
     def test_process_bibliographic_coupling_empty(self):
-        df = process_bibliographic_coupling_postgres([])
+        df = process_bibliographic_coupling_postgres([], [])
         self.assertTrue(len(df) == 0)
         self.assertTrue(len(df['total']) == 0)
 
     def test_process_bibliographic_coupling(self):
-        df = process_bibliographic_coupling_postgres([
-            ('1', ['2', '3', '4', '5']),
-            ('2', ['3', '4', '5']),
-            ('3', ['4', '5']),
-            ('4', ['5'])
-        ])
+        df = process_bibliographic_coupling_postgres(
+            ['1', '2', '3', '4', '5'],
+            [
+                ('1', ['2', '3', '4', '5']),
+                ('2', ['3', '4', '5']),
+                ('3', ['4', '5']),
+                ('4', ['5'])
+            ])
+        # print(df)
         expected_df = pd.DataFrame([
             ['2', '3', 1],
             ['2', '4', 1],

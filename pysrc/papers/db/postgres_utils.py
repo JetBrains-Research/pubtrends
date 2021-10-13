@@ -1,8 +1,10 @@
 import logging
 import re
 
+import numpy as np
 import pandas as pd
 from nltk import SnowballStemmer
+from scipy.sparse import lil_matrix
 
 from pysrc.papers.db.search_error import SearchError
 
@@ -104,9 +106,10 @@ def process_cocitations_postgres(cursor):
     return df
 
 
-def process_bibliographic_coupling_postgres(cursor):
-    data = []
+def process_bibliographic_coupling_postgres(ids, cursor):
     lines = 0
+    bm = lil_matrix((len(ids), len(ids)), dtype=np.int8)
+    indx = {pid: i for i, pid in enumerate(ids)}
     for row in cursor:
         lines += 1
         if lines % 1000 == 1:
@@ -115,11 +118,14 @@ def process_bibliographic_coupling_postgres(cursor):
         citing_list.sort()
         for i in range(len(citing_list)):
             for j in range(i + 1, len(citing_list)):
-                data.append((str(citing_list[i]), str(citing_list[j]), 1))
-    df = pd.DataFrame(data, columns=['citing_1', 'citing_2', 'total'], dtype=object)
+                bm[indx[str(citing_list[i])], indx[str(citing_list[j])]] += 1
     logger.debug(f'Total {lines} lines of bibliographic coupling info')
-    logger.debug(f'Df size {len(df)}')
     if lines > 0:
-        df = df.groupby(['citing_1', 'citing_2']).sum().reset_index()
-        logger.debug(f'Total df size {len(df)}')
+        bmc = bm.tocoo(copy=False)
+        df = pd.DataFrame(dict(citing_1=[ids[i] for i in bmc.row],
+                               citing_2=[ids[j] for j in bmc.col],
+                               total=list(bmc.data)))
+    else:
+        df = pd.DataFrame(columns=['citing_1', 'citing_2', 'total'], dtype=object)
+    logger.debug(f'Df size {len(df)}')
     return df

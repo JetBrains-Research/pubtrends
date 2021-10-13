@@ -276,5 +276,5 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         logger.debug(f'load_bibliographic_coupling query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df = process_bibliographic_coupling_postgres(cursor)
+            df = process_bibliographic_coupling_postgres(ids, cursor)
         return df
