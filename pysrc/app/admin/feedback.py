@@ -8,7 +8,8 @@ RECENT = 50
 
 
 def prepare_feedback_data(logfile):
-    return parse_feeback_content(open(logfile).readlines())
+    return parse_feedback_content(open(logfile).readlines())
+
 
 def parse_feedback_content(lines):
     emotions_counter = Counter()
@@ -80,7 +81,7 @@ def parse_feedback_content(lines):
     while not recent_emotions.empty():
         emotions.append(recent_emotions.get())
 
-    emotions_summary = [(key, int(100 * value[0]/value[1]) / 100, value[1])
+    emotions_summary = [(key, int(100 * value[0] / value[1]) / 100, value[1])
                         for key, value in emotions_counter.items() if value[1] != 0]
     return dict(
         recent=RECENT,
