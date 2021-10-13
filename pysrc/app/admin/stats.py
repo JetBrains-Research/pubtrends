@@ -18,6 +18,10 @@ RECENT = 50
 
 
 def prepare_stats_data(logfile):
+    return parse_stats_content(open(logfile).readlines())
+
+
+def parse_stats_content(lines):
     terms_searches_dates = []
     recent_searches = Queue(maxsize=RECENT)
     searches_infos = dict()
@@ -27,7 +31,7 @@ def prepare_stats_data(logfile):
     recent_papers = Queue(maxsize=RECENT)
     papers_infos = dict()
 
-    for line in open(logfile).readlines():
+    for line in lines:
         try:
             if 'INFO' not in line:
                 continue
