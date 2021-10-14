@@ -137,15 +137,18 @@ def _analyze_id_list(analyzer, source, ids, query, analysis_type=IDS_ANALYSIS_TY
 
 
 @pubtrends_celery.task(name='analyze_search_paper')
-def analyze_search_paper(source, key, value, test=False):
-    if key != 'doi' and is_doi(preprocess_doi(value)):
+def analyze_search_paper(source, pid, key, value, test=False):
+    if key is not None and key != 'doi' and is_doi(preprocess_doi(value)):
         raise SearchError(DOI_WRONG_SEARCH)
     config = PubtrendsConfig(test=test)
     loader = Loaders.get_loader(source, config)
     analyzer = PapersAnalyzer(loader, config)
     analyzer.progress.info(f'Searching for a publication with {key}={value}', current=1, task=current_task)
     try:
-        result = loader.find(key, value)
+        if pid is not None:
+            result = [pid]
+        else:
+            result = loader.find(key, value)
         if len(result) == 1:
             return _analyze_id_list(
                 analyzer,

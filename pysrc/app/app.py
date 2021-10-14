@@ -193,7 +193,7 @@ def search_paper():
             source = data.get('source')  # Pubmed or Semantic Scholar
             key = data.get('key')
             value = data.get('value')
-            job = analyze_search_paper.delay(source, key, value, test=app.config['TESTING'])
+            job = analyze_search_paper.delay(source, None, key, value, test=app.config['TESTING'])
             return redirect(url_for('.process', query=f'Paper {key}={value}', analysis_type=PAPER_ANALYSIS_TYPE,
                                     key=key, value=value, source=source, jobid=job.id))
         logger.error(f'/search_paper error {log_request(request)}')
@@ -484,6 +484,7 @@ def graph():
 def paper():
     jobid = request.values.get('jobid')
     source = request.args.get('source')
+    pid = request.args.get('id')
     key = request.args.get('key')
     value = request.args.get('value')
     try:
@@ -492,13 +493,13 @@ def paper():
             if data is not None:
                 logger.info(f'/paper success {log_request(request)}')
                 return render_template('paper.html',
-                                       **prepare_paper_data(data, source),
+                                       **prepare_paper_data(data, source, pid),
                                        max_graph_size=PUBTRENDS_CONFIG.max_graph_size,
                                        version=VERSION)
             else:
                 logger.info(f'/paper No job or out-of-date job, restart it {log_request(request)}')
                 analyze_search_paper.apply_async(
-                    args=[source, key, value, app.config['TESTING']], task_id=jobid
+                    args=[source, pid, key, value, app.config['TESTING']], task_id=jobid
                 )
                 return redirect(url_for('.process', query=f'Paper {key}={value}', analysis_type=PAPER_ANALYSIS_TYPE,
                                         source=source, key=key, value=value, jobid=jobid))
