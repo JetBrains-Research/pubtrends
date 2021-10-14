@@ -36,6 +36,7 @@ from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.plot.plotter import Plotter
 from pysrc.papers.utils import cut_authors_list
+from pysrc.version import VERSION
 
 logger = logging.getLogger(__name__)
 
@@ -330,9 +331,9 @@ class AnalyzerFiles(PapersAnalyzer):
         if len(folder_name) > max_folder_length:
             folder_name = folder_name[:(max_folder_length - 32 - 1)] + '_' + \
                           hashlib.md5(folder_name.encode('utf-8')).hexdigest()
-        folder = os.path.join(self.search_results_folder, folder_name)
+        folder = os.path.join(self.search_results_folder, f"{VERSION.replace(' ', '_')}", folder_name)
         if not os.path.exists(folder):
-            os.mkdir(folder)
+            os.makedirs(folder)
         return folder
 
 
