@@ -1,5 +1,4 @@
 import gzip
-import hashlib
 import json
 import logging
 import os
@@ -14,7 +13,8 @@ from flask import Flask, url_for, redirect, render_template, request, render_tem
     send_from_directory, send_file
 
 from pysrc.app.admin.admin import configure_admin_functions
-from pysrc.app.predefined import save_predefined, load_predefined_viz_log, load_predefined_or_result_data
+from pysrc.app.predefined import get_predefined_jobs, save_predefined, load_predefined_viz_log, \
+    load_predefined_or_result_data
 from pysrc.app.utils import log_request, MAX_QUERY_LENGTH, SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, \
     SOMETHING_WENT_WRONG_PAPER, SOMETHING_WENT_WRONG_TOPIC
 from pysrc.celery.pubtrends_celery import pubtrends_celery
@@ -88,30 +88,24 @@ def static_from_root():
     return send_from_directory(app.static_folder, request.path[1:])
 
 
+PREDEFINED_JOBS = get_predefined_jobs(PUBTRENDS_CONFIG)
+
+
 @app.route('/')
 def index():
     search_example_message = ''
     search_example_source = ''
     search_example_terms = []
-    sources = []
-    if PUBTRENDS_CONFIG.pm_enabled:
-        sources.append('pm')
-    if PUBTRENDS_CONFIG.ss_enabled:
-        sources.append('ss')
-    if len(sources):
-        choice = random.choice(sources)
-        if choice == 'pm':
-            search_example_source = 'Pubmed'
-            search_example_terms = PUBTRENDS_CONFIG.pm_search_example_terms
-        if choice == 'ss':
-            search_example_source = 'Semantic Scholar'
-            search_example_terms = PUBTRENDS_CONFIG.ss_search_example_terms
+
+    if len(PREDEFINED_JOBS) != 0:
+        search_example_source, search_example_terms = random.choice(list(PREDEFINED_JOBS.items()))
         search_example_message = 'Try one of our examples for ' + search_example_source
-    search_example_terms = [(t, hashlib.md5(t.encode('utf-8')).hexdigest()) for t in search_example_terms]
+
     if PUBTRENDS_CONFIG.min_search_words > 1:
         min_words_message = f'Minimum {PUBTRENDS_CONFIG.min_search_words} words per query. '
     else:
         min_words_message = ''
+
     return render_template('main.html',
                            version=VERSION,
                            limits=PUBTRENDS_CONFIG.show_max_articles_options,
@@ -407,7 +401,7 @@ def result():
             job = AsyncResult(jobid, app=pubtrends_celery)
             if job and job.state == 'SUCCESS':
                 viz, data, log = job.result
-                save_predefined(viz, data, log, jobid, source, query, sort, limit)
+                save_predefined(viz, data, log, jobid, source, PREDEFINED_JOBS)
                 logger.info(f'/result success {log_request(request)}')
                 return render_template('result.html',
                                        query=trim(query, MAX_QUERY_LENGTH),
@@ -418,7 +412,7 @@ def result():
                                        version=VERSION,
                                        log=log,
                                        **viz)
-            viz_log = load_predefined_viz_log(source, query, sort, limit, jobid)
+            viz_log = load_predefined_viz_log(source, jobid, PREDEFINED_JOBS)
             if viz_log is not None:
                 viz, log = viz_log
                 return render_template('result.html',
@@ -454,7 +448,7 @@ def graph():
     limit = request.args.get('limit')
     sort = request.args.get('sort')
     if jobid:
-        data = load_predefined_or_result_data(source, query, sort, limit, jobid, pubtrends_celery)
+        data = load_predefined_or_result_data(source, jobid, PREDEFINED_JOBS, pubtrends_celery)
         if data is not None:
             loader, url_prefix = Loaders.get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
             analyzer = PapersAnalyzer(loader, PUBTRENDS_CONFIG)
@@ -494,7 +488,7 @@ def paper():
     value = request.args.get('value')
     try:
         if jobid:
-            data = load_predefined_or_result_data(source, query, sort, limit, jobid, pubtrends_celery)
+            data = load_predefined_or_result_data(source, jobid, PREDEFINED_JOBS, pubtrends_celery)
             if data is not None:
                 logger.info(f'/paper success {log_request(request)}')
                 return render_template('paper.html',
@@ -550,7 +544,7 @@ def show_ids():
         search_string += 'Hot Papers'
 
     if jobid:
-        data = load_predefined_or_result_data(source, query, sort, limit, jobid, pubtrends_celery)
+        data = load_predefined_or_result_data(source, jobid, PREDEFINED_JOBS, pubtrends_celery)
         if data is not None:
             logger.info(f'/papers success {log_request(request)}')
             export_name = re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{query}_{search_string}'.lower())).strip('_')
@@ -628,7 +622,7 @@ def export_results():
         limit = request.args.get('limit')
         sort = request.args.get('sort')
         if jobid and query and source and limit and source:
-            data = load_predefined_or_result_data(source, query, sort, limit, jobid, pubtrends_celery)
+            data = load_predefined_or_result_data(source, jobid, PREDEFINED_JOBS, pubtrends_celery)
             with tempfile.TemporaryDirectory() as tmpdir:
                 name = re.sub('_{2,}', '_',
                               re.sub('["\':,. ]', '_', f'{source}_{query}_{sort}_{limit}'.lower())).strip('_')

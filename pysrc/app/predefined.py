@@ -1,4 +1,5 @@
 import gzip
+import hashlib
 import json
 import logging
 import os
@@ -7,6 +8,7 @@ from threading import Lock
 from celery.result import AsyncResult
 
 from pysrc.papers.analysis.text import preprocess_text
+from pysrc.papers.utils import SORT_MOST_CITED
 from pysrc.version import VERSION
 
 logger = logging.getLogger(__name__)
@@ -22,9 +24,19 @@ else:
 PREDEFINED_LOCK = Lock()
 
 
-def save_predefined(viz, data, log, jobid, source, query, sort, limit):
+def get_predefined_jobs(config):
+    result = {}
+    if config.pm_enabled:
+        result['Pubmed'] = _predefined_info(config.pm_search_example_terms)
+    if config.ss_enabled:
+        result['Semantic Scholar'] = _predefined_info(config.ss_search_example_terms)
+    return result
+
+
+def save_predefined(viz, data, log, source, jobid, predefined_jobs):
     if jobid.startswith('predefined_'):
-        logger.info('Saving predefined search')
+        query, sort, limit = _example_by_jobid(source, jobid, predefined_jobs)
+        logger.info(f'Saving predefined search for source={source} query={query} sort={sort} limit={limit}')
         folder = os.path.join(predefined_path, f"{VERSION.replace(' ', '_')}",
                               query_to_folder(source, query, sort, limit))
         if not os.path.exists(folder):
@@ -47,9 +59,10 @@ def save_predefined(viz, data, log, jobid, source, query, sort, limit):
             PREDEFINED_LOCK.release()
 
 
-def load_predefined_viz_log(source, query, sort, limit, jobid):
+def load_predefined_viz_log(source, jobid, predefined_jobs):
     if jobid.startswith('predefined_'):
-        logger.info('Trying to load predefined viz, log')
+        query, sort, limit = _example_by_jobid(source, jobid, predefined_jobs)
+        logger.info(f'Trying to load predefined viz, log for source={source} query={query} sort={sort} limit={limit}')
         folder = os.path.join(predefined_path, f"{VERSION.replace(' ', '_')}",
                               query_to_folder(source, query, sort, limit))
         path_viz = os.path.join(folder, 'viz.json.gz')
@@ -67,9 +80,10 @@ def load_predefined_viz_log(source, query, sort, limit, jobid):
     return None
 
 
-def load_predefined_or_result_data(source, query, sort, limit, jobid, app):
+def load_predefined_or_result_data(source, jobid, predefined_jobs, app):
     if jobid.startswith('predefined_'):
-        logger.info('Trying to load predefined data')
+        query, sort, limit = _example_by_jobid(source, jobid, predefined_jobs)
+        logger.info(f'Trying to load predefined data for source={source} query={query} sort={sort} limit={limit}')
         folder = os.path.join(predefined_path, f"{VERSION.replace(' ', '_')}",
                               query_to_folder(source, query, sort, limit))
         path_data = os.path.join(folder, 'data.json.gz')
@@ -91,5 +105,18 @@ def query_to_folder(source, query, sort, limit, max_folder_length=100):
     folder_name = preprocess_text(f'{source}_{query}_{sort}_{limit}').replace(' ', '_').replace('__', '_')
     if len(folder_name) > max_folder_length:
         folder_name = folder_name[:(max_folder_length - 32 - 1)] + '_' + \
-            hashlib.md5(folder_name.encode('utf-8')).hexdigest()
+                      hashlib.md5(folder_name.encode('utf-8')).hexdigest()
     return folder_name
+
+
+def _predefined_info(examples):
+    return [(t, hashlib.md5(t.encode('utf-8')).hexdigest()) for t in examples]
+
+
+def _example_by_jobid(source, jobid, predefined_jobs):
+    logger.debug(f'Lookup search example by jobid: {jobid}')
+    for (t, hash) in predefined_jobs[source]:
+        if jobid == f'predefined_{hash}':
+            logger.debug(f'Example: {t}')
+            return t, SORT_MOST_CITED, 1000
+    raise Exception(f'Cannot find search example for jobid: {jobid}')
