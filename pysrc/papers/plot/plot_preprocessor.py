@@ -275,4 +275,6 @@ class PlotPreprocessor:
             keyword_df['year'] = years
             keyword_dfs.append(keyword_df)
         keywords_df = pd.concat(keyword_dfs, axis=0).reset_index(drop=True)
+        # Some values may become negative because of smoothing
+        keywords_df.clip(lower=0.0, inplace=True)
         return keywords_df, years
