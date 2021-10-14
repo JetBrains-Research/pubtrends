@@ -350,6 +350,11 @@ def status():
                 'state': job_state,
                 'message': 'Task is in queue, please wait...'
             })
+        elif job_state == 'REVOKED':
+            return json.dumps({
+                'state': job_state,
+                'message': 'Task was cancelled, please <a href="/">rerun</a> your search.'
+            })
         else:
             return json.dumps({
                 'state': 'FAILURE',
