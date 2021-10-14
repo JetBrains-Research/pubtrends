@@ -270,11 +270,11 @@ class PlotPreprocessor:
             keyword = corpus_terms[idx]
             numbers = numbers_per_year[:, idx]
             numbers = lowess(numbers, years, frac=0.2, return_sorted=False)
+            # Some values may become negative because of smoothing
+            numbers = numbers.clip(min=0.0)
             keyword_df = pd.DataFrame(data=numbers.astype(int), columns=['number'])
             keyword_df['keyword'] = keyword
             keyword_df['year'] = years
             keyword_dfs.append(keyword_df)
         keywords_df = pd.concat(keyword_dfs, axis=0).reset_index(drop=True)
-        # Some values may become negative because of smoothing
-        keywords_df.clip(lower=0.0, inplace=True)
         return keywords_df, years
