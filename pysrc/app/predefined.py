@@ -24,12 +24,14 @@ PREDEFINED_LOCK = Lock()
 def save_predefined(viz, data, log, jobid):
     if jobid.startswith('predefined_'):
         logger.info('Saving predefined search')
-        path = os.path.join(predefined_path, f"{VERSION.replace(' ', '_')}_{jobid}")
+        folder = os.path.join(predefined_path, f"{VERSION.replace(' ', '_')}")
+        if not os.path.exists(folder):
+            os.makedirs(folder)
         try:
             PREDEFINED_LOCK.acquire()
-            path_viz = f'{path}_viz.json.gz'
-            path_data = f'{path}_data.json.gz'
-            path_log = f'{path}_log.gz'
+            path_viz = os.path.join(folder, f'{jobid}_viz.json.gz')
+            path_data = os.path.join(folder, f'{jobid}_data.json.gz')
+            path_log = os.path.join(folder, f'{jobid}_log.gz')
             if not os.path.exists(path_viz):
                 with gzip.open(path_viz, 'w') as f:
                     f.write(json.dumps(viz).encode('utf-8'))
@@ -46,9 +48,9 @@ def save_predefined(viz, data, log, jobid):
 def load_predefined_viz_log(jobid):
     if jobid.startswith('predefined_'):
         logger.info('Trying to load predefined viz, log')
-        path = os.path.join(predefined_path, f"{VERSION.replace(' ', '_')}_{jobid}")
-        path_viz = f'{path}_viz.json.gz'
-        path_log = f'{path}_log.gz'
+        folder = os.path.join(predefined_path, f"{VERSION.replace(' ', '_')}")
+        path_viz = os.path.join(folder, f'{jobid}_viz.json.gz')
+        path_log = os.path.join(folder, f'{jobid}_log.gz')
         try:
             PREDEFINED_LOCK.acquire()
             if os.path.exists(path_viz) and os.path.exists(path_log):
@@ -65,8 +67,8 @@ def load_predefined_viz_log(jobid):
 def load_predefined_or_result_data(jobid, app):
     if jobid.startswith('predefined_'):
         logger.info('Trying to load predefined data')
-        path = os.path.join(predefined_path, f"{VERSION.replace(' ', '_')}_{jobid}")
-        path_data = f'{path}_data.json.gz'
+        folder = os.path.join(predefined_path, f"{VERSION.replace(' ', '_')}")
+        path_data = os.path.join(folder, f'{jobid}_data.json.gz')
         try:
             PREDEFINED_LOCK.acquire()
             if os.path.exists(path_data):
