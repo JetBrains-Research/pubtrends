@@ -28,6 +28,7 @@ services:
       - ~/.pubtrends/logs:/logs
       - ~/.pubtrends/model:/model:ro
       - ~/.pubtrends/.cache:/home/user/.cache
+      - ~/.pubtrends/predefined:/predefined
       - ~/.pubtrends/search_results:/search_results
   redis:
     image: redis:5.0
