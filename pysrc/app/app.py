@@ -401,7 +401,7 @@ def result():
             job = AsyncResult(jobid, app=pubtrends_celery)
             if job and job.state == 'SUCCESS':
                 viz, data, log = job.result
-                save_predefined(viz, data, log, jobid, source, PREDEFINED_JOBS)
+                save_predefined(viz, data, log, source, jobid, PREDEFINED_JOBS)
                 logger.info(f'/result success {log_request(request)}')
                 return render_template('result.html',
                                        query=trim(query, MAX_QUERY_LENGTH),
