@@ -22,6 +22,7 @@ from matplotlib import pyplot as plt
 from more_itertools import unique_everseen
 from sklearn.manifold import TSNE
 
+from pysrc.app.predefined import query_to_folder
 from pysrc.papers.analysis.citations import find_top_cited_papers, build_cit_stats_df, merge_citation_stats, \
     build_cocit_grouped_df
 from pysrc.papers.analysis.graph import build_papers_graph, \
@@ -62,9 +63,12 @@ class AnalyzerFiles(PapersAnalyzer):
     def teardown(self):
         self.progress.remove_handler()
 
-    def analyze_ids(self, ids, source, query, limit, test=False, task=None):
+    def analyze_ids(self, ids, source, query, sort, limit, test=False, task=None):
         self.query = query
-        self.query_folder = self.query_to_folder(source, query, limit)
+        self.query_folder = os.path.join(self.search_results_folder, f"{VERSION.replace(' ', '_')}",
+                                         query_to_folder(source, query, sort, limit))
+        if not os.path.exists(self.query_folder):
+            os.makedirs(self.query_folder)
         logger.info(f'Query folder: {self.query_folder}')
         self.progress.info(f'Found {len(ids)} papers', current=1, task=task)
         path_ids = os.path.join(self.query_folder, 'ids.txt')
@@ -326,15 +330,6 @@ class AnalyzerFiles(PapersAnalyzer):
         else:
             raise RuntimeError(f'Search results folder not found among: {SEARCH_RESULTS_PATHS}')
 
-    def query_to_folder(self, source, query, limit, max_folder_length=100):
-        folder_name = preprocess_text(f'{source}_{query}_{limit}').replace(' ', '_')
-        if len(folder_name) > max_folder_length:
-            folder_name = folder_name[:(max_folder_length - 32 - 1)] + '_' + \
-                          hashlib.md5(folder_name.encode('utf-8')).hexdigest()
-        folder = os.path.join(self.search_results_folder, f"{VERSION.replace(' ', '_')}", folder_name)
-        if not os.path.exists(folder):
-            os.makedirs(folder)
-        return folder
 
 
 def plot_mesh_terms(mesh_counter, top=100, plot_width=1200, plot_height=400):

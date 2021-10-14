@@ -407,7 +407,7 @@ def result():
             job = AsyncResult(jobid, app=pubtrends_celery)
             if job and job.state == 'SUCCESS':
                 viz, data, log = job.result
-                save_predefined(viz, data, log, jobid)
+                save_predefined(viz, data, log, jobid, source, query, sort, limit)
                 logger.info(f'/result success {log_request(request)}')
                 return render_template('result.html',
                                        query=trim(query, MAX_QUERY_LENGTH),
@@ -418,7 +418,7 @@ def result():
                                        version=VERSION,
                                        log=log,
                                        **viz)
-            viz_log = load_predefined_viz_log(jobid)
+            viz_log = load_predefined_viz_log(source, query, sort, limit, jobid)
             if viz_log is not None:
                 viz, log = viz_log
                 return render_template('result.html',
@@ -454,7 +454,7 @@ def graph():
     limit = request.args.get('limit')
     sort = request.args.get('sort')
     if jobid:
-        data = load_predefined_or_result_data(jobid, pubtrends_celery)
+        data = load_predefined_or_result_data(source, query, sort, limit, jobid, pubtrends_celery)
         if data is not None:
             loader, url_prefix = Loaders.get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
             analyzer = PapersAnalyzer(loader, PUBTRENDS_CONFIG)
@@ -494,7 +494,7 @@ def paper():
     value = request.args.get('value')
     try:
         if jobid:
-            data = load_predefined_or_result_data(jobid, pubtrends_celery)
+            data = load_predefined_or_result_data(source, query, sort, limit, jobid, pubtrends_celery)
             if data is not None:
                 logger.info(f'/paper success {log_request(request)}')
                 return render_template('paper.html',
@@ -550,7 +550,7 @@ def show_ids():
         search_string += 'Hot Papers'
 
     if jobid:
-        data = load_predefined_or_result_data(jobid, pubtrends_celery)
+        data = load_predefined_or_result_data(source, query, sort, limit, jobid, pubtrends_celery)
         if data is not None:
             logger.info(f'/papers success {log_request(request)}')
             export_name = re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{query}_{search_string}'.lower())).strip('_')
@@ -628,7 +628,7 @@ def export_results():
         limit = request.args.get('limit')
         sort = request.args.get('sort')
         if jobid and query and source and limit and source:
-            data = load_predefined_or_result_data(jobid, pubtrends_celery)
+            data = load_predefined_or_result_data(source, query, sort, limit, jobid, pubtrends_celery)
             with tempfile.TemporaryDirectory() as tmpdir:
                 name = re.sub('_{2,}', '_',
                               re.sub('["\':,. ]', '_', f'{source}_{query}_{sort}_{limit}'.lower())).strip('_')

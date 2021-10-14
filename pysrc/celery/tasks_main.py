@@ -83,7 +83,7 @@ def analyze_search_terms_files(source, query, sort=None, limit=None, noreviews=T
                 PapersAnalyzer.EXPAND_SIMILARITY_THRESHOLD,
                 analyzer.progress, current=2, task=current_task
             )
-        analyzer.analyze_ids(ids, source, query, limit, test=test, task=current_task)
+        analyzer.analyze_ids(ids, source, query, sort, limit, test=test, task=current_task)
         analyzer.progress.done(task=current_task)
         analyzer.teardown()
         return analyzer.query_folder
@@ -186,7 +186,7 @@ def analyze_pubmed_search_files(query, limit, test=False):
     try:
         analyzer.progress.info(f"Searching Pubmed query: {query}, limit {limit}", current=1, task=current_task)
         ids = pubmed_search(query, limit)
-        analyzer.analyze_ids(ids, 'Pubmed', query, limit, test=test, task=current_task)
+        analyzer.analyze_ids(ids, 'Pubmed', query, '', limit, test=test, task=current_task)
         analyzer.progress.done(task=current_task)
         analyzer.teardown()
         return analyzer.query_folder
