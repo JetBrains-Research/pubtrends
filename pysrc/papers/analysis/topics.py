@@ -4,7 +4,7 @@ from itertools import chain
 
 import numpy as np
 from sklearn.cluster import AgglomerativeClustering
-from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.metrics import pairwise_distances
 
 from pysrc.papers.analysis.text import get_frequent_tokens
 
@@ -12,15 +12,15 @@ logger = logging.getLogger(__name__)
 
 
 def compute_topics_similarity_matrix(papers_embeddings, comps):
-    logger.debug('Computing mean cosine similarity between topics embeddings')
+    logger.debug('Computing mean similarity between topics embeddings')
     n_comps = len(set(comps))
-    cos_similarities = cosine_similarity(papers_embeddings)
+    distances = pairwise_distances(papers_embeddings)
     similarity_matrix = np.zeros(shape=(n_comps, n_comps))
     indx = {i: np.flatnonzero([c == i for c in comps]).tolist() for i in range(n_comps)}
     for i in range(n_comps):
         for j in range(i, n_comps):
-            mean_similarity = np.mean(cos_similarities[indx[i], :][:, indx[j]])
-            similarity_matrix[i, j] = similarity_matrix[j, i] = mean_similarity
+            mean_distance = np.mean(distances[indx[i], :][:, indx[j]])
+            similarity_matrix[i, j] = similarity_matrix[j, i] = 1 / (1 + mean_distance)
     return similarity_matrix
 
 
