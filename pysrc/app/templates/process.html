@@ -31,48 +31,47 @@
             }
         };
 
-        const TIMEOUT = 5000; // 5 seconds
-        const MAX_RETRIES = 30;
+        const TIMEOUT = 3000; // 5 seconds
+        const MAX_RETRIES = 6; // 30 seconds total
         let retries = 0;
         let cancelled = false;
-        let last_progress;
 
         function check_status() {
             if (cancelled) {
                 return;
             }
+            let $status = $('#status');
+            let $progress = $('#progress');
+            let $log = $('#log');
             $.ajax("{{url_for('.status', jobid=jobid)}}", {
                 dataType: "json", success: function (response) {
                     console.log(response);
                     if (response.state === 'FAILURE') {
-                        $('#progress').hide();
                         let errorMsg = `<h2>Error</h2><span class="error-message"> ${response.message} </span>`;
                         if (response.search_error) {
-                            $('#status').html(errorMsg);
+                            $status.html(errorMsg);
                         } else {
-                            $('#status').html(errorMsg + `<br>We're working on it. Please check back soon.`)
+                            $status.html(errorMsg + `<br>We're working on it. Please check back soon.`)
                         }
-                        $('#log').html(response.log);
+                        $status.show();
+                        $progress.hide();
+                        $log.html(response.log);
                     } else if (response.state === 'PENDING') {
-                        $('#status').html(response.message);
+                        $status.html(response.message);
+                        $status.show();
                         setTimeout(check_status, TIMEOUT);
                     } else if (response.state !== undefined) {
-                        $('#status').hide();
-                        $('#progress').show();
-                        if (last_progress !== response.progress) {
+                        $status.hide();
+                        if (response.progress !== undefined) {
                             $('.progress-bar').css('width', response.progress + '%').attr('aria-valuenow', response.progress);
                             $('.progress-bar-label').text(response.progress + '%');
-                            last_progress = response.progress;
                         }
                         if (response.state === 'SUCCESS') {
-
                             // Disable formatter for the next section because of injections.
                             // Enable formatter control in File > Settings > Editor > Code Style
                             // @formatter:off
-
                             // Join arg-value pairs for URL
                             var args = {{ redirect_args|safe }};
-
                             // @formatter:on
 
                             const args_list = [];
@@ -84,23 +83,25 @@
                             const href = `/{{ redirect_page }}?${args_list.join('&')}`;
                             window.location.replace(href);
                         } else {
-                            $('#log').html(response.log);
+                            $log.html(response.log);
                             setTimeout(check_status, TIMEOUT);
                         }
                     } else {
                         retries += 1;
                         if (retries > MAX_RETRIES) {
-                            $('#progress').hide();
-                            $('#status').html("<h2>Error</h2>Failed to fetch results.<br>We're working on it. Please check back soon.");
+                            $progress.hide();
+                            $status.html("<h2>Error</h2>Failed to fetch results.<br>We're working on it. Please check back soon.");
+                            $status.show();
                         } else {
                             setTimeout(check_status, TIMEOUT);
                         }
                     }
                 },
                 error: function () {
-                    $('#progress').hide();
-                    $('#log').hide();
-                    $('#status').html("<h2>Error</h2>We're working on it. Please check back soon.");
+                    $progress.hide();
+                    $log.hide();
+                    $status.html("<h2>Error</h2>We're working on it. Please check back soon.");
+                    $status.show();
                 },
                 timeout: TIMEOUT * MAX_RETRIES
             });
