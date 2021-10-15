@@ -74,14 +74,12 @@ def no_stemming_filter(query_str):
     return ' AND (' + \
            ' OR '.join(
                'P.title IS NOT NULL AND ' +
-               ' AND '.join(
-                   f"position('{w.strip()}' in LOWER(P.title))>0" for w in re.split(r'(?:&|<->)+', q)) +
+               ' AND '.join(f'P.title ~* \'(\\m{w.strip()}\\M)\'' for w in re.split(r'(?:&|<->)+', q)) +
                ' OR ' +
                'P.abstract IS NOT NULL AND ' +
-               ' AND '.join(
-                   f"position('{w.strip()}' in LOWER(P.abstract))>0" for w in re.split(r'(?:&|<->)+', q))
-               for q in query_str.lower().split('|')) + \
-           ')'
+               ' AND '.join(f'P.abstract ~* \'(\\m{w.strip()}\\M)\'' for w in re.split(r'(?:&|<->)+', q))
+               for q in query_str.lower().split('|')
+           ) + ')'
 
 
 def process_cocitations_postgres(cursor):

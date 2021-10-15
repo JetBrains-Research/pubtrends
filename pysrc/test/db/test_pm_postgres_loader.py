@@ -4,6 +4,8 @@ import numpy as np
 from pandas.testing import assert_frame_equal
 from parameterized import parameterized
 
+from pysrc.papers.db.article import AuxInfo, Author, Journal
+from pysrc.papers.db.pm_article import PubmedArticle
 from pysrc.papers.utils import SORT_MOST_RECENT, SORT_MOST_CITED
 from pysrc.test.db.pm_test_articles import EXPECTED_PUB_DF, \
     EXPECTED_CIT_STATS_DF, INNER_CITATIONS, EXPECTED_CIT_DF, EXPECTED_COCIT_DF, EXPECTED_PUB_DF_GIVEN_IDS, \
@@ -16,7 +18,6 @@ from pysrc.test.db.pm_test_articles import REQUIRED_ARTICLES, ARTICLES, CITATION
 
 
 class TestPubmedPostgresLoader(unittest.TestCase):
-
     test_config = PubtrendsConfig(test=True)
     loader = PubmedPostgresLoader(test_config)
 
@@ -31,6 +32,19 @@ class TestPubmedPostgresLoader(unittest.TestCase):
         writer = PubmedPostgresWriter(config=TestPubmedPostgresLoader.test_config)
         writer.init_pubmed_database()
         writer.insert_pubmed_publications(ARTICLES)
+        writer.insert_pubmed_publications([
+            PubmedArticle(pmid=16960519,
+                          title='Comparison of the 2001 BRFSS and the IPAQ Physical Activity Questionnaires',
+                          abstract='''
+Purpose: ... (BRFSS) physical activity module ...
+Results: ... for the lowest category (inactive) by ...
+''',
+                          year=2006,
+                          doi='10.1249/01.mss.0000229457.73333.9a',
+                          aux=AuxInfo(
+                              authors=[Author(name='Barbara E Ainsworth')],
+                              journal=Journal(name='Med Sci Sports Exerc.')))
+        ])
         writer.insert_pubmed_citations(CITATIONS)
 
         # Get data via loader methods
@@ -104,6 +118,13 @@ class TestPubmedPostgresLoader(unittest.TestCase):
         self.assertListEqual(sorted(idswithreview), ['1', '10', '2', '3', '4', '5', '6', '7', '8', '9'],
                              'Wrong IDs of papers')
 
+    def test_search_phrase(self):
+        self.assertListEqual(['16960519'], self.loader.search('"activity module"', limit=100, sort=SORT_MOST_CITED),
+                             'Wrong IDs of papers')
+        # word inactive won't be matched
+        self.assertListEqual([], self.loader.search('"active module"', limit=100, sort=SORT_MOST_CITED),
+                             'Wrong IDs of papers')
+
     def test_load_citation_stats_data_frame(self):
         # Sort to compare with expected
         actual = self.cit_stats_df.sort_values(by=['id', 'year']).reset_index(drop=True)
@@ -161,7 +182,6 @@ class TestPubmedPostgresLoader(unittest.TestCase):
             actual.sort_values(by=['total', 'id']).reset_index(drop=True),
             "Wrong list of expanded 4 ids"
         )
-
 
     @parameterized.expand([
         ('id search', 'id', '1', ['1']),

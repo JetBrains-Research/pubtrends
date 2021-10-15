@@ -62,18 +62,20 @@ class TestPostgresUtils(unittest.TestCase):
 
     def test_no_stemming_filter(self):
         self.assertEqual(
-            " AND (P.title IS NOT NULL "
-            "AND position('covid-19' in LOWER(P.title))>0 OR P.abstract IS NOT NULL "
-            "AND position('covid-19' in LOWER(P.abstract))>0 "
-            "OR P.title IS NOT NULL "
-            "AND position('corona' in LOWER(P.title))>0 AND position('virus' in LOWER(P.title))>0 "
-            "OR P.abstract IS NOT NULL "
-            "AND position('corona' in LOWER(P.abstract))>0 AND position('virus' in LOWER(P.abstract))>0 "
-            "OR P.title IS NOT NULL "
-            "AND position('respiratory' in LOWER(P.title))>0 AND position('syndrome' in LOWER(P.title))>0 "
-            "OR P.abstract IS NOT NULL "
-            "AND position('respiratory' in LOWER(P.abstract))>0 AND position('syndrome' in LOWER(P.abstract))>0)",
+            " AND (P.title IS NOT NULL AND P.title ~* '(\mcovid-19\M)' OR P.abstract IS NOT NULL AND "
+            "P.abstract ~* '(\mcovid-19\M)' OR P.title IS NOT NULL AND P.title ~* '(\mcorona\M)' AND "
+            "P.title ~* '(\mvirus\M)' OR P.abstract IS NOT NULL AND P.abstract ~* '(\mcorona\M)' AND "
+            "P.abstract ~* '(\mvirus\M)' OR P.title IS NOT NULL AND P.title ~* '(\mrespiratory\M)' AND "
+            "P.title ~* '(\msyndrome\M)' OR P.abstract IS NOT NULL AND P.abstract ~* '(\mrespiratory\M)' AND "
+            "P.abstract ~* '(\msyndrome\M)')",
             no_stemming_filter('COVID-19 | Corona<->virus| Respiratory & Syndrome')
+        )
+
+    def test_no_stemming_filter_phrase(self):
+        self.assertEqual(
+            " AND (P.title IS NOT NULL AND P.title ~* '(\mactive\M)' AND P.title ~* '(\mmodule\M)' OR "
+            "P.abstract IS NOT NULL AND P.abstract ~* '(\mactive\M)' AND P.abstract ~* '(\mmodule\M)')",
+            no_stemming_filter('active<->module')
         )
 
     def test_non_english_query(self):
@@ -110,3 +112,7 @@ class TestPostgresUtils(unittest.TestCase):
             ['4', '5', 3],
         ], columns=['citing_1', 'citing_2', 'total'])
         assert_frame_equal(df, expected_df)
+
+
+if __name__ == '__main__':
+    unittest.main()
