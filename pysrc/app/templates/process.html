@@ -56,34 +56,43 @@
                         $status.show();
                         $progress.hide();
                         $log.html(response.log);
-                    } else if (response.state === 'PENDING') {
-                        $status.html(response.message);
-                        $status.show();
-                        setTimeout(check_status, TIMEOUT);
+                    } else if (response.state === 'SUCCESS') {
+                        // Disable formatter for the next section because of injections.
+                        // Enable formatter control in File > Settings > Editor > Code Style
+                        // @formatter:off
+                        // Join arg-value pairs for URL
+                        var args = {{ redirect_args|safe }};
+                        // @formatter:on
+
+                        const args_list = [];
+                        for (const key in args) {
+                            args_list.push(`${key}=${args[key]}`);
+                        }
+
+                        // Build href for given redirect page and args
+                        const href = `/{{ redirect_page }}?${args_list.join('&')}`;
+                        window.location.replace(href);
                     } else if (response.state !== undefined) {
-                        $status.hide();
                         if (response.progress !== undefined) {
                             $('.progress-bar').css('width', response.progress + '%').attr('aria-valuenow', response.progress);
                             $('.progress-bar-label').text(response.progress + '%');
-                        }
-                        if (response.state === 'SUCCESS') {
-                            // Disable formatter for the next section because of injections.
-                            // Enable formatter control in File > Settings > Editor > Code Style
-                            // @formatter:off
-                            // Join arg-value pairs for URL
-                            var args = {{ redirect_args|safe }};
-                            // @formatter:on
-
-                            const args_list = [];
-                            for (const key in args) {
-                                args_list.push(`${key}=${args[key]}`);
-                            }
-
-                            // Build href for given redirect page and args
-                            const href = `/{{ redirect_page }}?${args_list.join('&')}`;
-                            window.location.replace(href);
+                            $progress.show();
                         } else {
+                            $progress.hide();
+                        }
+                        if (response.message !== undefined) {
+                            $status.html(response.message);
+                            $status.show();
+                        } else {
+                            $status.hide();
+                        }
+                        if (response.log !== undefined) {
                             $log.html(response.log);
+                            $log.show();
+                        } else {
+                            $log.hide();
+                        }
+                        if (response.state !== 'REVOKED') {
                             setTimeout(check_status, TIMEOUT);
                         }
                     } else {
@@ -108,31 +117,37 @@
         }
 
         function cancel() {
-            cancelled = true;
+            let $status = $('#status');
+            let $log = $('#log');
+            let $progress = $('#progress');
             $.ajax("{{url_for('.cancel', jobid=jobid)}}", {
                 dataType: "json", success: function (response) {
                     console.log(response);
                     if (response.state === 'CANCELLED') {
-                        $('#status').html(response.message);
-                        $('#log').empty();
+                        $progress.hide();
+                        $log.hide();
+                        $status.html(response.message);
+                        $status.show();
                         setTimeout(function () {
                             window.location.replace("/");
                         }, TIMEOUT);
                     } else if (response.state === 'FAILURE') {
-                        $('#progress').hide();
+                        $progress.hide();
+                        $log.hide();
                         let errorMsg = `<h2>Error</h2><span class="error-message"> ${response.message} </span>`;
                         if (response.search_error) {
-                            $('#status').html(errorMsg);
+                            $status.html(errorMsg);
                         } else {
-                            $('#status').html(errorMsg + `<br>We're working on it. Please check back soon.`)
+                            $status.html(errorMsg + `<br>We're working on it. Please check back soon.`)
                         }
-                        $('#log').empty();
+                        $status.show();
                         setTimeout(function () {
                             window.location.replace("/");
                         }, TIMEOUT);
                     }
                 }
             });
+            cancelled = true;
         }
 
         $(function () {
