@@ -33,17 +33,14 @@ class TestPubmedPostgresLoader(unittest.TestCase):
         writer.init_pubmed_database()
         writer.insert_pubmed_publications(ARTICLES)
         writer.insert_pubmed_publications([
-            PubmedArticle(pmid=16960519,
-                          title='Comparison of the 2001 BRFSS and the IPAQ Physical Activity Questionnaires',
+            PubmedArticle(pmid=100,
+                          title='active module',
                           abstract='''
-Purpose: ... (BRFSS) physical activity module ...
-Results: ... for the lowest category (inactive) by ...
+... physical activity module ... (inactive) ... activating modules ... antipositive ...
 ''',
-                          year=2006,
-                          doi='10.1249/01.mss.0000229457.73333.9a',
-                          aux=AuxInfo(
-                              authors=[Author(name='Barbara E Ainsworth')],
-                              journal=Journal(name='Med Sci Sports Exerc.')))
+                          year=2021,
+                          doi='10.1249/01.mss.0000229457.73333.9a,doi:10.1101/gad.918201 ',
+                          aux=AuxInfo(authors=[], journal=Journal(name='')))
         ])
         writer.insert_pubmed_citations(CITATIONS)
 
@@ -121,9 +118,20 @@ Results: ... for the lowest category (inactive) by ...
     def test_search_phrase(self):
         self.assertListEqual(['16960519'], self.loader.search('"activity module"', limit=100, sort=SORT_MOST_CITED),
                              'Wrong IDs of papers')
-        # word inactive won't be matched
+        self.assertListEqual(['16960519'], self.loader.search('"activating modules"', limit=100, sort=SORT_MOST_CITED),
+                             'Wrong IDs of papers')
+
+        # there is not pharse, but words
         self.assertListEqual([], self.loader.search('"active module"', limit=100, sort=SORT_MOST_CITED),
                              'Wrong IDs of papers')
+        # plural check
+        self.assertListEqual([], self.loader.search('"activating module"', limit=100, sort=SORT_MOST_CITED),
+                             'Wrong IDs of papers')
+        # whole word match
+        self.assertListEqual([], self.loader.search('positive', limit=100, sort=SORT_MOST_CITED),
+                             'Wrong IDs of papers')
+
+
 
     def test_load_citation_stats_data_frame(self):
         # Sort to compare with expected
