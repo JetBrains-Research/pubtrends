@@ -75,12 +75,12 @@ def no_stemming_filter(query_str):
            ' OR '.join(
                'P.title IS NOT NULL AND ' +
                ' AND '.join(
-                   'P.title ~* \'(\\m' + w.strip().replace("<->", "\\s")+ '}\\M)\'' for w in re.split(r'(?:&)+', q)
+                   'P.title ~* \'(\\m' + w.strip().replace("<->", "\\s+")+ '\\M)\'' for w in re.split(r'(?:&)+', q)
                ) +
                ' OR ' +
                'P.abstract IS NOT NULL AND ' +
                ' AND '.join(
-                   'P.abstract ~* \'(\\m{' + w.strip().replace("<->", "\\s") + '}\\M)\'' for w in re.split(r'(?:&)+', q)
+                   'P.abstract ~* \'(\\m' + w.strip().replace("<->", "\\s+") + '\\M)\'' for w in re.split(r'(?:&)+', q)
                )
                for q in query_str.lower().split('|')
            ) + ')'

@@ -34,9 +34,9 @@ class TestPubmedPostgresLoader(unittest.TestCase):
         writer.insert_pubmed_publications(ARTICLES)
         writer.insert_pubmed_publications([
             PubmedArticle(pmid=100,
-                          title='active module',
+                          title='activemodule',
                           abstract='''
-... physical activity module ... (inactive) ... activating modules ... antipositive ...
+... physical activity module ... (inactive) ... activating                modules ... antipositive ... active ...
 ''',
                           year=2021,
                           doi='10.1249/01.mss.0000229457.73333.9a,doi:10.1101/gad.918201 ',
@@ -116,9 +116,9 @@ class TestPubmedPostgresLoader(unittest.TestCase):
                              'Wrong IDs of papers')
 
     def test_search_phrase(self):
-        self.assertListEqual(['16960519'], self.loader.search('"activity module"', limit=100, sort=SORT_MOST_CITED),
+        self.assertListEqual(['100'], self.loader.search('"activity module"', limit=100, sort=SORT_MOST_CITED),
                              'Wrong IDs of papers')
-        self.assertListEqual(['16960519'], self.loader.search('"activating modules"', limit=100, sort=SORT_MOST_CITED),
+        self.assertListEqual(['100'], self.loader.search('"activating modules"', limit=100, sort=SORT_MOST_CITED),
                              'Wrong IDs of papers')
 
         # there is not pharse, but words
