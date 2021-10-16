@@ -61,13 +61,13 @@ class TestPostgresUtils(unittest.TestCase):
         )
 
     def test_no_stemming_filter(self):
-        # print(no_stemming_filter('COVID-19 | Corona<->virus| Respiratory & Syndrome'))
         self.assertEqual(
-            " AND (P.title IS NOT NULL AND P.title ~* '(\mcovid-19}\M)' OR P.abstract IS NOT NULL AND "
-            "P.abstract ~* '(\m{covid-19}\M)' OR P.title IS NOT NULL AND P.title ~* '(\mcorona\svirus}\M)' OR "
-            "P.abstract IS NOT NULL AND P.abstract ~* '(\m{corona\svirus}\M)' OR P.title IS NOT NULL AND "
-            "P.title ~* '(\mrespiratory}\M)' AND P.title ~* '(\msyndrome}\M)' OR P.abstract IS NOT NULL AND "
-            "P.abstract ~* '(\m{respiratory}\M)' AND P.abstract ~* '(\m{syndrome}\M)')",
+            " AND (P.title IS NOT NULL AND P.title ~* '(\mcovid-19\M)' OR "
+            "P.abstract IS NOT NULL AND P.abstract ~* '(\mcovid-19\M)' OR "
+            "P.title IS NOT NULL AND P.title ~* '(\mcorona\s+virus\M)' OR "
+            "P.abstract IS NOT NULL AND P.abstract ~* '(\mcorona\s+virus\M)' "
+            "OR P.title IS NOT NULL AND P.title ~* '(\mrespiratory\M)' AND P.title ~* '(\msyndrome\M)' OR "
+            "P.abstract IS NOT NULL AND P.abstract ~* '(\mrespiratory\M)' AND P.abstract ~* '(\msyndrome\M)')",
             no_stemming_filter('COVID-19 | Corona<->virus| Respiratory & Syndrome')
         )
 
