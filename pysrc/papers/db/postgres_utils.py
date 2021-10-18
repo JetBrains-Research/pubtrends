@@ -71,19 +71,14 @@ def preprocess_search_query_for_postgres(query, min_search_words):
 
 
 def no_stemming_filter(query_str):
-    return ' AND (' + \
-           ' OR '.join(
-               'P.title IS NOT NULL AND ' +
-               ' AND '.join(
-                   'P.title ~* \'(\\m' + w.strip().replace("<->", "\\s+")+ '\\M)\'' for w in re.split(r'(?:&)+', q)
-               ) +
-               ' OR ' +
-               'P.abstract IS NOT NULL AND ' +
-               ' AND '.join(
-                   'P.abstract ~* \'(\\m' + w.strip().replace("<->", "\\s+") + '\\M)\'' for w in re.split(r'(?:&)+', q)
-               )
-               for q in query_str.lower().split('|')
-           ) + ')'
+    return ' AND (' + ' OR '.join(
+        ' AND '.join(
+            '(P.title IS NOT NULL AND P.title ~* \'(\\m' + w.strip().replace("<->", "\\s+") + '\\M)\'' +
+            ' OR ' +
+            'P.abstract IS NOT NULL AND P.abstract ~* \'(\\m' + w.strip().replace("<->", "\\s+") + '\\M)\')'
+            for w in re.split(r' & ', q)
+        ) for q in query_str.lower().split('|')
+    ) + ')'
 
 
 def process_cocitations_postgres(cursor):

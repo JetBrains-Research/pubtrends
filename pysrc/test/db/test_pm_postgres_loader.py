@@ -34,9 +34,10 @@ class TestPubmedPostgresLoader(unittest.TestCase):
         writer.insert_pubmed_publications(ARTICLES)
         writer.insert_pubmed_publications([
             PubmedArticle(pmid=100,
-                          title='activemodule',
+                          title='activemodule dna',
                           abstract='''
 ... physical activity module ... (inactive) ... activating                modules ... antipositive ... active ...
+... methylation ...
 ''',
                           year=2021,
                           doi='10.1249/01.mss.0000229457.73333.9a,doi:10.1101/gad.918201 ',
@@ -120,8 +121,11 @@ class TestPubmedPostgresLoader(unittest.TestCase):
                              'Wrong IDs of papers')
         self.assertListEqual(['100'], self.loader.search('"activating modules"', limit=100, sort=SORT_MOST_CITED),
                              'Wrong IDs of papers')
+        # Words in all fields
+        self.assertListEqual(['100'], self.loader.search('dna methylation', limit=100, sort=SORT_MOST_CITED),
+                             'Wrong IDs of papers')
 
-        # there is not pharse, but words
+        # there is not phrase, but words
         self.assertListEqual([], self.loader.search('"active module"', limit=100, sort=SORT_MOST_CITED),
                              'Wrong IDs of papers')
         # plural check
@@ -130,7 +134,9 @@ class TestPubmedPostgresLoader(unittest.TestCase):
         # whole word match
         self.assertListEqual([], self.loader.search('positive', limit=100, sort=SORT_MOST_CITED),
                              'Wrong IDs of papers')
-
+        # Words different fields
+        self.assertListEqual([], self.loader.search('"dna methylation"', limit=100, sort=SORT_MOST_CITED),
+                             'Wrong IDs of papers')
 
 
     def test_load_citation_stats_data_frame(self):
