@@ -31,8 +31,8 @@
             }
         };
 
-        const TIMEOUT = 3000; // 5 seconds
-        const MAX_RETRIES = 6; // 30 seconds total
+        const TIMEOUT = 10000; // 10 seconds
+        const MAX_RETRIES = 12; // 2 minutes total
         let retries = 0;
         let cancelled = false;
 
@@ -44,7 +44,8 @@
             let $progress = $('#progress');
             let $log = $('#log');
             $.ajax("{{url_for('.status', jobid=jobid)}}", {
-                dataType: "json", success: function (response) {
+                dataType: "json",
+                success: function (response) {
                     console.log(response);
                     if (response.state === 'FAILURE') {
                         let errorMsg = `<h2>Error</h2><span class="error-message"> ${response.message} </span>`;
@@ -106,10 +107,14 @@
                         }
                     }
                 },
-                error: function () {
+                error: function(jqXHR, textStatus, errorThrown) {
                     $progress.hide();
                     $log.hide();
-                    $status.html("<h2>Error</h2>We're working on it. Please check back soon.");
+                    if (textStatus === 'timeout') {
+                        $status.html("<h2>Server is not responding</h2>We're working on it. Please check back soon.");
+                    } else {
+                        $status.html("<h2>Error</h2>" + errorThrown + " We're working on it. Please check back soon.");
+                    }
                     $status.show();
                 },
                 timeout: TIMEOUT * MAX_RETRIES
