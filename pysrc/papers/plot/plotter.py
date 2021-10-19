@@ -785,7 +785,7 @@ class Plotter:
         comp_labels = [f"#{c + 1}" for c in sorted(set(comps))]
         source = ColumnDataSource({'x': lxs, 'y': lys, 'name': comp_labels})
         labels = LabelSet(x='x', y='y', text='name', source=source,
-                          background_fill_color='white', text_font_size='11px', background_fill_alpha=.9)
+                          background_fill_color='white', text_font_size='13px', background_fill_alpha=.9)
         p.renderers.append(labels)
 
         return p
