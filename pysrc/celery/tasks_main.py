@@ -102,7 +102,7 @@ def analyze_id_list(source, ids, query, analysis_type, limit=None, test=False):
 def _analyze_id_list(analyzer, source, ids, query, analysis_type=IDS_ANALYSIS_TYPE, limit=None, test=False, task=None):
     if len(ids) == 0:
         raise RuntimeError('Empty papers list')
-    analyzer.progress.info(f'Analyzing paper(s) from {source}', current=1, task=task)
+    analyzer.progress.info(f'Analyzing {len(ids)} paper(s) from {source}', current=1, task=task)
     try:
         if analysis_type == PAPER_ANALYSIS_TYPE:
             limit = int(limit) if limit else analyzer.config.max_number_to_expand
@@ -186,6 +186,7 @@ def analyze_pubmed_search_files(query, limit, test=False):
     try:
         analyzer.progress.info(f"Searching Pubmed query: {query}, limit {limit}", current=1, task=current_task)
         ids = pubmed_search(query, limit)
+        analyzer.progress.info(f'Analysing {len(ids)} paper(s) from Pubmed', current=1, task=current_task)
         analyzer.analyze_ids(ids, 'Pubmed', query, '', limit, test=test, task=current_task)
         analyzer.progress.done(task=current_task)
         analyzer.teardown()

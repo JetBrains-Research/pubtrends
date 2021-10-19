@@ -70,7 +70,6 @@ class AnalyzerFiles(PapersAnalyzer):
         if not os.path.exists(self.query_folder):
             os.makedirs(self.query_folder)
         logger.info(f'Query folder: {self.query_folder}')
-        self.progress.info(f'Found {len(ids)} papers', current=1, task=task)
         path_ids = os.path.join(self.query_folder, 'ids.txt')
         logger.info(f'Ids saved to {path_ids}')
         with open(path_ids, 'w') as f:
