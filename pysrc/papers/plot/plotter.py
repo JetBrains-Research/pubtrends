@@ -3,6 +3,7 @@ import logging
 import re
 from collections import Counter
 from itertools import chain
+from math import fabs, log, sin, cos, pi
 from string import Template
 
 import holoviews as hv
@@ -20,13 +21,11 @@ from holoviews import opts
 from matplotlib import pyplot as plt
 from wordcloud import WordCloud
 
-from pysrc.papers.analysis.graph import sparse_graph
 from pysrc.papers.analysis.text import get_frequent_tokens
-from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
-from pysrc.papers.utils import cut_authors_list, trim, rgb2hex, MAX_TITLE_LENGTH, IDS_ANALYSIS_TYPE
+from pysrc.papers.utils import cut_authors_list, trim, rgb2hex, MAX_TITLE_LENGTH, IDS_ANALYSIS_TYPE, contrast_color
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
 hv.extension('bokeh')
@@ -78,13 +77,17 @@ def visualize_analysis(analyzer):
     if analyzer.papers_graph.nodes():
         result.update(dict(
             topics_analyzed=True,
-            component_size_summary=[components(plotter.topic_years_distribution())],
+            topic_years_distribution=[components(plotter.topic_years_distribution())],
             topics_info_and_word_cloud_and_callback=[
                 (components(p), Plotter.word_cloud_prepare(wc), "true" if is_empty else "false", zoom_in_callback) for
                 (p, wc, is_empty, zoom_in_callback) in plotter.topics_info_and_word_cloud_and_callback()],
             component_sizes=plotter.component_sizes(),
             papers_graph=[components(plotter.plot_papers_graph())]
         ))
+
+        topics_hierarchy_with_keywords = plotter.topics_hierarchy_with_keywords()
+        if topics_hierarchy_with_keywords:
+            result['topics_hierarchy_with_keywords'] = [components(topics_hierarchy_with_keywords)]
 
     # Configure additional features
     result.update(dict(
@@ -520,6 +523,125 @@ class Plotter:
             for comp, count in zip(components[:top], counts[:top])
         ])
 
+    def topics_hierarchy_with_keywords(self):
+        if self.analyzer.dendrogram is None:
+            return None
+        return Plotter._topics_hierarchy_with_keywords(
+            self.analyzer.df, self.analyzer.kwd_df, self.analyzer.clusters, self.analyzer.dendrogram
+        )
+
+    @staticmethod
+    def _topics_hierarchy_with_keywords(df, kwd_df, clusters, dendrogram_children,
+                                        max_words=3, plot_width=PLOT_WIDTH, plot_height=int(PLOT_WIDTH * 3 / 4)):
+        comp_sizes = Counter(df['comp'])
+        logger.debug('Computing dendrogram for clusters')
+        if dendrogram_children is None:
+            return None
+        clusters_dendrogram = PlotPreprocessor.compute_clusters_dendrogram_children(clusters, dendrogram_children)
+        paths, leaves_order = PlotPreprocessor.convert_clusters_dendrogram_to_paths(clusters, clusters_dendrogram)
+
+        # Configure dimensions
+        p = figure(x_range=(-180, 180),
+                   y_range=(-160, 160),
+                   tools="save",
+                   width=plot_width, height=plot_height)
+        x_coefficient = 1.2  # Ellipse x coefficient
+        y_delta = 40  # Extra space near pi / 2 and 3 * pi / 2
+        n_topics = len(leaves_order)
+        radius = 100  # Radius of circular dendrogram
+        dendrogram_len = len(paths[0])
+        d_radius = radius / dendrogram_len
+        d_degree = 2 * pi / n_topics
+
+        # Leaves coordinates
+        leaves_degrees = dict((v, i * d_degree) for v, i in leaves_order.items())
+
+        # Draw dendrogram - from bottom to top
+        ds = leaves_degrees.copy()
+        for i in range(1, dendrogram_len):
+            next_ds = {}
+            for path in paths:
+                if path[i] not in next_ds:
+                    next_ds[path[i]] = []
+                next_ds[path[i]].append(ds[path[i - 1]])
+            for v, nds in next_ds.items():
+                next_ds[v] = np.mean(nds)
+
+            for path in paths:
+                current_d = ds[path[i - 1]]
+                next_d = next_ds[path[i]]
+                p.line([cos(current_d) * d_radius * (dendrogram_len - i),
+                        cos(next_d) * d_radius * (dendrogram_len - i - 1)],
+                       [sin(current_d) * d_radius * (dendrogram_len - i),
+                        sin(next_d) * d_radius * (dendrogram_len - i - 1)],
+                       line_color='lightgray')
+            ds = next_ds
+
+        # Draw leaves
+        n_comps = len(comp_sizes)
+        cmap = Plotter.factors_colormap(n_comps)
+        topics_colors = dict((i, Plotter.color_to_rgb(cmap(i))) for i in range(n_comps))
+        xs = [cos(d) * d_radius * (dendrogram_len - 1) for _, d in leaves_degrees.items()]
+        ys = [sin(d) * d_radius * (dendrogram_len - 1) for _, d in leaves_degrees.items()]
+        sizes = [20 + int(min(10, log(comp_sizes[v]))) for v, _ in leaves_degrees.items()]
+        comps = [v + 1 for v, _ in leaves_degrees.items()]
+        colors = [topics_colors[v] for v, _ in leaves_degrees.items()]
+        ds = ColumnDataSource(data=dict(x=xs, y=ys, size=sizes, comps=comps, color=colors))
+        p.circle(x='x', y='y', size='size', fill_color='color', line_color='black', source=ds)
+
+        # Topics labels
+        p.text(x=[cos(d) * d_radius * (dendrogram_len - 1) for _, d in leaves_degrees.items()],
+               y=[sin(d) * d_radius * (dendrogram_len - 1) for _, d in leaves_degrees.items()],
+               text=[str(v + 1) for v, _ in leaves_degrees.items()],
+               text_align='center', text_baseline='middle', text_font_size='10pt',
+               text_color=[contrast_color(topics_colors[v]) for v, _ in leaves_degrees.items()])
+
+        # Show words for components - most popular words per component
+        words2show = PlotPreprocessor.topics_words(kwd_df, max_words)
+
+        # Visualize words
+        for v, d in leaves_degrees.items():
+            if v not in words2show:  # No super-specific words for topic
+                continue
+            words = words2show[v]
+            xs = []
+            ys = []
+            for i, word in enumerate(words):
+                wd = d + d_degree * (i - len(words) / 2) / len(words)
+                # Make word degree in range 0 - 2 * pi
+                if wd < 0:
+                    wd += 2 * pi
+                elif wd > 2 * pi:
+                    wd -= 2 * pi
+                xs.append(cos(wd) * radius * x_coefficient)
+                y = sin(wd) * radius
+                # Additional vertical space around pi/2 and 3*pi/2
+                if pi / 4 <= wd < 3 * pi / 4:
+                    y += pow(pi / 4 - fabs(pi / 2 - wd), 1.5) * y_delta
+                elif 5 * pi / 4 <= wd < 7 * pi / 4:
+                    y -= pow(pi / 4 - fabs(3 * pi / 2 - wd), 1.5) * y_delta
+                ys.append(y)
+
+            # Different text alignment for left | right parts
+            p.text(x=[x for x in xs if x > 0], y=[y for i, y in enumerate(ys) if xs[i] > 0],
+                   text=[w for i, w in enumerate(words) if xs[i] > 0],
+                   text_align='left', text_baseline='middle', text_font_size='10pt',
+                   text_color=topics_colors[v])
+            p.text(x=[x for x in xs if x <= 0], y=[y for i, y in enumerate(ys) if xs[i] <= 0],
+                   text=[w for i, w in enumerate(words) if xs[i] <= 0],
+                   text_align='right', text_baseline='middle', text_font_size='10pt',
+                   text_color=topics_colors[v])
+
+        p.sizing_mode = 'stretch_width'
+        p.axis.major_tick_line_color = None
+        p.axis.minor_tick_line_color = None
+        p.axis.major_label_text_color = None
+        p.axis.major_label_text_font_size = '0pt'
+        p.axis.axis_line_color = None
+        p.grid.grid_line_color = None
+        p.outline_line_color = None
+        return p
+
     def __serve_scatter_article_layout(self, ds, year_range, width=PLOT_WIDTH):
         min_year, max_year = year_range
         p = figure(tools=TOOLS, toolbar_location="right",
@@ -566,9 +688,14 @@ class Plotter:
         return html_tooltips_str
 
     def plot_papers_graph(self):
+        return Plotter._plot_papers_graph(
+            self.analyzer.source, self.analyzer.sparse_papers_graph, self.analyzer.df, self.analyzer.topics_description
+        )
+
+    @staticmethod
+    def _plot_papers_graph(source, gs, df, topics_tags, topics_meshs=None, add_callback=True,
+                           plot_width=PLOT_WIDTH, plot_height=TALL_PLOT_HEIGHT):
         logger.debug('Processing plot_papers_graph')
-        gs = self.analyzer.sparse_papers_graph
-        df = self.analyzer.df
         pids = df['id']
         comps = df['comp']
         graph = GraphRenderer()
@@ -589,7 +716,10 @@ class Plotter:
         graph.node_renderer.data_source.data['keywords'] = df['keywords']
         graph.node_renderer.data_source.data['topic'] = [c + 1 for c in comps]
         graph.node_renderer.data_source.data['topic_tags'] = \
-            [','.join(t for t, _ in self.analyzer.topics_description[c][:5]) for c in comps]
+            [','.join(t for t, _ in topics_tags[c][:5]) for c in comps]
+        if topics_meshs is not None:
+            graph.node_renderer.data_source.data['topic_meshs'] = \
+                [','.join(t for t, _ in topics_meshs[c][:5]) for c in comps]
 
         # Aesthetics
         graph.node_renderer.data_source.data['size'] = df['total'] * 20 / df['total'].max() + 5
@@ -603,8 +733,8 @@ class Plotter:
         xs, ys = df['x'], df['y']
         xrange = max(xs) - min(xs)
         yrange = max(ys) - min(ys)
-        p = figure(width=PLOT_WIDTH,
-                   height=TALL_PLOT_HEIGHT,
+        p = figure(width=plot_width,
+                   height=plot_height,
                    x_range=(min(xs) - 0.05 * xrange, max(xs) + 0.05 * xrange),
                    y_range=(min(ys) - 0.05 * yrange, max(ys) + 0.05 * yrange),
                    tools="pan,tap,wheel_zoom,box_zoom,reset,save")
@@ -618,7 +748,7 @@ class Plotter:
         p.outline_line_color = None
         p.sizing_mode = 'stretch_width'
 
-        p.add_tools(HoverTool(tooltips=self._paper_html_tooltips(self.analyzer.source, [
+        hover_tags = [
             ("Author(s)", '@authors'),
             ("Journal", '@journal'),
             ("Year", '@year'),
@@ -628,8 +758,13 @@ class Plotter:
             ("Keywords", '@keywords'),
             ("Topic", '@topic'),
             ("Topic tags", '@topic_tags'),
-        ])))
-        p.js_on_event('tap', self.paper_callback(graph.node_renderer.data_source))
+        ]
+        if topics_meshs is not None:
+            hover_tags.append(("Topic Mesh tags", '@topic_meshs'))
+        p.add_tools(HoverTool(tooltips=Plotter._paper_html_tooltips(source, hover_tags)))
+
+        if add_callback:
+            p.js_on_event('tap', Plotter.paper_callback(graph.node_renderer.data_source))
 
         graph_layout = dict(zip(pids, zip(xs, ys)))
         graph.layout_provider = StaticLayoutProvider(graph_layout=graph_layout)

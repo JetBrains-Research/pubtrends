@@ -3,7 +3,7 @@ import re
 
 import binascii
 import pandas as pd
-from Bio import Entrez
+from bokeh.colors import RGB
 from matplotlib import colors
 
 PUBMED_ARTICLE_BASE_URL = 'https://www.ncbi.nlm.nih.gov/pubmed/?term='
@@ -99,14 +99,22 @@ def hex2rgb(color):
     return [int(color[pos:pos + 2], 16) for pos in range(1, 7, 2)]
 
 
+def contrast_color(rgb):
+    r, g, b = rgb.r, rgb.g, rgb.b
+    """
+    Light foreground for dark background and vice verse.
+    Idea Taken from https://stackoverflow.com/a/1855903/418358
+    """
+    # Counting the perceptive luminance - human eye favors green color...
+    if 1 - (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.5:
+        return RGB(0, 0, 0)
+    else:
+        return RGB(255, 255, 255)
+
+
 def human_readable_size(size):
     for unit in ['B', 'KB', 'MB', 'GB']:
         if size < 1024.0 or unit == 'GB':
             break
         size /= 1024.0
     return f'{int(size)} {unit}'
-
-
-def pubmed_search(query, limit):
-    handle = Entrez.esearch(db='pubmed', retmax=str(limit), retmode='xml', term=query)
-    return Entrez.read(handle)['IdList']

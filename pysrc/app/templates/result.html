@@ -389,7 +389,7 @@
                         <em>direct citations</em>, and text similarity.<br>
                         Information about topics - keywords, sizes, publication years are shown below.<br>
                     </p>
-                    {% for script, div in component_size_summary %}
+                    {% for script, div in topic_years_distribution %}
                     {{ script|safe }}
                     {{ div|safe }}
                     {% endfor %}
@@ -511,6 +511,18 @@
                     <h1 class="card-header">Topics</h1>
                 </div>
                 <div class="card-body">
+                    {% if topics_hierarchy_with_keywords is defined %}
+                    <strong>Topics hierarchy</strong>
+                    <p>
+                        Topics are organized hierarchically. Clustering dendrogram with keywords is shown below.
+                    </p>
+                    {% for script, div in topics_hierarchy_with_keywords %}
+                    {{ script|safe }}
+                    {{ div|safe }}
+                    {% endfor %}
+                    {% endif %}
+
+                    <strong>Topics papers</strong>
                     <p>
                         Papers for topics are sorted descending by citations number overall from bottom to top.<br>
                         Word clouds show keywords specific for topics.
@@ -520,8 +532,10 @@
                         topics_info_and_word_cloud_and_callback %}
                         <div id="topic-div-{{ loop.index }}">
                             <hr>
-                            <h2 id="topic-{{ loop.index }}" class="card-subtitle">
-                                Topic {{ loop.index }}
+                            <div style="display: inline">
+                                <strong id="topic-{{ loop.index }}">
+                                    Topic {{ loop.index }}
+                                </strong>
                                 <button type="button" class="btn btn-light"
                                         onclick="papers_callback_component({{ loop.index }});">
                                     <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as
@@ -532,7 +546,7 @@
                                     <img src="{{ url_for('static', filename='zoom-in.svg') }}" alt="+"/>&nbsp;Zoom
                                     into
                                 </button>
-                            </h2>
+                            </div>
                             Number of papers: {{ component_sizes[loop.index - 1] }}
                             <div class="row">
                                 <div class="col-3 no-padding-right" style="min-width: 185px;">
@@ -769,8 +783,8 @@
                     <h1 class="card-header">Feedback</h1>
                 </div>
                 <div class="card-body">
+                    <strong>We'd love to hear your feedback!</strong>
                     <p>
-                        We'd love to hear your feedback!<br>
                         Use the form below to tell us more about you and your opinion about the service,<br>
                         or click instant feedback buttons to share your feelings about particular report
                         section.<br>

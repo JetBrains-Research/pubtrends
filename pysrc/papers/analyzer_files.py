@@ -1,11 +1,10 @@
-import hashlib
+import json
 import json
 import logging
 import math
 import os
 from collections import Counter
 from itertools import product, chain
-from math import sin, cos, pi, fabs
 
 import jinja2
 import networkx as nx
@@ -19,7 +18,6 @@ from bokeh.models.graphs import NodesAndLinkedEdges
 from bokeh.plotting import figure, output_file, save
 from lazy import lazy
 from matplotlib import pyplot as plt
-from more_itertools import unique_everseen
 from sklearn.manifold import TSNE
 
 from pysrc.app.predefined import query_to_folder
@@ -29,13 +27,13 @@ from pysrc.papers.analysis.graph import build_papers_graph, \
     sparse_graph, to_weighted_graph
 from pysrc.papers.analysis.node2vec import node2vec
 from pysrc.papers.analysis.text import get_frequent_tokens
-from pysrc.papers.analysis.text import texts_embeddings, vectorize_corpus, preprocess_text, word2vec_tokens
+from pysrc.papers.analysis.text import texts_embeddings, vectorize_corpus, word2vec_tokens
 from pysrc.papers.analysis.topics import get_topics_description, compute_topics_similarity_matrix, cluster_and_sort
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
-from pysrc.papers.plot.plotter import Plotter
+from pysrc.papers.plot.plotter import Plotter, PLOT_WIDTH, SHORT_PLOT_HEIGHT, TALL_PLOT_HEIGHT
 from pysrc.papers.utils import cut_authors_list
 from pysrc.version import VERSION
 
@@ -190,9 +188,9 @@ class AnalyzerFiles(PapersAnalyzer):
         self.df['y'] = tsne_embeddings_2d[:, 1]
 
         self.progress.info('Extracting topics from papers', current=12, task=task)
-        clusters, dendrogram_children = cluster_and_sort(self.papers_embeddings,
-                                                         PapersAnalyzer.TOPIC_MIN_SIZE,
-                                                         self.TOPICS_MAX_NUMBER)
+        clusters, dendrogram = cluster_and_sort(self.papers_embeddings,
+                                                PapersAnalyzer.TOPIC_MIN_SIZE,
+                                                self.TOPICS_MAX_NUMBER)
         self.df['comp'] = clusters
         path_topics_sizes = os.path.join(self.query_folder, 'topics_sizes.html')
         logging.info(f'Save topics ratios to file {path_topics_sizes}')
@@ -265,15 +263,13 @@ class AnalyzerFiles(PapersAnalyzer):
             path_topics = os.path.join(self.query_folder, 'topics.html')
             logging.info(f'Save topics hierarchy with keywords to file {path_topics}')
             output_file(filename=path_topics, title="Topics dendrogram")
-            save(topics_hierarchy_with_keywords(self.df, self.kwd_df, clusters, dendrogram_children,
-                                                max_words=3, plot_height=1200, plot_width=1200))
+            save(Plotter._topics_hierarchy_with_keywords(self.df, self.kwd_df, clusters, dendrogram, max_words=3))
             reset_output()
 
             path_topics_mesh = os.path.join(self.query_folder, 'topics_mesh.html')
             logging.info(f'Save topics hierarchy with mesh keywords to file {path_topics_mesh}')
             output_file(filename=path_topics_mesh, title="Topics dendrogram")
-            save(topics_hierarchy_with_keywords(self.df, mesh_df, clusters, dendrogram_children,
-                                                max_words=3, plot_height=1200, plot_width=1200))
+            save(Plotter._topics_hierarchy_with_keywords(self.df, mesh_df, clusters, dendrogram, max_words=3))
             reset_output()
 
         self.df['topic_tags'] = [','.join(t for t, _ in clusters_description[c][:5]) for c in self.df['comp']]
@@ -291,7 +287,8 @@ class AnalyzerFiles(PapersAnalyzer):
         path_papers_graph = os.path.join(self.query_folder, 'papers.html')
         logging.info(f'Saving papers graph for bokeh {path_papers_graph}')
         output_file(filename=path_papers_graph, title="Papers graph")
-        save(papers_graph(self.sparse_papers_graph, self.df, plot_width=1200, plot_height=1200))
+        save(Plotter._plot_papers_graph(source, self.sparse_papers_graph, self.df,
+                                        clusters_description, mesh_clusters_description, add_callback=False))
         reset_output()
 
         path_papers_graph_interactive = os.path.join(self.query_folder, 'papers_interactive.html')
@@ -330,8 +327,7 @@ class AnalyzerFiles(PapersAnalyzer):
             raise RuntimeError(f'Search results folder not found among: {SEARCH_RESULTS_PATHS}')
 
 
-
-def plot_mesh_terms(mesh_counter, top=100, plot_width=1200, plot_height=400):
+def plot_mesh_terms(mesh_counter, top=100, plot_width=PLOT_WIDTH, plot_height=TALL_PLOT_HEIGHT):
     mc_terms = mesh_counter.most_common(top)
     terms = [mc[0] for mc in mc_terms]
     numbers = [mc[1] for mc in mc_terms]
@@ -405,7 +401,7 @@ def components_ratio_data(df):
     return comps, ratios
 
 
-def plot_components_ratio(df, plot_width=1200, plot_height=400):
+def plot_components_ratio(df, plot_width=PLOT_WIDTH, plot_height=SHORT_PLOT_HEIGHT):
     comps, ratios = components_ratio_data(df)
     n_comps = len(comps)
     cmap = Plotter.factors_colormap(n_comps)
@@ -442,7 +438,7 @@ def topics_similarity_data(papers_embeddings, comps):
     return similarity_topics_df, components
 
 
-def heatmap_topics_similarity(similarity_df, topics):
+def heatmap_topics_similarity(similarity_df, topics, plot_width=PLOT_WIDTH, plot_height=TALL_PLOT_HEIGHT):
     logger.debug('Visualizing topics similarity with heatmap')
 
     step = 10
@@ -453,7 +449,7 @@ def heatmap_topics_similarity(similarity_df, topics):
                                high=similarity_df.similarity.max())
 
     p = figure(x_range=topics, y_range=topics,
-               x_axis_location="below", plot_width=600, plot_height=600,
+               x_axis_location="below", plot_width=plot_width, plot_height=plot_height,
                tools="hover,pan,tap,wheel_zoom,box_zoom,reset,save", toolbar_location="right",
                tooltips=[('Topic 1', '@comp_x'),
                          ('Topic 2', '@comp_y'),
@@ -475,283 +471,6 @@ def heatmap_topics_similarity(similarity_df, topics):
                          formatter=PrintfTickFormatter(format="%.2f"),
                          label_standoff=11, border_line_color=None, location=(0, 0))
     p.add_layout(color_bar, 'right')
-    return p
-
-
-def compute_clusters_dendrogram_children(clusters, children):
-    leaves_map = dict(enumerate(clusters))
-    nodes_map = {}
-    clusters_children = []
-    for i, (u, v) in enumerate(children):
-        u_cluster = leaves_map[u] if u in leaves_map else nodes_map[u]
-        v_cluster = leaves_map[v] if v in leaves_map else nodes_map[v]
-        node = len(leaves_map) + i
-        if u_cluster is not None and v_cluster is not None:
-            if u_cluster != v_cluster:
-                nodes_map[node] = None  # Different clusters
-                clusters_children.append((u, v, node))
-            else:
-                nodes_map[node] = u_cluster
-        else:
-            nodes_map[node] = None  # Different clusters
-            clusters_children.append((u, v, node))
-
-    def rwc(v):
-        if v in leaves_map:
-            return leaves_map[v]
-        elif v in nodes_map:
-            res = nodes_map[v]
-            return res if res is not None else v
-        else:
-            return v
-
-    # Rename nodes to clusters
-    result = [(rwc(u), rwc(v), rwc(n)) for u, v, n in clusters_children]
-    #     logger.debug(f'Clusters based dendrogram children {result}')
-    return result
-
-
-def convert_clusters_dendrogram_to_paths(clusters, children):
-    logger.debug('Converting agglomerate clustering clusters dendrogram format to path for visualization')
-    paths = [[p] for p in sorted(set(clusters))]
-    for i, (u, v, n) in enumerate(children):
-        for p in paths:
-            if p[i] == u or p[i] == v:
-                p.append(n)
-            else:
-                p.append(p[i])
-    #     logger.debug(f'Paths {paths}')
-    logger.debug('Radix sort or paths to ensure no overlaps')
-    for i in range(len(children)):
-        paths.sort(key=lambda p: p[i])
-        # Reorder next level to keep order of previous if possible
-        if i != len(children):
-            order = dict((v, i) for i, v in enumerate(unique_everseen(p[i + 1] for p in paths)))
-            for p in paths:
-                p[i + 1] = order[p[i + 1]]
-    leaves_order = dict((v, i) for i, v in enumerate(unique_everseen(p[0] for p in paths)))
-    return paths, leaves_order
-
-
-def contrast_color(rgb):
-    r, g, b = rgb.r, rgb.g, rgb.b
-    """
-    Light foreground for dark background and vice verse.
-    Idea Taken from https://stackoverflow.com/a/1855903/418358
-    """
-    # Counting the perceptive luminance - human eye favors green color...
-    if 1 - (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.5:
-        return RGB(0, 0, 0)
-    else:
-        return RGB(255, 255, 255)
-
-
-def topics_words(kwd_df, max_words):
-    words2show = {}
-    for _, row in kwd_df.iterrows():
-        comp, kwds = row[0], row[1]
-        if kwds != '':  # Correctly process empty freq_kwds encoding
-            words2show[comp] = [p.split(':')[0] for p in kwds.split(',')[:max_words]]
-    return words2show
-
-
-def topics_hierarchy_with_keywords(df, kwd_df, clusters, dendrogram_children,
-                                   max_words=3, plot_width=1200, plot_height=800):
-    comp_sizes = Counter(df['comp'])
-    logger.debug('Computing dendrogram for clusters')
-    if dendrogram_children is None:
-        return None
-    clusters_dendrogram = compute_clusters_dendrogram_children(clusters, dendrogram_children)
-    paths, leaves_order = convert_clusters_dendrogram_to_paths(clusters, clusters_dendrogram)
-
-    # Configure dimensions
-    p = figure(x_range=(-180, 180),
-               y_range=(-160, 160),
-               tools="save",
-               width=plot_width, height=plot_height)
-    x_coefficient = 1.2  # Ellipse x coefficient
-    y_delta = 40  # Extra space near pi / 2 and 3 * pi / 2
-    n_topics = len(leaves_order)
-    radius = 100  # Radius of circular dendrogram
-    dendrogram_len = len(paths[0])
-    d_radius = radius / dendrogram_len
-    d_degree = 2 * pi / n_topics
-
-    # Leaves coordinates
-    leaves_degrees = dict((v, i * d_degree) for v, i in leaves_order.items())
-
-    # Draw dendrogram - from bottom to top
-    ds = leaves_degrees.copy()
-    for i in range(1, dendrogram_len):
-        next_ds = {}
-        for path in paths:
-            if path[i] not in next_ds:
-                next_ds[path[i]] = []
-            next_ds[path[i]].append(ds[path[i - 1]])
-        for v, nds in next_ds.items():
-            next_ds[v] = np.mean(nds)
-
-        for path in paths:
-            current_d = ds[path[i - 1]]
-            next_d = next_ds[path[i]]
-            p.line([cos(current_d) * d_radius * (dendrogram_len - i),
-                    cos(next_d) * d_radius * (dendrogram_len - i - 1)],
-                   [sin(current_d) * d_radius * (dendrogram_len - i),
-                    sin(next_d) * d_radius * (dendrogram_len - i - 1)],
-                   line_color='lightgray')
-        ds = next_ds
-
-    # Draw leaves
-    n_comps = len(comp_sizes)
-    cmap = Plotter.factors_colormap(n_comps)
-    topics_colors = dict((i, Plotter.color_to_rgb(cmap(i))) for i in range(n_comps))
-    xs = [cos(d) * d_radius * (dendrogram_len - 1) for _, d in leaves_degrees.items()]
-    ys = [sin(d) * d_radius * (dendrogram_len - 1) for _, d in leaves_degrees.items()]
-    sizes = [20 + int(min(10, math.log(comp_sizes[v]))) for v, _ in leaves_degrees.items()]
-    comps = [v + 1 for v, _ in leaves_degrees.items()]
-    colors = [topics_colors[v] for v, _ in leaves_degrees.items()]
-    ds = ColumnDataSource(data=dict(x=xs, y=ys, size=sizes, comps=comps, color=colors))
-    p.circle(x='x', y='y', size='size', fill_color='color', line_color='black', source=ds)
-
-    # Topics labels
-    p.text(x=[cos(d) * d_radius * (dendrogram_len - 1) for _, d in leaves_degrees.items()],
-           y=[sin(d) * d_radius * (dendrogram_len - 1) for _, d in leaves_degrees.items()],
-           text=[str(v + 1) for v, _ in leaves_degrees.items()],
-           text_align='center', text_baseline='middle', text_font_size='10pt',
-           text_color=[contrast_color(topics_colors[v]) for v, _ in leaves_degrees.items()])
-
-    # Show words for components - most popular words per component
-    topics = leaves_order.keys()
-    words2show = topics_words(kwd_df, max_words)
-
-    # Visualize words
-    for v, d in leaves_degrees.items():
-        if v not in words2show:  # No super-specific words for topic
-            continue
-        words = words2show[v]
-        xs = []
-        ys = []
-        for i, word in enumerate(words):
-            wd = d + d_degree * (i - len(words) / 2) / len(words)
-            # Make word degree in range 0 - 2 * pi
-            if wd < 0:
-                wd += 2 * pi
-            elif wd > 2 * pi:
-                wd -= 2 * pi
-            xs.append(cos(wd) * radius * x_coefficient)
-            y = sin(wd) * radius
-            # Additional vertical space around pi/2 and 3*pi/2
-            if pi / 4 <= wd < 3 * pi / 4:
-                y += pow(pi / 4 - fabs(pi / 2 - wd), 1.5) * y_delta
-            elif 5 * pi / 4 <= wd < 7 * pi / 4:
-                y -= pow(pi / 4 - fabs(3 * pi / 2 - wd), 1.5) * y_delta
-            ys.append(y)
-
-        # Different text alignment for left | right parts
-        p.text(x=[x for x in xs if x > 0], y=[y for i, y in enumerate(ys) if xs[i] > 0],
-               text=[w for i, w in enumerate(words) if xs[i] > 0],
-               text_align='left', text_baseline='middle', text_font_size='10pt',
-               text_color=topics_colors[v])
-        p.text(x=[x for x in xs if x <= 0], y=[y for i, y in enumerate(ys) if xs[i] <= 0],
-               text=[w for i, w in enumerate(words) if xs[i] <= 0],
-               text_align='right', text_baseline='middle', text_font_size='10pt',
-               text_color=topics_colors[v])
-
-    p.sizing_mode = 'stretch_width'
-    p.axis.major_tick_line_color = None
-    p.axis.minor_tick_line_color = None
-    p.axis.major_label_text_color = None
-    p.axis.major_label_text_font_size = '0pt'
-    p.axis.axis_line_color = None
-    p.grid.grid_line_color = None
-    p.outline_line_color = None
-    return p
-
-
-def papers_graph(g, df, plot_width=600, plot_height=600):
-    nodes = df['id']
-    graph = GraphRenderer()
-    comps = df['comp']
-    cmap = Plotter.factors_colormap(len(set(comps)))
-    palette = dict(zip(sorted(set(comps)), [Plotter.color_to_rgb(cmap(i)).to_hex()
-                                            for i in range(len(set(comps)))]))
-
-    graph.node_renderer.data_source.add(df['id'], 'index')
-    graph.node_renderer.data_source.data['id'] = df['id']
-    graph.node_renderer.data_source.data['title'] = df['title']
-    graph.node_renderer.data_source.data['authors'] = df['authors']
-    graph.node_renderer.data_source.data['journal'] = df['journal']
-    graph.node_renderer.data_source.data['year'] = df['year']
-    graph.node_renderer.data_source.data['type'] = df['type']
-    graph.node_renderer.data_source.data['total'] = df['total']
-    graph.node_renderer.data_source.data['mesh'] = df['mesh']
-    graph.node_renderer.data_source.data['keywords'] = df['keywords']
-    graph.node_renderer.data_source.data['topic'] = [c + 1 for c in comps]
-    graph.node_renderer.data_source.data['topic_tags'] = df['topic_tags']
-    graph.node_renderer.data_source.data['topic_meshs'] = df['topic_meshs']
-
-    # Aesthetics
-    graph.node_renderer.data_source.data['size'] = df['total'] * 20 / df['total'].max() + 5
-    graph.node_renderer.data_source.data['color'] = [palette[c] for c in comps]
-
-    # Edges
-    graph.edge_renderer.data_source.data = dict(start=[u for u, _ in g.edges],
-                                                end=[v for _, v in g.edges])
-
-    # start of layout code
-    x = df['x']
-    y = df['y']
-    xrange = max(x) - min(x)
-    yrange = max(y) - min(y)
-    p = figure(plot_width=plot_width,
-               plot_height=plot_height,
-               x_range=(min(x) - 0.05 * xrange, max(x) + 0.05 * xrange),
-               y_range=(min(y) - 0.05 * yrange, max(y) + 0.05 * yrange),
-               tools="pan,tap,wheel_zoom,box_zoom,reset,save")
-    p.xaxis.major_tick_line_color = None  # turn off x-axis major ticks
-    p.xaxis.minor_tick_line_color = None  # turn off x-axis minor ticks
-    p.yaxis.major_tick_line_color = None  # turn off y-axis major ticks
-    p.yaxis.minor_tick_line_color = None  # turn off y-axis minor ticks
-    p.xaxis.major_label_text_font_size = '0pt'  # preferred method for removing tick labels
-    p.yaxis.major_label_text_font_size = '0pt'  # preferred method for removing tick labels
-    p.grid.grid_line_color = None
-    p.outline_line_color = None
-    p.sizing_mode = 'stretch_width'
-
-    p.add_tools(HoverTool(tooltips=Plotter._paper_html_tooltips('Pubmed', [
-        ("Author(s)", '@authors'),
-        ("Journal", '@journal'),
-        ("Year", '@year'),
-        ("Type", '@type'),
-        ("Cited by", '@total paper(s) total'),
-        ("Mesh", '@mesh'),
-        ("Keywords", '@keywords'),
-        ("Topic", '@topic'),
-        ("Topic tags", '@topic_tags'),
-        ("Topic Mesh", '@topic_meshs'),
-    ])))
-
-    graph_layout = dict(zip(nodes, zip(x, y)))
-    graph.layout_provider = StaticLayoutProvider(graph_layout=graph_layout)
-
-    graph.node_renderer.glyph = Circle(size='size', fill_alpha=0.7, line_alpha=0.7, fill_color='color')
-    graph.node_renderer.hover_glyph = Circle(size='size', fill_alpha=1.0, line_alpha=1.0, fill_color='color')
-
-    graph.edge_renderer.glyph = MultiLine(line_color='lightgrey', line_alpha=0.5, line_width=1)
-    graph.edge_renderer.hover_glyph = MultiLine(line_color='grey', line_alpha=1.0, line_width=2)
-
-    graph.inspection_policy = NodesAndLinkedEdges()
-    p.renderers.append(graph)
-
-    # Add Labels
-    lxs = [df.loc[df['comp'] == c]['x'].mean() for c in sorted(set(comps))]
-    lys = [df.loc[df['comp'] == c]['y'].mean() for c in sorted(set(comps))]
-    comp_labels = [f"#{c + 1}" for c in sorted(set(comps))]
-    source = ColumnDataSource({'x': lxs, 'y': lys, 'name': comp_labels})
-    labels = LabelSet(x='x', y='y', text='name', source=source,
-                      background_fill_color='white', text_font_size='11px', background_fill_alpha=.9)
-    p.renderers.append(labels)
-
     return p
 
 

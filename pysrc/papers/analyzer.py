@@ -214,13 +214,14 @@ class PapersAnalyzer:
         self.progress.info('Extracting topics from papers text and graph similarity', current=8, task=task)
         if self.papers_graph.number_of_nodes() <= PapersAnalyzer.TOPIC_MIN_SIZE:
             logger.debug('Small graph - single topic')
-            self.df['comp'] = 0
+            self.clusters, self.dendrogram = [0] * len(self.df), None
+            self.df['comp'] = self.clusters
         else:
             logger.debug('Extracting topics from papers embeddings')
-            clusters, _ = cluster_and_sort(self.papers_embeddings,
-                                           PapersAnalyzer.TOPIC_MIN_SIZE,
-                                           PapersAnalyzer.TOPICS_MAX_NUMBER)
-            self.df['comp'] = clusters
+            self.clusters, self.dendrogram = cluster_and_sort(
+                self.papers_embeddings, PapersAnalyzer.TOPIC_MIN_SIZE, PapersAnalyzer.TOPICS_MAX_NUMBER
+            )
+            self.df['comp'] = self.clusters
 
         self.progress.info(f'Analyzing {len(set(self.df["comp"]))} topics descriptions',
                            current=9, task=task)

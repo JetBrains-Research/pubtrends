@@ -1,8 +1,8 @@
 from logging import getLogger
-
 from celery import current_task
-from pysrc.papers.analyzer_files import AnalyzerFiles
+from Bio import Entrez
 
+from pysrc.papers.analyzer_files import AnalyzerFiles
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.papers.analysis.expand import expand_ids
 from pysrc.papers.analyzer import PapersAnalyzer
@@ -10,10 +10,13 @@ from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plotter import visualize_analysis
-from pysrc.papers.utils import SORT_MOST_CITED, pubmed_search, PAPER_ANALYSIS_TYPE, IDS_ANALYSIS_TYPE, \
+from pysrc.papers.utils import SORT_MOST_CITED, PAPER_ANALYSIS_TYPE, IDS_ANALYSIS_TYPE, \
     preprocess_doi, is_doi
 
 logger = getLogger(__name__)
+
+# Configure email to get notifications on too heavy API usage
+Entrez.email = 'os@jetbrains.com'
 
 DOI_WRONG_SEARCH = 'Search query looks like DOI, please <a href="/#paper-tab">rerun</a> paper analysis.' 
 
@@ -21,7 +24,7 @@ DOI_WRONG_SEARCH = 'Search query looks like DOI, please <a href="/#paper-tab">re
 @pubtrends_celery.task(name='analyze_search_terms')
 def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, expand=0.5, test=False):
     if is_doi(query):
-        raise SearchError()
+        raise SearchError(DOI_WRONG_SEARCH)
     config = PubtrendsConfig(test=test)
     loader = Loaders.get_loader(source, config)
     analyzer = PapersAnalyzer(loader, config)
@@ -161,6 +164,11 @@ def analyze_search_paper(source, pid, key, value, test=False):
             raise SearchError(f'Multiple papers found matching {key}={value}, please be more specific')
     finally:
         loader.close_connection()
+
+
+def pubmed_search(query, limit):
+    handle = Entrez.esearch(db='pubmed', retmax=str(limit), retmode='xml', term=query)
+    return Entrez.read(handle)['IdList']
 
 
 @pubtrends_celery.task(name='analyze_pubmed_search')
