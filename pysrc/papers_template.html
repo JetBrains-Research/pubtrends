@@ -38,22 +38,25 @@
 
         function colorTopics() {
             window.color_mode = 'topics';
-            cy.nodes().forEach(function (ele) {
-                if ('title' in ele.data()) {
-                    ele.removeClass('topic year');
-                    ele.addClass('topic');
-                }
+            window.cy.batch(function () {
+                cy.nodes().forEach(function (ele) {
+                    if ('title' in ele.data()) {
+                        ele.removeClass('topic year');
+                        ele.addClass('topic');
+                    }
+                });
             });
-            showNone();
         }
 
         function colorYear() {
             window.color_mode = 'year';
-            cy.nodes().forEach(function (ele) {
-                if ('title' in ele.data()) {
-                    ele.removeClass('topic year');
-                    ele.addClass('year');
-                }
+            window.cy.batch(function () {
+                cy.nodes().forEach(function (ele) {
+                    if ('title' in ele.data()) {
+                        ele.removeClass('topic year');
+                        ele.addClass('year');
+                    }
+                });
             });
             showYear();
         }
@@ -469,12 +472,14 @@
 
         function searchChanged() {
             const filter = getFilter();
-            if (filter === "") {
-                window.cy.nodes().filter(function (ele) {
-                    return 'title' in ele.data();
-                }).forEach(function (ele) {
-                    ele.removeClass('highlight');
-                    ele.removeClass('semitransp');
+            if (filter === '') {
+                window.cy.batch(function () {
+                    window.cy.nodes().filter(function (ele) {
+                        return 'title' in ele.data();
+                    }).forEach(function (ele) {
+                        ele.removeClass('highlight');
+                        ele.removeClass('semitransp');
+                    });
                 });
                 if (color_mode === 'topics') {
                     colorTopics();
@@ -487,30 +492,29 @@
                 } else {
                     colorYear();
                 }
-                return;
-            }
-
-            // Batch update
-            window.cy.batch( function() {
+            } else {
                 let matches = 0;
-                window.cy.nodes().forEach(function (ele) {
-                    let data = ele.data();
-                    if ('title' in data) {
-                        if ($('#searchTitles').is(':checked') && data.title.toLowerCase().includes(filter) ||
-                            $('#searchJournals').is(':checked') && data.journal.toLowerCase().includes(filter) ||
-                            $('#searchAuthors').is(':checked') && data.authors.toLowerCase().includes(filter) ||
-                            $('#searchAbstracts').is(':checked') && data.abstract.toLowerCase().includes(filter) ||
-                            $('#searchMesh').is(':checked') && data.mesh.toLowerCase().includes(filter) ||
-                            $('#searchKeywords').is(':checked') && data.keywords.toLowerCase().includes(filter)) {
-                            ele.removeClass('semitransp');
-                            ele.addClass('highlight');
-                            matches += 1;
-                        } else {
-                            ele.removeClass('highlight');
-                            ele.addClass('semitransp');
+
+                window.cy.batch(function () {
+                    window.cy.nodes().forEach(function (ele) {
+                        let data = ele.data();
+                        if ('title' in data) {
+                            if ($('#searchTitles').is(':checked') && data.title.toLowerCase().includes(filter) ||
+                                $('#searchJournals').is(':checked') && data.journal.toLowerCase().includes(filter) ||
+                                $('#searchAuthors').is(':checked') && data.authors.toLowerCase().includes(filter) ||
+                                $('#searchAbstracts').is(':checked') && data.abstract.toLowerCase().includes(filter) ||
+                                $('#searchMesh').is(':checked') && data.mesh.toLowerCase().includes(filter) ||
+                                $('#searchKeywords').is(':checked') && data.keywords.toLowerCase().includes(filter)) {
+                                ele.removeClass('semitransp');
+                                ele.addClass('highlight');
+                                matches += 1;
+                            } else {
+                                ele.removeClass('highlight');
+                                ele.addClass('semitransp');
+                            }
                         }
-                    }
-                })
+                    })
+                });
 
                 // Close all notifications
                 $('.notifyjs-wrapper').trigger('notify-hide');
@@ -524,7 +528,7 @@
                     hideDuration: 0,
                     clickToHide: false
                 });
-            });
+            }
         }
     </script>
 </head>
@@ -560,29 +564,29 @@
             </span>
         </div>
         <div class="col-auto row">
-        <div class="dropdown">
-            <button class="btn btn-secondary dropdown-toggle mr-2" type="button"
-                    id="dropdownMenuButtonColor" data-toggle="dropdown" aria-haspopup="true"
-                    aria-expanded="false">
-               Color
-            </button>
-            <div class="dropdown-menu" aria-labelledby="dropdownMenuButtonColor">
-                <a class="dropdown-item" onclick="colorTopics();" href="javascript:void(0);">Topics</a>
-                <a class="dropdown-item" onclick="colorYear();" href="javascript:void(0);">Years</a>
+            <div class="dropdown">
+                <button class="btn btn-secondary dropdown-toggle mr-2" type="button"
+                        id="dropdownMenuButtonColor" data-toggle="dropdown" aria-haspopup="true"
+                        aria-expanded="false">
+                    Color
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButtonColor">
+                    <a class="dropdown-item" onclick="colorTopics();" href="javascript:void(0);">Topics</a>
+                    <a class="dropdown-item" onclick="colorYear();" href="javascript:void(0);">Years</a>
+                </div>
             </div>
-        </div>
-        <div class="dropdown ">
-            <button class="btn btn-secondary dropdown-toggle" type="button"
-                    id="dropdownMenuButtonDescription" data-toggle="dropdown" aria-haspopup="true"
-                    aria-expanded="false">
-                Description
-            </button>
-            <div class="dropdown-menu" aria-labelledby="dropdownMenuButtonDescription">
-                <a class="dropdown-item" onclick="showKeywords();" href="javascript:void(0);">Keywords</a>
-                <a class="dropdown-item" onclick="showMeshTerms();" href="javascript:void(0);">Mesh terms</a>
-                <a class="dropdown-item" onclick="showNone();" href="javascript:void(0);">Hide</a>
+            <div class="dropdown ">
+                <button class="btn btn-secondary dropdown-toggle" type="button"
+                        id="dropdownMenuButtonDescription" data-toggle="dropdown" aria-haspopup="true"
+                        aria-expanded="false">
+                    Description
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButtonDescription">
+                    <a class="dropdown-item" onclick="showKeywords();" href="javascript:void(0);">Keywords</a>
+                    <a class="dropdown-item" onclick="showMeshTerms();" href="javascript:void(0);">Mesh terms</a>
+                    <a class="dropdown-item" onclick="showNone();" href="javascript:void(0);">Hide</a>
+                </div>
             </div>
-        </div>
         </div>
     </div>
 </nav>
