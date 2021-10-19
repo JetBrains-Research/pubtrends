@@ -288,7 +288,8 @@ class AnalyzerFiles(PapersAnalyzer):
         logging.info(f'Saving papers graph for bokeh {path_papers_graph}')
         output_file(filename=path_papers_graph, title="Papers graph")
         save(Plotter._plot_papers_graph(source, self.sparse_papers_graph, self.df,
-                                        clusters_description, mesh_clusters_description, add_callback=False))
+                                        clusters_description, mesh_clusters_description, add_callback=False,
+                                        plot_width=PLOT_WIDTH, plot_height=PLOT_WIDTH))
         reset_output()
 
         path_papers_graph_interactive = os.path.join(self.query_folder, 'papers_interactive.html')
