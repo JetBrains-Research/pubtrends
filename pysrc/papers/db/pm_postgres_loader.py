@@ -5,7 +5,7 @@ import pandas as pd
 
 from pysrc.papers.db.loader import Loader
 from pysrc.papers.db.postgres_connector import PostgresConnector
-from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres, no_stemming_filter, \
+from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres, no_stemming_filter_for_phrases, \
     process_bibliographic_coupling_postgres, process_cocitations_postgres
 from pysrc.papers.utils import SORT_MOST_CITED, SORT_MOST_RECENT, preprocess_doi, \
     preprocess_search_title
@@ -63,8 +63,8 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         noreviews_filter = "AND type != 'Review'" if noreviews else ''
         query_str = preprocess_search_query_for_postgres(query, self.config.min_search_words)
 
-        # Disable stemming-based lookup for now, see: https://github.com/JetBrains-Research/pubtrends/issues/242
-        exact_filter = no_stemming_filter(query_str)
+        # Disable stemming-based lookup for phrases, see: https://github.com/JetBrains-Research/pubtrends/issues/242
+        exact_phrase_filter = no_stemming_filter_for_phrases(query_str)
 
         by_citations = 'count DESC NULLS LAST'
         by_year = 'year DESC NULLS LAST'
@@ -84,7 +84,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
             PMPublications P
             LEFT JOIN matview_pmcitations C 
             ON P.pmid = C.pmid
-            WHERE P.tsv @@ query {noreviews_filter} {exact_filter}
+            WHERE P.tsv @@ query {noreviews_filter} {exact_phrase_filter}
             ORDER BY {order}, P.pmid
             LIMIT {limit};
             '''

@@ -70,15 +70,23 @@ def preprocess_search_query_for_postgres(query, min_search_words):
                           f'all the query wrapped in "" for phrasal search. Query: {query}')
 
 
-def no_stemming_filter(query_str):
-    return ' AND (' + ' OR '.join(
-        ' AND '.join(
-            '(P.title IS NOT NULL AND P.title ~* \'(\\m' + w.strip().replace("<->", "\\s+") + '\\M)\'' +
-            ' OR ' +
-            'P.abstract IS NOT NULL AND P.abstract ~* \'(\\m' + w.strip().replace("<->", "\\s+") + '\\M)\')'
-            for w in re.split(r' & ', q)
-        ) for q in query_str.lower().split('|')
-    ) + ')'
+def no_stemming_filter_for_phrases(query_str):
+    ors = []
+    for q in query_str.lower().split('|'):
+        ands = []
+        for w in re.split('&', q.strip()):
+            if '<->' in w.strip():  # Process only phrases
+                ands.append(
+                    '(P.title IS NOT NULL AND P.title ~* \'(\\m' + w.strip().replace("<->", "\\s+") + '\\M)\'' +
+                    ' OR ' +
+                    'P.abstract IS NOT NULL AND P.abstract ~* \'(\\m' + w.strip().replace("<->", "\\s+") + '\\M)\')'
+                )
+        if len(ands) > 0:
+            ors.append(' AND '.join(ands))
+    if len(ors) > 0:
+        return ' AND (' + ' OR '.join(ors) + ')'
+    else:
+        return ''
 
 
 def process_cocitations_postgres(cursor):

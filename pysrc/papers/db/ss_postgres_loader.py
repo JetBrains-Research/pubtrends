@@ -6,7 +6,7 @@ import pandas as pd
 from pysrc.papers.db.loader import Loader
 from pysrc.papers.db.postgres_connector import PostgresConnector
 from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres, \
-    process_cocitations_postgres, no_stemming_filter
+    process_cocitations_postgres, no_stemming_filter_for_phrases
 from pysrc.papers.utils import crc32, SORT_MOST_CITED, SORT_MOST_RECENT, preprocess_doi
 
 logger = logging.getLogger(__name__)
@@ -59,8 +59,8 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         if noreviews:
             logger.debug('Type is not supported for Semantic Scholar')
         query_str = preprocess_search_query_for_postgres(query, self.config.min_search_words)
-        # Disable stemming-based lookup for now, see: https://github.com/JetBrains-Research/pubtrends/issues/242
-        exact_filter = no_stemming_filter(query_str)
+        # Disable stemming-based lookup for phrases, see: https://github.com/JetBrains-Research/pubtrends/issues/242
+        exact_phrase_filter = no_stemming_filter_for_phrases(query_str)
 
         by_citations = 'count DESC NULLS LAST'
         by_year = 'year DESC NULLS LAST'
@@ -80,7 +80,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
             SSPublications P
             LEFT JOIN matview_sscitations C 
             ON C.ssid = P.ssid AND C.crc32id = P.crc32id
-            WHERE P.tsv @@ query {exact_filter}
+            WHERE P.tsv @@ query {exact_phrase_filter}
             ORDER BY {order}, P.crc32id
             LIMIT {limit};
             '''
