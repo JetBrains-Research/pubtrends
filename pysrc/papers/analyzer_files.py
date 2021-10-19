@@ -18,7 +18,9 @@ from bokeh.models.graphs import NodesAndLinkedEdges
 from bokeh.plotting import figure, output_file, save
 from lazy import lazy
 from matplotlib import pyplot as plt
+from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
+from sklearn.preprocessing import StandardScaler
 
 from pysrc.app.predefined import query_to_folder
 from pysrc.papers.analysis.citations import find_top_cited_papers, build_cit_stats_df, merge_citation_stats, \
@@ -178,19 +180,35 @@ class AnalyzerFiles(PapersAnalyzer):
         self.graph_embeddings = node2vec(self.df['id'], gs)
 
         logger.debug('Computing aggregated graph and text embeddings for papers')
-        self.papers_embeddings = np.concatenate(
+        papers_embeddings = np.concatenate(
             (self.graph_embeddings * PapersAnalyzer.GRAPH_EMBEDDINGS_FACTOR,
              self.texts_embeddings * PapersAnalyzer.TEXT_EMBEDDINGS_FACTOR), axis=1)
 
-        logger.debug('Apply TSNE transformation on papers embeddings')
-        tsne_embeddings_2d = TSNE(n_components=2, random_state=42).fit_transform(self.papers_embeddings)
-        self.df['x'] = tsne_embeddings_2d[:, 0]
-        self.df['y'] = tsne_embeddings_2d[:, 1]
+        logger.debug('Computing PCA projection')
+        pca = PCA(n_components=min(len(papers_embeddings), PapersAnalyzer.PCA_COMPONENTS))
+        t = StandardScaler().fit_transform(papers_embeddings)
+        self.pca_coords = pca.fit_transform(t)
+        logger.debug('Explained variation', int(np.sum(pca.explained_variance_ratio_) * 100), '%')
+
+        if len(self.df) > 1:
+            logger.debug('Computing PCA projection')
+            pca = PCA(n_components=min(len(papers_embeddings), PapersAnalyzer.PCA_COMPONENTS))
+            t = StandardScaler().fit_transform(papers_embeddings)
+            self.pca_coords = pca.fit_transform(t)
+            logger.debug(f'Explained variation {int(np.sum(pca.explained_variance_ratio_) * 100)}%')
+            logger.debug('Apply TSNE transformation on papers PCA coords')
+            tsne_embeddings_2d = TSNE(n_components=2, random_state=42).fit_transform(self.pca_coords)
+            self.df['x'] = tsne_embeddings_2d[:, 0]
+            self.df['y'] = tsne_embeddings_2d[:, 1]
+        else:
+            self.pca_coords = np.zeros(shape=(len(self.df), 128))
+            self.df['x'] = 0
+            self.df['y'] = 0
 
         self.progress.info('Extracting topics from papers', current=12, task=task)
-        clusters, dendrogram = cluster_and_sort(self.papers_embeddings,
-                                                PapersAnalyzer.TOPIC_MIN_SIZE,
-                                                self.TOPICS_MAX_NUMBER)
+        clusters, dendrogram = cluster_and_sort(
+            self.pca_coords, PapersAnalyzer.TOPIC_MIN_SIZE, self.TOPICS_MAX_NUMBER
+        )
         self.df['comp'] = clusters
         path_topics_sizes = os.path.join(self.query_folder, 'topics_sizes.html')
         logging.info(f'Save topics ratios to file {path_topics_sizes}')
@@ -199,7 +217,7 @@ class AnalyzerFiles(PapersAnalyzer):
         reset_output()
 
         similarity_df, topics = topics_similarity_data(
-            self.papers_embeddings, self.df['comp']
+            self.pca_coords, self.df['comp']
         )
         similarity_df['type'] = ['Inside' if x == y else 'Outside'
                                  for (x, y) in zip(similarity_df['comp_x'], similarity_df['comp_y'])]

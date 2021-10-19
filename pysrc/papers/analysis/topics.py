@@ -11,10 +11,10 @@ from pysrc.papers.analysis.text import get_frequent_tokens
 logger = logging.getLogger(__name__)
 
 
-def compute_topics_similarity_matrix(papers_embeddings, comps):
+def compute_topics_similarity_matrix(papers_vectors, comps):
     logger.debug('Computing mean similarity between topics embeddings')
     n_comps = len(set(comps))
-    distances = pairwise_distances(papers_embeddings)
+    distances = pairwise_distances(papers_vectors)
     similarity_matrix = np.zeros(shape=(n_comps, n_comps))
     indx = {i: np.flatnonzero([c == i for c in comps]).tolist() for i in range(n_comps)}
     for i in range(n_comps):

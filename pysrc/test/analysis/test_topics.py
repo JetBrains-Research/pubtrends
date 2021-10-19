@@ -36,9 +36,9 @@ class TestTopics(unittest.TestCase):
                 self.assertEqual(getattr(row, 'comp'), -1)
 
     def test_heatmap_topics_similarity(self):
-        matrix = compute_topics_similarity_matrix(self.analyzer.papers_embeddings, self.analyzer.df['comp'])
+        matrix = compute_topics_similarity_matrix(self.analyzer.pca_coords, self.analyzer.df['comp'])
         # print(matrix)
-        similarities = np.array([[0.71560726]])
+        similarities = np.array([[0.06547536]])
         self.assertTrue(np.allclose(similarities, matrix, rtol=1e-3))
 
     @staticmethod

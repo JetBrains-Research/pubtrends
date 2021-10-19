@@ -3,7 +3,9 @@ import logging
 import numpy as np
 import pandas as pd
 from networkx.readwrite import json_graph
+from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
+from sklearn.preprocessing import StandardScaler
 
 from pysrc.papers.analysis.citations import find_top_cited_papers, find_max_gain_papers, \
     find_max_relative_gain_papers, build_cit_stats_df, merge_citation_stats, build_cocit_grouped_df
@@ -59,6 +61,8 @@ class PapersAnalyzer:
     VECTOR_MIN_DF = 0.001
     # Terms with higher frequency will be ignored, remove abundant words
     VECTOR_MAX_DF = 0.8
+
+    PCA_COMPONENTS = 20
 
     TOPIC_MIN_SIZE = 20
     # Max number of topics should be "deliverable"
@@ -198,16 +202,22 @@ class PapersAnalyzer:
             self.graph_embeddings = np.zeros(shape=(len(self.df), 0))
 
         logger.debug('Computing aggregated graph and text embeddings for papers')
-        self.papers_embeddings = np.concatenate(
+        papers_embeddings = np.concatenate(
             (self.graph_embeddings * PapersAnalyzer.GRAPH_EMBEDDINGS_FACTOR,
              self.texts_embeddings * PapersAnalyzer.TEXT_EMBEDDINGS_FACTOR), axis=1)
 
         if len(self.df) > 1:
-            logger.debug('Apply TSNE transformation on papers embeddings')
-            tsne_embeddings_2d = TSNE(n_components=2, random_state=42).fit_transform(self.papers_embeddings)
+            logger.debug('Computing PCA projection')
+            pca = PCA(n_components=min(len(papers_embeddings), PapersAnalyzer.PCA_COMPONENTS))
+            t = StandardScaler().fit_transform(papers_embeddings)
+            self.pca_coords = pca.fit_transform(t)
+            logger.debug(f'Explained variation {int(np.sum(pca.explained_variance_ratio_) * 100)}%')
+            logger.debug('Apply TSNE transformation on papers PCA coords')
+            tsne_embeddings_2d = TSNE(n_components=2, random_state=42).fit_transform(self.pca_coords)
             self.df['x'] = tsne_embeddings_2d[:, 0]
             self.df['y'] = tsne_embeddings_2d[:, 1]
         else:
+            self.pca_coords = np.zeros(shape=(len(self.df), 128))
             self.df['x'] = 0
             self.df['y'] = 0
 
@@ -219,7 +229,7 @@ class PapersAnalyzer:
         else:
             logger.debug('Extracting topics from papers embeddings')
             self.clusters, self.dendrogram = cluster_and_sort(
-                self.papers_embeddings, PapersAnalyzer.TOPIC_MIN_SIZE, PapersAnalyzer.TOPICS_MAX_NUMBER
+                self.pca_coords, PapersAnalyzer.TOPIC_MIN_SIZE, PapersAnalyzer.TOPICS_MAX_NUMBER
             )
             self.df['comp'] = self.clusters
 
