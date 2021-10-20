@@ -41,8 +41,9 @@
         directions.<br>
     </p>
     <p>
-        Open Access Paper: <a href="https://doi.org/10.1145/3459930.3469501">https://doi.org/10.1145/3459930.3469501</a><br>
-        Poster is available <a href="https://drive.google.com/file/d/1SeqJtJtaHSO6YihG2905boOEYL1NiSP1/view?usp=sharing">here</a>.<br>
+        Open Access Paper: <a class="link" href="https://doi.org/10.1145/3459930.3469501">https://doi.org/10.1145/3459930.3469501</a><br>
+        Poster is available <a class="link"
+                               href="https://drive.google.com/file/d/1SeqJtJtaHSO6YihG2905boOEYL1NiSP1/view?usp=sharing">here</a>.<br>
         <i>Citation: Shpynov, O. and Nikolai, K., 2021, August. PubTrends: a scientific literature explorer. In
             Proceedings of the 12th ACM Conference on Bioinformatics, Computational Biology, and Health Informatics (pp.
             1-1).</i>
@@ -64,8 +65,7 @@
                 </li>
                 <li><a href="#other">Other</a> section contains other analyses</li>
             </ul>
-            <li><a href="#paper-analysis">Paper Analysis</a> section describes single paper analysis
-            </li>
+            <li><a href="#feedback">Feedback</a> We'd love to hear your feedback to make the service better together</li>
         </ul>
     </div>
     <h3 id="dataset">Dataset</h3>
@@ -78,93 +78,136 @@
     </p>
     <h3 id="workflow">Workflow</h3>
     <img class="mx-auto d-block" src="../static/about_pubtrends_scheme.png" style="width: 100%; max-width: 900px;">
+
+    <h3>Main page</h3>
     <p>
-        All the analysis starts with
+        Pubtrends main page is the start point for papers analysis, several analysis options are supported.
+    </p>
     <ul>
         <li>
-            The search query - first of all most cited papers containing the search query are found.<br>
-            User can use double quotes wrapping to search for exact phrase or find documents, which contain all the
-            words in the query. The number of papers can be quite significant, so it's natural to
+            <strong>Search</strong><br>
+            The service looks for papers matching the search query. Only papers containing search query in titles or
+            abstracts are found. The user can use double quotes to search for exact phrase or find documents, which
+            contain all the words in the query. The number of papers can be quite significant, so it's natural to
             use some ranking and filtering to focus on either most cited, or most recent articles.<br>
-            This set of papers is further extended by reference to papers which are similar, but may not contain some of
-            the search words.
+            This set of papers is further extended by reference to papers which are similar, but may not contain some
+            search words. <br>
+            When working with Pubmed database the user can use Pubmed search syntax for the search query, in this case
+            the service will use Pubmed API to fetch list of papers for analysis. Pubmed advanced search syntax
+            allows searching in exact fields, limit publications by date and much more.
         </li>
         <li>
-            Single paper - the service looks for connected papers and proceeds one step further by
-            references to find out which of the connected papers have co-citations, common references, etc.
+            <strong>Paper</strong><br>
+            When user is interested in the particular paper, PubTrends can help user to
+            find similar papers and most important prior and derivative works. User can use title name of DOI for paper
+            identification. The service will search for paper, analyze connected papers and proceed one step further by
+            references to find out which of the connected papers have co-citations, common references, etc. When the set
+            of papers is collected, papers similarity is analyzed.
         </li>
     </ul>
-    Next step is known as the Bibliometrics analysis, i.e. citations graph analysis, collecting co-citations (when a
-    pair of papers are cited together), bibliographic coupling (number of common references in a pair of papers),
-    and possible citations based on texts similarity. These values are combined into aggregated similarity score
-    and are used to build papers graph. Papers graphs is available for additional exploration in interactive viewer.<br>
-    </p>
+    <img class="mx-auto d-block" src="../static/about_main.png" style="width: 100%; max-width: 900px;">
     <p>
+        Analysis procedure starts with the Bibliometrics analysis, i.e. citations graph analysis, collecting citations,
+        co-citations (when a pair of papers are cited together), and bibliographic couplings (number of common
+        references in a pair of papers). Citations information is used to create aggregated papers graph.<br>
+        Citations graph is later used to compute papers graph embeddings. Texts of titles and abstracts are used to
+        compute papers text embeddings. Combined graph and text embeddings they are used for papers similarity analysis
+        and topics identification by clustering. <br>
         Finally, user gets full report covering all the aspects of analysis.
     </p>
     <h3 id="example">Example</h3>
-    <p>Here we describe the analysis for the search query <i>human aging</i>. <br>
+    <p>Here we describe the analysis for the predefined search query <a class="link" target="_blank"
+                                                                        href="https://pubtrends.net/result?source=Pubmed&sort=Most+Cited&limit=1000&noreviews=on&expand=20&jobid=predefined_013615a5e39aa14ae55eba6d2a89b068&query=%22human+aging%22">"human
+        aging"</a>. <br>
         We focus on 1000 most cited papers from the PubMed, with review papers, extending search set with connected
-        papers
-        by 20%.<br>
+        papers by 20%.<br>
         Learn more exploring one of precomputed search queries from the <a class="link" href="/">PubTrends</a> main
         page.
     </p>
-    <h4 id="report">Report</h4>
+    <h4 id="papers">Papers</h4>
     <p>
-        <img class="mx-auto d-block" src="../static/about_humanaging_report.png"
-             style="width: 100%; max-width: 900px"><br>
-        The report page contains all the analytics and consists of several parts: Papers, Trends, Topics, etc.<br>
+        The report page contains all the analytics and consists of several parts: <a href="#papers">Papers</a>, <a
+            href="#trends">Trends</a>, <a href="#network">Network</a>, <a href="#topics">Topics</a>, etc.<br>
         Side bar on the left of the page can be used for navigation.<br>
         Please use About button - PubTrends will guide you through the report.
+
+        <img class="mx-auto d-block" src="../static/about_report.png"
+             style="width: 100%; max-width: 900px"><br>
     </p>
-    <h4 id="papers">Papers</h4>
     <p>The Papers section demonstrates a birds-eye view of the field, including the total number of articles,
         and extracted topics. Word cloud shows the most frequent words in titles and abstracts. Also, it
         contains a summary plot of papers per year. Please note that the word cloud component is clickable, and
-        you can navigate to documents containing the selected word. Articles can be viewed as a plain list, as
+        you can navigate to the documents containing the selected word. Papers can be viewed as a plain list, as
         well.<br>
         Topics were computed by hierarchical clustering of papers embeddings based on text and graph embeddings.<br>
+    <p>
+        Topics by year plot shows the number of papers for each topic by year, total papers share and main keywords
+        describing each topic.
+        <img class="mx-auto d-block" src="../static/about_keywords.png"
+             style="width: 100%; max-width: 900px">
     </p>
     <h4 id="trends">Trends</h4>
     <p>
         The Trends section contains an interactive visualisation of top-cited papers, organised by number and
-        citations count. Different types of articles are shown in different colours.<br>
-        Most cited papers and papers with quickest growth of citations are also shown here. All the papers are
+        citations count. <br>
+        Different types of articles are shown in different colours.<br>
+        Most cited papers and papers with the quickest growth of citations are also shown here. All the papers are
         clickable, and we can explore details on a separate page.
+    </p>
+    <p>
+        Top Cited papers plot are shown in the plot, where user can see most important papers publication year, total
+        number of citations and additional information about the paper on mouse hover.
+        <img class="mx-auto d-block" src="../static/about_top_cited_papers.png"
+             style="width: 100%; max-width: 900px">
+    </p>
+    <p>
+        Hot papers plot shows papers with the biggest number of citations by year.
+        <img class="mx-auto d-block" src="../static/about_hot_papers.png"
+             style="width: 100%; max-width: 900px">
     </p>
     <h4 id="network">Network</h4>
     <p>
         Topics are closely related groups of documents. Similarity between papers is computed based on <em>bibliographic
         coupling</em>, <em>direct citations</em>, <em>co-citations</em>, and text similarity
-        between papers. Community detection algorithm is used to extract dense clusters of papers or topics. Small
-        topics
-        are merged together to get reasonable number of topics.<br>
-        Overall structure of topics within a research field can be visualised as a graph.
+        between papers. Aggregated graph and text embeddings are used to find similar papers and detect topics.<br>
+        Overall structure of topics within a research field can be visualised as a papers similarity graph.
     </p>
-    <img class="mx-auto d-block" src="../static/about_humanaging_graph.png"
+    <img class="mx-auto d-block" src="../static/about_network.png"
          style="width: 100%; max-width: 900px"><br>
     <p>
-        This graph allows you to find out the most important spots. Hover on any nodes to view paper details, filter
-        papers with dedicated filter field, configure visualization options and more. On the screenshot you can see
-        papers coloured by different topics and the paper is highlighted with its similar neighbours.
+        The graph behind shows the overall structure of the research field, hovered dedicated graph explorer can do much
+        better. It supports papers coloring by year or by topic, provides reach capabilities for search and filtering in
+        papers
+        meta-information available. On the screenshot you can see papers coloured by different topics and the paper is
+        highlighted with its connected papers.
     </p>
+    <img class="mx-auto d-block" src="../static/about_graph_explorer.png"
+         style="width: 100%; max-width: 900px"><br>
+
 
     <h4 id="topics">Topics</h4>
-    <p>In the section Topics for each topic, the application shows familiar to users word cloud and articles plot. Word
-        cloud is built from terms specific to the given topic with respect to others. These words are computed using
-        TF-IDF normalization, a standard approach in the field of natural language processing. The more important word
-        is the more significant fraction of papers contains it.<br>
-        The topic below is dedicated to DNA methylation changes related with <i>human aging</i>.<br>
+    <p>Topics and identified using hierarchical clustering of papers embeddings, the user can explore topics hierarchy
+        dendrogram in the dedicated plot.
     </p>
-    <img class="mx-auto d-block" src="../static/about_humanaging_topic.png"
+    <img class="mx-auto d-block" src="../static/about_topics_hierarchy.png"
+         style="width: 100%; max-width: 900px"><br>
+    <p>For each topic, the application shows familiar to users word cloud and articles plot. Word cloud is built from
+        terms specific to the given topic with respect to others. The more important word is the more significant
+        fraction of papers contains it.<br>
+        The topic below is dedicated to molecular makers of human aging including DNA methylation changes and telomeres
+        shortening related with human aging.<br>
+    </p>
+    <img class="mx-auto d-block" src="../static/about_topic.png"
          style="width: 100%; max-width: 900px">
     <h4 id="review">Review</h4>
     <p>
         Generate a review for the chosen topic - a set of sentences from top cited papers with the highest probability
         to be included in a real review paper.</p>
+    <img class="mx-auto d-block" src="../static/about_review.png"
+         style="width: 100%; max-width: 900px">
     <p>
-        Open Access Paper: <a href="https://arxiv.org/abs/2010.04147">https://arxiv.org/abs/2010.04147</a><br>
+        Review generation mechanism is described in the Open Access Paper: <a class="link"
+                                                                              href="https://arxiv.org/abs/2010.04147">https://arxiv.org/abs/2010.04147</a><br>
 
         <i>Citation: Nikiforovskaya, A., Kapralov, N., Vlasova, A., Shpynov, O. and Shpilman, A., 2020, December.
             Automatic generation of reviews of scientific papers. In 2020 19th IEEE International Conference on Machine
@@ -172,24 +215,26 @@
     </p>
 
     <h4 id="other">Other</h4>
+    Sections Authors and Journals shows the most productive authors and the popular journals in the analyzed set of
+    papers.</p>
     <p>
-        Other sections include information about the most popular journals, most productive authors, etc.<br>
+        Section Numbers allows for quick identification of numbers hidden in the set of papers.<br>
+        The service scans papers for quantitative features mentioned in titles or abstracts and presents the user table
+        with search capabilities.</p>
+    <p>
+        Topics evolution analysis in an experimental feature, when topics identification is performed longitudinally at
+        several time points to detect merges and splits of topics.<br>
+        The user can inspect evolution of the topics.
     </p>
 
-    <h3 id="paper-analysis">Paper analysis</h3>
-    <p>In case when user is interested in the particular paper, PubTrends can help user to find similar papers and
-        most important prior and derivative works. User can use title name of DOI for paper identification. The service
-        will search for paper, analyze connected papers and proceed one step further by references to find out which
-        of the connected papers have co-citations, common references, etc. When the set of papers
-        is collected, papers similarity is analyzed.
-    </p>
     <hr>
-    <h3>Your feedback is welcome</h3>
-    <p>Let's make the service better together! We would love to hear your opinion on the results.<br>
+    <h3 id="feedback">Feedback</h3>
+    We'd love to hear your feedback! It allows us to make the Pubtrends better together.
+    <p>
         Feel free to fill the feedback form on the bottom of reports page or use emotions buttons to
-        share your thoughts.
+        share your thoughts.<br> Also you can optionally leave your email to contact you later.<br>
     </p>
-
+    <strong>Thank you for using Pubtrends!</strong>
 </div>
 <footer class="container">
     <div class="row">
