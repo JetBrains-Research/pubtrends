@@ -51,7 +51,7 @@
     <h4>Contents</h4>
     <div>
         <ul>
-            <li><a href="#dataset">Dataset</a> section described publications dataset</li>
+            <li><a href="#datasets">Datasets</a> section described publications datasets</li>
             <li><a href="#workflow">Workflow</a> section describes general analysis workflow</li>
             <li><a href="#example">Example</a> section contains a detailed description of analysis results</li>
             <ul>
@@ -65,10 +65,11 @@
                 </li>
                 <li><a href="#other">Other</a> section contains other analyses</li>
             </ul>
-            <li><a href="#feedback">Feedback</a> We'd love to hear your feedback to make the service better together</li>
+            <li><a href="#feedback">Feedback</a> We'd love to hear your feedback to make the service better together
+            </li>
         </ul>
     </div>
-    <h3 id="dataset">Dataset</h3>
+    <h3 id="datasets">Datasets</h3>
     <p>
         PubTrends contains 30 mln papers and 175 mln citations of biomedical literature from the
         <a class="link"
@@ -87,19 +88,21 @@
         <li>
             <strong>Search</strong><br>
             The service looks for papers matching the search query. Only papers containing search query in titles or
-            abstracts are found. The user can use double quotes to search for exact phrase or find documents, which
+            abstracts are found.<br>
+            The user can use double quotes to search for exact phrase or find documents, which
             contain all the words in the query. The number of papers can be quite significant, so it's natural to
             use some ranking and filtering to focus on either most cited, or most recent articles.<br>
             This set of papers is further extended by reference to papers which are similar, but may not contain some
             search words. <br>
-            When working with Pubmed database the user can use Pubmed search syntax for the search query, in this case
-            the service will use Pubmed API to fetch list of papers for analysis. Pubmed advanced search syntax
+            When working with PubMed database the user can use PubMed search syntax for the search query, in this case
+            the service will use PubMed API to fetch list of papers for analysis. PubMed advanced search syntax
             allows searching in exact fields, limit publications by date and much more.
         </li>
         <li>
             <strong>Paper</strong><br>
             When user is interested in the particular paper, PubTrends can help user to
-            find similar papers and most important prior and derivative works. User can use title name of DOI for paper
+            find similar papers and most important prior and derivative works. The user can use title name of DOI for
+            paper
             identification. The service will search for paper, analyze connected papers and proceed one step further by
             references to find out which of the connected papers have co-citations, common references, etc. When the set
             of papers is collected, papers similarity is analyzed.
@@ -107,52 +110,52 @@
     </ul>
     <img class="mx-auto d-block" src="../static/about_main.png" style="width: 100%; max-width: 900px;">
     <p>
-        Analysis procedure starts with the Bibliometrics analysis, i.e. citations graph analysis, collecting citations,
-        co-citations (when a pair of papers are cited together), and bibliographic couplings (number of common
-        references in a pair of papers). Citations information is used to create aggregated papers graph.<br>
+        All the analysis is based on similarity between papers. Similarity is computed based on Bibliometrics features,
+        i.e. <em>bibliographic coupling</em> (number of common references in a pair of papers), <em>co-citations</em>
+        (when a pair of papers are cited together), <em>direct citations</em>, and text similarity between papers.
+        This information is used to create papers citations graph.<br>
         Citations graph is later used to compute papers graph embeddings. Texts of titles and abstracts are used to
         compute papers text embeddings. Combined graph and text embeddings they are used for papers similarity analysis
         and topics identification by clustering. <br>
-        Finally, user gets full report covering all the aspects of analysis.
-    </p>
-    <h3 id="example">Example</h3>
-    <p>Here we describe the analysis for the predefined search query <a class="link" target="_blank"
-                                                                        href="https://pubtrends.net/result?source=Pubmed&sort=Most+Cited&limit=1000&noreviews=on&expand=20&jobid=predefined_013615a5e39aa14ae55eba6d2a89b068&query=%22human+aging%22">"human
-        aging"</a>. <br>
-        We focus on 1000 most cited papers from the PubMed, with review papers, extending search set with connected
-        papers by 20%.<br>
+        Finally, the user gets full report covering all the aspects of analysis.</p>
+    <p>
         Learn more exploring one of precomputed search queries from the <a class="link" href="/">PubTrends</a> main
         page.
     </p>
-    <h4 id="papers">Papers</h4>
-    <p>
-        The report page contains all the analytics and consists of several parts: <a href="#papers">Papers</a>, <a
-            href="#trends">Trends</a>, <a href="#network">Network</a>, <a href="#topics">Topics</a>, etc.<br>
-        Side bar on the left of the page can be used for navigation.<br>
-        Please use About button - PubTrends will guide you through the report.
-
-        <img class="mx-auto d-block" src="../static/about_report.png"
-             style="width: 100%; max-width: 900px"><br>
+    <h3 id="example">Example</h3>
+    <p>Here we describe the analysis for the predefined search query <a class="link" target="_blank"
+                                                                        href="https://pubtrends.net/result?source=PubMed&sort=Most+Cited&limit=1000&noreviews=on&expand=20&jobid=predefined_013615a5e39aa14ae55eba6d2a89b068&query=%22human+aging%22">"human
+        aging"</a>. <br>
+        We focus on 1000 most cited papers from the PubMed, with review papers, extending search set with connected
+        papers by 20%.<br>
+        The main report page contains all the analytics and consists of several parts: <a href="#papers">Papers</a>, <a
+                href="#trends">Trends</a>, <a href="#network">Network</a>, <a href="#topics">Topics</a>, <a
+                href="#review">Review</a> and <a href="#other">Other</a>.<br>
+        Side bar on the left of the page can be used for navigation. Please use About button for the help.
     </p>
+    <h4 id="papers">Papers</h4>
     <p>The Papers section demonstrates a birds-eye view of the field, including the total number of articles,
         and extracted topics. Word cloud shows the most frequent words in titles and abstracts. Also, it
         contains a summary plot of papers per year. Please note that the word cloud component is clickable, and
         you can navigate to the documents containing the selected word. Papers can be viewed as a plain list, as
         well.<br>
         Topics were computed by hierarchical clustering of papers embeddings based on text and graph embeddings.<br>
-    <p>
-        Topics by year plot shows the number of papers for each topic by year, total papers share and main keywords
-        describing each topic.
-        <img class="mx-auto d-block" src="../static/about_keywords.png"
-             style="width: 100%; max-width: 900px">
     </p>
+    <img class="mx-auto d-block" src="../static/about_report.png"
+         style="width: 100%; max-width: 900px"><br>
+    <p>
+        Topics by year plot shows dissection of papers by topics and the number of papers for each topic by year.<br>
+        Each topic is described by main keywords and total papers share.
+    </p>
+    <img class="mx-auto d-block" src="../static/about_topics_by_year.png"
+         style="width: 100%; max-width: 900px">
     <h4 id="trends">Trends</h4>
     <p>
         The Trends section contains an interactive visualisation of top-cited papers, organised by number and
-        citations count. <br>
-        Different types of articles are shown in different colours.<br>
+        citations count. Different types of articles are shown in different colours.<br>
         Most cited papers and papers with the quickest growth of citations are also shown here. All the papers are
-        clickable, and we can explore details on a separate page.
+        clickable, and we can explore details on a separate page.<br>
+        Also the user can explore frequent keywords trends mentioned in papers.
     </p>
     <p>
         Top Cited papers plot are shown in the plot, where user can see most important papers publication year, total
@@ -165,11 +168,17 @@
         <img class="mx-auto d-block" src="../static/about_hot_papers.png"
              style="width: 100%; max-width: 900px">
     </p>
+    <p>
+        Keywords frequency plot shows most frequent terms mentioned in papers and evolution in time.<br>
+        Exact number of papers containing keyword is available on hover.
+        <img class="mx-auto d-block" src="../static/about_keywords.png"
+             style="width: 100%; max-width: 900px">
+    </p>
+
     <h4 id="network">Network</h4>
     <p>
-        Topics are closely related groups of documents. Similarity between papers is computed based on <em>bibliographic
-        coupling</em>, <em>direct citations</em>, <em>co-citations</em>, and text similarity
-        between papers. Aggregated graph and text embeddings are used to find similar papers and detect topics.<br>
+        Topics are closely related groups of documents. Aggregated graph and text embeddings are used to find similar
+        papers and detect topics.<br>
         Overall structure of topics within a research field can be visualised as a papers similarity graph.
     </p>
     <img class="mx-auto d-block" src="../static/about_network.png"

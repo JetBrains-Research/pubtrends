@@ -87,6 +87,7 @@ logger = app.logger
 @app.route('/about_review.png')
 @app.route('/about_top_cited_papers.png')
 @app.route('/about_topic.png')
+@app.route('/about_topics_by_year.png')
 @app.route('/about_topics_hierarchy.png')
 @app.route('/smile.svg')
 @app.route('/meh.svg')
