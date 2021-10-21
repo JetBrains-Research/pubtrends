@@ -30,6 +30,9 @@ cp config.properties "${PTV}"/
 cp docker-compose.yml "${PTV}"/
 cp gunicorn.sh "${PTV}"/
 cp -r pysrc "${PTV}"/
+if [[ -d pubtrends-review ]]; then
+  cp -r pubtrends-review "${PTV}"/
+fi
 
 echo "Update config VERSION"
 sed -E "s/VERSION[^\n]*/VERSION = '${FULL_VERSION}'/g" -i "${PTV}"/pysrc/version.py
