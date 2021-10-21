@@ -3,12 +3,13 @@
 PubTrends
 =========
 
-PubTrends is a scientific literature exploratory tool for analyzing topics of a research field and similar papers analysis.
+PubTrends is a scientific literature exploratory tool for analyzing topics of a research field and similar papers
+analysis.
 
 **Open Access Paper**: [https://doi.org/10.1145/3459930.3469501](https://doi.org/10.1145/3459930.3469501) \
 Poster is available [here](https://drive.google.com/file/d/1SeqJtJtaHSO6YihG2905boOEYL1NiSP1/view?usp=sharing). \
-*Citation: Shpynov, O. and Nikolai, K., 2021, August. PubTrends: a scientific literature explorer. In
-Proceedings of the 12th ACM Conference on Bioinformatics, Computational Biology, and Health Informatics (pp. 1-1).*
+*Citation: Shpynov, O. and Nikolai, K., 2021, August. PubTrends: a scientific literature explorer. In Proceedings of the
+12th ACM Conference on Bioinformatics, Computational Biology, and Health Informatics (pp. 1-1).*
 
 ![Scheme](pysrc/app/static/about_pubtrends_scheme.png?raw=true "Title")
 
@@ -24,7 +25,7 @@ Proceedings of the 12th ACM Conference on Bioinformatics, Computational Biology,
 ## Configuration
 
 1. Copy and modify `config.properties` to `~/.pubtrends/config.properties`.\
-Ensure that file contains correct information about the database(s) (url, port, DB name, username and password).
+   Ensure that file contains correct information about the database(s) (url, port, DB name, username and password).
 
 2. Conda environment `pubtrends` can be easily created for launching Jupyter Notebook and Web Service:
 
@@ -33,7 +34,7 @@ Ensure that file contains correct information about the database(s) (url, port, 
     source activate pubtrends
     ```
 
-    Download Nltk and Spacy resources
+   Download Nltk and Spacy resources
     ```
     source activate pubtrends \
     && python -m nltk.downloader averaged_perceptron_tagger punkt stopwords wordnet \
@@ -47,7 +48,7 @@ Ensure that file contains correct information about the database(s) (url, port, 
     ```
 
 4. Init PostgreSQL database.
-    
+
     * Launch Docker image:
     ```
     docker run --rm  --name pubtrends-postgres \
@@ -57,7 +58,7 @@ Ensure that file contains correct information about the database(s) (url, port, 
         -p 5432:5432 \
         -d postgres:12
     ``` 
-   * Create database:
+    * Create database:
     ```
     psql -h localhost -p 5432 -U biolabs
     ALTER ROLE biolabs WITH LOGIN;
@@ -81,7 +82,15 @@ Ensure that file contains correct information about the database(s) (url, port, 
     max_worker_processes = 8
     max_parallel_workers = 8
     ```
-   
+
+5. If you would like to enable the review generation functionality, please clone the
+   [JetBrains-Research/pubtrends-review](https://github.com/JetBrains-Research/pubtrends-review) repository to the
+   working directory, and enable it in `~/.pubtrends/config.properties` file.
+
+   ```
+   git clone git@github.com:JetBrains-Research/pubtrends-review.git
+   ```
+
 ## Kotlin/Java Build
 
 Use the following command to test and build JAR package:
@@ -101,19 +110,19 @@ Launch crawler to download and keep up-to-date Pubmed database:
    ```
    java -cp build/libs/pubtrends-dev.jar org.jetbrains.bio.pubtrends.pm.PubmedLoader --fillDatabase
    ``` 
-   
-   Command line options supported:
-   * `resetDatabase` - clear current contents of the database (for development)
-   * `fillDatabase` - option to fill database with Pubmed data. Can be interrupted at any moment.
-   * `lastId` - force downloading from given id from articles pack `pubmed20n{lastId+1}.xml`. 
-   
+
+Command line options supported:
+
+* `resetDatabase` - clear current contents of the database (for development)
+* `fillDatabase` - option to fill database with Pubmed data. Can be interrupted at any moment.
+* `lastId` - force downloading from given id from articles pack `pubmed20n{lastId+1}.xml`.
 
 Updates - add crontab update every day at 22:00 with the command:
-    ```
-    crontab -e
-    0 22 * * * java -cp pubtrends-<version>.jar org.jetbrains.bio.pubtrends.pm.PubmedLoader --fillDatabase | \
-        tee -a crontab_update.log
-    ```
+
+```
+crontab -e 0 22 * * * java -cp pubtrends-<version>.jar org.jetbrains.bio.pubtrends.pm.PubmedLoader --fillDatabase | \
+tee -a crontab_update.log
+```
 
 ### Optional: Semantic Scholar
 
@@ -121,7 +130,8 @@ Download Sample from [Semantic Scholar](https://www.semanticscholar.org/) or ful
 Instructions are for the corpus 2021-03-01. \
 Replace `<PATH_TO_PUBTRENDS.JAR>` with actual path to Jar file.
 
-   * Linux & Mac OS
+* Linux & Mac OS
+
    ```
    wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2021-03-01/manifest.txt
    echo "" > complete.txt
@@ -136,8 +146,9 @@ Replace `<PATH_TO_PUBTRENDS.JAR>` with actual path to Jar file.
    done
    java -cp <PATH_TO_PUBTRENDS.JAR> org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --finish
    ```
-   
-   * Windows 10 PowerShell
+
+* Windows 10 PowerShell
+
    ```
    curl.exe -o .\manifest.txt https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2021-03-01/manifest.txt 
    echo "" > .\complete.txt
@@ -156,8 +167,7 @@ Replace `<PATH_TO_PUBTRENDS.JAR>` with actual path to Jar file.
 
 ## Development
 
-Several front-ends are supported.
-Please ensure that you have Database configured, up and running.
+Please ensure that you have database configured, up and running. Then use web-service or jupyter notebook.
 
 ### Web service
 
@@ -180,7 +190,7 @@ Please ensure that you have Database configured, up and running.
     ```
     conda env create -f environment.yml
     ```
-    Enable environment by command `source activate pubtrends`.
+   Enable environment by command `source activate pubtrends`.
 
 4. Download nltk & spacy resources
     ```
@@ -200,6 +210,7 @@ Please ensure that you have Database configured, up and running.
     ```    
 
 ### Jupyter Notebook
+
    ```
    # Configure paths
    export PYTHONPATH=$PYTHONPATH:$(pwd)
@@ -208,7 +219,6 @@ Please ensure that you have Database configured, up and running.
    jupyter notebook
    ```
 
-
 ## Testing
 
 1. Start Docker image with Postgres environment for tests (Kotlin and Python development)
@@ -216,7 +226,7 @@ Please ensure that you have Database configured, up and running.
     docker run --rm --name pubtrends-test \
     --publish=5432:5432 --volume=$(pwd):/pubtrends -i -t biolabs/pubtrends-test
     ```
-    
+
    NOTE: don't forget to stop the container afterwards.
 
 2. Kotlin tests
@@ -226,7 +236,7 @@ Please ensure that you have Database configured, up and running.
     ```
 
 3. Python tests with codestyle check for development (including integration with Kotlin DB writers)
-    
+
     ```
     source activate pubtrends; pytest pysrc
     ```
@@ -243,14 +253,15 @@ Please ensure that you have Database configured, up and running.
 ## Deployment
 
 Deployment is done with docker-compose. It is configured to start three containers:
+
 * Gunicorn serving Flask app on HTTPS port 443
 * Redis as a message proxy
 * Celery workers queue
 
 Please ensure that you have configured and prepared the database(s).
 
-1. Modify file `config.properties` with information about the database(s). 
-   File from the project folder is used in this case.
+1. Modify file `config.properties` with information about the database(s). File from the project folder is used in this
+   case.
 
 2. Start PostgreSQL server.
 
@@ -265,13 +276,13 @@ Please ensure that you have configured and prepared the database(s).
     ```
    NOTE: stop Postgres docker image with timeout `--time=300` to avoid DB recovery.\
 
-   NOTE2: for speed reason we use materialize views, which are updated upon successful database update.
-   In case of emergency stop, the view should be refreshed manually to ensure sort by citations works correctly:
+   NOTE2: for speed reason we use materialize views, which are updated upon successful database update. In case of
+   emergency stop, the view should be refreshed manually to ensure sort by citations works correctly:
     ```
     psql -h localhost -p 5432 -U biolabs -d pubtrends
     refresh materialized view matview_pmcitations;
     ``` 
-   
+
 3. Build ready for deployment package with script `dist.sh`.
    ```
    dist.sh build=build-number ga=google-analytics-id
@@ -287,19 +298,19 @@ Please ensure that you have configured and prepared the database(s).
 
 5. Optional: prepare SSL certificates files `privkey.pem` and `cert.pem` and optional CA-authority file `chain.pem`.\
    You can generate a self-signed certificate for testing purposes by the command:
-   
+
    ```
    mkdir ~/.pubtrends/ssl
    cd ~/.pubtrends/ssl
    openssl req -nodes -x509 -newkey rsa:4096 -keyout privkey.pem -out cert.pem -days 365 -subj '/CN=localhost'
    ```
- 
+
 6. Launch pubtrends with docker-compose.
     ```
     # start
     docker-compose up -d --build
     ```
-    Use these commands to stop compose build and check logs:
+   Use these commands to stop compose build and check logs:
     ```
     # stop
     docker-compose down
@@ -308,19 +319,26 @@ Please ensure that you have configured and prepared the database(s).
     ```
 
 ## Release
+
 * Update `CHANGES.txt`
 * Update version in `dist.sh`
 * Launch `dist.sh`, `pubtrends-XXX.tar.gz` will be created in the `dist` directory.
-
 
 # Authors
 
 See [AUTHORS.md](AUTHORS.md) for a list of authors and contributors.
 
 # Materials
-* Project architecture [presentation](https://docs.google.com/presentation/d/131qvkEnzzmpx7-I0rz1om6TG7bMBtYwU9T1JNteRIEs/edit?usp=sharing) - summer 2019. 
-* Review generation [presentation](https://my.compscicenter.ru/media/projects/2019-autumn/844/presentations/participants.pdf) - fall 2019.
-* Extractive summarization [presentation](https://drive.google.com/file/d/1NnZ6JtJ2owtxFnuwKbARzOFM5_aHw6ls/view?usp=sharing) - spring 2020.
+
+* Project architecture 
+  [presentation](https://docs.google.com/presentation/d/131qvkEnzzmpx7-I0rz1om6TG7bMBtYwU9T1JNteRIEs/edit?usp=sharing) - 
+  summer 2019.
+* Review generation
+  [presentation](https://my.compscicenter.ru/media/projects/2019-autumn/844/presentations/participants.pdf) - 
+  fall 2019.
+* Extractive summarization 
+  [presentation](https://drive.google.com/file/d/1NnZ6JtJ2owtxFnuwKbARzOFM5_aHw6ls/view?usp=sharing) - 
+  spring 2020.
 * Paper ["Automatic generation of reviews of scientific papers"](https://arxiv.org/abs/2010.04147)
 * [Icons by Feather](https://feathericons.com/)
 

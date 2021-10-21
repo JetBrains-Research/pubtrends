@@ -2,20 +2,26 @@ import logging
 import os
 from threading import Lock
 
+import sys
 import torch
 from celery import current_task
 from lazy import lazy
+from os.path import dirname
 
-import pysrc.review.config as cfg
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.papers.analysis.citations import find_top_cited_papers
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.progress import Progress
 from pysrc.papers.config import PubtrendsConfig
-from pysrc.review.model import load_model
-from pysrc.review.text import text_to_data
-from pysrc.review.utils import setup_single_gpu
+
+# Configure source path for pubtrends-review repository
+sys.path.append(os.path.abspath(f'{dirname(__file__)}/../../../pubtrends-review'))
+
+import review.config as cfg
+from review.model import load_model
+from review.text import text_to_data
+from review.utils import setup_single_gpu
 
 logger = logging.getLogger(__name__)
 
