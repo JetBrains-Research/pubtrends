@@ -681,7 +681,7 @@ configure_admin_functions(app, pubtrends_celery, logfile)
 #######################
 
 if PUBTRENDS_CONFIG.feature_review_enabled:
-    register_app_review(app)
+    register_app_review(app, PREDEFINED_JOBS)
 
 
 # Application
