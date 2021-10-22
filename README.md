@@ -126,9 +126,8 @@ from `/admin` dashboard, which shows requests and results, execution times and f
     max_parallel_workers = 8
     ```
 
-5. If you would like to enable the review generation functionality, please clone the
-   [JetBrains-Research/pubtrends-review](https://github.com/JetBrains-Research/pubtrends-review) repository to the
-   working directory, and enable it in `~/.pubtrends/config.properties` file.
+5. Clone the [JetBrains-Research/pubtrends-review](https://github.com/JetBrains-Research/pubtrends-review) repository to
+   the working directory, and enable it in `~/.pubtrends/config.properties` file.
 
    ```
    git clone git@github.com:JetBrains-Research/pubtrends-review.git
