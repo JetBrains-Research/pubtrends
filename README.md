@@ -13,6 +13,49 @@ Poster is available [here](https://drive.google.com/file/d/1SeqJtJtaHSO6YihG2905
 
 ![Scheme](pysrc/app/static/about_pubtrends_scheme.png?raw=true "Title")
 
+## Technical details
+
+PubTrends is a web service, written in Python, Kotlin and Javascript.
+
+### Libraries
+
+The service uses combination of Gunicorn and Flask for web server. Asynchronous computations are supported with Celery
+tasks queue and Redis as message broker. We use PostgreSQL to store information about papers: titles, abstracts, authors
+and citations information. PostgreSQL built-in text search engine is used for full text search. MySQL is used to store
+technical user information including users roles and admin credentials for admin dashboard. It uses Kotlin PostgresSQL
+ORM to store papers in the database.
+
+All the data manipulations are made with Pandas, Numpy and Scikit-Learn libraries. The service uses Python Nltk and
+Space libraries for text processing and analysis. Graph objects are processed with NetworkX library, papers embeddings
+are created with word2vec library from GenSim and in-house node2vec implementation based on word2vec. All the plots are
+created with Bokeh, Holoviews, Seaborn and Matplotlib libraries, which are used both in web pages and Jupyter notebook
+experiments. Frontend is created with Bootstrap, Jquery and Cytoscape-JS for graphs rendering.
+
+Please refer to [environment.yml](environment.yml) for the full list of libraries used in the project.
+
+### Docker
+
+Two Docker images are used for testing and deployment: [biolabs/pubtrends-test](resources/docker/main/Dockerfile)
+and [biolabs/pubtrends](resources/docker/test/Dockerfile), respectively. We use [Docker Hub](https://hub.docker.com/) to
+store built images. Service deployment is done with Docker compose, which launches Redis container, Celery container and
+Gunicorn container.
+
+Please refer to [docker-compose.yml](docker-compose.yml) for more information about deployment.
+
+### Testing and CI
+
+Testing is done with Pytest and JUnit. Flake8 linter is used for quality assessment of Python code. Python tests are
+launched in Dockers. Continuous integration is done with TeamCity using build chains. Each commit is assigned with build
+number which is later used for *Python tests*, *Kotlin tests* and *Docker-compose tests* build configurations.
+Dedicated *Distributive* build configuration is used to build Kotlin code and pack all the Python code into distribution
+packages, this configuration depends on tests configuration and is being executed only when all the tests are passed
+successfully. Distribution packages are used for database updates and web service deployment.
+
+### Product metrics
+
+We use Google Analytics to collect information about site visitors as well as internal statistics collector available
+from `/admin` dashboard, which shows requests and results, execution times and feedback from users.
+
 ## Prerequisites
 
 * JDK 8+
@@ -330,15 +373,13 @@ See [AUTHORS.md](AUTHORS.md) for a list of authors and contributors.
 
 # Materials
 
-* Project architecture 
-  [presentation](https://docs.google.com/presentation/d/131qvkEnzzmpx7-I0rz1om6TG7bMBtYwU9T1JNteRIEs/edit?usp=sharing) - 
+* Project architecture
+  [presentation](https://docs.google.com/presentation/d/131qvkEnzzmpx7-I0rz1om6TG7bMBtYwU9T1JNteRIEs/edit?usp=sharing) -
   summer 2019.
 * Review generation
-  [presentation](https://my.compscicenter.ru/media/projects/2019-autumn/844/presentations/participants.pdf) - 
-  fall 2019.
-* Extractive summarization 
-  [presentation](https://drive.google.com/file/d/1NnZ6JtJ2owtxFnuwKbARzOFM5_aHw6ls/view?usp=sharing) - 
-  spring 2020.
+  [presentation](https://my.compscicenter.ru/media/projects/2019-autumn/844/presentations/participants.pdf) - fall 2019.
+* Extractive summarization
+  [presentation](https://drive.google.com/file/d/1NnZ6JtJ2owtxFnuwKbARzOFM5_aHw6ls/view?usp=sharing) - spring 2020.
 * Paper ["Automatic generation of reviews of scientific papers"](https://arxiv.org/abs/2010.04147)
 * [Icons by Feather](https://feathericons.com/)
 
