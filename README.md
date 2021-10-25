@@ -4,10 +4,11 @@ PubTrends
 =========
 
 PubTrends is a scientific literature exploratory tool for analyzing topics of a research field and similar papers
-analysis.
+analysis. \
+It is available at [https://pubtrends.net](https://pubtrends.net).
 
-**Open Access Paper**: [https://doi.org/10.1145/3459930.3469501](https://doi.org/10.1145/3459930.3469501) \
-Poster is available [here](https://drive.google.com/file/d/1SeqJtJtaHSO6YihG2905boOEYL1NiSP1/view?usp=sharing). \
+Open Access Paper: [https://doi.org/10.1145/3459930.3469501](https://doi.org/10.1145/3459930.3469501), poster
+is [here](https://drive.google.com/file/d/1SeqJtJtaHSO6YihG2905boOEYL1NiSP1/view?usp=sharing). \
 *Citation: Shpynov, O. and Nikolai, K., 2021, August. PubTrends: a scientific literature explorer. In Proceedings of the
 12th ACM Conference on Bioinformatics, Computational Biology, and Health Informatics (pp. 1-1).*
 
@@ -15,21 +16,22 @@ Poster is available [here](https://drive.google.com/file/d/1SeqJtJtaHSO6YihG2905
 
 ## Technical details
 
-PubTrends is a web service, written in Python, Kotlin and Javascript.
+Here is a short description of the service architecture and technologies used.
 
 ### Libraries
 
+PubTrends is a web service, written in Python, Kotlin and Javascript.
 The service uses combination of Gunicorn and Flask for web server. Asynchronous computations are supported with Celery
 tasks queue and Redis as message broker. We use PostgreSQL to store information about papers: titles, abstracts, authors
-and citations information. PostgreSQL built-in text search engine is used for full text search. MySQL is used to store
-technical user information including users roles and admin credentials for admin dashboard. It uses Kotlin PostgresSQL
-ORM to store papers in the database.
+and citations information. PostgreSQL built-in text search engine is used for full text search. Kotlin PostgresSQL
+ORM is used to store papers in the database. MySQL database is used to store technical user information including users 
+roles and admin credentials for admin dashboard. 
 
 All the data manipulations are made with Pandas, Numpy and Scikit-Learn libraries. The service uses Python Nltk and
-Space libraries for text processing and analysis. Graph objects are processed with NetworkX library, papers embeddings
+Spacy libraries for text processing and analysis. Graph objects are processed with NetworkX library, papers embeddings
 are created with word2vec library from GenSim and in-house node2vec implementation based on word2vec. All the plots are
-created with Bokeh, Holoviews, Seaborn and Matplotlib libraries, which are used both in web pages and Jupyter notebook
-experiments. Frontend is created with Bootstrap, Jquery and Cytoscape-JS for graphs rendering.
+created with Bokeh, Holoviews, Seaborn and Matplotlib libraries. Interactive Bokeh plots are used in web pages and Jupyter notebook
+experiments. Frontend is created with Bootstrap, JQuery and Cytoscape-JS for graphs rendering.
 
 Please refer to [environment.yml](environment.yml) for the full list of libraries used in the project.
 
@@ -45,7 +47,7 @@ Please refer to [docker-compose.yml](docker-compose.yml) for more information ab
 ### Testing and CI
 
 Testing is done with Pytest and JUnit. Flake8 linter is used for quality assessment of Python code. Python tests are
-launched in Dockers. Continuous integration is done with TeamCity using build chains. Each commit is assigned with build
+launched within Docker. Continuous integration is done with TeamCity using build chains. Each commit is assigned with build
 number which is later used for *Python tests*, *Kotlin tests* and *Docker-compose tests* build configurations.
 Dedicated *Distributive* build configuration is used to build Kotlin code and pack all the Python code into distribution
 packages, this configuration depends on tests configuration and is being executed only when all the tests are passed
@@ -56,7 +58,8 @@ successfully. Distribution packages are used for database updates and web servic
 We use Google Analytics to collect information about site visitors as well as internal statistics collector available
 from `/admin` dashboard, which shows requests and results, execution times and feedback from users.
 
-## Prerequisites
+
+## Development Prerequisites
 
 * JDK 8+
 * Conda
@@ -166,7 +169,7 @@ crontab -e 0 22 * * * java -cp pubtrends-<version>.jar org.jetbrains.bio.pubtren
 tee -a crontab_update.log
 ```
 
-### Optional: Semantic Scholar
+### Semantic Scholar
 
 Download Sample from [Semantic Scholar](https://www.semanticscholar.org/) or full archive. See Open Corpus.<br>
 Instructions are for the corpus 2021-03-01. \
@@ -371,14 +374,15 @@ Please ensure that you have configured and prepared the database(s).
 See [AUTHORS.md](AUTHORS.md) for a list of authors and contributors.
 
 # Materials
-
-* Project architecture
+* Open Access Paper: [https://doi.org/10.1145/3459930.3469501](https://doi.org/10.1145/3459930.3469501), poster 
+  [here](https://drive.google.com/file/d/1SeqJtJtaHSO6YihG2905boOEYL1NiSP1/view?usp=sharing) - 2021.
+* Project overview 
   [presentation](https://docs.google.com/presentation/d/131qvkEnzzmpx7-I0rz1om6TG7bMBtYwU9T1JNteRIEs/edit?usp=sharing) -
   summer 2019.
 * Review generation
   [presentation](https://my.compscicenter.ru/media/projects/2019-autumn/844/presentations/participants.pdf) - fall 2019.
 * Extractive summarization
   [presentation](https://drive.google.com/file/d/1NnZ6JtJ2owtxFnuwKbARzOFM5_aHw6ls/view?usp=sharing) - spring 2020.
-* Paper ["Automatic generation of reviews of scientific papers"](https://arxiv.org/abs/2010.04147)
+* Paper ["Automatic generation of reviews of scientific papers"](https://arxiv.org/abs/2010.04147) - 2021.
 * [Icons by Feather](https://feathericons.com/)
 
