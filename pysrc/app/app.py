@@ -147,37 +147,40 @@ def search_terms():
     pubmed_syntax = request.form.get('pubmed-syntax') == 'on'
     noreviews = request.form.get('noreviews') == 'on'  # Include reviews in the initial search phase
     expand = request.form.get('expand')  # Fraction of papers to cover by references
+    topics = request.form.get('topics')  # Topics sizes
     files = request.form.get('files') == 'on'
 
     try:
         # PubMed syntax
-        if query and source and limit and pubmed_syntax:
+        if query and source and limit and topics and pubmed_syntax:
             if files:
                 # Save results to files
-                job = analyze_pubmed_search_files.delay(query=query, limit=limit, test=app.config['TESTING'])
+                job = analyze_pubmed_search_files.delay(query=query, limit=limit, topics=topics,
+                                                        test=app.config['TESTING'])
                 return redirect(url_for('.process', query=query, analysis_type=ANALYSIS_FILES_TYPE,
-                                        sort='', limit=limit, source='Pubmed', jobid=job.id))
+                                        sort='', limit=limit, source='Pubmed', topics=topics, jobid=job.id))
             else:
                 # Regular analysis
-                job = analyze_pubmed_search.delay(query=query, limit=limit, test=app.config['TESTING'])
-                return redirect(url_for('.process', source='Pubmed', query=query, limit=limit, sort='', jobid=job.id))
+                job = analyze_pubmed_search.delay(query=query, limit=limit, topics=topics, test=app.config['TESTING'])
+                return redirect(url_for('.process', source='Pubmed', query=query, limit=limit, sort='', topics=topics,
+                                        jobid=job.id))
 
         # Regular search syntax
-        if query and source and sort and limit and expand:
+        if query and source and sort and limit and expand and topics:
             if files:
                 # Save results to files
                 job = analyze_search_terms_files.delay(source, query=query, limit=int(limit), sort=sort,
-                                                       noreviews=noreviews, expand=int(expand) / 100,
+                                                       noreviews=noreviews, expand=int(expand) / 100, topics=topics,
                                                        test=app.config['TESTING'])
                 return redirect(url_for('.process', query=query, analysis_type=ANALYSIS_FILES_TYPE,
-                                        sort=sort, limit=limit, source=source, jobid=job.id))
+                                        sort=sort, limit=limit, source=source, topics=topics, jobid=job.id))
             else:
                 # Regular analysis
                 job = analyze_search_terms.delay(source, query=query, limit=int(limit), sort=sort,
-                                                 noreviews=noreviews, expand=int(expand) / 100,
+                                                 noreviews=noreviews, expand=int(expand) / 100, topics=topics,
                                                  test=app.config['TESTING'])
                 return redirect(url_for('.process', query=query, source=source, limit=limit, sort=sort,
-                                        noreviews=noreviews, expand=expand,
+                                        noreviews=noreviews, expand=expand, topics=topics,
                                         jobid=job.id))
         logger.error(f'/search_terms error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_TOPIC), 400
@@ -191,13 +194,14 @@ def search_paper():
     logger.info(f'/search_paper {log_request(request)}')
     data = request.form
     try:
-        if 'source' in data and 'key' in data and 'value' in data:
+        if 'source' in data and 'key' in data and 'value' in data and 'topics' in data:
             source = data.get('source')  # Pubmed or Semantic Scholar
             key = data.get('key')
             value = data.get('value')
-            job = analyze_search_paper.delay(source, None, key, value, test=app.config['TESTING'])
+            topics = data.get('topics')
+            job = analyze_search_paper.delay(source, None, key, value, topics, test=app.config['TESTING'])
             return redirect(url_for('.process', query=f'Paper {key}={value}', analysis_type=PAPER_ANALYSIS_TYPE,
-                                    key=key, value=value, source=source, jobid=job.id))
+                                    key=key, value=value, source=source, topics=topics, jobid=job.id))
         logger.error(f'/search_paper error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
     except Exception as e:
@@ -210,15 +214,17 @@ def process_ids():
     logger.info(f'/process_ids {log_request(request)}')
     source = request.form.get('source')  # Pubmed or Semantic Scholar
     query = request.form.get('query')  # Original search query
+    topics = request.form.get('topics')
     try:
-        if source and query and 'id_list' in request.form:
+        if source and query and topics and 'id_list' in request.form:
             id_list = request.form.get('id_list').split(',')
             analysis_type = request.form.get('analysis_type')
             job = analyze_id_list.delay(
-                source, ids=id_list, query=query, analysis_type=analysis_type, limit=None,
+                source, ids=id_list, query=query, analysis_type=analysis_type, limit=None, topics=topics,
                 test=app.config['TESTING']
             )
-            return redirect(url_for('.process', query=query, analysis_type=analysis_type, source=source, jobid=job.id))
+            return redirect(url_for('.process', query=query, analysis_type=analysis_type, source=source, topics=topics,
+                                    jobid=job.id))
         logger.error(f'/process_ids error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception as e:
@@ -243,12 +249,13 @@ def process():
         query = request.args.get('query') or ''
         analysis_type = request.values.get('analysis_type')
         source = request.values.get('source')
+        topics = request.values.get('topics') or 'medium'
 
         if analysis_type == IDS_ANALYSIS_TYPE:
             logger.info(f'/process ids {log_request(request)}')
             return render_template('process.html',
                                    redirect_args={'query': quote(query), 'source': source, 'jobid': jobid,
-                                                  'limit': analysis_type, 'sort': ''},
+                                                  'limit': analysis_type, 'sort': '', 'topics': topics},
                                    query=trim(query, MAX_QUERY_LENGTH), source=source, limit=analysis_type, sort='',
                                    redirect_page='result',  # redirect in case of success
                                    jobid=jobid, version=VERSION)
@@ -259,7 +266,8 @@ def process():
             value = request.args.get('value')
             return render_template('process.html',
                                    redirect_args={'source': source, 'jobid': jobid,
-                                                  'limit': '', 'sort': '', 'key': key, 'value': value},
+                                                  'limit': '', 'sort': '', 'key': key, 'value': value,
+                                                  'topics': topics},
                                    query=trim(query, MAX_QUERY_LENGTH), source=source,
                                    redirect_page='paper',  # redirect in case of success
                                    jobid=jobid, version=VERSION)
@@ -285,7 +293,7 @@ def process():
                                    redirect_args={
                                        'source': source,
                                        'query': quote(query),
-                                       'limit': limit, 'sort': '',
+                                       'limit': limit, 'sort': '', 'topics': topics,
                                        'jobid': jobid},
                                    query=trim(query, MAX_QUERY_LENGTH), source=source,
                                    limit=limit, sort='',
@@ -299,7 +307,7 @@ def process():
             return render_template('process.html',
                                    redirect_args={
                                        'query': quote(query), 'source': source,
-                                       'limit': limit, 'sort': sort,
+                                       'limit': limit, 'sort': sort, 'topics': topics,
                                        'jobid': jobid
                                    },
                                    query=trim(query, MAX_QUERY_LENGTH), source=source,
@@ -404,6 +412,7 @@ def result():
     sort = request.args.get('sort')
     noreviews = request.args.get('noreviews') == 'on'  # Include reviews in the initial search phase
     expand = request.args.get('expand') or 0  # Fraction of papers to cover by references
+    topics = request.args.get('topics')
     try:
         if jobid and query and source and limit is not None and sort is not None:
             job = AsyncResult(jobid, app=pubtrends_celery)
@@ -434,11 +443,11 @@ def result():
                                        **viz)
             logger.info(f'/result No job or out-of-date job, restart it {log_request(request)}')
             analyze_search_terms.apply_async(
-                args=[source, query, sort, int(limit), noreviews, int(expand) / 100, app.config['TESTING']],
+                args=[source, query, sort, int(limit), noreviews, int(expand) / 100, topics, app.config['TESTING']],
                 task_id=jobid
             )
             return redirect(url_for('.process', query=query, source=source, limit=limit, sort=sort,
-                                    noreviews=noreviews, expand=expand,
+                                    noreviews=noreviews, expand=expand, topics=topics,
                                     jobid=jobid))
         else:
             logger.error(f'/result error wrong request {log_request(request)}')
@@ -494,6 +503,7 @@ def paper():
     pid = request.args.get('id')
     key = request.args.get('key')
     value = request.args.get('value')
+    topics = request.args.get('topics')
     try:
         if jobid:
             data = load_predefined_or_result_data(source, jobid, PREDEFINED_JOBS, pubtrends_celery)
@@ -506,10 +516,10 @@ def paper():
             else:
                 logger.info(f'/paper No job or out-of-date job, restart it {log_request(request)}')
                 analyze_search_paper.apply_async(
-                    args=[source, pid, key, value, app.config['TESTING']], task_id=jobid
+                    args=[source, pid, key, value, topics, app.config['TESTING']], task_id=jobid
                 )
                 return redirect(url_for('.process', query=f'Paper {key}={value}', analysis_type=PAPER_ANALYSIS_TYPE,
-                                        source=source, key=key, value=value, jobid=jobid))
+                                        source=source, key=key, value=value, topics=topics, jobid=jobid))
         else:
             logger.error(f'/paper error wrong request {log_request(request)}')
             return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400

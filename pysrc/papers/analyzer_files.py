@@ -13,8 +13,6 @@ import pandas as pd
 from bokeh.colors import RGB
 from bokeh.io import reset_output
 from bokeh.models import ColumnDataSource, ColorBar, PrintfTickFormatter, LinearColorMapper
-from bokeh.models import GraphRenderer, StaticLayoutProvider, Circle, HoverTool, MultiLine, LabelSet
-from bokeh.models.graphs import NodesAndLinkedEdges
 from bokeh.plotting import figure, output_file, save
 from lazy import lazy
 from matplotlib import pyplot as plt
@@ -48,8 +46,6 @@ SEARCH_RESULTS_PATHS = ['/search_results', os.path.expanduser('~/.pubtrends/sear
 
 
 class AnalyzerFiles(PapersAnalyzer):
-    # Increase max number of topics
-    TOPICS_MAX_NUMBER = 40
 
     def __init__(self, loader, config, test=False):
         super(AnalyzerFiles, self).__init__(loader, config)
@@ -58,12 +54,12 @@ class AnalyzerFiles(PapersAnalyzer):
         self.source = Loaders.source(self.loader, test)
 
     def total_steps(self):
-        return 17
+        return 16
 
     def teardown(self):
         self.progress.remove_handler()
 
-    def analyze_ids(self, ids, source, query, sort, limit, test=False, task=None):
+    def analyze_ids(self, ids, source, query, sort, limit, topics, test=False, task=None):
         self.query = query
         self.query_folder = os.path.join(self.search_results_folder, f"{VERSION.replace(' ', '_')}",
                                          query_to_folder(source, query, sort, limit))
@@ -169,11 +165,8 @@ class AnalyzerFiles(PapersAnalyzer):
         self.papers_graph = build_papers_graph(
             self.df, self.cit_df, self.cocit_grouped_df, self.bibliographic_coupling_df,
         )
-        logger.debug(f'Built papers graph - {self.papers_graph.number_of_nodes()} nodes and '
-                     f'{self.papers_graph.number_of_edges()} edges')
-
-        self.progress.info(f'Analyzing papers graph with {self.papers_graph.number_of_nodes()} nodes '
-                           f'and {self.papers_graph.number_of_edges()} edges', current=11, task=task)
+        self.progress.info(f'Built papers graph with {self.papers_graph.number_of_nodes()} nodes '
+                           f'and {self.papers_graph.number_of_edges()} edges', current=10, task=task)
         logger.debug('Analyzing papers graph embeddings')
         self.weighted_similarity_graph = to_weighted_graph(self.papers_graph, PapersAnalyzer.similarity)
         gs = sparse_graph(self.weighted_similarity_graph)
@@ -205,10 +198,10 @@ class AnalyzerFiles(PapersAnalyzer):
             self.df['x'] = 0
             self.df['y'] = 0
 
-        self.progress.info('Extracting topics from papers', current=12, task=task)
-        clusters, dendrogram = cluster_and_sort(
-            self.pca_coords, PapersAnalyzer.TOPIC_MIN_SIZE, self.TOPICS_MAX_NUMBER
-        )
+        self.progress.info(f'Extracting {topics.lower()} topics from papers text and graph similarity',
+                           current=11, task=task)
+        topics_max_number, topic_min_size = PapersAnalyzer.get_topics_info(topics)
+        clusters, dendrogram = cluster_and_sort(self.pca_coords, topics_max_number, topic_min_size)
         self.df['comp'] = clusters
         path_topics_sizes = os.path.join(self.query_folder, 'topics_sizes.html')
         logging.info(f'Save topics ratios to file {path_topics_sizes}')
@@ -227,7 +220,7 @@ class AnalyzerFiles(PapersAnalyzer):
         save(heatmap_topics_similarity(similarity_df, topics))
         reset_output()
 
-        self.progress.info('Analyzing topics descriptions', current=13, task=task)
+        self.progress.info('Analyzing topics descriptions', current=12, task=task)
         print('Computing clusters keywords')
         clusters_pids = self.df[['id', 'comp']].groupby('comp')['id'].apply(list).to_dict()
         clusters_description = get_topics_description(
@@ -245,7 +238,7 @@ class AnalyzerFiles(PapersAnalyzer):
         t.to_csv(path_tags, index=False)
         del t
 
-        self.progress.info('Analyzing topics descriptions with MESH terms', current=14, task=task)
+        self.progress.info('Analyzing topics descriptions with MESH terms', current=13, task=task)
         mesh_corpus = [
             [[mesh_corpus_tokens[i]] * int(mc) for i, mc in
              enumerate(np.asarray(mesh_corpus_counts[pid, :]).reshape(-1)) if mc > 0]
@@ -299,7 +292,7 @@ class AnalyzerFiles(PapersAnalyzer):
         t.to_csv(path_papers, index=False)
         del t
 
-        self.progress.info('Preparing papers graphs', current=15, task=task)
+        self.progress.info('Preparing papers graphs', current=14, task=task)
         logger.debug('Prepare sparse graph for visualization')
         self.sparse_papers_graph = self.prepare_sparse_papers_graph(self.papers_graph, self.weighted_similarity_graph)
         path_papers_graph = os.path.join(self.query_folder, 'papers.html')
@@ -316,7 +309,7 @@ class AnalyzerFiles(PapersAnalyzer):
         save_sim_papers_graph_interactive(self.sparse_papers_graph, self.df, clusters_description,
                                           mesh_clusters_description, template_path, path_papers_graph_interactive)
 
-        self.progress.info('Other analyses', current=16, task=task)
+        self.progress.info('Other analyses', current=15, task=task)
         plotter = Plotter(self)
         path_timeline = os.path.join(self.query_folder, 'timeline.html')
         logging.info(f'Save timeline to {path_timeline}')

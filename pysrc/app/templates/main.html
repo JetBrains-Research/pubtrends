@@ -206,19 +206,32 @@
                             </div>
                             <div class="row no-gutters align-items-center mt-2">
                                 <div class="col input-group mr-2">
-                                    <label style="margin-top: auto;margin-bottom: auto">
-                                        <input type="checkbox" checked="checked" name="noreviews" id="noreviews">
-                                        <span class="checkmark">Prefer no reviews</span>
-                                    </label>
+                                    <div class="input-group-prepend mr-2">
+                                        <span class="input-group-text" id="review-addon">
+                                            Prefer no reviews</span>
+                                    </div>
+                                    <input type="checkbox" checked="checked" name="noreviews" id="noreviews"
+                                           aria-describedby="review-addon"
+                                           style="width: 1.2rem; height: 1.2rem; margin-top: auto; margin-bottom: auto;">
                                 </div>
                                 <div class="col input-group d-flex align-items-center mr-2">
-                                    <label for="expand" class="mr-1" style="margin-top: auto;margin-bottom: auto">
-                                        Expand by references %
-                                    </label>
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text" id="expand-addon">
+                                            Expand by references %</span>
+                                    </div>
                                     <input id="expand" name="expand" class="form-control" type="number"
+                                           aria-describedby="expand-addon"
                                            min="0" max="100" step="10" value="20"/>
                                 </div>
                                 <div class="col input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text" id="topics-addon">Topics number</span>
+                                    </div>
+                                    <select class="form-control" aria-describedby="topics-addon" name="topics">
+                                        <option>Small</option>
+                                        <option selected>Medium</option>
+                                        <option>Large</option>
+                                    </select>
                                 </div>
                             </div>
                             <div class="row no-gutters align-items-center mt-2">
@@ -238,6 +251,7 @@
                         <form action="result" method="GET" class="inline">
                             <input type="hidden" name="source" value="{{ search_example_source }}">
                             <input type="hidden" name="sort" value="Most Cited">
+                            <input type="hidden" name="topics" value="medium">
                             <input type="hidden" name="limit" value="{{ default_limit }}">
                             {% if search_example_source == "Semantic Scholar" %}
                             <input type="hidden" name="noreviews" value="off">
@@ -306,7 +320,7 @@
                         </div>
                         <div id="collapsePaperAdvanced" class="collapse mt-4">
                             <div class="row no-gutters align-items-center">
-                                <div class="col-4 input-group">
+                                <div class="col-4 input-group mr-2">
                                     <div class="input-group-prepend">
                                         <span class="input-group-text" id="paper-amount-addon">Limit</span>
                                     </div>
@@ -323,6 +337,16 @@
                                     <div class="input-group-append">
                                         <span class="input-group-text">papers</span>
                                     </div>
+                                </div>
+                                <div class="col-4 input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text" id="paper-topics-addon">Topics number</span>
+                                    </div>
+                                    <select class="form-control" aria-describedby="paper-topics-addon" name="topics">
+                                        <option>Small</option>
+                                        <option selected>Medium</option>
+                                        <option>Large</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -379,7 +403,11 @@
                 {
                     element: '#step3',
                     intro: "Additionally configure papers limit and ranking, filter out review papers, etc.<br>" +
-                        "Use save analysis html reports to create downloadable report files."
+                            "Topics number can be configured:<br>" +
+                            "<i>Small</i> - ≤ 10 topics, each ≥ 50 papers;<br>" +
+                            "<i>Medium</i> - ≤ 20 topics, each ≥ 20 papers;<br>" +
+                            "<i>Large</i> - ≤ 50 topics, each ≥ 10 papers.<br>" +
+                            "Use <i>Save analysis html reports</i> to create downloadable report files."
                 },
                 {
                     element: '#step4',

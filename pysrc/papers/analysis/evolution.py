@@ -14,12 +14,12 @@ logger = logging.getLogger(__name__)
 
 
 def topic_evolution_analysis(
-        df, cit_df, cocit_df, bibliographic_coupling_df, cocit_min_threshold, similarity_func,
+        df,
+        cit_df, cocit_df, bibliographic_coupling_df, cocit_min_threshold, similarity_func,
         corpus_counts, corpus_tokens_embedding,
         graph_embedding_factor, text_embedding_factor,
-        topic_min_size, max_topics_number,
-        evolution_step
-):
+        topics_max_number, topic_min_size,
+        evolution_step):
     """
     Main method of evolution analysis
     :return: evolution_df, year_range
@@ -80,7 +80,7 @@ def topic_evolution_analysis(
              texts_embeddings_year * text_embedding_factor), axis=1)
 
         logger.debug('Extracting topics from papers')
-        clusters, _ = cluster_and_sort(papers_embeddings, topic_min_size, max_topics_number)
+        clusters, _ = cluster_and_sort(papers_embeddings, topics_max_number, topic_min_size)
         partition = dict(zip(df_year['id'], clusters))
         evolution_series.append(pd.Series(partition))
 

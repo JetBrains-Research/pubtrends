@@ -64,9 +64,22 @@ class PapersAnalyzer:
 
     PCA_COMPONENTS = 20
 
-    TOPIC_MIN_SIZE = 20
-    # Max number of topics should be "deliverable"
-    TOPICS_MAX_NUMBER = 20
+    # Configure number and size of topics
+    TOPICS_NUMBER_SMALL = dict(max_number=10, min_size=50)
+    TOPICS_NUMBER_MEDIUM = dict(max_number=20, min_size=20)
+    TOPICS_NUMBER_LARGE = dict(max_number=50, min_size=10)
+
+    @staticmethod
+    def get_topics_info(topics):
+        if topics.lower() == 'small':
+            info = PapersAnalyzer.TOPICS_NUMBER_SMALL
+        elif topics.lower() == 'medium':
+            info = PapersAnalyzer.TOPICS_NUMBER_MEDIUM
+        elif topics.lower() == 'large':
+            info = PapersAnalyzer.TOPICS_NUMBER_LARGE
+        else:
+            raise Exception(f'Unknown topics size: {topics}')
+        return info['max_number'], info['min_size']
 
     # Number of top cited papers in topic picked for description computation
     TOPIC_MOST_CITED_PAPERS = 50
@@ -124,7 +137,7 @@ class PapersAnalyzer:
         logger.debug(f'Loaded {len(references)} references')
         return references
 
-    def analyze_papers(self, ids, query, test=False, task=None):
+    def analyze_papers(self, ids, query, topics='medium', test=False, task=None):
         self.progress.info('Loading publication data', current=2, task=task)
         self.query = query
         self.df = self.loader.load_publications(ids)
@@ -221,16 +234,16 @@ class PapersAnalyzer:
             self.df['x'] = 0
             self.df['y'] = 0
 
-        self.progress.info('Extracting topics from papers text and graph similarity', current=8, task=task)
-        if self.papers_graph.number_of_nodes() <= PapersAnalyzer.TOPIC_MIN_SIZE:
+        self.progress.info(f'Extracting {topics.lower()} topics from papers text and graph similarity',
+                           current=8, task=task)
+        topics_max_number, topic_min_size = PapersAnalyzer.get_topics_info(topics)
+        if self.papers_graph.number_of_nodes() <= topic_min_size:
             logger.debug('Small graph - single topic')
             self.clusters, self.dendrogram = [0] * len(self.df), None
             self.df['comp'] = self.clusters
         else:
             logger.debug('Extracting topics from papers embeddings')
-            self.clusters, self.dendrogram = cluster_and_sort(
-                self.pca_coords, PapersAnalyzer.TOPIC_MIN_SIZE, PapersAnalyzer.TOPICS_MAX_NUMBER
-            )
+            self.clusters, self.dendrogram = cluster_and_sort(self.pca_coords, topics_max_number, topic_min_size)
             self.df['comp'] = self.clusters
 
         self.progress.info(f'Analyzing {len(set(self.df["comp"]))} topics descriptions',
@@ -279,12 +292,18 @@ class PapersAnalyzer:
                                    current=14, task=task)
                 logger.debug('Perform topic evolution analysis and get topic descriptions')
                 self.evolution_df, self.evolution_year_range = topic_evolution_analysis(
-                    self.df, self.cit_df, self.cocit_df, self.bibliographic_coupling_df, self.SIMILARITY_COCITATION_MIN,
+                    self.df, self.cit_df,
+                    self.cocit_df,
+                    self.bibliographic_coupling_df,
+                    self.SIMILARITY_COCITATION_MIN,
                     self.similarity,
-                    self.corpus_counts, self.corpus_tokens_embedding,
-                    PapersAnalyzer.GRAPH_EMBEDDINGS_FACTOR, PapersAnalyzer.TEXT_EMBEDDINGS_FACTOR,
-                    PapersAnalyzer.TOPIC_MIN_SIZE, PapersAnalyzer.TOPICS_MAX_NUMBER,
-                    self.EVOLUTION_STEP,
+                    self.corpus_counts,
+                    self.corpus_tokens_embedding,
+                    PapersAnalyzer.GRAPH_EMBEDDINGS_FACTOR,
+                    PapersAnalyzer.TEXT_EMBEDDINGS_FACTOR,
+                    topics_max_number,
+                    topic_min_size,
+                    self.EVOLUTION_STEP
                 )
                 self.evolution_kwds = topic_evolution_descriptions(
                     self.df, self.evolution_df, self.evolution_year_range,

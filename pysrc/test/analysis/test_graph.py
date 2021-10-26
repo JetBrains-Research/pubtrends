@@ -16,7 +16,6 @@ class TestBuildGraph(unittest.TestCase):
         loader = MockLoader()
         cls.analyzer = PapersAnalyzer(loader, TestBuildGraph.PUBTRENDS_CONFIG, test=True)
         ids = cls.analyzer.search_terms(query='query')
-        cls.analyzer.TOPIC_MIN_SIZE = 0  # Disable merging for tests
         cls.analyzer.analyze_papers(ids, 'query', test=True)
 
     def test_build_papers_graph(self):

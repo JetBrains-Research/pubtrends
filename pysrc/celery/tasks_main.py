@@ -22,7 +22,7 @@ DOI_WRONG_SEARCH = 'Search query looks like DOI, please <a href="/#paper-tab">re
 
 
 @pubtrends_celery.task(name='analyze_search_terms')
-def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, expand=0.5, test=False):
+def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, expand=0.5, topics='medium', test=False):
     if is_doi(query):
         raise SearchError(DOI_WRONG_SEARCH)
     config = PubtrendsConfig(test=test)
@@ -47,7 +47,7 @@ def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, e
                 PapersAnalyzer.EXPAND_SIMILARITY_THRESHOLD,
                 analyzer.progress, current=2, task=current_task
             )
-        analyzer.analyze_papers(ids, query, test=test, task=current_task)
+        analyzer.analyze_papers(ids, query, topics, test=test, task=current_task)
     finally:
         loader.close_connection()
 
@@ -61,7 +61,9 @@ def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, e
 
 
 @pubtrends_celery.task(name='analyze_search_terms_files')
-def analyze_search_terms_files(source, query, sort=None, limit=None, noreviews=True, expand=0.5, test=False):
+def analyze_search_terms_files(source, query,
+                               sort=None, limit=None, noreviews=True, expand=0.5, topics='medium',
+                               test=False):
     if is_doi(preprocess_doi(query)):
         raise SearchError(DOI_WRONG_SEARCH)
     config = PubtrendsConfig(test=test)
@@ -86,7 +88,7 @@ def analyze_search_terms_files(source, query, sort=None, limit=None, noreviews=T
                 PapersAnalyzer.EXPAND_SIMILARITY_THRESHOLD,
                 analyzer.progress, current=2, task=current_task
             )
-        analyzer.analyze_ids(ids, source, query, sort, limit, test=test, task=current_task)
+        analyzer.analyze_ids(ids, source, query, sort, limit, topics, test=test, task=current_task)
         analyzer.progress.done(task=current_task)
         analyzer.teardown()
         return analyzer.query_folder
@@ -95,14 +97,16 @@ def analyze_search_terms_files(source, query, sort=None, limit=None, noreviews=T
 
 
 @pubtrends_celery.task(name='analyze_id_list')
-def analyze_id_list(source, ids, query, analysis_type, limit=None, test=False):
+def analyze_id_list(source, ids, query, analysis_type, limit=None, topics='medium', test=False):
     config = PubtrendsConfig(test=test)
     loader = Loaders.get_loader(source, config)
     analyzer = PapersAnalyzer(loader, config)
-    return _analyze_id_list(analyzer, source, ids, query, analysis_type, limit, test, current_task)
+    return _analyze_id_list(analyzer, source, ids, query, analysis_type, limit, topics, test, current_task)
 
 
-def _analyze_id_list(analyzer, source, ids, query, analysis_type=IDS_ANALYSIS_TYPE, limit=None, test=False, task=None):
+def _analyze_id_list(analyzer, source,
+                     ids, query, analysis_type=IDS_ANALYSIS_TYPE, limit=None, topics='medium',
+                     test=False, task=None):
     if len(ids) == 0:
         raise RuntimeError('Empty papers list')
     analyzer.progress.info(f'Analyzing {len(ids)} paper(s) from {source}', current=1, task=task)
@@ -127,7 +131,7 @@ def _analyze_id_list(analyzer, source, ids, query, analysis_type=IDS_ANALYSIS_TY
             ids = ids  # Leave intact
         else:
             raise Exception(f'Illegal analysis type {analysis_type}')
-        analyzer.analyze_papers(ids, query, test=test, task=task)
+        analyzer.analyze_papers(ids, query, topics, test=test, task=task)
     finally:
         analyzer.loader.close_connection()
 
@@ -140,7 +144,7 @@ def _analyze_id_list(analyzer, source, ids, query, analysis_type=IDS_ANALYSIS_TY
 
 
 @pubtrends_celery.task(name='analyze_search_paper')
-def analyze_search_paper(source, pid, key, value, test=False):
+def analyze_search_paper(source, pid, key, value, topics, test=False):
     if key is not None and key != 'doi' and is_doi(preprocess_doi(value)):
         raise SearchError(DOI_WRONG_SEARCH)
     config = PubtrendsConfig(test=test)
@@ -156,6 +160,7 @@ def analyze_search_paper(source, pid, key, value, test=False):
             return _analyze_id_list(
                 analyzer,
                 source, ids=result, query=f'Paper {key}={value}', analysis_type=PAPER_ANALYSIS_TYPE, limit='',
+                topics=topics,
                 test=test, task=current_task
             )
         elif len(result) == 0:
@@ -172,7 +177,7 @@ def pubmed_search(query, limit):
 
 
 @pubtrends_celery.task(name='analyze_pubmed_search')
-def analyze_pubmed_search(query, limit=None, test=False):
+def analyze_pubmed_search(query, limit, topics, test=False):
     if is_doi(preprocess_doi(query)):
         raise SearchError(DOI_WRONG_SEARCH)
     config = PubtrendsConfig(test=test)
@@ -180,12 +185,13 @@ def analyze_pubmed_search(query, limit=None, test=False):
     analyzer = PapersAnalyzer(loader, config)
     analyzer.progress.info(f"Searching Pubmed query: {query}, limit {limit}", current=1, task=current_task)
     ids = pubmed_search(query, limit)
-    return _analyze_id_list(analyzer, 'Pubmed', ids, query=query, analysis_type=IDS_ANALYSIS_TYPE, limit=limit,
+    return _analyze_id_list(analyzer, 'Pubmed',
+                            ids, query=query, analysis_type=IDS_ANALYSIS_TYPE, limit=limit, topics=topics,
                             test=test, task=current_task)
 
 
 @pubtrends_celery.task(name='analyze_pubmed_search_files')
-def analyze_pubmed_search_files(query, limit, test=False):
+def analyze_pubmed_search_files(query, limit, topics, test=False):
     if is_doi(preprocess_doi(query)):
         raise SearchError(DOI_WRONG_SEARCH)
     config = PubtrendsConfig(test=test)
@@ -195,7 +201,7 @@ def analyze_pubmed_search_files(query, limit, test=False):
         analyzer.progress.info(f"Searching Pubmed query: {query}, limit {limit}", current=1, task=current_task)
         ids = pubmed_search(query, limit)
         analyzer.progress.info(f'Analysing {len(ids)} paper(s) from Pubmed', current=1, task=current_task)
-        analyzer.analyze_ids(ids, 'Pubmed', query, '', limit, test=test, task=current_task)
+        analyzer.analyze_ids(ids, 'Pubmed', query, '', limit, topics, test=test, task=current_task)
         analyzer.progress.done(task=current_task)
         analyzer.teardown()
         return analyzer.query_folder

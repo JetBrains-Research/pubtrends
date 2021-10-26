@@ -24,11 +24,11 @@ def compute_topics_similarity_matrix(papers_vectors, comps):
     return similarity_matrix
 
 
-def cluster_and_sort(x, min_cluster_size, max_clusters):
+def cluster_and_sort(x, max_clusters, min_cluster_size):
     """
     :param x: object representations (X x Features)
-    :param min_cluster_size:
     :param max_clusters:
+    :param min_cluster_size:
     :return: List[cluster], Hierarchical dendrogram of splits.
     """
     logger.debug('Looking for an appropriate number of clusters,'
@@ -42,7 +42,7 @@ def cluster_and_sort(x, min_cluster_size, max_clusters):
         return [0] * x.shape[0], None
 
     prev_min_size = None
-    while l < r - 2:
+    while l < r - 1:
         n_clusters = int((l + r) / 2)
         model = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward').fit(x)
         clusters_counter = Counter(model.labels_)

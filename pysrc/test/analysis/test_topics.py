@@ -18,7 +18,6 @@ class TestTopics(unittest.TestCase):
         loader = MockLoader()
         cls.analyzer = PapersAnalyzer(loader, TestTopics.PUBTRENDS_CONFIG, test=True)
         ids = cls.analyzer.search_terms(query='query')
-        cls.analyzer.TOPIC_MIN_SIZE = 0  # Disable merging for tests
         cls.analyzer.analyze_papers(ids, 'query', test=True)
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.df['id'])
         cls.analyzer.bibliographic_coupling_df = loader.load_bibliographic_coupling(cls.analyzer.df['id'])
