@@ -30,9 +30,11 @@ class PubtrendsConfig:
         self.postgres_database = params['postgres_database' if not test else 'test_postgres_database']
 
         self.pm_enabled = params.getboolean('pm_enabled')
+        self.pm_search_example_terms = [terms.strip() for terms in params['pm_search_example_terms'].split(';')]
+        self.entrez_email = params.getboolean('entrez_email')
+
         self.ss_enabled = params.getboolean('ss_enabled')
         self.ss_search_example_terms = [terms.strip() for terms in params['ss_search_example_terms'].split(';')]
-        self.pm_search_example_terms = [terms.strip() for terms in params['pm_search_example_terms'].split(';')]
 
         self.save_to_files_enabled = params.getboolean('save_to_files_enabled')
         self.min_search_words = params.getint('min_search_words') if not test else 0

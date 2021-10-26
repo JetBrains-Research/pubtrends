@@ -16,7 +16,7 @@ from pysrc.papers.utils import SORT_MOST_CITED, PAPER_ANALYSIS_TYPE, IDS_ANALYSI
 logger = getLogger(__name__)
 
 # Configure email to get notifications on too heavy API usage
-Entrez.email = 'os@jetbrains.com'
+Entrez.email = PubtrendsConfig(test=False).entrez_email
 
 DOI_WRONG_SEARCH = 'Search query looks like DOI, please <a href="/#paper-tab">rerun</a> paper analysis.' 
 
