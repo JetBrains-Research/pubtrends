@@ -254,10 +254,10 @@ def process():
         if analysis_type == IDS_ANALYSIS_TYPE:
             logger.info(f'/process ids {log_request(request)}')
             return render_template('process.html',
-                                   redirect_args={'query': quote(query), 'source': source, 'jobid': jobid,
-                                                  'limit': analysis_type, 'sort': '', 'topics': topics},
-                                   query=trim(query, MAX_QUERY_LENGTH), source=source, limit=analysis_type, sort='',
                                    redirect_page='result',  # redirect in case of success
+                                   redirect_args=dict(query=quote(query), source=source, jobid=jobid,
+                                                      limit=analysis_type, sort='', topics=topics),
+                                   query=trim(query, MAX_QUERY_LENGTH), source=source, limit=analysis_type, sort='',
                                    jobid=jobid, version=VERSION)
 
         elif analysis_type == PAPER_ANALYSIS_TYPE:
@@ -265,11 +265,10 @@ def process():
             key = request.args.get('key')
             value = request.args.get('value')
             return render_template('process.html',
-                                   redirect_args={'source': source, 'jobid': jobid,
-                                                  'limit': '', 'sort': '', 'key': key, 'value': value,
-                                                  'topics': topics},
-                                   query=trim(query, MAX_QUERY_LENGTH), source=source,
                                    redirect_page='paper',  # redirect in case of success
+                                   redirect_args=dict(source=source, jobid=jobid, limit='', sort='', key=key,
+                                                      value=value, topics=topics),
+                                   query=trim(query, MAX_QUERY_LENGTH), source=source,
                                    jobid=jobid, version=VERSION)
 
         elif analysis_type == REVIEW_ANALYSIS_TYPE:
@@ -277,27 +276,22 @@ def process():
             limit = request.args.get('limit')
             sort = request.args.get('sort')
             return render_template('process.html',
-                                   redirect_args={
-                                       'query': quote(query), 'source': source,
-                                       'limit': limit, 'sort': sort,
-                                       'jobid': jobid},
+                                   redirect_page='review',  # redirect in case of success
+                                   redirect_args=dict(query=quote(query), source=source, limit=limit, sort=sort,
+                                                      jobid=jobid),
                                    query=trim(query, MAX_QUERY_LENGTH), source=source,
                                    limit=limit, sort=sort,
-                                   redirect_page='review',  # redirect in case of success
                                    jobid=jobid, version=VERSION)
 
         elif analysis_type == ANALYSIS_FILES_TYPE:
             logger.info(f'/process files {log_request(request)}')
             limit = request.args.get('limit')
             return render_template('process.html',
-                                   redirect_args={
-                                       'source': source,
-                                       'query': quote(query),
-                                       'limit': limit, 'sort': '', 'topics': topics,
-                                       'jobid': jobid},
+                                   redirect_page='result_files',  # redirect in case of success
+                                   redirect_args=dict(source=source, query=quote(query), limit=limit, sort='',
+                                                      topics=topics, jobid=jobid),
                                    query=trim(query, MAX_QUERY_LENGTH), source=source,
                                    limit=limit, sort='',
-                                   redirect_page='result_files',  # redirect in case of success
                                    jobid=jobid, version=VERSION)
 
         elif query:  # This option should be the last default
@@ -305,14 +299,11 @@ def process():
             limit = request.args.get('limit')
             sort = request.args.get('sort')
             return render_template('process.html',
-                                   redirect_args={
-                                       'query': quote(query), 'source': source,
-                                       'limit': limit, 'sort': sort, 'topics': topics,
-                                       'jobid': jobid
-                                   },
+                                   redirect_page='result',  # redirect in case of success
+                                   redirect_args=dict(query=quote(query), source=source, limit=limit, sort=sort,
+                                                      topics=topics, jobid=jobid),
                                    query=trim(query, MAX_QUERY_LENGTH), source=source,
                                    limit=limit, sort=sort,
-                                   redirect_page='result',  # redirect in case of success
                                    jobid=jobid, version=VERSION)
 
     logger.error(f'/process error {log_request(request)}')
@@ -326,55 +317,29 @@ def status():
     if jobid:
         job = get_or_cancel_task(jobid)
         if job is None:
-            return json.dumps({
-                'state': 'FAILURE',
-                'message': f'Unknown task id {jobid}'
-            })
+            return json.dumps(dict(state='FAILURE', message=f'Unknown task id {jobid}'))
         job_state, job_result = job.state, job.result
         if job_state == 'PROGRESS':
-            return json.dumps({
-                'state': job_state,
-                'log': job_result['log'],
-                'progress': int(100.0 * job_result['current'] / job_result['total'])
-            })
+            return json.dumps(dict(state=job_state, log=job_result['log'],
+                                   progress=int(100.0 * job_result['current'] / job_result['total'])))
         elif job_state == 'SUCCESS':
-            return json.dumps({
-                'state': job_state,
-                'progress': 100
-            })
+            return json.dumps(dict(state=job_state, progress=100))
         elif job_state == 'FAILURE':
             is_search_error = isinstance(job_result, SearchError)
             logger.info(f'/status failure. Search error: {is_search_error}. {log_request(request)}')
-            return json.dumps({
-                'state': job_state,
-                'message': str(job_result).replace('\\n', '\n').replace('\\t', '\t'),
-                'search_error': is_search_error
-            })
+            return json.dumps(dict(state=job_state, message=str(job_result).replace('\\n', '\n').replace('\\t', '\t'),
+                                   search_error=is_search_error))
         elif job_state == 'STARTED':
-            return json.dumps({
-                'state': job_state,
-                'message': 'Task is starting, please wait...'
-            })
+            return json.dumps(dict(state=job_state, message='Task is starting, please wait...'))
         elif job_state == 'PENDING':
-            return json.dumps({
-                'state': job_state,
-                'message': 'Task is in queue, please wait...'
-            })
+            return json.dumps(dict(state=job_state, message='Task is in queue, please wait...'))
         elif job_state == 'REVOKED':
-            return json.dumps({
-                'state': job_state,
-                'message': 'Task was cancelled, please <a href="/">rerun</a> your search.'
-            })
+            return json.dumps(
+                dict(state=job_state, message='Task was cancelled, please <a href="/">rerun</a> your search.'))
         else:
-            return json.dumps({
-                'state': 'FAILURE',
-                'message': f'Illegal task state {job_state}'
-            })
+            return json.dumps(dict(state='FAILURE', message=f'Illegal task state {job_state}'))
     # no jobid
-    return json.dumps({
-        'state': 'FAILURE',
-        'message': 'No task id'
-    })
+    return json.dumps(dict(state='FAILURE', message='No task id'))
 
 
 @app.route('/cancel')
@@ -383,19 +348,10 @@ def cancel():
         jobid = request.values.get('jobid')
         if jobid:
             pubtrends_celery.control.revoke(jobid, terminate=True)
-            return json.dumps({
-                'state': 'CANCELLED',
-                'message': f'Successfully cancelled task {jobid}'
-            })
+            return json.dumps(dict(state='CANCELLED', message=f'Successfully cancelled task {jobid}'))
         else:
-            return json.dumps({
-                'state': 'FAILURE',
-                'message': f'Failed to cancel task {jobid}'
-            })
-    return json.dumps({
-        'state': 'FAILURE',
-        'message': 'Unknown task id'
-    })
+            return json.dumps(dict(state='FAILURE', message=f'Failed to cancel task {jobid}'))
+    return json.dumps(dict(state='FAILURE', message='Unknown task id'))
 
 
 ####################################
@@ -669,11 +625,11 @@ def feedback():
         jobid = data.get('jobid')
         logger.info('Feedback ' + json.dumps(dict(key=key, value=value, jobid=jobid)))
     elif 'type' in data:
-        ftype = data.get('type')
+        feedback_type = data.get('type')
         message = data.get('message')
         email = data.get('email')
         jobid = data.get('jobid')
-        logger.info('Feedback ' + json.dumps(dict(type=ftype, message=message, email=email, jobid=jobid)))
+        logger.info('Feedback ' + json.dumps(dict(type=feedback_type, message=message, email=email, jobid=jobid)))
     else:
         logger.error(f'/feedback error')
         return render_template_string(ERROR_OCCURRED), 500
