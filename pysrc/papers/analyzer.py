@@ -234,7 +234,7 @@ class PapersAnalyzer:
             self.df['x'] = 0
             self.df['y'] = 0
 
-        self.progress.info(f'Extracting {topics.lower()} topics from papers text and graph similarity',
+        self.progress.info(f'Extracting {topics.lower()} number of topics from papers text and graph similarity',
                            current=8, task=task)
         topics_max_number, topic_min_size = PapersAnalyzer.get_topics_info(topics)
         if self.papers_graph.number_of_nodes() <= topic_min_size:

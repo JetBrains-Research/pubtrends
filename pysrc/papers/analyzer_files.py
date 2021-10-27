@@ -198,7 +198,7 @@ class AnalyzerFiles(PapersAnalyzer):
             self.df['x'] = 0
             self.df['y'] = 0
 
-        self.progress.info(f'Extracting {topics.lower()} topics from papers text and graph similarity',
+        self.progress.info(f'Extracting {topics.lower()} number of topics from papers text and graph similarity',
                            current=11, task=task)
         topics_max_number, topic_min_size = PapersAnalyzer.get_topics_info(topics)
         clusters, dendrogram = cluster_and_sort(self.pca_coords, topics_max_number, topic_min_size)
