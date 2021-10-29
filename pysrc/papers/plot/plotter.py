@@ -8,15 +8,12 @@ from string import Template
 
 import holoviews as hv
 import numpy as np
-from bokeh.colors import RGB
 from bokeh.embed import components
 from bokeh.models import ColumnDataSource, CustomJS, LabelSet
 from bokeh.models import GraphRenderer, StaticLayoutProvider, Circle, HoverTool, MultiLine
 from bokeh.models import NumeralTickFormatter
 from bokeh.models.graphs import NodesAndLinkedEdges
 from bokeh.plotting import figure
-from bokeh.transform import factor_cmap
-from holoviews import dim
 from holoviews import opts
 from matplotlib import pyplot as plt
 from wordcloud import WordCloud
@@ -24,8 +21,10 @@ from wordcloud import WordCloud
 from pysrc.papers.analysis.text import get_frequent_tokens
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
+from pysrc.papers.plot.plot_evolution import plot_topics_evolution
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
-from pysrc.papers.utils import cut_authors_list, trim, rgb2hex, MAX_TITLE_LENGTH, IDS_ANALYSIS_TYPE, contrast_color
+from pysrc.papers.utils import cut_authors_list, trim, MAX_TITLE_LENGTH, IDS_ANALYSIS_TYPE, contrast_color, \
+    topics_palette_rgb, color_to_rgb, factor_colors, factors_colormap
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
 hv.extension('bokeh')
@@ -56,18 +55,18 @@ def visualize_analysis(analyzer):
     # Initialize plotter after completion of analysis
     plotter = Plotter(analyzer=analyzer)
     freq_kwds = get_frequent_tokens(chain(*chain(*analyzer.corpus)))
-    word_cloud = plotter.papers_word_cloud(freq_kwds)
+    word_cloud = plotter._papers_word_cloud(freq_kwds)
     export_name = re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{analyzer.query}'.lower())).strip('_')
     result = dict(
         topics_analyzed=False,
         n_papers=len(analyzer.df),
         n_topics=len(set(analyzer.df['comp'])),
         export_name=export_name,
-        top_cited_papers=[components(plotter.top_cited_papers())],
-        most_cited_per_year_papers=[components(plotter.most_cited_per_year_papers())],
-        fastest_growth_per_year_papers=[components(plotter.fastest_growth_per_year_papers())],
-        papers_stats=[components(plotter.papers_by_year())],
-        papers_word_cloud=Plotter.word_cloud_prepare(word_cloud),
+        top_cited_papers=[components(plotter.plot_top_cited_papers())],
+        most_cited_per_year_papers=[components(plotter.plot_most_cited_per_year_papers())],
+        fastest_growth_per_year_papers=[components(plotter.plot_fastest_growth_per_year_papers())],
+        papers_stats=[components(plotter.plot_papers_by_year())],
+        papers_word_cloud=PlotPreprocessor.word_cloud_prepare(word_cloud),
     )
 
     keywords_frequencies = plotter.plot_keywords_frequencies(freq_kwds)
@@ -77,11 +76,12 @@ def visualize_analysis(analyzer):
     if analyzer.papers_graph.nodes():
         result.update(dict(
             topics_analyzed=True,
-            topic_years_distribution=[components(plotter.topic_years_distribution())],
+            topic_years_distribution=[components(plotter.plot_topic_years_distribution())],
             topics_info_and_word_cloud_and_callback=[
-                (components(p), Plotter.word_cloud_prepare(wc), "true" if is_empty else "false", zoom_in_callback) for
-                (p, wc, is_empty, zoom_in_callback) in plotter.topics_info_and_word_cloud_and_callback()],
-            component_sizes=plotter.component_sizes(),
+                (components(p), PlotPreprocessor.word_cloud_prepare(wc),
+                 "true" if is_empty else "false", zoom_in_callback) for
+                (p, wc, is_empty, zoom_in_callback) in plotter.plot_topics_info_and_word_cloud_and_callback()],
+            component_sizes=PlotPreprocessor.component_sizes(analyzer.df),
             papers_graph=[components(plotter.plot_papers_graph())]
         ))
 
@@ -113,7 +113,9 @@ def visualize_analysis(analyzer):
             ]
 
     if PUBTRENDS_CONFIG.feature_evolution_enabled:
-        evolution_result = plotter.topic_evolution()
+        evolution_result = plot_topics_evolution(
+            analyzer.df, analyzer.evolution_df, analyzer.evolution_kwds, PLOT_WIDTH, TALL_PLOT_HEIGHT
+        )
         if evolution_result is not None:
             evolution_data, keywords_data = evolution_result
             result['topic_evolution'] = [components(evolution_data)]
@@ -128,139 +130,26 @@ class Plotter:
 
         if self.analyzer:
             if self.analyzer.papers_graph.nodes():
-                self.comp_colors = Plotter.topics_palette_rgb(self.analyzer.df)
+                self.comp_colors = topics_palette_rgb(self.analyzer.df)
                 self.comp_palette = list(self.comp_colors.values())
 
             n_pub_types = len(self.analyzer.pub_types)
             pub_types_cmap = plt.cm.get_cmap('jet', n_pub_types)
             self.pub_types_colors_map = dict(
-                zip(self.analyzer.pub_types, [Plotter.color_to_rgb(pub_types_cmap(i)) for i in range(n_pub_types)])
+                zip(self.analyzer.pub_types, [color_to_rgb(pub_types_cmap(i)) for i in range(n_pub_types)])
             )
 
-    @staticmethod
-    def paper_callback(ds):
-        return CustomJS(args=dict(ds=ds), code="""
-            var data = ds.data, selected = ds.selected.indices;
-
-            // Decode params from URL
-            const jobid = new URL(window.location).searchParams.get('jobid');
-            const source = new URL(window.location).searchParams.get('source');
-
-            // Max number of papers to be opened, others will be ignored
-            var MAX_PAPERS = 3;
-
-            for (var i = 0; i < Math.min(MAX_PAPERS, selected.length); i++){
-                window.open('/paper?source=' + source + '&id=' + data['id'][selected[i]] + '&jobid=' + jobid, '_blank');
-            }
-        """)
-
-    @staticmethod
-    def author_callback(ds):
-        return CustomJS(args=dict(ds=ds), code="""
-            var data = ds.data, selected = ds.selected.indices;
-
-            // Decode params from URL
-            const jobid = new URL(window.location).searchParams.get('jobid');
-            const source = new URL(window.location).searchParams.get('source');
-            const query = new URL(window.location).searchParams.get('query');
-            const limit = new URL(window.location).searchParams.get('limit');
-            const sort = new URL(window.location).searchParams.get('sort');
-
-            // Max number of authors to be opened, others will be ignored
-            var MAX_AUTHORS = 3;
-
-            for (var i = 0; i < Math.min(MAX_AUTHORS, selected.length); i++){
-                window.open('/papers?&query=' + query + '&source=' + source + '&limit=' + limit + '&sort=' + sort + 
-                '&author=' + data['id'][selected[i]] + '&jobid=' + jobid, '_blank');
-            }
-        """)
-
-    @staticmethod
-    def topic_callback(source):
-        return CustomJS(args=dict(source=source), code="""
-            var data = source.data, selected = source.selected.indices;
-            if (selected.length == 1) {
-                // only consider case where one glyph is selected by user
-                selected_comp = data['comps'][selected[0]];
-                window.location.hash = '#topic-' + selected_comp;
-            }
-            source.selected.indices = [];
-        """)
-
-    @staticmethod
-    def zoom_in_callback(id_list, source, query):
-        # submit list of ids and database name to the main page using invisible form
-        # IMPORTANT: no double quotes!
-        return f"""
-        var form = document.createElement('form');
-        document.body.appendChild(form);
-        form.method = 'post';
-        form.action = '/process_ids';
-        form.target = '_blank'
-
-        var input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'id_list';
-        input.value = {json.dumps(id_list).replace('"', "'")};
-        form.appendChild(input);
-
-        var input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'source';
-        input.value = '{source}';
-        form.appendChild(input);
-
-        var input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'analysis_type';
-        input.value = '{IDS_ANALYSIS_TYPE}';
-        form.appendChild(input);
-
-        var input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'query';
-        input.value = {json.dumps(query).replace('"', "'")};
-        form.appendChild(input);
-
-        form.submit();
-        """
-
-    def topic_years_distribution(self):
+    def plot_topic_years_distribution(self):
         logger.debug('Processing topic_years_distribution')
         logger.debug('Topics publications year distribution visualization')
         min_year, max_year = self.analyzer.df['year'].min(), self.analyzer.df['year'].max()
         plot_components, data = PlotPreprocessor.component_size_summary_data(
             self.analyzer.df, set(self.analyzer.df['comp']), min_year, max_year
         )
-        return self._topics_years_distribution(self.analyzer.df, self.analyzer.kwd_df, plot_components, data,
-                                               min_year, max_year)
+        return self._plot_topics_years_distribution(self.analyzer.df, self.analyzer.kwd_df, plot_components, data,
+                                                    min_year, max_year)
 
-    @staticmethod
-    def _topics_years_distribution(df, kwd_df, plot_components, data, min_year, max_year):
-        source = ColumnDataSource(data=dict(x=[min_year - 1] + data['years'] + [max_year + 1]))
-        plot_titles = []
-        words2show = PlotPreprocessor.topics_words(kwd_df, TOPIC_KEYWORDS)
-        comp_sizes = Counter(df['comp'])
-        for c in sorted(set(df['comp'])):
-            percent = int(100 * comp_sizes[int(c)] / len(df))
-            plot_titles.append(f'#{c + 1} [{percent if percent > 0 else "<1"}%] {",".join(words2show[c])}')
-        # Fake additional y levels
-        p = figure(y_range=list(reversed(plot_titles)) + [' ', '  ', '   '],
-                   plot_width=PLOT_WIDTH, plot_height=50 * (len(plot_components) + 2),
-                   x_range=(min_year - 1, max_year + 1), toolbar_location=None)
-        topics_colors = Plotter.topics_palette_rgb(df)
-        max_papers_per_year = max(max(data[pc]) for pc in plot_components)
-        for i, (pc, pt) in enumerate(zip(plot_components, plot_titles)):
-            source.add([(pt, 0)] + [(pt, 3 * d / max_papers_per_year) for d in data[pc]] + [(pt, 0)], pt)
-            p.patch('x', pt, color=topics_colors[i], alpha=0.6, line_color="black", source=source)
-        p.sizing_mode = 'stretch_width'
-        p.outline_line_color = None
-        p.axis.minor_tick_line_color = None
-        p.axis.major_tick_line_color = None
-        p.axis.axis_line_color = None
-        return p
-
-    def topics_info_and_word_cloud_and_callback(self):
+    def plot_topics_info_and_word_cloud_and_callback(self):
         logger.debug('Processing topics_info_and_word_cloud_and_callback')
 
         # Prepare layouts
@@ -274,15 +163,15 @@ class Plotter:
             ))
             # Add type coloring
             ds.add([self.pub_types_colors_map[t] for t in df_comp['type']], 'color')
-            plot = self.__serve_scatter_article_layout(
-                ds=ds, year_range=[min_year, max_year], width=PAPERS_PLOT_WIDTH
+            plot = Plotter._plot_scatter_papers_layout(
+                self.analyzer.source, ds, [min_year, max_year], PAPERS_PLOT_WIDTH
             )
             plot.circle(x='year', y='y', fill_alpha=0.5, source=ds, size='size',
                         line_color='color', fill_color='color', legend_field='type')
             plot.legend.location = "top_left"
 
             # Word cloud description of topic by titles and abstracts
-            kwds = Plotter.get_topic_word_cloud_data(self.analyzer.kwd_df, comp)
+            kwds = PlotPreprocessor.get_topic_word_cloud_data(self.analyzer.kwd_df, comp)
             is_empty = len(kwds) == 0
             if is_empty:
                 kwds = {'N/A': 1}
@@ -295,20 +184,12 @@ class Plotter:
 
             # Create Zoom In callback
             id_list = list(df_comp['id'])
-            zoom_in_callback = self.zoom_in_callback(id_list, self.analyzer.source,
-                                                     query=self.analyzer.query)
-
+            zoom_in_callback = self._zoom_in_callback(id_list, self.analyzer.source, self.analyzer.query)
             result.append((plot, wc, is_empty, zoom_in_callback))
 
         return result
 
-    def component_sizes(self):
-        logger.debug('Processing component_sizes')
-        assigned_comps = self.analyzer.df[self.analyzer.df['comp'] >= 0]
-        d = dict(assigned_comps.groupby('comp')['id'].count())
-        return [int(d[k]) for k in range(len(d))]
-
-    def top_cited_papers(self):
+    def plot_top_cited_papers(self):
         logger.debug('Processing top_cited_papers')
         min_year, max_year = self.analyzer.df['year'].min(), self.analyzer.df['year'].max()
         ds = ColumnDataSource(PlotPreprocessor.article_view_data_source(
@@ -317,8 +198,8 @@ class Plotter:
         # Add type coloring
         ds.add([self.pub_types_colors_map[t] for t in self.analyzer.top_cited_df['type']], 'color')
 
-        plot = self.__serve_scatter_article_layout(
-            ds=ds, year_range=[min_year, max_year], width=PLOT_WIDTH
+        plot = Plotter._plot_scatter_papers_layout(
+            self.analyzer.source, ds, [min_year, max_year], PLOT_WIDTH
         )
 
         plot.circle(x='year', y='y', fill_alpha=0.5, source=ds, size='size',
@@ -326,7 +207,7 @@ class Plotter:
         plot.legend.location = "top_left"
         return plot
 
-    def most_cited_per_year_papers(self):
+    def plot_most_cited_per_year_papers(self):
         logger.debug('Processing most_cited_per_year_papers')
         cols = ['year', 'id', 'title', 'authors', 'journal', 'paper_year', 'count']
         most_cited_per_year_df = self.analyzer.max_gain_df[cols].replace(np.nan, "Undefined")
@@ -334,7 +215,7 @@ class Plotter:
             lambda authors: cut_authors_list(authors)
         )
         factors = self.analyzer.max_gain_df['id'].unique()
-        colors = self.factor_colors(factors)
+        colors = factor_colors(factors)
 
         most_cited_counts = most_cited_per_year_df['count']
         min_year, max_year = self.analyzer.df['year'].min(), self.analyzer.df['year'].max()
@@ -354,7 +235,7 @@ class Plotter:
         ])
         most_cited_per_year_df['count'] = most_cited_per_year_df['count'].astype(float)
         ds = ColumnDataSource(most_cited_per_year_df)
-        p.js_on_event('tap', self.paper_callback(ds))
+        p.js_on_event('tap', self._paper_callback(ds))
         # Use explicit bottom for log scale as workaround
         # https://github.com/bokeh/bokeh/issues/6536
         bottom = most_cited_counts.min() - 0.01
@@ -362,7 +243,7 @@ class Plotter:
                fill_alpha=0.5, source=ds, fill_color=colors, line_color=colors)
         return p
 
-    def fastest_growth_per_year_papers(self):
+    def plot_fastest_growth_per_year_papers(self):
         logger.debug('Processing fastest_growth_per_year_papers')
         logger.debug('Growth(year) = Citation delta (year) / Citations previous year')
         logger.debug('Different colors encode different papers')
@@ -373,7 +254,7 @@ class Plotter:
         )
 
         factors = self.analyzer.max_rel_gain_df['id'].astype(str).unique()
-        colors = self.factor_colors(factors)
+        colors = factor_colors(factors)
 
         fastest_rel_gains = fastest_growth_per_year_df['rel_gain']
         min_year, max_year = self.analyzer.df['year'].min(), self.analyzer.df['year'].max()
@@ -391,7 +272,7 @@ class Plotter:
             ("Year", '@paper_year'),
             ("Relative Gain", '@rel_gain in @year')])
         ds = ColumnDataSource(fastest_growth_per_year_df)
-        p.js_on_event('tap', self.paper_callback(ds))
+        p.js_on_event('tap', self._paper_callback(ds))
         # Use explicit bottom for log scale as workaround
         # https://github.com/bokeh/bokeh/issues/6536
         bottom = fastest_rel_gains.min() - 0.01
@@ -399,24 +280,7 @@ class Plotter:
                fill_alpha=0.5, fill_color=colors, line_color=colors)
         return p
 
-    @staticmethod
-    def paper_citations_per_year(df, pid):
-        logger.debug('Processing paper_citations_per_year')
-        ds = ColumnDataSource(PlotPreprocessor.article_citation_dynamics_data(df, pid))
-        p = figure(tools=TOOLS, toolbar_location="right", plot_width=PLOT_WIDTH,
-                   plot_height=SHORT_PLOT_HEIGHT)
-        p.vbar(x='x', width=0.8, top='y', source=ds, color='#A6CEE3', line_width=3)
-        p.sizing_mode = 'stretch_width'
-        p.xaxis.axis_label = "Year"
-        p.yaxis.axis_label = "Number of citations"
-        p.hover.tooltips = [
-            ("Year", "@x"),
-            ("Cited by", "@y paper(s) in @x"),
-        ]
-
-        return p
-
-    def papers_by_year(self):
+    def plot_papers_by_year(self):
         logger.debug('Processing papers_by_year')
         ds_stats = ColumnDataSource(PlotPreprocessor.papers_statistics_data(self.analyzer.df))
         min_year, max_year = self.analyzer.df['year'].min(), self.analyzer.df['year'].max()
@@ -439,14 +303,6 @@ class Plotter:
             p.vbar(x='year', width=0.8, top='counts', source=ds_stats)
         return p
 
-    def papers_word_cloud(self, freq_kwds):
-        # Build word cloud, size is proportional to token frequency
-        wc = WordCloud(background_color="white", width=WORD_CLOUD_WIDTH, height=WORD_CLOUD_HEIGHT,
-                       color_func=lambda *args, **kwargs: 'black',
-                       max_words=TOPIC_WORD_CLOUD_KEYWORDS, min_font_size=10, max_font_size=30)
-        wc.generate_from_frequencies(freq_kwds)
-        return wc
-
     def plot_keywords_frequencies(self, freq_kwds, n=20):
         logger.debug('Processing plot_keywords_frequencies')
         keywords_df, years = PlotPreprocessor.frequent_keywords_data(
@@ -454,44 +310,7 @@ class Plotter:
         )
         if len(years) <= 3:
             return None
-        return self.plot_keywords_timeline(keywords_df, years)
-
-    @staticmethod
-    def plot_keywords_timeline(keywords_df, years):
-        logger.debug('Processing plot_keywords_timeline')
-        # Define the value dimensions
-        max_numbers = keywords_df['number'].max()
-        vdim = hv.Dimension('number', range=(-10, max_numbers + 10))
-        # Define the dataset
-        ds = hv.Dataset(keywords_df, vdims=vdim)
-        curves = ds.to(hv.Curve, 'year', groupby='keyword').overlay().redim(
-            year=dict(range=(min(years) - 1, max(years) + 5)))
-        # Define a function to get the text annotations
-        max_year = ds['year'].max()
-        label_df = keywords_df[keywords_df.year == max_year].copy().reset_index(drop=True)
-        # Update layout for better labels representation
-        label_df.sort_values(by='number', inplace=True)
-        if len(label_df) > 1:
-            label_df['number'] = [i * max_numbers / (len(label_df) - 1) for i in range(len(label_df))]
-        label_df.sort_values(by='keyword', inplace=True)
-        labels = hv.Labels(label_df, ['year', 'number'], 'keyword')
-        overlay = curves * labels
-        cmap = Plotter.factors_colormap(len(label_df))
-        palette = [Plotter.color_to_rgb(cmap(i)).to_hex() for i in range(len(label_df))]
-        overlay.opts(
-            opts.Curve(show_frame=False, labelled=[], tools=['hover'],
-                       width=PLOT_WIDTH, height=TALL_PLOT_HEIGHT, show_legend=False,
-                       xticks=list(reversed(range(max(years), min(years), -5))),
-                       color=hv.Cycle(values=palette), alpha=0.8, line_width=2, show_grid=True),
-            opts.Labels(text_color='keyword', cmap=palette, text_align='left'),
-            opts.NdOverlay(batched=False,
-                           gridstyle={'grid_line_dash': [6, 4], 'grid_line_width': 1, 'grid_bounds': (0, 100)})
-        )
-        p = hv.render(overlay, backend='bokeh')
-        p.xaxis.axis_label = 'Year'
-        p.yaxis.axis_label = 'Number of papers'
-        p.sizing_mode = 'stretch_width'
-        return p
+        return self._plot_keywords_timeline(keywords_df, years)
 
     def author_statistics(self):
         logger.debug('Processing author_statistics')
@@ -515,6 +334,18 @@ class Plotter:
             topics = [' '] * len(self.analyzer.journal_stats)  # Ignore topics
         return list(zip([trim(j, MAX_JOURNAL_LENGTH) for j in journals], sums, topics))
 
+    def topics_hierarchy_with_keywords(self):
+        if self.analyzer.dendrogram is None:
+            return None
+        return Plotter._plot_topics_hierarchy_with_keywords(
+            self.analyzer.df, self.analyzer.kwd_df, self.analyzer.clusters, self.analyzer.dendrogram
+        )
+
+    def plot_papers_graph(self):
+        return Plotter._plot_papers_graph(
+            self.analyzer.source, self.analyzer.sparse_papers_graph, self.analyzer.df, self.analyzer.topics_description
+        )
+
     def _to_colored_circle(self, components, counts, sum, top=3):
         # html code to generate circles corresponding to the most popular topics
         return ' '.join([
@@ -523,16 +354,97 @@ class Plotter:
             for comp, count in zip(components[:top], counts[:top])
         ])
 
-    def topics_hierarchy_with_keywords(self):
-        if self.analyzer.dendrogram is None:
-            return None
-        return Plotter._topics_hierarchy_with_keywords(
-            self.analyzer.df, self.analyzer.kwd_df, self.analyzer.clusters, self.analyzer.dendrogram
-        )
+    @staticmethod
+    def _plot_topics_years_distribution(df, kwd_df, plot_components, data, min_year, max_year):
+        source = ColumnDataSource(data=dict(x=[min_year - 1] + data['years'] + [max_year + 1]))
+        plot_titles = []
+        words2show = PlotPreprocessor.topics_words(kwd_df, TOPIC_KEYWORDS)
+        comp_sizes = Counter(df['comp'])
+        for c in sorted(set(df['comp'])):
+            percent = int(100 * comp_sizes[int(c)] / len(df))
+            plot_titles.append(f'#{c + 1} [{percent if percent > 0 else "<1"}%] {",".join(words2show[c])}')
+        # Fake additional y levels
+        p = figure(y_range=list(reversed(plot_titles)) + [' ', '  ', '   '],
+                   plot_width=PLOT_WIDTH, plot_height=50 * (len(plot_components) + 2),
+                   x_range=(min_year - 1, max_year + 1), toolbar_location=None)
+        topics_colors = topics_palette_rgb(df)
+        max_papers_per_year = max(max(data[pc]) for pc in plot_components)
+        for i, (pc, pt) in enumerate(zip(plot_components, plot_titles)):
+            source.add([(pt, 0)] + [(pt, 3 * d / max_papers_per_year) for d in data[pc]] + [(pt, 0)], pt)
+            p.patch('x', pt, color=topics_colors[i], alpha=0.6, line_color="black", source=source)
+        p.sizing_mode = 'stretch_width'
+        p.outline_line_color = None
+        p.axis.minor_tick_line_color = None
+        p.axis.major_tick_line_color = None
+        p.axis.axis_line_color = None
+        return p
 
     @staticmethod
-    def _topics_hierarchy_with_keywords(df, kwd_df, clusters, dendrogram_children,
-                                        max_words=3, plot_width=PLOT_WIDTH, plot_height=int(PLOT_WIDTH * 3 / 4)):
+    def _plot_paper_citations_per_year(df, pid):
+        logger.debug('Processing paper_citations_per_year')
+        ds = ColumnDataSource(PlotPreprocessor.article_citation_dynamics_data(df, pid))
+        p = figure(tools=TOOLS, toolbar_location="right", plot_width=PLOT_WIDTH,
+                   plot_height=SHORT_PLOT_HEIGHT)
+        p.vbar(x='x', width=0.8, top='y', source=ds, color='#A6CEE3', line_width=3)
+        p.sizing_mode = 'stretch_width'
+        p.xaxis.axis_label = "Year"
+        p.yaxis.axis_label = "Number of citations"
+        p.hover.tooltips = [
+            ("Year", "@x"),
+            ("Cited by", "@y paper(s) in @x"),
+        ]
+
+        return p
+
+    @staticmethod
+    def _papers_word_cloud(freq_kwds):
+        # Build word cloud, size is proportional to token frequency
+        wc = WordCloud(background_color="white", width=WORD_CLOUD_WIDTH, height=WORD_CLOUD_HEIGHT,
+                       color_func=lambda *args, **kwargs: 'black',
+                       max_words=TOPIC_WORD_CLOUD_KEYWORDS, min_font_size=10, max_font_size=30)
+        wc.generate_from_frequencies(freq_kwds)
+        return wc
+
+    @staticmethod
+    def _plot_keywords_timeline(keywords_df, years):
+        logger.debug('Processing plot_keywords_timeline')
+        # Define the value dimensions
+        max_numbers = keywords_df['number'].max()
+        vdim = hv.Dimension('number', range=(-10, max_numbers + 10))
+        # Define the dataset
+        ds = hv.Dataset(keywords_df, vdims=vdim)
+        curves = ds.to(hv.Curve, 'year', groupby='keyword').overlay().redim(
+            year=dict(range=(min(years) - 1, max(years) + 5)))
+        # Define a function to get the text annotations
+        max_year = ds['year'].max()
+        label_df = keywords_df[keywords_df.year == max_year].copy().reset_index(drop=True)
+        # Update layout for better labels representation
+        label_df.sort_values(by='number', inplace=True)
+        if len(label_df) > 1:
+            label_df['number'] = [i * max_numbers / (len(label_df) - 1) for i in range(len(label_df))]
+        label_df.sort_values(by='keyword', inplace=True)
+        labels = hv.Labels(label_df, ['year', 'number'], 'keyword')
+        overlay = curves * labels
+        cmap = factors_colormap(len(label_df))
+        palette = [color_to_rgb(cmap(i)).to_hex() for i in range(len(label_df))]
+        overlay.opts(
+            opts.Curve(show_frame=False, labelled=[], tools=['hover'],
+                       width=PLOT_WIDTH, height=TALL_PLOT_HEIGHT, show_legend=False,
+                       xticks=list(reversed(range(max(years), min(years), -5))),
+                       color=hv.Cycle(values=palette), alpha=0.8, line_width=2, show_grid=True),
+            opts.Labels(text_color='keyword', cmap=palette, text_align='left'),
+            opts.NdOverlay(batched=False,
+                           gridstyle={'grid_line_dash': [6, 4], 'grid_line_width': 1, 'grid_bounds': (0, 100)})
+        )
+        p = hv.render(overlay, backend='bokeh')
+        p.xaxis.axis_label = 'Year'
+        p.yaxis.axis_label = 'Number of papers'
+        p.sizing_mode = 'stretch_width'
+        return p
+
+    @staticmethod
+    def _plot_topics_hierarchy_with_keywords(df, kwd_df, clusters, dendrogram_children,
+                                             max_words=3, plot_width=PLOT_WIDTH, plot_height=int(PLOT_WIDTH * 3 / 4)):
         comp_sizes = Counter(df['comp'])
         logger.debug('Computing dendrogram for clusters')
         if dendrogram_children is None:
@@ -579,10 +491,11 @@ class Plotter:
 
         # Draw leaves
         n_comps = len(comp_sizes)
-        cmap = Plotter.factors_colormap(n_comps)
-        topics_colors = dict((i, Plotter.color_to_rgb(cmap(i))) for i in range(n_comps))
+        cmap = factors_colormap(n_comps)
+        topics_colors = dict((i, color_to_rgb(cmap(i))) for i in range(n_comps))
         xs = [cos(d) * d_radius * (dendrogram_len - 1) for _, d in leaves_degrees.items()]
         ys = [sin(d) * d_radius * (dendrogram_len - 1) for _, d in leaves_degrees.items()]
+        # noinspection PyTypeChecker
         sizes = [20 + int(min(10, log(comp_sizes[v]))) for v, _ in leaves_degrees.items()]
         comps = [v + 1 for v, _ in leaves_degrees.items()]
         colors = [topics_colors[v] for v, _ in leaves_degrees.items()]
@@ -642,7 +555,8 @@ class Plotter:
         p.outline_line_color = None
         return p
 
-    def __serve_scatter_article_layout(self, ds, year_range, width=PLOT_WIDTH):
+    @staticmethod
+    def _plot_scatter_papers_layout(source, ds, year_range, width=PLOT_WIDTH):
         min_year, max_year = year_range
         p = figure(tools=TOOLS, toolbar_location="right",
                    plot_width=width, plot_height=PLOT_HEIGHT,
@@ -652,13 +566,13 @@ class Plotter:
         p.yaxis.axis_label = 'Number of citations'
         p.yaxis.formatter = NumeralTickFormatter(format='0,0')
 
-        p.hover.tooltips = Plotter._paper_html_tooltips(self.analyzer.source, [
+        p.hover.tooltips = Plotter._paper_html_tooltips(source, [
             ("Author(s)", '@authors'),
             ("Journal", '@journal'),
             ("Year", '@year'),
             ("Type", '@type'),
             ("Cited by", '@total paper(s) total')])
-        p.js_on_event('tap', self.paper_callback(ds))
+        p.js_on_event('tap', Plotter._paper_callback(ds))
 
         return p
 
@@ -687,11 +601,6 @@ class Plotter:
             '''
         return html_tooltips_str
 
-    def plot_papers_graph(self):
-        return Plotter._plot_papers_graph(
-            self.analyzer.source, self.analyzer.sparse_papers_graph, self.analyzer.df, self.analyzer.topics_description
-        )
-
     @staticmethod
     def _plot_papers_graph(source, gs, df, topics_tags, topics_meshs=None, add_callback=True,
                            plot_width=PLOT_WIDTH, plot_height=TALL_PLOT_HEIGHT):
@@ -699,9 +608,8 @@ class Plotter:
         pids = df['id']
         comps = df['comp']
         graph = GraphRenderer()
-        cmap = Plotter.factors_colormap(len(set(comps)))
-        palette = dict(zip(sorted(set(comps)), [Plotter.color_to_rgb(cmap(i)).to_hex()
-                                                for i in range(len(set(comps)))]))
+        cmap = factors_colormap(len(set(comps)))
+        palette = dict(zip(sorted(set(comps)), [color_to_rgb(cmap(i)).to_hex() for i in range(len(set(comps)))]))
 
         graph.node_renderer.data_source.add(pids, 'index')
         graph.node_renderer.data_source.data['id'] = pids
@@ -764,7 +672,7 @@ class Plotter:
         p.add_tools(HoverTool(tooltips=Plotter._paper_html_tooltips(source, hover_tags)))
 
         if add_callback:
-            p.js_on_event('tap', Plotter.paper_callback(graph.node_renderer.data_source))
+            p.js_on_event('tap', Plotter._paper_callback(graph.node_renderer.data_source))
 
         graph_layout = dict(zip(pids, zip(xs, ys)))
         graph.layout_provider = StaticLayoutProvider(graph_layout=graph_layout)
@@ -790,85 +698,90 @@ class Plotter:
 
         return p
 
-    def topic_evolution(self):
+    @staticmethod
+    def _paper_callback(ds):
+        return CustomJS(args=dict(ds=ds), code="""
+            var data = ds.data, selected = ds.selected.indices;
+
+            // Decode params from URL
+            const jobid = new URL(window.location).searchParams.get('jobid');
+            const source = new URL(window.location).searchParams.get('source');
+
+            // Max number of papers to be opened, others will be ignored
+            var MAX_PAPERS = 3;
+
+            for (var i = 0; i < Math.min(MAX_PAPERS, selected.length); i++){
+                window.open('/paper?source=' + source + '&id=' + data['id'][selected[i]] + '&jobid=' + jobid, '_blank');
+            }
+        """)
+
+    @staticmethod
+    def _author_callback(ds):
+        return CustomJS(args=dict(ds=ds), code="""
+            var data = ds.data, selected = ds.selected.indices;
+
+            // Decode params from URL
+            const jobid = new URL(window.location).searchParams.get('jobid');
+            const source = new URL(window.location).searchParams.get('source');
+            const query = new URL(window.location).searchParams.get('query');
+            const limit = new URL(window.location).searchParams.get('limit');
+            const sort = new URL(window.location).searchParams.get('sort');
+
+            // Max number of authors to be opened, others will be ignored
+            var MAX_AUTHORS = 3;
+
+            for (var i = 0; i < Math.min(MAX_AUTHORS, selected.length); i++){
+                window.open('/papers?&query=' + query + '&source=' + source + '&limit=' + limit + '&sort=' + sort + 
+                '&author=' + data['id'][selected[i]] + '&jobid=' + jobid, '_blank');
+            }
+        """)
+
+    @staticmethod
+    def _topic_callback(source):
+        return CustomJS(args=dict(source=source), code="""
+            var data = source.data, selected = source.selected.indices;
+            if (selected.length == 1) {
+                // only consider case where one glyph is selected by user
+                selected_comp = data['comps'][selected[0]];
+                window.location.hash = '#topic-' + selected_comp;
+            }
+            source.selected.indices = [];
+        """)
+
+    @staticmethod
+    def _zoom_in_callback(id_list, source, query):
+        # submit list of ids and database name to the main page using invisible form
+        # IMPORTANT: no double quotes!
+        return f"""
+        var form = document.createElement('form');
+        document.body.appendChild(form);
+        form.method = 'post';
+        form.action = '/process_ids';
+        form.target = '_blank'
+
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'id_list';
+        input.value = {json.dumps(id_list).replace('"', "'")};
+        form.appendChild(input);
+
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'source';
+        input.value = '{source}';
+        form.appendChild(input);
+
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'analysis_type';
+        input.value = '{IDS_ANALYSIS_TYPE}';
+        form.appendChild(input);
+
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'query';
+        input.value = {json.dumps(query).replace('"', "'")};
+        form.appendChild(input);
+
+        form.submit();
         """
-        Sankey diagram of topic evolution
-        :return:
-            if self.analyzer.evolution_df is None: None, as no evolution can be observed in 1 step
-            Sankey diagram + table with keywords
-        """
-        logger.debug('Processing topic_evolution')
-        # Topic evolution analysis failed, one step is not enough to analyze evolution
-        if self.analyzer.evolution_df is None or not self.analyzer.evolution_kwds:
-            logger.debug(f'Topic evolution failure, '
-                         f'evolution_df is None: {self.analyzer.evolution_df is None}, '
-                         f'evolution_kwds is None: {self.analyzer.evolution_kwds is None}')
-            return None
-
-        n_steps = len(self.analyzer.evolution_df.columns) - 2
-
-        edges, nodes_data = PlotPreprocessor.topic_evolution_data(
-            self.analyzer.evolution_df, self.analyzer.evolution_kwds, n_steps
-        )
-
-        value_dim = hv.Dimension('Papers', unit=None)
-        nodes_ds = hv.Dataset(nodes_data, 'index', 'label')
-        topic_evolution = hv.Sankey((edges, nodes_ds), ['From', 'To'], vdims=value_dim)
-        topic_evolution.opts(labels='label',
-                             width=PLOT_WIDTH, height=max(TALL_PLOT_HEIGHT, len(set(self.analyzer.df['comp'])) * 30),
-                             show_values=False, cmap='tab20',
-                             edge_color=dim('To').str(), node_color=dim('index').str())
-
-        p = hv.render(topic_evolution, backend='bokeh')
-        p.sizing_mode = 'stretch_width'
-        kwds_data = PlotPreprocessor.topic_evolution_keywords_data(
-            self.analyzer.evolution_kwds
-        )
-        return p, kwds_data
-
-    @staticmethod
-    def get_topic_word_cloud_data(kwd_df, comp):
-        kwds = {}
-        for pair in list(kwd_df[kwd_df['comp'] == comp]['kwd'])[0].split(','):
-            if pair != '':  # Correctly process empty freq_kwds encoding
-                token, value = pair.split(':')
-                for word in token.split(' '):
-                    kwds[word] = float(value) + kwds.get(word, 0)
-        return kwds
-
-    @staticmethod
-    def word_cloud_prepare(wc):
-        return json.dumps([(word, int(position[0]), int(position[1]),
-                            int(font_size), orientation is not None,
-                            rgb2hex(color))
-                           for (word, count), font_size, position, orientation, color in wc.layout_])
-
-    @staticmethod
-    def color_to_rgb(v):
-        return RGB(*[int(c * 255) for c in v[:3]])
-
-    @staticmethod
-    def factor_colors(factors):
-        cmap = Plotter.factors_colormap(len(factors))
-        palette = [Plotter.color_to_rgb(cmap(i)).to_hex() for i in range(len(factors))]
-        colors = factor_cmap('id', palette=palette, factors=factors)
-        return colors
-
-    @staticmethod
-    def topics_palette_rgb(df):
-        n_comps = len(set(df['comp']))
-        cmap = Plotter.factors_colormap(n_comps)
-        return dict((i, Plotter.color_to_rgb(cmap(i))) for i in range(n_comps))
-
-    @staticmethod
-    def factors_colormap(n):
-        if n <= 10:
-            return plt.cm.get_cmap('tab10', n)
-        if n <= 20:
-            return plt.cm.get_cmap('tab20', n)
-        else:
-            return plt.cm.get_cmap('nipy_spectral', n)
-
-    @staticmethod
-    def topics_palette(df):
-        return dict((k, v.to_hex()) for k, v in Plotter.topics_palette_rgb(df).items())

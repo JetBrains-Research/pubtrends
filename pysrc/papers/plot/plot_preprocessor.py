@@ -1,3 +1,4 @@
+import json
 import logging
 
 import networkx as nx
@@ -6,12 +7,19 @@ import pandas as pd
 from more_itertools import unique_everseen
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
-from pysrc.papers.utils import cut_authors_list
+from pysrc.papers.utils import cut_authors_list, rgb2hex
 
 logger = logging.getLogger(__name__)
 
 
 class PlotPreprocessor:
+
+    @staticmethod
+    def component_sizes(df):
+        logger.debug('Processing component_sizes')
+        assigned_comps = df[df['comp'] >= 0]
+        d = dict(assigned_comps.groupby('comp')['id'].count())
+        return [int(d[k]) for k in range(len(d))]
 
     @staticmethod
     def component_size_summary_data(df, comps, min_year, max_year):
@@ -333,3 +341,20 @@ class PlotPreprocessor:
             keyword_dfs.append(keyword_df)
         keywords_df = pd.concat(keyword_dfs, axis=0).reset_index(drop=True)
         return keywords_df, years
+
+    @staticmethod
+    def get_topic_word_cloud_data(kwd_df, comp):
+        kwds = {}
+        for pair in list(kwd_df[kwd_df['comp'] == comp]['kwd'])[0].split(','):
+            if pair != '':  # Correctly process empty freq_kwds encoding
+                token, value = pair.split(':')
+                for word in token.split(' '):
+                    kwds[word] = float(value) + kwds.get(word, 0)
+        return kwds
+
+    @staticmethod
+    def word_cloud_prepare(wc):
+        return json.dumps([(word, int(position[0]), int(position[1]),
+                            int(font_size), orientation is not None,
+                            rgb2hex(color))
+                           for (word, count), font_size, position, orientation, color in wc.layout_])

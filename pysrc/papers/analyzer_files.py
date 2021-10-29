@@ -141,7 +141,7 @@ class AnalyzerFiles(PapersAnalyzer):
             path_mesh_terms_timeline = os.path.join(self.query_folder, 'timeline_mesh_terms.html')
             logging.info(f'Save frequent mesh terms to file {path_mesh_terms_timeline}')
             output_file(filename=path_mesh_terms_timeline, title="Mesh terms timeline")
-            save(Plotter.plot_keywords_timeline(keywords_df, years))
+            save(Plotter._plot_keywords_timeline(keywords_df, years))
             reset_output()
 
         self.progress.info('Calculating co-citations for selected papers', current=8, task=task)
@@ -267,20 +267,20 @@ class AnalyzerFiles(PapersAnalyzer):
         path_topics_by_years = os.path.join(self.query_folder, 'topics_by_years.html')
         logging.info(f'Save topics years to file {path_topics_by_years}')
         output_file(filename=path_topics_by_years, title="Topics by years")
-        save(Plotter._topics_years_distribution(self.df, self.kwd_df, plot_components, data, min_year, max_year))
+        save(Plotter._plot_topics_years_distribution(self.df, self.kwd_df, plot_components, data, min_year, max_year))
         reset_output()
 
         if len(set(self.df['comp'])) > 1:
             path_topics = os.path.join(self.query_folder, 'topics.html')
             logging.info(f'Save topics hierarchy with keywords to file {path_topics}')
             output_file(filename=path_topics, title="Topics dendrogram")
-            save(Plotter._topics_hierarchy_with_keywords(self.df, self.kwd_df, clusters, dendrogram, max_words=3))
+            save(Plotter._plot_topics_hierarchy_with_keywords(self.df, self.kwd_df, clusters, dendrogram, max_words=3))
             reset_output()
 
             path_topics_mesh = os.path.join(self.query_folder, 'topics_mesh.html')
             logging.info(f'Save topics hierarchy with mesh keywords to file {path_topics_mesh}')
             output_file(filename=path_topics_mesh, title="Topics dendrogram")
-            save(Plotter._topics_hierarchy_with_keywords(self.df, mesh_df, clusters, dendrogram, max_words=3))
+            save(Plotter._plot_topics_hierarchy_with_keywords(self.df, mesh_df, clusters, dendrogram, max_words=3))
             reset_output()
 
         self.df['topic_tags'] = [','.join(t for t, _ in clusters_description[c][:5]) for c in self.df['comp']]
@@ -314,7 +314,7 @@ class AnalyzerFiles(PapersAnalyzer):
         path_timeline = os.path.join(self.query_folder, 'timeline.html')
         logging.info(f'Save timeline to {path_timeline}')
         output_file(filename=path_timeline, title="Timeline")
-        save(plotter.papers_by_year())
+        save(plotter.plot_papers_by_year())
         reset_output()
 
         path_terms_timeline = os.path.join(self.query_folder, "timeline_terms.html")

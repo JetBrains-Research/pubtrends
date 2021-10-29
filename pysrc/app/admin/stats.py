@@ -8,7 +8,8 @@ from bokeh.embed import components
 from bokeh.models import HoverTool
 from bokeh.plotting import figure
 from wordcloud import WordCloud
-from pysrc.papers.plot.plotter import Plotter
+
+from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
 PLOT_WIDTH = 900
@@ -202,9 +203,9 @@ def parse_stats_content(lines):
     # Generate a word cloud
     text = ' '.join(terms).replace(',', ' ').replace('[^a-zA-Z0-9]+', ' ')
     if text:  # Check that string is not empty
-        wc = WordCloud(collocations=False, width=PLOT_WIDTH, height=WC_HEIGHT,
-                       background_color='white', max_font_size=100).generate(text)
-        result['word_cloud'] = Plotter.word_cloud_prepare(wc)
+        wc = WordCloud(collocations=False, max_words=100,
+                       width=PLOT_WIDTH, height=WC_HEIGHT, background_color='white', max_font_size=100).generate(text)
+        result['word_cloud'] = PlotPreprocessor.word_cloud_prepare(wc)
 
     # Terms search statistics
     finished_searches = sum('end' in info for info in searches_infos.values())

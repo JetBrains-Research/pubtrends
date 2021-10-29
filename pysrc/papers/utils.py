@@ -4,6 +4,8 @@ import re
 import binascii
 import pandas as pd
 from bokeh.colors import RGB
+from bokeh.transform import factor_cmap
+import matplotlib as plt
 from matplotlib import colors
 
 PUBMED_ARTICLE_BASE_URL = 'https://www.ncbi.nlm.nih.gov/pubmed/?term='
@@ -110,6 +112,36 @@ def contrast_color(rgb):
         return RGB(0, 0, 0)
     else:
         return RGB(255, 255, 255)
+
+
+def color_to_rgb(v):
+    return RGB(*[int(c * 255) for c in v[:3]])
+
+
+def factor_colors(factors):
+    cmap = factors_colormap(len(factors))
+    palette = [color_to_rgb(cmap(i)).to_hex() for i in range(len(factors))]
+    colors = factor_cmap('id', palette=palette, factors=factors)
+    return colors
+
+
+def topics_palette_rgb(df):
+    n_comps = len(set(df['comp']))
+    cmap = factors_colormap(n_comps)
+    return dict((i, color_to_rgb(cmap(i))) for i in range(n_comps))
+
+
+def factors_colormap(n):
+    if n <= 10:
+        return plt.cm.get_cmap('tab10', n)
+    if n <= 20:
+        return plt.cm.get_cmap('tab20', n)
+    else:
+        return plt.cm.get_cmap('nipy_spectral', n)
+
+
+def topics_palette(df):
+    return dict((k, v.to_hex()) for k, v in topics_palette_rgb(df).items())
 
 
 def human_readable_size(size):

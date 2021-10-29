@@ -81,7 +81,7 @@ def prepare_paper_data(data, source, pid):
     result = dict(title=title, trimmed_title=trim(title, MAX_TITLE_LENGTH), authors=authors, journal=journal, year=year,
                   topic=topic, doi=doi, mesh=mesh, keywords=keywords, url=url_prefix + pid, source=source,
                   n_papers=len(analyzer.df),
-                  citation_dynamics=[components(plotter.paper_citations_per_year(analyzer.df, str(pid)))])
+                  citation_dynamics=[components(plotter._plot_paper_citations_per_year(analyzer.df, str(pid)))])
     if similar_papers:
         result['similar_papers'] = [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid, year, f'{similarity:.3f}')
                                     for pid, title, year, similarity in similar_papers]
