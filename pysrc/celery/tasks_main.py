@@ -51,7 +51,7 @@ def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, e
     finally:
         loader.close_connection()
 
-    analyzer.progress.info('Visualizing', current=analyzer.progress.total - 1, task=current_task)
+    analyzer.progress.info('Visualizing results', current=analyzer.progress.total - 1, task=current_task)
 
     visualization = visualize_analysis(analyzer)
     dump = analyzer.dump()
@@ -135,7 +135,7 @@ def _analyze_id_list(analyzer, source,
     finally:
         analyzer.loader.close_connection()
 
-    analyzer.progress.info('Visualizing', current=analyzer.progress.total - 1, task=task)
+    analyzer.progress.info('Visualizing results', current=analyzer.progress.total - 1, task=task)
     visualization = visualize_analysis(analyzer)
     dump = analyzer.dump()
     analyzer.progress.done(task=task)
