@@ -17,7 +17,7 @@ def node2vec(ids, graph, p=0.5, q=2.0, walk_length=32, walks_per_node=5, vector_
     :param vector_size: Resulting embedding size
     :param key: key for weight
     :param seed: seed
-    :returns indices and matrix of embeddings
+    :returns matrix of embeddings
     """
     logger.debug('Precomputing random walk probabilities')
     probabilities_first_step, probabilities_next_step = _precompute(graph, key, p, q)

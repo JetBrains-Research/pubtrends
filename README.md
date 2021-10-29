@@ -212,7 +212,8 @@ Replace `<PATH_TO_PUBTRENDS.JAR>` with actual path to Jar file.
 
 ## Development
 
-Please ensure that you have database configured, up and running. Then use web-service or jupyter notebook.
+Please ensure that you have database configured, up and running. \
+Then launch web-service or use jupyter notebook for development.
 
 ### Web service
 
@@ -254,13 +255,10 @@ Please ensure that you have database configured, up and running. Then use web-se
     python -m pysrc.app.app
     ```    
 
-### Jupyter Notebook
-
+### Jupyter notebook
+Notebooks are located under the `/notebooks` folder. Please configure `PYTHONPATH` before using jupyter.
    ```
-   # Configure paths
    export PYTHONPATH=$PYTHONPATH:$(pwd)
-   
-   # Launch notebook
    jupyter notebook
    ```
 
