@@ -28,17 +28,18 @@ logger = logging.getLogger(__name__)
 class PapersAnalyzer:
     TOP_CITED_PAPERS = 50
 
-    # These coefficients were estimated in the paper: https://dl.acm.org/doi/10.1145/3459930.3469501
-    # Poster: https://drive.google.com/file/d/1SeqJtJtaHSO6YihG2905boOEYL1NiSP1/view
-    # Features are originally taken from papers:
+    # Features are originally taken from paper:
     # 1) Which type of citation analysis generates the most accurate taxonomy of
     #   scientific and technical knowledge? (https://arxiv.org/pdf/1511.05078.pdf)
     #   ...bibliographic coupling (BC) was the most accurate,  followed by co-citation (CC).
     #   Direct citation (DC) was a distant third among the three...
-    # 2) Exploiting potential citation papers in scholarly paper recommendation. In: JCDL (2013)
-    SIMILARITY_BIBLIOGRAPHIC_COUPLING = 1  # Limited by number of references, applied to log
-    SIMILARITY_COCITATION = 2  # Limiter by number of co-citations, applied to log
-    SIMILARITY_CITATION = 2  # Limited by 1 citation
+    #
+    # Coefficients were estimated in the paper: https://dl.acm.org/doi/10.1145/3459930.3469501
+    # Poster: https://drive.google.com/file/d/1SeqJtJtaHSO6YihG2905boOEYL1NiSP1/view
+    # See for details: https://github.com/JetBrains-Research/pubtrends-nature-reviews
+    SIMILARITY_BIBLIOGRAPHIC_COUPLING = 3  # Limited by number of references, applied to log
+    SIMILARITY_COCITATION = 3  # Limiter by number of co-citations, applied to log
+    SIMILARITY_CITATION = 1  # Limited by 1 citation
 
     # Minimal number of common references, used to reduces papers graph edges count
     # Value > 1 is especially useful while analysing single paper, removes meaningless connections by construction
@@ -62,7 +63,7 @@ class PapersAnalyzer:
     # Terms with higher frequency will be ignored, remove abundant words
     VECTOR_MAX_DF = 0.8
 
-    PCA_COMPONENTS = 20
+    PCA_COMPONENTS = 15
 
     # Configure number and size of topics
     TOPICS_NUMBER_SMALL = dict(max_number=10, min_size=50)
