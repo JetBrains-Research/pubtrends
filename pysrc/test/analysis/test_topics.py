@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from parameterized import parameterized
 
-from pysrc.papers.analysis.topics import compute_topics_similarity_matrix, _get_topics_description_cosine
+from pysrc.papers.analysis.topics import _get_topics_description_cosine
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.test.mock_loaders import MockLoader
@@ -33,12 +33,6 @@ class TestTopics(unittest.TestCase):
         for row in self.analyzer.df.itertuples():
             if getattr(row, 'id') not in nodes:
                 self.assertEqual(getattr(row, 'comp'), -1)
-
-    def test_heatmap_topics_similarity(self):
-        matrix = compute_topics_similarity_matrix(self.analyzer.pca_coords, self.analyzer.df['comp'])
-        # print(matrix)
-        similarities = np.array([[0.06547536]])
-        self.assertTrue(np.allclose(similarities, matrix, rtol=1e-3))
 
     @staticmethod
     def _get_topics_description_data():
