@@ -55,7 +55,6 @@
             };
 
             function advanced_enable() {
-                noreviews_checkbox.prop("checked", true);
                 noreviews_checkbox.removeAttr("disabled")
                 expand_field.val(20);
                 expand_field.prop("readonly", false);
@@ -210,7 +209,7 @@
                                         <span class="input-group-text" id="review-addon">
                                             Prefer no reviews</span>
                                     </div>
-                                    <input type="checkbox" checked="checked" name="noreviews" id="noreviews"
+                                    <input type="checkbox" name="noreviews" id="noreviews"
                                            aria-describedby="review-addon"
                                            style="width: 1.2rem; height: 1.2rem; margin-top: auto; margin-bottom: auto;">
                                 </div>
@@ -236,10 +235,13 @@
                             </div>
                             <div class="row no-gutters align-items-center mt-2">
                                 <div class="col input-group">
-                                    <label style="margin-top: auto;margin-bottom: auto">
-                                        <input type="checkbox" name="files" id="files">
-                                        <span class="checkmark">Save analysis html reports</span>
-                                    </label>
+                                    <div class="input-group-prepend mr-2">
+                                        <span class="input-group-text" id="files-addon">
+                                            Save analysis html reports</span>
+                                    </div>
+                                    <input type="checkbox" name="files" id="files"
+                                           aria-describedby="files-addon"
+                                           style="width: 1.2rem; height: 1.2rem; margin-top: auto; margin-bottom: auto;">
                                 </div>
                             </div>
                         </div>
@@ -253,11 +255,10 @@
                             <input type="hidden" name="sort" value="Most Cited">
                             <input type="hidden" name="topics" value="medium">
                             <input type="hidden" name="limit" value="{{ default_limit }}">
-                            {% if search_example_source == "Semantic Scholar" %}
                             <input type="hidden" name="noreviews" value="off">
+                            {% if search_example_source == "Semantic Scholar" %}
                             <input type="hidden" name="expand" value="0">
                             {% else %}
-                            <input type="hidden" name="noreviews" value="on">
                             <input type="hidden" name="expand" value="20">
                             {% endif %}
                             <input type="hidden" name="jobid" value="predefined_{{ hash }}">
