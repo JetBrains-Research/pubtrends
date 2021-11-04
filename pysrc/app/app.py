@@ -29,7 +29,7 @@ from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.plot.plotter import Plotter, TOPIC_KEYWORDS
 from pysrc.papers.plot.plotter_paper import prepare_paper_data
-from pysrc.papers.utils import trim, IDS_ANALYSIS_TYPE, PAPER_ANALYSIS_TYPE, human_readable_size
+from pysrc.papers.utils import trim, IDS_ANALYSIS_TYPE, PAPER_ANALYSIS_TYPE, human_readable_size, topics_palette
 from pysrc.version import VERSION
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
@@ -441,7 +441,7 @@ def graph():
                 query=trim(query, MAX_QUERY_LENGTH),
                 limit=limit,
                 sort=sort,
-                topics_palette_json=json.dumps(Plotter.topics_palette(analyzer.df)),
+                topics_palette_json=json.dumps(topics_palette(analyzer.df)),
                 topics_description_json=json.dumps(topics_tags),
                 graph_cytoscape_json=json.dumps(graph_cs)
             )
