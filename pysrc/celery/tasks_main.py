@@ -1,7 +1,7 @@
 from logging import getLogger
 from celery import current_task
-from Bio import Entrez
 
+from pysrc.papers.analysis.pubmed import pubmed_search
 from pysrc.papers.analyzer_files import AnalyzerFiles
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.papers.analysis.expand import expand_ids
@@ -14,9 +14,6 @@ from pysrc.papers.utils import SORT_MOST_CITED, PAPER_ANALYSIS_TYPE, IDS_ANALYSI
     preprocess_doi, is_doi
 
 logger = getLogger(__name__)
-
-# Configure email to get notifications on too heavy API usage
-Entrez.email = PubtrendsConfig(test=False).entrez_email
 
 DOI_WRONG_SEARCH = 'Search query looks like DOI, please <a href="/#paper-tab">rerun</a> paper analysis.' 
 
@@ -171,35 +168,32 @@ def analyze_search_paper(source, pid, key, value, topics, test=False):
         loader.close_connection()
 
 
-def pubmed_search(query, limit):
-    handle = Entrez.esearch(db='pubmed', retmax=str(limit), retmode='xml', term=query)
-    return Entrez.read(handle)['IdList']
-
-
 @pubtrends_celery.task(name='analyze_pubmed_search')
-def analyze_pubmed_search(query, limit, topics, test=False):
+def analyze_pubmed_search(query, sort, limit, topics, test=False):
     if is_doi(preprocess_doi(query)):
         raise SearchError(DOI_WRONG_SEARCH)
     config = PubtrendsConfig(test=test)
     loader = Loaders.get_loader('Pubmed', config)
     analyzer = PapersAnalyzer(loader, config)
-    analyzer.progress.info(f"Searching Pubmed query: {query}, limit {limit}", current=1, task=current_task)
-    ids = pubmed_search(query, limit)
+    analyzer.progress.info(f"Searching Pubmed query: {query}, {sort.lower()} limit {limit}",
+                           current=1, task=current_task)
+    ids = pubmed_search(query, sort, limit)
     return _analyze_id_list(analyzer, 'Pubmed',
                             ids, query=query, analysis_type=IDS_ANALYSIS_TYPE, limit=limit, topics=topics,
                             test=test, task=current_task)
 
 
 @pubtrends_celery.task(name='analyze_pubmed_search_files')
-def analyze_pubmed_search_files(query, limit, topics, test=False):
+def analyze_pubmed_search_files(query, sort, limit, topics, test=False):
     if is_doi(preprocess_doi(query)):
         raise SearchError(DOI_WRONG_SEARCH)
     config = PubtrendsConfig(test=test)
     loader = Loaders.get_loader('Pubmed', config)
     analyzer = AnalyzerFiles(loader, config)
     try:
-        analyzer.progress.info(f"Searching Pubmed query: {query}, limit {limit}", current=1, task=current_task)
-        ids = pubmed_search(query, limit)
+        analyzer.progress.info(f"Searching Pubmed query: {query}, {sort.lower()} limit {limit}",
+                               current=1, task=current_task)
+        ids = pubmed_search(query, sort, limit)
         analyzer.progress.info(f'Analysing {len(ids)} paper(s) from Pubmed', current=1, task=current_task)
         analyzer.analyze_ids(ids, 'Pubmed', query, '', limit, topics, test=test, task=current_task)
         analyzer.progress.done(task=current_task)

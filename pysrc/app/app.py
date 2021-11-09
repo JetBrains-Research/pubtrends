@@ -155,13 +155,14 @@ def search_terms():
         if query and source and limit and topics and pubmed_syntax:
             if files:
                 # Save results to files
-                job = analyze_pubmed_search_files.delay(query=query, limit=limit, topics=topics,
+                job = analyze_pubmed_search_files.delay(query=query, sort=sort, limit=limit, topics=topics,
                                                         test=app.config['TESTING'])
                 return redirect(url_for('.process', query=query, analysis_type=ANALYSIS_FILES_TYPE,
                                         sort='', limit=limit, source='Pubmed', topics=topics, jobid=job.id))
             else:
                 # Regular analysis
-                job = analyze_pubmed_search.delay(query=query, limit=limit, topics=topics, test=app.config['TESTING'])
+                job = analyze_pubmed_search.delay(query=query, sort=sort, limit=limit, topics=topics,
+                                                  test=app.config['TESTING'])
                 return redirect(url_for('.process', source='Pubmed', query=query, limit=limit, sort='', topics=topics,
                                         jobid=job.id))
 

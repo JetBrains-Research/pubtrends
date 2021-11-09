@@ -47,39 +47,44 @@
             const noreviews_checkbox = $("#noreviews");
             const expand_field = $("#expand");
 
-            function advanced_disable() {
+            function advanced_noreviews_expand_disable() {
                 noreviews_checkbox.prop("checked", false);
                 noreviews_checkbox.attr("disabled", "disabled");
                 expand_field.val(0);
                 expand_field.prop("readonly", true);
-            };
+            }
 
-            function advanced_enable() {
+            function advanced_noreviews_expand_enable() {
                 noreviews_checkbox.removeAttr("disabled")
                 expand_field.val(20);
                 expand_field.prop("readonly", false);
-            };
+            }
 
             $('#search-source-selector').change(function () {
                 if ($(this).val() === "Semantic Scholar") {
-                    advanced_disable();
+                    advanced_noreviews_expand_disable();
                     $("#pubmed-syntax-div").hide();
                     $("#pubmed-syntax").prop("checked", false);
                     $("#search-input-field").prop("placeholder", "{{min_words_message}}Use double quotes for phrase search, join queries by commas.");
                 } else {
-                    advanced_enable();
+                    advanced_noreviews_expand_enable();
                     $("#pubmed-syntax-div").show();
                 }
             });
             $("#pubmed-syntax").change(function () {
+                let $sort = $("#sort-selector");
                 if ($("#pubmed-syntax").prop("checked") === true) {
                     $("#search-input-field").prop("placeholder", "Use PubMed search syntax.");
-                    advanced_disable();
-                    $("#sort-selector").attr("disabled", "disabled");
+                    advanced_noreviews_expand_disable();
+                    $sort.empty(); // remove old options
+                    $sort.append($("<option>Most Relevant</option>"));
+                    $sort.append($("<option>Most Recent</option>"));
                 } else {
                     $("#search-input-field").prop("placeholder", "{{min_words_message}}Use double quotes for phrase search, join queries by commas.");
-                    advanced_enable();
-                    $("#sort-selector").removeAttr("disabled");
+                    advanced_noreviews_expand_enable();
+                    $sort.empty(); // remove old options
+                    $sort.append($("<option>Most Cited</option>"));
+                    $sort.append($("<option>Most Recent</option>"));
                 }
             });
         });
@@ -397,12 +402,12 @@
                 },
                 {% if pm_enabled %}
                 {
-                    element: '#pubmed-syntax-div',
+                    '#pubmed-syntax-div',
                     intro: "You can use Pubmed search syntax including AND, OR, fields etc."
                 },
                 {% endif %}
                 {
-                    element: '#step3',
+                    '#step3',
                     intro: "Additionally configure papers limit and ranking, filter out review papers, etc.<br>" +
                             "Topics number can be configured:<br>" +
                             "<i>Small</i> - ≤ 10 topics, each ≥ 50 papers;<br>" +
@@ -411,17 +416,17 @@
                             "Use <i>Save analysis html reports</i> to create downloadable report files."
                 },
                 {
-                    element: '#step4',
+                    '#step4',
                     intro: "Click the <em>Search</em> button!<br>" +
                         "You will be redirected automatically to a results page once analysis is complete.<br>" +
                         "Click <em>About</em> button to learn about results."
                 },
                 {
-                    element: '#predefined',
+                    '#predefined',
                     intro: "Or try one of precomputed examples."
                 }
             ]
-    });
+    })
         // @formatter:on
 
         intro.start();
