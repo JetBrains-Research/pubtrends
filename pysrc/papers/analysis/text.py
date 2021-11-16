@@ -1,5 +1,4 @@
 import logging
-import re
 from itertools import chain
 from threading import Lock
 
@@ -17,7 +16,7 @@ logger = logging.getLogger(__name__)
 # nltk punkt required for word_tokenize
 # nltk stopwords
 # nltk wordnet
-STOP_WORDS_SET = set(stopwords.words('english'))
+NLTK_STOP_WORDS_SET = set(stopwords.words('english'))
 
 # Lock to support multithreading for NLTK
 # See https://github.com/nltk/nltk/issues/1576
@@ -75,51 +74,35 @@ def get_frequent_tokens(tokens, fraction=0.1, min_tokens=20):
     return result
 
 
-def is_noun_or_adj(pos):
-    return pos[:2] == 'NN' or pos == 'JJ'
+# Convert pos_tag output to WordNetLemmatizer tags
+try:
+    NLTK_LOCK.acquire()
+    NLTK_POS_TAG_TO_WORDNET = dict(JJ=wordnet.ADJ, NN=wordnet.NOUN, VB=wordnet.VERB, RB=wordnet.ADV)
+finally:
+    NLTK_LOCK.release()
 
 
-def get_wordnet_pos(treebank_tag):
-    """Convert pos_tag output to WordNetLemmatizer tags."""
-    result = ''
-    try:
-        NLTK_LOCK.acquire()
-        if treebank_tag.startswith('J'):
-            result = wordnet.ADJ
-        elif treebank_tag.startswith('V'):
-            result = wordnet.VERB
-        elif treebank_tag.startswith('N'):
-            result = wordnet.NOUN
-        elif treebank_tag.startswith('R'):
-            result = wordnet.ADV
-    finally:
-        NLTK_LOCK.release()
-        return result
-
-
-def stemmed_tokens(text, min_token_length=3):
-    tokenized = word_tokenize(text)
+def stemmed_tokens(text, min_token_length=4):
     # Ignore stop words, take into accounts nouns and adjectives, fix plural forms
     lemmatizer = WordNetLemmatizer()
-    lemmas = [lemmatizer.lemmatize(token, pos=get_wordnet_pos(pos))
-              for token, pos in nltk.pos_tag(tokenized)
-              if len(token) > min_token_length and token not in STOP_WORDS_SET and is_noun_or_adj(pos)]
+    lemmas = [lemmatizer.lemmatize(token, pos=NLTK_POS_TAG_TO_WORDNET[pos[:2]])
+              for token, pos in nltk.pos_tag(word_tokenize(text.lower()))
+              if len(token) >= min_token_length
+              and token not in NLTK_STOP_WORDS_SET
+              and pos[:2] in NLTK_POS_TAG_TO_WORDNET]
 
-    # Apply stemming to reduce word length
+    # Apply stemming to reduce word length,
+    # later shortest word will be used as actual word
     stemmer = SnowballStemmer('english')
     return [(stemmer.stem(token), token) for token in lemmas]
 
 
-def preprocess_text(text):
-    text = text.lower()
-    # Replace non-ascii with space
-    text = re.sub('[^a-zA-Z0-9 ]+', ' ', text)
-    # Whitespaces normalization, see #215
-    text = re.sub('[ ]{2,}', ' ', text.strip())
-    return text
-
-
 def build_stemmed_corpus(df):
+    """ Tokenization is done in several steps
+    1. Lemmatization:  Ignore stop words, take into accounts nouns and adjectives, fix plural forms
+    2. Stemming: reducing words
+    3. Matching stems to a shortest existing lemma in texts
+    """
     logger.info(f'Building corpus from {len(df)} papers')
     logger.info(f'Processing stemming for all papers')
     papers_stemmed_sentences = [None] * len(df)
@@ -131,35 +114,28 @@ def build_stemmed_corpus(df):
         if i % 1000 == 1:
             logger.debug(f'Processed {i} papers')
         papers_stemmed_sentences[i] = [
-            stemmed_tokens(preprocess_text(sentence.strip()))
+            stemmed_tokens(sentence)
             for sentence in f'{title}.{abstract}.{mesh}.{keywords}'.split('.')
             if len(sentence.strip()) > 0
         ]
     logger.debug(f'Done processing stemming for {len(df)} papers')
     logger.info('Creating global shortest stem to word map')
-    stems_tokens_map = build_stems_to_tokens_map(chain(*chain(*papers_stemmed_sentences)))
+    stems_tokens_map = _build_stems_to_tokens_map(chain(*chain(*papers_stemmed_sentences)))
     logger.info('Creating stemmed corpus')
-    return [[[stems_tokens_map[s] for s, _ in stemmed] for stemmed in sentence]
+    return [[[stems_tokens_map.get(s, s) for s, _ in stemmed] for stemmed in sentence]
             for sentence in papers_stemmed_sentences]
 
 
-def tokenize(text, stems_tokens_map=None, min_token_length=3):
-    stems_and_tokens = stemmed_tokens(preprocess_text(text), min_token_length)
-    if stems_tokens_map is None:
-        return [t for _, t in stems_and_tokens]
-    else:
-        return [stems_tokens_map[s] for s, _ in stems_and_tokens if s in stems_tokens_map]
-
-
-def build_stems_to_tokens_map(stems_and_tokens):
-    """ Substitute each stem with the shortest similar word """
+def _build_stems_to_tokens_map(stems_and_tokens):
+    """ Build a map to substitute each stem with the shortest word if word is different """
     stems_tokens_map = {}
     for stem, token in stems_and_tokens:
-        if stem in stems_tokens_map:
-            if len(stems_tokens_map[stem]) > len(token):
+        if stem != token:  # Ignore tokens similar to stems
+            if stem in stems_tokens_map:
+                if len(stems_tokens_map[stem]) > len(token):
+                    stems_tokens_map[stem] = token
+            else:
                 stems_tokens_map[stem] = token
-        else:
-            stems_tokens_map[stem] = token
     return stems_tokens_map
 
 

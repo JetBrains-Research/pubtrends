@@ -3,11 +3,11 @@ import hashlib
 import json
 import logging
 import os
+import re
 from threading import Lock
 
 from celery.result import AsyncResult
 
-from pysrc.papers.analysis.text import preprocess_text
 from pysrc.papers.utils import SORT_MOST_CITED
 from pysrc.version import VERSION
 
@@ -102,7 +102,7 @@ def load_predefined_or_result_data(source, jobid, predefined_jobs, app):
 
 
 def query_to_folder(source, query, sort, limit, max_folder_length=100):
-    folder_name = preprocess_text(f'{source}_{query}_{sort}_{limit}').replace(' ', '_').replace('__', '_')
+    folder_name = re.sub(r'[^a-z0-9_]+', '_', f'{source}_{query}_{sort}_{limit}'.lower()).replace('__', '_')
     if len(folder_name) > max_folder_length:
         folder_name = folder_name[:(max_folder_length - 32 - 1)] + '_' + \
                       hashlib.md5(folder_name.encode('utf-8')).hexdigest()
