@@ -27,7 +27,7 @@ from pysrc.papers.analysis.graph import build_papers_graph, \
     sparse_graph, to_weighted_graph
 from pysrc.papers.analysis.node2vec import node2vec
 from pysrc.papers.analysis.text import get_frequent_tokens
-from pysrc.papers.analysis.text import texts_embeddings, vectorize_corpus, word2vec_tokens
+from pysrc.papers.analysis.text import texts_embeddings, vectorize_corpus, tokens_embeddings
 from pysrc.papers.analysis.topics import get_topics_description, compute_topics_similarity_matrix, cluster_and_sort
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.db.loaders import Loaders
@@ -108,7 +108,7 @@ class AnalyzerFiles(PapersAnalyzer):
             test=test
         )
         logger.debug('Analyzing tokens embeddings')
-        self.corpus_tokens_embedding = word2vec_tokens(
+        self.corpus_tokens_embedding = tokens_embeddings(
             self.corpus, self.corpus_tokens, test=test
         )
         logger.debug('Analyzing texts embeddings')

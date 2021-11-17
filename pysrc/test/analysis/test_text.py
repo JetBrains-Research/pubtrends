@@ -34,17 +34,33 @@ class TestText(unittest.TestCase):
         self.assertSequenceEqual(actual, expected)
 
     def test_stemmed_tokens_map(self):
-        text = """... Control differences in Bland-Altman plots for mean+/-SD in mm Hg were systolic, 0.0+/-4.4; diastolic, 
+        text = """Control differences in Bland-Altman plots for mean+/-SD in mm Hg were systolic, 0.0+/-4.4; diastolic, 
          0.6+/-1.7; pulse, -0.7+/-4.2; and mean pressure, -0.5+/-2.0. For nitroglycerin infusion, differences 
          respectively were systolic, -0.2+/-4.3; diastolic, 0.6+/-1.7; pulse, -0.8+/-4.1; and mean pressure, 
-         -0.4+/-1.8. Differences were within specified limits of the Association for the Advancement of Medical 
-         Instrumentation SP10 criteria. In contrast, differences between recorded radial and aortic systolic and pulse 
+         -0.4+/-1.8. Differences were within specified limits of the "Association for the Advancement of Medical 
+         Instrumentation" SP10 criteria. In contrast, differences between recorded radial and aortic systolic and pulse 
          pressures were well outside the criteria (respectively, 15.7+/-8.4 and 16.3+/-8.5 for control and 14.5+/-7.3 
-         and 15.1+/-7.3 mm Hg for nitroglycerin) ..."""
+         and 15.1+/-7.3 mm Hg for nitroglycerin) 
+         ...
+         One particular BCI approach is the so-called 'P300 matrix speller' that was first described by 
+         Farwell and Donchin (1988 Electroencephalogr. Clin. Neurophysiol. 70 510-23). ... it 
+         relies primarily on the P300-evoked potential and minimally, if at all, on other EEG features such as the 
+         visual-evoked potential (VEP).  ... We evaluated the performance of 
+         17 healthy subjects using a 'P300' matrix speller under two conditions. Under one condition ('letter'), the 
+         subjects focused their eye gaze on the intended letter, while under the second condition ('center'), the 
+         subjects focused their eye gaze on a fixation cross that was located in the center of the matrix ...
+         The applicability of these findings to people with severe neuromuscular disabilities 
+         (particularly in eye-movements) remains to be determined.
+         """
         expected = {'differ': 'difference', 'systol': 'systolic', 'diastol': 'diastolic', 'puls': 'pulse',
                     'pressur': 'pressure', 'infus': 'infusion', 'respect': 'respectively', 'specifi': 'specify',
                     'associ': 'association', 'advanc': 'advancement', 'medic': 'medical',
-                    'instrument': 'instrumentation'}
+                    'instrument': 'instrumentation', 'call': 'called', 'describ': 'describe', 'farwel': 'farwell',
+                    'reli': 'rely', 'primarili': 'primarily', 'evok': 'evoke', 'potenti': 'potential',
+                    'minim': 'minimally', 'featur': 'feature', 'evalu': 'evaluate', 'perform': 'performance',
+                    'healthi': 'healthy', 'condit': 'condition', 'intend': 'intended', 'fixat': 'fixation',
+                    'locat': 'locate', 'applic': 'applicability', 'find': 'finding', 'peopl': 'people',
+                    'sever': 'severe', 'disabl': 'disability', 'particular': 'particularly', 'determin': 'determine'}
         actual = _build_stems_to_tokens_map(stemmed_tokens(text))
         print(actual)
         self.assertSequenceEqual(actual, expected)

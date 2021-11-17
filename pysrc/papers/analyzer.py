@@ -15,7 +15,7 @@ from pysrc.papers.analysis.graph import build_papers_graph, \
 from pysrc.papers.analysis.metadata import popular_authors, popular_journals
 from pysrc.papers.analysis.node2vec import node2vec
 from pysrc.papers.analysis.numbers import extract_numbers
-from pysrc.papers.analysis.text import texts_embeddings, vectorize_corpus, word2vec_tokens
+from pysrc.papers.analysis.text import texts_embeddings, vectorize_corpus, tokens_embeddings
 from pysrc.papers.analysis.topics import get_topics_description, cluster_and_sort
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
@@ -159,7 +159,7 @@ class PapersAnalyzer:
         )
         if PapersAnalyzer.TEXT_EMBEDDINGS_FACTOR != 0:
             logger.debug('Analyzing tokens embeddings')
-            self.corpus_tokens_embedding = word2vec_tokens(
+            self.corpus_tokens_embedding = tokens_embeddings(
                 self.corpus, self.corpus_tokens, test=test
             )
             logger.debug('Analyzing texts embeddings')

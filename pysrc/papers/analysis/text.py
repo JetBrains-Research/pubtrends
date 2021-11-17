@@ -1,10 +1,13 @@
 import logging
+import re
 from itertools import chain
 from threading import Lock
 
+import gensim.downloader as api
 import nltk
 import numpy as np
 from gensim.models import Word2Vec
+from lazy import lazy
 from nltk import word_tokenize, WordNetLemmatizer, SnowballStemmer
 from nltk.corpus import wordnet, stopwords
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
@@ -83,10 +86,12 @@ finally:
 
 
 def stemmed_tokens(text, min_token_length=4):
+    # Tokenize text
+    tokens = word_tokenize(re.sub(r'[\'-]+', ' ', text.lower()))
     # Ignore stop words, take into accounts nouns and adjectives, fix plural forms
     lemmatizer = WordNetLemmatizer()
     lemmas = [lemmatizer.lemmatize(token, pos=NLTK_POS_TAG_TO_WORDNET[pos[:2]])
-              for token, pos in nltk.pos_tag(word_tokenize(text.lower()))
+              for token, pos in nltk.pos_tag(tokens)
               if len(token) >= min_token_length
               and token not in NLTK_STOP_WORDS_SET
               and pos[:2] in NLTK_POS_TAG_TO_WORDNET]
@@ -139,11 +144,44 @@ def _build_stems_to_tokens_map(stems_and_tokens):
     return stems_tokens_map
 
 
-def word2vec_tokens(corpus, corpus_tokens, vector_size=64, test=False):
-    logger.debug(f'Compute words embeddings with word2vec')
+class PretrainedModelCache:
+    @lazy
+    def download_and_load_model(self):
+        model_name = 'fasttext-wiki-news-subwords-300'
+        logger.info(f'Loading {model_name} fasttext model by facebook')
+        model = api.load(model_name)
+        logger.info('Successfully loaded model')
+        return model
+
+
+PRETRAINED_MODEL_CACHE = PretrainedModelCache()
+
+PRETRAINED_MODEL_CACHE_LOCK = Lock()
+
+
+def tokens_embeddings(corpus, corpus_tokens, test=False):
+    if test:
+        logger.debug(f'Compute words embeddings trained word2vec')
+        return train_word2vec(corpus, corpus_tokens, test=test)
+    else:
+        try:
+            PRETRAINED_MODEL_CACHE_LOCK.acquire()
+            logger.debug('Compute words embeddings using pretrained model')
+            model = PRETRAINED_MODEL_CACHE.download_and_load_model
+            logger.debug('Retrieve word embeddings')
+            return np.array([
+                model.word_vec(t) if model.has_index_for(t)
+                else np.zeros(model.vector_size)  # Support out-of-dictionary missing embeddings
+                for t in corpus_tokens
+            ])
+        finally:
+            PRETRAINED_MODEL_CACHE_LOCK.release()
+
+
+def train_word2vec(corpus, corpus_tokens, vector_size=64, test=False):
     logger.debug('Collecting sentences across dataset')
     sentences = list(filter(
-        lambda l: test or len(l) >= 5,  # Ignore short sentences
+        lambda l: test or len(l) >= 5,  # Ignore short sentences, less than window
         chain.from_iterable(corpus)))
     logger.debug(f'Total {len(sentences)} sentences')
     logger.debug('Training word2vec model')
