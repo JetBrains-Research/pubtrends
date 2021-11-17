@@ -366,8 +366,16 @@ class PapersAnalyzer:
                 mapping[col] = col
         df = df.rename(columns=mapping)
         cit_df = pd.read_json(fields['cit_df'])
+        cit_df['id_in'] = cit_df['id_in'].astype(str)
+        cit_df['id_out'] = cit_df['id_out'].astype(str)
+
         cocit_grouped_df = pd.read_json(fields['cocit_grouped_df'])
+        cocit_grouped_df['cited_1'] = cocit_grouped_df['cited_1'].astype(str)
+        cocit_grouped_df['cited_2'] = cocit_grouped_df['cited_2'].astype(str)
+
         bibliographic_coupling_df = pd.read_json(fields['bibliographic_coupling_df'])
+        bibliographic_coupling_df['citing_1'] = bibliographic_coupling_df['citing_1'].astype(str)
+        bibliographic_coupling_df['citing_2'] = bibliographic_coupling_df['citing_2'].astype(str)
 
         # Restore topic descriptions
         kwd_df = pd.read_json(fields['kwd_df'])
