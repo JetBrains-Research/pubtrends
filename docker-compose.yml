@@ -17,6 +17,8 @@ services:
       - ~/.pubtrends/ssl:/ssl:ro
       - ~/.pubtrends/predefined:/predefined
       - ~/.pubtrends/search_results:/search_results
+      - ~/.pubtrends/nltk-data:/home/user/nltk-data
+      - ~/.pubtrends/gensim-data:/home/user/gensim-data
   worker:
     build:
       context: .
@@ -30,6 +32,8 @@ services:
       - ~/.pubtrends/.cache:/home/user/.cache
       - ~/.pubtrends/predefined:/predefined
       - ~/.pubtrends/search_results:/search_results
+      - ~/.pubtrends/nltk-data:/home/user/nltk-data
+      - ~/.pubtrends/gensim-data:/home/user/gensim-data
   redis:
     image: redis:5.0
     volumes:

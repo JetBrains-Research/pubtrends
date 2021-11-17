@@ -10,8 +10,10 @@ ENV C_FORCE_ROOT true
 COPY . /home/user/
 WORKDIR /home/user/
 
-# Download all the nltk resources
-RUN source activate pubtrends && python pysrc/papers/utils.py
+# Download all the nltk and spacy resources
+RUN source activate pubtrends \
+    && python -m nltk.downloader averaged_perceptron_tagger punkt stopwords wordnet \
+    && python -m spacy download en_core_web_sm
 
 # Launch celery workers
 ENTRYPOINT source activate pubtrends \

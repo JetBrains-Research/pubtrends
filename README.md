@@ -82,13 +82,6 @@ from `/admin` dashboard, which shows requests and results, execution times and f
     source activate pubtrends
     ```
 
-   Download Nltk and Spacy resources
-    ```
-    source activate pubtrends \
-    && python -m nltk.downloader averaged_perceptron_tagger punkt stopwords wordnet \
-    && python -m spacy download en_core_web_sm
-    ```
-
 3. Build base Docker image `biolabs/pubtrends` and nested image `biolabs/pubtrends-test` for testing.
     ```
     docker build -f resources/docker/main/Dockerfile -t biolabs/pubtrends .
@@ -225,8 +218,10 @@ Then launch web-service or use jupyter notebook for development.
     mkdir ~/.pubtrends/database
     mkdir ~/.pubtrends/.cache
     mkdir ~/.pubtrends/predefined
-    mkdir ~/.pubtrends/ssl
     mkdir ~/.pubtrends/search_results
+    mkdir ~/.pubtrends/ssl
+    mkdir ~/nltk_data
+    mkdir ~/gensim-data
     ```
 
 2. Start Redis
