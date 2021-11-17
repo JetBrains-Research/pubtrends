@@ -101,7 +101,7 @@ class PlotPreprocessor:
             nid = node_cs['data']['id']
             sel = df.loc[df['id'] == nid]
             # Adjust vertical axis with bokeh graph
-            node_cs['position'] = dict(x=int(sel['x'].values[0] * 10), y=int((maxy - sel['y'].values[0]) * 4))
+            node_cs['position'] = dict(x=int(sel['x'].values[0] * 10), y=int((maxy - sel['y'].values[0]) * 6))
         return cytoscape_graph
 
     @staticmethod
