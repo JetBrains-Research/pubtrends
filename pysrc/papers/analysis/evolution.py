@@ -1,10 +1,8 @@
 import logging
 
-import networkx as nx
 import numpy as np
 import pandas as pd
 
-from pysrc.papers.analysis.citations import build_cocit_grouped_df
 from pysrc.papers.analysis.graph import build_papers_graph, to_weighted_graph, sparse_graph
 from pysrc.papers.analysis.node2vec import node2vec
 from pysrc.papers.analysis.text import texts_embeddings
@@ -15,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 def topic_evolution_analysis(
         df,
-        cit_df, cocit_df, bibliographic_coupling_df, cocit_min_threshold, similarity_func,
+        cit_df, cocit_grouped_df, bibliographic_coupling_df, cocit_min_threshold, similarity_func,
         corpus_counts, corpus_tokens_embedding,
         graph_embedding_factor, text_embedding_factor,
         topics_max_number, topic_min_size,
@@ -57,7 +55,7 @@ def topic_evolution_analysis(
             cit_df_year = filter_cit_df(cit_df, ids_year)
 
             logger.debug('Use only co-citations earlier than year')
-            cocit_grouped_df_year = filter_cocit_grouped_df(cocit_df, cocit_min_threshold, ids_year)
+            cocit_grouped_df_year = filter_cocit_grouped_df(cocit_grouped_df, cocit_min_threshold, ids_year, year)
 
             logger.debug('Use bibliographic coupling earlier then year')
             bibliographic_coupling_df_year = filter_bibliographic_coupling_df(bibliographic_coupling_df, ids_year)
@@ -108,12 +106,14 @@ def filter_bibliographic_coupling_df(bibliographic_coupling_df, ids_year):
         ]
 
 
-def filter_cocit_grouped_df(cocit_df, cocit_min_threshold, ids_year):
-    cocit_df_year = cocit_df.loc[
-        (cocit_df['citing'].isin(ids_year)) & (cocit_df['cited_1'].isin(ids_year)) &
-        (cocit_df['cited_2'].isin(ids_year))]
-    cocit_grouped_df_year = build_cocit_grouped_df(cocit_df_year)
-    cocit_grouped_df_year = cocit_grouped_df_year[cocit_grouped_df_year['total'] >= cocit_min_threshold]
+def filter_cocit_grouped_df(cocit_grouped_df, cocit_min_threshold, ids_year, year):
+    total_year = np.zeros(len(cocit_grouped_df))
+    for c in cocit_grouped_df.columns:
+        if c not in ['index', 'cited_1', 'cited_2', 'total'] and int(c) <= year:
+            total_year += cocit_grouped_df[c]
+    cocit_grouped_df_year = cocit_grouped_df.loc[(cocit_grouped_df['cited_1'].isin(ids_year)) &
+                                                 (cocit_grouped_df['cited_2'].isin(ids_year)) &
+                                                 (total_year >= cocit_min_threshold)]
     return cocit_grouped_df_year
 
 

@@ -293,8 +293,9 @@ class PapersAnalyzer:
                                    current=14, task=task)
                 logger.debug('Perform topic evolution analysis and get topic descriptions')
                 self.evolution_df, self.evolution_year_range = topic_evolution_analysis(
-                    self.df, self.cit_df,
-                    self.cocit_df,
+                    self.df,
+                    self.cit_df,
+                    self.cocit_grouped_df,
                     self.bibliographic_coupling_df,
                     self.SIMILARITY_COCITATION_MIN,
                     self.similarity,
@@ -340,6 +341,8 @@ class PapersAnalyzer:
         return dict(
             df=self.df.to_json(),
             cit_df=self.cit_df.to_json(),
+            cocit_grouped_df=self.cocit_grouped_df.to_json(),
+            bibliographic_coupling_df=self.bibliographic_coupling_df.to_json(),
             kwd_df=self.kwd_df.to_json(),
             sparse_papers_graph=json_graph.node_link_data(self.sparse_papers_graph),
             top_cited_papers=self.top_cited_papers,
@@ -363,6 +366,8 @@ class PapersAnalyzer:
                 mapping[col] = col
         df = df.rename(columns=mapping)
         cit_df = pd.read_json(fields['cit_df'])
+        cocit_grouped_df = pd.read_json(fields['cocit_grouped_df'])
+        bibliographic_coupling_df = pd.read_json(fields['bibliographic_coupling_df'])
 
         # Restore topic descriptions
         kwd_df = pd.read_json(fields['kwd_df'])
@@ -382,6 +387,8 @@ class PapersAnalyzer:
         return dict(
             df=df,
             cit_df=cit_df,
+            cocit_grouped_df=cocit_grouped_df,
+            bibliographic_coupling_df=bibliographic_coupling_df,
             kwd_df=kwd_df,
             sparse_papers_graph=sparse_papers_graph,
             top_cited_papers=top_cited_papers,
@@ -400,6 +407,8 @@ class PapersAnalyzer:
         loaded = PapersAnalyzer.load(fields)
         self.df = loaded['df']
         self.cit_df = loaded['cit_df']
+        self.cocit_grouped_df = loaded['cocit_grouped_df']
+        self.bibliographic_coupling_df = loaded['bibliographic_coupling_df']
         # Used for components naming
         self.kwd_df = loaded['kwd_df']
         # Used for network visualization
