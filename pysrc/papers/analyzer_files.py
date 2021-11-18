@@ -34,7 +34,8 @@ from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.plot.plotter import Plotter, PLOT_WIDTH, SHORT_PLOT_HEIGHT, TALL_PLOT_HEIGHT
-from pysrc.papers.utils import cut_authors_list
+from pysrc.papers.utils import cut_authors_list, factors_colormap, color_to_rgb, topics_palette
+
 from pysrc.version import VERSION
 
 logger = logging.getLogger(__name__)
@@ -343,8 +344,8 @@ def plot_mesh_terms(mesh_counter, top=100, plot_width=PLOT_WIDTH, plot_height=TA
     mc_terms = mesh_counter.most_common(top)
     terms = [mc[0] for mc in mc_terms]
     numbers = [mc[1] for mc in mc_terms]
-    cmap = Plotter.factors_colormap(top)
-    colors = [Plotter.color_to_rgb(cmap(i)) for i in range(top)]
+    cmap = factors_colormap(top)
+    colors = [color_to_rgb(cmap(i)) for i in range(top)]
     source = ColumnDataSource(data=dict(terms=terms, numbers=numbers, colors=colors))
 
     p = figure(plot_width=plot_width, plot_height=plot_height,
@@ -416,8 +417,8 @@ def components_ratio_data(df):
 def plot_components_ratio(df, plot_width=PLOT_WIDTH, plot_height=SHORT_PLOT_HEIGHT):
     comps, ratios = components_ratio_data(df)
     n_comps = len(comps)
-    cmap = Plotter.factors_colormap(n_comps)
-    colors = [Plotter.color_to_rgb(cmap(i)) for i in range(n_comps)]
+    cmap = factors_colormap(n_comps)
+    colors = [color_to_rgb(cmap(i)) for i in range(n_comps)]
     source = ColumnDataSource(data=dict(comps=comps, ratios=ratios, colors=colors))
 
     p = figure(plot_width=plot_width, plot_height=plot_height,
@@ -534,7 +535,7 @@ def save_sim_papers_graph_interactive(gs, df, clusters_description, mesh_cluster
         text = f.read()
 
     html = jinja2.Environment(loader=jinja2.BaseLoader()).from_string(text).render(
-        topics_palette_json=json.dumps(Plotter.topics_palette(df)),
+        topics_palette_json=json.dumps(topics_palette(df)),
         topics_tags_json=json.dumps(topics_tags),
         topics_meshs_json=json.dumps(topics_meshs),
         graph_cytoscape_json=json.dumps(graph_cs)
