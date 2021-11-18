@@ -247,10 +247,16 @@ Then launch web-service or use jupyter notebook for development.
     celery -A pysrc.celery.tasks worker -c 1 --loglevel=debug
     ```
 
-6. Start flask server at localhost:5000/
+6. Start flask server at http://localhost:5000/
     ```
     python -m pysrc.app.app
     ```    
+
+7. Start service for text embeddings based on pretrained fasttext model at http://localhost:8081/
+    ```
+    python -m pysrc.fasttext.fasttext_app
+    ```    
+
 
 ### Jupyter notebook
 Notebooks are located under the `/notebooks` folder. Please configure `PYTHONPATH` before using jupyter.

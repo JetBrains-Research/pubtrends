@@ -3,9 +3,9 @@ import logging
 import os
 import threading
 
-from flask import Flask, render_template_string, request
+from flask import Flask, request
 
-from pysrc.papers.analysis.text import PRETRAINED_MODEL_CACHE_LOCK, PRETRAINED_MODEL_CACHE, _tokens_embeddings_fasttext
+from pysrc.fasttext.fasttext import PRETRAINED_MODEL_CACHE, PRETRAINED_MODEL_CACHE_LOCK, tokens_embeddings_fasttext
 from pysrc.papers.config import PubtrendsConfig
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
@@ -14,8 +14,6 @@ if PUBTRENDS_CONFIG.feature_review_enabled:
     pass
 else:
     REVIEW_ANALYSIS_TYPE = 'not_available'
-
-PORT = 8081
 
 fasttext_app = Flask(__name__)
 
@@ -27,7 +25,7 @@ fasttext_app = Flask(__name__)
 LOG_PATHS = ['/logs', os.path.expanduser('~/.pubtrends/logs')]
 for p in LOG_PATHS:
     if os.path.isdir(p):
-        logfile = os.path.join(p, 'fasttext_app.py')
+        logfile = os.path.join(p, 'fasttext_app.log')
         break
 else:
     raise RuntimeError('Failed to configure main log file')
@@ -47,11 +45,11 @@ if __name__ != '__main__':
 logger = fasttext_app.logger
 
 
-def init():
-    logger.debug('Prepare embeddings pretrained model')
+def init_fasttext_model():
+    logger.info('Prepare embeddings pretrained model')
     # noinspection PyUnusedLocal
     loaded_model = PRETRAINED_MODEL_CACHE.download_and_load_model
-    logger.debug('Model is ready')
+    logger.info('Model is ready')
     fasttext_app.config['LOADED'] = True
 
 
@@ -68,9 +66,7 @@ def initialized():
         if fasttext_app.config.get('LOADING', False):
             return json.dumps(False)
         fasttext_app.config['LOADING'] = True
-        t = threading.Thread(target=init())
-        t.setDaemon(True)
-        t.start()
+        threading.Thread(target=init_fasttext_model, daemon=True).start()
         return json.dumps(False)
     finally:
         PRETRAINED_MODEL_CACHE_LOCK.release()
@@ -78,19 +74,16 @@ def initialized():
 
 @fasttext_app.route('/fasttext', methods=['GET'])
 def fasttext():
-    # Ensure initialized
-    if initialized() != 'true':
-        return render_template_string('Not initialized yet'), 500
-
+    # Please ensure that already initialized, otherwise model loading may take some time
     corpus_tokens = request.get_json()
-    embeddings = _tokens_embeddings_fasttext(corpus_tokens)
-    # Return on a JSON format
+    logger.info('Computing embeddings')
+    embeddings = tokens_embeddings_fasttext(corpus_tokens)
+    logger.info(f'Return embeddings of shape {embeddings.shape} in JSON format')
     return json.dumps(dict(embeddings=embeddings.reshape(-1).tolist()))
 
 
 @fasttext_app.route('/', methods=['GET'])
 def index():
-    logger.debug('/')
     return 'Words embedding with fasttext'
 
 
@@ -101,4 +94,4 @@ def get_app():
 
 # With debug=True, Flask server will auto-reload on changes
 if __name__ == '__main__':
-    fasttext_app.run(host='0.0.0.0', debug=False, port=PORT)
+    fasttext_app.run(host='0.0.0.0', debug=True, port=8081)
