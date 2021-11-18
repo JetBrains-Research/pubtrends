@@ -6,6 +6,7 @@ from threading import Lock
 import gensim.downloader as api
 import nltk
 import numpy as np
+import requests
 from gensim.models import Word2Vec
 from lazy import lazy
 from nltk import word_tokenize, WordNetLemmatizer, SnowballStemmer
@@ -163,19 +164,32 @@ def tokens_embeddings(corpus, corpus_tokens, test=False):
     if test:
         logger.debug(f'Compute words embeddings trained word2vec')
         return train_word2vec(corpus, corpus_tokens, test=test)
+
+    # Don't use model as is, since each celery process will load it's own copy.
+    # Shared model is available via additional service with single model.
+    logger.debug(f'Fetch embeddings from microservice')
+    r = requests.request(
+        url='http://0.0.0.0:8081/fasttext',
+        method='GET',
+        json=corpus_tokens,
+        headers={'Accept': 'application/json'}
+    )
+    if r.status_code == 200:
+        return np.array(r.json()['embeddings']).reshape(len(corpus_tokens), 300)
     else:
-        try:
-            PRETRAINED_MODEL_CACHE_LOCK.acquire()
-            logger.debug('Compute words embeddings using pretrained model')
-            model = PRETRAINED_MODEL_CACHE.download_and_load_model
-            logger.debug('Retrieve word embeddings')
-            return np.array([
-                model.word_vec(t) if model.has_index_for(t)
-                else np.zeros(model.vector_size)  # Support out-of-dictionary missing embeddings
-                for t in corpus_tokens
-            ])
-        finally:
-            PRETRAINED_MODEL_CACHE_LOCK.release()
+        logger.debug(f'Wrong response code {r.status_code}, fallback to in-house word2vec')
+        return train_word2vec(corpus, corpus_tokens, test=test)
+
+
+def _tokens_embeddings_fasttext(corpus_tokens):
+    logger.debug('Compute words embeddings using pretrained fasttext model')
+    model = PRETRAINED_MODEL_CACHE.download_and_load_model
+    logger.debug('Retrieve word embeddings')
+    return np.array([
+        model.get_vector(t) if model.has_index_for(t)
+        else np.zeros(model.vector_size)  # Support out-of-dictionary missing embeddings
+        for t in corpus_tokens
+    ])
 
 
 def train_word2vec(corpus, corpus_tokens, vector_size=64, test=False):
