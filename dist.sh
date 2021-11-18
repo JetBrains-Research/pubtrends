@@ -46,7 +46,8 @@ if [[ ! -z "${GA}" ]]; then
   gtag('config', '$GA');\
 </script>"
 
-  for F in $(find "${PTV}"/pysrc -name "*.html"); do
+  # Ignore init.html file and admin/ files
+  for F in $(find "${PTV}"/pysrc -name "*.html" | grep -v 'init.html' | grep - v 'admin/'); do
     echo "Save version to $F"
     sed "s#{{ version }}#${FULL_VERSION}#" -i $F
     if [[ -z "$(echo $F | grep 'admin')" ]]; then
