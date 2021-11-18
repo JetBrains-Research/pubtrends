@@ -27,16 +27,18 @@ class TestTopicEvolution(unittest.TestCase):
         ('7 steps', 2, False, [1975, 1973, 1971, 1969, 1967, 1965, 1963])
     ])
     def test_topic_evolution(self, name, step, expect_none, expected_year_range):
-        evolution_df, year_range = topic_evolution_analysis(self.analyzer.df, self.analyzer.cit_df,
-                                                            self.analyzer.cocit_df,
-                                                            self.analyzer.bibliographic_coupling_df,
-                                                            PapersAnalyzer.SIMILARITY_COCITATION_MIN,
-                                                            PapersAnalyzer.similarity, self.analyzer.corpus_counts,
-                                                            self.analyzer.corpus_tokens_embedding,
-                                                            PapersAnalyzer.GRAPH_EMBEDDINGS_FACTOR,
-                                                            PapersAnalyzer.TEXT_EMBEDDINGS_FACTOR,
-                                                            20, 20,
-                                                            evolution_step=step)
+        evolution_df, year_range = topic_evolution_analysis(
+            self.analyzer.df, self.analyzer.cit_df,
+            self.analyzer.cocit_grouped_df,
+            self.analyzer.bibliographic_coupling_df,
+            PapersAnalyzer.SIMILARITY_COCITATION_MIN,
+            PapersAnalyzer.similarity, self.analyzer.corpus_counts,
+            self.analyzer.corpus_tokens_embedding,
+            PapersAnalyzer.GRAPH_EMBEDDINGS_FACTOR,
+            PapersAnalyzer.TEXT_EMBEDDINGS_FACTOR,
+            20, 20,
+            evolution_step=step
+        )
 
         if expect_none:
             self.assertIsNone(evolution_df, msg=f'Evolution DataFrame is not None when step is too large {name}')
@@ -49,16 +51,18 @@ class TestTopicEvolution(unittest.TestCase):
             self.assertIsNone(year_range, msg=f'Year range is not None when step is too large {name}')
 
     def test_topic_evolution_description(self):
-        evolution_df, year_range = topic_evolution_analysis(self.analyzer.df, self.analyzer.cit_df,
-                                                            self.analyzer.cocit_df,
-                                                            self.analyzer.bibliographic_coupling_df,
-                                                            PapersAnalyzer.SIMILARITY_COCITATION_MIN,
-                                                            PapersAnalyzer.similarity, self.analyzer.corpus_counts,
-                                                            self.analyzer.corpus_tokens_embedding,
-                                                            PapersAnalyzer.GRAPH_EMBEDDINGS_FACTOR,
-                                                            PapersAnalyzer.TEXT_EMBEDDINGS_FACTOR,
-                                                            20, 20,
-                                                            evolution_step=5)
+        evolution_df, year_range = topic_evolution_analysis(
+            self.analyzer.df, self.analyzer.cit_df,
+            self.analyzer.cocit_grouped_df,
+            self.analyzer.bibliographic_coupling_df,
+            PapersAnalyzer.SIMILARITY_COCITATION_MIN,
+            PapersAnalyzer.similarity, self.analyzer.corpus_counts,
+            self.analyzer.corpus_tokens_embedding,
+            PapersAnalyzer.GRAPH_EMBEDDINGS_FACTOR,
+            PapersAnalyzer.TEXT_EMBEDDINGS_FACTOR,
+            20, 20,
+            evolution_step=5
+        )
 
         evolution_kwds = topic_evolution_descriptions(
             self.analyzer.df, evolution_df, year_range,
@@ -76,8 +80,8 @@ class TestTopicEvolution(unittest.TestCase):
                 ('abstract', 0.2222222222222222), ('term5', 0.2222222222222222), ('interesting', 0.1111111111111111)],
             -1: []},
             1975: {
-            0: [('article', 0.5), ('term1', 0.3), ('term2', 0.3), ('term3', 0.3), ('term4', 0.3), ('term5', 0.3),
-                ('paper', 0.2), ('abstract', 0.2), ('interesting', 0.1), ('breakthrough', 0.1)], -1: []}}
+                0: [('article', 0.5), ('term1', 0.3), ('term2', 0.3), ('term3', 0.3), ('term4', 0.3), ('term5', 0.3),
+                    ('paper', 0.2), ('abstract', 0.2), ('interesting', 0.1), ('breakthrough', 0.1)], -1: []}}
         self.assertEquals(expected_topics_kwds, evolution_kwds)
 
 

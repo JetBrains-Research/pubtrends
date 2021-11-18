@@ -15,7 +15,7 @@ from pysrc.papers.analysis.graph import build_papers_graph, \
 from pysrc.papers.analysis.metadata import popular_authors, popular_journals
 from pysrc.papers.analysis.node2vec import node2vec
 from pysrc.papers.analysis.numbers import extract_numbers
-from pysrc.papers.analysis.text import texts_embeddings, vectorize_corpus, word2vec_tokens
+from pysrc.papers.analysis.text import texts_embeddings, vectorize_corpus, tokens_embeddings
 from pysrc.papers.analysis.topics import get_topics_description, cluster_and_sort
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
@@ -63,7 +63,7 @@ class PapersAnalyzer:
     # Terms with higher frequency will be ignored, remove abundant words
     VECTOR_MAX_DF = 0.8
 
-    PCA_COMPONENTS = 15
+    PCA_COMPONENTS = 30
 
     # Configure number and size of topics
     TOPICS_NUMBER_SMALL = dict(max_number=10, min_size=50)
@@ -159,7 +159,7 @@ class PapersAnalyzer:
         )
         if PapersAnalyzer.TEXT_EMBEDDINGS_FACTOR != 0:
             logger.debug('Analyzing tokens embeddings')
-            self.corpus_tokens_embedding = word2vec_tokens(
+            self.corpus_tokens_embedding = tokens_embeddings(
                 self.corpus, self.corpus_tokens, test=test
             )
             logger.debug('Analyzing texts embeddings')
@@ -293,8 +293,9 @@ class PapersAnalyzer:
                                    current=14, task=task)
                 logger.debug('Perform topic evolution analysis and get topic descriptions')
                 self.evolution_df, self.evolution_year_range = topic_evolution_analysis(
-                    self.df, self.cit_df,
-                    self.cocit_df,
+                    self.df,
+                    self.cit_df,
+                    self.cocit_grouped_df,
                     self.bibliographic_coupling_df,
                     self.SIMILARITY_COCITATION_MIN,
                     self.similarity,
@@ -340,6 +341,8 @@ class PapersAnalyzer:
         return dict(
             df=self.df.to_json(),
             cit_df=self.cit_df.to_json(),
+            cocit_grouped_df=self.cocit_grouped_df.to_json(),
+            bibliographic_coupling_df=self.bibliographic_coupling_df.to_json(),
             kwd_df=self.kwd_df.to_json(),
             sparse_papers_graph=json_graph.node_link_data(self.sparse_papers_graph),
             top_cited_papers=self.top_cited_papers,
@@ -363,6 +366,16 @@ class PapersAnalyzer:
                 mapping[col] = col
         df = df.rename(columns=mapping)
         cit_df = pd.read_json(fields['cit_df'])
+        cit_df['id_in'] = cit_df['id_in'].astype(str)
+        cit_df['id_out'] = cit_df['id_out'].astype(str)
+
+        cocit_grouped_df = pd.read_json(fields['cocit_grouped_df'])
+        cocit_grouped_df['cited_1'] = cocit_grouped_df['cited_1'].astype(str)
+        cocit_grouped_df['cited_2'] = cocit_grouped_df['cited_2'].astype(str)
+
+        bibliographic_coupling_df = pd.read_json(fields['bibliographic_coupling_df'])
+        bibliographic_coupling_df['citing_1'] = bibliographic_coupling_df['citing_1'].astype(str)
+        bibliographic_coupling_df['citing_2'] = bibliographic_coupling_df['citing_2'].astype(str)
 
         # Restore topic descriptions
         kwd_df = pd.read_json(fields['kwd_df'])
@@ -382,6 +395,8 @@ class PapersAnalyzer:
         return dict(
             df=df,
             cit_df=cit_df,
+            cocit_grouped_df=cocit_grouped_df,
+            bibliographic_coupling_df=bibliographic_coupling_df,
             kwd_df=kwd_df,
             sparse_papers_graph=sparse_papers_graph,
             top_cited_papers=top_cited_papers,
@@ -400,6 +415,8 @@ class PapersAnalyzer:
         loaded = PapersAnalyzer.load(fields)
         self.df = loaded['df']
         self.cit_df = loaded['cit_df']
+        self.cocit_grouped_df = loaded['cocit_grouped_df']
+        self.bibliographic_coupling_df = loaded['bibliographic_coupling_df']
         # Used for components naming
         self.kwd_df = loaded['kwd_df']
         # Used for network visualization

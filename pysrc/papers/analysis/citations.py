@@ -79,6 +79,13 @@ def build_cocit_grouped_df(cocit_df):
     cocit_grouped_df = cocit_grouped_df.replace(np.nan, 0)
     cocit_grouped_df['total'] = cocit_grouped_df.iloc[:, 2:].sum(axis=1).astype(int)
     cocit_grouped_df = cocit_grouped_df.sort_values(by='total', ascending=False)
+    # Cleanup columns after grouping
+    cocit_grouped_df.reset_index(inplace=True)
+    cocit_grouped_df.columns = [a if b == '' else b for a, b in cocit_grouped_df.columns.values.tolist()]
+    cocit_grouped_df.drop('index', axis='columns', inplace=True)
+    for c in cocit_grouped_df.columns:
+        if c not in ['index', 'cited_1', 'cited_2', 'total']:
+            cocit_grouped_df[c] = cocit_grouped_df[c].astype(int)
 
     return cocit_grouped_df
 

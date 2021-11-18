@@ -8,15 +8,16 @@ import tempfile
 import time
 from urllib.parse import quote
 
+import requests
 from celery.result import AsyncResult
 from flask import Flask, url_for, redirect, render_template, request, render_template_string, \
     send_from_directory, send_file
 
 from pysrc.app.admin.admin import configure_admin_functions
+from pysrc.app.messages import SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, SOMETHING_WENT_WRONG_PAPER, \
+    SOMETHING_WENT_WRONG_TOPIC, SERVICE_LOADING_NLP_MODELS, SERVICE_LOADING_PREDEFINED_EXAMPLES
 from pysrc.app.predefined import get_predefined_jobs, save_predefined, load_predefined_viz_log, \
-    load_predefined_or_result_data
-from pysrc.app.utils import log_request, MAX_QUERY_LENGTH, SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, \
-    SOMETHING_WENT_WRONG_PAPER, SOMETHING_WENT_WRONG_TOPIC
+    load_predefined_or_result_data, _example_by_jobid
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.celery.tasks_cache import get_or_cancel_task
 from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, analyze_id_list, \
@@ -27,7 +28,7 @@ from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
-from pysrc.papers.plot.plotter import Plotter, TOPIC_KEYWORDS
+from pysrc.papers.plot.plotter import TOPIC_KEYWORDS
 from pysrc.papers.plot.plotter_paper import prepare_paper_data
 from pysrc.papers.utils import trim, IDS_ANALYSIS_TYPE, PAPER_ANALYSIS_TYPE, human_readable_size, topics_palette
 from pysrc.version import VERSION
@@ -98,9 +99,20 @@ def static_from_root():
 
 PREDEFINED_JOBS = get_predefined_jobs(PUBTRENDS_CONFIG)
 
+MAX_QUERY_LENGTH = 60
+
+
+def log_request(r):
+    return f'addr:{r.remote_addr} args:{json.dumps(r.args)}'
+
 
 @app.route('/')
 def index():
+    if not is_fasttext_endpoint_ready():
+        return render_template('init.html', version=VERSION, message=SERVICE_LOADING_NLP_MODELS)
+    if not are_predefined_tasks_ready():
+        return render_template('init.html', version=VERSION, message=SERVICE_LOADING_PREDEFINED_EXAMPLES)
+
     search_example_message = ''
     search_example_source = ''
     search_example_terms = []
@@ -610,6 +622,65 @@ def export_results():
     except Exception as e:
         logger.exception(f'/export_results exception {e}')
         return render_template_string(ERROR_OCCURRED), 500
+
+
+#########################
+# Loading functionality #
+#########################
+
+
+def are_predefined_tasks_ready():
+    """ Checks if all the precomputed examples are available and gensim fasttext model is loaded """
+    if len(PREDEFINED_JOBS) == 0:
+        return True
+    if app.config.get('PREDEFINED_TASKS_READY', False):
+        return True
+    ready = True
+    inspect = pubtrends_celery.control.inspect()
+    active_jobs = [j['id'] for j in list(inspect.active().items())[0][1]]
+    scheduled_jobs = [j['id'] for j in list(inspect.reserved().items())[0][1]]
+
+    for source, predefine_info in PREDEFINED_JOBS.items():
+        for query, query_hash in predefine_info:
+            logger.info(f'Check predefined search for source={source} query={query}')
+            jobid = f'predefined_{query_hash}'
+            # Check celery queue
+            if jobid in active_jobs or jobid in scheduled_jobs:
+                ready = False
+                continue
+            if load_predefined_or_result_data(source, jobid, PREDEFINED_JOBS, pubtrends_celery) is None:
+                query, sort, limit = _example_by_jobid(source, jobid, PREDEFINED_JOBS)
+                job = AsyncResult(jobid, app=pubtrends_celery)
+                if job and job.state == 'SUCCESS':
+                    continue
+                logger.info(f'No job or out-of-date job for source={source} query={query}, launch it')
+                expand = 20 if source == 'Pubmed' else 0
+                analyze_search_terms.apply_async(
+                    args=[source, query, sort, int(limit), False, expand / 100, 'medium', app.config['TESTING']],
+                    task_id=jobid
+                )
+                ready = False
+    if ready:
+        app.config['PREDEFINED_TASKS_READY'] = True
+    return ready
+
+
+# Launch with Docker address or locally
+FASTTEXT_URL = os.getenv('FASTTEXT_URL', 'http://localhost:8081')
+
+
+def is_fasttext_endpoint_ready():
+    logger.debug(f'Check fasttext endpoint is ready')
+    try:
+        r = requests.request(url=FASTTEXT_URL, method='GET')
+        if r.status_code != 200:
+            return False
+        r = requests.request(url=f'{FASTTEXT_URL}/initialized', method='GET', headers={'Accept': 'application/json'})
+        if r.status_code != 200 or r.json() is not True:
+            return False
+        return True
+    except:
+        return False
 
 
 ##########################

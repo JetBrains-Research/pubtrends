@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pubtrends initialization</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
+          crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css"
+          integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt"
+          crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT"
+            crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+            integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+            crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+            integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+            crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1"/>
+    <!--            <link rel="stylesheet" href="../static/style.css"/>-->
+    <style>
+        .progress-bar.indeterminate {
+            position: relative;
+            animation: progress-indeterminate 3s linear infinite;
+        }
+
+        @keyframes progress-indeterminate {
+            from { left: -25%; width: 25%; }
+            to { left: 100%; width: 25%;}
+        }
+    </style>
+    <script>
+        "use strict";
+
+        const TIMEOUT = 20000; // 20 seconds
+
+        $(function () {
+            setTimeout(function () { window.location.replace("/"); }, TIMEOUT);
+        });
+    </script>
+</head>
+<body>
+
+<div class="container">
+    <nav class="navbar navbar-light bg-light d-flex">
+        <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
+    </nav>
+    <div class="progress" style="position: relative;">
+        <div class="progress-bar progress-bar-striped indeterminate">
+        </div>
+    </div>
+    <div class="h6 mt-3 ml-3" id="status">{{ message }}</div>
+</div>
+<footer>
+    <p>version {{ version }}<br/>
+        &copy; 2021 <a href="https://research.jetbrains.org/groups/biolabs"
+                       title="JetBrains Research BioLabs"
+                       target="_blank">JetBrains Research</a></p>
+</footer>
+</body>
+</html>
