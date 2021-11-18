@@ -182,7 +182,7 @@ class AnalyzerFiles(PapersAnalyzer):
         pca = PCA(n_components=min(len(papers_embeddings), PapersAnalyzer.PCA_COMPONENTS))
         t = StandardScaler().fit_transform(papers_embeddings)
         self.pca_coords = pca.fit_transform(t)
-        logger.debug('Explained variation', int(np.sum(pca.explained_variance_ratio_) * 100), '%')
+        logger.debug(f'Explained variation {int(np.sum(pca.explained_variance_ratio_) * 100)} %')
 
         if len(self.df) > 1:
             logger.debug('Computing PCA projection')
