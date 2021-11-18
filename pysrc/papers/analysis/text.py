@@ -156,17 +156,21 @@ def tokens_embeddings(corpus, corpus_tokens, test=False):
     # Don't use model as is, since each celery process will load it's own copy.
     # Shared model is available via additional service with single model.
     logger.debug(f'Fetch embeddings from microservice')
-    r = requests.request(
-        url=f'{FASTTEXT_URL}/fasttext',
-        method='GET',
-        json=corpus_tokens,
-        headers={'Accept': 'application/json'}
-    )
-    if r.status_code == 200:
-        return np.array(r.json()['embeddings']).reshape(len(corpus_tokens), 300)
-    else:
-        logger.debug(f'Wrong response code {r.status_code}, fallback to in-house word2vec')
-        return train_word2vec(corpus, corpus_tokens, test=test)
+    try:
+        r = requests.request(
+            url=f'{FASTTEXT_URL}/fasttext',
+            method='GET',
+            json=corpus_tokens,
+            headers={'Accept': 'application/json'}
+        )
+        if r.status_code == 200:
+            return np.array(r.json()['embeddings']).reshape(len(corpus_tokens), 300)
+        else:
+            logger.debug(f'Wrong response code {r.status_code}')
+    except Exception as e:
+        logger.debug(f'Failed to fetch embeddings ${e.message}')
+    logger.debug('Fallback to in-house word2vec')
+    return train_word2vec(corpus, corpus_tokens, test=test)
 
 
 def train_word2vec(corpus, corpus_tokens, vector_size=64, test=False):
