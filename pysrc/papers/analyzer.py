@@ -63,7 +63,7 @@ class PapersAnalyzer:
     # Terms with higher frequency will be ignored, remove abundant words
     VECTOR_MAX_DF = 0.8
 
-    PCA_COMPONENTS = 15
+    PCA_COMPONENTS = 30
 
     # Configure number and size of topics
     TOPICS_NUMBER_SMALL = dict(max_number=10, min_size=50)
