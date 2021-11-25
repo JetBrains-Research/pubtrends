@@ -58,8 +58,8 @@ open class SemanticScholarPostgresWriter(
                     """
             )
             exec(
-                """                    
-                    create index sspublications_doi_index on sspublications using hash (doi);                    
+                """
+                    create index if not exists sspublications_doi_index on sspublications using hash (doi);                   
                     """
             )
         }
