@@ -117,7 +117,7 @@ class ArchiveParser(
         dbWriter.store(currentBatch)
         currentBatch.clear()
         batchIndex++
-        val progress = 10000 * batchIndex / batchSize
+        val progress = 250000 * batchIndex / batchSize
         logger.info("Finished batch $batchIndex adding ($archiveFileGz) $progress%")
     }
 
