@@ -43,7 +43,7 @@ class SemanticScholarPostgresWriter(PostgresConnector):
                     ALTER TABLE SSPublications ADD COLUMN IF NOT EXISTS tsv TSVECTOR;                    
                     create index if not exists sspublications_crc32id_index on sspublications (crc32id);                    
                     create index if not exists SSPublications_tsv on SSPublications using gin(tsv);
-                    create index sspublications_doi_index on sspublications using hash (doi);
+                    create index if not exists sspublications_doi_index on sspublications using hash (doi);
                     '''
         query_drop_matview = '''
                     drop materialized view if exists matview_sscitations;
