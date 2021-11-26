@@ -167,36 +167,36 @@ tee -a crontab_update.log
 ### Semantic Scholar
 
 Download Sample from [Semantic Scholar](https://www.semanticscholar.org/) or full archive. See Open Corpus.<br>
-Instructions are for the corpus 2021-03-01. \
+Instructions are for the corpus 2021-11-01. \
 Replace `<PATH_TO_PUBTRENDS.JAR>` with actual path to Jar file.
 
 * Linux & Mac OS
 
    ```
-   wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2021-03-01/manifest.txt
+   wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2021-11-01/manifest.txt
    echo "" > complete.txt
    cat manifest.txt | grep corpus | while read -r file; do 
       if [[ -z $(grep "$file" complete.txt) ]]; then
          echo "Processing $file"
-         wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2021-03-01/$file;
-         java -cp <PATH_TO_PUBTRENDS.JAR> org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --fillDatabase $(pwd)/$file
+         wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2021-11-01/$file;
+         java -cp pubtrends-0.20.1234.jar org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --fillDatabase $(pwd)/$file
          rm $file;
          echo "$file" >> complete.txt
       fi;
    done
-   java -cp <PATH_TO_PUBTRENDS.JAR> org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --finish
+   java -cp pubtrends-0.20.1234.jar org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --finish
    ```
 
 * Windows 10 PowerShell
 
    ```
-   curl.exe -o .\manifest.txt https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2021-03-01/manifest.txt 
+   curl.exe -o .\manifest.txt https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2021-11-01/manifest.txt 
    echo "" > .\complete.txt
    foreach ($file in Get-Content .\manifest.txt) {
        $sel = Select-String -Path .\complete.txt -Pattern $file
        if ($sel -eq $null) {
           echo "Processing $file"
-          curl.exe -o .\$file https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2021-03-01$file
+          curl.exe -o .\$file https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2021-11-01$file
           java -cp <PATH_TO_PUBTRENDS.JAR> org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --fillDatabase .\$file
           del ./$file
           echo $file >> .\complete.txt
@@ -313,7 +313,7 @@ Please ensure that you have configured and prepared the database(s).
 
     ```
     docker run --rm  --name pubtrends-postgres -p 5432:5432 \
-        --shm-size=4g \
+        --shm-size=8g \
         -e POSTGRES_USER=biolabs -e POSTGRES_PASSWORD=mysecretpassword \
         -e POSTGRES_DB=pubtrends \
         -v ~/postgres/:/var/lib/postgresql/data \
