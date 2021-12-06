@@ -16,7 +16,7 @@ from flask import Flask, url_for, redirect, render_template, request, render_tem
 from pysrc.app.admin.admin import configure_admin_functions
 from pysrc.app.messages import SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, SOMETHING_WENT_WRONG_PAPER, \
     SOMETHING_WENT_WRONG_TOPIC, SERVICE_LOADING_NLP_MODELS, SERVICE_LOADING_PREDEFINED_EXAMPLES
-from pysrc.app.predefined import get_predefined_jobs, save_predefined, load_predefined_viz_log, \
+from pysrc.app.predefined import get_predefined_jobs, load_predefined_viz_log, \
     load_predefined_or_result_data, _example_by_jobid
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.celery.tasks_cache import get_or_cancel_task
@@ -385,20 +385,7 @@ def result():
     try:
         if jobid and query and source and limit is not None and sort is not None:
             job = AsyncResult(jobid, app=pubtrends_celery)
-            if job and job.state == 'SUCCESS':
-                viz, data, log = job.result
-                save_predefined(viz, data, log, source, jobid, PREDEFINED_JOBS)
-                logger.info(f'/result success {log_request(request)}')
-                return render_template('result.html',
-                                       query=trim(query, MAX_QUERY_LENGTH),
-                                       source=source,
-                                       limit=limit,
-                                       sort=sort,
-                                       max_graph_size=PUBTRENDS_CONFIG.max_graph_size,
-                                       version=VERSION,
-                                       log=log,
-                                       **viz)
-            viz_log = load_predefined_viz_log(source, jobid, PREDEFINED_JOBS)
+            viz_log = load_predefined_viz_log(source, jobid, PREDEFINED_JOBS, pubtrends_celery)
             if viz_log is not None:
                 viz, log = viz_log
                 return render_template('result.html',
@@ -650,9 +637,6 @@ def are_predefined_tasks_ready():
                 continue
             if load_predefined_or_result_data(source, jobid, PREDEFINED_JOBS, pubtrends_celery) is None:
                 query, sort, limit = _example_by_jobid(source, jobid, PREDEFINED_JOBS)
-                job = AsyncResult(jobid, app=pubtrends_celery)
-                if job and job.state == 'SUCCESS':
-                    continue
                 logger.info(f'No job or out-of-date job for source={source} query={query}, launch it')
                 expand = 20 if source == 'Pubmed' else 0
                 analyze_search_terms.apply_async(

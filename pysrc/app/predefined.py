@@ -33,7 +33,7 @@ def get_predefined_jobs(config):
     return result
 
 
-def save_predefined(viz, data, log, source, jobid, predefined_jobs):
+def _save_predefined(viz, data, log, source, jobid, predefined_jobs):
     if jobid.startswith('predefined_'):
         query, sort, limit = _example_by_jobid(source, jobid, predefined_jobs)
         logger.info(f'Saving predefined search for source={source} query={query} sort={sort} limit={limit}')
@@ -59,7 +59,7 @@ def save_predefined(viz, data, log, source, jobid, predefined_jobs):
             PREDEFINED_LOCK.release()
 
 
-def load_predefined_viz_log(source, jobid, predefined_jobs):
+def load_predefined_viz_log(source, jobid, predefined_jobs, app):
     if jobid.startswith('predefined_'):
         query, sort, limit = _example_by_jobid(source, jobid, predefined_jobs)
         logger.info(f'Trying to load predefined viz, log for source={source} query={query} sort={sort} limit={limit}')
@@ -77,6 +77,11 @@ def load_predefined_viz_log(source, jobid, predefined_jobs):
                 return viz, log
         finally:
             PREDEFINED_LOCK.release()
+    job = AsyncResult(jobid, app=app)
+    if job and job.state == 'SUCCESS':
+        viz, data, log = job.result
+        _save_predefined(viz, data, log, source, jobid, predefined_jobs)
+        return viz, log
     return None
 
 
@@ -97,6 +102,7 @@ def load_predefined_or_result_data(source, jobid, predefined_jobs, app):
     job = AsyncResult(jobid, app=app)
     if job and job.state == 'SUCCESS':
         viz, data, log = job.result
+        _save_predefined(viz, data, log, source, jobid, predefined_jobs)
         return data
     return None
 
