@@ -173,18 +173,20 @@ Replace `<PATH_TO_PUBTRENDS.JAR>` with actual path to Jar file.
 * Linux & Mac OS
 
    ```
+   # Fail on errors
+   set -euox pipefail 
    wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2021-11-01/manifest.txt
    echo "" > complete.txt
    cat manifest.txt | grep corpus | while read -r file; do 
       if [[ -z $(grep "$file" complete.txt) ]]; then
          echo "Processing $file"
          wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2021-11-01/$file;
-         java -cp pubtrends-0.20.1234.jar org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --fillDatabase $(pwd)/$file
+         java -cp <PUBTRENDS.JAR> org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --fillDatabase $(pwd)/$file
          rm $file;
          echo "$file" >> complete.txt
       fi;
    done
-   java -cp pubtrends-0.20.1234.jar org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --finish
+   java -cp <PUBTRENDS.JAR> org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --finish
    ```
 
 * Windows 10 PowerShell
@@ -196,13 +198,13 @@ Replace `<PATH_TO_PUBTRENDS.JAR>` with actual path to Jar file.
        $sel = Select-String -Path .\complete.txt -Pattern $file
        if ($sel -eq $null) {
           echo "Processing $file"
-          curl.exe -o .\$file https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2021-11-01$file
-          java -cp <PATH_TO_PUBTRENDS.JAR> org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --fillDatabase .\$file
+          curl.exe -o .\$file https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2021-11-01/$file
+          java -cp <PUBTRENDS.JAR> org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --fillDatabase .\$file
           del ./$file
           echo $file >> .\complete.txt
        }
    }
-   java -cp <PATH_TO_PUBTRENDS.JAR> org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --finish
+   java -cp <PUBTRENDS.JAR> org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --finish
    ```
 
 ## Development
