@@ -384,9 +384,9 @@ def result():
     topics = request.args.get('topics')
     try:
         if jobid and query and source and limit is not None and sort is not None:
-            job = AsyncResult(jobid, app=pubtrends_celery)
             viz_log = load_predefined_viz_log(source, jobid, PREDEFINED_JOBS, pubtrends_celery)
             if viz_log is not None:
+                logger.info(f'/result success {log_request(request)}')
                 viz, log = viz_log
                 return render_template('result.html',
                                        query=trim(query, MAX_QUERY_LENGTH),
