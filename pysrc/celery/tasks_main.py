@@ -141,7 +141,7 @@ def _analyze_id_list(analyzer, source,
 
 
 @pubtrends_celery.task(name='analyze_search_paper')
-def analyze_search_paper(source, pid, key, value, topics, test=False):
+def analyze_search_paper(source, pid, key, value, limit, topics, test=False):
     if key is not None and key != 'doi' and is_doi(preprocess_doi(value)):
         raise SearchError(DOI_WRONG_SEARCH)
     config = PubtrendsConfig(test=test)
@@ -156,8 +156,8 @@ def analyze_search_paper(source, pid, key, value, topics, test=False):
         if len(result) == 1:
             return _analyze_id_list(
                 analyzer,
-                source, ids=result, query=f'Paper {key}={value}', analysis_type=PAPER_ANALYSIS_TYPE, limit='',
-                topics=topics,
+                source, ids=result, query=f'Paper {key}={value}', analysis_type=PAPER_ANALYSIS_TYPE,
+                limit=limit, topics=topics,
                 test=test, task=current_task
             )
         elif len(result) == 0:

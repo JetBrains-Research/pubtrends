@@ -211,10 +211,11 @@ def search_paper():
             source = data.get('source')  # Pubmed or Semantic Scholar
             key = data.get('key')
             value = data.get('value')
+            limit = data.get('limit')
             topics = data.get('topics')
-            job = analyze_search_paper.delay(source, None, key, value, topics, test=app.config['TESTING'])
+            job = analyze_search_paper.delay(source, None, key, value, limit, topics, test=app.config['TESTING'])
             return redirect(url_for('.process', query=f'Paper {key}={value}', analysis_type=PAPER_ANALYSIS_TYPE,
-                                    key=key, value=value, source=source, topics=topics, jobid=job.id))
+                                    key=key, value=value, source=source, limit=limit, topics=topics, jobid=job.id))
         logger.error(f'/search_paper error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
     except Exception as e:
@@ -277,10 +278,11 @@ def process():
             logger.info(f'/process paper analysis {log_request(request)}')
             key = request.args.get('key')
             value = request.args.get('value')
+            limit = request.args.get('limit')
             return render_template('process.html',
                                    redirect_page='paper',  # redirect in case of success
-                                   redirect_args=dict(source=source, jobid=jobid, limit='', sort='', key=key,
-                                                      value=value, topics=topics),
+                                   redirect_args=dict(source=source, jobid=jobid, sort='',
+                                                      key=key, value=value, limit=limit, topics=topics),
                                    query=trim(query, MAX_QUERY_LENGTH), source=source,
                                    jobid=jobid, version=VERSION)
 
