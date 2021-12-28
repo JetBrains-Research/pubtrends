@@ -24,7 +24,6 @@ def prepare_paper_data(data, source, pid):
     loader, url_prefix = Loaders.get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
     analyzer = PapersAnalyzer(loader, PUBTRENDS_CONFIG)
     analyzer.init(data)
-    plotter = Plotter()
 
     logger.debug('Extracting data for the current paper')
     # Use pid if is given or show the very first paper
@@ -86,7 +85,8 @@ def prepare_paper_data(data, source, pid):
     result = dict(title=title, trimmed_title=trim(title, MAX_TITLE_LENGTH), authors=authors, journal=journal, year=year,
                   topic=topic, doi=doi, mesh=mesh, keywords=keywords, url=url_prefix + pid, source=source,
                   n_papers=len(analyzer.df),
-                  citation_dynamics=[components(plotter._plot_paper_citations_per_year(analyzer.df, str(pid)))])
+                  citation_dynamics=[components(Plotter._plot_paper_citations_per_year(analyzer.df, str(pid)))])
+
     if similar_papers:
         result['similar_papers'] = [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid,
                                      year, cited, f'{similarity:.3f}')
@@ -106,5 +106,13 @@ def prepare_paper_data(data, source, pid):
     if len(derivative_papers) > 0:
         result['derivative_papers'] = [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid, year, cited)
                                        for pid, title, year, cited in derivative_papers]
+
+    logger.debug('Papers graph')
+    if len(analyzer.df) > 1:
+        result['papers_graph'] = [components(
+            Plotter._plot_papers_graph(
+                source, analyzer.sparse_papers_graph, analyzer.df,
+                pid=pid, topics_tags=analyzer.topics_description
+            ))]
 
     return result

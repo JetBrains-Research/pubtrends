@@ -277,12 +277,19 @@
                 </div>
                 <div class="card-body">
                     {% if n_papers <= max_graph_size %}
+                    {% if papers_graph is defined %}
+                    <strong>Papers similarity</strong>
                     <p>
-                        Similarity between papers is computed based on <em>bibliographic coupling</em>,
-                        <em>co-citations</em>,<br>
-                        <em>direct citations</em>, and <em>potential</em> citations based on text similarity.
-                        <br>
+                        The graph below shows papers similarity network. Similar papers are located closely.<br>
+                        Edges represent co-citations, common references and citations between papers.<br>
+                        Color represents topic, size - total citations number.
                     </p>
+                    {% for script, div in papers_graph %}
+                    {{ script|safe }}
+                    {{ div|safe }}
+                    {% endfor %}
+                    {% endif %}
+                    <br>
                     <p>
                         Explore papers similarity network in the interactive graph viewer.
                     </p>

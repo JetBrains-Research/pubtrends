@@ -343,6 +343,7 @@ class PapersAnalyzer:
             cit_df=self.cit_df.to_json(),
             cocit_grouped_df=self.cocit_grouped_df.to_json(),
             bibliographic_coupling_df=self.bibliographic_coupling_df.to_json(),
+            topics_description=self.topics_description,
             kwd_df=self.kwd_df.to_json(),
             pca_coords=self.pca_coords.tolist(),
             sparse_papers_graph=json_graph.node_link_data(self.sparse_papers_graph),
@@ -379,6 +380,7 @@ class PapersAnalyzer:
         bibliographic_coupling_df['citing_2'] = bibliographic_coupling_df['citing_2'].astype(str)
 
         # Restore topic descriptions
+        topics_description = {int(c): ks for c, ks in fields["topics_description"].items()}  # Restore int components
         kwd_df = pd.read_json(fields['kwd_df'])
 
         # Extra filter is applied to overcome split behaviour problem: split('') = [''] problem
@@ -401,6 +403,7 @@ class PapersAnalyzer:
             cit_df=cit_df,
             cocit_grouped_df=cocit_grouped_df,
             bibliographic_coupling_df=bibliographic_coupling_df,
+            topics_description=topics_description,
             kwd_df=kwd_df,
             pca_coords=pca_coords,
             sparse_papers_graph=sparse_papers_graph,
@@ -423,6 +426,7 @@ class PapersAnalyzer:
         self.cocit_grouped_df = loaded['cocit_grouped_df']
         self.bibliographic_coupling_df = loaded['bibliographic_coupling_df']
         # Used for components naming
+        self.topics_description = loaded['topics_description']
         self.kwd_df = loaded['kwd_df']
         # Used for similar papers
         self.pca_coords = loaded['pca_coords']

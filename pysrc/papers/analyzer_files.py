@@ -300,7 +300,8 @@ class AnalyzerFiles(PapersAnalyzer):
         logging.info(f'Saving papers graph for bokeh {path_papers_graph}')
         output_file(filename=path_papers_graph, title="Papers graph")
         save(Plotter._plot_papers_graph(source, self.sparse_papers_graph, self.df,
-                                        clusters_description, mesh_clusters_description, add_callback=False,
+                                        topics_tags=clusters_description, topics_meshs=mesh_clusters_description,
+                                        add_callback=False,
                                         plot_width=PLOT_WIDTH, plot_height=PLOT_WIDTH))
         reset_output()
 

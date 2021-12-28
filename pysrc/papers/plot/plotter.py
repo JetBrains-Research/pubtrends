@@ -343,7 +343,8 @@ class Plotter:
 
     def plot_papers_graph(self):
         return Plotter._plot_papers_graph(
-            self.analyzer.source, self.analyzer.sparse_papers_graph, self.analyzer.df, self.analyzer.topics_description
+            self.analyzer.source, self.analyzer.sparse_papers_graph, self.analyzer.df,
+            topics_tags=self.analyzer.topics_description
         )
 
     def _to_colored_circle(self, components, counts, sum, top=3):
@@ -602,7 +603,7 @@ class Plotter:
         return html_tooltips_str
 
     @staticmethod
-    def _plot_papers_graph(source, gs, df, topics_tags, topics_meshs=None, add_callback=True,
+    def _plot_papers_graph(source, gs, df, pid=None, topics_tags=None, topics_meshs=None, add_callback=True,
                            plot_width=PLOT_WIDTH, plot_height=TALL_PLOT_HEIGHT):
         logger.debug('Processing plot_papers_graph')
         pids = df['id']
@@ -623,8 +624,9 @@ class Plotter:
         graph.node_renderer.data_source.data['mesh'] = df['mesh']
         graph.node_renderer.data_source.data['keywords'] = df['keywords']
         graph.node_renderer.data_source.data['topic'] = [c + 1 for c in comps]
-        graph.node_renderer.data_source.data['topic_tags'] = \
-            [','.join(t for t, _ in topics_tags[c][:5]) for c in comps]
+        if topics_tags is not None:
+            graph.node_renderer.data_source.data['topic_tags'] = \
+                [','.join(t for t, _ in topics_tags[c][:5]) for c in comps]
         if topics_meshs is not None:
             graph.node_renderer.data_source.data['topic_meshs'] = \
                 [','.join(t for t, _ in topics_meshs[c][:5]) for c in comps]
@@ -632,6 +634,7 @@ class Plotter:
         # Aesthetics
         graph.node_renderer.data_source.data['size'] = df['total'] * 20 / df['total'].max() + 5
         graph.node_renderer.data_source.data['color'] = [palette[c] for c in comps]
+        graph.node_renderer.data_source.data['alpha'] = [2.0 if p == pid else 0.7 for p in pids]
 
         # Edges
         graph.edge_renderer.data_source.data = dict(start=[u for u, _ in gs.edges],
@@ -665,8 +668,9 @@ class Plotter:
             ("Mesh", '@mesh'),
             ("Keywords", '@keywords'),
             ("Topic", '@topic'),
-            ("Topic tags", '@topic_tags'),
         ]
+        if topics_tags is not None:
+            hover_tags.append(("Topic tags", '@topic_tags'))
         if topics_meshs is not None:
             hover_tags.append(("Topic Mesh tags", '@topic_meshs'))
         p.add_tools(HoverTool(tooltips=Plotter._paper_html_tooltips(source, hover_tags)))
@@ -677,7 +681,7 @@ class Plotter:
         graph_layout = dict(zip(pids, zip(xs, ys)))
         graph.layout_provider = StaticLayoutProvider(graph_layout=graph_layout)
 
-        graph.node_renderer.glyph = Circle(size='size', fill_alpha=0.7, line_alpha=0.7, fill_color='color')
+        graph.node_renderer.glyph = Circle(size='size', fill_alpha='alpha', line_alpha='alpha', fill_color='color')
         graph.node_renderer.hover_glyph = Circle(size='size', fill_alpha=1.0, line_alpha=1.0, fill_color='color')
 
         graph.edge_renderer.glyph = MultiLine(line_color='lightgrey', line_alpha=0.5, line_width=1)
