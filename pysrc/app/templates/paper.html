@@ -303,7 +303,7 @@
                 </div>
                 <div class="card-body">
                     <p>
-                        This section represents valuable papers, similar to the paper of interest.
+                        This section represents papers, similar to the paper of interest.
                     </p>
                     <table id="similar_papers" class="table table-sm table-bordered table-striped">
                         <thead>
@@ -311,11 +311,12 @@
                             <th scope="col">#</th>
                             <th scope="col">Title</th>
                             <th scope="col">Year</th>
+                            <th scope="col">Cited</th>
                             <th scope="col">Similarity</th>
                         </tr>
                         </thead>
                         <tbody>
-                        {% for id, title, url, year, similarity in similar_papers %}
+                        {% for id, title, url, year, cited, similarity in similar_papers %}
                         <tr>
                             <th scope="row">{{ loop.index }}</th>
                             <td>
@@ -324,6 +325,7 @@
                                 </a>
                             </td>
                             <td>{{ year }}</td>
+                            <td>{{ cited }}</td>
                             <td>{{ similarity }}</td>
                         </tr>
                         {% endfor %}
@@ -341,7 +343,7 @@
                 </div>
                 <div class="card-body">
                     <p>
-                        This section represents most valuable papers, cited by the paper of interest.
+                        This section represents most cited papers, cited by the paper of interest.
                     </p>
                     <table id="prior_papers" class="table table-sm table-bordered table-striped">
                         <thead>
@@ -349,10 +351,11 @@
                             <th scope="col">#</th>
                             <th scope="col">Title</th>
                             <th scope="col">Year</th>
+                            <th scope="col">Cited</th>
                         </tr>
                         </thead>
                         <tbody>
-                        {% for id, title, url, year in prior_papers %}
+                        {% for id, title, url, year, cited in prior_papers %}
                         <tr>
                             <th scope="row">{{ loop.index }}</th>
                             <td>
@@ -361,6 +364,7 @@
                                 </a>
                             </td>
                             <td>{{ year }}</td>
+                            <td>{{ cited }}</td>
                         </tr>
                         {% endfor %}
                         </tbody>
@@ -377,7 +381,7 @@
                 </div>
                 <div class="card-body">
                     <p>
-                        This section represents most valuable papers, citing the paper of interest.
+                        This section represents most cited papers, citing the paper of interest.
                     </p>
                     <table id="derivative_papers" class="table table-sm table-bordered table-striped">
                         <thead>
@@ -385,10 +389,11 @@
                             <th scope="col">#</th>
                             <th scope="col">Title</th>
                             <th scope="col">Year</th>
+                            <th scope="col">Cited</th>
                         </tr>
                         </thead>
                         <tbody>
-                        {% for id, title, url, year in derivative_papers %}
+                        {% for id, title, url, year, cited in derivative_papers %}
                         <tr>
                             <th scope="row">{{ loop.index }}</th>
                             <td>
@@ -397,6 +402,7 @@
                                 </a>
                             </td>
                             <td>{{ year }}</td>
+                            <td>{{ cited }}</td>
                         </tr>
                         {% endfor %}
                         </tbody>

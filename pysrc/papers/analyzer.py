@@ -344,6 +344,7 @@ class PapersAnalyzer:
             cocit_grouped_df=self.cocit_grouped_df.to_json(),
             bibliographic_coupling_df=self.bibliographic_coupling_df.to_json(),
             kwd_df=self.kwd_df.to_json(),
+            pca_coords=self.pca_coords.tolist(),
             sparse_papers_graph=json_graph.node_link_data(self.sparse_papers_graph),
             top_cited_papers=self.top_cited_papers,
             max_gain_papers=self.max_gain_papers,
@@ -385,6 +386,9 @@ class PapersAnalyzer:
         kwd_df['kwd'] = kwd_df['kwd'].apply(lambda x: [el.split(':') for el in x])
         kwd_df['kwd'] = kwd_df['kwd'].apply(lambda x: [(el[0], float(el[1])) for el in x])
 
+        # Restore original coordinates
+        pca_coords = np.array(fields['pca_coords'])
+
         # Restore citation and structure graphs
         sparse_papers_graph = json_graph.node_link_graph(fields['sparse_papers_graph'])
 
@@ -398,6 +402,7 @@ class PapersAnalyzer:
             cocit_grouped_df=cocit_grouped_df,
             bibliographic_coupling_df=bibliographic_coupling_df,
             kwd_df=kwd_df,
+            pca_coords=pca_coords,
             sparse_papers_graph=sparse_papers_graph,
             top_cited_papers=top_cited_papers,
             max_gain_papers=max_gain_papers,
@@ -419,6 +424,8 @@ class PapersAnalyzer:
         self.bibliographic_coupling_df = loaded['bibliographic_coupling_df']
         # Used for components naming
         self.kwd_df = loaded['kwd_df']
+        # Used for similar papers
+        self.pca_coords = loaded['pca_coords']
         # Used for network visualization
         self.sparse_papers_graph = loaded['sparse_papers_graph']
         # Used for navigation

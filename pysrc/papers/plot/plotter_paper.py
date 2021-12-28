@@ -1,5 +1,6 @@
 import logging
 from bokeh.embed import components
+from scipy.spatial import distance
 
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
@@ -12,10 +13,11 @@ PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 logger = logging.getLogger(__name__)
 
 
-def get_top_papers_id_title_year(papers, df, key, n=50):
-    citing_papers = map(lambda v: (df[df['id'] == v], df[df['id'] == v][key].values[0]), papers)
-    return [(el[0]['id'].values[0], el[0]['title'].values[0], el[0]['year'].values[0])
-            for el in sorted(citing_papers, key=lambda x: x[1], reverse=True)[:n]]
+def get_top_papers_id_title_year_cited(papers, df, n=50):
+    top_papers = map(lambda v: (df[df['id'] == v], df[df['id'] == v]['total'].values[0]), papers)
+    return [(el[0]['id'].values[0], el[0]['title'].values[0],
+             el[0]['year'].values[0], el[0]['total'].values[0])
+            for el in sorted(top_papers, key=lambda x: x[1], reverse=True)[:n]]
 
 
 def prepare_paper_data(data, source, pid):
@@ -57,24 +59,27 @@ def prepare_paper_data(data, source, pid):
     else:
         related_topics = None
 
-    # Citations is limited by only the nodes in pub_df
-    derivative_papers = get_top_papers_id_title_year(
-        analyzer.cit_df.loc[analyzer.cit_df['id_in'] == pid]['id_out'], analyzer.df, key='total'
+    logger.debug('Computing most cited prior and derivative papers')
+    derivative_papers = get_top_papers_id_title_year_cited(
+        analyzer.cit_df.loc[analyzer.cit_df['id_in'] == pid]['id_out'], analyzer.df
     )
-    prior_papers = get_top_papers_id_title_year(
-        analyzer.cit_df.loc[analyzer.cit_df['id_out'] == pid]['id_in'], analyzer.df, key='total'
+    prior_papers = get_top_papers_id_title_year_cited(
+        analyzer.cit_df.loc[analyzer.cit_df['id_out'] == pid]['id_in'], analyzer.df
     )
 
-    logger.debug('Computing aggregated graph')
-    if analyzer.sparse_papers_graph.nodes() and analyzer.sparse_papers_graph.has_node(pid):
+    logger.debug('Computing most similar papers')
+    if len(analyzer.df) > 1:
+        indx = {t: i for i, t in enumerate(analyzer.df['id'])}
         similar_papers = map(
             lambda v: (analyzer.df[analyzer.df['id'] == v]['id'].values[0],
                        analyzer.df[analyzer.df['id'] == v]['title'].values[0],
                        analyzer.df[analyzer.df['id'] == v]['year'].values[0],
-                       analyzer.sparse_papers_graph.edges[pid, v]['similarity']),
-            list(analyzer.sparse_papers_graph[pid])
+                       analyzer.df[analyzer.df['id'] == v]['total'].values[0],
+                       1 / (1 + distance.euclidean(analyzer.pca_coords[indx[pid], :],
+                                                   analyzer.pca_coords[indx[v], :]))),
+            [p for p in analyzer.df['id'] if p != pid]
         )
-        similar_papers = sorted(similar_papers, key=lambda x: x[3], reverse=True)[:50]
+        similar_papers = sorted(similar_papers, key=lambda x: x[4], reverse=True)[:50]
     else:
         similar_papers = None
 
@@ -83,8 +88,9 @@ def prepare_paper_data(data, source, pid):
                   n_papers=len(analyzer.df),
                   citation_dynamics=[components(plotter._plot_paper_citations_per_year(analyzer.df, str(pid)))])
     if similar_papers:
-        result['similar_papers'] = [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid, year, f'{similarity:.3f}')
-                                    for pid, title, year, similarity in similar_papers]
+        result['similar_papers'] = [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid,
+                                     year, cited, f'{similarity:.3f}')
+                                    for pid, title, year, cited, similarity in similar_papers]
 
     if related_topics:
         result['related_topics'] = related_topics
@@ -94,11 +100,11 @@ def prepare_paper_data(data, source, pid):
         result['abstract'] = abstract
 
     if len(prior_papers) > 0:
-        result['prior_papers'] = [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid, year)
-                                  for pid, title, year in prior_papers]
+        result['prior_papers'] = [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid, year, cited)
+                                  for pid, title, year, cited in prior_papers]
 
     if len(derivative_papers) > 0:
-        result['derivative_papers'] = [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid, year)
-                                       for pid, title, year in derivative_papers]
+        result['derivative_papers'] = [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid, year, cited)
+                                       for pid, title, year, cited in derivative_papers]
 
     return result
