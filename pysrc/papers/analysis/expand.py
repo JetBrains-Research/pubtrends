@@ -40,67 +40,55 @@ def expand_ids(
         cit_mean, cit_std = None, None
         mesh_stems, mesh_counter = None, None
 
-    number_to_expand = limit - len(ids)
-    expanded_df = loader.expand(ids, max_expand)
-    logger.debug(f'Loaded {len(expanded_df)} papers by references')
+    new_df = loader.expand(ids, max_expand)
+    logger.debug(f'Expanded by references: {len(new_df)}')
 
-    new_df = expanded_df.loc[np.logical_not(expanded_df['id'].isin(set(ids)))]
-    logger.debug(f'New papers {len(new_df)}')
-    if len(new_df) == 0:  # Nothing to add
-        logger.debug('Nothing expanded')
+    if len(new_df) == 0:
         return ids
 
     if cit_mean is not None and cit_std is not None:
         logger.debug(f'New papers citations min={new_df["total"].min()}, max={new_df["total"].max()}')
         logger.debug(f'Filtering by citations mean({cit_mean}) +- {citations_sigma} * std({cit_std})')
-        new_df = new_df.loc[[
-            cit_mean - citations_sigma * cit_std <= t <= cit_mean + citations_sigma * cit_std
-            for t in new_df['total']
-        ]]
-        logger.debug(f'Citations filtered: {len(new_df)}')
+        new_publications_citations_infos = []
+        for _, row in new_df.iterrows():
+            pid, total = row['id'], row['total']
+            new_publications_citations_infos.append([pid, total])
+        new_publications_citations_infos.sort(key=lambda i: i[1], reverse=True)
+        new_ids = [i[0] for i in new_publications_citations_infos
+                   if cit_mean - citations_sigma * cit_std <= i[1] <= cit_mean + citations_sigma * cit_std]
+    else:
+        new_ids = new_df['id']
+    logger.debug(f'Citations filter: {len(new_ids)}')
 
-    logging.debug(f'Limiting new papers to {number_to_expand}')
-    new_ids = list(new_df['id'])[:number_to_expand]
-    if len(new_ids) == 0:  # Nothing to add
-        logger.debug('Nothing expanded after citations filtration')
+    if len(new_ids) == 0:
         return ids
 
     if mesh_stems is not None:
         new_publications = loader.load_publications(new_ids)
-        fcs = []
+        new_publications_mesh_infos = []
         for _, row in new_publications.iterrows():
-            pid = row['id']
-            mesh = row['mesh']
-            keywords = row['keywords']
-            title = row['title']
+            pid, title, mesh, keywords = row['id'], row['title'], row['mesh'], row['keywords']
             new_mesh_stems = [s for s, _ in stemmed_tokens((mesh + ' ' + keywords).replace(',', ' '))]
             if new_mesh_stems:
                 # Estimate fold change of similarity vs random single paper
                 similarity = sum([mesh_counter[s] / (len(mesh_stems) / len(ids)) for s in new_mesh_stems])
-                fcs.append([pid, False, similarity, title, ','.join(new_mesh_stems)])
+                new_publications_mesh_infos.append([pid, False, similarity, title, ','.join(new_mesh_stems)])
             else:
-                fcs.append([pid, True, 0.0, title, ''])
+                new_publications_mesh_infos.append([pid, True, 0.0, title, ''])
 
-        fcs.sort(key=lambda v: v[2], reverse=True)
+        new_publications_mesh_infos.sort(key=lambda i: i[2], reverse=True)
         # Compute keywords similarity threshold as a fraction of top
-        sim_threshold = fcs[0][2] * min_keywords_similarity
-        for v in fcs:
-            v[1] = v[1] or v[2] > sim_threshold
+        sim_threshold = new_publications_mesh_infos[0][2] * min_keywords_similarity
+        logger.debug(f'Similarity threshold {sim_threshold}')
+        logger.debug('Pid\tOk\tSimilarity\tTitle\tMesh\n' +
+                     '\n'.join(f'{p}\t{"+" if a else "-"}\t{int(s)}\t{t}\t{m}' for
+                               p, a, s, t, m in new_publications_mesh_infos))
+        new_ids = [i[0] for i in new_publications_mesh_infos if i[1] or i[2] >= sim_threshold]
+        logger.debug(f'Similar by mesh papers: {len(new_ids)}')
 
-        # logger.debug('Pid\tOk\tSimilarity\tTitle\tMesh\n' +
-        #              '\n'.join(f'{p}\t{"+" if a else "-"}\t{int(s)}\t{t}\t{m}' for
-        #                        p, a, s, t, m in fcs))
-        new_mesh_ids = [v[0] for v in fcs if v[1]][:limit]
-        logger.debug(f'Similar by mesh papers: {len(new_mesh_ids)}')
-        if len(new_mesh_ids) == 0:  # Nothing to add
-            logger.debug('Nothing expanded after mesh filtration')
-            return ids
-        else:
-            logger.debug(f'Expanded to {len(ids) + len(new_ids)} papers')
-            return ids + new_mesh_ids
-    else:
-        logger.debug(f'Expanded to {len(ids) + len(new_ids)} papers')
-        return ids + new_ids
+    new_ids = new_ids[:limit - len(ids)]
+    logger.debug(f'Expanded to {len(ids) + len(new_ids)} papers')
+    return ids + new_ids
 
 
 def estimate_mesh(ids, loader):
