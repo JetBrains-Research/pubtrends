@@ -112,8 +112,8 @@ class TestPubmedPostgresLoader(unittest.TestCase):
         ids = self.loader.search('Article', limit=10, sort=SORT_MOST_RECENT)
         self.assertListEqual(sorted(ids), ['1', '10', '2', '3', '4', '5', '7', '8', '9'], 'Wrong IDs of papers')
 
-        idswithreview = self.loader.search('Article', limit=10, sort=SORT_MOST_RECENT, noreviews=False)
-        self.assertListEqual(sorted(idswithreview), ['1', '10', '2', '3', '4', '5', '6', '7', '8', '9'],
+        ids_with_review = self.loader.search('Article', limit=10, sort=SORT_MOST_RECENT, noreviews=False)
+        self.assertListEqual(sorted(ids_with_review), ['1', '10', '2', '3', '4', '5', '6', '7', '8', '9'],
                              'Wrong IDs of papers')
 
     def test_search_phrase(self):
@@ -137,7 +137,6 @@ class TestPubmedPostgresLoader(unittest.TestCase):
         # Words different fields
         self.assertListEqual([], self.loader.search('"dna methylation"', limit=100, sort=SORT_MOST_CITED),
                              'Wrong IDs of papers')
-
 
     def test_load_citation_stats_data_frame(self):
         # Sort to compare with expected

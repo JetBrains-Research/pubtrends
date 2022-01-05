@@ -241,11 +241,12 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
             WITH X AS (
                 SELECT C.pmid_in AS pmid
                 FROM PMCitations C
-                WHERE C.pmid_out IN (VALUES {vals})
+                WHERE C.pmid_out IN (VALUES {vals}) AND C.pmid_in NOT IN (VALUES {vals})
                 UNION
                 SELECT C.pmid_out AS pmid
                 FROM PMCitations C
-                WHERE C.pmid_in IN (VALUES {vals}))
+                WHERE C.pmid_in IN (VALUES {vals}) AND C.pmid_out NOT IN (VALUES {vals})
+            )
             SELECT X.pmid as pmid, count 
                 FROM X
                     LEFT JOIN matview_pmcitations C

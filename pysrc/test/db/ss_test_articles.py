@@ -77,7 +77,5 @@ EXPECTED_COCIT_DF = pd.DataFrame(COCITATIONS_DATA, columns=['citing', 'cited_1',
 
 ARTICLES_LIST = [article1, article4, article3, article8, article7, article10]
 EXPANDED_ARTICLES_DF = pd.DataFrame(
-    [[article1.ssid, 1], [article6.ssid, 1], [article2.ssid, 1],
-     [article4.ssid, 2], [article8.ssid, 2], [article3.ssid, 2]],
-    columns=['id', 'total']
+    [[article5.ssid, 1], [article6.ssid, 1], [article2.ssid, 1]], columns=['id', 'total']
 )

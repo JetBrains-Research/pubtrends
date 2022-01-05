@@ -243,15 +243,19 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
 
     def expand(self, ids, limit):
         self.check_connection()
+        vals = SemanticScholarPostgresLoader.ids2values(ids)
         query = f'''
             WITH X AS (
                 SELECT C.ssid_in as ssid, C.crc32id_in as crc32id
                 FROM sscitations C
-                WHERE (C.crc32id_out, C.ssid_out) IN (VALUES {SemanticScholarPostgresLoader.ids2values(ids)})
+                WHERE (C.crc32id_out, C.ssid_out) IN (VALUES {vals})
+                    AND (C.crc32id_in, C.ssid_in) NOT IN (VALUES {vals})
                 UNION
                 SELECT C.ssid_out as ssid, C.crc32id_out as crc32id
                 FROM sscitations C
-                WHERE (C.crc32id_in, C.ssid_in) IN (VALUES {SemanticScholarPostgresLoader.ids2values(ids)}))
+                WHERE (C.crc32id_in, C.ssid_in) IN (VALUES {vals})
+                    AND (C.crc32id_out, C.ssid_out) NOT IN (VALUES {vals})
+            )
             SELECT X.ssid, count 
                 FROM X
                     LEFT JOIN matview_sscitations C
