@@ -33,6 +33,7 @@ def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, e
                                     noreviews=noreviews,
                                     task=current_task)
         if ids and expand != 0:
+            analyzer.progress.info('Expanding related papers by references', current=2, task=current_task)
             ids = expand_ids(
                 ids,
                 min(int(min(len(ids), limit) * (1 + expand)), analyzer.config.max_number_to_expand),
@@ -41,8 +42,7 @@ def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, e
                 PapersAnalyzer.EXPAND_CITATIONS_Q_LOW,
                 PapersAnalyzer.EXPAND_CITATIONS_Q_HIGH,
                 PapersAnalyzer.EXPAND_CITATIONS_SIGMA,
-                PapersAnalyzer.EXPAND_SIMILARITY_THRESHOLD,
-                analyzer.progress, current=2, task=current_task
+                PapersAnalyzer.EXPAND_SIMILARITY_THRESHOLD
             )
         analyzer.analyze_papers(ids, query, topics, test=test, task=current_task)
     finally:
@@ -74,6 +74,7 @@ def analyze_search_terms_files(source, query,
                                     noreviews=noreviews,
                                     task=current_task)
         if ids and expand != 0:
+            analyzer.progress.info('Expanding related papers by references', current=2, task=current_task)
             ids = expand_ids(
                 ids,
                 min(int(min(len(ids), limit) * (1 + expand)), analyzer.config.max_number_to_expand),
@@ -82,8 +83,7 @@ def analyze_search_terms_files(source, query,
                 PapersAnalyzer.EXPAND_CITATIONS_Q_LOW,
                 PapersAnalyzer.EXPAND_CITATIONS_Q_HIGH,
                 PapersAnalyzer.EXPAND_CITATIONS_SIGMA,
-                PapersAnalyzer.EXPAND_SIMILARITY_THRESHOLD,
-                analyzer.progress, current=2, task=current_task
+                PapersAnalyzer.EXPAND_SIMILARITY_THRESHOLD
             )
         analyzer.analyze_ids(ids, source, query, sort, limit, topics, test=test, task=current_task)
         analyzer.progress.done(task=current_task)
@@ -112,7 +112,7 @@ def _analyze_id_list(analyzer, source,
             limit = int(limit) if limit else analyzer.config.max_number_to_expand
             # Fetch references at first, but in some cases paper may have empty references
             ids = ids + analyzer.load_references(ids[0], limit=limit)
-            # And then expand
+            analyzer.progress.info('Expanding related papers by references', current=1, task=task)
             ids = expand_ids(
                 ids,
                 limit,
@@ -121,8 +121,7 @@ def _analyze_id_list(analyzer, source,
                 PapersAnalyzer.EXPAND_CITATIONS_Q_LOW,
                 PapersAnalyzer.EXPAND_CITATIONS_Q_HIGH,
                 PapersAnalyzer.EXPAND_CITATIONS_SIGMA,
-                PapersAnalyzer.EXPAND_SIMILARITY_THRESHOLD,
-                analyzer.progress, current=1, task=task
+                PapersAnalyzer.EXPAND_SIMILARITY_THRESHOLD
             )
         elif analysis_type == IDS_ANALYSIS_TYPE:
             ids = ids  # Leave intact

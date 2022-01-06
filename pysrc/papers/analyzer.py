@@ -90,14 +90,14 @@ class PapersAnalyzer:
     POPULAR_JOURNALS = 50
     POPULAR_AUTHORS = 50
 
-    # Max expand before filtration by citations and keywords
-    EXPAND_LIMIT = 10000
+    # Expand limit by references before filtration by citations and keywords
+    EXPAND_LIMIT = 5000
     # Control citations count
     EXPAND_CITATIONS_Q_LOW = 5
     EXPAND_CITATIONS_Q_HIGH = 95
     EXPAND_CITATIONS_SIGMA = 3
     # Take up to fraction of top similarity
-    EXPAND_SIMILARITY_THRESHOLD = 0.3
+    EXPAND_SIMILARITY_THRESHOLD = 0.5
 
     EVOLUTION_MIN_PAPERS = 100
     EVOLUTION_STEP = 10

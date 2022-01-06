@@ -12,8 +12,7 @@ def expand_ids(
         ids, limit,
         loader, max_expand,
         citations_q_low, citations_q_high, citations_sigma,
-        min_keywords_similarity,
-        progress, current=1, task=None
+        similarity_threshold
 ):
     """
     Expands list of paper ids to the limit, filtering by citations counts and keywords
@@ -24,13 +23,10 @@ def expand_ids(
     :param citations_q_low: Minimal percentile for groupwise citations count estimation, removes outliers
     :param citations_q_high: Max percentile for groupwise citations count estimation, removes outliers
     :param citations_sigma: Sigma for citations filtering range mean +- sigma * std
-    :param min_keywords_similarity: Min keywords similarity
-    :param progress:
-    :param current:
-    :param task:
+    :param similarity_threshold: Similarity fraction of top similar, value 0 - 1
     :return:
     """
-    progress.info('Expanding related papers by references', current=current, task=task)
+    logger.debug(f'Expanding {len(ids)} papers by references limit={limit} max_expand={max_expand}')
 
     if len(ids) > 1:
         cit_mean, cit_std = estimate_citations(ids, loader, citations_q_low, citations_q_high)
@@ -72,18 +68,20 @@ def expand_ids(
             if new_mesh_stems:
                 # Estimate fold change of similarity vs random single paper
                 similarity = sum([mesh_counter[s] / (len(mesh_stems) / len(ids)) for s in new_mesh_stems])
-                new_publications_mesh_infos.append([pid, False, similarity, title, ','.join(new_mesh_stems)])
+                new_publications_mesh_infos.append([pid, True, similarity, title, ','.join(new_mesh_stems)])
             else:
-                new_publications_mesh_infos.append([pid, True, 0.0, title, ''])
+                new_publications_mesh_infos.append([pid, False, 0.0, title, ''])
 
         new_publications_mesh_infos.sort(key=lambda i: i[2], reverse=True)
         # Compute keywords similarity threshold as a fraction of top
-        sim_threshold = new_publications_mesh_infos[0][2] * min_keywords_similarity
+        sim_threshold = new_publications_mesh_infos[0][2] * similarity_threshold
         logger.debug(f'Similarity threshold {sim_threshold}')
-        logger.debug('Pid\tOk\tSimilarity\tTitle\tMesh\n' +
+        # Show top 50 similar papers
+        filtered_publications_mesh_infos = [i for i in new_publications_mesh_infos if not i[1] or i[2] >= sim_threshold]
+        logger.debug('Pid\tMesh\tSimilarity\tTitle\tMesh\n' +
                      '\n'.join(f'{p}\t{"+" if a else "-"}\t{int(s)}\t{t}\t{m}' for
-                               p, a, s, t, m in new_publications_mesh_infos))
-        new_ids = [i[0] for i in new_publications_mesh_infos if i[1] or i[2] >= sim_threshold]
+                               p, a, s, t, m in filtered_publications_mesh_infos[:50]))
+        new_ids = [i[0] for i in filtered_publications_mesh_infos]
         logger.debug(f'Similar by mesh papers: {len(new_ids)}')
 
     new_ids = new_ids[:limit - len(ids)]

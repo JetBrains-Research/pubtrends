@@ -7,6 +7,8 @@ import re
 import tempfile
 import time
 from urllib.parse import quote
+from threading import Lock
+
 
 import requests
 from celery.result import AsyncResult
@@ -110,7 +112,7 @@ def log_request(r):
 def index():
     if not is_fasttext_endpoint_ready():
         return render_template('init.html', version=VERSION, message=SERVICE_LOADING_NLP_MODELS)
-    if not are_predefined_tasks_ready():
+    if not are_predefined_jobs_ready():
         return render_template('init.html', version=VERSION, message=SERVICE_LOADING_PREDEFINED_EXAMPLES)
 
     search_example_message = ''
@@ -617,38 +619,44 @@ def export_results():
 # Loading functionality #
 #########################
 
+PREDEFINED_JOBS_LOCK = Lock()
 
-def are_predefined_tasks_ready():
+
+def are_predefined_jobs_ready():
     """ Checks if all the precomputed examples are available and gensim fasttext model is loaded """
     if len(PREDEFINED_JOBS) == 0:
         return True
-    if app.config.get('PREDEFINED_TASKS_READY', False):
-        return True
-    ready = True
-    inspect = pubtrends_celery.control.inspect()
-    active_jobs = [j['id'] for j in list(inspect.active().items())[0][1]]
-    scheduled_jobs = [j['id'] for j in list(inspect.reserved().items())[0][1]]
+    try:
+        PREDEFINED_JOBS_LOCK.acquire()
+        if app.config.get('PREDEFINED_TASKS_READY', False):
+            return True
+        ready = True
+        inspect = pubtrends_celery.control.inspect()
+        active_jobs = [j['id'] for j in list(inspect.active().items())[0][1]]
+        scheduled_jobs = [j['id'] for j in list(inspect.reserved().items())[0][1]]
 
-    for source, predefine_info in PREDEFINED_JOBS.items():
-        for query, query_hash in predefine_info:
-            logger.info(f'Check predefined search for source={source} query={query}')
-            jobid = f'predefined_{query_hash}'
-            # Check celery queue
-            if jobid in active_jobs or jobid in scheduled_jobs:
-                ready = False
-                continue
-            if load_predefined_or_result_data(source, jobid, PREDEFINED_JOBS, pubtrends_celery) is None:
-                query, sort, limit = _example_by_jobid(source, jobid, PREDEFINED_JOBS)
-                logger.info(f'No job or out-of-date job for source={source} query={query}, launch it')
-                expand = 20 if source == 'Pubmed' else 0
-                analyze_search_terms.apply_async(
-                    args=[source, query, sort, int(limit), False, expand / 100, 'medium', app.config['TESTING']],
-                    task_id=jobid
-                )
-                ready = False
-    if ready:
-        app.config['PREDEFINED_TASKS_READY'] = True
-    return ready
+        for source, predefine_info in PREDEFINED_JOBS.items():
+            for query, query_hash in predefine_info:
+                logger.info(f'Check predefined search for source={source} query={query}')
+                jobid = f'predefined_{query_hash}'
+                # Check celery queue
+                if jobid in active_jobs or jobid in scheduled_jobs:
+                    ready = False
+                    continue
+                if load_predefined_or_result_data(source, jobid, PREDEFINED_JOBS, pubtrends_celery) is None:
+                    query, sort, limit = _example_by_jobid(source, jobid, PREDEFINED_JOBS)
+                    logger.info(f'No job or out-of-date job for source={source} query={query}, launch it')
+                    expand = 20 if source == 'Pubmed' else 0
+                    analyze_search_terms.apply_async(
+                        args=[source, query, sort, int(limit), False, expand / 100, 'medium', app.config['TESTING']],
+                        task_id=jobid
+                    )
+                    ready = False
+        if ready:
+            app.config['PREDEFINED_TASKS_READY'] = True
+        return ready
+    finally:
+        PREDEFINED_JOBS_LOCK.release()
 
 
 # Launch with Docker address or locally
