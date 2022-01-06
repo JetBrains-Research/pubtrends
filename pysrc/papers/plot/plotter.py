@@ -453,9 +453,12 @@ class Plotter:
         clusters_dendrogram = PlotPreprocessor.compute_clusters_dendrogram_children(clusters, dendrogram_children)
         paths, leaves_order = PlotPreprocessor.convert_clusters_dendrogram_to_paths(clusters, clusters_dendrogram)
 
-        # Configure dimensions
-        p = figure(x_range=(-180, 180),
-                   y_range=(-160, 160),
+        # Configure dimensions, keep range ratios to keep circles round
+        mx = 180
+        # Hacky coefficients to make circular dendrogram look good
+        my = int(1.05 * mx * plot_height / plot_width)
+        p = figure(x_range=(-mx, mx),
+                   y_range=(-my, my),
                    tools="save",
                    width=plot_width, height=plot_height)
         x_coefficient = 1.2  # Ellipse x coefficient
@@ -472,22 +475,33 @@ class Plotter:
         # Draw dendrogram - from bottom to top
         ds = leaves_degrees.copy()
         for i in range(1, dendrogram_len):
+            logger.debug(f'LEVEL {i}')
             next_ds = {}
             for path in paths:
+                d = ds[path[i - 1]]
                 if path[i] not in next_ds:
                     next_ds[path[i]] = []
-                next_ds[path[i]].append(ds[path[i - 1]])
+                next_ds[path[i]].append(d)
+
+                # Draw current level connections
+                p.line([cos(d) * d_radius * (dendrogram_len - i), cos(d) * d_radius * (dendrogram_len - i - 1)],
+                       [sin(d) * d_radius * (dendrogram_len - i), sin(d) * d_radius * (dendrogram_len - i - 1)],
+                       line_color='grey')
+                logger.debug(
+                    f'LINE d={d}; r1={d_radius * (dendrogram_len - i)}; r2={d_radius * (dendrogram_len - i - 1)}; '
+                    f'x={[cos(d) * d_radius * (dendrogram_len - i), cos(d) * d_radius * (dendrogram_len - i - 1)]}; '
+                    f'y={[sin(d) * d_radius * (dendrogram_len - i), sin(d) * d_radius * (dendrogram_len - i - 1)]}'
+                )
+
+            # Compute next connections and draw arcs
             for v, nds in next_ds.items():
                 next_ds[v] = np.mean(nds)
+                if nds[0] != nds[-1]:
+                    p.arc(0, 0, d_radius * (dendrogram_len - i - 1), nds[0], nds[-1], line_color='grey')
+                    logger.debug(
+                        f'ARC r={d_radius * (dendrogram_len - i - 1)}; d1={nds[0]}; d2={nds[-1]}'
+                    )
 
-            for path in paths:
-                current_d = ds[path[i - 1]]
-                next_d = next_ds[path[i]]
-                p.line([cos(current_d) * d_radius * (dendrogram_len - i),
-                        cos(next_d) * d_radius * (dendrogram_len - i - 1)],
-                       [sin(current_d) * d_radius * (dendrogram_len - i),
-                        sin(next_d) * d_radius * (dendrogram_len - i - 1)],
-                       line_color='lightgray')
             ds = next_ds
 
         # Draw leaves
@@ -546,7 +560,8 @@ class Plotter:
                    text_align='right', text_baseline='middle', text_font_size='10pt',
                    text_color=topics_colors[v])
 
-        p.sizing_mode = 'stretch_width'
+        # Arcs fail at stretching, use fixed size only
+        # p.sizing_mode = 'stretch_width'
         p.axis.major_tick_line_color = None
         p.axis.minor_tick_line_color = None
         p.axis.major_label_text_color = None

@@ -138,6 +138,18 @@ class PlotPreprocessor:
 
     @staticmethod
     def compute_clusters_dendrogram_children(clusters, children):
+        """
+        :param clusters: Clusters list for elements
+        :param children: Hierarchical clustering dendrogram encoding, list of pairs of groups to connect.
+        Three clusters (0, 1) + (2, 3) + (4), with children  [0, 1], [2, 3], [5, 6], [4, 7] encodes dendrogram:
+                   /\
+                /\    \
+             /\    /\  \
+            0  1  2  3  4
+        :return: List of groups to connect with respect to clusters.
+        Result for the example above:
+        [0, 1], [2, 3]
+        """
         leaves_map = dict(enumerate(clusters))
         nodes_map = {}
         clusters_children = []
@@ -155,17 +167,17 @@ class PlotPreprocessor:
                 nodes_map[node] = None  # Different clusters
                 clusters_children.append((u, v, node))
 
-        def rwc(v):
-            if v in leaves_map:
-                return leaves_map[v]
-            elif v in nodes_map:
-                res = nodes_map[v]
-                return res if res is not None else v
+        def renamed(x):
+            if x in leaves_map:
+                return leaves_map[x]
+            elif x in nodes_map:
+                res = nodes_map[x]
+                return res if res is not None else x
             else:
-                return v
+                return x
 
         # Rename nodes to clusters
-        result = [(rwc(u), rwc(v), rwc(n)) for u, v, n in clusters_children]
+        result = [(renamed(u), renamed(v), renamed(n)) for u, v, n in clusters_children]
         #     logger.debug(f'Clusters based dendrogram children {result}')
         return result
 
