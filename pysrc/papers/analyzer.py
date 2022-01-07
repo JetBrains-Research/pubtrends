@@ -99,6 +99,9 @@ class PapersAnalyzer:
     # Take up to fraction of top similarity
     EXPAND_SIMILARITY_THRESHOLD = 0.5
 
+    # Impact of single paper when analyzing citations and mesh terms when analysing paper
+    SINGLE_PAPER_IMPACT = 20
+
     EVOLUTION_MIN_PAPERS = 100
     EVOLUTION_STEP = 10
 
@@ -131,12 +134,6 @@ class PapersAnalyzer:
         else:
             self.progress.info(f'Found {len(ids)} publications in the database', current=1, task=task)
         return ids
-
-    def load_references(self, pid, limit):
-        logger.debug('Loading direct references for paper analysis')
-        references = self.loader.load_references(pid, limit)
-        logger.debug(f'Loaded {len(references)} references')
-        return references
 
     def analyze_papers(self, ids, query, topics='medium', test=False, task=None):
         self.progress.info('Loading publication data', current=2, task=task)

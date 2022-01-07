@@ -70,7 +70,7 @@ class MockLoader(Loader):
     def load_references(self, pid, limit):
         raise Exception('Not implemented')
 
-    def estimate_citations(self, ids):
+    def load_citations_counts(self, ids):
         raise Exception('Not implemented')
 
     def load_citations(self, ids=None):
@@ -107,7 +107,7 @@ class MockLoaderSingle(Loader):
     def load_references(self, pid, limit):
         raise Exception('Not implemented')
 
-    def estimate_citations(self, ids):
+    def load_citations_counts(self, ids):
         raise Exception('Not implemented')
 
     def load_citations(self, ids=None):
@@ -141,7 +141,7 @@ class MockLoaderEmpty(Loader):
     def load_references(self, pid, limit):
         raise Exception('Not implemented')
 
-    def estimate_citations(self, ids):
+    def load_citations_counts(self, ids):
         raise Exception('Not implemented')
 
     def load_citations(self, ids):

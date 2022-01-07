@@ -9,14 +9,21 @@ logger = logging.getLogger(__name__)
 
 
 def expand_ids(
-        ids, limit,
-        loader, max_expand,
-        citations_q_low, citations_q_high, citations_sigma,
-        similarity_threshold
+        loader,
+        ids,
+        single_paper,
+        limit,
+        max_expand,
+        citations_q_low,
+        citations_q_high,
+        citations_sigma,
+        similarity_threshold,
+        single_paper_impact
 ):
     """
     Expands list of paper ids to the limit, filtering by citations counts and keywords
     :param ids: Initial ids to expand
+    :param single_paper: True if expand is applied to a single paper analysis
     :param limit: Limit of expansion
     :param loader: DB loader
     :param max_expand: Number of papers expanded by references by loader before any filtration
@@ -24,13 +31,20 @@ def expand_ids(
     :param citations_q_high: Max percentile for groupwise citations count estimation, removes outliers
     :param citations_sigma: Sigma for citations filtering range mean +- sigma * std
     :param similarity_threshold: Similarity fraction of top similar, value 0 - 1
+    :param single_paper_impact: Impact of single paper when analyzing citations and mesh terms for single paper
     :return:
     """
-    logger.debug(f'Expanding {len(ids)} papers by references limit={limit} max_expand={max_expand}')
+    logger.debug(f'Expanding {len(ids)} papers single_paper={single_paper} with limit={limit} max_expand={max_expand}')
+    if single_paper:
+        # Fetch references at first, but in some cases paper may have empty references
+        logger.debug('Loading direct references for paper analysis')
+        ids = ids + loader.load_references(ids[0], limit)
+        logger.debug(f'Loaded {len(ids) - 1} references')
 
     if len(ids) > 1:
-        cit_mean, cit_std = estimate_citations(ids, loader, citations_q_low, citations_q_high)
-        mesh_stems, mesh_counter = estimate_mesh(ids, loader)
+        cit_mean, cit_std = estimate_citations(ids, single_paper, loader,
+                                               citations_q_low, citations_q_high, single_paper_impact)
+        mesh_stems, mesh_counter = estimate_mesh(ids, single_paper, loader, single_paper_impact)
     else:
         # Cannot estimate these characteristics by a single paper
         cit_mean, cit_std = None, None
@@ -89,28 +103,41 @@ def expand_ids(
     return ids + new_ids
 
 
-def estimate_mesh(ids, loader):
+def estimate_mesh(ids, single_paper, loader, single_paper_impact):
     logger.debug(f'Estimating mesh and keywords terms to keep the theme')
     publications = loader.load_publications(ids)
-    mesh_stems = [s for s, _ in stemmed_tokens(
-        ' '.join(publications['mesh'] + ' ' + publications['keywords']).replace(',', ' ')
-    )]
+    if single_paper:
+        # Artificially inflate paper of interest influence
+        mesh_stems = [s for s, _ in stemmed_tokens(
+            ' '.join(publications['mesh'].values[0] + ' ' + publications['keywords'].values[0]).replace(',', ' ')
+        )] * single_paper_impact + \
+        [s for s, _ in stemmed_tokens(
+            ' '.join(publications['mesh'][1:] + ' ' + publications['keywords'][1:]).replace(',', ' ')
+        )]
+    else:
+        mesh_stems = [s for s, _ in stemmed_tokens(
+            ' '.join(publications['mesh'] + ' ' + publications['keywords']).replace(',', ' ')
+        )]
     mesh_counter = Counter(mesh_stems)
     logger.debug(f'Mesh most common:\n' + ','.join(f'{k}:{"{0:.3f}".format(v / len(mesh_stems))}'
                                                    for k, v in mesh_counter.most_common(20)))
     return (mesh_stems, mesh_counter) if len(mesh_stems) > 0 else (None, None)
 
 
-def estimate_citations(ids, loader, q_low, q_high):
-    total = loader.estimate_citations(ids)
-    logger.debug(f'Citations min={total.min()}, max={total.max()}, '
-                 f'mean={total.mean()}, std={total.std()}')
+def estimate_citations(ids, single_paper, loader, q_low, q_high, single_paper_impact):
+    if single_paper:
+        # Artificially inflate paper of interest influence
+        total = loader.load_citations_counts(ids[0]) * single_paper_impact + loader.load_citations_counts(ids[1:])
+    else:
+        total = loader.load_citations_counts(ids)
+    logger.debug(f'Citations min={np.min(total)}, max={np.max(total)}, '
+                 f'mean={np.mean(total)}, std={np.std(total)}')
     citations_q_low = np.percentile(total, q_low)
     citations_q_high = np.percentile(total, q_high)
     logger.debug(
         f'Filtering < Q{q_low}={citations_q_low} or > Q{q_high}={citations_q_high}')
-    filtered = total[np.logical_and(total >= citations_q_low, total <= citations_q_high)]
-    mean = filtered.mean()
-    std = filtered.std()
-    logger.debug(f'Filtered citations min={filtered.min()}, max={filtered.max()}, mean={mean}, std={std}')
+    filtered = [t for t in total if citations_q_low <= t <= citations_q_high]
+    mean = np.mean(filtered)
+    std = np.std(filtered)
+    logger.debug(f'Filtered citations min={np.mean(filtered)}, max={np.max(filtered)}, mean={mean}, std={std}')
     return mean, std

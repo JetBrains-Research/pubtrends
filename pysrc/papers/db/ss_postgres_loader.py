@@ -171,7 +171,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
             df = pd.DataFrame(cursor.fetchall(), columns=['id'], dtype=object)
         return list(df['id'].astype(str))
 
-    def estimate_citations(self, ids):
+    def load_citations_counts(self, ids):
         self.check_connection()
         query = f'''
                 SELECT count
@@ -187,7 +187,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
             df = pd.DataFrame(cursor.fetchall(), columns=['total'], dtype=object)
             df.fillna(value=1, inplace=True)  # matview_sscitations ignores < 3 citations
 
-        return df['total']
+        return list(df['total'])
 
     def load_citations(self, ids):
         self.check_connection()

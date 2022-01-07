@@ -34,16 +34,14 @@ def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, e
                                     task=current_task)
         if ids and expand != 0:
             analyzer.progress.info('Expanding related papers by references', current=2, task=current_task)
-            ids = expand_ids(
-                ids,
-                min(int(min(len(ids), limit) * (1 + expand)), analyzer.config.max_number_to_expand),
-                loader,
-                PapersAnalyzer.EXPAND_LIMIT,
-                PapersAnalyzer.EXPAND_CITATIONS_Q_LOW,
-                PapersAnalyzer.EXPAND_CITATIONS_Q_HIGH,
-                PapersAnalyzer.EXPAND_CITATIONS_SIGMA,
-                PapersAnalyzer.EXPAND_SIMILARITY_THRESHOLD
-            )
+            ids = expand_ids(loader=loader, ids=ids, single_paper=False,
+                             limit=min(int(min(len(ids), limit) * (1 + expand)), analyzer.config.max_number_to_expand),
+                             max_expand=PapersAnalyzer.EXPAND_LIMIT,
+                             citations_q_low=PapersAnalyzer.EXPAND_CITATIONS_Q_LOW,
+                             citations_q_high=PapersAnalyzer.EXPAND_CITATIONS_Q_HIGH,
+                             citations_sigma=PapersAnalyzer.EXPAND_CITATIONS_SIGMA,
+                             similarity_threshold=PapersAnalyzer.EXPAND_SIMILARITY_THRESHOLD,
+                             single_paper_impact=PapersAnalyzer.SINGLE_PAPER_IMPACT)
         analyzer.analyze_papers(ids, query, topics, test=test, task=current_task)
     finally:
         loader.close_connection()
@@ -75,16 +73,14 @@ def analyze_search_terms_files(source, query,
                                     task=current_task)
         if ids and expand != 0:
             analyzer.progress.info('Expanding related papers by references', current=2, task=current_task)
-            ids = expand_ids(
-                ids,
-                min(int(min(len(ids), limit) * (1 + expand)), analyzer.config.max_number_to_expand),
-                loader,
-                PapersAnalyzer.EXPAND_LIMIT,
-                PapersAnalyzer.EXPAND_CITATIONS_Q_LOW,
-                PapersAnalyzer.EXPAND_CITATIONS_Q_HIGH,
-                PapersAnalyzer.EXPAND_CITATIONS_SIGMA,
-                PapersAnalyzer.EXPAND_SIMILARITY_THRESHOLD
-            )
+            ids = expand_ids(loader=loader, ids=ids, single_paper=False,
+                             limit=min(int(min(len(ids), limit) * (1 + expand)), analyzer.config.max_number_to_expand),
+                             max_expand=PapersAnalyzer.EXPAND_LIMIT,
+                             citations_q_low=PapersAnalyzer.EXPAND_CITATIONS_Q_LOW,
+                             citations_q_high=PapersAnalyzer.EXPAND_CITATIONS_Q_HIGH,
+                             citations_sigma=PapersAnalyzer.EXPAND_CITATIONS_SIGMA,
+                             similarity_threshold=PapersAnalyzer.EXPAND_SIMILARITY_THRESHOLD,
+                             single_paper_impact=PapersAnalyzer.SINGLE_PAPER_IMPACT)
         analyzer.analyze_ids(ids, source, query, sort, limit, topics, test=test, task=current_task)
         analyzer.progress.done(task=current_task)
         analyzer.teardown()
@@ -98,11 +94,13 @@ def analyze_id_list(source, ids, query, analysis_type, limit=None, topics='mediu
     config = PubtrendsConfig(test=test)
     loader = Loaders.get_loader(source, config)
     analyzer = PapersAnalyzer(loader, config)
-    return _analyze_id_list(analyzer, source, ids, query, analysis_type, limit, topics, test, current_task)
+    return _analyze_id_list(analyzer, source, ids, False, query, analysis_type, limit, topics,
+                            test, current_task)
 
 
 def _analyze_id_list(analyzer, source,
-                     ids, query, analysis_type=IDS_ANALYSIS_TYPE, limit=None, topics='medium',
+                     ids, single_paper,
+                     query, analysis_type=IDS_ANALYSIS_TYPE, limit=None, topics='medium',
                      test=False, task=None):
     if len(ids) == 0:
         raise RuntimeError('Empty papers list')
@@ -110,19 +108,14 @@ def _analyze_id_list(analyzer, source,
     try:
         if analysis_type == PAPER_ANALYSIS_TYPE:
             limit = int(limit) if limit else analyzer.config.max_number_to_expand
-            # Fetch references at first, but in some cases paper may have empty references
-            ids = ids + analyzer.load_references(ids[0], limit=limit)
             analyzer.progress.info('Expanding related papers by references', current=1, task=task)
-            ids = expand_ids(
-                ids,
-                limit,
-                analyzer.loader,
-                PapersAnalyzer.EXPAND_LIMIT,
-                PapersAnalyzer.EXPAND_CITATIONS_Q_LOW,
-                PapersAnalyzer.EXPAND_CITATIONS_Q_HIGH,
-                PapersAnalyzer.EXPAND_CITATIONS_SIGMA,
-                PapersAnalyzer.EXPAND_SIMILARITY_THRESHOLD
-            )
+            ids = expand_ids(loader=analyzer.loader, ids=ids, single_paper=single_paper, limit=limit,
+                             max_expand=PapersAnalyzer.EXPAND_LIMIT,
+                             citations_q_low=PapersAnalyzer.EXPAND_CITATIONS_Q_LOW,
+                             citations_q_high=PapersAnalyzer.EXPAND_CITATIONS_Q_HIGH,
+                             citations_sigma=PapersAnalyzer.EXPAND_CITATIONS_SIGMA,
+                             similarity_threshold=PapersAnalyzer.EXPAND_SIMILARITY_THRESHOLD,
+                             single_paper_impact=PapersAnalyzer.SINGLE_PAPER_IMPACT)
         elif analysis_type == IDS_ANALYSIS_TYPE:
             ids = ids  # Leave intact
         else:
@@ -155,7 +148,8 @@ def analyze_search_paper(source, pid, key, value, limit, topics, test=False):
         if len(result) == 1:
             return _analyze_id_list(
                 analyzer,
-                source, ids=result, query=f'Paper {key}={value}', analysis_type=PAPER_ANALYSIS_TYPE,
+                source, ids=result, single_paper=True, query=f'Paper {key}={value}',
+                analysis_type=PAPER_ANALYSIS_TYPE,
                 limit=limit, topics=topics,
                 test=test, task=current_task
             )
@@ -178,7 +172,8 @@ def analyze_pubmed_search(query, sort, limit, topics, test=False):
                            current=1, task=current_task)
     ids = pubmed_search(query, sort, limit)
     return _analyze_id_list(analyzer, 'Pubmed',
-                            ids, query=query, analysis_type=IDS_ANALYSIS_TYPE, limit=limit, topics=topics,
+                            ids, single_paper=False, query=query, analysis_type=IDS_ANALYSIS_TYPE, limit=limit,
+                            topics=topics,
                             test=test, task=current_task)
 
 

@@ -44,16 +44,16 @@ class Loader(metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def estimate_citations(self, ids):
+    def load_citations_counts(self, ids):
         """
-        Estimates mean, variance for total citations count of given ids.
-        :return: list of total citations
+        Returns total citations counts for each paper id.
+        :return: list[Int]
         """
 
     @abstractmethod
     def load_citations(self, ids):
         """
-        Loading INNER citations graph, where all the nodes are inside query of interest.
+        Loading citations graph, between ids.
         :return: dataframe[id_out(String), id_in(String)]
         """
 
@@ -74,7 +74,7 @@ class Loader(metaclass=ABCMeta):
     @abstractmethod
     def expand(self, ids, limit):
         """
-        Expands list of ids after one or BFS step along citations graph sorted by citations count.
+        Expands list of ids after one or BFS step along citations graph.
         :return: dataframe[id(String), total]
         """
 
