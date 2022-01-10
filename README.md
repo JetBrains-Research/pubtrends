@@ -6,8 +6,7 @@ PubTrends
 =========
 
 PubTrends is a scientific literature exploratory tool for analyzing topics of a research field and similar papers
-analysis. It runs a Pubmed or Semantic Scholar search and allows user to explore high-level structure of result papers. \
-It is available at [https://pubtrends.net](https://pubtrends.net).
+analysis. It runs a Pubmed or Semantic Scholar search and allows user to explore high-level structure of result papers. 
 
 Open Access Paper: [https://doi.org/10.1145/3459930.3469501](https://doi.org/10.1145/3459930.3469501), poster
 is [here](https://drive.google.com/file/d/1SeqJtJtaHSO6YihG2905boOEYL1NiSP1/view?usp=sharing). \
@@ -18,15 +17,11 @@ is [here](https://drive.google.com/file/d/1SeqJtJtaHSO6YihG2905boOEYL1NiSP1/view
 
 ## Technical details
 
-Here is a short description of the service architecture and technologies used.
+PubTrends is a web service, written in Python and Javascript. It uses PostrgreSQL to store information about scientific publications.
 
-### Libraries
-
-PubTrends is a web service, written in Python, Kotlin and Javascript.
-The service uses combination of Gunicorn and Flask for web server. Asynchronous computations are supported with Celery
-tasks queue and Redis as message broker. We use PostgreSQL to store information about papers: titles, abstracts, authors
-and citations information. PostgreSQL built-in text search engine is used for full text search. Kotlin PostgresSQL
-ORM is used to store papers in the database. MySQL database is used to store technical user information including users 
+###  Libraries
+Web service is built with Gunicorn and Flask. Asynchronous computations are supported with Celery tasks queue and Redis as message broker. 
+We use PostgreSQL to store information about papers: titles, abstracts, authors and citations information. PostgreSQL built-in text search engine is used for full text search. Kotlin PostgresSQL ORM is used to store papers in the database. MySQL database is used to store technical user information including users 
 roles and admin credentials for admin dashboard. 
 
 All the data manipulations are made with Pandas, Numpy and Scikit-Learn libraries. The service uses Python Nltk and
