@@ -209,17 +209,7 @@ Then launch web-service or use jupyter notebook for development.
 
 ### Web service
 
-1. Create necessary folders for logs, service database, etc. See `docker-compose.yml` for details.
-    ```
-    mkdir ~/.pubtrends/logs
-    mkdir ~/.pubtrends/database
-    mkdir ~/.pubtrends/.cache
-    mkdir ~/.pubtrends/predefined
-    mkdir ~/.pubtrends/search_results
-    mkdir ~/.pubtrends/ssl
-    mkdir ~/nltk_data
-    mkdir ~/gensim-data
-    ```
+1. Create necessary folders with script `init.sh`.
 
 2. Start Redis
     ```
