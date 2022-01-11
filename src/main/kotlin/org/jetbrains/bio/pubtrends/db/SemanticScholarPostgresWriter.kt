@@ -1,12 +1,12 @@
 package org.jetbrains.bio.pubtrends.db
 
-import org.apache.logging.log4j.LogManager
 import org.jetbrains.bio.pubtrends.ss.SemanticScholarArticle
 import org.jetbrains.bio.pubtrends.ss.crc32id
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.statements.StatementContext
 import org.jetbrains.exposed.sql.statements.expandArgs
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.slf4j.LoggerFactory
 
 open class SemanticScholarPostgresWriter(
     host: String,
@@ -17,10 +17,10 @@ open class SemanticScholarPostgresWriter(
     private val finishFillDatabase: Boolean
 ) : AbstractDBWriter<SemanticScholarArticle> {
     companion object Log4jSqlLogger : SqlLogger {
-        private val logger = LogManager.getLogger(Log4jSqlLogger::class)
+        private val LOG = LoggerFactory.getLogger(Log4jSqlLogger::class.java)
 
         override fun log(context: StatementContext, transaction: Transaction) {
-            logger.debug("SQL: ${context.expandArgs(transaction)}")
+            LOG.debug("SQL: ${context.expandArgs(transaction)}")
         }
     }
 
@@ -119,7 +119,7 @@ open class SemanticScholarPostgresWriter(
 
     override fun close() {
         if (finishFillDatabase) {
-            logger.info("Refreshing matview_sscitations")
+            LOG.info("Refreshing matview_sscitations")
             transaction {
                 addLogger(PubmedPostgresWriter)
                 exec(
@@ -135,7 +135,7 @@ open class SemanticScholarPostgresWriter(
                     """
                 )
             }
-            logger.info("Done refreshing matview_sscitations")
+            LOG.info("Done refreshing matview_sscitations")
         }
     }
 }

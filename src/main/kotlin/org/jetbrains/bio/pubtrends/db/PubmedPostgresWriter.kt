@@ -1,12 +1,12 @@
 package org.jetbrains.bio.pubtrends.db
 
-import org.apache.logging.log4j.LogManager
 import org.jetbrains.bio.pubtrends.pm.PublicationType
 import org.jetbrains.bio.pubtrends.pm.PubmedArticle
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.statements.StatementContext
 import org.jetbrains.exposed.sql.statements.expandArgs
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.slf4j.LoggerFactory
 
 open class PubmedPostgresWriter(
         host: String,
@@ -16,10 +16,10 @@ open class PubmedPostgresWriter(
         password: String
 ) : AbstractDBWriter<PubmedArticle> {
     companion object Log4jSqlLogger : SqlLogger {
-        private val logger = LogManager.getLogger(Log4jSqlLogger::class)
+        private val LOG = LoggerFactory.getLogger(Log4jSqlLogger::class.java)
 
         override fun log(context: StatementContext, transaction: Transaction) {
-            logger.debug("SQL: ${context.expandArgs(transaction)}")
+            LOG.debug("SQL: ${context.expandArgs(transaction)}")
         }
     }
 

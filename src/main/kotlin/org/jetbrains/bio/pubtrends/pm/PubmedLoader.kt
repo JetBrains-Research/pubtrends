@@ -1,18 +1,19 @@
 package org.jetbrains.bio.pubtrends.pm
 
 import joptsimple.OptionParser
-import org.apache.logging.log4j.LogManager
 import org.jetbrains.bio.pubtrends.Config
 import org.jetbrains.bio.pubtrends.db.AbstractDBWriter
 import org.jetbrains.bio.pubtrends.db.PubmedPostgresWriter
+import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import kotlin.system.exitProcess
 
 object PubmedLoader {
+    private val LOG = LoggerFactory.getLogger(PubmedLoader::class.java)
+
     @JvmStatic
     fun main(args: Array<String>) {
 
-        val logger = LogManager.getLogger("Pubtrends")
 
         with(OptionParser()) {
             accepts("resetDatabase", "Reset Database")
@@ -23,7 +24,7 @@ object PubmedLoader {
             // Help option
             acceptsAll(listOf("h", "?", "help"), "Show help").forHelp()
 
-            logger.info("Arguments: \n" + args.contentToString())
+            LOG.info("Arguments: \n" + args.contentToString())
 
             val options = parse(*args)
             if (options.has("help")) {
@@ -33,11 +34,11 @@ object PubmedLoader {
 
             // Load configuration file
             val (config, configPath, settingsRoot) = Config.load()
-            logger.info("Config path: $configPath")
+            LOG.info("Config path: $configPath")
 
             val dbWriter: AbstractDBWriter<PubmedArticle>
             if (!(config["postgres_host"]?.toString()).isNullOrBlank()) {
-                logger.info("Init Postgresql database connection")
+                LOG.info("Init Postgresql database connection")
                 dbWriter = PubmedPostgresWriter(
                         config["postgres_host"]!!.toString(),
                         config["postgres_port"]!!.toString().toInt(),
@@ -55,25 +56,25 @@ object PubmedLoader {
 
             dbWriter.use {
                 if (options.has("resetDatabase")) {
-                    logger.info("Resetting database")
+                    LOG.info("Resetting database")
                     dbWriter.reset()
                     Files.deleteIfExists(pubmedLastIdFile)
                     Files.deleteIfExists(pubmedStatsFile)
                 }
 
                 if (options.has("fillDatabase")) {
-                    logger.info("Checking Pubmed FTP...")
+                    LOG.info("Checking Pubmed FTP...")
                     var retry = 1
                     var waitTime: Long = 1
                     var isUpdateRequired = true
-                    logger.info("Retrying downloading after any problems.")
+                    LOG.info("Retrying downloading after any problems.")
                     while (isUpdateRequired) {
                         try {
-                            logger.info("Init Pubmed processor")
+                            LOG.info("Init Pubmed processor")
                             val pubmedXMLParser =
                                     PubmedXMLParser(dbWriter, config["loader_batch_size"].toString().toInt())
 
-                            logger.info("Init crawler")
+                            LOG.info("Init crawler")
                             val collectStats = config["loader_collect_stats"].toString().toBoolean()
                             val pubmedCrawler = PubmedCrawler(pubmedXMLParser, collectStats,
                                     pubmedStatsFile, pubmedLastIdFile)
@@ -90,12 +91,12 @@ object PubmedLoader {
                             }
                             waitTime = 1
                         } catch (e: PubmedCrawlerException) {
-                            logger.error(e)
+                            LOG.error("Error", e)
                             isUpdateRequired = true
 
-                            logger.info("Waiting for $waitTime seconds...")
+                            LOG.info("Waiting for $waitTime seconds...")
                             Thread.sleep(waitTime * 1000)
-                            logger.info("Retry #$retry")
+                            LOG.info("Retry #$retry")
                             retry += 1
 
                             if (waitTime < 1024) {
@@ -103,7 +104,7 @@ object PubmedLoader {
                             }
                         }
                     }
-                    logger.info("Done crawling.")
+                    LOG.info("Done crawling.")
                 }
             }
         }

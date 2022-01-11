@@ -3,19 +3,20 @@ package org.jetbrains.bio.pubtrends.ss
 import joptsimple.OptionParser
 import joptsimple.ValueConversionException
 import joptsimple.ValueConverter
-import org.apache.logging.log4j.LogManager
 import org.jetbrains.bio.pubtrends.Config
 import org.jetbrains.bio.pubtrends.db.AbstractDBWriter
 import org.jetbrains.bio.pubtrends.db.SemanticScholarPostgresWriter
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.system.exitProcess
 
 object SemanticScholarLoader {
+    private val LOG = LoggerFactory.getLogger(SemanticScholarLoader::class.java)
+
     @JvmStatic
     fun main(args: Array<String>) {
-        val logger = LogManager.getLogger("Pubtrends")
 
         with(OptionParser()) {
             accepts("resetDatabase", "Reset Database")
@@ -35,11 +36,11 @@ object SemanticScholarLoader {
 
             // Load configuration file
             val (config, configPath, settingsRoot) = Config.load()
-            logger.info("Config path: $configPath")
+            LOG.info("Config path: $configPath")
 
             val dbWriter: AbstractDBWriter<SemanticScholarArticle>
             if (!(config["postgres_host"]?.toString()).isNullOrBlank()) {
-                logger.info("Init Postgresql database connection")
+                LOG.info("Init Postgresql database connection")
                 dbWriter = SemanticScholarPostgresWriter(
                     config["postgres_host"]!!.toString(),
                     config["postgres_port"]!!.toString().toInt(),
@@ -55,7 +56,7 @@ object SemanticScholarLoader {
 
             dbWriter.use {
                 if (options.has("resetDatabase")) {
-                    logger.info("Resetting database")
+                    LOG.info("Resetting database")
                     dbWriter.reset()
                 }
 
@@ -64,14 +65,14 @@ object SemanticScholarLoader {
                     val collectStats = config["loader_collect_stats"].toString().toBoolean()
 
                     val file = File(options.valueOf("fillDatabase").toString())
-                    logger.info("Started parsing articles $file")
+                    LOG.info("Started parsing articles $file")
                     ArchiveParser(
                         dbWriter, file,
                         config["loader_batch_size"].toString().toInt(),
                         collectStats,
                         statsFile
                     ).parse()
-                    logger.info("Finished parsing articles")
+                    LOG.info("Finished parsing articles")
                 }
             }
 

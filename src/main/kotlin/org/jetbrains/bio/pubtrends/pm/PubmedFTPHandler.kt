@@ -4,7 +4,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.apache.commons.net.ftp.FTPClient
 import org.apache.commons.net.ftp.FTPReply
-import org.apache.logging.log4j.LogManager
+import org.slf4j.LoggerFactory
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.IOException
@@ -12,7 +12,7 @@ import java.io.IOException
 
 class PubmedFTPHandler {
     companion object {
-        private val logger = LogManager.getLogger(PubmedFTPHandler::class)
+        private val LOG = LoggerFactory.getLogger(PubmedFTPHandler::class.java)
 
         const val SERVER = "ftp.ncbi.nlm.nih.gov"
         const val BASELINE_PATH = "/pubmed/baseline"
@@ -20,22 +20,23 @@ class PubmedFTPHandler {
 
         const val TIMEOUT_MS = 20000
         const val DOWNLOAD_TIMEOUT_MS = 100000L
+        const val YEAR = 22
 
-        fun pubmedFileToId(name: String): Int = name.removeSurrounding("pubmed22n", ".xml.gz").toInt()
+        fun pubmedFileToId(name: String): Int = name.removeSurrounding("pubmed${YEAR}n", ".xml.gz").toInt()
 
-        fun idToPubmedFile(id: Int): String = "pubmed22n${id.toString().padStart(4, '0')}.xml.gz"
+        fun idToPubmedFile(id: Int): String = "pubmed${YEAR}n${id.toString().padStart(4, '0')}.xml.gz"
     }
 
     fun fetch(lastId: Int = 0): Pair<List<String>, List<String>> {
         val ftp = CloseableFTPClient()
 
         ftp.use {
-            logger.info("Connecting to $SERVER")
+            LOG.info("Connecting to $SERVER")
             connect(it)
 
-            logger.info("Fetching baseline files")
+            LOG.info("Fetching baseline files")
             val baselineFiles = getNewXMLsList(it, BASELINE_PATH, lastId)
-            logger.info("Fetching update files")
+            LOG.info("Fetching update files")
             val updateFiles = getNewXMLsList(it, UPDATE_PATH, lastId)
 
             return Pair(baselineFiles, updateFiles)

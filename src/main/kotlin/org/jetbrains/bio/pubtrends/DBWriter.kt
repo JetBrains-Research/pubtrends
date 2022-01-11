@@ -1,11 +1,11 @@
 package org.jetbrains.bio.pubtrends
 
-import org.apache.logging.log4j.LogManager
 import org.jetbrains.bio.pubtrends.db.PubmedPostgresWriter
 import org.jetbrains.bio.pubtrends.db.SemanticScholarPostgresWriter
 import org.jetbrains.bio.pubtrends.pm.PublicationType
 import org.jetbrains.bio.pubtrends.pm.PubmedArticle
 import org.jetbrains.bio.pubtrends.ss.*
+import org.slf4j.LoggerFactory
 import java.util.*
 
 /**
@@ -13,7 +13,7 @@ import java.util.*
  */
 class DBWriter {
     companion object {
-        private val LOG = LogManager.getLogger("DBWriter")
+        private val LOG = LoggerFactory.getLogger(DBWriter::class.java)
 
         private val PUBMED_ARTICLE = PubmedArticle(
             pmid = 1,

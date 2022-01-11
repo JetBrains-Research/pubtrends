@@ -1,7 +1,7 @@
 package org.jetbrains.bio.pubtrends.pm
 
-import org.apache.logging.log4j.LogManager
 import org.jetbrains.bio.pubtrends.db.AbstractDBWriter
+import org.slf4j.LoggerFactory
 import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileInputStream
@@ -17,7 +17,7 @@ class PubmedXMLParser(
         private val batchSize: Int = 0
 ) {
     companion object {
-        private val logger = LogManager.getLogger(PubmedXMLParser::class)
+        private val LOG = LoggerFactory.getLogger(PubmedXMLParser::class.java)
 
         // Article tag
         const val ARTICLE_TAG = "PubmedArticleSet/PubmedArticle"
@@ -86,7 +86,7 @@ class PubmedXMLParser(
     fun parse(name: String): Boolean {
         try {
             val file = File(name)
-            logger.debug("File location: ${file.absolutePath}")
+            LOG.debug("File location: ${file.absolutePath}")
             val `in` = if (name.endsWith(".gz"))
                 GZIPInputStream(BufferedInputStream(FileInputStream(file)))
             else // for tests
@@ -95,7 +95,7 @@ class PubmedXMLParser(
                 parseData(factory.createXMLEventReader(it))
             }
         } catch (e: XMLStreamException) {
-            logger.error("Failed to parse $name", e)
+            LOG.error("Failed to parse $name", e)
             throw e
         }
 
@@ -159,7 +159,7 @@ class PubmedXMLParser(
                 // Process start elements
                 when (fullName) {
                     ARTICLE_TAG -> {
-                        logger.debug("New article start")
+                        LOG.debug("New article start")
                         isAbstractStructured = false
                         isArticleTitleParsed = false
                         isAbstractTextParsed = false
@@ -254,7 +254,7 @@ class PubmedXMLParser(
                         if (yearMatch != null) {
                             year = yearMatch.value.toInt()
                         } else {
-                            logger.warn(
+                            LOG.warn(
                                     "Failed to parse year from MEDLINE date in article $pmid: " +
                                             dataElement.data
                             )
@@ -293,7 +293,7 @@ class PubmedXMLParser(
                             citationList.add(dataElement.data.toInt())
                             isCitationPMIDFound = false
                         } catch (e: NumberFormatException) {
-                            logger.error("Failed to process $CITATION_PMID_TAG: ${dataElement.data}")
+                            LOG.error("Failed to process $CITATION_PMID_TAG: ${dataElement.data}")
                         }
                     }
 
@@ -309,12 +309,12 @@ class PubmedXMLParser(
                     fullName == MESH_DESCRIPTOR_TAG -> {
                         val descriptor = dataElement.data.replace(", ", " ").replace("[/&]+", " ").trim()
                         currentMeshHeading = descriptor
-                        logger.debug("$pmid: MeSH Descriptor <$descriptor> <$currentMeshHeading>")
+                        LOG.debug("$pmid: MeSH Descriptor <$descriptor> <$currentMeshHeading>")
                     }
                     fullName == MESH_QUALIFIER_TAG -> {
                         val qualifier = dataElement.data.replace(", ", " ").replace("[/&]+", " ").trim()
                         currentMeshHeading += " $qualifier"
-                        logger.debug("$pmid: MeSH Qualifier <$qualifier> <$currentMeshHeading>")
+                        LOG.debug("$pmid: MeSH Qualifier <$qualifier> <$currentMeshHeading>")
                     }
 
                     // Authors
@@ -386,7 +386,7 @@ class PubmedXMLParser(
                                         authors.toList(), databanks.toList(), Journal(journalName), language
                                 )
                         )
-                        logger.debug("Found new article: $pubmedArticle")
+                        LOG.debug("Found new article: $pubmedArticle")
                         articleList.add(pubmedArticle)
                     }
 
@@ -447,19 +447,19 @@ class PubmedXMLParser(
 
         // Delete articles if needed
         if (deletedArticlePMIDList.size > 0) {
-            logger.info("Deleting ${deletedArticlePMIDList.size} articles")
+            LOG.info("Deleting ${deletedArticlePMIDList.size} articles")
 
             dbWriter.delete(deletedArticlePMIDList.map { it.toString() })
         }
 
-        logger.info(
+        LOG.info(
                 "Articles found: $articleCounter, deleted: ${deletedArticlePMIDList.size}, " +
                         "keywords: $keywordCounter, citations: $citationCounter"
         )
     }
 
     private fun storeArticles() {
-        logger.info("Storing articles ${articlesStored + 1}-${articlesStored + articleList.size}...")
+        LOG.info("Storing articles ${articlesStored + 1}-${articlesStored + articleList.size}...")
 
         dbWriter.store(articleList)
         articlesStored += articleList.size

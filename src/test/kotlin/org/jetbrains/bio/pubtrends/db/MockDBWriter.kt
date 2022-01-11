@@ -1,6 +1,6 @@
 package org.jetbrains.bio.pubtrends.db
 
-import org.apache.logging.log4j.LogManager
+import org.slf4j.LoggerFactory
 
 /**
  * This class is used to avoid interaction with a real database while testing Parsers class.
@@ -12,11 +12,11 @@ class MockDBWriter<T>(private val batch: Boolean = false) : AbstractDBWriter<T> 
     var articles = arrayListOf<T>()
 
     companion object {
-        private val logger = LogManager.getLogger(MockDBWriter::class)
+        private val LOG = LoggerFactory.getLogger(MockDBWriter::class.java)
     }
 
     override fun store(articles: List<T>) {
-        logger.info("Attempted to store ${articles.size} articles")
+        LOG.info("Attempted to store ${articles.size} articles")
         if (batch) {
             this.articles.addAll(articles)
             articlesStored += articles.size
@@ -28,8 +28,8 @@ class MockDBWriter<T>(private val batch: Boolean = false) : AbstractDBWriter<T> 
     }
 
     override fun delete(ids: List<String>) {
-        logger.info("Attempted to delete ${ids.size} articles")
-        logger.info("Article IDs: ${ids.joinToString(separator = ", ")}")
+        LOG.info("Attempted to delete ${ids.size} articles")
+        LOG.info("Article IDs: ${ids.joinToString(separator = ", ")}")
         articlesDeleted = ids.size
     }
 

@@ -1,7 +1,7 @@
 package org.jetbrains.bio.pubtrends.pm
 
 import kotlinx.coroutines.TimeoutCancellationException
-import org.apache.logging.log4j.LogManager
+import org.slf4j.LoggerFactory
 import java.io.*
 import java.nio.file.Files
 import java.nio.file.Path
@@ -20,11 +20,9 @@ class PubmedCrawler(
         private val progressTSV: Path
 ) {
 
-    private val logger = LogManager.getLogger(PubmedCrawler::class)
-
     init {
         if (collectStats) {
-            logger.info("Collecting stats in $statsTSV")
+            LOG.info("Collecting stats in $statsTSV")
         }
     }
 
@@ -38,7 +36,7 @@ class PubmedCrawler(
         var lastId = 0
         if (lastIdCmd == null) {
             if (Files.exists(progressTSV)) {
-                logger.info("Found crawler progress $progressTSV")
+                LOG.info("Found crawler progress $progressTSV")
                 BufferedReader(FileReader(progressTSV.toFile())).useLines { lines ->
                     for (line in lines) {
                         val chunks = line.split("\t")
@@ -55,7 +53,7 @@ class PubmedCrawler(
         }
 
         if (lastId > 0) {
-            logger.info("Last downloaded file: ${PubmedFTPHandler.idToPubmedFile(lastId)}")
+            LOG.info("Last downloaded file: ${PubmedFTPHandler.idToPubmedFile(lastId)}")
         }
 
         try {
@@ -63,36 +61,36 @@ class PubmedCrawler(
         } catch (e: IOException) {
             throw PubmedCrawlerException("Failed to create temporary directory")
         }
-        logger.info("Created temporary directory: ${tempDirectory.absolutePath}")
+        LOG.info("Created temporary directory: ${tempDirectory.absolutePath}")
 
         try {
             val (baselineFiles, updateFiles) = ftpHandler.fetch(lastId)
             val baselineSize = baselineFiles.size
             val updatesSize = updateFiles.size
             val totalSize = baselineSize + updatesSize
-            logger.info(
+            LOG.info(
                     "Found $totalSize new file(s)\nBaseline: $baselineSize, Updates: $updatesSize"
             )
             if (baselineSize + updatesSize == 0) {
                 return false
             }
-            logger.info("Processing baseline")
+            LOG.info("Processing baseline")
             downloadAndProcessFiles(baselineFiles, 0, totalSize, isBaseline = true)
-            logger.info("Processing updates")
+            LOG.info("Processing updates")
             downloadAndProcessFiles(updateFiles, baselineSize, totalSize, isBaseline = false)
         } catch (e: IOException) {
-            logger.error("Download failed: ${e.message}")
+            LOG.error("Download failed: ${e.message}")
             throw PubmedCrawlerException(e)
         } catch (e: TimeoutCancellationException) {
-            logger.error("Download timed out")
+            LOG.error("Download timed out")
             throw PubmedCrawlerException(e)
         } finally {
             if (tempDirectory.exists()) {
-                logger.info("Deleting directory: ${tempDirectory.absolutePath}")
+                LOG.info("Deleting directory: ${tempDirectory.absolutePath}")
                 tempDirectory.deleteRecursively()
             }
             if (collectStats) {
-                logger.info("Writing stats to $statsTSV")
+                LOG.info("Writing stats to $statsTSV")
                 statsTSV.toFile().outputStream().bufferedWriter().use {
                     xmlParser.tags.iterator().forEach { tag ->
                         it.write("${tag.key}\t${tag.value}\n")
@@ -116,7 +114,7 @@ class PubmedCrawler(
             val localArchiveName = "${tempDirectory.absolutePath}/$file"
             val progressPrefix = "(${startProgress + idx + 1} / $totalProgress total) [$fileType]"
 
-            logger.info("$progressPrefix $localArchiveName: Downloading...")
+            LOG.info("$progressPrefix $localArchiveName: Downloading...")
 
             try {
                 if (isBaseline)
@@ -129,7 +127,7 @@ class PubmedCrawler(
             }
 
             try {
-                logger.info("$progressPrefix $localArchiveName: Parsing...")
+                LOG.info("$progressPrefix $localArchiveName: Parsing...")
                 xmlParser.parse(localArchiveName)
             } catch (e: XMLStreamException) {
                 throw PubmedCrawlerException("Failed to parse $localArchiveName", e)
@@ -137,10 +135,10 @@ class PubmedCrawler(
                 deleteIfExists(localArchiveName)
             }
 
-            logger.info("$progressPrefix $localArchiveName: SUCCESS")
+            LOG.info("$progressPrefix $localArchiveName: SUCCESS")
 
             // Save progress information to be able to recover from Ctrl-C/kill signals
-            logger.debug("$progressPrefix Save progress to $progressTSV")
+            LOG.debug("$progressPrefix Save progress to $progressTSV")
             BufferedWriter(FileWriter(progressTSV.toFile())).use {
                 it.write("lastId\t${PubmedFTPHandler.pubmedFileToId(file)}")
             }
@@ -152,5 +150,9 @@ class PubmedCrawler(
         if (file.exists()) {
             file.delete()
         }
+    }
+
+    companion object {
+        private val LOG = LoggerFactory.getLogger(PubmedCrawler::class.java)
     }
 }

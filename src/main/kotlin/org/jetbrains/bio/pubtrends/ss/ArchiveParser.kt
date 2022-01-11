@@ -2,8 +2,8 @@ package org.jetbrains.bio.pubtrends.ss
 
 import com.google.gson.*
 import com.google.gson.reflect.TypeToken
-import org.apache.logging.log4j.LogManager
 import org.jetbrains.bio.pubtrends.db.AbstractDBWriter
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Path
 import java.util.*
@@ -22,12 +22,12 @@ class ArchiveParser(
     private var batchIndex = 0
 
     companion object {
-        private val logger = LogManager.getLogger(ArchiveParser::class)
+        private val LOG = LoggerFactory.getLogger(ArchiveParser::class.java)
     }
 
     init {
         if (collectStats) {
-            logger.info("Collecting stats in $statsTSV")
+            LOG.info("Collecting stats in $statsTSV")
         }
     }
 
@@ -78,7 +78,7 @@ class ArchiveParser(
                     try {
                         jsonObject.get("year").asInt
                     } catch (e: Exception) {
-                        logger.info("Skip year value: ${jsonObject.get("year")}")
+                        LOG.info("Skip year value: ${jsonObject.get("year")}")
                         null
                     }
                 }
@@ -118,7 +118,7 @@ class ArchiveParser(
         currentBatch.clear()
         batchIndex++
         val progress = 250000 * batchIndex / batchSize
-        logger.info("Finished batch $batchIndex adding ($archiveFileGz) $progress%")
+        LOG.info("Finished batch $batchIndex adding ($archiveFileGz) $progress%")
     }
 
     private fun handleEndDocument() {
@@ -126,7 +126,7 @@ class ArchiveParser(
             storeBatch()
         }
         if (collectStats) {
-            logger.info("Writing stats to $statsTSV")
+            LOG.info("Writing stats to $statsTSV")
             statsTSV.toFile().outputStream().bufferedWriter().use {
                 it.write(archiveFileGz.path)
                 it.newLine()
@@ -185,7 +185,7 @@ class ArchiveParser(
         try {
             jsonObject = JsonParser().parse(line).asJsonObject
         } catch (e: JsonSyntaxException) {
-            logger.error("Error parsing line, skipping article\n$line")
+            LOG.error("Error parsing line, skipping article\n$line")
         }
 
         return jsonObject
