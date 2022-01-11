@@ -21,9 +21,9 @@ class PubmedFTPHandler {
         const val TIMEOUT_MS = 20000
         const val DOWNLOAD_TIMEOUT_MS = 100000L
 
-        fun pubmedFileToId(name: String): Int = name.removeSurrounding("pubmed20n", ".xml.gz").toInt()
+        fun pubmedFileToId(name: String): Int = name.removeSurrounding("pubmed22n", ".xml.gz").toInt()
 
-        fun idToPubmedFile(id: Int): String = "pubmed20n${id.toString().padStart(4, '0')}.xml.gz"
+        fun idToPubmedFile(id: Int): String = "pubmed22n${id.toString().padStart(4, '0')}.xml.gz"
     }
 
     fun fetch(lastId: Int = 0): Pair<List<String>, List<String>> {
