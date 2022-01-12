@@ -6,7 +6,7 @@ PubTrends
 =========
 
 PubTrends is a scientific literature exploratory tool for analyzing topics of a research field and similar papers
-analysis. It runs a Pubmed or Semantic Scholar search and allows user to explore high-level structure of result papers. 
+analysis. It runs a Pubmed or Semantic Scholar search and allows user to explore high-level structure of result papers.
 
 Open Access Paper: [https://doi.org/10.1145/3459930.3469501](https://doi.org/10.1145/3459930.3469501), poster
 is [here](https://drive.google.com/file/d/1SeqJtJtaHSO6YihG2905boOEYL1NiSP1/view?usp=sharing). \
@@ -17,18 +17,22 @@ is [here](https://drive.google.com/file/d/1SeqJtJtaHSO6YihG2905boOEYL1NiSP1/view
 
 ## Technical details
 
-PubTrends is a web service, written in Python and Javascript. It uses PostrgreSQL to store information about scientific publications.
+PubTrends is a web service, written in Python and Javascript. It uses PostrgreSQL to store information about scientific
+publications.
 
-###  Libraries
-Web service is built with Gunicorn and Flask. Asynchronous computations are supported with Celery tasks queue and Redis as message broker. 
-We use PostgreSQL to store information about papers: titles, abstracts, authors and citations information. PostgreSQL built-in text search engine is used for full text search. Kotlin PostgresSQL ORM is used to store papers in the database. MySQL database is used to store technical user information including users 
-roles and admin credentials for admin dashboard. 
+### Libraries
+
+Web service is built with Gunicorn and Flask. Asynchronous computations are supported with Celery tasks queue and Redis
+as message broker. We use PostgreSQL to store information about papers: titles, abstracts, authors and citations
+information. PostgreSQL built-in text search engine is used for full text search. Kotlin PostgresSQL ORM is used to
+store papers in the database. MySQL database is used to store technical user information including users roles and admin
+credentials for admin dashboard.
 
 All the data manipulations are made with Pandas, Numpy and Scikit-Learn libraries. The service uses Python Nltk and
 Spacy libraries for text processing and analysis. Graph objects are processed with NetworkX library, papers embeddings
 are created with word2vec library from GenSim and in-house node2vec implementation based on word2vec. All the plots are
-created with Bokeh, Holoviews, Seaborn and Matplotlib libraries. Interactive Bokeh plots are used in web pages and Jupyter notebook
-experiments. Frontend is created with Bootstrap, JQuery and Cytoscape-JS for graphs rendering.
+created with Bokeh, Holoviews, Seaborn and Matplotlib libraries. Interactive Bokeh plots are used in web pages and
+Jupyter notebook experiments. Frontend is created with Bootstrap, JQuery and Cytoscape-JS for graphs rendering.
 
 Please refer to [environment.yml](environment.yml) for the full list of libraries used in the project.
 
@@ -44,8 +48,8 @@ Please refer to [docker-compose.yml](docker-compose.yml) for more information ab
 ### Testing and CI
 
 Testing is done with Pytest and JUnit. Flake8 linter is used for quality assessment of Python code. Python tests are
-launched within Docker. Continuous integration is done with TeamCity using build chains. Each commit is assigned with build
-number which is later used for *Python tests*, *Kotlin tests* and *Docker-compose tests* build configurations.
+launched within Docker. Continuous integration is done with TeamCity using build chains. Each commit is assigned with
+build number which is later used for *Python tests*, *Kotlin tests* and *Docker-compose tests* build configurations.
 Dedicated *Distributive* build configuration is used to build Kotlin code and pack all the Python code into distribution
 packages, this configuration depends on tests configuration and is being executed only when all the tests are passed
 successfully. Distribution packages are used for database updates and web service deployment.
@@ -55,14 +59,13 @@ successfully. Distribution packages are used for database updates and web servic
 We use Google Analytics to collect information about site visitors as well as internal statistics collector available
 from `/admin` dashboard, which shows requests and results, execution times and feedback from users.
 
-
 ## Development Prerequisites
 
 * JDK 8+
 * Conda
 * Python 3.6+
 * Docker
-* PostgreSQL 12 (in Docker)
+* PostgreSQL 14 (in Docker)
 * Redis 5.0 (in Docker)
 
 ## Configuration
@@ -92,7 +95,7 @@ from `/admin` dashboard, which shows requests and results, execution times and f
         -v ~/postgres/:/var/lib/postgresql/data \
         -e PGDATA=/var/lib/postgresql/data/pgdata \
         -p 5432:5432 \
-        -d postgres:12
+        -d postgres:14
     ``` 
     * Create database:
     ```
@@ -113,10 +116,6 @@ from `/admin` dashboard, which shows requests and results, execution times and f
     checkpoint_timeout = 10min
     checkpoint_completion_target = 0.8
     synchronous_commit = off
-
-    # Concurrency
-    max_worker_processes = 8
-    max_parallel_workers = 8
     ```
 
 5. Clone the [JetBrains-Research/pubtrends-review](https://github.com/JetBrains-Research/pubtrends-review) repository to
@@ -152,7 +151,7 @@ Command line options supported:
 * `fillDatabase` - option to fill database with Pubmed data. Can be interrupted at any moment.
 * `lastId` - force downloading from given id from articles pack `pubmed20n{lastId+1}.xml`.
 
-Updates - add crontab update every day at 22:00 with the command:
+Updates - add crontab updates every day at 22:00 with the command:
 
 ```
 crontab -e 0 22 * * * java -cp pubtrends-<version>.jar org.jetbrains.bio.pubtrends.pm.PubmedLoader --fillDatabase | \
@@ -244,9 +243,10 @@ Then launch web-service or use jupyter notebook for development.
     python -m pysrc.fasttext.fasttext_app
     ```    
 
-
 ### Jupyter notebook
+
 Notebooks are located under the `/notebooks` folder. Please configure `PYTHONPATH` before using jupyter.
+
    ```
    export PYTHONPATH=$PYTHONPATH:$(pwd)
    jupyter notebook
@@ -268,7 +268,7 @@ Notebooks are located under the `/notebooks` folder. Please configure `PYTHONPAT
     ./gradlew clean test
     ```
 
-3. Python tests with codestyle check for development (including integration with Kotlin DB writers)
+3. Python tests with code style check for development (including integration with Kotlin DB writers)
 
     ```
     source activate pubtrends; pytest pysrc
@@ -278,18 +278,19 @@ Notebooks are located under the `/notebooks` folder. Please configure `PYTHONPAT
 
     ```
     docker run --rm --volume=$(pwd):/pubtrends -t biolabs/pubtrends-test /bin/bash -c \
-    "/usr/lib/postgresql/12/bin/pg_ctl -D /home/user/postgres start; \
+    "/usr/lib/postgresql/14/bin/pg_ctl -D /home/user/postgres start; \
     cd /pubtrends; mkdir ~/.pubtrends; cp config.properties ~/.pubtrends; \
     source activate pubtrends; pytest pysrc"
     ```
 
 ## Deployment
 
-Deployment is done with docker-compose. It is configured to start three containers:
+Deployment is done with docker-compose. It is configured to start the following containers:
 
-* Gunicorn serving Flask app on HTTPS port 443
+* Gunicorn serving main pubtrends Flask app
 * Redis as a message proxy
 * Celery workers queue
+* Gunicorn fasttext model app
 
 Please ensure that you have configured and prepared the database(s).
 
@@ -305,7 +306,7 @@ Please ensure that you have configured and prepared the database(s).
         -e POSTGRES_DB=pubtrends \
         -v ~/postgres/:/var/lib/postgresql/data \
         -e PGDATA=/var/lib/postgresql/data/pgdata \
-        -d postgres:12 
+        -d postgres:14 
     ```
    NOTE: stop Postgres docker image with timeout `--time=300` to avoid DB recovery.\
 
@@ -322,14 +323,7 @@ Please ensure that you have configured and prepared the database(s).
    ```
 
 
-4. Create necessary folders for logs, service database, etc. See `docker-compose.yml` for details.
-    ```
-    mkdir ~/.pubtrends/logs
-    mkdir ~/.pubtrends/database
-    ...
-    ```
-
-5. Optional: prepare SSL certificates files `privkey.pem` and `cert.pem` and optional CA-authority file `chain.pem`.\
+4. Optional: prepare SSL certificates files `privkey.pem` and `cert.pem` and optional CA-authority file `chain.pem`.\
    You can generate a self-signed certificate for testing purposes by the command:
 
    ```
@@ -338,7 +332,7 @@ Please ensure that you have configured and prepared the database(s).
    openssl req -nodes -x509 -newkey rsa:4096 -keyout privkey.pem -out cert.pem -days 365 -subj '/CN=localhost'
    ```
 
-6. Launch pubtrends with docker-compose.
+5. Launch pubtrends with docker-compose.
     ```
     # start
     docker-compose up -d --build
@@ -362,9 +356,10 @@ Please ensure that you have configured and prepared the database(s).
 See [AUTHORS.md](AUTHORS.md) for a list of authors and contributors.
 
 # Materials
-* Open Access Paper: [https://doi.org/10.1145/3459930.3469501](https://doi.org/10.1145/3459930.3469501), poster 
+
+* Open Access Paper: [https://doi.org/10.1145/3459930.3469501](https://doi.org/10.1145/3459930.3469501), poster
   [here](https://drive.google.com/file/d/1SeqJtJtaHSO6YihG2905boOEYL1NiSP1/view?usp=sharing) - 2021.
-* Project overview 
+* Project overview
   [presentation](https://docs.google.com/presentation/d/131qvkEnzzmpx7-I0rz1om6TG7bMBtYwU9T1JNteRIEs/edit?usp=sharing) -
   summer 2019.
 * Review generation
