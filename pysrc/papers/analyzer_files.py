@@ -307,7 +307,7 @@ class AnalyzerFiles(PapersAnalyzer):
 
         path_papers_graph_interactive = os.path.join(self.query_folder, 'papers_interactive.html')
         logging.info(f'Saving papers graph for cytoscape.js {path_papers_graph_interactive}')
-        template_path = os.path.realpath(os.path.join(__file__, '../../papers_template.html'))
+        template_path = os.path.realpath(os.path.join(__file__, '../../app/templates/papers_template.html'))
         save_sim_papers_graph_interactive(self.sparse_papers_graph, self.df, clusters_description,
                                           mesh_clusters_description, template_path, path_papers_graph_interactive)
 
