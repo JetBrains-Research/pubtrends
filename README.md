@@ -17,7 +17,7 @@ is [here](https://drive.google.com/file/d/1SeqJtJtaHSO6YihG2905boOEYL1NiSP1/view
 
 ## Technical details
 
-PubTrends is a web service, written in Python and Javascript. It uses PostrgreSQL to store information about scientific
+PubTrends is a web service, written in Python and Javascript. It uses PostgresSQL to store information about scientific
 publications.
 
 ### Libraries
