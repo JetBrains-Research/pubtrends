@@ -345,6 +345,14 @@ Please ensure that you have configured and prepared the database(s).
     docker-compose logs
     ```
 
+## Maintenance
+
+   Use simple placeholder during maintenance.
+   ```
+   cd pysrc; python -m http.server
+   ```
+
+
 ## Release
 
 * Update `CHANGES.txt`
