@@ -323,16 +323,7 @@ Please ensure that you have configured and prepared the database(s).
    ```
 
 
-4. Optional: prepare SSL certificates files `privkey.pem` and `cert.pem` and optional CA-authority file `chain.pem`.\
-   You can generate a self-signed certificate for testing purposes by the command:
-
-   ```
-   mkdir ~/.pubtrends/ssl
-   cd ~/.pubtrends/ssl
-   openssl req -nodes -x509 -newkey rsa:4096 -keyout privkey.pem -out cert.pem -days 365 -subj '/CN=localhost'
-   ```
-
-5. Launch pubtrends with docker-compose.
+4. Launch pubtrends with docker-compose.
     ```
     # start
     docker-compose up -d --build
@@ -345,11 +336,14 @@ Please ensure that you have configured and prepared the database(s).
     docker-compose logs
     ```
 
+   Pubtrends will be serving on port 8888.
+5. Nginx is used to proxy all trafic to port 8888 and redirect http -> https with Let's encrypt certificates.
+
 ## Maintenance
 
    Use simple placeholder during maintenance.
    ```
-   cd pysrc; python -m http.server
+   cd pysrc/app; python -m http.server 8888
    ```
 
 

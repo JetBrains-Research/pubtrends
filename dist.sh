@@ -30,7 +30,6 @@ cp environment.yml "${PTV}"/
 cp resources/docker/main/Dockerfile "${PTV}"/
 cp config.properties "${PTV}"/
 cp docker-compose.yml "${PTV}"/
-cp gunicorn.sh "${PTV}"/
 cp init.sh "${PTV}"/
 cp README.md ${PTV}/
 cp LICENSE.txt ${PTV}/

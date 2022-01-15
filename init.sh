@@ -8,6 +8,5 @@ mkdir ~/.pubtrends/database
 mkdir ~/.pubtrends/.cache
 mkdir ~/.pubtrends/predefined
 mkdir ~/.pubtrends/search_results
-mkdir ~/.pubtrends/ssl
 mkdir ~/.pubtrends/nltk_data
 mkdir ~/.pubtrends/gensim-data
