@@ -66,7 +66,7 @@ object SemanticScholarLoader {
 
                     val file = File(options.valueOf("fillDatabase").toString())
                     LOG.info("Started parsing articles $file")
-                    ArchiveParser(
+                    SemanticScholarArchiveParser(
                         dbWriter, file,
                         config["loader_batch_size"].toString().toInt(),
                         collectStats,

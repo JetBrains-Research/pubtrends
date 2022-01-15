@@ -10,7 +10,7 @@ import java.util.*
 import java.util.zip.GZIPInputStream
 
 
-class ArchiveParser(
+class SemanticScholarArchiveParser(
         private val dbWriter: AbstractDBWriter<SemanticScholarArticle>,
         private val archiveFileGz: File,
         private var batchSize: Int,
@@ -22,7 +22,9 @@ class ArchiveParser(
     private var batchIndex = 0
 
     companion object {
-        private val LOG = LoggerFactory.getLogger(ArchiveParser::class.java)
+        private val LOG = LoggerFactory.getLogger(SemanticScholarArchiveParser::class.java)
+
+        const val ARCHIVE_SIZE = 30000
     }
 
     init {
@@ -32,7 +34,7 @@ class ArchiveParser(
     }
 
     // Stats about JSON tags
-    val tags = HashMap<String, Int>()
+    private val tags = HashMap<String, Int>()
 
     fun parse() {
         var sc: Scanner
@@ -117,7 +119,7 @@ class ArchiveParser(
         dbWriter.store(currentBatch)
         currentBatch.clear()
         batchIndex++
-        val progress = 250000 * batchIndex / batchSize
+        val progress = batchIndex * batchSize / ARCHIVE_SIZE * 100
         LOG.info("Finished batch $batchIndex adding ($archiveFileGz) $progress%")
     }
 
