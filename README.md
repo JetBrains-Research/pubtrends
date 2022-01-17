@@ -151,10 +151,10 @@ Command line options supported:
 * `fillDatabase` - option to fill database with Pubmed data. Can be interrupted at any moment.
 * `lastId` - force downloading from given id from articles pack `pubmed20n{lastId+1}.xml`.
 
-Updates - add crontab updates every day at 22:00 with the command:
-
+Updates - add the following line to crontab:
 ```
-crontab -e 0 22 * * * java -cp pubtrends-<version>.jar org.jetbrains.bio.pubtrends.pm.PubmedLoader --fillDatabase | \
+crontab -e
+0 22 * * * java -cp pubtrends-<version>.jar org.jetbrains.bio.pubtrends.pm.PubmedLoader --fillDatabase | \
 tee -a crontab_update.log
 ```
 
