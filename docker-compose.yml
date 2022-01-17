@@ -6,8 +6,7 @@ services:
       dockerfile: pysrc/app/Dockerfile
     restart: always
     ports:
-      - "443:8888"
-      - "80:8888"
+      - "8888:8888"
     depends_on:
       - redis
       - fasttext
