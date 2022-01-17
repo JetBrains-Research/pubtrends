@@ -67,7 +67,7 @@ def expand_ids(
         new_ids = [i[0] for i in new_publications_citations_infos
                    if cit_mean - citations_sigma * cit_std <= i[1] <= cit_mean + citations_sigma * cit_std]
     else:
-        new_ids = new_df['id']
+        new_ids = list(new_df['id'])
     logger.debug(f'Citations filter: {len(new_ids)}')
 
     if len(new_ids) == 0:
