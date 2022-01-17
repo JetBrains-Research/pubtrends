@@ -5,6 +5,7 @@ import com.google.gson.reflect.TypeToken
 import org.jetbrains.bio.pubtrends.db.AbstractDBWriter
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.lang.Integer.min
 import java.nio.file.Path
 import java.util.*
 import java.util.zip.GZIPInputStream
@@ -119,7 +120,7 @@ class SemanticScholarArchiveParser(
         dbWriter.store(currentBatch)
         currentBatch.clear()
         batchIndex++
-        val progress = batchIndex * batchSize / ARCHIVE_SIZE * 100
+        val progress = min(100, (1.0 * batchIndex * batchSize / ARCHIVE_SIZE * 100).toInt())
         LOG.info("Finished batch $batchIndex adding ($archiveFileGz) $progress%")
     }
 
