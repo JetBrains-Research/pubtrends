@@ -463,6 +463,7 @@ def paper():
     pid = request.args.get('id')
     key = request.args.get('key')
     value = request.args.get('value')
+    limit = request.args.get('limit')
     topics = request.args.get('topics')
     try:
         if jobid:
@@ -476,7 +477,7 @@ def paper():
             else:
                 logger.info(f'/paper No job or out-of-date job, restart it {log_request(request)}')
                 analyze_search_paper.apply_async(
-                    args=[source, pid, key, value, topics, app.config['TESTING']], task_id=jobid
+                    args=[source, pid, key, value, limit, topics, app.config['TESTING']], task_id=jobid
                 )
                 return redirect(url_for('.process', query=f'Paper {key}={value}', analysis_type=PAPER_ANALYSIS_TYPE,
                                         source=source, key=key, value=value, topics=topics, jobid=jobid))
