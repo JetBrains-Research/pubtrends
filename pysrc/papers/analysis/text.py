@@ -37,15 +37,23 @@ def vectorize_corpus(df, max_features, min_df, max_df, test=False):
     :return: Return list of list of sentences for each paper, tokens, and counts matrix
     """
     papers_sentences_corpus = build_stemmed_corpus(df)
-    logger.debug(f'Vectorize corpus')
-    vectorizer = CountVectorizer(
-        min_df=min_df,
-        max_df=max_df if not test else 1.0,
-        max_features=max_features,
-        preprocessor=lambda t: t,
-        tokenizer=lambda t: t
-    )
-    counts = vectorizer.fit_transform([list(chain(*sentences)) for sentences in papers_sentences_corpus])
+    logger.debug(f'Vectorize corpus of {len(df)} papers')
+    counts = None
+    while counts is None:
+        try:
+            vectorizer = CountVectorizer(
+                min_df=min_df,
+                max_df=max_df if not test else 1.0,
+                max_features=max_features,
+                preprocessor=lambda t: t,
+                tokenizer=lambda t: t
+            )
+            counts = vectorizer.fit_transform([list(chain(*sentences)) for sentences in papers_sentences_corpus])
+        except:
+            # Workaround for exception After pruning, no terms remain.
+            logger.debug(f'Failed to build counts for vector for min_df={min_df}, max_df={max_df}, adjusting')
+            min_df = max(0.0, min_df - 0.1)
+            max_df = min(1.0, max_df + 0.1)
     logger.debug(f'Vectorized corpus size {counts.shape}')
     tokens_counts = np.asarray(np.sum(counts, axis=0)).reshape(-1)
     tokens_freqs = tokens_counts / len(df)
