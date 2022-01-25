@@ -3,6 +3,16 @@ Pubtrends changelog
 
 Here you can see the full list of changes between each release.
 
+Version 0.21
+------------
+Released on Jan 25, 2022
+
+-- Updated PubMed database to the version 2022
+-- Updated pubtrends.net config to use nginx
+-- Improved single paper analysis - pay more attention to paper own keywords/citations while expanding by references
+-- Show papers graph for single-paper analysis
+-- Fixed issues with missing references for fresh papers
+
 Version 0.20
 ------------
 Released on Nov 18, 2021
