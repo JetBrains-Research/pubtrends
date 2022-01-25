@@ -1,11 +1,10 @@
 import logging
-from bokeh.embed import components
 from scipy.spatial import distance
 
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
-from pysrc.papers.plot.plotter import Plotter
+from pysrc.papers.plot.plotter import Plotter, components_list
 from pysrc.papers.utils import trim, MAX_TITLE_LENGTH
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
@@ -85,7 +84,7 @@ def prepare_paper_data(data, source, pid):
     result = dict(title=title, trimmed_title=trim(title, MAX_TITLE_LENGTH), authors=authors, journal=journal, year=year,
                   topic=topic, doi=doi, mesh=mesh, keywords=keywords, url=url_prefix + pid, source=source,
                   n_papers=len(analyzer.df),
-                  citation_dynamics=[components(Plotter._plot_paper_citations_per_year(analyzer.df, str(pid)))])
+                  citation_dynamics=components_list(Plotter._plot_paper_citations_per_year(analyzer.df, str(pid))))
 
     if similar_papers:
         result['similar_papers'] = [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid,
@@ -109,10 +108,10 @@ def prepare_paper_data(data, source, pid):
 
     logger.debug('Papers graph')
     if len(analyzer.df) > 1:
-        result['papers_graph'] = [components(
+        result['papers_graph'] = components_list(
             Plotter._plot_papers_graph(
                 source, analyzer.sparse_papers_graph, analyzer.df,
                 pid=pid, topics_tags=analyzer.topics_description
-            ))]
+            ))
 
     return result

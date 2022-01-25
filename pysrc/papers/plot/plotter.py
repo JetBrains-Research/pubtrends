@@ -1,21 +1,20 @@
+import holoviews as hv
 import json
 import logging
-import re
-from collections import Counter
-from itertools import chain
-from math import fabs, log, sin, cos, pi
-from string import Template
-
-import holoviews as hv
 import numpy as np
+import re
 from bokeh.embed import components
 from bokeh.models import ColumnDataSource, CustomJS, LabelSet
 from bokeh.models import GraphRenderer, StaticLayoutProvider, Circle, HoverTool, MultiLine
 from bokeh.models import NumeralTickFormatter
 from bokeh.models.graphs import NodesAndLinkedEdges
 from bokeh.plotting import figure
+from collections import Counter
 from holoviews import opts
+from itertools import chain
+from math import fabs, log, sin, cos, pi
 from matplotlib import pyplot as plt
+from string import Template
 from wordcloud import WordCloud
 
 from pysrc.papers.analysis.text import get_frequent_tokens
@@ -62,32 +61,29 @@ def visualize_analysis(analyzer):
         n_papers=len(analyzer.df),
         n_topics=len(set(analyzer.df['comp'])),
         export_name=export_name,
-        top_cited_papers=[components(plotter.plot_top_cited_papers())],
-        most_cited_per_year_papers=[components(plotter.plot_most_cited_per_year_papers())],
-        fastest_growth_per_year_papers=[components(plotter.plot_fastest_growth_per_year_papers())],
-        papers_stats=[components(plotter.plot_papers_by_year())],
+        top_cited_papers=components_list(plotter.plot_top_cited_papers()),
+        most_cited_per_year_papers=components_list(plotter.plot_most_cited_per_year_papers()),
+        fastest_growth_per_year_papers=components_list(plotter.plot_fastest_growth_per_year_papers()),
+        papers_stats=components_list(plotter.plot_papers_by_year()),
         papers_word_cloud=PlotPreprocessor.word_cloud_prepare(word_cloud),
     )
 
     keywords_frequencies = plotter.plot_keywords_frequencies(freq_kwds)
     if keywords_frequencies is not None:
-        result['keywords_frequencies'] = [components(keywords_frequencies)]
+        result['keywords_frequencies'] = components_list(keywords_frequencies)
 
     if analyzer.papers_graph.nodes():
         result.update(dict(
             topics_analyzed=True,
-            topic_years_distribution=[components(plotter.plot_topic_years_distribution())],
-            topics_info_and_word_cloud_and_callback=[
-                (components(p), PlotPreprocessor.word_cloud_prepare(wc),
-                 "true" if is_empty else "false", zoom_in_callback) for
-                (p, wc, is_empty, zoom_in_callback) in plotter.plot_topics_info_and_word_cloud_and_callback()],
+            topic_years_distribution=components_list(plotter.plot_topic_years_distribution()),
+            topics_info_and_word_cloud_and_callback=topics_info_and_word_cloud_and_callback(plotter),
             component_sizes=PlotPreprocessor.component_sizes(analyzer.df),
-            papers_graph=[components(plotter.plot_papers_graph())]
+            papers_graph=components_list(plotter.plot_papers_graph())
         ))
 
         topics_hierarchy_with_keywords = plotter.topics_hierarchy_with_keywords()
         if topics_hierarchy_with_keywords:
-            result['topics_hierarchy_with_keywords'] = [components(topics_hierarchy_with_keywords)]
+            result['topics_hierarchy_with_keywords'] = components_list(topics_hierarchy_with_keywords)
 
     # Configure additional features
     result.update(dict(
@@ -118,10 +114,34 @@ def visualize_analysis(analyzer):
         )
         if evolution_result is not None:
             evolution_data, keywords_data = evolution_result
-            result['topic_evolution'] = [components(evolution_data)]
+            result['topic_evolution'] = components_list(evolution_data)
             result['topic_evolution_keywords'] = keywords_data
 
     return result
+
+
+def exception_handler(func):
+    def inner_function(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            logger.info(f'{func.__name__} raised {e}')
+            return []
+
+    return inner_function
+
+
+@exception_handler
+def components_list(plot):
+    return [components(plot)]
+
+
+@exception_handler
+def topics_info_and_word_cloud_and_callback(plotter):
+    return [
+        (components(p), PlotPreprocessor.word_cloud_prepare(wc), "true" if is_empty else "false", zoom_in_callback)
+        for (p, wc, is_empty, zoom_in_callback) in plotter.plot_topics_info_and_word_cloud_and_callback()
+    ]
 
 
 class Plotter:
