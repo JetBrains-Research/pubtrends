@@ -337,7 +337,7 @@ Please ensure that you have configured and prepared the database(s).
     ```
 
    Pubtrends will be serving on port 8888.
-5. Nginx is used to proxy all trafic to port 8888 and redirect http -> https with Let's encrypt certificates.
+5. Nginx is used to proxy all traffic to port 8888 and redirect http -> https with Let's encrypt certificates.
 
 ## Maintenance
 
