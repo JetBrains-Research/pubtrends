@@ -17,14 +17,14 @@ is [here](https://drive.google.com/file/d/1SeqJtJtaHSO6YihG2905boOEYL1NiSP1/view
 
 ## Technical details
 
-PubTrends is a web service, written in Python and Javascript. It uses PostgresSQL to store information about scientific
+PubTrends is a web service, written in Python and Javascript. It uses PostgreSQL to store information about scientific
 publications.
 
 ### Libraries
 
 Web service is built with Gunicorn and Flask. Asynchronous computations are supported with Celery tasks queue and Redis
 as message broker. We use PostgreSQL to store information about papers: titles, abstracts, authors and citations
-information. PostgreSQL built-in text search engine is used for full text search. Kotlin PostgresSQL ORM is used to
+information. PostgreSQL built-in text search engine is used for full text search. Kotlin PostgreSQL ORM is used to
 store papers in the database. MySQL database is used to store technical user information including users roles and admin
 credentials for admin dashboard.
 
@@ -254,7 +254,7 @@ Notebooks are located under the `/notebooks` folder. Please configure `PYTHONPAT
 
 ## Testing
 
-1. Start Docker image with Postgres environment for tests (Kotlin and Python development)
+1. Start Docker image with PostgreSQL environment for tests (Kotlin and Python development)
     ```
     docker run --rm --name pubtrends-test \
     --publish=5432:5432 --volume=$(pwd):/pubtrends -i -t biolabs/pubtrends-test
@@ -308,7 +308,7 @@ Please ensure that you have configured and prepared the database(s).
         -e PGDATA=/var/lib/postgresql/data/pgdata \
         -d postgres:14 
     ```
-   NOTE: stop Postgres docker image with timeout `--time=300` to avoid DB recovery.\
+   NOTE: stop PostgreSQL docker image with timeout `--time=300` to avoid DB recovery.\
 
    NOTE2: for speed reason we use materialize views, which are updated upon successful database update. In case of
    emergency stop, the view should be refreshed manually to ensure sort by citations works correctly:
