@@ -4,16 +4,14 @@ import logging
 import os
 import random
 import re
+import requests
 import tempfile
 import time
-from urllib.parse import quote
-from threading import Lock
-
-
-import requests
 from celery.result import AsyncResult
 from flask import Flask, url_for, redirect, render_template, request, render_template_string, \
     send_from_directory, send_file
+from threading import Lock
+from urllib.parse import quote
 
 from pysrc.app.admin.admin import configure_admin_functions
 from pysrc.app.messages import SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, SOMETHING_WENT_WRONG_PAPER, \
@@ -280,7 +278,7 @@ def process():
             logger.info(f'/process paper analysis {log_request(request)}')
             key = request.args.get('key')
             value = request.args.get('value')
-            limit = request.args.get('limit')
+            limit = request.args.get('limit') or PUBTRENDS_CONFIG.show_max_articles_default_value
             return render_template('process.html',
                                    redirect_page='paper',  # redirect in case of success
                                    redirect_args=dict(source=source, jobid=jobid, sort='',
@@ -290,7 +288,7 @@ def process():
 
         elif analysis_type == REVIEW_ANALYSIS_TYPE:
             logger.info(f'/process review {log_request(request)}')
-            limit = request.args.get('limit')
+            limit = request.args.get('limit') or PUBTRENDS_CONFIG.show_max_articles_default_value
             sort = request.args.get('sort')
             return render_template('process.html',
                                    redirect_page='review',  # redirect in case of success
@@ -302,7 +300,7 @@ def process():
 
         elif analysis_type == ANALYSIS_FILES_TYPE:
             logger.info(f'/process files {log_request(request)}')
-            limit = request.args.get('limit')
+            limit = request.args.get('limit') or PUBTRENDS_CONFIG.show_max_articles_default_value
             return render_template('process.html',
                                    redirect_page='result_files',  # redirect in case of success
                                    redirect_args=dict(source=source, query=quote(query), limit=limit, sort='',
@@ -313,7 +311,7 @@ def process():
 
         elif query:  # This option should be the last default
             logger.info(f'/process regular search {log_request(request)}')
-            limit = request.args.get('limit')
+            limit = request.args.get('limit') or PUBTRENDS_CONFIG.show_max_articles_default_value
             sort = request.args.get('sort')
             return render_template('process.html',
                                    redirect_page='result',  # redirect in case of success
