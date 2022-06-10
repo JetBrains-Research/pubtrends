@@ -239,16 +239,16 @@
                         style: {
                             "width": function (node) {
                                 const data = node.data();
-                                if ('cited' in data) {
-                                    return data.cited * 20 / max_cited + 5;
+                                if ('connections' in data) {
+                                    return data.connections * 10 / max_cited + 5;
                                 } else {
                                     return 5;
                                 }
                             },
                             "height": function (node) {
                                 const data = node.data();
-                                if ('cited' in data) {
-                                    return data.cited * 20 / max_cited + 5;
+                                if ('connections' in data) {
+                                    return data.connections * 10 / max_cited + 5;
                                 } else {
                                     return 5;
                                 }
@@ -260,16 +260,16 @@
                         style: {
                             "width": function (node) {
                                 const data = node.data();
-                                if ('connections' in data) {
-                                    return data.connections * 20 / max_cited + 5;
+                                if ('cited' in data) {
+                                    return data.cited * 20 / max_cited + 5;
                                 } else {
                                     return 5;
                                 }
                             },
                             "height": function (node) {
                                 const data = node.data();
-                                if ('connections' in data) {
-                                    return data.connections * 20 / max_cited + 5;
+                                if ('cited' in data) {
+                                    return data.cited * 20 / max_cited + 5;
                                 } else {
                                     return 5;
                                 }
