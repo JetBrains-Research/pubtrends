@@ -60,12 +60,12 @@
             return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
         }
 
-        function showTopics() {
-            window.show_mode = 'topics';
+        function showColorTopics() {
+            window.show_color_mode = 'topics';
             cy.nodes().forEach(function (ele) {
                 if ('title' in ele.data()) {
-                    ele.removeClass('topic year');
-                    ele.addClass('topic');
+                    ele.removeClass('color-topic color-year');
+                    ele.addClass('color-topic');
                 }
             });
             // Close all notifications
@@ -92,12 +92,12 @@
             });
         }
 
-        function showYear() {
-            window.show_mode = 'year';
+        function showColorYear() {
+            window.show_color_mode = 'year';
             cy.nodes().forEach(function (ele) {
                 if ('title' in ele.data()) {
-                    ele.removeClass('topic year');
-                    ele.addClass('year');
+                    ele.removeClass('color-topic color-year');
+                    ele.addClass('color-year');
                 }
             });
             // Close all notifications
@@ -120,6 +120,24 @@
             });
         }
 
+        function showSizeConnections() {
+            cy.nodes().forEach(function (ele) {
+                if ('title' in ele.data()) {
+                    ele.removeClass('size-citations size-connections');
+                    ele.addClass('size-connections');
+                }
+            });
+        }
+
+        function showSizeCitations() {
+            cy.nodes().forEach(function (ele) {
+                if ('title' in ele.data()) {
+                    ele.removeClass('size-citations size-connections');
+                    ele.addClass('size-citations');
+                }
+            });
+        }
+
         $(window).on("load", function () {
             document.getElementById('cy').innerHTML = "";
 
@@ -132,11 +150,13 @@
             // @formatter:on
             window.papers_number = elements['nodes'].length;
 
-            // Compute min/max params for palette
+            // Compute min/max params for palette/sizes
             let min_year = 3000;
             let max_year = 0;
             let min_cited = 100000;
             let max_cited = 0;
+            let min_connections = 100000;
+            let max_connections = 0;
             elements['nodes'].forEach(function (ele) {
                 let data = ele['data'];
                 if ('year' in data) {
@@ -147,12 +167,18 @@
                     min_cited = Math.min(data.cited, min_cited);
                     max_cited = Math.max(data.cited, max_cited);
                 }
+                if ('connections' in data) {
+                    min_connections = Math.min(data.connections, min_connections);
+                    max_connections = Math.max(data.connections, max_connections);
+                }
             });
-            // Save variables
+            // Make variables globally available
             window.min_year = min_year;
             window.max_year = max_year;
             window.min_cited = min_cited;
             window.max_cited = max_cited;
+            window.min_connections = min_connections;
+            window.max_connections = max_connections;
 
             // Compute topics centers
             let topics_xs = new Map();
@@ -193,6 +219,24 @@
                     {
                         selector: "node",
                         style: {
+                            "width": 5,
+                            "height": 5,
+                            "border-width": 0.5,
+                            "border-color": "black",
+                            "opacity": 0.7,
+                        }
+                    },
+                    <!-- In case of Paper Analyzer highlight analyzed paper -->
+                    {
+                        selector: 'node.analyzed',
+                        style: {
+                            'border-width': '1.0',
+                            'opacity': '1.0 !important'
+                        }
+                    },
+                    {
+                        selector: "node.size-connections",
+                        style: {
                             "width": function (node) {
                                 const data = node.data();
                                 if ('cited' in data) {
@@ -208,22 +252,32 @@
                                 } else {
                                     return 5;
                                 }
-                            },
-                            "border-width": 0.5,
-                            "border-color": "black",
-                            "opacity": 0.7,
+                            }
                         }
                     },
-                    <!-- In case of Paper Analyzer highlight analyzed paper -->
                     {
-                        selector: 'node.analyzed',
+                        selector: "node.size-citations",
                         style: {
-                            'border-width': '1.0',
-                            'opacity': '1.0 !important'
+                            "width": function (node) {
+                                const data = node.data();
+                                if ('connections' in data) {
+                                    return data.connections * 20 / max_cited + 5;
+                                } else {
+                                    return 5;
+                                }
+                            },
+                            "height": function (node) {
+                                const data = node.data();
+                                if ('connections' in data) {
+                                    return data.connections * 20 / max_cited + 5;
+                                } else {
+                                    return 5;
+                                }
+                            }
                         }
                     },
                     {
-                        selector: "node.topic",
+                        selector: "node.color-topic",
                         style: {
                             "background-color": function (node) {
                                 let data = node.data();
@@ -231,6 +285,25 @@
                                     return topics_palette[data.topic];
                                 } else {
                                     return '#FFFFFF'
+                                }
+                            },
+                        }
+                    },
+                    {
+                        selector: "node.color-year",
+                        style: {
+                            "background-color": function (node) {
+                                let data = node.data();
+                                if ('year' in data) {
+                                    let dy;
+                                    if (max_year > min_year) {
+                                        dy = (data.year - min_year) / (max_year - min_year);
+                                    } else {
+                                        dy = 1;
+                                    }
+                                    return rgbToHex(0, Math.floor(255 * dy), 0);
+                                } else {
+                                    return "#FFFFFF"
                                 }
                             },
                         }
@@ -250,25 +323,6 @@
                             "z-index": "10",
                             "text-background-color": "black",
                             "opacity": "1.0 !important"
-                        }
-                    },
-                    {
-                        selector: "node.year",
-                        style: {
-                            "background-color": function (node) {
-                                let data = node.data();
-                                if ('year' in data) {
-                                    let dy;
-                                    if (max_year > min_year) {
-                                        dy = (data.year - min_year) / (max_year - min_year);
-                                    } else {
-                                        dy = 1;
-                                    }
-                                    return rgbToHex(0, Math.floor(255 * dy), 0);
-                                } else {
-                                    return "#FFFFFF"
-                                }
-                            },
                         }
                     },
                     {
@@ -400,7 +454,10 @@
             }
 
             // Topic based colouring by default
-            showTopics();
+            showColorTopics();
+
+            // Show connections by default
+            showSizeConnections();
 
             // Save all created tippy
             let tippys = [];
@@ -603,10 +660,10 @@
                     ele.removeClass('semitransp');
                 });
                 // Restore notification
-                if (window.show_mode === 'topics') {
-                    showTopics();
+                if (window.show_color_mode === 'topics') {
+                    showColorTopics();
                 } else {
-                    showYear();
+                    showColorYear();
                 }
                 return;
             }
@@ -716,10 +773,34 @@
                             View
                         </button>
                         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                            <a class="dropdown-item" onclick="showTopics();" href="javascript:void(0);">Topic</a>
-                            <a class="dropdown-item" onclick="showYear();" href="javascript:void(0);">Year</a>
+                            <div class="dropdown dropdown-sub dropdown-item dropleft">
+                                <button class="btn dropdown-toggle" type="button"
+                                        id="dropdownMenuButtonSize" data-toggle="dropdown" aria-haspopup="true"
+                                        aria-expanded="false">
+                                    Size
+                                </button>
+                                <div class="dropdown-menu" aria-labelledby="dropdownMenuButtonSize">
+                                    <a class="dropdown-item" onclick="showSizeConnections();"
+                                       href="javascript:void(0);">Connections</a>
+                                    <a class="dropdown-item" onclick="showSizeCitations();"
+                                       href="javascript:void(0);">Citations</a>
+                                </div>
+                            </div>
+                            <div class="dropdown-sub dropdown-item dropleft">
+                                <button class="btn dropdown-toggle" type="button"
+                                        id="dropdownMenuButtonColor" data-toggle="dropdown" aria-haspopup="true"
+                                        aria-expanded="false">
+                                    Color
+                                </button>
+                                <div class="dropdown-menu" aria-labelledby="dropdownMenuButtonColor">
+                                    <a class="dropdown-item" onclick="showColorTopics();"
+                                       href="javascript:void(0);">Topic</a>
+                                    <a class="dropdown-item" onclick="showColorYear();"
+                                       href="javascript:void(0);">Year</a>
+                                </div>
+                            </div>
                             <hr>
-                            <div class="dropdown-item">
+                            <div class="dropdown dropdown-item">
                                 <input type="checkbox" id="connectTopics" checked="checked">
                                 <label for="connectTopics">Connect topics</label>
                             </div>

@@ -117,6 +117,7 @@ class PlotPreprocessor:
                 year=int(sel['year'].values[0]),
                 cited=int(sel['total'].values[0]),
                 topic=int(sel['comp'].values[0]),
+                connections=len(list(graph.neighbors(node))),
                 # These can be heavy
                 abstract=sel['abstract'].values[0],
                 mesh=sel['mesh'].values[0],

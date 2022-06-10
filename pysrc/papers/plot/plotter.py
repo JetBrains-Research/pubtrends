@@ -643,6 +643,7 @@ class Plotter:
         logger.debug('Processing plot_papers_graph')
         pids = df['id']
         comps = df['comp']
+        connections = [len(list(gs.neighbors(p))) for p in pids]
         graph = GraphRenderer()
         cmap = factors_colormap(len(set(comps)))
         palette = dict(zip(sorted(set(comps)), [color_to_rgb(cmap(i)).to_hex() for i in range(len(set(comps)))]))
@@ -659,6 +660,7 @@ class Plotter:
         graph.node_renderer.data_source.data['mesh'] = df['mesh']
         graph.node_renderer.data_source.data['keywords'] = df['keywords']
         graph.node_renderer.data_source.data['topic'] = [c + 1 for c in comps]
+        graph.node_renderer.data_source.data['connections'] = connections
         if topics_tags is not None:
             graph.node_renderer.data_source.data['topic_tags'] = \
                 [','.join(t for t, _ in topics_tags[c][:5]) for c in comps]
@@ -667,7 +669,8 @@ class Plotter:
                 [','.join(t for t, _ in topics_meshs[c][:5]) for c in comps]
 
         # Aesthetics
-        graph.node_renderer.data_source.data['size'] = df['total'] * 20 / df['total'].max() + 5
+        max_connections = max(connections)
+        graph.node_renderer.data_source.data['size'] = [c * 20 / (max_connections + 1) + 5 for c in connections]
         graph.node_renderer.data_source.data['color'] = [palette[c] for c in comps]
         graph.node_renderer.data_source.data['alpha'] = [2.0 if p == pid else 0.7 for p in pids]
 

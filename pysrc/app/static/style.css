@@ -96,3 +96,12 @@ ol.breadcrumb {
     display: flex;
     align-items: center;
 }
+
+.dropdown-sub:hover > .dropdown-menu {
+    display: block;
+}
+
+.dropdown-sub > .dropdown-toggle:active {
+    /*Without this, clicking will make it sticky*/
+    pointer-events: none;
+}
