@@ -155,7 +155,6 @@
             let max_year = 0;
             let min_cited = 100000;
             let max_cited = 0;
-            let min_connections = 100000;
             let max_connections = 0;
             elements['nodes'].forEach(function (ele) {
                 let data = ele['data'];
@@ -168,7 +167,6 @@
                     max_cited = Math.max(data.cited, max_cited);
                 }
                 if ('connections' in data) {
-                    min_connections = Math.min(data.connections, min_connections);
                     max_connections = Math.max(data.connections, max_connections);
                 }
             });
@@ -177,7 +175,6 @@
             window.max_year = max_year;
             window.min_cited = min_cited;
             window.max_cited = max_cited;
-            window.min_connections = min_connections;
             window.max_connections = max_connections;
 
             // Compute topics centers
@@ -240,7 +237,7 @@
                             "width": function (node) {
                                 const data = node.data();
                                 if ('connections' in data) {
-                                    return data.connections * 10 / max_cited + 5;
+                                    return data.connections * 20 / max_connections + 5;
                                 } else {
                                     return 5;
                                 }
@@ -248,7 +245,7 @@
                             "height": function (node) {
                                 const data = node.data();
                                 if ('connections' in data) {
-                                    return data.connections * 10 / max_cited + 5;
+                                    return data.connections * 20 / max_connections + 5;
                                 } else {
                                     return 5;
                                 }
