@@ -444,7 +444,7 @@ def graph():
                 limit=limit,
                 sort=sort,
                 topics_palette_json=json.dumps(topics_palette(analyzer.df)),
-                topics_description_json=json.dumps(topics_tags),
+                topics_tags_json=json.dumps(topics_tags),
                 graph_cytoscape_json=json.dumps(graph_cs)
             )
         logger.error(f'/graph error job id {log_request(request)}')
@@ -560,7 +560,7 @@ def result_files():
                 query_folder = job.result
                 if 'file' in request.args:
                     file = request.args.get('file')
-                    return send_file(os.path.join(query_folder, file), as_attachment=True, attachment_filename=file)
+                    return send_file(os.path.join(query_folder, file), as_attachment=False, attachment_filename=file)
                 else:
                     available_files = list(sorted(os.listdir(query_folder)))
                     file_infos = []

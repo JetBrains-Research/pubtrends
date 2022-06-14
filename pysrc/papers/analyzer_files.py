@@ -293,21 +293,12 @@ class AnalyzerFiles(PapersAnalyzer):
         t.to_csv(path_papers, index=False)
         del t
 
-        self.progress.info('Preparing papers graphs', current=14, task=task)
+        self.progress.info('Preparing papers network', current=14, task=task)
         logger.debug('Prepare sparse graph for visualization')
         self.sparse_papers_graph = self.prepare_sparse_papers_graph(self.papers_graph, self.weighted_similarity_graph)
-        path_papers_graph = os.path.join(self.query_folder, 'papers.html')
-        logging.info(f'Saving papers graph for bokeh {path_papers_graph}')
-        output_file(filename=path_papers_graph, title="Papers graph")
-        save(Plotter._plot_papers_graph(source, self.sparse_papers_graph, self.df,
-                                        topics_tags=clusters_description, topics_meshs=mesh_clusters_description,
-                                        add_callback=False,
-                                        plot_width=PLOT_WIDTH, plot_height=PLOT_WIDTH))
-        reset_output()
-
-        path_papers_graph_interactive = os.path.join(self.query_folder, 'papers_interactive.html')
+        path_papers_graph_interactive = os.path.join(self.query_folder, 'graph.html')
         logging.info(f'Saving papers graph for cytoscape.js {path_papers_graph_interactive}')
-        template_path = os.path.realpath(os.path.join(__file__, '../../app/templates/papers_template.html'))
+        template_path = os.path.realpath(os.path.join(__file__, '../../app/templates/graph_download.html'))
         save_sim_papers_graph_interactive(self.sparse_papers_graph, self.df, clusters_description,
                                           mesh_clusters_description, template_path, path_papers_graph_interactive)
 
@@ -560,8 +551,7 @@ FILES_WITH_DESCRIPTIONS = {
     'timeline_mesh_terms.html': 'Most popular MESH terms per year',
     'mesh_terms_freqs.html': 'Frequency of MESH terms used in papers',
 
-    'papers.html': 'Graph representation of papers',
-    'papers_interactive.html': 'Interactive version of papers graph with advanced filtering, coloring',
+    'graph.html': 'Interactive papers graph with filtering, coloring',
     'topics.html': 'Topics hierarchy',
     'topics_mesh.html': 'Topics hierarchy with MESH terms',
     'topics_by_years.html': 'Topics per year',

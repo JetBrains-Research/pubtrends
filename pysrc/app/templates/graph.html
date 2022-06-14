@@ -62,22 +62,63 @@
 
         function showColorTopics() {
             window.show_color_mode = 'topics';
-            cy.nodes().forEach(function (ele) {
-                if ('title' in ele.data()) {
-                    ele.removeClass('color-topic color-year');
-                    ele.addClass('color-topic');
-                }
+            window.cy.batch(function () {
+                cy.nodes().forEach(function (ele) {
+                    if ('title' in ele.data()) {
+                        ele.removeClass('color-topic color-year');
+                        ele.addClass('color-topic');
+                    }
+                });
             });
+            showDescription(topics_tags);
+        }
+
+        function showColorYear() {
+            window.show_color_mode = 'year';
+            window.cy.batch(function () {
+                cy.nodes().forEach(function (ele) {
+                    if ('title' in ele.data()) {
+                        ele.removeClass('color-topic color-year');
+                        ele.addClass('color-year');
+                    }
+                });
+            });
+            showYear();
+        }
+
+        function showSizeConnections() {
+            window.cy.batch(function () {
+                cy.nodes().forEach(function (ele) {
+                    if ('title' in ele.data()) {
+                        ele.removeClass('size-citations size-connections');
+                        ele.addClass('size-connections');
+                    }
+                });
+            });
+        }
+
+        function showSizeCitations() {
+            window.cy.batch(function () {
+                cy.nodes().forEach(function (ele) {
+                    if ('title' in ele.data()) {
+                        ele.removeClass('size-citations size-connections');
+                        ele.addClass('size-citations');
+                    }
+                });
+            });
+        }
+
+        function showDescription(description) {
             // Close all notifications
             $('.notifyjs-wrapper').trigger('notify-hide');
             const h = $(window).height();
             const s = Math.min(13, Math.round(7 * h / 800 * 80 / (Object.keys(topics_palette).length + 1))).toString()
-            let content = '<p style="line-height: 35%;font-size:' + s + 'px">';
-            for (let [topic, description] of Object.entries(topics_description)) {
+            let content = '<p style="background-color:white;color:black;line-height: 35%;font-size:' + s + 'px";>';
+            for (let [topic, tags] of Object.entries(description)) {
                 content += '<svg width="' + s + '" height="' + s + '">' +
                     '<rect width="' + s + '" height="' + s + '" ' +
                     'style="fill:' + topics_palette[topic] + '";/></svg> ' +
-                    '#' + (parseInt(topic) + 1).toString() + ' ' + description + '<br>';
+                    '#' + (parseInt(topic) + 1).toString() + ' ' + tags + '<br>';
             }
             content += '</p>';
             $.notify({
@@ -92,14 +133,7 @@
             });
         }
 
-        function showColorYear() {
-            window.show_color_mode = 'year';
-            cy.nodes().forEach(function (ele) {
-                if ('title' in ele.data()) {
-                    ele.removeClass('color-topic color-year');
-                    ele.addClass('color-year');
-                }
-            });
+        function showYear() {
             // Close all notifications
             $('.notifyjs-wrapper').trigger('notify-hide');
             $.notify({
@@ -120,64 +154,27 @@
             });
         }
 
-        function showSizeConnections() {
-            cy.nodes().forEach(function (ele) {
-                if ('title' in ele.data()) {
-                    ele.removeClass('size-citations size-connections');
-                    ele.addClass('size-connections');
-                }
-            });
-        }
-
-        function showSizeCitations() {
-            cy.nodes().forEach(function (ele) {
-                if ('title' in ele.data()) {
-                    ele.removeClass('size-citations size-connections');
-                    ele.addClass('size-citations');
-                }
-            });
-        }
-
-        $(window).on("load", function () {
-            document.getElementById('cy').innerHTML = "";
-
-            // Disable formatter for the next section because of injections.
-            // Enable formatter control in File > Settings > Editor > Code Style
-            // @formatter:off
-            const topics_palette = window.topics_palette = JSON.parse({{ topics_palette_json | tojson }});
-            const topics_description = window.topics_description = JSON.parse({{topics_description_json | tojson }});
-            const elements = JSON.parse({{ graph_cytoscape_json | tojson }});
-            // @formatter:on
-            window.papers_number = elements['nodes'].length;
-
-            // Compute min/max params for palette/sizes
-            let min_year = 3000;
-            let max_year = 0;
-            let min_cited = 100000;
-            let max_cited = 0;
-            let max_connections = 0;
+        function computeYearCitedConnections(elements) {
+            window.min_year = 3000;
+            window.max_year = 0;
+            window.max_cited = 0;
+            window.max_connections = 0;
             elements['nodes'].forEach(function (ele) {
                 let data = ele['data'];
                 if ('year' in data) {
-                    min_year = Math.min(data.year, min_year);
-                    max_year = Math.max(data.year, max_year);
+                    window.min_year = Math.min(data.year, window.min_year);
+                    window.max_year = Math.max(data.year, window.max_year);
                 }
                 if ('cited' in data) {
-                    min_cited = Math.min(data.cited, min_cited);
-                    max_cited = Math.max(data.cited, max_cited);
+                    window.max_cited = Math.max(data.cited, window.max_cited);
                 }
                 if ('connections' in data) {
-                    max_connections = Math.max(data.connections, max_connections);
+                    window.max_connections = Math.max(data.connections, window.max_connections);
                 }
             });
-            // Make variables globally available
-            window.min_year = min_year;
-            window.max_year = max_year;
-            window.min_cited = min_cited;
-            window.max_cited = max_cited;
-            window.max_connections = max_connections;
+        }
 
-            // Compute topics centers
+        function addTopicsCenters(elements) {
             let topics_xs = new Map();
             let topics_ys = new Map();
             elements['nodes'].forEach(function (ele) {
@@ -200,6 +197,25 @@
                     classes: "topic-center"
                 });
             }
+        }
+
+        $(window).on("load", function () {
+            document.getElementById('cy').innerHTML = "";
+
+            // Disable formatter for the next section because of injections.
+            // Enable formatter control in File > Settings > Editor > Code Style
+            // @formatter:off
+            const topics_palette = window.topics_palette = JSON.parse({{ topics_palette_json | tojson }});
+            const topics_tags = window.topics_tags = JSON.parse({{topics_tags_json | tojson }});
+            const elements = JSON.parse({{ graph_cytoscape_json | tojson }});
+            // @formatter:on
+            window.papers_number = elements['nodes'].length;
+
+            // Compute min/max params for palette/sizes
+            computeYearCitedConnections(elements);
+
+            // Compute topics centers
+            addTopicsCenters(elements);
 
             //add a new style 'html_title'
             $.notify.addStyle('html_title', {
@@ -227,7 +243,7 @@
                     {
                         selector: 'node.analyzed',
                         style: {
-                            'border-width': '1.0',
+                            'border-width': '2.0',
                             'opacity': '1.0 !important'
                         }
                     },
@@ -237,7 +253,7 @@
                             "width": function (node) {
                                 const data = node.data();
                                 if ('connections' in data) {
-                                    return data.connections * 20 / max_connections + 5;
+                                    return data.connections * 20 / window.max_connections + 5;
                                 } else {
                                     return 5;
                                 }
@@ -245,7 +261,7 @@
                             "height": function (node) {
                                 const data = node.data();
                                 if ('connections' in data) {
-                                    return data.connections * 20 / max_connections + 5;
+                                    return data.connections * 20 / window.max_connections + 5;
                                 } else {
                                     return 5;
                                 }
@@ -258,7 +274,7 @@
                             "width": function (node) {
                                 const data = node.data();
                                 if ('cited' in data) {
-                                    return data.cited * 20 / max_cited + 5;
+                                    return data.cited * 20 / window.max_cited + 5;
                                 } else {
                                     return 5;
                                 }
@@ -266,7 +282,7 @@
                             "height": function (node) {
                                 const data = node.data();
                                 if ('cited' in data) {
-                                    return data.cited * 20 / max_cited + 5;
+                                    return data.cited * 20 / window.max_cited + 5;
                                 } else {
                                     return 5;
                                 }
@@ -293,8 +309,8 @@
                                 let data = node.data();
                                 if ('year' in data) {
                                     let dy;
-                                    if (max_year > min_year) {
-                                        dy = (data.year - min_year) / (max_year - min_year);
+                                    if (window.max_year > window.min_year) {
+                                        dy = (data.year - window.min_year) / (window.max_year - window.min_year);
                                     } else {
                                         dy = 1;
                                     }
@@ -343,7 +359,7 @@
                                 if ('similarity' in data) {
                                     return (Math.max(5, Math.min(20, data.similarity / 5))) / 5;
                                 }
-                                return 1;
+                                return 0.5;
                             },
                             "curve-style": "haystack",
                             "line-color": function (edge) {
@@ -438,8 +454,8 @@
                                 '<span style="color:dodgerblue;">Keywords</span>: ' + data.keywords + "<br>" +
                                 '<span style="color:dodgerblue;">Topic</span>: ' + (data.topic + 1) + " " +
                                 '<svg width="16" height="16"><rect width="16" height="16" ' +
-                                'style="fill:' + topics_palette[data.topic] + '";/></svg> ' +
-                                topics_description[data.topic] +
+                                'style="fill:' + topics_palette[data.topic] + '";/></svg><br>' +
+                                '<span style="color:dodgerblue;">Topic Tags</span>: ' + topics_tags[data.topic] +
                                 "</small></p>";
                             }
                             // @formatter:on
@@ -450,11 +466,9 @@
                 return ele.tippy;
             }
 
-            // Topic based colouring by default
-            showColorTopics();
-
-            // Show connections by default
+            // Default size and colors
             showSizeConnections();
+            showColorTopics();
 
             // Save all created tippy
             let tippys = [];
@@ -614,26 +628,6 @@
                 }
             });
 
-            // Connections between topics
-            let topicsConnections = new Set();
-            cy.edges().forEach(function (ele) {
-                let data = ele.data();
-                let sourceData = cy.nodes().filter(ele => ele.data().id === data.source).first().data();
-                let targetData = cy.nodes().filter(ele => ele.data().id === data.target).first().data();
-                if ('topic' in sourceData && 'topic' in targetData && sourceData.topic !== targetData.topic) {
-                    topicsConnections.add(ele);
-                }
-            });
-
-            $('#connectTopics').change(
-                function () {
-                    if ($(this).is(':checked')) {
-                        topicsConnections.forEach(ele => cy.add(ele));
-                    } else {
-                        cy.remove(cy.edges().filter(ele => topicsConnections.has(ele)));
-                    }
-                });
-
             $('#searchTitles').change(searchChanged);
             $('#searchAbstracts').change(searchChanged);
             $('#searchAuthors').change(searchChanged);
@@ -649,12 +643,14 @@
 
         function searchChanged() {
             const filter = getFilter();
-            if (filter === "") {
-                window.cy.nodes().filter(function (ele) {
-                    return 'title' in ele.data();
-                }).forEach(function (ele) {
-                    ele.removeClass('highlight');
-                    ele.removeClass('semitransp');
+            if (filter === '') {
+                window.cy.batch(function () {
+                    window.cy.nodes().filter(function (ele) {
+                        return 'title' in ele.data();
+                    }).forEach(function (ele) {
+                        ele.removeClass('highlight');
+                        ele.removeClass('semitransp');
+                    });
                 });
                 // Restore notification
                 if (window.show_color_mode === 'topics') {
@@ -664,25 +660,29 @@
                 }
                 return;
             }
+            // Non-empty search
             let matches = 0;
-            window.cy.nodes().forEach(function (ele) {
-                let data = ele.data();
-                if ('title' in data) {
-                    if ($('#searchTitles').is(':checked') && data.title.toLowerCase().includes(filter) ||
-                        $('#searchJournals').is(':checked') && data.journal.toLowerCase().includes(filter) ||
-                        $('#searchAuthors').is(':checked') && data.authors.toLowerCase().includes(filter) ||
-                        $('#searchAbstracts').is(':checked') && data.abstract.toLowerCase().includes(filter) ||
-                        $('#searchMesh').is(':checked') && data.mesh.toLowerCase().includes(filter) ||
-                        $('#searchKeywords').is(':checked') && data.keywords.toLowerCase().includes(filter)) {
-                        ele.removeClass('semitransp');
-                        ele.addClass('highlight');
-                        matches += 1;
-                    } else {
-                        ele.removeClass('highlight');
-                        ele.addClass('semitransp');
+            window.cy.batch(function () {
+                window.cy.nodes().forEach(function (ele) {
+                    let data = ele.data();
+                    if ('title' in data) {
+                        if ($('#searchTitles').is(':checked') && data.title.toLowerCase().includes(filter) ||
+                            $('#searchJournals').is(':checked') && data.journal.toLowerCase().includes(filter) ||
+                            $('#searchAuthors').is(':checked') && data.authors.toLowerCase().includes(filter) ||
+                            $('#searchAbstracts').is(':checked') && data.abstract.toLowerCase().includes(filter) ||
+                            $('#searchMesh').is(':checked') && data.mesh.toLowerCase().includes(filter) ||
+                            $('#searchKeywords').is(':checked') && data.keywords.toLowerCase().includes(filter)) {
+                            ele.removeClass('semitransp');
+                            ele.addClass('highlight');
+                            matches += 1;
+                        } else {
+                            ele.removeClass('highlight');
+                            ele.addClass('semitransp');
+                        }
                     }
-                }
+                });
             });
+
             // Close all notifications
             $('.notifyjs-wrapper').trigger('notify-hide');
             $.notify({
@@ -694,7 +694,7 @@
                 showDuration: 0,
                 hideDuration: 0,
                 clickToHide: false
-            })
+                });
         }
 
         function result() {
@@ -796,11 +796,6 @@
                                        href="javascript:void(0);">Year</a>
                                 </div>
                             </div>
-                            <hr>
-                            <div class="dropdown dropdown-item">
-                                <input type="checkbox" id="connectTopics" checked="checked">
-                                <label for="connectTopics">Connect topics</label>
-                            </div>
                         </div>
                     </div>
 
@@ -822,8 +817,8 @@
         <div class="col-4">
             <p>version {{ version }}<br/>
                 &copy; 2021-2022 <a href="https://research.jetbrains.org/groups/biolabs"
-                               title="JetBrains Research BioLabs"
-                               target="_blank">JetBrains Research</a>
+                                    title="JetBrains Research BioLabs"
+                                    target="_blank">JetBrains Research</a>
             </p>
         </div>
         <div class="col-4"></div>
@@ -863,10 +858,10 @@
                 {
                     element: '#dropdownMenuButton',
                     intro: 'Change graph view.<br>' +
-                        'Colors can represent topics or publication year.<br>' +
+                        'Size shows centrality of the paper or number of total number of citations.<br>' +
+                        'Color represent topic or publication year.<br>' +
                         '<svg width="16" height="16"><rect width="16" height="16" style="fill:#000000;"/></svg> min - ' +
-                        '<svg width="16" height="16"><rect width="16" height="16" style="fill:#00FF00;"/></svg> max<br>' +
-                        'Connect topics: whether edges between different topics are shown.'
+                        '<svg width="16" height="16"><rect width="16" height="16" style="fill:#00FF00;"/></svg> max'
                 }
             ]
         });
