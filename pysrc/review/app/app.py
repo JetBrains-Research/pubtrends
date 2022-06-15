@@ -9,7 +9,7 @@ from pysrc.app.predefined import load_predefined_or_result_data
 from pysrc.app.messages import SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.papers.config import PubtrendsConfig
-from pysrc.papers.utils import trim
+from pysrc.papers.utils import trim, MAX_QUERY_LENGTH
 from pysrc.version import VERSION
 from pysrc.review.app.task import prepare_review_data_async
 
@@ -18,10 +18,6 @@ logger = logging.getLogger(__name__)
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
 REVIEW_ANALYSIS_TYPE = 'review'
-
-
-MAX_QUERY_LENGTH = 60
-
 
 def log_request(r):
     return f'addr:{r.remote_addr} args:{json.dumps(r.args)}'

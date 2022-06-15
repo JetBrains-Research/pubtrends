@@ -694,7 +694,7 @@
                 showDuration: 0,
                 hideDuration: 0,
                 clickToHide: false
-                });
+            });
         }
 
         function result() {
@@ -721,89 +721,78 @@
 
 <body>
 <!-- Fixed navbar -->
-<nav class="navbar navbar-light bg-light fixed-top border-bottom no-padding-right">
-    <div class="row container-fluid no-padding-right">
-        <div class="col no-padding">
-            <div class="row ml-3">
-                <a id="pubtrends" class="navbar-brand vertical-center" href="/">PubTrends</a>
-                <ol class="breadcrumb bg-light search-query col-auto">
-                    <li class="breadcrumb-item vertical-center">{{ source }}</li>
-                    <li class="breadcrumb-item vertical-center">
-                        <a id="result" href="javascript:void(0);" class="link" onclick="result();"><strong>{{ query
-                            }}</strong></a>
-                    </li>
-                    <li class="breadcrumb-item vertical-center">{{ limit }} {{ sort }}</li>
-                </ol>
-                <div class="col justify-content-end row">
-                    <div class="col-auto">
-                        <div class="col-auto">
-                            <span class="d-flex align-items-center">
-                                <input id="search-input" type="text" class="form-control" style="min-width: 100px;"
-                                       placeholder="Search..." aria-label="Search for..."
-                                       oninput="searchChanged();"/>
-                                &nbsp;in
+<nav class="navbar navbar-light bg-light fixed-top border-bottom no-padding-right justify-content-between">
+    <a id="pubtrends" class="navbar-brand vertical-center" href="/">PubTrends</a>
+    <ol class="breadcrumb bg-light search-query">
+        <li class="breadcrumb-item vertical-center">{{ source }}</li>
+        <li class="breadcrumb-item vertical-center">
+            <a id="result" href="javascript:void(0);" class="link" onclick="result();"><strong>{{ query
+                }}</strong></a>
+        </li>
+        <li class="breadcrumb-item vertical-center">{{ limit }} {{ sort }}</li>
+    </ol>
+    <div class="form-inline">
+    <span class="d-flex align-items-center mr-2">
+        <input id="search-input" type="text" class="form-control" style="min-width: 100px;"
+               placeholder="Search..." aria-label="Search for..."
+               oninput="searchChanged();"/>
+        &nbsp;in
 
-                                <input type="checkbox" id="searchTitles" class="ml-3 mr-2" checked="checked"/>
-                                <label style="margin: auto" for="searchTitles">Titles</label>
+        <input type="checkbox" id="searchTitles" class="ml-3 mr-2" checked="checked"/>
+        <label style="margin: auto" for="searchTitles">Titles</label>
 
-                                <input type="checkbox" id="searchAbstracts" class="ml-3 mr-2" checked="checked"/>
-                                <label style="margin: auto" for="searchAbstracts">Abstracts</label>
+        <input type="checkbox" id="searchAbstracts" class="ml-3 mr-2" checked="checked"/>
+        <label style="margin: auto" for="searchAbstracts">Abstracts</label>
 
-                                <input type="checkbox" id="searchAuthors" class="ml-3 mr-2"/>
-                                <label style="margin: auto" for="searchAuthors">Authors</label>
+        <input type="checkbox" id="searchAuthors" class="ml-3 mr-2"/>
+        <label style="margin: auto" for="searchAuthors">Authors</label>
 
-                                <input type="checkbox" id="searchJournals" class="ml-3 mr-2"/>
-                                <label style="margin: auto" for="searchJournals">Journals</label>
+        <input type="checkbox" id="searchJournals" class="ml-3 mr-2"/>
+        <label style="margin: auto" for="searchJournals">Journals</label>
 
-                                <input type="checkbox" id="searchMesh" class="ml-3 mr-2"/>
-                                <label style="margin: auto" for="searchMesh">Mesh</label>
+        <input type="checkbox" id="searchMesh" class="ml-3 mr-2"/>
+        <label style="margin: auto" for="searchMesh">Mesh</label>
 
-                                <input type="checkbox" id="searchKeywords" class="ml-3 mr-2"/>
-                                <label for="searchKeywords" style="margin: auto">Keywords</label>
-                            </span>
-                        </div>
-                    </div>
-                    <div class="dropdown col-auto no-padding mr-2">
-                        <button class="btn btn-secondary dropdown-toggle" type="button"
-                                id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true"
-                                aria-expanded="false">
-                            View
-                        </button>
-                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                            <div class="dropdown dropdown-sub dropdown-item dropleft">
-                                <button class="btn dropdown-toggle" type="button"
-                                        id="dropdownMenuButtonSize" data-toggle="dropdown" aria-haspopup="true"
-                                        aria-expanded="false">
-                                    Size
-                                </button>
-                                <div class="dropdown-menu" aria-labelledby="dropdownMenuButtonSize">
-                                    <a class="dropdown-item" onclick="showSizeConnections();"
-                                       href="javascript:void(0);">Connections</a>
-                                    <a class="dropdown-item" onclick="showSizeCitations();"
-                                       href="javascript:void(0);">Citations</a>
-                                </div>
-                            </div>
-                            <div class="dropdown-sub dropdown-item dropleft">
-                                <button class="btn dropdown-toggle" type="button"
-                                        id="dropdownMenuButtonColor" data-toggle="dropdown" aria-haspopup="true"
-                                        aria-expanded="false">
-                                    Color
-                                </button>
-                                <div class="dropdown-menu" aria-labelledby="dropdownMenuButtonColor">
-                                    <a class="dropdown-item" onclick="showColorTopics();"
-                                       href="javascript:void(0);">Topic</a>
-                                    <a class="dropdown-item" onclick="showColorYear();"
-                                       href="javascript:void(0);">Year</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <a class="btn btn-secondary col-auto mr-3" content="About"
-                       href="javascript:void(0);" onclick="startIntro();">About</a>
+        <input type="checkbox" id="searchKeywords" class="ml-3 mr-2"/>
+        <label for="searchKeywords" style="margin: auto">Keywords</label>
+    </span>
+    <div class="dropdown no-padding mr-2">
+        <button class="btn btn-secondary dropdown-toggle" type="button"
+                id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true"
+                aria-expanded="false">
+            View
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <div class="dropdown dropdown-sub dropdown-item dropleft">
+                <button class="btn dropdown-toggle" type="button"
+                        id="dropdownMenuButtonSize" data-toggle="dropdown" aria-haspopup="true"
+                        aria-expanded="false">
+                    Size
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButtonSize">
+                    <a class="dropdown-item" onclick="showSizeConnections();"
+                       href="javascript:void(0);">Connections</a>
+                    <a class="dropdown-item" onclick="showSizeCitations();"
+                       href="javascript:void(0);">Citations</a>
+                </div>
+            </div>
+            <div class="dropdown-sub dropdown-item dropleft">
+                <button class="btn dropdown-toggle" type="button"
+                        id="dropdownMenuButtonColor" data-toggle="dropdown" aria-haspopup="true"
+                        aria-expanded="false">
+                    Color
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButtonColor">
+                    <a class="dropdown-item" onclick="showColorTopics();"
+                       href="javascript:void(0);">Topic</a>
+                    <a class="dropdown-item" onclick="showColorYear();"
+                       href="javascript:void(0);">Year</a>
                 </div>
             </div>
         </div>
+    </div>
+    <a class="btn btn-secondary mr-3" content="About"
+       href="javascript:void(0);" onclick="startIntro();">About</a>
     </div>
 </nav>
 <div class="container-fluid">

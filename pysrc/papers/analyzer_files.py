@@ -34,7 +34,8 @@ from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.plot.plotter import Plotter, PLOT_WIDTH, SHORT_PLOT_HEIGHT, TALL_PLOT_HEIGHT
-from pysrc.papers.utils import cut_authors_list, factors_colormap, color_to_rgb, topics_palette
+from pysrc.papers.utils import cut_authors_list, factors_colormap, color_to_rgb, topics_palette, trim
+
 
 from pysrc.version import VERSION
 
@@ -299,7 +300,8 @@ class AnalyzerFiles(PapersAnalyzer):
         path_papers_graph_interactive = os.path.join(self.query_folder, 'graph.html')
         logging.info(f'Saving papers graph for cytoscape.js {path_papers_graph_interactive}')
         template_path = os.path.realpath(os.path.join(__file__, '../../app/templates/graph_download.html'))
-        save_sim_papers_graph_interactive(self.sparse_papers_graph, self.df, clusters_description,
+        save_sim_papers_graph_interactive(source, query, sort, limit,
+                                          self.sparse_papers_graph, self.df, clusters_description,
                                           mesh_clusters_description, template_path, path_papers_graph_interactive)
 
         self.progress.info('Other analyses', current=15, task=task)
@@ -479,7 +481,8 @@ def heatmap_topics_similarity(similarity_df, topics, plot_width=PLOT_WIDTH, plot
     return p
 
 
-def save_sim_papers_graph_interactive(gs, df, clusters_description, mesh_clusters_description,
+def save_sim_papers_graph_interactive(source, query, sort, limit,
+                                      graph_sparse, df, clusters_description, mesh_clusters_description,
                                       template_path, path):
     logging.info('Saving papers graph for cytoscape.js')
 
@@ -488,9 +491,9 @@ def save_sim_papers_graph_interactive(gs, df, clusters_description, mesh_cluster
 
     logger.debug('Creating graph')
     gss = nx.Graph()
-    for (u, v) in gs.edges():
+    for (u, v) in graph_sparse.edges():
         gss.add_edge(u, v)
-    for n in gs.nodes():
+    for n in graph_sparse.nodes():
         if not gss.has_node(n):
             gss.add_node(n)
 
@@ -527,6 +530,10 @@ def save_sim_papers_graph_interactive(gs, df, clusters_description, mesh_cluster
         text = f.read()
 
     html = jinja2.Environment(loader=jinja2.BaseLoader()).from_string(text).render(
+        source=source,
+        query=trim(query, MAX_QUERY_LENGTH),
+        limit=limit,
+        sort=sort,
         topics_palette_json=json.dumps(topics_palette(df)),
         topics_tags_json=json.dumps(topics_tags),
         topics_meshs_json=json.dumps(topics_meshs),

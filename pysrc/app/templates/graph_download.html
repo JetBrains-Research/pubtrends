@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Network</title>
+    <title>{{query}} at {{source}} {{limit}} {{sort}} - PubTrends</title>
     <meta charset="utf-8">
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"
             integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT"
@@ -605,9 +605,8 @@
 
 <body>
 <!-- Fixed navbar -->
-<nav class="navbar navbar-light bg-light fixed-top border-bottom ">
-    <div class="row container-fluid">
-        <div class="col-auto">
+<nav class="navbar navbar-light bg-light fixed-top border-bottom justify-content-between">
+    <div class="col-auto">
             <span class="d-flex align-items-center">
                 <input id="search-input" type="text" class="form-control"
                        placeholder="Search..." aria-label="Search for..."
@@ -632,51 +631,50 @@
                 <input type="checkbox" id="searchKeywords" class="ml-3 mr-2"/>
                 <label for="searchKeywords" style="margin: auto">Keywords</label>
             </span>
-        </div>
-        <div class="col-auto justify-content-end dropdown dropleft">
-            <button class="btn btn-secondary dropdown-toggle" type="button"
-                    id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true"
-                    aria-expanded="false">
-                View
-            </button>
-            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                <div class="dropdown dropdown-sub dropdown-item dropleft">
-                    <button class="btn dropdown-toggle" type="button"
-                            id="dropdownMenuButtonSize" data-toggle="dropdown" aria-haspopup="true"
-                            aria-expanded="false">
-                        Size
-                    </button>
-                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButtonSize">
-                        <a class="dropdown-item" onclick="showSizeConnections();"
-                           href="javascript:void(0);">Connections</a>
-                        <a class="dropdown-item" onclick="showSizeCitations();"
-                           href="javascript:void(0);">Citations</a>
-                    </div>
+    </div>
+    <div class="col-auto dropdown dropleft">
+        <button class="btn btn-secondary dropdown-toggle" type="button"
+                id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true"
+                aria-expanded="false">
+            View
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <div class="dropdown dropdown-sub dropdown-item dropleft">
+                <button class="btn dropdown-toggle" type="button"
+                        id="dropdownMenuButtonSize" data-toggle="dropdown" aria-haspopup="true"
+                        aria-expanded="false">
+                    Size
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButtonSize">
+                    <a class="dropdown-item" onclick="showSizeConnections();"
+                       href="javascript:void(0);">Connections</a>
+                    <a class="dropdown-item" onclick="showSizeCitations();"
+                       href="javascript:void(0);">Citations</a>
                 </div>
-                <div class="dropdown-sub dropdown-item dropleft">
-                    <button class="btn dropdown-toggle" type="button"
-                            id="dropdownMenuButtonColor" data-toggle="dropdown" aria-haspopup="true"
-                            aria-expanded="false">
-                        Color
-                    </button>
-                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButtonColor">
-                        <a class="dropdown-item" onclick="showColorTopics();"
-                           href="javascript:void(0);">Topic</a>
-                        <a class="dropdown-item" onclick="showColorYear();"
-                           href="javascript:void(0);">Year</a>
-                    </div>
+            </div>
+            <div class="dropdown-sub dropdown-item dropleft">
+                <button class="btn dropdown-toggle" type="button"
+                        id="dropdownMenuButtonColor" data-toggle="dropdown" aria-haspopup="true"
+                        aria-expanded="false">
+                    Color
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButtonColor">
+                    <a class="dropdown-item" onclick="showColorTopics();"
+                       href="javascript:void(0);">Topic</a>
+                    <a class="dropdown-item" onclick="showColorYear();"
+                       href="javascript:void(0);">Year</a>
                 </div>
-                <div class="dropdown-sub dropdown-item dropleft">
-                    <button class="btn dropdown-toggle" type="button"
-                            id="dropdownMenuButtonDescription" data-toggle="dropdown" aria-haspopup="true"
-                            aria-expanded="false">
-                        Description
-                    </button>
-                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButtonDescription">
-                        <a class="dropdown-item" onclick="showKeywords();" href="javascript:void(0);">Keywords</a>
-                        <a class="dropdown-item" onclick="showMeshTerms();" href="javascript:void(0);">Mesh terms</a>
-                        <a class="dropdown-item" onclick="showNone();" href="javascript:void(0);">None</a>
-                    </div>
+            </div>
+            <div class="dropdown-sub dropdown-item dropleft">
+                <button class="btn dropdown-toggle" type="button"
+                        id="dropdownMenuButtonDescription" data-toggle="dropdown" aria-haspopup="true"
+                        aria-expanded="false">
+                    Description
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButtonDescription">
+                    <a class="dropdown-item" onclick="showKeywords();" href="javascript:void(0);">Keywords</a>
+                    <a class="dropdown-item" onclick="showMeshTerms();" href="javascript:void(0);">Mesh terms</a>
+                    <a class="dropdown-item" onclick="showNone();" href="javascript:void(0);">None</a>
                 </div>
             </div>
         </div>

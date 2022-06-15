@@ -30,7 +30,8 @@ from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.plot.plotter import TOPIC_KEYWORDS
 from pysrc.papers.plot.plotter_paper import prepare_paper_data
-from pysrc.papers.utils import trim, IDS_ANALYSIS_TYPE, PAPER_ANALYSIS_TYPE, human_readable_size, topics_palette
+from pysrc.papers.utils import trim, IDS_ANALYSIS_TYPE, PAPER_ANALYSIS_TYPE, human_readable_size, topics_palette, \
+    MAX_QUERY_LENGTH
 from pysrc.version import VERSION
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
@@ -99,7 +100,6 @@ def static_from_root():
 
 PREDEFINED_JOBS = get_predefined_jobs(PUBTRENDS_CONFIG)
 
-MAX_QUERY_LENGTH = 60
 
 
 def log_request(r):
