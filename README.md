@@ -161,44 +161,48 @@ tee -a crontab_update.log
 ### Semantic Scholar
 
 Download Sample from [Semantic Scholar](https://www.semanticscholar.org/) or full archive. See Open Corpus.<br>
-Instructions are for the corpus 2021-11-01. \
-Replace `<PATH_TO_PUBTRENDS.JAR>` with actual path to Jar file.
 
 * Linux & Mac OS
 
    ```
    # Fail on errors
    set -euox pipefail 
-   wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2021-11-01/manifest.txt
+  
+   DATE="2022-05-01"
+   PUBTRENDS_JAR=
+  
+   wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/$DATE/manifest.txt
    echo "" > complete.txt
    cat manifest.txt | grep corpus | while read -r file; do 
       if [[ -z $(grep "$file" complete.txt) ]]; then
          echo "Processing $file"
-         wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2021-11-01/$file;
-         java -cp <PUBTRENDS.JAR> org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --fillDatabase $(pwd)/$file
+         wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/$DATE/$file;
+         java -cp $PUBTRENDS_JAR org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --fillDatabase $(pwd)/$file
          rm $file;
          echo "$file" >> complete.txt
       fi;
    done
-   java -cp <PUBTRENDS.JAR> org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --finish
+   java -cp $PUBTRENDS_JAR org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --finish
    ```
 
 * Windows 10 PowerShell
 
    ```
-   curl.exe -o .\manifest.txt https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2021-11-01/manifest.txt 
+   $DATE = "2022-05-01"
+   $PUBTRENDS_JAR = 
+   curl.exe -o .\manifest.txt https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/$DATE/manifest.txt 
    echo "" > .\complete.txt
    foreach ($file in Get-Content .\manifest.txt) {
        $sel = Select-String -Path .\complete.txt -Pattern $file
        if ($sel -eq $null) {
           echo "Processing $file"
-          curl.exe -o .\$file https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/2021-11-01/$file
-          java -cp <PUBTRENDS.JAR> org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --fillDatabase .\$file
+          curl.exe -o .\$file https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/$DATE/$file
+          java -cp $PUBTRENDS_JAR org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --fillDatabase .\$file
           del ./$file
           echo $file >> .\complete.txt
        }
    }
-   java -cp <PUBTRENDS.JAR> org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --finish
+   java -cp $PUBTRENDS_JAR org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --finish
    ```
 
 ## Development
