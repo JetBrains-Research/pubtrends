@@ -173,9 +173,10 @@ Download Sample from [Semantic Scholar](https://www.semanticscholar.org/) or ful
   
    wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/$DATE/manifest.txt
    echo "" > complete.txt
+   N=$(cat manifest.txt | grep corpus | wc -l)
    cat manifest.txt | grep corpus | while read -r file; do 
       if [[ -z $(grep "$file" complete.txt) ]]; then
-         echo "Processing $file"
+         echo "Processing $file / $N"
          wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/$DATE/$file;
          java -cp $PUBTRENDS_JAR org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --fillDatabase $(pwd)/$file
          rm $file;
