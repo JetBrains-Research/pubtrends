@@ -89,15 +89,6 @@ def analyze_search_terms_files(source, query,
         loader.close_connection()
 
 
-@pubtrends_celery.task(name='analyze_id_list')
-def analyze_id_list(source, ids, query, analysis_type, limit=None, topics='medium', test=False):
-    config = PubtrendsConfig(test=test)
-    loader = Loaders.get_loader(source, config)
-    analyzer = PapersAnalyzer(loader, config)
-    return _analyze_id_list(analyzer, source, ids, False, query, analysis_type, limit, topics,
-                            test, current_task)
-
-
 def _analyze_id_list(analyzer, source,
                      ids, single_paper,
                      query, analysis_type=IDS_ANALYSIS_TYPE, limit=None, topics='medium',

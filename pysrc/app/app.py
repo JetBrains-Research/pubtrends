@@ -20,7 +20,7 @@ from pysrc.app.predefined import get_predefined_jobs, load_predefined_viz_log, \
     load_predefined_or_result_data, _example_by_jobid
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.celery.tasks_cache import get_or_cancel_task
-from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, analyze_id_list, \
+from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, \
     analyze_pubmed_search_files, analyze_pubmed_search, analyze_search_terms_files
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.analyzer_files import FILES_WITH_DESCRIPTIONS, ANALYSIS_FILES_TYPE
@@ -220,29 +220,6 @@ def search_paper():
         return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
     except Exception as e:
         logger.exception(f'/search_paper exception {e}')
-        return render_template_string(ERROR_OCCURRED), 500
-
-
-@app.route('/process_ids', methods=['POST'])
-def process_ids():
-    logger.info(f'/process_ids {log_request(request)}')
-    source = request.form.get('source')  # Pubmed or Semantic Scholar
-    query = request.form.get('query')  # Original search query
-    topics = request.form.get('topics')
-    try:
-        if source and query and topics and 'id_list' in request.form:
-            id_list = request.form.get('id_list').split(',')
-            analysis_type = request.form.get('analysis_type')
-            job = analyze_id_list.delay(
-                source, ids=id_list, query=query, analysis_type=analysis_type, limit=None, topics=topics,
-                test=app.config['TESTING']
-            )
-            return redirect(url_for('.process', query=query, analysis_type=analysis_type, source=source, topics=topics,
-                                    jobid=job.id))
-        logger.error(f'/process_ids error {log_request(request)}')
-        return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
-    except Exception as e:
-        logger.exception(f'/process_ids exception {e}')
         return render_template_string(ERROR_OCCURRED), 500
 
 

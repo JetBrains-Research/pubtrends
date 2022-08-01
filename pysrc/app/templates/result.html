@@ -163,7 +163,7 @@
 
             // Process topics word clouds
             let cid = '';
-            {% for (script, div), word_cloud, is_empty, zoom_in_callback in topics_info_and_word_cloud_and_callback %}
+            {% for (script, div), word_cloud, is_empty in topics_info_and_word_cloud %}
                  word_records = JSON.parse(normalize('{{ word_cloud }}'));
                  // Ignore artificial tags for scale
                  // word record [word, x, y, size, vertical, color]
@@ -528,8 +528,7 @@
                         Word clouds show keywords specific for topics.
                     </p>
                     <div>
-                        {% for (script, div), word_cloud, is_empty, zoom_in_callback in
-                        topics_info_and_word_cloud_and_callback %}
+                        {% for (script, div), word_cloud, is_empty in topics_info_and_word_cloud %}
                         <div id="topic-div-{{ loop.index }}">
                             <hr>
                             <div style="display: inline">
@@ -540,11 +539,6 @@
                                         onclick="papers_callback_component({{ loop.index }});">
                                     <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as
                                     list
-                                </button>
-                                <button type="button" class="btn btn-light"
-                                        onclick="(function(){ {{ zoom_in_callback|safe }} })();">
-                                    <img src="{{ url_for('static', filename='zoom-in.svg') }}" alt="+"/>&nbsp;Zoom
-                                    into
                                 </button>
                             </div>
                             Number of papers: {{ component_sizes[loop.index - 1] }}
@@ -896,14 +890,6 @@
                     element: '#topics',
                     intro: "Topic is a group of papers which share common ideas, describe common features, etc.<br>" +
                         "Topics are extracted based on papers graph and texts similarity."
-                },
-                {
-                    element: '#topic-1',
-                    intro: "This is the detailed information about topic 1. As usual, " +
-                        "click <img src=\"{{ url_for('static', filename='list.svg') }}\" alt=\"+\"/> " +
-                        "<em>Show as list</em> to open the list of papers for the topic or " +
-                        "use the <img src=\"{{ url_for('static', filename='zoom-in.svg') }}\" alt=\"+\"/> " +
-                        "<em>Zoom into</em> button to run analysis for this particular topic.<br>"
                 },
                 {
                     element: '#topic_chart_1',

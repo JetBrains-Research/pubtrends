@@ -76,7 +76,7 @@ def visualize_analysis(analyzer):
         result.update(dict(
             topics_analyzed=True,
             topic_years_distribution=components_list(plotter.plot_topic_years_distribution()),
-            topics_info_and_word_cloud_and_callback=topics_info_and_word_cloud_and_callback(plotter),
+            topics_info_and_word_cloud=topics_info_and_word_cloud(plotter),
             component_sizes=PlotPreprocessor.component_sizes(analyzer.df),
             papers_graph=components_list(plotter.plot_papers_graph())
         ))
@@ -137,10 +137,10 @@ def components_list(plot):
 
 
 @exception_handler
-def topics_info_and_word_cloud_and_callback(plotter):
+def topics_info_and_word_cloud(plotter):
     return [
-        (components(p), PlotPreprocessor.word_cloud_prepare(wc), "true" if is_empty else "false", zoom_in_callback)
-        for (p, wc, is_empty, zoom_in_callback) in plotter.plot_topics_info_and_word_cloud_and_callback()
+        (components(p), PlotPreprocessor.word_cloud_prepare(wc), "true" if is_empty else "false")
+        for (p, wc, is_empty) in plotter.plot_topics_info_and_word_cloud()
     ]
 
 
@@ -169,8 +169,8 @@ class Plotter:
         return self._plot_topics_years_distribution(self.analyzer.df, self.analyzer.kwd_df, plot_components, data,
                                                     min_year, max_year)
 
-    def plot_topics_info_and_word_cloud_and_callback(self):
-        logger.debug('Processing topics_info_and_word_cloud_and_callback')
+    def plot_topics_info_and_word_cloud(self):
+        logger.debug('Processing topics_info_and_word_cloud')
 
         # Prepare layouts
         result = []
@@ -202,10 +202,7 @@ class Plotter:
                            max_words=TOPIC_WORD_CLOUD_KEYWORDS, min_font_size=10, max_font_size=30)
             wc.generate_from_frequencies(kwds)
 
-            # Create Zoom In callback
-            id_list = list(df_comp['id'])
-            zoom_in_callback = self._zoom_in_callback(id_list, self.analyzer.source, self.analyzer.query)
-            result.append((plot, wc, is_empty, zoom_in_callback))
+            result.append((plot, wc, is_empty))
 
         return result
 
@@ -789,41 +786,3 @@ class Plotter:
             }
             source.selected.indices = [];
         """)
-
-    @staticmethod
-    def _zoom_in_callback(id_list, source, query):
-        # submit list of ids and database name to the main page using invisible form
-        # IMPORTANT: no double quotes!
-        return f"""
-        var form = document.createElement('form');
-        document.body.appendChild(form);
-        form.method = 'post';
-        form.action = '/process_ids';
-        form.target = '_blank'
-
-        var input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'id_list';
-        input.value = {json.dumps(id_list).replace('"', "'")};
-        form.appendChild(input);
-
-        var input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'source';
-        input.value = '{source}';
-        form.appendChild(input);
-
-        var input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'analysis_type';
-        input.value = '{IDS_ANALYSIS_TYPE}';
-        form.appendChild(input);
-
-        var input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'query';
-        input.value = {json.dumps(query).replace('"', "'")};
-        form.appendChild(input);
-
-        form.submit();
-        """
