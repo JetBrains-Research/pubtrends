@@ -1,4 +1,6 @@
+from datetime import datetime
 import logging
+import os
 
 import numpy as np
 import pandas as pd
@@ -20,6 +22,13 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
     def ids2values(ids):
         ids = list(ids)  # In case of generator, avoid problems with zip and map
         return ', '.join(f'({i}, \'{j}\')' for (i, j) in zip(map(crc32, ids), ids))
+
+    UPDATE_STATS_PATH = os.path.expanduser('~/.pubtrends/semantic_scholar_stats.tsv')
+
+    def last_update(self):
+        if os.path.exists(self.UPDATE_STATS_PATH):
+            return datetime.fromtimestamp(os.path.getmtime(self.UPDATE_STATS_PATH)).strftime('%Y-%m-%d %H:%M:%S')
+        return None
 
     def find(self, key, value):
         self.check_connection()

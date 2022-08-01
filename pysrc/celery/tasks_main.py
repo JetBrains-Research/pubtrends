@@ -25,6 +25,9 @@ def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, e
     config = PubtrendsConfig(test=test)
     loader = Loaders.get_loader(source, config)
     analyzer = PapersAnalyzer(loader, config)
+    last_update = loader.last_update()
+    if last_update is not None:
+        analyzer.progress.info(f'Last papers update {last_update}', current=0, task=current_task)
     analyzer.progress.info('Analyzing search query', current=1, task=current_task)
     try:
         sort = sort or SORT_MOST_CITED
@@ -64,6 +67,9 @@ def analyze_search_terms_files(source, query,
     config = PubtrendsConfig(test=test)
     loader = Loaders.get_loader(source, config)
     analyzer = AnalyzerFiles(loader, config)
+    last_update = loader.last_update()
+    if last_update is not None:
+        analyzer.progress.info(f'Last papers update {last_update}', current=0, task=current_task)
     analyzer.progress.info('Analyzing search query', current=1, task=current_task)
     try:
         sort = sort or SORT_MOST_CITED

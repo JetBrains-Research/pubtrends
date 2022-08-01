@@ -9,6 +9,13 @@ from pysrc.papers.utils import extract_authors
 class Loader(metaclass=ABCMeta):
 
     @abstractmethod
+    def last_update(self):
+        """
+        :return: date of the latest update
+        """
+        pass
+
+    @abstractmethod
     def find(self, key, value):
         """
         Searches single or multiple paper(s) for give search key, value.

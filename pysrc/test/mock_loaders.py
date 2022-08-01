@@ -49,6 +49,9 @@ EXPECTED_MAX_RELATIVE_GAIN = {1972: '3', 1974: '4'}
 
 class MockLoader(Loader):
 
+    def last_update(self):
+        return None
+
     def find(self, key, value):
         raise Exception('Not implemented')
 
@@ -84,6 +87,9 @@ class MockLoader(Loader):
 
 
 class MockLoaderSingle(Loader):
+
+    def last_update(self):
+        return None
 
     def find(self, key, value):
         raise Exception('Not implemented')
@@ -125,6 +131,9 @@ class MockLoaderSingle(Loader):
 
 
 class MockLoaderEmpty(Loader):
+
+    def last_update(self):
+        return None
 
     def search(self, terms, limit=None, sort=None, noreviews=True):
         return []

@@ -1,4 +1,6 @@
+from datetime import datetime
 import logging
+import os
 
 import numpy as np
 import pandas as pd
@@ -20,6 +22,13 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
     @staticmethod
     def ids_to_vals(ids):
         return ','.join([f'({i})' for i in ids])
+
+    UPDATE_LAST_PATH = os.path.expanduser('~/.pubtrends/pubmedpostgreswriter_last.tsv')
+
+    def last_update(self):
+        if os.path.exists(self.UPDATE_LAST_PATH):
+            return datetime.fromtimestamp(os.path.getmtime(self.UPDATE_LAST_PATH)).strftime('%Y-%m-%d %H:%M:%S')
+        return None
 
     def find(self, key, value):
         self.check_connection()
