@@ -37,7 +37,7 @@ def register_app_review(app, predefined_jobs):
             num_papers = request.args.get('papers_number')
             num_sents = request.args.get('sents_number')
             if jobid:
-                data = load_predefined_or_result_data(source, jobid, predefined_jobs, pubtrends_celery)
+                data, _ = load_predefined_or_result_data(source, jobid, predefined_jobs, pubtrends_celery)
                 if data is not None:
                     job = prepare_review_data_async.delay(data, source, num_papers, num_sents)
                     return redirect(url_for('.process', analysis_type=REVIEW_ANALYSIS_TYPE, jobid=job.id,

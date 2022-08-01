@@ -778,8 +778,9 @@
                 </div>
                 <div class="card-body">
                     <strong>We'd love to hear your feedback!</strong><br>
+                    {% if !is_predefined %}
                     <p>
-                        Use the form below to tell us more about you and your opinion about the service,<br>
+                        Use the form below to tell us more about your experience with the service,<br>
                         or click instant feedback buttons to share your feelings about particular report
                         section.<br>
                         Also you can optionally leave your email to contact you later.<br>
@@ -810,8 +811,9 @@
                             <input type="hidden" class="form-control" name="type" value="result"/>
                         </div>
                     </form>
+                    {% endif %}
                     <p>
-                        Alternatively, submit your questions or issues directly to the GitHub at
+                        Submit your questions or issues directly to the GitHub at
                         <a href="https://github.com/JetBrains-Research/PubTrends" target="_blank">https://github.com/JetBrains-Research/PubTrends</a>.
                     </p>
                     <strong>Thank you for using PubTrends!</strong>

@@ -34,33 +34,33 @@ def get_predefined_jobs(config):
 
 
 def _save_predefined(viz, data, log, source, jobid, predefined_jobs):
-    if jobid.startswith('predefined_'):
-        query, sort, limit = _example_by_jobid(source, jobid, predefined_jobs)
-        logger.info(f'Saving predefined search for source={source} query={query} sort={sort} limit={limit}')
-        folder = os.path.join(predefined_path, f"{VERSION.replace(' ', '_')}",
-                              query_to_folder(source, query, sort, limit))
-        if not os.path.exists(folder):
-            os.makedirs(folder)
-        try:
-            PREDEFINED_LOCK.acquire()
-            path_viz = os.path.join(folder, 'viz.json.gz')
-            path_data = os.path.join(folder, 'data.json.gz')
-            path_log = os.path.join(folder, 'log.gz')
-            if not os.path.exists(path_viz):
-                with gzip.open(path_viz, 'w') as f:
-                    f.write(json.dumps(viz).encode('utf-8'))
-            if not os.path.exists(path_data):
-                with gzip.open(path_data, 'w') as f:
-                    f.write(json.dumps(data).encode('utf-8'))
-            if not os.path.exists(path_log):
-                with gzip.open(path_log, 'w') as f:
-                    f.write(log.encode('utf-8'))
-        finally:
-            PREDEFINED_LOCK.release()
+    query, sort, limit = _example_by_jobid(source, jobid, predefined_jobs)
+    logger.info(f'Saving predefined search for source={source} query={query} sort={sort} limit={limit}')
+    folder = os.path.join(predefined_path, f"{VERSION.replace(' ', '_')}",
+                          query_to_folder(source, query, sort, limit))
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+    try:
+        PREDEFINED_LOCK.acquire()
+        path_viz = os.path.join(folder, 'viz.json.gz')
+        path_data = os.path.join(folder, 'data.json.gz')
+        path_log = os.path.join(folder, 'log.gz')
+        if not os.path.exists(path_viz):
+            with gzip.open(path_viz, 'w') as f:
+                f.write(json.dumps(viz).encode('utf-8'))
+        if not os.path.exists(path_data):
+            with gzip.open(path_data, 'w') as f:
+                f.write(json.dumps(data).encode('utf-8'))
+        if not os.path.exists(path_log):
+            with gzip.open(path_log, 'w') as f:
+                f.write(log.encode('utf-8'))
+    finally:
+        PREDEFINED_LOCK.release()
 
 
 def load_predefined_viz_log(source, jobid, predefined_jobs, app):
-    if jobid.startswith('predefined_'):
+    is_predefined = jobid.startswith('predefined_')
+    if is_predefined:
         query, sort, limit = _example_by_jobid(source, jobid, predefined_jobs)
         logger.info(f'Trying to load predefined viz, log for source={source} query={query} sort={sort} limit={limit}')
         folder = os.path.join(predefined_path, f"{VERSION.replace(' ', '_')}",
@@ -74,19 +74,21 @@ def load_predefined_viz_log(source, jobid, predefined_jobs, app):
                     viz = json.loads(f.read().decode('utf-8'))
                 with gzip.open(path_log, 'r') as f:
                     log = f.read().decode('utf-8')
-                return viz, log
+                return viz, log, True
         finally:
             PREDEFINED_LOCK.release()
     job = AsyncResult(jobid, app=app)
     if job and job.state == 'SUCCESS':
         viz, data, log = job.result
-        _save_predefined(viz, data, log, source, jobid, predefined_jobs)
-        return viz, log
-    return None
+        if is_predefined:
+            _save_predefined(viz, data, log, source, jobid, predefined_jobs)
+        return viz, log, is_predefined
+    return None, None, is_predefined
 
 
 def load_predefined_or_result_data(source, jobid, predefined_jobs, app):
-    if jobid.startswith('predefined_'):
+    is_predefined = jobid.startswith('predefined_')
+    if is_predefined:
         query, sort, limit = _example_by_jobid(source, jobid, predefined_jobs)
         logger.info(f'Trying to load predefined data for source={source} query={query} sort={sort} limit={limit}')
         folder = os.path.join(predefined_path, f"{VERSION.replace(' ', '_')}",
@@ -96,15 +98,16 @@ def load_predefined_or_result_data(source, jobid, predefined_jobs, app):
             PREDEFINED_LOCK.acquire()
             if os.path.exists(path_data):
                 with gzip.open(path_data, 'r') as f:
-                    return json.loads(f.read().decode('utf-8'))
+                    return json.loads(f.read().decode('utf-8')), True
         finally:
             PREDEFINED_LOCK.release()
     job = AsyncResult(jobid, app=app)
     if job and job.state == 'SUCCESS':
         viz, data, log = job.result
-        _save_predefined(viz, data, log, source, jobid, predefined_jobs)
-        return data
-    return None
+        if is_predefined:
+            _save_predefined(viz, data, log, source, jobid, predefined_jobs)
+        return data, is_predefined
+    return None, is_predefined
 
 
 def query_to_folder(source, query, sort, limit, max_folder_length=100):
