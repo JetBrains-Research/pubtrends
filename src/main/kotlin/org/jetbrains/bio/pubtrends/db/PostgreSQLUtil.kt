@@ -83,7 +83,7 @@ fun <T : Table, E> T.batchInsertOnDuplicateKeyUpdate(
         }
         TransactionManager.current().exec(insert)
         columns.firstOrNull { it.columnType.isAutoInc }?.let { idCol ->
-            insert.generatedKey?.mapNotNull {
+            insert.resultedValues?.mapNotNull {
                 when (val value = it[idCol]) {
                     is Long -> value.toInt()
                     is Int -> value

@@ -41,8 +41,8 @@ project (":") {
         implementation("org.jetbrains.kotlinx:kotlinx-support-jdk8:0.1")
         implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 
-        compile("org.jetbrains.exposed:exposed:0.10.5")
-        compile("org.postgresql:postgresql:42.2.2")
+        compile("org.jetbrains.exposed:exposed:0.17.14")
+        compile("org.postgresql:postgresql:42.4.0")
         compile("commons-net:commons-net:3.6")
         compile("com.opencsv:opencsv:4.6")
         compile("com.google.code.gson:gson:2.2.4")
