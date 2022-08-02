@@ -152,11 +152,12 @@ Command line options supported:
 * `lastId` - force downloading from given id from articles pack `pubmed20n{lastId+1}.xml`.
 
 Updates - add the following line to crontab:
-```
-crontab -e
-0 22 * * * java -cp pubtrends-<version>.jar org.jetbrains.bio.pubtrends.pm.PubmedLoader --fillDatabase | \
-tee -a crontab_update.log
-```
+
+   ```
+   crontab -e
+   0 22 * * * java -cp pubtrends-<version>.jar org.jetbrains.bio.pubtrends.pm.PubmedLoader --fillDatabase | \
+   tee -a crontab_update.log
+   ```
 
 ### Semantic Scholar
 
@@ -327,7 +328,6 @@ Please ensure that you have configured and prepared the database(s).
    dist.sh build=build-number ga=google-analytics-id
    ```
 
-
 4. Launch pubtrends with docker-compose.
     ```
     # start
@@ -346,11 +346,11 @@ Please ensure that you have configured and prepared the database(s).
 
 ## Maintenance
 
-   Use simple placeholder during maintenance.
+Use simple placeholder during maintenance.
+
    ```
    cd pysrc/app; python -m http.server 8888
    ```
-
 
 ## Release
 
