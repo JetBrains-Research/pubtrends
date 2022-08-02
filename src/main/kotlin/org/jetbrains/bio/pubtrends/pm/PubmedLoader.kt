@@ -1,5 +1,7 @@
 package org.jetbrains.bio.pubtrends.pm
 
+import ch.qos.logback.classic.Logger
+import ch.qos.logback.classic.LoggerContext
 import joptsimple.OptionParser
 import org.jetbrains.bio.pubtrends.Config
 import org.jetbrains.bio.pubtrends.db.AbstractDBWriter
@@ -23,6 +25,7 @@ object PubmedLoader {
 
             // Help option
             acceptsAll(listOf("h", "?", "help"), "Show help").forHelp()
+            acceptsAll(listOf("d", "debug"), "Debug")
 
             LOG.info("Arguments: \n" + args.contentToString())
 
@@ -30,6 +33,10 @@ object PubmedLoader {
             if (options.has("help")) {
                 printHelpOn(System.err)
                 exitProcess(0)
+            }
+            if (options.has("debug")) {
+                val rootLogger = (LoggerFactory.getILoggerFactory() as LoggerContext).getLogger(Logger.ROOT_LOGGER_NAME)
+                rootLogger.level = ch.qos.logback.classic.Level.DEBUG
             }
 
             // Load configuration file

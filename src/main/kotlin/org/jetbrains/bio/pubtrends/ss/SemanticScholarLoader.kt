@@ -1,5 +1,7 @@
 package org.jetbrains.bio.pubtrends.ss
 
+import ch.qos.logback.classic.Logger
+import ch.qos.logback.classic.LoggerContext
 import joptsimple.OptionParser
 import joptsimple.ValueConversionException
 import joptsimple.ValueConverter
@@ -26,12 +28,16 @@ object SemanticScholarLoader {
                 .withValuesConvertedBy(exists())
 
             acceptsAll(listOf("h", "?", "help"), "Show help").forHelp()
-
+            acceptsAll(listOf("d", "debug"), "Debug")
             val options = parse(*args)
 
             if (options.has("help")) {
                 printHelpOn(System.err)
                 exitProcess(0)
+            }
+            if (options.has("debug")) {
+                val rootLogger = (LoggerFactory.getILoggerFactory() as LoggerContext).getLogger(Logger.ROOT_LOGGER_NAME)
+                rootLogger.level = ch.qos.logback.classic.Level.DEBUG
             }
 
             // Load configuration file
