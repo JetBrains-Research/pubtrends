@@ -104,10 +104,12 @@ open class SemanticScholarPostgresWriter(
             // Update TSV vector
             val vals = articles.map { it.ssid }.joinToString(",") { "('$it', ${crc32id(it)})" }
             exec(
-                "UPDATE SSPublications\n" +
-                        "set tsv = setweight(to_tsvector('english', coalesce(title, '')), 'A') || \n" +
-                        "   setweight(to_tsvector('english', coalesce(abstract, '')), 'B')\n" +
-                        "WHERE (ssid, crc32id) IN (VALUES $vals);"
+                """
+                    UPDATE SSPublications
+                    SET tsv = setweight(to_tsvector('english', coalesce(title, '')), 'A') || 
+                        setweight(to_tsvector('english', coalesce(abstract, '')), 'B')
+                    WHERE (ssid, crc32id) IN (VALUES $vals);
+                    """
             )
         }
     }
@@ -124,14 +126,14 @@ open class SemanticScholarPostgresWriter(
                 addLogger(PubmedPostgresWriter)
                 exec(
                     """
-                    do
-                    $$
-                    begin
-                    IF exists (select matviewname from pg_matviews where matviewname = 'matview_sscitations') THEN
-                        refresh materialized view matview_sscitations;
-                    END IF;
-                    end;
-                    $$;
+                        do
+                        $$
+                        begin
+                        IF exists (select matviewname from pg_matviews where matviewname = 'matview_sscitations') THEN
+                            refresh materialized view matview_sscitations;
+                        END IF;
+                        end;
+                        $$;
                     """
                 )
             }
