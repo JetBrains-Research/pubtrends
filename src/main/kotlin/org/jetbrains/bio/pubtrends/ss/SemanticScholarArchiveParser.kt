@@ -12,21 +12,20 @@ import java.util.zip.GZIPInputStream
 
 
 class SemanticScholarArchiveParser(
-        private val dbWriter: AbstractDBWriter<SemanticScholarArticle>,
-        private val archiveFileGz: File,
-        private var batchSize: Int,
-        private val collectStats: Boolean,
-        private val statsTSV: Path
+    private val dbWriter: AbstractDBWriter<SemanticScholarArticle>,
+    private val archiveFileGz: File,
+    private var batchSize: Int,
+    private val collectStats: Boolean,
+    private val statsTSV: Path
 ) {
+    companion object {
+        private val LOG = LoggerFactory.getLogger(SemanticScholarArchiveParser::class.java)
+        const val DEFAULT_SIZE = 30000
+    }
 
     private val currentBatch = arrayListOf<SemanticScholarArticle>()
     private var batchIndex = 0
-
-    companion object {
-        private val LOG = LoggerFactory.getLogger(SemanticScholarArchiveParser::class.java)
-
-        const val ARCHIVE_SIZE = 30000
-    }
+    private var actualSize = DEFAULT_SIZE
 
     init {
         if (collectStats) {
@@ -38,11 +37,9 @@ class SemanticScholarArchiveParser(
     private val tags = HashMap<String, Int>()
 
     fun parse() {
-        var sc: Scanner
         GZIPInputStream(archiveFileGz.inputStream()).use {
-            sc = Scanner(it, "UTF-8")
+            val sc = Scanner(it, "UTF-8")
             val buffer = StringBuilder()
-            var curArticle: SemanticScholarArticle
             while (sc.hasNextLine()) {
                 val line = sc.nextLine().trim()
 
@@ -63,46 +60,61 @@ class SemanticScholarArchiveParser(
                 if (jsonObject == null) {
                     continue
                 }
-                val ssid = jsonObject.get("id")?.asString ?: continue
-                val title = jsonObject.get("title")?.asString ?: continue
+                val ssid = jsonObject["id"]?.asString ?: continue
+                val title = jsonObject["title"]?.asString ?: continue
 
-                val pmid = extractPmid(jsonObject.get("pmid").asString)
-                var doi = jsonObject.get("doi")?.asString
-                if (doi == "") doi = null
-                var abstract = jsonObject.get("paperAbstract")?.asString
-                if (abstract == "") abstract = null
-                var keywords: String? = jsonObject.get("entities").toString()
-                        .replace("\"", "").removeSurrounding("[", "]")
-                if (keywords == "") keywords = null
+                val pmid = extractPmid(jsonObject["pmid"].asString)
 
-                val year: Int? = if (jsonObject.get("year") == null || jsonObject.get("year").toString() == "null") {
+                var doi = jsonObject["doi"]?.asString
+                if (doi.isNullOrEmpty()) {
+                    doi = null
+                }
+
+                var abstract = jsonObject["paperAbstract"]?.asString
+                if (abstract.isNullOrEmpty()) {
+                    abstract = null
+                }
+
+                var keywords: String? = jsonObject["entities"].toString()
+                    .replace("\"", "").removeSurrounding("[", "]")
+                if (keywords.isNullOrEmpty()) {
+                    keywords = null
+                }
+
+                val year: Int? = if (jsonObject["year"] == null || jsonObject["year"].toString() == "null") {
                     null
                 } else {
                     try {
-                        jsonObject.get("year").asInt
+                        jsonObject["year"].asInt
                     } catch (e: Exception) {
-                        LOG.info("Skip year value: ${jsonObject.get("year")}")
+                        LOG.info("Skip year value: ${jsonObject["year"]}")
                         null
                     }
                 }
 
-                val citationList = extractList(jsonObject.get("outCitations"))
-
-                val authors = extractAuthors(jsonObject.get("authors"))
+                val citationList = extractList(jsonObject["outCitations"])
+                val authors = extractAuthors(jsonObject["authors"])
                 val journal = extractJournal(jsonObject)
                 val links = extractLinks(jsonObject)
-                val venue = jsonObject.get("venue")?.asString ?: ""
+                val venue = jsonObject["venue"]?.asString ?: ""
                 val aux = AuxInfo(authors, journal, links, venue)
 
-                curArticle = SemanticScholarArticle(ssid = ssid, title = title,
-                        pmid = pmid, doi = doi, abstract = abstract, keywords = keywords, year = year,
-                        citations = citationList, aux = aux)
-
-                addArticleToBatch(curArticle)
+                val article = SemanticScholarArticle(
+                    ssid = ssid,
+                    title = title,
+                    pmid = pmid,
+                    doi = doi,
+                    abstract = abstract,
+                    keywords = keywords,
+                    year = year,
+                    citations = citationList,
+                    aux = aux
+                )
+                addArticleToBatch(article)
 
                 if (collectStats) {
-                    jsonObject.entrySet().forEach { e ->
-                        tags[e.key] = (tags[e.key] ?: 0) + 1
+                    jsonObject.entrySet().forEach { (k) ->
+                        tags[k] = (tags[k] ?: 0) + 1
                     }
                     for (i in citationList.indices) {
                         tags["citation"] = (tags["citation"] ?: 0) + 1
@@ -120,7 +132,7 @@ class SemanticScholarArchiveParser(
         dbWriter.store(currentBatch)
         currentBatch.clear()
         batchIndex++
-        val progress = min(100, (1.0 * batchIndex * batchSize / ARCHIVE_SIZE * 100).toInt())
+        val progress = min(100, (1.0 * batchIndex * batchSize / actualSize * 100).toInt())
         LOG.info("Finished batch $batchIndex adding ($archiveFileGz) $progress%")
     }
 
@@ -128,6 +140,8 @@ class SemanticScholarArchiveParser(
         if (currentBatch.isNotEmpty()) {
             storeBatch()
         }
+        // Update actual size
+        actualSize = batchIndex * batchSize
         if (collectStats) {
             LOG.info("Writing stats to $statsTSV")
             statsTSV.toFile().outputStream().bufferedWriter().use {
@@ -143,7 +157,6 @@ class SemanticScholarArchiveParser(
 
     private fun addArticleToBatch(article: SemanticScholarArticle) {
         currentBatch.add(article)
-
         if (currentBatch.size == batchSize) {
             storeBatch()
         }
@@ -157,28 +170,25 @@ class SemanticScholarArchiveParser(
 
     private fun extractPmid(pmidString: String): Int? {
         val pmidWithoutVersion = pmidString.substringBefore("v")
-        if (pmidWithoutVersion.isEmpty())
-            return null
-
-        return pmidWithoutVersion.toInt()
+        return if (pmidWithoutVersion.isNotEmpty()) pmidWithoutVersion.toInt() else null
     }
 
     private fun extractAuthors(authorsJson: JsonElement?): List<Author> {
         val authors = authorsJson?.asJsonArray ?: return listOf()
-        return authors.map { author -> Author(author.asJsonObject.get("name").asString) }
+        return authors.map { Author(it.asJsonObject.get("name").asString) }
     }
 
     private fun extractLinks(articleJson: JsonObject): Links {
-        val s2Url = articleJson.get("s2Url")?.asString
-        val s2PdfUrl = articleJson.get("s2PdfUrl")?.asString
-        val pdfUrls = extractList(articleJson.get("pdfUrls"))
+        val s2Url = articleJson["s2Url"]?.asString
+        val s2PdfUrl = articleJson["s2PdfUrl"]?.asString
+        val pdfUrls = extractList(articleJson["pdfUrls"])
         return Links(s2Url ?: "", s2PdfUrl ?: "", pdfUrls)
     }
 
     private fun extractJournal(articleJson: JsonObject): Journal {
-        val name = articleJson.get("journalName")?.asString
-        val volume = articleJson.get("journalVolume")?.asString
-        val pages = articleJson.get("journalPages")?.asString
+        val name = articleJson["journalName"]?.asString
+        val volume = articleJson["journalVolume"]?.asString
+        val pages = articleJson["journalPages"]?.asString
         return Journal(name ?: "", volume ?: "", pages ?: "")
     }
 
@@ -190,7 +200,6 @@ class SemanticScholarArchiveParser(
         } catch (e: JsonSyntaxException) {
             LOG.error("Error parsing line, skipping article\n$line")
         }
-
         return jsonObject
     }
 
