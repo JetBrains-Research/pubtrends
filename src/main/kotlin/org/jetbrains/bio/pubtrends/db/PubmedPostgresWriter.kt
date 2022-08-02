@@ -20,12 +20,6 @@ open class PubmedPostgresWriter(
         private val LOG = LoggerFactory.getLogger(PubmedPostgresWriter::class.java)
     }
 
-    private val sqlLogger = object : SqlLogger {
-        override fun log(context: StatementContext, transaction: Transaction) {
-            LOG.debug("SQL: ${context.expandArgs(transaction)}")
-        }
-    }
-
     private var changed = false
 
     init {
@@ -38,8 +32,6 @@ open class PubmedPostgresWriter(
         )
         LOG.debug("Init transaction started")
         transaction {
-            addLogger(sqlLogger)
-
             LOG.debug("Check and create enum publication type")
             val customTypeExists = exec(
                 "SELECT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'publicationtype');"
@@ -89,7 +81,6 @@ open class PubmedPostgresWriter(
     override fun reset() {
         LOG.debug("Reset transaction started")
         transaction {
-            addLogger(sqlLogger)
             LOG.debug("Drop materialized view with index")
             exec(
                 """
@@ -117,7 +108,6 @@ open class PubmedPostgresWriter(
         val citationsForArticle = articles.map { it.citations.toSet().map { cit -> it.pmid to cit } }.flatten()
         LOG.debug("Store transaction started")
         transaction {
-            addLogger(sqlLogger)
             LOG.debug("Batch insert or update publications")
             PMPublications.batchInsertOnDuplicateKeyUpdate(
                 articles, PMPublications.pmid,
@@ -172,7 +162,6 @@ open class PubmedPostgresWriter(
         val intIds = ids.map { it.toInt() }
         LOG.debug("Delete transaction started")
         transaction {
-            addLogger(sqlLogger)
             LOG.debug("Delete publications")
             PMPublications.deleteWhere { PMPublications.pmid inList intIds }
             LOG.debug("Delete citations out")
@@ -191,7 +180,6 @@ open class PubmedPostgresWriter(
         if (changed) {
             LOG.debug("Close transaction started")
             transaction {
-                addLogger(sqlLogger)
                 LOG.debug("Update material view matview_pmcitations")
                 exec(
                     """

@@ -20,12 +20,6 @@ open class SemanticScholarPostgresWriter(
         private val LOG = LoggerFactory.getLogger(SemanticScholarPostgresWriter::class.java)
     }
 
-    private val sqlLogger = object : SqlLogger {
-        override fun log(context: StatementContext, transaction: Transaction) {
-            LOG.debug("SQL: ${context.expandArgs(transaction)}")
-        }
-    }
-
     init {
         LOG.debug("Initializing DB connection")
         Database.connect(
@@ -36,7 +30,6 @@ open class SemanticScholarPostgresWriter(
         )
         LOG.debug("Init transaction starting")
         transaction {
-            addLogger(sqlLogger)
             LOG.debug("Creating schema")
             SchemaUtils.create(SSPublications, SSCitations)
             LOG.debug("Adding TSV column")
@@ -74,7 +67,6 @@ open class SemanticScholarPostgresWriter(
     override fun reset() {
         LOG.debug("Reset transaction started")
         transaction {
-            addLogger(sqlLogger)
             LOG.debug("Drop materialized view with index")
             exec(
                 """
@@ -144,7 +136,6 @@ open class SemanticScholarPostgresWriter(
             LOG.info("Refreshing matview_sscitations")
             LOG.debug("Cloe transaction started")
             transaction {
-                addLogger(sqlLogger)
                 LOG.debug("Refreshing materialized view")
                 exec(
                     """
