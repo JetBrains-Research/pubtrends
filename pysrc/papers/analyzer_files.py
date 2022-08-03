@@ -34,8 +34,7 @@ from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.plot.plotter import Plotter, PLOT_WIDTH, SHORT_PLOT_HEIGHT, TALL_PLOT_HEIGHT
-from pysrc.papers.utils import cut_authors_list, factors_colormap, color_to_rgb, topics_palette, trim
-
+from pysrc.papers.utils import cut_authors_list, factors_colormap, color_to_rgb, topics_palette, trim, MAX_QUERY_LENGTH
 
 from pysrc.version import VERSION
 
