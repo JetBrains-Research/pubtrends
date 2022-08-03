@@ -1,5 +1,6 @@
 package org.jetbrains.bio.pubtrends.ss
 
+import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.Logger
 import ch.qos.logback.classic.LoggerContext
 import joptsimple.OptionParser
@@ -8,6 +9,7 @@ import joptsimple.ValueConverter
 import org.jetbrains.bio.pubtrends.Config
 import org.jetbrains.bio.pubtrends.db.AbstractDBWriter
 import org.jetbrains.bio.pubtrends.db.SemanticScholarPostgresWriter
+import org.jetbrains.exposed.sql.Slf4jSqlDebugLogger
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Path
@@ -36,8 +38,11 @@ object SemanticScholarLoader {
                 exitProcess(0)
             }
             if (options.has("debug")) {
-                val rootLogger = (LoggerFactory.getILoggerFactory() as LoggerContext).getLogger(Logger.ROOT_LOGGER_NAME)
-                rootLogger.level = ch.qos.logback.classic.Level.DEBUG
+                val loggerContext = LoggerFactory.getILoggerFactory() as LoggerContext
+                val rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME)
+                rootLogger.level = Level.DEBUG
+                // Keep info level for transactions logger
+                loggerContext.getLogger(Slf4jSqlDebugLogger::class.java).level = Level.INFO
             }
 
             // Load configuration file
