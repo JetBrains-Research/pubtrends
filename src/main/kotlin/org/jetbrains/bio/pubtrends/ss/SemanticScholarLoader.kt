@@ -9,7 +9,6 @@ import joptsimple.ValueConverter
 import org.jetbrains.bio.pubtrends.Config
 import org.jetbrains.bio.pubtrends.db.AbstractDBWriter
 import org.jetbrains.bio.pubtrends.db.SemanticScholarPostgresWriter
-import org.jetbrains.exposed.sql.Slf4jSqlDebugLogger
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Path
@@ -39,10 +38,7 @@ object SemanticScholarLoader {
             }
             if (options.has("debug")) {
                 val loggerContext = LoggerFactory.getILoggerFactory() as LoggerContext
-                val rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME)
-                rootLogger.level = Level.DEBUG
-                // Keep info level for transactions logger
-                loggerContext.getLogger(Slf4jSqlDebugLogger::class.java).level = Level.INFO
+                loggerContext.getLogger(Logger.ROOT_LOGGER_NAME).level = Level.DEBUG
             }
 
             // Load configuration file
