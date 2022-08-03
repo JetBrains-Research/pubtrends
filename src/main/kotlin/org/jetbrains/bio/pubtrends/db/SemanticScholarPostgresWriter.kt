@@ -21,24 +21,24 @@ open class SemanticScholarPostgresWriter(
     }
 
     init {
-        LOG.debug("Initializing DB connection")
+        LOG.info("Initializing DB connection")
         Database.connect(
             url = "jdbc:postgresql://$host:$port/$database",
             driver = "org.postgresql.Driver",
             user = username,
             password = password
         )
-        LOG.debug("Init transaction starting")
+        LOG.info("Init transaction starting")
         transaction {
-            LOG.debug("Creating schema")
+            LOG.info("Creating schema")
             SchemaUtils.create(SSPublications, SSCitations)
-            LOG.debug("Adding TSV column")
+            LOG.info("Adding TSV column")
             exec("ALTER TABLE SSPublications ADD COLUMN IF NOT EXISTS tsv TSVECTOR;")
-            LOG.debug("Creating index ss_title_abstract_index")
+            LOG.info("Creating index ss_title_abstract_index")
             exec(
                 "CREATE INDEX IF NOT EXISTS ss_title_abstract_index ON SSPublications using GIN (tsv);"
             )
-            LOG.debug("Creating citations material view matview_sscitations")
+            LOG.info("Creating citations material view matview_sscitations")
             exec(
                 """
                 create materialized view if not exists matview_sscitations as
@@ -49,32 +49,32 @@ open class SemanticScholarPostgresWriter(
                 create index if not exists SSCitation_matview_index on matview_sscitations (crc32id);
                 """
             )
-            LOG.debug("Creating index sspublications_ssid_year")
+            LOG.info("Creating index sspublications_ssid_year")
             exec(
                 """
                 CREATE INDEX IF NOT EXISTS
                 sspublications_ssid_year ON sspublications (ssid, year);
                 """
             )
-            LOG.debug("Creating index sspublications_doi_index")
+            LOG.info("Creating index sspublications_doi_index")
             exec(
                 "create index if not exists sspublications_doi_index on sspublications using hash (doi);"
             )
         }
-        LOG.debug("Init transaction finished")
+        LOG.info("Init transaction finished")
     }
 
     override fun reset() {
-        LOG.debug("Reset transaction started")
+        LOG.info("Reset transaction started")
         transaction {
-            LOG.debug("Drop materialized view with index")
+            LOG.info("Drop materialized view with index")
             exec(
                 """
                 drop index if exists SSCitation_matview_index;
                 drop materialized view if exists matview_sscitations;
                 """
             )
-            LOG.debug("Drop other indexes")
+            LOG.info("Drop other indexes")
             exec(
                 """
                 drop index if exists sspublications_ssid_year;
@@ -82,18 +82,18 @@ open class SemanticScholarPostgresWriter(
                 DROP INDEX IF EXISTS ss_title_abstract_index;
                 """
             )
-            LOG.debug("Drop tables")
+            LOG.info("Drop tables")
             SchemaUtils.drop(SSPublications, SSCitations)
         }
-        LOG.debug("Reset transaction finished")
+        LOG.info("Reset transaction finished")
     }
 
     override fun store(articles: List<SemanticScholarArticle>) {
-        LOG.debug("Store batch of ${articles.size} articles")
+        LOG.info("Store batch of ${articles.size} articles")
         val citationsList = articles.map { it.citations.distinct().map { cit -> it.ssid to cit } }.flatten()
-        LOG.debug("Store batch transaction started")
+        LOG.info("Store batch transaction started")
         transaction {
-            LOG.debug("Batch insert articles")
+            LOG.info("Batch insert articles")
             SSPublications.batchInsert(articles, ignore = true) { article ->
                 this[SSPublications.ssid] = article.ssid
                 this[SSPublications.crc32id] = crc32id(article.ssid)
@@ -105,7 +105,7 @@ open class SemanticScholarPostgresWriter(
                 this[SSPublications.doi] = article.doi
                 this[SSPublications.aux] = article.aux
             }
-            LOG.debug("Update TSV vector")
+            LOG.info("Update TSV vector")
             val vals = articles.map { it.ssid }.joinToString(",") { "('$it', ${crc32id(it)})" }
             exec(
                 """
@@ -115,7 +115,7 @@ open class SemanticScholarPostgresWriter(
                 WHERE (ssid, crc32id) IN (VALUES $vals);
                 """
             )
-            LOG.debug("Batch insert citations list")
+            LOG.info("Batch insert citations list")
             SSCitations.batchInsert(citationsList, ignore = true) { citation ->
                 this[SSCitations.ssid_out] = citation.first
                 this[SSCitations.ssid_in] = citation.second
@@ -123,7 +123,7 @@ open class SemanticScholarPostgresWriter(
                 this[SSCitations.crc32id_in] = crc32id(citation.second)
             }
         }
-        LOG.debug("Store batch transaction finished")
+        LOG.info("Store batch transaction finished")
     }
 
 
@@ -133,10 +133,9 @@ open class SemanticScholarPostgresWriter(
 
     override fun close() {
         if (finishFillDatabase) {
-            LOG.info("Refreshing matview_sscitations")
-            LOG.debug("Cloe transaction started")
+            LOG.info("Close transaction started")
             transaction {
-                LOG.debug("Refreshing materialized view")
+                LOG.info("Refreshing materialized view")
                 exec(
                     """
                     do
@@ -150,8 +149,7 @@ open class SemanticScholarPostgresWriter(
                     """
                 )
             }
-            LOG.debug("Close transaction finished")
-            LOG.info("Done refreshing matview_sscitations")
+            LOG.info("Close transaction finished")
         }
     }
 }
