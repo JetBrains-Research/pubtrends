@@ -94,16 +94,30 @@ open class SemanticScholarPostgresWriter(
         LOG.info("Store batch transaction started")
         transaction {
             LOG.info("Batch insert articles")
-            SSPublications.batchInsert(articles, ignore = true) { article ->
-                this[SSPublications.ssid] = article.ssid
-                this[SSPublications.crc32id] = crc32id(article.ssid)
-                this[SSPublications.pmid] = article.pmid
-                this[SSPublications.abstract] = article.abstract
-                this[SSPublications.keywords] = article.keywords
-                this[SSPublications.title] = article.title
-                this[SSPublications.year] = article.year
-                this[SSPublications.doi] = article.doi
-                this[SSPublications.aux] = article.aux
+            SSPublications.batchInsertOnDuplicateKeyUpdate(
+                articles, listOf(SSPublications.crc32id, SSPublications.ssid),
+                listOf(
+                    SSPublications.pmid,
+                    SSPublications.title,
+                    SSPublications.abstract,
+                    SSPublications.keywords,
+                    SSPublications.year,
+                    SSPublications.doi,
+                    SSPublications.aux
+                )
+            ) { conflict, article ->
+                conflict[ssid] = article.ssid
+                conflict[crc32id] = crc32id(article.ssid)
+                conflict[pmid] = article.pmid
+                conflict[title] = article.title.take(PUBLICATION_MAX_TITLE_LENGTH)
+                conflict[title] = article.title
+                if (!article.abstract.isNullOrEmpty()) {
+                    conflict[abstract] = article.abstract
+                }
+                conflict[keywords] = article.keywords
+                conflict[year] = article.year
+                conflict[doi] = article.doi
+                conflict[aux] = article.aux
             }
             LOG.info("Update TSV vector")
             val vals = articles.map { it.ssid }.joinToString(",") { "('$it', ${crc32id(it)})" }

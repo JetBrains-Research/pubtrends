@@ -110,7 +110,7 @@ open class PubmedPostgresWriter(
         transaction {
             LOG.info("Batch insert or update publications")
             PMPublications.batchInsertOnDuplicateKeyUpdate(
-                articles, PMPublications.pmid,
+                articles, listOf(PMPublications.pmid),
                 listOf(
                     PMPublications.title,
                     PMPublications.abstract,
@@ -124,7 +124,7 @@ open class PubmedPostgresWriter(
             ) { batch, article ->
                 batch[pmid] = article.pmid
                 batch[title] = article.title.take(PUBLICATION_MAX_TITLE_LENGTH)
-                if (article.abstract != "") {
+                if (article.abstract.isNotEmpty()) {
                     batch[abstract] = article.abstract
                 }
                 batch[year] = article.year

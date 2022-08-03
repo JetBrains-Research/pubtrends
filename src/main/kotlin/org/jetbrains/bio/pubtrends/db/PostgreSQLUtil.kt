@@ -55,12 +55,12 @@ class PGEnum<T : Enum<T>>(enumTypeName: String, enumValue: T?) : PGobject() {
 
 class BatchInsertUpdateOnDuplicate(
     table: Table,
-    private val column: Column<*>,
+    private val columns: List<Column<*>>,
     private val onDupUpdate: List<Column<*>>
 ) : BatchInsertStatement(table, false) {
     override fun prepareSQL(transaction: Transaction): String {
         val onUpdateSQL = if (onDupUpdate.isNotEmpty()) {
-            " ON CONFLICT (${column.name}) DO UPDATE SET ${
+            " ON CONFLICT (${columns.joinToString(",")}) DO UPDATE SET ${
                 onDupUpdate.joinToString {
                     "${transaction.identity(it)} = Excluded.${transaction.identity(it)}"
                 }
@@ -72,17 +72,17 @@ class BatchInsertUpdateOnDuplicate(
 
 fun <T : Table, E> T.batchInsertOnDuplicateKeyUpdate(
     data: List<E>,
-    column: Column<*>,
+    columns: List<Column<*>>,
     onDupUpdateColumns: List<Column<*>>, body: T.(BatchInsertUpdateOnDuplicate, E) -> Unit
 ): List<Int> {
     return data.takeIf { it.isNotEmpty() }?.let {
-        val insert = BatchInsertUpdateOnDuplicate(this, column, onDupUpdateColumns)
+        val insert = BatchInsertUpdateOnDuplicate(this, columns, onDupUpdateColumns)
         data.forEach {
             insert.addBatch()
             body(insert, it)
         }
         TransactionManager.current().exec(insert)
-        columns.firstOrNull { it.columnType.isAutoInc }?.let { idCol ->
+        this.columns.firstOrNull { it.columnType.isAutoInc }?.let { idCol ->
             insert.resultedValues?.mapNotNull {
                 when (val value = it[idCol]) {
                     is Long -> value.toInt()
