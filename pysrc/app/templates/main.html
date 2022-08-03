@@ -139,7 +139,7 @@
                                 <input id="search-input-field" class="form-control form-control-borderless"
                                        type="search"
                                        name="query"
-                                       placeholder="{{min_words_message}}Use double quotes for phrase search, join queries by commas."
+                                       placeholder="{{ min_words_message }}Use double quotes for phrase search, join queries by commas."
                                        aria-describedby="query-addon"
                                        autofocus required>
                             </div>
@@ -157,10 +157,10 @@
                                 <select id="search-source-selector" class="form-control" name="source"
                                         aria-describedby="search-source-addon">
                                     {% if pm_enabled %}
-                                    <option>Pubmed</option>
+                                        <option>Pubmed</option>
                                     {% endif %}
                                     {% if ss_enabled %}
-                                    <option>Semantic Scholar</option>
+                                        <option>Semantic Scholar</option>
                                     {% endif %}
                                 </select>
                             </div>
@@ -196,11 +196,11 @@
                                     <select class="form-control" aria-describedby="amount-addon"
                                             name="limit">
                                         {% for limit in limits %}
-                                        {% if limit == default_limit %}
-                                        <option selected>{{ limit }}</option>
-                                        {% else %}
-                                        <option>{{ limit }}</option>
-                                        {% endif %}
+                                            {% if limit == default_limit %}
+                                                <option selected>{{ limit }}</option>
+                                            {% else %}
+                                                <option>{{ limit }}</option>
+                                            {% endif %}
                                         {% endfor %}
                                     </select>
                                     <div class="input-group-append">
@@ -255,24 +255,24 @@
                     {{ search_example_message }}<br>
                     <div id="predefined" class="row ml-1">
                         {% for terms, hash in search_example_terms %}
-                        <form action="result" method="GET" class="inline">
-                            <input type="hidden" name="source" value="{{ search_example_source }}">
-                            <input type="hidden" name="sort" value="Most Cited">
-                            <input type="hidden" name="topics" value="medium">
-                            <input type="hidden" name="limit" value="{{ default_limit }}">
-                            <input type="hidden" name="noreviews" value="off">
-                            {% if search_example_source == "Semantic Scholar" %}
-                            <input type="hidden" name="expand" value="0">
-                            {% else %}
-                            <input type="hidden" name="expand" value="20">
-                            {% endif %}
-                            <input type="hidden" name="jobid" value="predefined_{{ hash }}">
-                            <button type="submit" name="query" value="{{ terms }}"
-                                    class="btn btn-sm btn-outline-secondary mt-2 mr-2"
-                                    style="border-radius: 10px;">
-                                {{ terms }}
-                            </button>
-                        </form>
+                            <form action="result" method="GET" class="inline">
+                                <input type="hidden" name="source" value="{{ search_example_source }}">
+                                <input type="hidden" name="sort" value="Most Cited">
+                                <input type="hidden" name="topics" value="medium">
+                                <input type="hidden" name="limit" value="{{ default_limit }}">
+                                <input type="hidden" name="noreviews" value="off">
+                                {% if search_example_source == "Semantic Scholar" %}
+                                    <input type="hidden" name="expand" value="0">
+                                {% else %}
+                                    <input type="hidden" name="expand" value="20">
+                                {% endif %}
+                                <input type="hidden" name="jobid" value="predefined_{{ hash }}">
+                                <button type="submit" name="query" value="{{ terms }}"
+                                        class="btn btn-sm btn-outline-secondary mt-2 mr-2"
+                                        style="border-radius: 10px;">
+                                    {{ terms }}
+                                </button>
+                            </form>
                         {% endfor %}
                     </div>
                 </div>
@@ -310,10 +310,10 @@
                                 <select class="form-control" name="source"
                                         aria-describedby="paper-source-addon">
                                     {% if pm_enabled %}
-                                    <option>Pubmed</option>
+                                        <option>Pubmed</option>
                                     {% endif %}
                                     {% if ss_enabled %}
-                                    <option>Semantic Scholar</option>
+                                        <option>Semantic Scholar</option>
                                     {% endif %}
                                 </select>
                             </div>
@@ -333,11 +333,11 @@
                                     <select class="form-control" aria-describedby="amount-addon"
                                             name="limit">
                                         {% for limit in limits %}
-                                        {% if limit == default_limit %}
-                                        <option selected>{{ limit }}</option>
-                                        {% else %}
-                                        <option>{{ limit }}</option>
-                                        {% endif %}
+                                            {% if limit == default_limit %}
+                                                <option selected>{{ limit }}</option>
+                                            {% else %}
+                                                <option>{{ limit }}</option>
+                                            {% endif %}
                                         {% endfor %}
                                     </select>
                                     <div class="input-group-append">
@@ -365,8 +365,8 @@
 <footer>
     <p>version {{ version }}<br/>
         &copy; 2021-2022 <a href="https://research.jetbrains.org/groups/biolabs"
-                       title="JetBrains Research BioLabs"
-                       target="_blank">JetBrains Research</a></p>
+                            title="JetBrains Research BioLabs"
+                            target="_blank">JetBrains Research</a></p>
 </footer>
 
 <script type="text/javascript">

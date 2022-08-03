@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>{{query}} at {{source}} {{limit}} {{sort}} - PubTrends</title>
+    <title>{{ query }} at {{ source }} {{ limit }} {{ sort }} - PubTrends</title>
     <meta charset="utf-8">
     <link rel="stylesheet"
           href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
@@ -171,19 +171,19 @@
                             </thead>
                             <tbody>
                             {% for title, year, cited, topic, sent, url, score in review_array %}
-                            <tr>
-                                <th scope="row">{{ loop.index }}</th>
-                                <td>
-                                    <a class="link" href="{{ url }}" title="Open in {{ source }}">
-                                        {{ title }}
-                                    </a>
-                                </td>
-                                <td>{{ year }}</td>
-                                <td>{{ cited }}</td>
-                                <td>{{ topic }}</td>
-                                <td>{{ sent }}</td>
-                                <td>{{ score }}</td>
-                            </tr>
+                                <tr>
+                                    <th scope="row">{{ loop.index }}</th>
+                                    <td>
+                                        <a class="link" href="{{ url }}" title="Open in {{ source }}">
+                                            {{ title }}
+                                        </a>
+                                    </td>
+                                    <td>{{ year }}</td>
+                                    <td>{{ cited }}</td>
+                                    <td>{{ topic }}</td>
+                                    <td>{{ sent }}</td>
+                                    <td>{{ score }}</td>
+                                </tr>
                             {% endfor %}
                             </tbody>
                         </table>
@@ -200,8 +200,8 @@
 <footer>
     <p>version {{ version }}<br/>
         &copy; 2021-2022 <a href="https://research.jetbrains.org/groups/biolabs"
-                       title="JetBrains Research BioLabs"
-                       target="_blank">JetBrains Research</a></p>
+                            title="JetBrains Research BioLabs"
+                            target="_blank">JetBrains Research</a></p>
 </footer>
 </body>
 </html>

@@ -28,8 +28,14 @@
         }
 
         @keyframes progress-indeterminate {
-            from { left: -25%; width: 25%; }
-            to { left: 100%; width: 25%;}
+            from {
+                left: -25%;
+                width: 25%;
+            }
+            to {
+                left: 100%;
+                width: 25%;
+            }
         }
     </style>
     <script>
@@ -38,7 +44,9 @@
         const TIMEOUT = 20000; // 20 seconds
 
         $(function () {
-            setTimeout(function () { window.location.replace("/"); }, TIMEOUT);
+            setTimeout(function () {
+                window.location.replace("/");
+            }, TIMEOUT);
         });
     </script>
 </head>
@@ -60,8 +68,8 @@
 <footer>
     <p>version {{ version }}<br/>
         &copy; 2021-2022 <a href="https://research.jetbrains.org/groups/biolabs"
-                       title="JetBrains Research BioLabs"
-                       target="_blank">JetBrains Research</a></p>
+                            title="JetBrains Research BioLabs"
+                            target="_blank">JetBrains Research</a></p>
 </footer>
 </body>
 </html>

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>{{query}} at {{source}}{{ search_string }} {{limit}} {{sort}} - PubTrends</title>
+    <title>{{ query }} at {{ source }}{{ search_string }} {{ limit }} {{ sort }} - PubTrends</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
@@ -107,7 +107,7 @@
                         }
                     }
                 },
-                error: function(jqXHR, textStatus, errorThrown) {
+                error: function (jqXHR, textStatus, errorThrown) {
                     $progress.hide();
                     $log.hide();
                     if (textStatus === 'timeout') {
@@ -185,8 +185,8 @@
 <footer>
     <p>version {{ version }}<br/>
         &copy; 2021-2022 <a href="https://research.jetbrains.org/groups/biolabs"
-                       title="JetBrains Research BioLabs"
-                       target="_blank">JetBrains Research</a></p>
+                            title="JetBrains Research BioLabs"
+                            target="_blank">JetBrains Research</a></p>
 </footer>
 </body>
 </html>

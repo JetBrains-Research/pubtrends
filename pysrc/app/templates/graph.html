@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>{{query}} at {{source}} {{limit}} {{sort}} - PubTrends</title>
+    <title>{{ query }} at {{ source }} {{ limit }} {{ sort }} - PubTrends</title>
     <meta charset="utf-8">
     <link rel="stylesheet"
           href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
@@ -726,8 +726,7 @@
     <ol class="breadcrumb bg-light search-query">
         <li class="breadcrumb-item vertical-center">{{ source }}</li>
         <li class="breadcrumb-item vertical-center">
-            <a id="result" href="javascript:void(0);" class="link" onclick="result();"><strong>{{ query
-                }}</strong></a>
+            <a id="result" href="javascript:void(0);" class="link" onclick="result();"><strong>{{ query }}</strong></a>
         </li>
         <li class="breadcrumb-item vertical-center">{{ limit }} {{ sort }}</li>
     </ol>
@@ -756,43 +755,43 @@
         <input type="checkbox" id="searchKeywords" class="ml-3 mr-2"/>
         <label for="searchKeywords" style="margin: auto">Keywords</label>
     </span>
-    <div class="dropdown no-padding mr-2">
-        <button class="btn btn-secondary dropdown-toggle" type="button"
-                id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true"
-                aria-expanded="false">
-            View
-        </button>
-        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-            <div class="dropdown dropdown-sub dropdown-item dropleft">
-                <button class="btn dropdown-toggle" type="button"
-                        id="dropdownMenuButtonSize" data-toggle="dropdown" aria-haspopup="true"
-                        aria-expanded="false">
-                    Size
-                </button>
-                <div class="dropdown-menu" aria-labelledby="dropdownMenuButtonSize">
-                    <a class="dropdown-item" onclick="showSizeConnections();"
-                       href="javascript:void(0);">Connections</a>
-                    <a class="dropdown-item" onclick="showSizeCitations();"
-                       href="javascript:void(0);">Citations</a>
+        <div class="dropdown no-padding mr-2">
+            <button class="btn btn-secondary dropdown-toggle" type="button"
+                    id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true"
+                    aria-expanded="false">
+                View
+            </button>
+            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                <div class="dropdown dropdown-sub dropdown-item dropleft">
+                    <button class="btn dropdown-toggle" type="button"
+                            id="dropdownMenuButtonSize" data-toggle="dropdown" aria-haspopup="true"
+                            aria-expanded="false">
+                        Size
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButtonSize">
+                        <a class="dropdown-item" onclick="showSizeConnections();"
+                           href="javascript:void(0);">Connections</a>
+                        <a class="dropdown-item" onclick="showSizeCitations();"
+                           href="javascript:void(0);">Citations</a>
+                    </div>
                 </div>
-            </div>
-            <div class="dropdown-sub dropdown-item dropleft">
-                <button class="btn dropdown-toggle" type="button"
-                        id="dropdownMenuButtonColor" data-toggle="dropdown" aria-haspopup="true"
-                        aria-expanded="false">
-                    Color
-                </button>
-                <div class="dropdown-menu" aria-labelledby="dropdownMenuButtonColor">
-                    <a class="dropdown-item" onclick="showColorTopics();"
-                       href="javascript:void(0);">Topic</a>
-                    <a class="dropdown-item" onclick="showColorYear();"
-                       href="javascript:void(0);">Year</a>
+                <div class="dropdown-sub dropdown-item dropleft">
+                    <button class="btn dropdown-toggle" type="button"
+                            id="dropdownMenuButtonColor" data-toggle="dropdown" aria-haspopup="true"
+                            aria-expanded="false">
+                        Color
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButtonColor">
+                        <a class="dropdown-item" onclick="showColorTopics();"
+                           href="javascript:void(0);">Topic</a>
+                        <a class="dropdown-item" onclick="showColorYear();"
+                           href="javascript:void(0);">Year</a>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    <a class="btn btn-secondary mr-3" content="About"
-       href="javascript:void(0);" onclick="startIntro();">About</a>
+        <a class="btn btn-secondary mr-3" content="About"
+           href="javascript:void(0);" onclick="startIntro();">About</a>
     </div>
 </nav>
 <div class="container-fluid">

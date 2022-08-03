@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>{{query}} at {{source}} {{limit}} - PubTrends</title>
+    <title>{{ query }} at {{ source }} {{ limit }} - PubTrends</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet"
@@ -76,13 +76,13 @@
                     </thead>
                     <tbody>
                     {% for file, url, description, date, size in file_infos %}
-                    <tr>
-                        <th scope="row">{{ loop.index }}</th>
-                        <td><a href="{{ url }}" target="_blank" title="{{ description }}">{{ file }}</a></td>
-                        <td>{{ description }}</td>
-                        <td>{{ date }}</td>
-                        <td>{{ size }}</td>
-                    </tr>
+                        <tr>
+                            <th scope="row">{{ loop.index }}</th>
+                            <td><a href="{{ url }}" target="_blank" title="{{ description }}">{{ file }}</a></td>
+                            <td>{{ description }}</td>
+                            <td>{{ date }}</td>
+                            <td>{{ size }}</td>
+                        </tr>
                     {% endfor %}
                     </tbody>
                 </table>
@@ -100,8 +100,8 @@
         <div class="col-4">
             <p>version {{ version }}<br/>
                 &copy; 2021-2022 <a href="https://research.jetbrains.org/groups/biolabs"
-                               title="JetBrains Research BioLabs"
-                               target="_blank">JetBrains Research</a>
+                                    title="JetBrains Research BioLabs"
+                                    target="_blank">JetBrains Research</a>
             </p>
         </div>
         <div class="col-4"></div>

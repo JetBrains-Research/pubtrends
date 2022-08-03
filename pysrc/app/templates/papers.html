@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>{{query}} at {{source}} {{limit}} {{sort}}{{ search_string }} - PubTrends</title>
+    <title>{{ query }} at {{ source }} {{ limit }} {{ sort }}{{ search_string }} - PubTrends</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet"
@@ -88,7 +88,7 @@
                 </li>
                 <li class="breadcrumb-item">{{ limit }} {{ sort }}</li>
                 {% if search_string %}
-                <li class="breadcrumb-item">{{ search_string }}</li>
+                    <li class="breadcrumb-item">{{ search_string }}</li>
                 {% endif %}
             </ol>
         </div>
@@ -116,21 +116,21 @@
                     </thead>
                     <tbody>
                     {% for id, title, authors, url, journal, year, total, doi, topic in papers %}
-                    <tr>
-                        <th scope="row">{{ loop.index }}</th>
-                        <td>{{ title }}</td>
-                        <td>{{ authors }}</td>
-                        <td>{{ journal }}</td>
-                        <td>{{ year }}</td>
-                        <td><a class="link" href="{{ url }}" title="Open in {{ source }}">{{ id }}</a></td>
-                        <td>
-                            {% if doi != "" %}
-                            <a class="link" href="https://doi.org/{{doi}}">{{ doi }}</a>
-                            {% endif %}
-                        </td>
-                        <td>{{ total }}</td>
-                        <td>{{ topic }}</td>
-                    </tr>
+                        <tr>
+                            <th scope="row">{{ loop.index }}</th>
+                            <td>{{ title }}</td>
+                            <td>{{ authors }}</td>
+                            <td>{{ journal }}</td>
+                            <td>{{ year }}</td>
+                            <td><a class="link" href="{{ url }}" title="Open in {{ source }}">{{ id }}</a></td>
+                            <td>
+                                {% if doi != "" %}
+                                    <a class="link" href="https://doi.org/{{ doi }}">{{ doi }}</a>
+                                {% endif %}
+                            </td>
+                            <td>{{ total }}</td>
+                            <td>{{ topic }}</td>
+                        </tr>
                     {% endfor %}
                     </tbody>
                 </table>

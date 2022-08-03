@@ -1,124 +1,124 @@
 {% extends 'admin/master.html' %}
 {% block head %}
-{{ super() }}
-<script src="https://code.jquery.com/jquery-3.3.1.min.js"
-        integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT"
-        crossorigin="anonymous"></script>
-<script src="https://cdn.bokeh.org/bokeh/release/bokeh-2.1.1.min.js"
-        crossorigin="anonymous"></script>
-<script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-2.1.1.min.js"
-        crossorigin="anonymous"></script>
-<script src="{{ url_for('static', filename='text_utils.js') }}"></script>
-<!--<script src="../../static/text_utils.js"/>-->
-<script src="{{ url_for('static', filename='wordcloud.js') }}"></script>
-<!--<script src="../../static/wordcloud.js"/>-->
+    {{ super() }}
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT"
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-2.1.1.min.js"
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-2.1.1.min.js"
+            crossorigin="anonymous"></script>
+    <script src="{{ url_for('static', filename='text_utils.js') }}"></script>
+    <!--<script src="../../static/text_utils.js"/>-->
+    <script src="{{ url_for('static', filename='wordcloud.js') }}"></script>
+    <!--<script src="../../static/wordcloud.js"/>-->
 
-{% if word_cloud is defined %}
-<script>
-    "use strict";
-    $(document).ready(function () {
-        var words = JSON.parse(normalize('{{ word_cloud }}'));
-        process_word_cloud('word_cloud', $('#word_cloud').outerWidth(), 600, 900, 600, words, null);
-    });
-</script>
-{% endif %}
-
+    {% if word_cloud is defined %}
+        <script>
+            "use strict";
+            $(document).ready(function () {
+                var words = JSON.parse(normalize('{{ word_cloud }}'));
+                process_word_cloud('word_cloud', $('#word_cloud').outerWidth(), 600, 900, 600, words, null);
+            });
+        </script>
+    {% endif %}
 {% endblock head %}
+
 {% block body %}
-{{ super() }}
-<h3>Terms searches</h3>
-Total: {{ total_terms_searches }}<br>
-Successful: {{ successful_searches }}<br>
-Average duration: {{ searches_avg_duration }}<br>
-Papers shown: {{ searches_papers_shown }}<br>
-Graph shown: {{ searches_graph_shown }}<br>
+    {{ super() }}
+    <h3>Terms searches</h3>
+    Total: {{ total_terms_searches }}<br>
+    Successful: {{ successful_searches }}<br>
+    Average duration: {{ searches_avg_duration }}<br>
+    Papers shown: {{ searches_papers_shown }}<br>
+    Graph shown: {{ searches_graph_shown }}<br>
 
-{% if total_terms_searches > 0 %}
-{% for script, div in terms_searches_plot %}
-{{ script|safe }}
-{{ div|safe }}
-{% endfor %}
-{%  endif %}
+    {% if total_terms_searches > 0 %}
+        {% for script, div in terms_searches_plot %}
+            {{ script|safe }}
+            {{ div|safe }}
+        {% endfor %}
+    {% endif %}
 
-<h3>Paper searches</h3>
-Total: {{ total_paper_searches }}<br>
-Successful: {{ paper_successful_searches }}<br>
-Average duration: {{ paper_searches_avg_duration }}
+    <h3>Paper searches</h3>
+    Total: {{ total_paper_searches }}<br>
+    Successful: {{ paper_successful_searches }}<br>
+    Average duration: {{ paper_searches_avg_duration }}
 
-{% if total_paper_searches > 0 %}
-{% for script, div in paper_searches_plot %}
-{{ script|safe }}
-{{ div|safe }}
-{% endfor %}
+    {% if total_paper_searches > 0 %}
+        {% for script, div in paper_searches_plot %}
+            {{ script|safe }}
+            {{ div|safe }}
+        {% endfor %}
 
-{% if word_cloud is defined %}
-<h3>Word cloud</h3>
-<canvas id="word_cloud" style="border:1px solid #eee; width: 100%; height: 100%;">
-    Canvas is not supported in your browser.
-</canvas>
-{% endif %}
+        {% if word_cloud is defined %}
+            <h3>Word cloud</h3>
+            <canvas id="word_cloud" style="border:1px solid #eee; width: 100%; height: 100%;">
+                Canvas is not supported in your browser.
+            </canvas>
+        {% endif %}
 
-<h3>Recent searches</h3>
-<table class="table table-sm table-bordered table-striped">
-    <thead>
-    <tr>
-        <th scope="col">#</th>
-        <th scope="col">Date</th>
-        <th scope="col">Source</th>
-        <th scope="col">Search</th>
-        <th scope="col">Duration</th>
-        <th scope="col">Status</th>
-        <th scope="col">Papers</th>
-        <th scope="col">Graph</th>
-    </tr>
-    </thead>
-    <tbody>
-    {% for d, s, q, l, du, st, p, g in recent_searches %}
-    <tr>
-        <th scope="row">{{ loop.index }}</th>
-        <td>{{ d }}</td>
-        <td>{{ s }}</td>
-        <td>
-            <a class="link" href="{{ l }}">{{ q }}</a>
-        </td>
-        <td>{{ du }}</td>
-        <td>{{ st }}</td>
-        <td>{{ p }}</td>
-        <td>{{ g }}</td>
-    </tr>
-    {% endfor %}
-    </tbody>
-</table><small class="form-text text-muted">{{recent}} recent.</small>
+        <h3>Recent searches</h3>
+        <table class="table table-sm table-bordered table-striped">
+            <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Date</th>
+                <th scope="col">Source</th>
+                <th scope="col">Search</th>
+                <th scope="col">Duration</th>
+                <th scope="col">Status</th>
+                <th scope="col">Papers</th>
+                <th scope="col">Graph</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for d, s, q, l, du, st, p, g in recent_searches %}
+                <tr>
+                    <th scope="row">{{ loop.index }}</th>
+                    <td>{{ d }}</td>
+                    <td>{{ s }}</td>
+                    <td>
+                        <a class="link" href="{{ l }}">{{ q }}</a>
+                    </td>
+                    <td>{{ du }}</td>
+                    <td>{{ st }}</td>
+                    <td>{{ p }}</td>
+                    <td>{{ g }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table><small class="form-text text-muted">{{ recent }} recent.</small>
 
 
-<h3>Recent papers</h3>
-<table class="table table-sm table-bordered table-striped">
-    <thead>
-    <tr>
-        <th scope="col">#</th>
-        <th scope="col">Date</th>
-        <th scope="col">Source</th>
-        <th scope="col">Search</th>
-        <th scope="col">Duration</th>
-        <th scope="col">Status</th>
-    </tr>
-    </thead>
-    <tbody>
-    {% for d, s, q, l, du, st in recent_papers %}
-    <tr>
-        <th scope="row">{{ loop.index }}</th>
-        <td>{{ d }}</td>
-        <td>{{ s }}</td>
-        <td>
-            <a class="link" href="{{ l }}">{{ q }}</a>
-        </td>
-        <td>{{ du }}</td>
-        <td>{{ st }}</td>
-    </tr>
-    {% endfor %}
-    </tbody>
-</table><small class="text-muted">{{recent}} recent.</small>
+        <h3>Recent papers</h3>
+        <table class="table table-sm table-bordered table-striped">
+            <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Date</th>
+                <th scope="col">Source</th>
+                <th scope="col">Search</th>
+                <th scope="col">Duration</th>
+                <th scope="col">Status</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for d, s, q, l, du, st in recent_papers %}
+                <tr>
+                    <th scope="row">{{ loop.index }}</th>
+                    <td>{{ d }}</td>
+                    <td>{{ s }}</td>
+                    <td>
+                        <a class="link" href="{{ l }}">{{ q }}</a>
+                    </td>
+                    <td>{{ du }}</td>
+                    <td>{{ st }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table><small class="text-muted">{{ recent }} recent.</small>
 
-{% endif %}
+    {% endif %}
 
 {% endblock body %}
