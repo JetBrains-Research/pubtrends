@@ -110,7 +110,6 @@ open class SemanticScholarPostgresWriter(
                 conflict[crc32id] = crc32id(article.ssid)
                 conflict[pmid] = article.pmid
                 conflict[title] = article.title.take(PUBLICATION_MAX_TITLE_LENGTH)
-                conflict[title] = article.title
                 if (!article.abstract.isNullOrEmpty()) {
                     conflict[abstract] = article.abstract
                 }

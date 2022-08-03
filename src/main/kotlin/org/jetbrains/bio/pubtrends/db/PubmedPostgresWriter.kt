@@ -121,18 +121,18 @@ open class PubmedPostgresWriter(
                     PMPublications.doi,
                     PMPublications.aux
                 )
-            ) { batch, article ->
-                batch[pmid] = article.pmid
-                batch[title] = article.title.take(PUBLICATION_MAX_TITLE_LENGTH)
+            ) { conflict, article ->
+                conflict[pmid] = article.pmid
+                conflict[title] = article.title.take(PUBLICATION_MAX_TITLE_LENGTH)
                 if (article.abstract.isNotEmpty()) {
-                    batch[abstract] = article.abstract
+                    conflict[abstract] = article.abstract
                 }
-                batch[year] = article.year
-                batch[keywords] = article.keywords.joinToString(",")
-                batch[mesh] = article.mesh.joinToString(",")
-                batch[type] = article.type
-                batch[doi] = article.doi
-                batch[aux] = article.aux
+                conflict[year] = article.year
+                conflict[keywords] = article.keywords.joinToString(",")
+                conflict[mesh] = article.mesh.joinToString(",")
+                conflict[type] = article.type
+                conflict[doi] = article.doi
+                conflict[aux] = article.aux
             }
             LOG.info("Update TSV vector")
             val vals = articles.map { it.pmid }.joinToString(",") { "($it)" }
