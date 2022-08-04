@@ -23,6 +23,7 @@ object PMPublications : Table() {
 
     init {
         index(false, doi)
+        pmid.primaryKey()
     }
 }
 

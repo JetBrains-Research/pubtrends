@@ -29,6 +29,9 @@ object SSPublications : Table() {
 
     init {
         index(false, crc32id)
+        index(false, doi)
+        crc32id.primaryKey()
+        ssid.primaryKey()
     }
 }
 
