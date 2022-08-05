@@ -12,13 +12,13 @@ class SemanticScholarPostgresWriter(PostgresConnector):
     def init_semantic_scholar_database(self):
         self.check_connection()
         query_citations = '''
-                    drop index if exists sscitations_crc32id_out_crc32id_in_index;                    
-                    drop table if exists sscitations;                    
+                    drop index if exists sscitations_crc32id_out_crc32id_in_index;
+                    drop table if exists sscitations;
                     create table sscitations (
                         crc32id_out integer,
                         crc32id_in  integer,
-                        ssid_out      varchar(40) not null,
-                        ssid_in       varchar(40) not null
+                        ssid_out    varchar(40) not null,
+                        ssid_in     varchar(40) not null
                     );
                     create index if not exists sscitations_crc32id_out_crc32id_in_index
                     on sscitations (crc32id_out, crc32id_in);
@@ -27,8 +27,8 @@ class SemanticScholarPostgresWriter(PostgresConnector):
         query_publications = '''
                     drop index if exists sspublications_crc32id_index;
                     drop index if exists SSPublications_tsv;
-                    drop index if exists sspublications_doi_index;                    
-                    drop table if exists sspublications;                    
+                    drop index if exists sspublications_doi_index;
+                    drop table if exists sspublications;
                     create table sspublications(
                         ssid    varchar(40) not null,
                         crc32id integer     not null,
@@ -40,8 +40,9 @@ class SemanticScholarPostgresWriter(PostgresConnector):
                         doi     varchar(100),
                         aux     jsonb
                     );
-                    ALTER TABLE SSPublications ADD COLUMN IF NOT EXISTS tsv TSVECTOR;                    
-                    create index if not exists sspublications_crc32id_index on sspublications (crc32id);                    
+                    ALTER TABLE SSPublications ADD COLUMN IF NOT EXISTS tsv TSVECTOR;
+                    ALTER TABLE SSPublications ADD CONSTRAINT ss_id_key PRIMARY KEY (crc32id, ssid);
+                    create index if not exists sspublications_crc32id_index on sspublications (crc32id);
                     create index if not exists SSPublications_tsv on SSPublications using gin(tsv);
                     create index if not exists sspublications_doi_index on sspublications using hash (doi);
                     '''
