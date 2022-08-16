@@ -82,8 +82,8 @@ from `/admin` dashboard, which shows requests and results, execution times and f
 
 3. Build base Docker image `biolabs/pubtrends` and nested image `biolabs/pubtrends-test` for testing.
     ```
-    docker build -f resources/docker/main/Dockerfile -t biolabs/pubtrends .
-    docker build -f resources/docker/test/Dockerfile -t biolabs/pubtrends-test . 
+    docker build -f resources/docker/main/Dockerfile -t biolabs/pubtrends --platform=amd64 .
+    docker build -f resources/docker/test/Dockerfile -t biolabs/pubtrends-test --platform=amd64 .
     ```
 
 4. Init PostgreSQL database.
