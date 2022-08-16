@@ -97,7 +97,7 @@ from `/admin` dashboard, which shows requests and results, execution times and f
         -p 5432:5432 \
         -d postgres:14
     ``` 
-    * Create database:
+    * Create database (once database is created use `-d pubtrends` argument):
     ```
     psql -h localhost -p 5432 -U biolabs
     ALTER ROLE biolabs WITH LOGIN;
@@ -179,7 +179,7 @@ Download Sample from [Semantic Scholar](https://www.semanticscholar.org/) or ful
       if [[ -z $(grep "$file" complete.txt) ]]; then
          echo "Processing $file / $N"
          wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/$DATE/$file;
-         java -cp $PUBTRENDS_JAR org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --fillDatabase $(pwd)/$file
+         java -cp $PUBTRENDS_JAR org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --fillDatabase $(pwd)/$file --debug
          rm $file;
          echo "$file" >> complete.txt
       fi;
