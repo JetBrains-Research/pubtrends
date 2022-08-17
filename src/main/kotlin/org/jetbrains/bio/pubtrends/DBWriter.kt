@@ -67,6 +67,7 @@ class DBWriter {
                 config["test_postgres_database"]!!.toString(),
                 config["test_postgres_username"]!!.toString(),
                 config["test_postgres_password"]!!.toString(),
+                true,
                 true
             )
         }

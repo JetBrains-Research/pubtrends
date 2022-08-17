@@ -26,13 +26,6 @@ object SSPublications : Table() {
     val year = integer("year").nullable()
     val doi = varchar("doi", MAX_DOI_LENGTH).nullable()
     val aux = jsonb("aux", AuxInfo::class.java, jsonMapper)
-
-    init {
-        index(false, crc32id)
-        index(false, doi)
-        crc32id.primaryKey()
-        ssid.primaryKey()
-    }
 }
 
 
@@ -42,9 +35,4 @@ object SSCitations : Table() {
 
     val crc32id_out = integer("crc32id_out")
     val crc32id_in = integer("crc32id_in")
-
-    init {
-        index(false, crc32id_in)
-        index(false, crc32id_out)
-    }
 }

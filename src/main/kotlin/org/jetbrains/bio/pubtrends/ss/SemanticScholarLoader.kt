@@ -23,6 +23,7 @@ object SemanticScholarLoader {
 
         with(OptionParser()) {
             accepts("resetDatabase", "Reset Database")
+            accepts("index", "Create indexes and materialized views")
             accepts("finish", "Finish database loading, update indexes")
             accepts("fillDatabase", "Create and fill database with articles")
                 .withRequiredArg()
@@ -54,6 +55,7 @@ object SemanticScholarLoader {
                     config["postgres_database"]!!.toString(),
                     config["postgres_username"]!!.toString(),
                     config["postgres_password"]!!.toString(),
+                    "index" in config,
                     "finish" in config
                 )
             } else {

@@ -184,7 +184,7 @@ Download Sample from [Semantic Scholar](https://www.semanticscholar.org/) or ful
          echo "$file" >> complete.txt
       fi;
    done
-   java -cp $PUBTRENDS_JAR org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --finish
+   java -cp $PUBTRENDS_JAR org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --index --finish
    ```
 
 * Windows 10 PowerShell
@@ -204,7 +204,7 @@ Download Sample from [Semantic Scholar](https://www.semanticscholar.org/) or ful
           echo $file >> .\complete.txt
        }
    }
-   java -cp $PUBTRENDS_JAR org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --finish
+   java -cp $PUBTRENDS_JAR org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --index --finish
    ```
 
 ## Development

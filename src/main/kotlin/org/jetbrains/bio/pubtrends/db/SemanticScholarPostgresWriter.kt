@@ -14,6 +14,7 @@ open class SemanticScholarPostgresWriter(
     database: String,
     username: String,
     password: String,
+    private val initIndexesAndMatView: Boolean,
     private val finishFillDatabase: Boolean
 ) : AbstractDBWriter<SemanticScholarArticle> {
     companion object {
@@ -32,15 +33,20 @@ open class SemanticScholarPostgresWriter(
         transaction {
             LOG.info("Creating schema")
             SchemaUtils.create(SSPublications, SSCitations)
+
             LOG.info("Adding TSV column")
             exec("ALTER TABLE SSPublications ADD COLUMN IF NOT EXISTS tsv TSVECTOR;")
-            LOG.info("Creating index ss_title_abstract_index")
-            exec(
-                "CREATE INDEX IF NOT EXISTS ss_title_abstract_index ON SSPublications using GIN (tsv);"
-            )
-            LOG.info("Creating citations material view matview_sscitations")
-            exec(
-                """
+
+            if (initIndexesAndMatView) {
+                LOG.info("Adding primary key")
+                exec("ALTER TABLE SSPublications ADD CONSTRAINT ss_id_key PRIMARY KEY (crc32id, ssid);")
+                LOG.info("Creating index ss_title_abstract_index")
+                exec(
+                    "CREATE INDEX IF NOT EXISTS ss_title_abstract_index ON SSPublications using GIN (tsv);"
+                )
+                LOG.info("Creating citations material view matview_sscitations")
+                exec(
+                    """
                 create materialized view if not exists matview_sscitations as
                 SELECT ssid_in as ssid, crc32id_in as crc32id, COUNT(*) AS count
                 FROM SSCitations C
@@ -48,18 +54,21 @@ open class SemanticScholarPostgresWriter(
                 HAVING COUNT(*) >= 3; -- Ignore tail of 0,1,2 cited papers
                 create index if not exists SSCitation_matview_index on matview_sscitations using hash(crc32id);
                 """
-            )
-            LOG.info("Creating index sspublications_ssid_year")
-            exec(
+                )
+                LOG.info("Creating index sspublications_ssid_year")
+                exec(
+                    """
+                CREATE INDEX IF NOT EXISTS sspublications_ssid_year ON sspublications (ssid, year);
                 """
-                CREATE INDEX IF NOT EXISTS
-                sspublications_ssid_year ON sspublications (ssid, year);
-                """
-            )
-            LOG.info("Creating index sspublications_doi_index")
-            exec(
-                "create index if not exists sspublications_doi_index on sspublications using hash(doi);"
-            )
+                )
+                LOG.info("Creating index sspublications_doi_index")
+                exec(
+                    "create index if not exists sspublications_doi_index on sspublications using hash(doi);"
+                )
+                LOG.info("Creating ss_citations indexes")
+                exec("create index if not exists sscitations_crc32id_out_index on SSCitations using hash(crc32id_out);")
+                exec("create index if not exists sscitations_crc32id_in_index on SSCitations using hash(crc32id_in);")
+            }
         }
         LOG.info("Init transaction finished")
     }
@@ -71,7 +80,7 @@ open class SemanticScholarPostgresWriter(
             exec(
                 """
                 drop index if exists SSCitation_matview_index;
-                drop materialized view if exists matview_sscitations;
+                drop materialized view if exists matview_sscitations;                
                 """
             )
             LOG.info("Drop other indexes")
@@ -80,6 +89,9 @@ open class SemanticScholarPostgresWriter(
                 drop index if exists sspublications_ssid_year;
                 drop index if exists sspublications_doi_index;
                 DROP INDEX IF EXISTS ss_title_abstract_index;
+                drop index if exists sspublications_crc32id_index;
+                drop index if exists sscitations_crc32id_out_index;
+                drop index if exists sscitations_crc32id_in_index;                
                 """
             )
             LOG.info("Drop tables")
