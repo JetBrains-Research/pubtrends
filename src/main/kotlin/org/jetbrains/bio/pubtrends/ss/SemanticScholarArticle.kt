@@ -29,10 +29,11 @@ data class AuxInfo(
  */
 data class SemanticScholarArticle(
         val ssid: String,
+        val crc32id: Int = crc32id(ssid),
         val pmid: Int? = null,
         val title: String = "",
         val abstract: String? = null,
-        val year: Int? = null,
+        val year: Int? = 1970,
         val doi: String? = null,
         val keywords: String? = null,
         val aux: AuxInfo = AuxInfo(),

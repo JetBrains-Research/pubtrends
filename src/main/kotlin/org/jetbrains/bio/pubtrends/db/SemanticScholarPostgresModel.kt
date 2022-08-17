@@ -44,7 +44,7 @@ object SSCitations : Table() {
     val crc32id_in = integer("crc32id_in")
 
     init {
-        index(false, crc32id_in, crc32id_out)
+        index(false, crc32id_in)
         index(false, crc32id_out)
     }
 }

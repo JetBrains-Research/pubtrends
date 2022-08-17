@@ -23,10 +23,14 @@ class Journal:
 class AuxInfo:
     authors: List[Author] = field(default_factory=lambda: [])
     journal: Journal = field(default=Journal())
+    language: str = field(default_factory=lambda: '')
+    databanks: List[str] = field(default_factory=lambda: [])
 
     def to_dict(self):
         return {'authors': [author.to_dict() for author in self.authors],
-                'journal': self.journal.to_dict()}
+                'journal': self.journal.to_dict(),
+                'language': self.language,
+                'databanks': self.databanks}
 
 
 @dataclass

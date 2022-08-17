@@ -1,4 +1,5 @@
 import unittest
+import numpy as np
 import pandas as pd
 from pandas.testing import assert_frame_equal
 from parameterized import parameterized
@@ -113,8 +114,8 @@ class TestPostgresUtils(unittest.TestCase):
             ['3', '4', 2],
             ['3', '5', 2],
             ['4', '5', 3],
-        ], columns=['citing_1', 'citing_2', 'total'])
-        assert_frame_equal(df, expected_df)
+        ], columns=['citing_1', 'citing_2', 'total'], dtype=np.int8)
+        assert_frame_equal(expected_df, df)
 
 
 if __name__ == '__main__':

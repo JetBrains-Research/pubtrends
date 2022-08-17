@@ -1,12 +1,5 @@
 from abc import ABCMeta, abstractmethod
 
-from pandas.testing import assert_frame_equal
-from parameterized import parameterized
-
-from pysrc.papers.utils import SORT_MOST_RECENT, SORT_MOST_CITED
-from pysrc.test.db.ss_test_articles import REQUIRED_CITATIONS, \
-    EXPECTED_CIT_STATS_DF, EXPECTED_CIT_DF, EXPECTED_COCIT_DF, ARTICLES_LIST, EXPANDED_ARTICLES_DF
-
 
 # Don't make it subclass of unittest.TestCase to avoid tests execution
 class AbstractTestSemanticScholarLoader(metaclass=ABCMeta):

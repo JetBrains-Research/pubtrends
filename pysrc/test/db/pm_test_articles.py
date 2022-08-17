@@ -37,19 +37,30 @@ EXTRA_ARTICLES = [
 ]
 
 ARTICLES = REQUIRED_ARTICLES + EXTRA_ARTICLES
+EXTRA_ARTICLE = PubmedArticle(
+    pmid=100,
+    title='activemodule dna',
+    abstract='''
+... physical activity module ... (inactive) ... activating                modules ... antipositive ... active ...
+... methylation ...
+''',
+    year=2021,
+    doi='10.1249/01.mss.0000229457.73333.9a,doi:10.1101/gad.918201 ',
+    aux=AuxInfo(authors=[], journal=Journal(name=''))
+)
 
 PART_OF_ARTICLES = [REQUIRED_ARTICLES[2], REQUIRED_ARTICLES[3]]
 
 EXPANDED_IDS_DF = pd.DataFrame([
-    [10, 1], [7, 1], [8, 1], [9, 1], [2, 2], [5, 3]],
+    [10, 1], [2, 1], [7, 1], [8, 1], [9, 1], [5, 3]],
     columns=['id', 'total']
 )
 EXPANDED_IDS_DF['id'] = EXPANDED_IDS_DF['id'].astype(str)
 
-EXPANDED_TOP_CITED_3_DF = pd.DataFrame([[10, 1], [2, 2], [5, 3]], columns=['id', 'total'])
+EXPANDED_TOP_CITED_3_DF = pd.DataFrame([[10, 1], [9, 1], [5, 3]], columns=['id', 'total'])
 EXPANDED_TOP_CITED_3_DF['id'] = EXPANDED_TOP_CITED_3_DF['id'].astype(str)
 
-EXPANDED_TOP_CITED_4_DF = pd.DataFrame([[10, 1], [7, 1], [2, 2], [5, 3]], columns=['id', 'total'])
+EXPANDED_TOP_CITED_4_DF = pd.DataFrame([[10, 1], [7, 1], [9, 1], [5, 3]], columns=['id', 'total'])
 EXPANDED_TOP_CITED_4_DF['id'] = EXPANDED_TOP_CITED_4_DF['id'].astype(str)
 
 OUTER_CITATIONS = [

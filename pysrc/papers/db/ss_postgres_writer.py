@@ -12,16 +12,17 @@ class SemanticScholarPostgresWriter(PostgresConnector):
     def init_semantic_scholar_database(self):
         self.check_connection()
         query_citations = '''
-                    drop index if exists sscitations_crc32id_out_crc32id_in_index;
+                    drop index if exists sscitations_crc32id_out_index;
+                    drop index if exists sscitations_crc32id_in_index;
                     drop table if exists sscitations;
-                    create table sscitations (
+                    create table SSCitations (
                         crc32id_out integer,
                         crc32id_in  integer,
                         ssid_out    varchar(40) not null,
                         ssid_in     varchar(40) not null
                     );
-                    create index if not exists sscitations_crc32id_out_crc32id_in_index
-                    on sscitations (crc32id_out, crc32id_in);
+                    create index if not exists sscitations_crc32id_out_index on SSCitations using hash(crc32id_out);
+                    create index if not exists sscitations_crc32id_in_index on SSCitations using hash(crc32id_in);
                     '''
 
         query_publications = '''
@@ -42,9 +43,9 @@ class SemanticScholarPostgresWriter(PostgresConnector):
                     );
                     ALTER TABLE SSPublications ADD COLUMN IF NOT EXISTS tsv TSVECTOR;
                     ALTER TABLE SSPublications ADD CONSTRAINT ss_id_key PRIMARY KEY (crc32id, ssid);
-                    create index if not exists sspublications_crc32id_index on sspublications (crc32id);
                     create index if not exists SSPublications_tsv on SSPublications using gin(tsv);
-                    create index if not exists sspublications_doi_index on sspublications using hash (doi);
+                    create index if not exists sspublications_doi_index on sspublications using hash(doi);
+                    CREATE INDEX IF NOT EXISTS sspublications_crc32id_year ON sspublications (crc32id, year);
                     '''
         query_drop_matview = '''
                     drop materialized view if exists matview_sscitations;
@@ -56,8 +57,9 @@ class SemanticScholarPostgresWriter(PostgresConnector):
                     FROM SSPublications P
                     LEFT JOIN SSCitations C
                     ON C.ssid_in = ssid AND C.crc32id_in = crc32id
-                    GROUP BY ssid, crc32id;
-                    create index if not exists SSCitation_matview_index on matview_sscitations (crc32id);
+                    GROUP BY ssid, crc32id
+                    HAVING COUNT(*) >= 3; -- Ignore tail of 0,1,2 cited papers
+                    create index if not exists SSCitation_matview_index on matview_sscitations using hash(crc32id);
                     '''
 
         with self.postgres_connection.cursor() as cursor:

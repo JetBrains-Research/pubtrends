@@ -11,6 +11,8 @@ class PubmedPostgresWriter(PostgresConnector):
     def init_pubmed_database(self):
         self.check_connection()
         query_citations = '''
+                    drop index if exists PMCitations_pmid_out;
+                    drop index if exists PMCitations_pmid_in;
                     drop table if exists PMCitations;
                     
                     create table PMCitations (
@@ -18,8 +20,8 @@ class PubmedPostgresWriter(PostgresConnector):
                         pmid_in  integer
                     );
                     
-                    create index if not exists PMCitations_pmid_out_pmid_in_index
-                    on PMCitations (pmid_out, pmid_in);
+                    create index if not exists PMCitations_pmid_out_index on PMCitations using hash(pmid_out);
+                    create index if not exists PMCitations_pmid_in_index on PMCitations using hash(pmid_in);
                     '''
 
         query_publications = '''
@@ -37,14 +39,13 @@ class PubmedPostgresWriter(PostgresConnector):
                         aux     jsonb
                     );
                     
-                    create index if not exists PMPublications_pmid_index on PMPublications (pmid);
+                    create index if not exists PMPublications_pmid_index on PMPublications using hash(pmid);
                     create index if not exists PMPublications_doi_index on PMPublications using hash(doi); 
                     
                     ALTER TABLE PMPublications ADD COLUMN IF NOT EXISTS tsv TSVECTOR;
                     create index if not exists PMPublications_tsv on PMPublications using gin(tsv);
                     
-                    CREATE INDEX IF NOT EXISTS
-                    pmpublications_pmid_year ON pmpublications (pmid, year);
+                    CREATE INDEX IF NOT EXISTS pmpublications_pmid_year ON pmpublications (pmid, year);
                     '''
 
         query_drop_matview = '''
@@ -56,9 +57,10 @@ class PubmedPostgresWriter(PostgresConnector):
                     SELECT pmid, COUNT(*) AS count
                     FROM PMPublications P
                     LEFT JOIN PMCitations C
-                    ON C.pmid_in = pmid
-                    GROUP BY pmid;
-                    create index if not exists PMCitation_matview_index on matview_pmcitations (pmid);
+                    ON C.pmid_in = pmid            
+                    GROUP BY pmid
+                    HAVING COUNT(*) >= 3; -- Ignore tail of 0,1,2 cited papers
+                    create index if not exists PMCitation_matview_index on matview_pmcitations using hash(pmid);
                     '''
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query_drop_matview)

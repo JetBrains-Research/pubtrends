@@ -2,9 +2,9 @@ package org.jetbrains.bio.pubtrends.db
 
 import org.jetbrains.bio.pubtrends.ss.SemanticScholarArticle
 import org.jetbrains.bio.pubtrends.ss.crc32id
-import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.statements.StatementContext
-import org.jetbrains.exposed.sql.statements.expandArgs
+import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.batchInsert
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.slf4j.LoggerFactory
 
@@ -46,7 +46,7 @@ open class SemanticScholarPostgresWriter(
                 FROM SSCitations C
                 GROUP BY ssid, crc32id
                 HAVING COUNT(*) >= 3; -- Ignore tail of 0,1,2 cited papers
-                create index if not exists SSCitation_matview_index on matview_sscitations (crc32id);
+                create index if not exists SSCitation_matview_index on matview_sscitations using hash(crc32id);
                 """
             )
             LOG.info("Creating index sspublications_ssid_year")
@@ -58,7 +58,7 @@ open class SemanticScholarPostgresWriter(
             )
             LOG.info("Creating index sspublications_doi_index")
             exec(
-                "create index if not exists sspublications_doi_index on sspublications using hash (doi);"
+                "create index if not exists sspublications_doi_index on sspublications using hash(doi);"
             )
         }
         LOG.info("Init transaction finished")
@@ -91,6 +91,13 @@ open class SemanticScholarPostgresWriter(
     override fun store(articles: List<SemanticScholarArticle>) {
         LOG.info("Store batch of ${articles.size} articles")
         val citationsList = articles.map { it.citations.distinct().map { cit -> it.ssid to cit } }.flatten()
+        store(articles, citationsList)
+    }
+
+    internal fun store(
+        articles: List<SemanticScholarArticle>,
+        citationsList: List<Pair<String, String>>
+    ) {
         LOG.info("Store batch transaction started")
         transaction {
             LOG.info("Batch insert articles")
@@ -119,14 +126,14 @@ open class SemanticScholarPostgresWriter(
                 conflict[aux] = article.aux
             }
             LOG.info("Update TSV vector")
-            val vals = articles.map { it.ssid }.joinToString(",") { "('$it', ${crc32id(it)})" }
+            val vals = articles.joinToString(",") { "('${it.ssid}', ${it.crc32id})" }
             exec(
                 """
-                UPDATE SSPublications
-                SET tsv = setweight(to_tsvector('english', coalesce(title, '')), 'A') || 
-                    setweight(to_tsvector('english', coalesce(abstract, '')), 'B')
-                WHERE (ssid, crc32id) IN (VALUES $vals);
-                """
+                    UPDATE SSPublications
+                    SET tsv = setweight(to_tsvector('english', coalesce(title, '')), 'A') || 
+                        setweight(to_tsvector('english', coalesce(abstract, '')), 'B')
+                    WHERE (ssid, crc32id) IN (VALUES $vals);
+                    """
             )
             LOG.info("Batch insert citations list")
             SSCitations.batchInsert(citationsList, ignore = true) { citation ->

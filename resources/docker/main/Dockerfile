@@ -40,3 +40,8 @@ RUN conda install -c conda-forge mamba
 COPY environment.yml /home/user/environment.yml
 RUN mamba env update -f /home/user/environment.yml \
     && mamba clean -afy
+
+# Install nltk & spacy dependencies \
+RUN source activate pubtrends \
+    && python -m nltk.downloader averaged_perceptron_tagger punkt stopwords wordnet omw-1.4 \
+    && python -m spacy download en_core_web_sm \

@@ -1,8 +1,7 @@
 import logging
-import re
-
 import math
 import pandas as pd
+import re
 import spacy
 from nltk.stem import WordNetLemmatizer
 from spacy import displacy
@@ -11,6 +10,7 @@ from text_to_num import alpha2digit
 NUMBER = re.compile(r'-?[\d]+([\.,][\d]+)?([eE][+-]?\d+)?')
 ENTITY = re.compile(r'[a-zA-Z_]+[a-zA-Z0-9_\-]*')
 URL = re.compile(r"((http|https)\:\/\/)?[a-zA-Z0-9\.\/\?\:@\-_=#]+\.([a-zA-Z]){2,6}([a-zA-Z0-9\.\&\/\?\:@\-_=#])*")
+SMALL_SENTENCE = 3
 spacy_en = spacy.load('en_core_web_sm')
 
 lemmatizer = WordNetLemmatizer()
@@ -39,7 +39,21 @@ def extract_numbers(df):
     return result[['id', 'title', 'numbers']]
 
 
-def process_candidate(metrics, token, value, idx):
+def _preprocess_text(text):
+    # Replace all emails / urls to avoid irrelevant numbers
+    text = re.sub(URL, "", text)
+    # Replace non-ascii or punctuation with space
+    text = re.sub('[^a-zA-Z0-9-+.,:!?]+', ' ', text, flags=re.IGNORECASE)
+    # Whitespaces normalization, see #215
+    text = re.sub(r'[ ]{2,}', ' ', text.strip())
+    # Convert textual numbers to digits (three -> 3)
+    text = alpha2digit(text, 'en', relaxed=True)
+    # Convect 1st, 2nd, 3rd, 4th
+    text = re.sub(r"([\d]+)(st|nd|rd|th)", r"\g<1>", text, flags=re.IGNORECASE)
+    return text
+
+
+def _process_candidate(metrics, token, value, idx):
     tt = token.text
     if ENTITY.fullmatch(tt) and token.pos_ in {'NOUN', 'PROPN'}:
         if re.match(r'[A-Z\-0-9_]+s', tt):  # plural of abbreviation
@@ -56,13 +70,13 @@ def process_number(token, value, idx, metrics):
     # logging.debug(f'Number: {value}')
     if token.head.pos_ == 'NUM':
         tht = token.head.text
-        if re.match(r'hundred(s?)', tht, flags=re.IGNORECASE):
+        if re.match(r'hundred(s?)|100', tht, flags=re.IGNORECASE):
             value *= 100
-        elif re.match(r'thousand(s?)', tht, flags=re.IGNORECASE):
+        elif re.match(r'thousand(s?)|1000', tht, flags=re.IGNORECASE):
             value *= 1000
-        elif re.match(r'million(s?)', tht, flags=re.IGNORECASE):
+        elif re.match(r'million(s?)|1000000', tht, flags=re.IGNORECASE):
             value *= 1000000
-        elif re.match(r'billion(s?)', tht, flags=re.IGNORECASE):
+        elif re.match(r'billion(s?)|1000000000', tht, flags=re.IGNORECASE):
             value *= 1000000000
         # logging.debug(f'Value adjusted: {value}')
         token = next(token.ancestors, token)
@@ -73,19 +87,19 @@ def process_number(token, value, idx, metrics):
     # TODO: expand nouns with adjectives or other nouns? (rate -> information transfer rate)
     # logging.debug(f'Token children: {",".join(t.text for t in token.children)}')
     for t in token.children:
-        if t != token and process_candidate(metrics, t, value, idx):
+        if t != token and _process_candidate(metrics, t, value, idx):
             # logging.debug(f'Child term: {t.text}')
             return
 
     # logging.debug('Head with children: '
     #               f'{token.head.text} | {",".join(t.text for t in token.head.children)}')
     if token != token.head:
-        if process_candidate(metrics, token.head, value, idx):
+        if _process_candidate(metrics, token.head, value, idx):
             # logging.debug(f'Head term: {token.head.text}')
             return
 
         for t in token.head.children:
-            if t != token and process_candidate(metrics, t, value, idx):
+            if t != token and _process_candidate(metrics, t, value, idx):
                 # logging.debug(f'Child of head term: {t.text}')
                 return
 
@@ -93,7 +107,7 @@ def process_number(token, value, idx, metrics):
     for i, t in enumerate(token.ancestors):
         if i == 3:  # Don't go too high
             return
-        if t != token and process_candidate(metrics, t, value, idx):
+        if t != token and _process_candidate(metrics, t, value, idx):
             # logging.debug(f'Ancestor: {t.text}')
             return
 
@@ -103,23 +117,16 @@ def extract_metrics(text, visualize_dependencies=False):
     Parses abstract and returns a dict of numbers with nouns that could be suitable as a metric.
     :return list of tuples (sentence, [metrics]), where metrics is a list of tuples (number, [nouns], sentence_number)
     """
-    metrics = {}
-    sentences = {}
-    # Replace all emails / urls to avoid irrelevant numbers
-    text = re.sub(URL, "", text)
-    # Insert whitespaces between non-ascii and punctuation symbols, help spacy to split tokens correctly.
-    text = re.sub(r"([^0-9a-z\-\n])", r" \g<1> ", text, flags=re.IGNORECASE)
-    # Whitespaces normalization
-    text = re.sub(r'[ ]{2,}', ' ', text.strip())
-    # Convert textual numbers to digits (three -> 3)
-    text = alpha2digit(text, 'en', relaxed=True)
-    # Convect 10th -> 10
-    text = re.sub(r"([\d]+)th", r"\g<1>", text, flags=re.IGNORECASE)
+    text = _preprocess_text(text)
     # Split text into sentences and find numbers in sentences
     doc = spacy_en(text)
+    metrics = {}
+    sentences = {}
     for idx, sent in enumerate(doc.sents):
         # # logging.debug('###')
         # # logging.debug(sent.text)
+        if len(sent) < SMALL_SENTENCE:
+            continue
         sentences[idx] = sent.text
         for token in sent:
             #             print(token.text, token.pos_, list(token.ancestors))

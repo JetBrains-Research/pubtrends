@@ -94,8 +94,13 @@ finally:
 
 
 def stemmed_tokens(text, min_token_length=4):
+    text = text.lower()
+    # Replace non-ascii or punctuation with space
+    text = re.sub('[^a-zA-Z0-9-+.,:!?]+', ' ', text)
+    # Whitespaces normalization, see #215
+    text = re.sub('[ ]{2,}', ' ', text.strip())
     # Tokenize text
-    tokens = word_tokenize(re.sub(r'[\'-]+', ' ', text.lower()))
+    tokens = word_tokenize(text.lower())
     # Ignore stop words, take into accounts nouns and adjectives, fix plural forms
     lemmatizer = WordNetLemmatizer()
     lemmas = [lemmatizer.lemmatize(token, pos=NLTK_POS_TAG_TO_WORDNET[pos[:2]])
@@ -118,7 +123,7 @@ def build_stemmed_corpus(df):
     """
     logger.info(f'Building corpus from {len(df)} papers')
     logger.info(f'Processing stemming for all papers')
-    papers_stemmed_sentences = [None] * len(df)
+    papers_stemmed_sentences = []
     # NOTE: we split mesh and keywords by commas into separate sentences
     for i, (title, abstract, mesh, keywords) in enumerate(zip(df['title'],
                                                               df['abstract'],
@@ -126,11 +131,11 @@ def build_stemmed_corpus(df):
                                                               df['keywords'].replace(',', '.'))):
         if i % 1000 == 1:
             logger.debug(f'Processed {i} papers')
-        papers_stemmed_sentences[i] = [
+        papers_stemmed_sentences.append([
             stemmed_tokens(sentence)
             for sentence in f'{title}.{abstract}.{mesh}.{keywords}'.split('.')
             if len(sentence.strip()) > 0
-        ]
+        ])
     logger.debug(f'Done processing stemming for {len(df)} papers')
     logger.info('Creating global shortest stem to word map')
     stems_tokens_map = _build_stems_to_tokens_map(chain(*chain(*papers_stemmed_sentences)))

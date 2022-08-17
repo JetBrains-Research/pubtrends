@@ -1,30 +1,29 @@
+import os
+import subprocess
 import unittest
 from pandas.testing import assert_frame_equal
 from parameterized import parameterized
 
+from pysrc.papers.config import PubtrendsConfig
+from pysrc.papers.db.ss_postgres_loader import SemanticScholarPostgresLoader
 from pysrc.papers.utils import SORT_MOST_RECENT, SORT_MOST_CITED
 from pysrc.test.db.ss_test_articles import EXPECTED_CIT_STATS_DF, EXPECTED_CIT_DF, EXPECTED_COCIT_DF, ARTICLES_LIST, \
     EXPANDED_ARTICLES_DF
+from pysrc.test.db.ss_test_articles import REQUIRED_ARTICLES, REQUIRED_CITATIONS
 
-from pysrc.papers.config import PubtrendsConfig
-from pysrc.papers.db.ss_postgres_loader import SemanticScholarPostgresLoader
-from pysrc.papers.db.ss_postgres_writer import SemanticScholarPostgresWriter
-from pysrc.test.db.ss_test_articles import REQUIRED_ARTICLES, EXTRA_ARTICLES, REQUIRED_CITATIONS, \
-    EXTRA_CITATIONS
+PUBTRENDS_JAR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../build/libs/pubtrends-dev.jar'))
 
 
-class TestSemanticScholarPostgresLoader(unittest.TestCase):
+class TestSemanticScholarKotlinPostgresLoader(unittest.TestCase):
     test_config = PubtrendsConfig(test=True)
     loader = SemanticScholarPostgresLoader(test_config)
 
     @classmethod
     def setUpClass(cls):
-        cls.loader = TestSemanticScholarPostgresLoader.loader
+        subprocess.run(
+            ['java', '-cp', PUBTRENDS_JAR, 'org.jetbrains.bio.pubtrends.DBWriter', 'SemanticScholarPostgresWriter'])
 
-        writer = SemanticScholarPostgresWriter(TestSemanticScholarPostgresLoader.test_config)
-        writer.init_semantic_scholar_database()
-        writer.insert_semantic_scholar_publications(REQUIRED_ARTICLES + EXTRA_ARTICLES)
-        writer.insert_semantic_scholar_citations(REQUIRED_CITATIONS + EXTRA_CITATIONS)
+        cls.loader = TestSemanticScholarKotlinPostgresLoader.loader
 
         # Text search is not tested, imitating search results
         cls.ids = list(map(lambda article: article.ssid, REQUIRED_ARTICLES))

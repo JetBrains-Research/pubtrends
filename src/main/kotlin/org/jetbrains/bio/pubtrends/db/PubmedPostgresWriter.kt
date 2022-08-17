@@ -3,8 +3,6 @@ package org.jetbrains.bio.pubtrends.db
 import org.jetbrains.bio.pubtrends.pm.PublicationType
 import org.jetbrains.bio.pubtrends.pm.PubmedArticle
 import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.statements.StatementContext
-import org.jetbrains.exposed.sql.statements.expandArgs
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.slf4j.LoggerFactory
 
@@ -63,7 +61,7 @@ open class PubmedPostgresWriter(
                 FROM PMCitations C
                 GROUP BY pmid_in
                 HAVING COUNT(*) >= 3; -- Ignore tail of 0,1,2 cited papers
-                create index if not exists PMCitation_matview_index on matview_pmcitations (pmid);
+                create index if not exists PMCitation_matview_index on matview_pmcitations using hash (pmid);
                 """
             )
             LOG.info("Creating index pmpublications_pmid_year")
@@ -72,7 +70,7 @@ open class PubmedPostgresWriter(
             )
             LOG.info("Creating index pm_doi_index")
             exec(
-                "CREATE INDEX IF NOT EXISTS pm_doi_index ON PMPublications using HASH (doi);"
+                "CREATE INDEX IF NOT EXISTS pm_doi_index ON PMPublications using hash (doi);"
             )
         }
         LOG.info("Init transaction finished")
@@ -106,6 +104,13 @@ open class PubmedPostgresWriter(
     override fun store(articles: List<PubmedArticle>) {
         LOG.info("Store ${articles.size} articles")
         val citationsForArticle = articles.map { it.citations.toSet().map { cit -> it.pmid to cit } }.flatten()
+        store(articles, citationsForArticle)
+    }
+
+    internal fun store(
+        articles: List<PubmedArticle>,
+        citationsList: List<Pair<Int, Int>>
+    ) {
         LOG.info("Store transaction started")
         transaction {
             LOG.info("Batch insert or update publications")
@@ -138,14 +143,14 @@ open class PubmedPostgresWriter(
             val vals = articles.map { it.pmid }.joinToString(",") { "($it)" }
             exec(
                 """
-                UPDATE PMPublications
-                set tsv = setweight(to_tsvector('english', coalesce(title, '')), 'A') || 
-                    setweight(to_tsvector('english', coalesce(abstract, '')), 'B')
-                WHERE pmid IN (VALUES $vals);
-                """
+                    UPDATE PMPublications
+                    set tsv = setweight(to_tsvector('english', coalesce(title, '')), 'A') || 
+                        setweight(to_tsvector('english', coalesce(abstract, '')), 'B')
+                    WHERE pmid IN (VALUES $vals);
+                    """
             )
             LOG.info("Batch insert citations")
-            PMCitations.batchInsert(citationsForArticle, ignore = true) { citation ->
+            PMCitations.batchInsert(citationsList, ignore = true) { citation ->
                 this[PMCitations.pmidOut] = citation.first
                 this[PMCitations.pmidIn] = citation.second
             }

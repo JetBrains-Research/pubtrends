@@ -32,7 +32,7 @@ object PMCitations : Table() {
     val pmidIn = integer("pmid_in")
 
     init {
-        index(true, pmidIn, pmidOut)
+        index(false, pmidIn)
         index(false, pmidOut)
     }
 }

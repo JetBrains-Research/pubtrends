@@ -1,39 +1,32 @@
-import unittest
-
 import numpy as np
+import os
+import subprocess
+import unittest
 from pandas.testing import assert_frame_equal
 from parameterized import parameterized
 
-from pysrc.papers.db.article import AuxInfo, Author, Journal
-from pysrc.papers.db.pm_article import PubmedArticle
+from pysrc.papers.config import PubtrendsConfig
+from pysrc.papers.db.pm_postgres_loader import PubmedPostgresLoader
 from pysrc.papers.utils import SORT_MOST_RECENT, SORT_MOST_CITED
 from pysrc.test.db.pm_test_articles import EXPECTED_PUB_DF, \
     EXPECTED_CIT_STATS_DF, INNER_CITATIONS, EXPECTED_CIT_DF, EXPECTED_COCIT_DF, EXPECTED_PUB_DF_GIVEN_IDS, \
-    PART_OF_ARTICLES, EXPANDED_IDS_DF, EXPANDED_TOP_CITED_3_DF, EXPANDED_TOP_CITED_4_DF, EXTRA_ARTICLE
+    PART_OF_ARTICLES, EXPANDED_IDS_DF, EXPANDED_TOP_CITED_3_DF, EXPANDED_TOP_CITED_4_DF
+from pysrc.test.db.pm_test_articles import REQUIRED_ARTICLES
 
-from pysrc.papers.config import PubtrendsConfig
-from pysrc.papers.db.pm_postgres_loader import PubmedPostgresLoader
-from pysrc.papers.db.pm_postgres_writer import PubmedPostgresWriter
-from pysrc.test.db.pm_test_articles import REQUIRED_ARTICLES, ARTICLES, CITATIONS
+PUBTRENDS_JAR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../build/libs/pubtrends-dev.jar'))
 
 
-class TestPubmedPostgresLoader(unittest.TestCase):
+class TestPubmedKotlinPostgresLoader(unittest.TestCase):
     test_config = PubtrendsConfig(test=True)
     loader = PubmedPostgresLoader(test_config)
 
     @classmethod
     def setUpClass(cls):
-        cls.loader = TestPubmedPostgresLoader.loader
-
+        subprocess.run(['java', '-cp', PUBTRENDS_JAR, 'org.jetbrains.bio.pubtrends.DBWriter', 'PubmedPostgresWriter'])
+        cls.loader = TestPubmedKotlinPostgresLoader.loader
+        loader = PubmedPostgresLoader(PubtrendsConfig(True))
         # Text search is not tested, imitating search results
-        cls.ids = list(map(lambda article: article.pmid, REQUIRED_ARTICLES))
-
-        # Reset and load data to the test database
-        writer = PubmedPostgresWriter(config=TestPubmedPostgresLoader.test_config)
-        writer.init_pubmed_database()
-        writer.insert_pubmed_publications(ARTICLES + [EXTRA_ARTICLE])
-        writer.insert_pubmed_citations(CITATIONS)
-
+        cls.ids = [1, 2, 3, 4, 5, 6]
         # Get data via loader methods
         cls.pub_df = cls.loader.load_publications(cls.ids)
         cls.cit_stats_df = cls.loader.load_citations_by_year(cls.ids)
@@ -81,6 +74,11 @@ class TestPubmedPostgresLoader(unittest.TestCase):
         self.assertListEqual(actual, expected, msg='Wrong journals extracted')
 
     def test_load_publications_data_frame(self):
+        # for i, a in enumerate(self.pub_df['aux']):
+        #     print(i, a)
+        # print()
+        # for i, a in enumerate(EXPECTED_PUB_DF['aux']):
+        #     print(i, a)
         assert_frame_equal(self.pub_df, EXPECTED_PUB_DF, 'Wrong publication data', check_like=True)
 
     @parameterized.expand([
@@ -161,9 +159,10 @@ class TestPubmedPostgresLoader(unittest.TestCase):
     def test_expand(self):
         ids_list = list(map(lambda article: str(article.pmid), PART_OF_ARTICLES))
         actual = self.loader.expand(ids_list, 1000)
+        actual = actual.sort_values(by=['total', 'id']).reset_index(drop=True)
         assert_frame_equal(
             EXPANDED_IDS_DF,
-            actual.sort_values(by=['total', 'id']).reset_index(drop=True),
+            actual,
             "Wrong list of expanded ids"
         )
 
