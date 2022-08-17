@@ -2,28 +2,28 @@ from abc import ABCMeta, abstractmethod
 from pandas.testing import assert_frame_equal
 from parameterized import parameterized
 
+from pysrc.papers.utils import SORT_MOST_RECENT, SORT_MOST_CITED
 # Don't make it subclass of unittest.TestCase to avoid tests execution
 from pysrc.test.db.ss_test_articles import EXPECTED_CIT_STATS_DF, REQUIRED_CITATIONS, EXPECTED_CIT_DF, \
     EXPECTED_COCIT_DF, ARTICLES_LIST, EXPANDED_ARTICLES_DF
-from pysrc.papers.utils import SORT_MOST_RECENT, SORT_MOST_CITED
 
 
 class AbstractTestSemanticScholarLoader(metaclass=ABCMeta):
 
     @abstractmethod
-    def getLoader(self):
+    def get_loader(self):
         """:return Loader instance"""
 
     @abstractmethod
-    def getCitationsStatsDataframe(self):
+    def get_citations_stats_dataframe(self):
         """:return citations stats pandas dataframe"""
 
     @abstractmethod
-    def getCitationsDataframe(self):
+    def get_citations_dataframe(self):
         """:return citations dataframe"""
 
     @abstractmethod
-    def getCoCitationsDataframe(self):
+    def get_cocitations_dataframe(self):
         """:return co-citations dataframe"""
 
     @parameterized.expand([
@@ -38,38 +38,39 @@ class AbstractTestSemanticScholarLoader(metaclass=ABCMeta):
     ])
     def test_search(self, name, limit, sort, expected):
         # Use sorted to avoid ambiguity
-        ids = self.getLoader().search('find search', limit=limit, sort=sort)
+        ids = self.get_loader().search('find search', limit=limit, sort=sort)
         self.assertListEqual(sorted(expected), sorted(ids), name)
 
     def test_citations_stats_rows(self):
         expected_rows = EXPECTED_CIT_STATS_DF.shape[0]
-        actual_rows = self.getCitationsStatsDataframe().shape[0]
+        actual_rows = self.get_citations_stats_dataframe().shape[0]
         self.assertEqual(expected_rows, actual_rows, "Number of rows in citations statistics is incorrect")
 
     def test_load_citation_stats_data_frame(self):
         assert_frame_equal(EXPECTED_CIT_STATS_DF,
-                           self.getCitationsStatsDataframe().sort_values(by=['id', 'year']).reset_index(drop=True),
+                           self.get_citations_stats_dataframe().sort_values(by=['id', 'year']).reset_index(drop=True),
                            "Citations statistics is incorrect",
                            check_like=True)
 
     def test_load_citations_count(self):
-        self.assertEqual(len(REQUIRED_CITATIONS), len(self.getCitationsDataframe()), 'Wrong number of citations')
+        self.assertEqual(len(REQUIRED_CITATIONS), len(self.get_citations_dataframe()), 'Wrong number of citations')
 
     def test_load_citations_data_frame(self):
-        assert_frame_equal(EXPECTED_CIT_DF, self.getCitationsDataframe(), 'Wrong citation data', check_like=True)
+        assert_frame_equal(EXPECTED_CIT_DF, self.get_citations_dataframe(), 'Wrong citation data', check_like=True)
 
     def test_load_cocitations_count(self):
         expected_rows = EXPECTED_COCIT_DF.shape[0]
-        actual_rows = self.getCoCitationsDataframe().shape[0]
+        actual_rows = self.get_cocitations_dataframe().shape[0]
         self.assertEqual(expected_rows, actual_rows, "Number of rows in co-citations dataframe is incorrect")
 
     def test_load_cocitations_data_frame(self):
-        actual = self.getCoCitationsDataframe().sort_values(by=['citing', 'cited_1', 'cited_2']).reset_index(drop=True)
+        actual = self.get_cocitations_dataframe().sort_values(by=['citing', 'cited_1', 'cited_2']).reset_index(
+            drop=True)
         assert_frame_equal(EXPECTED_COCIT_DF, actual, "Co-citations dataframe is incorrect", check_like=True)
 
     def test_expand(self):
         ids = list(map(lambda article: article.ssid, ARTICLES_LIST))
-        actual = self.getLoader().expand(ids, 6)
+        actual = self.get_loader().expand(ids, 6)
         expected = EXPANDED_ARTICLES_DF.sort_values(by=['total', 'id']).reset_index(drop=True)
         actual = actual.sort_values(by=['total', 'id']).reset_index(drop=True)
         self.assertEqual(set(expected['id']), set(actual['id']))
@@ -92,7 +93,7 @@ class AbstractTestSemanticScholarLoader(metaclass=ABCMeta):
         ('doi with spaces', 'doi', '     10.000/0000      ', ['5451b1ef43678d473575bdfa7016d024146f2b53']),
     ])
     def test_find_match(self, case, key, value, expected):
-        actual = self.getLoader().find(key, value)
+        actual = self.get_loader().find(key, value)
         self.assertListEqual(sorted(actual), sorted(expected), case)
 
     @parameterized.expand([
@@ -101,5 +102,5 @@ class AbstractTestSemanticScholarLoader(metaclass=ABCMeta):
         ('no such doi', 'doi', '10.000/0001')
     ])
     def test_find_no_match(self, case, key, value):
-        actual = self.getLoader().find(key, value)
+        actual = self.get_loader().find(key, value)
         self.assertTrue(len(actual) == 0, case)

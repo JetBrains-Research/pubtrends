@@ -16,11 +16,9 @@ class TestPubmedKotlinPostgresLoader(unittest.TestCase, AbstractTestPubmedLoader
     @classmethod
     def setUpClass(cls):
         subprocess.run(['java', '-cp', PUBTRENDS_JAR, 'org.jetbrains.bio.pubtrends.DBWriter', 'PubmedPostgresWriter'])
-        cls.loader = TestPubmedKotlinPostgresLoader.loader
-        loader = PubmedPostgresLoader(PubtrendsConfig(True))
-        # Text search is not tested, imitating search results
-        cls.ids = [1, 2, 3, 4, 5, 6]
         # Get data via loader methods
+        cls.loader = TestPubmedKotlinPostgresLoader.loader
+        cls.ids = [1, 2, 3, 4, 5, 6]
         cls.pub_df = cls.loader.load_publications(cls.ids)
         cls.cit_stats_df = cls.loader.load_citations_by_year(cls.ids)
         cls.cit_df = cls.loader.load_citations(cls.ids)
@@ -30,19 +28,19 @@ class TestPubmedKotlinPostgresLoader(unittest.TestCase, AbstractTestPubmedLoader
     def tearDownClass(cls):
         cls.loader.close_connection()
 
-    def getPublicationsDataframe(self):
+    def get_publications_dataframe(self):
         return TestPubmedKotlinPostgresLoader.pub_df
 
-    def getLoader(self):
+    def get_loader(self):
         return TestPubmedKotlinPostgresLoader.loader
 
-    def getCitationsStatsDataframe(self):
+    def get_citations_stats_dataframe(self):
         return TestPubmedKotlinPostgresLoader.cit_stats_df
 
-    def getCitationsDataframe(self):
+    def get_citations_dataframe(self):
         return TestPubmedKotlinPostgresLoader.cit_df
 
-    def getCoCitationsDataframe(self):
+    def get_cocitations_dataframe(self):
         return TestPubmedKotlinPostgresLoader.cocit_df
 
 

@@ -14,16 +14,14 @@ class TestSemanticScholarPostgresLoader(unittest.TestCase, AbstractTestSemanticS
 
     @classmethod
     def setUpClass(cls):
-        cls.loader = TestSemanticScholarPostgresLoader.loader
-
         writer = SemanticScholarPostgresWriter(TestSemanticScholarPostgresLoader.test_config)
         writer.init_semantic_scholar_database()
         writer.insert_semantic_scholar_publications(REQUIRED_ARTICLES + EXTRA_ARTICLES)
         writer.insert_semantic_scholar_citations(REQUIRED_CITATIONS + EXTRA_CITATIONS)
 
-        # Text search is not tested, imitating search results
-        cls.ids = list(map(lambda article: article.ssid, REQUIRED_ARTICLES))
         # Get data via loader methods
+        cls.ids = list(map(lambda article: article.ssid, REQUIRED_ARTICLES))
+        cls.loader = TestSemanticScholarPostgresLoader.loader
         cls.pub_df = cls.loader.load_publications(cls.ids)
         cls.cit_stats_df = cls.loader.load_citations_by_year(cls.ids)
         cls.cit_df = cls.loader.load_citations(cls.ids)
@@ -33,16 +31,16 @@ class TestSemanticScholarPostgresLoader(unittest.TestCase, AbstractTestSemanticS
     def tearDownClass(cls):
         TestSemanticScholarPostgresLoader.loader.close_connection()
 
-    def getLoader(self):
+    def get_loader(self):
         return TestSemanticScholarPostgresLoader.loader
 
-    def getCitationsStatsDataframe(self):
+    def get_citations_stats_dataframe(self):
         return TestSemanticScholarPostgresLoader.cit_stats_df
 
-    def getCitationsDataframe(self):
+    def get_citations_dataframe(self):
         return TestSemanticScholarPostgresLoader.cit_df
 
-    def getCoCitationsDataframe(self):
+    def get_cocitations_dataframe(self):
         return TestSemanticScholarPostgresLoader.cocit_df
 
 

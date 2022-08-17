@@ -14,11 +14,6 @@ class TestPubmedPostgresLoader(unittest.TestCase, AbstractTestPubmedLoader):
 
     @classmethod
     def setUpClass(cls):
-        cls.loader = TestPubmedPostgresLoader.loader
-
-        # Text search is not tested, imitating search results
-        cls.ids = list(map(lambda article: article.pmid, REQUIRED_ARTICLES))
-
         # Reset and load data to the test database
         writer = PubmedPostgresWriter(config=TestPubmedPostgresLoader.test_config)
         writer.init_pubmed_database()
@@ -26,6 +21,8 @@ class TestPubmedPostgresLoader(unittest.TestCase, AbstractTestPubmedLoader):
         writer.insert_pubmed_citations(CITATIONS)
 
         # Get data via loader methods
+        cls.loader = TestPubmedPostgresLoader.loader
+        cls.ids = list(map(lambda article: article.pmid, REQUIRED_ARTICLES))
         cls.pub_df = cls.loader.load_publications(cls.ids)
         cls.cit_stats_df = cls.loader.load_citations_by_year(cls.ids)
         cls.cit_df = cls.loader.load_citations(cls.ids)
@@ -35,19 +32,19 @@ class TestPubmedPostgresLoader(unittest.TestCase, AbstractTestPubmedLoader):
     def tearDownClass(cls):
         cls.loader.close_connection()
 
-    def getPublicationsDataframe(self):
+    def get_publications_dataframe(self):
         return TestPubmedPostgresLoader.pub_df
 
-    def getLoader(self):
+    def get_loader(self):
         return TestPubmedPostgresLoader.loader
 
-    def getCitationsStatsDataframe(self):
+    def get_citations_stats_dataframe(self):
         return TestPubmedPostgresLoader.cit_stats_df
 
-    def getCitationsDataframe(self):
+    def get_citations_dataframe(self):
         return TestPubmedPostgresLoader.cit_df
 
-    def getCoCitationsDataframe(self):
+    def get_cocitations_dataframe(self):
         return TestPubmedPostgresLoader.cocit_df
 
 
