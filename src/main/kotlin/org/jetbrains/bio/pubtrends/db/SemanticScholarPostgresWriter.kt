@@ -37,9 +37,10 @@ open class SemanticScholarPostgresWriter(
             LOG.info("Adding TSV column")
             exec("ALTER TABLE SSPublications ADD COLUMN IF NOT EXISTS tsv TSVECTOR;")
 
+            LOG.info("Adding primary key, required for batch update")
+            exec("ALTER TABLE SSPublications ADD CONSTRAINT ss_id_key PRIMARY KEY (crc32id, ssid);")
+
             if (initIndexesAndMatView) {
-                LOG.info("Adding primary key")
-                exec("ALTER TABLE SSPublications ADD CONSTRAINT ss_id_key PRIMARY KEY (crc32id, ssid);")
                 LOG.info("Creating index ss_title_abstract_index")
                 exec(
                     "CREATE INDEX IF NOT EXISTS ss_title_abstract_index ON SSPublications using GIN (tsv);"
