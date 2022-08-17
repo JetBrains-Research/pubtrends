@@ -227,24 +227,17 @@ Then launch web-service or use jupyter notebook for development.
     ```
    Enable environment by command `source activate pubtrends`.
 
-4. Download nltk & spacy resources
-    ```
-    source activate pubtrends
-    python -m nltk.downloader averaged_perceptron_tagger punkt stopwords wordnet
-    python -m spacy download en_core_web_sm
-    ```
-
-5. Start Celery worker queue
+4. Start Celery worker queue
     ```
     celery -A pysrc.celery.tasks worker -c 1 --loglevel=debug
     ```
 
-6. Start flask server at http://localhost:5000/
+5. Start flask server at http://localhost:5000/
     ```
     python -m pysrc.app.app
     ```    
 
-7. Start service for text embeddings based on pretrained fasttext model at http://localhost:8081/
+6. Start service for text embeddings based on pretrained fasttext model at http://localhost:8081/
     ```
     python -m pysrc.fasttext.fasttext_app
     ```    
