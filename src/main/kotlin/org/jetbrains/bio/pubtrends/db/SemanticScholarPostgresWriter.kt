@@ -81,7 +81,7 @@ open class SemanticScholarPostgresWriter(
             exec(
                 """
                 drop index if exists SSCitation_matview_index;
-                drop materialized view if exists matview_sscitations;                
+                drop materialized view if exists matview_sscitations;
                 """
             )
             LOG.info("Drop other indexes")

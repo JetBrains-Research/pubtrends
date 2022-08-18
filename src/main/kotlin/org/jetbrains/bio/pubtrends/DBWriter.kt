@@ -39,17 +39,17 @@ class DBWriter {
                     }
 
                     SemanticScholarPostgresWriter::class.java.simpleName -> {
-                        createSemanticScholarPostgresWriter(config).use {
+                        createSemanticScholarPostgresWriter(config, false, false).use {
                             LOG.info("Reset")
                             it.reset()
-                        }
-                        createSemanticScholarPostgresWriter(config).use {
                             LOG.info("Store")
                             it.store(
                                 SS_REQUIRED_ARTICLES + SS_EXTRA_ARTICLES,
                                 SS_REQUIRED_CITATIONS + SS_EXTRA_CITATIONS
                             )
                         }
+                        // Create indexes and update them
+                        createSemanticScholarPostgresWriter(config, true, true).close()
                     }
 
                     else -> LOG.error("Unknown arg $arg")
@@ -60,15 +60,20 @@ class DBWriter {
                 println("Welcome to Pubtrends! See README.md for deployment instructions.")
         }
 
-        private fun createSemanticScholarPostgresWriter(config: Properties): SemanticScholarPostgresWriter {
+        private fun createSemanticScholarPostgresWriter(
+            config: Properties,
+            initIndexesAndMatView: Boolean,
+            finishFillDatabase: Boolean
+
+        ): SemanticScholarPostgresWriter {
             return SemanticScholarPostgresWriter(
                 config["test_postgres_host"]!!.toString(),
                 config["test_postgres_port"]!!.toString().toInt(),
                 config["test_postgres_database"]!!.toString(),
                 config["test_postgres_username"]!!.toString(),
                 config["test_postgres_password"]!!.toString(),
-                true,
-                true
+                initIndexesAndMatView,
+                finishFillDatabase
             )
         }
 
