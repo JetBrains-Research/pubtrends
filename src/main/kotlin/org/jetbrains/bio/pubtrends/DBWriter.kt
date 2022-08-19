@@ -39,9 +39,19 @@ class DBWriter {
                     }
 
                     SemanticScholarPostgresWriter::class.java.simpleName -> {
-                        createSemanticScholarPostgresWriter(config, false, false).use {
+                        createSemanticScholarPostgresWriter(
+                            config,
+                            initIndexesAndMatView = false,
+                            finishFillDatabase = false
+                        ).use {
                             LOG.info("Reset")
                             it.reset()
+                        }
+                        createSemanticScholarPostgresWriter(
+                            config,
+                            initIndexesAndMatView = false,
+                            finishFillDatabase = false
+                        ).use {
                             LOG.info("Store")
                             it.store(
                                 SS_REQUIRED_ARTICLES + SS_EXTRA_ARTICLES,
@@ -49,7 +59,11 @@ class DBWriter {
                             )
                         }
                         // Create indexes and update them
-                        createSemanticScholarPostgresWriter(config, true, true).close()
+                        createSemanticScholarPostgresWriter(
+                            config,
+                            initIndexesAndMatView = true,
+                            finishFillDatabase = true
+                        ).close()
                     }
 
                     else -> LOG.error("Unknown arg $arg")

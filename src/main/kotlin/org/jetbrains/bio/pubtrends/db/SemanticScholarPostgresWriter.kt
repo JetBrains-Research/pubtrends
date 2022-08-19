@@ -38,7 +38,20 @@ open class SemanticScholarPostgresWriter(
             exec("ALTER TABLE SSPublications ADD COLUMN IF NOT EXISTS tsv TSVECTOR;")
 
             LOG.info("Adding primary key, required for batch update")
-            exec("ALTER TABLE SSPublications ADD CONSTRAINT ss_id_key PRIMARY KEY (crc32id, ssid);")
+            // We add primary key manually, because primary key on two or more fields in supported by ORM,
+            // IMPORTANT: works correctly only with table name in lowercase.
+            exec(
+                """
+                do
+                $$ 
+                begin
+                if NOT exists (select constraint_name from information_schema.table_constraints 
+                    where table_name = 'sspublications' and constraint_type = 'PRIMARY KEY') then
+                    ALTER TABLE SSPublications ADD CONSTRAINT crc32id_ssid_key PRIMARY KEY (crc32id, ssid);
+                end if;
+                end;
+                $$;
+            """)
 
             if (initIndexesAndMatView) {
                 LOG.info("Creating index ss_title_abstract_index")
@@ -87,6 +100,7 @@ open class SemanticScholarPostgresWriter(
             LOG.info("Drop other indexes")
             exec(
                 """
+                ALTER TABLE SSPublications DROP CONSTRAINT crc32id_ssid_key;
                 drop index if exists sspublications_ssid_year;
                 drop index if exists sspublications_doi_index;
                 DROP INDEX IF EXISTS ss_title_abstract_index;
