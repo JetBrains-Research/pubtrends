@@ -46,22 +46,21 @@ object SemanticScholarLoader {
             val (config, configPath, settingsRoot) = Config.load()
             LOG.info("Config path: $configPath")
 
-            val dbWriter: AbstractDBWriter<SemanticScholarArticle>
+            val dbWriter: AbstractDBWriter<SemanticScholarArticle> =
             if (!(config["postgres_host"]?.toString()).isNullOrBlank()) {
                 LOG.info("Init Postgresql database connection")
-                dbWriter = SemanticScholarPostgresWriter(
+                SemanticScholarPostgresWriter(
                     config["postgres_host"]!!.toString(),
                     config["postgres_port"]!!.toString().toInt(),
                     config["postgres_database"]!!.toString(),
                     config["postgres_username"]!!.toString(),
                     config["postgres_password"]!!.toString(),
-                    "index" in config,
-                    "finish" in config
+                    options.has("index"),
+                    options.has("finish")
                 )
             } else {
                 throw IllegalStateException("No database configured")
             }
-
 
             dbWriter.use {
                 if (options.has("resetDatabase")) {
