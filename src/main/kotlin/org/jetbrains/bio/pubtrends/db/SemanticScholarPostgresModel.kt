@@ -17,22 +17,21 @@ internal const val MAX_DOI_LENGTH = 100
  * @property keywords comma separated keywords
  */
 object SSPublications : Table() {
-    val ssid = varchar("ssid", MAX_ID_LENGTH)
     val crc32id = integer("crc32id")
     val pmid = integer("pmid").nullable()
+    val year = integer("year").nullable()
+    val ssid = varchar("ssid", MAX_ID_LENGTH)
     val title = varchar("title", PUBLICATION_MAX_TITLE_LENGTH)
     val abstract = text("abstract").nullable()
     val keywords = text("keywords").nullable()
-    val year = integer("year").nullable()
     val doi = varchar("doi", MAX_DOI_LENGTH).nullable()
     val aux = jsonb("aux", AuxInfo::class.java, jsonMapper)
 }
 
 
 object SSCitations : Table() {
-    val ssid_out = varchar("ssid_out", MAX_ID_LENGTH)
-    val ssid_in = varchar("ssid_in", MAX_ID_LENGTH)
-
     val crc32id_out = integer("crc32id_out")
     val crc32id_in = integer("crc32id_in")
+    val ssid_out = varchar("ssid_out", MAX_ID_LENGTH)
+    val ssid_in = varchar("ssid_in", MAX_ID_LENGTH)
 }
