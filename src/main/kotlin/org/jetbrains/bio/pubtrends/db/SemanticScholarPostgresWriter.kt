@@ -14,7 +14,7 @@ open class SemanticScholarPostgresWriter(
     database: String,
     username: String,
     password: String,
-    private val initIndexesAndMatView: Boolean,
+    initIndexesAndMatView: Boolean,
     private val finishFillDatabase: Boolean
 ) : AbstractDBWriter<SemanticScholarArticle> {
     companion object {
@@ -36,8 +36,9 @@ open class SemanticScholarPostgresWriter(
 
             LOG.info("Adding TSV column")
             exec("ALTER TABLE SSPublications ADD COLUMN IF NOT EXISTS tsv TSVECTOR;")
-
-            LOG.info("Adding primary key, required for batch update")
+        }
+        LOG.info("Adding primary key, required for batch update")
+        transaction {
             // We add primary key manually, because primary key on two or more fields in supported by ORM,
             // IMPORTANT: works correctly only with table name in lowercase.
             exec(
@@ -51,14 +52,18 @@ open class SemanticScholarPostgresWriter(
                 end if;
                 end;
                 $$;
-            """)
-
-            if (initIndexesAndMatView) {
-                LOG.info("Creating index ss_title_abstract_index")
+            """
+            )
+        }
+        if (initIndexesAndMatView) {
+            LOG.info("Creating index ss_title_abstract_index")
+            transaction {
                 exec(
                     "CREATE INDEX IF NOT EXISTS ss_title_abstract_index ON SSPublications using GIN (tsv);"
                 )
-                LOG.info("Creating citations material view matview_sscitations")
+            }
+            LOG.info("Creating citations material view matview_sscitations")
+            transaction {
                 exec(
                     """
                 create materialized view if not exists matview_sscitations as
@@ -69,18 +74,26 @@ open class SemanticScholarPostgresWriter(
                 create index if not exists SSCitation_matview_index on matview_sscitations using hash(crc32id);
                 """
                 )
-                LOG.info("Creating index sspublications_ssid_year")
+            }
+            LOG.info("Creating index sspublications_ssid_year")
+            transaction {
                 exec(
                     """
                 CREATE INDEX IF NOT EXISTS sspublications_ssid_year ON sspublications (ssid, year);
                 """
                 )
                 LOG.info("Creating index sspublications_doi_index")
+                transaction {
+                }
                 exec(
                     "create index if not exists sspublications_doi_index on sspublications using hash(doi);"
                 )
-                LOG.info("Creating ss_citations indexes")
+            }
+            LOG.info("Creating ss_citations indexes")
+            transaction {
                 exec("create index if not exists sscitations_crc32id_out_index on SSCitations using hash(crc32id_out);")
+            }
+            transaction {
                 exec("create index if not exists sscitations_crc32id_in_index on SSCitations using hash(crc32id_in);")
             }
         }
@@ -152,7 +165,9 @@ open class SemanticScholarPostgresWriter(
                 conflict[doi] = article.doi
                 conflict[aux] = article.aux
             }
-            LOG.info("Update TSV vector")
+        }
+        LOG.info("Update TSV vector")
+        transaction {
             val vals = articles.joinToString(",") { "('${it.ssid}', ${it.crc32id})" }
             exec(
                 """
@@ -162,7 +177,9 @@ open class SemanticScholarPostgresWriter(
                     WHERE (ssid, crc32id) IN (VALUES $vals);
                     """
             )
-            LOG.info("Batch insert citations list")
+        }
+        LOG.info("Batch insert citations list")
+        transaction {
             SSCitations.batchInsert(citationsList, ignore = true) { citation ->
                 this[SSCitations.ssid_out] = citation.first
                 this[SSCitations.ssid_in] = citation.second
@@ -181,8 +198,8 @@ open class SemanticScholarPostgresWriter(
     override fun close() {
         if (finishFillDatabase) {
             LOG.info("Close transaction started")
+            LOG.info("Refreshing materialized view")
             transaction {
-                LOG.info("Refreshing materialized view")
                 exec(
                     """
                     do
