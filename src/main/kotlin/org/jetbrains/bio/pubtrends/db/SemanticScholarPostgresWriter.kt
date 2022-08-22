@@ -71,20 +71,19 @@ open class SemanticScholarPostgresWriter(
                 FROM SSCitations C
                 GROUP BY ssid, crc32id
                 HAVING COUNT(*) >= 3; -- Ignore tail of 0,1,2 cited papers
-                create index if not exists SSCitation_matview_index on matview_sscitations using hash(crc32id);
                 """
                 )
             }
+            LOG.info("Creating index on material view matview_sscitations")
+            transaction {
+                exec("create index if not exists SSCitation_matview_index on matview_sscitations using hash(crc32id);")
+            }
             LOG.info("Creating index sspublications_ssid_year")
             transaction {
-                exec(
-                    """
-                CREATE INDEX IF NOT EXISTS sspublications_ssid_year ON sspublications (ssid, year);
-                """
-                )
-                LOG.info("Creating index sspublications_doi_index")
-                transaction {
-                }
+                exec("CREATE INDEX IF NOT EXISTS sspublications_ssid_year ON sspublications (ssid, year);")
+            }
+            LOG.info("Creating index sspublications_doi_index")
+            transaction {
                 exec(
                     "create index if not exists sspublications_doi_index on sspublications using hash(doi);"
                 )
