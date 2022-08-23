@@ -25,6 +25,11 @@
             integrity="sha256-SPZP/x8QDPEhRlpJjet4AD5X4ergPWcxjhMn73SwyOE="
             crossorigin="anonymous"></script>
 
+    <!-- Notify.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"
+            integrity="sha512-efUTj3HdSPwWJ9gjfGR71X9cvsrthIA78/Fvd/IN+fttQVy7XWkOAXb295j8B3cmm/kFKVxjiNYzKw9IQJHIuQ=="
+            crossorigin="anonymous"></script>
+
     <script>
         'use strict';
         // Example starter JavaScript for disabling form submissions if there are invalid fields
@@ -87,6 +92,22 @@
                     $sort.append($("<option>Most Recent</option>"));
                 }
             });
+            //add a new style 'html_title'
+            $.notify.addStyle('html_title', {
+                html: "<div class='title' data-notify-html='title'/>"
+            });
+            setTimeout(function () {
+                $('#jumbotron').notify({
+                    title:
+                        $('<a class="link" href="https://github.com/JetBrains-Research/pubtrends/blob/master/CHANGES.txt" title="What\'s new?" target="_blank">What\'s new?</a>')
+                }, {
+                    style: 'html_title',
+                    autoHide: false,
+                    arrowShow: false,
+                    position: 'top right',
+                    hideDuration: 0,
+                });
+            }, 1000);
         });
     </script>
 </head>
@@ -94,20 +115,18 @@
 <div class="container mt-3">
     <div class="jumbotron border-light">
         <h1>PubTrends</h1>
-        <p class="lead">
+        <p id="jumbotron" class="lead">
             Scientific literature explorer
         </p>
         <p>
             Find publications by search query, view most cited papers, explore research topics and trends,<br>
             analyze frequent keywords, and visualize graphs of citations and similar papers network.<br>
             Explore similar papers, important prior, and derivative works for the paper of interest.<br>
+            <a class="link" href="about.html">Learn more.</a>
         </p>
         <p>
             <a id="tour-start" class="btn btn-light mr-1"
                href="javascript:void(0);" onclick="startIntro();">Take a tour</a>
-            <a class="btn btn-light"
-               href="about.html"
-               target="_blank" role="button">About</a>
         </p>
     </div>
     <main class="card border-light mt-3" role="main">
