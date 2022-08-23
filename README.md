@@ -179,7 +179,7 @@ Download Sample from [Semantic Scholar](https://www.semanticscholar.org/) or ful
       if [[ -z $(grep "$file" complete.txt) ]]; then
          echo "Processing $file / $N"
          wget https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/$DATE/$file;
-         java -cp $PUBTRENDS_JAR org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --fillDatabase $(pwd)/$file --debug
+         java -cp $PUBTRENDS_JAR org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --fillDatabase $(pwd)/$file
          rm $file;
          echo "$file" >> complete.txt
       fi;
