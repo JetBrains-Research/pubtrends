@@ -36,7 +36,7 @@ class PapersAnalyzer:
     #
     # Coefficients were estimated in the paper: https://dl.acm.org/doi/10.1145/3459930.3469501
     # Poster: https://drive.google.com/file/d/1SeqJtJtaHSO6YihG2905boOEYL1NiSP1/view
-    # See for details: https://github.com/JetBrains-Research/pubtrends-nature-reviews
+    # See for details: https://github.com/JetBrains-Research/pubtrends-clustering
     SIMILARITY_BIBLIOGRAPHIC_COUPLING = 3  # Limited by number of references, applied to log
     SIMILARITY_COCITATION = 3  # Limiter by number of co-citations, applied to log
     SIMILARITY_CITATION = 1  # Limited by 1 citation
