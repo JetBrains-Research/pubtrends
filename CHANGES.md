@@ -7,89 +7,89 @@ Version 0.22
 ------------
 Released on Aug 23, 2022
 
--- Updated Semantic Scholar database to version 2022-05-01
--- Reworked Semantic Scholar database structure and indexes for faster loading and updates
--- Added size selector in network view - size encodes number of citations or centrality of the paper
--- Don't show feedback message form for predefined examples
--- Small bugfixes in numbers extracting functionality
--- Better tests on Kotlin-based database uploading and Python-based analysis
--- Updated libraries versions to support MacBook aarch64 architecture
--- Fork me on GitHub
--- Show what's new notification
+- Updated Semantic Scholar database to version 2022-05-01
+- Reworked Semantic Scholar database structure and indexes for faster loading and updates
+- Added size selector in network view - size encodes number of citations or centrality of the paper
+- Don't show feedback message form for predefined examples
+- Small bugfixes in numbers extracting functionality
+- Better tests on Kotlin-based database uploading and Python-based analysis
+- Updated libraries versions to support MacBook aarch64 architecture
+- Fork me on GitHub
+- Show what's new notification
 
 Version 0.21
 ------------
 Released on Jan 25, 2022
 
--- Updated PubMed database to the version 2022
--- Updated pubtrends.net config to use nginx
--- Improved single paper analysis - pay more attention to paper own keywords/citations while expanding by references
--- Show papers graph for single-paper analysis
--- Fixed issues with missing references for fresh papers
+- Updated PubMed database to the version 2022
+- Updated pubtrends.net config to use nginx
+- Improved single paper analysis - pay more attention to paper own keywords/citations while expanding by references
+- Show papers graph for single-paper analysis
+- Fixed issues with missing references for fresh papers
 
 Version 0.20
 ------------
 Released on Nov 18, 2021
 
--- Use pretrained fasttext model by Facebook for words embeddings
--- Reworked text preprocessing - don't ignore non-ascii characters
--- Optimize memory consumption for workers
+- Use pretrained fasttext model by Facebook for words embeddings
+- Reworked text preprocessing - don't ignore non-ascii characters
+- Optimize memory consumption for workers
 
 Version 0.19
 ------------
 Released on Oct 10, 2021
 
--- Use combined text and graph embeddings for papers analysis
--- Get rid of citations graph visualization
--- Disabled zoom out functionality, reworked execution
--- Fixed review generation functionality
--- Reduced default font size
--- Various other bugfixes
+- Use combined text and graph embeddings for papers analysis
+- Get rid of citations graph visualization
+- Disabled zoom out functionality, reworked execution
+- Fixed review generation functionality
+- Reduced default font size
+- Various other bugfixes
 
 Version 0.18
 ------------
 Released on Oct 5, 2021
 
--- Support Pubmed search syntax including AND, OR, etc.
--- Show analysis results as downloadable html files
--- Reworked single paper analysis with single background task
--- Small fixes
+- Support Pubmed search syntax including AND, OR, etc.
+- Show analysis results as downloadable html files
+- Reworked single paper analysis with single background task
+- Small fixes
 
 Version 0.17
 ------------
 Released on Aug 10, 2021
 
--- Improved topics descriptions based on cosine similarities
--- Use similarity and clustering parameters according to the nature reviews benchmark,
+- Improved topics descriptions based on cosine similarities
+- Use similarity and clustering parameters according to the nature reviews benchmark,
    see https://dl.acm.org/doi/10.1145/3459930.3469501
--- Papers filtering in graph representation based on specific fields
--- Show topics centers and tags in interactive viewer
--- Small updates and bugfixes
+- Papers filtering in graph representation based on specific fields
+- Show topics centers and tags in interactive viewer
+- Small updates and bugfixes
 
 
 Version 0.16
 ------------
 Released on May 24, 2021
 
--- Use graph embeddings for detecting similar papers
--- Improved papers graph visualization in tSNE coordinates of embeddings
--- Identify groups of similar authors
--- Small updates and bugfixes
+- Use graph embeddings for detecting similar papers
+- Improved papers graph visualization in tSNE coordinates of embeddings
+- Identify groups of similar authors
+- Small updates and bugfixes
 
 
 Version 0.15
 ------------
 Released on April 9, 2021
 
--- Removed Neo4j DB backend
+- Removed Neo4j DB backend
 
 Version 0.14
 ------------
 Released on April 7, 2021
 
--- Reworked results page
--- Show joint topics and keyword diagram
--- Bugfixes
+- Reworked results page
+- Show joint topics and keyword diagram
+- Bugfixes
 
 Version 0.13
 ------------

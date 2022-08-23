@@ -347,7 +347,7 @@ Use simple placeholder during maintenance.
 
 ## Release
 
-* Update `CHANGES.txt`
+* Update `CHANGES.md`
 * Update version in `dist.sh`
 * Launch `dist.sh`, `pubtrends-XXX.tar.gz` will be created in the `dist` directory.
 
