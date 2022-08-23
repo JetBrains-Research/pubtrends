@@ -14,8 +14,6 @@ Released on Aug 23, 2022
 - Small bugfixes in numbers extracting functionality
 - Better tests on Kotlin-based database uploading and Python-based analysis
 - Updated libraries versions to support MacBook aarch64 architecture
-- Fork me on GitHub
-- Show what's new notification
 
 Version 0.21
 ------------
