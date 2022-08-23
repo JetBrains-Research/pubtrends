@@ -3,6 +3,20 @@ Pubtrends changelog
 
 Here you can see the full list of changes between each release.
 
+Version 0.22
+------------
+Released on Aug 23, 2022
+
+-- Updated Semantic Scholar database to version 2022-05-01
+-- Reworked Semantic Scholar database structure and indexes for faster loading and updates
+-- Added size selector in network view - size encodes number of citations or centrality of the paper
+-- Don't show feedback message form for predefined examples
+-- Small bugfixes in numbers extracting functionality
+-- Better tests on Kotlin-based database uploading and Python-based analysis
+-- Updated libraries versions to support MacBook aarch64 architecture
+-- Fork me on GitHub
+-- Show what's new notification
+
 Version 0.21
 ------------
 Released on Jan 25, 2022
