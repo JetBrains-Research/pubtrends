@@ -127,7 +127,7 @@ def estimate_mesh(ids, single_paper, loader, single_paper_impact):
 def estimate_citations(ids, single_paper, loader, q_low, q_high, single_paper_impact):
     if single_paper:
         # Artificially inflate paper of interest influence
-        total = loader.load_citations_counts(ids[0]) * single_paper_impact + loader.load_citations_counts(ids[1:])
+        total = loader.load_citations_counts(ids[:1]) * single_paper_impact + loader.load_citations_counts(ids[1:])
     else:
         total = loader.load_citations_counts(ids)
     logger.debug(f'Citations min={np.min(total)}, max={np.max(total)}, '
