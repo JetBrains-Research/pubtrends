@@ -19,9 +19,8 @@ from pysrc.papers.config import PubtrendsConfig
 sys.path.append(os.path.abspath(f'{dirname(__file__)}/../../../pubtrends-review'))
 
 import review.config as cfg
-from review.model import load_model
+from review.model import setup_cuda_device, load_model
 from review.text import text_to_data
-from review.utils import setup_single_gpu
 
 logger = logging.getLogger(__name__)
 
