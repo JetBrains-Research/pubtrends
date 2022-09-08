@@ -44,7 +44,7 @@ class ModelCache:
     def model_and_device(self):
         logger.info('Loading base BERT model')
         model = load_model("bert", "froze_all", 512)
-        model, gpu = setup_single_gpu(model)
+        model, device = setup_single_gpu(model)
         # TODO: add model path to config properties
         for model_path in [os.path.join(p, cfg.model_name) for p in MODEL_PATHS]:
             if os.path.exists(model_path):
@@ -53,7 +53,7 @@ class ModelCache:
                 break
         else:
             raise RuntimeError(f'Model weights file {cfg.model_name} not found among: {MODEL_PATHS}')
-        return model, gpu
+        return model, device
 
 
 MODEL_CACHE = ModelCache()
@@ -101,10 +101,10 @@ def predict_review_score(device, model, abstract):
     data = text_to_data(abstract, 512, model.tokenizer)
     logger.debug(f'Data to process {len(data)}')
     result = []
-    for article_ids, article_mask, article_seg, magic, sents in data:
-        input_ids = torch.tensor([article_ids]).to(device)
-        input_mask = torch.tensor([article_mask]).to(device)
-        input_segment = torch.tensor([article_seg]).to(device)
-        draft_probs = model(input_ids, input_mask, input_segment, )
-        result.extend(zip(sents[magic:], draft_probs.cpu().detach().numpy()[magic:]))
+    for input_ids, attention_mask, token_type_ids, offset, sents in data:
+        input_ids = torch.tensor([input_ids]).to(device)
+        attention_mask = torch.tensor([attention_mask]).to(device)
+        token_type_ids = torch.tensor([token_type_ids]).to(device)
+        model_scores = model(input_ids, attention_mask, token_type_ids, )
+        result.extend(zip(sents[offset:], model_scores.cpu().detach().numpy()[offset:]))
     return result
