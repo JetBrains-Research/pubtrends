@@ -106,10 +106,10 @@ from `/admin` dashboard, which shows requests and results, execution times and f
     * Configure memory params in `~/postgres/pgdata/postgresql.conf`.
     ```
     # Memory settings
-    effective_cache_size = 4GB  # ~ 50 to 75% (can be set precisely by referring to “top” free+cached)
+    effective_cache_size = 8GB  # ~ 50 to 75% (can be set precisely by referring to “top” free+cached)
     shared_buffers = 2GB        # ~ 1/4 – 1/3 total system RAM
-    work_mem = 512MB            # For sorting, ordering etc
-    max_client_connections = 4  # Total mem is work_mem * connections
+    work_mem = 1GB            # For sorting, ordering etc
+    max_connections = 4  # Total mem is work_mem * connections
     maintenance_work_mem = 1GB  # Memory for indexes, etc
     
     # Write performance
