@@ -44,7 +44,10 @@ def expand_ids(
     if len(ids) > 1:
         cit_mean, cit_std = estimate_citations(ids, single_paper, loader,
                                                citations_q_low, citations_q_high, single_paper_impact)
-        mesh_stems, mesh_counter = estimate_mesh(ids, single_paper, loader, single_paper_impact)
+        if cit_mean is not None and cit_std is not None:
+            mesh_stems, mesh_counter = estimate_mesh(ids, single_paper, loader, single_paper_impact)
+        else:
+            mesh_stems, mesh_counter = None, None
     else:
         # Cannot estimate these characteristics by a single paper
         cit_mean, cit_std = None, None
@@ -130,14 +133,18 @@ def estimate_citations(ids, single_paper, loader, q_low, q_high, single_paper_im
         total = loader.load_citations_counts(ids[:1]) * single_paper_impact + loader.load_citations_counts(ids[1:])
     else:
         total = loader.load_citations_counts(ids)
+    if len(total) == 0:
+        return None, None
     logger.debug(f'Citations min={np.min(total)}, max={np.max(total)}, '
                  f'mean={np.mean(total)}, std={np.std(total)}')
     citations_q_low = np.percentile(total, q_low)
     citations_q_high = np.percentile(total, q_high)
     logger.debug(
-        f'Filtering < Q{q_low}={citations_q_low} or > Q{q_high}={citations_q_high}')
+        f'Filtering < Q{q_low}={citations_q_low} or > Q{q_high}={citations_q_high}'
+    )
     filtered = [t for t in total if citations_q_low <= t <= citations_q_high]
-    mean = np.mean(filtered)
-    std = np.std(filtered)
-    logger.debug(f'Filtered citations min={np.mean(filtered)}, max={np.max(filtered)}, mean={mean}, std={std}')
+    if len(filtered) == 0:
+        return None, None
+    mean, std = np.mean(filtered), np.std(filtered)
+    logger.debug(f'Filtered citations min={np.min(filtered)}, max={np.max(filtered)}, mean={mean}, std={std}')
     return mean, std
