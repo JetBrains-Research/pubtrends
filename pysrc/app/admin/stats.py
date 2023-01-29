@@ -23,14 +23,14 @@ def prepare_stats_data(logfile):
 
 
 def parse_stats_content(lines):
-    terms_searches_dates = []
-    recent_searches = Queue(maxsize=RECENT)
-    searches_infos = dict()
+    terms_search_infos = dict()
+    terms_search_dates = []
+    terms_searches_recent = Queue(maxsize=RECENT)
     terms = []
 
-    paper_searches_dates = []
-    recent_papers = Queue(maxsize=RECENT)
-    papers_infos = dict()
+    paper_search_infos = dict()
+    paper_searches_recent = Queue(maxsize=RECENT)
+    paper_search_dates = []
 
     for line in lines:
         try:
@@ -42,28 +42,28 @@ def parse_stats_content(lines):
             date = datetime.datetime.strptime(search_date.group(0), '%Y-%m-%d %H:%M:%S,%f')
 
             if '/process regular search addr:' in line:
-                terms_searches_dates.append(date)
+                terms_search_dates.append(date)
                 args = json.loads(re.sub(".*args:", "", line.strip()))
                 terms.append(args['query'].replace(',', ' ').replace('[^a-zA-Z0-9]+', ' '))
                 jobid = args['jobid']
                 if not jobid:
                     continue
-                if jobid not in searches_infos:  # Don't re-add already existing task
-                    searches_infos[jobid] = dict(jobid=jobid, start=date, args=args)
-                    if recent_searches.full():
-                        recent_searches.get()  # Free some space
-                    recent_searches.put(jobid)
+                if jobid not in terms_search_infos:  # Don't re-add already existing task
+                    terms_search_infos[jobid] = dict(jobid=jobid, start=date, args=args)
+                    if terms_searches_recent.full():
+                        terms_searches_recent.get()  # Free some space
+                    terms_searches_recent.put(jobid)
 
             if '/search_terms with fixed jobid addr:' in line:
                 args = json.loads(re.sub(".*args:", "", line.strip()))
                 jobid = args['jobid']
                 if not jobid or jobid:
                     continue
-                searches_infos[jobid] = dict(jobid=jobid, start=date, args=args)
-                if recent_searches.full():
-                    recent_searches.get()  # Free some space
-                recent_searches.put(jobid)
-                terms_searches_dates.append(date)
+                terms_search_infos[jobid] = dict(jobid=jobid, start=date, args=args)
+                if terms_searches_recent.full():
+                    terms_searches_recent.get()  # Free some space
+                terms_searches_recent.put(jobid)
+                terms_search_dates.append(date)
                 terms.append(args['query'].replace(',', ' ').replace('[^a-zA-Z0-9]+', ' '))
 
             if '/status failure' in line:
@@ -71,8 +71,8 @@ def parse_stats_content(lines):
                 jobid = args['jobid']
                 if not jobid:
                     continue
-                if jobid in searches_infos:
-                    info = searches_infos[jobid]
+                if jobid in terms_search_infos:
+                    info = terms_search_infos[jobid]
                     info['status'] = 'Error'
                     if 'Search error: True' in line:
                         info['status'] = 'Not found'
@@ -84,8 +84,8 @@ def parse_stats_content(lines):
                 jobid = args['jobid']
                 if not jobid:
                     continue
-                if jobid in searches_infos:
-                    info = searches_infos[jobid]
+                if jobid in terms_search_infos:
+                    info = terms_search_infos[jobid]
                     info['status'] = 'Ok'
                     if 'end' not in info:
                         info['end'] = date
@@ -95,39 +95,55 @@ def parse_stats_content(lines):
                 jobid = args['jobid']
                 if not jobid:
                     continue
-                if jobid in searches_infos:
-                    info = searches_infos[jobid]
-                    if 'papers' not in info:
-                        info['papers'] = True
+                if jobid in terms_search_infos:
+                    info = terms_search_infos[jobid]
+                    if 'papers_list' not in info:
+                        info['papers_list'] = True
 
             if '/graph success similarity addr:' in line:
                 args = json.loads(re.sub(".*args:", "", line.strip()))
                 jobid = args['jobid']
                 if not jobid:
                     continue
-                if jobid in searches_infos:
-                    info = searches_infos[jobid]
+                if jobid in terms_search_infos:
+                    info = terms_search_infos[jobid]
                     if 'graph' not in info:
                         info['graph'] = True
 
-            if '/process paper analysis addr:' in line:
-                paper_searches_dates.append(date)
+            if '/process review addr:' in line:
                 args = json.loads(re.sub(".*args:", "", line.strip()))
                 jobid = args['jobid']
                 if not jobid:
                     continue
-                papers_infos[jobid] = dict(jobid=jobid, start=date, args=args)
-                if recent_papers.full():
-                    recent_papers.get()  # Free some space
-                recent_papers.put(jobid)
+                if jobid in terms_search_infos:
+                    info = terms_search_infos[jobid]
+                    if 'review' not in info:
+                        info['review'] = True
+
+            if '/process paper analysis addr:' in line:
+                paper_search_dates.append(date)
+                args = json.loads(re.sub(".*args:", "", line.strip()))
+                jobid = args['jobid']
+                if not jobid:
+                    continue
+                paper_search_infos[jobid] = dict(jobid=jobid, start=date, args=args)
+                if paper_searches_recent.full():
+                    paper_searches_recent.get()  # Free some space
+                paper_searches_recent.put(jobid)
 
             if '/paper success addr:' in line:
                 args = json.loads(re.sub(".*args:", "", line.strip()))
                 jobid = args['jobid']
                 if not jobid:
                     continue
-                if jobid in papers_infos:
-                    info = papers_infos[jobid]
+                if jobid in terms_search_infos:
+                    info = terms_search_infos[jobid]
+                    if 'papers_clicks' in info:
+                        info['papers_clicks'] += 1
+                    else:
+                        info['papers_clicks'] = 1
+                if jobid in paper_search_infos:
+                    info = paper_search_infos[jobid]
                     info['status'] = 'Ok'
                     if 'end' not in info:
                         info['end'] = date
@@ -136,23 +152,23 @@ def parse_stats_content(lines):
 
     # Build timeseries graphs for terms and papers searches
     result = {}
-    total_terms_searches = len(terms_searches_dates)
-    result['total_terms_searches'] = total_terms_searches
-    if total_terms_searches:
-        p = prepare_timeseries(terms_searches_dates, 'Terms searches')
+    terms_searches_total = len(terms_search_dates)
+    result['terms_searches_total'] = terms_searches_total
+    if terms_searches_total:
+        p = prepare_timeseries(terms_search_dates, 'Terms searches')
         result['terms_searches_plot'] = [components(p)]
 
-    total_paper_searches = len(paper_searches_dates)
-    result['total_paper_searches'] = total_paper_searches
-    if total_paper_searches:
-        p = prepare_timeseries(paper_searches_dates, 'Paper searches')
+    paper_searches_total = len(paper_search_dates)
+    result['paper_searches_total'] = paper_searches_total
+    if paper_searches_total:
+        p = prepare_timeseries(paper_search_dates, 'Paper searches')
         result['paper_searches_plot'] = [components(p)]
 
     # Process recent searches
-    recent_searches_results = []
-    while not recent_searches.empty():
-        jobid = recent_searches.get()
-        info = searches_infos[jobid]
+    terms_searches_recent_results = []
+    while not terms_searches_recent.empty():
+        jobid = terms_searches_recent.get()
+        info = terms_search_infos[jobid]
         date, args = info['start'], info['args']
         if 'end' in info:
             duration = duration_string(info['end'] - date)
@@ -160,23 +176,25 @@ def parse_stats_content(lines):
             duration = '-'
 
         link = f'/result?{"&".join([f"{a}={v}" for a, v in args.items()])}'
-        recent_searches_results.append((
+        terms_searches_recent_results.append((
             date.strftime('%Y-%m-%d %H:%M:%S'),
             args['source'] if 'source' in args else '',
             args['query'],
             link,
             duration,
             info['status'] if 'status' in info else 'N/A',
-            '+' if 'papers' in info else '-',
+            info['papers_clicks'] if 'papers_clicks' in info else 0,
+            '+' if 'papers_list' in info else '-',
             '+' if 'graph' in info else '-',
+            '+' if 'review' in info else '-',
         ))
-    result['recent_searches'] = recent_searches_results[::-1]
+    result['terms_searches_recent'] = terms_searches_recent_results[::-1]
 
     # Process recent papers
-    recent_papers_results = []
-    while not recent_papers.empty():
-        jobid = recent_papers.get()
-        info = papers_infos[jobid]
+    recent_paper_searchers_results = []
+    while not paper_searches_recent.empty():
+        jobid = paper_searches_recent.get()
+        info = paper_search_infos[jobid]
         date, args = info['start'], info['args']
         if 'query' in args:
             title = args['query']
@@ -190,7 +208,7 @@ def parse_stats_content(lines):
             duration = '-'
 
         link = f'/paper?{"&".join([f"{a}={v}" for a, v in args.items()])}'
-        recent_papers_results.append((
+        recent_paper_searchers_results.append((
             date.strftime('%Y-%m-%d %H:%M:%S'),
             args['source'] if 'source' in args else '',
             title,
@@ -198,7 +216,7 @@ def parse_stats_content(lines):
             duration,
             info['status'] if 'status' in info else 'N/A',
         ))
-    result['recent_papers'] = recent_papers_results[::-1]
+    result['paper_searches_recent'] = recent_paper_searchers_results[::-1]
 
     # Generate a word cloud
     text = ' '.join(terms).replace(',', ' ').replace('[^a-zA-Z0-9]+', ' ')
@@ -208,31 +226,33 @@ def parse_stats_content(lines):
         result['word_cloud'] = PlotPreprocessor.word_cloud_prepare(wc)
 
     # Terms search statistics
-    finished_searches = sum('end' in info for info in searches_infos.values())
-    result['successful_searches'] = finished_searches
+    terms_searches_successful = sum('end' in info for info in terms_search_infos.values())
+    result['terms_searches_successful'] = terms_searches_successful
     duration = 0
-    for info in searches_infos.values():
+    for info in terms_search_infos.values():
         if 'end' in info:
             duration += (info['end'] - info['start']).seconds
-    if finished_searches > 0:
-        result['searches_avg_duration'] = duration_string(
-            datetime.timedelta(seconds=int(duration / finished_searches))
+    if terms_searches_successful > 0:
+        result['terms_searches_avg_duration'] = duration_string(
+            datetime.timedelta(seconds=int(duration / terms_searches_successful))
         )
     else:
         result['searches_avg_duration'] = 'N/A'
-    result['searches_papers_shown'] = sum('papers' in info for info in searches_infos.values())
-    result['searches_graph_shown'] = sum('graph' in info for info in searches_infos.values())
+    result['searches_papers_clicks'] = sum('papers_clicks' in info for info in terms_search_infos.values())
+    result['searches_papers_list_shown'] = sum('papers_list' in info for info in terms_search_infos.values())
+    result['searches_graph_shown'] = sum('graph' in info for info in terms_search_infos.values())
+    result['searches_review_shown'] = sum('review' in info for info in terms_search_infos.values())
 
     # Papers search statistics
-    finished_paper_searches = sum('end' in info for info in papers_infos.values())
-    result['paper_successful_searches'] = finished_paper_searches
+    paper_searches_successful = sum('end' in info for info in paper_search_infos.values())
+    result['paper_searches_successful'] = paper_searches_successful
     duration = 0
-    for info in papers_infos.values():
+    for info in paper_search_infos.values():
         if 'end' in info:
             duration += (info['end'] - info['start']).seconds
-    if finished_paper_searches > 0:
+    if paper_searches_successful > 0:
         result['paper_searches_avg_duration'] = duration_string(
-            datetime.timedelta(seconds=int(duration / finished_paper_searches))
+            datetime.timedelta(seconds=int(duration / paper_searches_successful))
         )
     else:
         result['paper_searches_avg_duration'] = 'N/A'

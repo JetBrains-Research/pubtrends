@@ -25,6 +25,10 @@ LOG = """
     {"query": "human microbiome", "source": "Pubmed", "jobid": "fce96ec4"}
 [2021-10-06 20:10:58,608: INFO] /papers success addr:172.30.0.150 args:\
     {"query": "human microbiome", "source": "Pubmed", "comp": "1", "jobid": "fce96ec4"}
+[2023-01-28 22:48:31,871: INFO/pysrc.app.app] /paper success addr:172.18.0.1 args:\
+    {"query": "human microbiome", "source": "Pubmed", "comp": "1", "jobid": "fce96ec4"}
+[2023-01-28 22:17:25,126: INFO/pysrc.app.app] /process review addr:172.18.0.1 args:\
+    {"query": "human microbiome", "source": "Pubmed", "comp": "1", "jobid": "fce96ec4"}
 
 [2021-10-07 14:46:24,756: INFO] /process regular search addr:172.30.0.150 args:\
     {"query": "Bla-bla-bla", "source": "Semantic Scholar", "jobid": "23818aa8"}
@@ -39,45 +43,55 @@ LOG = """
 """
 
 EXPECTED_STATS = {
-    'total_terms_searches': 2,
-    'total_paper_searches': 2,
-    'recent_searches': [
-        ('2021-10-07 14:46:24',
-         'Semantic Scholar',
-         'Bla-bla-bla',
-         '/result?query=Bla-bla-bla&source=Semantic Scholar&jobid=23818aa8',
-         '00:05:42', 'Not found',
-         '-', '-'),
-        ('2021-10-06 14:06:57',
-         'Pubmed',
-         'human microbiome',
-         '/result?query=human microbiome&source=Pubmed&jobid=fce96ec4',
-         '06:02:16', 'Ok', '+',
-         '+')],
-    'recent_papers': [
-        (
-            '2021-10-12 09:12:49',
-            'Semantic Scholar',
-            'Paper doi=10.1063/5.0021420',
-            '/paper?query=Paper doi=10.1063/5.0021420&analysis_type=paper&source=Semantic Scholar&key=doi&'
-            'value=10.1063/5.0021420&jobid=96584252',
-            '00:03:59',
-            'Ok'),
-        ('2021-10-07 04:34:42',
-         'Pubmed',
-         'Paper title',
-         '/paper?query=Paper title&analysis_type=paper&key=title&value=On the features of ...&source=Pubmed&'
-         'jobid=400a5897',
-         '-',
-         'N/A')],
-    'successful_searches': 2,
-    'searches_avg_duration': '03:03:59',
-    'searches_papers_shown': 1,
-    'searches_graph_shown': 1,
-    'paper_successful_searches': 1,
     'paper_searches_avg_duration': '00:03:59',
-    'recent': 50
-}
+    'paper_searches_recent': [('2021-10-12 09:12:49',
+                               'Semantic Scholar',
+                               'Paper doi=10.1063/5.0021420',
+                               '/paper?query=Paper '
+                               'doi=10.1063/5.0021420&analysis_type=paper&source=Semantic '
+                               'Scholar&key=doi&value=10.1063/5.0021420&jobid=96584252',
+                               '00:03:59',
+                               'Ok'),
+                              ('2021-10-07 04:34:42',
+                               'Pubmed',
+                               'Paper title',
+                               '/paper?query=Paper '
+                               'title&analysis_type=paper&key=title&value=On the '
+                               'features of ...&source=Pubmed&jobid=400a5897',
+                               '-',
+                               'N/A')],
+    'paper_searches_successful': 1,
+    'paper_searches_total': 2,
+    'recent': 50,
+    'searches_graph_shown': 1,
+    'searches_papers_clicks': 1,
+    'searches_papers_list_shown': 1,
+    'searches_review_shown': 1,
+    'terms_searches_avg_duration': '03:03:59',
+    'terms_searches_recent': [('2021-10-07 14:46:24',
+                               'Semantic Scholar',
+                               'Bla-bla-bla',
+                               '/result?query=Bla-bla-bla&source=Semantic '
+                               'Scholar&jobid=23818aa8',
+                               '00:05:42',
+                               'Not found',
+                               0,
+                               '-',
+                               '-',
+                               '-'),
+                              ('2021-10-06 14:06:57',
+                               'Pubmed',
+                               'human microbiome',
+                               '/result?query=human '
+                               'microbiome&source=Pubmed&jobid=fce96ec4',
+                               '06:02:16',
+                               'Ok',
+                               1,
+                               '+',
+                               '+',
+                               '+')],
+    'terms_searches_successful': 2,
+    'terms_searches_total': 2}
 
 
 class TestStats(unittest.TestCase):

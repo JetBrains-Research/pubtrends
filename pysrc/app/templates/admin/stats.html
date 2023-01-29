@@ -27,13 +27,15 @@
 {% block body %}
     {{ super() }}
     <h3>Terms searches</h3>
-    Total: {{ total_terms_searches }}<br>
-    Successful: {{ successful_searches }}<br>
-    Average duration: {{ searches_avg_duration }}<br>
-    Papers shown: {{ searches_papers_shown }}<br>
+    Total: {{ terms_searches_total }}<br>
+    Successful: {{ terms_successful_searches }}<br>
+    Average duration: {{ terms_searches_avg_duration }}<br>
+    Papers clicked: {{ searches_papers_clicks }}<br>
+    Papers list shown: {{ searches_papers_list_shown }}<br>
     Graph shown: {{ searches_graph_shown }}<br>
+    Review shown: {{ searches_review_shown }}<br>
 
-    {% if total_terms_searches > 0 %}
+    {% if terms_searches_total > 0 %}
         {% for script, div in terms_searches_plot %}
             {{ script|safe }}
             {{ div|safe }}
@@ -41,11 +43,11 @@
     {% endif %}
 
     <h3>Paper searches</h3>
-    Total: {{ total_paper_searches }}<br>
-    Successful: {{ paper_successful_searches }}<br>
+    Total: {{ paper_searches_total }}<br>
+    Successful: {{ paper_searches_successful }}<br>
     Average duration: {{ paper_searches_avg_duration }}
 
-    {% if total_paper_searches > 0 %}
+    {% if paper_searches_total > 0 %}
         {% for script, div in paper_searches_plot %}
             {{ script|safe }}
             {{ div|safe }}
@@ -68,23 +70,27 @@
                 <th scope="col">Search</th>
                 <th scope="col">Duration</th>
                 <th scope="col">Status</th>
-                <th scope="col">Papers</th>
+                <th scope="col">Papers Clicks</th>
+                <th scope="col">Papers List</th>
                 <th scope="col">Graph</th>
+                <th scope="col">Review</th>
             </tr>
             </thead>
             <tbody>
-            {% for d, s, q, l, du, st, p, g in recent_searches %}
+            {% for date, source, query, link, duration, status, papers_clicks, papers_list, graph, review in terms_searches_recent %}
                 <tr>
                     <th scope="row">{{ loop.index }}</th>
-                    <td>{{ d }}</td>
-                    <td>{{ s }}</td>
+                    <td>{{ date }}</td>
+                    <td>{{ source }}</td>
                     <td>
-                        <a class="link" href="{{ l }}">{{ q }}</a>
+                        <a class="link" href="{{ link }}">{{ query }}</a>
                     </td>
-                    <td>{{ du }}</td>
-                    <td>{{ st }}</td>
-                    <td>{{ p }}</td>
-                    <td>{{ g }}</td>
+                    <td>{{ duration }}</td>
+                    <td>{{ status }}</td>
+                    <td>{{ papers_clicks }}</td>
+                    <td>{{ papers_list }}</td>
+                    <td>{{ graph }}</td>
+                    <td>{{ review }}</td>
                 </tr>
             {% endfor %}
             </tbody>
@@ -104,16 +110,16 @@
             </tr>
             </thead>
             <tbody>
-            {% for d, s, q, l, du, st in recent_papers %}
+            {% for data, source, query, link, duration, status in paper_searches_recent %}
                 <tr>
                     <th scope="row">{{ loop.index }}</th>
-                    <td>{{ d }}</td>
-                    <td>{{ s }}</td>
+                    <td>{{ data }}</td>
+                    <td>{{ source }}</td>
                     <td>
-                        <a class="link" href="{{ l }}">{{ q }}</a>
+                        <a class="link" href="{{ link }}">{{ query }}</a>
                     </td>
-                    <td>{{ du }}</td>
-                    <td>{{ st }}</td>
+                    <td>{{ duration }}</td>
+                    <td>{{ status }}</td>
                 </tr>
             {% endfor %}
             </tbody>
