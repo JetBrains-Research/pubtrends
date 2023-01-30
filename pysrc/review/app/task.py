@@ -44,7 +44,7 @@ class ModelCache:
     def model_and_device(self):
         logger.info('Loading base BERT model')
         model = load_model("bert", "froze_all", 512)
-        model, device = setup_single_gpu(model)
+        model, device = setup_cuda_device(model)
         # TODO: add model path to config properties
         for model_path in [os.path.join(p, cfg.model_name) for p in MODEL_PATHS]:
             if os.path.exists(model_path):
