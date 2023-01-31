@@ -4,15 +4,15 @@ import logging
 import os
 import random
 import re
-import requests
 import tempfile
 import time
-from celery.result import AsyncResult
-from flask import Flask, url_for, redirect, render_template, request, render_template_string, \
-    send_from_directory, send_file
 from threading import Lock
 from urllib.parse import quote
 
+import requests
+from celery.result import AsyncResult
+from flask import Flask, url_for, redirect, render_template, request, render_template_string, \
+    send_from_directory, send_file
 from pysrc.app.admin.admin import configure_admin_functions
 from pysrc.app.messages import SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, SOMETHING_WENT_WRONG_PAPER, \
     SOMETHING_WENT_WRONG_TOPIC, SERVICE_LOADING_NLP_MODELS, SERVICE_LOADING_PREDEFINED_EXAMPLES
@@ -99,7 +99,6 @@ def static_from_root():
 
 
 PREDEFINED_JOBS = get_predefined_jobs(PUBTRENDS_CONFIG)
-
 
 
 def log_request(r):
