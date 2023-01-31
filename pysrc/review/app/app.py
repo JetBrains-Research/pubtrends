@@ -5,13 +5,13 @@ import re
 from celery.result import AsyncResult
 from flask import request, redirect, url_for, render_template_string, render_template
 
-from pysrc.app.predefined import load_predefined_or_result_data
 from pysrc.app.messages import SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED
+from pysrc.app.predefined import load_predefined_or_result_data
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.utils import trim, MAX_QUERY_LENGTH
-from pysrc.version import VERSION
 from pysrc.review.app.task import prepare_review_data_async
+from pysrc.version import VERSION
 
 logger = logging.getLogger(__name__)
 
@@ -19,12 +19,12 @@ PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
 REVIEW_ANALYSIS_TYPE = 'review'
 
+
 def log_request(r):
     return f'addr:{r.remote_addr} args:{json.dumps(r.args)}'
 
 
 def register_app_review(app, predefined_jobs):
-
     @app.route('/generate_review')
     def generate_review():
         logger.info(f'/generate_review {log_request(request)}')
