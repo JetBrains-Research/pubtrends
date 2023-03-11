@@ -64,8 +64,13 @@ val SS_REQUIRED_ARTICLES = listOf(
 val SS_EXTRA_ARTICLES = listOf(SS_ARTICLE5)
 
 val SS_REQUIRED_CITATIONS = listOf(
-    (SS_ARTICLE1.ssid to SS_ARTICLE4.ssid), (SS_ARTICLE1.ssid to SS_ARTICLE3.ssid), (SS_ARTICLE1.ssid to SS_ARTICLE8.ssid),
-    (SS_ARTICLE3.ssid to SS_ARTICLE8.ssid), (SS_ARTICLE2.ssid to SS_ARTICLE4.ssid), (SS_ARTICLE2.ssid to SS_ARTICLE3.ssid),
-    (SS_ARTICLE6.ssid to SS_ARTICLE7.ssid), (SS_ARTICLE6.ssid to SS_ARTICLE10.ssid)
+    (SS_ARTICLE1.ssid to SS_ARTICLE4.ssid),
+    (SS_ARTICLE1.ssid to SS_ARTICLE3.ssid),
+    (SS_ARTICLE1.ssid to SS_ARTICLE8.ssid),
+    (SS_ARTICLE3.ssid to SS_ARTICLE8.ssid),
+    (SS_ARTICLE2.ssid to SS_ARTICLE4.ssid),
+    (SS_ARTICLE2.ssid to SS_ARTICLE3.ssid),
+    (SS_ARTICLE6.ssid to SS_ARTICLE7.ssid),
+    (SS_ARTICLE6.ssid to SS_ARTICLE10.ssid)
 )
 val SS_EXTRA_CITATIONS = listOf((SS_ARTICLE5.ssid to SS_ARTICLE1.ssid))

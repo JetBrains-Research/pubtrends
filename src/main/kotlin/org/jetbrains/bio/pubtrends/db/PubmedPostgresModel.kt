@@ -14,7 +14,7 @@ object PMPublications : Table() {
     val abstract = text("abstract").nullable()
 
     val type = customEnumeration("type", "PublicationType",
-            { value -> PublicationType.valueOf(value as String) }, { PGEnum("PublicationType", it) })
+        { value -> PublicationType.valueOf(value as String) }, { PGEnum("PublicationType", it) })
 
     val keywords = text("keywords").nullable()
     val mesh = text("mesh").nullable()

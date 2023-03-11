@@ -6,38 +6,38 @@ import java.util.zip.CRC32
 data class Author(val name: String = "")
 
 data class Journal(
-        val name: String = "",
-        val volume: String = "",
-        val pages: String = ""
+    val name: String = "",
+    val volume: String = "",
+    val pages: String = ""
 )
 
 data class Links(
-        val s2Url: String = "",
-        val s2PdfUrl: String = "",
-        val pdfUrls: List<String> = listOf()
+    val s2Url: String = "",
+    val s2PdfUrl: String = "",
+    val pdfUrls: List<String> = listOf()
 )
 
 data class AuxInfo(
-        val authors: List<Author> = listOf(),
-        val journal: Journal = Journal(),
-        val links: Links = Links(),
-        val venue: String = ""
+    val authors: List<Author> = listOf(),
+    val journal: Journal = Journal(),
+    val links: Links = Links(),
+    val venue: String = ""
 )
 
 /**
  * Data class for [SSPublications]
  */
 data class SemanticScholarArticle(
-        val ssid: String,
-        val crc32id: Int = crc32id(ssid),
-        val pmid: Int? = null,
-        val title: String = "",
-        val abstract: String? = null,
-        val year: Int? = 1970,
-        val doi: String? = null,
-        val keywords: String? = null,
-        val aux: AuxInfo = AuxInfo(),
-        val citations: List<String> = listOf()
+    val ssid: String,
+    val crc32id: Int = crc32id(ssid),
+    val pmid: Int? = null,
+    val title: String = "",
+    val abstract: String? = null,
+    val year: Int? = 1970,
+    val doi: String? = null,
+    val keywords: String? = null,
+    val aux: AuxInfo = AuxInfo(),
+    val citations: List<String> = listOf()
 )
 
 

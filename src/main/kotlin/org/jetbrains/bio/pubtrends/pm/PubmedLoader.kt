@@ -48,11 +48,11 @@ object PubmedLoader {
             if (!(config["postgres_host"]?.toString()).isNullOrBlank()) {
                 LOG.info("Init Postgresql database connection")
                 dbWriter = PubmedPostgresWriter(
-                        config["postgres_host"]!!.toString(),
-                        config["postgres_port"]!!.toString().toInt(),
-                        config["postgres_database"]!!.toString(),
-                        config["postgres_username"]!!.toString(),
-                        config["postgres_password"]!!.toString()
+                    config["postgres_host"]!!.toString(),
+                    config["postgres_port"]!!.toString().toInt(),
+                    config["postgres_database"]!!.toString(),
+                    config["postgres_username"]!!.toString(),
+                    config["postgres_password"]!!.toString()
                 )
             } else {
                 throw IllegalStateException("No database configured")
@@ -80,12 +80,14 @@ object PubmedLoader {
                         try {
                             LOG.info("Init Pubmed processor")
                             val pubmedXMLParser =
-                                    PubmedXMLParser(dbWriter, config["loader_batch_size"].toString().toInt())
+                                PubmedXMLParser(dbWriter, config["loader_batch_size"].toString().toInt())
 
                             LOG.info("Init crawler")
                             val collectStats = config["loader_collect_stats"].toString().toBoolean()
-                            val pubmedCrawler = PubmedCrawler(pubmedXMLParser, collectStats,
-                                    pubmedStatsFile, pubmedLastIdFile)
+                            val pubmedCrawler = PubmedCrawler(
+                                pubmedXMLParser, collectStats,
+                                pubmedStatsFile, pubmedLastIdFile
+                            )
 
                             val lastIdCmd = if (options.has("lastId"))
                                 options.valueOf("lastId").toString().toInt()

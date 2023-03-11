@@ -14,10 +14,10 @@ class PubmedCrawlerException : Exception {
 }
 
 class PubmedCrawler(
-        private val xmlParser: PubmedXMLParser,
-        private val collectStats: Boolean,
-        private val statsTSV: Path,
-        private val progressTSV: Path
+    private val xmlParser: PubmedXMLParser,
+    private val collectStats: Boolean,
+    private val statsTSV: Path,
+    private val progressTSV: Path
 ) {
 
     init {
@@ -69,7 +69,7 @@ class PubmedCrawler(
             val updatesSize = updateFiles.size
             val totalSize = baselineSize + updatesSize
             LOG.info(
-                    "Found $totalSize new file(s)\nBaseline: $baselineSize, Updates: $updatesSize"
+                "Found $totalSize new file(s)\nBaseline: $baselineSize, Updates: $updatesSize"
             )
             if (baselineSize + updatesSize == 0) {
                 return false
@@ -103,10 +103,10 @@ class PubmedCrawler(
     }
 
     private fun downloadAndProcessFiles(
-            files: List<String>,
-            startProgress: Int,
-            totalProgress: Int,
-            isBaseline: Boolean
+        files: List<String>,
+        startProgress: Int,
+        totalProgress: Int,
+        isBaseline: Boolean
     ) {
         val fileType = if (isBaseline) "baseline" else "update"
 

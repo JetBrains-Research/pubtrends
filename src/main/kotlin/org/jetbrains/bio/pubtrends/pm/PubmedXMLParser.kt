@@ -13,8 +13,8 @@ import javax.xml.stream.XMLStreamException
 
 
 class PubmedXMLParser(
-        private val dbWriter: AbstractDBWriter<PubmedArticle>,
-        private val batchSize: Int = 0
+    private val dbWriter: AbstractDBWriter<PubmedArticle>,
+    private val batchSize: Int = 0
 ) {
     companion object {
         private val LOG = LoggerFactory.getLogger(PubmedXMLParser::class.java)
@@ -62,8 +62,8 @@ class PubmedXMLParser(
 
         // Month mapping
         private val CALENDAR_MONTH = mapOf(
-                "Jan" to 1, "Feb" to 2, "Mar" to 3, "Apr" to 4, "May" to 5, "Jun" to 6,
-                "Jul" to 7, "Aug" to 8, "Sep" to 9, "Oct" to 10, "Nov" to 11, "Dec" to 12
+            "Jan" to 1, "Feb" to 2, "Mar" to 3, "Apr" to 4, "May" to 5, "Jun" to 6,
+            "Jul" to 7, "Aug" to 8, "Sep" to 9, "Oct" to 10, "Nov" to 11, "Dec" to 12
         )
 
         val NON_BASIC_LATIN_REGEX = "\\P{InBasic_Latin}".toRegex()
@@ -188,10 +188,12 @@ class PubmedXMLParser(
                         language = ""
                         doi = ""
                     }
+
                     AUTHOR_TAG -> {
                         authorName = ""
                         authorAffiliations.clear()
                     }
+
                     ABSTRACT_TAG -> {
                         if (startElement.attributes.hasNext()) {
                             isAbstractStructured = true
@@ -247,6 +249,7 @@ class PubmedXMLParser(
                     fullName == YEAR_TAG -> {
                         year = dataElement.data.toInt()
                     }
+
                     fullName == MEDLINE_TAG -> {
                         val yearRegex = "(1\\d|20)\\d{2}".toRegex()
                         val yearMatch = yearRegex.find(dataElement.data)
@@ -255,8 +258,8 @@ class PubmedXMLParser(
                             year = yearMatch.value.toInt()
                         } else {
                             LOG.warn(
-                                    "Failed to parse year from MEDLINE date in article $pmid: " +
-                                            dataElement.data
+                                "Failed to parse year from MEDLINE date in article $pmid: " +
+                                        dataElement.data
                             )
                         }
                     }
@@ -265,6 +268,7 @@ class PubmedXMLParser(
                     isArticleTitleParsed -> {
                         title += dataElement.data
                     }
+
                     fullName == TITLE_TAG -> {
                         title = dataElement.data
                         isArticleTitleParsed = true
@@ -276,6 +280,7 @@ class PubmedXMLParser(
                             dataElement.data
                         else dataElement.data.trim { it <= ' ' }
                     }
+
                     fullName == OTHER_ABSTRACT_TAG -> {
                         abstractText += " ${dataElement.data}"
                     }
@@ -301,6 +306,7 @@ class PubmedXMLParser(
                     fullName == DATABANK_NAME_TAG -> {
                         databankName = dataElement.data
                     }
+
                     fullName == ACCESSION_NUMBER_TAG -> {
                         databankAccessionNumbers.add(dataElement.data)
                     }
@@ -311,6 +317,7 @@ class PubmedXMLParser(
                         currentMeshHeading = descriptor
                         LOG.debug("$pmid: MeSH Descriptor <$descriptor> <$currentMeshHeading>")
                     }
+
                     fullName == MESH_QUALIFIER_TAG -> {
                         val qualifier = dataElement.data.replace(", ", " ").replace("[/&]+", " ").trim()
                         currentMeshHeading += " $qualifier"
@@ -321,9 +328,11 @@ class PubmedXMLParser(
                     fullName == AUTHOR_LASTNAME_TAG -> {
                         authorName = dataElement.data
                     }
+
                     fullName == AUTHOR_INITIALS_TAG -> {
                         authorName += " ${dataElement.data}"
                     }
+
                     fullName == AUTHOR_AFFILIATION_TAG -> {
                         authorAffiliations.add(dataElement.data.trim(' ', '.').replace(NON_BASIC_LATIN_REGEX, ""))
                     }
@@ -332,25 +341,31 @@ class PubmedXMLParser(
                     fullName == JOURNAL_TITLE_TAG -> {
                         journalName = dataElement.data.replace(NON_BASIC_LATIN_REGEX, "")
                     }
+
                     fullName == LANGUAGE_TAG -> {
                         language = dataElement.data.replace(NON_BASIC_LATIN_REGEX, "")
                     }
+
                     (fullName == DOI_TAG) && (isDOIFound) -> {
                         doi = dataElement.data
                         isDOIFound = false
                     }
+
                     fullName == PUBLICATION_TYPE_TAG -> {
                         val publicationType = dataElement.data
                         when {
                             publicationType.contains("Technical Report") -> {
                                 type = PublicationType.TechnicalReport
                             }
+
                             publicationType.contains("Clinical Trial") -> {
                                 type = PublicationType.ClinicalTrial
                             }
+
                             publicationType == "Dataset" -> {
                                 type = PublicationType.Dataset
                             }
+
                             publicationType == "Review" -> {
                                 type = PublicationType.Review
                             }
@@ -373,18 +388,18 @@ class PubmedXMLParser(
 
                         abstractText = abstractText.trim()
                         val pubmedArticle = PubmedArticle(
-                                pmid = pmid,
-                                year = year ?: 1970,
-                                title = title.replace(NON_BASIC_LATIN_REGEX, ""),
-                                abstract = abstractText.replace(NON_BASIC_LATIN_REGEX, ""),
-                                keywords = keywordList.toList(),
-                                citations = citationList.toList(),
-                                mesh = meshHeadingList.toList(),
-                                type = type,
-                                doi = doi,
-                                aux = AuxInfo(
-                                        authors.toList(), databanks.toList(), Journal(journalName), language
-                                )
+                            pmid = pmid,
+                            year = year ?: 1970,
+                            title = title.replace(NON_BASIC_LATIN_REGEX, ""),
+                            abstract = abstractText.replace(NON_BASIC_LATIN_REGEX, ""),
+                            keywords = keywordList.toList(),
+                            citations = citationList.toList(),
+                            mesh = meshHeadingList.toList(),
+                            type = type,
+                            doi = doi,
+                            aux = AuxInfo(
+                                authors.toList(), databanks.toList(), Journal(journalName), language
+                            )
                         )
                         LOG.debug("Found new article: $pubmedArticle")
                         articleList.add(pubmedArticle)
@@ -393,9 +408,9 @@ class PubmedXMLParser(
                     // Add author to the list of authors
                     AUTHOR_TAG -> {
                         authors.add(
-                                Author(
-                                        authorName.replace(NON_BASIC_LATIN_REGEX, ""), authorAffiliations.toList()
-                                )
+                            Author(
+                                authorName.replace(NON_BASIC_LATIN_REGEX, ""), authorAffiliations.toList()
+                            )
                         )
                     }
 
@@ -410,9 +425,9 @@ class PubmedXMLParser(
                     // Databanks
                     DATABANK_TAG -> {
                         databanks.add(
-                                DatabankEntry(
-                                        databankName, databankAccessionNumbers.toList()
-                                )
+                            DatabankEntry(
+                                databankName, databankAccessionNumbers.toList()
+                            )
                         )
                     }
 
@@ -453,8 +468,8 @@ class PubmedXMLParser(
         }
 
         LOG.info(
-                "Articles found: $articleCounter, deleted: ${deletedArticlePMIDList.size}, " +
-                        "keywords: $keywordCounter, citations: $citationCounter"
+            "Articles found: $articleCounter, deleted: ${deletedArticlePMIDList.size}, " +
+                    "keywords: $keywordCounter, citations: $citationCounter"
         )
     }
 

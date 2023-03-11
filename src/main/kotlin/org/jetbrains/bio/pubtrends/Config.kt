@@ -29,7 +29,7 @@ object Config {
         load(BufferedReader(FileReader(configPath.toFile())))
     }
 
-    fun load() : Triple<Properties, Path, Path> {
+    fun load(): Triple<Properties, Path, Path> {
         return Triple(config, configPath, settingsRoot)
     }
 }

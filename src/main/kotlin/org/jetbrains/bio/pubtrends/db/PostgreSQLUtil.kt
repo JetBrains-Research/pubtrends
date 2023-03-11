@@ -60,7 +60,7 @@ class BatchInsertUpdateOnDuplicate(
 ) : BatchInsertStatement(table, false) {
     override fun prepareSQL(transaction: Transaction): String {
         val onUpdateSQL = if (onDupUpdate.isNotEmpty()) {
-            " ON CONFLICT (${columns.joinToString(", ") {it.name}}) DO UPDATE SET ${
+            " ON CONFLICT (${columns.joinToString(", ") { it.name }}) DO UPDATE SET ${
                 onDupUpdate.joinToString {
                     "${transaction.identity(it)} = Excluded.${transaction.identity(it)}"
                 }

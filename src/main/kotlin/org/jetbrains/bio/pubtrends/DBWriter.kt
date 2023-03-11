@@ -3,7 +3,10 @@ package org.jetbrains.bio.pubtrends
 import org.jetbrains.bio.pubtrends.db.PubmedPostgresWriter
 import org.jetbrains.bio.pubtrends.db.SemanticScholarPostgresWriter
 import org.jetbrains.bio.pubtrends.pm.*
-import org.jetbrains.bio.pubtrends.ss.*
+import org.jetbrains.bio.pubtrends.ss.SS_EXTRA_ARTICLES
+import org.jetbrains.bio.pubtrends.ss.SS_EXTRA_CITATIONS
+import org.jetbrains.bio.pubtrends.ss.SS_REQUIRED_ARTICLES
+import org.jetbrains.bio.pubtrends.ss.SS_REQUIRED_CITATIONS
 import org.slf4j.LoggerFactory
 import java.util.*
 
@@ -13,7 +16,6 @@ import java.util.*
 class DBWriter {
     companion object {
         private val LOG = LoggerFactory.getLogger(DBWriter::class.java)
-
 
 
         @JvmStatic
