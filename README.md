@@ -119,6 +119,7 @@ from `/admin` dashboard, which shows requests and results, execution times and f
     checkpoint_completion_target = 0.8
     synchronous_commit = off
     ```
+   You can check current settings by command `SHOW ALL;` in psql console.
 
 5. Clone the [JetBrains-Research/pubtrends-review](https://github.com/JetBrains-Research/pubtrends-review) repository to
    the working directory, and enable it in `~/.pubtrends/config.properties` file.
