@@ -25,11 +25,6 @@
             integrity="sha256-SPZP/x8QDPEhRlpJjet4AD5X4ergPWcxjhMn73SwyOE="
             crossorigin="anonymous"></script>
 
-    <!-- Notify.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"
-            integrity="sha512-efUTj3HdSPwWJ9gjfGR71X9cvsrthIA78/Fvd/IN+fttQVy7XWkOAXb295j8B3cmm/kFKVxjiNYzKw9IQJHIuQ=="
-            crossorigin="anonymous"></script>
-
     <script>
         'use strict';
         // Example starter JavaScript for disabling form submissions if there are invalid fields
@@ -79,7 +74,7 @@
             $("#pubmed-syntax").change(function () {
                 let $sort = $("#sort-selector");
                 if ($("#pubmed-syntax").prop("checked") === true) {
-                    $("#search-input-field").prop("placeholder", "Use PubMed search syntax.");
+                    $("#search-input-field").prop("placeholder", "Use Pubmed search syntax.");
                     advanced_noreviews_expand_disable();
                     $sort.empty(); // remove old options
                     $sort.append($("<option>Most Relevant</option>"));
@@ -92,22 +87,6 @@
                     $sort.append($("<option>Most Recent</option>"));
                 }
             });
-            //add a new style 'html_title'
-            $.notify.addStyle('html_title', {
-                html: "<div class='title' data-notify-html='title'/>"
-            });
-            setTimeout(function () {
-                $('#jumbotron').notify({
-                    title:
-                        $('<a class="link" href="https://github.com/JetBrains-Research/pubtrends/blob/master/CHANGES.md" title="What\'s new?" target="_blank">What\'s new?</a>')
-                }, {
-                    style: 'html_title',
-                    autoHide: false,
-                    arrowShow: false,
-                    position: 'top right',
-                    hideDuration: 0,
-                });
-            }, 1000);
         });
     </script>
 </head>
@@ -176,18 +155,12 @@
                                 <select id="search-source-selector" class="form-control" name="source"
                                         aria-describedby="search-source-addon">
                                     {% if pm_enabled %}
-                                        <option>Pubmed</option>
+                                    <option>Pubmed</option>
                                     {% endif %}
                                     {% if ss_enabled %}
-                                        <option>Semantic Scholar</option>
+                                    <option>Semantic Scholar</option>
                                     {% endif %}
                                 </select>
-                            </div>
-                            <div id="pubmed-syntax-div" class="col input-group mr-2">
-                                <label style="margin-top: auto;margin-bottom: auto">
-                                    <input type="checkbox" name="pubmed-syntax" id="pubmed-syntax">
-                                    <span class="checkmark">PubMed syntax</span>
-                                </label>
                             </div>
                         </div>
                         <div class="mt-2">
@@ -197,6 +170,12 @@
                             </a>
                         </div>
                         <div id="collapseSearchAdvanced" class="collapse mt-4 mb-4">
+                            <div id="pubmed-syntax-div" class="col input-group mt-2 mb-2 mr-2">
+                                <label style="margin-top: auto;margin-bottom: auto">
+                                    <input type="checkbox" name="pubmed-syntax" id="pubmed-syntax">
+                                    <span class="checkmark">Use Pubmed syntax</span>
+                                </label>
+                            </div>
                             <div class="row no-gutters align-items-center">
                                 <div class="col input-group mr-2">
                                     <div class="input-group-prepend">
@@ -215,11 +194,11 @@
                                     <select class="form-control" aria-describedby="amount-addon"
                                             name="limit">
                                         {% for limit in limits %}
-                                            {% if limit == default_limit %}
-                                                <option selected>{{ limit }}</option>
-                                            {% else %}
-                                                <option>{{ limit }}</option>
-                                            {% endif %}
+                                        {% if limit == default_limit %}
+                                        <option selected>{{ limit }}</option>
+                                        {% else %}
+                                        <option>{{ limit }}</option>
+                                        {% endif %}
                                         {% endfor %}
                                     </select>
                                     <div class="input-group-append">
@@ -244,7 +223,7 @@
                                     </div>
                                     <input id="expand" name="expand" class="form-control" type="number"
                                            aria-describedby="expand-addon"
-                                           min="0" max="100" step="10" value="20"/>
+                                           min="0" max="100" step="10" value="10"/>
                                 </div>
                                 <div class="col input-group">
                                     <div class="input-group-prepend">
@@ -274,24 +253,24 @@
                     {{ search_example_message }}<br>
                     <div id="predefined" class="row ml-1">
                         {% for terms, hash in search_example_terms %}
-                            <form action="result" method="GET" class="inline">
-                                <input type="hidden" name="source" value="{{ search_example_source }}">
-                                <input type="hidden" name="sort" value="Most Cited">
-                                <input type="hidden" name="topics" value="medium">
-                                <input type="hidden" name="limit" value="{{ default_limit }}">
-                                <input type="hidden" name="noreviews" value="off">
-                                {% if search_example_source == "Semantic Scholar" %}
-                                    <input type="hidden" name="expand" value="0">
-                                {% else %}
-                                    <input type="hidden" name="expand" value="20">
-                                {% endif %}
-                                <input type="hidden" name="jobid" value="predefined_{{ hash }}">
-                                <button type="submit" name="query" value="{{ terms }}"
-                                        class="btn btn-sm btn-outline-secondary mt-2 mr-2"
-                                        style="border-radius: 10px;">
-                                    {{ terms }}
-                                </button>
-                            </form>
+                        <form action="result" method="GET" class="inline">
+                            <input type="hidden" name="source" value="{{ search_example_source }}">
+                            <input type="hidden" name="sort" value="Most Cited">
+                            <input type="hidden" name="topics" value="medium">
+                            <input type="hidden" name="limit" value="{{ default_limit }}">
+                            <input type="hidden" name="noreviews" value="off">
+                            {% if search_example_source == "Semantic Scholar" %}
+                            <input type="hidden" name="expand" value="0">
+                            {% else %}
+                            <input type="hidden" name="expand" value="10">
+                            {% endif %}
+                            <input type="hidden" name="jobid" value="predefined_{{ hash }}">
+                            <button type="submit" name="query" value="{{ terms }}"
+                                    class="btn btn-sm btn-outline-secondary mt-2 mr-2"
+                                    style="border-radius: 10px;">
+                                {{ terms }}
+                            </button>
+                        </form>
                         {% endfor %}
                     </div>
                 </div>
@@ -329,10 +308,10 @@
                                 <select class="form-control" name="source"
                                         aria-describedby="paper-source-addon">
                                     {% if pm_enabled %}
-                                        <option>Pubmed</option>
+                                    <option>Pubmed</option>
                                     {% endif %}
                                     {% if ss_enabled %}
-                                        <option>Semantic Scholar</option>
+                                    <option>Semantic Scholar</option>
                                     {% endif %}
                                 </select>
                             </div>
@@ -352,11 +331,11 @@
                                     <select class="form-control" aria-describedby="amount-addon"
                                             name="limit">
                                         {% for limit in limits %}
-                                            {% if limit == default_limit %}
-                                                <option selected>{{ limit }}</option>
-                                            {% else %}
-                                                <option>{{ limit }}</option>
-                                            {% endif %}
+                                        {% if limit == default_limit %}
+                                        <option selected>{{ limit }}</option>
+                                        {% else %}
+                                        <option>{{ limit }}</option>
+                                        {% endif %}
                                         {% endfor %}
                                     </select>
                                     <div class="input-group-append">
@@ -384,7 +363,7 @@
 <footer>
     <p>version <a href="https://github.com/JetBrains-Research/pubtrends/blob/master/CHANGES.md" title="{{ version }}"
                   target="_blank">{{ version }}</a><br/>
-        &copy; 2021-2022 <a href="https://research.jetbrains.org/groups/biolabs"
+        &copy; 2021-2023 <a href="https://research.jetbrains.org/groups/biolabs"
                             title="JetBrains Research BioLabs"
                             target="_blank">JetBrains Research</a></p>
 </footer>
@@ -420,32 +399,46 @@
                     element: '#step2-2',
                     intro: "Select publications database to work with."
                 },
-                {% if pm_enabled %}
-                {
-                    element: '#pubmed-syntax-div',
-                    intro: "You can use Pubmed search syntax including AND, OR, fields etc."
-                },
-                {% endif %}
-                {
-                    element: '#step3',
-                    intro: "Additionally configure papers limit and ranking, filter out review papers, etc.<br>" +
-                            "Topics number can be configured:<br>" +
-                            "<i>Small</i> - ≤ 10 topics, each ≥ 50 papers;<br>" +
-                            "<i>Medium</i> - ≤ 20 topics, each ≥ 20 papers;<br>" +
-                            "<i>Large</i> - ≤ 50 topics, each ≥ 10 papers.<br>" +
-                            "Use <i>Save analysis html reports</i> to create downloadable report files."
-                },
-                {
-                    element: '#step4',
-                    intro: "Click the <em>Search</em> button!<br>" +
-                        "You will be redirected automatically to a results page once analysis is complete.<br>" +
-                        "Click <em>About</em> button to learn about results."
-                },
-                {
-                    element: '#predefined',
-                    intro: "Or try one of precomputed examples."
-                }
-            ]
+                { % if pm_enabled %
+        }
+        {
+            element: '#pubmed-syntax-div',
+                intro
+        :
+            "You can use Pubmed search syntax including AND, OR, fields etc."
+        }
+    ,
+        {%
+            endif %
+        }
+        {
+            element: '#step3',
+                intro
+        :
+            "Additionally configure papers limit and ranking, filter out review papers, etc.<br>" +
+            "Topics number can be configured:<br>" +
+            "<i>Small</i> - ≤ 10 topics, each ≥ 50 papers;<br>" +
+            "<i>Medium</i> - ≤ 20 topics, each ≥ 20 papers;<br>" +
+            "<i>Large</i> - ≤ 50 topics, each ≥ 10 papers.<br>" +
+            "Use <i>Save analysis html reports</i> to create downloadable report files."
+        }
+    ,
+        {
+            element: '#step4',
+                intro
+        :
+            "Click the <em>Search</em> button!<br>" +
+            "You will be redirected automatically to a results page once analysis is complete.<br>" +
+            "Click <em>About</em> button to learn about results."
+        }
+    ,
+        {
+            element: '#predefined',
+                intro
+        :
+            "Or try one of precomputed examples."
+        }
+    ]
     })
         // @formatter:on
 
