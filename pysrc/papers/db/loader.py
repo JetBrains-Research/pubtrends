@@ -1,4 +1,3 @@
-import html
 import json
 import numpy as np
 from abc import abstractmethod, ABCMeta
@@ -7,13 +6,8 @@ from pysrc.papers.utils import extract_authors
 
 
 class Loader(metaclass=ABCMeta):
-
-    @abstractmethod
-    def last_update(self):
-        """
-        :return: date of the latest update
-        """
-        pass
+    # Max years of publications SPAN to prevent papers from 1860 to spoil all visualizations
+    MAX_YEARS_SPAN = 50
 
     @abstractmethod
     def find(self, key, value):
@@ -95,6 +89,8 @@ class Loader(metaclass=ABCMeta):
         )
         pub_df = pub_df.fillna(value={'abstract': ''})
         pub_df['year'] = pub_df['year'].apply(int)
+        # Keep max year span
+        pub_df['year'].clip(lower=pub_df['year'].max() - Loader.MAX_YEARS_SPAN, inplace=True)
         pub_df['authors'] = pub_df['aux'].apply(lambda aux: extract_authors(aux['authors']))
         pub_df['journal'] = pub_df['aux'].apply(lambda aux: aux['journal']['name'])
         pub_df['title'] = pub_df['title'].apply(lambda title: title)
