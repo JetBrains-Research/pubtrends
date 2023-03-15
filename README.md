@@ -138,7 +138,7 @@ Use the following command to test and build JAR package:
 
 ## Papers downloading and processing
 
-PostgreSQL should be configured and launched.
+Postgresql should be configured and launched.
 
 ### Pubmed
 
