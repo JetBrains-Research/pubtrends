@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<head>
+<head><!-- Global site tag (gtag.js) - Google Analytics --><script async src='https://www.googletagmanager.com/gtag/js?id=UA-181053892-1'></script><script>  window.dataLayer = window.dataLayer || [];  function gtag(){dataLayer.push(arguments);}  gtag('js', new Date());  gtag('config', 'UA-181053892-1');</script>
     <title>PubTrends - Scientific Literature Explorer</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -396,47 +396,33 @@
                     element: '#step2-2',
                     intro: "Select publications database to work with."
                 },
-                { % if pm_enabled %
-        }
-        {
-            element: '#pubmed-syntax-div',
-                intro
-        :
-            "You can use Pubmed search syntax including AND, OR, fields etc."
-        }
-    ,
-        {%
-            endif %
-        }
-        {
-            element: '#step3',
-                intro
-        :
-            "Additionally configure papers limit and ranking, filter out review papers, etc.<br>" +
-            "Topics number can be configured:<br>" +
-            "<i>Small</i> - ≤ 10 topics, each ≥ 50 papers;<br>" +
-            "<i>Medium</i> - ≤ 20 topics, each ≥ 20 papers;<br>" +
-            "<i>Large</i> - ≤ 50 topics, each ≥ 10 papers.<br>" +
-            "Use <i>Save analysis html reports</i> to create downloadable report files."
-        }
-    ,
-        {
-            element: '#step4',
-                intro
-        :
-            "Click the <em>Search</em> button!<br>" +
-            "You will be redirected automatically to a results page once analysis is complete.<br>" +
-            "Click <em>About</em> button to learn about results."
-        }
-    ,
-        {
-            element: '#predefined',
-                intro
-        :
-            "Or try one of precomputed examples."
-        }
-    ]
-    })
+                {% if pm_enabled %}
+                {
+                    element: '#pubmed-syntax-div',
+                    intro: "You can use Pubmed search syntax including AND, OR, fields etc."
+                },
+                {% endif %}
+                {
+                    element: '#step3',
+                    intro: "Additionally configure papers limit and ranking, filter out review papers, etc.<br>" +
+                            "Topics number can be configured:<br>" +
+                            "<i>Small</i> - ≤ 10 topics, each ≥ 50 papers;<br>" +
+                            "<i>Medium</i> - ≤ 20 topics, each ≥ 20 papers;<br>" +
+                            "<i>Large</i> - ≤ 50 topics, each ≥ 10 papers.<br>" +
+                            "Use <i>Save analysis html reports</i> to create downloadable report files."
+                },
+                {
+                    element: '#step4',
+                    intro: "Click the <em>Search</em> button!<br>" +
+                            "You will be redirected automatically to a results page once analysis is complete.<br>" +
+                            "Click <em>About</em> button to learn about results."
+                },
+                {
+                element: '#predefined',
+                intro: "Or try one of precomputed examples."
+                }
+        ]
+        })
         // @formatter:on
 
         intro.start();

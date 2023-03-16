@@ -142,29 +142,19 @@
             // Setup datatables
             $('#authors-table').DataTable();
             $('#journals-table').DataTable();
-            {%
-                if topic_evolution is
-                defined %
-            }
+            {% if topic_evolution is defined %}
             $('#topic_evolution_keywords').DataTable();
-            {%
-                endif %
-            }
+            {% endif %}
 
             // Enable search for numbers only in numbers table
-            {%
-                if numbers is
-                defined %
-            }
+            {% if numbers is defined %}
             // disable search on the first column
             $('#numbers-table').DataTable({
                 "columnDefs": [
                     {"searchable": false, "targets": 1}
                 ]
             });
-            {%
-                endif %
-            }
+            {% endif %}
 
             // Process main word cloud
             let word_records = JSON.parse(normalize('{{ papers_word_cloud }}'));
@@ -173,29 +163,21 @@
 
             // Process topics word clouds
             let cid = '';
-            {%
-                for (script, div),
-                word_cloud, is_empty in topics_info_and_word_cloud %
-            }
+            {% for (script, div), word_cloud, is_empty in topics_info_and_word_cloud %}
             word_records = JSON.parse(normalize('{{ word_cloud }}'));
             // Ignore artificial tags for scale
             // word record [word, x, y, size, vertical, color]
             word_records = word_records.filter(wr => !wr[0].startsWith("#"));
             cid = 'topic_word_cloud_{{ loop.index }}';
-            if ({{
-                is_empty
-            }
-        })
+            if ({{ is_empty }})
             {
                 process_word_cloud(cid, $('#' + cid).outerWidth(), 335, 200, 300, word_records, null);
             }
-        else
+            else
             {
                 process_word_cloud(cid, $('#' + cid).outerWidth(), 335, 200, 300, word_records, papers_callback_word);
             }
-            {%
-                endfor %
-            }
+            {% endfor %}
 
             // @formatter:on
 
@@ -922,8 +904,7 @@
                         "about the papers. Click glyphs to open a page about corresponding paper in a " +
                         "new tab."
                 },
-                { % if features_authors_enabled %
-        }
+                {% if features_authors_enabled %}
         {
             element: '#authors',
                 intro
@@ -934,12 +915,9 @@
             "number of papers."
         }
     ,
-        {%
-            endif %
-        }
+        {% endif %}
 
-        {%
-            if features_numbers_enabled %}
+        {% if features_numbers_enabled %}
         {
             element: '#numbers',
                 intro
@@ -947,12 +925,9 @@
             "Explore quantitative features mentioned in papers!"
         }
     ,
-        {%
-            endif %
-        }
+        {% endif %}
 
-        {%
-            if features_evolution_enabled %}
+        {% if features_evolution_enabled %}
         {
             element: '#evolution',
                 intro
@@ -960,12 +935,9 @@
             "Explore evolution of ideas in the field."
         }
     ,
-        {%
-            endif %
-        }
+        {% endif %}
 
-        {%
-            if features_review_enabled %}
+        {% if features_review_enabled %}
         {
             element: '#review',
                 intro
@@ -973,9 +945,7 @@
             "Generate review - extractive summmarization."
         }
     ,
-        {%
-            endif %
-        }
+        {% endif %}
         {
             intro: "Congratulations!<br>" +
             "Now you are ready to explore scientific literature with PubTrends."

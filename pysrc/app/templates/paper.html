@@ -71,38 +71,18 @@
             // @formatter:off
 
             // Setup datatables
-            {%
-                if related_topics is
-                defined %
-            }
+            {% if related_topics is defined %}
             $('#related_topics').DataTable();
-            {%
-                endif %
-            }
-            {%
-                if prior_papers is
-                defined %
-            }
+            {% endif %}
+            {% if prior_papers is defined %}
             $('#prior_papers').DataTable();
-            {%
-                endif %
-            }
-            {%
-                if derivative_papers is
-                defined %
-            }
+            {% endif %}
+            {% if derivative_papers is defined %}
             $('#derivative_papers').DataTable();
-            {%
-                endif %
-            }
-            {%
-                if similar_papers is
-                defined %
-            }
+            {% endif %}
+            {% if similar_papers is defined %}
             $('#similar_papers').DataTable();
-            {%
-                endif %
-            }
+            {% endif %}
 
             // @formatter:on
 
