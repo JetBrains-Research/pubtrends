@@ -19,7 +19,6 @@ from pysrc.app.messages import SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, SOME
 from pysrc.app.predefined import get_predefined_jobs, load_predefined_viz_log, \
     load_predefined_or_result_data, _example_by_jobid
 from pysrc.celery.pubtrends_celery import pubtrends_celery
-from pysrc.celery.tasks_cache import get_or_cancel_task
 from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, \
     analyze_pubmed_search_files, analyze_pubmed_search, analyze_search_terms_files
 from pysrc.papers.analyzer import PapersAnalyzer
@@ -306,7 +305,7 @@ def status():
     """ Check tasks status being executed by Celery """
     jobid = request.values.get('jobid')
     if jobid:
-        job = get_or_cancel_task(jobid)
+        job = AsyncResult(jobid, app=pubtrends_celery)
         if job is None:
             return json.dumps(dict(state='FAILURE', message=f'Unknown task id {jobid}'))
         job_state, job_result = job.state, job.result

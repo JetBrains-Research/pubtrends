@@ -1,11 +1,12 @@
-from logging import getLogger
 from celery import current_task
+from logging import getLogger
 
-from pysrc.papers.analysis.pubmed import pubmed_search
-from pysrc.papers.analyzer_files import AnalyzerFiles
+from pysrc.app.messages import DOI_WRONG_SEARCH
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.papers.analysis.expand import expand_ids
+from pysrc.papers.analysis.pubmed import pubmed_search
 from pysrc.papers.analyzer import PapersAnalyzer
+from pysrc.papers.analyzer_files import AnalyzerFiles
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
@@ -14,8 +15,6 @@ from pysrc.papers.utils import SORT_MOST_CITED, PAPER_ANALYSIS_TYPE, IDS_ANALYSI
     preprocess_doi, is_doi
 
 logger = getLogger(__name__)
-
-DOI_WRONG_SEARCH = 'Search query looks like DOI, please <a href="/#paper-tab">rerun</a> paper analysis.' 
 
 
 @pubtrends_celery.task(name='analyze_search_terms')

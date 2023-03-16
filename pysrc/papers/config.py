@@ -48,11 +48,6 @@ class PubtrendsConfig:
         self.max_number_of_articles = max(self.show_max_articles_options)
         self.max_graph_size = params.getint('max_graph_size')
 
-        # Max allowed pending tasks
-        self.celery_max_pending_tasks = params.getint('celery_max_pending_tasks')
-        # Seconds, pending task will be revoked after no polling activity
-        self.celery_pending_tasks_timeout = params.getint('celery_pending_tasks_timeout')
-
         # TODO Admin password - should be a better way
         self.admin_password = params['admin_password']
 
