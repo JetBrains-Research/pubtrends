@@ -170,7 +170,7 @@
                             </a>
                         </div>
                         <div id="collapseSearchAdvanced" class="collapse mt-4 mb-4">
-                            <div id="pubmed-syntax-div" class="col input-group mt-2 mb-2 mr-2">
+                            <div id="pubmed-syntax-div" class="input-group mt-2 mb-2 mr-2">
                                 <label style="margin-top: auto;margin-bottom: auto">
                                     <input type="checkbox" name="pubmed-syntax" id="pubmed-syntax">
                                     <span class="checkmark">Use Pubmed syntax</span>
@@ -207,15 +207,7 @@
                                 </div>
                             </div>
                             <div class="row no-gutters align-items-center mt-2">
-                                <div class="col input-group mr-2">
-                                    <div class="input-group-prepend mr-2">
-                                        <span class="input-group-text" id="review-addon">
-                                            Prefer no reviews</span>
-                                    </div>
-                                    <input type="checkbox" name="noreviews" id="noreviews"
-                                           aria-describedby="review-addon"
-                                           style="width: 1.2rem; height: 1.2rem; margin-top: auto; margin-bottom: auto;">
-                                </div>
+
                                 <div class="col input-group d-flex align-items-center mr-2">
                                     <div class="input-group-prepend">
                                         <span class="input-group-text" id="expand-addon">
@@ -235,17 +227,22 @@
                                         <option>Large</option>
                                     </select>
                                 </div>
-                            </div>
-                            <div class="row no-gutters align-items-center mt-2">
-                                <div class="col input-group">
-                                    <div class="input-group-prepend mr-2">
-                                        <span class="input-group-text" id="files-addon">
-                                            Save analysis html reports</span>
-                                    </div>
-                                    <input type="checkbox" name="files" id="files"
-                                           aria-describedby="files-addon"
-                                           style="width: 1.2rem; height: 1.2rem; margin-top: auto; margin-bottom: auto;">
+                                <div id="noreviews-div" class="col input-group ml-2 mt-2 mb-2 mr-2">
+                                    <label style="margin-top: auto;margin-bottom: auto">
+                                        <input type="checkbox" name="noreviews" id="noreviews">
+                                        <span class="checkmark">
+                                            Prefer no reviews</span>
+                                    </label>
                                 </div>
+                            </div>
+                            <div class="row no-gutters align-items-center">
+                                    <div id="files-div" class="col input-group ml-2 mt-2 mb-2 mr-2">
+                                        <label style="margin-top: auto;margin-bottom: auto">
+                                            <input type="checkbox" name="files" id="files">
+                                            <span class="checkmark">
+                                            Save analysis html reports</span>
+                                        </label>
+                                    </div>
                             </div>
                         </div>
                     </form>
