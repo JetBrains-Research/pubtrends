@@ -10,6 +10,7 @@ from bokeh.plotting import figure
 from wordcloud import WordCloud
 
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
+from pysrc.papers.utils import trim, MAX_QUERY_LENGTH
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
 PLOT_WIDTH = 900
@@ -179,7 +180,7 @@ def parse_stats_content(lines):
         terms_searches_recent_results.append((
             date.strftime('%Y-%m-%d %H:%M:%S'),
             args['source'] if 'source' in args else '',
-            args['query'],
+            trim(args['query'], MAX_QUERY_LENGTH),
             link,
             duration,
             info['status'] if 'status' in info else 'N/A',
@@ -211,7 +212,7 @@ def parse_stats_content(lines):
         recent_paper_searchers_results.append((
             date.strftime('%Y-%m-%d %H:%M:%S'),
             args['source'] if 'source' in args else '',
-            title,
+            trim(title, MAX_QUERY_LENGTH),
             link,
             duration,
             info['status'] if 'status' in info else 'N/A',
