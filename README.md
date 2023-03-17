@@ -56,11 +56,6 @@ Dedicated *Distributive* build configuration is used to build Kotlin code and pa
 packages, this configuration depends on tests configuration and is being executed only when all the tests are passed
 successfully. Distribution packages are used for database updates and web service deployment.
 
-### Product metrics
-
-We use Google Analytics to collect information about site visitors as well as internal statistics collector available
-from `/admin` dashboard, which shows requests and results, execution times and feedback from users.
-
 ## Development Prerequisites
 
 * JDK 8+
