@@ -19,14 +19,14 @@ is [here](https://drive.google.com/file/d/1SeqJtJtaHSO6YihG2905boOEYL1NiSP1/view
 
 ## Technical details
 
-PubTrends is a web service, written in Python and Javascript. It uses PostgreSQL to store information about scientific
+PubTrends is a web service, written in Python and Javascript. It uses Postgres to store information about scientific
 publications.
 
 ### Libraries
 
 Web service is built with Gunicorn and Flask. Asynchronous computations are supported with Celery tasks queue and Redis
-as message broker. We use PostgreSQL to store information about papers: titles, abstracts, authors and citations
-information. PostgreSQL built-in text search engine is used for full text search. Kotlin PostgreSQL ORM is used to
+as message broker. We use Postgres to store information about papers: titles, abstracts, authors and citations
+information. Postgres built-in text search engine is used for full text search. Kotlin Postgres ORM is used to
 store papers in the database. MySQL database is used to store technical user information including users roles and admin
 credentials for admin dashboard.
 
@@ -62,7 +62,7 @@ successfully. Distribution packages are used for database updates and web servic
 * Conda
 * Python 3.6+
 * Docker
-* PostgreSQL 14 (in Docker)
+* Postgres 14 (in Docker)
 * Redis 5.0 (in Docker)
 
 ## Configuration
@@ -83,7 +83,7 @@ successfully. Distribution packages are used for database updates and web servic
     docker build -f resources/docker/test/Dockerfile -t biolabs/pubtrends-test --platform=amd64 .
     ```
 
-4. Init PostgreSQL database.
+4. Init Postgres database.
 
     * Launch Docker image:
     ```
@@ -160,7 +160,10 @@ Updates - add the following line to crontab:
 ### Semantic Scholar
 
 Download Sample from [Semantic Scholar](https://www.semanticscholar.org/) or full archive. See Open Corpus.<br>
-
+The latest release can be found at: https://api.semanticscholar.org/api-docs/datasets#tag/Release-Data
+   ```
+   curl https://api.semanticscholar.org/datasets/v1/release/
+   ```
 * Linux & Mac OS
 
    ```
@@ -188,7 +191,7 @@ Download Sample from [Semantic Scholar](https://www.semanticscholar.org/) or ful
 * Windows 10 PowerShell
 
    ```
-   $DATE = "2022-05-01"
+   $DATE = "2023-03-14
    $PUBTRENDS_JAR = 
    curl.exe -o .\manifest.txt https://s3-us-west-2.amazonaws.com/ai2-s2-research-public/open-corpus/$DATE/manifest.txt 
    echo "" > .\complete.txt
@@ -251,7 +254,7 @@ Notebooks are located under the `/notebooks` folder. Please configure `PYTHONPAT
 
 ## Testing
 
-1. Start Docker image with PostgreSQL environment for tests (Kotlin and Python development)
+1. Start Docker image with Postgres environment for tests (Kotlin and Python development)
     ```
     docker run --rm --name pubtrends-test \
     --publish=5432:5432 --volume=$(pwd):/pubtrends -i -t biolabs/pubtrends-test
@@ -294,7 +297,7 @@ Please ensure that you have configured and prepared the database(s).
 1. Modify file `config.properties` with information about the database(s). File from the project folder is used in this
    case.
 
-2. Start PostgreSQL server.
+2. Start Postgres server.
 
     ```
     docker run --rm  --name pubtrends-postgres -p 5432:5432 \
@@ -305,7 +308,7 @@ Please ensure that you have configured and prepared the database(s).
         -e PGDATA=/var/lib/postgresql/data/pgdata \
         -d postgres:14 
     ```
-   NOTE: stop PostgreSQL docker image with timeout `--time=300` to avoid DB recovery.\
+   NOTE: stop Postgres docker image with timeout `--time=300` to avoid DB recovery.\
 
    NOTE2: for speed reason we use materialize views, which are updated upon successful database update. In case of
    emergency stop, the view should be refreshed manually to ensure sort by citations works correctly:
