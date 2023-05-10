@@ -5,7 +5,7 @@ Here you can see the full list of changes between each release.
 
 Version 0.23
 ------------
-Released on XXX XX, 2023
+Released on May 10, 2023
 
 - Cleanup tasks cache - removed lru_ttl_cache_with_callback
 - Don't use fasttext model, it requires lots of memory without significant improvements
