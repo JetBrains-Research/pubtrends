@@ -4,8 +4,7 @@
 # Push to Docker hub
 # docker login -u biolabs && docker push biolabs/pubtrends
 
-# On Dockerhub, Ubuntu 20.04 LTS image is now the new Minimal Ubuntu image.
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 LABEL author = "Oleg Shpynov"
 LABEL email = "os@jetbrains.com"
@@ -41,7 +40,7 @@ COPY environment.yml /home/user/environment.yml
 RUN mamba env update -f /home/user/environment.yml \
     && mamba clean -afy
 
-# Install nltk & spacy dependencies \
+# Install nltk & spacy dependencies
 RUN source activate pubtrends \
     && python -m nltk.downloader averaged_perceptron_tagger punkt stopwords wordnet omw-1.4 \
-    && python -m spacy download en_core_web_sm \
+    && python -m spacy download en_core_web_sm

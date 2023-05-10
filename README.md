@@ -58,7 +58,7 @@ launched within Docker. Continuous integration is done with TeamCity using build
 * Conda
 * Python 3.6+
 * Docker
-* Postgres 14 (in Docker)
+* Postgres 15 (in Docker)
 * Redis 5.0 (in Docker)
 
 ## Configuration
@@ -75,8 +75,8 @@ launched within Docker. Continuous integration is done with TeamCity using build
 
 3. Build base Docker image `biolabs/pubtrends` and nested image `biolabs/pubtrends-test` for testing.
     ```
-    docker build -f resources/docker/main/Dockerfile -t biolabs/pubtrends --platform=amd64 .
-    docker build -f resources/docker/test/Dockerfile -t biolabs/pubtrends-test --platform=amd64 .
+    docker build -f resources/docker/main/Dockerfile -t biolabs/pubtrends --platform linux/amd64  .
+    docker build  -f resources/docker/test/Dockerfile -t biolabs/pubtrends-test --platform linux/amd64 .
     ```
 
 4. Init Postgres database.
@@ -88,7 +88,7 @@ launched within Docker. Continuous integration is done with TeamCity using build
         -v ~/postgres/:/var/lib/postgresql/data \
         -e PGDATA=/var/lib/postgresql/data/pgdata \
         -p 5432:5432 \
-        -d postgres:14
+        -d postgres:15
     ``` 
     * Create database (once database is created use `-d pubtrends` argument):
     ```
@@ -269,7 +269,7 @@ Notebooks are located under the `/notebooks` folder. Please configure `PYTHONPAT
 
     ```
     docker run --rm --platform linux/amd64 --volume=$(pwd):/pubtrends -t biolabs/pubtrends-test /bin/bash -c \
-    "/usr/lib/postgresql/14/bin/pg_ctl -D /home/user/postgres start; \
+    "/usr/lib/postgresql/15/bin/pg_ctl -D /home/user/postgres start; \
     cd /pubtrends; mkdir ~/.pubtrends; cp config.properties ~/.pubtrends; \
     source activate pubtrends; pytest pysrc"
     ```
@@ -295,7 +295,7 @@ Please ensure that you have configured and prepared the database(s).
         -e POSTGRES_DB=pubtrends \
         -v ~/postgres/:/var/lib/postgresql/data \
         -e PGDATA=/var/lib/postgresql/data/pgdata \
-        -d postgres:14 
+        -d postgres:15 
     ```
    NOTE: stop Postgres docker image with timeout `--time=300` to avoid DB recovery.\
 

@@ -29,19 +29,17 @@ def get_predefined_path():
 
 
 # Configure search results path
-SEARCH_RESULTS_PATHS = ['/search_results', os.path.expanduser('~/.pubtrends/search_results')]
-for path in SEARCH_RESULTS_PATHS:
+RESULTS_PATH = ['/results', os.path.expanduser('~/.pubtrends/results')]
+for path in RESULTS_PATH:
     if os.path.exists(path):
         logger.info(f'Search results will be stored at {path}')
         search_path = path
         break
 else:
-    search_path = None
+    raise RuntimeError(f'Search results folder not found among: {RESULTS_PATH}')
 
 
 def search_results_folder():
-    if search_path is None:
-        raise RuntimeError(f'Search results folder not found among: {SEARCH_RESULTS_PATHS}')
     return search_path
 
 

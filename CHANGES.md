@@ -9,6 +9,7 @@ Released on XXX XX, 2023
 
 - Cleanup tasks cache - removed lru_ttl_cache_with_callback
 - Don't use fasttext model, it requires lots of memory without significant improvements
+- Docker base image updated to Ubuntu 22.04 LTS
 
 Version 0.22
 ------------
