@@ -5,18 +5,18 @@ import os
 import random
 import re
 import tempfile
-import time
 from threading import Lock
 from urllib.parse import quote
 
-import requests
+import time
 from celery.result import AsyncResult
 from flask import Flask, url_for, redirect, render_template, request, render_template_string, \
     send_from_directory, send_file
+
 from pysrc.app.admin.admin import configure_admin_functions
 from pysrc.app.messages import SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, SOMETHING_WENT_WRONG_PAPER, \
-    SOMETHING_WENT_WRONG_TOPIC, SERVICE_LOADING_NLP_MODELS, SERVICE_LOADING_PREDEFINED_EXAMPLES
-from pysrc.app.predefined import get_predefined_jobs, load_predefined_viz_log, \
+    SOMETHING_WENT_WRONG_TOPIC, SERVICE_LOADING_PREDEFINED_EXAMPLES
+from pysrc.app.reports import get_predefined_jobs, load_predefined_viz_log, \
     load_predefined_or_result_data, _example_by_jobid
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, \

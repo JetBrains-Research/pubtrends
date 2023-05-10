@@ -83,7 +83,7 @@ launched within Docker. Continuous integration is done with TeamCity using build
 
     * Launch Docker image:
     ```
-    docker run --rm  --name pubtrends-postgres \
+    docker run --rm --name pubtrends-postgres \
         -e POSTGRES_USER=biolabs -e POSTGRES_PASSWORD=mysecretpassword \
         -v ~/postgres/:/var/lib/postgresql/data \
         -e PGDATA=/var/lib/postgresql/data/pgdata \
@@ -247,7 +247,7 @@ Notebooks are located under the `/notebooks` folder. Please configure `PYTHONPAT
 
 1. Start Docker image with Postgres environment for tests (Kotlin and Python development)
     ```
-    docker run --rm --name pubtrends-test \
+    docker run --rm --platform linux/amd64 --name pubtrends-test \
     --publish=5432:5432 --volume=$(pwd):/pubtrends -i -t biolabs/pubtrends-test
     ```
 
@@ -268,7 +268,7 @@ Notebooks are located under the `/notebooks` folder. Please configure `PYTHONPAT
 4. Python tests within Docker (ensure that `./build/libs/pubtrends-dev.jar` file is present)
 
     ```
-    docker run --rm --volume=$(pwd):/pubtrends -t biolabs/pubtrends-test /bin/bash -c \
+    docker run --rm --platform linux/amd64 --volume=$(pwd):/pubtrends -t biolabs/pubtrends-test /bin/bash -c \
     "/usr/lib/postgresql/14/bin/pg_ctl -D /home/user/postgres start; \
     cd /pubtrends; mkdir ~/.pubtrends; cp config.properties ~/.pubtrends; \
     source activate pubtrends; pytest pysrc"
@@ -289,7 +289,7 @@ Please ensure that you have configured and prepared the database(s).
 2. Start Postgres server.
 
     ```
-    docker run --rm  --name pubtrends-postgres -p 5432:5432 \
+    docker run --rm --name pubtrends-postgres -p 5432:5432 \
         --shm-size=8g \
         -e POSTGRES_USER=biolabs -e POSTGRES_PASSWORD=mysecretpassword \
         -e POSTGRES_DB=pubtrends \

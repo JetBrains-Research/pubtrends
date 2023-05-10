@@ -13,7 +13,7 @@ from pysrc.version import VERSION
 
 logger = logging.getLogger(__name__)
 
-# Configure predefined paths
+# Configure predefined path
 PREDEFINED_PATHS = ['/predefined', os.path.expanduser('~/.pubtrends/predefined')]
 for p in PREDEFINED_PATHS:
     if os.path.isdir(p):
@@ -22,6 +22,27 @@ for p in PREDEFINED_PATHS:
 else:
     raise RuntimeError('Failed to configure predefined searches dir')
 PREDEFINED_LOCK = Lock()
+
+
+def get_predefined_path():
+    return predefined_path
+
+
+# Configure search results path
+SEARCH_RESULTS_PATHS = ['/search_results', os.path.expanduser('~/.pubtrends/search_results')]
+for path in SEARCH_RESULTS_PATHS:
+    if os.path.exists(path):
+        logger.info(f'Search results will be stored at {path}')
+        search_path = path
+        break
+else:
+    search_path = None
+
+
+def search_results_folder():
+    if search_path is None:
+        raise RuntimeError(f'Search results folder not found among: {SEARCH_RESULTS_PATHS}')
+    return search_path
 
 
 def get_predefined_jobs(config):
@@ -36,7 +57,7 @@ def get_predefined_jobs(config):
 def _save_predefined(viz, data, log, source, jobid, predefined_jobs):
     query, sort, limit = _example_by_jobid(source, jobid, predefined_jobs)
     logger.info(f'Saving predefined search for source={source} query={query} sort={sort} limit={limit}')
-    folder = os.path.join(predefined_path, f"{VERSION.replace(' ', '_')}",
+    folder = os.path.join(get_predefined_path(), f"{VERSION.replace(' ', '_')}",
                           query_to_folder(source, query, sort, limit))
     if not os.path.exists(folder):
         os.makedirs(folder)
@@ -63,7 +84,7 @@ def load_predefined_viz_log(source, jobid, predefined_jobs, app):
     if is_predefined:
         query, sort, limit = _example_by_jobid(source, jobid, predefined_jobs)
         logger.info(f'Trying to load predefined viz, log for source={source} query={query} sort={sort} limit={limit}')
-        folder = os.path.join(predefined_path, f"{VERSION.replace(' ', '_')}",
+        folder = os.path.join(get_predefined_path(), f"{VERSION.replace(' ', '_')}",
                               query_to_folder(source, query, sort, limit))
         path_viz = os.path.join(folder, 'viz.json.gz')
         path_log = os.path.join(folder, 'log.gz')
@@ -91,7 +112,7 @@ def load_predefined_or_result_data(source, jobid, predefined_jobs, app):
     if is_predefined:
         query, sort, limit = _example_by_jobid(source, jobid, predefined_jobs)
         logger.info(f'Trying to load predefined data for source={source} query={query} sort={sort} limit={limit}')
-        folder = os.path.join(predefined_path, f"{VERSION.replace(' ', '_')}",
+        folder = os.path.join(get_predefined_path(), f"{VERSION.replace(' ', '_')}",
                               query_to_folder(source, query, sort, limit))
         path_data = os.path.join(folder, 'data.json.gz')
         try:
@@ -129,3 +150,4 @@ def _example_by_jobid(source, jobid, predefined_jobs):
             logger.debug(f'Example: {t}')
             return t, SORT_MOST_CITED, 1000
     raise Exception(f'Cannot find search example for jobid: {jobid}')
+

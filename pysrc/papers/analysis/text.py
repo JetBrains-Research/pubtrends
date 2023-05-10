@@ -57,7 +57,7 @@ def vectorize_corpus(df, max_features, min_df, max_df, test=False):
     tokens_freqs = tokens_counts / len(df)
     logger.debug(f'Tokens frequencies min={tokens_freqs.min()}, max={tokens_freqs.max()}, '
                  f'mean={tokens_freqs.mean()}, std={tokens_freqs.std()}')
-    corpus_tokens = vectorizer.get_feature_names()
+    corpus_tokens = vectorizer.get_feature_names_out().tolist()
     corpus_tokens_set = set(corpus_tokens)
     # Filter tokens left after vectorization
     filtered_corpus = [
@@ -167,7 +167,7 @@ def train_word2vec(corpus, corpus_tokens, vector_size=64, test=False):
         chain.from_iterable(corpus)))
     logger.debug(f'Total {len(sentences)} sentences')
     logger.debug('Training word2vec model')
-    w2v = Word2Vec(sentences, vector_size=vector_size, window=5, min_count=0, workers=1, seed=42)
+    w2v = Word2Vec(sentences, vector_size=vector_size, window=5, min_count=0, workers=1, epochs=5, seed=42)
     logger.debug('Retrieve word embeddings, corresponding subjects and reorder according to corpus_terms')
     ids, embeddings = w2v.wv.index_to_key, w2v.wv.vectors
     indx = {t: i for i, t in enumerate(ids)}

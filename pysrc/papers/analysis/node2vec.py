@@ -6,7 +6,11 @@ from gensim.models import Word2Vec
 logger = logging.getLogger(__name__)
 
 
-def node2vec(ids, graph, p=0.5, q=2.0, walk_length=32, walks_per_node=5, vector_size=64, key='weight', seed=42):
+def node2vec(
+        ids, graph, p=0.5, q=2.0,
+        walk_length=64, walks_per_node=32,
+        vector_size=64, key='weight', seed=42
+):
     """
     :param ids: Ids or nodes for embedding
     :param graph: Undirected weighted networkx graph
@@ -31,7 +35,7 @@ def node2vec(ids, graph, p=0.5, q=2.0, walk_length=32, walks_per_node=5, vector_
     logger.debug('Performing word2vec embeddings')
     logging.getLogger('node2vec.py').setLevel('ERROR')  # Disable logging
     w2v = Word2Vec(
-        walks, vector_size=vector_size, window=5, min_count=0, sg=1, workers=1, epochs=1, seed=seed
+        walks, vector_size=vector_size, window=5, min_count=0, sg=1, workers=1, epochs=5, seed=seed
     )
     logger.debug('Retrieve word embeddings, corresponding subjects and reorder according to ids')
     node_ids, node_embeddings = w2v.wv.index_to_key, w2v.wv.vectors

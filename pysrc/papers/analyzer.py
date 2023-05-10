@@ -142,7 +142,7 @@ class PapersAnalyzer:
         if len(self.df) == 0:
             raise SearchError(f'Nothing found for ids: {ids}')
         else:
-            self.progress.info(f'Found {len(self.df)} papers in database', current=2, task=task)
+            self.progress.info(f'Total {len(self.df)} papers in database', current=2, task=task)
         ids = list(self.df['id'])  # Limit ids to existing papers only!
         self.pub_types = list(set(self.df['type']))
 
@@ -195,11 +195,11 @@ class PapersAnalyzer:
         logger.debug(f'Filtered {len(self.bibliographic_coupling_df)} bibliographic coupling pairs of papers '
                      f'threshold {self.SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN}')
 
-        self.progress.info('Analyzing papers graph', current=7, task=task)
+        self.progress.info('Building papers graph', current=7, task=task)
         self.papers_graph = build_papers_graph(
             self.df, self.cit_df, self.cocit_grouped_df, self.bibliographic_coupling_df,
         )
-        self.progress.info(f'Built papers graph - {self.papers_graph.number_of_nodes()} nodes and '
+        self.progress.info(f'Analyzing papers graph - {self.papers_graph.number_of_nodes()} nodes and '
                            f'{self.papers_graph.number_of_edges()} edges', current=7, task=task)
         logger.debug('Analyzing papers graph embeddings')
         self.weighted_similarity_graph = to_weighted_graph(self.papers_graph, PapersAnalyzer.similarity)

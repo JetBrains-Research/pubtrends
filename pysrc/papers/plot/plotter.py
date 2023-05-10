@@ -504,20 +504,18 @@ class Plotter:
                 p.line([cos(d) * d_radius * (dendrogram_len - i), cos(d) * d_radius * (dendrogram_len - i - 1)],
                        [sin(d) * d_radius * (dendrogram_len - i), sin(d) * d_radius * (dendrogram_len - i - 1)],
                        line_color='grey')
-                logger.debug(
-                    f'LINE d={d}; r1={d_radius * (dendrogram_len - i)}; r2={d_radius * (dendrogram_len - i - 1)}; '
-                    f'x={[cos(d) * d_radius * (dendrogram_len - i), cos(d) * d_radius * (dendrogram_len - i - 1)]}; '
-                    f'y={[sin(d) * d_radius * (dendrogram_len - i), sin(d) * d_radius * (dendrogram_len - i - 1)]}'
-                )
+                # logger.debug(
+                #     f'LINE d={d}; r1={d_radius * (dendrogram_len - i)}; r2={d_radius * (dendrogram_len - i - 1)}; '
+                #     f'x={[cos(d) * d_radius * (dendrogram_len - i), cos(d) * d_radius * (dendrogram_len - i - 1)]}; '
+                #     f'y={[sin(d) * d_radius * (dendrogram_len - i), sin(d) * d_radius * (dendrogram_len - i - 1)]}'
+                # )
 
             # Compute next connections and draw arcs
             for v, nds in next_ds.items():
                 next_ds[v] = np.mean(nds)
                 if nds[0] != nds[-1]:
                     p.arc(0, 0, d_radius * (dendrogram_len - i - 1), nds[0], nds[-1], line_color='grey')
-                    logger.debug(
-                        f'ARC r={d_radius * (dendrogram_len - i - 1)}; d1={nds[0]}; d2={nds[-1]}'
-                    )
+                    # logger.debug(f'ARC r={d_radius * (dendrogram_len - i - 1)}; d1={nds[0]}; d2={nds[-1]}')
 
             ds = next_ds
 

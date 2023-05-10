@@ -20,7 +20,7 @@ from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
 
-from pysrc.app.predefined import query_to_folder
+from pysrc.app.reports import query_to_folder, search_results_folder
 from pysrc.papers.analysis.citations import find_top_cited_papers, build_cit_stats_df, merge_citation_stats, \
     build_cocit_grouped_df
 from pysrc.papers.analysis.graph import build_papers_graph, \
@@ -42,9 +42,6 @@ logger = logging.getLogger(__name__)
 
 ANALYSIS_FILES_TYPE = 'files'
 
-# Deployment and development
-SEARCH_RESULTS_PATHS = ['/search_results', os.path.expanduser('~/.pubtrends/search_results')]
-
 
 class AnalyzerFiles(PapersAnalyzer):
 
@@ -62,7 +59,7 @@ class AnalyzerFiles(PapersAnalyzer):
 
     def analyze_ids(self, ids, source, query, sort, limit, topics, test=False, task=None):
         self.query = query
-        self.query_folder = os.path.join(self.search_results_folder, f"{VERSION.replace(' ', '_')}",
+        self.query_folder = os.path.join(search_results_folder(), f"{VERSION.replace(' ', '_')}",
                                          query_to_folder(source, query, sort, limit))
         if not os.path.exists(self.query_folder):
             os.makedirs(self.query_folder)
@@ -322,15 +319,6 @@ class AnalyzerFiles(PapersAnalyzer):
 
         self.progress.done('Done analysis', task=task)
 
-    @lazy
-    def search_results_folder(self):
-        logger.info('Preparing search results folder')
-        for path in SEARCH_RESULTS_PATHS:
-            if os.path.exists(path):
-                logger.info(f'Search results will be stored at {path}')
-                return path
-        else:
-            raise RuntimeError(f'Search results folder not found among: {SEARCH_RESULTS_PATHS}')
 
 
 def plot_mesh_terms(mesh_counter, top=100, plot_width=PLOT_WIDTH, plot_height=TALL_PLOT_HEIGHT):
