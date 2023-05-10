@@ -34,7 +34,7 @@ All the data manipulations are made with Pandas, Numpy and Scikit-Learn librarie
 Spacy libraries for text processing and analysis. Graph objects are processed with NetworkX library, papers embeddings
 are created with word2vec library from GenSim and in-house node2vec implementation based on word2vec. All the plots are
 created with Bokeh, Holoviews, Seaborn and Matplotlib libraries. Interactive Bokeh plots are used in web pages and
-Jupyter notebook experiments. Frontend is created with Bootstrap, JQuery and Cytoscape-JS for graphs rendering.
+Jupyter notebook experiments. Frontend uses Bootstrap, JQuery and Cytoscape-JS for graphs rendering.
 
 Please refer to [environment.yml](environment.yml) for the full list of libraries used in the project.
 
@@ -50,11 +50,7 @@ Please refer to [docker-compose.yml](docker-compose.yml) for more information ab
 ### Testing and CI
 
 Testing is done with Pytest and JUnit. Flake8 linter is used for quality assessment of Python code. Python tests are
-launched within Docker. Continuous integration is done with TeamCity using build chains. Each commit is assigned with
-build number which is later used for *Python tests*, *Kotlin tests* and *Docker-compose tests* build configurations.
-Dedicated *Distributive* build configuration is used to build Kotlin code and pack all the Python code into distribution
-packages, this configuration depends on tests configuration and is being executed only when all the tests are passed
-successfully. Distribution packages are used for database updates and web service deployment.
+launched within Docker. Continuous integration is done with TeamCity using build chains.
 
 ## Development Prerequisites
 
@@ -238,11 +234,6 @@ Then launch web-service or use jupyter notebook for development.
     python -m pysrc.app.app
     ```    
 
-6. Start service for text embeddings based on pretrained fasttext model at http://localhost:8081/
-    ```
-    python -m pysrc.fasttext.fasttext_app
-    ```    
-
 ### Jupyter notebook
 
 Notebooks are located under the `/notebooks` folder. Please configure `PYTHONPATH` before using jupyter.
@@ -260,7 +251,7 @@ Notebooks are located under the `/notebooks` folder. Please configure `PYTHONPAT
     --publish=5432:5432 --volume=$(pwd):/pubtrends -i -t biolabs/pubtrends-test
     ```
 
-   NOTE: don't forget to stop the container afterwards.
+   NOTE: don't forget to stop the container afterward.
 
 2. Kotlin tests
 
@@ -285,12 +276,10 @@ Notebooks are located under the `/notebooks` folder. Please configure `PYTHONPAT
 
 ## Deployment
 
-Deployment is done with docker-compose. It is configured to start the following containers:
-
+Deployment is done with docker-compose:
 * Gunicorn serving main pubtrends Flask app
 * Redis as a message proxy
 * Celery workers queue
-* Gunicorn fasttext model app
 
 Please ensure that you have configured and prepared the database(s).
 

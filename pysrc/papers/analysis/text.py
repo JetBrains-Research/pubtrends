@@ -1,12 +1,10 @@
 import logging
-import os
 import re
 from itertools import chain
 from threading import Lock
 
 import nltk
 import numpy as np
-import requests
 from gensim.models import Word2Vec
 from nltk import word_tokenize, WordNetLemmatizer, SnowballStemmer
 from nltk.corpus import wordnet, stopwords
@@ -157,32 +155,8 @@ def _build_stems_to_tokens_map(stems_and_tokens):
     return stems_tokens_map
 
 
-# Launch with Docker address or locally
-FASTTEXT_URL = os.getenv('FASTTEXT_URL', 'http://localhost:8081')
-
-
 def tokens_embeddings(corpus, corpus_tokens, test=False):
-    if test:
-        logger.debug(f'Compute words embeddings trained word2vec')
-        return train_word2vec(corpus, corpus_tokens, test=test)
-
-    # Don't use model as is, since each celery process will load it's own copy.
-    # Shared model is available via additional service with single model.
-    logger.debug(f'Fetch embeddings from microservice')
-    try:
-        r = requests.request(
-            url=f'{FASTTEXT_URL}/fasttext',
-            method='GET',
-            json=corpus_tokens,
-            headers={'Accept': 'application/json'}
-        )
-        if r.status_code == 200:
-            return np.array(r.json()['embeddings']).reshape(len(corpus_tokens), 300)
-        else:
-            logger.debug(f'Wrong response code {r.status_code}')
-    except Exception as e:
-        logger.debug(f'Failed to fetch embeddings ${e.message}')
-    logger.debug('Fallback to in-house word2vec')
+    logger.debug(f'Compute words embeddings trained word2vec')
     return train_word2vec(corpus, corpus_tokens, test=test)
 
 

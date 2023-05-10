@@ -9,7 +9,6 @@ services:
       - "8888:8888"
     depends_on:
       - redis
-      - fasttext
       - celery
     volumes:
       - ~/.pubtrends:/config:ro
@@ -26,7 +25,6 @@ services:
       dockerfile: pysrc/celery/Dockerfile
     depends_on:
       - redis
-      - fasttext
     volumes:
       - ~/.pubtrends:/config:ro
       - ~/.pubtrends/logs:/logs
@@ -42,13 +40,3 @@ services:
       - ~/.pubtrends/logs:/log
     # This command is used to process huge analysis results of 40k+ papers
     command: redis-server --timeout 0 --client-output-buffer-limit normal 0 0 0
-  fasttext:
-    build:
-      context: .
-      dockerfile: pysrc/fasttext/Dockerfile
-    restart: always
-    volumes:
-      - ~/.pubtrends:/config:ro
-      - ~/.pubtrends/logs:/logs
-      - ~/.pubtrends/nltk-data:/home/user/nltk-data
-      - ~/.pubtrends/gensim-data:/home/user/gensim-data

@@ -106,8 +106,6 @@ def log_request(r):
 
 @app.route('/')
 def index():
-    if not is_fasttext_endpoint_ready():
-        return render_template('init.html', version=VERSION, message=SERVICE_LOADING_NLP_MODELS)
     if not are_predefined_jobs_ready():
         return render_template('init.html', version=VERSION, message=SERVICE_LOADING_PREDEFINED_EXAMPLES)
 
@@ -632,24 +630,6 @@ def are_predefined_jobs_ready():
         return ready
     finally:
         PREDEFINED_JOBS_LOCK.release()
-
-
-# Launch with Docker address or locally
-FASTTEXT_URL = os.getenv('FASTTEXT_URL', 'http://localhost:8081')
-
-
-def is_fasttext_endpoint_ready():
-    logger.debug(f'Check fasttext endpoint is ready')
-    try:
-        r = requests.request(url=FASTTEXT_URL, method='GET')
-        if r.status_code != 200:
-            return False
-        r = requests.request(url=f'{FASTTEXT_URL}/initialized', method='GET', headers={'Accept': 'application/json'})
-        if r.status_code != 200 or r.json() is not True:
-            return False
-        return True
-    except:
-        return False
 
 
 ##########################
