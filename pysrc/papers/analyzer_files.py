@@ -20,7 +20,7 @@ from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
 
-from pysrc.app.reports import query_to_folder, search_results_folder
+from pysrc.app.reports import query_to_folder, results_folder
 from pysrc.papers.analysis.citations import find_top_cited_papers, build_cit_stats_df, merge_citation_stats, \
     build_cocit_grouped_df
 from pysrc.papers.analysis.graph import build_papers_graph, \
@@ -59,7 +59,7 @@ class AnalyzerFiles(PapersAnalyzer):
 
     def analyze_ids(self, ids, source, query, sort, limit, topics, test=False, task=None):
         self.query = query
-        self.query_folder = os.path.join(search_results_folder(), f"{VERSION.replace(' ', '_')}",
+        self.query_folder = os.path.join(results_folder(), f"{VERSION.replace(' ', '_')}",
                                          query_to_folder(source, query, sort, limit))
         if not os.path.exists(self.query_folder):
             os.makedirs(self.query_folder)
@@ -76,7 +76,7 @@ class AnalyzerFiles(PapersAnalyzer):
         if len(self.pub_df) == 0:
             raise SearchError(f'Nothing found in database')
         ids = list(self.pub_df['id'])  # Limit ids to existing papers only!
-        self.progress.info(f'Found {len(ids)} papers in database', current=2, task=task)
+        self.progress.info(f'Total {len(ids)} papers in database', current=2, task=task)
 
         self.progress.info('Loading citations statistics for papers', current=3, task=task)
         cits_by_year_df = self.loader.load_citations_by_year(ids)

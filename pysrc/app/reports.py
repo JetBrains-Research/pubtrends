@@ -39,7 +39,7 @@ else:
     raise RuntimeError(f'Search results folder not found among: {RESULTS_PATH}')
 
 
-def search_results_folder():
+def results_folder():
     return search_path
 
 

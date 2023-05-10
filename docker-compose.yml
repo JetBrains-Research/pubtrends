@@ -16,7 +16,7 @@ services:
       - ~/.pubtrends/database:/database
       - ~/.pubtrends/ssl:/ssl:ro
       - ~/.pubtrends/predefined:/predefined
-      - ~/.pubtrends/search_results:/search_results
+      - ~/.pubtrends/results:/results
       - ~/.pubtrends/nltk-data:/home/user/nltk-data
       - ~/.pubtrends/gensim-data:/home/user/gensim-data
   celery:
@@ -31,7 +31,7 @@ services:
       - ~/.pubtrends/model:/model:ro
       - ~/.pubtrends/.cache:/home/user/.cache
       - ~/.pubtrends/predefined:/predefined
-      - ~/.pubtrends/search_results:/search_results
+      - ~/.pubtrends/results:/results
       - ~/.pubtrends/nltk-data:/home/user/nltk-data
       - ~/.pubtrends/gensim-data:/home/user/gensim-data
   redis:
