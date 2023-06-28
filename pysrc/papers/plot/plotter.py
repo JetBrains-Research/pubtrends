@@ -485,7 +485,7 @@ class Plotter:
         # Draw dendrogram - from bottom to top
         ds = leaves_degrees.copy()
         for i in range(1, dendrogram_len):
-            logger.debug(f'LEVEL {i}')
+            # logger.debug(f'LEVEL {i}')
             next_ds = {}
             for path in paths:
                 d = ds[path[i - 1]]
