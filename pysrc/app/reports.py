@@ -4,9 +4,8 @@ import json
 import logging
 import os
 import re
-from threading import Lock
-
 from celery.result import AsyncResult
+from threading import Lock
 
 from pysrc.papers.utils import SORT_MOST_CITED
 from pysrc.version import VERSION
@@ -46,10 +45,10 @@ def _save_data(viz, data, log, jobid, source, query, sort, limit):
     logger.info(f'Saving search for source={source} query={query} sort={sort} limit={limit}')
     folder = os.path.join(get_results_path(), preprocess_string(VERSION),
                           query_to_folder(source, query, sort, limit, jobid))
-    if not os.path.exists(folder):
-        os.makedirs(folder)
     try:
         FILES_LOCK.acquire()
+        if not os.path.exists(folder):
+            os.makedirs(folder)
         path_viz = os.path.join(folder, 'viz.json.gz')
         path_data = os.path.join(folder, 'data.json.gz')
         path_log = os.path.join(folder, 'log.gz')
@@ -68,18 +67,18 @@ def _save_data(viz, data, log, jobid, source, query, sort, limit):
 
 def load_result_viz_log(jobid, source, query, sort, limit, app):
     logger.info(f'Trying to load viz, log for source={source} query={query} sort={sort} limit={limit}')
-    folder = os.path.join(get_results_path(), preprocess_string(VERSION),
-                          query_to_folder(source, query, sort, limit, jobid))
-    path_viz = os.path.join(folder, 'viz.json.gz')
-    path_log = os.path.join(folder, 'log.gz')
     try:
         FILES_LOCK.acquire()
-        if os.path.exists(path_viz) and os.path.exists(path_log):
-            with gzip.open(path_viz, 'r') as f:
-                viz = json.loads(f.read().decode('utf-8'))
-            with gzip.open(path_log, 'r') as f:
-                log = f.read().decode('utf-8')
-            return viz, log
+        folder = _find_folder(jobid)
+        if folder is not None:
+            path_viz = os.path.join(folder, 'viz.json.gz')
+            path_log = os.path.join(folder, 'log.gz')
+            if os.path.exists(path_viz) and os.path.exists(path_log):
+                with gzip.open(path_viz, 'r') as f:
+                    viz = json.loads(f.read().decode('utf-8'))
+                with gzip.open(path_log, 'r') as f:
+                    log = f.read().decode('utf-8')
+                return viz, log
     finally:
         FILES_LOCK.release()
     job = AsyncResult(jobid, app=app)
@@ -92,14 +91,14 @@ def load_result_viz_log(jobid, source, query, sort, limit, app):
 
 def load_result_data(jobid, source, query, sort, limit, app):
     logger.info(f'Trying to load data for source={source} query={query} sort={sort} limit={limit}')
-    folder = os.path.join(get_results_path(), preprocess_string(VERSION),
-                          query_to_folder(source, query, sort, limit, jobid))
-    path_data = os.path.join(folder, 'data.json.gz')
     try:
         FILES_LOCK.acquire()
-        if os.path.exists(path_data):
-            with gzip.open(path_data, 'r') as f:
-                return json.loads(f.read().decode('utf-8'))
+        folder = _find_folder(jobid)
+        if folder is not None:
+            path_data = os.path.join(folder, 'data.json.gz')
+            if os.path.exists(path_data):
+                with gzip.open(path_data, 'r') as f:
+                    return json.loads(f.read().decode('utf-8'))
     finally:
         FILES_LOCK.release()
     job = AsyncResult(jobid, app=app)
@@ -119,14 +118,22 @@ def query_to_folder(source, query, sort, limit, jobid, max_folder_length=100):
     if len(folder_name) > max_folder_length:
         folder_name = folder_name[:(max_folder_length - 32 - 1)]
     if jobid is not None:
-        folder_name += '-' + jobid[:32]
+        folder_name = jobid[:32] + '-' + folder_name
     else:
-        folder_name += '-' + hashlib.md5(folder_name.encode('utf-8')).hexdigest()[:32]
+        folder_name = hashlib.md5(folder_name.encode('utf-8')).hexdigest()[:32] + '-' + folder_name
     return folder_name
 
 
-def _predefined_examples_jobid(examples):
+def _find_folder(jobid):
+    lookup_folder = os.path.join(get_results_path(), preprocess_string(VERSION))
+    for p in os.listdir(lookup_folder):
+        candidate_folder = os.path.join(lookup_folder, p)
+        if p.startswith(jobid[:32]) and os.path.isdir(candidate_folder):
+            return candidate_folder
+    return None
 
+
+def _predefined_examples_jobid(examples):
     return [(t, PREDEFINED_PREFIX + hashlib.md5(t.encode('utf-8')).hexdigest()) for t in examples]
 
 
@@ -137,4 +144,3 @@ def _predefined_example_params_by_jobid(source, jobid, predefined_jobs):
             logger.debug(f'Example={t}, jobid={jobid}')
             return t, SORT_MOST_CITED, 1000
     raise Exception(f'Cannot find search example for jobid: {jobid}')
-
