@@ -111,7 +111,7 @@ def prepare_paper_data(data, source, pid):
         result['papers_graph'] = components_list(
             Plotter._plot_papers_graph(
                 source, analyzer.sparse_papers_graph, analyzer.df,
-                pid=pid, topics_tags=analyzer.topics_description
+                analyzed_pid=pid, topics_tags=analyzer.topics_description
             ))
 
     return result

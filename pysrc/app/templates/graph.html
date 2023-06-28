@@ -232,9 +232,9 @@
                     {
                         selector: "node",
                         style: {
-                            "width": 5,
-                            "height": 5,
-                            "border-width": 0.5,
+                            "width": 2,
+                            "height": 2,
+                            "border-width": 0.3,
                             "border-color": "black",
                             "opacity": 0.7,
                         }
@@ -243,7 +243,7 @@
                     {
                         selector: 'node.analyzed',
                         style: {
-                            'border-width': '2.0',
+                            'border-width': '1.0',
                             'opacity': '1.0 !important'
                         }
                     },
@@ -253,17 +253,17 @@
                             "width": function (node) {
                                 const data = node.data();
                                 if ('connections' in data) {
-                                    return data.connections * 20 / window.max_connections + 5;
+                                    return data.connections * 5 / window.max_connections + 2;
                                 } else {
-                                    return 5;
+                                    return 2;
                                 }
                             },
                             "height": function (node) {
                                 const data = node.data();
                                 if ('connections' in data) {
-                                    return data.connections * 20 / window.max_connections + 5;
+                                    return data.connections * 5 / window.max_connections + 2;
                                 } else {
-                                    return 5;
+                                    return 2;
                                 }
                             }
                         }
@@ -274,17 +274,17 @@
                             "width": function (node) {
                                 const data = node.data();
                                 if ('cited' in data) {
-                                    return data.cited * 20 / window.max_cited + 5;
+                                    return data.cited * 5 / window.max_cited + 2;
                                 } else {
-                                    return 5;
+                                    return 2;
                                 }
                             },
                             "height": function (node) {
                                 const data = node.data();
                                 if ('cited' in data) {
-                                    return data.cited * 20 / window.max_cited + 5;
+                                    return data.cited * 5 / window.max_cited + 2;
                                 } else {
-                                    return 5;
+                                    return 2;
                                 }
                             }
                         }
@@ -325,14 +325,14 @@
                         selector: "node.topic-center",
                         style: {
                             "content": "data(name)",
-                            "font-size": "13px",
+                            "font-size": "5px",
                             "text-valign": "center",
                             "text-halign": "center",
                             "background-color": "black",
                             "text-outline-color": "white",
-                            "text-outline-width": "4px",
+                            "text-outline-width": "1px",
                             "color": "black",
-                            "overlay-padding": "8px",
+                            "overlay-padding": "5px",
                             "z-index": "10",
                             "text-background-color": "black",
                             "opacity": "1.0 !important"
@@ -357,9 +357,9 @@
                             "width": function (edge) {
                                 let data = edge.data();
                                 if ('similarity' in data) {
-                                    return (Math.max(5, Math.min(20, data.similarity / 5))) / 5;
+                                    return (Math.max(3, Math.min(10, data.similarity / 10))) / 10;
                                 }
-                                return 0.5;
+                                return 0.3;
                             },
                             "curve-style": "haystack",
                             "line-color": function (edge) {
@@ -803,8 +803,9 @@
             <div id="feedback-graph-html-form" class="float-left vertical-center"></div>
         </div>
         <div class="col-4">
-            <p>version <a href="https://github.com/JetBrains-Research/pubtrends/blob/master/CHANGES.md" title="{{ version }}"
-                  target="_blank">{{ version }}</a><br/>
+            <p>version <a href="https://github.com/JetBrains-Research/pubtrends/blob/master/CHANGES.md"
+                          title="{{ version }}"
+                          target="_blank">{{ version }}</a><br/>
                 &copy; 2021-2023 <a href="https://research.jetbrains.org/groups/biolabs"
                                     title="JetBrains Research BioLabs"
                                     target="_blank">JetBrains Research</a>

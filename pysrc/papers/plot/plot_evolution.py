@@ -8,7 +8,7 @@ from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 logger = logging.getLogger(__name__)
 
 
-def plot_topics_evolution(df, evolution_df, evolution_kwds, plot_width, plot_height):
+def plot_topics_evolution(df, evolution_df, evolution_kwds, width, height):
     """
     Sankey diagram of topic evolution
     :return:
@@ -33,7 +33,7 @@ def plot_topics_evolution(df, evolution_df, evolution_kwds, plot_width, plot_hei
     nodes_ds = hv.Dataset(nodes_data, 'index', 'label')
     topic_evolution = hv.Sankey((edges, nodes_ds), ['From', 'To'], vdims=value_dim)
     topic_evolution.opts(labels='label',
-                         width=plot_width, height=max(plot_height, len(set(df['comp'])) * 30),
+                         width=width, height=max(height, len(set(df['comp'])) * 30),
                          show_values=False, cmap='tab20',
                          edge_color=dim('To').str(), node_color=dim('index').str())
 

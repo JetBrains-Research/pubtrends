@@ -1,8 +1,6 @@
 import holoviews as hv
-import json
 import logging
 import numpy as np
-import re
 from bokeh.embed import components
 from bokeh.models import ColumnDataSource, CustomJS, LabelSet
 from bokeh.models import GraphRenderer, StaticLayoutProvider, Circle, HoverTool, MultiLine
@@ -17,12 +15,13 @@ from matplotlib import pyplot as plt
 from string import Template
 from wordcloud import WordCloud
 
+from pysrc.app.reports import preprocess_string
 from pysrc.papers.analysis.text import get_frequent_tokens
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.plot.plot_evolution import plot_topics_evolution
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
-from pysrc.papers.utils import cut_authors_list, trim, MAX_TITLE_LENGTH, IDS_ANALYSIS_TYPE, contrast_color, \
+from pysrc.papers.utils import cut_authors_list, trim, MAX_TITLE_LENGTH, contrast_color, \
     topics_palette_rgb, color_to_rgb, factor_colors, factors_colormap
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
@@ -55,7 +54,7 @@ def visualize_analysis(analyzer):
     plotter = Plotter(analyzer=analyzer)
     freq_kwds = get_frequent_tokens(chain(*chain(*analyzer.corpus)))
     word_cloud = plotter._papers_word_cloud(freq_kwds)
-    export_name = re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{analyzer.query}'.lower())).strip('_')
+    export_name = preprocess_string(analyzer.query)
     result = dict(
         topics_analyzed=False,
         n_papers=len(analyzer.df),
@@ -633,18 +632,22 @@ class Plotter:
         return html_tooltips_str
 
     @staticmethod
-    def _plot_papers_graph(source, gs, df, pid=None, topics_tags=None, topics_meshs=None, add_callback=True,
+    def _plot_papers_graph(source, gs, df, analyzed_pid=None, topics_tags=None, topics_meshs=None, add_callback=True,
                            width=PLOT_WIDTH, height=TALL_PLOT_HEIGHT):
         logger.debug('Processing plot_papers_graph')
-        pids = df['id'].astype(int)
+        pids = df['id']
+        pim = dict((p, i) for i, p in enumerate(pids))
         comps = df['comp']
-        connections = [len(list(gs.neighbors(str(p)))) for p in pids]
+        connections = [len(list(gs.neighbors(p))) for p in pids]
         graph = GraphRenderer()
         cmap = factors_colormap(len(set(comps)))
         palette = dict(zip(sorted(set(comps)), [color_to_rgb(cmap(i)).to_hex() for i in range(len(set(comps)))]))
 
-        graph.node_renderer.data_source.add(pids, 'index')
-        graph.node_renderer.data_source.data['id'] = pids
+        pids_int = [pim[p] for p in pids]
+        # Graph API requires id to be integer
+        graph.node_renderer.data_source.add(pids_int, 'index')
+        graph.node_renderer.data_source.data['id'] = pids_int
+        graph.node_renderer.data_source.data['pid'] = pids
         graph.node_renderer.data_source.data['title'] = df['title']
         graph.node_renderer.data_source.data['authors'] = \
             df['authors'].apply(lambda authors: cut_authors_list(authors))
@@ -667,11 +670,12 @@ class Plotter:
         max_connections = max(connections)
         graph.node_renderer.data_source.data['size'] = [c * 20 / (max_connections + 1) + 5 for c in connections]
         graph.node_renderer.data_source.data['color'] = [palette[c] for c in comps]
-        graph.node_renderer.data_source.data['alpha'] = [2.0 if p == pid else 0.7 for p in pids]
+        graph.node_renderer.data_source.data['line_width'] = [3.0 if p == analyzed_pid else 1 for p in pids]
+        graph.node_renderer.data_source.data['alpha'] = [1.0 if p == analyzed_pid else 0.7 for p in pids]
 
         # Edges
-        graph.edge_renderer.data_source.data = dict(start=[u for u, _ in gs.edges],
-                                                    end=[v for _, v in gs.edges])
+        graph.edge_renderer.data_source.data = dict(start=[pim[u] for u, _ in gs.edges],
+                                                    end=[pim[v] for _, v in gs.edges])
 
         # start of layout code
         xs, ys = df['x'], df['y']
@@ -709,13 +713,15 @@ class Plotter:
         p.add_tools(HoverTool(tooltips=Plotter._paper_html_tooltips(source, hover_tags)))
 
         if add_callback:
-            p.js_on_event('tap', Plotter._paper_callback(graph.node_renderer.data_source))
+            p.js_on_event('tap', Plotter._paper_callback(graph.node_renderer.data_source, idname='pid'))
 
-        graph_layout = dict(zip(pids, zip(xs, ys)))
+        graph_layout = dict(zip(pids_int, zip(xs, ys)))
         graph.layout_provider = StaticLayoutProvider(graph_layout=graph_layout)
 
-        graph.node_renderer.glyph = Circle(size='size', fill_alpha='alpha', line_alpha='alpha', fill_color='color')
-        graph.node_renderer.hover_glyph = Circle(size='size', fill_alpha=1.0, line_alpha=1.0, fill_color='color')
+        graph.node_renderer.glyph = Circle(size='size', fill_alpha='alpha', line_alpha='alpha', line_width='line_width',
+                                           fill_color='color')
+        graph.node_renderer.hover_glyph = Circle(size='size', fill_alpha=1.0, line_alpha=1.0, line_width='line_width',
+                                                 fill_color='color')
 
         graph.edge_renderer.glyph = MultiLine(line_color='lightgrey', line_alpha=0.5, line_width=1)
         graph.edge_renderer.hover_glyph = MultiLine(line_color='grey', line_alpha=1.0, line_width=2)
@@ -736,8 +742,8 @@ class Plotter:
         return p
 
     @staticmethod
-    def _paper_callback(ds):
-        return CustomJS(args=dict(ds=ds), code="""
+    def _paper_callback(ds, idname='id'):
+        return CustomJS(args=dict(ds=ds), code=f"""
             var data = ds.data, selected = ds.selected.indices;
 
             // Decode params from URL
@@ -747,9 +753,9 @@ class Plotter:
             // Max number of papers to be opened, others will be ignored
             var MAX_PAPERS = 3;
 
-            for (var i = 0; i < Math.min(MAX_PAPERS, selected.length); i++){
-                window.open('/paper?source=' + source + '&id=' + data['id'][selected[i]] + '&jobid=' + jobid, '_blank');
-            }
+            for (var i = 0; i < Math.min(MAX_PAPERS, selected.length); i++){{
+                window.open('/paper?source=' + source + '&id=' + data['{idname}'][selected[i]] + '&jobid=' + jobid, '_blank');
+            }}
         """)
 
     @staticmethod

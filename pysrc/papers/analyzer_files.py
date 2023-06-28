@@ -1,26 +1,23 @@
-import json
+import jinja2
 import json
 import logging
 import math
-import os
-from collections import Counter
-from itertools import product, chain
-
-import jinja2
 import networkx as nx
 import numpy as np
+import os
 import pandas as pd
 from bokeh.colors import RGB
 from bokeh.io import reset_output
 from bokeh.models import ColumnDataSource, ColorBar, PrintfTickFormatter, LinearColorMapper
 from bokeh.plotting import figure, output_file, save
-from lazy import lazy
+from collections import Counter
+from itertools import product, chain
 from matplotlib import pyplot as plt
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
 
-from pysrc.app.reports import query_to_folder, results_folder
+from pysrc.app.reports import query_to_folder, get_results_path, preprocess_string
 from pysrc.papers.analysis.citations import find_top_cited_papers, build_cit_stats_df, merge_citation_stats, \
     build_cocit_grouped_df
 from pysrc.papers.analysis.graph import build_papers_graph, \
@@ -35,7 +32,6 @@ from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.plot.plotter import Plotter, PLOT_WIDTH, SHORT_PLOT_HEIGHT, TALL_PLOT_HEIGHT
 from pysrc.papers.utils import cut_authors_list, factors_colormap, color_to_rgb, topics_palette, trim, MAX_QUERY_LENGTH
-
 from pysrc.version import VERSION
 
 logger = logging.getLogger(__name__)
@@ -59,8 +55,8 @@ class AnalyzerFiles(PapersAnalyzer):
 
     def analyze_ids(self, ids, source, query, sort, limit, topics, test=False, task=None):
         self.query = query
-        self.query_folder = os.path.join(results_folder(), f"{VERSION.replace(' ', '_')}",
-                                         query_to_folder(source, query, sort, limit))
+        self.query_folder = os.path.join(get_results_path(), preprocess_string(VERSION),
+                                         query_to_folder(source, query, sort, limit, jobid=None))
         if not os.path.exists(self.query_folder):
             os.makedirs(self.query_folder)
         logger.info(f'Query folder: {self.query_folder}')
@@ -320,8 +316,7 @@ class AnalyzerFiles(PapersAnalyzer):
         self.progress.done('Done analysis', task=task)
 
 
-
-def plot_mesh_terms(mesh_counter, top=100, plot_width=PLOT_WIDTH, plot_height=TALL_PLOT_HEIGHT):
+def plot_mesh_terms(mesh_counter, top=100, width=PLOT_WIDTH, height=TALL_PLOT_HEIGHT):
     mc_terms = mesh_counter.most_common(top)
     terms = [mc[0] for mc in mc_terms]
     numbers = [mc[1] for mc in mc_terms]
@@ -329,7 +324,7 @@ def plot_mesh_terms(mesh_counter, top=100, plot_width=PLOT_WIDTH, plot_height=TA
     colors = [color_to_rgb(cmap(i)) for i in range(top)]
     source = ColumnDataSource(data=dict(terms=terms, numbers=numbers, colors=colors))
 
-    p = figure(plot_width=plot_width, plot_height=plot_height,
+    p = figure(width=width, height=height,
                toolbar_location="right", tools="save", x_range=terms)
     p.vbar(x='terms', top='numbers', width=0.8, fill_alpha=0.5, color='colors', source=source)
     p.hover.tooltips = [("Term", '@terms'), ("Number", '@numbers')]
@@ -395,14 +390,14 @@ def components_ratio_data(df):
     return comps, ratios
 
 
-def plot_components_ratio(df, plot_width=PLOT_WIDTH, plot_height=SHORT_PLOT_HEIGHT):
+def plot_components_ratio(df, width=PLOT_WIDTH, height=SHORT_PLOT_HEIGHT):
     comps, ratios = components_ratio_data(df)
     n_comps = len(comps)
     cmap = factors_colormap(n_comps)
     colors = [color_to_rgb(cmap(i)) for i in range(n_comps)]
     source = ColumnDataSource(data=dict(comps=comps, ratios=ratios, colors=colors))
 
-    p = figure(plot_width=plot_width, plot_height=plot_height,
+    p = figure(width=width, height=height,
                toolbar_location="right", tools="save", x_range=comps)
     p.vbar(x='comps', top='ratios', width=0.8, fill_alpha=0.5, color='colors', source=source)
     p.hover.tooltips = [("Topic", '@comps'), ("Amount", '@ratios %')]
@@ -432,7 +427,7 @@ def topics_similarity_data(papers_embeddings, comps):
     return similarity_topics_df, components
 
 
-def heatmap_topics_similarity(similarity_df, topics, plot_width=PLOT_WIDTH, plot_height=TALL_PLOT_HEIGHT):
+def heatmap_topics_similarity(similarity_df, topics, width=PLOT_WIDTH, height=TALL_PLOT_HEIGHT):
     logger.debug('Visualizing topics similarity with heatmap')
 
     step = 10
@@ -443,7 +438,7 @@ def heatmap_topics_similarity(similarity_df, topics, plot_width=PLOT_WIDTH, plot
                                high=similarity_df.similarity.max())
 
     p = figure(x_range=topics, y_range=topics,
-               x_axis_location="below", plot_width=plot_width, plot_height=plot_height,
+               x_axis_location="below", width=width, height=height,
                tools="hover,pan,tap,wheel_zoom,box_zoom,reset,save", toolbar_location="right",
                tooltips=[('Topic 1', '@comp_x'),
                          ('Topic 2', '@comp_y'),

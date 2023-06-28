@@ -15,8 +15,8 @@ from urllib.parse import quote
 from pysrc.app.admin.admin import configure_admin_functions
 from pysrc.app.messages import SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, SOMETHING_WENT_WRONG_PAPER, \
     SOMETHING_WENT_WRONG_TOPIC, SERVICE_LOADING_PREDEFINED_EXAMPLES
-from pysrc.app.reports import get_predefined_jobs, load_predefined_viz_log, \
-    load_predefined_or_result_data, _example_by_jobid
+from pysrc.app.reports import get_predefined_jobs, load_result_viz_log, \
+    load_result_data, _predefined_example_params_by_jobid, preprocess_string
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, \
     analyze_pubmed_search_files, analyze_pubmed_search, analyze_search_terms_files
@@ -103,6 +103,9 @@ def log_request(r):
     return f'addr:{r.remote_addr} args:{json.dumps(r.args)}'
 
 
+PUBMED_DEFAULT_EXPAND = 10
+
+
 @app.route('/')
 def index():
     if not are_predefined_jobs_ready():
@@ -132,7 +135,8 @@ def index():
                            ss_enabled=PUBTRENDS_CONFIG.ss_enabled,
                            search_example_message=search_example_message,
                            search_example_source=search_example_source,
-                           search_example_terms=search_example_terms)
+                           search_example_terms=search_example_terms,
+                           search_example_expand=PUBMED_DEFAULT_EXPAND if search_example_source == "Pubmed" else 0)
 
 
 @app.route('/about.html', methods=['GET'])
@@ -358,7 +362,7 @@ def result():
     topics = request.args.get('topics')
     try:
         if jobid and query and source and limit is not None and sort is not None:
-            viz, log, is_predefined = load_predefined_viz_log(source, jobid, PREDEFINED_JOBS, pubtrends_celery)
+            viz, log = load_result_viz_log(jobid, source, query, sort, limit, pubtrends_celery)
             if viz is not None and log is not None:
                 logger.info(f'/result success {log_request(request)}')
                 return render_template('result.html',
@@ -394,8 +398,8 @@ def graph():
     source = request.args.get('source')
     limit = request.args.get('limit')
     sort = request.args.get('sort')
-    if jobid:
-        data, _ = load_predefined_or_result_data(source, jobid, PREDEFINED_JOBS, pubtrends_celery)
+    if jobid and query and source and limit and sort:
+        data = load_result_data(jobid, source, query, sort, limit, pubtrends_celery)
         if data is not None:
             loader, url_prefix = Loaders.get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
             analyzer = PapersAnalyzer(loader, PUBTRENDS_CONFIG)
@@ -437,23 +441,24 @@ def paper():
     topics = request.args.get('topics')
     try:
         if jobid:
-            data, _ = load_predefined_or_result_data(source, jobid, PREDEFINED_JOBS, pubtrends_celery)
-            if data is not None:
-                logger.info(f'/paper success {log_request(request)}')
-                return render_template('paper.html',
-                                       **prepare_paper_data(data, source, pid),
-                                       max_graph_size=PUBTRENDS_CONFIG.max_graph_size,
-                                       version=VERSION)
-            else:
-                logger.info(f'/paper No job or out-of-date job, restart it {log_request(request)}')
-                analyze_search_paper.apply_async(
-                    args=[source, pid, key, value, limit, topics, app.config['TESTING']], task_id=jobid
-                )
-                return redirect(url_for('.process', query=f'Paper {key}={value}', analysis_type=PAPER_ANALYSIS_TYPE,
-                                        source=source, key=key, value=value, topics=topics, jobid=jobid))
-        else:
-            logger.error(f'/paper error wrong request {log_request(request)}')
-            return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
+            job = AsyncResult(jobid, app=pubtrends_celery)
+            if job and job.state == 'SUCCESS':
+                _, data, _ = job.result
+                if data is not None:
+                    logger.info(f'/paper success {log_request(request)}')
+                    return render_template('paper.html',
+                                           **prepare_paper_data(data, source, pid),
+                                           max_graph_size=PUBTRENDS_CONFIG.max_graph_size,
+                                           version=VERSION)
+                else:
+                    logger.info(f'/paper No job or out-of-date job, restart it {log_request(request)}')
+                    analyze_search_paper.apply_async(
+                        args=[source, pid, key, value, limit, topics, app.config['TESTING']], task_id=jobid
+                    )
+                    return redirect(url_for('.process', query=f'Paper {key}={value}', analysis_type=PAPER_ANALYSIS_TYPE,
+                                            source=source, key=key, value=value, topics=topics, jobid=jobid))
+        logger.error(f'/paper error wrong request {log_request(request)}')
+        return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
     except Exception as e:
         logger.exception(f'/paper exception {e}')
         return render_template_string(ERROR_OCCURRED), 500
@@ -492,11 +497,11 @@ def show_ids():
     if papers_list == 'hot':
         search_string += 'Hot Papers'
 
-    if jobid:
-        data, _ = load_predefined_or_result_data(source, jobid, PREDEFINED_JOBS, pubtrends_celery)
+    if jobid and query and source and limit and sort:
+        data = load_result_data(jobid, source, query, sort, limit, pubtrends_celery)
         if data is not None:
             logger.info(f'/papers success {log_request(request)}')
-            export_name = re.sub('_{2,}', '_', re.sub('["\':,. ]', '_', f'{query}_{search_string}'.lower())).strip('_')
+            export_name = preprocess_string(f'{query}-{search_string}')
             loader, url_prefix = Loaders.get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
             analyzer = PapersAnalyzer(loader, PUBTRENDS_CONFIG)
             analyzer.init(data)
@@ -532,7 +537,7 @@ def result_files():
                 query_folder = job.result
                 if 'file' in request.args:
                     file = request.args.get('file')
-                    return send_file(os.path.join(query_folder, file), as_attachment=False, attachment_filename=file)
+                    return send_file(os.path.join(query_folder, file), as_attachment=False, download_name=file)
                 else:
                     available_files = list(sorted(os.listdir(query_folder)))
                     file_infos = []
@@ -570,11 +575,10 @@ def export_results():
         source = request.args.get('source')
         limit = request.args.get('limit')
         sort = request.args.get('sort')
-        if jobid and query and source and limit and source:
-            data, _ = load_predefined_or_result_data(source, jobid, PREDEFINED_JOBS, pubtrends_celery)
+        if jobid and query and source and limit and sort:
+            data = load_result_data(jobid, source, query, sort, limit, pubtrends_celery)
             with tempfile.TemporaryDirectory() as tmpdir:
-                name = re.sub('_{2,}', '_',
-                              re.sub('["\':,. ]', '_', f'{source}_{query}_{sort}_{limit}'.lower())).strip('_')
+                name = preprocess_string(f'{source}-{query}-{sort}-{limit}')
                 path = os.path.join(tmpdir, f'{name}.json.gz')
                 with gzip.open(path, 'w') as f:
                     f.write(json.dumps(data).encode('utf-8'))
@@ -607,18 +611,17 @@ def are_predefined_jobs_ready():
         scheduled_jobs = [j['id'] for j in list(inspect.reserved().items())[0][1]]
 
         for source, predefine_info in PREDEFINED_JOBS.items():
-            for query, query_hash in predefine_info:
-                logger.info(f'Check predefined search for source={source} query={query}')
-                jobid = f'predefined_{query_hash}'
+            for query, jobid in predefine_info:
+                logger.info(f'Check predefined search for source={source} query={query} jobid={jobid}')
                 # Check celery queue
                 if jobid in active_jobs or jobid in scheduled_jobs:
                     ready = False
                     continue
-                data, _ = load_predefined_or_result_data(source, jobid, PREDEFINED_JOBS, pubtrends_celery)
+                query, sort, limit = _predefined_example_params_by_jobid(source, jobid, PREDEFINED_JOBS)
+                data = load_result_data(jobid, source, query, sort, limit, pubtrends_celery)
                 if data is None:
-                    query, sort, limit = _example_by_jobid(source, jobid, PREDEFINED_JOBS)
                     logger.info(f'No job or out-of-date job for source={source} query={query}, launch it')
-                    expand = 20 if source == 'Pubmed' else 0
+                    expand = PUBMED_DEFAULT_EXPAND if source == 'Pubmed' else 0
                     analyze_search_terms.apply_async(
                         args=[source, query, sort, int(limit), False, expand / 100, 'medium', app.config['TESTING']],
                         task_id=jobid
@@ -667,7 +670,7 @@ configure_admin_functions(app, pubtrends_celery, logfile)
 #######################
 
 if PUBTRENDS_CONFIG.feature_review_enabled:
-    register_app_review(app, PREDEFINED_JOBS)
+    register_app_review(app)
 
 
 # Application

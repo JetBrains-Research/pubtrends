@@ -15,7 +15,6 @@ services:
       - ~/.pubtrends/logs:/logs
       - ~/.pubtrends/database:/database
       - ~/.pubtrends/ssl:/ssl:ro
-      - ~/.pubtrends/predefined:/predefined
       - ~/.pubtrends/results:/results
       - ~/.pubtrends/nltk-data:/home/user/nltk-data
       - ~/.pubtrends/gensim-data:/home/user/gensim-data
@@ -30,7 +29,6 @@ services:
       - ~/.pubtrends/logs:/logs
       - ~/.pubtrends/model:/model:ro
       - ~/.pubtrends/.cache:/home/user/.cache
-      - ~/.pubtrends/predefined:/predefined
       - ~/.pubtrends/results:/results
       - ~/.pubtrends/nltk-data:/home/user/nltk-data
       - ~/.pubtrends/gensim-data:/home/user/gensim-data

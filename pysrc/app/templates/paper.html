@@ -172,36 +172,36 @@
                     </li>
 
                     {% if similar_papers is defined %}
-                    <li class="nav-item row">
-                        <a class="nav-link no-padding-right" href="#similar" title="Similar Papers">
-                            <img class="nav-icon" src="{{ url_for('static', filename='pause.svg') }}"/>
-                        </a>
-                        <a class="nav-link d-none d-xl-block no-padding" href="#similar">
-                            Similar Papers
-                        </a>
-                    </li>
+                        <li class="nav-item row">
+                            <a class="nav-link no-padding-right" href="#similar" title="Similar Papers">
+                                <img class="nav-icon" src="{{ url_for('static', filename='pause.svg') }}"/>
+                            </a>
+                            <a class="nav-link d-none d-xl-block no-padding" href="#similar">
+                                Similar Papers
+                            </a>
+                        </li>
                     {% endif %}
 
                     {% if prior_papers is defined %}
-                    <li class="nav-item row">
-                        <a class="nav-link no-padding-right" href="#prior" title="Prior Papers">
-                            <img class="nav-icon" src="{{ url_for('static', filename='rewind.svg') }}"/>
-                        </a>
-                        <a class="nav-link d-none d-xl-block no-padding" href="#prior">
-                            Prior Papers
-                        </a>
-                    </li>
+                        <li class="nav-item row">
+                            <a class="nav-link no-padding-right" href="#prior" title="Prior Papers">
+                                <img class="nav-icon" src="{{ url_for('static', filename='rewind.svg') }}"/>
+                            </a>
+                            <a class="nav-link d-none d-xl-block no-padding" href="#prior">
+                                Prior Papers
+                            </a>
+                        </li>
                     {% endif %}
 
                     {% if derivative_papers is defined %}
-                    <li class="nav-item row">
-                        <a class="nav-link no-padding-right" href="#derivative" title="Derivative Papers">
-                            <img class="nav-icon" src="{{ url_for('static', filename='fast-forward.svg') }}"/>
-                        </a>
-                        <a class="nav-link d-none d-xl-block no-padding" href="#derivative">
-                            Derivative Papers
-                        </a>
-                    </li>
+                        <li class="nav-item row">
+                            <a class="nav-link no-padding-right" href="#derivative" title="Derivative Papers">
+                                <img class="nav-icon" src="{{ url_for('static', filename='fast-forward.svg') }}"/>
+                            </a>
+                            <a class="nav-link d-none d-xl-block no-padding" href="#derivative">
+                                Derivative Papers
+                            </a>
+                        </li>
                     {% endif %}
 
                     <li class="nav-item row">
@@ -237,34 +237,34 @@
                         <em>{{ authors }}</em><br>
                         <!-- Generate info about publication year and journal-->
                         {% if journal != "" %}
-                        {{ journal }}
+                            {{ journal }}
                         {% endif %}
                         {% if year != "None" %}
-                        {{ year }}
+                            {{ year }}
                         {% endif %}
                         {% if doi != "" %}
-                        <br>
-                        <a class="link" href="https://doi.org/{{ doi }}">doi:{{ doi }}</a>
+                            <br>
+                            <a class="link" href="https://doi.org/{{ doi }}">doi:{{ doi }}</a>
                         {% endif %}
                         <br>
                         <a class="link" href="{{ url }}">Open in {{ source }}</a>
                         {% if mesh != "" %}
-                        <br>Mesh: {{ mesh }}
+                            <br>Mesh: {{ mesh }}
                         {% endif %}
                         {% if keywords != "" %}
-                        <br>Keywords: {{ keywords }}
+                            <br>Keywords: {{ keywords }}
                         {% endif %}
                         {% if abstract is defined %}
-                        <h5 class="card-subtitle mt-3">Abstract</h5>
-                        <p class="mt-2">{{ abstract }}</p>
+                            <h5 class="card-subtitle mt-3">Abstract</h5>
+                            <p class="mt-2">{{ abstract }}</p>
                         {% endif %}
                     </div>
                     <h5 class="card-subtitle mt-3">Citations</h5>
                     <p class="mt-2">Number of citations per year for the paper.</p>
                     <div>
                         {% for script, div in citation_dynamics %}
-                        {{ script|safe }}
-                        {{ div|safe }}
+                            {{ script|safe }}
+                            {{ div|safe }}
                         {% endfor %}
                     </div>
                     <div class="mt-3" id="paper-feedback-paper-form"></div>
@@ -277,146 +277,146 @@
                 </div>
                 <div class="card-body">
                     {% if n_papers <= max_graph_size %}
-                    {% if papers_graph is defined %}
-                    <strong>Papers similarity</strong>
-                    <p>
-                        The graph below shows papers similarity network. Similar papers are located closely.<br>
-                        Edges represent co-citations, common references and citations between papers.<br>
-                        Color represents topic, size - total citations number.
-                    </p>
-                    {% for script, div in papers_graph %}
-                    {{ script|safe }}
-                    {{ div|safe }}
-                    {% endfor %}
-                    {% endif %}
-                    <br>
-                    <p>
-                        Explore papers similarity network in the interactive graph viewer.
-                    </p>
-                    <button type="button" class="btn btn-light" onclick="graph_callback();">
-                        Explore
-                    </button>
+                        {% if papers_graph is defined %}
+                            <strong>Papers similarity</strong>
+                            <p>
+                                The graph below shows papers similarity network. Similar papers are located closely.<br>
+                                Edges represent co-citations, common references and citations between papers.<br>
+                                Color represents topic, size - total citations number.
+                            </p>
+                            {% for script, div in papers_graph %}
+                                {{ script|safe }}
+                                {{ div|safe }}
+                            {% endfor %}
+                        {% endif %}
+                        <br>
+                        <p>
+                            Explore papers similarity network in the interactive graph viewer.
+                        </p>
+                        <button type="button" class="btn btn-light" onclick="graph_callback();">
+                            Explore
+                        </button>
                     {% else %}
-                    Too many papers to visualize graphs.
+                        Too many papers to visualize graphs.
                     {% endif %}
                     <div class="mt-3" id="paper-feedback-network-form"></div>
                 </div>
             </div>
 
             {% if similar_papers is defined %}
-            <div class="card mt-3">
-                <div class="card-title" id="similar">
-                    <h1 class="card-header">Similar Papers</h1>
+                <div class="card mt-3">
+                    <div class="card-title" id="similar">
+                        <h1 class="card-header">Similar Papers</h1>
+                    </div>
+                    <div class="card-body">
+                        <p>
+                            This section represents papers, similar to the paper of interest.
+                        </p>
+                        <table id="similar_papers" class="table table-sm table-bordered table-striped">
+                            <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Title</th>
+                                <th scope="col">Year</th>
+                                <th scope="col">Cited</th>
+                                <th scope="col">Similarity</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for id, title, url, year, cited, similarity in similar_papers %}
+                                <tr>
+                                    <th scope="row">{{ loop.index }}</th>
+                                    <td>
+                                        <a class="link" href="{{ url }}" title="Open in {{ source }}">
+                                            {{ title }}
+                                        </a>
+                                    </td>
+                                    <td>{{ year }}</td>
+                                    <td>{{ cited }}</td>
+                                    <td>{{ similarity }}</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                        <div class="mt-3" id="paper-feedback-similar-form"></div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <p>
-                        This section represents papers, similar to the paper of interest.
-                    </p>
-                    <table id="similar_papers" class="table table-sm table-bordered table-striped">
-                        <thead>
-                        <tr>
-                            <th scope="col">#</th>
-                            <th scope="col">Title</th>
-                            <th scope="col">Year</th>
-                            <th scope="col">Cited</th>
-                            <th scope="col">Similarity</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {% for id, title, url, year, cited, similarity in similar_papers %}
-                        <tr>
-                            <th scope="row">{{ loop.index }}</th>
-                            <td>
-                                <a class="link" href="{{ url }}" title="Open in {{ source }}">
-                                    {{ title }}
-                                </a>
-                            </td>
-                            <td>{{ year }}</td>
-                            <td>{{ cited }}</td>
-                            <td>{{ similarity }}</td>
-                        </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                    <div class="mt-3" id="paper-feedback-similar-form"></div>
-                </div>
-            </div>
             {% endif %}
 
             {% if prior_papers is defined %}
-            <div class="card mt-3">
-                <div class="card-title" id="prior">
-                    <h1 class="card-header">Prior Papers</h1>
+                <div class="card mt-3">
+                    <div class="card-title" id="prior">
+                        <h1 class="card-header">Prior Papers</h1>
+                    </div>
+                    <div class="card-body">
+                        <p>
+                            This section represents most cited papers, cited by the paper of interest.
+                        </p>
+                        <table id="prior_papers" class="table table-sm table-bordered table-striped">
+                            <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Title</th>
+                                <th scope="col">Year</th>
+                                <th scope="col">Cited</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for id, title, url, year, cited in prior_papers %}
+                                <tr>
+                                    <th scope="row">{{ loop.index }}</th>
+                                    <td>
+                                        <a class="link" href="{{ url }}" title="Open in {{ source }}">
+                                            {{ title }}
+                                        </a>
+                                    </td>
+                                    <td>{{ year }}</td>
+                                    <td>{{ cited }}</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                        <div class="mt-3" id="paper-feedback-prior-form"></div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <p>
-                        This section represents most cited papers, cited by the paper of interest.
-                    </p>
-                    <table id="prior_papers" class="table table-sm table-bordered table-striped">
-                        <thead>
-                        <tr>
-                            <th scope="col">#</th>
-                            <th scope="col">Title</th>
-                            <th scope="col">Year</th>
-                            <th scope="col">Cited</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {% for id, title, url, year, cited in prior_papers %}
-                        <tr>
-                            <th scope="row">{{ loop.index }}</th>
-                            <td>
-                                <a class="link" href="{{ url }}" title="Open in {{ source }}">
-                                    {{ title }}
-                                </a>
-                            </td>
-                            <td>{{ year }}</td>
-                            <td>{{ cited }}</td>
-                        </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                    <div class="mt-3" id="paper-feedback-prior-form"></div>
-                </div>
-            </div>
             {% endif %}
 
             {% if derivative_papers is defined %}
-            <div class="card mt-3">
-                <div class="card-title" id="derivative">
-                    <h1 class="card-header">Derivative Papers</h1>
+                <div class="card mt-3">
+                    <div class="card-title" id="derivative">
+                        <h1 class="card-header">Derivative Papers</h1>
+                    </div>
+                    <div class="card-body">
+                        <p>
+                            This section represents most cited papers, citing the paper of interest.
+                        </p>
+                        <table id="derivative_papers" class="table table-sm table-bordered table-striped">
+                            <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Title</th>
+                                <th scope="col">Year</th>
+                                <th scope="col">Cited</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for id, title, url, year, cited in derivative_papers %}
+                                <tr>
+                                    <th scope="row">{{ loop.index }}</th>
+                                    <td>
+                                        <a class="link" href="{{ url }}" title="Open in {{ source }}">
+                                            {{ title }}
+                                        </a>
+                                    </td>
+                                    <td>{{ year }}</td>
+                                    <td>{{ cited }}</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                        <div class="mt-3" id="paper-feedback-derivative-form"></div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <p>
-                        This section represents most cited papers, citing the paper of interest.
-                    </p>
-                    <table id="derivative_papers" class="table table-sm table-bordered table-striped">
-                        <thead>
-                        <tr>
-                            <th scope="col">#</th>
-                            <th scope="col">Title</th>
-                            <th scope="col">Year</th>
-                            <th scope="col">Cited</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {% for id, title, url, year, cited in derivative_papers %}
-                        <tr>
-                            <th scope="row">{{ loop.index }}</th>
-                            <td>
-                                <a class="link" href="{{ url }}" title="Open in {{ source }}">
-                                    {{ title }}
-                                </a>
-                            </td>
-                            <td>{{ year }}</td>
-                            <td>{{ cited }}</td>
-                        </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                    <div class="mt-3" id="paper-feedback-derivative-form"></div>
-                </div>
-            </div>
             {% endif %}
 
             <div class="card mt-3">
@@ -429,28 +429,28 @@
                         <a href="javascript:void(0);" class="link" onclick="result();">here</a>.
                     </p>
                     {% if related_topics is defined %}
-                    <hr>
-                    <p>
-                        Number of similar papers topics in the field. Paper topic is #{{ topic }}.</p>
-                    <br>
-                    <table id="related_topics" class="table table-sm table-bordered table-striped">
-                        <thead>
-                        <tr>
-                            <th scope="col">#</th>
-                            <th scope="col">Topic keywords</th>
-                            <th scope="col">Similar papers</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {% for row in related_topics %}
-                        <tr>
-                            <th scope="row">{{ loop.index }}</th>
-                            <td>{{ row[0] }}</td>
-                            <td>{{ row[1] }}</td>
-                        </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
+                        <hr>
+                        <p>
+                            Number of similar papers topics in the field. Paper topic is #{{ topic }}.</p>
+                        <br>
+                        <table id="related_topics" class="table table-sm table-bordered table-striped">
+                            <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Topic keywords</th>
+                                <th scope="col">Similar papers</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for row in related_topics %}
+                                <tr>
+                                    <th scope="row">{{ loop.index }}</th>
+                                    <td>{{ row[0] }}</td>
+                                    <td>{{ row[1] }}</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
                     {% endif %}
                     <div class="mt-3" id="paper-feedback-related-form"></div>
                 </div>

@@ -50,7 +50,6 @@ EXPOSE 5432
 USER root
 RUN mkdir /logs && chmod a+rw /logs \
     && mkdir /database && chmod a+rw /database \
-    && mkdir /predefined && chmod a+rw /predefined \
     && mkdir /results && chmod a+rw /results
 USER user
 
