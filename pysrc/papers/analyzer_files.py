@@ -163,7 +163,7 @@ class AnalyzerFiles(PapersAnalyzer):
                            f'and {self.papers_graph.number_of_edges()} edges', current=10, task=task)
         logger.debug('Analyzing papers graph embeddings')
         self.weighted_similarity_graph = to_weighted_graph(self.papers_graph, PapersAnalyzer.similarity)
-        gs = sparse_graph(self.weighted_similarity_graph)
+        gs = sparse_graph(self.weighted_similarity_graph, PapersAnalyzer.PAPERS_GRAPH_EDGES_TO_NODES)
         self.graph_embeddings = node2vec(self.df['id'], gs)
 
         logger.debug('Computing aggregated graph and text embeddings for papers')

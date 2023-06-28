@@ -67,7 +67,8 @@ def topic_evolution_analysis(
             logger.debug(f'Built papers graph - {papers_graph.number_of_nodes()} nodes and '
                          f'{papers_graph.number_of_edges()} edges')
             weighted_similarity_graph = to_weighted_graph(papers_graph, similarity_func)
-            gs = sparse_graph(weighted_similarity_graph)
+            # Cannot use PapersAnalyzer.PAPERS_GRAPH_EDGES_TO_NODES here, so hardcoded
+            gs = sparse_graph(weighted_similarity_graph, 10)
             graph_embeddings_year = node2vec(df_year['id'], gs)
         else:
             graph_embeddings_year = np.zeros(shape=(len(df_year), 0))

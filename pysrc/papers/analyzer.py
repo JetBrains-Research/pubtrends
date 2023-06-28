@@ -34,11 +34,8 @@ class PapersAnalyzer:
     #   ...bibliographic coupling (BC) was the most accurate,  followed by co-citation (CC).
     #   Direct citation (DC) was a distant third among the three...
     #
-    # Coefficients were estimated in the paper: https://dl.acm.org/doi/10.1145/3459930.3469501
-    # Poster: https://drive.google.com/file/d/1SeqJtJtaHSO6YihG2905boOEYL1NiSP1/view
-    # See for details: https://github.com/JetBrains-Research/pubtrends-clustering
+    SIMILARITY_COCITATION = 10  # Limiter by number of co-citations, applied to log
     SIMILARITY_BIBLIOGRAPHIC_COUPLING = 3  # Limited by number of references, applied to log
-    SIMILARITY_COCITATION = 3  # Limiter by number of co-citations, applied to log
     SIMILARITY_CITATION = 1  # Limited by 1 citation
 
     # Minimal number of common references, used to reduces papers graph edges count
@@ -54,7 +51,7 @@ class PapersAnalyzer:
     TEXT_EMBEDDINGS_FACTOR = 1
 
     # Reduce number of edges in papers graph
-    PAPERS_GRAPH_EDGES_TO_NODES = 5
+    PAPERS_GRAPH_EDGES_TO_NODES = 10
 
     # Global vectorization max vocabulary size
     VECTOR_WORDS = 10000
@@ -207,7 +204,7 @@ class PapersAnalyzer:
         self.sparse_papers_graph = self.prepare_sparse_papers_graph(self.papers_graph, self.weighted_similarity_graph)
 
         if PapersAnalyzer.GRAPH_EMBEDDINGS_FACTOR != 0:
-            gs = sparse_graph(self.weighted_similarity_graph)
+            gs = sparse_graph(self.weighted_similarity_graph, PapersAnalyzer.PAPERS_GRAPH_EDGES_TO_NODES)
             self.graph_embeddings = node2vec(self.df['id'], gs)
         else:
             self.graph_embeddings = np.zeros(shape=(len(self.df), 0))
