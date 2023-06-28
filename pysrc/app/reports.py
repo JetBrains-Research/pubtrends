@@ -41,10 +41,18 @@ def get_predefined_jobs(config):
     return result
 
 
-def _save_data(viz, data, log, jobid, source, query, sort, limit):
-    logger.info(f'Saving search for source={source} query={query} sort={sort} limit={limit}')
-    folder = os.path.join(get_results_path(), preprocess_string(VERSION),
-                          query_to_folder(source, query, sort, limit, jobid))
+def _save_result_data(viz, data, log, jobid, source, query, sort, limit):
+    logger.info(f'Saving result for source={source} query={query} sort={sort} limit={limit}')
+    _save_data(result_folder_name(source, query, sort, limit, jobid), data, log, viz)
+
+
+def _save_paper_data(viz, data, log, jobid, source, query):
+    logger.info(f'Saving paper for source={source} query={query}')
+    _save_data(paper_folder_name(source, query, jobid), data, log, viz)
+
+
+def _save_data(name, data, log, viz):
+    folder = os.path.join(get_results_path(), preprocess_string(VERSION), name)
     try:
         FILES_LOCK.acquire()
         if not os.path.exists(folder):
@@ -84,7 +92,7 @@ def load_result_viz_log(jobid, source, query, sort, limit, app):
     job = AsyncResult(jobid, app=app)
     if job and job.state == 'SUCCESS':
         viz, data, log = job.result
-        _save_data(viz, data, log, jobid, source, query, sort, limit)
+        _save_result_data(viz, data, log, jobid, source, query, sort, limit)
         return viz, log
     return None, None
 
@@ -104,7 +112,27 @@ def load_result_data(jobid, source, query, sort, limit, app):
     job = AsyncResult(jobid, app=app)
     if job and job.state == 'SUCCESS':
         viz, data, log = job.result
-        _save_data(viz, data, log, jobid, source, query, sort, limit)
+        _save_result_data(viz, data, log, jobid, source, query, sort, limit)
+        return data
+    return None
+
+
+def load_paper_data(jobid, source, query, app):
+    logger.info(f'Trying to load paper data for source={source} query={query}')
+    try:
+        FILES_LOCK.acquire()
+        folder = _find_folder(jobid)
+        if folder is not None:
+            path_data = os.path.join(folder, 'data.json.gz')
+            if os.path.exists(path_data):
+                with gzip.open(path_data, 'r') as f:
+                    return json.loads(f.read().decode('utf-8'))
+    finally:
+        FILES_LOCK.release()
+    job = AsyncResult(jobid, app=app)
+    if job and job.state == 'SUCCESS':
+        viz, data, log = job.result
+        _save_paper_data(viz, data, log, jobid, source, query)
         return data
     return None
 
@@ -113,8 +141,16 @@ def preprocess_string(s):
     return re.sub(r'-{2,}', '-', re.sub(r'[^a-z0-9_]+', '-', s.lower())).strip('-')
 
 
-def query_to_folder(source, query, sort, limit, jobid, max_folder_length=100):
-    folder_name = preprocess_string(f'{source}-{query}-{sort}-{limit}')
+def result_folder_name(source, query, sort, limit, jobid):
+    return get_folder_name(jobid, f'{source}-{query}-{sort}-{limit}')
+
+
+def paper_folder_name(source, query, jobid):
+    return get_folder_name(jobid, f'paper-{source}-{query}')
+
+
+def get_folder_name(jobid, name, max_folder_length=100):
+    folder_name = preprocess_string(name)
     if len(folder_name) > max_folder_length:
         folder_name = folder_name[:(max_folder_length - 32 - 1)]
     if jobid is not None:

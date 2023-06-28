@@ -16,7 +16,7 @@ from pysrc.app.admin.admin import configure_admin_functions
 from pysrc.app.messages import SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, SOMETHING_WENT_WRONG_PAPER, \
     SOMETHING_WENT_WRONG_TOPIC, SERVICE_LOADING_PREDEFINED_EXAMPLES
 from pysrc.app.reports import get_predefined_jobs, load_result_viz_log, \
-    load_result_data, _predefined_example_params_by_jobid, preprocess_string
+    load_result_data, _predefined_example_params_by_jobid, preprocess_string, load_paper_data
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, \
     analyze_pubmed_search_files, analyze_pubmed_search, analyze_search_terms_files
@@ -441,21 +441,19 @@ def paper():
     topics = request.args.get('topics')
     try:
         if jobid:
-            job = AsyncResult(jobid, app=pubtrends_celery)
-            if job and job.state == 'SUCCESS':
-                _, data, _ = job.result
-                if data is not None:
-                    logger.info(f'/paper success {log_request(request)}')
-                    return render_template('paper.html',
-                                           **prepare_paper_data(data, source, pid),
-                                           max_graph_size=PUBTRENDS_CONFIG.max_graph_size,
-                                           version=VERSION)
-                else:
-                    logger.info(f'/paper No job or out-of-date job, restart it {log_request(request)}')
-                    analyze_search_paper.apply_async(
-                        args=[source, pid, key, value, limit, topics, app.config['TESTING']], task_id=jobid
-                    )
-                    return redirect(url_for('.process', query=f'Paper {key}={value}', analysis_type=PAPER_ANALYSIS_TYPE,
+            data = load_paper_data(jobid, source, f'{key}={value}', pubtrends_celery)
+            if data is not None:
+                logger.info(f'/paper success {log_request(request)}')
+                return render_template('paper.html',
+                                       **prepare_paper_data(data, source, pid),
+                                       max_graph_size=PUBTRENDS_CONFIG.max_graph_size,
+                                       version=VERSION)
+            else:
+                logger.info(f'/paper No job or out-of-date job, restart it {log_request(request)}')
+                analyze_search_paper.apply_async(
+                    args=[source, pid, key, value, limit, topics, app.config['TESTING']], task_id=jobid
+                )
+                return redirect(url_for('.process', query=f'Paper {key}={value}', analysis_type=PAPER_ANALYSIS_TYPE,
                                             source=source, key=key, value=value, topics=topics, jobid=jobid))
         logger.error(f'/paper error wrong request {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400

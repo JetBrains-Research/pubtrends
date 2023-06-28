@@ -17,7 +17,7 @@ from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
 
-from pysrc.app.reports import query_to_folder, get_results_path, preprocess_string
+from pysrc.app.reports import result_folder_name, get_results_path, preprocess_string
 from pysrc.papers.analysis.citations import find_top_cited_papers, build_cit_stats_df, merge_citation_stats, \
     build_cocit_grouped_df
 from pysrc.papers.analysis.graph import build_papers_graph, \
@@ -56,7 +56,7 @@ class AnalyzerFiles(PapersAnalyzer):
     def analyze_ids(self, ids, source, query, sort, limit, topics, test=False, task=None):
         self.query = query
         self.query_folder = os.path.join(get_results_path(), preprocess_string(VERSION),
-                                         query_to_folder(source, query, sort, limit, jobid=None))
+                                         result_folder_name(source, query, sort, limit, jobid=None))
         if not os.path.exists(self.query_folder):
             os.makedirs(self.query_folder)
         logger.info(f'Query folder: {self.query_folder}')
