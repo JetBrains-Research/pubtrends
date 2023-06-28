@@ -309,14 +309,8 @@ class Plotter:
         p.yaxis.axis_label = 'Number of papers'
         p.hover.tooltips = [("Papers", '@counts'), ("Year", '@year')]
         if min_year != max_year:
-            # NOTE: VBar is invisible (alpha=0) to provide tooltips, as in self.component_size_summary()
-            p.vbar(x='year', width=0.8, top='counts', fill_alpha=0, line_alpha=0, source=ds_stats)
-            # VArea is actually displayed
             ds_stats.data['bottom'] = [0] * len(ds_stats.data['year'])
             p.varea(x='year', y1='bottom', y2='counts', fill_alpha=0.5, source=ds_stats)
-        else:
-            # NOTE: VBar is invisible (alpha=0) to provide tooltips, as in self.component_size_summary()
-            p.vbar(x='year', width=0.8, top='counts', source=ds_stats)
         return p
 
     def plot_keywords_frequencies(self, freq_kwds, n=20):
