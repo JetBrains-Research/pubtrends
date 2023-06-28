@@ -670,8 +670,8 @@ class Plotter:
         graph.node_renderer.data_source.data['alpha'] = [2.0 if p == pid else 0.7 for p in pids]
 
         # Edges
-        graph.edge_renderer.data_source.data = dict(start=[int(u) for u, _ in gs.edges],
-                                                    end=[int(v) for _, v in gs.edges])
+        graph.edge_renderer.data_source.data = dict(start=[u for u, _ in gs.edges],
+                                                    end=[v for _, v in gs.edges])
 
         # start of layout code
         xs, ys = df['x'], df['y']
