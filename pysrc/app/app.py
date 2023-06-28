@@ -5,13 +5,12 @@ import os
 import random
 import re
 import tempfile
-from threading import Lock
-from urllib.parse import quote
-
 import time
 from celery.result import AsyncResult
 from flask import Flask, url_for, redirect, render_template, request, render_template_string, \
     send_from_directory, send_file
+from threading import Lock
+from urllib.parse import quote
 
 from pysrc.app.admin.admin import configure_admin_functions
 from pysrc.app.messages import SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, SOMETHING_WENT_WRONG_PAPER, \

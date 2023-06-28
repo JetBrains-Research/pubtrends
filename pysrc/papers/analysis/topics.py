@@ -102,7 +102,7 @@ def _get_topics_description_cosine(comps, corpus_tokens, corpus_counts, n_words,
     logger.debug('Compute average tokens counts per components')
     # Since some of the components may be skipped, use this dict for continuous indexes
     comp_idx = {c: i for i, c in enumerate(c for c in comps if c != ignore_comp)}
-    tokens_freqs_per_comp = np.zeros(shape=(len(comp_idx), corpus_counts.shape[1]), dtype=np.float)
+    tokens_freqs_per_comp = np.zeros(shape=(len(comp_idx), corpus_counts.shape[1]), dtype=np.float32)
     for comp, comp_ids in comps.items():
         if comp != ignore_comp:  # Not ignored
             tokens_freqs_per_comp[comp_idx[comp], :] = \

@@ -237,7 +237,7 @@ class Plotter:
         most_cited_counts = most_cited_per_year_df['count']
         min_year, max_year = self.analyzer.df['year'].min(), self.analyzer.df['year'].max()
         p = figure(tools=TOOLS, toolbar_location="right",
-                   plot_width=PLOT_WIDTH, plot_height=SHORT_PLOT_HEIGHT,
+                   width=PLOT_WIDTH, height=SHORT_PLOT_HEIGHT,
                    x_range=(min_year - 1, max_year + 1),
                    y_axis_type="log" if most_cited_counts.max() > MAX_LINEAR_AXIS else "linear")
         p.sizing_mode = 'stretch_width'
@@ -276,7 +276,7 @@ class Plotter:
         fastest_rel_gains = fastest_growth_per_year_df['rel_gain']
         min_year, max_year = self.analyzer.df['year'].min(), self.analyzer.df['year'].max()
         p = figure(tools=TOOLS, toolbar_location="right",
-                   plot_width=PLOT_WIDTH, plot_height=SHORT_PLOT_HEIGHT,
+                   width=PLOT_WIDTH, height=SHORT_PLOT_HEIGHT,
                    x_range=(min_year - 1, max_year + 1),
                    y_axis_type="log" if fastest_rel_gains.max() > MAX_LINEAR_AXIS else "linear")
         p.sizing_mode = 'stretch_width'
@@ -302,7 +302,7 @@ class Plotter:
         ds_stats = ColumnDataSource(PlotPreprocessor.papers_statistics_data(self.analyzer.df))
         min_year, max_year = self.analyzer.df['year'].min(), self.analyzer.df['year'].max()
         p = figure(tools=TOOLS, toolbar_location="right",
-                   plot_width=PAPERS_PLOT_WIDTH, plot_height=PLOT_HEIGHT,
+                   width=PAPERS_PLOT_WIDTH, height=PLOT_HEIGHT,
                    x_range=(min_year - 1, max_year + 1))
         p.sizing_mode = 'stretch_width'
         p.y_range.start = 0
@@ -383,7 +383,7 @@ class Plotter:
             plot_titles.append(f'#{c + 1} [{percent if percent > 0 else "<1"}%] {",".join(words2show[c])}')
         # Fake additional y levels
         p = figure(y_range=list(reversed(plot_titles)) + [' ', '  ', '   '],
-                   plot_width=PLOT_WIDTH, plot_height=50 * (len(plot_components) + 2),
+                   width=PLOT_WIDTH, height=50 * (len(plot_components) + 2),
                    x_range=(min_year - 1, max_year + 1), toolbar_location=None)
         topics_colors = topics_palette_rgb(df)
         max_papers_per_year = max(max(data[pc]) for pc in plot_components)
@@ -401,8 +401,8 @@ class Plotter:
     def _plot_paper_citations_per_year(df, pid):
         logger.debug('Processing paper_citations_per_year')
         ds = ColumnDataSource(PlotPreprocessor.article_citation_dynamics_data(df, pid))
-        p = figure(tools=TOOLS, toolbar_location="right", plot_width=PLOT_WIDTH,
-                   plot_height=SHORT_PLOT_HEIGHT)
+        p = figure(tools=TOOLS, toolbar_location="right", width=PLOT_WIDTH,
+                   height=SHORT_PLOT_HEIGHT)
         p.vbar(x='x', width=0.8, top='y', source=ds, color='#A6CEE3', line_width=3)
         p.sizing_mode = 'stretch_width'
         p.xaxis.axis_label = "Year"
@@ -462,7 +462,7 @@ class Plotter:
 
     @staticmethod
     def _plot_topics_hierarchy_with_keywords(df, kwd_df, clusters, dendrogram_children,
-                                             max_words=3, plot_width=PLOT_WIDTH, plot_height=int(PLOT_WIDTH * 3 / 4)):
+                                             max_words=3, width=PLOT_WIDTH, height=int(PLOT_WIDTH * 3 / 4)):
         comp_sizes = Counter(df['comp'])
         logger.debug('Computing dendrogram for clusters')
         if dendrogram_children is None:
@@ -473,11 +473,11 @@ class Plotter:
         # Configure dimensions, keep range ratios to keep circles round
         mx = 180
         # Hacky coefficients to make circular dendrogram look good
-        my = int(1.05 * mx * plot_height / plot_width)
+        my = int(1.05 * mx * height / width)
         p = figure(x_range=(-mx, mx),
                    y_range=(-my, my),
                    tools="save",
-                   width=plot_width, height=plot_height)
+                   width=width, height=height)
         x_coefficient = 1.2  # Ellipse x coefficient
         y_delta = 40  # Extra space near pi / 2 and 3 * pi / 2
         n_topics = len(leaves_order)
@@ -590,7 +590,7 @@ class Plotter:
     def _plot_scatter_papers_layout(source, ds, year_range, width=PLOT_WIDTH):
         min_year, max_year = year_range
         p = figure(tools=TOOLS, toolbar_location="right",
-                   plot_width=width, plot_height=PLOT_HEIGHT,
+                   width=width, height=PLOT_HEIGHT,
                    x_range=(min_year - 1, max_year + 1), y_axis_type="log")
         p.sizing_mode = 'stretch_width'
         p.xaxis.axis_label = 'Year'
@@ -634,11 +634,11 @@ class Plotter:
 
     @staticmethod
     def _plot_papers_graph(source, gs, df, pid=None, topics_tags=None, topics_meshs=None, add_callback=True,
-                           plot_width=PLOT_WIDTH, plot_height=TALL_PLOT_HEIGHT):
+                           width=PLOT_WIDTH, height=TALL_PLOT_HEIGHT):
         logger.debug('Processing plot_papers_graph')
-        pids = df['id']
+        pids = df['id'].astype(int)
         comps = df['comp']
-        connections = [len(list(gs.neighbors(p))) for p in pids]
+        connections = [len(list(gs.neighbors(str(p)))) for p in pids]
         graph = GraphRenderer()
         cmap = factors_colormap(len(set(comps)))
         palette = dict(zip(sorted(set(comps)), [color_to_rgb(cmap(i)).to_hex() for i in range(len(set(comps)))]))
@@ -670,15 +670,15 @@ class Plotter:
         graph.node_renderer.data_source.data['alpha'] = [2.0 if p == pid else 0.7 for p in pids]
 
         # Edges
-        graph.edge_renderer.data_source.data = dict(start=[u for u, _ in gs.edges],
-                                                    end=[v for _, v in gs.edges])
+        graph.edge_renderer.data_source.data = dict(start=[int(u) for u, _ in gs.edges],
+                                                    end=[int(v) for _, v in gs.edges])
 
         # start of layout code
         xs, ys = df['x'], df['y']
         xrange = max(xs) - min(xs)
         yrange = max(ys) - min(ys)
-        p = figure(width=plot_width,
-                   height=plot_height,
+        p = figure(width=width,
+                   height=height,
                    x_range=(min(xs) - 0.05 * xrange, max(xs) + 0.05 * xrange),
                    y_range=(min(ys) - 0.05 * yrange, max(ys) + 0.05 * yrange),
                    tools="pan,tap,wheel_zoom,box_zoom,reset,save")
