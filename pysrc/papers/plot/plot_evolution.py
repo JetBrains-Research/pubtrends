@@ -28,7 +28,8 @@ def plot_topics_evolution(df, evolution_df, evolution_kwds, width, height):
     edges, nodes_data = PlotPreprocessor.topic_evolution_data(
         evolution_df, evolution_kwds, n_steps
     )
-
+    hv.extension('bokeh')
+    hv.renderer('bokeh').theme = 'light_minimal'
     value_dim = hv.Dimension('Papers', unit=None)
     nodes_ds = hv.Dataset(nodes_data, 'index', 'label')
     topic_evolution = hv.Sankey((edges, nodes_ds), ['From', 'To'], vdims=value_dim)
@@ -36,7 +37,7 @@ def plot_topics_evolution(df, evolution_df, evolution_kwds, width, height):
                          width=width, height=max(height, len(set(df['comp'])) * 30),
                          show_values=False, cmap='tab20',
                          edge_color=dim('To').str(), node_color=dim('index').str())
-
+    # THIS COMMAND LINE causes worker to die with SIGTRAP 5, workaround is to disable evolution
     p = hv.render(topic_evolution, backend='bokeh')
     p.sizing_mode = 'stretch_width'
     kwds_data = PlotPreprocessor.topic_evolution_keywords_data(
