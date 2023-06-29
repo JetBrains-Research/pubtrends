@@ -20,7 +20,8 @@ def topic_evolution_analysis(
         corpus_counts,
         corpus_tokens_embedding,
         topics_max_number,
-        topic_min_size
+        topic_min_size,
+        evolution_step=EVOLUTION_STEP
 ):
     """
     Main method of evolution analysis
@@ -28,7 +29,7 @@ def topic_evolution_analysis(
     """
     min_year = int(df['year'].min())
     max_year = int(df['year'].max())
-    year_range = list(np.arange(max_year, min_year - 1, step=-EVOLUTION_STEP).astype(int))
+    year_range = list(np.arange(max_year, min_year - 1, step=-evolution_step).astype(int))
 
     # Cannot analyze evolution
     if len(year_range) < 2:

@@ -4,7 +4,7 @@ from parameterized import parameterized
 
 from pysrc.papers.analysis.evolution import topic_evolution_analysis, topic_evolution_descriptions
 from pysrc.papers.analyzer import PapersAnalyzer
-from pysrc.papers.config import PubtrendsConfig
+from pysrc.papers.config import PubtrendsConfig, TOPIC_DESCRIPTION_WORDS
 from pysrc.test.mock_loaders import MockLoader
 from pysrc.test.test_analyzer import TestPapersAnalyzer
 
@@ -31,11 +31,8 @@ class TestTopicEvolution(unittest.TestCase):
             self.analyzer.df, self.analyzer.cit_df,
             self.analyzer.cocit_grouped_df,
             self.analyzer.bibliographic_coupling_df,
-            PapersAnalyzer.SIMILARITY_COCITATION_MIN,
-            PapersAnalyzer.similarity, self.analyzer.corpus_counts,
+            self.analyzer.corpus_counts,
             self.analyzer.corpus_tokens_embedding,
-            PapersAnalyzer.GRAPH_EMBEDDINGS_FACTOR,
-            PapersAnalyzer.TEXT_EMBEDDINGS_FACTOR,
             20, 20,
             evolution_step=step
         )
@@ -55,11 +52,8 @@ class TestTopicEvolution(unittest.TestCase):
             self.analyzer.df, self.analyzer.cit_df,
             self.analyzer.cocit_grouped_df,
             self.analyzer.bibliographic_coupling_df,
-            PapersAnalyzer.SIMILARITY_COCITATION_MIN,
-            PapersAnalyzer.similarity, self.analyzer.corpus_counts,
+            self.analyzer.corpus_counts,
             self.analyzer.corpus_tokens_embedding,
-            PapersAnalyzer.GRAPH_EMBEDDINGS_FACTOR,
-            PapersAnalyzer.TEXT_EMBEDDINGS_FACTOR,
             20, 20,
             evolution_step=5
         )
@@ -67,7 +61,7 @@ class TestTopicEvolution(unittest.TestCase):
         evolution_kwds = topic_evolution_descriptions(
             self.analyzer.df, evolution_df, year_range,
             self.analyzer.corpus, self.analyzer.corpus_tokens, self.analyzer.corpus_counts,
-            PapersAnalyzer.TOPIC_DESCRIPTION_WORDS,
+            TOPIC_DESCRIPTION_WORDS,
             self.analyzer.progress
         )
         # print(evolution_kwds)

@@ -118,17 +118,23 @@ class PapersAnalyzer:
         self.cocit_df = self.loader.load_cocitations(ids)
         cocit_grouped_df = build_cocit_grouped_df(self.cocit_df)
         logger.debug(f'Found {len(cocit_grouped_df)} co-cited pairs of papers')
-        self.cocit_grouped_df = cocit_grouped_df[cocit_grouped_df['total'] >= SIMILARITY_COCITATION_MIN].copy()
-        logger.debug(f'Filtered {len(self.cocit_grouped_df)} co-cited pairs of papers, '
-                     f'threshold {SIMILARITY_COCITATION_MIN}')
+        if not test:
+            self.cocit_grouped_df = cocit_grouped_df[cocit_grouped_df['total'] >= SIMILARITY_COCITATION_MIN].copy()
+            logger.debug(f'Filtered {len(self.cocit_grouped_df)} co-cited pairs of papers, '
+                         f'threshold {SIMILARITY_COCITATION_MIN}')
+        else:
+            self.cocit_grouped_df = cocit_grouped_df
 
         self.progress.info('Processing bibliographic coupling for selected papers', current=6, task=task)
         bibliographic_coupling_df = self.loader.load_bibliographic_coupling(ids)
         logger.debug(f'Found {len(bibliographic_coupling_df)} bibliographic coupling pairs of papers')
-        self.bibliographic_coupling_df = bibliographic_coupling_df[
-            bibliographic_coupling_df['total'] >= SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN].copy()
-        logger.debug(f'Filtered {len(self.bibliographic_coupling_df)} bibliographic coupling pairs of papers '
-                     f'threshold {SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN}')
+        if not test:
+            self.bibliographic_coupling_df = bibliographic_coupling_df[
+                bibliographic_coupling_df['total'] >= SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN].copy()
+            logger.debug(f'Filtered {len(self.bibliographic_coupling_df)} bibliographic coupling pairs of papers '
+                         f'threshold {SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN}')
+        else:
+            self.bibliographic_coupling_df = bibliographic_coupling_df
 
         self.progress.info('Building papers graph', current=7, task=task)
         self.papers_graph = build_papers_graph(
@@ -159,7 +165,10 @@ class PapersAnalyzer:
             self.pca_coords = pca.fit_transform(t)
             logger.debug(f'Explained variation {int(np.sum(pca.explained_variance_ratio_) * 100)}%')
             logger.debug('Apply TSNE transformation on papers PCA coords')
-            tsne_embeddings_2d = TSNE(n_components=2, random_state=42).fit_transform(self.pca_coords)
+            if not test:
+                tsne_embeddings_2d = TSNE(n_components=2, random_state=42).fit_transform(self.pca_coords)
+            else:
+                tsne_embeddings_2d = TSNE(n_components=2, random_state=42, perplexity=3).fit_transform(self.pca_coords)
             self.df['x'] = tsne_embeddings_2d[:, 0]
             self.df['y'] = tsne_embeddings_2d[:, 1]
         else:
