@@ -2,6 +2,72 @@ import configparser
 import os
 
 
+TOP_CITED_PAPERS = 50
+
+# Features are originally taken from paper:
+# 1) Which type of citation analysis generates the most accurate taxonomy of
+#   scientific and technical knowledge? (https://arxiv.org/pdf/1511.05078.pdf)
+#   ...bibliographic coupling (BC) was the most accurate,  followed by co-citation (CC).
+#   Direct citation (DC) was a distant third among the three...
+
+SIMILARITY_COCITATION = 10  # Limiter by number of co-citations, applied to log
+SIMILARITY_BIBLIOGRAPHIC_COUPLING = 3  # Limited by number of references, applied to log
+SIMILARITY_CITATION = 1  # Limited by 1 citation
+
+# Reduce number of edges in papers graph
+EMBEDDINGS_SPARSE_GRAPH_EDGES_TO_NODES = 30
+VISUALIZATION_SPARSE_GRAPH_EDGES_TO_NODES = 3
+
+# Minimal number of common references, used to reduces papers graph edges count
+# Value > 1 is especially useful while analysing single paper, removes meaningless connections by construction
+SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN = 1
+
+# Minimal number of common references, used to reduces papers graph edges count
+SIMILARITY_COCITATION_MIN = 1
+
+# Papers embeddings is a concatenation of graph and text embeddings times corresponding factors
+# Graph embeddings produce more clear topics separation, so it goes with bigger coefficient
+GRAPH_EMBEDDINGS_FACTOR = 3
+TEXT_EMBEDDINGS_FACTOR = 1
+
+# Global vectorization max vocabulary size
+VECTOR_WORDS = 10_000
+# Terms with lower frequency will be ignored, remove rare words
+VECTOR_MIN_DF = 0.001
+# Terms with higher frequency will be ignored, remove abundant words
+VECTOR_MAX_DF = 0.8
+
+# Reduce embeddings dimensionality before tSNE projection
+PCA_COMPONENTS = 30
+
+# Configure number and size of topics
+TOPICS_NUMBER_SMALL = dict(max_number=10, min_size=50)
+TOPICS_NUMBER_MEDIUM = dict(max_number=20, min_size=20)
+TOPICS_NUMBER_LARGE = dict(max_number=50, min_size=10)
+
+# Number of top cited papers in topic picked for description computation
+TOPIC_MOST_CITED_PAPERS = 50
+# Number of words for topic description
+TOPIC_DESCRIPTION_WORDS = 10
+
+POPULAR_JOURNALS = 50
+POPULAR_AUTHORS = 50
+
+# Expand limit by references before filtration by citations and keywords
+EXPAND_LIMIT = 5000
+# Control citations count
+EXPAND_CITATIONS_Q_LOW = 5
+EXPAND_CITATIONS_Q_HIGH = 95
+EXPAND_CITATIONS_SIGMA = 3
+# Take up to fraction of top similarity
+EXPAND_SIMILARITY_THRESHOLD = 0.5
+
+# Impact of single paper when analyzing citations and mesh terms when analysing paper
+SINGLE_PAPER_IMPACT = 20
+
+EVOLUTION_MIN_PAPERS = 100
+EVOLUTION_STEP = 10
+
 class PubtrendsConfig:
     """
     Main service configuration

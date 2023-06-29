@@ -20,13 +20,13 @@ from sklearn.preprocessing import StandardScaler
 from pysrc.app.reports import result_folder_name, get_results_path, preprocess_string
 from pysrc.papers.analysis.citations import find_top_cited_papers, build_cit_stats_df, merge_citation_stats, \
     build_cocit_grouped_df
-from pysrc.papers.analysis.graph import build_papers_graph, \
-    sparse_graph, to_weighted_graph
+from pysrc.papers.analysis.graph import build_papers_graph, sparse_graph, similarity
 from pysrc.papers.analysis.node2vec import node2vec
 from pysrc.papers.analysis.text import get_frequent_tokens
 from pysrc.papers.analysis.text import texts_embeddings, vectorize_corpus, tokens_embeddings
 from pysrc.papers.analysis.topics import get_topics_description, compute_topics_similarity_matrix, cluster_and_sort
 from pysrc.papers.analyzer import PapersAnalyzer
+from pysrc.papers.config import *
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
@@ -91,14 +91,14 @@ class AnalyzerFiles(PapersAnalyzer):
 
         self.progress.info('Identifying top cited papers', current=5, task=task)
         logger.debug('Top cited papers')
-        self.top_cited_papers, self.top_cited_df = find_top_cited_papers(self.df, PapersAnalyzer.TOP_CITED_PAPERS)
+        self.top_cited_papers, self.top_cited_df = find_top_cited_papers(self.df, TOP_CITED_PAPERS)
 
         self.progress.info('Analyzing title and abstract texts', current=6, task=task)
         self.corpus, self.corpus_tokens, self.corpus_counts = vectorize_corpus(
             self.pub_df,
-            max_features=PapersAnalyzer.VECTOR_WORDS,
-            min_df=PapersAnalyzer.VECTOR_MIN_DF,
-            max_df=PapersAnalyzer.VECTOR_MAX_DF,
+            max_features=VECTOR_WORDS,
+            min_df=VECTOR_MIN_DF,
+            max_df=VECTOR_MAX_DF,
             test=test
         )
         logger.debug('Analyzing tokens embeddings')
@@ -143,17 +143,17 @@ class AnalyzerFiles(PapersAnalyzer):
         cocit_grouped_df = build_cocit_grouped_df(self.cocit_df)
         logger.debug(f'Found {len(cocit_grouped_df)} co-cited pairs of papers')
         self.cocit_grouped_df = cocit_grouped_df[
-            cocit_grouped_df['total'] >= PapersAnalyzer.SIMILARITY_COCITATION_MIN].copy()
+            cocit_grouped_df['total'] >= SIMILARITY_COCITATION_MIN].copy()
         logger.debug(f'Filtered {len(self.cocit_grouped_df)} co-cited pairs of papers, '
-                     f'threshold {PapersAnalyzer.SIMILARITY_COCITATION_MIN}')
+                     f'threshold {SIMILARITY_COCITATION_MIN}')
 
         self.progress.info('Processing bibliographic coupling for selected papers', current=9, task=task)
         bibliographic_coupling_df = self.loader.load_bibliographic_coupling(ids)
         logger.debug(f'Found {len(bibliographic_coupling_df)} bibliographic coupling pairs of papers')
         self.bibliographic_coupling_df = bibliographic_coupling_df[
-            bibliographic_coupling_df['total'] >= PapersAnalyzer.SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN].copy()
+            bibliographic_coupling_df['total'] >= SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN].copy()
         logger.debug(f'Filtered {len(self.bibliographic_coupling_df)} bibliographic coupling pairs of papers '
-                     f'threshold {PapersAnalyzer.SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN}')
+                     f'threshold {SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN}')
 
         self.progress.info('Analyzing papers graph', current=10, task=task)
         self.papers_graph = build_papers_graph(
@@ -161,25 +161,32 @@ class AnalyzerFiles(PapersAnalyzer):
         )
         self.progress.info(f'Built papers graph with {self.papers_graph.number_of_nodes()} nodes '
                            f'and {self.papers_graph.number_of_edges()} edges', current=10, task=task)
-        logger.debug('Analyzing papers graph embeddings')
-        self.weighted_similarity_graph = to_weighted_graph(self.papers_graph, PapersAnalyzer.similarity)
-        gs = sparse_graph(self.weighted_similarity_graph, PapersAnalyzer.PAPERS_GRAPH_EDGES_TO_NODES)
-        self.graph_embeddings = node2vec(self.df['id'], gs)
+
+        if GRAPH_EMBEDDINGS_FACTOR != 0:
+            logger.debug('Prepare sparse graph for embeddings')
+            sge = sparse_graph(self.papers_graph, EMBEDDINGS_SPARSE_GRAPH_EDGES_TO_NODES)
+            # Add similarity key to sparse graph
+            for i, j in sge.edges():
+                sge[i][j]['similarity'] = similarity(self.papers_graph.get_edge_data(i, j))
+            logger.debug('Analyzing papers graph embeddings')
+            self.graph_embeddings = node2vec(self.df['id'], sge, key='similarity')
+        else:
+            self.graph_embeddings = np.zeros(shape=(len(self.df), 0))
 
         logger.debug('Computing aggregated graph and text embeddings for papers')
         papers_embeddings = np.concatenate(
-            (self.graph_embeddings * PapersAnalyzer.GRAPH_EMBEDDINGS_FACTOR,
-             self.texts_embeddings * PapersAnalyzer.TEXT_EMBEDDINGS_FACTOR), axis=1)
+            (self.graph_embeddings * GRAPH_EMBEDDINGS_FACTOR,
+             self.texts_embeddings * TEXT_EMBEDDINGS_FACTOR), axis=1)
 
         logger.debug('Computing PCA projection')
-        pca = PCA(n_components=min(len(papers_embeddings), PapersAnalyzer.PCA_COMPONENTS))
+        pca = PCA(n_components=min(len(papers_embeddings), PCA_COMPONENTS))
         t = StandardScaler().fit_transform(papers_embeddings)
         self.pca_coords = pca.fit_transform(t)
         logger.debug(f'Explained variation {int(np.sum(pca.explained_variance_ratio_) * 100)} %')
 
         if len(self.df) > 1:
             logger.debug('Computing PCA projection')
-            pca = PCA(n_components=min(len(papers_embeddings), PapersAnalyzer.PCA_COMPONENTS))
+            pca = PCA(n_components=min(len(papers_embeddings), PCA_COMPONENTS))
             t = StandardScaler().fit_transform(papers_embeddings)
             self.pca_coords = pca.fit_transform(t)
             logger.debug(f'Explained variation {int(np.sum(pca.explained_variance_ratio_) * 100)}%')
@@ -220,7 +227,7 @@ class AnalyzerFiles(PapersAnalyzer):
         clusters_description = get_topics_description(
             self.df, clusters_pids,
             self.corpus, self.corpus_tokens, self.corpus_counts,
-            n_words=PapersAnalyzer.TOPIC_DESCRIPTION_WORDS
+            n_words=TOPIC_DESCRIPTION_WORDS
         )
 
         kwds = [(comp, ','.join([f'{t}:{v:.3f}' for t, v in vs[:20]])) for comp, vs in clusters_description.items()]
@@ -241,7 +248,7 @@ class AnalyzerFiles(PapersAnalyzer):
         mesh_clusters_description = get_topics_description(
             self.df, clusters_pids,
             mesh_corpus, mesh_corpus_tokens, mesh_corpus_counts,
-            n_words=PapersAnalyzer.TOPIC_DESCRIPTION_WORDS
+            n_words=TOPIC_DESCRIPTION_WORDS
         )
 
         meshs = [(comp, ','.join([f'{t}:{v:.3f}' for t, v in vs[:20]]))
@@ -288,7 +295,11 @@ class AnalyzerFiles(PapersAnalyzer):
 
         self.progress.info('Preparing papers network', current=14, task=task)
         logger.debug('Prepare sparse graph for visualization')
-        self.sparse_papers_graph = self.prepare_sparse_papers_graph(self.papers_graph, self.weighted_similarity_graph)
+        self.sparse_papers_graph = sparse_graph(self.papers_graph, VISUALIZATION_SPARSE_GRAPH_EDGES_TO_NODES)
+        # Add similarity key to sparse graph
+        for i, j in self.sparse_papers_graph.edges():
+            self.sparse_papers_graph[i][j]['similarity'] = similarity(self.papers_graph.get_edge_data(i, j))
+
         path_papers_graph_interactive = os.path.join(self.query_folder, 'graph.html')
         logging.info(f'Saving papers graph for cytoscape.js {path_papers_graph_interactive}')
         template_path = os.path.realpath(os.path.join(__file__, '../../app/templates/graph_download.html'))
@@ -340,7 +351,7 @@ def plot_mesh_terms(mesh_counter, top=100, width=PLOT_WIDTH, height=TALL_PLOT_HE
 
 
 def vectorize_mesh_tokens(df, mesh_counter, max_features=1000,
-                          min_df=0.1, max_df=PapersAnalyzer.VECTOR_MAX_DF):
+                          min_df=0.1, max_df=VECTOR_MAX_DF):
     logger.debug(f'Vectorization mesh terms min_df={min_df} max_df={max_df} max_features={max_features}')
     features = []
     for mt, count in mesh_counter.most_common():

@@ -7,7 +7,7 @@ from pysrc.papers.analysis.expand import expand_ids
 from pysrc.papers.analysis.pubmed import pubmed_search
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.analyzer_files import AnalyzerFiles
-from pysrc.papers.config import PubtrendsConfig
+from pysrc.papers.config import *
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plotter import visualize_analysis
@@ -38,12 +38,12 @@ def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, e
             analyzer.progress.info('Expanding related papers by references', current=2, task=current_task)
             ids = expand_ids(loader=loader, ids=ids, single_paper=False,
                              limit=min(int(min(len(ids), limit) * (1 + expand)), analyzer.config.max_number_to_expand),
-                             max_expand=PapersAnalyzer.EXPAND_LIMIT,
-                             citations_q_low=PapersAnalyzer.EXPAND_CITATIONS_Q_LOW,
-                             citations_q_high=PapersAnalyzer.EXPAND_CITATIONS_Q_HIGH,
-                             citations_sigma=PapersAnalyzer.EXPAND_CITATIONS_SIGMA,
-                             similarity_threshold=PapersAnalyzer.EXPAND_SIMILARITY_THRESHOLD,
-                             single_paper_impact=PapersAnalyzer.SINGLE_PAPER_IMPACT)
+                             max_expand=EXPAND_LIMIT,
+                             citations_q_low=EXPAND_CITATIONS_Q_LOW,
+                             citations_q_high=EXPAND_CITATIONS_Q_HIGH,
+                             citations_sigma=EXPAND_CITATIONS_SIGMA,
+                             similarity_threshold=EXPAND_SIMILARITY_THRESHOLD,
+                             single_paper_impact=SINGLE_PAPER_IMPACT)
         analyzer.analyze_papers(ids, query, topics, test=test, task=current_task)
     finally:
         loader.close_connection()
@@ -80,12 +80,12 @@ def analyze_search_terms_files(source, query,
             analyzer.progress.info('Expanding related papers by references', current=2, task=current_task)
             ids = expand_ids(loader=loader, ids=ids, single_paper=False,
                              limit=min(int(min(len(ids), limit) * (1 + expand)), analyzer.config.max_number_to_expand),
-                             max_expand=PapersAnalyzer.EXPAND_LIMIT,
-                             citations_q_low=PapersAnalyzer.EXPAND_CITATIONS_Q_LOW,
-                             citations_q_high=PapersAnalyzer.EXPAND_CITATIONS_Q_HIGH,
-                             citations_sigma=PapersAnalyzer.EXPAND_CITATIONS_SIGMA,
-                             similarity_threshold=PapersAnalyzer.EXPAND_SIMILARITY_THRESHOLD,
-                             single_paper_impact=PapersAnalyzer.SINGLE_PAPER_IMPACT)
+                             max_expand=EXPAND_LIMIT,
+                             citations_q_low=EXPAND_CITATIONS_Q_LOW,
+                             citations_q_high=EXPAND_CITATIONS_Q_HIGH,
+                             citations_sigma=EXPAND_CITATIONS_SIGMA,
+                             similarity_threshold=EXPAND_SIMILARITY_THRESHOLD,
+                             single_paper_impact=SINGLE_PAPER_IMPACT)
         analyzer.analyze_ids(ids, source, query, sort, limit, topics, test=test, task=current_task)
         analyzer.progress.done(task=current_task)
         analyzer.teardown()
@@ -106,12 +106,12 @@ def _analyze_id_list(analyzer, source,
             limit = int(limit) if limit else analyzer.config.max_number_to_expand
             analyzer.progress.info('Expanding related papers by references', current=1, task=task)
             ids = expand_ids(loader=analyzer.loader, ids=ids, single_paper=single_paper, limit=limit,
-                             max_expand=PapersAnalyzer.EXPAND_LIMIT,
-                             citations_q_low=PapersAnalyzer.EXPAND_CITATIONS_Q_LOW,
-                             citations_q_high=PapersAnalyzer.EXPAND_CITATIONS_Q_HIGH,
-                             citations_sigma=PapersAnalyzer.EXPAND_CITATIONS_SIGMA,
-                             similarity_threshold=PapersAnalyzer.EXPAND_SIMILARITY_THRESHOLD,
-                             single_paper_impact=PapersAnalyzer.SINGLE_PAPER_IMPACT)
+                             max_expand=EXPAND_LIMIT,
+                             citations_q_low=EXPAND_CITATIONS_Q_LOW,
+                             citations_q_high=EXPAND_CITATIONS_Q_HIGH,
+                             citations_sigma=EXPAND_CITATIONS_SIGMA,
+                             similarity_threshold=EXPAND_SIMILARITY_THRESHOLD,
+                             single_paper_impact=SINGLE_PAPER_IMPACT)
         elif analysis_type == IDS_ANALYSIS_TYPE:
             ids = ids  # Leave intact
         else:

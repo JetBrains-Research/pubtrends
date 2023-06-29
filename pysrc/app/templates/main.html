@@ -24,7 +24,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.9.3/intro.js"
             integrity="sha256-SPZP/x8QDPEhRlpJjet4AD5X4ergPWcxjhMn73SwyOE="
             crossorigin="anonymous"></script>
-
+    <!-- Notify.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"
+            integrity="sha512-efUTj3HdSPwWJ9gjfGR71X9cvsrthIA78/Fvd/IN+fttQVy7XWkOAXb295j8B3cmm/kFKVxjiNYzKw9IQJHIuQ=="
+            crossorigin="anonymous"></script>
     <script>
         'use strict';
         // Example starter JavaScript for disabling form submissions if there are invalid fields
@@ -87,6 +90,22 @@
                     $sort.append($("<option>Most Recent</option>"));
                 }
             });
+            //add a new style 'html_title'
+            $.notify.addStyle('html_title', {
+                html: "<div class='title' data-notify-html='title'/>"
+            });
+            setTimeout(function () {
+                $('#jumbotron').notify({
+                    title:
+                        $('<a class="link" href="https://github.com/JetBrains-Research/pubtrends/blob/master/CHANGES.md" title="What\'s new?" target="_blank">What\'s new?</a>')
+                }, {
+                    style: 'html_title',
+                    autoHide: false,
+                    arrowShow: false,
+                    position: 'top right',
+                    hideDuration: 0,
+                });
+            }, 1000);
         });
     </script>
 </head>
