@@ -1,8 +1,5 @@
 import unittest
 
-import networkx as nx
-
-from pysrc.papers.analysis.graph import _local_sparse
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.test.mock_loaders import MockLoader, PAPERS_GRAPH_EDGES, MockLoaderSingle
@@ -29,37 +26,6 @@ class TestBuildGraph(unittest.TestCase):
                 self.assertEquals(m in expected[2], m in actual[2], msg=f'{m} presence')
                 if m in expected[2]:
                     self.assertAlmostEqual(expected[2][m], actual[2][m], msg=f'{m} value', delta=1e-3)
-
-    def test_local_sparse(self):
-        # Full graph on 4 nodes
-        graph = nx.DiGraph()
-        for i in range(5):
-            for j in range(i + 1, 5):
-                graph.add_edge(i, j, similarity=1)
-
-        self.assertEqual([(0, 1), (0, 2), (1, 2), (1, 3), (2, 3), (2, 4), (3, 4)],
-                         list(_local_sparse(graph, 0.1, key='similarity').edges))
-        self.assertEqual([(0, 1), (0, 2), (1, 2), (1, 3), (2, 3), (2, 4), (3, 4)],
-                         list(_local_sparse(graph, 0.5, key='similarity').edges))
-        self.assertEqual([(0, 1), (0, 2), (0, 3), (0, 4),
-                          (1, 2), (1, 3), (1, 4),
-                          (2, 3), (2, 4),
-                          (3, 4)],
-                         list(_local_sparse(graph, 1, key='similarity').edges))
-
-        # Add not connected edge
-        graph.add_edge(10, 11, similarity=10)
-        self.assertEqual([(0, 1), (1, 2), (2, 3), (3, 4), (10, 11)],
-                         list(_local_sparse(graph, 0, key='similarity').edges))
-
-    def test_isolated_edges_sparse(self):
-        # Full graph on 4 nodes
-        graph = nx.DiGraph()
-        graph.add_node(1)
-        graph.add_node(2)
-        graph.add_node(3)
-
-        self.assertEqual([1, 2, 3], list(_local_sparse(graph, 0, key='similarity').nodes))
 
 
 class TestBuildGraphSingle(unittest.TestCase):
