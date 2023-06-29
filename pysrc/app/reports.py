@@ -162,6 +162,8 @@ def get_folder_name(jobid, name, max_folder_length=100):
 
 def _find_folder(jobid):
     lookup_folder = os.path.join(get_results_path(), preprocess_string(VERSION))
+    if not os.path.exists(lookup_folder):
+        os.makedirs(lookup_folder)
     for p in os.listdir(lookup_folder):
         candidate_folder = os.path.join(lookup_folder, p)
         if p.startswith(jobid[:32]) and os.path.isdir(candidate_folder):
