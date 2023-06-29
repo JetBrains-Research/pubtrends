@@ -1,7 +1,6 @@
 import configparser
 import os
 
-
 TOP_CITED_PAPERS = 50
 
 # Features are originally taken from paper:
@@ -10,20 +9,21 @@ TOP_CITED_PAPERS = 50
 #   ...bibliographic coupling (BC) was the most accurate,  followed by co-citation (CC).
 #   Direct citation (DC) was a distant third among the three...
 
-SIMILARITY_COCITATION = 10  # Limiter by number of co-citations, applied to log
+SIMILARITY_COCITATION = 5  # Limiter by number of co-citations, applied to log
 SIMILARITY_BIBLIOGRAPHIC_COUPLING = 3  # Limited by number of references, applied to log
 SIMILARITY_CITATION = 1  # Limited by 1 citation
 
 # Reduce number of edges in papers graph
-EMBEDDINGS_SPARSE_GRAPH_EDGES_TO_NODES = 30
-VISUALIZATION_SPARSE_GRAPH_EDGES_TO_NODES = 3
+EMBEDDINGS_SPARSE_GRAPH_EDGES_TO_NODES = 50
+VISUALIZATION_SPARSE_GRAPH_EDGES_TO_NODES = 10
 
-# Minimal number of common references, used to reduces papers graph edges count
-# Value > 1 is especially useful while analysing single paper, removes meaningless connections by construction
-SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN = 1
+# Minimal number of common references, used to reduce papers graph edges count
+# Value > 1 is especially useful while analysing single paper,
+# removes meaningless connections by construction
+SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN = 2
 
-# Minimal number of common references, used to reduces papers graph edges count
-SIMILARITY_COCITATION_MIN = 1
+# Minimal number of common references, used to reduce papers graph edges count
+SIMILARITY_COCITATION_MIN = 2
 
 # Papers embeddings is a concatenation of graph and text embeddings times corresponding factors
 # Graph embeddings produce more clear topics separation, so it goes with bigger coefficient
@@ -67,6 +67,7 @@ SINGLE_PAPER_IMPACT = 20
 
 EVOLUTION_MIN_PAPERS = 100
 EVOLUTION_STEP = 10
+
 
 class PubtrendsConfig:
     """
@@ -123,4 +124,3 @@ class PubtrendsConfig:
         self.feature_numbers_enabled = params.getboolean('feature_numbers_enabled')
         self.feature_evolution_enabled = params.getboolean('feature_evolution_enabled')
         self.feature_review_enabled = params.getboolean('feature_review_enabled')
-
