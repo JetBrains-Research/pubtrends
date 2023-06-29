@@ -30,53 +30,52 @@ else:
 
 def configure_admin_functions(app, celery_app, logfile):
     """Configures flask-admin and flask-sqlalchemy"""
-    app.config.from_pyfile('config.py')
-    service_database_path = os.path.join(SERVICE_DATABASE_PATH, app.config['DATABASE_FILE'])
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + service_database_path
+    with app.app_context():
+        app.config.from_pyfile('config.py')
+        service_database_path = os.path.join(SERVICE_DATABASE_PATH, app.config['DATABASE_FILE'])
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + service_database_path
 
-    db = SQLAlchemy(app)
+        db = SQLAlchemy(app)
 
-    # Define models
-    roles_users = db.Table(
-        'roles_users',
-        db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
-        db.Column('role_id', db.Integer(), db.ForeignKey('role.id'))
-    )
+        # Define models
+        roles_users = db.Table(
+            'roles_users',
+            db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
+            db.Column('role_id', db.Integer(), db.ForeignKey('role.id'))
+        )
 
-    class Role(db.Model, RoleMixin):
-        id = db.Column(db.Integer(), primary_key=True)
-        name = db.Column(db.String(80), unique=True)
-        description = db.Column(db.String(255))
+        class Role(db.Model, RoleMixin):
+            id = db.Column(db.Integer(), primary_key=True)
+            name = db.Column(db.String(80), unique=True)
+            description = db.Column(db.String(255))
 
-        def __str__(self):
-            return self.name
+            def __str__(self):
+                return self.name
 
-    class User(db.Model, UserMixin):
-        id = db.Column(db.Integer, primary_key=True)
-        first_name = db.Column(db.String(255))
-        last_name = db.Column(db.String(255))
-        email = db.Column(db.String(255), unique=True)
-        password = db.Column(db.String(255))
-        active = db.Column(db.Boolean())
-        confirmed_at = db.Column(db.DateTime())
-        roles = db.relationship('Role', secondary=roles_users,
-                                backref=db.backref('users', lazy='dynamic'))
+        class User(db.Model, UserMixin):
+            id = db.Column(db.Integer, primary_key=True)
+            first_name = db.Column(db.String(255))
+            last_name = db.Column(db.String(255))
+            email = db.Column(db.String(255), unique=True)
+            password = db.Column(db.String(255))
+            active = db.Column(db.Boolean())
+            confirmed_at = db.Column(db.DateTime())
+            roles = db.relationship('Role', secondary=roles_users,
+                                    backref=db.backref('users', lazy='dynamic'))
 
-        def __str__(self):
-            return self.email
+            def __str__(self):
+                return self.email
 
-    # Setup Flask-Security
-    user_datastore = SQLAlchemyUserDatastore(db, User, Role)
-    security = Security(app, user_datastore)
+        # Setup Flask-Security
+        user_datastore = SQLAlchemyUserDatastore(db, User, Role)
+        security = Security(app, user_datastore)
 
-    # Build a sample db on the fly, if one does not exist yet.
-    try:
-        DB_LOCK.acquire()
-        if not os.path.exists(service_database_path):
-            db.drop_all()
-            db.create_all()
-
-            with app.app_context():
+        # Build a sample db on the fly, if one does not exist yet.
+        try:
+            DB_LOCK.acquire()
+            if not os.path.exists(service_database_path):
+                db.drop_all()
+                db.create_all()
                 user_role = Role(name='user')
                 admin_role = Role(name='admin')
                 db.session.add(user_role)
@@ -90,93 +89,93 @@ def configure_admin_functions(app, celery_app, logfile):
                     roles=[user_role, admin_role]
                 )
                 db.session.commit()
-    finally:
-        DB_LOCK.release()
+        finally:
+            DB_LOCK.release()
 
-    # UI
-    class AdminStatsView(BaseView):
-        @expose('/')
-        def index(self):
-            stats_data = prepare_stats_data(logfile)
-            return self.render('admin/stats.html', version=VERSION, **stats_data)
+        # UI
+        class AdminStatsView(BaseView):
+            @expose('/')
+            def index(self):
+                stats_data = prepare_stats_data(logfile)
+                return self.render('admin/stats.html', version=VERSION, **stats_data)
 
-        def is_accessible(self):
-            return current_user.is_active and current_user.is_authenticated and current_user.has_role('admin')
+            def is_accessible(self):
+                return current_user.is_active and current_user.is_authenticated and current_user.has_role('admin')
 
-        def _handle_view(self, name, **kwargs):
-            """
-            Override builtin _handle_view in order to redirect users when a view is not accessible.
-            """
-            if not self.is_accessible():
-                if current_user.is_authenticated:
-                    # permission denied
-                    abort(403)
-                else:
-                    # login
-                    return redirect(url_for('security.login', next=request.url))
+            def _handle_view(self, name, **kwargs):
+                """
+                Override builtin _handle_view in order to redirect users when a view is not accessible.
+                """
+                if not self.is_accessible():
+                    if current_user.is_authenticated:
+                        # permission denied
+                        abort(403)
+                    else:
+                        # login
+                        return redirect(url_for('security.login', next=request.url))
 
-    class AdminFeedbackView(BaseView):
-        @expose('/')
-        def index(self):
-            feedback_data = prepare_feedback_data(logfile)
-            return self.render('admin/feedback.html', version=VERSION, **feedback_data)
+        class AdminFeedbackView(BaseView):
+            @expose('/')
+            def index(self):
+                feedback_data = prepare_feedback_data(logfile)
+                return self.render('admin/feedback.html', version=VERSION, **feedback_data)
 
-        def is_accessible(self):
-            return current_user.is_active and current_user.is_authenticated and current_user.has_role('admin')
+            def is_accessible(self):
+                return current_user.is_active and current_user.is_authenticated and current_user.has_role('admin')
 
-        def _handle_view(self, name, **kwargs):
-            """
-            Override builtin _handle_view in order to redirect users when a view is not accessible.
-            """
-            if not self.is_accessible():
-                if current_user.is_authenticated:
-                    # permission denied
-                    abort(403)
-                else:
-                    # login
-                    return redirect(url_for('security.login', next=request.url))
+            def _handle_view(self, name, **kwargs):
+                """
+                Override builtin _handle_view in order to redirect users when a view is not accessible.
+                """
+                if not self.is_accessible():
+                    if current_user.is_authenticated:
+                        # permission denied
+                        abort(403)
+                    else:
+                        # login
+                        return redirect(url_for('security.login', next=request.url))
 
-    class AdminCeleryView(BaseView):
-        @expose('/')
-        def index(self):
-            celery_data = prepare_celery_data(celery_app)
-            return self.render('admin/celery.html', version=VERSION, **celery_data)
+        class AdminCeleryView(BaseView):
+            @expose('/')
+            def index(self):
+                celery_data = prepare_celery_data(celery_app)
+                return self.render('admin/celery.html', version=VERSION, **celery_data)
 
-        def is_accessible(self):
-            return current_user.is_active and current_user.is_authenticated and current_user.has_role('admin')
+            def is_accessible(self):
+                return current_user.is_active and current_user.is_authenticated and current_user.has_role('admin')
 
-        def _handle_view(self, name, **kwargs):
-            """
-            Override builtin _handle_view in order to redirect users when a view is not accessible.
-            """
-            if not self.is_accessible():
-                if current_user.is_authenticated:
-                    # permission denied
-                    abort(403)
-                else:
-                    # login
-                    return redirect(url_for('security.login', next=request.url))
+            def _handle_view(self, name, **kwargs):
+                """
+                Override builtin _handle_view in order to redirect users when a view is not accessible.
+                """
+                if not self.is_accessible():
+                    if current_user.is_authenticated:
+                        # permission denied
+                        abort(403)
+                    else:
+                        # login
+                        return redirect(url_for('security.login', next=request.url))
 
 
-    # Create admin
-    admin = Admin(
-        app,
-        'Pubtrends',
-        base_template='master.html',
-        template_mode='bootstrap3',
-    )
-
-    # Available views
-    admin.add_view(AdminStatsView(name='Statistics', endpoint='stats'))
-    admin.add_view(AdminFeedbackView(name='Feedback', endpoint='feedback'))
-    admin.add_view(AdminCeleryView(name='Celery', endpoint='celery'))
-
-    # define a context processor for merging flask-admin's template context into the flask-security views.
-    @security.context_processor
-    def security_context_processor():
-        return dict(
-            admin_base_template=admin.base_template,
-            admin_view=admin.index_view,
-            h=admin_helpers,
-            get_url=url_for
+        # Create admin
+        admin = Admin(
+            app,
+            'Pubtrends',
+            base_template='master.html',
+            template_mode='bootstrap3',
         )
+
+        # Available views
+        admin.add_view(AdminStatsView(name='Statistics', endpoint='stats'))
+        admin.add_view(AdminFeedbackView(name='Feedback', endpoint='feedback'))
+        admin.add_view(AdminCeleryView(name='Celery', endpoint='celery'))
+
+        # define a context processor for merging flask-admin's template context into the flask-security views.
+        @security.context_processor
+        def security_context_processor():
+            return dict(
+                admin_base_template=admin.base_template,
+                admin_view=admin.index_view,
+                h=admin_helpers,
+                get_url=url_for
+            )

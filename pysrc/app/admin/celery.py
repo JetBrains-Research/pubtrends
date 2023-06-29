@@ -1,9 +1,10 @@
 def prepare_celery_data(app):
-    inspect = app.control.inspect()
-    return dict(
-        active=pp(list(inspect.active().items())[0][1]),
-        scheduled=pp(list(inspect.reserved().items())[0][1]),
-        revoked=('\n'.join(list(inspect.revoked().items())[0][1])))
+    with app.app_context():
+        inspect = app.control.inspect()
+        return dict(
+            active=pp(list(inspect.active().items())[0][1]),
+            scheduled=pp(list(inspect.reserved().items())[0][1]),
+            revoked=('\n'.join(list(inspect.revoked().items())[0][1])))
 
 
 def pp(tasks):
