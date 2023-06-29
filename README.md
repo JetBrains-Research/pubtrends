@@ -27,7 +27,7 @@ publications.
 Web service is built with Gunicorn and Flask. Asynchronous computations are supported with Celery tasks queue and Redis
 as message broker. We use Postgres to store information about papers: titles, abstracts, authors and citations
 information. Postgres built-in text search engine is used for full text search. Kotlin Postgres ORM is used to
-store papers in the database. MySQL database is used to store technical user information including users roles and admin
+store papers in the database. Sqlite database is used to store technical user information including users roles and admin
 credentials for admin dashboard.
 
 All the data manipulations are made with Pandas, Numpy and Scikit-Learn libraries. The service uses Python Nltk and
