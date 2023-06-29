@@ -3,6 +3,17 @@ Pubtrends changelog
 
 Here you can see the full list of changes between each release.
 
+Version 1.0
+------------
+Released on June 29, 2023
+
+- All search results are saved permanently
+- Use different sparse graphs for embeddings and visualization
+- Use kNN induced graph to create sparse graph
+- Tweaked analysis parameters for better clusters extraction
+- Updated libraries
+
+
 Version 0.23
 ------------
 Released on May 10, 2023
