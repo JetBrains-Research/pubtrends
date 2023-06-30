@@ -1,6 +1,5 @@
 import json
 import logging
-
 from celery.result import AsyncResult
 from flask import request, redirect, url_for, render_template_string, render_template
 
@@ -40,7 +39,7 @@ def register_app_review(app):
                 if data is not None:
                     job = prepare_review_data_async.delay(data, source, num_papers, num_sents)
                     return redirect(url_for('.process', analysis_type=REVIEW_ANALYSIS_TYPE, jobid=job.id,
-                                            query=query, source=source, limit=limit, sort=sort))
+                                            query=trim(query, MAX_QUERY_LENGTH), source=source, limit=limit, sort=sort))
             logger.error(f'/generate_review error {log_request(request)}')
             return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
         except Exception as e:

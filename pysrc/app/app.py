@@ -3,7 +3,6 @@ import json
 import logging
 import os
 import random
-import re
 import tempfile
 import time
 from celery.result import AsyncResult
@@ -168,14 +167,17 @@ def search_terms():
                 # Save results to files
                 job = analyze_pubmed_search_files.delay(query=query, sort=sort, limit=limit, topics=topics,
                                                         test=app.config['TESTING'])
-                return redirect(url_for('.process', query=query, analysis_type=ANALYSIS_FILES_TYPE,
-                                        sort='', limit=limit, source='Pubmed', topics=topics, jobid=job.id))
+                return redirect(
+                    url_for('.process', query=trim(query, MAX_QUERY_LENGTH), analysis_type=ANALYSIS_FILES_TYPE,
+                            sort='', limit=limit, source='Pubmed', topics=topics, jobid=job.id))
             else:
                 # Regular analysis
                 job = analyze_pubmed_search.delay(query=query, sort=sort, limit=limit, topics=topics,
                                                   test=app.config['TESTING'])
-                return redirect(url_for('.process', source='Pubmed', query=query, limit=limit, sort='', topics=topics,
-                                        jobid=job.id))
+                return redirect(
+                    url_for('.process', source='Pubmed', query=trim(query, MAX_QUERY_LENGTH), limit=limit, sort='',
+                            topics=topics,
+                            jobid=job.id))
 
         # Regular search syntax
         if query and source and sort and limit and expand and topics:
@@ -184,16 +186,18 @@ def search_terms():
                 job = analyze_search_terms_files.delay(source, query=query, limit=int(limit), sort=sort,
                                                        noreviews=noreviews, expand=int(expand) / 100, topics=topics,
                                                        test=app.config['TESTING'])
-                return redirect(url_for('.process', query=query, analysis_type=ANALYSIS_FILES_TYPE,
-                                        sort=sort, limit=limit, source=source, topics=topics, jobid=job.id))
+                return redirect(
+                    url_for('.process', query=trim(query, MAX_QUERY_LENGTH), analysis_type=ANALYSIS_FILES_TYPE,
+                            sort=sort, limit=limit, source=source, topics=topics, jobid=job.id))
             else:
                 # Regular analysis
                 job = analyze_search_terms.delay(source, query=query, limit=int(limit), sort=sort,
                                                  noreviews=noreviews, expand=int(expand) / 100, topics=topics,
                                                  test=app.config['TESTING'])
-                return redirect(url_for('.process', query=query, source=source, limit=limit, sort=sort,
-                                        noreviews=noreviews, expand=expand, topics=topics,
-                                        jobid=job.id))
+                return redirect(
+                    url_for('.process', query=trim(query, MAX_QUERY_LENGTH), source=source, limit=limit, sort=sort,
+                            noreviews=noreviews, expand=expand, topics=topics,
+                            jobid=job.id))
         logger.error(f'/search_terms error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_TOPIC), 400
     except Exception as e:
@@ -213,7 +217,8 @@ def search_paper():
             limit = data.get('limit')
             topics = data.get('topics')
             job = analyze_search_paper.delay(source, None, key, value, limit, topics, test=app.config['TESTING'])
-            return redirect(url_for('.process', query=f'Paper {key}={value}', analysis_type=PAPER_ANALYSIS_TYPE,
+            return redirect(url_for('.process', query=trim(f'Paper {key}={value}', MAX_QUERY_LENGTH),
+                                    analysis_type=PAPER_ANALYSIS_TYPE,
                                     key=key, value=value, source=source, limit=limit, topics=topics, jobid=job.id))
         logger.error(f'/search_paper error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
@@ -380,9 +385,10 @@ def result():
                 args=[source, query, sort, int(limit), noreviews, int(expand) / 100, topics, app.config['TESTING']],
                 task_id=jobid
             )
-            return redirect(url_for('.process', query=query, source=source, limit=limit, sort=sort,
-                                    noreviews=noreviews, expand=expand, topics=topics,
-                                    jobid=jobid))
+            return redirect(
+                url_for('.process', query=trim(query, MAX_QUERY_LENGTH), source=source, limit=limit, sort=sort,
+                        noreviews=noreviews, expand=expand, topics=topics,
+                        jobid=jobid))
         else:
             logger.error(f'/result error wrong request {log_request(request)}')
             return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
@@ -453,8 +459,9 @@ def paper():
                 analyze_search_paper.apply_async(
                     args=[source, pid, key, value, limit, topics, app.config['TESTING']], task_id=jobid
                 )
-                return redirect(url_for('.process', query=f'Paper {key}={value}', analysis_type=PAPER_ANALYSIS_TYPE,
-                                            source=source, key=key, value=value, topics=topics, jobid=jobid))
+                return redirect(url_for('.process', query=trim(f'Paper {key}={value}', MAX_QUERY_LENGTH),
+                                        analysis_type=PAPER_ANALYSIS_TYPE,
+                                        source=source, key=key, value=value, topics=topics, jobid=jobid))
         logger.error(f'/paper error wrong request {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
     except Exception as e:
