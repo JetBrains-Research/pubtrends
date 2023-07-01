@@ -48,29 +48,24 @@
 
         $(document).ready(function () {
             const noreviews_checkbox = $("#noreviews");
-            const expand_field = $("#expand");
 
-            function advanced_noreviews_expand_disable() {
+            function advanced_noreviews_disable() {
                 noreviews_checkbox.prop("checked", false);
                 noreviews_checkbox.attr("disabled", "disabled");
-                expand_field.val(0);
-                expand_field.prop("readonly", true);
             }
 
-            function advanced_noreviews_expand_enable() {
+            function advanced_noreviews_enable() {
                 noreviews_checkbox.removeAttr("disabled")
-                expand_field.val(10);
-                expand_field.prop("readonly", false);
             }
 
             $('#search-source-selector').change(function () {
                 if ($(this).val() === "Semantic Scholar") {
-                    advanced_noreviews_expand_disable();
+                    advanced_noreviews_disable();
                     $("#pubmed-syntax-div").hide();
                     $("#pubmed-syntax").prop("checked", false);
                     $("#search-input-field").prop("placeholder", "{{min_words_message}}Use double quotes for phrase search, join queries by commas.");
                 } else {
-                    advanced_noreviews_expand_enable();
+                    advanced_noreviews_enable();
                     $("#pubmed-syntax-div").show();
                 }
             });
@@ -78,13 +73,13 @@
                 let $sort = $("#sort-selector");
                 if ($("#pubmed-syntax").prop("checked") === true) {
                     $("#search-input-field").prop("placeholder", "Use Pubmed search syntax.");
-                    advanced_noreviews_expand_disable();
+                    advanced_noreviews_disable();
                     $sort.empty(); // remove old options
                     $sort.append($("<option>Most Relevant</option>"));
                     $sort.append($("<option>Most Recent</option>"));
                 } else {
                     $("#search-input-field").prop("placeholder", "{{min_words_message}}Use double quotes for phrase search, join queries by commas.");
-                    advanced_noreviews_expand_enable();
+                    advanced_noreviews_enable();
                     $sort.empty(); // remove old options
                     $sort.append($("<option>Most Cited</option>"));
                     $sort.append($("<option>Most Recent</option>"));
@@ -226,16 +221,6 @@
                                 </div>
                             </div>
                             <div class="row no-gutters align-items-center mt-2">
-
-                                <div class="col input-group d-flex align-items-center mr-2">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text" id="expand-addon">
-                                            Expand by references %</span>
-                                    </div>
-                                    <input id="expand" name="expand" class="form-control" type="number"
-                                           aria-describedby="expand-addon"
-                                           min="0" max="100" step="10" value="10"/>
-                                </div>
                                 <div class="col input-group">
                                     <div class="input-group-prepend">
                                         <span class="input-group-text" id="topics-addon">Topics number</span>
@@ -275,7 +260,6 @@
                                 <input type="hidden" name="topics" value="medium">
                                 <input type="hidden" name="limit" value="{{ default_limit }}">
                                 <input type="hidden" name="noreviews" value="off">
-                                <input type="hidden" name="expand" value="{{ search_example_expand }}">
                                 <input type="hidden" name="jobid" value="{{ jobid }}">
                                 <button type="submit" name="query" value="{{ terms }}"
                                         class="btn btn-sm btn-outline-secondary mt-2 mr-2"
@@ -421,9 +405,9 @@
                     element: '#step3',
                     intro: "Additionally configure papers limit and ranking, filter out review papers, etc.<br>" +
                             "Topics number can be configured:<br>" +
-                            "<i>Small</i> - ≤ 10 topics, each ≥ 50 papers;<br>" +
-                            "<i>Medium</i> - ≤ 20 topics, each ≥ 20 papers;<br>" +
-                            "<i>Large</i> - ≤ 50 topics, each ≥ 10 papers.<br>" +
+                            "<i>Small</i> ≤ 10<br>" +
+                            "<i>Medium</i> ≤ 20<br>" +
+                            "<i>Large</i> ≤ 50.<br>" +
                             "Use <i>Save analysis html reports</i> to create downloadable report files."
                 },
                 {

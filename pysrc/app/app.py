@@ -102,9 +102,6 @@ def log_request(r):
     return f'addr:{r.remote_addr} args:{json.dumps(r.args)}'
 
 
-PUBMED_DEFAULT_EXPAND = 10
-
-
 @app.route('/')
 def index():
     if not are_predefined_jobs_ready():
@@ -134,8 +131,7 @@ def index():
                            ss_enabled=PUBTRENDS_CONFIG.ss_enabled,
                            search_example_message=search_example_message,
                            search_example_source=search_example_source,
-                           search_example_terms=search_example_terms,
-                           search_example_expand=PUBMED_DEFAULT_EXPAND if search_example_source == "Pubmed" else 0)
+                           search_example_terms=search_example_terms)
 
 
 @app.route('/about.html', methods=['GET'])
@@ -156,7 +152,6 @@ def search_terms():
     limit = request.form.get('limit')  # Limit
     pubmed_syntax = request.form.get('pubmed-syntax') == 'on'
     noreviews = request.form.get('noreviews') == 'on'  # Include reviews in the initial search phase
-    expand = request.form.get('expand')  # Fraction of papers to cover by references
     topics = request.form.get('topics')  # Topics sizes
     files = request.form.get('files') == 'on'
 
@@ -180,11 +175,11 @@ def search_terms():
                             jobid=job.id))
 
         # Regular search syntax
-        if query and source and sort and limit and expand and topics:
+        if query and source and sort and limit and topics:
             if files:
                 # Save results to files
                 job = analyze_search_terms_files.delay(source, query=query, limit=int(limit), sort=sort,
-                                                       noreviews=noreviews, expand=int(expand) / 100, topics=topics,
+                                                       noreviews=noreviews, topics=topics,
                                                        test=app.config['TESTING'])
                 return redirect(
                     url_for('.process', query=trim(query, MAX_QUERY_LENGTH), analysis_type=ANALYSIS_FILES_TYPE,
@@ -192,11 +187,11 @@ def search_terms():
             else:
                 # Regular analysis
                 job = analyze_search_terms.delay(source, query=query, limit=int(limit), sort=sort,
-                                                 noreviews=noreviews, expand=int(expand) / 100, topics=topics,
+                                                 noreviews=noreviews, topics=topics,
                                                  test=app.config['TESTING'])
                 return redirect(
                     url_for('.process', query=trim(query, MAX_QUERY_LENGTH), source=source, limit=limit, sort=sort,
-                            noreviews=noreviews, expand=expand, topics=topics,
+                            noreviews=noreviews, topics=topics,
                             jobid=job.id))
         logger.error(f'/search_terms error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_TOPIC), 400
@@ -363,7 +358,6 @@ def result():
     limit = request.args.get('limit')
     sort = request.args.get('sort')
     noreviews = request.args.get('noreviews') == 'on'  # Include reviews in the initial search phase
-    expand = request.args.get('expand') or 0  # Fraction of papers to cover by references
     topics = request.args.get('topics')
     try:
         if jobid and query and source and limit is not None and sort is not None:
@@ -382,12 +376,12 @@ def result():
                                        **viz)
             logger.info(f'/result No job or out-of-date job, restart it {log_request(request)}')
             analyze_search_terms.apply_async(
-                args=[source, query, sort, int(limit), noreviews, int(expand) / 100, topics, app.config['TESTING']],
+                args=[source, query, sort, int(limit), noreviews, topics, app.config['TESTING']],
                 task_id=jobid
             )
             return redirect(
                 url_for('.process', query=trim(query, MAX_QUERY_LENGTH), source=source, limit=limit, sort=sort,
-                        noreviews=noreviews, expand=expand, topics=topics,
+                        noreviews=noreviews, topics=topics,
                         jobid=jobid))
         else:
             logger.error(f'/result error wrong request {log_request(request)}')
@@ -612,8 +606,14 @@ def are_predefined_jobs_ready():
             return True
         ready = True
         inspect = pubtrends_celery.control.inspect()
-        active_jobs = [j['id'] for j in list(inspect.active().items())[0][1]]
-        scheduled_jobs = [j['id'] for j in list(inspect.reserved().items())[0][1]]
+        active = inspect.active()
+        if active is None:
+            return False
+        active_jobs = [j['id'] for j in list(active.items())[0][1]]
+        reserved = inspect.reserved()
+        if reserved is None:
+            return False
+        scheduled_jobs = [j['id'] for j in list(reserved.items())[0][1]]
 
         for source, predefine_info in PREDEFINED_JOBS.items():
             for query, jobid in predefine_info:
@@ -626,9 +626,8 @@ def are_predefined_jobs_ready():
                 data = load_result_data(jobid, source, query, sort, limit, pubtrends_celery)
                 if data is None:
                     logger.info(f'No job or out-of-date job for source={source} query={query}, launch it')
-                    expand = PUBMED_DEFAULT_EXPAND if source == 'Pubmed' else 0
                     analyze_search_terms.apply_async(
-                        args=[source, query, sort, int(limit), False, expand / 100, 'medium', app.config['TESTING']],
+                        args=[source, query, sort, int(limit), False, 'medium', app.config['TESTING']],
                         task_id=jobid
                     )
                     ready = False

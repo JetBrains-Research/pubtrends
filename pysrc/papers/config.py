@@ -53,18 +53,20 @@ TOPIC_DESCRIPTION_WORDS = 10
 POPULAR_JOURNALS = 50
 POPULAR_AUTHORS = 50
 
+# Number of steps in expand
+EXPAND_STEPS = 2
 # Expand limit by references before filtration by citations and keywords
-EXPAND_LIMIT = 5000
+EXPAND_LIMIT = 1000
 # Control citations count
-EXPAND_CITATIONS_Q_LOW = 5
-EXPAND_CITATIONS_Q_HIGH = 95
+EXPAND_CITATIONS_Q_LOW = 10
+EXPAND_CITATIONS_Q_HIGH = 90
 EXPAND_CITATIONS_SIGMA = 3
 # Take up to fraction of top similarity
-EXPAND_SIMILARITY_THRESHOLD = 0.5
-
+EXPAND_MESH_SIMILARITY = 0.5
 # Impact of single paper when analyzing citations and mesh terms when analysing paper
-SINGLE_PAPER_IMPACT = 20
+EXPAND_SINGLE_PAPER_IMPACT = 50
 
+# Evolution config
 EVOLUTION_MIN_PAPERS = 100
 EVOLUTION_STEP = 10
 

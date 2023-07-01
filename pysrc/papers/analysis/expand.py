@@ -1,7 +1,6 @@
 import logging
-from collections import Counter
-
 import numpy as np
+from collections import Counter
 
 from pysrc.papers.analysis.text import stemmed_tokens
 
@@ -10,42 +9,41 @@ logger = logging.getLogger(__name__)
 
 def expand_ids(
         loader,
-        ids,
-        single_paper,
+        pid,
         limit,
+        expand_steps,
         max_expand,
         citations_q_low,
         citations_q_high,
         citations_sigma,
-        similarity_threshold,
+        mesh_similarity_threshold,
         single_paper_impact
 ):
     """
     Expands list of paper ids to the limit, filtering by citations counts and keywords
-    :param ids: Initial ids to expand
-    :param single_paper: True if expand is applied to a single paper analysis
+    :param pid: Initial id to expand
     :param limit: Limit of expansion
+    :param expand_steps: Number of expand steps
     :param loader: DB loader
     :param max_expand: Number of papers expanded by references by loader before any filtration
     :param citations_q_low: Minimal percentile for groupwise citations count estimation, removes outliers
     :param citations_q_high: Max percentile for groupwise citations count estimation, removes outliers
     :param citations_sigma: Sigma for citations filtering range mean +- sigma * std
-    :param similarity_threshold: Similarity fraction of top similar, value 0 - 1
+    :param mesh_similarity_threshold: Similarity fraction of top similar, value 0 - 1
     :param single_paper_impact: Impact of single paper when analyzing citations and mesh terms for single paper
     :return:
     """
-    logger.debug(f'Expanding {len(ids)} papers single_paper={single_paper} with limit={limit} max_expand={max_expand}')
-    if single_paper:
-        # Fetch references at first, but in some cases paper may have empty references
-        logger.debug('Loading direct references for paper analysis')
-        ids = ids + loader.load_references(ids[0], limit)
-        logger.debug(f'Loaded {len(ids) - 1} references')
+    logger.debug(f'Expanding paper {pid} with limit={limit} max_expand={max_expand}')
+    # Fetch references at first, but in some cases paper may have empty references
+    logger.debug('Loading direct references for paper analysis')
+    ids = [pid] + loader.load_references(pid, limit)
+    logger.debug(f'Loaded {len(ids) - 1} references')
 
     if len(ids) > 1:
-        cit_mean, cit_std = estimate_citations(ids, single_paper, loader,
+        cit_mean, cit_std = estimate_citations(ids, True, loader,
                                                citations_q_low, citations_q_high, single_paper_impact)
         if cit_mean is not None and cit_std is not None:
-            mesh_stems, mesh_counter = estimate_mesh(ids, single_paper, loader, single_paper_impact)
+            mesh_stems, mesh_counter = estimate_mesh(ids, True, loader, single_paper_impact)
         else:
             mesh_stems, mesh_counter = None, None
     else:
@@ -53,7 +51,28 @@ def expand_ids(
         cit_mean, cit_std = None, None
         mesh_stems, mesh_counter = None, None
 
-    new_df = loader.expand(ids, max_expand)
+    for i in range(expand_steps):
+        logger.debug(f'Expanding step {i + 1}/{expand_steps}')
+        ids = _expand_ids_step(
+            loader, ids, limit, max_expand, cit_mean, cit_std, citations_sigma, mesh_similarity_threshold,
+            mesh_stems, mesh_counter)
+
+    return ids
+
+
+def _expand_ids_step(
+        loader,
+        ids,
+        limit,
+        max_expand,
+        cit_mean,
+        cit_std,
+        citations_sigma,
+        mesh_similarity_threshold,
+        mesh_stems,
+        mesh_counter
+):
+    new_df = loader.expand(ids, max_expand - len(ids))
     logger.debug(f'Expanded by references: {len(new_df)}')
 
     if len(new_df) == 0:
@@ -91,12 +110,12 @@ def expand_ids(
 
         new_publications_mesh_infos.sort(key=lambda i: i[2], reverse=True)
         # Compute keywords similarity threshold as a fraction of top
-        sim_threshold = new_publications_mesh_infos[0][2] * similarity_threshold
+        sim_threshold = new_publications_mesh_infos[0][2] * mesh_similarity_threshold
         logger.debug(f'Similarity threshold {sim_threshold}')
         # Show top 50 similar papers
         filtered_publications_mesh_infos = [i for i in new_publications_mesh_infos if not i[1] or i[2] >= sim_threshold]
         logger.debug('Pid\tMesh\tSimilarity\tTitle\tMesh\n' +
-                     '\n'.join(f'{p}\t{"+" if a else "-"}\t{int(s)}\t{t}\t{m}' for
+                     '\n'.join(f'{p}\t{"+" if a else "-"}\t{int(s)}\t{t[:80]}\t{m[:50]}' for
                                p, a, s, t, m in filtered_publications_mesh_infos[:50]))
         new_ids = [i[0] for i in filtered_publications_mesh_infos]
         logger.debug(f'Similar by mesh papers: {len(new_ids)}')
@@ -114,9 +133,9 @@ def estimate_mesh(ids, single_paper, loader, single_paper_impact):
         mesh_stems = [s for s, _ in stemmed_tokens(
             ' '.join(publications['mesh'].values[0] + ' ' + publications['keywords'].values[0]).replace(',', ' ')
         )] * single_paper_impact + \
-        [s for s, _ in stemmed_tokens(
-            ' '.join(publications['mesh'][1:] + ' ' + publications['keywords'][1:]).replace(',', ' ')
-        )]
+                     [s for s, _ in stemmed_tokens(
+                         ' '.join(publications['mesh'][1:] + ' ' + publications['keywords'][1:]).replace(',', ' ')
+                     )]
     else:
         mesh_stems = [s for s, _ in stemmed_tokens(
             ' '.join(publications['mesh'] + ' ' + publications['keywords']).replace(',', ' ')

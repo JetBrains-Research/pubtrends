@@ -601,11 +601,11 @@ class Plotter:
         return p
 
     @staticmethod
-    def _paper_html_tooltips(source, tips_list):
+    def _paper_html_tooltips(source, tips_list, idname='id'):
         if source == "pubmed":
-            tips_list.insert(0, ("PMID", '@id'))
+            tips_list.insert(0, ("PMID", f'@{idname}'))
         else:
-            tips_list.insert(0, ("ID", '@id'))
+            tips_list.insert(0, ("ID", f'@{idname}'))
         tips_list = tips_list
 
         style_caption = Template('<span style="font-size: 12px;color:dodgerblue;">$caption:</span>')
@@ -704,7 +704,7 @@ class Plotter:
             hover_tags.append(("Topic tags", '@topic_tags'))
         if topics_meshs is not None:
             hover_tags.append(("Topic Mesh tags", '@topic_meshs'))
-        p.add_tools(HoverTool(tooltips=Plotter._paper_html_tooltips(source, hover_tags)))
+        p.add_tools(HoverTool(tooltips=Plotter._paper_html_tooltips(source, hover_tags, idname='pid')))
 
         if add_callback:
             p.js_on_event('tap', Plotter._paper_callback(graph.node_renderer.data_source, idname='pid'))

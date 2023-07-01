@@ -11,14 +11,13 @@ from pysrc.papers.config import *
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plotter import visualize_analysis
-from pysrc.papers.utils import SORT_MOST_CITED, PAPER_ANALYSIS_TYPE, IDS_ANALYSIS_TYPE, \
-    preprocess_doi, is_doi
+from pysrc.papers.utils import SORT_MOST_CITED, preprocess_doi, is_doi
 
 logger = getLogger(__name__)
 
 
 @pubtrends_celery.task(name='analyze_search_terms')
-def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, expand=0.5, topics='medium', test=False):
+def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, topics='medium', test=False):
     if is_doi(query):
         raise SearchError(DOI_WRONG_SEARCH)
     config = PubtrendsConfig(test=test)
@@ -34,16 +33,6 @@ def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, e
         ids = analyzer.search_terms(query, limit=limit, sort=sort,
                                     noreviews=noreviews,
                                     task=current_task)
-        if ids and expand != 0:
-            analyzer.progress.info('Expanding related papers by references', current=2, task=current_task)
-            ids = expand_ids(loader=loader, ids=ids, single_paper=False,
-                             limit=min(int(min(len(ids), limit) * (1 + expand)), analyzer.config.max_number_to_expand),
-                             max_expand=EXPAND_LIMIT,
-                             citations_q_low=EXPAND_CITATIONS_Q_LOW,
-                             citations_q_high=EXPAND_CITATIONS_Q_HIGH,
-                             citations_sigma=EXPAND_CITATIONS_SIGMA,
-                             similarity_threshold=EXPAND_SIMILARITY_THRESHOLD,
-                             single_paper_impact=SINGLE_PAPER_IMPACT)
         analyzer.analyze_papers(ids, query, topics, test=test, task=current_task)
     finally:
         loader.close_connection()
@@ -59,7 +48,7 @@ def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, e
 
 @pubtrends_celery.task(name='analyze_search_terms_files')
 def analyze_search_terms_files(source, query,
-                               sort=None, limit=None, noreviews=True, expand=0.5, topics='medium',
+                               sort=None, limit=None, noreviews=True, topics='medium',
                                test=False):
     if is_doi(preprocess_doi(query)):
         raise SearchError(DOI_WRONG_SEARCH)
@@ -76,16 +65,6 @@ def analyze_search_terms_files(source, query,
         ids = analyzer.search_terms(query, limit=limit, sort=sort,
                                     noreviews=noreviews,
                                     task=current_task)
-        if ids and expand != 0:
-            analyzer.progress.info('Expanding related papers by references', current=2, task=current_task)
-            ids = expand_ids(loader=loader, ids=ids, single_paper=False,
-                             limit=min(int(min(len(ids), limit) * (1 + expand)), analyzer.config.max_number_to_expand),
-                             max_expand=EXPAND_LIMIT,
-                             citations_q_low=EXPAND_CITATIONS_Q_LOW,
-                             citations_q_high=EXPAND_CITATIONS_Q_HIGH,
-                             citations_sigma=EXPAND_CITATIONS_SIGMA,
-                             similarity_threshold=EXPAND_SIMILARITY_THRESHOLD,
-                             single_paper_impact=SINGLE_PAPER_IMPACT)
         analyzer.analyze_ids(ids, source, query, sort, limit, topics, test=test, task=current_task)
         analyzer.progress.done(task=current_task)
         analyzer.teardown()
@@ -94,28 +73,13 @@ def analyze_search_terms_files(source, query,
         loader.close_connection()
 
 
-def _analyze_id_list(analyzer, source,
-                     ids, single_paper,
-                     query, analysis_type=IDS_ANALYSIS_TYPE, limit=None, topics='medium',
+def _analyze_id_list(analyzer, source, ids,
+                     query, topics='medium',
                      test=False, task=None):
     if len(ids) == 0:
         raise RuntimeError('Empty papers list')
     analyzer.progress.info(f'Analyzing {len(ids)} paper(s) from {source}', current=1, task=task)
     try:
-        if analysis_type == PAPER_ANALYSIS_TYPE:
-            limit = int(limit) if limit else analyzer.config.max_number_to_expand
-            analyzer.progress.info('Expanding related papers by references', current=1, task=task)
-            ids = expand_ids(loader=analyzer.loader, ids=ids, single_paper=single_paper, limit=limit,
-                             max_expand=EXPAND_LIMIT,
-                             citations_q_low=EXPAND_CITATIONS_Q_LOW,
-                             citations_q_high=EXPAND_CITATIONS_Q_HIGH,
-                             citations_sigma=EXPAND_CITATIONS_SIGMA,
-                             similarity_threshold=EXPAND_SIMILARITY_THRESHOLD,
-                             single_paper_impact=SINGLE_PAPER_IMPACT)
-        elif analysis_type == IDS_ANALYSIS_TYPE:
-            ids = ids  # Leave intact
-        else:
-            raise Exception(f'Illegal analysis type {analysis_type}')
         analyzer.analyze_papers(ids, query, topics, test=test, task=task)
     finally:
         analyzer.loader.close_connection()
@@ -142,11 +106,19 @@ def analyze_search_paper(source, pid, key, value, limit, topics, test=False):
         else:
             result = loader.find(key, value)
         if len(result) == 1:
+            analyzer.progress.info('Expanding related papers by references', current=1, task=current_task)
+            limit = int(limit) if limit is not None and limit != '' else 0
+            ids = expand_ids(loader=analyzer.loader, pid=result[0], limit=limit,
+                             expand_steps=EXPAND_STEPS,
+                             max_expand=EXPAND_LIMIT,
+                             citations_q_low=EXPAND_CITATIONS_Q_LOW,
+                             citations_q_high=EXPAND_CITATIONS_Q_HIGH,
+                             citations_sigma=EXPAND_CITATIONS_SIGMA,
+                             mesh_similarity_threshold=EXPAND_MESH_SIMILARITY,
+                             single_paper_impact=EXPAND_SINGLE_PAPER_IMPACT)
             return _analyze_id_list(
-                analyzer,
-                source, ids=result, single_paper=True, query=f'Paper {key}={value}',
-                analysis_type=PAPER_ANALYSIS_TYPE,
-                limit=limit, topics=topics,
+                analyzer, source, ids=ids, query=f'Paper {key}={value}',
+                topics=topics,
                 test=test, task=current_task
             )
         elif len(result) == 0:
@@ -168,7 +140,7 @@ def analyze_pubmed_search(query, sort, limit, topics, test=False):
                            current=1, task=current_task)
     ids = pubmed_search(query, sort, limit)
     return _analyze_id_list(analyzer, 'Pubmed',
-                            ids, single_paper=False, query=query, analysis_type=IDS_ANALYSIS_TYPE, limit=limit,
+                            ids, query=query,
                             topics=topics,
                             test=test, task=current_task)
 
