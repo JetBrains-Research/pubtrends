@@ -53,7 +53,7 @@ class AnalyzerFiles(PapersAnalyzer):
     def teardown(self):
         self.progress.remove_handler()
 
-    def analyze_ids(self, ids, source, query, sort, limit, topics, test=False, task=None):
+    def analyze_ids(self, ids, source, query, sort, limit, topics=TOPICS_NUMBER_MEDIUM, test=False, task=None):
         self.query = query
         self.query_folder = os.path.join(get_results_path(), preprocess_string(VERSION),
                                          result_folder_name(source, query, sort, limit, jobid=None))
@@ -205,10 +205,10 @@ class AnalyzerFiles(PapersAnalyzer):
             self.df['x'] = 0
             self.df['y'] = 0
 
-        self.progress.info(f'Extracting {topics.lower()} number of topics from papers text and graph similarity',
+        self.progress.info(f'Extracting {topics} number of topics from papers text and graph similarity',
                            current=11, task=task)
-        topics_max_number, topic_min_size = PapersAnalyzer.get_topics_info(topics)
-        clusters, dendrogram = cluster_and_sort(self.pca_coords, topics_max_number, topic_min_size)
+        logger.debug('Extracting topics from papers embeddings')
+        clusters, dendrogram = cluster_and_sort(self.pca_coords, topics)
         self.df['comp'] = clusters
         path_topics_sizes = os.path.join(self.query_folder, 'topics_sizes.html')
         logging.info(f'Save topics ratios to file {path_topics_sizes}')

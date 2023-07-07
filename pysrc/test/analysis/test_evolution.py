@@ -33,8 +33,7 @@ class TestTopicEvolution(unittest.TestCase):
             self.analyzer.bibliographic_coupling_df,
             self.analyzer.corpus_counts,
             self.analyzer.corpus_tokens_embedding,
-            20, 20,
-            evolution_step=step
+            20, evolution_step=step
         )
 
         if expect_none:
@@ -54,8 +53,7 @@ class TestTopicEvolution(unittest.TestCase):
             self.analyzer.bibliographic_coupling_df,
             self.analyzer.corpus_counts,
             self.analyzer.corpus_tokens_embedding,
-            20, 20,
-            evolution_step=5
+            20, evolution_step=5
         )
 
         evolution_kwds = topic_evolution_descriptions(

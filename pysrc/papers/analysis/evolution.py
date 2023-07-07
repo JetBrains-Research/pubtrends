@@ -19,8 +19,7 @@ def topic_evolution_analysis(
         bibliographic_coupling_df,
         corpus_counts,
         corpus_tokens_embedding,
-        topics_max_number,
-        topic_min_size,
+        topics,
         evolution_step=EVOLUTION_STEP
 ):
     """
@@ -88,7 +87,7 @@ def topic_evolution_analysis(
              texts_embeddings_year * TEXT_EMBEDDINGS_FACTOR), axis=1)
 
         logger.debug('Extracting topics from papers')
-        clusters, _ = cluster_and_sort(papers_embeddings, topics_max_number, topic_min_size)
+        clusters, _ = cluster_and_sort(papers_embeddings, topics)
         partition = dict(zip(df_year['id'], clusters))
         evolution_series.append(pd.Series(partition))
 

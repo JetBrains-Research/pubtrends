@@ -226,9 +226,13 @@
                                         <span class="input-group-text" id="topics-addon">Topics number</span>
                                     </div>
                                     <select class="form-control" aria-describedby="topics-addon" name="topics">
-                                        <option>Small</option>
-                                        <option selected>Medium</option>
-                                        <option>Large</option>
+                                        {% for topics in topics_variants %}
+                                        {% if topics == default_topics %}
+                                        <option selected>{{ topics }}</option>
+                                        {% else %}
+                                        <option>{{ topics }}</option>
+                                        {% endif %}
+                                        {% endfor %}
                                     </select>
                                 </div>
                                 <div id="noreviews-div" class="col input-group ml-2 mt-2 mb-2 mr-2">
@@ -257,7 +261,7 @@
                             <form action="result" method="GET" class="inline">
                                 <input type="hidden" name="source" value="{{ search_example_source }}">
                                 <input type="hidden" name="sort" value="Most Cited">
-                                <input type="hidden" name="topics" value="medium">
+                                <input type="hidden" name="topics" value="{{ default_topics }}">
                                 <input type="hidden" name="limit" value="{{ default_limit }}">
                                 <input type="hidden" name="noreviews" value="off">
                                 <input type="hidden" name="jobid" value="{{ jobid }}">
@@ -343,9 +347,13 @@
                                         <span class="input-group-text" id="paper-topics-addon">Topics number</span>
                                     </div>
                                     <select class="form-control" aria-describedby="paper-topics-addon" name="topics">
-                                        <option>Small</option>
-                                        <option selected>Medium</option>
-                                        <option>Large</option>
+                                        {% for topics in topics_variants %}
+                                        {% if topics == default_topics %}
+                                        <option selected>{{ topics }}</option>
+                                        {% else %}
+                                        <option>{{ topics }}</option>
+                                        {% endif %}
+                                        {% endfor %}
                                     </select>
                                 </div>
                             </div>
@@ -390,24 +398,18 @@
                 {
                     element: '#step2',
                     intro: "Enter search query to define the research area of interest."
+                    {% if pm_enabled %}
+                        +  "<br>Enable <i>Advanced settings | Use Pubmed syntax</i> to use advanced search query syntax with OR, AND here."
+                    {% endif %}
                 },
                 {
                     element: '#step2-2',
                     intro: "Select publications database to work with."
                 },
-                {% if pm_enabled %}
-                {
-                    element: '#pubmed-syntax-div',
-                    intro: "You can use Pubmed search syntax including AND, OR, fields etc."
-                },
-                {% endif %}
                 {
                     element: '#step3',
                     intro: "Additionally configure papers limit and ranking, filter out review papers, etc.<br>" +
-                            "Topics number can be configured:<br>" +
-                            "<i>Small</i> ≤ 10<br>" +
-                            "<i>Medium</i> ≤ 20<br>" +
-                            "<i>Large</i> ≤ 50.<br>" +
+                            "Also, number of topics number can be configured.<br>" +
                             "Use <i>Save analysis html reports</i> to create downloadable report files."
                 },
                 {

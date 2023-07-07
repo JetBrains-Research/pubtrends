@@ -5,11 +5,12 @@ import os
 import random
 import tempfile
 import time
+from threading import Lock
+from urllib.parse import quote
+
 from celery.result import AsyncResult
 from flask import Flask, url_for, redirect, render_template, request, render_template_string, \
     send_from_directory, send_file
-from threading import Lock
-from urllib.parse import quote
 
 from pysrc.app.admin.admin import configure_admin_functions
 from pysrc.app.messages import SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, SOMETHING_WENT_WRONG_PAPER, \
@@ -21,7 +22,7 @@ from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, 
     analyze_pubmed_search_files, analyze_pubmed_search, analyze_search_terms_files
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.analyzer_files import FILES_WITH_DESCRIPTIONS, ANALYSIS_FILES_TYPE
-from pysrc.papers.config import PubtrendsConfig
+from pysrc.papers.config import PubtrendsConfig, TOPICS_NUMBER_MEDIUM, TOPICS_NUMBER_SMALL, TOPICS_NUMBER_LARGE
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
@@ -124,6 +125,8 @@ def index():
                            version=VERSION,
                            limits=PUBTRENDS_CONFIG.show_max_articles_options,
                            default_limit=PUBTRENDS_CONFIG.show_max_articles_default_value,
+                           topics_variants=[TOPICS_NUMBER_SMALL, TOPICS_NUMBER_MEDIUM, TOPICS_NUMBER_LARGE],
+                           default_topics=TOPICS_NUMBER_MEDIUM,
                            min_words_message=min_words_message,
                            max_papers=PUBTRENDS_CONFIG.max_number_of_articles,
                            pm_enabled=PUBTRENDS_CONFIG.pm_enabled,
@@ -239,7 +242,7 @@ def process():
         query = request.args.get('query') or ''
         analysis_type = request.values.get('analysis_type')
         source = request.values.get('source')
-        topics = request.values.get('topics') or 'medium'
+        topics = request.values.get('topics')
 
         if analysis_type == IDS_ANALYSIS_TYPE:
             logger.info(f'/process ids {log_request(request)}')
@@ -277,12 +280,13 @@ def process():
         elif analysis_type == ANALYSIS_FILES_TYPE:
             logger.info(f'/process files {log_request(request)}')
             limit = request.args.get('limit') or PUBTRENDS_CONFIG.show_max_articles_default_value
+            sort = request.args.get('sort')
             return render_template('process.html',
                                    redirect_page='result_files',  # redirect in case of success
-                                   redirect_args=dict(source=source, query=quote(query), limit=limit, sort='',
+                                   redirect_args=dict(source=source, query=quote(query), limit=limit, sort=sort,
                                                       topics=topics, jobid=jobid),
                                    query=trim(query, MAX_QUERY_LENGTH), source=source,
-                                   limit=limit, sort='',
+                                   limit=limit, sort=sort,
                                    jobid=jobid, version=VERSION)
 
         elif query:  # This option should be the last default
@@ -528,7 +532,9 @@ def result_files():
     source = request.args.get('source')
     jobid = request.args.get('jobid')
     query = request.args.get('query')
+    sort = request.args.get('sort')
     limit = request.args.get('limit')
+    topics = request.args.get('topics')
     try:
         if jobid and query and limit:
             job = AsyncResult(jobid, app=pubtrends_celery)
@@ -546,7 +552,7 @@ def result_files():
                         if f in available_files:
                             full_path = os.path.join(query_folder, f)
                             if os.path.exists(full_path):
-                                url = f'/result_files?file={f}&jobid={jobid}&query={qq}&source={source}&limit={limit}'
+                                url = f'/result_files?file={f}&jobid={jobid}&query={qq}&source={source}&limit={limit}&sort={sort}&topics={topics}'
                                 file_infos.append((f, url, d,
                                                    time.ctime(os.path.getmtime(full_path)),
                                                    human_readable_size(os.path.getsize(full_path))))
@@ -556,6 +562,8 @@ def result_files():
                                            full_query=query,
                                            source=source,
                                            limit=limit,
+                                           sort=sort,
+                                           topics=topics,
                                            file_infos=file_infos,
                                            version=VERSION)
         logger.error(f'/result_files error {log_request(request)}')
@@ -627,7 +635,7 @@ def are_predefined_jobs_ready():
                 if data is None:
                     logger.info(f'No job or out-of-date job for source={source} query={query}, launch it')
                     analyze_search_terms.apply_async(
-                        args=[source, query, sort, int(limit), False, 'medium', app.config['TESTING']],
+                        args=[source, query, sort, int(limit), False, TOPICS_NUMBER_MEDIUM, app.config['TESTING']],
                         task_id=jobid
                     )
                     ready = False

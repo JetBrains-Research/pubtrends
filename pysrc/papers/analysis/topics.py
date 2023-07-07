@@ -24,42 +24,20 @@ def compute_topics_similarity_matrix(papers_vectors, comps):
     return similarity_matrix
 
 
-def cluster_and_sort(x, max_clusters, min_cluster_size):
+def cluster_and_sort(x, n_clusters):
     """
     :param x: object representations (X x Features)
-    :param max_clusters:
-    :param min_cluster_size:
+    :param n_clusters:
     :return: List[cluster], Hierarchical dendrogram of splits.
     """
-    logger.debug('Looking for an appropriate number of clusters,'
-                 f'min_cluster_size={min_cluster_size}, max_clusters={max_clusters}')
-    if x.shape[1] == 0:
+    logger.debug(f'Looking for clusters={n_clusters}')
+    if x.shape[0] <= n_clusters or x.shape[1] == 0:
         return [0] * x.shape[0], None
-    r = min(int(x.shape[0] / min_cluster_size), max_clusters) + 1
-    l = 1
-
-    if l >= r - 2:
-        return [0] * x.shape[0], None
-
-    prev_min_size = None
-    while l < r - 1:
-        n_clusters = int((l + r) / 2)
-        model = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward').fit(x)
-        clusters_counter = Counter(model.labels_)
-        min_size = clusters_counter.most_common()[-1][1]
-        logger.debug(f'l={l}, r={r}, n_clusters={n_clusters}, min_cluster_size={min_cluster_size}, '
-                     f'prev_min_size={prev_min_size}, min_size={min_size}')
-        if min_size < min_cluster_size:
-            if prev_min_size is not None and min_size <= prev_min_size:
-                break
-            r = n_clusters + 1
-        else:
-            l = n_clusters
-        prev_min_size = min_size
-
-    logger.debug(f'Number of clusters = {n_clusters}')
-    logger.debug(f'Min cluster size = {prev_min_size}')
+    model = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward').fit(x)
+    clusters_counter = Counter(model.labels_)
     logger.debug('Reorder clusters by size descending')
+    min_size = clusters_counter.most_common()[-1][1]
+    logger.debug(f'Min cluster size = {min_size}')
     reorder_map = {c: i for i, (c, _) in enumerate(clusters_counter.most_common())}
     return [reorder_map[c] for c in model.labels_], model.children_
 

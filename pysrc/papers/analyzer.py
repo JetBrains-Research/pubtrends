@@ -27,19 +27,6 @@ logger = logging.getLogger(__name__)
 
 class PapersAnalyzer:
 
-    @staticmethod
-    def get_topics_info(topics):
-        if topics.lower() == 'small':
-            info = TOPICS_NUMBER_SMALL
-        elif topics.lower() == 'medium':
-            info = TOPICS_NUMBER_MEDIUM
-        elif topics.lower() == 'large':
-            info = TOPICS_NUMBER_LARGE
-        else:
-            raise Exception(f'Unknown topics size: {topics}')
-        return info['max_number'], info['min_size']
-
-
     def __init__(self, loader, config, test=False):
         self.config = config
         self.progress = Progress(self.total_steps())
@@ -53,13 +40,12 @@ class PapersAnalyzer:
     def teardown(self):
         self.progress.remove_handler()
 
-    def search_terms(self, query, limit=None, sort=None, noreviews=True, task=None):
+    def search_terms(self, query, limit=None, sort=SORT_MOST_CITED, noreviews=True, task=None):
+        limit = limit or self.config.show_max_articles_default_value
         # Search articles relevant to the terms
         if len(query) == 0:
             raise SearchError('Empty search string, please use search terms or '
                               'all the query wrapped in "" for phrasal search')
-        limit = limit or self.config.max_number_of_articles
-        sort = sort or SORT_MOST_CITED
         noreviews_msg = ", not reviews" if noreviews else ""
         self.progress.info(f'Searching {limit} {sort.lower()} publications matching {query}{noreviews_msg}',
                            current=1, task=task)
@@ -70,7 +56,7 @@ class PapersAnalyzer:
             self.progress.info(f'Found {len(ids)} publications in the database', current=1, task=task)
         return ids
 
-    def analyze_papers(self, ids, query, topics='medium', test=False, task=None):
+    def analyze_papers(self, ids, query, topics=TOPICS_NUMBER_MEDIUM, test=False, task=None):
         self.progress.info('Loading publication data', current=2, task=task)
         self.query = query
         self.df = self.loader.load_publications(ids)
@@ -176,17 +162,11 @@ class PapersAnalyzer:
             self.df['x'] = 0
             self.df['y'] = 0
 
-        self.progress.info(f'Extracting {topics.lower()} number of topics from papers text and graph similarity',
+        self.progress.info(f'Extracting {topics} number of topics from papers text and graph similarity',
                            current=8, task=task)
-        topics_max_number, topic_min_size = PapersAnalyzer.get_topics_info(topics)
-        if self.papers_graph.number_of_nodes() <= topic_min_size:
-            logger.debug('Small graph - single topic')
-            self.clusters, self.dendrogram = [0] * len(self.df), None
-            self.df['comp'] = self.clusters
-        else:
-            logger.debug('Extracting topics from papers embeddings')
-            self.clusters, self.dendrogram = cluster_and_sort(self.pca_coords, topics_max_number, topic_min_size)
-            self.df['comp'] = self.clusters
+        logger.debug('Extracting topics from papers embeddings')
+        self.clusters, self.dendrogram = cluster_and_sort(self.pca_coords, topics)
+        self.df['comp'] = self.clusters
 
         self.progress.info(f'Analyzing {len(set(self.df["comp"]))} topics descriptions',
                            current=9, task=task)
@@ -246,8 +226,7 @@ class PapersAnalyzer:
                     self.bibliographic_coupling_df,
                     self.corpus_counts,
                     self.corpus_tokens_embedding,
-                    topics_max_number,
-                    topic_min_size,
+                    topics,
                 )
                 self.evolution_kwds = topic_evolution_descriptions(
                     self.df, self.evolution_df, self.evolution_year_range,

@@ -41,9 +41,9 @@ VECTOR_MAX_DF = 0.8
 PCA_COMPONENTS = 30
 
 # Configure number and size of topics
-TOPICS_NUMBER_SMALL = dict(max_number=10, min_size=50)
-TOPICS_NUMBER_MEDIUM = dict(max_number=20, min_size=20)
-TOPICS_NUMBER_LARGE = dict(max_number=50, min_size=10)
+TOPICS_NUMBER_SMALL = 10
+TOPICS_NUMBER_MEDIUM = 20
+TOPICS_NUMBER_LARGE = 50
 
 # Number of top cited papers in topic picked for description computation
 TOPIC_MOST_CITED_PAPERS = 50

@@ -17,7 +17,7 @@ logger = getLogger(__name__)
 
 
 @pubtrends_celery.task(name='analyze_search_terms')
-def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, topics='medium', test=False):
+def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, topics=TOPICS_NUMBER_MEDIUM, test=False):
     if is_doi(query):
         raise SearchError(DOI_WRONG_SEARCH)
     config = PubtrendsConfig(test=test)
@@ -29,7 +29,8 @@ def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, t
     analyzer.progress.info('Analyzing search query', current=1, task=current_task)
     try:
         sort = sort or SORT_MOST_CITED
-        limit = limit or analyzer.config.show_max_articles_default_value
+        limit = int(limit) if limit is not None and limit != '' else analyzer.config.show_max_articles_default_value
+        topics = int(topics) if topics is not None and topics != '' else TOPICS_NUMBER_MEDIUM
         ids = analyzer.search_terms(query, limit=limit, sort=sort,
                                     noreviews=noreviews,
                                     task=current_task)
@@ -48,7 +49,7 @@ def analyze_search_terms(source, query, sort=None, limit=None, noreviews=True, t
 
 @pubtrends_celery.task(name='analyze_search_terms_files')
 def analyze_search_terms_files(source, query,
-                               sort=None, limit=None, noreviews=True, topics='medium',
+                               sort=None, limit=None, noreviews=True, topics=TOPICS_NUMBER_MEDIUM,
                                test=False):
     if is_doi(preprocess_doi(query)):
         raise SearchError(DOI_WRONG_SEARCH)
@@ -61,7 +62,8 @@ def analyze_search_terms_files(source, query,
     analyzer.progress.info('Analyzing search query', current=1, task=current_task)
     try:
         sort = sort or SORT_MOST_CITED
-        limit = limit or analyzer.config.show_max_articles_default_value
+        limit = int(limit) if limit is not None and limit != '' else analyzer.config.show_max_articles_default_value
+        topics = int(topics) if topics is not None and topics != '' else TOPICS_NUMBER_MEDIUM
         ids = analyzer.search_terms(query, limit=limit, sort=sort,
                                     noreviews=noreviews,
                                     task=current_task)
@@ -74,7 +76,7 @@ def analyze_search_terms_files(source, query,
 
 
 def _analyze_id_list(analyzer, source, ids,
-                     query, topics='medium',
+                     query, topics=TOPICS_NUMBER_MEDIUM,
                      test=False, task=None):
     if len(ids) == 0:
         raise RuntimeError('Empty papers list')
@@ -107,7 +109,8 @@ def analyze_search_paper(source, pid, key, value, limit, topics, test=False):
             result = loader.find(key, value)
         if len(result) == 1:
             analyzer.progress.info('Expanding related papers by references', current=1, task=current_task)
-            limit = int(limit) if limit is not None and limit != '' else 0
+            limit = int(limit) if limit is not None and limit != '' else analyzer.config.show_max_articles_default_value
+            topics = int(topics) if topics is not None and topics != '' else TOPICS_NUMBER_MEDIUM
             ids = expand_ids(loader=analyzer.loader, pid=result[0], limit=limit,
                              expand_steps=EXPAND_STEPS,
                              max_expand=EXPAND_LIMIT,
@@ -138,6 +141,9 @@ def analyze_pubmed_search(query, sort, limit, topics, test=False):
     analyzer = PapersAnalyzer(loader, config)
     analyzer.progress.info(f"Searching Pubmed query: {query}, {sort.lower()} limit {limit}",
                            current=1, task=current_task)
+    sort = sort or SORT_MOST_CITED
+    limit = int(limit) if limit is not None and limit != '' else analyzer.config.show_max_articles_default_value
+    topics = int(topics) if topics is not None and topics != '' else TOPICS_NUMBER_MEDIUM
     ids = pubmed_search(query, sort, limit)
     return _analyze_id_list(analyzer, 'Pubmed',
                             ids, query=query,
@@ -153,11 +159,14 @@ def analyze_pubmed_search_files(query, sort, limit, topics, test=False):
     loader = Loaders.get_loader('Pubmed', config)
     analyzer = AnalyzerFiles(loader, config)
     try:
-        analyzer.progress.info(f"Searching Pubmed query: {query}, {sort.lower()} limit {limit}",
+        sort = sort or SORT_MOST_CITED
+        limit = int(limit) if limit is not None and limit != '' else analyzer.config.show_max_articles_default_value
+        topics = int(topics) if topics is not None and topics != '' else TOPICS_NUMBER_MEDIUM
+        analyzer.progress.info(f"Searching Pubmed query: {query}, {sort.lower()} limit {limit} topics {topics}",
                                current=1, task=current_task)
         ids = pubmed_search(query, sort, limit)
         analyzer.progress.info(f'Analysing {len(ids)} paper(s) from Pubmed', current=1, task=current_task)
-        analyzer.analyze_ids(ids, 'Pubmed', query, '', limit, topics, test=test, task=current_task)
+        analyzer.analyze_ids(ids, 'Pubmed', query, sort, limit, topics, test=test, task=current_task)
         analyzer.progress.done(task=current_task)
         analyzer.teardown()
         return analyzer.query_folder
