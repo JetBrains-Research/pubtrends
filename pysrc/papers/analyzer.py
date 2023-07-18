@@ -152,9 +152,10 @@ class PapersAnalyzer:
             logger.debug(f'Explained variation {int(np.sum(pca.explained_variance_ratio_) * 100)}%')
             logger.debug('Apply TSNE transformation on papers PCA coords')
             if not test:
-                tsne_embeddings_2d = TSNE(n_components=2, random_state=42).fit_transform(self.pca_coords)
+                tsne = TSNE(n_components=2, random_state=42, perplexity=min(30, len(self.df - 1)))
             else:
-                tsne_embeddings_2d = TSNE(n_components=2, random_state=42, perplexity=3).fit_transform(self.pca_coords)
+                tsne = TSNE(n_components=2, random_state=42, perplexity=3)
+            tsne_embeddings_2d = tsne.fit_transform(self.pca_coords)
             self.df['x'] = tsne_embeddings_2d[:, 0]
             self.df['y'] = tsne_embeddings_2d[:, 1]
         else:
