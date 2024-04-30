@@ -8,8 +8,6 @@ PubTrends
 PubTrends is a scientific literature exploratory tool for analyzing topics of a research field and similar papers
 analysis. It runs a Pubmed or Semantic Scholar search and allows user to explore high-level structure of result papers.
 
-PubTrends is available online at: [https://pubtrends.net](https://pubtrends.net).
-
 Open Access Paper: [https://doi.org/10.1145/3459930.3469501](https://doi.org/10.1145/3459930.3469501), poster
 is [here](https://drive.google.com/file/d/1SeqJtJtaHSO6YihG2905boOEYL1NiSP1/view?usp=sharing). \
 *Citation: Shpynov, O. and Nikolai, K., 2021, August. PubTrends: a scientific literature explorer. In Proceedings of the
