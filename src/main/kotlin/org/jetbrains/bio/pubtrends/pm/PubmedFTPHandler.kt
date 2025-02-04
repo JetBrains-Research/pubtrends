@@ -20,7 +20,7 @@ class PubmedFTPHandler {
 
         const val TIMEOUT_MS = 20000
         const val DOWNLOAD_TIMEOUT_MS = 100000L
-        const val YEAR = 23
+        const val YEAR = 25
 
         fun pubmedFileToId(name: String): Int = name.removeSurrounding("pubmed${YEAR}n", ".xml.gz").toInt()
 
