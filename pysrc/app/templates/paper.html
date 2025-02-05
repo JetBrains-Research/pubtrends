@@ -212,15 +212,6 @@
                             Topics Info
                         </a>
                     </li>
-
-                    <li class="nav-item row">
-                        <a class="nav-link no-padding-right" href="#feedback" title="Feedback">
-                            <img class="nav-icon" src="{{ url_for('static', filename='edit.svg') }}"/>
-                        </a>
-                        <a class="nav-link d-none d-xl-block no-padding" href="#feedback">
-                            Feedback
-                        </a>
-                    </li>
                 </ul>
             </div>
         </nav>
@@ -455,49 +446,6 @@
                     <div class="mt-3" id="paper-feedback-related-form"></div>
                 </div>
             </div>
-            <div class="card mt-3">
-                <div class="card-title" id="feedback">
-                    <h1 class="card-header">Feedback</h1>
-                </div>
-                <div class="card-body">
-                    <strong>We'd love to hear your feedback!</strong>
-                    <p>
-                        Use the form below to tell us more about you and your opinion about the service,<br>
-                        or click instant feedback buttons to share your feelings about particular report section.<br>
-                        Also you can optionally leave your email to contact you later.<br>
-                    </p>
-                    <form name="feedback-form" action="feedback" method="POST">
-                        <div class="form-group">
-                            <label for="feedback-message">Message</label>
-                            <textarea class="form-control" id="feedback-message" name="message"
-                                      rows="5" maxlength="2000"
-                                      aria-describedby="emailHelp"
-                                      placeholder="Enter message"></textarea>
-                            <small id="messageHelp" class="form-text text-muted">
-                                Max length: 2000.</small>
-                        </div>
-                        <div class="form-group">
-                            <label for="feedback-email">Email address</label>
-                            <input type="email" class="form-control" id="feedback-email" name="email"
-                                   aria-describedby="emailHelp"
-                                   placeholder="Enter email"/>
-                            <small id="emailHelp" class="form-text text-muted">
-                                We'll never share your email with anyone else.</small>
-                        </div>
-                        <div class="form-group">
-                            <button type="submit" class="btn btn-primary">Submit</button>
-                        </div>
-                        <div class="form-group">
-                            <input type="hidden" class="form-control" id="feedback-jobid" name="jobid" value=""/>
-                            <input type="hidden" class="form-control" name="type" value="result"/>
-                        </div>
-                    </form>
-                    <p>
-                        Alternatively, submit your questions or issues directly to the GitHub at
-                        <a href="https://github.com/JetBrains-Research/PubTrends" target="_blank">https://github.com/JetBrains-Research/PubTrends</a>.
-                    </p>
-                </div>
-            </div>
         </main>
 
         <!--Right alignment-->
@@ -507,7 +455,7 @@
 <footer>
     <p>version <a href="https://github.com/JetBrains-Research/pubtrends/blob/master/CHANGES.md" title="{{ version }}"
                   target="_blank">{{ version }}</a><br/>
-        &copy; 2021-2023 <a href="https://research.jetbrains.org/groups/biolabs"
+        &copy; 2021-2025 <a href="https://research.jetbrains.org/groups/biolabs"
                             title="JetBrains Research BioLabs"
                             target="_blank">JetBrains Research</a></p>
 </footer>

@@ -105,7 +105,7 @@ def log_request(r):
 
 @app.route('/')
 def index():
-    if not are_predefined_jobs_ready():
+    if PUBTRENDS_CONFIG.precompute_examples and not are_predefined_jobs_ready():
         return render_template('init.html', version=VERSION, message=SERVICE_LOADING_PREDEFINED_EXAMPLES)
 
     search_example_message = ''
@@ -659,12 +659,6 @@ def feedback():
         value = data.get('value')
         jobid = data.get('jobid')
         logger.info('Feedback ' + json.dumps(dict(key=key, value=value, jobid=jobid)))
-    elif 'type' in data:
-        feedback_type = data.get('type')
-        message = data.get('message')
-        email = data.get('email')
-        jobid = data.get('jobid')
-        logger.info('Feedback ' + json.dumps(dict(type=feedback_type, message=message, email=email, jobid=jobid)))
     else:
         logger.error(f'/feedback error')
         return render_template_string(ERROR_OCCURRED), 500

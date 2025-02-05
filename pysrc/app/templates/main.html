@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <head>
-    <title>PubTrends - Scientific Literature Explorer</title>
+    <title>PubTrends - Your Scientific Literature Explorer</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
@@ -18,16 +18,6 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1"/>
     <!--    <link rel="stylesheet" href="../static/style.css" />-->
 
-    <!-- IntroJS feature tour -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.9.3/introjs.css"
-          integrity="sha256-OYXGS5m4oWZAAqoAKpf7Y3bIdzdd9jBfly/xCavEpGw=" crossorigin="anonymous"/>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.9.3/intro.js"
-            integrity="sha256-SPZP/x8QDPEhRlpJjet4AD5X4ergPWcxjhMn73SwyOE="
-            crossorigin="anonymous"></script>
-    <!-- Notify.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"
-            integrity="sha512-efUTj3HdSPwWJ9gjfGR71X9cvsrthIA78/Fvd/IN+fttQVy7XWkOAXb295j8B3cmm/kFKVxjiNYzKw9IQJHIuQ=="
-            crossorigin="anonymous"></script>
     <script>
         'use strict';
         // Example starter JavaScript for disabling form submissions if there are invalid fields
@@ -89,18 +79,6 @@
             $.notify.addStyle('html_title', {
                 html: "<div class='title' data-notify-html='title'/>"
             });
-            setTimeout(function () {
-                $('#jumbotron').notify({
-                    title:
-                        $('<a class="link" href="https://github.com/JetBrains-Research/pubtrends/blob/master/CHANGES.md" title="What\'s new?" target="_blank">What\'s new?</a>')
-                }, {
-                    style: 'html_title',
-                    autoHide: false,
-                    arrowShow: false,
-                    position: 'top right',
-                    hideDuration: 0,
-                });
-            }, 1000);
         });
     </script>
 </head>
@@ -109,17 +87,13 @@
     <div class="jumbotron border-light">
         <h1>PubTrends</h1>
         <p id="jumbotron" class="lead">
-            Scientific literature explorer
+            Your Scientific Literature Explorer
         </p>
         <p>
-            Find publications by search query, view most cited papers, explore research topics and trends,<br>
-            analyze frequent keywords, and visualize graphs of citations and similar papers network.<br>
-            Explore similar papers, important prior, and derivative works for the paper of interest.<br>
+            Discover publications, top-cited papers, research trends, and frequent keywords.<br>
+            Visualize citation networks, explore similar papers, and analyze related works for papers
+            of interest.<br>
             <a class="link" href="about.html">Learn more.</a>
-        </p>
-        <p>
-            <a id="tour-start" class="btn btn-light mr-1"
-               href="javascript:void(0);" onclick="startIntro();">Take a tour</a>
         </p>
     </div>
     <main class="card border-light mt-3" role="main">
@@ -169,10 +143,10 @@
                                 <select id="search-source-selector" class="form-control" name="source"
                                         aria-describedby="search-source-addon">
                                     {% if pm_enabled %}
-                                        <option>Pubmed</option>
+                                    <option>Pubmed</option>
                                     {% endif %}
                                     {% if ss_enabled %}
-                                        <option>Semantic Scholar</option>
+                                    <option>Semantic Scholar</option>
                                     {% endif %}
                                 </select>
                             </div>
@@ -208,11 +182,11 @@
                                     <select class="form-control" aria-describedby="amount-addon"
                                             name="limit">
                                         {% for limit in limits %}
-                                            {% if limit == default_limit %}
-                                                <option selected>{{ limit }}</option>
-                                            {% else %}
-                                                <option>{{ limit }}</option>
-                                            {% endif %}
+                                        {% if limit == default_limit %}
+                                        <option selected>{{ limit }}</option>
+                                        {% else %}
+                                        <option>{{ limit }}</option>
+                                        {% endif %}
                                         {% endfor %}
                                     </select>
                                     <div class="input-group-append">
@@ -258,19 +232,19 @@
                     {{ search_example_message }}<br>
                     <div id="predefined" class="row ml-1">
                         {% for terms, jobid in search_example_terms %}
-                            <form action="result" method="GET" class="inline">
-                                <input type="hidden" name="source" value="{{ search_example_source }}">
-                                <input type="hidden" name="sort" value="Most Cited">
-                                <input type="hidden" name="topics" value="{{ default_topics }}">
-                                <input type="hidden" name="limit" value="{{ default_limit }}">
-                                <input type="hidden" name="noreviews" value="off">
-                                <input type="hidden" name="jobid" value="{{ jobid }}">
-                                <button type="submit" name="query" value="{{ terms }}"
-                                        class="btn btn-sm btn-outline-secondary mt-2 mr-2"
-                                        style="border-radius: 10px;">
-                                    {{ terms }}
-                                </button>
-                            </form>
+                        <form action="result" method="GET" class="inline">
+                            <input type="hidden" name="source" value="{{ search_example_source }}">
+                            <input type="hidden" name="sort" value="Most Cited">
+                            <input type="hidden" name="topics" value="{{ default_topics }}">
+                            <input type="hidden" name="limit" value="{{ default_limit }}">
+                            <input type="hidden" name="noreviews" value="off">
+                            <input type="hidden" name="jobid" value="{{ jobid }}">
+                            <button type="submit" name="query" value="{{ terms }}"
+                                    class="btn btn-sm btn-outline-secondary mt-2 mr-2"
+                                    style="border-radius: 10px;">
+                                {{ terms }}
+                            </button>
+                        </form>
                         {% endfor %}
                     </div>
                 </div>
@@ -308,10 +282,10 @@
                                 <select class="form-control" name="source"
                                         aria-describedby="paper-source-addon">
                                     {% if pm_enabled %}
-                                        <option>Pubmed</option>
+                                    <option>Pubmed</option>
                                     {% endif %}
                                     {% if ss_enabled %}
-                                        <option>Semantic Scholar</option>
+                                    <option>Semantic Scholar</option>
                                     {% endif %}
                                 </select>
                             </div>
@@ -331,11 +305,11 @@
                                     <select class="form-control" aria-describedby="amount-addon"
                                             name="limit">
                                         {% for limit in limits %}
-                                            {% if limit == default_limit %}
-                                                <option selected>{{ limit }}</option>
-                                            {% else %}
-                                                <option>{{ limit }}</option>
-                                            {% endif %}
+                                        {% if limit == default_limit %}
+                                        <option selected>{{ limit }}</option>
+                                        {% else %}
+                                        <option>{{ limit }}</option>
+                                        {% endif %}
                                         {% endfor %}
                                     </select>
                                     <div class="input-group-append">
@@ -367,68 +341,10 @@
 <footer>
     <p>version <a href="https://github.com/JetBrains-Research/pubtrends/blob/master/CHANGES.md" title="{{ version }}"
                   target="_blank">{{ version }}</a><br/>
-        &copy; 2021-2023 <a href="https://research.jetbrains.org/groups/biolabs"
+        &copy; 2021-2025 <a href="https://research.jetbrains.org/groups/biolabs"
                             title="JetBrains Research BioLabs"
                             target="_blank">JetBrains Research</a></p>
 </footer>
-
-<script type="text/javascript">
-    function startIntro() {
-        var intro = introJs();
-        // Disable formatter for the next section because of injections.
-        // Enable formatter control in File > Settings > Editor > Code Style
-        // @formatter:off
-        intro.setOptions({
-            steps: [
-                {
-                    intro: "Welcome to PubTrends!<br>" +
-                        "This quick tutorial will guide you through the features."
-                },
-                {
-                    element: '#step1',
-                    intro: "Proceed with the <em>Search</em> tab to search papers in database, " +
-                        "find most cited papers, explore topics and trends, analyze quantitative " +
-                        "features, visualize graphs of citations and papers similarity."
-                },
-                {
-                    element: '#step1-2',
-                    intro: "Use the <em>Paper</em> tab to find most cited similar papers, important prior, " +
-                        "and derivative works for the paper of interest. Search by DOI, title name and id is supported."
-                },
-                {
-                    element: '#step2',
-                    intro: "Enter search query to define the research area of interest."
-                    {% if pm_enabled %}
-                        +  "<br>Enable <i>Advanced settings | Use Pubmed syntax</i> to use advanced search query syntax with OR, AND here."
-                    {% endif %}
-                },
-                {
-                    element: '#step2-2',
-                    intro: "Select publications database to work with."
-                },
-                {
-                    element: '#step3',
-                    intro: "Additionally configure papers limit and ranking, filter out review papers, etc.<br>" +
-                            "Also, number of topics number can be configured.<br>" +
-                            "Use <i>Save analysis html reports</i> to create downloadable report files."
-                },
-                {
-                    element: '#step4',
-                    intro: "Click the <em>Search</em> button!<br>" +
-                            "You will be redirected automatically to a results page once analysis is complete.<br>" +
-                            "Click <em>About</em> button to learn about results."
-                },
-                {
-                element: '#predefined',
-                intro: "Or try one of precomputed examples."
-                }
-        ]
-        })
-        // @formatter:on
-
-        intro.start();
-    }
-</script>
 
 </body>
 </html>

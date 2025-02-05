@@ -13,7 +13,6 @@ def prepare_feedback_data(logfile):
 
 def parse_feedback_content(lines):
     emotions_counter = Counter()
-    recent_messages = Queue(maxsize=RECENT)
     recent_emotions = Queue(maxsize=RECENT)
     queries = dict()
     for line in lines:
@@ -39,43 +38,33 @@ def parse_feedback_content(lines):
             continue
         try:
             fb = json.loads(line.partition('Feedback ')[-1].strip())
-            if 'type' in fb:  # Messages
-                if recent_messages.full():
-                    recent_messages.get()  # Free some space
-                recent_messages.put((date.strftime('%Y-%m-%d %H:%M:%S'),
-                                     fb['type'], fb['message'], fb['email']))
-            else:  # Emotions
-                em_key, em_val = fb['key'].replace('feedback-', ''), int(fb['value'])
-                if em_key.startswith('cancel:'):
-                    em_key = em_key.replace('cancel:', '')
-                    em_val *= -1
-                    delta = -1
-                else:
-                    delta = 1
-                if em_key not in emotions_counter:
-                    if delta == 1:
-                        emotions_counter[em_key] = (em_val, delta)
-                else:
-                    old_sum, old_count = emotions_counter[em_key]
-                    emotions_counter[em_key] = (old_sum + em_val, old_count + delta)
+            em_key, em_val = fb['key'].replace('feedback-', ''), int(fb['value'])
+            if em_key.startswith('cancel:'):
+                em_key = em_key.replace('cancel:', '')
+                em_val *= -1
+                delta = -1
+            else:
+                delta = 1
+            if em_key not in emotions_counter:
+                if delta == 1:
+                    emotions_counter[em_key] = (em_val, delta)
+            else:
+                old_sum, old_count = emotions_counter[em_key]
+                emotions_counter[em_key] = (old_sum + em_val, old_count + delta)
 
-                if 'jobid' in fb and fb['jobid'] in queries:
-                    if recent_emotions.full():
-                        recent_emotions.get()  # Free some space
-                    if em_val == 1:
-                        em_str = 'Yes'
-                    elif em_val == -1:
-                        em_str = 'No'
-                    else:
-                        em_str = 'Meh'
-                    recent_emotions.put((date.strftime('%Y-%m-%d %H:%M:%S'),
-                                         em_key, em_str, queries[fb['jobid']]))
+            if 'jobid' in fb and fb['jobid'] in queries:
+                if recent_emotions.full():
+                    recent_emotions.get()  # Free some space
+                if em_val == 1:
+                    em_str = 'Yes'
+                elif em_val == -1:
+                    em_str = 'No'
+                else:
+                    em_str = 'Meh'
+                recent_emotions.put((date.strftime('%Y-%m-%d %H:%M:%S'),
+                                    em_key, em_str, queries[fb['jobid']]))
         except:
             pass
-
-    messages = []
-    while not recent_messages.empty():
-        messages.append(recent_messages.get())
 
     emotions = []
     while not recent_emotions.empty():
@@ -85,7 +74,6 @@ def parse_feedback_content(lines):
                         for key, value in emotions_counter.items() if value[1] != 0]
     return dict(
         recent=RECENT,
-        messages=list(reversed(messages)),
         emotions=list(reversed(emotions)),
         emotions_summary=emotions_summary
     )

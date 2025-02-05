@@ -21,7 +21,7 @@ COPY . /home/user/
 WORKDIR /home/user/
 
 CMD source activate pubtrends \
-    && gunicorn --bind 0.0.0.0:8888 --workers 5 \
+    && gunicorn --bind 0.0.0.0:5000 --workers 5 \
         --limit-request-line 0 --timeout=120 \
         --log-level=info --log-file=/logs/web.log \
         --preload "pysrc.app.app:get_app()"

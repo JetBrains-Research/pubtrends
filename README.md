@@ -6,33 +6,26 @@ PubTrends
 =========
 
 PubTrends is a scientific literature exploratory tool for analyzing topics of a research field and similar papers
-analysis. It runs a Pubmed or Semantic Scholar search and allows user to explore high-level structure of result papers.
+analysis. 
 
-Open Access Paper: [https://doi.org/10.1145/3459930.3469501](https://doi.org/10.1145/3459930.3469501), poster
-is [here](https://drive.google.com/file/d/1SeqJtJtaHSO6YihG2905boOEYL1NiSP1/view?usp=sharing). \
-*Citation: Shpynov, O. and Nikolai, K., 2021, August. PubTrends: a scientific literature explorer. In Proceedings of the
-12th ACM Conference on Bioinformatics, Computational Biology, and Health Informatics (pp. 1-1).*
+With PubTrends, you can:
+* Gain a concise overview of your research area.
+* Explore popular trends and impactful publications.
+* Discover new and promising research directions.
+
+Datasets:
+* [Pubmed](https://pubmed.ncbi.nlm.nih.gov) 30 mln papers and 175 mln citations
+* [Semantic Scholar](https://www.semanticscholar.org) 170 mln papers and 600 mln citations
 
 ![Scheme](pysrc/app/static/about_pubtrends_scheme.png?raw=true "Title")
 
 ## Technical details
 
-PubTrends is a web service, written in Python and Javascript. It uses Postgres to store information about scientific
-publications.
+PubTrends is a web service developed in Python and JavaScript, designed to analyze and visualize information about scientific publications. It uses PostgreSQL as its main database for storing details like titles, abstracts, authors, and citations, along with its built-in text search for full-text search functionality. A Kotlin ORM is used to manage the database, while a separate SQLite database stores user roles and admin credentials.
 
-### Libraries
+The web service is powered by Flask and Gunicorn, with Celery managing asynchronous tasks and Redis acting as the message broker. For data manipulation and analysis, libraries such as Pandas, NumPy, and Scikit-Learn are used, while text processing relies on NLTK and SpaCy. Graphs and embeddings are handled using NetworkX, word2vec (via GenSim), and a custom node2vec implementation.
 
-Web service is built with Gunicorn and Flask. Asynchronous computations are supported with Celery tasks queue and Redis
-as message broker. We use Postgres to store information about papers: titles, abstracts, authors and citations
-information. Postgres built-in text search engine is used for full text search. Kotlin Postgres ORM is used to
-store papers in the database. Sqlite database is used to store technical user information including users roles and admin
-credentials for admin dashboard.
-
-All the data manipulations are made with Pandas, Numpy and Scikit-Learn libraries. The service uses Python Nltk and
-Spacy libraries for text processing and analysis. Graph objects are processed with NetworkX library, papers embeddings
-are created with word2vec library from GenSim and in-house node2vec implementation based on word2vec. All the plots are
-created with Bokeh, Holoviews, Seaborn and Matplotlib libraries. Interactive Bokeh plots are used in web pages and
-Jupyter notebook experiments. Frontend uses Bootstrap, JQuery and Cytoscape-JS for graphs rendering.
+For data visualization, Bokeh, Holoviews, Seaborn, and Matplotlib are used, with Bokeh providing interactive plots for web pages and Jupyter notebooks. The frontend is built with Bootstrap for layout, jQuery for interactivity, and Cytoscape.js for rendering graphs. 
 
 Please refer to [environment.yml](environment.yml) for the full list of libraries used in the project.
 
@@ -209,7 +202,12 @@ Then launch web-service or use jupyter notebook for development.
 
 ### Web service
 
-1. Create necessary folders with script `init.sh`.
+1. Create necessary folders with script `init.sh` and download prerequisites.
+   ```
+   source activate pubtrends \
+      && python -m nltk.downloader averaged_perceptron_tagger punkt stopwords wordnet omw-1.4 \
+      && python -m spacy download en_core_web_sm
+   ```
 
 2. Start Redis
     ```
@@ -288,7 +286,7 @@ Please ensure that you have configured and prepared the database(s).
 
     ```
     docker run --rm --name pubtrends-postgres -p 5432:5432 \
-        --shm-size=8g \
+        -m 32G \
         -e POSTGRES_USER=biolabs -e POSTGRES_PASSWORD=mysecretpassword \
         -e POSTGRES_DB=pubtrends \
         -v ~/postgres/:/var/lib/postgresql/data \
@@ -322,15 +320,14 @@ Please ensure that you have configured and prepared the database(s).
     docker-compose logs
     ```
 
-   Pubtrends will be serving on port 8888.
-5. Nginx is used to proxy all traffic to port 8888 and redirect http -> https with Let's encrypt certificates.
+   Pubtrends will be serving on port 5000.
 
 ## Maintenance
 
 Use simple placeholder during maintenance.
 
    ```
-   cd pysrc/app; python -m http.server 8888
+   cd pysrc/app; python -m http.server 5000
    ```
 
 ## Release
@@ -345,15 +342,10 @@ See [AUTHORS.md](AUTHORS.md) for a list of authors and contributors.
 
 # Materials
 
-* Open Access Paper: [https://doi.org/10.1145/3459930.3469501](https://doi.org/10.1145/3459930.3469501), poster
-  [here](https://drive.google.com/file/d/1SeqJtJtaHSO6YihG2905boOEYL1NiSP1/view?usp=sharing) - 2021.
-* Project overview
-  [presentation](https://docs.google.com/presentation/d/131qvkEnzzmpx7-I0rz1om6TG7bMBtYwU9T1JNteRIEs/edit?usp=sharing) -
-  summer 2019.
-* Review generation
-  [presentation](https://my.compscicenter.ru/media/projects/2019-autumn/844/presentations/participants.pdf) - fall 2019.
-* Extractive summarization
-  [presentation](https://drive.google.com/file/d/1NnZ6JtJ2owtxFnuwKbARzOFM5_aHw6ls/view?usp=sharing) - spring 2020.
-* Paper ["Automatic generation of reviews of scientific papers"](https://arxiv.org/abs/2010.04147) - 2021.
+* *Shpynov, O. and Nikolai, K., 2021, August. PubTrends: a scientific literature explorer. In Proceedings of the
+12th ACM Conference on Bioinformatics, Computational Biology, and Health Informatics (pp. 1-1).* https://doi.org/10.1145/3459930.3469501
+
+* *Nikiforovskaya, A., Kapralov, N., Vlasova, A., Shpynov, O. and Shpilman, A., 2020, December. Automatic generation of reviews of scientific papers. In 2020 19th IEEE International Conference on Machine Learning and Applications (ICMLA) (pp. 314-319). IEEE.* https://arxiv.org/abs/2010.04147
+
 * [Icons by Feather](https://feathericons.com/)
 

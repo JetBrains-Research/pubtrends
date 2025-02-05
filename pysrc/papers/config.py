@@ -120,6 +120,9 @@ class PubtrendsConfig:
         # TODO Admin password - should be a better way
         self.admin_password = params['admin_password']
 
+        # Precompute examples
+        self.precompute_examples = params.getboolean('precompute_examples')
+
         # Additional modules configuration
         self.feature_authors_enabled = params.getboolean('feature_authors_enabled')
         self.feature_journals_enabled = params.getboolean('feature_journals_enabled')
