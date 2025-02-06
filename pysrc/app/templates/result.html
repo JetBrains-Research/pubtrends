@@ -36,13 +36,6 @@
           type="text/css">
 
 
-    <!-- IntroJS feature tour -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.9.3/introjs.css"
-          integrity="sha256-OYXGS5m4oWZAAqoAKpf7Y3bIdzdd9jBfly/xCavEpGw=" crossorigin="anonymous"/>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.9.3/intro.js"
-            integrity="sha256-SPZP/x8QDPEhRlpJjet4AD5X4ergPWcxjhMn73SwyOE="
-            crossorigin="anonymous"></script>
-
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1"/>
     <!--     <link rel="stylesheet" href="../static/style.css"/> -->
     <link rel="stylesheet" href="{{ url_for('static', filename='result.css') }}?v=1">
@@ -52,10 +45,6 @@
     <script src="{{ url_for('static', filename='text_utils.js') }}"></script>
     <!--    <script src="../static/text_utils.js"/>-->
 
-    <!-- Notify.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"
-            integrity="sha512-efUTj3HdSPwWJ9gjfGR71X9cvsrthIA78/Fvd/IN+fttQVy7XWkOAXb295j8B3cmm/kFKVxjiNYzKw9IQJHIuQ=="
-            crossorigin="anonymous"></script>
     <!-- Feedback -->
     <script src="{{ url_for('static', filename='feedback.js') }}"></script>
     <!--    <script src="../static/feedback.js"/>-->
@@ -181,14 +170,6 @@
 
             // @formatter:on
 
-            setTimeout(function () {
-                $.notify("See About ? for quick introduction.", {
-                    className: "success",
-                    position: "bottom right",
-                    autoHideDelay: 15000
-                });
-            }, 2000);
-
             // Configure jobid for feedback for text message form, decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
             $('#feedback-jobid').val(jobid);
@@ -224,10 +205,6 @@
                 <a id="tour-start1" class="btn btn-secondary float-right d-xl-none"
                    href="javascript:void(0);" onclick="startIntro();">?</a>
             </div>
-        </div>
-        <div class="d-none d-xl-block col-xl-2 float-right no-padding-right">
-            <a id="tour-start" class="btn btn-secondary float-right"
-               href="javascript:void(0);" onclick="startIntro();">About</a>
         </div>
     </div>
 </nav>
@@ -798,112 +775,5 @@
                             title="JetBrains Research BioLabs"
                             target="_blank">JetBrains Research</a></p>
 </footer>
-<script type="text/javascript">
-    function startIntro() {
-        var intro = introJs();
-        // Disable formatter for the next section because of injections.
-        // Enable formatter control in File > Settings > Editor > Code Style
-        // @formatter:off
-        intro.setOptions({
-            steps: [
-                {
-                    intro: "This page is a report of the analysis for the query <em>{{query}} at {{source}}<br>{{limit}} {{sort}}</em>."
-                },
-                {
-                    element: '#sidebar',
-                    intro: "Results are organised into sections - different aspects of analysis."
-                },
-                {
-                    element: '#papers',
-                    intro: "The report starts with a general information. " +
-                        "It shows total number of papers and topics, publications dynamics, and most common words in the field."
-                },
-                {
-                    element: '#papers-list',
-                    intro: "Click <img src=\"{{ url_for('static', filename='list.svg') }}\" alt=\"+\"/> " +
-                        "<em>Show as list</em> to open the list of papers in a separate window."
-                },
-                {
-                    element: '#papers_word_cloud',
-                    intro: "Click on any keyword to open the list of papers with this keyword in a new tab."
-                },
-                {
-                    element: '#search-in-papers',
-                    intro: "Search anything in paper titles or abstracts."
-                },
-                {
-                    element: '#trends',
-                    intro: "Trends section contains information about most notable papers. " +
-                        "Top cited papers, papers of the year, and hot papers are shown in a dedicated sections."
-                },
-                {
-                    element: '#network',
-                    intro: "View papers similarity network and explore graph in interactive viewer."
-                },
-                {
-                    element: '#topics',
-                    intro: "Topic is a group of papers which share common ideas, describe common features, etc.<br>" +
-                        "Topics are extracted based on papers graph and texts similarity."
-                },
-                {
-                    element: '#topic_chart_1',
-                    intro: "Hover over glyphs to check out tooltips that contain general information " +
-                        "about the papers. Click glyphs to open a page about corresponding paper in a " +
-                        "new tab."
-                },
-                {% if features_authors_enabled %}
-        {
-            element: '#authors',
-                intro
-        :
-            "Information about authors and journals with the largest number of papers " +
-            "is organised into tables, which also show distribution over topics. You can " +
-            "open all papers for a certain author or journal by clicking the corresponding " +
-            "number of papers."
-        }
-    ,
-        {% endif %}
-
-        {% if features_numbers_enabled %}
-        {
-            element: '#numbers',
-                intro
-        :
-            "Explore quantitative features mentioned in papers!"
-        }
-    ,
-        {% endif %}
-
-        {% if features_evolution_enabled %}
-        {
-            element: '#evolution',
-                intro
-        :
-            "Explore evolution of ideas in the field."
-        }
-    ,
-        {% endif %}
-
-        {% if features_review_enabled %}
-        {
-            element: '#review',
-                intro
-        :
-            "Generate review - extractive summmarization."
-        }
-    ,
-        {% endif %}
-        {
-            intro: "Congratulations!<br>" +
-            "Now you are ready to explore scientific literature with PubTrends."
-        }
-    ]
-    })
-        ;
-        // @formatter:on
-        intro.start();
-    }
-
-</script>
 </body>
 </html>
