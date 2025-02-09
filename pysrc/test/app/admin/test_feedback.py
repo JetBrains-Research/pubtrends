@@ -18,12 +18,10 @@ LOG = """
 [2020-11-23 22:18:01,109: INFO] Feedback {"key": "feedback-network", "value": "-1", "jobid": "0d16a389"}
 [2020-11-23 22:18:04,913: INFO] Feedback {"key": "cancel:feedback-network", "value": "-1", "jobid": "0d16a389"}
 [2021-10-12 20:25:36,219: INFO] /process regular search addr:0.0.0.0 args:{"query": "foo", "jobid": "b607c1bd"}
-[2021-09-10 15:12:47,967: INFO] Feedback {"type": "result", "message": "Good", "email": "email", "jobid": "b607c1bd"}
 """
 
 EXPECTED_FEEDBACK = {
     'recent': 50,
-    'messages': [('2021-09-10 15:12:47', 'result', 'Good', 'email')],
     'emotions': [('2020-11-23 22:18:04', 'network', 'Yes', 'foo'),
                  ('2020-11-23 22:18:01', 'network', 'No', 'foo'),
                  ('2020-11-23 22:17:27', 'highlights', 'Yes', 'foo'),
