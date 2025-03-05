@@ -73,7 +73,7 @@ object PubmedLoader {
                 if (options.has("fillDatabase")) {
                     LOG.info("Checking Pubmed FTP...")
                     var retry = 1
-                    var waitTime: Long = 1
+                    var waitTime  = 60 // Seconds
                     var isUpdateRequired = true
                     LOG.info("Retrying downloading after any problems.")
                     while (isUpdateRequired) {
@@ -105,11 +105,12 @@ object PubmedLoader {
                             isUpdateRequired = true
 
                             LOG.info("Waiting for $waitTime seconds...")
-                            Thread.sleep(waitTime * 1000)
+                            Thread.sleep(waitTime * 1000L)
                             LOG.info("Retry #$retry")
                             retry += 1
 
-                            if (waitTime < 1024) {
+                            // No more than 10 minutes
+                            if (waitTime < 600) {
                                 waitTime *= 2
                             }
                         }
