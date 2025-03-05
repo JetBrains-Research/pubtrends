@@ -9,9 +9,18 @@ import org.jetbrains.bio.pubtrends.db.AbstractDBWriter
 import org.jetbrains.bio.pubtrends.db.PubmedPostgresWriter
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
+import kotlin.math.min
 import kotlin.system.exitProcess
 
+
 object PubmedLoader {
+
+    // 1 minute
+    private const val START_WAIT_TIME = 60
+
+    // 10 minutes
+    private const val MAX_WAIT_TIME = 600
+
     private val LOG = LoggerFactory.getLogger(PubmedLoader::class.java)
 
     @JvmStatic
@@ -73,7 +82,7 @@ object PubmedLoader {
                 if (options.has("fillDatabase")) {
                     LOG.info("Checking Pubmed FTP...")
                     var retry = 1
-                    var waitTime  = 60 // Seconds
+                    var waitTime = START_WAIT_TIME
                     var isUpdateRequired = true
                     LOG.info("Retrying downloading after any problems.")
                     while (isUpdateRequired) {
@@ -99,7 +108,7 @@ object PubmedLoader {
                             } else {
                                 pubmedCrawler.update(null)
                             }
-                            waitTime = 1
+                            waitTime = START_WAIT_TIME
                         } catch (e: PubmedCrawlerException) {
                             LOG.error("Error", e)
                             isUpdateRequired = true
@@ -109,10 +118,7 @@ object PubmedLoader {
                             LOG.info("Retry #$retry")
                             retry += 1
 
-                            // No more than 10 minutes
-                            if (waitTime < 600) {
-                                waitTime *= 2
-                            }
+                            waitTime = min(waitTime * 2, MAX_WAIT_TIME)
                         }
                     }
                     LOG.info("Done crawling.")
