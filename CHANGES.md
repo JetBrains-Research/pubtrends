@@ -39,7 +39,7 @@ Version 0.21
 Released on Jan 25, 2022
 
 - Updated PubMed database to the version 2022
-- Updated pubtrends.net config to use nginx
+- Updated config to use nginx
 - Improved single paper analysis - pay more attention to paper own keywords/citations while expanding by references
 - Show papers graph for single-paper analysis
 - Fixed issues with missing references for fresh papers
