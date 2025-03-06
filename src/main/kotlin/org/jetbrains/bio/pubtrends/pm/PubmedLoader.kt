@@ -21,11 +21,12 @@ object PubmedLoader {
     // 10 minutes
     private const val MAX_WAIT_TIME = 600
 
+    private const val MAX_DB_RETRIES = 3
+
     private val LOG = LoggerFactory.getLogger(PubmedLoader::class.java)
 
     @JvmStatic
     fun main(args: Array<String>) {
-
 
         with(OptionParser()) {
             accepts("resetDatabase", "Reset Database")
@@ -71,57 +72,78 @@ object PubmedLoader {
             val pubmedLastIdFile = settingsRoot.resolve("${writerName}_last.tsv")
             val pubmedStatsFile = settingsRoot.resolve("${writerName}_stats.tsv")
 
-            dbWriter.use {
-                if (options.has("resetDatabase")) {
-                    LOG.info("Resetting database")
-                    dbWriter.reset()
-                    Files.deleteIfExists(pubmedLastIdFile)
-                    Files.deleteIfExists(pubmedStatsFile)
-                }
-
-                if (options.has("fillDatabase")) {
-                    LOG.info("Checking Pubmed FTP...")
-                    var retry = 1
-                    var waitTime = START_WAIT_TIME
-                    var isUpdateRequired = true
-                    LOG.info("Retrying downloading after any problems.")
-                    while (isUpdateRequired) {
-                        try {
-                            LOG.info("Init Pubmed processor")
-                            val pubmedXMLParser =
-                                PubmedXMLParser(dbWriter, config["loader_batch_size"].toString().toInt())
-
-                            LOG.info("Init crawler")
-                            val collectStats = config["loader_collect_stats"].toString().toBoolean()
-                            val pubmedCrawler = PubmedCrawler(
-                                pubmedXMLParser, collectStats,
-                                pubmedStatsFile, pubmedLastIdFile
-                            )
-
-                            val lastIdCmd = if (options.has("lastId"))
-                                options.valueOf("lastId").toString().toInt()
-                            else
-                                null
-
-                            isUpdateRequired = if (retry == 1) {
-                                pubmedCrawler.update(lastIdCmd)
-                            } else {
-                                pubmedCrawler.update(null)
-                            }
-                            waitTime = START_WAIT_TIME
-                        } catch (e: PubmedCrawlerException) {
-                            LOG.error("Error", e)
-                            isUpdateRequired = true
-
-                            LOG.info("Waiting for $waitTime seconds...")
-                            Thread.sleep(waitTime * 1000L)
-                            LOG.info("Retry #$retry")
-                            retry += 1
-
-                            waitTime = min(waitTime * 2, MAX_WAIT_TIME)
+            var dbRetry = 1
+            var dbWaitTime = START_WAIT_TIME
+            var isUpdateRequired = true
+            while (isUpdateRequired) {
+                try {
+                    dbWriter.use {
+                        if (options.has("resetDatabase")) {
+                            LOG.info("Resetting database")
+                            dbWriter.reset()
+                            Files.deleteIfExists(pubmedLastIdFile)
+                            Files.deleteIfExists(pubmedStatsFile)
                         }
+
+                        if (options.has("fillDatabase")) {
+                            LOG.info("Checking Pubmed FTP...")
+                            var downloadRetry = 1
+                            var downloadWaitTime = START_WAIT_TIME
+
+                            LOG.info("Retrying downloading after any problems.")
+                            while (isUpdateRequired) {
+                                try {
+                                    LOG.info("Init Pubmed processor")
+                                    val pubmedXMLParser =
+                                        PubmedXMLParser(dbWriter, config["loader_batch_size"].toString().toInt())
+
+                                    LOG.info("Init crawler")
+                                    val collectStats = config["loader_collect_stats"].toString().toBoolean()
+                                    val pubmedCrawler = PubmedCrawler(
+                                        pubmedXMLParser, collectStats,
+                                        pubmedStatsFile, pubmedLastIdFile
+                                    )
+
+                                    val lastIdCmd = if (options.has("lastId"))
+                                        options.valueOf("lastId").toString().toInt()
+                                    else
+                                        null
+
+                                    isUpdateRequired = if (downloadRetry == 1) {
+                                        pubmedCrawler.update(lastIdCmd)
+                                    } else {
+                                        pubmedCrawler.update(null)
+                                    }
+                                    downloadWaitTime = START_WAIT_TIME
+                                } catch (e: PubmedCrawlerException) {
+                                    LOG.error("Error", e)
+                                    isUpdateRequired = true
+
+                                    LOG.info("Download error, retrying in $downloadWaitTime seconds...")
+                                    Thread.sleep(downloadWaitTime * 1000L)
+                                    LOG.info("Download retry #$downloadRetry")
+                                    downloadRetry += 1
+
+                                    downloadWaitTime = min(downloadWaitTime * 2, MAX_WAIT_TIME)
+                                }
+                            }
+                            LOG.info("Done crawling.")
+                        }
+
+                        dbRetry = 1
+                        dbWaitTime = START_WAIT_TIME
                     }
-                    LOG.info("Done crawling.")
+                } catch (e: Exception) {
+                    LOG.error("Database connection error, retrying in $dbWaitTime seconds...")
+                    dbWriter.close()
+                    if (dbRetry > MAX_DB_RETRIES) {
+                        LOG.error("Database connection error, maximum retries reached.")
+                        exitProcess(1)
+                    }
+                    Thread.sleep(dbWaitTime * 1000L)
+                    LOG.info("Database connection retry #$dbRetry")
+                    dbRetry += 1
+                    dbWaitTime = min(dbWaitTime * 2, MAX_WAIT_TIME)
                 }
             }
         }
