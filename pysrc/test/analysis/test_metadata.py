@@ -1,6 +1,5 @@
-import unittest
-
 import pandas as pd
+import unittest
 from dataclasses import dataclass
 from pandas.testing import assert_frame_equal
 
@@ -26,8 +25,11 @@ class TestPaperMetadata(unittest.TestCase):
         self.assertEqual(expected_rows, actual_rows, "Number of rows in author statistics is incorrect")
 
     def test_author_stats(self):
-        assert_frame_equal(self.author_stats.reset_index(drop=True), author_df.reset_index(drop=True),
-                           "Popular authors are counted incorrectly")
+        assert_frame_equal(
+            self.author_stats.sort_values(by=['sum', 'author']).reset_index(drop=True),
+            author_df.sort_values(by=['sum', 'author']).reset_index(drop=True),
+            "Popular authors are counted incorrectly"
+        )
 
     def test_journal_stats_rows(self):
         expected_rows = journal_df.shape[0]
