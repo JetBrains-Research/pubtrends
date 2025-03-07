@@ -118,6 +118,7 @@ class PubtrendsConfig:
         self.max_graph_size = params.getint('max_graph_size')
 
         # TODO Admin password - should be a better way
+        self.admin_email = params['admin_email']
         self.admin_password = params['admin_password']
 
         # Precompute examples

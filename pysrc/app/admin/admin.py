@@ -14,7 +14,6 @@ from pysrc.app.admin.stats import prepare_stats_data
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.version import VERSION
 
-
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 DB_LOCK = Lock()
 
@@ -54,6 +53,7 @@ def configure_admin_functions(app, celery_app, logfile):
 
         class User(db.Model, UserMixin):
             id = db.Column(db.Integer, primary_key=True)
+            fs_uniquifier = db.Column(db.String(255), unique=True, nullable=False)  # Added field
             first_name = db.Column(db.String(255))
             last_name = db.Column(db.String(255))
             email = db.Column(db.String(255), unique=True)
@@ -84,7 +84,8 @@ def configure_admin_functions(app, celery_app, logfile):
 
                 user_datastore.create_user(
                     first_name='Admin',
-                    email='admin',
+                    email=PUBTRENDS_CONFIG.admin_email,
+                    fs_uniquifier='unique_admin_identifier',  # Set fs_uniquifier value
                     password=hash_password(PUBTRENDS_CONFIG.admin_password),
                     roles=[user_role, admin_role]
                 )
@@ -155,7 +156,6 @@ def configure_admin_functions(app, celery_app, logfile):
                     else:
                         # login
                         return redirect(url_for('security.login', next=request.url))
-
 
         # Create admin
         admin = Admin(
