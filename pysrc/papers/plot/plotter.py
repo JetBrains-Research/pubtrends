@@ -12,6 +12,7 @@ from holoviews import opts
 from itertools import chain
 from math import fabs, log, sin, cos, pi
 from matplotlib import pyplot as plt
+from sklearn.preprocessing import minmax_scale
 from string import Template
 from wordcloud import WordCloud
 
@@ -185,8 +186,8 @@ class Plotter:
             plot = Plotter._plot_scatter_papers_layout(
                 self.analyzer.source, ds, [min_year, max_year], PAPERS_PLOT_WIDTH
             )
-            plot.circle(x='year', y='y', fill_alpha=0.5, source=ds, size='size',
-                        line_color='color', fill_color='color', legend_field='type')
+            plot.scatter(x='year', y='y', fill_alpha=0.5, source=ds, size='size',
+                         line_color='color', fill_color='color', legend_field='type')
             plot.legend.location = "top_left"
 
             # Word cloud description of topic by titles and abstracts
@@ -218,8 +219,8 @@ class Plotter:
             self.analyzer.source, ds, [min_year, max_year], PLOT_WIDTH
         )
 
-        plot.circle(x='year', y='y', fill_alpha=0.5, source=ds, size='size',
-                    line_color='color', fill_color='color', legend_field='type')
+        plot.scatter(x='year', y='y', fill_alpha=0.5, source=ds, size='size',
+                     line_color='color', fill_color='color', legend_field='type')
         plot.legend.location = "top_left"
         return plot
 
@@ -485,7 +486,6 @@ class Plotter:
         # Draw dendrogram - from bottom to top
         ds = leaves_degrees.copy()
         for i in range(1, dendrogram_len):
-            # logger.debug(f'LEVEL {i}')
             next_ds = {}
             for path in paths:
                 d = ds[path[i - 1]]
@@ -497,11 +497,6 @@ class Plotter:
                 p.line([cos(d) * d_radius * (dendrogram_len - i), cos(d) * d_radius * (dendrogram_len - i - 1)],
                        [sin(d) * d_radius * (dendrogram_len - i), sin(d) * d_radius * (dendrogram_len - i - 1)],
                        line_color='grey')
-                # logger.debug(
-                #     f'LINE d={d}; r1={d_radius * (dendrogram_len - i)}; r2={d_radius * (dendrogram_len - i - 1)}; '
-                #     f'x={[cos(d) * d_radius * (dendrogram_len - i), cos(d) * d_radius * (dendrogram_len - i - 1)]}; '
-                #     f'y={[sin(d) * d_radius * (dendrogram_len - i), sin(d) * d_radius * (dendrogram_len - i - 1)]}'
-                # )
 
             # Compute next connections and draw arcs
             for v, nds in next_ds.items():
@@ -523,7 +518,7 @@ class Plotter:
         comps = [v + 1 for v, _ in leaves_degrees.items()]
         colors = [topics_colors[v] for v, _ in leaves_degrees.items()]
         ds = ColumnDataSource(data=dict(x=xs, y=ys, size=sizes, comps=comps, color=colors))
-        p.circle(x='x', y='y', size='size', fill_color='color', line_color='black', source=ds)
+        p.scatter(x='x', y='y', size='size', fill_color='color', line_color='black', source=ds)
 
         # Topics labels
         p.text(x=[cos(d) * d_radius * (dendrogram_len - 1) for _, d in leaves_degrees.items()],
@@ -660,11 +655,13 @@ class Plotter:
             graph.node_renderer.data_source.data['topic_meshs'] = \
                 [','.join(t for t, _ in topics_meshs[c][:5]) for c in comps]
 
+
         # Aesthetics
         max_connections = max(connections)
-        graph.node_renderer.data_source.data['size'] = [c * 20 / (max_connections + 1) + 5 for c in connections]
+        radiuses = minmax_scale([c / (max_connections + 1) + 0.1 for c in connections]) * 2 + 0.5
+        graph.node_renderer.data_source.data['radius'] = radiuses
         graph.node_renderer.data_source.data['color'] = [palette[c] for c in comps]
-        graph.node_renderer.data_source.data['line_width'] = [3.0 if p == analyzed_pid else 1 for p in pids]
+        graph.node_renderer.data_source.data['line_width'] = [5.0 if p == analyzed_pid else 1 for p in pids]
         graph.node_renderer.data_source.data['alpha'] = [1.0 if p == analyzed_pid else 0.7 for p in pids]
 
         # Edges
@@ -672,13 +669,14 @@ class Plotter:
                                                     end=[pim[v] for _, v in gs.edges])
 
         # start of layout code
-        xs, ys = df['x'], df['y']
-        xrange = max(xs) - min(xs)
-        yrange = max(ys) - min(ys)
+        xs, ys = df['x'].copy(), df['y'].copy()
+        xmin, xrange = np.min(xs), np.max(xs) - np.min(xs)
+        ymin, yrange = np.min(ys), np.max(ys) - np.min(ys)
+        xs, ys = minmax_scale(xs) * 100, minmax_scale(ys) * 100
         p = figure(width=width,
                    height=height,
-                   x_range=(min(xs) - 0.05 * xrange, max(xs) + 0.05 * xrange),
-                   y_range=(min(ys) - 0.05 * yrange, max(ys) + 0.05 * yrange),
+                   x_range=(-5, 105),
+                   y_range=(-5, 105),
                    tools="pan,tap,wheel_zoom,box_zoom,reset,save")
         p.xaxis.major_tick_line_color = None  # turn off x-axis major ticks
         p.xaxis.minor_tick_line_color = None  # turn off x-axis minor ticks
@@ -712,12 +710,14 @@ class Plotter:
         graph_layout = dict(zip(pids_int, zip(xs, ys)))
         graph.layout_provider = StaticLayoutProvider(graph_layout=graph_layout)
 
-        graph.node_renderer.glyph = Circle(size='size', fill_alpha='alpha', line_alpha='alpha', line_width='line_width',
-                                           fill_color='color')
-        graph.node_renderer.hover_glyph = Circle(size='size', fill_alpha=1.0, line_alpha=1.0, line_width='line_width',
-                                                 fill_color='color')
+        graph.node_renderer.glyph = Circle(
+            radius='radius', fill_alpha='alpha', line_alpha='alpha', line_width='line_width', fill_color='color'
+        )
+        graph.node_renderer.hover_glyph = Circle(
+            radius='radius', fill_alpha=1.0, line_alpha=1.0, line_width='line_width', fill_color='color'
+        )
 
-        graph.edge_renderer.glyph = MultiLine(line_color='lightgrey', line_alpha=0.5, line_width=1)
+        graph.edge_renderer.glyph = MultiLine(line_color='lightgrey', line_alpha=0.2, line_width=0.5)
         graph.edge_renderer.hover_glyph = MultiLine(line_color='grey', line_alpha=1.0, line_width=2)
 
         graph.inspection_policy = NodesAndLinkedEdges()
@@ -725,12 +725,14 @@ class Plotter:
         p.renderers.append(graph)
 
         # Add Labels
-        lxs = [df.loc[df['comp'] == c]['x'].mean() for c in sorted(set(comps))]
-        lys = [df.loc[df['comp'] == c]['y'].mean() for c in sorted(set(comps))]
+        lxs = [(df.loc[df['comp'] == c]['x'].mean() - xmin) / xrange * 100 for c in sorted(set(comps))]
+        lys = [(df.loc[df['comp'] == c]['y'].mean() - ymin) / yrange * 100 for c in sorted(set(comps))]
         comp_labels = [f"#{c + 1}" for c in sorted(set(comps))]
         source = ColumnDataSource({'x': lxs, 'y': lys, 'name': comp_labels})
         labels = LabelSet(x='x', y='y', text='name', source=source,
-                          background_fill_color='white', text_font_size='13px', background_fill_alpha=.9)
+                          background_fill_color='white',
+                          text_font_size='13px',
+                          background_fill_alpha=.9)
         p.renderers.append(labels)
 
         return p
