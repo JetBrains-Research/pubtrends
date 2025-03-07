@@ -49,7 +49,7 @@ launched within Docker. Continuous integration is done with TeamCity using build
 * Conda
 * Python 3.6+
 * Docker
-* Postgres 15 (in Docker)
+* Postgres 17 (in Docker)
 * Redis 5.0 (in Docker)
 
 ## Configuration
@@ -79,7 +79,7 @@ launched within Docker. Continuous integration is done with TeamCity using build
         -v ~/postgres/:/var/lib/postgresql/data \
         -e PGDATA=/var/lib/postgresql/data/pgdata \
         -p 5432:5432 \
-        -d postgres:15
+        -d postgres:17
     ``` 
     * Create database (once database is created use `-d pubtrends` argument):
     ```
@@ -205,7 +205,8 @@ Then launch web-service or use jupyter notebook for development.
 1. Create necessary folders with script `init.sh` and download prerequisites.
    ```
    source activate pubtrends \
-      && python -m nltk.downloader averaged_perceptron_tagger punkt stopwords wordnet omw-1.4 \
+      && python -m nltk.downloader averaged_perceptron_tagger averaged_perceptron_tagger_eng \
+      punkt punkt_tab stopwords wordnet omw-1.4 \
       && python -m spacy download en_core_web_sm
    ```
 
@@ -244,7 +245,7 @@ Notebooks are located under the `/notebooks` folder. Please configure `PYTHONPAT
 1. Start Docker image with Postgres environment for tests (Kotlin and Python development)
     ```
     docker run --rm --platform linux/amd64 --name pubtrends-test \
-    --publish=5432:5432 --volume=$(pwd):/pubtrends -i -t biolabs/pubtrends-test
+    --publish=5433:5432 --volume=$(pwd):/pubtrends -i -t biolabs/pubtrends-test
     ```
 
    NOTE: don't forget to stop the container afterward.
@@ -265,7 +266,7 @@ Notebooks are located under the `/notebooks` folder. Please configure `PYTHONPAT
 
     ```
     docker run --rm --platform linux/amd64 --volume=$(pwd):/pubtrends -t biolabs/pubtrends-test /bin/bash -c \
-    "/usr/lib/postgresql/15/bin/pg_ctl -D /home/user/postgres start; \
+    "/usr/lib/postgresql/17/bin/pg_ctl -D /home/user/postgres start; \
     cd /pubtrends; mkdir ~/.pubtrends; cp config.properties ~/.pubtrends; \
     source activate pubtrends; pytest pysrc"
     ```
@@ -291,7 +292,7 @@ Please ensure that you have configured and prepared the database(s).
         -e POSTGRES_DB=pubtrends \
         -v ~/postgres/:/var/lib/postgresql/data \
         -e PGDATA=/var/lib/postgresql/data/pgdata \
-        -d postgres:15 
+        -d postgres:17 
     ```
    NOTE: stop Postgres docker image with timeout `--time=300` to avoid DB recovery.\
 

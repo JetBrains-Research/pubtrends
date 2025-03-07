@@ -7,6 +7,7 @@ import nltk
 import numpy as np
 from gensim.models import Word2Vec
 from nltk import word_tokenize, WordNetLemmatizer, SnowballStemmer
+from nltk.probability import FreqDist
 from nltk.corpus import wordnet, stopwords
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 
@@ -75,7 +76,7 @@ def get_frequent_tokens(tokens, fraction=0.1, min_tokens=20):
     :param min_tokens: minimal number of tokens to return
     :return: dictionary {token: frequency}
     """
-    counter = nltk.Counter(tokens)
+    counter = FreqDist(tokens)
     result = {}
     tokens = len(counter)
     for token, cnt in counter.most_common(max(min_tokens, int(tokens * fraction))):

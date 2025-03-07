@@ -14,7 +14,7 @@ def popular_journals(df, n):
     :return:
     """
     journal_stats = df.groupby(['journal', 'comp']).size().reset_index(name='counts')
-    journal_stats['journal'].replace('', np.nan, inplace=True)
+    journal_stats['journal'] = journal_stats['journal'].replace('', np.nan)
     journal_stats.dropna(subset=['journal'], inplace=True)
 
     journal_stats.sort_values(by=['journal', 'counts'], ascending=False, inplace=True)
@@ -37,7 +37,7 @@ def popular_authors(df, n):
     :return:
     """
     author_stats = df[['authors', 'comp']].copy()
-    author_stats['authors'].replace({'': np.nan, -1: np.nan}, inplace=True)
+    author_stats['authors'] = author_stats['authors'].replace({'': np.nan, -1: np.nan})
     author_stats.dropna(subset=['authors'], inplace=True)
 
     author_stats = split_df_list(author_stats, target_column='authors', separator=', ')

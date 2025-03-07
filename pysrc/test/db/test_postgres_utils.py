@@ -114,7 +114,8 @@ class TestPostgresUtils(unittest.TestCase):
             ['3', '4', 2],
             ['3', '5', 2],
             ['4', '5', 3],
-        ], columns=['citing_1', 'citing_2', 'total'], dtype=np.int8)
+        ], columns=['citing_1', 'citing_2', 'total'])
+        expected_df['total'] = expected_df['total'].astype(np.int8)
         assert_frame_equal(expected_df, df)
 
 

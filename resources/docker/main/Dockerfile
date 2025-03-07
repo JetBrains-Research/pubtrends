@@ -4,10 +4,10 @@
 # Push to Docker hub
 # docker login -u biolabs && docker push biolabs/pubtrends
 
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
-LABEL author = "Oleg Shpynov"
-LABEL email = "os@jetbrains.com"
+LABEL author="Oleg Shpynov"
+LABEL email="os@jetbrains.com"
 
 # Install required packages and cleanup
 RUN DEBIAN_FRONTEND="noninteractive" apt-get update --fix-missing \
@@ -24,10 +24,10 @@ RUN echo "user     ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 # Install Conda and create pubtrends conda env
 USER user
-RUN curl --location https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh --output ~/miniconda.sh \
+RUN curl --location https://repo.anaconda.com/miniconda/Miniconda3-py310_25.1.1-2-Linux-x86_64.sh --output ~/miniconda.sh \
     && /bin/bash ~/miniconda.sh -b \
     && rm ~/miniconda.sh
-ENV PATH /home/user/miniconda3/bin:$PATH
+ENV PATH=/home/user/miniconda3/bin:$PATH
 # Fix shell for conda
 USER root
 RUN ln -snf /bin/bash /bin/sh
@@ -37,10 +37,11 @@ RUN conda install -c conda-forge mamba
 
 # Install required dependencies
 COPY environment.yml /home/user/environment.yml
-RUN mamba env update -f /home/user/environment.yml \
+RUN mamba env create -f /home/user/environment.yml \
     && mamba clean -afy
 
 # Install nltk & spacy dependencies
 RUN source activate pubtrends \
-    && python -m nltk.downloader averaged_perceptron_tagger punkt stopwords wordnet omw-1.4 \
+    && python -m nltk.downloader averaged_perceptron_tagger averaged_perceptron_tagger_eng \
+    punkt punkt_tab stopwords wordnet omw-1.4 \
     && python -m spacy download en_core_web_sm

@@ -106,7 +106,7 @@ def process_cocitations_postgres(cursor):
     logger.debug(f'Total df size {len(df)}')
 
     # Hack for missing year in SS, see https://github.com/JetBrains-Research/pubtrends/issues/258
-    df['year'].fillna(1970, inplace=True)
+    df['year'] = df['year'].fillna(1970)
     df['year'] = df['year'].astype(int)
     return df
 

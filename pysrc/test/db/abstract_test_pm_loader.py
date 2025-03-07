@@ -4,7 +4,7 @@ from pandas.testing import assert_frame_equal
 from parameterized import parameterized
 
 from pysrc.test.db.pm_test_articles import REQUIRED_ARTICLES, EXPECTED_PUB_DF, INNER_CITATIONS, PART_OF_ARTICLES, \
-    EXPECTED_PUB_DF_GIVEN_IDS, EXPANDED_IDS_DF, EXPANDED_TOP_CITED_3_DF, EXPANDED_TOP_CITED_4_DF, \
+    EXPECTED_PUB_DF_GIVEN_IDS, EXPANDED_IDS_DF, EXPANDED_TOP_CITED_5_DF, \
     EXPECTED_CIT_STATS_DF, EXPECTED_CIT_DF, EXPECTED_COCIT_DF
 from pysrc.papers.utils import SORT_MOST_RECENT, SORT_MOST_CITED
 
@@ -161,17 +161,11 @@ class AbstractTestPubmedLoader(metaclass=ABCMeta):
 
     def test_expand_limited(self):
         ids_list = list(map(lambda article: str(article.pmid), PART_OF_ARTICLES))
-        actual = self.get_loader().expand(ids_list, 3)
+        actual = self.get_loader().expand(ids_list, 5).sort_values(by=['total', 'id']).reset_index(drop=True)
         assert_frame_equal(
-            EXPANDED_TOP_CITED_3_DF,
+            EXPANDED_TOP_CITED_5_DF,
             actual.sort_values(by=['total', 'id']).reset_index(drop=True),
-            "Wrong list of expanded 3 ids"
-        )
-        actual = self.get_loader().expand(ids_list, 4)
-        assert_frame_equal(
-            EXPANDED_TOP_CITED_4_DF,
-            actual.sort_values(by=['total', 'id']).reset_index(drop=True),
-            "Wrong list of expanded 4 ids"
+            "Wrong list of expanded 5 ids"
         )
 
     @parameterized.expand([

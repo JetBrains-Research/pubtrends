@@ -74,7 +74,7 @@ class TestTopicEvolution(unittest.TestCase):
             1975: {
                 0: [('article', 0.5), ('term1', 0.3), ('term2', 0.3), ('term3', 0.3), ('term4', 0.3), ('term5', 0.3),
                     ('paper', 0.2), ('abstract', 0.2), ('interesting', 0.1), ('breakthrough', 0.1)], -1: []}}
-        self.assertEquals(expected_topics_kwds, evolution_kwds)
+        self.assertEqual(expected_topics_kwds, evolution_kwds)
 
 
 if __name__ == '__main__':

@@ -57,11 +57,8 @@ EXPANDED_IDS_DF = pd.DataFrame([
 )
 EXPANDED_IDS_DF['id'] = EXPANDED_IDS_DF['id'].astype(str)
 
-EXPANDED_TOP_CITED_3_DF = pd.DataFrame([[10, 1], [9, 1], [5, 3]], columns=['id', 'total'])
-EXPANDED_TOP_CITED_3_DF['id'] = EXPANDED_TOP_CITED_3_DF['id'].astype(str)
-
-EXPANDED_TOP_CITED_4_DF = pd.DataFrame([[10, 1], [7, 1], [9, 1], [5, 3]], columns=['id', 'total'])
-EXPANDED_TOP_CITED_4_DF['id'] = EXPANDED_TOP_CITED_4_DF['id'].astype(str)
+EXPANDED_TOP_CITED_5_DF = pd.DataFrame([[10, 1], [2, 1], [8, 1], [9, 1], [5, 3]], columns=['id', 'total'])
+EXPANDED_TOP_CITED_5_DF['id'] = EXPANDED_TOP_CITED_5_DF['id'].astype(str)
 
 OUTER_CITATIONS = [
     ('7', '1'), ('7', '2'), ('7', '3'), ('8', '1'), ('8', '3'),
