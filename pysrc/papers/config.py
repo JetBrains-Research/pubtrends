@@ -9,8 +9,8 @@ TOP_CITED_PAPERS = 50
 #   ...bibliographic coupling (BC) was the most accurate,  followed by co-citation (CC).
 #   Direct citation (DC) was a distant third among the three...
 
-SIMILARITY_COCITATION = 5  # Limiter by number of co-citations, applied to log
-SIMILARITY_BIBLIOGRAPHIC_COUPLING = 3  # Limited by number of references, applied to log
+SIMILARITY_COCITATION = 100  # Limiter by number of co-citations, applied to log
+SIMILARITY_BIBLIOGRAPHIC_COUPLING = 10  # Limited by number of references, applied to log
 SIMILARITY_CITATION = 1  # Limited by 1 citation
 
 # Reduce number of edges in papers graph
@@ -32,13 +32,15 @@ TEXT_EMBEDDINGS_FACTOR = 1
 
 # Global vectorization max vocabulary size
 VECTOR_WORDS = 10_000
+
 # Terms with lower frequency will be ignored, remove rare words
 VECTOR_MIN_DF = 0.001
+
 # Terms with higher frequency will be ignored, remove abundant words
 VECTOR_MAX_DF = 0.8
 
 # Reduce embeddings dimensionality before tSNE projection
-PCA_COMPONENTS = 30
+PCA_COMPONENTS = 20
 
 # Configure number and size of topics
 TOPICS_NUMBER_SMALL = 10
@@ -47,22 +49,28 @@ TOPICS_NUMBER_LARGE = 50
 
 # Number of top cited papers in topic picked for description computation
 TOPIC_MOST_CITED_PAPERS = 50
+
 # Number of words for topic description
 TOPIC_DESCRIPTION_WORDS = 10
 
+# Journals and authors
 POPULAR_JOURNALS = 50
 POPULAR_AUTHORS = 50
 
 # Number of steps in expand
-EXPAND_STEPS = 2
+EXPAND_STEPS = 3
+
 # Expand limit by references before filtration by citations and keywords
-EXPAND_LIMIT = 1000
+EXPAND_LIMIT = 5000
+
 # Control citations count
 EXPAND_CITATIONS_Q_LOW = 10
 EXPAND_CITATIONS_Q_HIGH = 90
 EXPAND_CITATIONS_SIGMA = 3
+
 # Take up to fraction of top similarity
 EXPAND_MESH_SIMILARITY = 0.5
+
 # Impact of single paper when analyzing citations and mesh terms when analysing paper
 EXPAND_SINGLE_PAPER_IMPACT = 50
 
