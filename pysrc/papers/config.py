@@ -66,10 +66,6 @@ EXPAND_MESH_SIMILARITY = 0.5
 # Impact of single paper when analyzing citations and mesh terms when analysing paper
 EXPAND_SINGLE_PAPER_IMPACT = 50
 
-# Evolution config
-EVOLUTION_MIN_PAPERS = 100
-EVOLUTION_STEP = 10
-
 
 class PubtrendsConfig:
     """
@@ -128,5 +124,4 @@ class PubtrendsConfig:
         self.feature_authors_enabled = params.getboolean('feature_authors_enabled')
         self.feature_journals_enabled = params.getboolean('feature_journals_enabled')
         self.feature_numbers_enabled = params.getboolean('feature_numbers_enabled')
-        self.feature_evolution_enabled = params.getboolean('feature_evolution_enabled')
         self.feature_review_enabled = params.getboolean('feature_review_enabled')

@@ -9,7 +9,6 @@ from sklearn.preprocessing import StandardScaler
 
 from pysrc.papers.analysis.citations import find_top_cited_papers, find_max_gain_papers, \
     find_max_relative_gain_papers, build_cit_stats_df, merge_citation_stats, build_cocit_grouped_df
-from pysrc.papers.analysis.evolution import topic_evolution_analysis, topic_evolution_descriptions
 from pysrc.papers.analysis.graph import build_papers_graph, sparse_graph, similarity
 from pysrc.papers.analysis.metadata import popular_authors, popular_journals
 from pysrc.papers.analysis.node2vec import node2vec
@@ -214,30 +213,6 @@ class PapersAnalyzer:
                 self.numbers_df = extract_numbers(self.df)
             else:
                 logger.debug('Not enough papers for numbers extraction')
-
-        if self.config.feature_evolution_enabled:
-            if len(self.df) >= EVOLUTION_MIN_PAPERS:
-                self.progress.info(f'Analyzing evolution of topics {self.df["year"].min()} - {self.df["year"].max()}',
-                                   current=14, task=task)
-                logger.debug('Perform topic evolution analysis and get topic descriptions')
-                self.evolution_df, self.evolution_year_range = topic_evolution_analysis(
-                    self.df,
-                    self.cit_df,
-                    self.cocit_grouped_df,
-                    self.bibliographic_coupling_df,
-                    self.corpus_counts,
-                    self.corpus_tokens_embedding,
-                    topics,
-                )
-                self.evolution_kwds = topic_evolution_descriptions(
-                    self.df, self.evolution_df, self.evolution_year_range,
-                    self.corpus, self.corpus_tokens, self.corpus_counts, TOPIC_DESCRIPTION_WORDS,
-                    self.progress, current=14, task=task
-                )
-            else:
-                logger.debug('Not enough papers for topics evolution')
-                self.evolution_df = None
-                self.evolution_kwds = None
 
 
     def dump(self):

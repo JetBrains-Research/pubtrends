@@ -120,9 +120,6 @@
             // Setup datatables
             $('#authors-table').DataTable();
             $('#journals-table').DataTable();
-            {% if topic_evolution is defined %}
-            $('#topic_evolution_keywords').DataTable();
-            {% endif %}
 
             // Enable search for numbers only in numbers table
             {% if numbers is defined %}
@@ -171,7 +168,6 @@
             createClickableFeedBackForm("feedback-authors-form", "feedback-authors");
             createClickableFeedBackForm("feedback-journals-form", "feedback-journals");
             createClickableFeedBackForm("feedback-numbers-form", "feedback-numbers");
-            createClickableFeedBackForm("feedback-evolution-form", "feedback-evolution");
             createClickableFeedBackForm("feedback-review-form", "feedback-review");
         });
     </script>
@@ -275,16 +271,6 @@
                         </li>
                     {% endif %}
 
-                    {% if feature_evolution_enabled %}
-                        <li class="nav-item row">
-                            <a class="nav-link no-padding-right" href="#evolution" title="Evolution">
-                                <img src="{{ url_for('static', filename='compass.svg') }}"/>
-                            </a>
-                            <a class="nav-link d-none d-xl-block no-padding" href="#evolution">
-                                Evolution
-                            </a>
-                        </li>
-                    {% endif %}
 
                     {% if feature_review_enabled %}
                         <li class="nav-item row">
@@ -650,51 +636,6 @@
                 </div>
             {% endif %}
 
-            {% if feature_evolution_enabled %}
-                <div class="card mt-3">
-                    <div class="card-title" id="evolution">
-                        <h1 class="card-header">Topic Evolution</h1>
-                    </div>
-                    <div class="card-body">
-                        <strong>Topics over time</strong>
-                        <p>
-                            Topics extraction is performed longitudinally at several time points to detect merges and
-                            splits of topics. <br>
-                            Edge width reflects the number of papers which moved from one topic to another.<br>
-                            <i>NPY</i> - not published yet.
-                        </p>
-                        {% if topic_evolution is defined %}
-                            {% for script, div in topic_evolution %}
-                                {{ script|safe }}
-                                {{ div|safe }}
-                            {% endfor %}
-                            <table id="topic_evolution_keywords" class="table table-sm table-bordered table-striped">
-                                <thead>
-                                <tr>
-                                    <th scope="col">#</th>
-                                    <th scope="col">Year</th>
-                                    <th scope="col">Topic</th>
-                                    <th scope="col">Tags</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                {% for year, topic, kwds in topic_evolution_keywords %}
-                                    <tr>
-                                        <th scope="row">{{ loop.index }}</th>
-                                        <td>{{ year }}</td>
-                                        <td>{{ topic }}</td>
-                                        <td>{{ kwds }}</td>
-                                    </tr>
-                                {% endfor %}
-                                </tbody>
-                            </table>
-                            <div class="mt-3" id="feedback-evolution-form"></div>
-                        {% else %}
-                            Topics evolution is not available.
-                        {% endif %}
-                    </div>
-                </div>
-            {% endif %}
 
             {% if feature_review_enabled %}
                 <div class="card mt-3">

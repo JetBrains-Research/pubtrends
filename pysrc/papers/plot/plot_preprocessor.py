@@ -205,68 +205,6 @@ class PlotPreprocessor:
         return paths, leaves_order
 
     @staticmethod
-    def topic_evolution_data(evolution_df, kwds, n_steps):
-        def sort_nodes_key(node):
-            y, c = node[0].split(' ')
-            return int(y), 1 if c == 'NPY' else -int(c)
-
-        cols = evolution_df.columns[1:]  # Skip id
-        nodes = set()
-        edges = []
-        for now, then in list(zip(cols, cols[1:])):
-            nodes_now = [f'{now} {PlotPreprocessor.evolution_topic_name(c)}' for c in evolution_df[now].unique()]
-            nodes_then = [f'{then} {PlotPreprocessor.evolution_topic_name(c)}' for c in evolution_df[then].unique()]
-
-            inner = {node: 0 for node in nodes_then}
-            changes = {node: inner.copy() for node in nodes_now}
-            for pmid, comp in evolution_df.iterrows():
-                c_now, c_then = comp[now], comp[then]
-                changes[f'{now} {PlotPreprocessor.evolution_topic_name(c_now)}'][
-                    f'{then} {PlotPreprocessor.evolution_topic_name(c_then)}'
-                ] += 1
-
-            for v in nodes_now:
-                for u in nodes_then:
-                    n_papers = changes[v][u]
-                    if n_papers > 0:
-                        # Improve Sankey Diagram by hiding NPY papers, adding artificial edge
-                        edges.append((v, u, n_papers if not ('NPY' in u and 'NPY' in v) else 1))
-                        nodes.add(v)
-                        nodes.add(u)
-
-        nodes_data = []
-        for node in nodes:
-            year, c = node.split(' ')
-            if c == 'NPY':
-                label = c
-            else:
-                label = f'{year} {c}'
-                if n_steps < 4:
-                    label += ' ' + ','.join(c for c, _ in kwds[int(year)][int(c) - 1][:3])
-            nodes_data.append((node, label))
-        nodes_data = sorted(nodes_data, key=sort_nodes_key, reverse=True)
-
-        return edges, nodes_data
-
-    @staticmethod
-    def evolution_topic_name(comp):
-        if comp == -1:
-            result = 'NPY'
-        else:
-            # Fix topic numbering to start with 1
-            result = comp + 1
-        return result
-
-    @staticmethod
-    def topic_evolution_keywords_data(kwds):
-        kwds_data = []
-        for year, comps in kwds.items():
-            for comp, kwd in comps.items():
-                if comp != -1:  # Not published yet
-                    kwds_data.append((year, comp + 1, ', '.join(k for k, _ in kwd)))
-        return kwds_data
-
-    @staticmethod
     def prepare_papers_data(
             df, top_cited_papers, max_gain_papers, max_rel_gain_papers,
             url_prefix,

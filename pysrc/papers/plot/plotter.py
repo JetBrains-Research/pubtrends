@@ -20,7 +20,6 @@ from pysrc.app.reports import preprocess_string
 from pysrc.papers.analysis.text import get_frequent_tokens
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
-from pysrc.papers.plot.plot_evolution import plot_topics_evolution
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.utils import cut_authors_list, trim, MAX_TITLE_LENGTH, contrast_color, \
     topics_palette_rgb, color_to_rgb, factor_colors, factors_colormap
@@ -90,7 +89,6 @@ def visualize_analysis(analyzer):
         feature_authors_enabled=PUBTRENDS_CONFIG.feature_authors_enabled,
         feature_journals_enabled=PUBTRENDS_CONFIG.feature_journals_enabled,
         feature_numbers_enabled=PUBTRENDS_CONFIG.feature_numbers_enabled,
-        feature_evolution_enabled=PUBTRENDS_CONFIG.feature_evolution_enabled,
         feature_review_enabled=PUBTRENDS_CONFIG.feature_review_enabled
     ))
 
@@ -107,15 +105,6 @@ def visualize_analysis(analyzer):
                 (row['id'], url_prefix + row['id'], trim(row['title'], MAX_TITLE_LENGTH), row['numbers'])
                 for _, row in analyzer.numbers_df.iterrows()
             ]
-
-    if PUBTRENDS_CONFIG.feature_evolution_enabled:
-        evolution_result = plot_topics_evolution(
-            analyzer.df, analyzer.evolution_df, analyzer.evolution_kwds, PLOT_WIDTH, TALL_PLOT_HEIGHT
-        )
-        if evolution_result is not None:
-            evolution_data, keywords_data = evolution_result
-            result['topic_evolution'] = components_list(evolution_data)
-            result['topic_evolution_keywords'] = keywords_data
 
     return result
 

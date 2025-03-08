@@ -79,33 +79,6 @@ class TestPlotPreprocessor(unittest.TestCase):
         max_width = max_size * (self.analyzer.max_year - self.analyzer.min_year + 1)
         self.assertLessEqual(max_width, width, 'Horizontal overlap')
 
-    def test_topic_evolution_data(self):
-        edges, nodes_data = PlotPreprocessor.topic_evolution_data(
-            self.analyzer.evolution_df, self.analyzer.evolution_kwds, self.analyzer.n_steps
-        )
-
-        expected_edges = [('2021 1', '2045 1', 3), ('2021 1', '2045 2', 2), ('2021 NPY', '2045 1', 1),
-                          ('2021 NPY', '2045 2', 4)]
-        expected_nodes_data = [('2045 1', '2045 1 shiftwork,estrogen,pattern'),
-                               ('2045 2', '2045 2 study,analysis,association'), ('2021 NPY', 'NPY'),
-                               ('2021 1', '2021 1 rassf1a,tsg,datasets')]
-        self.assertListEqual(nodes_data, expected_nodes_data, 'Wrong nodes data')
-        self.assertCountEqual(edges, expected_edges, 'Wrong Sankey diagram edges')
-        self.assertListEqual([el[0] for el in nodes_data], [el[0] for el in expected_nodes_data],
-                             'Wrong node order')
-
-    def test_topic_evolution_keywords(self):
-        kwds_data = PlotPreprocessor.topic_evolution_keywords_data(
-            self.analyzer.evolution_kwds
-        )
-
-        expected_keywords_data = [(2021,
-                                   1,
-                                   'rassf1a, tsg, datasets, biopsy, apc, benign, mutation, measure, history'),
-                                  (2045, 1, 'shiftwork, estrogen, pattern, disturbance, cell, per2, disruption'),
-                                  (2045, 2, 'study, analysis, association')]
-        self.assertEqual(expected_keywords_data, kwds_data)
-
 
 if __name__ == '__main__':
     unittest.main()
