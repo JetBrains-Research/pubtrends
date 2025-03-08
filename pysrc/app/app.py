@@ -126,7 +126,7 @@ def index():
                            limits=PUBTRENDS_CONFIG.show_max_articles_options,
                            default_limit=PUBTRENDS_CONFIG.show_max_articles_default_value,
                            topics_variants=[TOPICS_NUMBER_SMALL, TOPICS_NUMBER_MEDIUM, TOPICS_NUMBER_LARGE],
-                           default_topics=TOPICS_NUMBER_MEDIUM,
+                           default_topics=TOPICS_NUMBER_SMALL,
                            min_words_message=min_words_message,
                            max_papers=PUBTRENDS_CONFIG.max_number_of_articles,
                            pm_enabled=PUBTRENDS_CONFIG.pm_enabled,

@@ -27,7 +27,7 @@ SIMILARITY_COCITATION_MIN = 2
 
 # Papers embeddings is a concatenation of graph and text embeddings times corresponding factors
 # Graph embeddings produce more clear topics separation, so it goes with bigger coefficient
-GRAPH_EMBEDDINGS_FACTOR = 3
+GRAPH_EMBEDDINGS_FACTOR = 10
 TEXT_EMBEDDINGS_FACTOR = 1
 
 # Global vectorization max vocabulary size

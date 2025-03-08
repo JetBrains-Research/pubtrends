@@ -199,7 +199,7 @@
                                 </div>
                                 <div id="noreviews-div" class="col input-group ml-2 mt-2 mb-2 mr-2">
                                     <label style="margin-top: auto;margin-bottom: auto">
-                                        <input type="checkbox" name="noreviews" id="noreviews">
+                                        <input type="checkbox" name="noreviews" id="noreviews" checked>
                                         <span class="checkmark">
                                             Prefer no reviews</span>
                                     </label>
@@ -225,7 +225,7 @@
                             <input type="hidden" name="sort" value="Most Cited">
                             <input type="hidden" name="topics" value="{{ default_topics }}">
                             <input type="hidden" name="limit" value="{{ default_limit }}">
-                            <input type="hidden" name="noreviews" value="off">
+                            <input type="hidden" name="noreviews" value="on">
                             <input type="hidden" name="jobid" value="{{ jobid }}">
                             <button type="submit" name="query" value="{{ terms }}"
                                     class="btn btn-sm btn-outline-secondary mt-2 mr-2"
