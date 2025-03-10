@@ -55,7 +55,7 @@ class PapersAnalyzer:
             self.progress.info(f'Found {len(ids)} publications in the database', current=1, task=task)
         return ids
 
-    def analyze_papers(self, ids, query, topics=TOPICS_NUMBER_MEDIUM, test=False, task=None):
+    def analyze_papers(self, ids, query, topics, test=False, task=None):
         self.progress.info('Loading publication data', current=2, task=task)
         self.query = query
         self.df = self.loader.load_publications(ids)
@@ -127,14 +127,15 @@ class PapersAnalyzer:
         )
         self.progress.info(f'Analyzing papers graph - {self.papers_graph.number_of_nodes()} nodes and '
                            f'{self.papers_graph.number_of_edges()} edges', current=7, task=task)
+        logger.debug('Prepare sparse graph')
+        self.sparse_papers_graph = sparse_graph(self.papers_graph, SPARSE_GRAPH_EDGES_TO_NODES)
+        # Add similarity key to sparse graph
+        for i, j in self.sparse_papers_graph.edges():
+            self.sparse_papers_graph[i][j]['similarity'] = similarity(self.papers_graph.get_edge_data(i, j))
+
         if GRAPH_EMBEDDINGS_FACTOR != 0:
-            logger.debug('Prepare sparse graph for embedding')
-            sge = sparse_graph(self.papers_graph, EMBEDDINGS_SPARSE_GRAPH_EDGES_TO_NODES)
-            # Add similarity key to sparse graph
-            for i, j in sge.edges():
-                sge[i][j]['similarity'] = similarity(self.papers_graph.get_edge_data(i, j))
             logger.debug('Analyzing papers graph embeddings')
-            self.graph_embeddings = node2vec(self.df['id'], sge, key='similarity')
+            self.graph_embeddings = node2vec(self.df['id'], self.sparse_papers_graph, key='similarity')
         else:
             self.graph_embeddings = np.zeros(shape=(len(self.df), 0))
 
@@ -174,9 +175,9 @@ class PapersAnalyzer:
         self.topics_description = get_topics_description(
             self.df, comp_pids,
             self.corpus, self.corpus_tokens, self.corpus_counts,
-            n_words=TOPIC_DESCRIPTION_WORDS
+            n_words=self.config.topic_description_words,
         )
-        kwds = [(comp, ','.join([f'{t}:{v:.3f}' for t, v in vs[:TOPIC_DESCRIPTION_WORDS]]))
+        kwds = [(comp, ','.join([f'{t}:{v:.3f}' for t, v in vs[:self.config.topic_description_words]]))
                 for comp, vs in self.topics_description.items()]
         self.kwd_df = pd.DataFrame(kwds, columns=['comp', 'kwd'])
 
@@ -192,20 +193,14 @@ class PapersAnalyzer:
             self.df, self.citation_years
         )
 
-        logger.debug('Prepare sparse graph for visualization')
-        self.sparse_papers_graph = sparse_graph(self.papers_graph, VISUALIZATION_SPARSE_GRAPH_EDGES_TO_NODES)
-        # Add similarity key to sparse graph
-        for i, j in self.sparse_papers_graph.edges():
-            self.sparse_papers_graph[i][j]['similarity'] = similarity(self.papers_graph.get_edge_data(i, j))
-
         # Additional analysis steps
         if self.config.feature_authors_enabled:
             self.progress.info("Analyzing authors and groups", current=11, task=task)
-            self.author_stats = popular_authors(self.df, n=POPULAR_AUTHORS)
+            self.author_stats = popular_authors(self.df, n=self.config.popular_authors)
 
         if self.config.feature_journals_enabled:
             self.progress.info("Analyzing popular journals", current=12, task=task)
-            self.journal_stats = popular_journals(self.df, n=POPULAR_JOURNALS)
+            self.journal_stats = popular_journals(self.df, n=self.config.popular_journals)
 
         if self.config.feature_numbers_enabled:
             if len(self.df) >= 0:

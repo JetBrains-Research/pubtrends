@@ -5,12 +5,11 @@ import os
 import random
 import tempfile
 import time
-from threading import Lock
-from urllib.parse import quote
-
 from celery.result import AsyncResult
 from flask import Flask, url_for, redirect, render_template, request, render_template_string, \
     send_from_directory, send_file
+from threading import Lock
+from urllib.parse import quote
 
 from pysrc.app.admin.admin import configure_admin_functions
 from pysrc.app.messages import SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, SOMETHING_WENT_WRONG_PAPER, \
@@ -22,7 +21,7 @@ from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, 
     analyze_pubmed_search_files, analyze_pubmed_search, analyze_search_terms_files
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.analyzer_files import FILES_WITH_DESCRIPTIONS, ANALYSIS_FILES_TYPE
-from pysrc.papers.config import PubtrendsConfig, TOPICS_NUMBER_MEDIUM, TOPICS_NUMBER_SMALL, TOPICS_NUMBER_LARGE
+from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
@@ -125,8 +124,8 @@ def index():
                            version=VERSION,
                            limits=PUBTRENDS_CONFIG.show_max_articles_options,
                            default_limit=PUBTRENDS_CONFIG.show_max_articles_default_value,
-                           topics_variants=[TOPICS_NUMBER_SMALL, TOPICS_NUMBER_MEDIUM, TOPICS_NUMBER_LARGE],
-                           default_topics=TOPICS_NUMBER_SMALL,
+                           topics_variants=PUBTRENDS_CONFIG.show_topics_options,
+                           default_topics=PUBTRENDS_CONFIG.show_topics_default_value,
                            min_words_message=min_words_message,
                            max_papers=PUBTRENDS_CONFIG.max_number_of_articles,
                            pm_enabled=PUBTRENDS_CONFIG.pm_enabled,
@@ -635,7 +634,8 @@ def are_predefined_jobs_ready():
                 if data is None:
                     logger.info(f'No job or out-of-date job for source={source} query={query}, launch it')
                     analyze_search_terms.apply_async(
-                        args=[source, query, sort, int(limit), False, TOPICS_NUMBER_MEDIUM, app.config['TESTING']],
+                        args=[source, query, sort, int(limit), False, PUBTRENDS_CONFIG.show_topics_default_value,
+                              app.config['TESTING']],
                         task_id=jobid
                     )
                     ready = False

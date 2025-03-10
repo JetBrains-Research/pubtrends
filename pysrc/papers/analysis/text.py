@@ -24,6 +24,8 @@ NLTK_STOP_WORDS_SET = set(stopwords.words('english'))
 # See https://github.com/nltk/nltk/issues/1576
 NLTK_LOCK = Lock()
 
+WORD2VEC_WINDOW = 8
+WORD2VEC_VECTOR_SIZE = 16
 
 def vectorize_corpus(df, max_features, min_df, max_df, test=False):
     """
@@ -161,14 +163,16 @@ def tokens_embeddings(corpus, corpus_tokens, test=False):
     return train_word2vec(corpus, corpus_tokens, test=test)
 
 
-def train_word2vec(corpus, corpus_tokens, vector_size=64, test=False):
+def train_word2vec(corpus, corpus_tokens, vector_size=WORD2VEC_VECTOR_SIZE, test=False):
     logger.debug('Collecting sentences across dataset')
     sentences = list(filter(
-        lambda l: test or len(l) >= 5,  # Ignore short sentences, less than window
+        lambda l: test or len(l) >= WORD2VEC_WINDOW,  # Ignore short sentences, less than window
         chain.from_iterable(corpus)))
     logger.debug(f'Total {len(sentences)} sentences')
     logger.debug('Training word2vec model')
-    w2v = Word2Vec(sentences, vector_size=vector_size, window=5, min_count=0, workers=1, epochs=5, seed=42)
+    w2v = Word2Vec(
+        sentences, vector_size=vector_size, window=WORD2VEC_WINDOW, min_count=0, workers=1, epochs=5, seed=42
+    )
     logger.debug('Retrieve word embeddings, corresponding subjects and reorder according to corpus_terms')
     ids, embeddings = w2v.wv.index_to_key, w2v.wv.vectors
     indx = {t: i for i, t in enumerate(ids)}

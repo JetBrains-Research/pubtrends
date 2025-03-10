@@ -445,8 +445,9 @@ class Plotter:
 
     @staticmethod
     def _plot_topics_hierarchy_with_keywords(df, kwd_df, clusters, dendrogram_children,
-                                             max_words=3, width=PLOT_WIDTH, height=int(PLOT_WIDTH * 3 / 4)):
+                                             width=PLOT_WIDTH, height=int(PLOT_WIDTH * 3 / 4)):
         comp_sizes = Counter(df['comp'])
+        max_words = 3 if len(comp_sizes) >= 20 else 5
         logger.debug('Computing dendrogram for clusters')
         if dendrogram_children is None:
             return None

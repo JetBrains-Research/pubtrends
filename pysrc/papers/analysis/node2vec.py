@@ -3,13 +3,22 @@ import logging
 import numpy as np
 from gensim.models import Word2Vec
 
+from pysrc.papers.config import SPARSE_GRAPH_EDGES_TO_NODES
+
 logger = logging.getLogger(__name__)
 
+NODE2VEC_P = 5.0
+NODE2VEC_Q = 2.0
+# Increasing number of walks significantly increases node2vec representation accuracy
+NODE2VEC_WALKS_PER_NODE = SPARSE_GRAPH_EDGES_TO_NODES
+NODE2VEC_WALK_LENGTH = SPARSE_GRAPH_EDGES_TO_NODES / 2
+NODE2VEC_WORD2VEC_WINDOW = 8
+NODE2VEC_VECTOR_SIZE = 16
 
 def node2vec(
-        ids, graph, p=0.5, q=2.0,
-        walk_length=64, walks_per_node=32,
-        vector_size=64, key='weight', seed=42
+        ids, graph, p=NODE2VEC_P, q=NODE2VEC_Q,
+        walk_length=NODE2VEC_WALK_LENGTH, walks_per_node=NODE2VEC_WALKS_PER_NODE,
+        vector_size=NODE2VEC_VECTOR_SIZE, key='weight', seed=42
 ):
     """
     :param ids: Ids or nodes for embedding
@@ -35,7 +44,9 @@ def node2vec(
     logger.debug('Performing word2vec embeddings')
     logging.getLogger('node2vec.py').setLevel('ERROR')  # Disable logging
     w2v = Word2Vec(
-        walks, vector_size=vector_size, window=5, min_count=0, sg=1, workers=1, epochs=5, seed=seed
+        walks, vector_size=vector_size,
+        window=NODE2VEC_WORD2VEC_WINDOW,
+        min_count=0, sg=1, workers=1, epochs=5, seed=seed
     )
     logger.debug('Retrieve word embeddings, corresponding subjects and reorder according to ids')
     node_ids, node_embeddings = w2v.wv.index_to_key, w2v.wv.vectors
@@ -46,7 +57,7 @@ def node2vec(
     ])
 
 
-def _precompute(graph, key='weight', p=0.5, q=2.0):
+def _precompute(graph, key, p, q):
     """
     :param graph: Undirected weighted networkx graph
     :param key: weight key for edge

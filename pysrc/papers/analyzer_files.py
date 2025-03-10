@@ -53,7 +53,7 @@ class AnalyzerFiles(PapersAnalyzer):
     def teardown(self):
         self.progress.remove_handler()
 
-    def analyze_ids(self, ids, source, query, sort, limit, topics=TOPICS_NUMBER_MEDIUM, test=False, task=None):
+    def analyze_ids(self, ids, source, query, sort, limit, topics, test=False, task=None):
         self.query = query
         self.query_folder = os.path.join(get_results_path(), preprocess_string(VERSION),
                                          result_folder_name(source, query, sort, limit, jobid=None))
@@ -168,14 +168,15 @@ class AnalyzerFiles(PapersAnalyzer):
         self.progress.info(f'Built papers graph with {self.papers_graph.number_of_nodes()} nodes '
                            f'and {self.papers_graph.number_of_edges()} edges', current=10, task=task)
 
+        logger.debug('Prepare sparse graph')
+        self.sparse_papers_graph = sparse_graph(self.papers_graph, SPARSE_GRAPH_EDGES_TO_NODES)
+        # Add similarity key to sparse graph
+        for i, j in self.sparse_papers_graph.edges():
+            self.sparse_papers_graph[i][j]['similarity'] = similarity(self.papers_graph.get_edge_data(i, j))
+
         if GRAPH_EMBEDDINGS_FACTOR != 0:
-            logger.debug('Prepare sparse graph for embeddings')
-            sge = sparse_graph(self.papers_graph, EMBEDDINGS_SPARSE_GRAPH_EDGES_TO_NODES)
-            # Add similarity key to sparse graph
-            for i, j in sge.edges():
-                sge[i][j]['similarity'] = similarity(self.papers_graph.get_edge_data(i, j))
             logger.debug('Analyzing papers graph embeddings')
-            self.graph_embeddings = node2vec(self.df['id'], sge, key='similarity')
+            self.graph_embeddings = node2vec(self.df['id'], self.sparse_papers_graph, key='similarity')
         else:
             self.graph_embeddings = np.zeros(shape=(len(self.df), 0))
 
@@ -233,7 +234,7 @@ class AnalyzerFiles(PapersAnalyzer):
         clusters_description = get_topics_description(
             self.df, clusters_pids,
             self.corpus, self.corpus_tokens, self.corpus_counts,
-            n_words=TOPIC_DESCRIPTION_WORDS
+            n_words=self.config.topic_description_words
         )
 
         kwds = [(comp, ','.join([f'{t}:{v:.3f}' for t, v in vs[:20]])) for comp, vs in clusters_description.items()]
@@ -254,7 +255,7 @@ class AnalyzerFiles(PapersAnalyzer):
         mesh_clusters_description = get_topics_description(
             self.df, clusters_pids,
             mesh_corpus, mesh_corpus_tokens, mesh_corpus_counts,
-            n_words=TOPIC_DESCRIPTION_WORDS
+            n_words=self.config.topic_description_words
         )
 
         meshs = [(comp, ','.join([f'{t}:{v:.3f}' for t, v in vs[:20]]))
@@ -300,12 +301,6 @@ class AnalyzerFiles(PapersAnalyzer):
         del t
 
         self.progress.info('Preparing papers network', current=14, task=task)
-        logger.debug('Prepare sparse graph for visualization')
-        self.sparse_papers_graph = sparse_graph(self.papers_graph, VISUALIZATION_SPARSE_GRAPH_EDGES_TO_NODES)
-        # Add similarity key to sparse graph
-        for i, j in self.sparse_papers_graph.edges():
-            self.sparse_papers_graph[i][j]['similarity'] = similarity(self.papers_graph.get_edge_data(i, j))
-
         path_papers_graph_interactive = os.path.join(self.query_folder, 'graph.html')
         logging.info(f'Saving papers graph for cytoscape.js {path_papers_graph_interactive}')
         template_path = os.path.realpath(os.path.join(__file__, '../../app/templates/graph_download.html'))

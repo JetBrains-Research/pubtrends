@@ -61,7 +61,7 @@ def sparse_graph(graph, k):
         neighbors_data = sorted(list([(x, graph.get_edge_data(n, x)) for x in graph.neighbors(n)]),
                                 key=lambda x: similarity(x[1]), reverse=True)
         for x, data in neighbors_data[:k]:
-            if not result.has_edge(n, x):
+            if not result.has_edge(n, x) and (not result.has_node(x) or len(list(result.neighbors(x))) < k):
                 result.add_edge(n, x, **data)
     # Ensure all the nodes present
     for n in graph.nodes():

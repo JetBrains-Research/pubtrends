@@ -9,25 +9,24 @@ TOP_CITED_PAPERS = 50
 #   ...bibliographic coupling (BC) was the most accurate,  followed by co-citation (CC).
 #   Direct citation (DC) was a distant third among the three...
 
-SIMILARITY_COCITATION = 100  # Limiter by number of co-citations, applied to log
-SIMILARITY_BIBLIOGRAPHIC_COUPLING = 10  # Limited by number of references, applied to log
-SIMILARITY_CITATION = 1  # Limited by 1 citation
+SIMILARITY_COCITATION = 10  # x number of co-citations, applied to log
+SIMILARITY_BIBLIOGRAPHIC_COUPLING = 3  # x number of references, applied to log
+SIMILARITY_CITATION = 1  # x 0-1 citation
 
 # Reduce number of edges in papers graph
-EMBEDDINGS_SPARSE_GRAPH_EDGES_TO_NODES = 50
-VISUALIZATION_SPARSE_GRAPH_EDGES_TO_NODES = 10
+SPARSE_GRAPH_EDGES_TO_NODES = 100
 
 # Minimal number of common references, used to reduce papers graph edges count
 # Value > 1 is especially useful while analysing single paper,
 # removes meaningless connections by construction
-SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN = 2
+SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN = 5
 
 # Minimal number of common references, used to reduce papers graph edges count
 SIMILARITY_COCITATION_MIN = 2
 
 # Papers embeddings is a concatenation of graph and text embeddings times corresponding factors
 # Graph embeddings produce more clear topics separation, so it goes with bigger coefficient
-GRAPH_EMBEDDINGS_FACTOR = 10
+GRAPH_EMBEDDINGS_FACTOR = 5
 TEXT_EMBEDDINGS_FACTOR = 1
 
 # Global vectorization max vocabulary size
@@ -40,28 +39,7 @@ VECTOR_MIN_DF = 0.001
 VECTOR_MAX_DF = 0.8
 
 # Reduce embeddings dimensionality before tSNE projection
-PCA_COMPONENTS = 20
-
-# Configure number and size of topics
-TOPICS_NUMBER_SMALL = 10
-TOPICS_NUMBER_MEDIUM = 20
-TOPICS_NUMBER_LARGE = 50
-
-# Number of top cited papers in topic picked for description computation
-TOPIC_MOST_CITED_PAPERS = 50
-
-# Number of words for topic description
-TOPIC_DESCRIPTION_WORDS = 10
-
-# Journals and authors
-POPULAR_JOURNALS = 50
-POPULAR_AUTHORS = 50
-
-# Number of steps in expand
-EXPAND_STEPS = 3
-
-# Expand limit by references before filtration by citations and keywords
-EXPAND_LIMIT = 5000
+PCA_COMPONENTS = 10
 
 # Control citations count
 EXPAND_CITATIONS_Q_LOW = 10
@@ -119,7 +97,19 @@ class PubtrendsConfig:
         self.show_max_articles_options = [int(opt.strip()) for opt in params['show_max_articles_options'].split(',')]
         self.show_max_articles_default_value = int(params['show_max_articles_default_value'].strip())
         self.max_number_of_articles = max(self.show_max_articles_options)
+
+        self.show_topics_options = [int(opt.strip()) for opt in params['show_topics_options'].split(',')]
+        self.show_topics_default_value = int(params['show_topics_default_value'].strip())
+
         self.max_graph_size = params.getint('max_graph_size')
+
+        self.topic_description_words = params.getint('topic_description_words')
+
+        self.popular_journals = params.getint('popular_journals')
+        self.popular_authors = params.getint('popular_authors')
+
+        self.paper_expands_steps = params.getint('paper_expands_steps')
+        self.paper_expand_limit = params.getint('paper_expand_limit')
 
         # TODO Admin password - should be a better way
         self.admin_email = params['admin_email']
