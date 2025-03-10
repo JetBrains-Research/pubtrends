@@ -1,8 +1,6 @@
 import configparser
 import os
 
-TOP_CITED_PAPERS = 50
-
 # Features are originally taken from paper:
 # 1) Which type of citation analysis generates the most accurate taxonomy of
 #   scientific and technical knowledge? (https://arxiv.org/pdf/1511.05078.pdf)
@@ -103,6 +101,7 @@ class PubtrendsConfig:
 
         self.max_graph_size = params.getint('max_graph_size')
 
+        self.top_cited_papers = params.getint('top_cited_papers')
         self.topic_description_words = params.getint('topic_description_words')
 
         self.popular_journals = params.getint('popular_journals')

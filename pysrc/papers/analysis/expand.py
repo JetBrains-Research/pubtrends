@@ -56,8 +56,8 @@ def expand_ids(
         ids = _expand_ids_step(
             loader, ids, limit, max_expand, cit_mean, cit_std, citations_sigma, mesh_similarity_threshold,
             mesh_stems, mesh_counter)
-
-    return ids
+    # Keep original pid first
+    return [pid] + [x for x in ids if x != pid]
 
 
 def _expand_ids_step(

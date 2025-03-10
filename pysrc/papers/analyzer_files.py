@@ -91,7 +91,7 @@ class AnalyzerFiles(PapersAnalyzer):
 
         self.progress.info('Identifying top cited papers', current=5, task=task)
         logger.debug('Top cited papers')
-        self.top_cited_papers, self.top_cited_df = find_top_cited_papers(self.df, TOP_CITED_PAPERS)
+        self.top_cited_papers, self.top_cited_df = find_top_cited_papers(self.df, self.config.top_cited_papers)
 
         self.progress.info('Analyzing title and abstract texts', current=6, task=task)
         self.corpus, self.corpus_tokens, self.corpus_counts = vectorize_corpus(

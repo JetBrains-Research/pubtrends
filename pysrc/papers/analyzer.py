@@ -183,7 +183,7 @@ class PapersAnalyzer:
 
         self.progress.info('Identifying top cited papers', current=10, task=task)
         logger.debug('Top cited papers')
-        self.top_cited_papers, self.top_cited_df = find_top_cited_papers(self.df, TOP_CITED_PAPERS)
+        self.top_cited_papers, self.top_cited_df = find_top_cited_papers(self.df, self.config.top_cited_papers)
 
         logger.debug('Top cited papers per year')
         self.max_gain_papers, self.max_gain_df = find_max_gain_papers(self.df, self.citation_years)
