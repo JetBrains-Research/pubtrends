@@ -2,7 +2,7 @@ import json
 import numpy as np
 from abc import abstractmethod, ABCMeta
 
-from pysrc.papers.utils import extract_authors
+from pysrc.papers.utils import extract_authors, reorder_publications
 
 
 class Loader(metaclass=ABCMeta):
@@ -100,6 +100,5 @@ class Loader(metaclass=ABCMeta):
             pub_df['crc32id'] = pub_df['crc32id'].apply(int)
 
         # Reorder dataframe
-        ids_order = {str(pid): index for index, pid in enumerate(ids)}
-        sort_ord = np.argsort([ids_order[pid] for pid in pub_df['id']])
-        return pub_df.iloc[sort_ord, :].reset_index(drop=True)
+        return reorder_publications(ids, pub_df)
+

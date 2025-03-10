@@ -3,6 +3,8 @@ import logging
 import numpy as np
 import pandas as pd
 
+from pysrc.papers.utils import reorder_publications
+
 logger = logging.getLogger(__name__)
 
 
@@ -90,9 +92,10 @@ def build_cocit_grouped_df(cocit_df):
     return cocit_grouped_df
 
 
-def merge_citation_stats(pub_df, cit_df):
+def merge_citation_stats(ids, pub_df, cit_df):
     df = pd.merge(pub_df, cit_df, on='id', how='outer')
-
+    # restore original publications order, important when analysing single paper
+    df = reorder_publications(ids, df)
     # Fill only new columns to preserve year NaN values
     df[cit_df.columns] = df[cit_df.columns].fillna(0)
     df.authors = df.authors.fillna('')

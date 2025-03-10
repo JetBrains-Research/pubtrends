@@ -19,7 +19,7 @@ from pysrc.papers.config import *
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.progress import Progress
-from pysrc.papers.utils import SORT_MOST_CITED
+from pysrc.papers.utils import SORT_MOST_CITED, reorder_publications
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +94,7 @@ class PapersAnalyzer:
         self.cit_stats_df = build_cit_stats_df(cits_by_year_df, len(ids))
         if len(self.cit_stats_df) == 0:
             logger.warning('No citations of papers were found')
-        self.df, self.citation_years = merge_citation_stats(self.df, self.cit_stats_df)
+        self.df, self.citation_years = merge_citation_stats(ids, self.df, self.cit_stats_df)
         logger.debug('Loading citations information')
         self.cit_df = self.loader.load_citations(ids)
         logger.debug(f'Found {len(self.cit_df)} citations between papers')
@@ -213,6 +213,10 @@ class PapersAnalyzer:
                 self.numbers_df = extract_numbers(self.df)
             else:
                 logger.debug('Not enough papers for numbers extraction')
+
+        # restore original publications order
+        self.df = reorder_publications(ids, self.df)
+
 
 
     def dump(self):

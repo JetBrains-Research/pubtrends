@@ -81,7 +81,7 @@ class AnalyzerFiles(PapersAnalyzer):
         self.cit_stats_df = build_cit_stats_df(cits_by_year_df, len(ids))
         if len(self.cit_stats_df) == 0:
             logger.warning('No citations of papers were found')
-        self.df, self.citation_years = merge_citation_stats(self.pub_df, self.cit_stats_df)
+        self.df, self.citation_years = merge_citation_stats(ids, self.pub_df, self.cit_stats_df)
 
         # Load data about citations between given papers (excluding outer papers)
         # IMPORTANT: cit_df may contain not all the publications for query

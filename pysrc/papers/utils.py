@@ -6,6 +6,7 @@ import pandas as pd
 from bokeh.colors import RGB
 from bokeh.transform import factor_cmap
 import matplotlib as plt
+import numpy as np
 from matplotlib import colors
 
 PUBMED_ARTICLE_BASE_URL = 'https://www.ncbi.nlm.nih.gov/pubmed/?term='
@@ -23,6 +24,12 @@ MAX_QUERY_LENGTH = 60
 SEED = 19700101
 
 log = logging.getLogger(__name__)
+
+
+def reorder_publications(ids, pub_df):
+    ids_order = {str(pid): index for index, pid in enumerate(ids)}
+    sort_ord = np.argsort([ids_order[pid] for pid in pub_df['id']])
+    return pub_df.iloc[sort_ord, :].reset_index(drop=True)
 
 
 def cut_authors_list(authors, limit=10):
