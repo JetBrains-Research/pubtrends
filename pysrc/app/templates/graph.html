@@ -372,6 +372,7 @@
                                 if (citation > 0 && citation >= Math.max(cocitation, bibcoupling)) {
                                     return "#3498DB"; //235, 222, 240
                                 }
+                                // Text similarity
                                 return "#BDC3C7";
                             },
                             "opacity": 0.01
@@ -406,7 +407,7 @@
                     content: () => {
                         let content = document.createElement('div');
                         let data = ele.data();
-                        if ('similarity' in data) {
+                        if ('similarity' in data || 'textsimilarity' in data) {
                             // Edge similarity
                             let bibcoupling = 0;
                             if ('bibcoupling' in data) {
@@ -420,12 +421,17 @@
                             if ('citation' in data) {
                                 citation = data.citation;
                             }
+                            let textsimilarity = 0;
+                            if ('textsimilarity' in data) {
+                                textsimilarity = data.textsimilarity;
+                            }
                             content.innerHTML = "<p style='text-align:left;'><small><b>Similarity</b><br>" +
                                 "Similarity is computed based on citations <br>" +
                                 "and text similarity between papers.<br>" +
                                 '<span style="color:dodgerblue;">Co-citations</span>: ' + cocitation + "<br>" +
                                 '<span style="color:dodgerblue;">Common references</span>: ' + bibcoupling + "<br>" +
-                                '<span style="color:dodgerblue;">Citation</span>: ' + citation + "</p>";
+                                '<span style="color:dodgerblue;">Citation</span>: ' + citation + "<br>" +
+                                '<span style="color:dodgerblue;">Text similarity</span>: ' + textsimilarity.toFixed(2) + "</p>";
                         } else if ('title' in data) {
                             // Paper
                             // Disable formatter for the next section because of injections.

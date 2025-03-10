@@ -11,9 +11,10 @@ NODE2VEC_P = 5.0
 NODE2VEC_Q = 2.0
 # Increasing number of walks significantly increases node2vec representation accuracy
 NODE2VEC_WALKS_PER_NODE = SPARSE_GRAPH_EDGES_TO_NODES
-NODE2VEC_WALK_LENGTH = SPARSE_GRAPH_EDGES_TO_NODES / 2
+NODE2VEC_WALK_LENGTH = 32
 NODE2VEC_WORD2VEC_WINDOW = 8
 NODE2VEC_VECTOR_SIZE = 16
+NODE2VEC_WORD2VEC_EPOCHS = 5
 
 def node2vec(
         ids, graph, p=NODE2VEC_P, q=NODE2VEC_Q,
@@ -46,15 +47,21 @@ def node2vec(
     w2v = Word2Vec(
         walks, vector_size=vector_size,
         window=NODE2VEC_WORD2VEC_WINDOW,
-        min_count=0, sg=1, workers=1, epochs=5, seed=seed
+        min_count=0, sg=1, workers=1, epochs=NODE2VEC_WORD2VEC_EPOCHS, seed=seed
     )
     logger.debug('Retrieve word embeddings, corresponding subjects and reorder according to ids')
     node_ids, node_embeddings = w2v.wv.index_to_key, w2v.wv.vectors
     indx = {pid: i for i, pid in enumerate(node_ids)}
-    return np.array([
+    embeddings = np.array([
         node_embeddings[indx[pid]] if pid in indx else np.zeros(node_embeddings.shape[1])  # Process missing
         for pid in ids
     ])
+    logger.debug('put 0 when edge has no neighbors')
+    for i, node in enumerate(ids):
+        if len(list(graph.neighbors(node))) == 0:
+            embeddings[i] = np.zeros(vector_size)
+    logger.debug('Normalize to abs max')
+    return embeddings / np.max(np.fabs(embeddings.reshape(-1)))
 
 
 def _precompute(graph, key, p, q):

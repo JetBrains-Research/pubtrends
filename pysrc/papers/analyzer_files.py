@@ -20,7 +20,8 @@ from sklearn.preprocessing import StandardScaler
 from pysrc.app.reports import result_folder_name, get_results_path, preprocess_string
 from pysrc.papers.analysis.citations import find_top_cited_papers, build_cit_stats_df, merge_citation_stats, \
     build_cocit_grouped_df
-from pysrc.papers.analysis.graph import build_papers_graph, sparse_graph, similarity
+from pysrc.papers.analysis.graph import build_papers_graph, sparse_graph, similarity, \
+    add_artificial_text_similarities_edges
 from pysrc.papers.analysis.node2vec import node2vec
 from pysrc.papers.analysis.text import get_frequent_tokens
 from pysrc.papers.analysis.text import texts_embeddings, vectorize_corpus, tokens_embeddings
@@ -184,6 +185,10 @@ class AnalyzerFiles(PapersAnalyzer):
         papers_embeddings = np.concatenate(
             (self.graph_embeddings * GRAPH_EMBEDDINGS_FACTOR,
              self.texts_embeddings * TEXT_EMBEDDINGS_FACTOR), axis=1)
+
+        if TEXT_EMBEDDINGS_FACTOR != 0:
+            logger.debug('Adding artificial text similarities edges for visualization purposes')
+            add_artificial_text_similarities_edges(ids, self.texts_embeddings, self.sparse_papers_graph)
 
         logger.debug('Computing PCA projection')
         pca = PCA(n_components=min(len(papers_embeddings), PCA_COMPONENTS))

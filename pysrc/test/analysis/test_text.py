@@ -7,16 +7,16 @@ from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.test.mock_loaders import MockLoader
 
+PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
 
 class TestText(unittest.TestCase):
-    PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
 
     @classmethod
     def setUpClass(cls):
         loader = MockLoader()
-        cls.analyzer = PapersAnalyzer(loader, TestText.PUBTRENDS_CONFIG, test=True)
+        cls.analyzer = PapersAnalyzer(loader, PUBTRENDS_CONFIG, test=True)
         ids = cls.analyzer.search_terms(query='query')
-        cls.analyzer.analyze_papers(ids, 'query', test=True)
+        cls.analyzer.analyze_papers(ids, 'query', PUBTRENDS_CONFIG.show_topics_default_value, test=True)
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.df['id'])
         cls.analyzer.bibliographic_coupling_df = loader.load_bibliographic_coupling(cls.analyzer.df['id'])
 

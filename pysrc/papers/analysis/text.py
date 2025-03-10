@@ -26,6 +26,7 @@ NLTK_LOCK = Lock()
 
 WORD2VEC_WINDOW = 8
 WORD2VEC_VECTOR_SIZE = 16
+WORD2VEC_EPOCHS = 5
 
 def vectorize_corpus(df, max_features, min_df, max_df, test=False):
     """
@@ -171,7 +172,8 @@ def train_word2vec(corpus, corpus_tokens, vector_size=WORD2VEC_VECTOR_SIZE, test
     logger.debug(f'Total {len(sentences)} sentences')
     logger.debug('Training word2vec model')
     w2v = Word2Vec(
-        sentences, vector_size=vector_size, window=WORD2VEC_WINDOW, min_count=0, workers=1, epochs=5, seed=42
+        sentences, vector_size=vector_size,
+        window=WORD2VEC_WINDOW, min_count=0, workers=1, epochs=WORD2VEC_EPOCHS, seed=42
     )
     logger.debug('Retrieve word embeddings, corresponding subjects and reorder according to corpus_terms')
     ids, embeddings = w2v.wv.index_to_key, w2v.wv.vectors
@@ -199,4 +201,5 @@ def texts_embeddings(corpus_counts, tokens_w2v_embeddings):
         np.mean((tokens_w2v_embeddings.T * tfidf[i, :].T).T, axis=0) for i in range(tfidf.shape[0])
     ])
     logger.debug(f'Texts embeddings shape: {texts_embeddings.shape}')
-    return texts_embeddings
+    logger.debug('Normalize to abs max')
+    return texts_embeddings / np.max(np.fabs(texts_embeddings.reshape(-1)))

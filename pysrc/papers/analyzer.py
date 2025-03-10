@@ -9,7 +9,8 @@ from sklearn.preprocessing import StandardScaler
 
 from pysrc.papers.analysis.citations import find_top_cited_papers, find_max_gain_papers, \
     find_max_relative_gain_papers, build_cit_stats_df, merge_citation_stats, build_cocit_grouped_df
-from pysrc.papers.analysis.graph import build_papers_graph, sparse_graph, similarity
+from pysrc.papers.analysis.graph import build_papers_graph, sparse_graph, similarity, \
+    add_artificial_text_similarities_edges
 from pysrc.papers.analysis.metadata import popular_authors, popular_journals
 from pysrc.papers.analysis.node2vec import node2vec
 from pysrc.papers.analysis.numbers import extract_numbers
@@ -127,6 +128,7 @@ class PapersAnalyzer:
         )
         self.progress.info(f'Analyzing papers graph - {self.papers_graph.number_of_nodes()} nodes and '
                            f'{self.papers_graph.number_of_edges()} edges', current=7, task=task)
+
         logger.debug('Prepare sparse graph')
         self.sparse_papers_graph = sparse_graph(self.papers_graph, SPARSE_GRAPH_EDGES_TO_NODES)
         # Add similarity key to sparse graph
@@ -143,6 +145,10 @@ class PapersAnalyzer:
         papers_embeddings = np.concatenate(
             (self.graph_embeddings * GRAPH_EMBEDDINGS_FACTOR,
              self.texts_embeddings * TEXT_EMBEDDINGS_FACTOR), axis=1)
+
+        if TEXT_EMBEDDINGS_FACTOR != 0:
+            logger.debug('Adding artificial text similarities edges for visualization purposes')
+            add_artificial_text_similarities_edges(ids, self.texts_embeddings, self.sparse_papers_graph)
 
         if len(self.df) > 1:
             logger.debug('Computing PCA projection')
@@ -211,8 +217,6 @@ class PapersAnalyzer:
 
         # restore original publications order
         self.df = reorder_publications(ids, self.df)
-
-
 
     def dump(self):
         """

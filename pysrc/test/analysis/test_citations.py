@@ -9,15 +9,16 @@ from pysrc.test.mock_loaders import MockLoader, \
     EXPECTED_MAX_GAIN, EXPECTED_MAX_RELATIVE_GAIN, MockLoaderSingle
 
 
+PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
+
 class TestPopularPapers(unittest.TestCase):
-    PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
 
     @classmethod
     def setUpClass(cls):
         loader = MockLoader()
-        cls.analyzer = PapersAnalyzer(loader, TestPopularPapers.PUBTRENDS_CONFIG, test=True)
+        cls.analyzer = PapersAnalyzer(loader, PUBTRENDS_CONFIG, test=True)
         ids = cls.analyzer.search_terms(query='query')
-        cls.analyzer.analyze_papers(ids, 'query', test=True)
+        cls.analyzer.analyze_papers(ids, 'query', PUBTRENDS_CONFIG.show_topics_default_value, test=True)
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.df['id'])
         cls.analyzer.bibliographic_coupling_df = loader.load_bibliographic_coupling(cls.analyzer.df['id'])
 
@@ -58,13 +59,12 @@ class TestPopularPapers(unittest.TestCase):
 
 
 class TestPopularPapersSingle(unittest.TestCase):
-    PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
 
     @classmethod
     def setUpClass(cls):
-        cls.analyzer = PapersAnalyzer(MockLoaderSingle(), TestPopularPapersSingle.PUBTRENDS_CONFIG, test=True)
+        cls.analyzer = PapersAnalyzer(MockLoaderSingle(), PUBTRENDS_CONFIG, test=True)
         ids = cls.analyzer.search_terms(query='query')
-        cls.analyzer.analyze_papers(ids, 'query', test=True)
+        cls.analyzer.analyze_papers(ids, 'query', PUBTRENDS_CONFIG.show_topics_default_value, test=True)
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.df['id'])
 
     def test_find_max_gain_papers_count(self):

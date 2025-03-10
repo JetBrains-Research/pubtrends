@@ -212,75 +212,75 @@
                     </li>
 
                     {% if topics_analyzed %}
-                        <li class="nav-item row">
-                            <a class="nav-link no-padding-right" href="#trends" title="Trends">
-                                <img class="nav-icon" src="{{ url_for('static', filename='bar-chart-2.svg') }}"/>
-                            </a>
-                            <a class="nav-link d-none d-xl-block no-padding" href="#trends">
-                                Trends
-                            </a>
-                        </li>
-                        <li class="nav-item row">
-                            <a class="nav-link no-padding-right" href="#network" title="Network">
-                                <img class="nav-icon" src="{{ url_for('static', filename='globe.svg') }}"/>
-                            </a>
-                            <a class="nav-link d-none d-xl-block no-padding" href="#network">
-                                Network
-                            </a>
-                        </li>
-                        <li class="nav-item row">
-                            <a class="nav-link no-padding-right" href="#topics" title="Topics">
-                                <img class="nav-icon" src="{{ url_for('static', filename='tag.svg') }}"/>
-                            </a>
-                            <a class="nav-link d-none d-xl-block no-padding" href="#topics">
-                                Topics
-                            </a>
-                        </li>
+                    <li class="nav-item row">
+                        <a class="nav-link no-padding-right" href="#trends" title="Trends">
+                            <img class="nav-icon" src="{{ url_for('static', filename='bar-chart-2.svg') }}"/>
+                        </a>
+                        <a class="nav-link d-none d-xl-block no-padding" href="#trends">
+                            Trends
+                        </a>
+                    </li>
+                    <li class="nav-item row">
+                        <a class="nav-link no-padding-right" href="#network" title="Network">
+                            <img class="nav-icon" src="{{ url_for('static', filename='globe.svg') }}"/>
+                        </a>
+                        <a class="nav-link d-none d-xl-block no-padding" href="#network">
+                            Network
+                        </a>
+                    </li>
+                    <li class="nav-item row">
+                        <a class="nav-link no-padding-right" href="#topics" title="Topics">
+                            <img class="nav-icon" src="{{ url_for('static', filename='tag.svg') }}"/>
+                        </a>
+                        <a class="nav-link d-none d-xl-block no-padding" href="#topics">
+                            Topics
+                        </a>
+                    </li>
                     {% endif %}
 
                     {% if feature_authors_enabled %}
-                        <li class="nav-item row">
-                            <a class="nav-link no-padding-right" href="#authors" title="Authors">
-                                <img src="{{ url_for('static', filename='users.svg') }}"/>
-                            </a>
-                            <a class="nav-link d-none d-xl-block no-padding" href="#authors">
-                                Authors
-                            </a>
-                        </li>
+                    <li class="nav-item row">
+                        <a class="nav-link no-padding-right" href="#authors" title="Authors">
+                            <img src="{{ url_for('static', filename='users.svg') }}"/>
+                        </a>
+                        <a class="nav-link d-none d-xl-block no-padding" href="#authors">
+                            Authors
+                        </a>
+                    </li>
                     {% endif %}
 
                     {% if feature_journals_enabled %}
-                        <li class="nav-item row">
-                            <a class="nav-link no-padding-right" href="#journals" title="Journals">
-                                <img class="nav-icon" src="{{ url_for('static', filename='book-open.svg') }}"/>
-                            </a>
-                            <a class="nav-link d-none d-xl-block no-padding" href="#journals">
-                                Journals
-                            </a>
-                        </li>
+                    <li class="nav-item row">
+                        <a class="nav-link no-padding-right" href="#journals" title="Journals">
+                            <img class="nav-icon" src="{{ url_for('static', filename='book-open.svg') }}"/>
+                        </a>
+                        <a class="nav-link d-none d-xl-block no-padding" href="#journals">
+                            Journals
+                        </a>
+                    </li>
                     {% endif %}
 
                     {% if feature_numbers_enabled %}
-                        <li class="nav-item row">
-                            <a class="nav-link no-padding-right" href="#numbers" title="Numbers">
-                                <img src="{{ url_for('static', filename='hash.svg') }}"/>
-                            </a>
-                            <a class="nav-link d-none d-xl-block no-padding" href="#numbers">
-                                Numbers
-                            </a>
-                        </li>
+                    <li class="nav-item row">
+                        <a class="nav-link no-padding-right" href="#numbers" title="Numbers">
+                            <img src="{{ url_for('static', filename='hash.svg') }}"/>
+                        </a>
+                        <a class="nav-link d-none d-xl-block no-padding" href="#numbers">
+                            Numbers
+                        </a>
+                    </li>
                     {% endif %}
 
 
                     {% if feature_review_enabled %}
-                        <li class="nav-item row">
-                            <a class="nav-link no-padding-right" href="#review" title="Review">
-                                <img class="nav-icon" src="{{ url_for('static', filename='list.svg') }}"/>
-                            </a>
-                            <a class="nav-link d-none d-xl-block no-padding" href="#review">
-                                Review
-                            </a>
-                        </li>
+                    <li class="nav-item row">
+                        <a class="nav-link no-padding-right" href="#review" title="Review">
+                            <img class="nav-icon" src="{{ url_for('static', filename='list.svg') }}"/>
+                        </a>
+                        <a class="nav-link d-none d-xl-block no-padding" href="#review">
+                            Review
+                        </a>
+                    </li>
                     {% endif %}
 
                 </ul>
@@ -313,8 +313,8 @@
                             <small><strong>&nbsp;&nbsp;&nbsp;Papers per year</strong></small>
                             <br>
                             {% for script, div in papers_stats %}
-                                {{ script|safe }}
-                                {{ div|safe }}
+                            {{ script|safe }}
+                            {{ div|safe }}
                             {% endfor %}
                         </div>
                     </div>
@@ -350,8 +350,8 @@
                     </button>
                     <div>
                         {% for script, div in top_cited_papers %}
-                            {{ script|safe }}
-                            {{ div|safe }}
+                        {{ script|safe }}
+                        {{ div|safe }}
                         {% endfor %}
                     </div>
                     <hr>
@@ -368,8 +368,8 @@
                     </button>
                     <div>
                         {% for script, div in most_cited_per_year_papers %}
-                            {{ script|safe }}
-                            {{ div|safe }}
+                        {{ script|safe }}
+                        {{ div|safe }}
                         {% endfor %}
                     </div>
                     <hr>
@@ -387,8 +387,8 @@
                     </button>
                     <div>
                         {% for script, div in fastest_growth_per_year_papers %}
-                            {{ script|safe }}
-                            {{ div|safe }}
+                        {{ script|safe }}
+                        {{ div|safe }}
                         {% endfor %}
                     </div>
 
@@ -400,8 +400,8 @@
                     </p>
                     <div>
                         {% for script, div in keywords_frequencies %}
-                            {{ script|safe }}
-                            {{ div|safe }}
+                        {{ script|safe }}
+                        {{ div|safe }}
                         {% endfor %}
                     </div>
 
@@ -415,28 +415,28 @@
                 </div>
                 <div class="card-body">
                     {% if n_papers <= max_graph_size %}
-                        {% if papers_graph is defined %}
-                            <strong>Papers similarity</strong>
-                            <p>
-                                The graph below shows papers similarity network. Similar papers are located closely.<br>
-                                Edges represent co-citations, common references and citations between papers.<br>
-                                Color represents topic, size - total citations number.
-                            </p>
-                            {% for script, div in papers_graph %}
-                                {{ script|safe }}
-                                {{ div|safe }}
-                            {% endfor %}
-                        {% endif %}
-                        <br>
-                        <p>
-                            Explore papers similarity in-depth in the interactive graph viewer.<br>
-                            Filter papers by keywords and apply different coloring schemes.
-                        </p>
-                        <button type="button" class="btn btn-light" onclick="graph_callback();">
-                            Explore
-                        </button>
+                    {% if papers_graph is defined %}
+                    <strong>Papers similarity</strong>
+                    <p>
+                        The graph below shows papers similarity network. Similar papers are located closely.<br>
+                        Edges represent co-citations, common references and citations between papers.<br>
+                        Color represents topic, size - total citations number.
+                    </p>
+                    {% for script, div in papers_graph %}
+                    {{ script|safe }}
+                    {{ div|safe }}
+                    {% endfor %}
+                    {% endif %}
+                    <br>
+                    <p>
+                        Explore papers similarity in-depth in the interactive graph viewer.<br>
+                        Filter papers by keywords and apply different coloring schemes.
+                    </p>
+                    <button type="button" class="btn btn-light" onclick="graph_callback();">
+                        Explore
+                    </button>
                     {% else %}
-                        Too many papers to visualize papers graph.
+                    Too many papers to visualize papers graph.
                     {% endif %}
                     <div class="mt-3" id="feedback-network-form"></div>
                 </div>
@@ -448,235 +448,236 @@
                 </div>
                 <div class="card-body">
                     {% if topics_analyzed %}
-                        <strong>Topics summary</strong>
-                        <p>
-                            Topic is a group of similar papers which share common ideas, describe common features, etc.
-                            <br>
-                            Topics are extracted based on similarity between papers based on <em>common references</em>,
-                            <em>co-citations</em>, <em>direct citations</em>, and text similarity.<br>
-                            Information about topics - keywords, sizes, publication years are shown below.<br>
-                        </p>
-                        {% for script, div in topic_years_distribution %}
-                            {{ script|safe }}
-                            {{ div|safe }}
-                        {% endfor %}
+                    <strong>Topics</strong>
+                    <p>
+                        Topic is a group of similar papers which share common ideas, describe common features, etc.
+                        <br>
+                        Topics are extracted based on similarity between papers based on <em>common references</em>,
+                        <em>co-citations</em>, <em>direct citations</em>, and text similarity.<br>
+                    </p>
+                    {% if topics_hierarchy_with_keywords is defined %}
+                    Topics are organized hierarchically. Clustering dendrogram with keywords is shown below.
+                    {% for script, div in topics_hierarchy_with_keywords %}
+                    {{ script|safe }}
+                    {{ div|safe }}
+                    {% endfor %}
+                    {% endif %}
+                    <hr>
+                    <strong>Topics by years</strong>
+                    <p>
+                        Information about topics - keywords, sizes, publication years are shown below.<br>
+                    </p>
 
-                        {% if topics_hierarchy_with_keywords is defined %}
-                            <hr>
-                            <strong>Topics hierarchy</strong>
-                            <p>
-                                Topics are organized hierarchically. Clustering dendrogram with keywords is shown below.
-                            </p>
-                            {% for script, div in topics_hierarchy_with_keywords %}
-                                {{ script|safe }}
-                                {{ div|safe }}
-                            {% endfor %}
-                        {% endif %}
-                        <hr>
-                        <strong>Topics papers</strong>
-                        <p>
-                            Papers for topics are sorted descending by citations number overall from bottom to top.<br>
-                            Word clouds show keywords specific for topics.
-                        </p>
-                        <div>
-                            {% for (script, div), word_cloud, is_empty in topics_info_and_word_cloud %}
-                                <div id="topic-div-{{ loop.index }}">
+                    {% for script, div in topic_years_distribution %}
+                    {{ script|safe }}
+                    {{ div|safe }}
+                    {% endfor %}
 
-                                    <div style="display: inline">
-                                        <strong id="topic-{{ loop.index }}">
-                                            Topic {{ loop.index }}
-                                        </strong>
-                                        <button type="button" class="btn btn-light"
-                                                onclick="papers_callback_component({{ loop.index }});">
-                                            <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show
-                                            as
-                                            list
-                                        </button>
-                                    </div>
-                                    Number of papers: {{ component_sizes[loop.index - 1] }}
-                                    <div class="row">
-                                        <div class="col-3 no-padding-right" style="min-width: 185px;">
-                                            <small><strong>Topic words</strong></small>
-                                            <br>
-                                            <canvas id="topic_word_cloud_{{ loop.index }}"
-                                                    style="border:1px solid #eee; width: 100%; height: 100%;">
-                                                Canvas is not supported in your browser.
-                                            </canvas>
-                                        </div>
-                                        <div class="col-9 no-padding-left" id="topic_chart_{{ loop.index }}">
-                                            <small><strong>&nbsp;&nbsp;&nbsp;Publications</strong></small>
-                                            {{ script|safe }}
-                                            {{ div|safe }}
-                                        </div>
-                                    </div>
+                    <hr>
+                    <strong>Topics papers</strong>
+                    <p>
+                        Papers for topics are sorted descending by citations number overall from bottom to top.<br>
+                        Word clouds show keywords specific for topics.
+                    </p>
+                    <div>
+                        {% for (script, div), word_cloud, is_empty in topics_info_and_word_cloud %}
+                        <div id="topic-div-{{ loop.index }}">
+
+                            <div style="display: inline">
+                                <strong id="topic-{{ loop.index }}">
+                                    Topic {{ loop.index }}
+                                </strong>
+                                <button type="button" class="btn btn-light"
+                                        onclick="papers_callback_component({{ loop.index }});">
+                                    <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show
+                                    as
+                                    list
+                                </button>
+                            </div>
+                            Number of papers: {{ component_sizes[loop.index - 1] }}
+                            <div class="row">
+                                <div class="col-3 no-padding-right" style="min-width: 185px;">
+                                    <small><strong>Topic words</strong></small>
+                                    <br>
+                                    <canvas id="topic_word_cloud_{{ loop.index }}"
+                                            style="border:1px solid #eee; width: 100%; height: 100%;">
+                                        Canvas is not supported in your browser.
+                                    </canvas>
                                 </div>
-                            {% endfor %}
+                                <div class="col-9 no-padding-left" id="topic_chart_{{ loop.index }}">
+                                    <small><strong>&nbsp;&nbsp;&nbsp;Publications</strong></small>
+                                    {{ script|safe }}
+                                    {{ div|safe }}
+                                </div>
+                            </div>
                         </div>
+                        {% endfor %}
+                    </div>
                     {% endif %}
                     <div class="mt-3" id="feedback-topics-form"></div>
                 </div>
             </div>
 
             {% if feature_authors_enabled %}
-                <div class="card mt-3">
-                    <div class="card-title" id="authors">
-                        <h1 class="card-header">Authors</h1>
-                    </div>
-                    <div class="card-body">
-                        <strong>Authors papers and topics</strong>
-                        <p>
-                            List of authors with the largest number of papers for given search query.<br>
-                            The colors of the circles in the topics column indicate top 3 most common topics among
-                            these papers.
-                        </p>
-                        <table id="authors-table" class="table table-sm table-bordered table-striped">
-                            <thead>
-                            <tr>
-                                <th scope="col">#</th>
-                                <th scope="col">Author</th>
-                                <th scope="col">Papers</th>
-                                <th scope="col">Topics</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {% for row in author_statistics %}
-                                <tr>
-                                    <th scope="row">{{ loop.index }}</th>
-                                    <td>{{ row[0] }}</td>
-                                    <td>
-                                        <button type="button" class="btn btn-link link"
-                                                onclick="papers_callback_author('{{ row[0] }}');">
-                                            {{ row[1] }}
-                                        </button>
-                                    </td>
-                                    <td>{{ row[2]|safe }}</td>
-                                </tr>
-                            {% endfor %}
-                            </tbody>
-                        </table>
-                        <div class="mt-3" id="feedback-authors-form"></div>
-                    </div>
+            <div class="card mt-3">
+                <div class="card-title" id="authors">
+                    <h1 class="card-header">Authors</h1>
                 </div>
+                <div class="card-body">
+                    <strong>Authors papers and topics</strong>
+                    <p>
+                        List of authors with the largest number of papers for given search query.<br>
+                        The colors of the circles in the topics column indicate top 3 most common topics among
+                        these papers.
+                    </p>
+                    <table id="authors-table" class="table table-sm table-bordered table-striped">
+                        <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Author</th>
+                            <th scope="col">Papers</th>
+                            <th scope="col">Topics</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for row in author_statistics %}
+                        <tr>
+                            <th scope="row">{{ loop.index }}</th>
+                            <td>{{ row[0] }}</td>
+                            <td>
+                                <button type="button" class="btn btn-link link"
+                                        onclick="papers_callback_author('{{ row[0] }}');">
+                                    {{ row[1] }}
+                                </button>
+                            </td>
+                            <td>{{ row[2]|safe }}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                    <div class="mt-3" id="feedback-authors-form"></div>
+                </div>
+            </div>
             {% endif %}
 
             {% if feature_journals_enabled %}
-                <div class="card mt-3">
-                    <div class="card-title" id="journals">
-                        <h1 class="card-header">Journals</h1>
-                    </div>
-                    <div class="card-body">
-                        <strong>Journals topics</strong>
-                        <p>
-                            List of journals with the largest number of papers for given search query.<br>
-                            The colors of the circles in the topics column indicate top 3 most common topics among
-                            these papers.
-                        </p>
-                        <table id="journals-table" class="table table-sm table-bordered table-striped">
-                            <thead>
-                            <tr>
-                                <th scope="col">#</th>
-                                <th scope="col">Journal</th>
-                                <th scope="col">Papers</th>
-                                <th scope="col">Topics</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {% for row in journal_statistics %}
-                                <tr>
-                                    <th scope="row">{{ loop.index }}</th>
-                                    <td>{{ row[0] }}</td>
-                                    <td>
-                                        <button type="button" class="btn btn-link link"
-                                                onclick="papers_callback_journal('{{ row[0] }}');">{{ row[1] }}
-                                        </button>
-                                    </td>
-                                    <td>{{ row[2]|safe }}</td>
-                                </tr>
-                            {% endfor %}
-                            </tbody>
-                        </table>
-                        <div class="mt-3" id="feedback-journals-form"></div>
-                    </div>
+            <div class="card mt-3">
+                <div class="card-title" id="journals">
+                    <h1 class="card-header">Journals</h1>
                 </div>
+                <div class="card-body">
+                    <strong>Journals topics</strong>
+                    <p>
+                        List of journals with the largest number of papers for given search query.<br>
+                        The colors of the circles in the topics column indicate top 3 most common topics among
+                        these papers.
+                    </p>
+                    <table id="journals-table" class="table table-sm table-bordered table-striped">
+                        <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Journal</th>
+                            <th scope="col">Papers</th>
+                            <th scope="col">Topics</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for row in journal_statistics %}
+                        <tr>
+                            <th scope="row">{{ loop.index }}</th>
+                            <td>{{ row[0] }}</td>
+                            <td>
+                                <button type="button" class="btn btn-link link"
+                                        onclick="papers_callback_journal('{{ row[0] }}');">{{ row[1] }}
+                                </button>
+                            </td>
+                            <td>{{ row[2]|safe }}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                    <div class="mt-3" id="feedback-journals-form"></div>
+                </div>
+            </div>
             {% endif %}
 
             {% if feature_numbers_enabled %}
-                <div class="card mt-3">
-                    <div class="card-title" id="numbers">
-                        <h1 class="card-header">Numbers</h1>
-                    </div>
-                    <div class="card-body">
-                        <strong>Numbers and features</strong>
-                        <p>
-                            Quantitative features extracted from papers titles and abstracts, use search to filter the
-                            table.
-                        </p>
-                        {% if numbers is defined %}
-                            <table id="numbers-table" class="table table-sm table-bordered table-striped">
-                                <thead>
-                                <tr>
-                                    <th scope="col">#</th>
-                                    <th scope="col">Title</th>
-                                    <th scope="col">Numbers</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                {% for id, url, title, metrics in numbers %}
-                                    <tr>
-                                        <th scope="row">{{ loop.index }}</th>
-                                        <td><a class="link" href="{{ url }}">{{ title }}</a></td>
-                                        <td>{{ metrics }}</td>
-                                    </tr>
-                                {% endfor %}
-                                </tbody>
-                            </table>
-                        {% endif %}
-                        <div class="mt-3" id="feedback-numbers-form"></div>
-                    </div>
+            <div class="card mt-3">
+                <div class="card-title" id="numbers">
+                    <h1 class="card-header">Numbers</h1>
                 </div>
+                <div class="card-body">
+                    <strong>Numbers and features</strong>
+                    <p>
+                        Quantitative features extracted from papers titles and abstracts, use search to filter the
+                        table.
+                    </p>
+                    {% if numbers is defined %}
+                    <table id="numbers-table" class="table table-sm table-bordered table-striped">
+                        <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Title</th>
+                            <th scope="col">Numbers</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for id, url, title, metrics in numbers %}
+                        <tr>
+                            <th scope="row">{{ loop.index }}</th>
+                            <td><a class="link" href="{{ url }}">{{ title }}</a></td>
+                            <td>{{ metrics }}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                    {% endif %}
+                    <div class="mt-3" id="feedback-numbers-form"></div>
+                </div>
+            </div>
             {% endif %}
 
 
             {% if feature_review_enabled %}
-                <div class="card mt-3">
-                    <div class="card-title" id="review">
-                        <h1 class="card-header">Review</h1>
-                    </div>
-                    <div class="card-body">
-                        <strong>Extractive summarization review</strong>
-                        <p>
-                            Generate a review for the chosen topic - a set of sentences from top cited papers <br>
-                            with the highest probability to be included in a real review paper.
-                        </p>
-                        <div class="row no-gutters align-items-center mb-3">
-                            <div class="col input-group mr-2">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text" id="number-papers-addon">Number of papers</span>
-                                </div>
-                                <input class="form-control form-control-borderless" type="number"
-                                       name="number-papers" id="papers-input"
-                                       value="10"
-                                       aria-describedby="number-papers-addon"
-                                       required>
-                            </div>
-                            <div class="col input-group">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text" id="number-of-sents-addon">Sentences each</span>
-                                </div>
-                                <input class="form-control form-control-borderless" type="number"
-                                       name="number-of-sents" id="sents-input"
-                                       value="1"
-                                       aria-describedby="number-of-sents-addon"
-                                       required>
-                            </div>
-                        </div>
-                        <button type="button" class="btn btn-secondary"
-                                onclick="review_callback($('#papers-input').val(), $('#sents-input').val());">
-                            Generate
-                        </button>
-                        <div class="mt-3" id="feedback-review-form"></div>
-                    </div>
+            <div class="card mt-3">
+                <div class="card-title" id="review">
+                    <h1 class="card-header">Review</h1>
                 </div>
+                <div class="card-body">
+                    <strong>Extractive summarization review</strong>
+                    <p>
+                        Generate a review for the chosen topic - a set of sentences from top cited papers <br>
+                        with the highest probability to be included in a real review paper.
+                    </p>
+                    <div class="row no-gutters align-items-center mb-3">
+                        <div class="col input-group mr-2">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="number-papers-addon">Number of papers</span>
+                            </div>
+                            <input class="form-control form-control-borderless" type="number"
+                                   name="number-papers" id="papers-input"
+                                   value="10"
+                                   aria-describedby="number-papers-addon"
+                                   required>
+                        </div>
+                        <div class="col input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="number-of-sents-addon">Sentences each</span>
+                            </div>
+                            <input class="form-control form-control-borderless" type="number"
+                                   name="number-of-sents" id="sents-input"
+                                   value="1"
+                                   aria-describedby="number-of-sents-addon"
+                                   required>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-secondary"
+                            onclick="review_callback($('#papers-input').val(), $('#sents-input').val());">
+                        Generate
+                    </button>
+                    <div class="mt-3" id="feedback-review-form"></div>
+                </div>
+            </div>
             {% endif %}
 
             <div class="mt-3 ml-3" id="log">

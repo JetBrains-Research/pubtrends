@@ -14,6 +14,9 @@ SIMILARITY_CITATION = 1  # x 0-1 citation
 # Reduce number of edges in papers graph
 SPARSE_GRAPH_EDGES_TO_NODES = 100
 
+# Add artificial text similarity nodes to sparse graph for visualisations
+GRAPH_TEXT_SIMILARITY_EDGES = 5
+
 # Minimal number of common references, used to reduce papers graph edges count
 # Value > 1 is especially useful while analysing single paper,
 # removes meaningless connections by construction
@@ -23,8 +26,8 @@ SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN = 5
 SIMILARITY_COCITATION_MIN = 2
 
 # Papers embeddings is a concatenation of graph and text embeddings times corresponding factors
-# Graph embeddings produce more clear topics separation, so it goes with bigger coefficient
-GRAPH_EMBEDDINGS_FACTOR = 5
+# Graph embeddings produce more clear topics separation, so it goes with higher coefficient
+GRAPH_EMBEDDINGS_FACTOR = 2
 TEXT_EMBEDDINGS_FACTOR = 1
 
 # Global vectorization max vocabulary size

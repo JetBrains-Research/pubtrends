@@ -9,15 +9,17 @@ from pysrc.test.mock_loaders import MockLoader, \
     MockLoaderEmpty, MockLoaderSingle, BIBCOUPLING_DF, COCITATION_DF
 
 
+PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
+
 class TestPapersAnalyzer(unittest.TestCase):
-    PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
+
 
     @classmethod
     def setUpClass(cls):
         loader = MockLoader()
-        cls.analyzer = PapersAnalyzer(loader, TestPapersAnalyzer.PUBTRENDS_CONFIG, test=True)
+        cls.analyzer = PapersAnalyzer(loader, PUBTRENDS_CONFIG, test=True)
         ids = cls.analyzer.search_terms(query='query')
-        cls.analyzer.analyze_papers(ids, 'query', test=True)
+        cls.analyzer.analyze_papers(ids, 'query', PUBTRENDS_CONFIG.show_topics_default_value, test=True)
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.df['id'])
         cls.analyzer.bibliographic_coupling_df = loader.load_bibliographic_coupling(cls.analyzer.df['id'])
 
@@ -43,13 +45,12 @@ class TestPapersAnalyzer(unittest.TestCase):
                 self.assertEqual(getattr(row, 'comp'), -1)
 
 class TestPapersAnalyzerSingle(unittest.TestCase):
-    PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
 
     @classmethod
     def setUpClass(cls):
-        cls.analyzer = PapersAnalyzer(MockLoaderSingle(), TestPapersAnalyzerSingle.PUBTRENDS_CONFIG, test=True)
+        cls.analyzer = PapersAnalyzer(MockLoaderSingle(), PUBTRENDS_CONFIG, test=True)
         ids = cls.analyzer.search_terms(query='query')
-        cls.analyzer.analyze_papers(ids, 'query', test=True)
+        cls.analyzer.analyze_papers(ids, 'query', PUBTRENDS_CONFIG.show_topics_default_value, test=True)
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.df['id'])
 
     def test_attrs(self):
@@ -78,27 +79,28 @@ class TestPapersAnalyzerSingle(unittest.TestCase):
 
 
 class TestPapersAnalyzerMissingPaper(unittest.TestCase):
-    PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
 
     def test_missing_paper(self):
-        analyzer = PapersAnalyzer(MockLoaderSingle(), TestPapersAnalyzerSingle.PUBTRENDS_CONFIG, test=True)
+        analyzer = PapersAnalyzer(MockLoaderSingle(), PUBTRENDS_CONFIG, test=True)
         good_ids = list(analyzer.search_terms(query='query'))
-        analyzer.analyze_papers(good_ids + ['non-existing-id'], 'query', test=True)
+        analyzer.analyze_papers(
+            good_ids + ['non-existing-id'], 'query', PUBTRENDS_CONFIG.show_topics_default_value, test=True
+        )
         self.assertEqual(good_ids, list(analyzer.df['id']))
 
 
 class TestPapersAnalyzerEmpty(unittest.TestCase):
-    PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
 
     @classmethod
     def setUpClass(cls):
-        cls.analyzer = PapersAnalyzer(MockLoaderEmpty(),
-                                      TestPapersAnalyzerEmpty.PUBTRENDS_CONFIG, test=True)
+        cls.analyzer = PapersAnalyzer(MockLoaderEmpty(), PUBTRENDS_CONFIG, test=True)
 
     def test_setup(self):
         with self.assertRaises(Exception):
             ids = self.analyzer.search_terms(query='query')
-            self.analyzer.analyze_papers(ids, query='query', test=True)
+            self.analyzer.analyze_papers(
+                ids, query='query', topics=PUBTRENDS_CONFIG.show_topics_default_value, test=True
+            )
 
 
 if __name__ == '__main__':

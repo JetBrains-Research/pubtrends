@@ -69,3 +69,22 @@ def sparse_graph(graph, k):
             result.add_node(n)
     logger.debug(f'Sparse {k}-neighbour graph edges/nodes={result.number_of_edges() / result.number_of_nodes()}')
     return result
+
+
+def add_artificial_text_similarities_edges(ids, texts_embeddings, sparse_papers_graph):
+    # Compute text based similarities and add artificial edges to graph
+    distances = np.zeros(shape=(len(ids), len(ids)))
+    for i in range(len(ids)):
+        # Compute distances from the current node to all other nodes
+        distances[i, :] = np.linalg.norm(texts_embeddings - texts_embeddings[i], axis=1)
+    similarities = 1 - distances / np.max(distances.reshape(-1))
+    for node_i, node in enumerate(ids):
+        # Get indices of closest nodes (excluding the source node itself)
+        for similar_node_i in np.argsort(similarities[node_i])[-GRAPH_TEXT_SIMILARITY_EDGES-1:-1]:
+            similar_node = ids[similar_node_i]
+            if not sparse_papers_graph.has_edge(node, similar_node):
+                sparse_papers_graph.add_edge(node, similar_node, textsimilarity=(similarities[node_i, similar_node_i]))
+        # Add text_similarity to all existing edges
+        for neighbor_i, neighbor in enumerate(ids):
+            if neighbor_i > node_i and sparse_papers_graph.has_edge(node, neighbor):
+                sparse_papers_graph[node][neighbor]['textsimilarity'] = similarities[node_i, neighbor_i]

@@ -1,8 +1,7 @@
+import networkx as nx
 import unittest
 
-import networkx as nx
-
-from pysrc.papers.analysis.node2vec import _precompute, _random_walks, node2vec
+from pysrc.papers.analysis.node2vec import _precompute, _random_walks, node2vec, NODE2VEC_P, NODE2VEC_Q
 
 
 class TestNode2Vec(unittest.TestCase):
@@ -12,7 +11,7 @@ class TestNode2Vec(unittest.TestCase):
         graph.add_node(1)
         graph.add_node(2)
         graph.add_node(3)
-        ps1, ps2 = _precompute(graph)
+        ps1, ps2 = _precompute(graph, 'weight', NODE2VEC_P, NODE2VEC_Q)
         self.assertEqual({1: [], 2: [], 3: []}, {k: v.tolist() for k, v in ps1.items()})
         self.assertEqual([[1], [2], [3], [1], [2], [3]], _random_walks(graph, ps1, ps2, 2, 10))
 
@@ -22,22 +21,33 @@ class TestNode2Vec(unittest.TestCase):
         graph.add_edge(2, 3, weight=1)
         graph.add_edge(3, 1, weight=1)
         graph.add_node(4)
-        ps1, ps2 = _precompute(graph)
+        ps1, ps2 = _precompute(graph, 'weight', NODE2VEC_P, NODE2VEC_Q)
         walks = _random_walks(graph, ps1, ps2, walks_per_node=1, walk_length=3, seed=42)
-        self.assertEqual([[1, 2, 3], [2, 3, 2], [3, 2, 1], [4]], walks)
+        self.assertEqual([[1, 2, 3], [2, 3, 1], [3, 2, 1], [4]], walks)
 
     def test_walk_triangle_weighted(self):
         graph = nx.Graph()
         graph.add_edge(1, 2, weight=100)
         graph.add_edge(2, 3, weight=10)
         graph.add_edge(3, 1, weight=1)
-        ps1, ps2 = _precompute(graph)
+        ps1, ps2 = _precompute(graph, 'weight', NODE2VEC_P, NODE2VEC_Q)
         walks = _random_walks(graph, ps1, ps2, walks_per_node=5, walk_length=3, seed=42)
-        self.assertEqual([[1, 2, 1], [2, 1, 2], [3, 2, 1],
-                          [1, 2, 1], [2, 1, 2], [3, 2, 3],
-                          [1, 2, 1], [2, 1, 2], [3, 2, 1],
-                          [1, 2, 1], [2, 1, 2], [3, 2, 1],
-                          [1, 2, 1], [2, 1, 2], [3, 2, 1]], walks)
+        self.assertEqual([[1, 2, 3],
+                          [2, 1, 2],
+                          [3, 2, 1],
+                          [1, 2, 3],
+                          [2, 1, 2],
+                          [3, 2, 1],
+                          [1, 2, 1],
+                          [2, 1, 2],
+                          [3, 2, 1],
+                          [1, 2, 1],
+                          [2, 1, 2],
+                          [3, 2, 1],
+                          [1, 2, 3],
+                          [2, 1, 2],
+                          [3, 2, 1]],
+                         walks)
 
     def test_node2vec_triangle_weighted(self):
         graph = nx.Graph()
