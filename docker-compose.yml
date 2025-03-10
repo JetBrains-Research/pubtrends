@@ -33,7 +33,7 @@ services:
       - ~/.pubtrends/nltk-data:/home/user/nltk-data
       - ~/.pubtrends/gensim-data:/home/user/gensim-data
   redis:
-    image: redis:5.0
+    image: redis:7.4.2
     volumes:
       - ~/.pubtrends/logs:/log
     # This command is used to process huge analysis results of 40k+ papers

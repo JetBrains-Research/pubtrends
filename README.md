@@ -212,7 +212,7 @@ Then launch web-service or use jupyter notebook for development.
 
 2. Start Redis
     ```
-    docker run -p 6379:6379 redis:5.0
+    docker run -p 6379:6379 redis:7.4.2
     ```
 
 3. Configure conda environment `pubtrends`
