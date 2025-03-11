@@ -2,6 +2,7 @@ import logging
 
 import numpy as np
 import pandas as pd
+from io import StringIO
 from networkx.readwrite import json_graph
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
@@ -241,7 +242,7 @@ class PapersAnalyzer:
         Load valuable fields from JSON-serializable dict. Use 'dump' to dump analyzer.
         """
         # Restore main dataframe
-        df = pd.read_json(fields['df'])
+        df = pd.read_json(StringIO(fields['df']))
         df['id'] = df['id'].apply(str)
         mapping = {}
         for col in df.columns:
@@ -250,21 +251,21 @@ class PapersAnalyzer:
             except ValueError:
                 mapping[col] = col
         df = df.rename(columns=mapping)
-        cit_df = pd.read_json(fields['cit_df'])
+        cit_df = pd.read_json(StringIO(fields['cit_df']))
         cit_df['id_in'] = cit_df['id_in'].astype(str)
         cit_df['id_out'] = cit_df['id_out'].astype(str)
 
-        cocit_grouped_df = pd.read_json(fields['cocit_grouped_df'])
+        cocit_grouped_df = pd.read_json(StringIO(fields['cocit_grouped_df']))
         cocit_grouped_df['cited_1'] = cocit_grouped_df['cited_1'].astype(str)
         cocit_grouped_df['cited_2'] = cocit_grouped_df['cited_2'].astype(str)
 
-        bibliographic_coupling_df = pd.read_json(fields['bibliographic_coupling_df'])
+        bibliographic_coupling_df = pd.read_json(StringIO(fields['bibliographic_coupling_df']))
         bibliographic_coupling_df['citing_1'] = bibliographic_coupling_df['citing_1'].astype(str)
         bibliographic_coupling_df['citing_2'] = bibliographic_coupling_df['citing_2'].astype(str)
 
         # Restore topic descriptions
         topics_description = {int(c): ks for c, ks in fields["topics_description"].items()}  # Restore int components
-        kwd_df = pd.read_json(fields['kwd_df'])
+        kwd_df = pd.read_json(StringIO(fields['kwd_df']))
 
         # Extra filter is applied to overcome split behaviour problem: split('') = [''] problem
         kwd_df['kwd'] = [kwd.split(',') if kwd != '' else [] for kwd in kwd_df['kwd']]
