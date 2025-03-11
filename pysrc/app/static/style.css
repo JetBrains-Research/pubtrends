@@ -105,3 +105,11 @@ ol.breadcrumb {
     /*Without this, clicking will make it sticky*/
     pointer-events: none;
 }
+
+.parent {
+    display: grid;
+}
+.parent div {
+    grid-row-start: 1;
+    grid-column-start: 1;
+}

@@ -74,6 +74,9 @@
         }
 
         function showSizeConnections() {
+            window.show_size_mode = 'connections';
+            $('#slider-label').text('Min connections');
+            $('#slider').val(0);
             window.cy.batch(function () {
                 cy.nodes().forEach(function (ele) {
                     if ('title' in ele.data()) {
@@ -85,6 +88,9 @@
         }
 
         function showSizeCitations() {
+            window.show_size_mode = 'citations';
+            $('#slider-label').text('Min citations');
+            $('#slider').val(0);
             window.cy.batch(function () {
                 cy.nodes().forEach(function (ele) {
                     if ('title' in ele.data()) {
@@ -339,6 +345,12 @@
                         }
                     },
                     {
+                        selector: 'node.semitransp2',
+                        style: {
+                            'opacity': 0.01
+                        }
+                    },
+                    {
                         selector: "edge",
                         style: {
                             "width": function (edge) {
@@ -391,6 +403,13 @@
                             'opacity': '0.01 !important'
                         }
                     },
+                    {
+                        selector: 'edge.semitransp2',
+                        style: {
+                            'opacity': '0.01 !important'
+                        }
+                    },
+
                 ],
                 elements: elements,
                 // interaction options
@@ -512,7 +531,7 @@
                 });
                 // Highlight node and neighbours on hover
                 cy.on('mouseover', 'node', function (event) {
-                    if (window.freeze || getFilter() !== "") {
+                    if (window.freeze || getFilter() !== "" || $('#slider').val() > 0) {
                         return;
                     }
                     let sel = event.target;
@@ -530,7 +549,7 @@
                     }
                 });
                 cy.on('mouseout', 'node', function (event) {
-                    if (window.freeze || getFilter() !== "") {
+                    if (window.freeze || getFilter() !== "" || $('#slider').val() > 0) {
                         return;
                     }
                     let sel = event.target;
@@ -550,7 +569,7 @@
 
                 // Highlight edges and neighbours on hover
                 cy.on('mouseover', 'edge', function (event) {
-                    if (window.freeze || getFilter() !== "") {
+                    if (window.freeze || getFilter() !== "" || $('#slider').val() > 0) {
                         return;
                     }
                     let sel = event.target;
@@ -563,7 +582,7 @@
                     neighborNodes.addClass('highlight');
                 });
                 cy.on('mouseout', 'edge', function (event) {
-                    if (window.freeze || getFilter() !== "") {
+                    if (window.freeze || getFilter() !== "" || $('#slider').val() > 0) {
                         return;
                     }
                     let sel = event.target;
@@ -634,6 +653,29 @@
             return $.trim($("#search-input").val()).toLowerCase();
         }
 
+        function sliderRange() {
+            let sliderVal = $('#slider').val();
+            let min_threshold = 0
+            if (window.show_size_mode === 'connections') {
+                min_threshold = window.max_connections * sliderVal / 100;
+            } else if (window.show_size_mode === 'citations') {
+                min_threshold = window.max_cited * sliderVal / 100;
+            }
+            window.cy.batch(function () {
+                window.cy.nodes().forEach(function (ele) {
+                    let data = ele.data();
+                    if ('title' in data) {
+                        if (window.show_size_mode === 'connections' && data.connections < min_threshold ||
+                            window.show_size_mode === 'citations' && data.cited < min_threshold) {
+                            ele.addClass('semitransp2');
+                        } else {
+                            ele.removeClass('semitransp2');
+                        }
+                    }
+                });
+            });
+        }
+
         function searchChanged() {
             const filter = getFilter();
             if (filter === '') {
@@ -675,6 +717,8 @@
                     }
                 });
             });
+
+            sliderRange();
 
             // Close all notifications
             $('.notifyjs-wrapper').trigger('notify-hide');
@@ -787,7 +831,18 @@
            href="javascript:void(0);" onclick="startIntro();">About</a>
     </div>
 </nav>
-<div class="container-fluid">
+<div class="container-fluid parent">
+    <div class="row">
+        <div class="col-12">
+            <div class="float-right vertical-center">
+                <div class="form-group mt-4" style="z-index: 10">
+                    <input id="slider" type="range" class="custom-range"  min="0" max="100" step="1" value="0" onChange="sliderRange()">
+                    <label id="slider-label" for="slider">Min connections</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="cy" role="main" style="height: 85vh; margin-bottom: 2rem">Loading...</div>
 </div>
 <footer class="container">
@@ -845,7 +900,12 @@
                         'Color represent topic or publication year.<br>' +
                         '<svg width="16" height="16"><rect width="16" height="16" style="fill:#000000;"/></svg> min - ' +
                         '<svg width="16" height="16"><rect width="16" height="16" style="fill:#00FF00;"/></svg> max'
+                },
+                {
+                    element: '#slider',
+                    intro: 'Filter papers by minimal number of connections or citations.'
                 }
+
             ]
         });
         intro.start();
