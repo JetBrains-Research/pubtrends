@@ -353,13 +353,7 @@
                     {
                         selector: "edge",
                         style: {
-                            "width": function (edge) {
-                                let data = edge.data();
-                                if ('similarity' in data) {
-                                    return (Math.max(5, Math.min(20, data.similarity / 5))) / 5;
-                                }
-                                return 0.5;
-                            },
+                            "width": 0.5,
                             "curve-style": "haystack",
                             "line-color": function (edge) {
                                 let data = edge.data();
@@ -869,20 +863,19 @@
             steps: [
                 {
                     intro: "Papers graph represents similarity among papers.<br>" +
-                        "Papers are visualized as nodes, similarities as edges. " +
-                        "Node size shows paper citations count, see Color menu for node colors options. <br>" +
-                        "Edge width shows papers graph similarity, the thicker the more similar papers are.<br>" +
-                        "Similar papers are highlighted on hover.<br>" +
-                        "Use <strong>F</strong> to freeze highlighting, <strong>Escape</strong> to unfreeze.<br>" +
-                        "Edge color - similarity type.<br>" +
+                        "Paper information with most similar papers are highlighted on hover.<br>" +
+                        "Edge color reflects major similarity type:<br>" +
                         '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(46,204,113,0.5);"/></svg>' +
-                        "&nbsp;<em>Co-citation</em>" +
-                        "<br>" +
+                        "&nbsp;<em>co-citations</em>, " +
                         '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(155,89,182,0.5);"/></svg>' +
-                        "&nbsp;<em>Common references</em> " +
-                        "<br>" +
+                        "&nbsp;<em>common references</em>, " +
                         '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(52,152,219,0.5);"/></svg>' +
-                        "&nbsp;<em>Citation</em>"
+                        "&nbsp;<em>citations</em>, " +
+                        '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(189,195,199,0.5);"/></svg>' +
+                        "&nbsp;<em>text similarity</em>.<br><br>" +
+                        "Press <strong>F</strong> to freeze the highlighting, <strong>Escape</strong> to unfreeze."
+
+
                 },
                 {
                     element: '#result',
@@ -896,7 +889,7 @@
                 {
                     element: '#dropdownMenuButton',
                     intro: 'Change graph view.<br>' +
-                        'Size shows centrality of the paper or number of total number of citations.<br>' +
+                        'Size shows paper connections or number of citations.<br>' +
                         'Color represent topic or publication year.<br>' +
                         '<svg width="16" height="16"><rect width="16" height="16" style="fill:#000000;"/></svg> min - ' +
                         '<svg width="16" height="16"><rect width="16" height="16" style="fill:#00FF00;"/></svg> max'
