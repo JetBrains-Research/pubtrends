@@ -648,7 +648,7 @@ class Plotter:
 
         # Aesthetics
         max_connections = max(connections)
-        radiuses = minmax_scale([c / (max_connections + 1) + 0.1 for c in connections]) * 2 + 0.5
+        radiuses = minmax_scale([c / (max_connections + 1) + 0.1 for c in connections]) + 0.5
         graph.node_renderer.data_source.data['radius'] = radiuses
         graph.node_renderer.data_source.data['color'] = [palette[c] for c in comps]
         graph.node_renderer.data_source.data['line_width'] = [5.0 if p == analyzed_pid else 1 for p in pids]

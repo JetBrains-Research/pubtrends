@@ -12,7 +12,7 @@ SIMILARITY_BIBLIOGRAPHIC_COUPLING = 3  # x number of references, applied to log
 SIMILARITY_CITATION = 1  # x 0-1 citation
 
 # Reduce number of edges in papers graph
-SPARSE_GRAPH_EDGES_TO_NODES = 100
+GRAPH_BIBLIOGRAPHIC_EDGES = 20
 
 # Add artificial text similarity nodes to sparse graph for visualisations
 GRAPH_TEXT_SIMILARITY_EDGES = 5

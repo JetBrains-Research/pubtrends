@@ -129,15 +129,9 @@ class PapersAnalyzer:
         self.progress.info(f'Analyzing papers graph - {self.papers_graph.number_of_nodes()} nodes and '
                            f'{self.papers_graph.number_of_edges()} edges', current=7, task=task)
 
-        logger.debug('Prepare sparse graph')
-        self.sparse_papers_graph = sparse_graph(self.papers_graph, SPARSE_GRAPH_EDGES_TO_NODES)
-        # Add similarity key to sparse graph
-        for i, j in self.sparse_papers_graph.edges():
-            self.sparse_papers_graph[i][j]['similarity'] = similarity(self.papers_graph.get_edge_data(i, j))
-
         if GRAPH_EMBEDDINGS_FACTOR != 0:
             logger.debug('Analyzing papers graph embeddings')
-            self.graph_embeddings = node2vec(self.df['id'], self.sparse_papers_graph, key='similarity')
+            self.graph_embeddings = node2vec(self.df['id'], self.papers_graph, key='similarity')
         else:
             self.graph_embeddings = np.zeros(shape=(len(self.df), 0))
 
@@ -146,6 +140,11 @@ class PapersAnalyzer:
             (self.graph_embeddings * GRAPH_EMBEDDINGS_FACTOR,
              self.texts_embeddings * TEXT_EMBEDDINGS_FACTOR), axis=1)
 
+        logger.debug('Prepare sparse graph')
+        self.sparse_papers_graph = sparse_graph(self.papers_graph, GRAPH_BIBLIOGRAPHIC_EDGES)
+        # Add similarity key to sparse graph
+        for i, j in self.sparse_papers_graph.edges():
+            self.sparse_papers_graph[i][j]['similarity'] = similarity(self.papers_graph.get_edge_data(i, j))
         if TEXT_EMBEDDINGS_FACTOR != 0:
             logger.debug('Adding artificial text similarities edges for visualization purposes')
             add_artificial_text_similarities_edges(ids, self.texts_embeddings, self.sparse_papers_graph)
