@@ -110,8 +110,8 @@ def analyze_search_paper(source, pid, key, value, limit, topics, test=False):
             limit = int(limit) if limit is not None and limit != '' else analyzer.config.show_max_articles_default_value
             topics = int(topics) if topics is not None and topics != '' else analyzer.config.show_topics_default_value
             ids = expand_ids(loader=analyzer.loader, pid=result[0], limit=limit,
-                             expand_steps=analyzer.config.expand_steps,
-                             max_expand=analyzer.config.expand_limit,
+                             expand_steps=analyzer.config.paper_expands_steps,
+                             max_expand=analyzer.config.paper_expand_limit,
                              citations_q_low=EXPAND_CITATIONS_Q_LOW,
                              citations_q_high=EXPAND_CITATIONS_Q_HIGH,
                              citations_sigma=EXPAND_CITATIONS_SIGMA,
