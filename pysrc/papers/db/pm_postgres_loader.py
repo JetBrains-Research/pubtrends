@@ -136,7 +136,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 FROM PMCitations C
                 JOIN PMPublications P
                 ON C.pmid_in = P.pmid
-                WHERE P.pmid in (VALUES {vals}))
+                WHERE C.pmid_in != C.pmid_out AND P.pmid in (VALUES {vals})) 
             SELECT X.pmid_in AS id, year, COUNT(1) AS count
             FROM X
                 JOIN PMPublications P
@@ -166,9 +166,10 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
                 SELECT C.pmid_in AS pmid
-                FROM PMCitations C JOIN matview_pmcitations MC
+                FROM PMCitations C 
+                JOIN matview_pmcitations MC
                     ON C.pmid_in = MC.pmid
-                WHERE C.pmid_out IN (VALUES {vals})
+                WHERE C.pmid_in != C.pmid_out AND C.pmid_out IN (VALUES {vals})
                 ORDER BY MC.count DESC NULLS LAST
                 LIMIT {limit};
                 '''
@@ -199,9 +200,9 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
     def load_citations(self, ids):
         self.check_connection()
         vals = self.ids_to_vals(ids)
-        query = f'''SELECT pmid_out as id_out, pmid_in as id_in
+        query = f'''SELECT DISTINCT pmid_out as id_out, pmid_in as id_in
                     FROM PMCitations C
-                    WHERE pmid_in IN (VALUES {vals}) AND pmid_out IN (VALUES {vals})
+                    WHERE pmid_out != pmid_in AND pmid_in IN (VALUES {vals}) AND pmid_out IN (VALUES {vals})
                     ORDER BY id_out, id_in
                     LIMIT {self.config.max_number_of_citations};
                     '''
@@ -224,9 +225,9 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         vals = self.ids_to_vals(ids)
         query = f'''SELECT C.pmid_out as citing, year, ARRAY_AGG(C.pmid_in) as cited_list
                         FROM PMCitations C
-                            JOIN PMPublications P
+                        JOIN PMPublications P
                             ON C.pmid_out = P.pmid
-                        WHERE C.pmid_in IN (VALUES {vals})
+                        WHERE C.pmid_in != C.pmid_out AND C.pmid_in IN (VALUES {vals})
                         GROUP BY citing, year
                         HAVING COUNT(*) >= 2
                         LIMIT {self.config.max_number_of_cocitations};
@@ -250,11 +251,11 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
             WITH X AS (
                 SELECT C.pmid_in AS pmid
                 FROM PMCitations C
-                WHERE C.pmid_out IN (VALUES {vals}) AND C.pmid_in NOT IN (VALUES {vals})
+                WHERE C.pmid_in != C.pmid_out AND C.pmid_out IN (VALUES {vals}) AND C.pmid_in NOT IN (VALUES {vals})
                 UNION
                 SELECT C.pmid_out AS pmid
                 FROM PMCitations C
-                WHERE C.pmid_in IN (VALUES {vals}) AND C.pmid_out NOT IN (VALUES {vals})
+                WHERE C.pmid_in != C.pmid_out AND C.pmid_in IN (VALUES {vals}) AND C.pmid_out NOT IN (VALUES {vals})
             )
             SELECT X.pmid as pmid, count 
                 FROM X
@@ -277,7 +278,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         vals = self.ids_to_vals(ids)
         query = f'''SELECT C.pmid_in as cited, ARRAY_AGG(C.pmid_out) as citing_list
                     FROM PMCitations C
-                    WHERE C.pmid_out IN (VALUES {vals})
+                    WHERE C.pmid_out IN (VALUES {vals}) AND C.pmid_in != C.pmid_out
                     GROUP BY cited
                     HAVING COUNT(*) >= 2
                     LIMIT {self.config.max_number_of_bibliographic_coupling};
