@@ -381,7 +381,7 @@
                                 // Text similarity
                                 return "#BDC3C7";
                             },
-                            "opacity": 0.01
+                            "opacity": 0.1
                         }
                     },
                     {
@@ -513,7 +513,7 @@
                     return 'topic' in ele.data();
                 }));
                 addPopper(cy.edges().filter(function (ele) {
-                    return 'similarity' in ele.data();
+                    return 'similarity' in ele.data() || 'textsimilarity' in ele.data();
                 }));
                 // Open paper details on click
                 cy.nodes().on('click', function (event) {
