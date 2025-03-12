@@ -98,7 +98,7 @@ finally:
 def stemmed_tokens(text, min_token_length=4):
     text = text.lower()
     # Replace non-ascii or punctuation with space
-    text = re.sub('[^a-zA-Z0-9-+.,:!?]+', ' ', text)
+    text = re.sub('[^a-zA-Z0-9.]+', ' ', text)
     # Whitespaces normalization, see #215
     text = re.sub('[ ]{2,}', ' ', text.strip())
     # Tokenize text

@@ -1,6 +1,5 @@
-import unittest
-
 import numpy as np
+import unittest
 
 from pysrc.papers.analysis.text import stemmed_tokens, _build_stems_to_tokens_map
 from pysrc.papers.analyzer import PapersAnalyzer
@@ -8,6 +7,7 @@ from pysrc.papers.config import PubtrendsConfig
 from pysrc.test.mock_loaders import MockLoader
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
+
 
 class TestText(unittest.TestCase):
 
@@ -55,14 +55,21 @@ class TestText(unittest.TestCase):
         expected = {'differ': 'difference', 'systol': 'systolic', 'diastol': 'diastolic', 'puls': 'pulse',
                     'pressur': 'pressure', 'infus': 'infusion', 'respect': 'respectively', 'specifi': 'specify',
                     'associ': 'association', 'advanc': 'advancement', 'medic': 'medical',
-                    'instrument': 'instrumentation', 'so-cal': 'so-called', 'describ': 'describe', 'farwel': 'farwell',
-                    'reli': 'rely', 'primarili': 'primarily', 'p300-evok': 'p300-evoked', 'potenti': 'potential',
-                    'minim': 'minimally', 'featur': 'feature', 'visual-evok': 'visual-evoked', 'evalu': 'evaluate',
-                    'perform': 'performance', 'healthi': 'healthy', 'condit': 'condition', 'intend': 'intended',
-                    'fixat': 'fixation', 'locat': 'locate', 'applic': 'applicability', 'find': 'finding',
-                    'peopl': 'people', 'sever': 'severe', 'disabl': 'disability', 'particular': 'particularly',
-                    'eye-mov': 'eye-movements', 'remain': 'remains', 'determin': 'determine'}
+                    'instrument': 'instrumentation', 'call': 'called', 'describ': 'describe', 'farwel': 'farwell',
+                    'reli': 'rely', 'primarili': 'primarily', 'evok': 'evoke', 'potenti': 'potential',
+                    'minim': 'minimally', 'featur': 'feature', 'evalu': 'evaluate', 'perform': 'performance',
+                    'healthi': 'healthy', 'condit': 'condition', 'fixat': 'fixation', 'locat': 'locate',
+                    'applic': 'applicability', 'find': 'finding', 'peopl': 'people', 'sever': 'severe',
+                    'disabl': 'disability', 'particular': 'particularly', 'determin': 'determine'}
         actual = _build_stems_to_tokens_map(stemmed_tokens(text))
+        print(actual)
+        self.assertSequenceEqual(actual, expected)
+
+    def test_dashes(self):
+        text = """Genome-wide whole-genome DNA-methylation"""
+        expected = [('genom', 'genome'), ('wide', 'wide'), ('whole', 'whole'), ('genom', 'genome'),
+                    ('methyl', 'methylation')]
+        actual = stemmed_tokens(text)
         # print(actual)
         self.assertSequenceEqual(actual, expected)
 
