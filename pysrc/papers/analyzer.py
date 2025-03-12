@@ -1,5 +1,4 @@
 import logging
-
 import numpy as np
 import pandas as pd
 from io import StringIO
@@ -10,8 +9,7 @@ from sklearn.preprocessing import StandardScaler
 
 from pysrc.papers.analysis.citations import find_top_cited_papers, find_max_gain_papers, \
     find_max_relative_gain_papers, build_cit_stats_df, merge_citation_stats, build_cocit_grouped_df
-from pysrc.papers.analysis.graph import build_papers_graph, sparse_graph, similarity, \
-    add_artificial_text_similarities_edges
+from pysrc.papers.analysis.graph import build_papers_graph, sparse_graph, add_artificial_text_similarities_edges
 from pysrc.papers.analysis.metadata import popular_authors, popular_journals
 from pysrc.papers.analysis.node2vec import node2vec
 from pysrc.papers.analysis.numbers import extract_numbers
@@ -141,9 +139,9 @@ class PapersAnalyzer:
             self.graph_embeddings = np.zeros(shape=(len(self.df), 0))
 
         logger.debug('Computing aggregated graph and text embeddings for papers')
-        papers_embeddings = np.concatenate(
-            (self.graph_embeddings * GRAPH_EMBEDDINGS_FACTOR,
-             self.texts_embeddings * TEXT_EMBEDDINGS_FACTOR), axis=1)
+        self.papers_embeddings = (self.graph_embeddings * GRAPH_EMBEDDINGS_FACTOR +
+                                  self.texts_embeddings * TEXT_EMBEDDINGS_FACTOR
+                                  ) / (GRAPH_EMBEDDINGS_FACTOR + TEXT_EMBEDDINGS_FACTOR)
 
         logger.debug('Prepare sparse graph to visualize')
         self.sparse_papers_graph = sparse_graph(self.papers_graph, GRAPH_BIBLIOGRAPHIC_EDGES)
@@ -153,28 +151,22 @@ class PapersAnalyzer:
             add_artificial_text_similarities_edges(ids, self.texts_embeddings, self.sparse_papers_graph)
 
         if len(self.df) > 1:
-            logger.debug('Computing PCA projection')
-            pca = PCA(n_components=min(len(papers_embeddings), PCA_COMPONENTS))
-            t = StandardScaler().fit_transform(papers_embeddings)
-            self.pca_coords = pca.fit_transform(t)
-            logger.debug(f'Explained variation {int(np.sum(pca.explained_variance_ratio_) * 100)}%')
-            logger.debug('Apply TSNE transformation on papers PCA coords')
+            logger.debug('Apply TSNE transformation on papers embeddings')
             if not test:
-                tsne = TSNE(n_components=2, random_state=42, perplexity=min(30, len(self.df) - 1))
+                tsne = TSNE(n_components=2, random_state=42)
             else:
-                tsne = TSNE(n_components=2, random_state=42, perplexity=3)
-            tsne_embeddings_2d = tsne.fit_transform(self.pca_coords)
+                tsne = TSNE(n_components=2, random_state=42)
+            tsne_embeddings_2d = tsne.fit_transform(self.papers_embeddings)
             self.df['x'] = tsne_embeddings_2d[:, 0]
             self.df['y'] = tsne_embeddings_2d[:, 1]
         else:
-            self.pca_coords = np.zeros(shape=(len(self.df), 128))
             self.df['x'] = 0
             self.df['y'] = 0
 
         self.progress.info(f'Extracting {topics} number of topics from papers text and graph similarity',
                            current=8, task=task)
         logger.debug('Extracting topics from papers embeddings')
-        self.clusters, self.dendrogram = cluster_and_sort(self.pca_coords, topics)
+        self.clusters, self.dendrogram = cluster_and_sort(self.papers_embeddings, topics)
         self.df['comp'] = self.clusters
 
         self.progress.info(f'Analyzing {len(set(self.df["comp"]))} topics descriptions',
@@ -231,7 +223,7 @@ class PapersAnalyzer:
             bibliographic_coupling_df=self.bibliographic_coupling_df.to_json(),
             topics_description=self.topics_description,
             kwd_df=self.kwd_df.to_json(),
-            pca_coords=self.pca_coords.tolist(),
+            papers_embeddings=self.papers_embeddings.tolist(),
             sparse_papers_graph=json_graph.node_link_data(self.sparse_papers_graph),
             top_cited_papers=self.top_cited_papers,
             max_gain_papers=self.max_gain_papers,
@@ -274,8 +266,8 @@ class PapersAnalyzer:
         kwd_df['kwd'] = kwd_df['kwd'].apply(lambda x: [el.split(':') for el in x])
         kwd_df['kwd'] = kwd_df['kwd'].apply(lambda x: [(el[0], float(el[1])) for el in x])
 
-        # Restore original coordinates
-        pca_coords = np.array(fields['pca_coords'])
+        # Restore original embeddings
+        papers_embeddings = np.array(fields['papers_embeddings'])
 
         # Restore citation and structure graphs
         sparse_papers_graph = json_graph.node_link_graph(fields['sparse_papers_graph'])
@@ -291,7 +283,7 @@ class PapersAnalyzer:
             bibliographic_coupling_df=bibliographic_coupling_df,
             topics_description=topics_description,
             kwd_df=kwd_df,
-            pca_coords=pca_coords,
+            papers_embeddings=papers_embeddings,
             sparse_papers_graph=sparse_papers_graph,
             top_cited_papers=top_cited_papers,
             max_gain_papers=max_gain_papers,
@@ -315,7 +307,7 @@ class PapersAnalyzer:
         self.topics_description = loaded['topics_description']
         self.kwd_df = loaded['kwd_df']
         # Used for similar papers
-        self.pca_coords = loaded['pca_coords']
+        self.papers_embeddings = loaded['papers_embeddings']
         # Used for network visualization
         self.sparse_papers_graph = loaded['sparse_papers_graph']
         # Used for navigation

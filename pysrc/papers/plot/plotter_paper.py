@@ -73,8 +73,8 @@ def prepare_paper_data(data, source, pid):
                        analyzer.df[analyzer.df['id'] == v]['title'].values[0],
                        analyzer.df[analyzer.df['id'] == v]['year'].values[0],
                        analyzer.df[analyzer.df['id'] == v]['total'].values[0],
-                       1 / (1 + distance.euclidean(analyzer.pca_coords[indx[pid], :],
-                                                   analyzer.pca_coords[indx[v], :]))),
+                       1 / (1 + distance.euclidean(analyzer.papers_embeddings[indx[pid], :],
+                                                   analyzer.papers_embeddings[indx[v], :]))),
             [p for p in analyzer.df['id'] if p != pid]
         )
         similar_papers = sorted(similar_papers, key=lambda x: x[4], reverse=True)[:50]

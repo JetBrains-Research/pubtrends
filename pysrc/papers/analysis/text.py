@@ -1,15 +1,14 @@
 import logging
-import re
-from itertools import chain
-from threading import Lock
-
 import nltk
 import numpy as np
+import re
 from gensim.models import Word2Vec
+from itertools import chain
 from nltk import word_tokenize, WordNetLemmatizer, SnowballStemmer
-from nltk.probability import FreqDist
 from nltk.corpus import wordnet, stopwords
+from nltk.probability import FreqDist
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from threading import Lock
 
 logger = logging.getLogger(__name__)
 
@@ -24,8 +23,8 @@ NLTK_STOP_WORDS_SET = set(stopwords.words('english'))
 # See https://github.com/nltk/nltk/issues/1576
 NLTK_LOCK = Lock()
 
-WORD2VEC_WINDOW = 8
-WORD2VEC_VECTOR_SIZE = 16
+WORD2VEC_WINDOW = 5
+WORD2VEC_VECTOR_SIZE = 32
 WORD2VEC_EPOCHS = 5
 
 def vectorize_corpus(df, max_features, min_df, max_df, test=False):
@@ -131,7 +130,7 @@ def build_stemmed_corpus(df):
                                                               df['abstract'],
                                                               df['mesh'].replace(',', '.'),
                                                               df['keywords'].replace(',', '.'))):
-        if i % 1000 == 1:
+        if i % 200 == 1 :
             logger.debug(f'Processed {i} papers')
         papers_stemmed_sentences.append([
             stemmed_tokens(sentence)
@@ -201,5 +200,4 @@ def texts_embeddings(corpus_counts, tokens_w2v_embeddings):
         np.mean((tokens_w2v_embeddings.T * tfidf[i, :].T).T, axis=0) for i in range(tfidf.shape[0])
     ])
     logger.debug(f'Texts embeddings shape: {texts_embeddings.shape}')
-    logger.debug('Normalize to abs max')
-    return texts_embeddings / np.max(np.fabs(texts_embeddings.reshape(-1)))
+    return texts_embeddings

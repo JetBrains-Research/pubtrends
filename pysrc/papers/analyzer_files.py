@@ -20,8 +20,7 @@ from sklearn.preprocessing import StandardScaler
 from pysrc.app.reports import result_folder_name, get_results_path, preprocess_string
 from pysrc.papers.analysis.citations import find_top_cited_papers, build_cit_stats_df, merge_citation_stats, \
     build_cocit_grouped_df
-from pysrc.papers.analysis.graph import build_papers_graph, sparse_graph, similarity, \
-    add_artificial_text_similarities_edges
+from pysrc.papers.analysis.graph import build_papers_graph, sparse_graph, add_artificial_text_similarities_edges
 from pysrc.papers.analysis.node2vec import node2vec
 from pysrc.papers.analysis.text import get_frequent_tokens
 from pysrc.papers.analysis.text import texts_embeddings, vectorize_corpus, tokens_embeddings
@@ -180,9 +179,9 @@ class AnalyzerFiles(PapersAnalyzer):
             self.graph_embeddings = np.zeros(shape=(len(self.df), 0))
 
         logger.debug('Computing aggregated graph and text embeddings for papers')
-        papers_embeddings = np.concatenate(
-            (self.graph_embeddings * GRAPH_EMBEDDINGS_FACTOR,
-             self.texts_embeddings * TEXT_EMBEDDINGS_FACTOR), axis=1)
+        self.papers_embeddings = (self.graph_embeddings * GRAPH_EMBEDDINGS_FACTOR +
+                                  self.texts_embeddings * TEXT_EMBEDDINGS_FACTOR
+                                  ) / (GRAPH_EMBEDDINGS_FACTOR + TEXT_EMBEDDINGS_FACTOR)
 
         logger.debug('Prepare sparse graph to visualize')
         self.sparse_papers_graph = sparse_graph(self.papers_graph, GRAPH_BIBLIOGRAPHIC_EDGES)
@@ -190,31 +189,19 @@ class AnalyzerFiles(PapersAnalyzer):
             logger.debug('Adding artificial text similarities edges for visualization purposes')
             add_artificial_text_similarities_edges(ids, self.texts_embeddings, self.sparse_papers_graph)
 
-        logger.debug('Computing PCA projection')
-        pca = PCA(n_components=min(len(papers_embeddings), PCA_COMPONENTS))
-        t = StandardScaler().fit_transform(papers_embeddings)
-        self.pca_coords = pca.fit_transform(t)
-        logger.debug(f'Explained variation {int(np.sum(pca.explained_variance_ratio_) * 100)} %')
-
         if len(self.df) > 1:
-            logger.debug('Computing PCA projection')
-            pca = PCA(n_components=min(len(papers_embeddings), PCA_COMPONENTS))
-            t = StandardScaler().fit_transform(papers_embeddings)
-            self.pca_coords = pca.fit_transform(t)
-            logger.debug(f'Explained variation {int(np.sum(pca.explained_variance_ratio_) * 100)}%')
-            logger.debug('Apply TSNE transformation on papers PCA coords')
-            tsne_embeddings_2d = TSNE(n_components=2, random_state=42).fit_transform(self.pca_coords)
+            logger.debug('Apply TSNE transformation on papers embeddings')
+            tsne_embeddings_2d = TSNE(n_components=2, random_state=42).fit_transform(self.papers_embeddings)
             self.df['x'] = tsne_embeddings_2d[:, 0]
             self.df['y'] = tsne_embeddings_2d[:, 1]
         else:
-            self.pca_coords = np.zeros(shape=(len(self.df), 128))
             self.df['x'] = 0
             self.df['y'] = 0
 
         self.progress.info(f'Extracting {topics} number of topics from papers text and graph similarity',
                            current=11, task=task)
         logger.debug('Extracting topics from papers embeddings')
-        clusters, dendrogram = cluster_and_sort(self.pca_coords, topics)
+        clusters, dendrogram = cluster_and_sort(self.papers_embeddings, topics)
         self.df['comp'] = clusters
         path_topics_sizes = os.path.join(self.query_folder, 'topics_sizes.html')
         logging.info(f'Save topics ratios to file {path_topics_sizes}')
@@ -223,7 +210,7 @@ class AnalyzerFiles(PapersAnalyzer):
         reset_output()
 
         similarity_df, topics = topics_similarity_data(
-            self.pca_coords, self.df['comp']
+            self.papers_embeddings, self.df['comp']
         )
         similarity_df['type'] = ['Inside' if x == y else 'Outside'
                                  for (x, y) in zip(similarity_df['comp_x'], similarity_df['comp_y'])]

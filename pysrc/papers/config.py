@@ -41,9 +41,6 @@ VECTOR_MIN_DF = 0.001
 # Terms with higher frequency will be ignored, remove abundant words
 VECTOR_MAX_DF = 0.8
 
-# Reduce embeddings dimensionality before tSNE projection
-PCA_COMPONENTS = 10
-
 # Control citations count
 EXPAND_CITATIONS_Q_LOW = 10
 EXPAND_CITATIONS_Q_HIGH = 90

@@ -9,9 +9,9 @@ NODE2VEC_P = 5.0
 NODE2VEC_Q = 2.0
 # Increasing number of walks significantly increases node2vec representation accuracy
 NODE2VEC_WALKS_PER_NODE = 128
-NODE2VEC_WALK_LENGTH = 32
-NODE2VEC_WORD2VEC_WINDOW = 8
-NODE2VEC_VECTOR_SIZE = 16
+NODE2VEC_WALK_LENGTH = 64
+NODE2VEC_WORD2VEC_WINDOW = 5
+NODE2VEC_VECTOR_SIZE = 32
 NODE2VEC_WORD2VEC_EPOCHS = 5
 
 def node2vec(
@@ -58,8 +58,7 @@ def node2vec(
     for i, node in enumerate(ids):
         if len(list(graph.neighbors(node))) == 0:
             embeddings[i] = np.zeros(vector_size)
-    logger.debug('Normalize to abs max')
-    return embeddings / np.max(np.fabs(embeddings.reshape(-1)))
+    return embeddings
 
 
 def _precompute(graph, key, p, q):
