@@ -51,7 +51,7 @@ def build_papers_graph(df, cit_df, cocit_df, bibliographic_coupling_df):
     return result
 
 
-def sparse_graph(graph, k):
+def sparse_graph(graph, k, add_similarity=True):
     """ Build sparse graph by sorting only k nearest neighbours for each node """
     logger.debug(f'Limit edges/nodes by {k} neighbours, '
                  f'current={graph.number_of_edges() / graph.number_of_nodes()}')
@@ -68,6 +68,11 @@ def sparse_graph(graph, k):
         if not result.has_node(n):
             result.add_node(n)
     logger.debug(f'Sparse {k}-neighbour graph edges/nodes={result.number_of_edges() / result.number_of_nodes()}')
+
+    # Add similarity key to sparse graph
+    if add_similarity:
+        for i, j in result.edges():
+            result[i][j]['similarity'] = similarity(result.get_edge_data(i, j))
     return result
 
 

@@ -246,7 +246,7 @@
                             "width": function (node) {
                                 const data = node.data();
                                 if ('connections' in data) {
-                                    return data.connections * 20 / window.max_connections + 5;
+                                    return data.connections * 10 / window.max_connections + 5;
                                 } else {
                                     return 5;
                                 }
@@ -254,7 +254,7 @@
                             "height": function (node) {
                                 const data = node.data();
                                 if ('connections' in data) {
-                                    return data.connections * 20 / window.max_connections + 5;
+                                    return data.connections * 10 / window.max_connections + 5;
                                 } else {
                                     return 5;
                                 }
@@ -267,7 +267,7 @@
                             "width": function (node) {
                                 const data = node.data();
                                 if ('cited' in data) {
-                                    return data.cited * 20 / window.max_cited + 5;
+                                    return data.cited * 10 / window.max_cited + 5;
                                 } else {
                                     return 5;
                                 }
@@ -275,7 +275,7 @@
                             "height": function (node) {
                                 const data = node.data();
                                 if ('cited' in data) {
-                                    return data.cited * 20 / window.max_cited + 5;
+                                    return data.cited * 10 / window.max_cited + 5;
                                 } else {
                                     return 5;
                                 }
@@ -334,7 +334,7 @@
                     {
                         selector: 'node.highlight',
                         style: {
-                            'border-width': '1.0',
+                            'border-width': '1.0 !important',
                             'opacity': '1.0 !important'
                         }
                     },
@@ -486,6 +486,7 @@
                     // track hovered event to avoid too late tippy
                     let inside = false;
                     ele.bind('mouseover', (event) => {
+                        if (ele.hasClass('semitransp') || ele.hasClass('semitransp2')) return;
                         inside = true;
                         // Show hover after two seconds
                         setTimeout(
@@ -494,11 +495,12 @@
                                     event.target.tippy.show();
                                 }
                             },
-                            1000
+                            300
                         );
                     });
                     ele.unbind('mouseout');
                     ele.bind('mouseout', (event) => {
+                        if (ele.hasClass('semitransp') || ele.hasClass('semitransp2')) return;
                         inside = false;
                         event.target.tippy.hide();
                     })
@@ -525,17 +527,18 @@
                 });
                 // Highlight node and neighbours on hover
                 cy.on('mouseover', 'node', function (event) {
-                    if (window.freeze || getFilter() !== "" || $('#slider').val() > 0) {
+                    if (window.freeze || getFilter() !== "") {
                         return;
                     }
                     let sel = event.target;
+                    if (sel.hasClass('semitransp2')) return;
                     if ('title' in sel.data()) {
                         sel.addClass('highlight');
                         sel.removeClass('semitransp');
                         let neighborEdges = sel.connectedEdges();
                         let neighborNodes = neighborEdges.connectedNodes();
                         cy.nodes().filter(function (ele) {
-                            return ele !== sel;
+                            return ele !== sel && !ele.hasClass('semitransp2');
                         }).difference(neighborNodes).addClass('semitransp');
                         neighborEdges.addClass('highlight');
                         cy.edges().difference(neighborEdges).addClass('semitransp');
@@ -543,10 +546,11 @@
                     }
                 });
                 cy.on('mouseout', 'node', function (event) {
-                    if (window.freeze || getFilter() !== "" || $('#slider').val() > 0) {
+                    if (window.freeze || getFilter() !== "") {
                         return;
                     }
                     let sel = event.target;
+                    if (sel.hasClass('semitransp2')) return;
                     if ('title' in sel.data()) {
                         sel.removeClass('highlight');
                         sel.removeClass('semitransp');
@@ -554,7 +558,7 @@
                         let neighborNodes = neighborEdges.connectedNodes();
                         neighborNodes.removeClass('highlight');
                         cy.nodes().filter(function (ele) {
-                            return ele !== sel;
+                            return ele !== sel && !ele.hasClass('semitransp2');
                         }).difference(neighborNodes).removeClass('semitransp');
                         neighborEdges.removeClass('highlight');
                         cy.edges().difference(neighborEdges).removeClass('semitransp');

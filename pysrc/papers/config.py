@@ -7,9 +7,12 @@ import os
 #   ...bibliographic coupling (BC) was the most accurate,  followed by co-citation (CC).
 #   Direct citation (DC) was a distant third among the three...
 
-SIMILARITY_COCITATION = 10  # x number of co-citations, applied to log
-SIMILARITY_BIBLIOGRAPHIC_COUPLING = 3  # x number of references, applied to log
+SIMILARITY_COCITATION = 10  # x number of co-citations
+SIMILARITY_BIBLIOGRAPHIC_COUPLING = 3  # x number of references
 SIMILARITY_CITATION = 1  # x 0-1 citation
+
+# Reduce number of edges in papers graph
+EMBEDDINGS_GRAPH_EDGES = 100
 
 # Reduce number of edges in papers graph
 GRAPH_BIBLIOGRAPHIC_EDGES = 20

@@ -76,7 +76,7 @@ def _precompute(graph, key, p, q):
     for i, node in enumerate(graph.nodes()):
         if i % 1000 == 1:
             logger.debug(f'Analyzed probabilities for {i} nodes')
-        first_step_weights = [graph[node][neighbor].get(key, 1) for neighbor in (graph.neighbors(node))]
+        first_step_weights = [graph[node][neighbor].get(key) for neighbor in (graph.neighbors(node))]
         probabilities_first_step[node] = _normalize(first_step_weights)
 
         for neighbor in graph.neighbors(node):
@@ -89,11 +89,11 @@ def _precompute(graph, key, p, q):
 
 def _next_step_weight(graph, key, node, neighbor, neighbor2, p, q):
     if neighbor2 == node:  # Backwards probability
-        return graph[neighbor][neighbor2].get(key, 1) * 1 / p
+        return graph[neighbor][neighbor2].get(key) * 1 / p
     elif neighbor2 in graph[node]:  # If the neighbor is connected to the node
-        return graph[neighbor][neighbor2].get(key, 1)
+        return graph[neighbor][neighbor2].get(key)
     else:
-        return graph[neighbor][neighbor2].get(key, 1) * 1 / q
+        return graph[neighbor][neighbor2].get(key) * 1 / q
 
 
 def _normalize(values):
