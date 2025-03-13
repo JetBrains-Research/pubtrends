@@ -153,9 +153,9 @@ class PapersAnalyzer:
         if len(self.df) > 1:
             logger.debug('Apply TSNE transformation on papers embeddings')
             if not test:
-                tsne = TSNE(n_components=2, random_state=42)
+                tsne = TSNE(n_components=2, random_state=42, perplexity=min(30, len(self.df) - 1))
             else:
-                tsne = TSNE(n_components=2, random_state=42)
+                tsne = TSNE(n_components=2, random_state=42, perplexity=3)
             tsne_embeddings_2d = tsne.fit_transform(self.papers_embeddings)
             self.df['x'] = tsne_embeddings_2d[:, 0]
             self.df['y'] = tsne_embeddings_2d[:, 1]
