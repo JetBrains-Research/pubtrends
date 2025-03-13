@@ -24,7 +24,7 @@ from pysrc.papers.analysis.graph import build_papers_graph, sparse_graph, add_ar
 from pysrc.papers.analysis.node2vec import node2vec
 from pysrc.papers.analysis.text import get_frequent_tokens
 from pysrc.papers.analysis.text import texts_embeddings, vectorize_corpus, tokens_embeddings
-from pysrc.papers.analysis.topics import get_topics_description, compute_topics_similarity_matrix, cluster_and_sort
+from pysrc.papers.analysis.topics import get_topics_description, cluster_and_sort
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import *
 from pysrc.papers.db.loaders import Loaders
@@ -101,14 +101,17 @@ class AnalyzerFiles(PapersAnalyzer):
             max_df=VECTOR_MAX_DF,
             test=test
         )
-        logger.debug('Analyzing tokens embeddings')
-        self.corpus_tokens_embedding = tokens_embeddings(
-            self.corpus, self.corpus_tokens, test=test
-        )
-        logger.debug('Analyzing texts embeddings')
-        self.texts_embeddings = texts_embeddings(
-            self.corpus_counts, self.corpus_tokens_embedding
-        )
+        if TEXT_EMBEDDINGS_FACTOR != 0:
+            logger.debug('Analyzing tokens embeddings')
+            self.corpus_tokens_embedding = tokens_embeddings(
+                self.corpus, self.corpus_tokens, test=test
+            )
+            logger.debug('Analyzing texts embeddings')
+            self.texts_embeddings = texts_embeddings(
+                self.corpus_counts, self.corpus_tokens_embedding
+            )
+        else:
+            self.texts_embeddings = np.zeros(shape=(len(self.df), EMBEDDINGS_VECTOR_LENGTH))
 
         self.progress.info('Analyzing MESH terms', current=7, task=task)
         mesh_counter = Counter()
@@ -213,17 +216,6 @@ class AnalyzerFiles(PapersAnalyzer):
         save(plot_components_ratio(self.df))
         reset_output()
 
-        similarity_df, topics = topics_similarity_data(
-            self.papers_embeddings, self.df['comp']
-        )
-        similarity_df['type'] = ['Inside' if x == y else 'Outside'
-                                 for (x, y) in zip(similarity_df['comp_x'], similarity_df['comp_y'])]
-        path_topics_similarity = os.path.join(self.query_folder, 'topics_similarity.html')
-        logging.info(f'Save similarity heatmap to file {path_topics_similarity}')
-        output_file(filename=path_topics_similarity, title="Topics mean similarity")
-        save(heatmap_topics_similarity(similarity_df, topics))
-        reset_output()
-
         self.progress.info('Analyzing topics descriptions', current=12, task=task)
         print('Computing clusters keywords')
         clusters_pids = self.df[['id', 'comp']].groupby('comp')['id'].apply(list).to_dict()
@@ -278,13 +270,13 @@ class AnalyzerFiles(PapersAnalyzer):
             path_topics = os.path.join(self.query_folder, 'topics.html')
             logging.info(f'Save topics hierarchy with keywords to file {path_topics}')
             output_file(filename=path_topics, title="Topics dendrogram")
-            save(Plotter._plot_topics_hierarchy_with_keywords(self.df, self.kwd_df, clusters, dendrogram, max_words=3))
+            save(Plotter._plot_topics_hierarchy_with_keywords(self.df, self.kwd_df, clusters, dendrogram))
             reset_output()
 
             path_topics_mesh = os.path.join(self.query_folder, 'topics_mesh.html')
             logging.info(f'Save topics hierarchy with mesh keywords to file {path_topics_mesh}')
             output_file(filename=path_topics_mesh, title="Topics dendrogram")
-            save(Plotter._plot_topics_hierarchy_with_keywords(self.df, mesh_df, clusters, dendrogram, max_words=3))
+            save(Plotter._plot_topics_hierarchy_with_keywords(self.df, mesh_df, clusters, dendrogram))
             reset_output()
 
         self.df['topic_tags'] = [','.join(t for t, _ in clusters_description[c][:5]) for c in self.df['comp']]
@@ -417,57 +409,6 @@ def plot_components_ratio(df, width=PLOT_WIDTH, height=SHORT_PLOT_HEIGHT):
     p.axis.minor_tick_line_color = None
     p.outline_line_color = None
 
-    return p
-
-
-def topics_similarity_data(papers_embeddings, comps):
-    similarity_matrix = compute_topics_similarity_matrix(papers_embeddings, comps)
-
-    # c + 1 is used to start numbering with 1
-    components = [str(c + 1) for c in sorted(set(comps))]
-    n_comps = len(components)
-    similarity_topics_df = pd.DataFrame([
-        {'comp_x': i, 'comp_y': j, 'similarity': similarity_matrix[i, j]}
-        for i, j in product(range(n_comps), range(n_comps))
-    ])
-    similarity_topics_df['comp_x'] = similarity_topics_df['comp_x'].apply(lambda x: x + 1).astype(str)
-    similarity_topics_df['comp_y'] = similarity_topics_df['comp_y'].apply(lambda x: x + 1).astype(str)
-    return similarity_topics_df, components
-
-
-def heatmap_topics_similarity(similarity_df, topics, width=PLOT_WIDTH, height=TALL_PLOT_HEIGHT):
-    logger.debug('Visualizing topics similarity with heatmap')
-
-    step = 10
-    cmap = plt.cm.get_cmap('PuBu', step)
-    colors = [RGB(*[round(c * 255) for c in cmap(i)[:3]]) for i in range(step)]
-    mapper = LinearColorMapper(palette=colors,
-                               low=similarity_df.similarity.min(),
-                               high=similarity_df.similarity.max())
-
-    p = figure(x_range=topics, y_range=topics,
-               x_axis_location="below", width=width, height=height,
-               tools="hover,pan,tap,wheel_zoom,box_zoom,reset,save", toolbar_location="right",
-               tooltips=[('Topic 1', '@comp_x'),
-                         ('Topic 2', '@comp_y'),
-                         ('Similarity', '@similarity')])
-
-    p.sizing_mode = 'stretch_width'
-    p.grid.grid_line_color = None
-    p.axis.axis_line_color = None
-    p.axis.major_tick_line_color = None
-    p.axis.major_label_text_font_size = "10pt"
-    p.axis.major_label_standoff = 0
-
-    p.rect(x="comp_x", y="comp_y", width=1, height=1,
-           source=similarity_df,
-           fill_color={'field': 'similarity', 'transform': mapper},
-           line_color=None)
-
-    color_bar = ColorBar(color_mapper=mapper, major_label_text_font_size="10pt",
-                         formatter=PrintfTickFormatter(format="%.2f"),
-                         label_standoff=11, border_line_color=None, location=(0, 0))
-    p.add_layout(color_bar, 'right')
     return p
 
 

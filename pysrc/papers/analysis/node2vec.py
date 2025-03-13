@@ -3,6 +3,8 @@ import logging
 import numpy as np
 from gensim.models import Word2Vec
 
+from pysrc.papers.config import EMBEDDINGS_VECTOR_LENGTH
+
 logger = logging.getLogger(__name__)
 
 NODE2VEC_P = 5.0
@@ -11,13 +13,13 @@ NODE2VEC_Q = 2.0
 NODE2VEC_WALKS_PER_NODE = 128
 NODE2VEC_WALK_LENGTH = 64
 NODE2VEC_WORD2VEC_WINDOW = 5
-NODE2VEC_VECTOR_SIZE = 32
 NODE2VEC_WORD2VEC_EPOCHS = 5
+
 
 def node2vec(
         ids, graph, p=NODE2VEC_P, q=NODE2VEC_Q,
         walk_length=NODE2VEC_WALK_LENGTH, walks_per_node=NODE2VEC_WALKS_PER_NODE,
-        vector_size=NODE2VEC_VECTOR_SIZE, key='weight', seed=42
+        vector_size=EMBEDDINGS_VECTOR_LENGTH, key='weight', seed=42
 ):
     """
     :param ids: Ids or nodes for embedding
@@ -73,7 +75,7 @@ def _precompute(graph, key, p, q):
     probabilities_next_step = {node: dict() for node in graph.nodes()}
 
     for i, node in enumerate(graph.nodes()):
-        if i % 1000 == 1:
+        if i % 100 == 1:
             logger.debug(f'Analyzed probabilities for {i} nodes')
         first_step_weights = [graph[node][neighbor].get(key) for neighbor in (graph.neighbors(node))]
         probabilities_first_step[node] = _normalize(first_step_weights)

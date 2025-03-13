@@ -22,7 +22,8 @@
     <link rel="stylesheet" href="https://unpkg.com/tippy.js@4.3.5/index.css"/>
 
     <!-- Notify.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"></script>
+    <!--<script src="../../static/notify.js"/>-->
+    <script src="{{ url_for('static', filename='notify.js') }}"></script>
     <style>
         .dropdown-sub:hover > .dropdown-menu {
             display: block;
@@ -251,7 +252,7 @@
                             "width": function (node) {
                                 const data = node.data();
                                 if ('connections' in data) {
-                                    return data.connections * 20 / window.max_connections + 5;
+                                    return data.connections * 10 / window.max_connections + 5;
                                 } else {
                                     return 5;
                                 }
@@ -259,7 +260,7 @@
                             "height": function (node) {
                                 const data = node.data();
                                 if ('connections' in data) {
-                                    return data.connections * 20 / window.max_connections + 5;
+                                    return data.connections * 10 / window.max_connections + 5;
                                 } else {
                                     return 5;
                                 }
@@ -272,7 +273,7 @@
                             "width": function (node) {
                                 const data = node.data();
                                 if ('cited' in data) {
-                                    return data.cited * 20 / window.max_cited + 5;
+                                    return data.cited * 10 / window.max_cited + 5;
                                 } else {
                                     return 5;
                                 }
@@ -280,7 +281,7 @@
                             "height": function (node) {
                                 const data = node.data();
                                 if ('cited' in data) {
-                                    return data.cited * 20 / window.max_cited + 5;
+                                    return data.cited * 10 / window.max_cited + 5;
                                 } else {
                                     return 5;
                                 }

@@ -84,7 +84,7 @@ class PapersAnalyzer:
                 self.corpus_counts, self.corpus_tokens_embedding
             )
         else:
-            self.texts_embeddings = np.zeros(shape=(len(self.df), 0))
+            self.texts_embeddings = np.zeros(shape=(len(self.df), EMBEDDINGS_VECTOR_LENGTH))
 
         self.progress.info('Loading citations for papers', current=4, task=task)
         logger.debug('Loading citations by year statistics')

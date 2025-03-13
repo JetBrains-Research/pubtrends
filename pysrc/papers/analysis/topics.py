@@ -1,27 +1,15 @@
 import logging
+import numpy as np
 from collections import Counter
 from itertools import chain
-
-import numpy as np
+from scipy.cluster.hierarchy import linkage, cophenet
+from scipy.spatial.distance import pdist
 from sklearn.cluster import AgglomerativeClustering
-from sklearn.metrics import pairwise_distances
+from sklearn.metrics import silhouette_score
 
 from pysrc.papers.analysis.text import get_frequent_tokens
 
 logger = logging.getLogger(__name__)
-
-
-def compute_topics_similarity_matrix(papers_vectors, comps):
-    logger.debug('Computing mean similarity between topics embeddings')
-    n_comps = len(set(comps))
-    distances = pairwise_distances(papers_vectors)
-    similarity_matrix = np.zeros(shape=(n_comps, n_comps))
-    indx = {i: np.flatnonzero([c == i for c in comps]).tolist() for i in range(n_comps)}
-    for i in range(n_comps):
-        for j in range(i, n_comps):
-            mean_distance = np.mean(distances[indx[i], :][:, indx[j]])
-            similarity_matrix[i, j] = similarity_matrix[j, i] = 1 / (1 + mean_distance)
-    return similarity_matrix
 
 
 def cluster_and_sort(x, n_clusters):
@@ -33,13 +21,31 @@ def cluster_and_sort(x, n_clusters):
     logger.debug(f'Looking for clusters={n_clusters}')
     if x.shape[0] <= n_clusters or x.shape[1] == 0:
         return [0] * x.shape[0], None
+
     model = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward').fit(x)
+
+    # Estimate hierarchical clustering possibilities
+    # Closer to 1 → Better hierarchical clustering.
+    z = linkage(x, method='ward')
+    coph_corr, _ = cophenet(z, pdist(x))
+    print(f'Cophenetic Correlation Coefficient: {coph_corr}')
+
+    # Above 0.7: Excellent clustering
+    # 0.5 - 0.7: Good clustering
+    # 0.25 - 0.5: Weak clustering
+    # Below 0.25: Poor clustering
+    score = silhouette_score(x, model.labels_)
+    logger.debug(f'Silhouette Score: {score}')
+
     clusters_counter = Counter(model.labels_)
     logger.debug('Reorder clusters by size descending')
     min_size = clusters_counter.most_common()[-1][1]
     logger.debug(f'Min cluster size = {min_size}')
     reorder_map = {c: i for i, (c, _) in enumerate(clusters_counter.most_common())}
-    return [reorder_map[c] for c in model.labels_], model.children_
+    clusters = [reorder_map[c] for c in model.labels_]
+    return clusters, model.children_
+
+
 
 
 def get_topics_description(df, comps, corpus, corpus_tokens, corpus_counts, n_words, ignore_comp=None):
@@ -98,7 +104,7 @@ def _get_topics_description_cosine(comps, corpus_tokens, corpus_counts, n_words,
     cluster_mask = np.eye(len(comp_idx))
     distance = tokens_freqs_per_comp.T @ cluster_mask
     # Add some weight for more frequent tokens to get rid of extremely rare ones in the top
-    adjusted_distance = distance.T * np.log(tokens_freqs_total)
+    adjusted_distance = distance.T * np.log1p(tokens_freqs_total)
 
     result = {}
     for comp in comps.keys():

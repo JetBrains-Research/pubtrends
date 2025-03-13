@@ -10,6 +10,8 @@ from nltk.probability import FreqDist
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from threading import Lock
 
+from pysrc.papers.config import EMBEDDINGS_VECTOR_LENGTH
+
 logger = logging.getLogger(__name__)
 
 # Ensure that modules are downloaded in advance
@@ -24,7 +26,6 @@ NLTK_STOP_WORDS_SET = set(stopwords.words('english'))
 NLTK_LOCK = Lock()
 
 WORD2VEC_WINDOW = 5
-WORD2VEC_VECTOR_SIZE = 32
 WORD2VEC_EPOCHS = 5
 
 def vectorize_corpus(df, max_features, min_df, max_df, test=False):
@@ -97,11 +98,15 @@ finally:
 def stemmed_tokens(text, min_token_length=4):
     text = text.lower()
     # Replace non-ascii or punctuation with space
-    text = re.sub('[^a-zA-Z0-9.]+', ' ', text)
+    text = re.sub('[^a-zA-Z0-9-+.,:!?]+', ' ', text)
     # Whitespaces normalization, see #215
     text = re.sub('[ ]{2,}', ' ', text.strip())
     # Tokenize text
-    tokens = word_tokenize(text.lower())
+    tokens = word_tokenize(text)
+    # Let tokens start with letters only
+    tokens = [re.sub('^[^a-zA-Z]+', '', t) for t in tokens]
+    # Ignore e-XX tokens
+    tokens = [t for t in tokens if not re.match('e-?[0-9]+' , t)]
     # Ignore stop words, take into accounts nouns and adjectives, fix plural forms
     lemmatizer = WordNetLemmatizer()
     lemmas = [lemmatizer.lemmatize(token, pos=NLTK_POS_TAG_TO_WORDNET[pos[:2]])
@@ -130,7 +135,7 @@ def build_stemmed_corpus(df):
                                                               df['abstract'],
                                                               df['mesh'].replace(',', '.'),
                                                               df['keywords'].replace(',', '.'))):
-        if i % 200 == 1 :
+        if i % 100 == 1 :
             logger.debug(f'Processed {i} papers')
         papers_stemmed_sentences.append([
             stemmed_tokens(sentence)
@@ -163,7 +168,7 @@ def tokens_embeddings(corpus, corpus_tokens, test=False):
     return train_word2vec(corpus, corpus_tokens, test=test)
 
 
-def train_word2vec(corpus, corpus_tokens, vector_size=WORD2VEC_VECTOR_SIZE, test=False):
+def train_word2vec(corpus, corpus_tokens, vector_size=EMBEDDINGS_VECTOR_LENGTH, test=False):
     logger.debug('Collecting sentences across dataset')
     sentences = list(filter(
         lambda l: test or len(l) >= WORD2VEC_WINDOW,  # Ignore short sentences, less than window

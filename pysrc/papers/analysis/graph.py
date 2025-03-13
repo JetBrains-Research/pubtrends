@@ -10,8 +10,8 @@ logger = logging.getLogger(__name__)
 
 def similarity(d):
     return \
-            SIMILARITY_BIBLIOGRAPHIC_COUPLING * np.log1p(d.get('bibcoupling', 0)) + \
-            SIMILARITY_COCITATION * np.log1p(d.get('cocitation', 0)) + \
+            SIMILARITY_BIBLIOGRAPHIC_COUPLING * d.get('bibcoupling', 0) + \
+            SIMILARITY_COCITATION * d.get('cocitation', 0) + \
             SIMILARITY_CITATION * d.get('citation', 0)
 
 

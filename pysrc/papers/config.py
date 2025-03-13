@@ -28,8 +28,9 @@ SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN = 5
 # Minimal number of common references, used to reduce papers graph edges count
 SIMILARITY_COCITATION_MIN = 2
 
-# Papers embeddings is a concatenation of graph and text embeddings times corresponding factors
-GRAPH_EMBEDDINGS_FACTOR = 1
+# Papers embeddings is a weighted average of graph and text embeddings
+EMBEDDINGS_VECTOR_LENGTH = 32
+GRAPH_EMBEDDINGS_FACTOR = 2
 TEXT_EMBEDDINGS_FACTOR = 1
 
 # Global vectorization max vocabulary size

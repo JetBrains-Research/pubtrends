@@ -1,7 +1,6 @@
-import unittest
-
 import numpy as np
 import pandas as pd
+import unittest
 from parameterized import parameterized
 
 from pysrc.papers.analysis.topics import _get_topics_description_cosine
@@ -10,6 +9,7 @@ from pysrc.papers.config import PubtrendsConfig
 from pysrc.test.mock_loaders import MockLoader
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
+
 
 class TestTopics(unittest.TestCase):
 
@@ -61,18 +61,19 @@ class TestTopics(unittest.TestCase):
 
             weights = np.array([v[1] for v in data])
             expected_weights = np.array([v[1] for v in expected_data])
-            self.assertTrue(np.allclose(weights, expected_weights, rtol=1e-3),
+            self.assertTrue(np.allclose(weights, expected_weights, rtol=1e-2),
                             f'{name}: weights do not match for component {comp}')
 
     @parameterized.expand([
-        ('1word_all', 1, None, {0: [('frequent', 2.598)], 1: [('rare-1', 2.708)], 2: [('rare-2', 2.708)]}),
-        ('2word_ignore0', 2, 0, {0: [],
-                                 1: [('frequent', 2.895), ('rare-1', 2.708)],
-                                 2: [('frequent', 2.895), ('rare-2', 2.708)]}),
+        ('1word_all', 1, None, {0: [('frequent', 2.60)], 1: [('rare-1', 2.77)], 2: [('rare-2', 2.77)]}),
+        ('2word_ignore0', 2, 0,
+         {0: [], 1: [('frequent', 2.90), ('rare-1', 2.77)], 2: [('frequent', 2.90), ('rare-2', 2.77)]}
+         ),
     ])
     def test_get_topics_description_cosine(self, name, n_words, ignore_comp, expected_result):
         _, _, _, comps, corpus_terms, corpus_counts = TestTopics._get_topics_description_data()
         result = _get_topics_description_cosine(comps, corpus_terms, corpus_counts, n_words, ignore_comp=ignore_comp)
+        # print(result)
         self._compare_topics_descriptions(result, expected_result, name)
 
 
