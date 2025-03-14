@@ -3,6 +3,17 @@ Pubtrends changelog
 
 Here you can see the full list of changes between each release.
 
+Version 1.1
+------------
+Released on March 14, 2025
+
+- Use weighted sum of graph and text embeddings instead of concatenation
+- Improved graph visualization - limit number of show connected papers
+- Updated databases
+- Updated libraries
+- Docker base image updated to Ubuntu 24.04 LTS
+
+
 Version 1.0
 ------------
 Released on June 29, 2023
