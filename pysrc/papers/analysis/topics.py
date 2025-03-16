@@ -36,16 +36,18 @@ def cluster_and_sort(x, n_clusters):
     # Below 0.25: Poor clustering
     score = silhouette_score(x, model.labels_)
     logger.debug(f'Silhouette Score: {score}')
+    clusters = reorder_by_size(model.labels_)
+    return clusters, model.children_
 
-    clusters_counter = Counter(model.labels_)
+
+def reorder_by_size(clusters):
+    clusters_counter = Counter(clusters)
     logger.debug('Reorder clusters by size descending')
     min_size = clusters_counter.most_common()[-1][1]
     logger.debug(f'Min cluster size = {min_size}')
     reorder_map = {c: i for i, (c, _) in enumerate(clusters_counter.most_common())}
-    clusters = [reorder_map[c] for c in model.labels_]
-    return clusters, model.children_
-
-
+    result = [reorder_map[c] for c in clusters]
+    return result
 
 
 def get_topics_description(df, comps, corpus, corpus_tokens, corpus_counts, n_words, ignore_comp=None):

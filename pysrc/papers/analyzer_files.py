@@ -193,7 +193,12 @@ class AnalyzerFiles(PapersAnalyzer):
             add_artificial_text_similarities_edges(ids, self.texts_embeddings, self.sparse_papers_graph)
 
         if len(self.df) > 1:
-            logger.debug('Apply TSNE transformation on papers embeddings')
+            logger.debug('Computing PCA projection')
+            pca = PCA(n_components=min(len(self.papers_embeddings), PCA_COMPONENTS))
+            t = StandardScaler().fit_transform(self.papers_embeddings)
+            self.pca_coords = pca.fit_transform(t)
+            logger.debug(f'Explained variation {int(np.sum(pca.explained_variance_ratio_) * 100)}%')
+            logger.debug('Apply TSNE transformation')
             if not test:
                 tsne = TSNE(n_components=2, random_state=42, perplexity=min(30, len(self.df) - 1))
             else:
@@ -202,13 +207,14 @@ class AnalyzerFiles(PapersAnalyzer):
             self.df['x'] = tsne_embeddings_2d[:, 0]
             self.df['y'] = tsne_embeddings_2d[:, 1]
         else:
+            self.pca_coords = np.zeros(shape=(len(self.df), PCA_COMPONENTS))
             self.df['x'] = 0
             self.df['y'] = 0
 
         self.progress.info(f'Extracting {topics} number of topics from papers text and graph similarity',
                            current=11, task=task)
         logger.debug('Extracting topics from papers embeddings')
-        clusters, dendrogram = cluster_and_sort(self.papers_embeddings, topics)
+        clusters, dendrogram = cluster_and_sort(self.pca_coords, topics)
         self.df['comp'] = clusters
         path_topics_sizes = os.path.join(self.query_folder, 'topics_sizes.html')
         logging.info(f'Save topics ratios to file {path_topics_sizes}')
