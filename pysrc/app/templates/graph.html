@@ -518,16 +518,23 @@
             // Save all created tippy
             let tippys = [];
 
-            function addPopper(popperElements) {
+            function addPopper(type, popperElements) {
                 popperElements.forEach(function (ele) {
                     tippys.push(makePopper(ele));
                     ele.unbind('mouseover');
                     // track hovered event to avoid too late tippy
                     let inside = false;
                     ele.bind('mouseover', (event) => {
-                        if (ele.hasClass('semitransp-hover') ||
+                        if (type === 'node' &&
+                            ele.hasClass('semitransp-hover') ||
                             ele.hasClass('semitransp-range') ||
                             ele.hasClass('semitransp-filter')) return;
+                        if (type === 'edge') {
+                            let neighborNodes = ele.connectedNodes();
+                            if (neighborNodes.filter(function (n) {
+                                return n.hasClass('semitransp-range') || n.hasClass('semitransp-filter');
+                            }).length === 2) return;
+                        }
                         inside = true;
                         // Show hover timeout
                         setTimeout(
@@ -552,10 +559,10 @@
 
             cy.ready(function () {
                 // Add info popup on hover
-                addPopper(cy.nodes().filter(function (ele) {
+                addPopper('node', cy.nodes().filter(function (ele) {
                     return 'topic' in ele.data();
                 }));
-                addPopper(cy.edges().filter(function (ele) {
+                addPopper('edge', cy.edges().filter(function (ele) {
                     return 'similarity' in ele.data() || 'textsimilarity' in ele.data();
                 }));
                 // Open paper details on click
@@ -626,12 +633,17 @@
 
                 // Highlight edges and neighbours on hover
                 cy.on('mouseover', 'edge', function (event) {
-                    if (window.freeze || getFilter() !== "" || $('#slider').val() > 0) {
+                    if (window.freeze) {
                         return;
                     }
                     let sel = event.target;
-                    sel.addClass('highlight');
                     let neighborNodes = sel.connectedNodes();
+                    if (neighborNodes.filter(function (n) {
+                        return n.hasClass('semitransp-range') || n.hasClass('semitransp-filter');
+                    }).length === 2) return;
+
+                    sel.addClass('highlight');
+
                     cy.nodes().filter(function (ele) {
                         return ele !== sel && ele.hasClass('dataset');
                     }).difference(neighborNodes).addClass('semitransp-hover');
@@ -639,7 +651,7 @@
                     neighborNodes.addClass('highlight');
                 });
                 cy.on('mouseout', 'edge', function (event) {
-                    if (window.freeze || getFilter() !== "" || $('#slider').val() > 0) {
+                    if (window.freeze) {
                         return;
                     }
                     let sel = event.target;
