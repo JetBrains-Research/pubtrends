@@ -103,10 +103,10 @@
 
         function showDescription(description) {
             // Close all notifications
-            $('.notifyjs-wrapper').trigger('notify-hide');
+            $('#topleftnotify').trigger('notify-hide');
             const h = $(window).height();
             const s = Math.min(13, Math.round(7 * h / 800 * 80 / (Object.keys(topics_palette).length + 1))).toString()
-            let content = '<div class="mt-5"><br><p style="background-color:white;color:black;line-height: 35%;font-size:' + s + 'px";>';
+            let content = '<div id="topleftnotify" class="mt-5"><br><p style="background-color:white;color:black;line-height: 35%;font-size:' + s + 'px";>';
             for (let [topic, tags] of Object.entries(description)) {
                 content += '<svg width="' + s + '" height="' + s + '">' +
                     '<rect width="' + s + '" height="' + s + '" ' +
@@ -128,10 +128,10 @@
 
         function showYear() {
             // Close all notifications
-            $('.notifyjs-wrapper').trigger('notify-hide');
+            $('#topleftnotify').trigger('notify-hide');
             $.notify({
                 title:
-                    $('<div class="mt-5"><br><p><small>' +
+                    $('<div id="topleftnotify" class="mt-5"><br><p><small>' +
                         '<svg width="16" height="16"><rect width="16" height="16" style="fill:#000000;"/></svg> ' +
                         window.min_year + ' - ' +
                         '<svg width="16" height="16"><rect width="16" height="16" style="fill:#00FF00;"/></svg> ' +
@@ -704,6 +704,7 @@
             $('#searchMesh').change(searchChanged);
             $('#searchKeywords').change(searchChanged);
 
+            showNumberOfPapers();
         });
 
         function getFilter() {
@@ -731,6 +732,31 @@
                     }
                 });
             });
+            showNumberOfPapers();
+        }
+
+        function showNumberOfPapers() {
+            // Close all notifications
+            $('#npapers').trigger('notify-hide');
+            let matches = 0;
+            window.cy.nodes().forEach(function (ele) {
+                if ('title' in ele.data() && !ele.hasClass('semitransp-range') && !ele.hasClass('semitransp-filter')) matches += 1;
+            });
+            let msg = "";
+            if (matches === papers_number) {
+                msg = papers_number.toString();
+            } else
+                msg = matches.toString() + " of " + papers_number.toString();
+            $.notify({
+                title: $('<div id="npapers" class="mt-5"><br><p><small>' + msg + ' papers</small></p></div>')
+            }, {
+                style: 'html_title',
+                autoHide: false,
+                position: 'bottom right',
+                showDuration: 0,
+                hideDuration: 0,
+                clickToHide: false
+            });
         }
 
         function searchChanged() {
@@ -744,16 +770,11 @@
                         ele.removeClass('semitransp-filter');
                     });
                 });
-                // Restore notification
-                if (window.show_color_mode === 'topics') {
-                    showColorTopics();
-                } else {
-                    showColorYear();
-                }
+                showNumberOfPapers();
                 return;
             }
+
             // Non-empty search
-            let matches = 0;
             window.cy.batch(function () {
                 window.cy.nodes().forEach(function (ele) {
                     let data = ele.data();
@@ -766,7 +787,6 @@
                             $('#searchKeywords').is(':checked') && data.keywords.toLowerCase().includes(filter)) {
                             ele.removeClass('semitransp-filter');
                             ele.addClass('highlight');
-                            matches += 1;
                         } else {
                             ele.removeClass('highlight');
                             ele.addClass('semitransp-filter');
@@ -777,19 +797,7 @@
 
             sliderRange();
 
-            // Close all notifications
-            $('.notifyjs-wrapper').trigger('notify-hide');
-            $.notify({
-                title: $('<div class="mt-5"><br><p><small>' + matches.toString() + " of " + papers_number.toString() +
-                    '</small></p></div>')
-            }, {
-                style: 'html_title',
-                autoHide: false,
-                position: 'top left',
-                showDuration: 0,
-                hideDuration: 0,
-                clickToHide: false
-            });
+            showNumberOfPapers();
         }
 
         function result() {
