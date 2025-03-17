@@ -97,4 +97,4 @@ def get_app():
 
 # With debug=True, Flask server will auto-reload on changes
 if __name__ == '__main__':
-    fasttext_app.run(host='0.0.0.0', debug=True, port=5001)
+    fasttext_app.run(host='0.0.0.0', debug=False, port=5001)
