@@ -192,6 +192,40 @@
             }
         }
 
+        function showPaperAbstract(data, topics_palette, topics_tags) {
+            // Close notifications
+            $('#about-paper').trigger('notify-hide');
+            window.abstractShown = true;
+            setTimeout(function () {
+                if (!window.abstractShown) return;
+                let content = '<div id="about-paper" ' +
+                    'style="background-color: white; position: fixed; bottom: 0; margin-bottom: 0;"><br><p>' +
+                    data.abstract + '</p><p>' +
+                    '<span style="color:dodgerblue;">Mesh</span>: ' + data.mesh + "<br>" +
+                    '<span style="color:dodgerblue;">Keywords</span>: ' + data.keywords + "<br>" +
+                    '<span style="color:dodgerblue;">Topic</span>: ' + (data.topic + 1) + " " +
+                    '<svg width="16" height="16"><rect width="16" height="16" ' +
+                    'style="fill:' + topics_palette[data.topic] + '";/></svg> ' + topics_tags[data.topic] +
+                    '</p></div>';
+                $.notify({
+                    title: $(content)
+                }, {
+                    style: 'html_title',
+                    autoHide: false,
+                    position: 'bottom left',
+                    showDuration: 0,
+                    hideDuration: 0,
+                    clickToHide: false
+                });
+            }, 300);
+        }
+
+        function hidePaperAbstract() {
+            // Hide paper abstract and other information
+            $('#about-paper').trigger('notify-hide');
+            window.abstractShown = false;
+        }
+
         $(window).on("load", function () {
             document.getElementById('cy').innerHTML = "";
 
@@ -339,15 +373,21 @@
                         }
                     },
                     {
-                        selector: 'node.semitransp',
+                        selector: 'node.semitransp-hover',
                         style: {
-                            'opacity': 0.01
+                            'opacity': '0.01 !important'
                         }
                     },
                     {
-                        selector: 'node.semitransp2',
+                        selector: 'node.semitransp-filter',
                         style: {
-                            'opacity': 0.01
+                            'opacity': '0.01 !important'
+                        }
+                    },
+                    {
+                        selector: 'node.semitransp-range',
+                        style: {
+                            'opacity': '0.01 !important'
                         }
                     },
                     {
@@ -392,13 +432,19 @@
                         }
                     },
                     {
-                        selector: 'edge.semitransp',
+                        selector: 'edge.semitransp-hover',
                         style: {
                             'opacity': '0.01 !important'
                         }
                     },
                     {
-                        selector: 'edge.semitransp2',
+                        selector: 'edge.semitransp-range',
+                        style: {
+                            'opacity': '0.01 !important'
+                        }
+                    },
+                    {
+                        selector: 'edge.semitransp-filter',
                         style: {
                             'opacity': '0.01 !important'
                         }
@@ -479,7 +525,9 @@
                     // track hovered event to avoid too late tippy
                     let inside = false;
                     ele.bind('mouseover', (event) => {
-                        if (ele.hasClass('semitransp') || ele.hasClass('semitransp2')) return;
+                        if (ele.hasClass('semitransp-hover') ||
+                            ele.hasClass('semitransp-range') ||
+                            ele.hasClass('semitransp-filter')) return;
                         inside = true;
                         // Show hover timeout
                         setTimeout(
@@ -493,7 +541,9 @@
                     });
                     ele.unbind('mouseout');
                     ele.bind('mouseout', (event) => {
-                        if (ele.hasClass('semitransp') || ele.hasClass('semitransp2')) return;
+                        if (ele.hasClass('semitransp-hover') ||
+                            ele.hasClass('semitransp-range') ||
+                            ele.hasClass('semitransp-filter')) return;
                         inside = false;
                         event.target.tippy.hide();
                     })
@@ -510,7 +560,9 @@
                 }));
                 // Open paper details on click
                 cy.nodes().on('click', function (event) {
-                    let data = event.target.data();
+                    let ele = event.target;
+                    if (ele.hasClass('semitransp-hover') || ele.hasClass('semitransp-range') || ele.hasClass('semitransp-filter')) return;
+                    let data = ele.data();
                     if ('title' in data) {
                         event.stopPropagation();
                         // Decode jobid from URL
@@ -523,70 +575,52 @@
 
                 // Highlight node and neighbours on hover
                 cy.on('mouseover', 'node', function (event) {
-                    if (window.freeze || getFilter() !== "") {
-                        return;
-                    }
                     let sel = event.target;
-                    if (sel.hasClass('semitransp2')) return;
+                    if (sel.hasClass('semitransp-range') ||
+                        sel.hasClass('semitransp-filter') ||
+                        window.freeze && sel.hasClass('semitransp-hover')) return;
                     let data = sel.data();
                     if ('title' in data) {
+                        showPaperAbstract(data, topics_palette, topics_tags);
+                    }
+                    if (window.freeze) {
+                        return;
+                    }
+                    if ('title' in data) {
                         sel.addClass('highlight');
-                        sel.removeClass('semitransp');
+                        sel.removeClass('semitransp-hover');
                         let neighborEdges = sel.connectedEdges();
                         let neighborNodes = neighborEdges.connectedNodes();
                         cy.nodes().filter(function (ele) {
-                            return ele !== sel && !ele.hasClass('semitransp2');
-                        }).difference(neighborNodes).addClass('semitransp');
+                            return ele !== sel &&
+                                !ele.hasClass('semitransp-range') &&
+                                !ele.hasClass('semitransp-filter');
+                        }).difference(neighborNodes).addClass('semitransp-hover');
                         neighborEdges.addClass('highlight');
-                        cy.edges().difference(neighborEdges).addClass('semitransp');
+                        cy.edges().difference(neighborEdges).addClass('semitransp-hover');
                         neighborNodes.addClass('highlight');
-
-                        // Close notifications
-                        $('#about-paper').trigger('notify-hide');
-                        window.abstractShown = true;
-                        setTimeout(function () {
-                            if (!window.abstractShown) return;
-                            let content = '<div id="about-paper" ' +
-                                'style="background-color: white; position: fixed; bottom: 0; margin-bottom: 0;"><br><p>' +
-                                data.abstract + '</p><p>' +
-                                '<span style="color:dodgerblue;">Mesh</span>: ' + data.mesh + "<br>" +
-                                '<span style="color:dodgerblue;">Keywords</span>: ' + data.keywords + "<br>" +
-                                '<span style="color:dodgerblue;">Topic</span>: ' + (data.topic + 1) + " " +
-                                '<svg width="16" height="16"><rect width="16" height="16" ' +
-                                'style="fill:' + topics_palette[data.topic] + '";/></svg> ' + topics_tags[data.topic] +
-                                '</p></div>';
-                            $.notify({
-                                title: $(content)
-                            }, {
-                                style: 'html_title',
-                                autoHide: false,
-                                position: 'bottom left',
-                                showDuration: 0,
-                                hideDuration: 0,
-                                clickToHide: false
-                            });
-                        }, 300);
                     }
                 });
                 cy.on('mouseout', 'node', function (event) {
-                    if (window.freeze || getFilter() !== "") {
+                    hidePaperAbstract();
+                    if (window.freeze) {
                         return;
                     }
-                    $('#about-paper').trigger('notify-hide');
-                    window.abstractShown = false;
                     let sel = event.target;
-                    if (sel.hasClass('semitransp2')) return;
+                    if (sel.hasClass('semitransp-range') || sel.hasClass('semitransp-filter')) return;
                     if ('title' in sel.data()) {
                         sel.removeClass('highlight');
-                        sel.removeClass('semitransp');
+                        sel.removeClass('semitransp-hover');
                         let neighborEdges = sel.connectedEdges();
                         let neighborNodes = neighborEdges.connectedNodes();
                         neighborNodes.removeClass('highlight');
                         cy.nodes().filter(function (ele) {
-                            return ele !== sel && !ele.hasClass('semitransp2');
-                        }).difference(neighborNodes).removeClass('semitransp');
+                            return ele !== sel &&
+                                !ele.hasClass('semitransp-range') &&
+                                !ele.hasClass('semitransp-filter');
+                        }).difference(neighborNodes).removeClass('semitransp-hover');
                         neighborEdges.removeClass('highlight');
-                        cy.edges().difference(neighborEdges).removeClass('semitransp');
+                        cy.edges().difference(neighborEdges).removeClass('semitransp-hover');
                     }
                 });
 
@@ -600,8 +634,8 @@
                     let neighborNodes = sel.connectedNodes();
                     cy.nodes().filter(function (ele) {
                         return ele !== sel && ele.hasClass('dataset');
-                    }).difference(neighborNodes).addClass('semitransp');
-                    cy.edges().difference(sel).addClass('semitransp');
+                    }).difference(neighborNodes).addClass('semitransp-hover');
+                    cy.edges().difference(sel).addClass('semitransp-hover');
                     neighborNodes.addClass('highlight');
                 });
                 cy.on('mouseout', 'edge', function (event) {
@@ -614,9 +648,9 @@
                     neighborNodes.removeClass('highlight');
                     cy.nodes().filter(function (ele) {
                         return ele !== sel && ele.hasClass('dataset');
-                    }).difference(neighborNodes).removeClass('semitransp');
+                    }).difference(neighborNodes).removeClass('semitransp-hover');
                     sel.removeClass('highlight');
-                    cy.edges().difference(sel).removeClass('semitransp');
+                    cy.edges().difference(sel).removeClass('semitransp-hover');
                 });
 
                 <!-- Highlight analyzed paper -->
@@ -690,9 +724,9 @@
                     if ('title' in data) {
                         if (window.show_size_mode === 'connections' && data.connections < min_threshold ||
                             window.show_size_mode === 'citations' && data.cited < min_threshold) {
-                            ele.addClass('semitransp2');
+                            ele.addClass('semitransp-range');
                         } else {
-                            ele.removeClass('semitransp2');
+                            ele.removeClass('semitransp-range');
                         }
                     }
                 });
@@ -707,7 +741,7 @@
                         return 'title' in ele.data();
                     }).forEach(function (ele) {
                         ele.removeClass('highlight');
-                        ele.removeClass('semitransp');
+                        ele.removeClass('semitransp-filter');
                     });
                 });
                 // Restore notification
@@ -730,12 +764,12 @@
                             $('#searchAbstracts').is(':checked') && data.abstract.toLowerCase().includes(filter) ||
                             $('#searchMesh').is(':checked') && data.mesh.toLowerCase().includes(filter) ||
                             $('#searchKeywords').is(':checked') && data.keywords.toLowerCase().includes(filter)) {
-                            ele.removeClass('semitransp');
+                            ele.removeClass('semitransp-filter');
                             ele.addClass('highlight');
                             matches += 1;
                         } else {
                             ele.removeClass('highlight');
-                            ele.addClass('semitransp');
+                            ele.addClass('semitransp-filter');
                         }
                     }
                 });
@@ -860,7 +894,8 @@
         <div class="col-12">
             <div class="float-right vertical-center">
                 <div class="form-group mt-3" style="z-index: 10">
-                    <input id="slider" type="range" class="custom-range"  min="0" max="100" step="1" value="0" onChange="sliderRange()">
+                    <input id="slider" type="range" class="custom-range" min="0" max="100" step="1" value="0"
+                           onChange="sliderRange()">
                     <label id="slider-label" for="slider">Min connections</label>
                 </div>
             </div>
