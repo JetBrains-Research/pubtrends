@@ -11,8 +11,8 @@ SIMILARITY_COCITATION = 10  # x number of co-citations
 SIMILARITY_BIBLIOGRAPHIC_COUPLING = 3  # x number of references
 SIMILARITY_CITATION = 1  # x 0-1 citation
 
-# Reduce number of edges in papers graph
-EMBEDDINGS_GRAPH_EDGES = 100
+# Reduce number of edges in papers graph for node2vec embeddings computations
+EMBEDDINGS_GRAPH_EDGES = 200
 
 # Reduce number of edges in papers graph
 GRAPH_BIBLIOGRAPHIC_EDGES = 20
@@ -29,7 +29,7 @@ SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN = 5
 SIMILARITY_COCITATION_MIN = 2
 
 # Papers embeddings is a weighted average of graph and text embeddings
-EMBEDDINGS_VECTOR_LENGTH = 32
+EMBEDDINGS_VECTOR_LENGTH = 200
 GRAPH_EMBEDDINGS_FACTOR = 2
 TEXT_EMBEDDINGS_FACTOR = 1
 
@@ -118,9 +118,6 @@ class PubtrendsConfig:
         # TODO Admin password - should be a better way
         self.admin_email = params['admin_email']
         self.admin_password = params['admin_password']
-
-        # Precompute examples
-        self.precompute_examples = params.getboolean('precompute_examples')
 
         # Additional modules configuration
         self.feature_authors_enabled = params.getboolean('feature_authors_enabled')

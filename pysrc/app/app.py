@@ -2,6 +2,7 @@ import gzip
 import json
 import logging
 import os
+import requests
 import random
 import tempfile
 import time
@@ -13,7 +14,7 @@ from urllib.parse import quote
 
 from pysrc.app.admin.admin import configure_admin_functions
 from pysrc.app.messages import SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, SOMETHING_WENT_WRONG_PAPER, \
-    SOMETHING_WENT_WRONG_TOPIC, SERVICE_LOADING_PREDEFINED_EXAMPLES
+    SOMETHING_WENT_WRONG_TOPIC, SERVICE_LOADING_PREDEFINED_EXAMPLES, SERVICE_LOADING_INITIALIZING
 from pysrc.app.reports import get_predefined_jobs, load_result_viz_log, \
     load_result_data, _predefined_example_params_by_jobid, preprocess_string, load_paper_data
 from pysrc.celery.pubtrends_celery import pubtrends_celery
@@ -104,7 +105,9 @@ def log_request(r):
 
 @app.route('/')
 def index():
-    if PUBTRENDS_CONFIG.precompute_examples and not are_predefined_jobs_ready():
+    if not is_fasttext_endpoint_ready():
+        return render_template('init.html', version=VERSION, message=SERVICE_LOADING_INITIALIZING)
+    if not are_predefined_jobs_ready():
         return render_template('init.html', version=VERSION, message=SERVICE_LOADING_PREDEFINED_EXAMPLES)
 
     search_example_message = ''
@@ -646,6 +649,25 @@ def are_predefined_jobs_ready():
         PREDEFINED_JOBS_LOCK.release()
 
 
+# Launch with Docker address or locally
+FASTTEXT_URL = os.getenv('FASTTEXT_URL', 'http://localhost:5001')
+
+
+def is_fasttext_endpoint_ready():
+    logger.debug(f'Check fasttext endpoint is ready')
+    try:
+        r = requests.request(url=FASTTEXT_URL, method='GET')
+        if r.status_code != 200:
+            return False
+        r = requests.request(url=f'{FASTTEXT_URL}/initialized', method='GET', headers={'Accept': 'application/json'})
+        if r.status_code != 200 or r.json() is not True:
+            return False
+        return True
+    except Exception as e:
+        logger.debug(f'Fasttext endpoint is not ready: {e}')
+        return False
+
+
 ##########################
 # Feedback functionality #
 ##########################
@@ -686,4 +708,4 @@ def get_app():
 
 # With debug=True, Flask server will auto-reload on changes
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True, extra_files=['templates/'])
+    app.run(host='0.0.0.0', debug=True, extra_files=['templates/'], port=5000)

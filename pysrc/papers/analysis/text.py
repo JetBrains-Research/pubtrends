@@ -1,6 +1,12 @@
 import logging
+import os
+import re
+from itertools import chain
+from threading import Lock
+
 import nltk
 import numpy as np
+import requests
 import re
 from gensim.models import Word2Vec
 from itertools import chain
@@ -163,8 +169,32 @@ def _build_stems_to_tokens_map(stems_and_tokens):
     return stems_tokens_map
 
 
+# Launch with Docker address or locally
+FASTTEXT_URL = os.getenv('FASTTEXT_URL', 'http://localhost:5001')
+
+
 def tokens_embeddings(corpus, corpus_tokens, test=False):
-    logger.debug(f'Compute words embeddings trained word2vec')
+    if test:
+        logger.debug(f'Compute words embeddings trained word2vec')
+        return train_word2vec(corpus, corpus_tokens, test=test)
+
+    # Don't use model as is, since each celery process will load it's own copy.
+    # Shared model is available via additional service with single model.
+    logger.debug(f'Fetch embeddings from fasttext service')
+    try:
+        r = requests.request(
+            url=f'{FASTTEXT_URL}/fasttext',
+            method='POST',
+            json=corpus_tokens,
+            headers={'Accept': 'application/json'}
+        )
+        if r.status_code == 200:
+            return np.array(r.json()).reshape(len(corpus_tokens), EMBEDDINGS_VECTOR_LENGTH)
+        else:
+            logger.debug(f'Wrong response code {r.status_code}')
+    except Exception as e:
+        logger.debug(f'Failed to fetch embeddings ${e}')
+    logger.debug('Fallback to in-house word2vec')
     return train_word2vec(corpus, corpus_tokens, test=test)
 
 
@@ -188,11 +218,11 @@ def train_word2vec(corpus, corpus_tokens, vector_size=EMBEDDINGS_VECTOR_LENGTH, 
     ])
 
 
-def texts_embeddings(corpus_counts, tokens_w2v_embeddings):
+def texts_embeddings(corpus_counts, tokens_embeddings):
     """
-    Computes texts embeddings as TF-IDF weighted average of word2vec words embeddings.
+    Computes texts embeddings as TF-IDF weighted average of words embeddings.
     :param corpus_counts: Vectorized papers matrix
-    :param tokens_w2v_embeddings: Tokens word2vec embeddings
+    :param tokens_embeddings: Tokens word2vec embeddings
     :return: numpy array [publications x embeddings]
     """
     logger.debug('Compute TF-IDF on tokens counts')
@@ -200,9 +230,9 @@ def texts_embeddings(corpus_counts, tokens_w2v_embeddings):
     tfidf = tfidf_transformer.fit_transform(corpus_counts)
     logger.debug(f'TFIDF shape {tfidf.shape}')
 
-    logger.debug('Compute text embeddings as TF-IDF weighted average of word2vec tokens embeddings')
+    logger.debug('Compute text embeddings as TF-IDF weighted average of tokens embeddings')
     texts_embeddings = np.array([
-        np.mean((tokens_w2v_embeddings.T * tfidf[i, :].T).T, axis=0) for i in range(tfidf.shape[0])
+        np.mean((tokens_embeddings.T * tfidf[i, :].T).T, axis=0) for i in range(tfidf.shape[0])
     ])
     logger.debug(f'Texts embeddings shape: {texts_embeddings.shape}')
     return texts_embeddings

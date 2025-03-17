@@ -26,6 +26,7 @@ Datasets:
 PubTrends is a web service developed in Python and JavaScript, designed to analyze and visualize information about scientific publications. It uses PostgreSQL as its main database for storing details like titles, abstracts, authors, and citations, along with its built-in text search for full-text search functionality. A Kotlin ORM is used to manage the database, while a separate SQLite database stores user roles and admin credentials.
 
 The web service is powered by Flask and Gunicorn, with Celery managing asynchronous tasks and Redis acting as the message broker. For data manipulation and analysis, libraries such as Pandas, NumPy, and Scikit-Learn are used, while text processing relies on NLTK and SpaCy. Graphs and embeddings are handled using NetworkX, word2vec (via GenSim), and a custom node2vec implementation.
+The service uses precomputed biomedical words embeddings https://github.com/ncbi-nlp/BioSentVec.
 
 For data visualization, Bokeh, Holoviews, Seaborn, and Matplotlib are used, with Bokeh providing interactive plots for web pages and Jupyter notebooks. The frontend is built with Bootstrap for layout, jQuery for interactivity, and Cytoscape.js for rendering graphs. 
 
@@ -231,7 +232,13 @@ Then launch web-service or use jupyter notebook for development.
 5. Start flask server at http://localhost:5000/
     ```
     python -m pysrc.app.app
-    ```    
+    ```
+
+6. Start service for text embeddings based on pretrained fasttext model at http://localhost:5001/
+    ```
+    python -m pysrc.fasttext.fasttext_app
+    ```
+
 
 ### Jupyter notebook
 
