@@ -106,20 +106,20 @@
             $('.notifyjs-wrapper').trigger('notify-hide');
             const h = $(window).height();
             const s = Math.min(13, Math.round(7 * h / 800 * 80 / (Object.keys(topics_palette).length + 1))).toString()
-            let content = '<p style="background-color:white;color:black;line-height: 35%;font-size:' + s + 'px";>';
+            let content = '<div class="mt-5"><br><p style="background-color:white;color:black;line-height: 35%;font-size:' + s + 'px";>';
             for (let [topic, tags] of Object.entries(description)) {
                 content += '<svg width="' + s + '" height="' + s + '">' +
                     '<rect width="' + s + '" height="' + s + '" ' +
                     'style="fill:' + topics_palette[topic] + '";/></svg> ' +
                     '#' + (parseInt(topic) + 1).toString() + ' ' + tags + '<br>';
             }
-            content += '</p>';
+            content += '</p></div>';
             $.notify({
                 title: $(content)
             }, {
                 style: 'html_title',
                 autoHide: false,
-                position: 'bottom right',
+                position: 'top left',
                 showDuration: 0,
                 hideDuration: 0,
                 clickToHide: false
@@ -131,16 +131,16 @@
             $('.notifyjs-wrapper').trigger('notify-hide');
             $.notify({
                 title:
-                    $('<p><small>' +
+                    $('<div class="mt-5"><br><p><small>' +
                         '<svg width="16" height="16"><rect width="16" height="16" style="fill:#000000;"/></svg> ' +
                         window.min_year + ' - ' +
                         '<svg width="16" height="16"><rect width="16" height="16" style="fill:#00FF00;"/></svg> ' +
                         window.max_year +
-                        '</small></p>')
+                        '</small></p></div>')
             }, {
                 style: 'html_title',
                 autoHide: false,
-                position: 'bottom right',
+                position: 'top left',
                 showDuration: 0,
                 hideDuration: 0,
                 clickToHide: false
@@ -438,9 +438,7 @@
                             if ('textsimilarity' in data) {
                                 textsimilarity = data.textsimilarity;
                             }
-                            content.innerHTML = "<p style='text-align:left;'><small><b>Similarity</b><br>" +
-                                "Similarity is computed based on citations <br>" +
-                                "and text similarity between papers.<br>" +
+                            content.innerHTML = "<p style='text-align:left;'><small>" +
                                 '<span style="color:dodgerblue;">Co-citations</span>: ' + cocitation + "<br>" +
                                 '<span style="color:dodgerblue;">Common references</span>: ' + bibcoupling + "<br>" +
                                 '<span style="color:dodgerblue;">Citation</span>: ' + citation + "<br>" +
@@ -456,17 +454,12 @@
                                 '<span style="color:dodgerblue;">Journal(s)</span>: ' + data.journal + "<br>" +
                                 '<span style="color:dodgerblue;">Year</span>: ' + data.year + "<br>" +
                                 '<span style="color:dodgerblue;">Cited by </span>: ' + data.cited + " paper(s) total<br>" +
-                                '<span style="color:dodgerblue;">Mesh</span>: ' + data.mesh + "<br>" +
-                                '<span style="color:dodgerblue;">Keywords</span>: ' + data.keywords + "<br>" +
-                                '<span style="color:dodgerblue;">Topic</span>: ' + (data.topic + 1) + " " +
-                                '<svg width="16" height="16"><rect width="16" height="16" ' +
-                                'style="fill:' + topics_palette[data.topic] + '";/></svg><br>' +
-                                '<span style="color:dodgerblue;">Topic Tags</span>: ' + topics_tags[data.topic] +
                                 "</small></p>";
                         }
                         // @formatter:on
                         return content;
                     },
+                    animation: 'false',
                     trigger: 'manual' // manual mode is required here, because of cytoscape
                 });
                 return ele.tippy;
@@ -488,7 +481,7 @@
                     ele.bind('mouseover', (event) => {
                         if (ele.hasClass('semitransp') || ele.hasClass('semitransp2')) return;
                         inside = true;
-                        // Show hover after two seconds
+                        // Show hover timeout
                         setTimeout(
                             function () {
                                 if (inside) {
@@ -525,6 +518,9 @@
                         window.open('/paper?source={{source}}&id=' + data.id + '&jobid=' + jobid, '_blank');
                     }
                 });
+
+                window.abstractShown = false;
+
                 // Highlight node and neighbours on hover
                 cy.on('mouseover', 'node', function (event) {
                     if (window.freeze || getFilter() !== "") {
@@ -532,7 +528,8 @@
                     }
                     let sel = event.target;
                     if (sel.hasClass('semitransp2')) return;
-                    if ('title' in sel.data()) {
+                    let data = sel.data();
+                    if ('title' in data) {
                         sel.addClass('highlight');
                         sel.removeClass('semitransp');
                         let neighborEdges = sel.connectedEdges();
@@ -543,12 +540,40 @@
                         neighborEdges.addClass('highlight');
                         cy.edges().difference(neighborEdges).addClass('semitransp');
                         neighborNodes.addClass('highlight');
+
+                        // Close notifications
+                        $('#about-paper').trigger('notify-hide');
+                        window.abstractShown = true;
+                        setTimeout(function () {
+                            if (!window.abstractShown) return;
+                            let content = '<div id="about-paper" ' +
+                                'style="background-color: white; position: fixed; bottom: 0; margin-bottom: 0;"><br><p>' +
+                                data.abstract + '</p><p>' +
+                                '<span style="color:dodgerblue;">Mesh</span>: ' + data.mesh + "<br>" +
+                                '<span style="color:dodgerblue;">Keywords</span>: ' + data.keywords + "<br>" +
+                                '<span style="color:dodgerblue;">Topic</span>: ' + (data.topic + 1) + " " +
+                                '<svg width="16" height="16"><rect width="16" height="16" ' +
+                                'style="fill:' + topics_palette[data.topic] + '";/></svg> ' + topics_tags[data.topic] +
+                                '</p></div>';
+                            $.notify({
+                                title: $(content)
+                            }, {
+                                style: 'html_title',
+                                autoHide: false,
+                                position: 'bottom left',
+                                showDuration: 0,
+                                hideDuration: 0,
+                                clickToHide: false
+                            });
+                        }, 300);
                     }
                 });
                 cy.on('mouseout', 'node', function (event) {
                     if (window.freeze || getFilter() !== "") {
                         return;
                     }
+                    $('#about-paper').trigger('notify-hide');
+                    window.abstractShown = false;
                     let sel = event.target;
                     if (sel.hasClass('semitransp2')) return;
                     if ('title' in sel.data()) {
@@ -721,11 +746,12 @@
             // Close all notifications
             $('.notifyjs-wrapper').trigger('notify-hide');
             $.notify({
-                title: $('<p><small>' + matches.toString() + " of " + papers_number.toString() + '</small></p>')
+                title: $('<div class="mt-5"><br><p><small>' + matches.toString() + " of " + papers_number.toString() +
+                    '</small></p></div>')
             }, {
                 style: 'html_title',
                 autoHide: false,
-                position: 'bottom right',
+                position: 'top left',
                 showDuration: 0,
                 hideDuration: 0,
                 clickToHide: false
@@ -833,7 +859,7 @@
     <div class="row">
         <div class="col-12">
             <div class="float-right vertical-center">
-                <div class="form-group mt-4" style="z-index: 10">
+                <div class="form-group mt-3" style="z-index: 10">
                     <input id="slider" type="range" class="custom-range"  min="0" max="100" step="1" value="0" onChange="sliderRange()">
                     <label id="slider-label" for="slider">Min connections</label>
                 </div>
@@ -866,8 +892,10 @@
         intro.setOptions({
             steps: [
                 {
-                    intro: "Papers graph represents similarity among papers.<br>" +
-                        "Paper information with most similar papers are highlighted on hover.<br>" +
+                    intro:
+                        "Papers graph represents similarity among papers.<br>" +
+                        "Paper size represents \"importance\" of the paper.<br>" +
+                        "Edge color reflects major similarity type:<br>" +
                         "Edge color reflects major similarity type:<br>" +
                         '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(46,204,113,0.5);"/></svg>' +
                         "&nbsp;<em>co-citations</em>, " +
@@ -876,14 +904,12 @@
                         '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(52,152,219,0.5);"/></svg>' +
                         "&nbsp;<em>citations</em>, " +
                         '<svg width="16" height="16"><rect width="16" height="16" style="fill:rgba(189,195,199,0.5);"/></svg>' +
-                        "&nbsp;<em>text similarity</em>.<br><br>" +
-                        "Press <strong>F</strong> to freeze the highlighting, <strong>Escape</strong> to unfreeze."
-
-
+                        "&nbsp;<em>text similarity</em>."
                 },
                 {
                     element: '#result',
-                    intro: "Open full analysis report.<br>" +
+                    intro:
+                        "Open full analysis report.<br>" +
                         "Learn more about topics, most cited papers, etc."
                 },
                 {
@@ -892,7 +918,8 @@
                 },
                 {
                     element: '#dropdownMenuButton',
-                    intro: 'Change graph view.<br>' +
+                    intro:
+                        'Change graph view.<br>' +
                         'Size shows paper connections or number of citations.<br>' +
                         'Color represent topic or publication year.<br>' +
                         '<svg width="16" height="16"><rect width="16" height="16" style="fill:#000000;"/></svg> min - ' +
@@ -901,8 +928,14 @@
                 {
                     element: '#slider',
                     intro: 'Filter papers by minimal number of connections or citations.'
+                },
+                {
+                    intro:
+                        "See more information about paper or connection on mouse hover, including full abstract text.<br>" +
+                        "Selected paper is highlighted with the most similar papers.<br>" +
+                        "Click on a paper to navigate to the dedicate paper page.<br>" +
+                        "Press <strong>F</strong> to freeze the paper selection, <strong>Escape</strong> to unfreeze."
                 }
-
             ]
         });
         intro.start();
