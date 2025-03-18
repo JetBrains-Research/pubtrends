@@ -548,9 +548,6 @@
                     });
                     ele.unbind('mouseout');
                     ele.bind('mouseout', (event) => {
-                        if (ele.hasClass('semitransp-hover') ||
-                            ele.hasClass('semitransp-range') ||
-                            ele.hasClass('semitransp-filter')) return;
                         inside = false;
                         event.target.tippy.hide();
                     })
@@ -633,6 +630,7 @@
 
                 // Highlight edges and neighbours on hover
                 cy.on('mouseover', 'edge', function (event) {
+                    hidePaperAbstract();
                     if (window.freeze) {
                         return;
                     }
@@ -651,6 +649,7 @@
                     neighborNodes.addClass('highlight');
                 });
                 cy.on('mouseout', 'edge', function (event) {
+                    hidePaperAbstract();
                     if (window.freeze) {
                         return;
                     }
