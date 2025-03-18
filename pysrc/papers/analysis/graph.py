@@ -51,20 +51,19 @@ def build_papers_graph(df, cit_df, cocit_df, bibliographic_coupling_df):
     return result
 
 
-def sparse_graph(graph, max_edges_to_nodes, key='weight',  min_e=0.001, add_similarity=True):
+def sparse_graph(graph, max_edges_to_nodes, key='similarity',  min_e=0.001, add_similarity=True):
     logger.debug(f'Limit edges to nodes by max_edges_to_nodes={max_edges_to_nodes}, '
                  f'current={graph.number_of_edges() / graph.number_of_nodes()}')
+    if add_similarity:
+        for i, j in graph.edges():
+            graph[i][j]['similarity'] = similarity(graph.get_edge_data(i, j))
+    logger.debug(f'Estimating e to keep {max_edges_to_nodes} edges per node')
     e = 1.0
     result = _local_sparse(graph, e, key)
     while e >= min_e and result.number_of_edges() / result.number_of_nodes() > max_edges_to_nodes:
         e /= 2
         result = _local_sparse(graph, e, key)
     logger.debug(f'Sparse e={e} graph edges/nodes={result.number_of_edges() / result.number_of_nodes()}')
-
-    # Add similarity key to sparse graph
-    if add_similarity:
-        for i, j in result.edges():
-            result[i][j]['similarity'] = similarity(result.get_edge_data(i, j))
     return result
 
 
