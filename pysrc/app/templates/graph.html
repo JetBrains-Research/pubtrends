@@ -7,6 +7,8 @@
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery-ui@1.14.1/dist/jquery-ui.min.js"></script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.min.js"></script>
 
@@ -75,8 +77,10 @@
 
         function showSizeConnections() {
             window.show_size_mode = 'connections';
-            $('#slider-label').text('Min connections');
-            $('#slider').val(0);
+            let importance_slider = $('#slider-importance');
+            importance_slider.slider({min: 0, max: window.max_connections});
+            $('#slider-importance-label').text("Connections: 0 - " + window.max_connections.toString());
+            importance_slider.val(0);
             window.cy.batch(function () {
                 cy.nodes().forEach(function (ele) {
                     if ('title' in ele.data()) {
@@ -89,8 +93,10 @@
 
         function showSizeCitations() {
             window.show_size_mode = 'citations';
-            $('#slider-label').text('Min citations');
-            $('#slider').val(0);
+            let importance_slider = $('#slider-importance');
+            importance_slider.slider({min: 0, max: window.max_cited});
+            $('#slider-importance-label').text("Citations: 0 - " + window.max_cited.toString());
+            importance_slider.val(0);
             window.cy.batch(function () {
                 cy.nodes().forEach(function (ele) {
                     if ('title' in ele.data()) {
@@ -231,7 +237,7 @@
             $('#frozen').prop("checked", true);
             $.notify("Switched to frozen highlighting mode.", {
                 className: "success",
-                position: "bottom right",
+                position: "top right",
                 showDuration: 0,
             });
         }
@@ -247,7 +253,7 @@
             $('#frozen').prop("checked", false);
             $.notify("Revert to normal highlighting mode.", {
                 className: "success",
-                position: "bottom right",
+                position: "top right",
                 showDuration: 0
             });
         }
@@ -258,6 +264,12 @@
             } else {
                 unfreezeHighlighting();
             }
+        }
+
+        function isHidden(ele) {
+            return ele.hasClass('semitransp-importance-range') ||
+                ele.hasClass('semitransp-year-range') ||
+                ele.hasClass('semitransp-filter');
         }
 
         $(window).on("load", function () {
@@ -419,7 +431,13 @@
                         }
                     },
                     {
-                        selector: 'node.semitransp-range',
+                        selector: 'node.semitransp-importance-range',
+                        style: {
+                            'opacity': '0.01 !important'
+                        }
+                    },
+                    {
+                        selector: 'node.semitransp-year-range',
                         style: {
                             'opacity': '0.01 !important'
                         }
@@ -472,7 +490,13 @@
                         }
                     },
                     {
-                        selector: 'edge.semitransp-range',
+                        selector: 'edge.semitransp-importance-range',
+                        style: {
+                            'opacity': '0.01 !important'
+                        }
+                    },
+                    {
+                        selector: 'edge.semitransp-year-range',
                         style: {
                             'opacity': '0.01 !important'
                         }
@@ -559,15 +583,12 @@
                     // track hovered event to avoid too late tippy
                     let inside = false;
                     ele.bind('mouseover', (event) => {
-                        if (type === 'node' &&
-                            ele.hasClass('semitransp-hover') ||
-                            ele.hasClass('semitransp-range') ||
-                            ele.hasClass('semitransp-filter')) return;
+                        if (type === 'node' && isHidden(ele)) return;
                         if (type === 'edge') {
                             if (window.frozenHighlighting) return;
                             let neighborNodes = ele.connectedNodes();
                             if (neighborNodes.filter(function (n) {
-                                return n.hasClass('semitransp-range') || n.hasClass('semitransp-filter');
+                                return isHidden(n);
                             }).length > 0) return;
                         }
                         inside = true;
@@ -600,7 +621,7 @@
                 // Open paper details on click
                 cy.nodes().on('click', function (event) {
                     let ele = event.target;
-                    if (ele.hasClass('semitransp-hover') || ele.hasClass('semitransp-range') || ele.hasClass('semitransp-filter')) return;
+                    if (isHidden(ele)) return;
                     let data = ele.data();
                     if ('title' in data) {
                         event.stopPropagation();
@@ -615,8 +636,7 @@
                 // Highlight node and neighbours on hover
                 cy.on('mouseover', 'node', function (event) {
                     let sel = event.target;
-                    if (sel.hasClass('semitransp-range') ||
-                        sel.hasClass('semitransp-filter') ||
+                    if (isHidden(sel) ||
                         window.frozenHighlighting && sel.hasClass('semitransp-hover')) return;
                     let data = sel.data();
                     if ('title' in data) {
@@ -631,14 +651,12 @@
                         let neighborEdges = sel.connectedEdges();
                         let neighborNodes = neighborEdges.connectedNodes();
                         cy.nodes().filter(function (ele) {
-                            return ele !== sel &&
-                                !ele.hasClass('semitransp-range') &&
-                                !ele.hasClass('semitransp-filter');
+                            return ele !== sel && !isHidden(ele);
                         }).difference(neighborNodes).addClass('semitransp-hover');
                         neighborEdges.forEach(function (ele) {
                             if (ele.connectedNodes().filter(function (n) {
-                                return n.hasClass('semitransp-range') || n.hasClass('semitransp-filter');
-                            }).length === 0)  ele.addClass('highlight');
+                                return isHidden(n);
+                            }).length === 0) ele.addClass('highlight');
                         });
                         cy.edges().difference(neighborEdges).addClass('semitransp-hover');
                         neighborNodes.addClass('highlight');
@@ -650,7 +668,7 @@
                         return;
                     }
                     let sel = event.target;
-                    if (sel.hasClass('semitransp-range') || sel.hasClass('semitransp-filter')) return;
+                    if (isHidden(sel)) return;
                     if ('title' in sel.data()) {
                         sel.removeClass('highlight');
                         sel.removeClass('semitransp-hover');
@@ -658,9 +676,7 @@
                         let neighborNodes = neighborEdges.connectedNodes();
                         neighborNodes.removeClass('highlight');
                         cy.nodes().filter(function (ele) {
-                            return ele !== sel &&
-                                !ele.hasClass('semitransp-range') &&
-                                !ele.hasClass('semitransp-filter');
+                            return ele !== sel && !isHidden(ele);
                         }).difference(neighborNodes).removeClass('semitransp-hover');
                         neighborEdges.removeClass('highlight');
                         cy.edges().difference(neighborEdges).removeClass('semitransp-hover');
@@ -680,7 +696,7 @@
                     let sel = event.target;
                     let neighborNodes = sel.connectedNodes();
                     if (neighborNodes.filter(function (n) {
-                        return n.hasClass('semitransp-range') || n.hasClass('semitransp-filter');
+                        return isHidden(n);
                     }).length > 0) return;
 
                     sel.addClass('highlight');
@@ -726,6 +742,16 @@
                         }
                     });
                 }
+
+                $('#slider-importance').slider({min: 0, max: window.max_connections});
+                $('#slider-importance-label').text("Connections: 0 - " + window.max_connections.toString());
+                updateSliderImportance();
+
+                $('#slider-year').slider({min: window.min_year, max: window.max_year});
+                $('#slider-year-label').text("Years: " + window.min_year.toString() + " - " + window.max_year.toString());
+                updateSliderYear();
+
+                showNumberOfPapers();
             });
             window.freeze = false;
             // Close all tippy
@@ -746,51 +772,59 @@
                 }
             });
 
-            $('#searchTitles').change(searchChanged);
-            $('#searchAbstracts').change(searchChanged);
-            $('#searchAuthors').change(searchChanged);
-            $('#searchJournals').change(searchChanged);
-            $('#searchMesh').change(searchChanged);
-            $('#searchKeywords').change(searchChanged);
-
-            showNumberOfPapers();
+            let update = function () {searchChanged(); showNumberOfPapers()};
+            $('#searchTitles').change(update);
+            $('#searchAbstracts').change(update);
+            $('#searchAuthors').change(update);
+            $('#searchJournals').change(update);
+            $('#searchMesh').change(update);
+            $('#searchKeywords').change(update);
         });
 
         function getFilter() {
             return $.trim($("#search-input").val()).toLowerCase();
         }
 
-        function sliderRange() {
-            let sliderVal = $('#slider').val();
-            let min_threshold = 0
-            if (window.show_size_mode === 'connections') {
-                min_threshold = window.max_connections * sliderVal / 100;
-            } else if (window.show_size_mode === 'citations') {
-                min_threshold = window.max_cited * sliderVal / 100;
-            }
+        function updateSliderImportance() {
+            let min_threshold = $('#slider-importance').val();
             window.cy.batch(function () {
                 window.cy.nodes().forEach(function (ele) {
                     let data = ele.data();
                     if ('title' in data) {
                         if (window.show_size_mode === 'connections' && data.connections < min_threshold ||
                             window.show_size_mode === 'citations' && data.cited < min_threshold) {
-                            ele.addClass('semitransp-range');
+                            ele.addClass('semitransp-importance-range');
                         } else {
-                            ele.removeClass('semitransp-range');
+                            ele.removeClass('semitransp-importance-range');
                         }
                     }
                 });
             });
-            showNumberOfPapers();
         }
+
+        function updateSliderYear() {
+            let min_threshold = $('#slider-year').val();
+            window.cy.batch(function () {
+                window.cy.nodes().forEach(function (ele) {
+                    let data = ele.data();
+                    if ('title' in data) {
+                        if (data.year < min_threshold) {
+                            ele.addClass('semitransp-year-range');
+                        } else {
+                            ele.removeClass('semitransp-year-range');
+                        }
+                    }
+                });
+            });
+        }
+
 
         function showNumberOfPapers() {
             // Close all notifications
             $('#npapers').trigger('notify-hide');
-            let matches = 0;
-            window.cy.nodes().forEach(function (ele) {
-                if ('title' in ele.data() && !ele.hasClass('semitransp-range') && !ele.hasClass('semitransp-filter')) matches += 1;
-            });
+            let matches = window.cy.nodes().filter(function (ele) {
+                return 'title' in ele.data() && !isHidden(ele);
+            }).length;
             let msg = "";
             if (matches === papers_number) {
                 msg = papers_number.toString();
@@ -819,8 +853,6 @@
                         ele.removeClass('semitransp-filter');
                     });
                 });
-                showNumberOfPapers();
-                return;
             }
 
             // Non-empty search
@@ -843,10 +875,6 @@
                     }
                 });
             });
-
-            sliderRange();
-
-            showNumberOfPapers();
         }
 
         function result() {
@@ -878,7 +906,7 @@
     <span class="d-flex align-items-center mr-2">
         <input id="search-input" type="text" class="form-control" style="min-width: 100px;"
                placeholder="Search..." aria-label="Search for..."
-               oninput="searchChanged();"/>
+               oninput="searchChanged(); showNumberOfPapers();"/>
         &nbsp;in
 
         <input type="checkbox" id="searchTitles" class="ml-3 mr-2" checked="checked"/>
@@ -944,13 +972,21 @@
             <div class="form-group float-right mt-3" style="position: relative; z-index: 10;">
                 <form class="col">
                     <div class="row justify-content-end">
-                        <input id="slider" type="range" class="custom-range" min="0" max="100" step="1" value="0"
-                               onChange="sliderRange()">
-                        <label id="slider-label" for="slider">Min connections</label>
+                        <input id="slider-importance" type="range" class="custom-range"
+                               min="0" max="100" step="1" value="0"
+                               onChange="updateSliderImportance(); showNumberOfPapers();"/>
+                        <label id="slider-importance-label" for="slider-importance">Connections</label>
                     </div>
+                    <div class="row justify-content-end">
+                        <input id="slider-year" type="range" class="custom-range"
+                               min="1970" max="2025" step="1" value="1970"
+                               onChange="updateSliderYear(); showNumberOfPapers();"/>
+                        <label id="slider-year-label" for="slider-year">Years</label>
+                    </div>
+
                     <div class="row justify-content-end vertical-align">
-                        <input type="checkbox" id="frozen" class="mr-2" onchange="changeFrozenHighlighting()"/>
-                        <label for="frozen" style="margin-bottom: 0">Frozen</label>
+                        <input type="checkbox" id="frozen" class="mr-2" onchange="changeFrozenHighlighting();"/>
+                        <label for="frozen" style="margin-bottom: 0">Freeze highlighting</label>
                     </div>
                 </form>
             </div>
@@ -1015,8 +1051,12 @@
                         '<svg width="16" height="16"><rect width="16" height="16" style="fill:#00FF00;"/></svg> max'
                 },
                 {
-                    element: '#slider',
+                    element: '#slider-importance',
                     intro: 'Filter papers by minimal number of connections or citations.'
+                },
+                {
+                    element: '#slider-year',
+                    intro: 'Filter papers by minimal publication year.'
                 },
                 {
                     intro:
