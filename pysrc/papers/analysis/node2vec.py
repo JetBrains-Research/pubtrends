@@ -1,5 +1,4 @@
 import logging
-
 import numpy as np
 from gensim.models import Word2Vec
 
@@ -9,8 +8,8 @@ logger = logging.getLogger(__name__)
 
 NODE2VEC_P = 5.0
 NODE2VEC_Q = 2.0
-# Increasing number of walks significantly increases node2vec representation accuracy
-NODE2VEC_WALKS_PER_NODE = 200
+# Increasing number of walks increases node2vec representation accuracy
+NODE2VEC_WALKS_PER_NODE = 100
 NODE2VEC_WALK_LENGTH = 50
 NODE2VEC_WORD2VEC_WINDOW = 5
 NODE2VEC_WORD2VEC_EPOCHS = 5
@@ -115,7 +114,7 @@ def _random_walks(
     np.random.seed(seed)
     walks = []
     for i in range(walks_per_node):
-        logger.debug(f'Generating walk {i+1}')
+        logger.debug(f'Generating walk {i + 1}')
 
         # Start a random walk from every node
         for node in graph.nodes():
