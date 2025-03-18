@@ -18,18 +18,15 @@ from pysrc.app.messages import SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, SOME
 from pysrc.app.reports import get_predefined_jobs, load_result_viz_log, \
     load_result_data, _predefined_example_params_by_jobid, preprocess_string, load_paper_data
 from pysrc.celery.pubtrends_celery import pubtrends_celery
-from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, \
-    analyze_pubmed_search_files, analyze_pubmed_search, analyze_search_terms_files
+from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, analyze_pubmed_search
 from pysrc.papers.analyzer import PapersAnalyzer
-from pysrc.papers.analyzer_files import FILES_WITH_DESCRIPTIONS, ANALYSIS_FILES_TYPE
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.plot.plotter import TOPIC_KEYWORDS
 from pysrc.papers.plot.plotter_paper import prepare_paper_data
-from pysrc.papers.utils import trim, IDS_ANALYSIS_TYPE, PAPER_ANALYSIS_TYPE, human_readable_size, topics_palette, \
-    MAX_QUERY_LENGTH
+from pysrc.papers.utils import trim, IDS_ANALYSIS_TYPE, PAPER_ANALYSIS_TYPE, topics_palette, MAX_QUERY_LENGTH
 from pysrc.version import VERSION
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
@@ -158,46 +155,27 @@ def search_terms():
     pubmed_syntax = request.form.get('pubmed-syntax') == 'on'
     noreviews = request.form.get('noreviews') == 'on'  # Include reviews in the initial search phase
     topics = request.form.get('topics')  # Topics sizes
-    files = request.form.get('files') == 'on'
 
     try:
         # PubMed syntax
         if query and source and limit and topics and pubmed_syntax:
-            if files:
-                # Save results to files
-                job = analyze_pubmed_search_files.delay(query=query, sort=sort, limit=limit, topics=topics,
-                                                        test=app.config['TESTING'])
-                return redirect(
-                    url_for('.process', query=trim(query, MAX_QUERY_LENGTH), analysis_type=ANALYSIS_FILES_TYPE,
-                            sort='', limit=limit, source='Pubmed', topics=topics, jobid=job.id))
-            else:
-                # Regular analysis
-                job = analyze_pubmed_search.delay(query=query, sort=sort, limit=limit, topics=topics,
-                                                  test=app.config['TESTING'])
-                return redirect(
-                    url_for('.process', source='Pubmed', query=trim(query, MAX_QUERY_LENGTH), limit=limit, sort='',
-                            topics=topics,
-                            jobid=job.id))
+            # Regular analysis
+            job = analyze_pubmed_search.delay(query=query, sort=sort, limit=limit, topics=topics,
+                                              test=app.config['TESTING'])
+            return redirect(
+                url_for('.process', source='Pubmed', query=trim(query, MAX_QUERY_LENGTH), limit=limit, sort='',
+                        topics=topics,
+                        jobid=job.id))
 
         # Regular search syntax
         if query and source and sort and limit and topics:
-            if files:
-                # Save results to files
-                job = analyze_search_terms_files.delay(source, query=query, limit=int(limit), sort=sort,
-                                                       noreviews=noreviews, topics=topics,
-                                                       test=app.config['TESTING'])
-                return redirect(
-                    url_for('.process', query=trim(query, MAX_QUERY_LENGTH), analysis_type=ANALYSIS_FILES_TYPE,
-                            sort=sort, limit=limit, source=source, topics=topics, jobid=job.id))
-            else:
-                # Regular analysis
-                job = analyze_search_terms.delay(source, query=query, limit=int(limit), sort=sort,
-                                                 noreviews=noreviews, topics=topics,
-                                                 test=app.config['TESTING'])
-                return redirect(
-                    url_for('.process', query=trim(query, MAX_QUERY_LENGTH), source=source, limit=limit, sort=sort,
-                            noreviews=noreviews, topics=topics,
-                            jobid=job.id))
+            job = analyze_search_terms.delay(source, query=query, limit=int(limit), sort=sort,
+                                             noreviews=noreviews, topics=topics,
+                                             test=app.config['TESTING'])
+            return redirect(
+                url_for('.process', query=trim(query, MAX_QUERY_LENGTH), source=source, limit=limit, sort=sort,
+                        noreviews=noreviews, topics=topics,
+                        jobid=job.id))
         logger.error(f'/search_terms error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_TOPIC), 400
     except Exception as e:
@@ -275,18 +253,6 @@ def process():
                                    redirect_page='review',  # redirect in case of success
                                    redirect_args=dict(query=quote(query), source=source, limit=limit, sort=sort,
                                                       jobid=jobid),
-                                   query=trim(query, MAX_QUERY_LENGTH), source=source,
-                                   limit=limit, sort=sort,
-                                   jobid=jobid, version=VERSION)
-
-        elif analysis_type == ANALYSIS_FILES_TYPE:
-            logger.info(f'/process files {log_request(request)}')
-            limit = request.args.get('limit') or PUBTRENDS_CONFIG.show_max_articles_default_value
-            sort = request.args.get('sort')
-            return render_template('process.html',
-                                   redirect_page='result_files',  # redirect in case of success
-                                   redirect_args=dict(source=source, query=quote(query), limit=limit, sort=sort,
-                                                      topics=topics, jobid=jobid),
                                    query=trim(query, MAX_QUERY_LENGTH), source=source,
                                    limit=limit, sort=sort,
                                    jobid=jobid, version=VERSION)
@@ -526,53 +492,6 @@ def show_ids():
                                    papers=papers_data)
     logger.error(f'/papers error {log_request(request)}')
     return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
-
-
-@app.route('/result_files', methods=['GET'])
-def result_files():
-    logger.info(f'/result_files {log_request(request)}')
-    source = request.args.get('source')
-    jobid = request.args.get('jobid')
-    query = request.args.get('query')
-    sort = request.args.get('sort')
-    limit = request.args.get('limit')
-    topics = request.args.get('topics')
-    try:
-        if jobid and query and limit:
-            job = AsyncResult(jobid, app=pubtrends_celery)
-            if job and job.state == 'SUCCESS':
-                query_folder = job.result
-                if 'file' in request.args:
-                    file = request.args.get('file')
-                    return send_file(os.path.join(query_folder, file), as_attachment=False, download_name=file)
-                else:
-                    available_files = list(sorted(os.listdir(query_folder)))
-                    file_infos = []
-                    qq = quote(query)
-                    # IMPORTANT: only files from description are showed
-                    for f, d in FILES_WITH_DESCRIPTIONS.items():
-                        if f in available_files:
-                            full_path = os.path.join(query_folder, f)
-                            if os.path.exists(full_path):
-                                url = f'/result_files?file={f}&jobid={jobid}&query={qq}&source={source}&limit={limit}&sort={sort}&topics={topics}'
-                                file_infos.append((f, url, d,
-                                                   time.ctime(os.path.getmtime(full_path)),
-                                                   human_readable_size(os.path.getsize(full_path))))
-
-                    return render_template('result_files.html',
-                                           query=trim(query, MAX_QUERY_LENGTH),
-                                           full_query=query,
-                                           source=source,
-                                           limit=limit,
-                                           sort=sort,
-                                           topics=topics,
-                                           file_infos=file_infos,
-                                           version=VERSION)
-        logger.error(f'/result_files error {log_request(request)}')
-        return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
-    except Exception as e:
-        logger.exception(f'/result_files exception {e}')
-        return render_template_string(ERROR_OCCURRED), 500
 
 
 @app.route('/export_data', methods=['GET'])

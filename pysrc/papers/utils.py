@@ -151,10 +151,3 @@ def factors_colormap(n):
 def topics_palette(df):
     return dict((k, v.to_hex()) for k, v in topics_palette_rgb(df).items())
 
-
-def human_readable_size(size):
-    for unit in ['B', 'KB', 'MB', 'GB']:
-        if size < 1024.0 or unit == 'GB':
-            break
-        size /= 1024.0
-    return f'{int(size)} {unit}'

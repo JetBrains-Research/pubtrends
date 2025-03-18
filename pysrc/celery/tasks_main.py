@@ -6,7 +6,6 @@ from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.papers.analysis.expand import expand_ids
 from pysrc.papers.analysis.pubmed import pubmed_search
 from pysrc.papers.analyzer import PapersAnalyzer
-from pysrc.papers.analyzer_files import AnalyzerFiles
 from pysrc.papers.config import *
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
@@ -45,32 +44,6 @@ def analyze_search_terms(source, query, sort, limit, noreviews, topics, test=Fal
     analyzer.progress.done(task=current_task)
     analyzer.teardown()
     return visualization, dump, analyzer.progress.log()
-
-
-@pubtrends_celery.task(name='analyze_search_terms_files')
-def analyze_search_terms_files(source, query, sort, limit, noreviews, topics, test=False):
-    if is_doi(preprocess_doi(query)):
-        raise SearchError(DOI_WRONG_SEARCH)
-    config = PubtrendsConfig(test=test)
-    loader = Loaders.get_loader(source, config)
-    analyzer = AnalyzerFiles(loader, config)
-    last_update = loader.last_update()
-    if last_update is not None:
-        analyzer.progress.info(f'Last papers update {last_update}', current=0, task=current_task)
-    analyzer.progress.info('Analyzing search query', current=1, task=current_task)
-    try:
-        sort = sort or SORT_MOST_CITED
-        limit = int(limit) if limit is not None and limit != '' else analyzer.config.show_max_articles_default_value
-        topics = int(topics) if topics is not None and topics != '' else analyzer.config.show_topics_default_value
-        ids = analyzer.search_terms(query, limit=limit, sort=sort,
-                                    noreviews=noreviews,
-                                    task=current_task)
-        analyzer.analyze_ids(ids, source, query, sort, limit, topics, test=test, task=current_task)
-        analyzer.progress.done(task=current_task)
-        analyzer.teardown()
-        return analyzer.query_folder
-    finally:
-        loader.close_connection()
 
 
 def _analyze_id_list(analyzer, source, ids,
@@ -148,25 +121,3 @@ def analyze_pubmed_search(query, sort, limit, topics, test=False):
                             topics=topics,
                             test=test, task=current_task)
 
-
-@pubtrends_celery.task(name='analyze_pubmed_search_files')
-def analyze_pubmed_search_files(query, sort, limit, topics, test=False):
-    if is_doi(preprocess_doi(query)):
-        raise SearchError(DOI_WRONG_SEARCH)
-    config = PubtrendsConfig(test=test)
-    loader = Loaders.get_loader('Pubmed', config)
-    analyzer = AnalyzerFiles(loader, config)
-    try:
-        sort = sort or SORT_MOST_CITED
-        limit = int(limit) if limit is not None and limit != '' else analyzer.config.show_max_articles_default_value
-        topics = int(topics) if topics is not None and topics != '' else analyzer.config.show_topics_default_value
-        analyzer.progress.info(f"Searching Pubmed query: {query}, {sort.lower()} limit {limit} topics {topics}",
-                               current=1, task=current_task)
-        ids = pubmed_search(query, sort, limit)
-        analyzer.progress.info(f'Analysing {len(ids)} paper(s) from Pubmed', current=1, task=current_task)
-        analyzer.analyze_ids(ids, 'Pubmed', query, sort, limit, topics, test=test, task=current_task)
-        analyzer.progress.done(task=current_task)
-        analyzer.teardown()
-        return analyzer.query_folder
-    finally:
-        loader.close_connection()
