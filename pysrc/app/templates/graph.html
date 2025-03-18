@@ -77,10 +77,10 @@
 
         function showSizeConnections() {
             window.show_size_mode = 'connections';
-            let importance_slider = $('#slider-importance');
-            importance_slider.slider({min: 0, max: window.max_connections});
+            let slider_importance = $('#slider-importance');
+            slider_importance.attr('max', window.max_connections);
             $('#slider-importance-label').text("Connections: 0 - " + window.max_connections.toString());
-            importance_slider.val(0);
+            slider_importance.val(0);
             window.cy.batch(function () {
                 cy.nodes().forEach(function (ele) {
                     if ('title' in ele.data()) {
@@ -93,10 +93,10 @@
 
         function showSizeCitations() {
             window.show_size_mode = 'citations';
-            let importance_slider = $('#slider-importance');
-            importance_slider.slider({min: 0, max: window.max_cited});
+            let slider_importance = $('#slider-importance');
+            slider_importance.attr('max', window.max_cited);
             $('#slider-importance-label').text("Citations: 0 - " + window.max_cited.toString());
-            importance_slider.val(0);
+            slider_importance.val(0);
             window.cy.batch(function () {
                 cy.nodes().forEach(function (ele) {
                     if ('title' in ele.data()) {
@@ -267,8 +267,8 @@
         }
 
         function isHidden(ele) {
-            return ele.hasClass('semitransp-importance-range') ||
-                ele.hasClass('semitransp-year-range') ||
+            return ele.hasClass('semitransp-importance') ||
+                ele.hasClass('semitransp-year') ||
                 ele.hasClass('semitransp-filter');
         }
 
@@ -431,13 +431,13 @@
                         }
                     },
                     {
-                        selector: 'node.semitransp-importance-range',
+                        selector: 'node.semitransp-importance',
                         style: {
                             'opacity': '0.01 !important'
                         }
                     },
                     {
-                        selector: 'node.semitransp-year-range',
+                        selector: 'node.semitransp-year',
                         style: {
                             'opacity': '0.01 !important'
                         }
@@ -490,13 +490,13 @@
                         }
                     },
                     {
-                        selector: 'edge.semitransp-importance-range',
+                        selector: 'edge.semitransp-importance',
                         style: {
                             'opacity': '0.01 !important'
                         }
                     },
                     {
-                        selector: 'edge.semitransp-year-range',
+                        selector: 'edge.semitransp-year',
                         style: {
                             'opacity': '0.01 !important'
                         }
@@ -743,11 +743,14 @@
                     });
                 }
 
-                $('#slider-importance').slider({min: 0, max: window.max_connections});
+                let slider_importance = $('#slider-importance');
+                slider_importance.attr('max', window.max_connections)
                 $('#slider-importance-label').text("Connections: 0 - " + window.max_connections.toString());
                 updateSliderImportance();
 
-                $('#slider-year').slider({min: window.min_year, max: window.max_year});
+                let slider_year = $('#slider-year');
+                slider_year.attr('min', window.min_year)
+                slider_year.attr('max', window.max_year)
                 $('#slider-year-label').text("Years: " + window.min_year.toString() + " - " + window.max_year.toString());
                 updateSliderYear();
 
@@ -786,16 +789,29 @@
         }
 
         function updateSliderImportance() {
-            let min_threshold = $('#slider-importance').val();
+            let slider_importance = $('#slider-importance');
+            let min_threshold = slider_importance.val();
+            let msg = ""
+            let max_threshold = 0;
+            if (window.show_size_mode === 'connections') {
+                msg = "Connections: ";
+                max_threshold = window.max_connections;
+            } else {
+                msg = "Citations: ";
+                max_threshold = window.max_cited;
+            }
+            $('#slider-importance-label').text(
+                msg + min_threshold.toString() + " - " + max_threshold.toString()
+            );
             window.cy.batch(function () {
                 window.cy.nodes().forEach(function (ele) {
                     let data = ele.data();
                     if ('title' in data) {
                         if (window.show_size_mode === 'connections' && data.connections < min_threshold ||
                             window.show_size_mode === 'citations' && data.cited < min_threshold) {
-                            ele.addClass('semitransp-importance-range');
+                            ele.addClass('semitransp-importance');
                         } else {
-                            ele.removeClass('semitransp-importance-range');
+                            ele.removeClass('semitransp-importance');
                         }
                     }
                 });
@@ -804,14 +820,17 @@
 
         function updateSliderYear() {
             let min_threshold = $('#slider-year').val();
+            $('#slider-year-label').text(
+                "Years: " + min_threshold.toString() + " - " + window.max_year.toString()
+            );
             window.cy.batch(function () {
                 window.cy.nodes().forEach(function (ele) {
                     let data = ele.data();
                     if ('title' in data) {
                         if (data.year < min_threshold) {
-                            ele.addClass('semitransp-year-range');
+                            ele.addClass('semitransp-year');
                         } else {
-                            ele.removeClass('semitransp-year-range');
+                            ele.removeClass('semitransp-year');
                         }
                     }
                 });
@@ -973,13 +992,13 @@
                 <form class="col">
                     <div class="row justify-content-end">
                         <input id="slider-importance" type="range" class="custom-range"
-                               min="0" max="100" step="1" value="0"
+                               min="0" max="1" step="1" value="0"
                                onChange="updateSliderImportance(); showNumberOfPapers();"/>
                         <label id="slider-importance-label" for="slider-importance">Connections</label>
                     </div>
                     <div class="row justify-content-end">
                         <input id="slider-year" type="range" class="custom-range"
-                               min="1970" max="2025" step="1" value="1970"
+                               min="0" max="1" step="1" value="0"
                                onChange="updateSliderYear(); showNumberOfPapers();"/>
                         <label id="slider-year-label" for="slider-year">Years</label>
                     </div>
