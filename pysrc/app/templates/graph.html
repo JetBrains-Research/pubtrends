@@ -635,7 +635,11 @@
                                 !ele.hasClass('semitransp-range') &&
                                 !ele.hasClass('semitransp-filter');
                         }).difference(neighborNodes).addClass('semitransp-hover');
-                        neighborEdges.addClass('highlight');
+                        neighborEdges.forEach(function (ele) {
+                            if (ele.connectedNodes().filter(function (n) {
+                                return n.hasClass('semitransp-range') || n.hasClass('semitransp-filter');
+                            }).length === 0)  ele.addClass('highlight');
+                        });
                         cy.edges().difference(neighborEdges).addClass('semitransp-hover');
                         neighborNodes.addClass('highlight');
                     }
