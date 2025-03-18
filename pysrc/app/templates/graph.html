@@ -226,6 +226,40 @@
             window.abstractShown = false;
         }
 
+        function freezeHighlighting() {
+            window.frozenHighlighting = true;
+            $('#frozen').prop("checked", true);
+            $.notify("Switched to frozen highlighting mode.", {
+                className: "success",
+                position: "bottom right",
+                showDuration: 0,
+            });
+        }
+
+        function unfreezeHighlighting() {
+            window.frozenHighlighting = false;
+            searchChanged();
+            cy.elements().forEach(function (ele) {
+                ele.removeClass('highlight');
+                ele.removeClass('semitransp-hover');
+            });
+
+            $('#frozen').prop("checked", false);
+            $.notify("Revert to normal highlighting mode.", {
+                className: "success",
+                position: "bottom right",
+                showDuration: 0
+            });
+        }
+
+        function changeFrozenHighlighting() {
+            if ($('#frozen').is(':checked')) {
+                freezeHighlighting();
+            } else {
+                unfreezeHighlighting();
+            }
+        }
+
         $(window).on("load", function () {
             document.getElementById('cy').innerHTML = "";
 
@@ -453,8 +487,8 @@
                 ],
                 elements: elements,
                 // interaction options
-                minZoom: 1e-1,
-                maxZoom: 1e1,
+                minZoom: 0.5,
+                maxZoom: 5,
                 boxSelectionEnabled: false,
             });
 
@@ -530,10 +564,11 @@
                             ele.hasClass('semitransp-range') ||
                             ele.hasClass('semitransp-filter')) return;
                         if (type === 'edge') {
+                            if (window.frozenHighlighting) return;
                             let neighborNodes = ele.connectedNodes();
                             if (neighborNodes.filter(function (n) {
                                 return n.hasClass('semitransp-range') || n.hasClass('semitransp-filter');
-                            }).length === 2) return;
+                            }).length > 0) return;
                         }
                         inside = true;
                         // Show hover timeout
@@ -582,12 +617,12 @@
                     let sel = event.target;
                     if (sel.hasClass('semitransp-range') ||
                         sel.hasClass('semitransp-filter') ||
-                        window.freeze && sel.hasClass('semitransp-hover')) return;
+                        window.frozenHighlighting && sel.hasClass('semitransp-hover')) return;
                     let data = sel.data();
                     if ('title' in data) {
                         showPaperAbstract(data, topics_palette, topics_tags);
                     }
-                    if (window.freeze) {
+                    if (window.frozenHighlighting) {
                         return;
                     }
                     if ('title' in data) {
@@ -607,7 +642,7 @@
                 });
                 cy.on('mouseout', 'node', function (event) {
                     hidePaperAbstract();
-                    if (window.freeze) {
+                    if (window.frozenHighlighting) {
                         return;
                     }
                     let sel = event.target;
@@ -631,14 +666,18 @@
                 // Highlight edges and neighbours on hover
                 cy.on('mouseover', 'edge', function (event) {
                     hidePaperAbstract();
-                    if (window.freeze) {
+                    if (window.frozenHighlighting) {
                         return;
                     }
+                    cy.nodes().forEach(function (ele) {
+                        ele.removeClass('highlight');
+                        ele.removeClass('semitransp-hover');
+                    });
                     let sel = event.target;
                     let neighborNodes = sel.connectedNodes();
                     if (neighborNodes.filter(function (n) {
                         return n.hasClass('semitransp-range') || n.hasClass('semitransp-filter');
-                    }).length === 2) return;
+                    }).length > 0) return;
 
                     sel.addClass('highlight');
 
@@ -650,9 +689,13 @@
                 });
                 cy.on('mouseout', 'edge', function (event) {
                     hidePaperAbstract();
-                    if (window.freeze) {
+                    if (window.frozenHighlighting) {
                         return;
                     }
+                    cy.nodes().forEach(function (ele) {
+                        ele.removeClass('highlight');
+                        ele.removeClass('semitransp-hover');
+                    });
                     let sel = event.target;
                     sel.removeClass('highlight');
                     let neighborNodes = sel.connectedNodes();
@@ -685,25 +728,16 @@
             $(document).keyup(function (event) { // keyprocess doesn't handle escape key
                 if (event.keyCode === 27) { // Escape
                     tippys.forEach((e) => e.hide());
-                    if (window.freeze) {
-                        // Unfreeze hover highlighting
-                        window.freeze = false;
-                        searchChanged();
-                        $.notify("Escape pressed. Revert to normal highlighting mode.", {
-                            className: "success",
-                            position: "bottom right"
-                        });
+                    hidePaperAbstract();
+                    if (window.frozenHighlighting) {
+                        unfreezeHighlighting();
                     }
                 }
             });
             $(document).keypress(function (event) {
                 if (event.keyCode === 70 || event.keyCode === 102) { // F or f
-                    if (!window.freeze) {
-                        window.freeze = true;  // Freeze hover highlighting
-                        $.notify("F pressed. Switched to fixed highlighting mode. Use Escape to undo.", {
-                            className: "success",
-                            position: "bottom right"
-                        });
+                    if (!window.frozenHighlighting) {
+                        freezeHighlighting();
                     }
                 }
             });
@@ -820,14 +854,6 @@
 
         $(document).ready(function () {
             createClickableFeedBackFormNoMessage("feedback-graph-html-form", "feedback-graph-html")
-
-            setTimeout(function () {
-                $.notify("See About for quick introduction.", {
-                    className: "success",
-                    position: "bottom right",
-                    autoHideDelay: 5000
-                });
-            }, 5000);
         });
 
     </script>
@@ -910,17 +936,22 @@
 </nav>
 <div class="container-fluid parent">
     <div class="row">
-        <div class="col-12">
-            <div class="float-right vertical-center">
-                <div class="form-group mt-3" style="z-index: 10">
-                    <input id="slider" type="range" class="custom-range" min="0" max="100" step="1" value="0"
-                           onChange="sliderRange()">
-                    <label id="slider-label" for="slider">Min connections</label>
-                </div>
+        <div class="col-12 float-right">
+            <div class="form-group float-right mt-3" style="position: relative; z-index: 9999;">
+                <form class="col">
+                    <div class="row justify-content-end">
+                        <input id="slider" type="range" class="custom-range" min="0" max="100" step="1" value="0"
+                               onChange="sliderRange()">
+                        <label id="slider-label" for="slider">Min connections</label>
+                    </div>
+                    <div class="row justify-content-end vertical-align">
+                        <input type="checkbox" id="frozen" class="mr-2" onchange="changeFrozenHighlighting()"/>
+                        <label for="frozen" style="margin-bottom: 0">Frozen</label>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
-
     <div id="cy" role="main" style="height: 85vh; margin-bottom: 2rem">Loading...</div>
 </div>
 <footer class="container">
