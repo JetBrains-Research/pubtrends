@@ -51,38 +51,25 @@ def build_papers_graph(df, cit_df, cocit_df, bibliographic_coupling_df):
     return result
 
 
-def sparse_graph(graph, max_edges_to_nodes, key='similarity',  min_e=0.001, add_similarity=True):
-    logger.debug(f'Limit edges to nodes by max_edges_to_nodes={max_edges_to_nodes}, '
-                 f'current={graph.number_of_edges() / graph.number_of_nodes()}')
+def sparse_graph(graph, k, key='similarity', add_similarity=True):
+    logger.debug(f'Building {k}-neighbours sparse graph, '
+                 f'edges/nodes={graph.number_of_edges() / graph.number_of_nodes()}')
     if add_similarity:
         for i, j in graph.edges():
             graph[i][j]['similarity'] = similarity(graph.get_edge_data(i, j))
-    logger.debug(f'Estimating e to keep {max_edges_to_nodes} edges per node')
-    e = 1.0
-    result = _local_sparse(graph, e, key)
-    while e >= min_e and result.number_of_edges() / result.number_of_nodes() > max_edges_to_nodes:
-        e /= 2
-        result = _local_sparse(graph, e, key)
-    logger.debug(f'Sparse e={e} graph edges/nodes={result.number_of_edges() / result.number_of_nodes()}')
-    return result
-
-
-def _local_sparse(graph, e, key='weight'):
-    assert 0 <= e <= 1, f'Sparsity parameter {e} should be in 0..1'
-    if e == 1:
-        return graph
     result = nx.Graph()
     # Start from nodes with max number of neighbors
     for n in sorted(graph.nodes(), key=lambda x: len(list(graph.neighbors(x))), reverse=True):
         neighbors_data = sorted(list([(x, graph.get_edge_data(n, x)) for x in graph.neighbors(n)]),
                                 key=lambda x: x[1][key], reverse=True)
-        for x, data in neighbors_data[:int(pow(len(list(neighbors_data)), e))]:
-            if not result.has_edge(n, x):
+        for x, data in neighbors_data[:k]:
+            if not result.has_edge(n, x) and (not result.has_node(x) or len(list(result.neighbors(x))) < k):
                 result.add_edge(n, x, **data)
     # Ensure all the nodes present
     for n in graph.nodes():
         if not result.has_node(n):
             result.add_node(n)
+    logger.debug(f'Sparse {k}-neighbours graph edges/nodes={result.number_of_edges() / result.number_of_nodes()}')
     return result
 
 

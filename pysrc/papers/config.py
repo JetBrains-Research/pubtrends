@@ -15,7 +15,7 @@ SIMILARITY_CITATION = 1  # x 0-1 citation
 EMBEDDINGS_GRAPH_EDGES = 100
 
 # Reduce number of edges in papers graph for visualization
-GRAPH_BIBLIOGRAPHIC_EDGES = 10
+GRAPH_BIBLIOGRAPHIC_EDGES = 20
 
 # Add artificial text similarity nodes to sparse graph for visualisations
 GRAPH_TEXT_SIMILARITY_EDGES = 5

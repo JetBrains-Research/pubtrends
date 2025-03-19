@@ -1,7 +1,7 @@
 import networkx as nx
 import unittest
 
-from pysrc.papers.analysis.graph import _local_sparse, sparse_graph
+from pysrc.papers.analysis.graph import sparse_graph
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
 from pysrc.test.mock_loaders import MockLoader, PAPERS_GRAPH_EDGES, MockLoaderSingle
@@ -54,34 +54,15 @@ class TestSparseGraph(unittest.TestCase):
         assert len(g.edges) == 45
         cls.g = g
 
-    LOCAL_SPARSE_05 = [(0, 9, {'weight': 9}), (0, 8, {'weight': 8}), (0, 7, {'weight': 7}), (9, 1, {'weight': 10}),
-                       (9, 2, {'weight': 11}), (9, 3, {'weight': 12}), (9, 4, {'weight': 13}), (9, 5, {'weight': 14}),
-                       (9, 6, {'weight': 15}), (9, 7, {'weight': 16}), (9, 8, {'weight': 17}), (8, 1, {'weight': 9}),
-                       (8, 2, {'weight': 10}), (8, 3, {'weight': 11}), (8, 4, {'weight': 12}), (8, 5, {'weight': 13}),
-                       (8, 6, {'weight': 14}), (8, 7, {'weight': 15}), (7, 1, {'weight': 8}), (7, 2, {'weight': 9}),
-                       (7, 3, {'weight': 10}), (7, 4, {'weight': 11}), (7, 5, {'weight': 12}), (7, 6, {'weight': 13})]
-
-    SPARSE = [(0, 9, {'weight': 9, 'similarity': 0}), (9, 1, {'weight': 10, 'similarity': 0}),
-              (9, 2, {'weight': 11, 'similarity': 0}), (9, 3, {'weight': 12, 'similarity': 0}),
-              (9, 4, {'weight': 13, 'similarity': 0}), (9, 5, {'weight': 14, 'similarity': 0}),
-              (9, 6, {'weight': 15, 'similarity': 0}), (9, 7, {'weight': 16, 'similarity': 0}),
-              (9, 8, {'weight': 17, 'similarity': 0})]
-
-    def test_local_sparse_graph(self):
-        sg = _local_sparse(self.g, 1.0, 'weight')
-        self.assertEqual(len(sg.edges), 45)
-
-        sg = _local_sparse(self.g, 0.5, 'weight')
-        self.assertEqual(len(sg.edges), 24)
-        edges = list(sg.edges(data=True))
-        print(edges)
-        self.assertEqual(self.LOCAL_SPARSE_05, edges)
+    SPARSE = [(0, 9, {'weight': 9}), (0, 8, {'weight': 8}), (0, 7, {'weight': 7}), (9, 1, {'weight': 10}),
+              (9, 2, {'weight': 11}), (9, 6, {'weight': 15}), (8, 1, {'weight': 9}), (8, 2, {'weight': 10}),
+              (8, 6, {'weight': 14}), (7, 1, {'weight': 8}), (7, 2, {'weight': 9}), (7, 6, {'weight': 13})]
 
     def test_sparse_graph(self):
-        sg = sparse_graph(self.g, 1, 'weight')
+        sg = sparse_graph(self.g, 3, 'weight', False)
         edges = list(sg.edges(data=True))
         print(edges)
-        self.assertEqual(len(sg.edges), 9)
+        self.assertEqual(len(sg.edges), 12)
         self.assertEqual(self.SPARSE, edges)
 
 
