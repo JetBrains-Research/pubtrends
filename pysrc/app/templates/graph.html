@@ -125,7 +125,7 @@
             $('#left-info').replaceWith('<div id="left-info"><p><small>' +
                 '<svg width="16" height="16"><rect width="16" height="16" style="fill:#000000;"/></svg> ' +
                 window.min_year + ' - ' +
-                '<svg width="16" height="16"><rect width="16" height="16" style="fill:#00FF00;"/></svg> ' +
+                '<svg width="16" height="16"><rect width="16" height="16" style="fill:#e12728;"/></svg> ' +
                 window.max_year +
                 '</small></p></div>');
         }
@@ -135,11 +135,13 @@
             window.max_year = 0;
             window.max_cited = 0;
             window.max_connections = 0;
+            window.years = [];
             elements['nodes'].forEach(function (ele) {
                 let data = ele['data'];
                 if ('year' in data) {
                     window.min_year = Math.min(data.year, window.min_year);
                     window.max_year = Math.max(data.year, window.max_year);
+                    window.years.push(data.year);
                 }
                 if ('cited' in data) {
                     window.max_cited = Math.max(data.cited, window.max_cited);
@@ -148,6 +150,18 @@
                     window.max_connections = Math.max(data.connections, window.max_connections);
                 }
             });
+            window.years.sort();
+        }
+
+        function yearColorDy(y) {
+            let arrayLength = window.years.length;
+            let step = Math.max(1, Math.ceil(arrayLength / 10));
+            for (let i = arrayLength - 1; i >= 0; i-=step) {
+                if (y >= window.years[i]) {
+                    return Math.min(1, (i + 1) / (arrayLength - 1));
+                }
+            }
+            return 0
         }
 
         function addTopicsCenters(elements) {
@@ -386,11 +400,12 @@
                                 if ('year' in data) {
                                     let dy;
                                     if (window.max_year > window.min_year) {
-                                        dy = (data.year - window.min_year) / (window.max_year - window.min_year);
+                                        dy = yearColorDy(data.year);
                                     } else {
                                         dy = 1;
                                     }
-                                    return rgbToHex(0, Math.floor(255 * dy), 0);
+                                    let r = 255, g = 39, b = 40; // #d62728
+                                    return rgbToHex(Math.floor(r * dy), Math.floor(g * dy), Math.floor(b * dy));
                                 } else {
                                     return "#FFFFFF"
                                 }
@@ -1072,7 +1087,7 @@
                         'Size shows paper connections or number of citations.<br>' +
                         'Color represent topic or publication year.<br>' +
                         '<svg width="16" height="16"><rect width="16" height="16" style="fill:#000000;"/></svg> min - ' +
-                        '<svg width="16" height="16"><rect width="16" height="16" style="fill:#00FF00;"/></svg> max'
+                        '<svg width="16" height="16"><rect width="16" height="16" style="fill:#e12728;"/></svg> max'
                 },
                 {
                     element: '#control-importance',
