@@ -1,6 +1,7 @@
 from datetime import datetime
 import logging
 import os
+import re
 
 import numpy as np
 import pandas as pd
@@ -8,9 +9,8 @@ import pandas as pd
 from pysrc.papers.db.loader import Loader
 from pysrc.papers.db.postgres_connector import PostgresConnector
 from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres, no_stemming_filter_for_phrases, \
-    process_bibliographic_coupling_postgres, process_cocitations_postgres
-from pysrc.papers.utils import SORT_MOST_CITED, SORT_MOST_RECENT, preprocess_doi, \
-    preprocess_search_title
+    process_bibliographic_coupling_postgres, process_cocitations_postgres, preprocess_quotes
+from pysrc.papers.utils import SORT_MOST_CITED, SORT_MOST_RECENT, preprocess_doi
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +33,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
     def find(self, key, value):
         self.check_connection()
         value = value.strip()
+        value = preprocess_quotes(value)
 
         if key == 'id':
             key = 'pmid'
@@ -42,16 +43,17 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
             except ValueError:
                 raise Exception("PMID should be an integer")
 
+
         # Preprocess DOI
         if key == 'doi':
             value = preprocess_doi(value)
 
         # Use dedicated text index to search title.
         if key == 'title':
-            value = preprocess_search_title(value)
+            value = re.sub('\.$', '', value)
             query = f'''
                 SELECT pmid
-                FROM to_tsquery('english', \'''{value}\''') query, PMPublications P
+                FROM to_tsquery(\'''{value}\''') query, PMPublications P
                 WHERE tsv @@ query AND LOWER(title) = LOWER('{value}');
             '''
         else:

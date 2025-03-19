@@ -13,6 +13,14 @@ logger = logging.getLogger(__name__)
 
 def preprocess_search_query_for_postgres(query, min_search_words):
     logger.debug(f'Preprocess search string for Postgres full text lookup query: {query}')
+    query = query.lower()
+    # Fix apostrophes 's
+    query = re.sub("'s$", '', query)
+    query = re.sub("'s\\s", ' ', query)
+    # Escaping
+    query = re.sub("[\^&'|<>=]+", '', query)
+    # Whitespaces normalization, see #215
+    processed = re.sub('[ ]{2,}|\t+', ' ', query.strip())
     query = query.strip(', ')  # Strip trailing spaces and commas
     if ',' in query:
         qor = ''
@@ -23,11 +31,6 @@ def preprocess_search_query_for_postgres(query, min_search_words):
             qor += pp
         return qor
 
-    # Whitespaces normalization, see #215
-    processed = re.sub('[ ]{2,}|\t+', ' ', query.strip())
-    if len(processed) == 0:
-        raise SearchError('Empty query')
-
     if len(processed) == 0:
         raise SearchError('Empty query')
 
@@ -37,7 +40,7 @@ def preprocess_search_query_for_postgres(query, min_search_words):
 
     # Check query complexity for similar words
     stemmer = SnowballStemmer('english')
-    stems = set([stemmer.stem(word) for word in [re.sub("[\"-]|('s$)", '', w) for w in processed.split(' ')]])
+    stems = set([stemmer.stem(word) for word in [re.sub("[\"-]", '', w) for w in processed.split(' ')]])
     if len(stems) + len(processed.split('-')) - 1 < min_search_words:
         raise SearchError(f'Please use query with >= {min_search_words} different words. Query: {query}')
 
@@ -58,7 +61,7 @@ def preprocess_search_query_for_postgres(query, min_search_words):
 
     # Processing words
     rest_words = re.sub('[ ]{2,}', ' ', processed).strip()
-    words = [re.sub("'s$", '', w) for w in rest_words.split(' ')]  # Fix apostrophes
+    words = rest_words.split(' ')
     words_result = ' & '.join(words) if words else ''
 
     if phrases_result != '':
@@ -68,6 +71,10 @@ def preprocess_search_query_for_postgres(query, min_search_words):
     else:
         raise SearchError(f'Illegal search query, please use search terms or '
                           f'all the query wrapped in "" for phrasal search. Query: {query}')
+
+
+def preprocess_quotes(value):
+    return re.sub("'{2,}", "'", value.strip().strip("'"))
 
 
 def no_stemming_filter_for_phrases(query_str):

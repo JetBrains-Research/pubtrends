@@ -44,7 +44,7 @@ VACUUM;
 -- full text search
 SELECT COUNT(*)
 FROM PMPublications P
-WHERE tsv @@ to_tsquery('english', 'cell');
+WHERE tsv @@ to_tsquery('cell');
 
 -- Cache cleanup
 DISCARD ALL;
@@ -54,7 +54,7 @@ VACUUM;
 explain analyse
 SELECT pmid
 FROM PMPublications P
-WHERE tsv @@ to_tsquery('english', 'cell')
+WHERE tsv @@ to_tsquery('cell')
 ORDER BY ts_rank_cd(tsv, 'cell') DESC
 LIMIT 1000;
 
@@ -66,7 +66,7 @@ VACUUM;
 explain analyse
 SELECT pmid
 FROM PMPublications P
-WHERE tsv @@ to_tsquery('english', 'cell')
+WHERE tsv @@ to_tsquery('cell')
 ORDER BY date DESC NULLS LAST
 LIMIT 1000;
 
@@ -80,7 +80,7 @@ SELECT pmid
 FROM PMPublications P
          LEFT JOIN PMCitations C
                    ON C.pmid_in = pmid
-WHERE tsv @@ to_tsquery('english', 'cell')
+WHERE tsv @@ to_tsquery('cell')
 GROUP BY pmid
 ORDER BY COUNT(*) DESC NULLS LAST
 LIMIT 1000;
@@ -117,7 +117,7 @@ SELECT P.pmid
 FROM PMPublications P
          LEFT JOIN matview_pmcitations C
                    ON P.pmid = C.pmid
-WHERE tsv @@ to_tsquery('english', 'cell')
+WHERE tsv @@ to_tsquery('cell')
 ORDER BY count DESC NULLS LAST
 LIMIT 1000;
 
@@ -129,7 +129,7 @@ VACUUM;
 -- explain analyse
 WITH X as (SELECT P.pmid as pmid
            FROM PMPublications P
-           WHERE tsv @@ to_tsquery('english', 'cell'))
+           WHERE tsv @@ to_tsquery('cell'))
 SELECT X.pmid FROM X
                        LEFT JOIN matview_pmcitations C
                                  ON X.pmid = C.pmid

@@ -5,28 +5,32 @@ from pandas.testing import assert_frame_equal
 from parameterized import parameterized
 
 from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres, no_stemming_filter_for_phrases, \
-    process_bibliographic_coupling_postgres
+    process_bibliographic_coupling_postgres, preprocess_quotes
 
 
 class TestPostgresUtils(unittest.TestCase):
+
     @parameterized.expand([
-        ('FooBar', 'FooBar'),
-        ('Foo Bar', 'Foo & Bar'),
-        ('"Foo Bar"', 'Foo<->Bar'),
-        ('Foo-Bar', 'Foo-Bar'),
-        ('&^Foo-Bar', '&^Foo-Bar'),
-        ("Alzheimer's disease", 'Alzheimer & disease'),
-        ('Foo, Bar', 'Foo | Bar'),
-        ('Foo, Bar Baz', 'Foo | Bar & Baz'),
-        ('Foo, "Bar Baz"', 'Foo | Bar<->Baz'),
-        (' Foo', 'Foo'),
-        ('Foo, "Bar Baz" Bzzzz, ', 'Foo | Bar<->Baz & Bzzzz'),
+        ('FooBar', 'foobar'),
+        ('Foo Bar', 'foo & bar'),
+        ('"Foo Bar"', 'foo<->bar'),
+        ('Foo-Bar', 'foo-bar'),
+        ('&^Foo-Bar', 'foo-bar'),
+        ("Alzheimer's disease", 'alzheimer & disease'),
+        ('Foo, Bar', 'foo | bar'),
+        ('Foo, Bar Baz', 'foo | bar & baz'),
+        ('Foo, "Bar Baz"', 'foo | bar<->baz'),
+        (' Foo', 'foo'),
+        ('Foo, "Bar Baz" Bzzzz, ', 'foo | bar<->baz & bzzzz'),
+        ('Foo, "Bar Baz" Bzzzz, ', 'foo | bar<->baz & bzzzz'),
+        ("user' or '1' == '1", 'user & or & 1 & 1'),
+        ("foo | bar<->baz & bzzzz", 'foo & bar-baz & bzzzz'),
     ])
     def test_preprocess_search_valid_source(self, terms, expected):
         self.assertEqual(expected, preprocess_search_query_for_postgres(terms, 0))
 
     def test_preprocess_search_too_few_words(self):
-        self.assertEqual('Foo', preprocess_search_query_for_postgres('Foo', 1))
+        self.assertEqual('foo', preprocess_search_query_for_postgres('Foo', 1))
         with self.assertRaises(Exception):
             preprocess_search_query_for_postgres('Foo', 2)
 
@@ -39,7 +43,7 @@ class TestPostgresUtils(unittest.TestCase):
             preprocess_search_query_for_postgres('Humans Humanity', 2)
 
     def test_preprocess_search_dash_split(self):
-        self.assertEqual('Covid-19', preprocess_search_query_for_postgres('Covid-19', 2))
+        self.assertEqual('covid-19', preprocess_search_query_for_postgres('Covid-19', 2))
 
     def test_preprocess_search_odd_quotes(self):
         with self.assertRaises(Exception):
@@ -51,8 +55,8 @@ class TestPostgresUtils(unittest.TestCase):
 
     def test_preprocess_search_or(self):
         self.assertEqual(
-            'COVID-19 | Coronavirus | Corona<->virus | 2019-nCoV | SARS-CoV | MERS-CoV |'
-            ' Severe<->Acute<->Respiratory<->Syndrome | Middle<->East<->Respiratory<->Syndrome',
+            'covid-19 | coronavirus | corona<->virus | 2019-ncov | sars-cov | mers-cov |'
+            ' severe<->acute<->respiratory<->syndrome | middle<->east<->respiratory<->syndrome',
             preprocess_search_query_for_postgres(
                 'COVID-19, Coronavirus, "Corona virus", 2019-nCoV, SARS-CoV, '
                 'MERS-CoV, "Severe Acute Respiratory Syndrome", '
@@ -83,14 +87,19 @@ class TestPostgresUtils(unittest.TestCase):
         self.assertEqual(phrase_filter, no_stemming_filter_for_phrases(query))
 
     def test_non_english_query(self):
-        self.assertEqual('ОЧЕНЬ & СТРАШНАЯ & БОЛЕЗНЬ',
-                         preprocess_search_query_for_postgres('ОЧЕНЬ СТРАШНАЯ БОЛЕЗНЬ', 0))
+        with self.assertRaises(Exception):
+            self.assertEqual('ОЧЕНЬ & СТРАШНАЯ & БОЛЕЗНЬ',
+                             preprocess_search_query_for_postgres('ОЧЕНЬ СТРАШНАЯ БОЛЕЗНЬ', 0))
 
     def test_preprocess_search_illegal_string(self):
         with self.assertRaises(Exception):
             preprocess_search_query_for_postgres('"Foo" Bar"', 2)
         with self.assertRaises(Exception):
             preprocess_search_query_for_postgres('&&&', 2)
+
+    def test_preprocess_quotes(self):
+        self.assertEqual(") or '1' == '1", preprocess_quotes("''') or '1' == ''1"))
+
 
     def test_process_bibliographic_coupling_empty(self):
         df = process_bibliographic_coupling_postgres([], [])

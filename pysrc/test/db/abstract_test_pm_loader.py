@@ -172,7 +172,7 @@ class AbstractTestPubmedLoader(metaclass=ABCMeta):
         ('id search', 'id', '1', ['1']),
         ('id search - with spaces', 'id', '  1  ', ['1']),
         ('title search - lower case', 'title', 'article title 2', ['2']),
-        ('title search - special characters', 'title', '[article title 3.]', ['3']),
+        ('title search - special characters', 'title', "'article title 3.'", ['3']),
         ('title search - Title Case', 'title', 'Article Title 4', ['4']),
         ('title search - with spaces', 'title', '       Article Title 4        ', ['4']),
         ('dx.doi.org search', 'doi', 'http://dx.doi.org/10.000/0000', ['1']),

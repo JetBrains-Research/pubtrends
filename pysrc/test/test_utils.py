@@ -1,9 +1,7 @@
 import unittest
-
 from parameterized import parameterized
 
-from pysrc.papers.utils import cut_authors_list, crc32, \
-    preprocess_doi, preprocess_search_title, rgb2hex
+from pysrc.papers.utils import cut_authors_list, crc32, preprocess_doi, rgb2hex
 
 
 class TestUtils(unittest.TestCase):
@@ -38,11 +36,6 @@ class TestUtils(unittest.TestCase):
     ])
     def test_preprocess_doi(self, case, doi, expected):
         self.assertEqual(preprocess_doi(doi), expected, case)
-
-    def test_preprocess_pubmed_search_title(self):
-        title = '[DNA methylation age.]'
-        expected = 'DNA methylation age'
-        self.assertEqual(preprocess_search_title(title), expected)
 
     @parameterized.expand([
         ([145, 200, 47], '#91c82f'),

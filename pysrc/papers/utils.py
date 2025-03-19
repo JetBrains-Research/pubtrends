@@ -85,13 +85,6 @@ def is_doi(text):
     return re.search('10.\\d{4,9}/[-._;()/:a-z0-9A-Z]+', text.lower())
 
 
-def preprocess_search_title(line):
-    """
-    Title processing similar to PubmedXMLParser - special characters removal
-    """
-    return line.strip('.[]')
-
-
 def rgb2hex(color):
     if isinstance(color, str):
         match = re.match('rgb\\((\\d+), (\\d+), (\\d+)\\)', color)
