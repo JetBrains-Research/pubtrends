@@ -108,11 +108,9 @@
         }
 
         function showDescription(description) {
-            // Close all notifications
-            $('#topleftnotify').trigger('notify-hide');
             const h = $(window).height();
             const s = Math.min(13, Math.round(7 * h / 800 * 80 / (Object.keys(topics_palette).length + 1))).toString()
-            let content = '<div id="topleftnotify" class="mt-5"><br><p style="background-color:white;color:black;line-height: 35%;font-size:' + s + 'px";>';
+            let content = '<div id="left-info"><p style="line-height:50%;font-size:' + s + 'px";>';
             for (let [topic, tags] of Object.entries(description)) {
                 content += '<svg width="' + s + '" height="' + s + '">' +
                     '<rect width="' + s + '" height="' + s + '" ' +
@@ -120,37 +118,16 @@
                     '#' + (parseInt(topic) + 1).toString() + ' ' + tags + '<br>';
             }
             content += '</p></div>';
-            $.notify({
-                title: $(content)
-            }, {
-                style: 'html_title',
-                autoHide: false,
-                position: 'top left',
-                showDuration: 0,
-                hideDuration: 0,
-                clickToHide: false
-            });
+            $('#left-info').replaceWith(content);
         }
 
         function showYear() {
-            // Close all notifications
-            $('#topleftnotify').trigger('notify-hide');
-            $.notify({
-                title:
-                    $('<div id="topleftnotify" class="mt-5"><br><p><small>' +
-                        '<svg width="16" height="16"><rect width="16" height="16" style="fill:#000000;"/></svg> ' +
-                        window.min_year + ' - ' +
-                        '<svg width="16" height="16"><rect width="16" height="16" style="fill:#00FF00;"/></svg> ' +
-                        window.max_year +
-                        '</small></p></div>')
-            }, {
-                style: 'html_title',
-                autoHide: false,
-                position: 'top left',
-                showDuration: 0,
-                hideDuration: 0,
-                clickToHide: false
-            });
+            $('#left-info').replaceWith('<div id="left-info"><p><small>' +
+                '<svg width="16" height="16"><rect width="16" height="16" style="fill:#000000;"/></svg> ' +
+                window.min_year + ' - ' +
+                '<svg width="16" height="16"><rect width="16" height="16" style="fill:#00FF00;"/></svg> ' +
+                window.max_year +
+                '</small></p></div>');
         }
 
         function computeYearCitedConnections(elements) {
@@ -198,7 +175,11 @@
             }
         }
 
-        function showPaperAbstract(data, topics_palette, topics_tags) {
+        function showPaperAbstract(data) {
+            if (!window.show_abstracts) {
+                window.abstractShown = false;
+                return;
+            }
             // Close notifications
             $('#about-paper').trigger('notify-hide');
             window.abstractShown = true;
@@ -206,13 +187,16 @@
                 if (!window.abstractShown) return;
                 let content = '<div id="about-paper" ' +
                     'style="background-color: white; position: fixed; bottom: 0; margin-bottom: 0;"><br><p>' +
-                    data.abstract + '</p><p>' +
-                    '<span style="color:dodgerblue;">Mesh</span>: ' + data.mesh + "<br>" +
-                    '<span style="color:dodgerblue;">Keywords</span>: ' + data.keywords + "<br>" +
-                    '<span style="color:dodgerblue;">Topic</span>: ' + (data.topic + 1) + " " +
-                    '<svg width="16" height="16"><rect width="16" height="16" ' +
-                    'style="fill:' + topics_palette[data.topic] + '";/></svg> ' + topics_tags[data.topic] +
-                    '</p></div>';
+                    data.abstract;
+                if (data.mesh !== '' || data.keywords !== '') {
+                    content += '<br><small>';
+                    if (data.mesh !== '')
+                        content += '<span style="color:dodgerblue;">Mesh</span>: ' + data.mesh + "<br>";
+                    if (data.keywords !== '')
+                        content += '<span style="color:dodgerblue;">Keywords</span>: ' + data.keywords + "<br>";
+                    content += '</small>';
+                }
+                content += '</p></div>';
                 $.notify({
                     title: $(content)
                 }, {
@@ -257,6 +241,25 @@
                 showDuration: 0
             });
         }
+
+        function changeShowAbstracts() {
+            window.show_abstracts = $('#show-abstracts').is(':checked');
+            if (window.show_abstracts)
+                $.notify("Show abstract on mouse hover active.", {
+                    className: "success",
+                    position: "top right",
+                    showDuration: 0
+                });
+            else {
+                hidePaperAbstract();
+                $.notify("Don't show abstract on mouse hover.", {
+                    className: "success",
+                    position: "top right",
+                    showDuration: 0
+                });
+            }
+        }
+
 
         function changeFrozenHighlighting() {
             if ($('#frozen').is(':checked')) {
@@ -553,7 +556,10 @@
                             // Enable formatter control in File > Settings > Editor > Code Style
                             // @formatter:off
                             content.innerHTML = "<p style='text-align:left;'><small>" +
-                                "<b>" + data.title + "</b><br>" +
+                                "<b>" + data.title + '&nbsp' +
+                                '<svg width="16" height="16"><rect width="12" height="12" ' +
+                                'style="fill:' + topics_palette[data.topic] + '";/></svg> ' +
+                                "</b><br>" +
                                 '<span style="color:dodgerblue;">Author(s)</span>: ' + data.authors + "<br>" +
                                 '<span style="color:dodgerblue;">Journal(s)</span>: ' + data.journal + "<br>" +
                                 '<span style="color:dodgerblue;">Year</span>: ' + data.year + "<br>" +
@@ -640,7 +646,7 @@
                         window.frozenHighlighting && sel.hasClass('semitransp-hover')) return;
                     let data = sel.data();
                     if ('title' in data) {
-                        showPaperAbstract(data, topics_palette, topics_tags);
+                        showPaperAbstract(data);
                     }
                     if (window.frozenHighlighting) {
                         return;
@@ -659,7 +665,6 @@
                             }).length === 0) ele.addClass('highlight');
                         });
                         cy.edges().difference(neighborEdges).addClass('semitransp-hover');
-                        neighborNodes.addClass('highlight');
                     }
                 });
                 cy.on('mouseout', 'node', function (event) {
@@ -679,7 +684,7 @@
                             return ele !== sel && !isHidden(ele);
                         }).difference(neighborNodes).removeClass('semitransp-hover');
                         neighborEdges.removeClass('highlight');
-                        cy.edges().difference(neighborEdges).removeClass('semitransp-hover');
+                        cy.edges().difference(neighborEdges).removeClass('semitransp-hover')
                     }
                 });
 
@@ -698,13 +703,7 @@
                     if (neighborNodes.filter(function (n) {
                         return isHidden(n);
                     }).length > 0) return;
-
                     sel.addClass('highlight');
-
-                    cy.nodes().filter(function (ele) {
-                        return ele !== sel && ele.hasClass('dataset');
-                    }).difference(neighborNodes).addClass('semitransp-hover');
-                    cy.edges().difference(sel).addClass('semitransp-hover');
                     neighborNodes.addClass('highlight');
                 });
                 cy.on('mouseout', 'edge', function (event) {
@@ -720,11 +719,6 @@
                     sel.removeClass('highlight');
                     let neighborNodes = sel.connectedNodes();
                     neighborNodes.removeClass('highlight');
-                    cy.nodes().filter(function (ele) {
-                        return ele !== sel && ele.hasClass('dataset');
-                    }).difference(neighborNodes).removeClass('semitransp-hover');
-                    sel.removeClass('highlight');
-                    cy.edges().difference(sel).removeClass('semitransp-hover');
                 });
 
                 <!-- Highlight analyzed paper -->
@@ -775,7 +769,10 @@
                 }
             });
 
-            let update = function () {searchChanged(); showNumberOfPapers()};
+            let update = function () {
+                searchChanged();
+                showNumberOfPapers()
+            };
             $('#searchTitles').change(update);
             $('#searchAbstracts').change(update);
             $('#searchAuthors').change(update);
@@ -868,7 +865,6 @@
                     window.cy.nodes().filter(function (ele) {
                         return 'title' in ele.data();
                     }).forEach(function (ele) {
-                        ele.removeClass('highlight');
                         ele.removeClass('semitransp-filter');
                     });
                 });
@@ -886,9 +882,7 @@
                             $('#searchMesh').is(':checked') && data.mesh.toLowerCase().includes(filter) ||
                             $('#searchKeywords').is(':checked') && data.keywords.toLowerCase().includes(filter)) {
                             ele.removeClass('semitransp-filter');
-                            ele.addClass('highlight');
                         } else {
-                            ele.removeClass('highlight');
                             ele.addClass('semitransp-filter');
                         }
                     }
@@ -913,7 +907,7 @@
 <body>
 <!-- Fixed navbar -->
 <nav class="navbar navbar-light bg-light fixed-top border-bottom no-padding-right justify-content-between">
-    <a id="pubtrends" class="navbar-brand vertical-center" href="/">PubTrends</a>
+    <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
     <ol class="breadcrumb bg-light search-query">
         <li class="breadcrumb-item vertical-center">{{ source }}</li>
         <li class="breadcrumb-item vertical-center">
@@ -986,26 +980,37 @@
     </div>
 </nav>
 <div class="container-fluid parent">
-    <div class="row">
-        <div class="col-12 float-right">
-            <div class="form-group float-right mt-3" style="position: relative; z-index: 10;">
+    <div class="row mt-3">
+        <div class="col-3">
+            <div id="left-info" class="float-left"></div>
+        </div>
+        <div class="col-6"></div>
+        <div class="col-3">
+            <div class="form-group float-right" style="position: relative; z-index: 10;">
                 <form class="col">
-                    <div class="row justify-content-end">
+                    <div id="control-importance" class="row justify-content-end">
                         <input id="slider-importance" type="range" class="custom-range"
                                min="0" max="1" step="1" value="0"
                                onChange="updateSliderImportance(); showNumberOfPapers();"/>
-                        <label id="slider-importance-label" for="slider-importance">Connections</label>
+                        <label id="slider-importance-label" for="slider-importance"
+                               style="background-color: white">Connections</label>
                     </div>
-                    <div class="row justify-content-end">
+                    <div id="control-year" class="row justify-content-end">
                         <input id="slider-year" type="range" class="custom-range"
                                min="0" max="1" step="1" value="0"
                                onChange="updateSliderYear(); showNumberOfPapers();"/>
-                        <label id="slider-year-label" for="slider-year">Years</label>
+                        <label id="slider-year-label" for="slider-year"
+                               style="background-color: white">Years</label>
                     </div>
-
-                    <div class="row justify-content-end vertical-align">
-                        <input type="checkbox" id="frozen" class="mr-2" onchange="changeFrozenHighlighting();"/>
-                        <label for="frozen" style="margin-bottom: 0">Freeze highlighting</label>
+                    <div id="control-show-abstracts" class="row justify-content-end vertical-align">
+                        <label for="frozen" style="margin-bottom: 0; background-color: white" class="mr-2">
+                            Show abstracts</label>
+                        <input type="checkbox" id="show-abstracts" onchange="changeShowAbstracts();"/>
+                    </div>
+                    <div id="control-frozen" class="row justify-content-end vertical-align">
+                        <label for="frozen" style="margin-bottom: 0; background-color: white;" class="mr-2">Freeze
+                            highlighting</label>
+                        <input type="checkbox" id="frozen" onchange="changeFrozenHighlighting();"/>
                     </div>
                 </form>
             </div>
@@ -1070,19 +1075,26 @@
                         '<svg width="16" height="16"><rect width="16" height="16" style="fill:#00FF00;"/></svg> max'
                 },
                 {
-                    element: '#slider-importance',
+                    element: '#control-importance',
                     intro: 'Filter papers by minimal number of connections or citations.'
                 },
                 {
-                    element: '#slider-year',
+                    element: '#control-year',
                     intro: 'Filter papers by minimal publication year.'
                 },
                 {
+                    element: '#control-show-abstracts',
+                    intro: 'Show abstracts of papers or not.'
+                },
+                {
+                    element: '#control-frozen',
+                    intro: 'Freeze highlighting of papers, use can also press <strong>F</strong> to activate and ' +
+                        '<strong>Esc</strong> to deactivate.'
+                },
+                {
                     intro:
-                        "See more information about paper or connection on mouse hover, including full abstract text.<br>" +
-                        "Selected paper is highlighted with the most similar papers.<br>" +
-                        "Click on a paper to navigate to the dedicate paper page.<br>" +
-                        "Press <strong>F</strong> to freeze the paper selection, <strong>Escape</strong> to unfreeze."
+                        "Learn more about paper or connection on mouse hover.<br>" +
+                        "Click on a paper to navigate to the dedicate paper page."
                 }
             ]
         });
