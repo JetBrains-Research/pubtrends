@@ -282,7 +282,7 @@ class Plotter:
             return None
         kwd_df = PlotPreprocessor.compute_kwds(self.data, self.config.topic_description_words)
         return Plotter._plot_topics_hierarchy_with_keywords(
-            self.data.df, self.kwd_df, self.data.df['comp'], self.data.dendrogram
+            self.data.df, kwd_df, self.data.df['comp'], self.data.dendrogram
         )
 
     def plot_papers_graph(self):
