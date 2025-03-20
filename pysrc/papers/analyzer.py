@@ -29,13 +29,21 @@ class PapersAnalyzer:
 
     def __init__(self, loader, config, test=False):
         self.config = config
-        self.progress = Progress(self.total_steps())
+        self.progress = Progress(self.total_steps(self.config))
 
         self.loader = loader
         self.source = Loaders.source(self.loader, test)
 
-    def total_steps(self):
-        return 14 + 1  # One extra step for visualization
+    def total_steps(self, config):
+        return 11 + config.feature_authors_enabled + config.feature_journals_enabled + config.feature_numbers_enabled
+
+    def set_current_step(self, step=2):
+        self.current_step = step
+
+    def get_step_and_inc(self):
+        s = self.current_step
+        self.current_step += 1
+        return s
 
     def teardown(self):
         self.progress.remove_handler()
@@ -64,12 +72,15 @@ class PapersAnalyzer:
         self.limit = limit
         self.topics = topics
         self.df = self.loader.load_publications(ids)
+        self.set_current_step(2)
         if len(self.df) == 0:
             raise SearchError(f'Nothing found for ids: {ids}')
         else:
-            self.progress.info(f'Total {len(self.df)} papers in database', current=2, task=task)
+            self.progress.info(f'Total {len(self.df)} papers in database',
+                               current=self.get_step_and_inc(), task=task)
         ids = list(self.df['id'])  # Limit ids to existing papers only!
-        self.progress.info('Analyzing title and abstract texts', current=3, task=task)
+        self.progress.info('Analyzing title and abstract texts',
+                           current=self.get_step_and_inc(), task=task)
         self.corpus, self.corpus_tokens, self.corpus_counts = vectorize_corpus(
             self.df,
             max_features=VECTOR_WORDS,
@@ -89,7 +100,8 @@ class PapersAnalyzer:
         else:
             papers_text_embeddings = np.zeros(shape=(len(self.df), EMBEDDINGS_VECTOR_LENGTH))
 
-        self.progress.info('Loading citations for papers', current=4, task=task)
+        self.progress.info('Loading citations for papers',
+                           current=self.get_step_and_inc(), task=task)
         logger.debug('Loading citations by year statistics')
         cits_by_year_df = self.loader.load_citations_by_year(ids)
         logger.debug(f'Found {len(cits_by_year_df)} records of citations by year')
@@ -102,7 +114,8 @@ class PapersAnalyzer:
         self.cit_df = self.loader.load_citations(ids)
         logger.debug(f'Found {len(self.cit_df)} citations between papers')
 
-        self.progress.info('Calculating co-citations for selected papers', current=5, task=task)
+        self.progress.info('Calculating co-citations for selected papers',
+                           current=self.get_step_and_inc(), task=task)
         self.cocit_df = self.loader.load_cocitations(ids)
         cocit_grouped_df = build_cocit_grouped_df(self.cocit_df)
         logger.debug(f'Found {len(cocit_grouped_df)} co-cited pairs of papers')
@@ -113,7 +126,8 @@ class PapersAnalyzer:
         else:
             self.cocit_grouped_df = cocit_grouped_df
 
-        self.progress.info('Processing bibliographic coupling for selected papers', current=6, task=task)
+        self.progress.info('Processing bibliographic coupling for selected papers',
+                           current=self.get_step_and_inc(), task=task)
         bibliographic_coupling_df = self.loader.load_bibliographic_coupling(ids)
         logger.debug(f'Found {len(bibliographic_coupling_df)} bibliographic coupling pairs of papers')
         if not test:
@@ -124,12 +138,12 @@ class PapersAnalyzer:
         else:
             self.bibliographic_coupling_df = bibliographic_coupling_df
 
-        self.progress.info('Building papers graph', current=7, task=task)
         full_papers_graph = build_papers_graph(
             self.df, self.cit_df, self.cocit_grouped_df, self.bibliographic_coupling_df,
         )
         self.progress.info(f'Analyzing papers graph - {full_papers_graph.number_of_nodes()} nodes and '
-                           f'{full_papers_graph.number_of_edges()} edges', current=7, task=task)
+                           f'{full_papers_graph.number_of_edges()} edges',
+                           current=self.get_step_and_inc(), task=task)
 
         if GRAPH_EMBEDDINGS_FACTOR != 0:
             logger.debug('Analyzing papers graph embeddings')
@@ -179,7 +193,7 @@ class PapersAnalyzer:
         self.df['comp'] = self.clusters
 
         self.progress.info(f'Analyzing {len(set(self.df["comp"]))} topics descriptions',
-                           current=9, task=task)
+                           current=self.get_step_and_inc(), task=task)
         comp_pids = self.df[['id', 'comp']].groupby('comp')['id'].apply(list).to_dict()
         self.topics_description = get_topics_description(
             self.df, comp_pids,
@@ -187,7 +201,8 @@ class PapersAnalyzer:
             n_words=self.config.topic_description_words,
         )
 
-        self.progress.info('Identifying top cited papers', current=10, task=task)
+        self.progress.info('Identifying top cited papers',
+                           current=self.get_step_and_inc(), task=task)
         logger.debug('Top cited papers')
         self.top_cited_df = find_top_cited_papers(self.df, self.config.top_cited_papers)
 
@@ -200,21 +215,25 @@ class PapersAnalyzer:
         # Additional analysis steps
         self.author_stats = None
         if self.config.feature_authors_enabled:
-            self.progress.info("Analyzing authors and groups", current=11, task=task)
+            self.progress.info("Analyzing authors and groups",
+                               current=self.get_step_and_inc(), task=task)
             self.author_stats = popular_authors(self.df, n=self.config.popular_authors)
 
         self.journal_stats = None
         if self.config.feature_journals_enabled:
-            self.progress.info("Analyzing popular journals", current=12, task=task)
+            self.progress.info("Analyzing popular journals",
+                               current=self.get_step_and_inc(), task=task)
             self.journal_stats = popular_journals(self.df, n=self.config.popular_journals)
 
         self.numbers_df = None
         if self.config.feature_numbers_enabled:
             if len(self.df) >= 0:
-                self.progress.info('Extracting quantitative features from abstracts texts', current=13, task=task)
+                self.progress.info('Extracting quantitative features from abstracts texts',
+                                   current=self.get_step_and_inc(), task=task)
                 self.numbers_df = extract_numbers(self.df)
             else:
                 logger.debug('Not enough papers for numbers extraction')
+        self.progress.done('Done', task=task)
 
     def save(self) -> AnalysisData:
         return AnalysisData(
