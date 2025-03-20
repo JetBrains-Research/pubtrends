@@ -22,7 +22,7 @@ class TestPopularPapers(unittest.TestCase):
         analyzer.analyze_papers(
             ids, 'query', 'Pubmed', SORT_MOST_CITED, 10, PUBTRENDS_CONFIG.show_topics_default_value, test=True
         )
-        cls.data = analyzer.save()
+        cls.data = analyzer.save(search_query='query', search_ids=None)
         cls.data.cit_df = analyzer.loader.load_citations(analyzer.df['id'])
 
     def test_find_max_gain_papers_count(self):
@@ -70,7 +70,7 @@ class TestPopularPapersSingle(unittest.TestCase):
         analyzer.analyze_papers(
             ids, 'query', 'Pubmed', SORT_MOST_CITED, 10, PUBTRENDS_CONFIG.show_topics_default_value, test=True
         )
-        cls.data = analyzer.save()
+        cls.data = analyzer.save(search_query='query', search_ids=None)
         cls.data.cit_df = analyzer.loader.load_citations(analyzer.df['id'])
 
     def test_find_max_gain_papers_count(self):

@@ -59,7 +59,7 @@
                     }
                 });
             });
-            showDescription(topics_tags);
+            showDescription(window.topics_tags);
         }
 
         function showColorYear() {
@@ -109,12 +109,12 @@
 
         function showDescription(description) {
             const h = $(window).height();
-            const s = Math.min(13, Math.round(7 * h / 800 * 80 / (Object.keys(topics_palette).length + 1))).toString()
+            const s = Math.min(13, Math.round(7 * h / 800 * 80 / (Object.keys(window.topics_palette).length + 1))).toString()
             let content = '<div id="left-info"><p style="line-height:50%;font-size:' + s + 'px";>';
             for (let [topic, tags] of Object.entries(description)) {
                 content += '<svg width="' + s + '" height="' + s + '">' +
                     '<rect width="' + s + '" height="' + s + '" ' +
-                    'style="fill:' + topics_palette[topic] + '";/></svg> ' +
+                    'style="fill:' + window.topics_palette[topic] + '";/></svg> ' +
                     '#' + (parseInt(topic) + 1).toString() + ' ' + tags + '<br>';
             }
             content += '</p></div>';
@@ -295,8 +295,8 @@
             // Disable formatter for the next section because of injections.
             // Enable formatter control in File > Settings > Editor > Code Style
             // @formatter:off
-            const topics_palette = window.topics_palette = JSON.parse({{ topics_palette_json | tojson }});
-            const topics_tags = window.topics_tags = JSON.parse({{topics_tags_json | tojson }});
+            window.topics_palette = JSON.parse({{ topics_palette_json | tojson }});
+            window.topics_tags = JSON.parse({{topics_tags_json | tojson }});
             const elements = JSON.parse({{ graph_cytoscape_json | tojson }});
             // @formatter:on
             window.papers_number = elements['nodes'].length;
@@ -385,7 +385,7 @@
                             "background-color": function (node) {
                                 let data = node.data();
                                 if ('topic' in data) {
-                                    return topics_palette[data.topic];
+                                    return window.topics_palette[data.topic];
                                 } else {
                                     return '#FFFFFF'
                                 }
@@ -529,7 +529,7 @@
                 ],
                 elements: elements,
                 // interaction options
-                minZoom: 0.5,
+                minZoom: 1,
                 maxZoom: 5,
                 boxSelectionEnabled: false,
             });
@@ -573,7 +573,7 @@
                             content.innerHTML = "<p style='text-align:left;'><small>" +
                                 "<b>" + data.title + '&nbsp' +
                                 '<svg width="16" height="16"><rect width="12" height="12" ' +
-                                'style="fill:' + topics_palette[data.topic] + '";/></svg> ' +
+                                'style="fill:' + window.topics_palette[data.topic] + '";/></svg> ' +
                                 "</b><br>" +
                                 '<span style="color:dodgerblue;">Author(s)</span>: ' + data.authors + "<br>" +
                                 '<span style="color:dodgerblue;">Journal(s)</span>: ' + data.journal + "<br>" +
@@ -737,20 +737,24 @@
                 });
 
                 <!-- Highlight analyzed paper -->
-                if ("{{ limit }}" === "related" && "{{ sort }}" === "papers") {
-                    let title = normalize('{{ query }}');
-                    if (title.endsWith("...")) {
-                        title = title.replace("...", "");
-                    }
-                    cy.nodes().forEach(function (ele) {
-                        let data = ele.data();
-                        if ('title' in data) {
-                            if (data.title.startsWith(title)) {
-                                ele.addClass('analyzed');
-                            }
-                        }
-                    });
+                let title = normalize('{{ query }}');
+                if (title.endsWith("...")) {
+                    title = title.replace("...", "");
                 }
+                // Disable formatter for the next section because of injections.
+                // Enable formatter control in File > Settings > Editor > Code Style
+                // @formatter:off
+                const shown_id = "{{ shown_id }}";
+                const search_ids = JSON.parse({{ search_ids | tojson }});
+                // @formatter:on
+                cy.nodes().forEach(function (ele) {
+                    let data = ele.data();
+                    if ('title' in data) {
+                        if (data.id === shown_id || search_ids.includes(data.id)) {
+                            ele.addClass('analyzed');
+                        }
+                    }
+                });
 
                 let slider_importance = $('#slider-importance');
                 slider_importance.attr('max', window.max_connections)

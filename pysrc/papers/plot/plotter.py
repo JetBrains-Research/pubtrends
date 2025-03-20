@@ -18,11 +18,8 @@ from sklearn.preprocessing import minmax_scale
 from string import Template
 from wordcloud import WordCloud
 
-from pysrc.app.reports import preprocess_string
-from pysrc.papers.analysis.text import get_frequent_tokens
-from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
-from pysrc.papers.utils import cut_authors_list, trim, MAX_TITLE_LENGTH, contrast_color, \
+from pysrc.papers.utils import cut_authors_list, trim, contrast_color, \
     topics_palette_rgb, color_to_rgb, factor_colors, factors_colormap
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
@@ -45,6 +42,7 @@ WORD_CLOUD_WIDTH = 200
 WORD_CLOUD_HEIGHT = 300
 
 TOPIC_WORD_CLOUD_KEYWORDS = 20
+
 
 def exception_handler(func):
     def inner_function(*args, **kwargs):
@@ -87,7 +85,6 @@ class Plotter:
                 zip(self.pub_types, [color_to_rgb(pub_types_cmap(i)) for i in range(n_pub_types)])
             )
 
-
     def plot_topic_years_distribution(self):
         logger.debug('Processing topic_years_distribution')
         logger.debug('Topics publications year distribution visualization')
@@ -99,7 +96,6 @@ class Plotter:
         return self._plot_topics_years_distribution(
             self.data.df, kwd_df, plot_components, data, self.config.topic_description_words, min_year, max_year
         )
-
 
     def plot_topics_info_and_word_cloud(self):
         logger.debug('Processing topics_info_and_word_cloud')
@@ -154,6 +150,7 @@ class Plotter:
         plot.scatter(x='year', y='y', fill_alpha=0.5, source=ds, size='size',
                      line_color='color', fill_color='color', legend_field='type')
         plot.legend.location = "top_left"
+        Plotter.remove_wheel_zoom_tool(plot)
         return plot
 
     def plot_most_cited_per_year_papers(self):
@@ -190,6 +187,7 @@ class Plotter:
         bottom = most_cited_counts.min() - 0.01
         p.vbar(x='year', width=0.8, top='count', bottom=bottom,
                fill_alpha=0.5, source=ds, fill_color=colors, line_color=colors)
+        Plotter.remove_wheel_zoom_tool(p)
         return p
 
     def plot_fastest_growth_per_year_papers(self):
@@ -227,6 +225,7 @@ class Plotter:
         bottom = fastest_rel_gains.min() - 0.01
         p.vbar(x='year', width=0.8, top='rel_gain', bottom=bottom, source=ds,
                fill_alpha=0.5, fill_color=colors, line_color=colors)
+        Plotter.remove_wheel_zoom_tool(p)
         return p
 
     def plot_papers_by_year(self):
@@ -244,6 +243,7 @@ class Plotter:
         if min_year != max_year:
             ds_stats.data['bottom'] = [0] * len(ds_stats.data['year'])
             p.varea(x='year', y1='bottom', y2='counts', fill_alpha=0.5, source=ds_stats)
+        Plotter.remove_wheel_zoom_tool(p)
         return p
 
     def plot_keywords_frequencies(self, freq_kwds, n=20):
@@ -287,7 +287,7 @@ class Plotter:
 
     def plot_papers_graph(self):
         return Plotter._plot_papers_graph(
-            self.data.source, self.data.papers_graph, self.data.df,
+            self.data.search_ids, self.data.source, self.data.papers_graph, self.data.df,
             topics_tags=self.data.topics_description
         )
 
@@ -322,6 +322,7 @@ class Plotter:
         p.axis.minor_tick_line_color = None
         p.axis.major_tick_line_color = None
         p.axis.axis_line_color = None
+        Plotter.remove_wheel_zoom_tool(p)
         return p
 
     @staticmethod
@@ -338,7 +339,7 @@ class Plotter:
             ("Year", "@x"),
             ("Cited by", "@y paper(s) in @x"),
         ]
-
+        Plotter.remove_wheel_zoom_tool(p)
         return p
 
     @staticmethod
@@ -355,11 +356,11 @@ class Plotter:
         logger.debug('Processing plot_keywords_timeline')
         # Define the value dimensions
         max_numbers = keywords_df['number'].max()
-        vdim = hv.Dimension('number', range=(-10, max_numbers + 10))
+        vdim = hv.Dimension('number', range=(-2, max_numbers + 2))
         # Define the dataset
         ds = hv.Dataset(keywords_df, vdims=vdim)
         curves = ds.to(hv.Curve, 'year', groupby='keyword').overlay().redim(
-            year=dict(range=(min(years) - 1, max(years) + 5)))
+            year=dict(range=(min(years) - 1, max(years) + 3)))
         # Define a function to get the text annotations
         max_year = ds['year'].max()
         label_df = keywords_df[keywords_df.year == max_year].copy().reset_index(drop=True)
@@ -385,6 +386,7 @@ class Plotter:
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Number of papers'
         p.sizing_mode = 'stretch_width'
+        Plotter.remove_wheel_zoom_tool(p)
         return p
 
     @staticmethod
@@ -506,6 +508,7 @@ class Plotter:
         p.axis.axis_line_color = None
         p.grid.grid_line_color = None
         p.outline_line_color = None
+        Plotter.remove_wheel_zoom_tool(p)
         return p
 
     @staticmethod
@@ -526,7 +529,7 @@ class Plotter:
             ("Type", '@type'),
             ("Cited by", '@total paper(s) total')])
         p.js_on_event('tap', Plotter._paper_callback(ds))
-
+        Plotter.remove_wheel_zoom_tool(p)
         return p
 
     @staticmethod
@@ -555,8 +558,10 @@ class Plotter:
         return html_tooltips_str
 
     @staticmethod
-    def _plot_papers_graph(source, gs, df, analyzed_pid=None, topics_tags=None, topics_meshs=None, add_callback=True,
-                           width=PLOT_WIDTH, height=TALL_PLOT_HEIGHT):
+    def _plot_papers_graph(
+            search_ids, source, gs, df,
+            shown_pid=None, topics_tags=None, topics_meshs=None, add_callback=True,
+            width=PLOT_WIDTH, height=TALL_PLOT_HEIGHT):
         logger.debug('Processing plot_papers_graph')
         pids = df['id']
         pim = dict((p, i) for i, p in enumerate(pids))
@@ -589,13 +594,15 @@ class Plotter:
             graph.node_renderer.data_source.data['topic_meshs'] = \
                 [','.join(t for t, _ in topics_meshs[c][:5]) for c in comps]
 
-
         # Aesthetics
-        radiuses = minmax_scale([c / max(connections) * 0.5 for c in connections]) + 0.3
-        graph.node_renderer.data_source.data['radius'] = radiuses
+        graph.node_renderer.data_source.data['radius'] = \
+            minmax_scale([c / max(connections) * 0.5 for c in connections]) + 0.3
         graph.node_renderer.data_source.data['color'] = [palette[c] for c in comps]
-        graph.node_renderer.data_source.data['line_width'] = [5.0 if p == analyzed_pid else 1 for p in pids]
-        graph.node_renderer.data_source.data['alpha'] = [1.0 if p == analyzed_pid else 0.7 for p in pids]
+        # Show search / shown ids
+        graph.node_renderer.data_source.data['line_width'] = \
+            [5.0 if search_ids is not None and p in search_ids else 3.0 if p == shown_pid else 1 for p in pids]
+        graph.node_renderer.data_source.data['alpha'] = \
+            [1.0 if search_ids is not None and p in search_ids or p == shown_pid else 0.7 for p in pids]
 
         # Edges
         graph.edge_renderer.data_source.data = dict(start=[pim[u] for u, _ in gs.edges],
@@ -667,7 +674,7 @@ class Plotter:
                           text_font_size='13px',
                           background_fill_alpha=.9)
         p.renderers.append(labels)
-
+        Plotter.remove_wheel_zoom_tool(p)
         return p
 
     @staticmethod
@@ -719,3 +726,8 @@ class Plotter:
             }
             source.selected.indices = [];
         """)
+
+    @staticmethod
+    def remove_wheel_zoom_tool(p):
+        p.tools = [tool for tool in p.tools if tool.__class__.__name__ != 'WheelZoomTool']
+

@@ -66,7 +66,6 @@ class PapersAnalyzer:
 
     def analyze_papers(self, ids, query, source, sort, limit, topics, test=False, task=None):
         self.progress.info('Loading publication data', current=2, task=task)
-        self.query = query
         self.source = source
         self.sort = sort
         self.limit = limit
@@ -235,9 +234,10 @@ class PapersAnalyzer:
                 logger.debug('Not enough papers for numbers extraction')
         self.progress.done('Done', task=task)
 
-    def save(self) -> AnalysisData:
+    def save(self, search_query, search_ids) -> AnalysisData:
         return AnalysisData(
-            query=self.query,
+            search_query=search_query,
+            search_ids=search_ids,
             source=self.source,
             sort=self.sort,
             limit=self.limit,

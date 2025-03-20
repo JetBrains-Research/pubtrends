@@ -24,7 +24,7 @@ def prepare_result_data(config: PubtrendsConfig, data: AnalysisData):
     plotter = Plotter(config, data)
     freq_kwds = get_frequent_tokens(chain(*chain(*data.corpus)))
     word_cloud = plotter._papers_word_cloud(freq_kwds)
-    export_name = preprocess_string(data.query)
+    export_name = preprocess_string(data.search_query)
     result = dict(
         topics_analyzed=False,
         n_papers=len(data.df),
@@ -219,14 +219,14 @@ def prepare_paper_data(
     if len(data.df) > 1:
         result['papers_graph'] = components_list(
             Plotter._plot_papers_graph(
-                source, data.papers_graph, data.df,
-                analyzed_pid=pid, topics_tags=data.topics_description
+                data.search_ids, source, data.papers_graph, data.df,
+                shown_pid=pid, topics_tags=data.topics_description
             ))
 
     return result
 
 
-def prepare_graph_data(config: PubtrendsConfig, data: AnalysisData):
+def prepare_graph_data(config: PubtrendsConfig, data: AnalysisData, shown_id=None):
     logger.debug('Extracting graph data')
     topics_tags = {comp: ','.join(
         [w[0] for w in data.topics_description[comp][:config.topic_description_words]]
@@ -236,8 +236,10 @@ def prepare_graph_data(config: PubtrendsConfig, data: AnalysisData):
         data.df, data.papers_graph
     )
     return dict(
+        query=trim(data.search_query, MAX_QUERY_LENGTH),
         source=data.source,
-        query=trim(data.query, MAX_QUERY_LENGTH),
+        search_ids=json.dumps(data.search_ids if data.search_ids else []),
+        shown_id=shown_id,
         limit=data.limit,
         sort=data.sort,
         topics_palette_json=json.dumps(topics_palette(data.df)),

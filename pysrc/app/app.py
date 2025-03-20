@@ -328,7 +328,7 @@ def result():
     noreviews = request.args.get('noreviews') == 'on'  # Include reviews in the initial search phase
     topics = request.args.get('topics')
     try:
-        if jobid and query and source and limit is not None and sort is not None:
+        if jobid:
             data = load_result_data(jobid, source, query, sort, limit, pubtrends_celery)
             if data is not None:
                 logger.info(f'/result success {log_request(request)}')
@@ -365,15 +365,16 @@ def graph():
     source = request.args.get('source')
     limit = request.args.get('limit')
     sort = request.args.get('sort')
+    pid = request.args.get('id')
     try:
-        if jobid and query and source and limit and sort:
+        if jobid:
             data = load_result_data(jobid, source, query, sort, limit, pubtrends_celery)
             if data is not None:
                 logger.info(f'/graph success {log_request(request)}')
                 return render_template(
                     'graph.html',
                     version=VERSION,
-                    **prepare_graph_data(PUBTRENDS_CONFIG, data)
+                    **prepare_graph_data(PUBTRENDS_CONFIG, data, pid)
                 )
             logger.error(f'/graph error job id {log_request(request)}')
             return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
@@ -484,13 +485,13 @@ def export_results():
         source = request.args.get('source')
         limit = request.args.get('limit')
         sort = request.args.get('sort')
-        if jobid and query and source and limit and sort:
+        if jobid:
             data = load_result_data(jobid, source, query, sort, limit, pubtrends_celery)
             with tempfile.TemporaryDirectory() as tmpdir:
                 name = preprocess_string(f'{source}-{query}-{sort}-{limit}')
                 path = os.path.join(tmpdir, f'{name}.json.gz')
                 with gzip.open(path, 'w') as f:
-                    f.write(json.dumps(data).encode('utf-8'))
+                    f.write(json.dumps(data.to_json()).encode('utf-8'))
                 return send_file(path, as_attachment=True)
         logger.error(f'/export_results error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400

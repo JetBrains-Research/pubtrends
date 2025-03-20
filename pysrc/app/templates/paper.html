@@ -84,10 +84,12 @@
         }
 
         function graph_callback() {
-            const url = '/graph?query=' + normalize('{{ title }}') + '&source={{source}}&limit=related&sort=papers';
+            const url = '/graph?query=' + normalize('{{ title }}') + '&source={{source}}';
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
-            window.open(url + '&jobid=' + jobid, '_blank');
+            const pid = new URL(window.location).searchParams.get('id');
+            const limit = new URL(window.location).searchParams.get('limit');
+            window.open(url + '&jobid=' + jobid + '&id=' + pid + '&limit=' + limit, '_blank');
         }
 
     </script>
@@ -389,6 +391,14 @@
                     </div>
                 </div>
             {% endif %}
+
+            <div class="mt-3 ml-3" id="log">
+                <a href="javascript:void(0);"
+                   class="btn btn-light"
+                   role="button" onclick="export_data();">
+                    Export
+                </a>
+            </div>
         </main>
 
         <!--Right alignment-->

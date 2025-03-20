@@ -8,14 +8,15 @@ from scipy.sparse import csr_matrix
 
 
 class AnalysisData:
-    def __init__(self, query, source, sort, limit,
+    def __init__(self, search_query, search_ids, source, sort, limit,
                  df, cit_df, cocit_grouped_df, bibliographic_coupling_df,
                  top_cited_df, max_gain_df, max_rel_gain_df,
                  corpus, corpus_tokens, corpus_counts,
                  dendrogram, topics_description,
                  papers_graph, papers_embeddings,
                  author_stats, journal_stats, numbers_df):
-        self.query = query
+        self.search_query = search_query  # Initial query for analysis
+        self.search_ids = search_ids  # Initial ids for analysis
         self.source = source
         self.sort = sort
         self.limit = limit
@@ -48,7 +49,8 @@ class AnalysisData:
         )
 
         return dict(
-            query=self.query,
+            search_query=self.search_query,
+            search_ids=self.search_ids,
             source=self.source,
             sort=self.sort,
             limit=self.limit,
@@ -76,7 +78,8 @@ class AnalysisData:
         """
         Load from JSON-serializable dict.
         """
-        query = fields['query']
+        search_ids = fields['search_ids']
+        search_query = fields['search_query']
         source = fields['source']
         sort = fields['sort']
         limit = fields['limit']
@@ -134,7 +137,8 @@ class AnalysisData:
         numbers_df = pd.read_json(StringIO(fields['numbers_df'])) if fields['numbers_df'] is not None else None
 
         return AnalysisData(
-            query=query,
+            search_query=search_query,
+            search_ids=search_ids,
             source=source,
             sort=sort,
             limit=limit,

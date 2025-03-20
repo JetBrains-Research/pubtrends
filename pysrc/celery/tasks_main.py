@@ -36,25 +36,27 @@ def analyze_search_terms(source, query, sort, limit, noreviews, topics, test=Fal
     finally:
         loader.close_connection()
 
-    data = analyzer.save()
+    data = analyzer.save(search_query=query, search_ids=None)
     analyzer.progress.done(task=current_task)
     analyzer.teardown()
     return data.to_json(), analyzer.progress.log()
 
 
-def _analyze_id_list(analyzer, ids,
-                     query, source, sort, limit, topics,
+def _analyze_id_list(analyzer, query , search_ids,
+                     ids, source, sort, limit, topics,
                      test=False, task=None):
     if len(ids) == 0:
         raise RuntimeError('Empty papers list')
+    last_update = analyzer.loader.last_update()
+    if last_update is not None:
+        analyzer.progress.info(f'Last papers update {last_update}', current=0, task=current_task)
     analyzer.progress.info(f'Analyzing {len(ids)} paper(s) from {source}', current=1, task=task)
     try:
         analyzer.analyze_papers(ids, query, source, sort, limit, topics, test=test, task=current_task)
     finally:
         analyzer.loader.close_connection()
 
-    analyzer.progress.info('Visualizing results', current=analyzer.progress.total - 1, task=task)
-    data = analyzer.save()
+    data = analyzer.save(search_query=query, search_ids=search_ids)
     analyzer.progress.done(task=task)
     analyzer.teardown()
     return data.to_json(), analyzer.progress.log()
@@ -86,9 +88,8 @@ def analyze_search_paper(source, pid, key, value, limit, topics, test=False):
                              mesh_similarity_threshold=EXPAND_MESH_SIMILARITY,
                              single_paper_impact=EXPAND_SINGLE_PAPER_IMPACT)
             return _analyze_id_list(
-                analyzer, ids,
-                f'Paper {key}={value}',
-                source, None, limit, topics,
+                analyzer, f'Paper {key}={value}', [result[0]],
+                ids, source, None, limit, topics,
                 test=test, task=current_task
             )
         elif len(result) == 0:
@@ -112,6 +113,7 @@ def analyze_pubmed_search(query, sort, limit, topics, test=False):
     limit = int(limit) if limit is not None and limit != '' else analyzer.config.show_max_articles_default_value
     topics = int(topics) if topics is not None and topics != '' else analyzer.config.show_topics_default_value
     ids = pubmed_search(query, sort, limit)
-    return _analyze_id_list(analyzer, ids,
-                            query, 'Pubmed', sort, limit, topics,
-                            test=test, task=current_task)
+    return _analyze_id_list(
+        analyzer, query, ids, ids, 'Pubmed', sort, limit, topics,
+        test=test, task=current_task
+    )
