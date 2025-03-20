@@ -7,6 +7,7 @@ import re
 from celery.result import AsyncResult
 from threading import Lock
 
+from pysrc.papers.data import AnalysisData
 from pysrc.papers.utils import SORT_MOST_CITED
 from pysrc.version import VERSION
 
@@ -41,28 +42,24 @@ def get_predefined_jobs(config):
     return result
 
 
-def _save_result_data(viz, data, log, jobid, source, query, sort, limit):
+def _save_result_data(data, log, jobid, source, query, sort, limit):
     logger.info(f'Saving result for source={source} query={query} sort={sort} limit={limit}')
-    _save_data(result_folder_name(source, query, sort, limit, jobid), data, log, viz)
+    _save_data(result_folder_name(source, query, sort, limit, jobid), data, log)
 
 
-def _save_paper_data(viz, data, log, jobid, source, query):
+def _save_paper_data(data, log, jobid, source, query):
     logger.info(f'Saving paper for source={source} query={query}')
-    _save_data(paper_folder_name(source, query, jobid), data, log, viz)
+    _save_data(paper_folder_name(source, query, jobid), data, log)
 
 
-def _save_data(name, data, log, viz):
+def _save_data(name, data, log):
     folder = os.path.join(get_results_path(), preprocess_string(VERSION), name)
     try:
         FILES_LOCK.acquire()
         if not os.path.exists(folder):
             os.makedirs(folder)
-        path_viz = os.path.join(folder, 'viz.json.gz')
         path_data = os.path.join(folder, 'data.json.gz')
         path_log = os.path.join(folder, 'log.gz')
-        if not os.path.exists(path_viz):
-            with gzip.open(path_viz, 'w') as f:
-                f.write(json.dumps(viz).encode('utf-8'))
         if not os.path.exists(path_data):
             with gzip.open(path_data, 'w') as f:
                 f.write(json.dumps(data).encode('utf-8'))
@@ -73,31 +70,7 @@ def _save_data(name, data, log, viz):
         FILES_LOCK.release()
 
 
-def load_result_viz_log(jobid, source, query, sort, limit, app):
-    logger.info(f'Trying to load viz, log for source={source} query={query} sort={sort} limit={limit}')
-    try:
-        FILES_LOCK.acquire()
-        folder = _find_folder(jobid)
-        if folder is not None:
-            path_viz = os.path.join(folder, 'viz.json.gz')
-            path_log = os.path.join(folder, 'log.gz')
-            if os.path.exists(path_viz) and os.path.exists(path_log):
-                with gzip.open(path_viz, 'r') as f:
-                    viz = json.loads(f.read().decode('utf-8'))
-                with gzip.open(path_log, 'r') as f:
-                    log = f.read().decode('utf-8')
-                return viz, log
-    finally:
-        FILES_LOCK.release()
-    job = AsyncResult(jobid, app=app)
-    if job and job.state == 'SUCCESS':
-        viz, data, log = job.result
-        _save_result_data(viz, data, log, jobid, source, query, sort, limit)
-        return viz, log
-    return None, None
-
-
-def load_result_data(jobid, source, query, sort, limit, app):
+def load_result_data(jobid, source, query, sort, limit, app) -> AnalysisData | None:
     logger.info(f'Trying to load data for source={source} query={query} sort={sort} limit={limit}')
     try:
         FILES_LOCK.acquire()
@@ -106,18 +79,18 @@ def load_result_data(jobid, source, query, sort, limit, app):
             path_data = os.path.join(folder, 'data.json.gz')
             if os.path.exists(path_data):
                 with gzip.open(path_data, 'r') as f:
-                    return json.loads(f.read().decode('utf-8'))
+                    return AnalysisData.from_json(json.loads(f.read().decode('utf-8')))
     finally:
         FILES_LOCK.release()
     job = AsyncResult(jobid, app=app)
     if job and job.state == 'SUCCESS':
-        viz, data, log = job.result
-        _save_result_data(viz, data, log, jobid, source, query, sort, limit)
-        return data
+        data, log = job.result
+        _save_result_data(data, log, jobid, source, query, sort, limit)
+        return AnalysisData.from_json(data)
     return None
 
 
-def load_paper_data(jobid, source, query, app):
+def load_paper_data(jobid, source, query, app) -> AnalysisData | None:
     logger.info(f'Trying to load paper data for source={source} query={query}')
     try:
         FILES_LOCK.acquire()
@@ -126,16 +99,15 @@ def load_paper_data(jobid, source, query, app):
             path_data = os.path.join(folder, 'data.json.gz')
             if os.path.exists(path_data):
                 with gzip.open(path_data, 'r') as f:
-                    return json.loads(f.read().decode('utf-8'))
+                    return AnalysisData.from_json(json.loads(f.read().decode('utf-8')))
     finally:
         FILES_LOCK.release()
     job = AsyncResult(jobid, app=app)
     if job and job.state == 'SUCCESS':
-        viz, data, log = job.result
-        _save_paper_data(viz, data, log, jobid, source, query)
-        return data
+        data, log = job.result
+        _save_paper_data(data, log, jobid, source, query)
+        return AnalysisData.from_json(data)
     return None
-
 
 def preprocess_string(s):
     return re.sub(r'-{2,}', '-', re.sub(r'[^a-z0-9_]+', '-', s.lower())).strip('-')

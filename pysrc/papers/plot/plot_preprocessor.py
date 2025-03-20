@@ -1,10 +1,10 @@
 import json
 import logging
-
 import networkx as nx
 import numpy as np
 import pandas as pd
 from more_itertools import unique_everseen
+from scipy.spatial import distance
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
 from pysrc.papers.utils import cut_authors_list, rgb2hex
@@ -31,6 +31,12 @@ class PlotPreprocessor:
             data[str(c + 1)] = [len(df[np.logical_and(df['comp'] == c, df['year'] == y)])
                                 for y in range(min_year, max_year + 1)]
         return components, data
+
+    @staticmethod
+    def compute_kwds(data, topic_description_words):
+        kwds = [(comp, ','.join([f'{t}:{v:.3f}' for t, v in vs[:topic_description_words]]))
+                for comp, vs in data.topics_description.items()]
+        return pd.DataFrame(kwds, columns=['comp', 'kwd']).sort_values(by='comp')
 
     @staticmethod
     def article_view_data_source(df, min_year, max_year, components_split, width=760):
@@ -205,59 +211,6 @@ class PlotPreprocessor:
         return paths, leaves_order
 
     @staticmethod
-    def prepare_papers_data(
-            df, top_cited_papers, max_gain_papers, max_rel_gain_papers,
-            url_prefix,
-            comp=None, word=None, author=None, journal=None, papers_list=None
-    ):
-        # Filter by component
-        if comp is not None:
-            df = df[df['comp'].astype(int) == comp]
-        # Filter by word
-        if word is not None:
-            df = df[(df['title'].str.contains(word, case=False)) |
-                    (df['abstract'].str.contains(word, case=False)) |
-                    (df['mesh'].str.contains(word, case=False)) |
-                    (df['keywords'].str.contains(word, case=False))]
-        # Filter by author
-        if author is not None:
-            # Check if string was trimmed
-            if author.endswith('...'):
-                author = author[:-3]
-                df = df[[any([a.startswith(author) for a in authors]) for authors in df['authors']]]
-            else:
-                df = df[[author in authors for authors in df['authors']]]
-
-        # Filter by journal
-        if journal is not None:
-            # Check if string was trimmed
-            if journal.endswith('...'):
-                journal = journal[:-3]
-                df = df[[j.startswith(journal) for j in df['journal']]]
-            else:
-                df = df[df['journal'] == journal]
-
-        if papers_list == 'top':
-            df = df[[pid in top_cited_papers for pid in df['id']]]
-        if papers_list == 'year':
-            df = df[[pid in max_gain_papers for pid in df['id']]]
-        if papers_list == 'hot':
-            df = df[[pid in max_rel_gain_papers for pid in df['id']]]
-
-        result = []
-        for _, row in df.iterrows():
-            pid, title, authors, journal, year, total, doi, topic = \
-                row['id'], row['title'], row['authors'], row['journal'], \
-                row['year'], int(row['total']), str(row['doi']), int(row['comp'] + 1)
-            if doi == 'None' or doi == 'nan':
-                doi = ''
-            # Don't trim or cut anything here, because this information can be exported
-            result.append(
-                (pid, title, authors, url_prefix + pid if url_prefix else None, journal, year, total, doi, topic)
-            )
-        return result
-
-    @staticmethod
     def frequent_keywords_data(freq_kwds, df, corpus_terms, corpus_counts, n):
         logger.debug('Computing frequencies of terms')
         keywords = [t for t, _ in list(freq_kwds.items())[:n]]
@@ -294,13 +247,12 @@ class PlotPreprocessor:
         return keywords_df, years
 
     @staticmethod
-    def get_topic_word_cloud_data(kwd_df, comp):
+    def get_topic_word_cloud_data(data, topic_description_words):
         kwds = {}
-        for pair in list(kwd_df[kwd_df['comp'] == comp]['kwd'])[0].split(','):
-            if pair != '':  # Correctly process empty freq_kwds encoding
-                token, value = pair.split(':')
-                for word in token.split(' '):
-                    kwds[word] = float(value) + kwds.get(word, 0)
+        for vs in data.topics_description.values():
+            for k, v in vs[:topic_description_words]:
+                for word in k.split(' '):
+                    kwds[word] = kwds.get(word, 0) + v
         return kwds
 
     @staticmethod
@@ -309,3 +261,16 @@ class PlotPreprocessor:
                             int(font_size), orientation is not None,
                             rgb2hex(color))
                            for (word, count), font_size, position, orientation, color in wc.layout_])
+
+
+    @staticmethod
+    def get_top_papers_id_title_year_cited_topic(papers, df, n=50):
+        top_papers = map(lambda v: (df[df['id'] == v], df[df['id'] == v]['total'].values[0]), papers)
+        return [(el[0]['id'].values[0],
+             el[0]['title'].values[0],
+             el[0]['year'].values[0],
+             el[0]['total'].values[0],
+             el[0]['comp'].values[0])
+            for el in sorted(top_papers, key=lambda x: x[1], reverse=True)[:n]]
+
+

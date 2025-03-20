@@ -9,7 +9,6 @@ from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import *
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
-from pysrc.papers.plot.plotter import visualize_analysis
 from pysrc.papers.utils import SORT_MOST_CITED, preprocess_doi, is_doi
 
 logger = getLogger(__name__)
@@ -33,36 +32,33 @@ def analyze_search_terms(source, query, sort, limit, noreviews, topics, test=Fal
         ids = analyzer.search_terms(query, limit=limit, sort=sort,
                                     noreviews=noreviews,
                                     task=current_task)
-        analyzer.analyze_papers(ids, query, topics, test=test, task=current_task)
+        analyzer.analyze_papers(ids, query, source, sort, limit, topics, test=test, task=current_task)
     finally:
         loader.close_connection()
 
-    analyzer.progress.info('Visualizing results', current=analyzer.progress.total - 1, task=current_task)
-
-    visualization = visualize_analysis(analyzer)
-    dump = analyzer.dump()
+    data = analyzer.save()
     analyzer.progress.done(task=current_task)
     analyzer.teardown()
-    return visualization, dump, analyzer.progress.log()
+    return data.to_json(), analyzer.progress.log()
 
 
-def _analyze_id_list(analyzer, source, ids,
-                     query, topics,
+def _analyze_id_list(analyzer, ids,
+                     query, source, sort, limit, topics,
                      test=False, task=None):
     if len(ids) == 0:
         raise RuntimeError('Empty papers list')
     analyzer.progress.info(f'Analyzing {len(ids)} paper(s) from {source}', current=1, task=task)
     try:
-        analyzer.analyze_papers(ids, query, topics, test=test, task=task)
+        analyzer.analyze_papers(ids, query, source, sort, limit, topics, test=test, task=current_task)
     finally:
         analyzer.loader.close_connection()
 
     analyzer.progress.info('Visualizing results', current=analyzer.progress.total - 1, task=task)
-    visualization = visualize_analysis(analyzer)
-    dump = analyzer.dump()
+    data = analyzer.save()
+    visualization = visualize_analysis(analyzer.config, data)
     analyzer.progress.done(task=task)
     analyzer.teardown()
-    return visualization, dump, analyzer.progress.log()
+    return visualization, data.to_json(), analyzer.progress.log()
 
 
 @pubtrends_celery.task(name='analyze_search_paper')
@@ -91,8 +87,9 @@ def analyze_search_paper(source, pid, key, value, limit, topics, test=False):
                              mesh_similarity_threshold=EXPAND_MESH_SIMILARITY,
                              single_paper_impact=EXPAND_SINGLE_PAPER_IMPACT)
             return _analyze_id_list(
-                analyzer, source, ids=ids, query=f'Paper {key}={value}',
-                topics=topics,
+                analyzer, ids,
+                f'Paper {key}={value}',
+                source, None, limit, topics,
                 test=test, task=current_task
             )
         elif len(result) == 0:
@@ -116,8 +113,6 @@ def analyze_pubmed_search(query, sort, limit, topics, test=False):
     limit = int(limit) if limit is not None and limit != '' else analyzer.config.show_max_articles_default_value
     topics = int(topics) if topics is not None and topics != '' else analyzer.config.show_topics_default_value
     ids = pubmed_search(query, sort, limit)
-    return _analyze_id_list(analyzer, 'Pubmed',
-                            ids, query=query,
-                            topics=topics,
+    return _analyze_id_list(analyzer, ids,
+                            query, 'Pubmed', sort, limit, topics,
                             test=test, task=current_task)
-

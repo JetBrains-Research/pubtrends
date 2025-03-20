@@ -6,6 +6,7 @@ from parameterized import parameterized
 from pysrc.papers.analysis.topics import _get_topics_description_cosine
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
+from pysrc.papers.utils import SORT_MOST_CITED
 from pysrc.test.mock_loaders import MockLoader
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
@@ -15,22 +16,22 @@ class TestTopics(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        loader = MockLoader()
-        cls.analyzer = PapersAnalyzer(loader, PUBTRENDS_CONFIG, test=True)
-        ids = cls.analyzer.search_terms(query='query')
-        cls.analyzer.analyze_papers(ids, 'query', PUBTRENDS_CONFIG.show_topics_default_value, test=True)
-        cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.df['id'])
-        cls.analyzer.bibliographic_coupling_df = loader.load_bibliographic_coupling(cls.analyzer.df['id'])
+        analyzer = PapersAnalyzer(MockLoader(), PUBTRENDS_CONFIG, test=True)
+        ids = analyzer.search_terms(query='query')
+        analyzer.analyze_papers(
+            ids, 'query', 'Pubmed', SORT_MOST_CITED, 10, PUBTRENDS_CONFIG.show_topics_default_value, test=True
+        )
+        cls.data = analyzer.save()
 
     def test_topic_analysis_all_nodes_assigned(self):
-        nodes = self.analyzer.papers_graph.nodes()
-        for row in self.analyzer.df.itertuples():
+        nodes = self.data.papers_graph.nodes()
+        for row in self.data.df.itertuples():
             if getattr(row, 'id') in nodes:
                 self.assertGreaterEqual(getattr(row, 'comp'), 0)
 
     def test_topic_analysis_missing_nodes_set_to_default(self):
-        nodes = self.analyzer.papers_graph.nodes()
-        for row in self.analyzer.df.itertuples():
+        nodes = self.data.papers_graph.nodes()
+        for row in self.data.df.itertuples():
             if getattr(row, 'id') not in nodes:
                 self.assertEqual(getattr(row, 'comp'), -1)
 

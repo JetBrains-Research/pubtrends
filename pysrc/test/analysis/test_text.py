@@ -4,6 +4,7 @@ import unittest
 from pysrc.papers.analysis.text import stemmed_tokens, _build_stems_to_tokens_map
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
+from pysrc.papers.utils import SORT_MOST_CITED
 from pysrc.test.mock_loaders import MockLoader
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
@@ -13,12 +14,12 @@ class TestText(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        loader = MockLoader()
-        cls.analyzer = PapersAnalyzer(loader, PUBTRENDS_CONFIG, test=True)
-        ids = cls.analyzer.search_terms(query='query')
-        cls.analyzer.analyze_papers(ids, 'query', PUBTRENDS_CONFIG.show_topics_default_value, test=True)
-        cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.df['id'])
-        cls.analyzer.bibliographic_coupling_df = loader.load_bibliographic_coupling(cls.analyzer.df['id'])
+        analyzer = PapersAnalyzer(MockLoader(), PUBTRENDS_CONFIG, test=True)
+        ids = analyzer.search_terms(query='query')
+        analyzer.analyze_papers(
+            ids, 'query', 'Pubmed', SORT_MOST_CITED, 10, PUBTRENDS_CONFIG.show_topics_default_value, test=True
+        )
+        cls.data = analyzer.save()
 
     def test_stemmed_tokens(self):
         text = """Very interesting article about elephants and donkeys.
@@ -75,7 +76,7 @@ class TestText(unittest.TestCase):
 
     def test_corpus_vectorization(self):
         self.assertEqual(
-            self.analyzer.corpus_tokens,
+            self.data.corpus_tokens,
             ['abstract',
              'article',
              'breakthrough',
@@ -87,9 +88,8 @@ class TestText(unittest.TestCase):
              'term4',
              'term5']
         )
-        # print(self.analyzer.corpus_counts.toarray())
         self.assertTrue(np.array_equal(
-            self.analyzer.corpus_counts.toarray(),
+            self.data.corpus_counts.toarray(),
             [[0, 1, 0, 0, 1, 1, 1, 1, 0, 0],
              [1, 1, 0, 0, 0, 0, 1, 1, 1, 0],
              [1, 1, 0, 0, 0, 0, 0, 1, 1, 1],

@@ -3,6 +3,7 @@ import unittest
 import numpy as np
 from bokeh.models import ColumnDataSource
 
+from pysrc.app.app import PUBTRENDS_CONFIG
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.plot.plotter import Plotter
 from pysrc.test.plot.mock_analyzer import MockAnalyzer
@@ -12,7 +13,7 @@ class TestPlotPreprocessor(unittest.TestCase):
 
     def setUp(self):
         self.analyzer = MockAnalyzer()
-        self.plotter = Plotter(self.analyzer)
+        self.plotter = Plotter(PUBTRENDS_CONFIG, self.analyzer)
 
     def test_component_size_summary(self):
         components, data = PlotPreprocessor.component_size_summary_data(

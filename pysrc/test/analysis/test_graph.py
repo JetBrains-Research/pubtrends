@@ -4,6 +4,7 @@ import unittest
 from pysrc.papers.analysis.graph import sparse_graph
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
+from pysrc.papers.utils import SORT_MOST_CITED
 from pysrc.test.mock_loaders import MockLoader, PAPERS_GRAPH_EDGES, MockLoaderSingle
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
@@ -13,14 +14,16 @@ class TestBuildGraph(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        loader = MockLoader()
-        cls.analyzer = PapersAnalyzer(loader, PUBTRENDS_CONFIG, test=True)
-        ids = cls.analyzer.search_terms(query='query')
-        cls.analyzer.analyze_papers(ids, 'query', PUBTRENDS_CONFIG.show_topics_default_value, test=True)
+        analyzer = PapersAnalyzer(MockLoader(), PUBTRENDS_CONFIG, test=True)
+        ids = analyzer.search_terms(query='query')
+        analyzer.analyze_papers(
+            ids, 'query', 'Pubmed', SORT_MOST_CITED, 10, PUBTRENDS_CONFIG.show_topics_default_value, test=True
+        )
+        cls.data = analyzer.save()
 
     def test_build_papers_graph(self):
-        edges = list(self.analyzer.papers_graph.edges(data=True))
-        # print(edges)
+        edges = list(self.data.papers_graph.edges(data=True))
+        edges.sort(key=lambda x: (x[0], x[1]))
         self.assertEqual(len(PAPERS_GRAPH_EDGES), len(edges), msg='size')
         for expected, actual in zip(PAPERS_GRAPH_EDGES, edges):
             self.assertEqual(expected[0], actual[0], msg='source')

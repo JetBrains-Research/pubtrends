@@ -30,10 +30,10 @@ SIMILARITY_COCITATION_MIN = 2
 
 # Papers embeddings is a weighted average of graph and text embeddings
 EMBEDDINGS_VECTOR_LENGTH = 200
-GRAPH_EMBEDDINGS_FACTOR = 2
+GRAPH_EMBEDDINGS_FACTOR = 1
 TEXT_EMBEDDINGS_FACTOR = 1
 
-PCA_COMPONENTS = 10
+PCA_COMPONENTS = 15
 
 # Global vectorization max vocabulary size
 VECTOR_WORDS = 10_000

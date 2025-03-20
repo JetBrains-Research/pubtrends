@@ -2,8 +2,8 @@ import gzip
 import json
 import logging
 import os
-import requests
 import random
+import requests
 import tempfile
 import time
 from celery.result import AsyncResult
@@ -15,18 +15,14 @@ from urllib.parse import quote
 from pysrc.app.admin.admin import configure_admin_functions
 from pysrc.app.messages import SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, SOMETHING_WENT_WRONG_PAPER, \
     SOMETHING_WENT_WRONG_TOPIC, SERVICE_LOADING_PREDEFINED_EXAMPLES, SERVICE_LOADING_INITIALIZING
-from pysrc.app.reports import get_predefined_jobs, load_result_viz_log, \
+from pysrc.app.reports import get_predefined_jobs, \
     load_result_data, _predefined_example_params_by_jobid, preprocess_string, load_paper_data
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, analyze_pubmed_search
-from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
-from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
-from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
-from pysrc.papers.plot.plotter import TOPIC_KEYWORDS
-from pysrc.papers.plot.plotter_paper import prepare_paper_data
-from pysrc.papers.utils import trim, IDS_ANALYSIS_TYPE, PAPER_ANALYSIS_TYPE, topics_palette, MAX_QUERY_LENGTH
+from pysrc.papers.plot.plot_app import prepare_graph_data, prepare_papers_data, prepare_paper_data, prepare_result_data
+from pysrc.papers.utils import trim, IDS_ANALYSIS_TYPE, PAPER_ANALYSIS_TYPE, MAX_QUERY_LENGTH
 from pysrc.version import VERSION
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
@@ -333,8 +329,8 @@ def result():
     topics = request.args.get('topics')
     try:
         if jobid and query and source and limit is not None and sort is not None:
-            viz, log = load_result_viz_log(jobid, source, query, sort, limit, pubtrends_celery)
-            if viz is not None and log is not None:
+            data = load_result_data(jobid, source, query, sort, limit, pubtrends_celery)
+            if data is not None:
                 logger.info(f'/result success {log_request(request)}')
                 return render_template('result.html',
                                        query=trim(query, MAX_QUERY_LENGTH),
@@ -343,9 +339,8 @@ def result():
                                        sort=sort,
                                        max_graph_size=PUBTRENDS_CONFIG.max_graph_size,
                                        version=VERSION,
-                                       log=log,
                                        is_predefined=True,
-                                       **viz)
+                                       **prepare_result_data(PUBTRENDS_CONFIG, data))
             logger.info(f'/result No job or out-of-date job, restart it {log_request(request)}')
             analyze_search_terms.apply_async(
                 args=[source, query, sort, int(limit), noreviews, topics, app.config['TESTING']],
@@ -370,37 +365,24 @@ def graph():
     source = request.args.get('source')
     limit = request.args.get('limit')
     sort = request.args.get('sort')
-    if jobid and query and source and limit and sort:
-        data = load_result_data(jobid, source, query, sort, limit, pubtrends_celery)
-        if data is not None:
-            loader, url_prefix = Loaders.get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
-            analyzer = PapersAnalyzer(loader, PUBTRENDS_CONFIG)
-            analyzer.init(data)
-            topics_tags = {comp: ','.join(
-                [w[0] for w in analyzer.kwd_df[analyzer.kwd_df['comp'] == comp]['kwd'].values[0][:TOPIC_KEYWORDS]]
-            ) for comp in sorted(set(analyzer.df['comp']))}
-            logger.debug('Computing sparse graph')
-            graph_cs = PlotPreprocessor.dump_similarity_graph_cytoscape(
-                analyzer.df, analyzer.sparse_papers_graph
-            )
-            logger.info(f'/graph success similarity {log_request(request)}')
-            return render_template(
-                'graph.html',
-                version=VERSION,
-                source=source,
-                query=trim(query, MAX_QUERY_LENGTH),
-                limit=limit,
-                sort=sort,
-                topics_palette_json=json.dumps(topics_palette(analyzer.df)),
-                topics_tags_json=json.dumps(topics_tags),
-                graph_cytoscape_json=json.dumps(graph_cs)
-            )
-        logger.error(f'/graph error job id {log_request(request)}')
-        return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
-    else:
-        logger.error(f'/graph error wrong request {log_request(request)}')
-        return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
-
+    try:
+        if jobid and query and source and limit and sort:
+            data = load_result_data(jobid, source, query, sort, limit, pubtrends_celery)
+            if data is not None:
+                logger.info(f'/graph success {log_request(request)}')
+                return render_template(
+                    'graph.html',
+                    version=VERSION,
+                    **prepare_graph_data(PUBTRENDS_CONFIG, data)
+                )
+            logger.error(f'/graph error job id {log_request(request)}')
+            return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
+        else:
+            logger.error(f'/graph error wrong request {log_request(request)}')
+            return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
+    except Exception as e:
+        logger.exception(f'/graph exception {e}')
+        return render_template_string(ERROR_OCCURRED), 500
 
 @app.route('/paper')
 def paper():
@@ -417,7 +399,7 @@ def paper():
             if data is not None:
                 logger.info(f'/paper success {log_request(request)}')
                 return render_template('paper.html',
-                                       **prepare_paper_data(data, source, pid),
+                                       **prepare_paper_data(PUBTRENDS_CONFIG, data, source, pid),
                                        max_graph_size=PUBTRENDS_CONFIG.max_graph_size,
                                        version=VERSION)
             else:
@@ -444,54 +426,53 @@ def show_ids():
     sort = request.args.get('sort')
     search_string = ''
     comp = request.args.get('comp')
-    if comp is not None:
-        search_string += f'topic: {comp}'
-        comp = int(comp) - 1  # Component was exposed so it was 1-based
+    try:
+        if comp is not None:
+            search_string += f'topic: {comp}'
+            comp = int(comp) - 1  # Component was exposed so it was 1-based
 
-    word = request.args.get('word')
-    if word is not None:
-        search_string += f'word: {word}'
+        word = request.args.get('word')
+        if word is not None:
+            search_string += f'word: {word}'
 
-    author = request.args.get('author')
-    if author is not None:
-        search_string += f'author: {author}'
+        author = request.args.get('author')
+        if author is not None:
+            search_string += f'author: {author}'
 
-    journal = request.args.get('journal')
-    if journal is not None:
-        search_string += f'journal: {journal}'
+        journal = request.args.get('journal')
+        if journal is not None:
+            search_string += f'journal: {journal}'
 
-    papers_list = request.args.get('papers_list')
-    if papers_list == 'top':
-        search_string += 'Top Papers'
-    if papers_list == 'year':
-        search_string += 'Papers of the Year'
-    if papers_list == 'hot':
-        search_string += 'Hot Papers'
+        papers_list = request.args.get('papers_list')
+        if papers_list == 'top':
+            search_string += 'Top Papers'
+        if papers_list == 'year':
+            search_string += 'Papers of the Year'
+        if papers_list == 'hot':
+            search_string += 'Hot Papers'
 
-    if jobid and query and source and limit and sort:
-        data = load_result_data(jobid, source, query, sort, limit, pubtrends_celery)
-        if data is not None:
-            logger.info(f'/papers success {log_request(request)}')
-            export_name = preprocess_string(f'{query}-{search_string}')
-            loader, url_prefix = Loaders.get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
-            analyzer = PapersAnalyzer(loader, PUBTRENDS_CONFIG)
-            analyzer.init(data)
-            papers_data = PlotPreprocessor.prepare_papers_data(
-                analyzer.df, analyzer.top_cited_papers, analyzer.max_gain_papers, analyzer.max_rel_gain_papers,
-                url_prefix,
-                comp, word, author, journal, papers_list
-            )
-            return render_template('papers.html',
-                                   version=VERSION,
-                                   source=source,
-                                   query=trim(query, MAX_QUERY_LENGTH),
-                                   search_string=search_string,
-                                   limit=limit,
-                                   sort=sort,
-                                   export_name=export_name,
-                                   papers=papers_data)
-    logger.error(f'/papers error {log_request(request)}')
-    return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
+        if jobid and query and source and limit and sort:
+            data = load_result_data(jobid, source, query, sort, limit, pubtrends_celery)
+            if data is not None:
+                logger.info(f'/papers success {log_request(request)}')
+                export_name = preprocess_string(f'{query}-{search_string}')
+                papers_data = prepare_papers_data(
+                    PUBTRENDS_CONFIG, data, comp, word, author, journal, papers_list
+                )
+                return render_template('papers.html',
+                                       version=VERSION,
+                                       source=source,
+                                       query=trim(query, MAX_QUERY_LENGTH),
+                                       search_string=search_string,
+                                       limit=limit,
+                                       sort=sort,
+                                       export_name=export_name,
+                                       papers=papers_data)
+        logger.error(f'/papers error {log_request(request)}')
+        return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
+    except Exception as e:
+        logger.exception(f'/papers exception {e}')
+        return render_template_string(ERROR_OCCURRED), 500
 
 
 @app.route('/export_data', methods=['GET'])

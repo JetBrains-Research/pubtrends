@@ -24,7 +24,7 @@ class Loaders:
             raise TypeError(f'Unknown loader {loader}')
 
     @staticmethod
-    def get_loader_and_url_prefix(source, config):
+    def _get_loader_and_url_prefix(source, config):
         if PostgresConnector.postgres_configured(config):
             if source == 'Pubmed':
                 return PubmedPostgresLoader(config), PUBMED_ARTICLE_BASE_URL
@@ -37,4 +37,8 @@ class Loaders:
 
     @staticmethod
     def get_loader(source, config):
-        return Loaders.get_loader_and_url_prefix(source, config)[0]
+        return Loaders._get_loader_and_url_prefix(source, config)[0]
+
+    @staticmethod
+    def get_url_prefix(source, config):
+        return Loaders._get_loader_and_url_prefix(source, config)[1]

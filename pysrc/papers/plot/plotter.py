@@ -1,6 +1,8 @@
 import holoviews as hv
+import json
 import logging
 import numpy as np
+import pandas as pd
 from bokeh.embed import components
 from bokeh.models import ColumnDataSource, CustomJS, LabelSet
 from bokeh.models import GraphRenderer, StaticLayoutProvider, Circle, HoverTool, MultiLine
@@ -18,7 +20,6 @@ from wordcloud import WordCloud
 
 from pysrc.app.reports import preprocess_string
 from pysrc.papers.analysis.text import get_frequent_tokens
-from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.utils import cut_authors_list, trim, MAX_TITLE_LENGTH, contrast_color, \
@@ -28,8 +29,6 @@ TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
 hv.extension('bokeh')
 
 logger = logging.getLogger(__name__)
-
-PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
 MAX_AUTHOR_LENGTH = 100
 MAX_JOURNAL_LENGTH = 100
@@ -46,68 +45,6 @@ WORD_CLOUD_WIDTH = 200
 WORD_CLOUD_HEIGHT = 300
 
 TOPIC_WORD_CLOUD_KEYWORDS = 20
-TOPIC_KEYWORDS = 5
-
-
-def visualize_analysis(analyzer):
-    # Initialize plotter after completion of analysis
-    plotter = Plotter(analyzer=analyzer)
-    freq_kwds = get_frequent_tokens(chain(*chain(*analyzer.corpus)))
-    word_cloud = plotter._papers_word_cloud(freq_kwds)
-    export_name = preprocess_string(analyzer.query)
-    result = dict(
-        topics_analyzed=False,
-        n_papers=len(analyzer.df),
-        n_topics=len(set(analyzer.df['comp'])),
-        export_name=export_name,
-        top_cited_papers=components_list(plotter.plot_top_cited_papers()),
-        most_cited_per_year_papers=components_list(plotter.plot_most_cited_per_year_papers()),
-        fastest_growth_per_year_papers=components_list(plotter.plot_fastest_growth_per_year_papers()),
-        papers_stats=components_list(plotter.plot_papers_by_year()),
-        papers_word_cloud=PlotPreprocessor.word_cloud_prepare(word_cloud),
-    )
-
-    keywords_frequencies = plotter.plot_keywords_frequencies(freq_kwds)
-    if keywords_frequencies is not None:
-        result['keywords_frequencies'] = components_list(keywords_frequencies)
-
-    if analyzer.papers_graph.nodes():
-        result.update(dict(
-            topics_analyzed=True,
-            topic_years_distribution=components_list(plotter.plot_topic_years_distribution()),
-            topics_info_and_word_cloud=topics_info_and_word_cloud(plotter),
-            component_sizes=PlotPreprocessor.component_sizes(analyzer.df),
-            papers_graph=components_list(plotter.plot_papers_graph())
-        ))
-
-        topics_hierarchy_with_keywords = plotter.topics_hierarchy_with_keywords()
-        if topics_hierarchy_with_keywords:
-            result['topics_hierarchy_with_keywords'] = components_list(topics_hierarchy_with_keywords)
-
-    # Configure additional features
-    result.update(dict(
-        feature_authors_enabled=PUBTRENDS_CONFIG.feature_authors_enabled,
-        feature_journals_enabled=PUBTRENDS_CONFIG.feature_journals_enabled,
-        feature_numbers_enabled=PUBTRENDS_CONFIG.feature_numbers_enabled,
-        feature_review_enabled=PUBTRENDS_CONFIG.feature_review_enabled
-    ))
-
-    if PUBTRENDS_CONFIG.feature_authors_enabled:
-        result['author_statistics'] = plotter.author_statistics()
-
-    if PUBTRENDS_CONFIG.feature_journals_enabled:
-        result['journal_statistics'] = plotter.journal_statistics()
-
-    if PUBTRENDS_CONFIG.feature_numbers_enabled:
-        _, url_prefix = Loaders.get_loader_and_url_prefix(analyzer.source, analyzer.config)
-        if analyzer.numbers_df is not None:
-            result['numbers'] = [
-                (row['id'], url_prefix + row['id'], trim(row['title'], MAX_TITLE_LENGTH), row['numbers'])
-                for _, row in analyzer.numbers_df.iterrows()
-            ]
-
-    return result
-
 
 def exception_handler(func):
     def inner_function(*args, **kwargs):
@@ -134,29 +71,35 @@ def topics_info_and_word_cloud(plotter):
 
 
 class Plotter:
-    def __init__(self, analyzer=None):
-        self.analyzer = analyzer
+    def __init__(self, config, data):
+        self.config = config
+        self.data = data
+        self.pub_types = list(set(self.data.df['type']))
 
-        if self.analyzer:
-            if self.analyzer.papers_graph.nodes():
-                self.comp_colors = topics_palette_rgb(self.analyzer.df)
+        if self.data:
+            if self.data.papers_graph.nodes():
+                self.comp_colors = topics_palette_rgb(self.data.df)
                 self.comp_palette = list(self.comp_colors.values())
 
-            n_pub_types = len(self.analyzer.pub_types)
+            n_pub_types = len(self.pub_types)
             pub_types_cmap = plt.cm.get_cmap('jet', n_pub_types)
             self.pub_types_colors_map = dict(
-                zip(self.analyzer.pub_types, [color_to_rgb(pub_types_cmap(i)) for i in range(n_pub_types)])
+                zip(self.pub_types, [color_to_rgb(pub_types_cmap(i)) for i in range(n_pub_types)])
             )
+
 
     def plot_topic_years_distribution(self):
         logger.debug('Processing topic_years_distribution')
         logger.debug('Topics publications year distribution visualization')
-        min_year, max_year = self.analyzer.df['year'].min(), self.analyzer.df['year'].max()
+        min_year, max_year = self.data.df['year'].min(), self.data.df['year'].max()
         plot_components, data = PlotPreprocessor.component_size_summary_data(
-            self.analyzer.df, set(self.analyzer.df['comp']), min_year, max_year
+            self.data.df, set(self.data.df['comp']), min_year, max_year
         )
-        return self._plot_topics_years_distribution(self.analyzer.df, self.analyzer.kwd_df, plot_components, data,
-                                                    min_year, max_year)
+        kwd_df = PlotPreprocessor.compute_kwds(self.data, self.config.topic_description_words)
+        return self._plot_topics_years_distribution(
+            self.data.df, kwd_df, plot_components, data, self.config.topic_description_words, min_year, max_year
+        )
+
 
     def plot_topics_info_and_word_cloud(self):
         logger.debug('Processing topics_info_and_word_cloud')
@@ -164,23 +107,23 @@ class Plotter:
         # Prepare layouts
         result = []
 
-        min_year, max_year = self.analyzer.df['year'].min(), self.analyzer.df['year'].max()
-        for comp in sorted(set(self.analyzer.df['comp'])):
-            df_comp = self.analyzer.df[self.analyzer.df['comp'] == comp]
+        min_year, max_year = self.data.df['year'].min(), self.data.df['year'].max()
+        for comp in sorted(set(self.data.df['comp'])):
+            df_comp = self.data.df[self.data.df['comp'] == comp]
             ds = ColumnDataSource(PlotPreprocessor.article_view_data_source(
                 df_comp, min_year, max_year, True, width=PAPERS_PLOT_WIDTH
             ))
             # Add type coloring
             ds.add([self.pub_types_colors_map[t] for t in df_comp['type']], 'color')
             plot = Plotter._plot_scatter_papers_layout(
-                self.analyzer.source, ds, [min_year, max_year], PAPERS_PLOT_WIDTH
+                self.data.source, ds, [min_year, max_year], PAPERS_PLOT_WIDTH
             )
             plot.scatter(x='year', y='y', fill_alpha=0.5, source=ds, size='size',
                          line_color='color', fill_color='color', legend_field='type')
             plot.legend.location = "top_left"
 
             # Word cloud description of topic by titles and abstracts
-            kwds = PlotPreprocessor.get_topic_word_cloud_data(self.analyzer.kwd_df, comp)
+            kwds = PlotPreprocessor.get_topic_word_cloud_data(self.data, self.config.topic_description_words)
             is_empty = len(kwds) == 0
             if is_empty:
                 kwds = {'N/A': 1}
@@ -197,15 +140,15 @@ class Plotter:
 
     def plot_top_cited_papers(self):
         logger.debug('Processing top_cited_papers')
-        min_year, max_year = self.analyzer.df['year'].min(), self.analyzer.df['year'].max()
+        min_year, max_year = self.data.df['year'].min(), self.data.df['year'].max()
         ds = ColumnDataSource(PlotPreprocessor.article_view_data_source(
-            self.analyzer.top_cited_df, min_year, max_year, False, width=PAPERS_PLOT_WIDTH
+            self.data.top_cited_df, min_year, max_year, False, width=PAPERS_PLOT_WIDTH
         ))
         # Add type coloring
-        ds.add([self.pub_types_colors_map[t] for t in self.analyzer.top_cited_df['type']], 'color')
+        ds.add([self.pub_types_colors_map[t] for t in self.data.top_cited_df['type']], 'color')
 
         plot = Plotter._plot_scatter_papers_layout(
-            self.analyzer.source, ds, [min_year, max_year], PLOT_WIDTH
+            self.data.source, ds, [min_year, max_year], PLOT_WIDTH
         )
 
         plot.scatter(x='year', y='y', fill_alpha=0.5, source=ds, size='size',
@@ -216,15 +159,15 @@ class Plotter:
     def plot_most_cited_per_year_papers(self):
         logger.debug('Processing most_cited_per_year_papers')
         cols = ['year', 'id', 'title', 'authors', 'journal', 'paper_year', 'count']
-        most_cited_per_year_df = self.analyzer.max_gain_df[cols].replace(np.nan, "Undefined")
+        most_cited_per_year_df = self.data.max_gain_df[cols].replace(np.nan, "Undefined")
         most_cited_per_year_df['authors'] = most_cited_per_year_df['authors'].apply(
             lambda authors: cut_authors_list(authors)
         )
-        factors = self.analyzer.max_gain_df['id'].unique()
+        factors = self.data.max_gain_df['id'].unique()
         colors = factor_colors(factors)
 
         most_cited_counts = most_cited_per_year_df['count']
-        min_year, max_year = self.analyzer.df['year'].min(), self.analyzer.df['year'].max()
+        min_year, max_year = self.data.df['year'].min(), self.data.df['year'].max()
         p = figure(tools=TOOLS, toolbar_location="right",
                    width=PLOT_WIDTH, height=SHORT_PLOT_HEIGHT,
                    x_range=(min_year - 1, max_year + 1),
@@ -233,7 +176,7 @@ class Plotter:
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Number of citations'
         p.yaxis.formatter = NumeralTickFormatter(format='0,0')
-        p.hover.tooltips = self._paper_html_tooltips(self.analyzer.source, [
+        p.hover.tooltips = self._paper_html_tooltips(self.data.source, [
             ("Author(s)", '@authors'),
             ("Journal", '@journal'),
             ("Year", '@paper_year'),
@@ -254,16 +197,16 @@ class Plotter:
         logger.debug('Growth(year) = Citation delta (year) / Citations previous year')
         logger.debug('Different colors encode different papers')
         cols = ['year', 'id', 'title', 'authors', 'journal', 'paper_year', 'rel_gain']
-        fastest_growth_per_year_df = self.analyzer.max_rel_gain_df[cols].replace(np.nan, "Undefined")
+        fastest_growth_per_year_df = self.data.max_rel_gain_df[cols].replace(np.nan, "Undefined")
         fastest_growth_per_year_df['authors'] = fastest_growth_per_year_df['authors'].apply(
             lambda authors: cut_authors_list(authors)
         )
 
-        factors = self.analyzer.max_rel_gain_df['id'].astype(str).unique()
+        factors = self.data.max_rel_gain_df['id'].astype(str).unique()
         colors = factor_colors(factors)
 
         fastest_rel_gains = fastest_growth_per_year_df['rel_gain']
-        min_year, max_year = self.analyzer.df['year'].min(), self.analyzer.df['year'].max()
+        min_year, max_year = self.data.df['year'].min(), self.data.df['year'].max()
         p = figure(tools=TOOLS, toolbar_location="right",
                    width=PLOT_WIDTH, height=SHORT_PLOT_HEIGHT,
                    x_range=(min_year - 1, max_year + 1),
@@ -272,7 +215,7 @@ class Plotter:
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Relative Gain of Citations'
         p.yaxis.formatter = NumeralTickFormatter(format='0,0')
-        p.hover.tooltips = self._paper_html_tooltips(self.analyzer.source, [
+        p.hover.tooltips = self._paper_html_tooltips(self.data.source, [
             ("Author(s)", '@authors'),
             ("Journal", '@journal'),
             ("Year", '@paper_year'),
@@ -288,8 +231,8 @@ class Plotter:
 
     def plot_papers_by_year(self):
         logger.debug('Processing papers_by_year')
-        ds_stats = ColumnDataSource(PlotPreprocessor.papers_statistics_data(self.analyzer.df))
-        min_year, max_year = self.analyzer.df['year'].min(), self.analyzer.df['year'].max()
+        ds_stats = ColumnDataSource(PlotPreprocessor.papers_statistics_data(self.data.df))
+        min_year, max_year = self.data.df['year'].min(), self.data.df['year'].max()
         p = figure(tools=TOOLS, toolbar_location="right",
                    width=PAPERS_PLOT_WIDTH, height=PLOT_HEIGHT,
                    x_range=(min_year - 1, max_year + 1))
@@ -306,7 +249,7 @@ class Plotter:
     def plot_keywords_frequencies(self, freq_kwds, n=20):
         logger.debug('Processing plot_keywords_frequencies')
         keywords_df, years = PlotPreprocessor.frequent_keywords_data(
-            freq_kwds, self.analyzer.df, self.analyzer.corpus_tokens, self.analyzer.corpus_counts, n
+            freq_kwds, self.data.df, self.data.corpus_tokens, self.data.corpus_counts, n
         )
         if len(years) <= 3:
             return None
@@ -314,37 +257,38 @@ class Plotter:
 
     def author_statistics(self):
         logger.debug('Processing author_statistics')
-        authors = self.analyzer.author_stats['author']
-        sums = self.analyzer.author_stats['sum']
-        if self.analyzer.papers_graph.nodes():
-            topics = self.analyzer.author_stats.apply(
+        authors = self.data.author_stats['author']
+        sums = self.data.author_stats['sum']
+        if self.data.papers_graph.nodes():
+            topics = self.data.author_stats.apply(
                 lambda row: self._to_colored_circle(row['comp'], row['counts'], row['sum']), axis=1)
         else:
-            topics = [' '] * len(self.analyzer.author_stats)  # Ignore topics
+            topics = [' '] * len(self.data.author_stats)  # Ignore topics
         return list(zip([trim(a, MAX_AUTHOR_LENGTH) for a in authors], sums, topics))
 
     def journal_statistics(self):
         logger.debug('Processing journal_statistics')
-        journals = self.analyzer.journal_stats['journal']
-        sums = self.analyzer.journal_stats['sum']
-        if self.analyzer.papers_graph.nodes():
-            topics = self.analyzer.journal_stats.apply(
+        journals = self.data.journal_stats['journal']
+        sums = self.data.journal_stats['sum']
+        if self.data.papers_graph.nodes():
+            topics = self.data.journal_stats.apply(
                 lambda row: self._to_colored_circle(row['comp'], row['counts'], row['sum']), axis=1)
         else:
-            topics = [' '] * len(self.analyzer.journal_stats)  # Ignore topics
+            topics = [' '] * len(self.data.journal_stats)  # Ignore topics
         return list(zip([trim(j, MAX_JOURNAL_LENGTH) for j in journals], sums, topics))
 
     def topics_hierarchy_with_keywords(self):
-        if self.analyzer.dendrogram is None:
+        if self.data.dendrogram is None:
             return None
+        kwd_df = PlotPreprocessor.compute_kwds(self.data, self.config.topic_description_words)
         return Plotter._plot_topics_hierarchy_with_keywords(
-            self.analyzer.df, self.analyzer.kwd_df, self.analyzer.clusters, self.analyzer.dendrogram
+            self.data.df, self.kwd_df, self.data.df['comp'], self.data.dendrogram
         )
 
     def plot_papers_graph(self):
         return Plotter._plot_papers_graph(
-            self.analyzer.source, self.analyzer.sparse_papers_graph, self.analyzer.df,
-            topics_tags=self.analyzer.topics_description
+            self.data.source, self.data.papers_graph, self.data.df,
+            topics_tags=self.data.topics_description
         )
 
     def _to_colored_circle(self, components, counts, sum, top=3):
@@ -356,10 +300,10 @@ class Plotter:
         ])
 
     @staticmethod
-    def _plot_topics_years_distribution(df, kwd_df, plot_components, data, min_year, max_year):
+    def _plot_topics_years_distribution(df, kwd_df, plot_components, data, topic_keywords, min_year, max_year):
         source = ColumnDataSource(data=dict(x=[min_year - 1] + data['years'] + [max_year + 1]))
         plot_titles = []
-        words2show = PlotPreprocessor.topics_words(kwd_df, TOPIC_KEYWORDS)
+        words2show = PlotPreprocessor.topics_words(kwd_df, topic_keywords)
         comp_sizes = Counter(df['comp'])
         for c in sorted(set(df['comp'])):
             percent = int(100 * comp_sizes[int(c)] / len(df))

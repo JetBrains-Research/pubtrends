@@ -5,8 +5,9 @@ from pandas._testing import assert_frame_equal
 from pysrc.papers.analysis.citations import build_cocit_grouped_df
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.config import PubtrendsConfig
+from pysrc.papers.utils import SORT_MOST_CITED
 from pysrc.test.mock_loaders import MockLoader, \
-    MockLoaderEmpty, MockLoaderSingle, BIBCOUPLING_DF, COCITATION_DF
+    MockLoaderEmpty, MockLoaderSingle, BIBCOUPLING_DF, COCITATION_GROUPED_DF
 
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
@@ -16,67 +17,30 @@ class TestPapersAnalyzer(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        loader = MockLoader()
-        cls.analyzer = PapersAnalyzer(loader, PUBTRENDS_CONFIG, test=True)
-        ids = cls.analyzer.search_terms(query='query')
-        cls.analyzer.analyze_papers(ids, 'query', PUBTRENDS_CONFIG.show_topics_default_value, test=True)
-        cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.df['id'])
-        cls.analyzer.bibliographic_coupling_df = loader.load_bibliographic_coupling(cls.analyzer.df['id'])
+        analyzer = PapersAnalyzer(MockLoader(), PUBTRENDS_CONFIG, test=True)
+        ids = analyzer.search_terms(query='query')
+        analyzer.analyze_papers(
+            ids, 'query', 'Pubmed', SORT_MOST_CITED, 10, PUBTRENDS_CONFIG.show_topics_default_value, test=True
+        )
+        cls.data = analyzer.save()
 
     def test_bibcoupling(self):
-        assert_frame_equal(BIBCOUPLING_DF, self.analyzer.bibliographic_coupling_df)
+        assert_frame_equal(BIBCOUPLING_DF, self.data.bibliographic_coupling_df)
 
     def test_cocitation(self):
-        df = build_cocit_grouped_df(self.analyzer.cocit_df)[
-            ['cited_1', 'cited_2', 'total']].reset_index(drop=True)
-        df.columns = ['cited_1', 'cited_2', 'total']
-        assert_frame_equal(COCITATION_DF, df)
+        assert_frame_equal(COCITATION_GROUPED_DF, self.data.cocit_grouped_df)
 
     def test_topic_analysis_all_nodes_assigned(self):
-        nodes = self.analyzer.papers_graph.nodes()
-        for row in self.analyzer.df.itertuples():
+        nodes = self.data.papers_graph.nodes()
+        for row in self.data.df.itertuples():
             if getattr(row, 'id') in nodes:
                 self.assertGreaterEqual(getattr(row, 'comp'), 0)
 
     def test_topic_analysis_missing_nodes_set_to_default(self):
-        nodes = self.analyzer.papers_graph.nodes()
-        for row in self.analyzer.df.itertuples():
+        nodes = self.data.papers_graph.nodes()
+        for row in self.data.df.itertuples():
             if getattr(row, 'id') not in nodes:
                 self.assertEqual(getattr(row, 'comp'), -1)
-
-class TestPapersAnalyzerSingle(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.analyzer = PapersAnalyzer(MockLoaderSingle(), PUBTRENDS_CONFIG, test=True)
-        ids = cls.analyzer.search_terms(query='query')
-        cls.analyzer.analyze_papers(ids, 'query', PUBTRENDS_CONFIG.show_topics_default_value, test=True)
-        cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.df['id'])
-
-    def test_attrs(self):
-        all_attrs = [
-            'df',
-            'query',
-            'sparse_papers_graph',
-            'pub_types',
-            'cit_stats_df',
-            'cit_df',
-            'top_cited_papers',
-            'top_cited_df',
-            'max_gain_papers',
-            'max_gain_df',
-            'max_rel_gain_papers',
-            'max_rel_gain_df',
-        ]
-        for a in all_attrs:
-            self.assertTrue(hasattr(self.analyzer, a), f'Missing attr {a}')
-
-    def test_dump(self):
-        dump = self.analyzer.dump()
-        self.assertEqual(
-            '{"comp":{"0":0},"kwd":{"0":"article:0.200,paper:0.200,term1:0.200,term2:0.200,term3:0.200"}}',
-            dump['kwd_df'])
-
 
 class TestPapersAnalyzerMissingPaper(unittest.TestCase):
 
@@ -84,9 +48,11 @@ class TestPapersAnalyzerMissingPaper(unittest.TestCase):
         analyzer = PapersAnalyzer(MockLoaderSingle(), PUBTRENDS_CONFIG, test=True)
         good_ids = list(analyzer.search_terms(query='query'))
         analyzer.analyze_papers(
-            good_ids + ['non-existing-id'], 'query', PUBTRENDS_CONFIG.show_topics_default_value, test=True
+            good_ids + ['non-existing-id'],
+            'query', 'Pubmed', SORT_MOST_CITED, 10, PUBTRENDS_CONFIG.show_topics_default_value, test=True
         )
         self.assertEqual(good_ids, list(analyzer.df['id']))
+
 
 
 class TestPapersAnalyzerEmpty(unittest.TestCase):
@@ -99,7 +65,7 @@ class TestPapersAnalyzerEmpty(unittest.TestCase):
         with self.assertRaises(Exception):
             ids = self.analyzer.search_terms(query='query')
             self.analyzer.analyze_papers(
-                ids, query='query', topics=PUBTRENDS_CONFIG.show_topics_default_value, test=True
+                ids, 'query', 'Pubmed', SORT_MOST_CITED, 10, PUBTRENDS_CONFIG.show_topics_default_value, test=True
             )
 
 

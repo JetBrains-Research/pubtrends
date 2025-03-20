@@ -1,19 +1,17 @@
 import logging
 import os
-from threading import Lock
-
 import sys
 import torch
 from celery import current_task
 from lazy import lazy
 from os.path import dirname
+from threading import Lock
 
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.papers.analysis.citations import find_top_cited_papers
-from pysrc.papers.analyzer import PapersAnalyzer
+from pysrc.papers.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.progress import Progress
-from pysrc.papers.config import PubtrendsConfig
 
 # Configure source path for pubtrends-review repository
 sys.path.append(os.path.abspath(f'{dirname(__file__)}/../../../pubtrends-review'))
@@ -65,15 +63,13 @@ def generate_review(data, source, num_papers, num_sents, progress, task):
     try:
         REVIEW_LOCK.acquire()
         progress.info(f'Generating review', current=1, task=task)
-        loader, url_prefix = Loaders.get_loader_and_url_prefix(source, PUBTRENDS_CONFIG)
-        analyzer = PapersAnalyzer(loader, PUBTRENDS_CONFIG)
-        analyzer.init(data)
+        url_prefix = Loaders.get_url_prefix(source, PUBTRENDS_CONFIG)
         progress.info('Initializing model and device', current=2, task=task)
         model, device = MODEL_CACHE.model_and_device
         progress.info('Configuring model for evaluation', current=3, task=task)
         model.eval()
         top_cited_papers, top_cited_df = find_top_cited_papers(
-            analyzer.df, n_papers=int(num_papers)
+            data.df, n_papers=int(num_papers)
         )
         progress.info(f'Processing abstracts for {len(top_cited_papers)} top cited papers', current=4, task=task)
         result = []

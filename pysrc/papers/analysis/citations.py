@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 def find_top_cited_papers(df, n_papers):
     papers_to_show = min(n_papers, len(df))
     top_cited_df = df.sort_values(by='total', ascending=False).iloc[:papers_to_show, :]
-    return list(top_cited_df['id']), top_cited_df
+    return top_cited_df
 
 
 def find_max_gain_papers(df, citation_years):
@@ -29,7 +29,7 @@ def find_max_gain_papers(df, citation_years):
     max_gain_df = pd.DataFrame(max_gain_data,
                                columns=['year', 'id', 'title', 'journal', 'authors', 'paper_year', 'count'],
                                dtype=object)
-    return list(max_gain_df['id'].values), max_gain_df
+    return max_gain_df
 
 
 def find_max_relative_gain_papers(df, citation_years):
@@ -54,7 +54,7 @@ def find_max_relative_gain_papers(df, citation_years):
     max_rel_gain_df = pd.DataFrame(max_rel_gain_data,
                                    columns=['year', 'id', 'title', 'journal', 'authors', 'paper_year', 'rel_gain'],
                                    dtype=object)
-    return list(max_rel_gain_df['id']), max_rel_gain_df
+    return max_rel_gain_df
 
 
 def build_cit_stats_df(cits_by_year_df, n_papers):
