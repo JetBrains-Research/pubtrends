@@ -55,10 +55,9 @@ def _analyze_id_list(analyzer, ids,
 
     analyzer.progress.info('Visualizing results', current=analyzer.progress.total - 1, task=task)
     data = analyzer.save()
-    visualization = visualize_analysis(analyzer.config, data)
     analyzer.progress.done(task=task)
     analyzer.teardown()
-    return visualization, data.to_json(), analyzer.progress.log()
+    return data.to_json(), analyzer.progress.log()
 
 
 @pubtrends_celery.task(name='analyze_search_paper')

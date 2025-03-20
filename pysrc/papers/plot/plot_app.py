@@ -156,10 +156,7 @@ def prepare_paper_data(
     if doi == 'None' or doi == 'nan':
         doi = ''
 
-    kwd_df = PlotPreprocessor.compute_kwds(data, config.topic_description_words)
-    topic_tags = ','.join(
-        [w[0] for w in kwd_df[kwd_df['comp'] == topic - 1]['kwd'].values[0][:config.topic_description_words]]
-    )
+    topic_tags = ','.join(w[0] for w in data.topics_description[topic - 1][:config.topic_description_words])
 
     logger.debug('Computing most cited prior and derivative papers')
     derivative_papers = PlotPreprocessor.get_top_papers_id_title_year_cited_topic(
