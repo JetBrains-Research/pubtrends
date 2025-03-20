@@ -452,7 +452,7 @@ def show_ids():
         if papers_list == 'hot':
             search_string += 'Hot Papers'
 
-        if jobid and query and source and limit and sort:
+        if jobid:
             data = load_result_data(jobid, source, query, sort, limit, pubtrends_celery)
             if data is not None:
                 logger.info(f'/papers success {log_request(request)}')

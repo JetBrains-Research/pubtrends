@@ -77,10 +77,13 @@
         });
 
         function result() {
-            const url = '/result?query=' + normalize('{{ title }}') + '&source={{source}}&limit=related&sort=papers';
+            const url = '/result?query=' + normalize('{{ title }}') + '&source={{source}}';
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
-            window.open(url + '&jobid=' + jobid, '_blank');
+            const pid = new URL(window.location).searchParams.get('id');
+            const limit = new URL(window.location).searchParams.get('limit');
+            const sort = new URL(window.location).searchParams.get('sort');
+            window.open(url + '&jobid=' + jobid + '&id=' + pid + '&limit=' + limit + '&sort=' + sort, '_blank');
         }
 
         function graph_callback() {
@@ -89,7 +92,8 @@
             const jobid = new URL(window.location).searchParams.get('jobid');
             const pid = new URL(window.location).searchParams.get('id');
             const limit = new URL(window.location).searchParams.get('limit');
-            window.open(url + '&jobid=' + jobid + '&id=' + pid + '&limit=' + limit, '_blank');
+            const sort = new URL(window.location).searchParams.get('sort');
+            window.open(url + '&jobid=' + jobid + '&id=' + pid + '&limit=' + limit + '&sort=' + sort, '_blank');
         }
 
     </script>
