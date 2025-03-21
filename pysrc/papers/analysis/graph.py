@@ -3,7 +3,7 @@ import logging
 import networkx as nx
 import numpy as np
 
-from pysrc.papers.config import *
+from pysrc.config import *
 
 logger = logging.getLogger(__name__)
 

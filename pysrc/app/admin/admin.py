@@ -11,7 +11,7 @@ import os
 from pysrc.app.admin.celery import prepare_celery_data
 from pysrc.app.admin.feedback import prepare_feedback_data
 from pysrc.app.admin.stats import prepare_stats_data
-from pysrc.papers.config import PubtrendsConfig
+from pysrc.config import PubtrendsConfig
 from pysrc.version import VERSION
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)

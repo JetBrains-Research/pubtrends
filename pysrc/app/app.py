@@ -19,7 +19,7 @@ from pysrc.app.reports import get_predefined_jobs, \
     load_result_data, _predefined_example_params_by_jobid, preprocess_string, load_paper_data
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, analyze_pubmed_search
-from pysrc.papers.config import PubtrendsConfig
+from pysrc.config import PubtrendsConfig
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plot_app import prepare_graph_data, prepare_papers_data, prepare_paper_data, prepare_result_data
 from pysrc.papers.utils import trim, IDS_ANALYSIS_TYPE, PAPER_ANALYSIS_TYPE, MAX_QUERY_LENGTH

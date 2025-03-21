@@ -16,7 +16,7 @@ from nltk.probability import FreqDist
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from threading import Lock
 
-from pysrc.papers.config import EMBEDDINGS_VECTOR_LENGTH
+from pysrc.config import EMBEDDINGS_VECTOR_LENGTH, WORD2VEC_WINDOW, WORD2VEC_EPOCHS
 
 logger = logging.getLogger(__name__)
 
@@ -30,9 +30,6 @@ NLTK_STOP_WORDS_SET = set(stopwords.words('english'))
 # Lock to support multithreading for NLTK
 # See https://github.com/nltk/nltk/issues/1576
 NLTK_LOCK = Lock()
-
-WORD2VEC_WINDOW = 5
-WORD2VEC_EPOCHS = 5
 
 def vectorize_corpus(df, max_features, min_df, max_df, test=False):
     """

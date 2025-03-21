@@ -4,7 +4,7 @@ from pandas._testing import assert_frame_equal
 
 from pysrc.papers.analysis.citations import build_cocit_grouped_df
 from pysrc.papers.analyzer import PapersAnalyzer
-from pysrc.papers.config import PubtrendsConfig
+from pysrc.config import PubtrendsConfig
 from pysrc.papers.utils import SORT_MOST_CITED
 from pysrc.test.mock_loaders import MockLoader, \
     MockLoaderEmpty, MockLoaderSingle, BIBCOUPLING_DF, COCITATION_GROUPED_DF

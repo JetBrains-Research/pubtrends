@@ -9,7 +9,7 @@ from threading import Lock
 
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.papers.analysis.citations import find_top_cited_papers
-from pysrc.papers.config import PubtrendsConfig
+from pysrc.config import PubtrendsConfig
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.progress import Progress
 

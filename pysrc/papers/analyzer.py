@@ -16,7 +16,7 @@ from pysrc.papers.analysis.node2vec import node2vec
 from pysrc.papers.analysis.numbers import extract_numbers
 from pysrc.papers.analysis.text import texts_embeddings, vectorize_corpus, tokens_embeddings
 from pysrc.papers.analysis.topics import get_topics_description, cluster_and_sort
-from pysrc.papers.config import *
+from pysrc.config import *
 from pysrc.papers.data import AnalysisData
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError

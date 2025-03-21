@@ -1,6 +1,6 @@
 from Bio import Entrez
 
-from pysrc.papers.config import PubtrendsConfig
+from pysrc.config import PubtrendsConfig
 
 # Configure email to get notifications on too heavy API usage
 Entrez.email = PubtrendsConfig(test=False).entrez_email

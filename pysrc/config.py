@@ -1,6 +1,10 @@
 import configparser
 import os
 
+#####################
+## Analysis config ##
+#####################
+
 # Features are originally taken from paper:
 # 1) Which type of citation analysis generates the most accurate taxonomy of
 #   scientific and technical knowledge? (https://arxiv.org/pdf/1511.05078.pdf)
@@ -55,6 +59,46 @@ EXPAND_MESH_SIMILARITY = 0.5
 # Impact of single paper when analyzing citations and mesh terms when analysing paper
 EXPAND_SINGLE_PAPER_IMPACT = 50
 
+#####################
+## Node2vec config ##
+#####################
+
+NODE2VEC_P = 5.0
+NODE2VEC_Q = 2.0
+
+# Increasing number of walks increases node2vec representation accuracy
+NODE2VEC_WALKS_PER_NODE = 100
+NODE2VEC_WALK_LENGTH = 50
+NODE2VEC_WORD2VEC_WINDOW = 5
+NODE2VEC_WORD2VEC_EPOCHS = 5
+
+#####################
+## Word2vec config ##
+#####################
+
+WORD2VEC_WINDOW = 5
+WORD2VEC_EPOCHS = 5
+
+#################
+## Plot config ##
+#################
+
+MAX_AUTHOR_LENGTH = 100
+MAX_JOURNAL_LENGTH = 100
+
+MAX_LINEAR_AXIS = 100
+
+PLOT_WIDTH = 870
+PAPERS_PLOT_WIDTH = 670
+
+SHORT_PLOT_HEIGHT = 300
+TALL_PLOT_HEIGHT = 600
+PLOT_HEIGHT = 375
+
+WORD_CLOUD_WIDTH = 200
+WORD_CLOUD_HEIGHT = 300
+
+WORD_CLOUD_KEYWORDS = 10
 
 class PubtrendsConfig:
     """

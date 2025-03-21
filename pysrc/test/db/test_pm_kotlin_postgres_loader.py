@@ -2,7 +2,7 @@ import os
 import subprocess
 import unittest
 
-from pysrc.papers.config import PubtrendsConfig
+from pysrc.config import PubtrendsConfig
 from pysrc.papers.db.pm_postgres_loader import PubmedPostgresLoader
 from pysrc.test.db.abstract_test_pm_loader import AbstractTestPubmedLoader
 

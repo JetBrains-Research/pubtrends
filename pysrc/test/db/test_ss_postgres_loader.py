@@ -1,7 +1,7 @@
 import unittest
 
 from pysrc.test.db.abstract_test_ss_loader import AbstractTestSemanticScholarLoader
-from pysrc.papers.config import PubtrendsConfig
+from pysrc.config import PubtrendsConfig
 from pysrc.papers.db.ss_postgres_loader import SemanticScholarPostgresLoader
 from pysrc.papers.db.ss_postgres_writer import SemanticScholarPostgresWriter
 from pysrc.test.db.ss_test_articles import REQUIRED_ARTICLES, EXTRA_ARTICLES, REQUIRED_CITATIONS, \

@@ -3,7 +3,7 @@ import unittest
 
 from pysrc.papers.analysis.graph import sparse_graph
 from pysrc.papers.analyzer import PapersAnalyzer
-from pysrc.papers.config import PubtrendsConfig
+from pysrc.config import PubtrendsConfig
 from pysrc.papers.utils import SORT_MOST_CITED
 from pysrc.test.mock_loaders import MockLoader, PAPERS_GRAPH_EDGES, MockLoaderSingle
 

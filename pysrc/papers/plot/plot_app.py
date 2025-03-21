@@ -10,7 +10,7 @@ from statsmodels.nonparametric.smoothers_lowess import lowess
 
 from pysrc.app.reports import preprocess_string
 from pysrc.papers.analysis.text import get_frequent_tokens
-from pysrc.papers.config import PubtrendsConfig
+from pysrc.config import PubtrendsConfig
 from pysrc.papers.data import AnalysisData
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor

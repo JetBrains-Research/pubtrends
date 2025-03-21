@@ -6,7 +6,7 @@ from flask import request, redirect, url_for, render_template_string, render_tem
 from pysrc.app.messages import SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED
 from pysrc.app.reports import load_result_data, preprocess_string
 from pysrc.celery.pubtrends_celery import pubtrends_celery
-from pysrc.papers.config import PubtrendsConfig
+from pysrc.config import PubtrendsConfig
 from pysrc.papers.utils import trim, MAX_QUERY_LENGTH
 from pysrc.review.app.task import prepare_review_data_async
 from pysrc.version import VERSION

@@ -267,10 +267,8 @@ class PlotPreprocessor:
     def get_top_papers_id_title_year_cited_topic(papers, df, n=50):
         top_papers = map(lambda v: (df[df['id'] == v], df[df['id'] == v]['total'].values[0]), papers)
         return [(el[0]['id'].values[0],
-             el[0]['title'].values[0],
-             el[0]['year'].values[0],
-             el[0]['total'].values[0],
-             el[0]['comp'].values[0])
-            for el in sorted(top_papers, key=lambda x: x[1], reverse=True)[:n]]
-
-
+                 el[0]['title'].values[0],
+                 el[0]['year'].values[0],
+                 el[0]['total'].values[0],
+                 el[0]['comp'].values[0])
+                for el in sorted(top_papers, key=lambda x: x[1], reverse=True)[:n]]

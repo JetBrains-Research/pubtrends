@@ -5,7 +5,7 @@ from pandas.testing import assert_frame_equal
 
 from pysrc.papers.analysis.metadata import popular_authors, popular_journals, split_df_list
 from pysrc.papers.analyzer import PapersAnalyzer
-from pysrc.papers.config import *
+from pysrc.config import *
 from pysrc.test.mock_loaders import MockLoader
 
 

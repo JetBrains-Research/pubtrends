@@ -2,18 +2,10 @@ import logging
 import numpy as np
 from gensim.models import Word2Vec
 
-from pysrc.papers.config import EMBEDDINGS_VECTOR_LENGTH
+from pysrc.config import EMBEDDINGS_VECTOR_LENGTH, NODE2VEC_P, NODE2VEC_Q, NODE2VEC_WALK_LENGTH, \
+    NODE2VEC_WALKS_PER_NODE, NODE2VEC_WORD2VEC_WINDOW, NODE2VEC_WORD2VEC_EPOCHS
 
 logger = logging.getLogger(__name__)
-
-NODE2VEC_P = 5.0
-NODE2VEC_Q = 2.0
-# Increasing number of walks increases node2vec representation accuracy
-NODE2VEC_WALKS_PER_NODE = 100
-NODE2VEC_WALK_LENGTH = 50
-NODE2VEC_WORD2VEC_WINDOW = 5
-NODE2VEC_WORD2VEC_EPOCHS = 5
-
 
 def node2vec(
         ids, graph, p=NODE2VEC_P, q=NODE2VEC_Q,

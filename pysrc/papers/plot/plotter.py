@@ -18,6 +18,8 @@ from sklearn.preprocessing import minmax_scale
 from string import Template
 from wordcloud import WordCloud
 
+from pysrc.config import PAPERS_PLOT_WIDTH, WORD_CLOUD_WIDTH, WORD_CLOUD_KEYWORDS, WORD_CLOUD_HEIGHT, \
+    PLOT_WIDTH, SHORT_PLOT_HEIGHT, MAX_LINEAR_AXIS, PLOT_HEIGHT, MAX_JOURNAL_LENGTH, MAX_AUTHOR_LENGTH, TALL_PLOT_HEIGHT
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.utils import cut_authors_list, trim, contrast_color, \
     topics_palette_rgb, color_to_rgb, factor_colors, factors_colormap
@@ -26,22 +28,6 @@ TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
 hv.extension('bokeh')
 
 logger = logging.getLogger(__name__)
-
-MAX_AUTHOR_LENGTH = 100
-MAX_JOURNAL_LENGTH = 100
-MAX_LINEAR_AXIS = 100
-
-PLOT_WIDTH = 870
-PAPERS_PLOT_WIDTH = 670
-
-SHORT_PLOT_HEIGHT = 300
-TALL_PLOT_HEIGHT = 600
-PLOT_HEIGHT = 375
-
-WORD_CLOUD_WIDTH = 200
-WORD_CLOUD_HEIGHT = 300
-
-TOPIC_WORD_CLOUD_KEYWORDS = 20
 
 
 def exception_handler(func):
@@ -127,7 +113,7 @@ class Plotter:
             color = (self.comp_colors[comp].r, self.comp_colors[comp].g, self.comp_colors[comp].b)
             wc = WordCloud(background_color="white", width=WORD_CLOUD_WIDTH, height=WORD_CLOUD_HEIGHT,
                            color_func=lambda *args, **kwargs: color,
-                           max_words=TOPIC_WORD_CLOUD_KEYWORDS, min_font_size=10, max_font_size=30)
+                           max_words=WORD_CLOUD_KEYWORDS, min_font_size=10, max_font_size=30)
             wc.generate_from_frequencies(kwds)
 
             result.append((plot, wc, is_empty))
@@ -347,7 +333,7 @@ class Plotter:
         # Build word cloud, size is proportional to token frequency
         wc = WordCloud(background_color="white", width=WORD_CLOUD_WIDTH, height=WORD_CLOUD_HEIGHT,
                        color_func=lambda *args, **kwargs: 'black',
-                       max_words=TOPIC_WORD_CLOUD_KEYWORDS, min_font_size=10, max_font_size=30)
+                       max_words=WORD_CLOUD_KEYWORDS, min_font_size=10, max_font_size=30)
         wc.generate_from_frequencies(freq_kwds)
         return wc
 
@@ -375,7 +361,7 @@ class Plotter:
         palette = [color_to_rgb(cmap(i)).to_hex() for i in range(len(label_df))]
         overlay.opts(
             opts.Curve(show_frame=False, labelled=[], tools=['hover'],
-                       width=PLOT_WIDTH, height=TALL_PLOT_HEIGHT, show_legend=False,
+                       width=PLOT_WIDTH, height=len(label_df) * 25, show_legend=False,
                        xticks=list(reversed(range(max(years), min(years), -5))),
                        color=hv.Cycle(values=palette), alpha=0.8, line_width=2, show_grid=True),
             opts.Labels(text_color='keyword', cmap=palette, text_align='left'),
