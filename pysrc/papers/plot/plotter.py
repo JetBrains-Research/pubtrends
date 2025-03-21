@@ -50,8 +50,8 @@ def components_list(plot):
 @exception_handler
 def topics_info_and_word_cloud(plotter):
     return [
-        (components(p), PlotPreprocessor.word_cloud_prepare(wc), "true" if is_empty else "false")
-        for (p, wc, is_empty) in plotter.plot_topics_info_and_word_cloud()
+        (components(p), PlotPreprocessor.word_cloud_prepare(wc))
+        for (p, wc) in plotter.plot_topics_info_and_word_cloud()
     ]
 
 
@@ -114,9 +114,6 @@ class Plotter:
             kwds = PlotPreprocessor.get_topic_word_cloud_data(
                 self.topics_description, comp, WORD_CLOUD_KEYWORDS
             )
-            is_empty = len(kwds) == 0
-            if is_empty:
-                kwds = {'N/A': 1}
             kwds[f'#{comp + 1}'] = 1  # Artificial tag for scale
             color = (self.comp_colors[comp].r, self.comp_colors[comp].g, self.comp_colors[comp].b)
             wc = WordCloud(background_color="white", width=WORD_CLOUD_WIDTH, height=WORD_CLOUD_HEIGHT,
@@ -124,7 +121,7 @@ class Plotter:
                            max_words=WORD_CLOUD_KEYWORDS, min_font_size=10, max_font_size=30)
             wc.generate_from_frequencies(kwds)
 
-            result.append((plot, wc, is_empty))
+            result.append((plot, wc))
 
         return result
 

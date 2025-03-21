@@ -14,14 +14,24 @@ function isHighDensity() {
         (window.devicePixelRatio && window.devicePixelRatio > 1.3));
 }
 
-function process_word_cloud(id, width, height, ww, wh, word_records, callback) {
+function isSafari() {
+    const userAgent = navigator.userAgent;
+    return /^((?!chrome|android).)*safari/i.test(userAgent);
+}
+
+function process_word_cloud(id, width, height, word_cloud, callback) {
+    const word_records = word_cloud['word_records'];
+    const ww = word_cloud['width'];
+    const wh = word_cloud['height'];
+    const dx = 10;
+    const dy = 10;
     const canvas = document.getElementById(id);
     const ctx = canvas.getContext("2d");
     // Make canvas visible
     canvas.style.width = width.toString() + "px";
     canvas.style.height = height.toString() + "px";
-    const sx = (height - 20) / wh;
-    const sy = (width - 20) / ww;
+    const sx = (height - dx * 2) / wh;
+    const sy = (width - dx * 2) / ww;
 
     // Retina/HiDPI fix
     if (isHighDensity()) {
@@ -34,16 +44,20 @@ function process_word_cloud(id, width, height, ww, wh, word_records, callback) {
     }
 
     const links = []; // Links information
-    var hoverWord = ""; // Word which cursor points at
+    let hoverWord = ""; // Word, which cursor points at
     ctx.textBaseline = "top"; // Makes left top point a start point for rendering text
+    const pointerHeight = 10;
 
     function addWord(word, x, y, size, vertical, color) {
-
         ctx.fillStyle = color;
-        ctx.font = size.toString() + "px Arial Bold";
+        if (!isSafari()) {
+            ctx.font = size.toString() + "px Arial Bold";
+        } else {
+            ctx.font = size.toString() + "px Arial";
+        }
 
-        var linkWidth = ctx.measureText(word).width,
-            linkHeight = parseInt(ctx.font); // Get line height out of font size
+        let linkWidth = ctx.measureText(word).width;
+        let linkHeight = parseInt(ctx.font); // Get line height out of font size
 
         if (vertical) {
             ctx.save();
@@ -65,12 +79,17 @@ function process_word_cloud(id, width, height, ww, wh, word_records, callback) {
     }
 
     function onMouseMove(ev) {
-        var x, y;
+        let x, y;
 
         // Get the mouse position relative to the canvas element
-        if (ev.layerX || ev.layerX === 0) { // For Firefox
+        if (ev.layerX || ev.layerX === 0) {
             x = ev.layerX;
             y = ev.layerY;
+        }
+
+        // For better navigation
+        if (!isSafari()) {
+            y -= pointerHeight;
         }
 
         // Link hover
@@ -83,7 +102,8 @@ function process_word_cloud(id, width, height, ww, wh, word_records, callback) {
                 linkWord = link[4];
 
             // Check if cursor is in the link area
-            if (linkX <= x && x <= (linkX + linkWidth) && linkY <= y && y <= (linkY + linkHeight)) {
+            if (linkX <= x - dx && x - dx <= linkX + linkWidth &&
+                linkY <= y - dy && y - dy <= linkY + linkHeight) {
                 document.body.style.cursor = "pointer";
                 hoverWord = linkWord;
                 break;
@@ -105,7 +125,7 @@ function process_word_cloud(id, width, height, ww, wh, word_records, callback) {
         const wr = word_records[i];
         const word = wr[0], x = wr[1], y = wr[2], size = wr[3], vertical = wr[4], color = wr[5];
         // Add word with small shift, coordinates changed!
-        addWord(word, y * sy + 10, x * sx + 10, size, vertical, color);
+        addWord(word, y * sy + dx, x * sx + dy, size, vertical, color);
     }
 
     // Add mouse listeners

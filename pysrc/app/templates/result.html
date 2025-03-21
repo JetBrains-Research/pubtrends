@@ -132,28 +132,17 @@
             {% endif %}
 
             // Process main word cloud
-            let word_records = JSON.parse(normalize('{{ papers_word_cloud }}'));
-            process_word_cloud('papers_word_cloud', $('#papers_word_cloud').outerWidth(),
-                335, 250, 300, word_records, papers_callback_word);
+            let word_cloud = JSON.parse(normalize('{{ papers_word_cloud }}'));
+            process_word_cloud('papers_word_cloud', $('#papers_word_cloud').outerWidth(), 335,
+                word_cloud, papers_callback_word);
 
             // Process topics word clouds
-            let cid = '';
-            {% for (script, div), word_cloud, is_empty in topics_info_and_word_cloud %}
-            word_records = JSON.parse(normalize('{{ word_cloud }}'));
-            // Ignore artificial tags for scale
-            // word record [word, x, y, size, vertical, color]
-            word_records = word_records.filter(wr => !wr[0].startsWith("#"));
-            cid = 'topic_word_cloud_{{ loop.index }}';
-            if ({{ is_empty }})
-            {
-                process_word_cloud(cid, $('#' + cid).outerWidth(),
-                    335, 250, 300, word_records, null);
-            }
-            else
-            {
-                process_word_cloud(cid, $('#' + cid).outerWidth(),
-                    335, 250, 300, word_records, papers_callback_word);
-            }
+            let wc_id = '';
+            {% for (script, div), word_cloud in topics_info_and_word_cloud %}
+                word_cloud = JSON.parse(normalize('{{ word_cloud }}'));
+                wc_id = 'topic_word_cloud_{{ loop.index }}';
+                process_word_cloud(wc_id, $('#' + wc_id).outerWidth(), 335,
+                    word_cloud, papers_callback_word);
             {% endfor %}
 
             // @formatter:on
@@ -482,7 +471,7 @@
                         Word clouds show keywords specific for topics.
                     </p>
                     <div>
-                        {% for (script, div), word_cloud, is_empty in topics_info_and_word_cloud %}
+                        {% for (script, div), word_cloud in topics_info_and_word_cloud %}
                         <div id="topic-div-{{ loop.index }}">
 
                             <div style="display: inline">

@@ -256,10 +256,9 @@ class PlotPreprocessor:
 
     @staticmethod
     def word_cloud_prepare(wc):
-        return json.dumps([(word, int(position[0]), int(position[1]),
-                            int(font_size), orientation is not None,
-                            rgb2hex(color))
-                           for (word, count), font_size, position, orientation, color in wc.layout_])
+        word_records = [(word, int(position[0]), int(position[1]), int(font_size), orientation is not None, rgb2hex(color))
+                    for (word, count), font_size, position, orientation, color in wc.layout_]
+        return json.dumps(dict(word_records=word_records, width=wc.width, height=wc.height))
 
 
     @staticmethod
