@@ -18,7 +18,7 @@ from pysrc.app.messages import SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, \
     SERVICE_LOADING_PREDEFINED_EXAMPLES, SERVICE_LOADING_INITIALIZING
 from pysrc.app.reports import get_predefined_jobs, \
     load_result_data, _predefined_example_params_by_jobid, preprocess_string, load_paper_data
-from pysrc.celery.pubtrends_celery import pubtrends_celery
+from pysrc.celery.pubtrends_celery import pubtrends_celery, CELERY_BROKER_URL
 from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, analyze_pubmed_search
 from pysrc.config import PubtrendsConfig
 from pysrc.papers.db.search_error import SearchError
@@ -37,7 +37,7 @@ app = Flask(__name__)
 
 if not app.config['TESTING']:
     app.config['CACHE_TYPE'] = 'RedisCache'
-app.config['CELERY_REDIS_URL'] = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379')
+app.config['CACHE_REDIS_URL'] = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379')
 app.config['CACHE_DEFAULT_TIMEOUT'] = 600  # 10 minutes
 
 cache = Cache(app)
