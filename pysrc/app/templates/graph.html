@@ -77,10 +77,7 @@
 
         function showSizeConnections() {
             window.show_size_mode = 'connections';
-            let slider_importance = $('#slider-importance');
-            slider_importance.attr('max', window.max_connections);
-            $('#slider-importance-label').text("Connections: 0 - " + window.max_connections.toString());
-            slider_importance.val(0);
+            setupSliderConnections();
             window.cy.batch(function () {
                 cy.nodes().forEach(function (ele) {
                     if ('title' in ele.data()) {
@@ -93,10 +90,7 @@
 
         function showSizeCitations() {
             window.show_size_mode = 'citations';
-            let slider_importance = $('#slider-importance');
-            slider_importance.attr('max', window.max_cited);
-            $('#slider-importance-label').text("Citations: 0 - " + window.max_cited.toString());
-            slider_importance.val(0);
+            setupSliderCitations();
             window.cy.batch(function () {
                 cy.nodes().forEach(function (ele) {
                     if ('title' in ele.data()) {
@@ -133,7 +127,9 @@
         function computeYearCitedConnections(elements) {
             window.min_year = 3000;
             window.max_year = 0;
+            window.min_cited = 100000;
             window.max_cited = 0;
+            window.min_connections = 100;
             window.max_connections = 0;
             window.years = [];
             elements['nodes'].forEach(function (ele) {
@@ -144,12 +140,22 @@
                     window.years.push(data.year);
                 }
                 if ('cited' in data) {
+                    window.min_cited = Math.min(data.cited, window.min_cited);
                     window.max_cited = Math.max(data.cited, window.max_cited);
                 }
                 if ('connections' in data) {
+                    window.min_connections = Math.min(data.connections, window.min_connections);
                     window.max_connections = Math.max(data.connections, window.max_connections);
                 }
             });
+            if (window.min_connections === window.max_connections) {
+                window.max_connections += 1
+            }
+            if (window.min_cited === window.max_cited) {
+                window.max_cited += 1
+            }
+
+            // Required for correct coloring by percentiles
             window.years.sort();
         }
 
@@ -162,6 +168,17 @@
                 }
             }
             return 0
+        }
+
+        function sizeConnections(data) {
+            return (data.connections - window.min_connections) * 10 / (window.max_connections - window.min_connections) + 3;
+        }
+
+        function sizeCitations(data) {
+            if (window.max_cited - window.min_cited > 1000)
+                return 10 * (Math.log1p(data.cited - min_cited) / Math.log1p(window.max_cited - window.min_cited)) + 3;
+            else
+                return 10 * (data.cited - window.min_cited) / (window.max_cited - window.min_cited) + 3;
         }
 
         function addTopicsCenters(elements) {
@@ -289,6 +306,33 @@
                 ele.hasClass('semitransp-filter');
         }
 
+        function setupSliderConnections() {
+            let slider_importance = $('#slider-importance');
+            slider_importance.attr('min', window.min_connections)
+            slider_importance.attr('max', window.max_connections)
+            $('#slider-importance-label').text(
+                "Connections: " + window.min_connections.toString() + " - " + window.max_connections.toString()
+            );
+            slider_importance.val(window.min_connections);
+        }
+        function setupSliderCitations() {
+            let slider_importance = $('#slider-importance');
+            slider_importance.attr('min', window.min_cited)
+            slider_importance.attr('max', window.max_cited)
+            $('#slider-importance-label').text(
+                "Connections: " + window.min_cited.toString() + " - " + window.max_cited.toString()
+            );
+            slider_importance.val(window.min_cited);
+        }
+
+        function setupSliderYear() {
+            let slider_year = $('#slider-year');
+            slider_year.attr('min', window.min_year)
+            slider_year.attr('max', window.max_year)
+            $('#slider-year-label').text("Years: " + window.min_year.toString() + " - " + window.max_year.toString());
+            slider_year.val(window.min_year);
+        }
+
         $(window).on("load", function () {
             document.getElementById('cy').innerHTML = "";
 
@@ -343,7 +387,7 @@
                             "width": function (node) {
                                 const data = node.data();
                                 if ('connections' in data) {
-                                    return data.connections * 10 / window.max_connections + 5;
+                                    return sizeConnections(data);
                                 } else {
                                     return 5;
                                 }
@@ -351,7 +395,7 @@
                             "height": function (node) {
                                 const data = node.data();
                                 if ('connections' in data) {
-                                    return data.connections * 10 / window.max_connections + 5;
+                                    return sizeConnections(data);
                                 } else {
                                     return 5;
                                 }
@@ -364,7 +408,7 @@
                             "width": function (node) {
                                 const data = node.data();
                                 if ('cited' in data) {
-                                    return data.cited * 10 / window.max_cited + 5;
+                                    return sizeCitations(data);
                                 } else {
                                     return 5;
                                 }
@@ -372,7 +416,7 @@
                             "height": function (node) {
                                 const data = node.data();
                                 if ('cited' in data) {
-                                    return data.cited * 10 / window.max_cited + 5;
+                                    return sizeCitations(data);
                                 } else {
                                     return 5;
                                 }
@@ -756,16 +800,10 @@
                         }
                     }
                 });
-
-                let slider_importance = $('#slider-importance');
-                slider_importance.attr('max', window.max_connections)
-                $('#slider-importance-label').text("Connections: 0 - " + window.max_connections.toString());
+                setupSliderConnections();
                 updateSliderImportance();
 
-                let slider_year = $('#slider-year');
-                slider_year.attr('min', window.min_year)
-                slider_year.attr('max', window.max_year)
-                $('#slider-year-label').text("Years: " + window.min_year.toString() + " - " + window.max_year.toString());
+                setupSliderYear();
                 updateSliderYear();
 
                 showNumberOfPapers();
