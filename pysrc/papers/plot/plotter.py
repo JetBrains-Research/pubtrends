@@ -20,6 +20,7 @@ from wordcloud import WordCloud
 
 from pysrc.config import PAPERS_PLOT_WIDTH, WORD_CLOUD_WIDTH, WORD_CLOUD_KEYWORDS, WORD_CLOUD_HEIGHT, \
     PLOT_WIDTH, SHORT_PLOT_HEIGHT, MAX_LINEAR_AXIS, PLOT_HEIGHT, MAX_JOURNAL_LENGTH, MAX_AUTHOR_LENGTH, TALL_PLOT_HEIGHT
+from pysrc.papers.analysis.topics import get_topics_description
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.utils import cut_authors_list, trim, contrast_color, \
     topics_palette_rgb, color_to_rgb, factor_colors, factors_colormap
@@ -59,6 +60,11 @@ class Plotter:
         self.config = config
         self.data = data
         self.pub_types = list(set(self.data.df['type']))
+        self.topics_description = get_topics_description(
+            self.data.df,
+            self.data.corpus, self.data.corpus_tokens, self.data.corpus_counts,
+            n_words=max(self.config.topic_description_words, WORD_CLOUD_KEYWORDS),
+        )
 
         if self.data:
             if self.data.papers_graph.nodes():
@@ -78,7 +84,7 @@ class Plotter:
         plot_components, data = PlotPreprocessor.component_size_summary_data(
             self.data.df, set(self.data.df['comp']), min_year, max_year
         )
-        kwd_df = PlotPreprocessor.compute_kwds(self.data, self.config.topic_description_words)
+        kwd_df = PlotPreprocessor.compute_kwds(self.topics_description, self.config.topic_description_words)
         return self._plot_topics_years_distribution(
             self.data.df, kwd_df, plot_components, data, self.config.topic_description_words, min_year, max_year
         )
@@ -105,7 +111,9 @@ class Plotter:
             plot.legend.location = "top_left"
 
             # Word cloud description of topic by titles and abstracts
-            kwds = PlotPreprocessor.get_topic_word_cloud_data(self.data, self.config.topic_description_words)
+            kwds = PlotPreprocessor.get_topic_word_cloud_data(
+                self.topics_description, comp, WORD_CLOUD_KEYWORDS
+            )
             is_empty = len(kwds) == 0
             if is_empty:
                 kwds = {'N/A': 1}
@@ -266,7 +274,7 @@ class Plotter:
     def topics_hierarchy_with_keywords(self):
         if self.data.dendrogram is None:
             return None
-        kwd_df = PlotPreprocessor.compute_kwds(self.data, self.config.topic_description_words)
+        kwd_df = PlotPreprocessor.compute_kwds(self.topics_description, self.config.topic_description_words)
         return Plotter._plot_topics_hierarchy_with_keywords(
             self.data.df, kwd_df, self.data.df['comp'], self.data.dendrogram
         )
@@ -274,7 +282,7 @@ class Plotter:
     def plot_papers_graph(self):
         return Plotter._plot_papers_graph(
             self.data.search_ids, self.data.source, self.data.papers_graph, self.data.df,
-            topics_tags=self.data.topics_description
+            self.config.topic_description_words, topics_tags=self.topics_description
         )
 
     def _to_colored_circle(self, components, counts, sum, top=3):
@@ -545,7 +553,7 @@ class Plotter:
 
     @staticmethod
     def _plot_papers_graph(
-            search_ids, source, gs, df,
+            search_ids, source, gs, df, topic_words,
             shown_pid=None, topics_tags=None, topics_meshs=None, add_callback=True,
             width=PLOT_WIDTH, height=TALL_PLOT_HEIGHT):
         logger.debug('Processing plot_papers_graph')
@@ -575,10 +583,10 @@ class Plotter:
         graph.node_renderer.data_source.data['connections'] = connections
         if topics_tags is not None:
             graph.node_renderer.data_source.data['topic_tags'] = \
-                [','.join(t for t, _ in topics_tags[c][:5]) for c in comps]
+                [','.join(t for t, _ in topics_tags[c][:topic_words]) for c in comps]
         if topics_meshs is not None:
             graph.node_renderer.data_source.data['topic_meshs'] = \
-                [','.join(t for t, _ in topics_meshs[c][:5]) for c in comps]
+                [','.join(t for t, _ in topics_meshs[c][:topic_words]) for c in comps]
 
         # Aesthetics
         graph.node_renderer.data_source.data['radius'] = \

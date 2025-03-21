@@ -50,11 +50,12 @@ def reorder_by_size(clusters):
     return result
 
 
-def get_topics_description(df, comps, corpus, corpus_tokens, corpus_counts, n_words, ignore_comp=None):
+def get_topics_description(df, corpus, corpus_tokens, corpus_counts, n_words, ignore_comp=None):
     """
     Get words from abstracts that describe the components the best way
     using closest to the 'ideal' frequency vector - [0, ..., 0, 1, 0, ..., 0] in tokens of cosine distance
     """
+    comps = df[['id', 'comp']].groupby('comp')['id'].apply(list).to_dict()
     logger.debug(f'Generating topics description, ignore_comp={ignore_comp}')
     # Since some of the components may be skipped, use this dict for continuous indexes'
     comp_idx = {c: i for i, c in enumerate(c for c in comps if c != ignore_comp)}

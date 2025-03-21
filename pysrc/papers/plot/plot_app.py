@@ -11,6 +11,7 @@ from statsmodels.nonparametric.smoothers_lowess import lowess
 from pysrc.app.reports import preprocess_string
 from pysrc.papers.analysis.text import get_frequent_tokens
 from pysrc.config import PubtrendsConfig
+from pysrc.papers.analysis.topics import get_topics_description
 from pysrc.papers.data import AnalysisData
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
@@ -156,7 +157,12 @@ def prepare_paper_data(
     if doi == 'None' or doi == 'nan':
         doi = ''
 
-    topic_tags = ','.join(w[0] for w in data.topics_description[topic - 1][:config.topic_description_words])
+    topics_description = get_topics_description(
+        data.df,
+        data.corpus, data.corpus_tokens, data.corpus_counts,
+        n_words=config.topic_description_words,
+    )
+    topic_tags = ','.join(w[0] for w in topics_description[topic - 1][:config.topic_description_words])
 
     logger.debug('Computing most cited prior and derivative papers')
     derivative_papers = PlotPreprocessor.get_top_papers_id_title_year_cited_topic(
@@ -217,10 +223,15 @@ def prepare_paper_data(
 
     logger.debug('Papers graph')
     if len(data.df) > 1:
+        topics_description = get_topics_description(
+            data.df,
+            data.corpus, data.corpus_tokens, data.corpus_counts,
+            n_words=config.topic_description_words,
+        )
         result['papers_graph'] = components_list(
             Plotter._plot_papers_graph(
-                data.search_ids, source, data.papers_graph, data.df,
-                shown_pid=pid, topics_tags=data.topics_description
+                data.search_ids, source, data.papers_graph, data.df, config.topic_description_words,
+                shown_pid=pid, topics_tags=topics_description
             ))
 
     return result
@@ -228,9 +239,14 @@ def prepare_paper_data(
 
 def prepare_graph_data(config: PubtrendsConfig, data: AnalysisData, shown_id=None):
     logger.debug('Extracting graph data')
-    topics_tags = {comp: ','.join(
-        [w[0] for w in data.topics_description[comp][:config.topic_description_words]]
-    ) for comp in sorted(set(data.df['comp']))}
+    topics_description = get_topics_description(
+        data.df,
+        data.corpus, data.corpus_tokens, data.corpus_counts,
+        n_words=config.topic_description_words,
+    )
+    topics_tags = {
+        comp: ','.join([w[0] for w in topics_description[comp]]) for comp in sorted(set(data.df['comp']))
+    }
     logger.debug('Computing sparse graph')
     graph_cs = PlotPreprocessor.dump_similarity_graph_cytoscape(
         data.df, data.papers_graph

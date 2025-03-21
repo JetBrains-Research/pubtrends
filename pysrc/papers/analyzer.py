@@ -35,7 +35,7 @@ class PapersAnalyzer:
         self.source = Loaders.source(self.loader, test)
 
     def total_steps(self, config):
-        return 11 + config.feature_authors_enabled + config.feature_journals_enabled + config.feature_numbers_enabled
+        return 10 + config.feature_authors_enabled + config.feature_journals_enabled + config.feature_numbers_enabled
 
     def set_current_step(self, step=2):
         self.current_step = step
@@ -191,15 +191,6 @@ class PapersAnalyzer:
         self.clusters, self.dendrogram = cluster_and_sort(pca_coords, topics)
         self.df['comp'] = self.clusters
 
-        self.progress.info(f'Analyzing {len(set(self.df["comp"]))} topics descriptions',
-                           current=self.get_step_and_inc(), task=task)
-        comp_pids = self.df[['id', 'comp']].groupby('comp')['id'].apply(list).to_dict()
-        self.topics_description = get_topics_description(
-            self.df, comp_pids,
-            self.corpus, self.corpus_tokens, self.corpus_counts,
-            n_words=self.config.topic_description_words,
-        )
-
         self.progress.info('Identifying top cited papers',
                            current=self.get_step_and_inc(), task=task)
         logger.debug('Top cited papers')
@@ -249,7 +240,6 @@ class PapersAnalyzer:
             max_gain_df=self.max_gain_df,
             max_rel_gain_df=self.max_rel_gain_df,
             dendrogram=self.dendrogram,
-            topics_description=self.topics_description,
             corpus=self.corpus,
             corpus_tokens=self.corpus_tokens,
             corpus_counts=self.corpus_counts,

@@ -33,9 +33,9 @@ class PlotPreprocessor:
         return components, data
 
     @staticmethod
-    def compute_kwds(data, topic_description_words):
-        kwds = [(comp, ','.join([f'{t}:{v:.3f}' for t, v in vs[:topic_description_words]]))
-                for comp, vs in data.topics_description.items()]
+    def compute_kwds(topics_description, n):
+        kwds = [(comp, ','.join([f'{t}:{v:.3f}' for t, v in vs[:n]]))
+                for comp, vs in topics_description.items()]
         return pd.DataFrame(kwds, columns=['comp', 'kwd']).sort_values(by='comp')
 
     @staticmethod
@@ -133,12 +133,12 @@ class PlotPreprocessor:
         return nx.cytoscape_data(graph)['elements']
 
     @staticmethod
-    def topics_words(kwd_df, max_words):
+    def topics_words(kwd_df, n):
         words2show = {}
         for _, row in kwd_df.iterrows():
             comp, kwds = row[0], row[1]
             if kwds != '':  # Correctly process empty freq_kwds encoding
-                words2show[comp] = [p.split(':')[0] for p in kwds.split(',')[:max_words]]
+                words2show[comp] = [p.split(':')[0] for p in kwds.split(',')[:n]]
             else:
                 words2show[comp] = []
         return words2show
@@ -247,12 +247,11 @@ class PlotPreprocessor:
         return keywords_df, years
 
     @staticmethod
-    def get_topic_word_cloud_data(data, topic_description_words):
+    def get_topic_word_cloud_data(topics_description, comp, n):
         kwds = {}
-        for vs in data.topics_description.values():
-            for k, v in vs[:topic_description_words]:
-                for word in k.split(' '):
-                    kwds[word] = kwds.get(word, 0) + v
+        for k, v in topics_description[comp][:n]:
+            for word in k.split(' '):
+                kwds[word] = kwds.get(word, 0) + v
         return kwds
 
     @staticmethod

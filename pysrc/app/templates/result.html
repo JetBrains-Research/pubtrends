@@ -134,7 +134,7 @@
             // Process main word cloud
             let word_records = JSON.parse(normalize('{{ papers_word_cloud }}'));
             process_word_cloud('papers_word_cloud', $('#papers_word_cloud').outerWidth(),
-                335, 200, 300, word_records, papers_callback_word);
+                335, 250, 300, word_records, papers_callback_word);
 
             // Process topics word clouds
             let cid = '';
@@ -146,11 +146,13 @@
             cid = 'topic_word_cloud_{{ loop.index }}';
             if ({{ is_empty }})
             {
-                process_word_cloud(cid, $('#' + cid).outerWidth(), 335, 200, 300, word_records, null);
+                process_word_cloud(cid, $('#' + cid).outerWidth(),
+                    335, 250, 300, word_records, null);
             }
             else
             {
-                process_word_cloud(cid, $('#' + cid).outerWidth(), 335, 200, 300, word_records, papers_callback_word);
+                process_word_cloud(cid, $('#' + cid).outerWidth(),
+                    335, 250, 300, word_records, papers_callback_word);
             }
             {% endfor %}
 
@@ -299,7 +301,7 @@
                     </p>
                     <button id="papers-list" type="button" class="btn btn-light"
                             onclick="papers_callback();">
-                        <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show all papers
+                        <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
                     </button>
                     <div class="row mt-2">
                         <div class="col-3 no-padding-right" style="min-width: 185px;">
