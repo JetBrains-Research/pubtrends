@@ -328,7 +328,6 @@ def cancel():
 
 @app.route('/result')
 @cache.cached(query_string=True)
-@cache.memoize(timeout=600)  # 10min
 def result():
     jobid = request.args.get('jobid')
     query = request.args.get('query')
@@ -370,7 +369,6 @@ def result():
 
 @app.route('/graph')
 @cache.cached(query_string=True)
-@cache.memoize(timeout=600)  # 10min
 def graph():
     jobid = request.values.get('jobid')
     query = request.args.get('query')
@@ -400,7 +398,6 @@ def graph():
 
 @app.route('/paper')
 @cache.cached(query_string=True)
-@cache.memoize(timeout=600)  # 10min
 def paper():
     jobid = request.values.get('jobid')
     source = request.args.get('source')
@@ -435,7 +432,6 @@ def paper():
 
 @app.route('/papers')
 @cache.cached(query_string=True)
-@cache.memoize(timeout=600)  # 10min
 def show_ids():
     jobid = request.values.get('jobid')
     query = request.args.get('query')
@@ -495,7 +491,6 @@ def show_ids():
 
 @app.route('/export_data', methods=['GET'])
 @cache.cached(query_string=True)
-@cache.memoize(timeout=600)  # 10min
 def export_results():
     logger.info(f'/export_data {log_request(request)}')
     try:
