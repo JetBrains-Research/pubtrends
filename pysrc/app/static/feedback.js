@@ -1,28 +1,21 @@
 "use strict";
+// Please ensure to use jquery.min.js and notify.js for correct functioning
 // Include necessary styling options from feedback.css
 
 function createClickableFeedBackForm(feedBackElementId, feedBackId) {
-    createClickableFeedBackFormImpl(feedBackElementId, feedBackId, 'feedback');
-}
-
-function createClickableFeedBackFormNoMessage(feedBackElementId, feedBackId) {
-    createClickableFeedBackFormImpl(feedBackElementId, feedBackId, 'feedbackNoMessageForm');
-}
-
-function createClickableFeedBackFormImpl(feedBackElementId, feedBackId, feedbackFunction) {
     $('#' + feedBackElementId).html(`
         <small class="text-muted mr-2">Was this useful?</small>
         <div id="` + feedBackId + `" class="btn-group-horizontal">
             <button type="button" class="btn btn-sm btn-feedback-yes"
-                onClick="` + feedbackFunction + `(this, 1)">
+                onClick="feedback(this, 1)">
                 <img src="smile.svg" alt="Yes"/>
             </button>
             <button type="button" class="btn btn-sm btn-feedback-meh"
-                onClick="` + feedbackFunction + `(this, 0)">
+                onClick="feedback(this, 0)">
                 <img src="meh.svg" alt="Not sure"/>
             </button>
             <button type="button" class="btn btn-sm btn-feedback-no"
-                onClick="` + feedbackFunction + `(this, -1)">
+                onClick="feedback(this, -1)">
                 <img src="frown.svg" alt="No"/>
             </button>
         </div>
@@ -33,14 +26,6 @@ function createClickableFeedBackFormImpl(feedBackElementId, feedBackId, feedback
 //      element should be placed under class btn-group-horizontal, which id is used as key
 // value -1, 0, +1
 function feedback(element, value) {
-    feedbackImpl(element, value)
-    $.notify("Thanks! You can leave us a message below.", {
-        className: "success",
-        position: "bottom right"
-    });
-}
-
-function feedbackNoMessageForm(element, value) {
     feedbackImpl(element, value)
     $.notify("Thanks for the feedback!", {
         className: "success",

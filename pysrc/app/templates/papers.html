@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css">
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.min.js"></script>
 
@@ -40,6 +40,9 @@
     <!--    <script src="../static/papers.js"/>-->
     <link rel="stylesheet" href="{{ url_for('static', filename='feedback.css') }}?v=1">
     <!--    <link rel="stylesheet" href="../static/feedback.css"/>-->
+    <!-- Notify.js -->
+    <!--<script src="../../static/notify.js"/>-->
+    <script src="{{ url_for('static', filename='notify.js') }}"></script>
 
     <script>
         "use strict";
@@ -51,7 +54,7 @@
 
             window.papers_table = $('#papers').DataTable();
 
-            createClickableFeedBackFormNoMessage("feedback-papers-html-form", "feedback-papers-html")
+            createClickableFeedBackForm("feedback-papers-html-form", "feedback-papers-html");
         });
 
         function result() {
