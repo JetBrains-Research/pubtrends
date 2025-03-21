@@ -14,8 +14,8 @@ from threading import Lock
 from urllib.parse import quote
 
 from pysrc.app.admin.admin import configure_admin_functions
-from pysrc.app.messages import SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, SOMETHING_WENT_WRONG_PAPER, \
-    SOMETHING_WENT_WRONG_TOPIC, SERVICE_LOADING_PREDEFINED_EXAMPLES, SERVICE_LOADING_INITIALIZING
+from pysrc.app.messages import SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, \
+    SERVICE_LOADING_PREDEFINED_EXAMPLES, SERVICE_LOADING_INITIALIZING
 from pysrc.app.reports import get_predefined_jobs, \
     load_result_data, _predefined_example_params_by_jobid, preprocess_string, load_paper_data
 from pysrc.celery.pubtrends_celery import pubtrends_celery
@@ -180,10 +180,10 @@ def search_terms():
                         noreviews=noreviews, topics=topics,
                         jobid=job.id))
         logger.error(f'/search_terms error {log_request(request)}')
-        return render_template_string(SOMETHING_WENT_WRONG_TOPIC), 400
+        return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception as e:
         logger.exception(f'/search_terms exception {e}')
-        return render_template_string(ERROR_OCCURRED), 500
+        return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
 
 
 @app.route('/search_paper', methods=['POST'])
@@ -202,10 +202,10 @@ def search_paper():
                                     analysis_type=PAPER_ANALYSIS_TYPE,
                                     key=key, value=value, source=source, limit=limit, topics=topics, jobid=job.id))
         logger.error(f'/search_paper error {log_request(request)}')
-        return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
+        return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception as e:
         logger.exception(f'/search_paper exception {e}')
-        return render_template_string(ERROR_OCCURRED), 500
+        return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
 
 
 ####################################
@@ -364,7 +364,7 @@ def result():
             return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception as e:
         logger.exception(f'/result exception {e}')
-        return render_template_string(ERROR_OCCURRED), 500
+        return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
 
 
 @app.route('/graph')
@@ -394,7 +394,8 @@ def graph():
             return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception as e:
         logger.exception(f'/graph exception {e}')
-        return render_template_string(ERROR_OCCURRED), 500
+        return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
+
 
 @app.route('/paper')
 @cache.cached(query_string=True)
@@ -425,10 +426,10 @@ def paper():
                                         analysis_type=PAPER_ANALYSIS_TYPE,
                                         source=source, key=key, value=value, topics=topics, jobid=jobid))
         logger.error(f'/paper error wrong request {log_request(request)}')
-        return render_template_string(SOMETHING_WENT_WRONG_PAPER), 400
+        return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception as e:
         logger.exception(f'/paper exception {e}')
-        return render_template_string(ERROR_OCCURRED), 500
+        return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
 
 
 @app.route('/papers')
@@ -488,7 +489,7 @@ def show_ids():
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception as e:
         logger.exception(f'/papers exception {e}')
-        return render_template_string(ERROR_OCCURRED), 500
+        return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
 
 
 @app.route('/export_data', methods=['GET'])
@@ -514,7 +515,7 @@ def export_results():
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception as e:
         logger.exception(f'/export_results exception {e}')
-        return render_template_string(ERROR_OCCURRED), 500
+        return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
 
 
 #########################
@@ -601,7 +602,6 @@ def feedback():
         logger.info('Feedback ' + json.dumps(dict(key=key, value=value, jobid=jobid)))
     else:
         logger.error(f'/feedback error')
-        return render_template_string(ERROR_OCCURRED), 500
     return render_template_string('Thanks you for the feedback!'), 200
 
 

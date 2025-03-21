@@ -44,7 +44,7 @@ def register_app_review(app):
             return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
         except Exception as e:
             logger.error(f'/generate_review error', e)
-            return render_template_string(ERROR_OCCURRED), 500
+            return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
 
     @app.route('/review')
     def review():
@@ -73,4 +73,4 @@ def register_app_review(app):
                 return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
         except Exception as e:
             logger.error(f'/review error', e)
-            return render_template_string(ERROR_OCCURRED), 500
+            return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
