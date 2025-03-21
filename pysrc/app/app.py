@@ -9,6 +9,7 @@ import time
 from celery.result import AsyncResult
 from flask import Flask, url_for, redirect, render_template, request, render_template_string, \
     send_from_directory, send_file
+from flask_caching import Cache
 from threading import Lock
 from urllib.parse import quote
 
@@ -33,6 +34,12 @@ else:
     REVIEW_ANALYSIS_TYPE = 'not_available'
 
 app = Flask(__name__)
+
+app.config['CACHE_TYPE'] = 'RedisCache'
+app.config['CELERY_REDIS_URL'] = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379')
+app.config['CACHE_DEFAULT_TIMEOUT'] = 600  # 10 minutes
+
+cache = Cache(app)
 
 #####################
 # Configure logging #
@@ -319,6 +326,8 @@ def cancel():
 
 
 @app.route('/result')
+@cache.cached(query_string=True)
+@cache.memoize(timeout=600)  # 10min
 def result():
     jobid = request.args.get('jobid')
     query = request.args.get('query')
@@ -359,6 +368,8 @@ def result():
 
 
 @app.route('/graph')
+@cache.cached(query_string=True)
+@cache.memoize(timeout=600)  # 10min
 def graph():
     jobid = request.values.get('jobid')
     query = request.args.get('query')
@@ -386,6 +397,8 @@ def graph():
         return render_template_string(ERROR_OCCURRED), 500
 
 @app.route('/paper')
+@cache.cached(query_string=True)
+@cache.memoize(timeout=600)  # 10min
 def paper():
     jobid = request.values.get('jobid')
     source = request.args.get('source')
@@ -419,6 +432,8 @@ def paper():
 
 
 @app.route('/papers')
+@cache.cached(query_string=True)
+@cache.memoize(timeout=600)  # 10min
 def show_ids():
     jobid = request.values.get('jobid')
     query = request.args.get('query')
@@ -477,6 +492,8 @@ def show_ids():
 
 
 @app.route('/export_data', methods=['GET'])
+@cache.cached(query_string=True)
+@cache.memoize(timeout=600)  # 10min
 def export_results():
     logger.info(f'/export_data {log_request(request)}')
     try:
