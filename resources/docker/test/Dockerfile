@@ -53,5 +53,11 @@ RUN mkdir /logs && chmod a+rw /logs \
     && mkdir /results && chmod a+rw /results
 USER user
 
+# Workaround for https://github.com/JetBrains-Research/pubtrends/issues/332
+# OMP: Error #13: Assertion failure at kmp_affinity.cpp(981)
+# Cannot build biolabs/pubtrends with updated environment.yaml, installing manually
+RUN source activate pubtrends \
+    && mamba install flask-caching=2.3.1 -c conda-forge
+
 # Use `-d` param to launch container as daemon
 CMD /usr/lib/postgresql/17/bin/pg_ctl -D /home/user/postgres start && sleep infinity

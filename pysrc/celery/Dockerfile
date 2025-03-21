@@ -5,6 +5,12 @@ LABEL email="os@jetbrains.com"
 
 USER user
 
+# Workaround for https://github.com/JetBrains-Research/pubtrends/issues/332
+# OMP: Error #13: Assertion failure at kmp_affinity.cpp(981)
+# Cannot build biolabs/pubtrends with updated environment.yaml, installing manually
+RUN source activate pubtrends \
+    && mamba install flask-caching=2.3.1 -c conda-forge \
+
 # Download all the nltk and spacy resources
 RUN source activate pubtrends \
     && python -m nltk.downloader averaged_perceptron_tagger averaged_perceptron_tagger_eng \
