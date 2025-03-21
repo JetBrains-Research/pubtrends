@@ -35,7 +35,8 @@ else:
 
 app = Flask(__name__)
 
-app.config['CACHE_TYPE'] = 'RedisCache'
+if not app.config['TESTING']:
+    app.config['CACHE_TYPE'] = 'RedisCache'
 app.config['CELERY_REDIS_URL'] = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379')
 app.config['CACHE_DEFAULT_TIMEOUT'] = 600  # 10 minutes
 
