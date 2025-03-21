@@ -604,7 +604,8 @@
                     // track hovered event to avoid too late tippy
                     let inside = false;
                     ele.bind('mouseover', (event) => {
-                        if (type === 'node' && isHidden(ele)) return;
+                        if (type === 'node' &&
+                            (isHidden(ele) || ele.hasClass('semitransp-hover'))) return;
                         if (type === 'edge') {
                             if (window.frozenHighlighting) return;
                             let neighborNodes = ele.connectedNodes();
