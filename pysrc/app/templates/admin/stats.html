@@ -13,8 +13,8 @@
         <script>
             "use strict";
             $(document).ready(function () {
-                var words = JSON.parse(normalize('{{ word_cloud }}'));
-                process_word_cloud('word_cloud', $('#word_cloud').outerWidth(), 600, 900, 600, words, null);
+                let word_cloud = JSON.parse(normalize('{{ word_cloud }}'));
+                process_word_cloud('word_cloud', $('#word_cloud').outerWidth(), 600, word_cloud, null);
             });
         </script>
     {% endif %}
