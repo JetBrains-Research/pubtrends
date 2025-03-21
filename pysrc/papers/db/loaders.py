@@ -24,21 +24,22 @@ class Loaders:
             raise TypeError(f'Unknown loader {loader}')
 
     @staticmethod
-    def _get_loader_and_url_prefix(source, config):
+    def get_loader(source, config):
         if PostgresConnector.postgres_configured(config):
             if source == 'Pubmed':
-                return PubmedPostgresLoader(config), PUBMED_ARTICLE_BASE_URL
+                return PubmedPostgresLoader(config)
             elif source == 'Semantic Scholar':
-                return SemanticScholarPostgresLoader(config), SEMANTIC_SCHOLAR_BASE_URL
+                return SemanticScholarPostgresLoader(config)
             else:
                 raise ValueError(f"Unknown source {source}")
         else:
             raise ValueError("No database configured")
 
     @staticmethod
-    def get_loader(source, config):
-        return Loaders._get_loader_and_url_prefix(source, config)[0]
-
-    @staticmethod
     def get_url_prefix(source, config):
-        return Loaders._get_loader_and_url_prefix(source, config)[1]
+        if source == 'Pubmed':
+            return PUBMED_ARTICLE_BASE_URL
+        elif source == 'Semantic Scholar':
+            return SEMANTIC_SCHOLAR_BASE_URL
+        else:
+            raise ValueError(f"Unknown source {source}")

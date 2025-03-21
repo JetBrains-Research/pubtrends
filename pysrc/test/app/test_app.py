@@ -1,14 +1,20 @@
 import unittest
+import re
+import time
+from urllib.parse import quote
+
 # Workaround for celery test worker and missing task, will be fixed in Celery 5+
 # See: https://github.com/celery/celery/issues/4851
 # noinspection PyUnresolvedReferences
 from celery.contrib.testing.tasks import ping
 from celery.contrib.testing.worker import start_worker
 
+from pysrc.app.app import app
 from pysrc.celery.tasks import pubtrends_celery
-from pysrc.papers import config
+from pysrc.config import PubtrendsConfig
 from pysrc.papers.db.pm_postgres_loader import PubmedPostgresLoader
 from pysrc.papers.db.pm_postgres_writer import PubmedPostgresWriter
+from pysrc.papers.utils import SORT_MOST_CITED
 from pysrc.test.db.pm_test_articles import REQUIRED_ARTICLES, ARTICLES, CITATIONS
 
 
@@ -19,7 +25,7 @@ class TestApp(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        test_config = config.PubtrendsConfig(test=True)
+        test_config = PubtrendsConfig(test=True)
         cls.loader = PubmedPostgresLoader(test_config)
 
         # Configure celery not to use broker
@@ -50,25 +56,26 @@ class TestApp(unittest.TestCase):
         cls.loader.close_connection()
 
     # TODO[shpynov] disabled for a while
-    # def test_terms_search(self):
-    #     app.config['TESTING'] = True
-    #     with app.test_client() as c:
-    #         rv = c.post('/search_terms', data={
-    #             'query': 'Article Title',
-    #             'source': 'Pubmed',
-    #             'sort': SORT_MOST_CITED,
-    #             'limit': '100',
-    #             'noreviews': 'on',
-    #             'expand': '25'
-    #         }, follow_redirects=True)
-    #         self.assertEqual(200, rv.status_code)
-    #         response = rv.data.decode('utf-8')
-    #         self.assertIn('progressbar', response)  # Should get process page
-    #         time.sleep(20)  # Should be enough
-    #         args = re.search('var args = [^\n]+', rv.data.decode('utf-8')).group(0)
-    #         args = '&'.join('='.join(quote(x) for x in v.split(': '))
-    #                         for v in args[len('var args = '):].strip('{};').replace('\'', '').split(', '))
-    #         rv = c.get(f'/result?{args}')  # Result should be fine
-    #         self.assertEqual(200, rv.status_code)
-    #         response = rv.data.decode('utf-8')
-    #         self.assertTrue('Analyzed <strong>10</strong> papers and <strong>1</strong> topics.' in response)
+    def test_terms_search(self):
+        app.config['TESTING'] = True
+        with app.test_client() as c:
+            rv = c.post('/search_terms', data={
+                'query': 'Article Title',
+                'source': 'Pubmed',
+                'sort': SORT_MOST_CITED,
+                'limit': '100',
+                'noreviews': 'on',
+                'topics': '2'
+            }, follow_redirects=True)
+            self.assertEqual(200, rv.status_code)
+            response = rv.data.decode('utf-8')
+            self.assertIn('progressbar', response)  # Should get process page
+            time.sleep(20)  # Should be enough time for processing
+            # Form correct url to check results
+            args = re.search('var args = [^\n]+', rv.data.decode('utf-8')).group(0)
+            args = '&'.join('='.join(quote(x) for x in v.split(': '))
+                            for v in args[len('var args = '):].strip('{};').replace('\'', '').split(', '))
+            rv = c.get(f'/result?{args}')  # Result should be fine
+            self.assertEqual(200, rv.status_code)
+            response = rv.data.decode('utf-8')
+            self.assertTrue('Analyzed <strong>9</strong> papers and <strong>2</strong> topics.' in response)
