@@ -162,7 +162,7 @@
         function yearColorDy(y) {
             let arrayLength = window.years.length;
             let step = Math.max(1, Math.ceil(arrayLength / 10));
-            for (let i = arrayLength - 1; i >= 0; i-=step) {
+            for (let i = arrayLength - 1; i >= 0; i -= step) {
                 if (y >= window.years[i]) {
                     return Math.min(1, (i + 1) / (arrayLength - 1));
                 }
@@ -171,14 +171,14 @@
         }
 
         function sizeConnections(data) {
-            return (data.connections - window.min_connections) * 10 / (window.max_connections - window.min_connections) + 3;
+            return (data.connections - window.min_connections) * 10 / (window.max_connections - window.min_connections) + 5;
         }
 
         function sizeCitations(data) {
             if (window.max_cited - window.min_cited > 1000)
-                return 10 * (Math.log1p(data.cited - min_cited) / Math.log1p(window.max_cited - window.min_cited)) + 3;
+                return 10 * (Math.log1p(data.cited - min_cited) / Math.log1p(window.max_cited - window.min_cited)) + 5;
             else
-                return 10 * (data.cited - window.min_cited) / (window.max_cited - window.min_cited) + 3;
+                return 10 * (data.cited - window.min_cited) / (window.max_cited - window.min_cited) + 5;
         }
 
         function addTopicsCenters(elements) {
@@ -315,6 +315,7 @@
             );
             slider_importance.val(window.min_connections);
         }
+
         function setupSliderCitations() {
             let slider_importance = $('#slider-importance');
             slider_importance.attr('min', window.min_cited)
