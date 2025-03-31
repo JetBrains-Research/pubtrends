@@ -65,7 +65,7 @@ class TestApp(unittest.TestCase):
                 'sort': SORT_MOST_CITED,
                 'limit': '100',
                 'noreviews': 'on',
-                'topics': '2'
+                'topics': '10'
             }, follow_redirects=True)
             self.assertEqual(200, rv.status_code)
             response = rv.data.decode('utf-8')
@@ -78,4 +78,4 @@ class TestApp(unittest.TestCase):
             rv = c.get(f'/result?{args}')  # Result should be fine
             self.assertEqual(200, rv.status_code)
             response = rv.data.decode('utf-8')
-            self.assertTrue('Analyzed <strong>9</strong> papers and <strong>2</strong> topics.' in response)
+            self.assertTrue('Analyzed <strong>9</strong> papers and <strong>1</strong> topics.' in response)

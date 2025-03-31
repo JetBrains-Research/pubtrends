@@ -147,6 +147,7 @@ class PubtrendsConfig:
 
         self.show_topics_options = [int(opt.strip()) for opt in params['show_topics_options'].split(',')]
         self.show_topics_default_value = int(params['show_topics_default_value'].strip())
+        self.topic_min_size = params.getint('topic_min_size')
 
         self.max_graph_size = params.getint('max_graph_size')
 

@@ -188,7 +188,7 @@ class PapersAnalyzer:
         self.progress.info(f'Extracting {topics} number of topics from papers text and graph similarity',
                            current=8, task=task)
         logger.debug('Extracting topics from papers embeddings')
-        self.clusters, self.dendrogram = cluster_and_sort(pca_coords, topics)
+        self.clusters, self.dendrogram = cluster_and_sort(pca_coords, topics, self.config.topic_min_size)
         self.df['comp'] = self.clusters
 
         self.progress.info('Identifying top cited papers',

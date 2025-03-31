@@ -12,7 +12,7 @@ from pysrc.papers.analysis.text import get_frequent_tokens
 logger = logging.getLogger(__name__)
 
 
-def cluster_and_sort(x, n_clusters):
+def cluster_and_sort(x, n_clusters, min_cluster_size):
     """
     :param x: object representations (X x Features)
     :param n_clusters:
@@ -22,7 +22,18 @@ def cluster_and_sort(x, n_clusters):
     if x.shape[0] <= n_clusters or x.shape[1] == 0:
         return [0] * x.shape[0], None
 
-    model = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward').fit(x)
+    while True:
+        model = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward').fit(x)
+        clusters_counter = Counter(model.labels_)
+        min_cluster = clusters_counter.most_common()[-1][1]
+        logger.debug(f'Clusters = {n_clusters}, min cluster size = {min_cluster}')
+        if min_cluster >= min_cluster_size:
+            break
+        else:
+            n_clusters -= 1
+            if n_clusters <= 1:
+                logger.debug('No clusters found')
+                return [0] * x.shape[0], None
 
     # Estimate hierarchical clustering possibilities
     # Closer to 1 → Better hierarchical clustering.

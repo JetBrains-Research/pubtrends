@@ -18,7 +18,7 @@ from pysrc.app.messages import SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, \
     SERVICE_LOADING_PREDEFINED_EXAMPLES, SERVICE_LOADING_INITIALIZING
 from pysrc.app.reports import get_predefined_jobs, \
     load_result_data, _predefined_example_params_by_jobid, preprocess_string, load_paper_data
-from pysrc.celery.pubtrends_celery import pubtrends_celery, CELERY_BROKER_URL
+from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, analyze_pubmed_search
 from pysrc.config import PubtrendsConfig
 from pysrc.papers.db.search_error import SearchError
