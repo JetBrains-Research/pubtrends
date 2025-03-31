@@ -444,6 +444,8 @@ def show_ids():
         if topic is not None:
             search_string += f'topic: {topic}'
             comp = int(topic) - 1  # Component was exposed so it was 1-based
+        else:
+            comp = None
 
         word = request.args.get('word')
         if word is not None:
