@@ -439,11 +439,11 @@ def show_ids():
     limit = request.args.get('limit')
     sort = request.args.get('sort')
     search_string = ''
-    comp = request.args.get('comp')
+    topic = request.args.get('topic')
     try:
-        if comp is not None:
-            search_string += f'topic: {comp}'
-            comp = int(comp) - 1  # Component was exposed so it was 1-based
+        if topic is not None:
+            search_string += f'topic: {topic}'
+            comp = int(topic) - 1  # Component was exposed so it was 1-based
 
         word = request.args.get('word')
         if word is not None:

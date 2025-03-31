@@ -61,8 +61,8 @@
             papers_callback_impl(null, null)
         }
 
-        function papers_callback_component(comp) {
-            papers_callback_impl('comp', comp)
+        function papers_callback_topic(topic) {
+            papers_callback_impl('topic', topic)
         }
 
         function papers_callback_word(word) {
@@ -482,7 +482,7 @@
                                     Topic {{ loop.index }}
                                 </strong>
                                 <button type="button" class="btn btn-light"
-                                        onclick="papers_callback_component({{ loop.index }});">
+                                        onclick="papers_callback_topic({{ loop.index }});">
                                     <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show
                                     as
                                     list
