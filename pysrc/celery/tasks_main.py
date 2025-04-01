@@ -75,28 +75,31 @@ def analyze_search_paper(source, pid, key, value, limit, topics, test=False):
         if pid is not None:
             result = [pid]
         else:
-            result = loader.find(key, value)
-        if len(result) == 1:
-            analyzer.progress.info('Expanding related papers by references', current=1, task=current_task)
-            limit = int(limit) if limit is not None and limit != '' else analyzer.config.show_max_articles_default_value
-            topics = int(topics) if topics is not None and topics != '' else analyzer.config.show_topics_default_value
-            ids = expand_ids(loader=analyzer.loader, pid=result[0], limit=limit,
-                             expand_steps=analyzer.config.paper_expands_steps,
-                             max_expand=analyzer.config.paper_expand_limit,
-                             citations_q_low=EXPAND_CITATIONS_Q_LOW,
-                             citations_q_high=EXPAND_CITATIONS_Q_HIGH,
-                             citations_sigma=EXPAND_CITATIONS_SIGMA,
-                             mesh_similarity_threshold=EXPAND_MESH_SIMILARITY,
-                             single_paper_impact=EXPAND_SINGLE_PAPER_IMPACT)
-            return _analyze_id_list(
-                analyzer, f'Paper {key}={value}', [result[0]],
-                ids, source, None, limit, topics,
-                test=test, task=current_task
-            )
-        elif len(result) == 0:
+            result = loader.search_key_value(key, value)
+
+        if len(result) == 0:
             raise SearchError(f'No papers found with {key}={value}')
-        else:
-            raise SearchError(f'Multiple papers found matching {key}={value}, please be more specific')
+
+        if len(result) >= config.paper_expand_start_max:
+            logger.warning(f'Multiple papers found matching {key}={value}, limiting to {config.paper_expand_start_max}')
+            result = result[:config.paper_expand_start_max]
+
+        analyzer.progress.info('Expanding related papers by references', current=1, task=current_task)
+        limit = int(limit) if limit is not None and limit != '' else analyzer.config.show_max_articles_default_value
+        topics = int(topics) if topics is not None and topics != '' else analyzer.config.show_topics_default_value
+        ids = expand_ids(loader=analyzer.loader, search_ids=result, limit=limit,
+                         expand_steps=analyzer.config.paper_expands_steps,
+                         max_expand=analyzer.config.paper_expand_limit,
+                         citations_q_low=EXPAND_CITATIONS_Q_LOW,
+                         citations_q_high=EXPAND_CITATIONS_Q_HIGH,
+                         citations_sigma=EXPAND_CITATIONS_SIGMA,
+                         mesh_similarity_threshold=EXPAND_MESH_SIMILARITY,
+                         single_paper_impact=EXPAND_SINGLE_PAPER_IMPACT)
+        return _analyze_id_list(
+            analyzer, f'Paper {key}={value}', result,
+            ids, source, None, limit, topics,
+            test=test, task=current_task
+        )
     finally:
         loader.close_connection()
 
