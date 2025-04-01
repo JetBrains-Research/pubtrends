@@ -256,10 +256,12 @@ class PlotPreprocessor:
 
     @staticmethod
     def word_cloud_prepare(wc):
-        word_records = [(word, int(position[0]), int(position[1]), int(font_size), orientation is not None, rgb2hex(color))
-                    for (word, count), font_size, position, orientation, color in wc.layout_]
+        word_records = [
+            (word, int(position[0]), int(position[1]), int(font_size), orientation is not None, rgb2hex(color))
+            for (word, count), font_size, position, orientation, color in wc.layout_
+            if not word.startswith('#')  # Skip technical records for scale
+        ]
         return json.dumps(dict(word_records=word_records, width=wc.width, height=wc.height))
-
 
     @staticmethod
     def get_top_papers_id_title_year_cited_topic(papers, df, n=50):
