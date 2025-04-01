@@ -1,4 +1,5 @@
 import unittest
+
 from parameterized import parameterized
 
 from pysrc.papers.utils import cut_authors_list, crc32, preprocess_doi, rgb2hex

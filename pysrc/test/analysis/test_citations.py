@@ -2,13 +2,12 @@ import unittest
 
 from parameterized import parameterized
 
+from pysrc.config import PubtrendsConfig
 from pysrc.papers.analysis.citations import find_top_cited_papers
 from pysrc.papers.analyzer import PapersAnalyzer
-from pysrc.config import PubtrendsConfig
 from pysrc.papers.utils import SORT_MOST_CITED
 from pysrc.test.mock_loaders import MockLoader, \
     EXPECTED_MAX_GAIN, EXPECTED_MAX_RELATIVE_GAIN, MockLoaderSingle
-
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
 

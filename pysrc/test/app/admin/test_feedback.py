@@ -1,7 +1,5 @@
 import unittest
 
-from parameterized import parameterized
-
 from pysrc.app.admin.feedback import parse_feedback_content
 
 # Part of preprocessed app.log file

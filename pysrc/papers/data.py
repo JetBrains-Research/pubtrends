@@ -1,8 +1,8 @@
 import json
+from io import StringIO
+
 import numpy as np
 import pandas as pd
-from collections import namedtuple
-from io import StringIO
 from networkx.readwrite import json_graph
 from scipy.sparse import csr_matrix
 

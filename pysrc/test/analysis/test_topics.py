@@ -1,11 +1,12 @@
+import unittest
+
 import numpy as np
 import pandas as pd
-import unittest
 from parameterized import parameterized
 
+from pysrc.config import PubtrendsConfig
 from pysrc.papers.analysis.topics import _get_topics_description_cosine
 from pysrc.papers.analyzer import PapersAnalyzer
-from pysrc.config import PubtrendsConfig
 from pysrc.papers.utils import SORT_MOST_CITED
 from pysrc.test.mock_loaders import MockLoader
 

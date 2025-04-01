@@ -1,12 +1,13 @@
-from celery import current_task
 from logging import getLogger
+
+from celery import current_task
 
 from pysrc.app.messages import DOI_WRONG_SEARCH
 from pysrc.celery.pubtrends_celery import pubtrends_celery
+from pysrc.config import *
 from pysrc.papers.analysis.expand import expand_ids
 from pysrc.papers.analysis.pubmed import pubmed_search
 from pysrc.papers.analyzer import PapersAnalyzer
-from pysrc.config import *
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.utils import SORT_MOST_CITED, preprocess_doi, is_doi

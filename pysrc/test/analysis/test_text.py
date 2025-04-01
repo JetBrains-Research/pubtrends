@@ -1,9 +1,10 @@
-import numpy as np
 import unittest
 
+import numpy as np
+
+from pysrc.config import PubtrendsConfig
 from pysrc.papers.analysis.text import stemmed_tokens, _build_stems_to_tokens_map
 from pysrc.papers.analyzer import PapersAnalyzer
-from pysrc.config import PubtrendsConfig
 from pysrc.papers.utils import SORT_MOST_CITED
 from pysrc.test.mock_loaders import MockLoader
 

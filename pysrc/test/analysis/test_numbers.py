@@ -1,4 +1,5 @@
 import unittest
+
 from parameterized import parameterized
 
 from pysrc.papers.analysis.numbers import extract_metrics, _preprocess_text

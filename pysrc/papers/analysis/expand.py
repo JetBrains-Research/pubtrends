@@ -1,6 +1,7 @@
 import logging
-import numpy as np
 from collections import Counter
+
+import numpy as np
 
 from pysrc.papers.analysis.text import stemmed_tokens
 

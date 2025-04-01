@@ -1,12 +1,11 @@
 import logging
+import os
 from threading import Lock
 
 import numpy as np
-from lazy import lazy
-import os
 import requests
 from gensim.models import KeyedVectors
-
+from lazy import lazy
 
 logger = logging.getLogger(__name__)
 

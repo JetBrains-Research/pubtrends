@@ -5,8 +5,8 @@ import threading
 
 from flask import Flask, request
 
-from pysrc.fasttext.fasttext import PRETRAINED_MODEL_CACHE, PRETRAINED_MODEL_CACHE_LOCK, tokens_embeddings_fasttext
 from pysrc.config import PubtrendsConfig
+from pysrc.fasttext.fasttext import PRETRAINED_MODEL_CACHE, PRETRAINED_MODEL_CACHE_LOCK, tokens_embeddings_fasttext
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 

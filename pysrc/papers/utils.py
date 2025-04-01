@@ -1,12 +1,12 @@
+import binascii
 import logging
 import re
 
-import binascii
+import matplotlib as plt
+import numpy as np
 import pandas as pd
 from bokeh.colors import RGB
 from bokeh.transform import factor_cmap
-import matplotlib as plt
-import numpy as np
 from matplotlib import colors
 
 PUBMED_ARTICLE_BASE_URL = 'https://www.ncbi.nlm.nih.gov/pubmed/?term='

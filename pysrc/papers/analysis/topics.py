@@ -1,7 +1,8 @@
 import logging
-import numpy as np
 from collections import Counter
 from itertools import chain
+
+import numpy as np
 from scipy.cluster.hierarchy import linkage, cophenet
 from scipy.spatial.distance import pdist
 from sklearn.cluster import AgglomerativeClustering

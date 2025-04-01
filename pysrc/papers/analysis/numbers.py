@@ -1,7 +1,8 @@
 import logging
 import math
-import pandas as pd
 import re
+
+import pandas as pd
 import spacy
 from nltk.stem import WordNetLemmatizer
 from spacy import displacy

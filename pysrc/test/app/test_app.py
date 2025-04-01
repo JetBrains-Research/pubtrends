@@ -1,6 +1,6 @@
-import unittest
 import re
 import time
+import unittest
 from urllib.parse import quote
 
 # Workaround for celery test worker and missing task, will be fixed in Celery 5+

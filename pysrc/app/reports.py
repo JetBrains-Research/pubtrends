@@ -4,8 +4,9 @@ import json
 import logging
 import os
 import re
-from celery.result import AsyncResult
 from threading import Lock
+
+from celery.result import AsyncResult
 
 from pysrc.papers.data import AnalysisData
 from pysrc.papers.utils import SORT_MOST_CITED

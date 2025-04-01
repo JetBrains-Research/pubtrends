@@ -3,15 +3,15 @@ import json
 import logging
 import os
 import random
-import requests
 import tempfile
-import time
+from threading import Lock
+from urllib.parse import quote
+
+import requests
 from celery.result import AsyncResult
 from flask import Flask, url_for, redirect, render_template, request, render_template_string, \
     send_from_directory, send_file
 from flask_caching import Cache
-from threading import Lock
-from urllib.parse import quote
 
 from pysrc.app.admin.admin import configure_admin_functions
 from pysrc.app.messages import SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, \

@@ -1,3 +1,4 @@
+import os
 from multiprocessing import Lock
 
 from flask import abort, url_for, request, redirect
@@ -6,7 +7,6 @@ from flask_security import Security, SQLAlchemyUserDatastore, \
     UserMixin, RoleMixin, current_user
 from flask_security.utils import hash_password
 from flask_sqlalchemy import SQLAlchemy
-import os
 
 from pysrc.app.admin.celery import prepare_celery_data
 from pysrc.app.admin.feedback import prepare_feedback_data

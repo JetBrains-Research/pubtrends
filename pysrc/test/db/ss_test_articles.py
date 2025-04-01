@@ -1,4 +1,3 @@
-import networkx as nx
 import pandas as pd
 
 from pysrc.papers.db.ss_article import SemanticScholarArticle

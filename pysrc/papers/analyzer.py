@@ -1,14 +1,11 @@
-import json
 import logging
 
 import numpy as np
-import pandas as pd
-from io import StringIO
-from networkx.readwrite import json_graph
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
 
+from pysrc.config import *
 from pysrc.papers.analysis.citations import find_top_cited_papers, find_max_gain_papers, \
     find_max_relative_gain_papers, build_cit_stats_df, merge_citation_stats, build_cocit_grouped_df
 from pysrc.papers.analysis.graph import build_papers_graph, sparse_graph, add_artificial_text_similarities_edges
@@ -16,8 +13,7 @@ from pysrc.papers.analysis.metadata import popular_authors, popular_journals
 from pysrc.papers.analysis.node2vec import node2vec
 from pysrc.papers.analysis.numbers import extract_numbers
 from pysrc.papers.analysis.text import texts_embeddings, vectorize_corpus, tokens_embeddings
-from pysrc.papers.analysis.topics import get_topics_description, cluster_and_sort
-from pysrc.config import *
+from pysrc.papers.analysis.topics import cluster_and_sort
 from pysrc.papers.data import AnalysisData
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError

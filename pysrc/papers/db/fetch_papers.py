@@ -1,6 +1,7 @@
 # Small example how to load papers information from the database
-import psycopg2
 import pandas as pd
+import psycopg2
+
 # TODO fill
 host='localhost'
 port='port'

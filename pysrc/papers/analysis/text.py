@@ -7,14 +7,11 @@ from threading import Lock
 import nltk
 import numpy as np
 import requests
-import re
 from gensim.models import Word2Vec
-from itertools import chain
 from nltk import word_tokenize, WordNetLemmatizer, SnowballStemmer
 from nltk.corpus import wordnet, stopwords
 from nltk.probability import FreqDist
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
-from threading import Lock
 
 from pysrc.config import EMBEDDINGS_VECTOR_LENGTH, WORD2VEC_WINDOW, WORD2VEC_EPOCHS
 

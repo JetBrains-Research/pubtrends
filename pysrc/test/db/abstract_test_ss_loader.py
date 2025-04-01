@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod
+
 from pandas.testing import assert_frame_equal
 from parameterized import parameterized
 

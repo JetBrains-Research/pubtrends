@@ -1,11 +1,12 @@
-import pandas as pd
 import unittest
 from dataclasses import dataclass
+
+import pandas as pd
 from pandas.testing import assert_frame_equal
 
+from pysrc.config import *
 from pysrc.papers.analysis.metadata import popular_authors, popular_journals, split_df_list
 from pysrc.papers.analyzer import PapersAnalyzer
-from pysrc.config import *
 from pysrc.test.mock_loaders import MockLoader
 
 

@@ -5,7 +5,6 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 from more_itertools import unique_everseen
-from scipy.spatial import distance
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
 from pysrc.papers.utils import cut_authors_list, rgb2hex

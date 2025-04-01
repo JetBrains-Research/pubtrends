@@ -4,10 +4,10 @@ import numpy as np
 from pandas.testing import assert_frame_equal
 from parameterized import parameterized
 
+from pysrc.papers.utils import SORT_MOST_RECENT, SORT_MOST_CITED
 from pysrc.test.db.pm_test_articles import REQUIRED_ARTICLES, EXPECTED_PUB_DF, INNER_CITATIONS, PART_OF_ARTICLES, \
     EXPECTED_PUB_DF_GIVEN_IDS, EXPANDED_IDS_DF, EXPANDED_TOP_CITED_5_DF, \
     EXPECTED_CIT_STATS_DF, EXPECTED_CIT_DF, EXPECTED_COCIT_DF
-from pysrc.papers.utils import SORT_MOST_RECENT, SORT_MOST_CITED
 
 
 # Don't make it subclass of unittest.TestCase to avoid tests execution

@@ -1,16 +1,12 @@
 import json
 import logging
-import networkx as nx
-import numpy as np
-import pandas as pd
 from itertools import chain
-from more_itertools import unique_everseen
+
 from scipy.spatial import distance
-from statsmodels.nonparametric.smoothers_lowess import lowess
 
 from pysrc.app.reports import preprocess_string
-from pysrc.papers.analysis.text import get_frequent_tokens
 from pysrc.config import PubtrendsConfig
+from pysrc.papers.analysis.text import get_frequent_tokens
 from pysrc.papers.analysis.topics import get_topics_description
 from pysrc.papers.data import AnalysisData
 from pysrc.papers.db.loaders import Loaders

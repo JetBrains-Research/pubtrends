@@ -1,5 +1,6 @@
-import networkx as nx
 import unittest
+
+import networkx as nx
 
 from pysrc.papers.analysis.node2vec import _precompute, _random_walks, node2vec, NODE2VEC_P, NODE2VEC_Q
 
