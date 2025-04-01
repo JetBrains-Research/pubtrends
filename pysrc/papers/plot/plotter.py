@@ -250,7 +250,7 @@ class Plotter:
         sums = self.data.author_stats['sum']
         if self.data.papers_graph.nodes():
             topics = self.data.author_stats.apply(
-                lambda row: self._to_colored_circle(row['comp'], row['counts'], row['sum']), axis=1)
+                lambda row: self._to_colored_square(row['comp'], row['counts'], row['sum']), axis=1)
         else:
             topics = [' '] * len(self.data.author_stats)  # Ignore topics
         return list(zip([trim(a, MAX_AUTHOR_LENGTH) for a in authors], sums, topics))
@@ -261,7 +261,7 @@ class Plotter:
         sums = self.data.journal_stats['sum']
         if self.data.papers_graph.nodes():
             topics = self.data.journal_stats.apply(
-                lambda row: self._to_colored_circle(row['comp'], row['counts'], row['sum']), axis=1)
+                lambda row: self._to_colored_square(row['comp'], row['counts'], row['sum']), axis=1)
         else:
             topics = [' '] * len(self.data.journal_stats)  # Ignore topics
         return list(zip([trim(j, MAX_JOURNAL_LENGTH) for j in journals], sums, topics))
@@ -280,10 +280,10 @@ class Plotter:
             self.config.topic_description_words, topics_tags=self.topics_description
         )
 
-    def _to_colored_circle(self, components, counts, sum, top=3):
+    def _to_colored_square(self, components, counts, sum, top=3):
         # html code to generate circles corresponding to the most popular topics
         return ' '.join([
-            f'<a class="fas fa-circle" style="color:{self.comp_colors[comp]}" href="#topic-{comp + 1}"></a>'
+            f'<a class="fas fa-square" style="color:{self.comp_colors[comp]}" href="#topic-{comp + 1}"></a>'
             f'<span class="bk" style="color:black">{int(count / sum * 100)}%</span>'
             for comp, count in zip(components[:top], counts[:top])
         ])
@@ -439,11 +439,11 @@ class Plotter:
         xs = [cos(d) * d_radius * (dendrogram_len - 1) for _, d in leaves_degrees.items()]
         ys = [sin(d) * d_radius * (dendrogram_len - 1) for _, d in leaves_degrees.items()]
         # noinspection PyTypeChecker
-        sizes = [20 + int(min(10, log(comp_sizes[v]))) for v, _ in leaves_degrees.items()]
+        sizes = [8 + int(min(5, log(comp_sizes[v]))) for v, _ in leaves_degrees.items()]
         comps = [v + 1 for v, _ in leaves_degrees.items()]
         colors = [topics_colors[v] for v, _ in leaves_degrees.items()]
         ds = ColumnDataSource(data=dict(x=xs, y=ys, size=sizes, comps=comps, color=colors))
-        p.scatter(x='x', y='y', size='size', fill_color='color', line_color='black', source=ds)
+        p.rect(x='x', y='y', width='size', height='size', fill_color='color', line_color='black', source=ds)
 
         # Topics labels
         p.text(x=[cos(d) * d_radius * (dendrogram_len - 1) for _, d in leaves_degrees.items()],
