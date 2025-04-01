@@ -1,21 +1,19 @@
-import holoviews as hv
-import json
 import logging
+from collections import Counter
+from math import fabs, log, sin, cos, pi
+from string import Template
+
+import holoviews as hv
 import numpy as np
-import pandas as pd
 from bokeh.embed import components
 from bokeh.models import ColumnDataSource, CustomJS, LabelSet
-from bokeh.models import GraphRenderer, StaticLayoutProvider, Circle, HoverTool, MultiLine
+from bokeh.models import GraphRenderer, StaticLayoutProvider, Circle, HoverTool, MultiLine, Label, Rect
 from bokeh.models import NumeralTickFormatter
 from bokeh.models.graphs import NodesAndLinkedEdges
 from bokeh.plotting import figure
-from collections import Counter
 from holoviews import opts
-from itertools import chain
-from math import fabs, log, sin, cos, pi
 from matplotlib import pyplot as plt
 from sklearn.preprocessing import minmax_scale
-from string import Template
 from wordcloud import WordCloud
 
 from pysrc.config import PAPERS_PLOT_WIDTH, WORD_CLOUD_WIDTH, WORD_CLOUD_KEYWORDS, WORD_CLOUD_HEIGHT, \
@@ -633,7 +631,8 @@ class Plotter:
             hover_tags.append(("Topic tags", '@topic_tags'))
         if topics_meshs is not None:
             hover_tags.append(("Topic Mesh tags", '@topic_meshs'))
-        p.add_tools(HoverTool(tooltips=Plotter._paper_html_tooltips(source, hover_tags, idname='pid')))
+        p.add_tools(HoverTool(tooltips=Plotter._paper_html_tooltips(source, hover_tags, idname='pid'),
+                              renderers=[graph]))
 
         if add_callback:
             p.js_on_event('tap', Plotter._paper_callback(graph.node_renderer.data_source, idname='pid'))
@@ -665,6 +664,20 @@ class Plotter:
                           text_font_size='13px',
                           background_fill_alpha=.9)
         p.renderers.append(labels)
+
+        # Add topic tags in the top left corner
+        if topics_tags is not None:
+            for i, c in enumerate(sorted(set(comps))):
+                p.rect(x=-3, y=103 - i * 2, width=1, height=2, fill_color=palette[c], line_color=None)
+                p.add_layout(Label(
+                    x=-2, y=102 - i * 2,
+                    text=f"#{c + 1}: {', '.join(t for t, _ in topics_tags[c][:5])}",
+                    text_font_size='11px',
+                    text_align="left",
+                    background_fill_color="white",
+                    background_fill_alpha=0.7,
+                ))
+
         Plotter.remove_wheel_zoom_tool(p)
         return p
 
@@ -721,4 +734,3 @@ class Plotter:
     @staticmethod
     def remove_wheel_zoom_tool(p):
         p.tools = [tool for tool in p.tools if tool.__class__.__name__ != 'WheelZoomTool']
-
