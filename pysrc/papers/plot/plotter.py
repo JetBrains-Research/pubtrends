@@ -7,7 +7,7 @@ import holoviews as hv
 import numpy as np
 from bokeh.embed import components
 from bokeh.models import ColumnDataSource, CustomJS, LabelSet
-from bokeh.models import GraphRenderer, StaticLayoutProvider, Circle, HoverTool, MultiLine, Label, Rect
+from bokeh.models import GraphRenderer, StaticLayoutProvider, Circle, HoverTool, MultiLine, Label
 from bokeh.models import NumeralTickFormatter
 from bokeh.models.graphs import NodesAndLinkedEdges
 from bokeh.plotting import figure

@@ -20,7 +20,7 @@ def preprocess_search_query_for_postgres(query, min_search_words):
     # Escaping
     query = re.sub("[\^&'|<>=]+", '', query)
     # Whitespaces normalization, see #215
-    processed = re.sub('[ ]{2,}|\t+', ' ', query.strip())
+    processed = re.sub('\s{2,}', ' ', query.strip())
     query = query.strip(', ')  # Strip trailing spaces and commas
     if ',' in query:
         qor = ''

@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 def expand_ids(
         loader,
-        pid,
+        search_ids,
         limit,
         expand_steps,
         max_expand,
@@ -21,7 +21,7 @@ def expand_ids(
 ):
     """
     Expands list of paper ids to the limit, filtering by citations counts and keywords
-    :param pid: Initial id to expand
+    :param search_ids: Initial ids to expand
     :param limit: Limit of expansion
     :param expand_steps: Number of expand steps
     :param loader: DB loader
@@ -33,10 +33,12 @@ def expand_ids(
     :param single_paper_impact: Impact of single paper when analyzing citations and mesh terms for single paper
     :return:
     """
-    logger.debug(f'Expanding paper {pid} with limit={limit} max_expand={max_expand}')
+    logger.debug(f'Expanding papers {", ".join(search_ids)} with limit={limit} max_expand={max_expand}')
     # Fetch references at first, but in some cases paper may have empty references
     logger.debug('Loading direct references for paper analysis')
-    ids = [pid] + loader.load_references(pid, limit)
+    ids = search_ids.copy()
+    for pid in search_ids:
+        ids.extend(loader.load_references(pid, limit))
     logger.debug(f'Loaded {len(ids) - 1} references')
 
     if len(ids) > 1:
@@ -56,8 +58,8 @@ def expand_ids(
         ids = _expand_ids_step(
             loader, ids, limit, max_expand, cit_mean, cit_std, citations_sigma, mesh_similarity_threshold,
             mesh_stems, mesh_counter)
-    # Keep original pid first
-    return [pid] + [x for x in ids if x != pid]
+    # Keep original start ids first
+    return search_ids + [x for x in ids if x not in search_ids][:limit - len(search_ids)]
 
 
 def _expand_ids_step(

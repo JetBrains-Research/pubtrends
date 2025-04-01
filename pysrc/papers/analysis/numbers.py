@@ -45,7 +45,7 @@ def _preprocess_text(text):
     # Replace non-ascii or punctuation with space
     text = re.sub('[^a-zA-Z0-9-+.,:!?]+', ' ', text, flags=re.IGNORECASE)
     # Whitespaces normalization, see #215
-    text = re.sub(r'[ ]{2,}', ' ', text.strip())
+    text = re.sub('\s{2,}', ' ', text.strip())
     # Convert textual numbers to digits (three -> 3)
     text = alpha2digit(text, 'en', relaxed=True)
     # Convect 1st, 2nd, 3rd, 4th

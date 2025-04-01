@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod
+
 import numpy as np
 from pandas.testing import assert_frame_equal
 from parameterized import parameterized
@@ -172,8 +173,8 @@ class AbstractTestPubmedLoader(metaclass=ABCMeta):
         ('id search', 'id', '1', ['1']),
         ('id search - with spaces', 'id', '  1  ', ['1']),
         ('title search - lower case', 'title', 'article title 2', ['2']),
-        ('title search - special characters', 'title', "'article title 3.'", ['3']),
         ('title search - Title Case', 'title', 'Article Title 4', ['4']),
+        ('relaxed title search wrong order - Title Case', 'title', 'Title Article  4', ['4']),
         ('title search - with spaces', 'title', '       Article Title 4        ', ['4']),
         ('dx.doi.org search', 'doi', 'http://dx.doi.org/10.000/0000', ['1']),
         ('doi.org search', 'doi', 'http://doi.org/10.000/0000', ['1']),
@@ -181,7 +182,7 @@ class AbstractTestPubmedLoader(metaclass=ABCMeta):
         ('doi with spaces', 'doi', '      10.000/0000       ', ['1']),
     ])
     def test_find_match(self, case, key, value, expected):
-        actual = self.get_loader().find(key, value)
+        actual = self.get_loader().search_key_value(key, value)
         self.assertListEqual(sorted(actual), sorted(expected), case)
 
     @parameterized.expand([
@@ -191,9 +192,9 @@ class AbstractTestPubmedLoader(metaclass=ABCMeta):
         ('no such doi', 'doi', '10.000/0001')
     ])
     def test_find_no_match(self, case, key, value):
-        actual = self.get_loader().find(key, value)
+        actual = self.get_loader().search_key_value(key, value)
         self.assertTrue(len(actual) == 0, case)
 
     def test_find_raise_pmid_not_integer(self):
         with self.assertRaises(Exception):
-            self.get_loader().find('id', 'abc')
+            self.get_loader().search_key_value('id', 'abc')

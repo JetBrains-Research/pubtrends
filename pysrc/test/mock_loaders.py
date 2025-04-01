@@ -60,7 +60,13 @@ class MockLoader(Loader):
     def last_update(self):
         return None
 
-    def find(self, key, value):
+    def search_id(self, pid):
+        raise Exception('Not implemented')
+
+    def search_doi(self, doi):
+        raise Exception('Not implemented')
+
+    def search_title(self, title):
         raise Exception('Not implemented')
 
     def expand(self, ids, limit):
@@ -99,7 +105,13 @@ class MockLoaderSingle(Loader):
     def last_update(self):
         return None
 
-    def find(self, key, value):
+    def search_id(self, pid):
+        raise Exception('Not implemented')
+
+    def search_doi(self, doi):
+        raise Exception('Not implemented')
+
+    def search_title(self, title):
         raise Exception('Not implemented')
 
     def expand(self, ids, limit):
@@ -146,7 +158,13 @@ class MockLoaderEmpty(Loader):
     def search(self, terms, limit=None, sort=None, noreviews=True):
         return []
 
-    def find(self, key, value):
+    def search_id(self, pid):
+        raise Exception('Not implemented')
+
+    def search_doi(self, doi):
+        raise Exception('Not implemented')
+
+    def search_title(self, title):
         raise Exception('Not implemented')
 
     def load_publications(self, ids):

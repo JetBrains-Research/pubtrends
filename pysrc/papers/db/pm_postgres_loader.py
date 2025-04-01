@@ -30,43 +30,54 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
             return datetime.fromtimestamp(os.path.getmtime(self.UPDATE_LAST_PATH)).strftime('%Y-%m-%d %H:%M:%S')
         return None
 
-    def find(self, key, value):
+    def search_id(self, pid):
         self.check_connection()
-        value = value.strip()
-        value = preprocess_quotes(value)
-
-        if key == 'id':
-            key = 'pmid'
-
-            try:
-                value = int(value)
-            except ValueError:
-                raise Exception("PMID should be an integer")
-
-
-        # Preprocess DOI
-        if key == 'doi':
-            value = preprocess_doi(value)
-
-        # Use dedicated text index to search title.
-        if key == 'title':
-            value = re.sub('\.$', '', value)
-            query = f'''
-                SELECT pmid
-                FROM to_tsquery(\'''{value}\''') query, PMPublications P
-                WHERE tsv @@ query AND LOWER(title) = LOWER('{value}');
-            '''
-        else:
-            query = f'''
+        try:
+            pid = int(pid)
+        except ValueError:
+            raise Exception("PMID should be an integer")
+        query = f'''
                 SELECT pmid
                 FROM PMPublications P
-                WHERE {key} = {repr(value)};
+                WHERE pmid = {pid};
             '''
         logger.debug(f'find query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
+        return list(df['pmid'].astype(str))
 
+
+    def search_doi(self, doi):
+        self.check_connection()
+        doi = preprocess_doi(doi)
+        doi = preprocess_quotes(doi)
+
+        query = f'''
+                SELECT pmid
+                FROM PMPublications P
+                WHERE doi = {repr(doi)};
+            '''
+        logger.debug(f'find query: {query[:1000]}')
+        with self.postgres_connection.cursor() as cursor:
+            cursor.execute(query)
+            df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
+        return list(df['pmid'].astype(str))
+
+    def search_title(self, title):
+        self.check_connection()
+        title = title.strip()
+        title = re.sub('\.$', '', title)
+        title = preprocess_quotes(title)
+        query = f'''
+                SELECT pmid
+                FROM to_tsquery(\'''{title}\''') query, PMPublications P
+                WHERE tsv @@ query AND TRIM(TRAILING '.' FROM LOWER(title)) = LOWER('{title}');
+            '''
+        logger.debug(f'find query: {query[:1000]}')
+        with self.postgres_connection.cursor() as cursor:
+            cursor.execute(query)
+            df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
         return list(df['pmid'].astype(str))
 
     def search(self, query, limit=None, sort=None, noreviews=True):
@@ -86,6 +97,8 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
             order = f'{by_citations}, ts_rank_cd(P.tsv, query, 2|4) DESC, {by_year}'
         elif sort == SORT_MOST_RECENT:
             order = f'{by_year}, ts_rank_cd(P.tsv, query, 2|4) DESC, {by_citations}'
+        elif sort is None:
+            order = 'ts_rank_cd(P.tsv, query, 2|4) DESC'
         else:
             raise ValueError(f'Illegal sort method: {sort}')
 

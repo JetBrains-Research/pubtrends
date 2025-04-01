@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 import logging
 import os
@@ -8,7 +9,7 @@ import pandas as pd
 from pysrc.papers.db.loader import Loader
 from pysrc.papers.db.postgres_connector import PostgresConnector
 from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres, \
-    process_cocitations_postgres, no_stemming_filter_for_phrases
+    process_cocitations_postgres, no_stemming_filter_for_phrases, preprocess_quotes
 from pysrc.papers.utils import crc32, SORT_MOST_CITED, SORT_MOST_RECENT, preprocess_doi
 
 logger = logging.getLogger(__name__)
@@ -30,38 +31,52 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
             return datetime.fromtimestamp(os.path.getmtime(self.UPDATE_STATS_PATH)).strftime('%Y-%m-%d %H:%M:%S')
         return None
 
-    def find(self, key, value):
+    def search_id(self, pid):
         self.check_connection()
-        value = value.strip()
-
-        # Preprocess DOI
-        if key == 'doi':
-            value = preprocess_doi(value)
-
-        if key == 'id':
-            key = 'ssid'
-
-        # Use dedicated text index to search title.
-        if key == 'title':
-            value = value.rstrip('.')   # do not require trailing dot
-            query = f'''
-                SELECT ssid
-                FROM to_tsquery(\'''{value}\''') query, SSPublications P
-                WHERE tsv @@ query AND TRIM(TRAILING '.' FROM LOWER(title)) = LOWER('{value}');
-            '''
-        else:
-            query = f'''
+        pid = preprocess_quotes(pid)
+        query = f'''
                 SELECT ssid
                 FROM SSPublications P
-                WHERE {key} = {repr(value)};
+                WHERE ssid = {repr(pid)};
             '''
-
         logger.debug(f'find query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
             cursor.execute(query)
-            df = pd.DataFrame(cursor.fetchall(), columns=['id'], dtype=object)
+            df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
+        return list(df['pmid'].astype(str))
 
-        return list(df['id'].astype(str))
+
+    def search_doi(self, doi):
+        self.check_connection()
+        doi = preprocess_doi(doi)
+        doi = preprocess_quotes(doi)
+
+        query = f'''
+                SELECT ssid
+                FROM SSPublications P
+                WHERE doi = {repr(doi)};
+            '''
+        logger.debug(f'find query: {query[:1000]}')
+        with self.postgres_connection.cursor() as cursor:
+            cursor.execute(query)
+            df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
+        return list(df['pmid'].astype(str))
+
+    def search_title(self, title):
+        self.check_connection()
+        title = title.strip()
+        title = re.sub('\.$', '', title)
+        title = preprocess_quotes(title)
+        query = f'''
+                SELECT ssid
+                FROM to_tsquery(\'''{title}\''') query, SSPublications P
+                WHERE tsv @@ query AND TRIM(TRAILING '.' FROM LOWER(title)) = LOWER('{title}');
+            '''
+        logger.debug(f'find query: {query[:1000]}')
+        with self.postgres_connection.cursor() as cursor:
+            cursor.execute(query)
+            df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
+        return list(df['pmid'].astype(str))
 
     def search(self, query, limit=None, sort=None, noreviews=True):
         self.check_connection()
@@ -80,6 +95,8 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
             order = f'{by_citations}, ts_rank_cd(P.tsv, query, 2|4) DESC, {by_year}'
         elif sort == SORT_MOST_RECENT:
             order = f'{by_year}, ts_rank_cd(P.tsv, query, 2|4) DESC, {by_citations}'
+        elif sort is None:
+            order = 'ts_rank_cd(P.tsv, query, 2|4) DESC'
         else:
             raise ValueError(f'Illegal sort method: {sort}')
 

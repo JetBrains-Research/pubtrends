@@ -1,7 +1,9 @@
 import json
-import numpy as np
+import re
 from abc import abstractmethod, ABCMeta
 
+from pysrc.papers.db.postgres_utils import preprocess_quotes
+from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.utils import extract_authors, reorder_publications
 
 
@@ -9,10 +11,37 @@ class Loader(metaclass=ABCMeta):
     # Max years of publications SPAN to prevent papers from 1860 to spoil all visualizations
     MAX_YEARS_SPAN = 50
 
+    def search_key_value(self, key, value):
+        if key == 'id':
+            result = self.search_id(value)
+        elif key == 'doi':
+            result = self.search_doi(value)
+        elif key == 'title':
+            result = self.search_title(value)
+            if len(result) == 0:
+                result = self.search_title_relaxed(value)
+        else:
+            raise SearchError(f'Unknown search key: {key}')
+        return result
+
     @abstractmethod
-    def find(self, key, value):
+    def search_id(self, pid):
         """
-        Searches single or multiple paper(s) for give search key, value.
+        Searches publications by paper id
+        :return: list of ids, i.e. list(String).
+        """
+
+    @abstractmethod
+    def search_doi(self, doi):
+        """
+        Searches publications by doi
+        :return: list of ids, i.e. list(String).
+        """
+
+    @abstractmethod
+    def search_title(self, title):
+        """
+        Searches publications by paper title
         :return: list of ids, i.e. list(String).
         """
 
@@ -78,6 +107,28 @@ class Loader(metaclass=ABCMeta):
         Expands list of ids after one or BFS step along citations graph.
         :return: dataframe[id(String), total]
         """
+
+    def search_title_relaxed(self, title):
+        """Fallback to regular search and check title manually"""
+        result = []
+        query = preprocess_quotes(title)
+        # Process apostrophe 's
+        query = re.sub("'s$", '', query)
+        query = re.sub("'s\\s", ' ', query)
+        # Whitespaces normalization, see #215
+        query = re.sub('\s{2,}', ' ', query.strip())
+        # Ignore non-latin letters
+        query = ' '.join(w for w in query.lower().split(' ') if re.match('^[a-z0-9\-+]+$', w))
+        try:
+            search_ids = self.search(query, limit=20, sort=None, noreviews=False)
+            if search_ids:
+                df = self.load_publications(search_ids)
+                for pid, ptitle in zip(df['id'], df['title']):
+                    if all(w in ptitle.lower() for w in query.lower().split(' ')):
+                        result.append(pid)
+        except Exception as e:
+            print(e)
+        return result
 
     @staticmethod
     def process_publications_dataframe(ids, pub_df):

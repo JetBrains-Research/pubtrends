@@ -93,7 +93,7 @@ class AbstractTestSemanticScholarLoader(metaclass=ABCMeta):
         ('doi with spaces', 'doi', '     10.000/0000      ', ['5451b1ef43678d473575bdfa7016d024146f2b53']),
     ])
     def test_find_match(self, case, key, value, expected):
-        actual = self.get_loader().find(key, value)
+        actual = self.get_loader().search_key_value(key, value)
         self.assertListEqual(sorted(actual), sorted(expected), case)
 
     @parameterized.expand([
@@ -102,5 +102,5 @@ class AbstractTestSemanticScholarLoader(metaclass=ABCMeta):
         ('no such doi', 'doi', '10.000/0001')
     ])
     def test_find_no_match(self, case, key, value):
-        actual = self.get_loader().find(key, value)
+        actual = self.get_loader().search_key_value(key, value)
         self.assertTrue(len(actual) == 0, case)

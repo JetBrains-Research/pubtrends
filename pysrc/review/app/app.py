@@ -1,5 +1,6 @@
 import json
 import logging
+
 from celery.result import AsyncResult
 from flask import request, redirect, url_for, render_template_string, render_template
 
