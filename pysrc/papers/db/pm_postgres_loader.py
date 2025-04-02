@@ -101,22 +101,26 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         # 4 divides the rank by the mean harmonic distance between extents (this is implemented only by ts_rank_cd)
         # See https://www.postgresql.org/docs/12/textsearch-controls.html#TEXTSEARCH-RANKING
         if sort == SORT_MOST_CITED:
-            order = f'{by_citations}, ts_rank_cd(P.tsv, query, 2|4) DESC, {by_year}'
+            order = f'{by_citations}, ts_rank_cd(tsv, query, 2|4) DESC, {by_year}'
         elif sort == SORT_MOST_RECENT:
-            order = f'{by_year}, ts_rank_cd(P.tsv, query, 2|4) DESC, {by_citations}'
+            order = f'{by_year}, ts_rank_cd(tsv, query, 2|4) DESC, {by_citations}'
         elif sort is None:
-            order = 'ts_rank_cd(P.tsv, query, 2|4) DESC'
+            order = 'ts_rank_cd(tsv, query, 2|4) DESC'
         else:
             raise ValueError(f'Illegal sort method: {sort}')
 
         query = f'''
-            SELECT P.pmid 
-            FROM to_tsquery('{query_str}') query, 
-            PMPublications P
+            WITH X AS
+                (SELECT P.pmid as pmid, P.tsv as tsv, query, P.year as year
+                FROM to_tsquery('{query_str}') query, 
+                PMPublications P
+                WHERE P.tsv @@ query {noreviews_filter} {exact_phrase_filter}
+                LIMIT {self.config.max_number_of_papers})
+            SELECT X.pmid as pmid
+            FROM X
             LEFT JOIN matview_pmcitations C 
-            ON P.pmid = C.pmid
-            WHERE P.tsv @@ query {noreviews_filter} {exact_phrase_filter}
-            ORDER BY {order}, P.pmid
+            ON X.pmid = C.pmid
+            ORDER BY {order}, X.pmid
             LIMIT {limit};
             '''
         logger.debug(f'search query: {query[:1000]}')

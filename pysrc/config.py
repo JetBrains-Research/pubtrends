@@ -136,6 +136,7 @@ class PubtrendsConfig:
 
         self.save_to_files_enabled = params.getboolean('save_to_files_enabled')
         self.min_search_words = params.getint('min_search_words') if not test else 0
+        self.max_number_of_papers = params.getint('max_number_of_papers')
         self.max_number_of_citations = params.getint('max_number_of_citations')
         self.max_number_of_cocitations = params.getint('max_number_of_cocitations')
         self.max_number_of_bibliographic_coupling = params.getint('max_number_of_bibliographic_coupling')
