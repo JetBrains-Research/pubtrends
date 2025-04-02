@@ -157,7 +157,6 @@ class PubtrendsConfig:
         self.popular_journals = params.getint('popular_journals')
         self.popular_authors = params.getint('popular_authors')
 
-        self.paper_expand_start_max = params.getint('paper_expand_start_max')
         self.paper_expands_steps = params.getint('paper_expands_steps')
         self.paper_expand_limit = params.getint('paper_expand_limit')
 

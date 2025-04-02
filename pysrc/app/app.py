@@ -35,8 +35,8 @@ else:
 
 app = Flask(__name__)
 
-if not app.config['TESTING'] and not app.config['DEBUG']:
-    app.config['CACHE_TYPE'] = 'RedisCache'
+# if not app.config['TESTING'] and not app.config['DEBUG']:
+#     app.config['CACHE_TYPE'] = 'RedisCache'
 app.config['CACHE_REDIS_URL'] = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379')
 app.config['CACHE_DEFAULT_TIMEOUT'] = 600  # 10 minutes
 
@@ -130,6 +130,8 @@ def index():
                            default_limit=PUBTRENDS_CONFIG.show_max_articles_default_value,
                            topics_variants=PUBTRENDS_CONFIG.show_topics_options,
                            default_topics=PUBTRENDS_CONFIG.show_topics_default_value,
+                           expand_variants = range(PUBTRENDS_CONFIG.paper_expands_steps + 1),
+                           default_expand = PUBTRENDS_CONFIG.paper_expands_steps,
                            min_words_message=min_words_message,
                            max_papers=PUBTRENDS_CONFIG.max_number_of_articles,
                            pm_enabled=PUBTRENDS_CONFIG.pm_enabled,
@@ -198,10 +200,15 @@ def search_paper():
             value = data.get('value')
             limit = data.get('limit')
             topics = data.get('topics')
-            job = analyze_search_paper.delay(source, None, key, value, limit, topics, test=app.config['TESTING'])
-            return redirect(url_for('.process', query=trim(f'Paper {key}={value}', MAX_QUERY_LENGTH),
+            expand = data.get('expand')
+            noreviews = request.args.get('noreviews') == 'on'  # Include reviews in the initial search phase
+            job = analyze_search_paper.delay(source, None, key, value, expand, limit, noreviews, topics,
+                                             test=app.config['TESTING'])
+            return redirect(url_for('.process', query=trim(f'Papers {key}={value}', MAX_QUERY_LENGTH),
                                     analysis_type=PAPER_ANALYSIS_TYPE,
-                                    key=key, value=value, source=source, limit=limit, topics=topics, jobid=job.id))
+                                    key=key, value=value,
+                                    source=source, expand=expand, limit=limit, noreviews=noreviews, topics=topics,
+                                    jobid=job.id))
         logger.error(f'/search_paper error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception as e:
@@ -242,7 +249,15 @@ def process():
             key = request.args.get('key')
             value = request.args.get('value')
             limit = request.args.get('limit') or PUBTRENDS_CONFIG.show_max_articles_default_value
-            return render_template('process.html',
+            if ';' in value:
+                return render_template('process.html',
+                                       redirect_page='result',  # redirect in case of success
+                                       redirect_args=dict(source=source, jobid=jobid, sort='',
+                                                          query=quote(f'Papers {key}={value}'), limit=limit, topics=topics),
+                                       query=trim(query, MAX_QUERY_LENGTH), source=source,
+                                       jobid=jobid, version=VERSION)
+            else:
+                return render_template('process.html',
                                    redirect_page='paper',  # redirect in case of success
                                    redirect_args=dict(source=source, jobid=jobid, sort='',
                                                       key=key, value=value, limit=limit, topics=topics),

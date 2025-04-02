@@ -4,7 +4,7 @@ from abc import abstractmethod, ABCMeta
 
 from pysrc.papers.db.postgres_utils import preprocess_quotes
 from pysrc.papers.db.search_error import SearchError
-from pysrc.papers.utils import extract_authors, reorder_publications
+from pysrc.papers.utils import extract_authors, reorder_publications, preprocess_doi
 
 
 class Loader(metaclass=ABCMeta):
@@ -18,28 +18,26 @@ class Loader(metaclass=ABCMeta):
             result = self.search_doi(value)
         elif key == 'title':
             result = self.search_title(value)
-            if len(result) == 0:
-                result = self.search_title_relaxed(value)
         else:
             raise SearchError(f'Unknown search key: {key}')
         return result
 
     @abstractmethod
-    def search_id(self, pid):
+    def search_id(self, pids):
         """
         Searches publications by paper id
         :return: list of ids, i.e. list(String).
         """
 
     @abstractmethod
-    def search_doi(self, doi):
+    def search_doi(self, dois):
         """
         Searches publications by doi
         :return: list of ids, i.e. list(String).
         """
 
     @abstractmethod
-    def search_title(self, title):
+    def search_title(self, titles):
         """
         Searches publications by paper title
         :return: list of ids, i.e. list(String).
@@ -102,13 +100,34 @@ class Loader(metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def expand(self, ids, limit):
+    def expand(self, ids, limit, noreviews):
         """
         Expands list of ids after one or BFS step along citations graph.
         :return: dataframe[id(String), total]
         """
 
-    def search_title_relaxed(self, title):
+    @staticmethod
+    def dois_to_list(dois):
+        dois2search = []
+        for d in preprocess_quotes(dois).split(';'):
+            d = preprocess_doi(d)
+            if d.strip() != '':
+                dois2search.append(d.strip())
+        return dois2search
+
+    @staticmethod
+    def titles_to_list(titles):
+        titles2search = []
+        titles = titles.strip()
+        titles = re.sub('\.$', '', titles)
+        titles = preprocess_quotes(titles)
+        for t in titles.split(';'):
+            if t.strip() != '':
+                titles2search.append(t.strip())
+        return titles2search
+
+
+    def _search_title_relaxed(self, title):
         """Fallback to regular search and check title manually"""
         result = []
         query = preprocess_quotes(title)
@@ -120,7 +139,7 @@ class Loader(metaclass=ABCMeta):
         # Ignore non-latin letters
         query = ' '.join(w for w in query.lower().split(' ') if re.match('^[a-z0-9\-+]+$', w))
         try:
-            search_ids = self.search(query, limit=20, sort=None, noreviews=False)
+            search_ids = self.search(query, limit=10, sort=None, noreviews=False)
             if search_ids:
                 df = self.load_publications(search_ids)
                 for pid, ptitle in zip(df['id'], df['title']):

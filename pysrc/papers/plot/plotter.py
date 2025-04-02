@@ -588,12 +588,16 @@ class Plotter:
             minmax_scale([c / max(connections) * 0.5 for c in connections]) + 0.3
         graph.node_renderer.data_source.data['color'] = [palette[c] for c in comps]
         # Show search / shown ids
-        graph.node_renderer.data_source.data['line_width'] = \
-            [5.0 if search_ids is not None and p in search_ids else 3.0 if p == shown_pid else 1 for p in pids]
-        graph.node_renderer.data_source.data['alpha'] = \
-            [1.0 if search_ids is not None and p in search_ids or p == shown_pid else 0.7 for p in pids]
+        if search_ids is not None and len(search_ids) < len(df):
+            graph.node_renderer.data_source.data['line_width'] = \
+                [5.0 if search_ids is not None and p in search_ids else 3.0 if p == shown_pid else 1 for p in pids]
+            graph.node_renderer.data_source.data['alpha'] = \
+                [1.0 if search_ids is not None and p in search_ids or p == shown_pid else 0.7 for p in pids]
+        else:
+            graph.node_renderer.data_source.data['line_width'] = [1] * len(pids)
+            graph.node_renderer.data_source.data['alpha'] = [0.7] * len(pids)
 
-        # Edges
+    # Edges
         graph.edge_renderer.data_source.data = dict(start=[pim[u] for u, _ in gs.edges],
                                                     end=[pim[v] for _, v in gs.edges])
 

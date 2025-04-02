@@ -152,7 +152,7 @@ class AbstractTestPubmedLoader(metaclass=ABCMeta):
 
     def test_expand(self):
         ids_list = list(map(lambda article: str(article.pmid), PART_OF_ARTICLES))
-        actual = self.get_loader().expand(ids_list, 1000)
+        actual = self.get_loader().expand(ids_list, 1000, noreviews=False)
         actual = actual.sort_values(by=['total', 'id']).reset_index(drop=True)
         assert_frame_equal(
             EXPANDED_IDS_DF,
@@ -162,7 +162,8 @@ class AbstractTestPubmedLoader(metaclass=ABCMeta):
 
     def test_expand_limited(self):
         ids_list = list(map(lambda article: str(article.pmid), PART_OF_ARTICLES))
-        actual = self.get_loader().expand(ids_list, 5).sort_values(by=['total', 'id']).reset_index(drop=True)
+        actual = self.get_loader().expand(ids_list, 5, noreviews=False).sort_values(
+            by=['total', 'id']).reset_index(drop=True)
         assert_frame_equal(
             EXPANDED_TOP_CITED_5_DF,
             actual.sort_values(by=['total', 'id']).reset_index(drop=True),

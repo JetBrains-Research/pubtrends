@@ -45,7 +45,7 @@
                     advanced_noreviews_disable();
                     $("#pubmed-syntax-div").hide();
                     $("#pubmed-syntax").prop("checked", false);
-                    $("#search-input-field").prop("placeholder", "{{min_words_message}}Use double quotes for phrase search, join queries by commas.");
+                    $("#search-input-field").prop("placeholder", "{{min_words_message}}Use double quotes for phrase search, semicolon to join queries.");
                 } else {
                     advanced_noreviews_enable();
                     $("#pubmed-syntax-div").show();
@@ -234,7 +234,6 @@
                         <div class="row no-gutters align-items-center">
                             <div class="col-auto mr-2">
                                 <select id="paper-key" class="form-control" name="key" required>
-                                    <option disabled></option>
                                     <option value="title">Title</option>
                                     <option value="doi">DOI</option>
                                     <option value="id">ID</option>
@@ -243,7 +242,7 @@
                             <div class="col mr-2">
                                 <input class="form-control form-control-borderless" type="search"
                                        name="value" id="paper-input"
-                                       placeholder="Enter paper details"
+                                       placeholder="Enter paper(s) details, e.g. DOI, ID, or title. Use semicolon to separate multiple papers."
                                        aria-describedby="query-addon"
                                        autofocus
                                        required>
@@ -308,6 +307,28 @@
                                         {% endif %}
                                         {% endfor %}
                                     </select>
+                                </div>
+                            </div>
+                            <div class="row no-gutters align-items-center mt-2">
+                                <div class="col input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text" id="expand-addon">Expand steps</span>
+                                    </div>
+                                    <select class="form-control" aria-describedby="expand-addon" name="expand">
+                                        {% for expand in expand_variants %}
+                                        {% if expand == default_expand %}
+                                        <option selected>{{ expand }}</option>
+                                        {% else %}
+                                        <option>{{ expand }}</option>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col input-group ml-2 mt-2 mb-2 mr-2">
+                                    <label style="margin-top: auto;margin-bottom: auto">
+                                        <input type="checkbox" name="noreviews" checked>
+                                        <span class="checkmark">Prefer no reviews</span>
+                                    </label>
                                 </div>
                             </div>
                         </div>

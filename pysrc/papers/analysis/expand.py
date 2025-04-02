@@ -11,8 +11,9 @@ logger = logging.getLogger(__name__)
 def expand_ids(
         loader,
         search_ids,
-        limit,
         expand_steps,
+        limit,
+        noreviews,
         max_expand,
         citations_q_low,
         citations_q_high,
@@ -34,31 +35,44 @@ def expand_ids(
     :param single_paper_impact: Impact of single paper when analyzing citations and mesh terms for single paper
     :return:
     """
-    logger.debug(f'Expanding papers {", ".join(search_ids)} with limit={limit} max_expand={max_expand}')
-    # Fetch references at first, but in some cases paper may have empty references
-    logger.debug('Loading direct references for paper analysis')
-    ids = search_ids.copy()
-    for pid in search_ids:
-        ids.extend(loader.load_references(pid, limit))
-    logger.debug(f'Loaded {len(ids) - 1} references')
+    if expand_steps == 0:
+        return search_ids
 
-    if len(ids) > 1:
-        cit_mean, cit_std = estimate_citations(ids, True, loader,
+    logger.debug(f'Expanding papers {", ".join(search_ids)} with limit={limit} max_expand={max_expand}')
+    ids = search_ids.copy()
+    step = 1
+    if expand_steps >= 1:
+        # Fetch references at first, but in some cases paper may have empty references
+        logger.debug(f'Expanding step {step}/{expand_steps} direct references')
+        for pid in search_ids:
+            references = loader.load_references(pid, limit)
+            ids.extend(references)
+        logger.debug(f'Loaded {len(ids) - len(search_ids)} references')
+
+    if len(ids) > 0:
+        cit_mean, cit_std = estimate_citations(search_ids + ids, True, loader,
                                                citations_q_low, citations_q_high, single_paper_impact)
         if cit_mean is not None and cit_std is not None:
             mesh_stems, mesh_counter = estimate_mesh(ids, True, loader, single_paper_impact)
         else:
             mesh_stems, mesh_counter = None, None
+        step += 1
     else:
-        # Cannot estimate these characteristics by a single paper
+        # Cannot estimate these characteristics start papers only
         cit_mean, cit_std = None, None
         mesh_stems, mesh_counter = None, None
+        step = 1
 
-    for i in range(expand_steps):
-        logger.debug(f'Expanding step {i + 1}/{expand_steps}')
+    while step <= expand_steps:
+        logger.debug(f'Expanding step {step}/{expand_steps}')
+        if len(ids) >= limit:
+            break
         ids = _expand_ids_step(
-            loader, ids, limit, max_expand, cit_mean, cit_std, citations_sigma, mesh_similarity_threshold,
+            loader, ids, limit, noreviews, max_expand,
+            cit_mean, cit_std, citations_sigma, mesh_similarity_threshold,
             mesh_stems, mesh_counter)
+        step += 1
+
     # Keep original start ids first
     return search_ids + [x for x in ids if x not in search_ids][:limit - len(search_ids)]
 
@@ -67,6 +81,7 @@ def _expand_ids_step(
         loader,
         ids,
         limit,
+        noreview,
         max_expand,
         cit_mean,
         cit_std,
@@ -75,7 +90,7 @@ def _expand_ids_step(
         mesh_stems,
         mesh_counter
 ):
-    new_df = loader.expand(ids, max_expand - len(ids))
+    new_df = loader.expand(ids, max_expand - len(ids), noreview)
     logger.debug(f'Expanded by references: {len(new_df)}')
 
     if len(new_df) == 0:

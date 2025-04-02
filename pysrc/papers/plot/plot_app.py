@@ -69,7 +69,7 @@ def prepare_result_data(config: PubtrendsConfig, data: AnalysisData):
         url_prefix = Loaders.get_url_prefix(data.source)
         if data.numbers_df is not None:
             result['numbers'] = [
-                (row['id'], url_prefix + row['id'], trim(row['title'], MAX_TITLE_LENGTH), row['numbers'])
+                (row['id'], url_prefix + str(row['id']), trim(row['title'], MAX_TITLE_LENGTH), row['numbers'])
                 for _, row in data.numbers_df.iterrows()
             ]
 
@@ -250,7 +250,8 @@ def prepare_graph_data(config: PubtrendsConfig, data: AnalysisData, shown_id=Non
     return dict(
         query=trim(data.search_query, MAX_QUERY_LENGTH),
         source=data.source,
-        search_ids=json.dumps(data.search_ids if data.search_ids else []),
+        # Don't highlight any search_ids if all the papers are there
+        search_ids=json.dumps(data.search_ids if data.search_ids and len(data.search_ids) < len(data.df) else []),
         shown_id=shown_id,
         limit=data.limit,
         sort=data.sort,

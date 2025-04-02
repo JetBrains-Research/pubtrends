@@ -61,7 +61,7 @@ def _analyze_id_list(analyzer, query , search_ids,
 
 
 @pubtrends_celery.task(name='analyze_search_paper')
-def analyze_search_paper(source, pid, key, value, limit, topics, test=False):
+def analyze_search_paper(source, pid, key, value, expand, limit, noreviews, topics, test=False):
     if key is not None and key != 'doi' and is_doi(preprocess_doi(value)):
         raise SearchError(DOI_WRONG_SEARCH)
     config = PubtrendsConfig(test=test)
@@ -70,7 +70,7 @@ def analyze_search_paper(source, pid, key, value, limit, topics, test=False):
     last_update = analyzer.loader.last_update()
     if last_update is not None:
         analyzer.progress.info(f'Last papers update {last_update}', current=0, task=current_task)
-    analyzer.progress.info(f'Searching for a publication with {key}={value}', current=1, task=current_task)
+    analyzer.progress.info(f'Searching for publications with {key}={value}', current=1, task=current_task)
     try:
         if pid is not None:
             result = [pid]
@@ -80,15 +80,12 @@ def analyze_search_paper(source, pid, key, value, limit, topics, test=False):
         if len(result) == 0:
             raise SearchError(f'No papers found with {key}={value}')
 
-        if len(result) >= config.paper_expand_start_max:
-            logger.warning(f'Multiple papers found matching {key}={value}, limiting to {config.paper_expand_start_max}')
-            result = result[:config.paper_expand_start_max]
-
         analyzer.progress.info('Expanding related papers by references', current=1, task=current_task)
         limit = int(limit) if limit is not None and limit != '' else analyzer.config.show_max_articles_default_value
         topics = int(topics) if topics is not None and topics != '' else analyzer.config.show_topics_default_value
-        ids = expand_ids(loader=analyzer.loader, search_ids=result, limit=limit,
-                         expand_steps=analyzer.config.paper_expands_steps,
+        expand = int(expand) if expand is not None and expand != '' else analyzer.config.paper_expands_steps
+        ids = expand_ids(loader=analyzer.loader, search_ids=result,
+                         expand_steps=expand, limit=limit, noreviews=noreviews,
                          max_expand=analyzer.config.paper_expand_limit,
                          citations_q_low=EXPAND_CITATIONS_Q_LOW,
                          citations_q_high=EXPAND_CITATIONS_Q_HIGH,

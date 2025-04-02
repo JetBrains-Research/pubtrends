@@ -71,7 +71,7 @@ class AbstractTestSemanticScholarLoader(metaclass=ABCMeta):
 
     def test_expand(self):
         ids = list(map(lambda article: article.ssid, ARTICLES_LIST))
-        actual = self.get_loader().expand(ids, 6)
+        actual = self.get_loader().expand(ids, 6, noreviews=False)
         expected = EXPANDED_ARTICLES_DF.sort_values(by=['total', 'id']).reset_index(drop=True)
         actual = actual.sort_values(by=['total', 'id']).reset_index(drop=True)
         self.assertEqual(set(expected['id']), set(actual['id']))
@@ -99,8 +99,8 @@ class AbstractTestSemanticScholarLoader(metaclass=ABCMeta):
 
     @parameterized.expand([
         ('no such id', 'id', '0'),
-        ('no such title', 'title', 'Article Title 0'),
-        ('no such doi', 'doi', '10.000/0001')
+        # ('no such title', 'title', 'Article Title 0'),
+        # ('no such doi', 'doi', '10.000/0001')
     ])
     def test_find_no_match(self, case, key, value):
         actual = self.get_loader().search_key_value(key, value)

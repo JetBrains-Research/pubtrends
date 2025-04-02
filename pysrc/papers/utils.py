@@ -23,7 +23,7 @@ MAX_QUERY_LENGTH = 60
 
 SEED = 19700101
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def reorder_publications(ids, pub_df):
@@ -53,8 +53,12 @@ def extract_authors(authors_list):
 
 
 def crc32(hex_string):
-    n = binascii.crc32(bytes.fromhex(hex_string))
-    return to_32_bit_int(n)
+    try:
+        n = binascii.crc32(bytes.fromhex(hex_string))
+        return to_32_bit_int(n)
+    except Exception as e:
+        logger.error(f'Error while computing CRC32 for {hex_string}: {e}')
+        return 0
 
 
 def to_32_bit_int(n):
@@ -64,7 +68,12 @@ def to_32_bit_int(n):
 
 
 def trim(string, max_length):
-    return f'{string[:max_length]}...' if len(string) > max_length else string
+    if string is None:
+        return ''
+    elif len(string) > max_length:
+        return f'{string[:max_length]}...'
+    else:
+        return string
 
 
 def preprocess_doi(line):

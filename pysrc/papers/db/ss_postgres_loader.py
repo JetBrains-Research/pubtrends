@@ -1,6 +1,5 @@
 import logging
 import os
-import re
 from datetime import datetime
 
 import numpy as np
@@ -9,8 +8,8 @@ import pandas as pd
 from pysrc.papers.db.loader import Loader
 from pysrc.papers.db.postgres_connector import PostgresConnector
 from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres, \
-    process_cocitations_postgres, no_stemming_filter_for_phrases, preprocess_quotes
-from pysrc.papers.utils import crc32, SORT_MOST_CITED, SORT_MOST_RECENT, preprocess_doi
+    process_cocitations_postgres, no_stemming_filter_for_phrases, preprocess_quotes, strs_to_vals
+from pysrc.papers.utils import crc32, SORT_MOST_CITED, SORT_MOST_RECENT
 
 logger = logging.getLogger(__name__)
 
@@ -31,13 +30,18 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
             return datetime.fromtimestamp(os.path.getmtime(self.UPDATE_STATS_PATH)).strftime('%Y-%m-%d %H:%M:%S')
         return None
 
-    def search_id(self, pid):
+    def search_id(self, pids):
         self.check_connection()
-        pid = preprocess_quotes(pid)
+        pids = preprocess_quotes(pids)
+        pids2search = []
+        for p in pids.split(';'):
+            if p.strip() != '':
+                pids2search.append(p.strip())
+        vals = SemanticScholarPostgresLoader.ids2values(pids2search)
         query = f'''
                 SELECT ssid
                 FROM SSPublications P
-                WHERE ssid = {repr(pid)};
+                WHERE (P.crc32id, P.ssid) in (VALUES {vals});
             '''
         logger.debug(f'find query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
@@ -46,15 +50,14 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         return list(df['pmid'].astype(str))
 
 
-    def search_doi(self, doi):
+    def search_doi(self, dois):
         self.check_connection()
-        doi = preprocess_doi(doi)
-        doi = preprocess_quotes(doi)
-
+        dois2search = self.dois_to_list(dois)
+        vals = strs_to_vals(dois2search)
         query = f'''
                 SELECT ssid
                 FROM SSPublications P
-                WHERE doi = {repr(doi)};
+                WHERE doi in (VALUES {vals});
             '''
         logger.debug(f'find query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
@@ -62,21 +65,25 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
             df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
         return list(df['pmid'].astype(str))
 
-    def search_title(self, title):
+    def search_title(self, titles):
         self.check_connection()
-        title = title.strip()
-        title = re.sub('\.$', '', title)
-        title = preprocess_quotes(title)
-        query = f'''
+        titles2search = self.titles_to_list(titles)
+        pids = []
+        for t in titles2search:
+            query = f'''
                 SELECT ssid
-                FROM to_tsquery(\'''{title}\''') query, SSPublications P
-                WHERE tsv @@ query AND TRIM(TRAILING '.' FROM LOWER(title)) = LOWER('{title}');
+                FROM to_tsquery(\'''{t}\''') query, SSPublications P
+                WHERE tsv @@ query AND TRIM(TRAILING '.' FROM LOWER(title)) = LOWER('{t}');
             '''
-        logger.debug(f'find query: {query[:1000]}')
-        with self.postgres_connection.cursor() as cursor:
-            cursor.execute(query)
-            df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
-        return list(df['pmid'].astype(str))
+            logger.debug(f'find query: {query[:1000]}')
+            with self.postgres_connection.cursor() as cursor:
+                cursor.execute(query)
+                df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
+                if len(df) > 0:
+                    pids.extend(df['pmid'].astype(str))
+                else:
+                    pids.extend(self._search_title_relaxed(t))
+        return pids
 
     def search(self, query, limit=None, sort=None, noreviews=True):
         self.check_connection()
@@ -123,12 +130,13 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
 
     def load_publications(self, ids):
         self.check_connection()
-        # We can possible have multiple records for a single paper!!!
+        # We can possibly have multiple records for a single paper!!!
         # PostgreSQLUtil.kt#batchInsertOnDuplicateKeyUpdate is not used for Semantic Scholar
+        vals = SemanticScholarPostgresLoader.ids2values(ids)
         query = f'''
                 SELECT distinct on (P.ssid) P.ssid, P.crc32id, P.pmid, P.title, P.abstract, P.year, P.doi, P.aux
                 FROM SSPublications P
-                WHERE (P.crc32id, P.ssid) in (VALUES {SemanticScholarPostgresLoader.ids2values(ids)});
+                WHERE (P.crc32id, P.ssid) in (VALUES {vals});
                 '''
         logger.debug(f'load_publications query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
@@ -181,7 +189,6 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
 
     def load_references(self, pid, limit):
         self.check_connection()
-        # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
                 SELECT C.ssid_in AS ssid
                 FROM SSCitations C JOIN matview_sscitations MC
@@ -267,8 +274,10 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
             raise ValueError('NaN values are not allowed in ids of co-citation DataFrame')
         return cocit_df
 
-    def expand(self, ids, limit):
+    def expand(self, ids, limit, noreviews):
         self.check_connection()
+        if noreviews:
+            logger.debug('Type is not supported for Semantic Scholar')
         vals = SemanticScholarPostgresLoader.ids2values(ids)
         query = f'''
             WITH X AS (

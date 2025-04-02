@@ -133,6 +133,7 @@
                         </a>
                     </li>
 
+                    {% if papers_graph is defined %}
                     <li class="nav-item row">
                         <a class="nav-link no-padding-right" href="#network" title="Si">
                             <img class="nav-icon" src="{{ url_for('static', filename='globe.svg') }}"/>
@@ -141,6 +142,7 @@
                             Network
                         </a>
                     </li>
+                    {% endif %}
 
                     {% if similar_papers is defined %}
                         <li class="nav-item row">
@@ -235,13 +237,13 @@
                 </div>
             </div>
 
+            {% if papers_graph is defined %}
             <div class="card mt-3">
                 <div class="card-title" id="network">
                     <h1 class="card-header">Network</h1>
                 </div>
                 <div class="card-body">
                     {% if n_papers <= max_graph_size %}
-                        {% if papers_graph is defined %}
                         <strong>Papers similarity</strong>
                             <p>
                                 The graph below shows papers similarity network. Similar papers are located closely.<br>
@@ -252,7 +254,6 @@
                                 {{ script|safe }}
                                 {{ div|safe }}
                             {% endfor %}
-                        {% endif %}
                         <br>
                         <p>
                             Explore papers similarity in-depth in the interactive graph viewer.<br>
@@ -267,6 +268,7 @@
                     <div class="mt-3" id="paper-feedback-network-form"></div>
                 </div>
             </div>
+            {% endif %}
 
             {% if similar_papers is defined %}
                 <div class="card mt-3">

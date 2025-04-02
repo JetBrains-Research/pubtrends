@@ -10,6 +10,11 @@ from pysrc.papers.db.search_error import SearchError
 
 logger = logging.getLogger(__name__)
 
+def ints_to_vals(xs):
+    return ','.join([f'({i})' for i in xs])
+
+def strs_to_vals(xs):
+    return ','.join([f'(\'{i}\')' for i in xs])
 
 def preprocess_search_query_for_postgres(query, min_search_words):
     logger.debug(f'Preprocess search string for Postgres full text lookup query: {query}')
