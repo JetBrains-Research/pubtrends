@@ -64,7 +64,7 @@ def generate_review(data, source, num_papers, num_sents, progress, task):
     try:
         REVIEW_LOCK.acquire()
         progress.info(f'Generating review', current=1, task=task)
-        url_prefix = Loaders.get_url_prefix(source, PUBTRENDS_CONFIG)
+        url_prefix = Loaders.get_url_prefix(source)
         progress.info('Initializing model and device', current=2, task=task)
         model, device = MODEL_CACHE.model_and_device
         progress.info('Configuring model for evaluation', current=3, task=task)

@@ -66,7 +66,7 @@ def prepare_result_data(config: PubtrendsConfig, data: AnalysisData):
         result['journal_statistics'] = plotter.journal_statistics()
 
     if config.feature_numbers_enabled:
-        url_prefix = Loaders.get_url_prefix(data.source, config)
+        url_prefix = Loaders.get_url_prefix(data.source)
         if data.numbers_df is not None:
             result['numbers'] = [
                 (row['id'], url_prefix + row['id'], trim(row['title'], MAX_TITLE_LENGTH), row['numbers'])
@@ -84,7 +84,7 @@ def prepare_papers_data(
     top_cited_papers = list(data.top_cited_df['id'])
     max_gain_papers = list(data.max_gain_df['id'])
     max_rel_gain_papers = list(data.max_rel_gain_df['id'])
-    url_prefix = Loaders.get_url_prefix(data.source, config)
+    url_prefix = Loaders.get_url_prefix(data.source)
     # Filter by component
     if comp is not None:
         df = df[df['comp'].astype(int) == comp]
@@ -138,7 +138,7 @@ def prepare_paper_data(
         source, pid
 ):
     logger.debug('Extracting data for the current paper')
-    url_prefix = Loaders.get_url_prefix(source, config)
+    url_prefix = Loaders.get_url_prefix(source)
     # Use pid if is given or show the very first paper
     pid = pid or data.df['id'].values[0]
     sel = data.df[data.df['id'] == pid]

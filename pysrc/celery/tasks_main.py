@@ -48,9 +48,6 @@ def _analyze_id_list(analyzer, query , search_ids,
                      test=False, task=None):
     if len(ids) == 0:
         raise RuntimeError('Empty papers list')
-    last_update = analyzer.loader.last_update()
-    if last_update is not None:
-        analyzer.progress.info(f'Last papers update {last_update}', current=0, task=current_task)
     analyzer.progress.info(f'Analyzing {len(ids)} paper(s) from {source}', current=1, task=task)
     try:
         analyzer.analyze_papers(ids, query, source, sort, limit, topics, test=test, task=current_task)
@@ -70,6 +67,9 @@ def analyze_search_paper(source, pid, key, value, limit, topics, test=False):
     config = PubtrendsConfig(test=test)
     loader = Loaders.get_loader(source, config)
     analyzer = PapersAnalyzer(loader, config)
+    last_update = analyzer.loader.last_update()
+    if last_update is not None:
+        analyzer.progress.info(f'Last papers update {last_update}', current=0, task=current_task)
     analyzer.progress.info(f'Searching for a publication with {key}={value}', current=1, task=current_task)
     try:
         if pid is not None:
@@ -111,6 +111,9 @@ def analyze_pubmed_search(query, sort, limit, topics, test=False):
     config = PubtrendsConfig(test=test)
     loader = Loaders.get_loader('Pubmed', config)
     analyzer = PapersAnalyzer(loader, config)
+    last_update = analyzer.loader.last_update()
+    if last_update is not None:
+        analyzer.progress.info(f'Last papers update {last_update}', current=0, task=current_task)
     analyzer.progress.info(f"Searching Pubmed query: {query}, {sort.lower()} limit {limit}",
                            current=1, task=current_task)
     sort = sort or SORT_MOST_CITED

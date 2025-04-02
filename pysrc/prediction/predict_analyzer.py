@@ -1,10 +1,32 @@
+import logging
+
+import pandas as pd
+
 from pysrc.papers.analysis.citations import build_cit_stats_df, merge_citation_stats
 from pysrc.papers.analyzer import PapersAnalyzer
 
+logger = logging.getLogger(__name__)
 
 class PredictAnalyzer(PapersAnalyzer):
     def __init__(self, loader, config):
         super(PredictAnalyzer, self).__init__(loader, config)
+
+    def search(self, limit, start_year=1970, end_year=2050, noreviews=True):
+        self.loader.check_connection()
+        noreviews_filter = "AND type != 'Review'" if noreviews else ''
+        query = f'''
+                SELECT pmid
+                FROM PMPublications P
+                WHERE year >= {start_year} AND year <= {end_year} {noreviews_filter}
+                ORDER by random() 
+                LIMIT {limit};
+            '''
+        logger.debug(f'find query: {query[:1000]}')
+        with self.loader.postgres_connection.cursor() as cursor:
+            cursor.execute(query)
+            df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
+        return list(df['pmid'].astype(str))
+
 
     def analyze(self, ids):
         try:
@@ -32,8 +54,6 @@ class PredictAnalyzer(PapersAnalyzer):
             self.min_year, self.max_year = self.df['year'].min(), self.df['year'].max()
 
             self.cit_df = self.loader.load_citations(self.ids)
-
-            return self.progress.stream.getvalue()
         finally:
             self.loader.close_connection()
             self.progress.remove_handler()

@@ -2,8 +2,6 @@ from pysrc.papers.db.pm_postgres_loader import PubmedPostgresLoader
 from pysrc.papers.db.postgres_connector import PostgresConnector
 from pysrc.papers.db.ss_postgres_loader import SemanticScholarPostgresLoader
 from pysrc.papers.utils import PUBMED_ARTICLE_BASE_URL, SEMANTIC_SCHOLAR_BASE_URL
-from pysrc.prediction.ss_arxiv_loader import SSArxivLoader
-from pysrc.prediction.ss_pubmed_loader import SSPubmedLoader
 
 
 class Loaders:
@@ -16,10 +14,6 @@ class Loaders:
             return 'Pubmed'
         elif isinstance(loader, SemanticScholarPostgresLoader):
             return 'Semantic Scholar'
-        elif isinstance(loader, SSArxivLoader):
-            return 'SSArxiv'
-        elif isinstance(loader, SSPubmedLoader):
-            return 'SSPubmed'
         elif not test:
             raise TypeError(f'Unknown loader {loader}')
 
@@ -36,7 +30,7 @@ class Loaders:
             raise ValueError("No database configured")
 
     @staticmethod
-    def get_url_prefix(source, config):
+    def get_url_prefix(source):
         if source == 'Pubmed':
             return PUBMED_ARTICLE_BASE_URL
         elif source == 'Semantic Scholar':
