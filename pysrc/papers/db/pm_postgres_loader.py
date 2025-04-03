@@ -297,23 +297,28 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
     def expand(self, ids, limit, noreviews):
         self.check_connection()
         vals = ints_to_vals(ids)
-        noreviews_filter = "WHERE X.type != 'Review'" if noreviews else ''
+        noreviews_filter = "AND P.type != 'Review'" if noreviews else ''
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
             WITH X AS (
                 SELECT C.pmid_in AS pmid
                 FROM PMCitations C
-                WHERE C.pmid_in != C.pmid_out AND C.pmid_out IN (VALUES {vals}) AND C.pmid_in NOT IN (VALUES {vals})
+                JOIN PMPublications P
+                ON C.pmid_out = P.pmid
+                WHERE C.pmid_in != C.pmid_out AND C.pmid_out IN (VALUES {vals}) AND C.pmid_in NOT IN (VALUES {vals}) 
+                {noreviews_filter}
                 UNION
                 SELECT C.pmid_out AS pmid
-                FROM PMCitations C
-                WHERE C.pmid_in != C.pmid_out AND C.pmid_in IN (VALUES {vals}) AND C.pmid_out NOT IN (VALUES {vals})
+                FROM PMCitations C 
+                JOIN PMPublications P
+                ON C.pmid_out = P.pmid
+                WHERE C.pmid_in != C.pmid_out AND C.pmid_in IN (VALUES {vals}) AND C.pmid_out NOT IN (VALUES {vals}) 
+                {noreviews_filter}
             )
             SELECT X.pmid as pmid, count 
                 FROM X
                     LEFT JOIN matview_pmcitations C
                     ON X.pmid = C.pmid
-                {noreviews_filter}
                 ORDER BY count DESC NULLS LAST
                 LIMIT {limit};
                 '''
