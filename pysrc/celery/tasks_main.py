@@ -25,7 +25,6 @@ def analyze_search_terms(source, query, sort, limit, noreviews, topics, test=Fal
     last_update = loader.last_update()
     if last_update is not None:
         analyzer.progress.info(f'Last papers update {last_update}', current=0, task=current_task)
-    analyzer.progress.info('Analyzing search query', current=1, task=current_task)
     try:
         sort = sort or SORT_MOST_CITED
         limit = int(limit) if limit is not None and limit != '' else analyzer.config.show_max_articles_default_value

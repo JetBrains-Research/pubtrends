@@ -1,13 +1,15 @@
 import logging
 import os
+import threading
 from datetime import datetime
 
 import numpy as np
 import pandas as pd
+import psycopg2
 
 from pysrc.papers.db.loader import Loader
 from pysrc.papers.db.postgres_connector import PostgresConnector
-from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres, no_stemming_filter_for_phrases, \
+from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres, \
     process_bibliographic_coupling_postgres, process_cocitations_postgres, ints_to_vals, strs_to_vals
 from pysrc.papers.utils import SORT_MOST_CITED, SORT_MOST_RECENT
 
@@ -90,10 +92,10 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
     def search(self, query, limit=None, sort=None, noreviews=True):
         self.check_connection()
         noreviews_filter = "AND type != 'Review'" if noreviews else ''
-        query_str = preprocess_search_query_for_postgres(query, self.config.min_search_words)
 
-        # Disable stemming-based lookup for phrases, see: https://github.com/JetBrains-Research/pubtrends/issues/242
-        exact_phrase_filter = no_stemming_filter_for_phrases(query_str)
+        query_str, exact_phrase_filter = preprocess_search_query_for_postgres(query)
+        if exact_phrase_filter:
+            exact_phrase_filter = f'AND ({exact_phrase_filter})'
 
         by_citations = 'count DESC NULLS LAST'
         by_year = 'year DESC NULLS LAST'
@@ -109,11 +111,21 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         else:
             raise ValueError(f'Illegal sort method: {sort}')
 
-        query = f'''
+        df = None
+        sampling_fraction = 1
+        sampling_filter = ''
+
+        def cancel_query():
+            nonlocal df
+            if df is None:
+                self.postgres_connection.cancel()
+
+        while df is None:
+            query = f'''
             WITH X AS
                 (SELECT P.pmid as pmid, P.tsv as tsv, query, P.year as year
                 FROM to_tsquery('{query_str}') query, 
-                PMPublications P
+                PMPublications P {sampling_filter}
                 WHERE P.tsv @@ query {noreviews_filter} {exact_phrase_filter}
                 LIMIT {self.config.max_number_of_papers})
             SELECT X.pmid as pmid
@@ -123,16 +135,28 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
             ORDER BY {order}, X.pmid
             LIMIT {limit};
             '''
-        logger.debug(f'search query: {query[:1000]}')
-        with self.postgres_connection.cursor() as cursor:
-            cursor.execute(query)
-            df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
-            # TODO [shpynov] query stays idle in transaction without this commit
-            # Further investigation is required
-            self.postgres_connection.commit()
+            logger.debug(f'search query: {query[:1000]}')
+            with self.postgres_connection.cursor() as cursor:
+                try:
+                    # Wait for execution
+                    threading.Timer(self.config.max_search_time_sec, cancel_query).start()
+                    cursor.execute(query)
+                    df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
+                except psycopg2.extensions.QueryCanceledError:
+                    sampling_fraction /= 10
+                    logger.warning(f'search query timeout, increasing sampling fraction {sampling_fraction}')
+                    sampling_filter = f'TABLESAMPLE SYSTEM({sampling_fraction})'
+                    if exact_phrase_filter:
+                        logger.warning(f'disabling exact phrase filter')
+                        query_str = query_str.replace('<->', '|')
+                        exact_phrase_filter=''
+                finally:
+                    # TODO [shpynov] query stays idle in transaction without this commit
+                    # Further investigation is required
+                    self.postgres_connection.commit()
 
         df['pmid'] = df['pmid'].astype(str)
-        return list(df['pmid'])
+        return df['pmid'].to_list()
 
     def load_publications(self, ids):
         self.check_connection()

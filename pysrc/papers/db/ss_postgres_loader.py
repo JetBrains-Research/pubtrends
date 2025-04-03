@@ -1,14 +1,16 @@
 import logging
 import os
+import threading
 from datetime import datetime
 
 import numpy as np
 import pandas as pd
+import psycopg2
 
 from pysrc.papers.db.loader import Loader
 from pysrc.papers.db.postgres_connector import PostgresConnector
 from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres, \
-    process_cocitations_postgres, no_stemming_filter_for_phrases, preprocess_quotes, strs_to_vals
+    process_cocitations_postgres, preprocess_quotes, strs_to_vals
 from pysrc.papers.utils import crc32, SORT_MOST_CITED, SORT_MOST_RECENT
 
 logger = logging.getLogger(__name__)
@@ -89,9 +91,10 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         self.check_connection()
         if noreviews:
             logger.debug('Type is not supported for Semantic Scholar')
-        query_str = preprocess_search_query_for_postgres(query, self.config.min_search_words)
-        # Disable stemming-based lookup for phrases, see: https://github.com/JetBrains-Research/pubtrends/issues/242
-        exact_phrase_filter = no_stemming_filter_for_phrases(query_str)
+
+        query_str, exact_phrase_filter = preprocess_search_query_for_postgres(query)
+        if exact_phrase_filter:
+            exact_phrase_filter = f'AND ({exact_phrase_filter})'
 
         by_citations = 'count DESC NULLS LAST'
         by_year = 'year DESC NULLS LAST'
@@ -107,12 +110,23 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         else:
             raise ValueError(f'Illegal sort method: {sort}')
 
-        query = f'''
-         WITH X AS
+        df = None
+        sampling_fraction = 1
+        sampling_filter = ''
+
+        def cancel_query():
+            nonlocal df
+            if df is None:
+                self.postgres_connection.cancel()
+
+        while df is None:
+            query = f'''
+            WITH X AS
                 (SELECT P.ssid as ssid, P.crc32id as crc32id, P.tsv as tsv, query, P.year as year
                 FROM to_tsquery('{query_str}') query, 
-                SSPublications P
+                SSPublications P {sampling_filter}
                 WHERE P.tsv @@ query {exact_phrase_filter}
+                ORDER BY random()
                 LIMIT {self.config.max_number_of_papers})
             SELECT X.ssid as ssid 
             FROM X
@@ -121,16 +135,30 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
             ORDER BY {order}, ssid
             LIMIT {limit};
             '''
-
-        logger.debug(f'search query: {query[:1000]}')
-        with self.postgres_connection.cursor() as cursor:
-            cursor.execute(query)
-            pub_df = pd.DataFrame(cursor.fetchall(), columns=['id'], dtype=object)
+            logger.debug(f'search query: {query[:1000]}')
+            with self.postgres_connection.cursor() as cursor:
+                try:
+                    # Wait for execution
+                    threading.Timer(self.config.max_search_time_sec, cancel_query).start()
+                    cursor.execute(query)
+                    df = pd.DataFrame(cursor.fetchall(), columns=['id'], dtype=object)
+                except psycopg2.extensions.QueryCanceledError:
+                    sampling_fraction /= 10
+                    logger.warning(f'search query timeout, increasing sampling fraction {sampling_fraction}')
+                    sampling_filter = f'TABLESAMPLE SYSTEM({sampling_fraction})'
+                    if exact_phrase_filter:
+                        logger.warning(f'disabling exact phrase filter')
+                        query_str = query_str.replace('<->', '|')
+                        exact_phrase_filter=''
+                finally:
+                    # TODO [shpynov] query stays idle in transaction without this commit
+                    # Further investigation is required
+                    self.postgres_connection.commit()
 
         # Duplicate rows may occur if crawler was stopped while parsing Semantic Scholar archive
-        pub_df.drop_duplicates(subset='id', inplace=True)
+        df.drop_duplicates(subset='id', inplace=True)
 
-        return list(pub_df['id'].values)
+        return df['id'].to_list()
 
     def load_publications(self, ids):
         self.check_connection()

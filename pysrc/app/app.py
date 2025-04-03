@@ -119,11 +119,6 @@ def index():
         search_example_source, search_example_terms = random.choice(list(PREDEFINED_JOBS.items()))
         search_example_message = 'Try one of our examples for ' + search_example_source
 
-    if PUBTRENDS_CONFIG.min_search_words > 1:
-        min_words_message = f'Minimum {PUBTRENDS_CONFIG.min_search_words} words per query. '
-    else:
-        min_words_message = ''
-
     return render_template('main.html',
                            version=VERSION,
                            limits=PUBTRENDS_CONFIG.show_max_articles_options,
@@ -132,10 +127,8 @@ def index():
                            default_topics=PUBTRENDS_CONFIG.show_topics_default_value,
                            expand_variants = range(PUBTRENDS_CONFIG.paper_expands_steps + 1),
                            default_expand = PUBTRENDS_CONFIG.paper_expands_steps,
-                           min_words_message=min_words_message,
                            max_papers=PUBTRENDS_CONFIG.max_number_of_articles,
                            pm_enabled=PUBTRENDS_CONFIG.pm_enabled,
-                           save_to_files_enabled=PUBTRENDS_CONFIG.save_to_files_enabled,
                            ss_enabled=PUBTRENDS_CONFIG.ss_enabled,
                            search_example_message=search_example_message,
                            search_example_source=search_example_source,

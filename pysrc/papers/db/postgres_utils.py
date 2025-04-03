@@ -16,7 +16,15 @@ def ints_to_vals(xs):
 def strs_to_vals(xs):
     return ','.join([f'(\'{i}\')' for i in xs])
 
-def preprocess_search_query_for_postgres(query, min_search_words):
+
+def preprocess_quotes(value):
+    return re.sub("'{2,}", "'", value.strip().strip("'"))
+
+
+def preprocess_search_query_for_postgres(query):
+    """
+    return a string that can be used in Postgres full text search query together with phrasal check queries
+    """
     logger.debug(f'Preprocess search string for Postgres full text lookup query: {query}')
     query = query.lower()
     # Fix apostrophes 's
@@ -25,81 +33,64 @@ def preprocess_search_query_for_postgres(query, min_search_words):
     # Escaping
     query = re.sub("[\^&'|<>=]+", '', query)
     # Whitespaces normalization, see #215
-    processed = re.sub('\s{2,}', ' ', query.strip())
+    query = re.sub('\s{2,}', ' ', query.strip())
     query = query.strip(', ')  # Strip trailing spaces and commas
-    if ',' in query:
-        qor = ''
-        for p in query.split(','):
-            if len(qor) > 0:
-                qor += ' | '
-            pp = preprocess_search_query_for_postgres(p.strip(), min_search_words)
-            qor += pp
-        return qor
 
-    if len(processed) == 0:
+    if len(query) == 0:
         raise SearchError('Empty query')
 
-    # Check query complexity
-    if len(re.split('[ -]', processed)) < min_search_words:
-        raise SearchError(f'Please use more specific query with >= {min_search_words} words. Query: {query}')
+    or_queries = []
+    or_phrases = []
+    if ',' in query:
+        for p in query.split(','):
+            query, phrase_filter = preprocess_search_query_for_postgres(p.strip())
+            if len(query) > 0:
+                or_queries.append(query)
+            if len(phrase_filter) > 0:
+                or_phrases.append(phrase_filter)
+        return ' | '.join(or_queries), ' OR '.join(or_phrases)
 
-    # Check query complexity for similar words
-    stemmer = SnowballStemmer('english')
-    stems = set([stemmer.stem(word) for word in [re.sub("[\"-]", '', w) for w in processed.split(' ')]])
-    if len(stems) + len(processed.split('-')) - 1 < min_search_words:
-        raise SearchError(f'Please use query with >= {min_search_words} different words. Query: {query}')
-
-    if len(re.findall('"', processed)) % 2 == 1:
+    if len(re.findall('"', query)) % 2 == 1:
         raise SearchError(f'Illegal search query, please use search terms or '
                           f'all the query wrapped in "" for phrasal search. Query: {query}')
 
     # Looking for complete phrases
     phrases = []
-    for phrase in re.findall('"[^"]*"', processed):
+    phrases_manuals = []
+    for phrase in list(re.findall('"[^"]*"', query)):
         phrase_strip = phrase.strip('"').strip()
         if ' ' not in phrase_strip:
             raise SearchError(f'Illegal search query, please use search terms or '
                               f'all the query wrapped in "" for phrasal search. Query: {query}')
         phrases.append('<->'.join(phrase_strip.split(' ')))
-        processed = processed.replace(phrase, "").strip()
+        # Disable stemming-based lookup for phrases
+        # see: https://github.com/JetBrains-Research/pubtrends/issues/242
+        phrase_query = "'(\\m" + phrase_strip.replace(' ', '\\s+') + "\\M)'"
+        phrases_manuals.append(
+            f"(P.title IS NOT NULL AND P.title ~* {phrase_query} OR "
+            f"P.abstract IS NOT NULL AND P.abstract ~* {phrase_query})"
+        )
+        # Cut phrase within the query
+        query = query.replace(phrase, "").strip()
+
     phrases_result = ' & '.join(phrases) if phrases else ''
+    phrases_manuals_result = ' AND '.join(phrases_manuals) if phrases_manuals else ''
 
     # Processing words
-    rest_words = re.sub('[ ]{2,}', ' ', processed).strip()
+    rest_words = re.sub('\s{2,}', ' ', query).strip()
     words = rest_words.split(' ')
     words_result = ' & '.join(words) if words else ''
 
     if phrases_result != '':
-        return phrases_result if words_result == '' else f'{phrases_result} & {words_result}'
+        if words_result == '':
+            return phrases_result, phrases_manuals_result
+        else:
+            return f'{phrases_result} & {words_result}', phrases_manuals_result
     elif words_result != '':
-        return words_result
+        return words_result, ''
     else:
         raise SearchError(f'Illegal search query, please use search terms or '
                           f'all the query wrapped in "" for phrasal search. Query: {query}')
-
-
-def preprocess_quotes(value):
-    return re.sub("'{2,}", "'", value.strip().strip("'"))
-
-
-def no_stemming_filter_for_phrases(query_str):
-    ors = []
-    for q in query_str.lower().split('|'):
-        ands = []
-        for w in re.split('&', q.strip()):
-            if '<->' in w.strip():  # Process only phrases
-                ands.append(
-                    '(P.title IS NOT NULL AND P.title ~* \'(\\m' + w.strip().replace("<->", "\\s+") + '\\M)\'' +
-                    ' OR ' +
-                    'P.abstract IS NOT NULL AND P.abstract ~* \'(\\m' + w.strip().replace("<->", "\\s+") + '\\M)\')'
-                )
-        if len(ands) > 0:
-            ors.append(' AND '.join(ands))
-    if len(ors) > 0:
-        return ' AND (' + ' OR '.join(ors) + ')'
-    else:
-        return ''
-
 
 def process_cocitations_postgres(cursor):
     data = []

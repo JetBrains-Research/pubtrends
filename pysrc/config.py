@@ -134,8 +134,7 @@ class PubtrendsConfig:
         self.ss_enabled = params.getboolean('ss_enabled')
         self.ss_search_example_terms = [terms.strip() for terms in params['ss_search_example_terms'].split(';')]
 
-        self.save_to_files_enabled = params.getboolean('save_to_files_enabled')
-        self.min_search_words = params.getint('min_search_words') if not test else 0
+        self.max_search_time_sec = params.getint('max_search_time_sec')
         self.max_number_of_papers = params.getint('max_number_of_papers')
         self.max_number_of_citations = params.getint('max_number_of_citations')
         self.max_number_of_cocitations = params.getint('max_number_of_cocitations')

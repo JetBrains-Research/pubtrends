@@ -5,7 +5,7 @@ import pandas as pd
 from pandas.testing import assert_frame_equal
 from parameterized import parameterized
 
-from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres, no_stemming_filter_for_phrases, \
+from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres, \
     process_bibliographic_coupling_postgres, preprocess_quotes
 
 
@@ -28,31 +28,16 @@ class TestPostgresUtils(unittest.TestCase):
         ("foo | bar<->baz & bzzzz", 'foo & bar-baz & bzzzz'),
     ])
     def test_preprocess_search_valid_source(self, terms, expected):
-        self.assertEqual(expected, preprocess_search_query_for_postgres(terms, 0))
+        self.assertEqual(expected, preprocess_search_query_for_postgres(terms)[0])
 
-    def test_preprocess_search_too_few_words(self):
-        self.assertEqual('foo', preprocess_search_query_for_postgres('Foo', 1))
-        with self.assertRaises(Exception):
-            preprocess_search_query_for_postgres('Foo', 2)
-
-    def test_preprocess_search_too_few_words_whitespaces(self):
-        with self.assertRaises(Exception):
-            preprocess_search_query_for_postgres('Foo  ', 2)
-
-    def test_preprocess_search_too_few_words_stems(self):
-        with self.assertRaises(Exception):
-            preprocess_search_query_for_postgres('Humans Humanity', 2)
-
-    def test_preprocess_search_dash_split(self):
-        self.assertEqual('covid-19', preprocess_search_query_for_postgres('Covid-19', 2))
 
     def test_preprocess_search_odd_quotes(self):
         with self.assertRaises(Exception):
-            preprocess_search_query_for_postgres('"foo" "', 2)
+            preprocess_search_query_for_postgres('"foo" "')
 
     def test_preprocess_search_empty_phrase(self):
         with self.assertRaises(Exception):
-            preprocess_search_query_for_postgres('"" bar baz', 2)
+            preprocess_search_query_for_postgres('"" bar baz')
 
     def test_preprocess_search_or(self):
         self.assertEqual(
@@ -62,41 +47,32 @@ class TestPostgresUtils(unittest.TestCase):
                 'COVID-19, Coronavirus, "Corona virus", 2019-nCoV, SARS-CoV, '
                 'MERS-CoV, "Severe Acute Respiratory Syndrome", '
                 '"Middle East Respiratory Syndrome"',
-                0
-            )
+            )[0]
         )
 
     @parameterized.expand([
-        ('Corona<->virus',
-         " AND ((P.title IS NOT NULL AND P.title ~* '(\mcorona\s+virus\M)' OR "
-         "P.abstract IS NOT NULL AND P.abstract ~* '(\mcorona\s+virus\M)'))"),
-        ('COVID-19 | Respiratory & Syndrome', ''),
-        ('COVID-19 | Corona<->virus | Respiratory & Syndrome',
-         " AND ((P.title IS NOT NULL AND P.title ~* '(\mcorona\s+virus\M)' OR "
-         "P.abstract IS NOT NULL AND P.abstract ~* '(\mcorona\s+virus\M)'))"),
-        ('COVID-19 | Corona<->virus & Respiratory & Syndrome',
-         " AND ((P.title IS NOT NULL AND P.title ~* '(\mcorona\s+virus\M)' OR "
-         "P.abstract IS NOT NULL AND P.abstract ~* '(\mcorona\s+virus\M)'))"),
-        ('Corona<->virus & Respiratory<->Syndrome',
-         " AND ((P.title IS NOT NULL AND P.title ~* '(\mcorona\s+virus\M)' OR "
-         "P.abstract IS NOT NULL AND P.abstract ~* '(\mcorona\s+virus\M)') "
-         "AND (P.title IS NOT NULL AND P.title ~* '(\mrespiratory\s+syndrome\M)' "
-         "OR P.abstract IS NOT NULL AND P.abstract ~* '(\mrespiratory\s+syndrome\M)'))")
+        ('"Corona virus"',
+         "(P.title IS NOT NULL AND P.title ~* '(\mcorona\s+virus\M)' OR "
+         "P.abstract IS NOT NULL AND P.abstract ~* '(\mcorona\s+virus\M)')"),
+        ('COVID-19,  Respiratory Syndrome', ''),
+        ('COVID-19, "Corona virus" , Respiratory Syndrome',
+         "(P.title IS NOT NULL AND P.title ~* '(\mcorona\s+virus\M)' OR "
+         "P.abstract IS NOT NULL AND P.abstract ~* '(\mcorona\s+virus\M)')")
     ])
-    def test_no_stemming_filter(self, query, phrase_filter):
-        # print(no_stemming_filter_for_phrases(query))
-        self.assertEqual(phrase_filter, no_stemming_filter_for_phrases(query))
+    def test_no_stemming_filter(self, query, expected_phrase_filter):
+        query, phrase_filter = preprocess_search_query_for_postgres(query)
+        self.assertEqual(expected_phrase_filter, phrase_filter)
 
     def test_non_english_query(self):
         with self.assertRaises(Exception):
             self.assertEqual('ОЧЕНЬ & СТРАШНАЯ & БОЛЕЗНЬ',
-                             preprocess_search_query_for_postgres('ОЧЕНЬ СТРАШНАЯ БОЛЕЗНЬ', 0))
+                             preprocess_search_query_for_postgres('ОЧЕНЬ СТРАШНАЯ БОЛЕЗНЬ')[0])
 
     def test_preprocess_search_illegal_string(self):
         with self.assertRaises(Exception):
-            preprocess_search_query_for_postgres('"Foo" Bar"', 2)
+            preprocess_search_query_for_postgres('"Foo" Bar"')
         with self.assertRaises(Exception):
-            preprocess_search_query_for_postgres('&&&', 2)
+            preprocess_search_query_for_postgres('&&&')
 
     def test_preprocess_quotes(self):
         self.assertEqual(") or '1' == '1", preprocess_quotes("''') or '1' == ''1"))
