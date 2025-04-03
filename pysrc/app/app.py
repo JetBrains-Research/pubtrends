@@ -194,7 +194,7 @@ def search_paper():
             limit = data.get('limit')
             topics = data.get('topics')
             expand = data.get('expand')
-            noreviews = request.args.get('noreviews') == 'on'  # Include reviews in the initial search phase
+            noreviews = data.get('noreviews') == 'on'  # Include reviews in the initial search phase
             job = analyze_search_paper.delay(source, None, key, value, expand, limit, noreviews, topics,
                                              test=app.config['TESTING'])
             return redirect(url_for('.process', query=trim_query(f'Papers {key}={value}'),
@@ -227,13 +227,15 @@ def process():
         analysis_type = request.values.get('analysis_type')
         source = request.values.get('source')
         topics = request.values.get('topics')
+        noreviews = request.args.get('noreviews') == 'on'
 
         if analysis_type == IDS_ANALYSIS_TYPE:
             logger.info(f'/process ids {log_request(request)}')
             return render_template('process.html',
                                    redirect_page='result',  # redirect in case of success
                                    redirect_args=dict(query=quote(trim_query(query)), source=source, jobid=jobid,
-                                                      limit=analysis_type, sort='', topics=topics),
+                                                      limit=analysis_type, sort='', topics=topics,
+                                                      noreviews=noreviews),
                                    query=trim_query(query), source=source, limit=analysis_type, sort='',
                                    jobid=jobid, version=VERSION)
 
@@ -242,12 +244,14 @@ def process():
             key = request.args.get('key')
             value = request.args.get('value')
             limit = request.args.get('limit') or PUBTRENDS_CONFIG.show_max_articles_default_value
+            noreviews = request.args.get('noreviews') == 'on'
             if ';' in value:
                 return render_template('process.html',
                                        redirect_page='result',  # redirect in case of success
                                        redirect_args=dict(query=quote(trim_query(f'Papers {key}={value}')),
                                                           source=source, jobid=jobid, sort='',
-                                                          limit=limit, topics=topics),
+                                                          limit=limit, topics=topics,
+                                                          noreviews=noreviews),
                                        query=trim_query(query), source=source,
                                        jobid=jobid, version=VERSION)
             else:
@@ -255,7 +259,8 @@ def process():
                                        redirect_page='paper',  # redirect in case of success
                                        redirect_args=dict(query=quote(trim_query(f'Papers {key}={value}')),
                                                           source=source, jobid=jobid, sort='',
-                                                          key=key, value=value, limit=limit, topics=topics),
+                                                          key=key, value=value, limit=limit, topics=topics,
+                                                          noreviews=noreviews),
                                        query=trim_query(query), source=source,
                                        jobid=jobid, version=VERSION)
 
@@ -276,11 +281,13 @@ def process():
             logger.info(f'/process regular search {log_request(request)}')
             limit = request.args.get('limit') or PUBTRENDS_CONFIG.show_max_articles_default_value
             sort = request.args.get('sort')
+            noreviews = request.args.get('noreviews') == 'on'
             return render_template('process.html',
                                    redirect_page='result',  # redirect in case of success
                                    redirect_args=dict(query=quote(trim_query(query)),
                                                       source=source, limit=limit, sort=sort,
-                                                      topics=topics, jobid=jobid),
+                                                      topics=topics, jobid=jobid,
+                                                      noreviews=noreviews),
                                    query=trim_query(query), source=source,
                                    limit=limit, sort=sort,
                                    jobid=jobid, version=VERSION)
