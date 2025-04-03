@@ -3,6 +3,13 @@ Pubtrends changelog
 
 Here you can see the full list of changes between each release.
 
+Version 1.2
+------------
+Released on April 3, 2025
+
+- Improved lookup for frequent words, e.g. cell, human, cancer, etc.
+- Introduced analysis for group of papers
+
 Version 1.1
 ------------
 Released on March 14, 2025
