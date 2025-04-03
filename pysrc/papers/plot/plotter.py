@@ -20,8 +20,8 @@ from pysrc.config import PAPERS_PLOT_WIDTH, WORD_CLOUD_WIDTH, WORD_CLOUD_KEYWORD
     PLOT_WIDTH, SHORT_PLOT_HEIGHT, MAX_LINEAR_AXIS, PLOT_HEIGHT, MAX_JOURNAL_LENGTH, MAX_AUTHOR_LENGTH, TALL_PLOT_HEIGHT
 from pysrc.papers.analysis.topics import get_topics_description
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
-from pysrc.papers.utils import cut_authors_list, trim, contrast_color, \
-    topics_palette_rgb, color_to_rgb, factor_colors, factors_colormap
+from pysrc.papers.utils import cut_authors_list, trim_query, contrast_color, \
+    topics_palette_rgb, color_to_rgb, factor_colors, factors_colormap, trim
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
 hv.extension('bokeh')

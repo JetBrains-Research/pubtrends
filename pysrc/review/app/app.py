@@ -8,7 +8,7 @@ from pysrc.app.messages import SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED
 from pysrc.app.reports import load_result_data, preprocess_string
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.config import PubtrendsConfig
-from pysrc.papers.utils import trim, MAX_QUERY_LENGTH
+from pysrc.papers.utils import trim_query, MAX_QUERY_LENGTH
 from pysrc.review.app.task import prepare_review_data_async
 from pysrc.version import VERSION
 
@@ -39,8 +39,9 @@ def register_app_review(app):
                 data = load_result_data(jobid, source, query, sort, limit, pubtrends_celery)
                 if data is not None:
                     job = prepare_review_data_async.delay(data, source, num_papers, num_sents)
-                    return redirect(url_for('.process', analysis_type=REVIEW_ANALYSIS_TYPE, jobid=job.id,
-                                            query=trim(query, MAX_QUERY_LENGTH), source=source, limit=limit, sort=sort))
+                    return redirect(url_for('.process', query=trim_query(query),
+                                            analysis_type=REVIEW_ANALYSIS_TYPE, jobid=job.id,
+                                            source=source, limit=limit, sort=sort))
             logger.error(f'/generate_review error {log_request(request)}')
             return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
         except Exception as e:
@@ -62,7 +63,7 @@ def register_app_review(app):
                     review_res = job.result
                     export_name = preprocess_string(f'{query}-review')
                     return render_template('review.html',
-                                           query=trim(query, MAX_QUERY_LENGTH),
+                                           query=trim_query(query),
                                            source=source,
                                            limit=limit,
                                            sort=sort,

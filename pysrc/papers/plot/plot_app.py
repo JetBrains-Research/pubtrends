@@ -12,7 +12,7 @@ from pysrc.papers.data import AnalysisData
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.plot.plotter import Plotter, components_list, topics_info_and_word_cloud
-from pysrc.papers.utils import trim, MAX_TITLE_LENGTH, topics_palette, MAX_QUERY_LENGTH
+from pysrc.papers.utils import trim_query, MAX_TITLE_LENGTH, topics_palette, MAX_QUERY_LENGTH, trim
 
 logger = logging.getLogger(__name__)
 
@@ -248,7 +248,7 @@ def prepare_graph_data(config: PubtrendsConfig, data: AnalysisData, shown_id=Non
         data.df, data.papers_graph
     )
     return dict(
-        query=trim(data.search_query, MAX_QUERY_LENGTH),
+        query=trim_query(data.search_query),
         source=data.source,
         # Don't highlight any search_ids if all the papers are there
         search_ids=json.dumps(data.search_ids if data.search_ids and len(data.search_ids) < len(data.df) else []),

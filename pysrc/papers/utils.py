@@ -67,13 +67,16 @@ def to_32_bit_int(n):
     return n
 
 
-def trim(string, max_length):
-    if string is None:
+def trim_query(query):
+    return trim(query, MAX_QUERY_LENGTH)
+
+def trim(text, max_length):
+    if text is None:
         return ''
-    elif len(string) > max_length:
-        return f'{string[:max_length]}...'
+    elif len(text) > max_length:
+        return f'{text[:max_length]}...'
     else:
-        return string
+        return text
 
 
 def preprocess_doi(line):

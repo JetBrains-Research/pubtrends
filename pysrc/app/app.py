@@ -23,7 +23,7 @@ from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, 
 from pysrc.config import PubtrendsConfig
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plot_app import prepare_graph_data, prepare_papers_data, prepare_paper_data, prepare_result_data
-from pysrc.papers.utils import trim, IDS_ANALYSIS_TYPE, PAPER_ANALYSIS_TYPE, MAX_QUERY_LENGTH
+from pysrc.papers.utils import trim_query, IDS_ANALYSIS_TYPE, PAPER_ANALYSIS_TYPE
 from pysrc.version import VERSION
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
@@ -125,8 +125,8 @@ def index():
                            default_limit=PUBTRENDS_CONFIG.show_max_articles_default_value,
                            topics_variants=PUBTRENDS_CONFIG.show_topics_options,
                            default_topics=PUBTRENDS_CONFIG.show_topics_default_value,
-                           expand_variants = range(PUBTRENDS_CONFIG.paper_expands_steps + 1),
-                           default_expand = PUBTRENDS_CONFIG.paper_expands_steps,
+                           expand_variants=range(PUBTRENDS_CONFIG.paper_expands_steps + 1),
+                           default_expand=PUBTRENDS_CONFIG.paper_expands_steps,
                            max_papers=PUBTRENDS_CONFIG.max_number_of_articles,
                            pm_enabled=PUBTRENDS_CONFIG.pm_enabled,
                            ss_enabled=PUBTRENDS_CONFIG.ss_enabled,
@@ -162,7 +162,7 @@ def search_terms():
             job = analyze_pubmed_search.delay(query=query, sort=sort, limit=limit, topics=topics,
                                               test=app.config['TESTING'])
             return redirect(
-                url_for('.process', source='Pubmed', query=trim(query, MAX_QUERY_LENGTH), limit=limit, sort='',
+                url_for('.process', source='Pubmed', query=trim_query(query), limit=limit, sort='',
                         topics=topics,
                         jobid=job.id))
 
@@ -172,7 +172,7 @@ def search_terms():
                                              noreviews=noreviews, topics=topics,
                                              test=app.config['TESTING'])
             return redirect(
-                url_for('.process', query=trim(query, MAX_QUERY_LENGTH), source=source, limit=limit, sort=sort,
+                url_for('.process', query=trim_query(query), source=source, limit=limit, sort=sort,
                         noreviews=noreviews, topics=topics,
                         jobid=job.id))
         logger.error(f'/search_terms error {log_request(request)}')
@@ -197,7 +197,7 @@ def search_paper():
             noreviews = request.args.get('noreviews') == 'on'  # Include reviews in the initial search phase
             job = analyze_search_paper.delay(source, None, key, value, expand, limit, noreviews, topics,
                                              test=app.config['TESTING'])
-            return redirect(url_for('.process', query=trim(f'Papers {key}={value}', MAX_QUERY_LENGTH),
+            return redirect(url_for('.process', query=trim_query(f'Papers {key}={value}'),
                                     analysis_type=PAPER_ANALYSIS_TYPE,
                                     key=key, value=value,
                                     source=source, expand=expand, limit=limit, noreviews=noreviews, topics=topics,
@@ -232,9 +232,9 @@ def process():
             logger.info(f'/process ids {log_request(request)}')
             return render_template('process.html',
                                    redirect_page='result',  # redirect in case of success
-                                   redirect_args=dict(query=quote(query), source=source, jobid=jobid,
+                                   redirect_args=dict(query=quote(trim_query(query)), source=source, jobid=jobid,
                                                       limit=analysis_type, sort='', topics=topics),
-                                   query=trim(query, MAX_QUERY_LENGTH), source=source, limit=analysis_type, sort='',
+                                   query=trim_query(query), source=source, limit=analysis_type, sort='',
                                    jobid=jobid, version=VERSION)
 
         elif analysis_type == PAPER_ANALYSIS_TYPE:
@@ -245,17 +245,19 @@ def process():
             if ';' in value:
                 return render_template('process.html',
                                        redirect_page='result',  # redirect in case of success
-                                       redirect_args=dict(source=source, jobid=jobid, sort='',
-                                                          query=quote(f'Papers {key}={value}'), limit=limit, topics=topics),
-                                       query=trim(query, MAX_QUERY_LENGTH), source=source,
+                                       redirect_args=dict(query=quote(trim_query(f'Papers {key}={value}')),
+                                                          source=source, jobid=jobid, sort='',
+                                                          limit=limit, topics=topics),
+                                       query=trim_query(query), source=source,
                                        jobid=jobid, version=VERSION)
             else:
                 return render_template('process.html',
-                                   redirect_page='paper',  # redirect in case of success
-                                   redirect_args=dict(source=source, jobid=jobid, sort='',
-                                                      key=key, value=value, limit=limit, topics=topics),
-                                   query=trim(query, MAX_QUERY_LENGTH), source=source,
-                                   jobid=jobid, version=VERSION)
+                                       redirect_page='paper',  # redirect in case of success
+                                       redirect_args=dict(query=quote(trim_query(f'Papers {key}={value}')),
+                                                          source=source, jobid=jobid, sort='',
+                                                          key=key, value=value, limit=limit, topics=topics),
+                                       query=trim_query(query), source=source,
+                                       jobid=jobid, version=VERSION)
 
         elif analysis_type == REVIEW_ANALYSIS_TYPE:
             logger.info(f'/process review {log_request(request)}')
@@ -263,9 +265,10 @@ def process():
             sort = request.args.get('sort')
             return render_template('process.html',
                                    redirect_page='review',  # redirect in case of success
-                                   redirect_args=dict(query=quote(query), source=source, limit=limit, sort=sort,
+                                   redirect_args=dict(query=quote(trim_query(query)),
+                                                      source=source, limit=limit, sort=sort,
                                                       jobid=jobid),
-                                   query=trim(query, MAX_QUERY_LENGTH), source=source,
+                                   query=trim_query(query), source=source,
                                    limit=limit, sort=sort,
                                    jobid=jobid, version=VERSION)
 
@@ -275,9 +278,10 @@ def process():
             sort = request.args.get('sort')
             return render_template('process.html',
                                    redirect_page='result',  # redirect in case of success
-                                   redirect_args=dict(query=quote(query), source=source, limit=limit, sort=sort,
+                                   redirect_args=dict(query=quote(trim_query(query)),
+                                                      source=source, limit=limit, sort=sort,
                                                       topics=topics, jobid=jobid),
-                                   query=trim(query, MAX_QUERY_LENGTH), source=source,
+                                   query=trim_query(query), source=source,
                                    limit=limit, sort=sort,
                                    jobid=jobid, version=VERSION)
 
@@ -350,7 +354,7 @@ def result():
             if data is not None:
                 logger.info(f'/result success {log_request(request)}')
                 return render_template('result.html',
-                                       query=trim(query, MAX_QUERY_LENGTH),
+                                       query=trim_query(query),
                                        source=source,
                                        limit=limit,
                                        sort=sort,
@@ -364,7 +368,7 @@ def result():
                 task_id=jobid
             )
             return redirect(
-                url_for('.process', query=trim(query, MAX_QUERY_LENGTH), source=source, limit=limit, sort=sort,
+                url_for('.process', query=trim_query(query), source=source, limit=limit, sort=sort,
                         noreviews=noreviews, topics=topics,
                         jobid=jobid))
         else:
@@ -433,7 +437,7 @@ def paper():
                         app.config['TESTING']
                     ], task_id=jobid
                 )
-                return redirect(url_for('.process', query=trim(f'Paper {key}={value}', MAX_QUERY_LENGTH),
+                return redirect(url_for('.process', query=trim_query(f'Paper {key}={value}'),
                                         analysis_type=PAPER_ANALYSIS_TYPE,
                                         source=source, key=key, value=value, topics=topics, jobid=jobid))
         logger.error(f'/paper error wrong request {log_request(request)}')
@@ -491,7 +495,7 @@ def show_ids():
                 return render_template('papers.html',
                                        version=VERSION,
                                        source=source,
-                                       query=trim(query, MAX_QUERY_LENGTH),
+                                       query=trim_query(query),
                                        search_string=search_string,
                                        limit=limit,
                                        sort=sort,
