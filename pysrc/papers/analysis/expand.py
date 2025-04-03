@@ -69,13 +69,13 @@ def _expand_ids_step(
         loader,
         ids,
         limit,
-        noreview,
+        noreviews,
         max_expand,
         cit_mean,
         cit_std,
         citations_sigma
 ):
-    new_df = loader.expand(ids, max_expand - len(ids), noreview)
+    new_df = loader.expand(ids, max_expand - len(ids), noreviews)
     logger.debug(f'Expanded by references: {len(new_df)}')
 
     if len(new_df) == 0:
