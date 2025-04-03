@@ -144,6 +144,12 @@ def about():
 # Search form POST methods #
 ############################
 
+def value_to_bool(value):
+    return str(value).lower() == 'on'
+
+def bool_to_value(value):
+    return 'on' if value else 'off'
+
 @app.route('/search_terms', methods=['POST'])
 def search_terms():
     logger.info(f'/search_terms {log_request(request)}')
@@ -152,7 +158,7 @@ def search_terms():
     sort = request.form.get('sort')  # Sort order
     limit = request.form.get('limit')  # Limit
     pubmed_syntax = request.form.get('pubmed-syntax') == 'on'
-    noreviews = request.form.get('noreviews') == 'on'  # Include reviews in the initial search phase
+    noreviews = value_to_bool(request.form.get('noreviews'))
     topics = request.form.get('topics')  # Topics sizes
 
     try:
@@ -194,7 +200,7 @@ def search_paper():
             limit = data.get('limit')
             topics = data.get('topics')
             expand = data.get('expand')
-            noreviews = data.get('noreviews') == 'on'  # Include reviews in the initial search phase
+            noreviews = value_to_bool(data.get('noreviews'))
             job = analyze_search_paper.delay(source, None, key, value, expand, limit, noreviews, topics,
                                              test=app.config['TESTING'])
             return redirect(url_for('.process', query=trim_query(f'Papers {key}={value}'),
@@ -227,7 +233,7 @@ def process():
         analysis_type = request.values.get('analysis_type')
         source = request.values.get('source')
         topics = request.values.get('topics')
-        noreviews = request.args.get('noreviews') == 'on'
+        noreviews = value_to_bool(request.args.get('noreviews'))
 
         if analysis_type == IDS_ANALYSIS_TYPE:
             logger.info(f'/process ids {log_request(request)}')
@@ -235,7 +241,7 @@ def process():
                                    redirect_page='result',  # redirect in case of success
                                    redirect_args=dict(query=quote(trim_query(query)), source=source, jobid=jobid,
                                                       limit=analysis_type, sort='', topics=topics,
-                                                      noreviews=noreviews),
+                                                      noreviews=bool_to_value(noreviews)),
                                    query=trim_query(query), source=source, limit=analysis_type, sort='',
                                    jobid=jobid, version=VERSION)
 
@@ -244,14 +250,14 @@ def process():
             key = request.args.get('key')
             value = request.args.get('value')
             limit = request.args.get('limit') or PUBTRENDS_CONFIG.show_max_articles_default_value
-            noreviews = request.args.get('noreviews') == 'on'
+            noreviews = value_to_bool(request.args.get('noreviews'))
             if ';' in value:
                 return render_template('process.html',
                                        redirect_page='result',  # redirect in case of success
                                        redirect_args=dict(query=quote(trim_query(f'Papers {key}={value}')),
                                                           source=source, jobid=jobid, sort='',
                                                           limit=limit, topics=topics,
-                                                          noreviews=noreviews),
+                                                          noreviews=bool_to_value(noreviews)),
                                        query=trim_query(query), source=source,
                                        jobid=jobid, version=VERSION)
             else:
@@ -260,7 +266,7 @@ def process():
                                        redirect_args=dict(query=quote(trim_query(f'Papers {key}={value}')),
                                                           source=source, jobid=jobid, sort='',
                                                           key=key, value=value, limit=limit, topics=topics,
-                                                          noreviews=noreviews),
+                                                          noreviews=bool_to_value(noreviews)),
                                        query=trim_query(query), source=source,
                                        jobid=jobid, version=VERSION)
 
@@ -281,13 +287,13 @@ def process():
             logger.info(f'/process regular search {log_request(request)}')
             limit = request.args.get('limit') or PUBTRENDS_CONFIG.show_max_articles_default_value
             sort = request.args.get('sort')
-            noreviews = request.args.get('noreviews') == 'on'
+            noreviews = value_to_bool(request.args.get('noreviews'))
             return render_template('process.html',
                                    redirect_page='result',  # redirect in case of success
                                    redirect_args=dict(query=quote(trim_query(query)),
                                                       source=source, limit=limit, sort=sort,
                                                       topics=topics, jobid=jobid,
-                                                      noreviews=noreviews),
+                                                      noreviews=bool_to_value(noreviews)),
                                    query=trim_query(query), source=source,
                                    limit=limit, sort=sort,
                                    jobid=jobid, version=VERSION)
@@ -353,7 +359,7 @@ def result():
     source = request.args.get('source')
     limit = request.args.get('limit')
     sort = request.args.get('sort')
-    noreviews = request.args.get('noreviews') == 'on'  # Include reviews in the initial search phase
+    noreviews = value_to_bool(request.args.get('noreviews'))
     topics = request.args.get('topics')
     try:
         if jobid:
@@ -426,7 +432,7 @@ def paper():
     limit = request.args.get('limit')
     topics = request.args.get('topics')
     expand = request.args.get('expand')
-    noreviews = request.args.get('noreviews') == 'on'  # Include reviews in the initial search phase
+    noreviews = value_to_bool(request.args.get('noreviews'))
     try:
         if jobid:
             data = load_paper_data(jobid, source, f'{key}={value}', pubtrends_celery)
