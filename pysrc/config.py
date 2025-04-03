@@ -48,13 +48,14 @@ VECTOR_MIN_DF = 0.001
 # Terms with higher frequency will be ignored, remove abundant words
 VECTOR_MAX_DF = 0.8
 
-# Control citations count
+#############################
+## Expanding by references ##
+#############################
+
+# Control citations count while expanding
 EXPAND_CITATIONS_Q_LOW = 10
 EXPAND_CITATIONS_Q_HIGH = 90
 EXPAND_CITATIONS_SIGMA = 3
-
-# Take up to fraction of top similarity
-EXPAND_MESH_SIMILARITY = 0.5
 
 # Impact of single paper when analyzing citations and mesh terms when analysing paper
 EXPAND_SINGLE_PAPER_IMPACT = 50

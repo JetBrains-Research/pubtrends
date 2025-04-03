@@ -85,12 +85,7 @@ def analyze_search_paper(source, pid, key, value, expand, limit, noreviews, topi
         expand = int(expand) if expand is not None and expand != '' else analyzer.config.paper_expands_steps
         ids = expand_ids(loader=analyzer.loader, search_ids=result,
                          expand_steps=expand, limit=limit, noreviews=noreviews,
-                         max_expand=analyzer.config.paper_expand_limit,
-                         citations_q_low=EXPAND_CITATIONS_Q_LOW,
-                         citations_q_high=EXPAND_CITATIONS_Q_HIGH,
-                         citations_sigma=EXPAND_CITATIONS_SIGMA,
-                         mesh_similarity_threshold=EXPAND_MESH_SIMILARITY,
-                         single_paper_impact=EXPAND_SINGLE_PAPER_IMPACT)
+                         max_expand=analyzer.config.paper_expand_limit)
         return _analyze_id_list(
             analyzer, f'Paper {key}={value}', result,
             ids, source, None, limit, topics,
