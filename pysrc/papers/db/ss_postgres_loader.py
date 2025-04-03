@@ -139,9 +139,11 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
             with self.postgres_connection.cursor() as cursor:
                 try:
                     # Wait for execution
-                    threading.Timer(self.config.max_search_time_sec, cancel_query).start()
+                    timer = threading.Timer(self.config.max_search_time_sec, cancel_query)
+                    timer.start()
                     cursor.execute(query)
                     df = pd.DataFrame(cursor.fetchall(), columns=['id'], dtype=object)
+                    timer.cancel()
                 except psycopg2.extensions.QueryCanceledError:
                     sampling_fraction /= 10
                     logger.warning(f'search query timeout, increasing sampling fraction {sampling_fraction}')
