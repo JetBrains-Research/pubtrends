@@ -111,16 +111,6 @@ def parse_stats_content(lines):
                     if 'graph' not in info:
                         info['graph'] = True
 
-            if '/process review addr:' in line:
-                args = json.loads(re.sub(".*args:", "", line.strip()))
-                jobid = args['jobid']
-                if not jobid:
-                    continue
-                if jobid in terms_search_infos:
-                    info = terms_search_infos[jobid]
-                    if 'review' not in info:
-                        info['review'] = True
-
             if '/process paper analysis addr:' in line:
                 paper_search_dates.append(date)
                 args = json.loads(re.sub(".*args:", "", line.strip()))
@@ -187,7 +177,6 @@ def parse_stats_content(lines):
             info['papers_clicks'] if 'papers_clicks' in info else 0,
             '+' if 'papers_list' in info else '-',
             '+' if 'graph' in info else '-',
-            '+' if 'review' in info else '-',
         ))
     result['terms_searches_recent'] = terms_searches_recent_results[::-1]
 
@@ -242,7 +231,6 @@ def parse_stats_content(lines):
     result['searches_papers_clicks'] = sum('papers_clicks' in info for info in terms_search_infos.values())
     result['searches_papers_list_shown'] = sum('papers_list' in info for info in terms_search_infos.values())
     result['searches_graph_shown'] = sum('graph' in info for info in terms_search_infos.values())
-    result['searches_review_shown'] = sum('review' in info for info in terms_search_infos.values())
 
     # Papers search statistics
     paper_searches_successful = sum('end' in info for info in paper_search_infos.values())

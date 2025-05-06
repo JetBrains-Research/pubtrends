@@ -10,11 +10,6 @@ from pysrc.fasttext.fasttext import PRETRAINED_MODEL_CACHE, PRETRAINED_MODEL_CAC
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
-if PUBTRENDS_CONFIG.feature_review_enabled:
-    pass
-else:
-    REVIEW_ANALYSIS_TYPE = 'not_available'
-
 fasttext_app = Flask(__name__)
 
 #####################

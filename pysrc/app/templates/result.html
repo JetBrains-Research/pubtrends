@@ -170,7 +170,6 @@
             createClickableFeedBackForm("feedback-authors-form", "feedback-authors");
             createClickableFeedBackForm("feedback-journals-form", "feedback-journals");
             createClickableFeedBackForm("feedback-numbers-form", "feedback-numbers");
-            createClickableFeedBackForm("feedback-review-form", "feedback-review");
         });
     </script>
 </head>
@@ -272,19 +271,6 @@
                         </a>
                     </li>
                     {% endif %}
-
-
-                    {% if feature_review_enabled %}
-                    <li class="nav-item row">
-                        <a class="nav-link no-padding-right" href="#review" title="Review">
-                            <img class="nav-icon" src="{{ url_for('static', filename='list.svg') }}"/>
-                        </a>
-                        <a class="nav-link d-none d-xl-block no-padding" href="#review">
-                            Review
-                        </a>
-                    </li>
-                    {% endif %}
-
                 </ul>
             </div>
         </nav>
@@ -639,48 +625,6 @@
             </div>
             {% endif %}
 
-
-            {% if feature_review_enabled %}
-            <div class="card mt-3">
-                <div class="card-title" id="review">
-                    <h1 class="card-header">Review</h1>
-                </div>
-                <div class="card-body">
-                    <strong>Extractive summarization review</strong>
-                    <p>
-                        Generate a review for the chosen topic - a set of sentences from top cited papers <br>
-                        with the highest probability to be included in a real review paper.
-                    </p>
-                    <div class="row no-gutters align-items-center mb-3">
-                        <div class="col input-group mr-2">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text" id="number-papers-addon">Number of papers</span>
-                            </div>
-                            <input class="form-control form-control-borderless" type="number"
-                                   name="number-papers" id="papers-input"
-                                   value="10"
-                                   aria-describedby="number-papers-addon"
-                                   required>
-                        </div>
-                        <div class="col input-group">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text" id="number-of-sents-addon">Sentences each</span>
-                            </div>
-                            <input class="form-control form-control-borderless" type="number"
-                                   name="number-of-sents" id="sents-input"
-                                   value="1"
-                                   aria-describedby="number-of-sents-addon"
-                                   required>
-                        </div>
-                    </div>
-                    <button type="button" class="btn btn-secondary"
-                            onclick="review_callback($('#papers-input').val(), $('#sents-input').val());">
-                        Generate
-                    </button>
-                    <div class="mt-3" id="feedback-review-form"></div>
-                </div>
-            </div>
-            {% endif %}
 
             <div class="mt-3 ml-3" id="log">
                 <a href="javascript:void(0);"

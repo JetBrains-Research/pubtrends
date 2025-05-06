@@ -69,11 +69,10 @@
                 <th scope="col">Papers Clicks</th>
                 <th scope="col">Papers List</th>
                 <th scope="col">Graph</th>
-                <th scope="col">Review</th>
             </tr>
             </thead>
             <tbody>
-            {% for date, source, query, link, duration, status, papers_clicks, papers_list, graph, review in terms_searches_recent %}
+            {% for date, source, query, link, duration, status, papers_clicks, papers_list, graph in terms_searches_recent %}
                 <tr>
                     <th scope="row">{{ loop.index }}</th>
                     <td>{{ date }}</td>
@@ -86,7 +85,6 @@
                     <td>{{ papers_clicks }}</td>
                     <td>{{ papers_list }}</td>
                     <td>{{ graph }}</td>
-                    <td>{{ review }}</td>
                 </tr>
             {% endfor %}
             </tbody>

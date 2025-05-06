@@ -28,11 +28,6 @@ from pysrc.version import VERSION
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
-if PUBTRENDS_CONFIG.feature_review_enabled:
-    from pysrc.review.app.app import REVIEW_ANALYSIS_TYPE, register_app_review
-else:
-    REVIEW_ANALYSIS_TYPE = 'not_available'
-
 flask_app = Flask(__name__)
 
 if not flask_app.config['TESTING'] and not flask_app.config['DEBUG']:
@@ -283,19 +278,6 @@ def process():
                                                           topics=topics),
                                        query=trim_query(query), source=source,
                                        jobid=jobid, version=VERSION)
-
-        elif analysis_type == REVIEW_ANALYSIS_TYPE:
-            logger.info(f'/process review {log_request(request)}')
-            limit = request.args.get('limit') or PUBTRENDS_CONFIG.show_max_articles_default_value
-            sort = request.args.get('sort')
-            return render_template('process.html',
-                                   redirect_page='review',  # redirect in case of success
-                                   redirect_args=dict(query=quote(trim_query(query)),
-                                                      source=source, limit=limit, sort=sort,
-                                                      jobid=jobid),
-                                   query=trim_query(query), source=source,
-                                   limit=limit, sort=sort,
-                                   jobid=jobid, version=VERSION)
 
         elif query:  # This option should be the last default
             logger.info(f'/process regular search {log_request(request)}')
@@ -671,10 +653,6 @@ configure_admin_functions(flask_app, pubtrends_celery, logfile)
 #######################
 # Additional features #
 #######################
-
-if PUBTRENDS_CONFIG.feature_review_enabled:
-    register_app_review(flask_app)
-
 
 # Application
 def get_app():

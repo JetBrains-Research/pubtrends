@@ -106,13 +106,6 @@ launched within Docker. Continuous integration is done with TeamCity using build
     ```
    You can check current settings by command `SHOW ALL;` in psql console.
 
-5. Clone the [JetBrains-Research/pubtrends-review](https://github.com/JetBrains-Research/pubtrends-review) repository to
-   the working directory, and enable it in `~/.pubtrends/config.properties` file.
-
-   ```
-   git clone git@github.com:JetBrains-Research/pubtrends-review.git
-   ```
-
 ## Kotlin/Java Build
 
 Use the following command to test and build JAR package:
@@ -354,8 +347,6 @@ See [AUTHORS.md](AUTHORS.md) for a list of authors and contributors.
 
 * *Shpynov, O. and Kapralov, N., 2021, August. PubTrends: a scientific literature explorer. In Proceedings of the
 12th ACM Conference on Bioinformatics, Computational Biology, and Health Informatics (pp. 1-1).* https://doi.org/10.1145/3459930.3469501
-
-* *Nikiforovskaya, A., Kapralov, N., Vlasova, A., Shpynov, O. and Shpilman, A., 2020, December. Automatic generation of reviews of scientific papers. In 2020 19th IEEE International Conference on Machine Learning and Applications (ICMLA) (pp. 314-319). IEEE.* https://arxiv.org/abs/2010.04147
 
 * [Icons by Feather](https://feathericons.com/)
 

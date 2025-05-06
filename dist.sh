@@ -34,7 +34,6 @@ cp init.sh "${PTV}"/
 cp README.md ${PTV}/
 cp LICENSE.txt ${PTV}/
 rsync -aiz pysrc "${PTV}"/ --exclude=**/.git* --exclude=**/__pycache__*
-rsync -aiz pubtrends-review "${PTV}"/ --exclude=**/.git* --exclude=**/__pycache__*
 
 echo "Update config VERSION"
 # Don't use sed -i for BSD compatibility

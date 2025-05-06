@@ -56,7 +56,6 @@ def prepare_result_data(config: PubtrendsConfig, data: AnalysisData):
         feature_authors_enabled=config.feature_authors_enabled,
         feature_journals_enabled=config.feature_journals_enabled,
         feature_numbers_enabled=config.feature_numbers_enabled,
-        feature_review_enabled=config.feature_review_enabled
     ))
 
     if config.feature_authors_enabled:

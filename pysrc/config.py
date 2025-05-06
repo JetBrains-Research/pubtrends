@@ -169,4 +169,3 @@ class PubtrendsConfig:
         self.feature_authors_enabled = params.getboolean('feature_authors_enabled')
         self.feature_journals_enabled = params.getboolean('feature_journals_enabled')
         self.feature_numbers_enabled = params.getboolean('feature_numbers_enabled')
-        self.feature_review_enabled = params.getboolean('feature_review_enabled')
