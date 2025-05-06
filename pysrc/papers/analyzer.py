@@ -1,5 +1,4 @@
 import logging
-
 import numpy as np
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
@@ -21,6 +20,7 @@ from pysrc.papers.progress import Progress
 from pysrc.papers.utils import SORT_MOST_CITED
 
 logger = logging.getLogger(__name__)
+
 
 class PapersAnalyzer:
 
@@ -45,28 +45,30 @@ class PapersAnalyzer:
     def teardown(self):
         self.progress.remove_handler()
 
-    def search_terms(self, query, limit=None, sort=SORT_MOST_CITED, noreviews=True, task=None):
+    def search_terms(self, query, limit=None, sort=SORT_MOST_CITED,
+                     noreviews=True, min_year=None, max_year=None,
+                     task=None):
         limit = limit or self.config.show_max_articles_default_value
         # Search articles relevant to the terms
         if len(query) == 0:
             raise SearchError('Empty search string, please use search terms or '
                               'all the query wrapped in "" for phrasal search')
         noreviews_msg = ", not reviews" if noreviews else ""
-        self.progress.info(f'Searching {limit} {sort.lower()} publications matching {query}{noreviews_msg}',
+        min_year_msg = f", after year {min_year}" if min_year else ""
+        max_year_msg = f", before year {max_year}" if max_year else ""
+        self.progress.info(f'Searching {limit} {sort.lower()} publications matching {query}'
+                           f'{noreviews_msg}{min_year_msg}{max_year_msg}',
                            current=1, task=task)
-        ids = self.loader.search(query, limit=limit, sort=sort, noreviews=noreviews)
+        ids = self.loader.search(query, limit=limit, sort=sort,
+                                 noreviews=noreviews, min_year=min_year, max_year=max_year)
         if len(ids) == 0:
             raise SearchError(f"Nothing found for search query: {query}")
         else:
             self.progress.info(f'Found {len(ids)} publications in the database', current=1, task=task)
         return ids
 
-    def analyze_papers(self, ids, query, source, sort, limit, topics, test=False, task=None):
+    def analyze_papers(self, ids, topics, test=False, task=None):
         self.progress.info('Loading publication data', current=2, task=task)
-        self.source = source
-        self.sort = sort
-        self.limit = limit
-        self.topics = topics
         self.df = self.loader.load_publications(ids)
         self.set_current_step(2)
         if len(self.df) == 0:
@@ -222,13 +224,16 @@ class PapersAnalyzer:
                 logger.debug('Not enough papers for numbers extraction')
         self.progress.done('Done', task=task)
 
-    def save(self, search_query, search_ids) -> AnalysisData:
+    def save(self, search_ids, search_query, source, sort, limit, noreviews, min_year, max_year) -> AnalysisData:
         return AnalysisData(
             search_query=search_query,
             search_ids=search_ids,
-            source=self.source,
-            sort=self.sort,
-            limit=self.limit,
+            source=source,
+            sort=sort,
+            limit=limit,
+            noreviews=noreviews,
+            min_year=min_year,
+            max_year=max_year,
             df=self.df,
             cit_df=self.cit_df,
             cocit_grouped_df=self.cocit_grouped_df,

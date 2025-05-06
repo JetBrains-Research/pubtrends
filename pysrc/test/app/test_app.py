@@ -9,7 +9,7 @@ from urllib.parse import quote
 from celery.contrib.testing.tasks import ping
 from celery.contrib.testing.worker import start_worker
 
-from pysrc.app.app import app
+from pysrc.app.app import flask_app
 from pysrc.celery.tasks import pubtrends_celery
 from pysrc.config import PubtrendsConfig
 from pysrc.papers.db.pm_postgres_loader import PubmedPostgresLoader
@@ -55,16 +55,17 @@ class TestApp(unittest.TestCase):
         cls.celery_worker.__exit__(None, None, None)
         cls.loader.close_connection()
 
-    # TODO[shpynov] disabled for a while
     def test_terms_search(self):
-        app.config['TESTING'] = True
-        with app.test_client() as c:
+        flask_app.config['TESTING'] = True
+        with flask_app.test_client() as c:
             rv = c.post('/search_terms', data={
                 'query': 'Article Title',
                 'source': 'Pubmed',
                 'sort': SORT_MOST_CITED,
                 'limit': '100',
                 'noreviews': 'on',
+                'min_year': '',
+                'max_year': '',
                 'topics': '10'
             }, follow_redirects=True)
             self.assertEqual(200, rv.status_code)

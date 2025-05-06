@@ -8,7 +8,8 @@ from scipy.sparse import csr_matrix
 
 
 class AnalysisData:
-    def __init__(self, search_query, search_ids, source, sort, limit,
+    def __init__(self, search_query, search_ids,
+                 source, sort, limit, noreviews, min_year, max_year,
                  df, cit_df, cocit_grouped_df, bibliographic_coupling_df,
                  top_cited_df, max_gain_df, max_rel_gain_df,
                  corpus, corpus_tokens, corpus_counts,
@@ -20,6 +21,9 @@ class AnalysisData:
         self.source = source
         self.sort = sort
         self.limit = limit
+        self.noreviews = noreviews
+        self.min_year = min_year
+        self.max_year = max_year
         self.df = df
         self.cit_df = cit_df
         self.cocit_grouped_df = cocit_grouped_df
@@ -53,6 +57,9 @@ class AnalysisData:
             source=self.source,
             sort=self.sort,
             limit=self.limit,
+            noreviews=self.noreviews,
+            min_year=self.min_year,
+            max_year=self.max_year,
             df=self.df.to_json(),
             cit_df=self.cit_df.to_json(),
             cocit_grouped_df=self.cocit_grouped_df.to_json(),
@@ -81,6 +88,9 @@ class AnalysisData:
         source = fields['source']
         sort = fields['sort']
         limit = fields['limit']
+        noreviews = fields['noreviews']
+        min_year = fields['min_year']
+        max_year = fields['max_year']
         # Restore main dataframe
         df = pd.read_json(StringIO(fields['df']))
         df['id'] = df['id'].apply(str)
@@ -140,6 +150,9 @@ class AnalysisData:
             source=source,
             sort=sort,
             limit=limit,
+            noreviews=noreviews,
+            min_year=min_year,
+            max_year=max_year,
             df=df,
             cit_df=cit_df,
             cocit_grouped_df=cocit_grouped_df,

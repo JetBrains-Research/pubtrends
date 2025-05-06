@@ -25,7 +25,6 @@ def preprocess_search_query_for_postgres(query):
     """
     return a string that can be used in Postgres full text search query together with phrasal check queries
     """
-    logger.debug(f'Preprocess search string for Postgres full text lookup query: {query}')
     query = query.lower()
     # Fix apostrophes 's
     query = re.sub("'s$", '', query)

@@ -33,14 +33,14 @@ if PUBTRENDS_CONFIG.feature_review_enabled:
 else:
     REVIEW_ANALYSIS_TYPE = 'not_available'
 
-app = Flask(__name__)
+flask_app = Flask(__name__)
 
-if not app.config['TESTING'] and not app.config['DEBUG']:
-    app.config['CACHE_TYPE'] = 'RedisCache'
-app.config['CACHE_REDIS_URL'] = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379')
-app.config['CACHE_DEFAULT_TIMEOUT'] = 600  # 10 minutes
+if not flask_app.config['TESTING'] and not flask_app.config['DEBUG']:
+    flask_app.config['CACHE_TYPE'] = 'RedisCache'
+flask_app.config['CACHE_REDIS_URL'] = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379')
+flask_app.config['CACHE_DEFAULT_TIMEOUT'] = 600  # 10 minutes
 
-cache = Cache(app)
+cache = Cache(flask_app)
 
 #####################
 # Configure logging #
@@ -65,36 +65,36 @@ logging.basicConfig(filename=logfile,
 # and then set your Flask application log level the same as Gunicorn’s.
 if __name__ != '__main__':
     gunicorn_logger = logging.getLogger('gunicorn.error')
-    app.logger.setLevel(gunicorn_logger.level)
+    flask_app.logger.setLevel(gunicorn_logger.level)
 
-logger = app.logger
+logger = flask_app.logger
 
 
 #############
 # Main page #
 #############
 
-@app.route('/robots.txt')
-@app.route('/sitemap.xml')
-@app.route('/feedback.js')
-@app.route('/style.css')
-@app.route('/about_graph_explorer.png')
-@app.route('/about_hot_papers.png')
-@app.route('/about_keywords.png')
-@app.route('/about_main.png')
-@app.route('/about_network.png')
-@app.route('/about_pubtrends_scheme.png')
-@app.route('/about_report.png')
-@app.route('/about_review.png')
-@app.route('/about_top_cited_papers.png')
-@app.route('/about_topic.png')
-@app.route('/about_topics_by_year.png')
-@app.route('/about_topics_hierarchy.png')
-@app.route('/smile.svg')
-@app.route('/meh.svg')
-@app.route('/frown.svg')
+@flask_app.route('/robots.txt')
+@flask_app.route('/sitemap.xml')
+@flask_app.route('/feedback.js')
+@flask_app.route('/style.css')
+@flask_app.route('/about_graph_explorer.png')
+@flask_app.route('/about_hot_papers.png')
+@flask_app.route('/about_keywords.png')
+@flask_app.route('/about_main.png')
+@flask_app.route('/about_network.png')
+@flask_app.route('/about_pubtrends_scheme.png')
+@flask_app.route('/about_report.png')
+@flask_app.route('/about_review.png')
+@flask_app.route('/about_top_cited_papers.png')
+@flask_app.route('/about_topic.png')
+@flask_app.route('/about_topics_by_year.png')
+@flask_app.route('/about_topics_hierarchy.png')
+@flask_app.route('/smile.svg')
+@flask_app.route('/meh.svg')
+@flask_app.route('/frown.svg')
 def static_from_root():
-    return send_from_directory(app.static_folder, request.path[1:])
+    return send_from_directory(flask_app.static_folder, request.path[1:])
 
 
 PREDEFINED_JOBS = get_predefined_jobs(PUBTRENDS_CONFIG)
@@ -104,7 +104,7 @@ def log_request(r):
     return f'addr:{r.remote_addr} args:{json.dumps(r.args)}'
 
 
-@app.route('/')
+@flask_app.route('/')
 def index():
     if not is_fasttext_endpoint_ready():
         return render_template('init.html', version=VERSION, message=SERVICE_LOADING_INITIALIZING)
@@ -135,7 +135,7 @@ def index():
                            search_example_terms=search_example_terms)
 
 
-@app.route('/about.html', methods=['GET'])
+@flask_app.route('/about.html', methods=['GET'])
 def about():
     return render_template('about.html', version=VERSION)
 
@@ -150,7 +150,7 @@ def value_to_bool(value):
 def bool_to_value(value):
     return 'on' if value else 'off'
 
-@app.route('/search_terms', methods=['POST'])
+@flask_app.route('/search_terms', methods=['POST'])
 def search_terms():
     logger.info(f'/search_terms {log_request(request)}')
     query = request.form.get('query')  # Original search query
@@ -159,6 +159,8 @@ def search_terms():
     limit = request.form.get('limit')  # Limit
     pubmed_syntax = request.form.get('pubmed-syntax') == 'on'
     noreviews = value_to_bool(request.form.get('noreviews'))
+    min_year = request.form.get('min_year')  # Minimal year of publications
+    max_year = request.form.get('max_year')  # Maximal year of publications
     topics = request.form.get('topics')  # Topics sizes
 
     try:
@@ -166,7 +168,7 @@ def search_terms():
         if query and source and limit and topics and pubmed_syntax:
             # Regular analysis
             job = analyze_pubmed_search.delay(query=query, sort=sort, limit=limit, topics=topics,
-                                              test=app.config['TESTING'])
+                                              test=flask_app.config['TESTING'])
             return redirect(
                 url_for('.process', source='Pubmed', query=trim_query(query), limit=limit, sort='',
                         topics=topics,
@@ -175,11 +177,12 @@ def search_terms():
         # Regular search syntax
         if query and source and sort and limit and topics:
             job = analyze_search_terms.delay(source, query=query, limit=int(limit), sort=sort,
-                                             noreviews=noreviews, topics=topics,
-                                             test=app.config['TESTING'])
+                                             noreviews=noreviews, min_year=min_year, max_year=max_year,
+                                             topics=topics,
+                                             test=flask_app.config['TESTING'])
             return redirect(
                 url_for('.process', query=trim_query(query), source=source, limit=limit, sort=sort,
-                        noreviews=noreviews, topics=topics,
+                        noreviews=noreviews, min_year=min_year, max_year=max_year, topics=topics,
                         jobid=job.id))
         logger.error(f'/search_terms error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
@@ -188,7 +191,7 @@ def search_terms():
         return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
 
 
-@app.route('/search_paper', methods=['POST'])
+@flask_app.route('/search_paper', methods=['POST'])
 def search_paper():
     logger.info(f'/search_paper {log_request(request)}')
     data = request.form
@@ -198,15 +201,19 @@ def search_paper():
             key = data.get('key')
             value = data.get('value')
             limit = data.get('limit')
-            topics = data.get('topics')
+            noreviews = value_to_bool(request.form.get('noreviews'))
+            min_year = request.form.get('min_year')  # Minimal year of publications
+            max_year = request.form.get('max_year')  # Maximal year of publications
             expand = data.get('expand')
-            noreviews = value_to_bool(data.get('noreviews'))
+            topics = data.get('topics')
             job = analyze_search_paper.delay(source, None, key, value, expand, limit, noreviews, topics,
-                                             test=app.config['TESTING'])
+                                             test=flask_app.config['TESTING'])
             return redirect(url_for('.process', query=trim_query(f'Papers {key}={value}'),
                                     analysis_type=PAPER_ANALYSIS_TYPE,
                                     key=key, value=value,
-                                    source=source, expand=expand, limit=limit, noreviews=noreviews, topics=topics,
+                                    source=source, expand=expand, limit=limit,
+                                    noreviews=noreviews, min_year=min_year, max_year=max_year,
+                                    topics=topics,
                                     jobid=job.id))
         logger.error(f'/search_paper error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
@@ -219,7 +226,7 @@ def search_paper():
 # Analysis progress and cancelling #
 ####################################
 
-@app.route('/process')
+@flask_app.route('/process')
 def process():
     """ Rendering process.html for task being queued or executed at the moment """
     if len(request.args) > 0:
@@ -232,16 +239,20 @@ def process():
         query = request.args.get('query') or ''
         analysis_type = request.values.get('analysis_type')
         source = request.values.get('source')
+        noreviews = value_to_bool(request.form.get('noreviews'))
+        min_year = request.form.get('min_year')  # Minimal year of publications
+        max_year = request.form.get('max_year')  # Maximal year of publications
         topics = request.values.get('topics')
-        noreviews = value_to_bool(request.args.get('noreviews'))
 
         if analysis_type == IDS_ANALYSIS_TYPE:
             logger.info(f'/process ids {log_request(request)}')
             return render_template('process.html',
                                    redirect_page='result',  # redirect in case of success
                                    redirect_args=dict(query=quote(trim_query(query)), source=source, jobid=jobid,
-                                                      limit=analysis_type, sort='', topics=topics,
-                                                      noreviews=bool_to_value(noreviews)),
+                                                      limit=analysis_type, sort='',
+                                                      noreviews='on' if noreviews else '',
+                                                      min_year=min_year or '', max_year=max_year or '',
+                                                      topics=topics),
                                    query=trim_query(query), source=source, limit=analysis_type, sort='',
                                    jobid=jobid, version=VERSION)
 
@@ -255,9 +266,10 @@ def process():
                 return render_template('process.html',
                                        redirect_page='result',  # redirect in case of success
                                        redirect_args=dict(query=quote(trim_query(f'Papers {key}={value}')),
-                                                          source=source, jobid=jobid, sort='',
-                                                          limit=limit, topics=topics,
-                                                          noreviews=bool_to_value(noreviews)),
+                                                          source=source, jobid=jobid, sort='', limit=limit,
+                                                          noreviews='on' if noreviews else '',
+                                                          min_year=min_year or '', max_year=max_year or '',
+                                                          topics=topics),
                                        query=trim_query(query), source=source,
                                        jobid=jobid, version=VERSION)
             else:
@@ -265,8 +277,10 @@ def process():
                                        redirect_page='paper',  # redirect in case of success
                                        redirect_args=dict(query=quote(trim_query(f'Papers {key}={value}')),
                                                           source=source, jobid=jobid, sort='',
-                                                          key=key, value=value, limit=limit, topics=topics,
-                                                          noreviews=bool_to_value(noreviews)),
+                                                          key=key, value=value, limit=limit,
+                                                          noreviews='on' if noreviews else '',
+                                                          min_year=min_year or '', max_year=max_year or '',
+                                                          topics=topics),
                                        query=trim_query(query), source=source,
                                        jobid=jobid, version=VERSION)
 
@@ -292,8 +306,9 @@ def process():
                                    redirect_page='result',  # redirect in case of success
                                    redirect_args=dict(query=quote(trim_query(query)),
                                                       source=source, limit=limit, sort=sort,
-                                                      topics=topics, jobid=jobid,
-                                                      noreviews=bool_to_value(noreviews)),
+                                                      noreviews='on' if noreviews else '',
+                                                      min_year=min_year or '', max_year=max_year or '',
+                                                      topics=topics, jobid=jobid),
                                    query=trim_query(query), source=source,
                                    limit=limit, sort=sort,
                                    jobid=jobid, version=VERSION)
@@ -302,7 +317,7 @@ def process():
     return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
 
 
-@app.route('/status')
+@flask_app.route('/status')
 def status():
     """ Check tasks status being executed by Celery """
     jobid = request.values.get('jobid')
@@ -334,7 +349,7 @@ def status():
     return json.dumps(dict(state='FAILURE', message='No task id'))
 
 
-@app.route('/cancel')
+@flask_app.route('/cancel')
 def cancel():
     if len(request.args) > 0:
         jobid = request.values.get('jobid')
@@ -351,7 +366,7 @@ def cancel():
 ####################################
 
 
-@app.route('/result')
+@flask_app.route('/result')
 @cache.cached(query_string=True)
 def result():
     jobid = request.args.get('jobid')
@@ -359,11 +374,13 @@ def result():
     source = request.args.get('source')
     limit = request.args.get('limit')
     sort = request.args.get('sort')
-    noreviews = value_to_bool(request.args.get('noreviews'))
+    noreviews = value_to_bool(request.form.get('noreviews'))
+    min_year = request.form.get('min_year')  # Minimal year of publications
+    max_year = request.form.get('max_year')  # Maximal year of publications
     topics = request.args.get('topics')
     try:
         if jobid:
-            data = load_result_data(jobid, source, query, sort, limit, pubtrends_celery)
+            data = load_result_data(jobid, source, query, sort, limit, noreviews, min_year, max_year, pubtrends_celery)
             if data is not None:
                 logger.info(f'/result success {log_request(request)}')
                 return render_template('result.html',
@@ -377,12 +394,13 @@ def result():
                                        **prepare_result_data(PUBTRENDS_CONFIG, data))
             logger.info(f'/result No job or out-of-date job, restart it {log_request(request)}')
             analyze_search_terms.apply_async(
-                args=[source, query, sort, int(limit), noreviews, topics, app.config['TESTING']],
+                args=[source, query, sort, int(limit), noreviews, min_year, max_year, topics, flask_app.config['TESTING']],
                 task_id=jobid
             )
             return redirect(
                 url_for('.process', query=trim_query(query), source=source, limit=limit, sort=sort,
-                        noreviews=noreviews, topics=topics,
+                        noreviews=noreviews, min_year=min_year, max_year=max_year,
+                        topics=topics,
                         jobid=jobid))
         else:
             logger.error(f'/result error wrong request {log_request(request)}')
@@ -392,7 +410,7 @@ def result():
         return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
 
 
-@app.route('/graph')
+@flask_app.route('/graph')
 @cache.cached(query_string=True)
 def graph():
     jobid = request.values.get('jobid')
@@ -400,10 +418,13 @@ def graph():
     source = request.args.get('source')
     limit = request.args.get('limit')
     sort = request.args.get('sort')
+    noreviews = value_to_bool(request.form.get('noreviews'))
+    min_year = request.form.get('min_year')  # Minimal year of publications
+    max_year = request.form.get('max_year')  # Maximal year of publications
     pid = request.args.get('id')
     try:
         if jobid:
-            data = load_result_data(jobid, source, query, sort, limit, pubtrends_celery)
+            data = load_result_data(jobid, source, query, sort, limit, noreviews, min_year, max_year, pubtrends_celery)
             if data is not None:
                 logger.info(f'/graph success {log_request(request)}')
                 return render_template(
@@ -421,7 +442,7 @@ def graph():
         return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
 
 
-@app.route('/paper')
+@flask_app.route('/paper')
 @cache.cached(query_string=True)
 def paper():
     jobid = request.values.get('jobid')
@@ -430,12 +451,14 @@ def paper():
     key = request.args.get('key')
     value = request.args.get('value')
     limit = request.args.get('limit')
-    topics = request.args.get('topics')
+    noreviews = value_to_bool(request.form.get('noreviews'))
+    min_year = request.form.get('min_year')  # Minimal year of publications
+    max_year = request.form.get('max_year')  # Maximal year of publications
     expand = request.args.get('expand')
-    noreviews = value_to_bool(request.args.get('noreviews'))
+    topics = request.args.get('topics')
     try:
         if jobid:
-            data = load_paper_data(jobid, source, f'{key}={value}', pubtrends_celery)
+            data = load_paper_data(jobid, source, f'{key}={value}', flask_app)
             if data is not None:
                 logger.info(f'/paper success {log_request(request)}')
                 return render_template('paper.html',
@@ -446,8 +469,8 @@ def paper():
                 logger.info(f'/paper No job or out-of-date job, restart it {log_request(request)}')
                 analyze_search_paper.apply_async(
                     args=[
-                        source, pid, key, value, expand, limit, noreviews, topics,
-                        app.config['TESTING']
+                        source, pid, key, value, expand, limit, noreviews, min_year, max_year, topics,
+                        flask_app.config['TESTING']
                     ], task_id=jobid
                 )
                 return redirect(url_for('.process', query=trim_query(f'Paper {key}={value}'),
@@ -460,7 +483,7 @@ def paper():
         return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
 
 
-@app.route('/papers')
+@flask_app.route('/papers')
 @cache.cached(query_string=True)
 def show_ids():
     jobid = request.values.get('jobid')
@@ -468,6 +491,9 @@ def show_ids():
     source = request.args.get('source')  # Pubmed or Semantic Scholar
     limit = request.args.get('limit')
     sort = request.args.get('sort')
+    noreviews = value_to_bool(request.form.get('noreviews'))
+    min_year = request.form.get('min_year')  # Minimal year of publications
+    max_year = request.form.get('max_year')  # Maximal year of publications
     search_string = ''
     topic = request.args.get('topic')
     try:
@@ -498,7 +524,7 @@ def show_ids():
             search_string += 'Hot Papers'
 
         if jobid:
-            data = load_result_data(jobid, source, query, sort, limit, pubtrends_celery)
+            data = load_result_data(jobid, source, query, sort, limit, noreviews, min_year, max_year, pubtrends_celery)
             if data is not None:
                 logger.info(f'/papers success {log_request(request)}')
                 export_name = preprocess_string(f'{query}-{search_string}')
@@ -521,7 +547,7 @@ def show_ids():
         return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
 
 
-@app.route('/export_data', methods=['GET'])
+@flask_app.route('/export_data', methods=['GET'])
 @cache.cached(query_string=True)
 def export_results():
     logger.info(f'/export_data {log_request(request)}')
@@ -531,8 +557,11 @@ def export_results():
         source = request.args.get('source')
         limit = request.args.get('limit')
         sort = request.args.get('sort')
+        noreviews = value_to_bool(request.form.get('noreviews'))
+        min_year = request.form.get('min_year')  # Minimal year of publications
+        max_year = request.form.get('max_year')  # Maximal year of publications
         if jobid:
-            data = load_result_data(jobid, source, query, sort, limit, pubtrends_celery)
+            data = load_result_data(jobid, source, query, sort, limit, noreviews, min_year, max_year, pubtrends_celery)
             with tempfile.TemporaryDirectory() as tmpdir:
                 name = preprocess_string(f'{source}-{query}-{sort}-{limit}')
                 path = os.path.join(tmpdir, f'{name}.json.gz')
@@ -559,7 +588,7 @@ def are_predefined_jobs_ready():
         return True
     try:
         PREDEFINED_JOBS_LOCK.acquire()
-        if app.config.get('PREDEFINED_TASKS_READY', False):
+        if flask_app.config.get('PREDEFINED_TASKS_READY', False):
             return True
         ready = True
         inspect = pubtrends_celery.control.inspect()
@@ -580,17 +609,17 @@ def are_predefined_jobs_ready():
                     ready = False
                     continue
                 query, sort, limit = _predefined_example_params_by_jobid(source, jobid, PREDEFINED_JOBS)
-                data = load_result_data(jobid, source, query, sort, limit, pubtrends_celery)
+                data = load_result_data(jobid, source, query, sort, limit, False, None, None, pubtrends_celery)
                 if data is None:
                     logger.info(f'No job or out-of-date job for source={source} query={query}, launch it')
                     analyze_search_terms.apply_async(
-                        args=[source, query, sort, int(limit), False, PUBTRENDS_CONFIG.show_topics_default_value,
-                              app.config['TESTING']],
+                        args=[source, query, sort, int(limit), False, None, None,
+                              PUBTRENDS_CONFIG.show_topics_default_value, flask_app.config['TESTING']],
                         task_id=jobid
                     )
                     ready = False
         if ready:
-            app.config['PREDEFINED_TASKS_READY'] = True
+            flask_app.config['PREDEFINED_TASKS_READY'] = True
         return ready
     finally:
         PREDEFINED_JOBS_LOCK.release()
@@ -619,7 +648,7 @@ def is_fasttext_endpoint_ready():
 # Feedback functionality #
 ##########################
 
-@app.route('/feedback', methods=['POST'])
+@flask_app.route('/feedback', methods=['POST'])
 def feedback():
     logger.info(f'/feedback {log_request(request)}')
     data = request.form
@@ -637,21 +666,21 @@ def feedback():
 # Admin functionality #
 #######################
 
-configure_admin_functions(app, pubtrends_celery, logfile)
+configure_admin_functions(flask_app, pubtrends_celery, logfile)
 
 #######################
 # Additional features #
 #######################
 
 if PUBTRENDS_CONFIG.feature_review_enabled:
-    register_app_review(app)
+    register_app_review(flask_app)
 
 
 # Application
 def get_app():
-    return app
+    return flask_app
 
 
 # With debug=True, Flask server will auto-reload on changes
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True, extra_files=['templates/'], port=5000)
+    flask_app.run(host='0.0.0.0', debug=True, extra_files=['templates/'], port=5000)

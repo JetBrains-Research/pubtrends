@@ -43,13 +43,11 @@ def get_predefined_jobs(config):
     return result
 
 
-def _save_result_data(data, log, jobid, source, query, sort, limit):
-    logger.info(f'Saving result for source={source} query={query} sort={sort} limit={limit}')
-    _save_data(result_folder_name(source, query, sort, limit, jobid), data, log)
+def _save_result_data(data, log, jobid, source, query, sort, limit, noreviews, min_year, max_year):
+    _save_data(result_folder_name(source, query, sort, limit, noreviews, min_year, max_year, jobid), data, log)
 
 
 def _save_paper_data(data, log, jobid, source, query):
-    logger.info(f'Saving paper for source={source} query={query}')
     _save_data(paper_folder_name(source, query, jobid), data, log)
 
 
@@ -71,8 +69,9 @@ def _save_data(name, data, log):
         FILES_LOCK.release()
 
 
-def load_result_data(jobid, source, query, sort, limit, app) -> AnalysisData | None:
-    logger.info(f'Trying to load data for source={source} query={query} sort={sort} limit={limit}')
+def load_result_data(jobid, source, query, sort, limit, noreviews, min_year, max_year, celery_app) -> AnalysisData | None:
+    logger.info(f'Trying to load data for source={source} query={query} sort={sort} limit={limit} '
+                f'noreviews={noreviews} min_year={min_year} max_year={max_year}')
     try:
         FILES_LOCK.acquire()
         folder = _find_folder(jobid)
@@ -83,15 +82,15 @@ def load_result_data(jobid, source, query, sort, limit, app) -> AnalysisData | N
                     return AnalysisData.from_json(json.loads(f.read().decode('utf-8')))
     finally:
         FILES_LOCK.release()
-    job = AsyncResult(jobid, app=app)
+    job = AsyncResult(jobid, app=celery_app)
     if job and job.state == 'SUCCESS':
         data, log = job.result
-        _save_result_data(data, log, jobid, source, query, sort, limit)
+        _save_result_data(data, log, jobid, source, query, sort, limit, noreviews, min_year, max_year)
         return AnalysisData.from_json(data)
     return None
 
 
-def load_paper_data(jobid, source, query, app) -> AnalysisData | None:
+def load_paper_data(jobid, source, query, celery_app) -> AnalysisData | None:
     logger.info(f'Trying to load paper data for source={source} query={query}')
     try:
         FILES_LOCK.acquire()
@@ -103,7 +102,7 @@ def load_paper_data(jobid, source, query, app) -> AnalysisData | None:
                     return AnalysisData.from_json(json.loads(f.read().decode('utf-8')))
     finally:
         FILES_LOCK.release()
-    job = AsyncResult(jobid, app=app)
+    job = AsyncResult(jobid, app=celery_app)
     if job and job.state == 'SUCCESS':
         data, log = job.result
         _save_paper_data(data, log, jobid, source, query)
@@ -114,8 +113,8 @@ def preprocess_string(s):
     return re.sub(r'-{2,}', '-', re.sub(r'[^a-z0-9_]+', '-', s.lower())).strip('-')
 
 
-def result_folder_name(source, query, sort, limit, jobid):
-    return get_folder_name(jobid, f'{source}-{query}-{sort}-{limit}')
+def result_folder_name(source, query, sort, limit, noreviews, min_year, max_year, jobid):
+    return get_folder_name(jobid, f'{source}-{query}-{sort}-{limit}-{noreviews}-{min_year}-{max_year}')
 
 
 def paper_folder_name(source, query, jobid):

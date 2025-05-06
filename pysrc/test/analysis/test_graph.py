@@ -17,10 +17,8 @@ class TestBuildGraph(unittest.TestCase):
     def setUpClass(cls):
         analyzer = PapersAnalyzer(MockLoader(), PUBTRENDS_CONFIG, test=True)
         ids = analyzer.search_terms(query='query')
-        analyzer.analyze_papers(
-            ids, 'query', 'Pubmed', SORT_MOST_CITED, 10, PUBTRENDS_CONFIG.show_topics_default_value, test=True
-        )
-        cls.data = analyzer.save(search_query='query', search_ids=None)
+        analyzer.analyze_papers(ids, PUBTRENDS_CONFIG.show_topics_default_value, test=True)
+        cls.data = analyzer.save(None, 'query', 'Pubmed', SORT_MOST_CITED, 10, False, None, None)
 
     def test_build_papers_graph(self):
         edges = list(self.data.papers_graph.edges(data=True))
@@ -41,7 +39,7 @@ class TestBuildGraphSingle(unittest.TestCase):
     def setUpClass(cls):
         cls.analyzer = PapersAnalyzer(MockLoaderSingle(), PUBTRENDS_CONFIG, test=True)
         ids = cls.analyzer.search_terms(query='query')
-        cls.analyzer.analyze_papers(ids, 'query', PUBTRENDS_CONFIG.show_topics_default_value, test=True)
+        cls.analyzer.analyze_papers(ids, PUBTRENDS_CONFIG.show_topics_default_value, test=True)
         cls.analyzer.cit_df = cls.analyzer.loader.load_citations(cls.analyzer.df['id'])
 
 

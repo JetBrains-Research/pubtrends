@@ -47,7 +47,9 @@
         "use strict";
 
         function papers_callback_impl(key, value) {
-            const url = '/papers?query=' + normalize('{{ query }}') + '&source={{source}}&limit={{limit}}&sort={{sort}}';
+            const url = '/papers?query=' + normalize('{{ query }}') +
+                '&source={{source}}&limit={{limit}}&sort={{sort}}' +
+                '&noreviews={{noreviews}}&min_year={{min_year}}&max_year={{max_year}}';
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
             let args = '';
@@ -90,21 +92,27 @@
         }
 
         function graph_callback() {
-            const url = '/graph?query=' + normalize('{{ query }}') + '&source={{source}}&limit={{limit}}&sort={{sort}}';
+            const url = '/graph?query=' + normalize('{{ query }}') +
+                '&source={{source}}&limit={{limit}}&sort={{sort}}' +
+                '&noreviews={{noreviews}}&min_year={{min_year}}&max_year={{max_year}}';
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
             window.open(url + '&jobid=' + jobid, '_blank');
         }
 
         function export_data() {
-            const url = '/export_data?query=' + normalize('{{ query }}') + '&source={{source}}&limit={{limit}}&sort={{sort}}';
+            const url = '/export_data?query=' + normalize('{{ query }}') +
+                '&source={{source}}&limit={{limit}}&sort={{sort}}' +
+                '&noreviews={{noreviews}}&min_year={{min_year}}&max_year={{max_year}}';
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
             window.open(url + '&jobid=' + jobid, '_blank');
         }
 
         function review_callback(papersNumber, sentsNumber) {
-            const url = '/generate_review?query=' + normalize('{{ query }}') + '&source={{source}}&limit={{limit}}&sort={{sort}}';
+            const url = '/generate_review?query=' + normalize('{{ query }}') +
+                '&source={{source}}&limit={{limit}}&sort={{sort}}' +
+                '&noreviews={{noreviews}}&min_year={{min_year}}&max_year={{max_year}}';
             // Decode jobid from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
             window.open(url + '&jobid=' + jobid + '&papers_number=' + papersNumber + '&sents_number=' + sentsNumber, '_blank');

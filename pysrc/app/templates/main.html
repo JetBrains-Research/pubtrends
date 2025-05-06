@@ -205,6 +205,22 @@
                                     </label>
                                 </div>
                             </div>
+                            <div class="row no-gutters align-items-center mt-2">
+                                <div class="col input-group mr-2">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text" id="min-year-addon">Min year</span>
+                                    </div>
+                                    <input type="number" class="form-control" aria-describedby="min-year-addon" 
+                                           name="min_year" placeholder="Optional" min="1800" max="2100">
+                                </div>
+                                <div class="col input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text" id="max-year-addon">Max year</span>
+                                    </div>
+                                    <input type="number" class="form-control" aria-describedby="max-year-addon" 
+                                           name="max_year" placeholder="Optional" min="1800" max="2100">
+                                </div>
+                            </div>
                         </div>
                     </form>
                     <!-- Preprocessed example -->
@@ -217,6 +233,8 @@
                             <input type="hidden" name="topics" value="{{ default_topics }}">
                             <input type="hidden" name="limit" value="{{ default_limit }}">
                             <input type="hidden" name="noreviews" value="on">
+                            <input type="hidden" name="min_year" value="on">
+                            <input type="hidden" name="max_year" value="on">
                             <input type="hidden" name="jobid" value="{{ jobid }}">
                             <button type="submit" name="query" value="{{ terms }}"
                                     class="btn btn-sm btn-outline-secondary mt-2 mr-2"
