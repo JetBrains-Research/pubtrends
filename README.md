@@ -352,7 +352,7 @@ See [AUTHORS.md](AUTHORS.md) for a list of authors and contributors.
 
 # Materials
 
-* *Shpynov, O. and Nikolai, K., 2021, August. PubTrends: a scientific literature explorer. In Proceedings of the
+* *Shpynov, O. and Kapralov, N., 2021, August. PubTrends: a scientific literature explorer. In Proceedings of the
 12th ACM Conference on Bioinformatics, Computational Biology, and Health Informatics (pp. 1-1).* https://doi.org/10.1145/3459930.3469501
 
 * *Nikiforovskaya, A., Kapralov, N., Vlasova, A., Shpynov, O. and Shpilman, A., 2020, December. Automatic generation of reviews of scientific papers. In 2020 19th IEEE International Conference on Machine Learning and Applications (ICMLA) (pp. 314-319). IEEE.* https://arxiv.org/abs/2010.04147
