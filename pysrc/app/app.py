@@ -197,8 +197,6 @@ def search_paper():
             value = data.get('value')
             limit = data.get('limit')
             noreviews = value_to_bool(request.form.get('noreviews'))
-            min_year = request.form.get('min_year')  # Minimal year of publications
-            max_year = request.form.get('max_year')  # Maximal year of publications
             expand = data.get('expand')
             topics = data.get('topics')
             job = analyze_search_paper.delay(source, None, key, value, expand, limit, noreviews, topics,
@@ -207,7 +205,7 @@ def search_paper():
                                     analysis_type=PAPER_ANALYSIS_TYPE,
                                     key=key, value=value,
                                     source=source, expand=expand, limit=limit,
-                                    noreviews=noreviews, min_year=min_year, max_year=max_year,
+                                    noreviews=noreviews,
                                     topics=topics,
                                     jobid=job.id))
         logger.error(f'/search_paper error {log_request(request)}')
@@ -274,7 +272,6 @@ def process():
                                                           source=source, jobid=jobid, sort='',
                                                           key=key, value=value, limit=limit,
                                                           noreviews='on' if noreviews else '',
-                                                          min_year=min_year or '', max_year=max_year or '',
                                                           topics=topics),
                                        query=trim_query(query), source=source,
                                        jobid=jobid, version=VERSION)
@@ -440,7 +437,7 @@ def paper():
     topics = request.args.get('topics')
     try:
         if jobid:
-            data = load_paper_data(jobid, source, f'{key}={value}', flask_app)
+            data = load_paper_data(jobid, source, f'{key}={value}', pubtrends_celery)
             if data is not None:
                 logger.info(f'/paper success {log_request(request)}')
                 return render_template('paper.html',
@@ -530,8 +527,7 @@ def show_ids():
 
 
 @flask_app.route('/export_data', methods=['GET'])
-@cache.cached(query_string=True)
-def export_results():
+def export_data():
     logger.info(f'/export_data {log_request(request)}')
     try:
         jobid = request.values.get('jobid')
@@ -539,17 +535,21 @@ def export_results():
         source = request.args.get('source')
         limit = request.args.get('limit')
         sort = request.args.get('sort')
-        noreviews = value_to_bool(request.form.get('noreviews'))
-        min_year = request.form.get('min_year')  # Minimal year of publications
-        max_year = request.form.get('max_year')  # Maximal year of publications
         if jobid:
-            data = load_result_data(jobid, source, query, sort, limit, noreviews, min_year, max_year, pubtrends_celery)
-            with tempfile.TemporaryDirectory() as tmpdir:
-                name = preprocess_string(f'{source}-{query}-{sort}-{limit}')
-                path = os.path.join(tmpdir, f'{name}.json.gz')
-                with gzip.open(path, 'w') as f:
-                    f.write(json.dumps(data.to_json()).encode('utf-8'))
-                return send_file(path, as_attachment=True)
+            if request.args.get('paper') == 'on':
+                data = load_paper_data(jobid, source, query, pubtrends_celery)
+            else:
+                noreviews = value_to_bool(request.form.get('noreviews'))
+                min_year = request.form.get('min_year')  # Minimal year of publications
+                max_year = request.form.get('max_year')  # Maximal year of publications
+                data = load_result_data(jobid, source, query, sort, limit, noreviews, min_year, max_year, pubtrends_celery)
+            if data:
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    name = preprocess_string(f'{source}-{query}')
+                    path = os.path.join(tmpdir, f'{name}.json.gz')
+                    with gzip.open(path, 'w') as f:
+                        f.write(json.dumps(data.to_json()).encode('utf-8'))
+                    return send_file(path, as_attachment=True)
         logger.error(f'/export_results error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception as e:
