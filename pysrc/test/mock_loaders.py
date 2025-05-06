@@ -72,7 +72,7 @@ class MockLoader(Loader):
     def expand(self, ids, limit, noreviews):
         raise Exception('Not implemented')
 
-    def search(self, terms, limit=None, sort=None, noreviews=True):
+    def search(self, terms, limit=None, sort=None, noreviews=True, min_year=None, max_year=None):
         return ['1', '2', '3', '4', '5']
 
     def load_publications(self, ids=None):
@@ -117,7 +117,7 @@ class MockLoaderSingle(Loader):
     def expand(self, ids, limit, noreviews):
         raise Exception('Not implemented')
 
-    def search(self, terms, limit=None, sort=None, noreviews=True):
+    def search(self, terms, limit=None, sort=None, noreviews=True, min_year=None, max_year=None):
         return ['1']
 
     def load_publications(self, ids=None):
@@ -155,7 +155,7 @@ class MockLoaderEmpty(Loader):
     def last_update(self):
         return None
 
-    def search(self, terms, limit=None, sort=None, noreviews=True):
+    def search(self, terms, limit=None, sort=None, noreviews=True, min_year=None, max_year=None):
         return []
 
     def search_id(self, pids):

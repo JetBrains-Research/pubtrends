@@ -16,7 +16,7 @@ logger = getLogger(__name__)
 
 
 @pubtrends_celery.task(name='analyze_search_terms')
-def analyze_search_terms(source, query, sort, limit, noreviews, topics, test=False):
+def analyze_search_terms(source, query, sort, limit, noreviews, min_year, max_year, topics, test=False):
     if is_doi(query):
         raise SearchError(DOI_WRONG_SEARCH)
     config = PubtrendsConfig(test=test)
@@ -30,30 +30,30 @@ def analyze_search_terms(source, query, sort, limit, noreviews, topics, test=Fal
         limit = int(limit) if limit is not None and limit != '' else analyzer.config.show_max_articles_default_value
         topics = int(topics) if topics is not None and topics != '' else analyzer.config.show_topics_default_value
         ids = analyzer.search_terms(query, limit=limit, sort=sort,
-                                    noreviews=noreviews,
+                                    noreviews=noreviews, min_year=min_year, max_year=max_year,
                                     task=current_task)
-        analyzer.analyze_papers(ids, query, source, sort, limit, topics, test=test, task=current_task)
+        analyzer.analyze_papers(ids, topics, test=test, task=current_task)
     finally:
         loader.close_connection()
 
-    data = analyzer.save(search_query=query, search_ids=None)
+    data = analyzer.save(None, query, source, sort, limit, noreviews, min_year, max_year)
     analyzer.progress.done(task=current_task)
     analyzer.teardown()
     return data.to_json(), analyzer.progress.log()
 
 
 def _analyze_id_list(analyzer, query , search_ids,
-                     ids, source, sort, limit, topics,
+                     ids, source, sort, limit, noreviews, min_year, max_year, topics,
                      test=False, task=None):
     if len(ids) == 0:
         raise RuntimeError('Empty papers list')
     analyzer.progress.info(f'Analyzing {len(ids)} paper(s) from {source}', current=1, task=task)
     try:
-        analyzer.analyze_papers(ids, query, source, sort, limit, topics, test=test, task=current_task)
+        analyzer.analyze_papers(ids, topics, test=test, task=current_task)
     finally:
         analyzer.loader.close_connection()
 
-    data = analyzer.save(search_query=query, search_ids=search_ids)
+    data = analyzer.save(search_ids, query, source, sort, limit, noreviews, min_year, max_year)
     analyzer.progress.done(task=task)
     analyzer.teardown()
     return data.to_json(), analyzer.progress.log()
@@ -88,7 +88,8 @@ def analyze_search_paper(source, pid, key, value, expand, limit, noreviews, topi
                          max_expand=analyzer.config.paper_expand_limit)
         return _analyze_id_list(
             analyzer, f'Paper {key}={value}', result,
-            ids, source, None, limit, topics,
+            ids, source, None, limit, False, None, None,
+            topics,
             test=test, task=current_task
         )
     finally:
@@ -112,6 +113,6 @@ def analyze_pubmed_search(query, sort, limit, topics, test=False):
     topics = int(topics) if topics is not None and topics != '' else analyzer.config.show_topics_default_value
     ids = pubmed_search(query, sort, limit)
     return _analyze_id_list(
-        analyzer, query, ids, ids, 'Pubmed', sort, limit, topics,
+        analyzer, ids, ids, 'Pubmed', sort, limit, topics,
         test=test, task=current_task
     )

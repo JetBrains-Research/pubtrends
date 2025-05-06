@@ -87,11 +87,19 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
                     pids.extend(self._search_title_relaxed(t))
         return pids
 
-    def search(self, query, limit=None, sort=None, noreviews=True):
+    def search(self, query, limit=None, sort=None, noreviews=True, min_year=None, max_year=None):
         self.check_connection()
         if noreviews:
             logger.debug('Type is not supported for Semantic Scholar')
 
+        # Add year filters if provided
+        year_filter = ''
+        if min_year:
+            year_filter += f" AND year >= {min_year}"
+        if max_year:
+            year_filter += f" AND year <= {max_year}"
+
+        logger.debug(f'Preprocess search string for Postgres full text lookup query: {query}')
         query_str, exact_phrase_filter = preprocess_search_query_for_postgres(query)
         if exact_phrase_filter:
             exact_phrase_filter = f'AND ({exact_phrase_filter})'
@@ -125,7 +133,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
                 (SELECT P.ssid as ssid, P.crc32id as crc32id, P.tsv as tsv, query, P.year as year
                 FROM to_tsquery('{query_str}') query, 
                 SSPublications P {sampling_filter}
-                WHERE P.tsv @@ query {exact_phrase_filter}
+                WHERE P.tsv @@ query {exact_phrase_filter} {year_filter}
                 ORDER BY random()
                 LIMIT {self.config.max_number_of_papers})
             SELECT X.ssid as ssid 

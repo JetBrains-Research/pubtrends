@@ -8,7 +8,7 @@ from pysrc.app.messages import SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED
 from pysrc.app.reports import load_result_data, preprocess_string
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.config import PubtrendsConfig
-from pysrc.papers.utils import trim_query, MAX_QUERY_LENGTH
+from pysrc.papers.utils import trim_query
 from pysrc.review.app.task import prepare_review_data_async
 from pysrc.version import VERSION
 
@@ -36,7 +36,7 @@ def register_app_review(app):
             num_papers = request.args.get('papers_number')
             num_sents = request.args.get('sents_number')
             if jobid and query and source and limit and sort:
-                data = load_result_data(jobid, source, query, sort, limit, pubtrends_celery)
+                data = load_result_data(jobid, source, query, sort, limit, False, None, None, pubtrends_celery)
                 if data is not None:
                     job = prepare_review_data_async.delay(data, source, num_papers, num_sents)
                     return redirect(url_for('.process', query=trim_query(query),

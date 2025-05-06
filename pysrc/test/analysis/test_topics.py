@@ -19,10 +19,8 @@ class TestTopics(unittest.TestCase):
     def setUpClass(cls):
         analyzer = PapersAnalyzer(MockLoader(), PUBTRENDS_CONFIG, test=True)
         ids = analyzer.search_terms(query='query')
-        analyzer.analyze_papers(
-            ids, 'query', 'Pubmed', SORT_MOST_CITED, 10, PUBTRENDS_CONFIG.show_topics_default_value, test=True
-        )
-        cls.data = analyzer.save(search_query='query', search_ids=None)
+        analyzer.analyze_papers(ids, PUBTRENDS_CONFIG.show_topics_default_value, test=True)
+        cls.data = analyzer.save(None, 'query', 'Pubmed', SORT_MOST_CITED, 10, False, None, None)
 
     def test_topic_analysis_all_nodes_assigned(self):
         nodes = self.data.papers_graph.nodes()

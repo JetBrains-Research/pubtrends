@@ -17,10 +17,8 @@ class TestPapersAnalyzer(unittest.TestCase):
     def setUpClass(cls):
         analyzer = PapersAnalyzer(MockLoader(), PUBTRENDS_CONFIG, test=True)
         ids = analyzer.search_terms(query='query')
-        analyzer.analyze_papers(
-            ids, 'query', 'Pubmed', SORT_MOST_CITED, 10, PUBTRENDS_CONFIG.show_topics_default_value, test=True
-        )
-        cls.data = analyzer.save(search_query='query', search_ids=None)
+        analyzer.analyze_papers(ids, PUBTRENDS_CONFIG.show_topics_default_value, test=True)
+        cls.data = analyzer.save(None, 'query', 'Pubmed', SORT_MOST_CITED, 10, False, None, None)
 
     def test_bibcoupling(self):
         assert_frame_equal(BIBCOUPLING_DF, self.data.bibliographic_coupling_df)
@@ -46,8 +44,7 @@ class TestPapersAnalyzerMissingPaper(unittest.TestCase):
         analyzer = PapersAnalyzer(MockLoaderSingle(), PUBTRENDS_CONFIG, test=True)
         good_ids = list(analyzer.search_terms(query='query'))
         analyzer.analyze_papers(
-            good_ids + ['non-existing-id'],
-            'query', 'Pubmed', SORT_MOST_CITED, 10, PUBTRENDS_CONFIG.show_topics_default_value, test=True
+            good_ids + ['non-existing-id'], PUBTRENDS_CONFIG.show_topics_default_value, test=True
         )
         self.assertEqual(good_ids, list(analyzer.df['id']))
 
@@ -63,7 +60,7 @@ class TestPapersAnalyzerEmpty(unittest.TestCase):
         with self.assertRaises(Exception):
             ids = self.analyzer.search_terms(query='query')
             self.analyzer.analyze_papers(
-                ids, 'query', 'Pubmed', SORT_MOST_CITED, 10, PUBTRENDS_CONFIG.show_topics_default_value, test=True
+                ids, PUBTRENDS_CONFIG.show_topics_default_value, test=True
             )
 
 
