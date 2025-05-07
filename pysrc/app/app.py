@@ -19,11 +19,11 @@ from pysrc.app.messages import SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, \
 from pysrc.app.reports import get_predefined_jobs, \
     load_result_data, _predefined_example_params_by_jobid, preprocess_string, load_paper_data
 from pysrc.celery.pubtrends_celery import pubtrends_celery
-from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, analyze_pubmed_search
+from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, analyze_pubmed_search, analyze_id_list
 from pysrc.config import PubtrendsConfig
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plot_app import prepare_graph_data, prepare_papers_data, prepare_paper_data, prepare_result_data
-from pysrc.papers.utils import trim_query, IDS_ANALYSIS_TYPE, PAPER_ANALYSIS_TYPE
+from pysrc.papers.utils import trim_query, IDS_ANALYSIS_TYPE, PAPER_ANALYSIS_TYPE, SORT_MOST_CITED
 from pysrc.version import VERSION
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
@@ -642,6 +642,76 @@ def feedback():
     else:
         logger.error(f'/feedback error')
     return render_template_string('Thanks you for the feedback!'), 200
+
+
+#######################
+# AIHKTN25-28 API     #
+#######################
+
+@flask_app.route('/search_terms_api', methods=['POST'])
+def search_terms_api():
+    logger.info(f'/search_terms_api {log_request(request)}')
+    query = request.form.get('query')  # Original search query
+    try:
+        # Regular search syntax
+        if query:
+            job = analyze_search_terms.delay('Pubmed', query=query, limit=1000, sort=SORT_MOST_CITED,
+                                             noreviews=True, min_year=None, max_year=None,
+                                             topics=10,
+                                             test=False)
+            return {'success': True, 'jobid': job.id}
+        logger.error(f'/search_terms_api error {log_request(request)}')
+        return {'success': False, 'jobid': None}
+    except Exception as e:
+        logger.exception(f'/search_terms_api exception {e}')
+        return {'success': False, 'jobid': None}, 500
+
+@flask_app.route('/analyse_ids_api', methods=['POST'])
+def analyse_ids_api():
+    logger.info(f'/analyse_ids_api {log_request(request)}')
+    query = request.form.get('query')  # Original search query
+    ids = request.form.get('ids').split(',')
+    try:
+        # Regular search syntax
+        if query:
+            job = analyze_id_list.delay('Pubmed', query, ids, 10, test=False)
+            return {'success': True, 'jobid': job.id}
+        logger.error(f'/analyse_ids_api error {log_request(request)}')
+        return {'success': False, 'jobid': None}
+    except Exception as e:
+        logger.exception(f'/analyse_ids_api exception {e}')
+        return {'success': False, 'jobid': None}, 500
+
+
+@flask_app.route('/check_status_api/<jobid>', methods=['GET'])
+def check_status_api(jobid):
+    logger.info(f'/check_status_api {log_request(request)}')
+    try:
+        job = pubtrends_celery.AsyncResult(jobid)
+        if job.state == 'PENDING':
+            return {'status': 'pending'}, 200
+        elif job.state == 'SUCCESS':
+            return {'status': 'success'}, 200
+        elif job.state == 'FAILURE':
+            return {'status': 'failed'}, 200
+        return {'status': 'unknown'}, 200
+    except Exception as e:
+        logger.exception(f'/check_status_api exception {e}')
+        return {'status': 'error'}, 500
+
+@flask_app.route('/get_result_api', methods=['GET'])
+def get_result_api():
+    logger.info(f'/get_result_api {log_request(request)}')
+    jobid = request.args.get('jobid')
+    query = request.args.get('query')
+    try:
+        if jobid and query:
+            data = load_result_data(jobid, 'Pubmed', query, SORT_MOST_CITED, 1000, True, None, None, pubtrends_celery)
+            return data.to_json(), 200
+        return {'status': 'error'}, 500
+    except Exception as e:
+        logger.exception(f'/check_status_api exception {e}')
+        return {'status': 'error'}, 500
 
 
 #######################

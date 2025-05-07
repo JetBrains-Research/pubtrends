@@ -42,6 +42,17 @@ def analyze_search_terms(source, query, sort, limit, noreviews, min_year, max_ye
     return data.to_json(), analyzer.progress.log()
 
 
+@pubtrends_celery.task(name='analyze_id_list')
+def analyze_id_list(source, query, ids, topics, test=False):
+    config = PubtrendsConfig(test=test)
+    loader = Loaders.get_loader(source, config)
+    analyzer = PapersAnalyzer(loader, config)
+    sort = SORT_MOST_CITED
+    limit = analyzer.config.show_max_articles_default_value
+    return _analyze_id_list(analyzer, query, ids, ids, source, sort, limit, False, None, None, topics,
+                            test=test, task=current_task)
+
+
 def _analyze_id_list(analyzer, query , search_ids,
                      ids, source, sort, limit, noreviews, min_year, max_year, topics,
                      test=False, task=None):
@@ -113,6 +124,7 @@ def analyze_pubmed_search(query, sort, limit, topics, test=False):
     topics = int(topics) if topics is not None and topics != '' else analyzer.config.show_topics_default_value
     ids = pubmed_search(query, sort, limit)
     return _analyze_id_list(
-        analyzer, ids, ids, 'Pubmed', sort, limit, topics,
+        analyzer, query, ids, ids, 'Pubmed', sort, limit, False, None, None,
+        topics,
         test=test, task=current_task
     )
