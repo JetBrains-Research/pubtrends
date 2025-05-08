@@ -68,17 +68,17 @@ NODE2VEC_P = 5.0
 NODE2VEC_Q = 2.0
 
 # Increasing number of walks increases node2vec representation accuracy
-NODE2VEC_WALKS_PER_NODE = 100
+NODE2VEC_WALKS_PER_NODE = 50
 NODE2VEC_WALK_LENGTH = 50
 NODE2VEC_WORD2VEC_WINDOW = 5
-NODE2VEC_WORD2VEC_EPOCHS = 5
+NODE2VEC_WORD2VEC_EPOCHS = 3
 
 #####################
 ## Word2vec config ##
 #####################
 
 WORD2VEC_WINDOW = 5
-WORD2VEC_EPOCHS = 5
+WORD2VEC_EPOCHS = 3
 
 #################
 ## Plot config ##
