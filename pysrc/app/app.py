@@ -671,11 +671,11 @@ def analyse_ids_api():
     logger.info(f'/analyse_ids_api {log_request(request)}')
     query = request.form.get('query')  # Original search query
     ids = request.form.get('ids').split(',')
+    job_id = request.form.get('job_id')
     try:
-        # Regular search syntax
-        if query:
-            job = analyze_id_list.delay('Pubmed', query, ids, 10, test=False)
-            return {'success': True, 'jobid': job.id}
+        if query and job_id and ids:
+            analyze_id_list.apply_async(args=['Pubmed', query, ids, 10, False], task_id=job_id)
+            return {'success': True, 'jobid': job_id}
         logger.error(f'/analyse_ids_api error {log_request(request)}')
         return {'success': False, 'jobid': None}
     except Exception as e:
