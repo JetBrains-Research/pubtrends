@@ -154,8 +154,8 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                     df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
                     timer.cancel()
                 except psycopg2.extensions.QueryCanceledError:
-                    sampling_fraction /= 10
-                    logger.warning(f'search query timeout, increasing sampling fraction {sampling_fraction}')
+                    sampling_fraction *= 0.5
+                    logger.warning(f'search query timeout, apply sampling fraction {sampling_fraction}')
                     sampling_filter = f'TABLESAMPLE SYSTEM({sampling_fraction})'
                     if exact_phrase_filter:
                         logger.warning(f'disabling exact phrase filter')
