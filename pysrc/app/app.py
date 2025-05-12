@@ -171,9 +171,11 @@ def search_terms():
 
         # Regular search syntax
         if query and source and sort and limit and topics:
+            # Check if semantic search is enabled (default: True)
+            semantic = value_to_bool(request.form.get('semantic', 'on'))
             job = analyze_search_terms.delay(source, query=query, limit=int(limit), sort=sort,
                                              noreviews=noreviews, min_year=min_year, max_year=max_year,
-                                             topics=topics,
+                                             topics=topics, semantic=semantic,
                                              test=flask_app.config['TESTING'])
             return redirect(
                 url_for('.process', query=trim_query(query), source=source, limit=limit, sort=sort,

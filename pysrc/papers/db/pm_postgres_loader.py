@@ -6,12 +6,14 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 import psycopg2
+import requests
 
 from pysrc.papers.db.loader import Loader
 from pysrc.papers.db.postgres_connector import PostgresConnector
 from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres, \
     process_bibliographic_coupling_postgres, process_cocitations_postgres, ints_to_vals, strs_to_vals
 from pysrc.papers.utils import SORT_MOST_CITED, SORT_MOST_RECENT
+from pysrc.papers.analysis.text import stemmed_tokens
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +21,141 @@ logger = logging.getLogger(__name__)
 class PubmedPostgresLoader(PostgresConnector, Loader):
     def __init__(self, config):
         super(PubmedPostgresLoader, self).__init__(config)
+        # Launch with Docker address or locally
+        self.FASTTEXT_URL = config.get('FASTTEXT_URL', 'http://localhost:5001')
+
+    def compute_embeddings(self, text):
+        """
+        Compute embeddings for a given text using FastText API
+
+        Args:
+            text (str): Text to compute embeddings for
+
+        Returns:
+            numpy.ndarray: Embeddings for the text
+        """
+        if not text or text.strip() == '':
+            return None
+
+        # Tokenize text
+        tokens = [token for token, _ in stemmed_tokens(text)]
+        if not tokens:
+            return None
+
+        try:
+            # Get embeddings from FastText API
+            r = requests.request(
+                url=f'{self.FASTTEXT_URL}/fasttext',
+                method='POST',
+                json=tokens,
+                headers={'Accept': 'application/json'}
+            )
+
+            if r.status_code == 200:
+                # Get embeddings from response
+                embeddings = np.array(r.json())
+
+                # Average embeddings for all tokens to get document embedding
+                return np.mean(embeddings.reshape(len(tokens), -1), axis=0).tolist()
+            else:
+                logger.error(f'Failed to get embeddings from FastText API: {r.status_code}')
+                return None
+        except Exception as e:
+            logger.error(f'Error computing embeddings: {e}')
+            return None
+
+    def semantic_search(self, query, limit=100, sort=None, noreviews=True, min_year=None, max_year=None):
+        """
+        Perform semantic search using FastText embeddings
+
+        Args:
+            query (str): Query text
+            limit (int): Maximum number of results to return
+            sort (str): Sort method (SORT_MOST_CITED or SORT_MOST_RECENT)
+            noreviews (bool): Whether to exclude reviews
+            min_year (int): Minimum publication year
+            max_year (int): Maximum publication year
+
+        Returns:
+            list: List of PMIDs of matching publications
+        """
+        self.check_connection()
+
+        # Compute embeddings for query
+        query_embeddings = self.compute_embeddings(query)
+        if not query_embeddings:
+            logger.warning(f'Could not compute embeddings for query: {query}')
+            # Fall back to regular search if embeddings can't be computed
+            return self.search(query, limit, sort, noreviews, min_year, max_year)
+
+        # Add filters
+        noreviews_filter = "AND type != 'Review'" if noreviews else ''
+        year_filter = ''
+        if min_year:
+            year_filter += f" AND year >= {min_year}"
+        if max_year:
+            year_filter += f" AND year <= {max_year}"
+
+        # Determine sort order
+        by_similarity = 'similarity DESC'
+        by_citations = 'count DESC NULLS LAST'
+        by_year = 'year DESC NULLS LAST'
+
+        if sort == SORT_MOST_CITED:
+            order = f'{by_citations}, {by_similarity}, {by_year}'
+        elif sort == SORT_MOST_RECENT:
+            order = f'{by_year}, {by_similarity}, {by_citations}'
+        else:
+            order = by_similarity
+
+        # Convert query embeddings to PostgreSQL array format
+        embeddings_array = str(query_embeddings).replace('[', '{').replace(']', '}')
+
+        # Use cosine similarity to find similar documents
+        # cosine_similarity = dot_product(a, b) / (|a| * |b|)
+        query = f"""
+        WITH X AS (
+            SELECT 
+                P.pmid as pmid,
+                P.year as year,
+                -- Compute cosine similarity between query embeddings and document embeddings
+                (P.embeddings <#> '{embeddings_array}'::float8[]) * -1 as similarity
+            FROM 
+                PMPublications P
+            WHERE 
+                P.embeddings IS NOT NULL
+                {noreviews_filter}
+                {year_filter}
+            ORDER BY 
+                similarity DESC
+            LIMIT {self.config.max_number_of_papers}
+        )
+        SELECT 
+            X.pmid as pmid
+        FROM 
+            X
+        LEFT JOIN 
+            matview_pmcitations C ON X.pmid = C.pmid
+        ORDER BY 
+            {order}, X.pmid
+        LIMIT {limit};
+        """
+
+        logger.debug(f'semantic_search query: {query[:1000]}')
+
+        df = None
+        try:
+            with self.postgres_connection.cursor() as cursor:
+                cursor.execute(query)
+                df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
+                self.postgres_connection.commit()
+        except Exception as e:
+            logger.error(f'Error executing semantic search: {e}')
+            # Fall back to regular search if semantic search fails
+            return self.search(query, limit, sort, noreviews, min_year, max_year)
+
+        df['pmid'] = df['pmid'].astype(str)
+        return df['pmid'].to_list()
 
 
     UPDATE_LAST_PATH = os.path.expanduser('~/.pubtrends/pubmedpostgreswriter_last.tsv')

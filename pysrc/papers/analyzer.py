@@ -47,7 +47,7 @@ class PapersAnalyzer:
 
     def search_terms(self, query, limit=None, sort=SORT_MOST_CITED,
                      noreviews=True, min_year=None, max_year=None,
-                     task=None):
+                     semantic=True, task=None):
         limit = limit or self.config.show_max_articles_default_value
         # Search articles relevant to the terms
         if len(query) == 0:
@@ -56,11 +56,21 @@ class PapersAnalyzer:
         noreviews_msg = ", not reviews" if noreviews else ""
         min_year_msg = f", after year {min_year}" if min_year else ""
         max_year_msg = f", before year {max_year}" if max_year else ""
-        self.progress.info(f'Searching {limit} {sort.lower()} publications matching {query}'
-                           f'{noreviews_msg}{min_year_msg}{max_year_msg}',
-                           current=1, task=task)
-        ids = self.loader.search(query, limit=limit, sort=sort,
-                                 noreviews=noreviews, min_year=min_year, max_year=max_year)
+
+        # Use semantic search if enabled and the loader supports it
+        if semantic and hasattr(self.loader, 'semantic_search'):
+            self.progress.info(f'Semantic searching {limit} {sort.lower()} publications matching {query}'
+                               f'{noreviews_msg}{min_year_msg}{max_year_msg}',
+                               current=1, task=task)
+            ids = self.loader.semantic_search(query, limit=limit, sort=sort,
+                                     noreviews=noreviews, min_year=min_year, max_year=max_year)
+        else:
+            self.progress.info(f'Searching {limit} {sort.lower()} publications matching {query}'
+                               f'{noreviews_msg}{min_year_msg}{max_year_msg}',
+                               current=1, task=task)
+            ids = self.loader.search(query, limit=limit, sort=sort,
+                                     noreviews=noreviews, min_year=min_year, max_year=max_year)
+
         if len(ids) == 0:
             raise SearchError(f"Nothing found for search query: {query}")
         else:

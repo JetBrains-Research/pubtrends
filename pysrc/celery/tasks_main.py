@@ -16,7 +16,7 @@ logger = getLogger(__name__)
 
 
 @pubtrends_celery.task(name='analyze_search_terms')
-def analyze_search_terms(source, query, sort, limit, noreviews, min_year, max_year, topics, test=False):
+def analyze_search_terms(source, query, sort, limit, noreviews, min_year, max_year, topics, semantic=True, test=False):
     if is_doi(query):
         raise SearchError(DOI_WRONG_SEARCH)
     config = PubtrendsConfig(test=test)
@@ -31,7 +31,7 @@ def analyze_search_terms(source, query, sort, limit, noreviews, min_year, max_ye
         topics = int(topics) if topics is not None and topics != '' else analyzer.config.show_topics_default_value
         ids = analyzer.search_terms(query, limit=limit, sort=sort,
                                     noreviews=noreviews, min_year=min_year, max_year=max_year,
-                                    task=current_task)
+                                    semantic=semantic, task=current_task)
         analyzer.analyze_papers(ids, topics, test=test, task=current_task)
     finally:
         loader.close_connection()
