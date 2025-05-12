@@ -3,18 +3,20 @@
 {% include "security/_messages.html" %}
 {% block body %}
     {{ super() }}
-    <div class="row-fluid">
-        <div class="col-sm-8 col-sm-offset-2">
+    <div class="row">
+        <div class="col-sm-8 offset-sm-2">
             <h1>Login</h1>
-            <div class="well">
-                <form action="{{ url_for_security('login') }}" method="POST" name="login_user_form">
-                    {{ login_user_form.hidden_tag() }}
-                    {{ render_field_with_errors(login_user_form.email) }}
-                    {{ render_field_with_errors(login_user_form.password) }}
-                    {{ render_checkbox_field(login_user_form.remember) }}
-                    {{ render_field(login_user_form.next) }}
-                    {{ render_field(login_user_form.submit, class="btn btn-primary") }}
-                </form>
+            <div class="card">
+                <div class="card-body">
+                    <form action="{{ url_for_security('login') }}" method="POST" name="login_user_form">
+                        {{ login_user_form.hidden_tag() }}
+                        {{ render_field_with_errors(login_user_form.email) }}
+                        {{ render_field_with_errors(login_user_form.password) }}
+                        {{ render_checkbox_field(login_user_form.remember) }}
+                        {{ render_field(login_user_form.next) }}
+                        {{ render_field(login_user_form.submit, class="btn btn-primary") }}
+                    </form>
+                </div>
             </div>
         </div>
     </div>

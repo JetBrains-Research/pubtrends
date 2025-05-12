@@ -6,6 +6,7 @@ from flask_admin import helpers as admin_helpers, expose, BaseView, Admin
 from flask_security import Security, SQLAlchemyUserDatastore, \
     UserMixin, RoleMixin, current_user
 from flask_security.utils import hash_password
+from pysrc.app.admin.forms import LoginForm
 from flask_sqlalchemy import SQLAlchemy
 
 from pysrc.app.admin.celery import prepare_celery_data
@@ -68,7 +69,7 @@ def configure_admin_functions(app, celery_app, logfile):
 
         # Setup Flask-Security
         user_datastore = SQLAlchemyUserDatastore(db, User, Role)
-        security = Security(app, user_datastore)
+        security = Security(app, user_datastore, login_form=LoginForm)
 
         # Build a sample db on the fly, if one does not exist yet.
         try:
@@ -162,7 +163,7 @@ def configure_admin_functions(app, celery_app, logfile):
             app,
             'Pubtrends',
             base_template='master.html',
-            template_mode='bootstrap3',
+            template_mode='bootstrap5',
         )
 
         # Available views

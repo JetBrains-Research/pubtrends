@@ -49,14 +49,7 @@ pre {
     font-size: 0.8rem;
 }
 
-footer {
-    margin: 1rem;
-    font-size: 0.9rem;
-    text-align: center;
-    color: #777777;
-}
-
-footer a {
+.a-footer {
     color: #777777;
     text-decoration: underline;
     text-decoration-color: #aaaaaa;
