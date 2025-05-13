@@ -453,10 +453,8 @@ def paper():
             else:
                 logger.info(f'/paper No job or out-of-date job, restart it {log_request(request)}')
                 analyze_search_paper.apply_async(
-                    args=[
-                        source, pid, key, value, expand, limit, noreviews, min_year, max_year, topics,
-                        flask_app.config['TESTING']
-                    ], task_id=jobid
+                    args=[source, pid, key, value, expand, limit, noreviews, topics, flask_app.config['TESTING']],
+                    task_id=jobid
                 )
                 return redirect(url_for('.process', query=trim_query(f'Paper {key}={value}'),
                                         analysis_type=PAPER_ANALYSIS_TYPE,
