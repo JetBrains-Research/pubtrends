@@ -166,6 +166,8 @@ def search_terms():
                                               test=flask_app.config['TESTING'])
             return redirect(
                 url_for('.process', source='Pubmed', query=trim_query(query), limit=limit, sort='',
+                        noreviews='on' if noreviews else '',
+                        min_year=min_year or '', max_year=max_year or '',
                         topics=topics,
                         jobid=job.id))
 
@@ -177,7 +179,9 @@ def search_terms():
                                              test=flask_app.config['TESTING'])
             return redirect(
                 url_for('.process', query=trim_query(query), source=source, limit=limit, sort=sort,
-                        noreviews=noreviews, min_year=min_year, max_year=max_year, topics=topics,
+                        noreviews='on' if noreviews else '',
+                        min_year=min_year or '', max_year=max_year or '',
+                        topics=topics,
                         jobid=job.id))
         logger.error(f'/search_terms error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
@@ -205,7 +209,7 @@ def search_paper():
                                     analysis_type=PAPER_ANALYSIS_TYPE,
                                     key=key, value=value,
                                     source=source, expand=expand, limit=limit,
-                                    noreviews=noreviews,
+                                    noreviews='on' if noreviews else '',
                                     topics=topics,
                                     jobid=job.id))
         logger.error(f'/search_paper error {log_request(request)}')
@@ -272,6 +276,7 @@ def process():
                                                           source=source, jobid=jobid, sort='',
                                                           key=key, value=value, limit=limit,
                                                           noreviews='on' if noreviews else '',
+                                                          min_year=min_year or '', max_year=max_year or '',
                                                           topics=topics),
                                        query=trim_query(query), source=source,
                                        jobid=jobid, version=VERSION)
@@ -378,7 +383,8 @@ def result():
             )
             return redirect(
                 url_for('.process', query=trim_query(query), source=source, limit=limit, sort=sort,
-                        noreviews=noreviews, min_year=min_year, max_year=max_year,
+                        noreviews='on' if noreviews else '',
+                        min_year=min_year or '', max_year=max_year or '',
                         topics=topics,
                         jobid=jobid))
         else:
@@ -454,7 +460,9 @@ def paper():
                 )
                 return redirect(url_for('.process', query=trim_query(f'Paper {key}={value}'),
                                         analysis_type=PAPER_ANALYSIS_TYPE,
-                                        source=source, key=key, value=value, topics=topics, jobid=jobid))
+                                        source=source, key=key, value=value,
+                                        noreviews='on' if noreviews else '',
+                                        topics=topics, jobid=jobid))
         logger.error(f'/paper error wrong request {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception as e:
@@ -517,6 +525,8 @@ def show_ids():
                                        search_string=search_string,
                                        limit=limit,
                                        sort=sort,
+                                       noreviews='on' if noreviews else '',
+                                       min_year=min_year or '', max_year=max_year or '',
                                        export_name=export_name,
                                        papers=papers_data)
         logger.error(f'/papers error {log_request(request)}')
