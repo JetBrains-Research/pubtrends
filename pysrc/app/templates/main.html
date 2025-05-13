@@ -227,20 +227,20 @@
                         </div>
                     </form>
                     <!-- Preprocessed example -->
-                    {{ search_example_message }}<br>
-                    <div id="predefined" class="row ml-1">
+                    <div id="predefined" class="d-flex flex-nowrap align-items-center">
+                        <div class="me-2">{{ search_example_message }}</div>
                         {% for terms, jobid in search_example_terms %}
-                        <form action="result" method="GET" class="inline">
+                        <form action="result" method="GET" class="inline me-2">
                             <input type="hidden" name="source" value="{{ search_example_source }}">
                             <input type="hidden" name="sort" value="Most Cited">
                             <input type="hidden" name="topics" value="{{ default_topics }}">
                             <input type="hidden" name="limit" value="{{ default_limit }}">
                             <input type="hidden" name="noreviews" value="on">
-                            <input type="hidden" name="min_year" value="on">
-                            <input type="hidden" name="max_year" value="on">
+                            <input type="hidden" name="min_year" value="">
+                            <input type="hidden" name="max_year" value="">
                             <input type="hidden" name="jobid" value="{{ jobid }}">
                             <button type="submit" name="query" value="{{ terms }}"
-                                    class="btn btn-sm btn-outline-secondary mt-2 mr-2"
+                                    class="btn btn-sm btn-outline-secondary"
                                     style="border-radius: 10px;">
                                 {{ terms }}
                             </button>
