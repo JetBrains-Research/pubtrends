@@ -555,7 +555,7 @@ class Plotter:
         pids = df['id']
         pim = dict((p, i) for i, p in enumerate(pids))
         comps = df['comp']
-        connections = [len(list(gs.neighbors(p))) for p in pids]
+        connections = [len(list(gs.neighbors(p))) + 1 for p in pids]
         graph = GraphRenderer()
         cmap = factors_colormap(len(set(comps)))
         palette = dict(zip(sorted(set(comps)), [color_to_rgb(cmap(i)).to_hex() for i in range(len(set(comps)))]))
