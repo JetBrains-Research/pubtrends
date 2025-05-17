@@ -167,10 +167,9 @@ class PapersAnalyzer:
 
         if len(self.df) > 1:
             logger.debug('Computing PCA projection')
-            pca = PCA(n_components=min(len(self.papers_embeddings), PCA_COMPONENTS))
             t = StandardScaler().fit_transform(self.papers_embeddings)
+            pca = PCA(n_components=0.95, svd_solver="full")
             pca_coords = pca.fit_transform(t)
-            logger.debug(f'Explained variation {int(np.sum(pca.explained_variance_ratio_) * 100)}%')
             logger.debug('Apply TSNE transformation')
             if not test:
                 tsne = TSNE(n_components=2, random_state=42, perplexity=min(30, len(self.df) - 1))
