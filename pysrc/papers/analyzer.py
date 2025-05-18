@@ -1,9 +1,8 @@
 import logging
 import numpy as np
 from sklearn.decomposition import PCA
-from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
-
+from umap import UMAP
 from pysrc.config import *
 from pysrc.papers.analysis.citations import find_top_cited_papers, find_max_gain_papers, \
     find_max_relative_gain_papers, build_cit_stats_df, merge_citation_stats, build_cocit_grouped_df
@@ -170,14 +169,12 @@ class PapersAnalyzer:
             t = StandardScaler().fit_transform(self.papers_embeddings)
             pca = PCA(n_components=0.95, svd_solver="full")
             pca_coords = pca.fit_transform(t)
-            logger.debug('Apply TSNE transformation')
-            if not test:
-                tsne = TSNE(n_components=2, random_state=42, perplexity=min(30, len(self.df) - 1))
-            else:
-                tsne = TSNE(n_components=2, random_state=42, perplexity=3)
-            tsne_embeddings_2d = tsne.fit_transform(pca_coords)
-            self.df['x'] = tsne_embeddings_2d[:, 0]
-            self.df['y'] = tsne_embeddings_2d[:, 1]
+            logger.debug('Apply transformation')
+            umap = UMAP(n_neighbors=int((GRAPH_BIBLIOGRAPHIC_EDGES + GRAPH_TEXT_SIMILARITY_EDGES) / 2),
+                    n_components=2, n_jobs=1, random_state=42)
+            umap_embeddings = umap.fit_transform(pca_coords)
+            self.df['x'] = umap_embeddings[:, 0]
+            self.df['y'] = umap_embeddings[:, 1]
         else:
             pca_coords = np.zeros(shape=(len(self.df), PCA_COMPONENTS))
             self.df['x'] = 0
