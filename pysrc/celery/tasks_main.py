@@ -65,7 +65,6 @@ def _analyze_id_list(analyzer, query , search_ids,
         analyzer.loader.close_connection()
 
     data = analyzer.save(search_ids, query, source, sort, limit, noreviews, min_year, max_year)
-    analyzer.progress.done(task=task)
     analyzer.teardown()
     return data.to_json(), analyzer.progress.log()
 
