@@ -31,6 +31,7 @@ cp resources/docker/main/Dockerfile "${PTV}"/
 cp config.properties "${PTV}"/
 cp docker-compose.yml "${PTV}"/
 cp init.sh "${PTV}"/
+cp nlp.sh "${PTV}"/
 cp README.md ${PTV}/
 cp LICENSE.txt ${PTV}/
 rsync -aiz pysrc "${PTV}"/ --exclude=**/.git* --exclude=**/__pycache__*
