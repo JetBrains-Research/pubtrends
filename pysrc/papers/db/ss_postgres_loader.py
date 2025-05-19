@@ -93,7 +93,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
             logger.debug('Type is not supported for Semantic Scholar')
 
         # Add year filters
-        min_year = int(min_year) if min_year else 1970
+        min_year = int(min_year) if min_year else 1900
         max_year = int(max_year) if max_year else datetime.now().year
         year_filter = f'year BETWEEN {min_year} AND {max_year}'
 

@@ -94,7 +94,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         noreviews_filter = "AND type != 'Review'" if noreviews else ''
 
         # Add year filters
-        min_year = int(min_year) if min_year else 1970
+        min_year = int(min_year) if min_year else 1900
         max_year = int(max_year) if max_year else datetime.now().year
         year_filter = f'year BETWEEN {min_year} AND {max_year}'
 
