@@ -5,17 +5,9 @@ LABEL email="os@jetbrains.com"
 
 USER user
 
-# Workaround for https://github.com/JetBrains-Research/pubtrends/issues/332
-# OMP: Error #13: Assertion failure at kmp_affinity.cpp(981)
-# Cannot build biolabs/pubtrends with updated environment.yaml, installing manually
-RUN source activate pubtrends \
-    && mamba install flask-caching=2.3.1 -c conda-forge
-
 # Download all the nltk and spacy resources
-RUN source activate pubtrends \
-    && python -m nltk.downloader averaged_perceptron_tagger averaged_perceptron_tagger_eng \
-           punkt punkt_tab stopwords wordnet omw-1.4 \
-           && python -m spacy download en_core_web_sm
+COPY nlp.sh /home/user/nlp.sh
+RUN /bin/bash ~/nlp.sh
 
 # Configure URLs for between containers communication
 ENV CELERY_BROKER_URL=redis://redis:6379/0
@@ -23,10 +15,17 @@ ENV CELERY_RESULT_BACKEND=redis://redis:6379/0
 ENV C_FORCE_ROOT=true
 ENV FASTTEXT_URL=http://fasttext:5001
 
+RUN mkdir -p /home/user/pubtrends/pysrc
+COPY pysrc /home/user/pubtrends/pysrc/
 
-COPY . /home/user/
-WORKDIR /home/user/
+USER root
+RUN chown -R user:pubtrends /home/user/pubtrends/pysrc
+
+USER user
+WORKDIR /home/user/pubtrends
+
 
 # Launch celery workers
-ENTRYPOINT source activate pubtrends \
+CMD source activate pubtrends \
+    && export PYTHONPATH=/home/user/pubtrends \
     && celery --app pysrc.celery.tasks worker -c 4 --loglevel=info --logfile=/logs/celery.log

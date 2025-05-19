@@ -37,17 +37,9 @@ RUN conda install -c conda-forge mamba
 
 # Install required dependencies
 COPY environment.yml /home/user/environment.yml
-RUN mamba env create -f /home/user/environment.yml \
+RUN mamba env create -f ~/environment.yml \
     && mamba clean -afy
 
-# Workaround for https://github.com/JetBrains-Research/pubtrends/issues/332
-# OMP: Error #13: Assertion failure at kmp_affinity.cpp(981)
-# Cannot build biolabs/pubtrends with updated environment.yaml, installing manually
-RUN source activate pubtrends \
-    && mamba install flask-caching=2.3.1 -c conda-forge
-
-# Install nltk & spacy dependencies
-RUN source activate pubtrends \
-    && python -m nltk.downloader averaged_perceptron_tagger averaged_perceptron_tagger_eng \
-    punkt punkt_tab stopwords wordnet omw-1.4 \
-    && python -m spacy download en_core_web_sm
+# Download all the nltk and spacy resources
+COPY nlp.sh /home/user/nlp.sh
+RUN /bin/bash ~/nlp.sh
