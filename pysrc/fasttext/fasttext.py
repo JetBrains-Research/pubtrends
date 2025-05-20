@@ -65,3 +65,12 @@ def tokens_embeddings_fasttext(corpus_tokens):
         else np.zeros(model.vector_size)  # Support out-of-dictionary missing embeddings
         for t in corpus_tokens
     ])
+
+def text_embedding_fasttext(text):
+    logger.info('Compute text embedding using pretrained fasttext model')
+    model_instance = PRETRAINED_MODEL_CACHE.download_and_load_model
+    return np.mean([
+        model_instance.get_vector(t) if model_instance.has_index_for(t)
+        else np.zeros(model_instance.vector_size)  # Support out-of-dictionary missing embeddings
+        for t in text.split()
+    ], axis=0).tolist()

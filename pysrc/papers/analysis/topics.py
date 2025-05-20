@@ -40,14 +40,14 @@ def cluster_and_sort(x, n_clusters, min_cluster_size):
     # Closer to 1 → Better hierarchical clustering.
     z = linkage(x, method='ward')
     coph_corr, _ = cophenet(z, pdist(x))
-    print(f'Cophenetic Correlation Coefficient: {coph_corr}')
+    print(f'Cophenetic Correlation Coefficient: {coph_corr}, the closer to 1, the better hierarchical clustering')
 
     # Above 0.7: Excellent clustering
     # 0.5 - 0.7: Good clustering
     # 0.25 - 0.5: Weak clustering
     # Below 0.25: Poor clustering
     score = silhouette_score(x, model.labels_)
-    logger.debug(f'Silhouette Score: {score}')
+    logger.debug(f'Silhouette Score: {score}, the closer to 1, the better, > 0.5 good clustering')
     clusters = reorder_by_size(model.labels_)
     return clusters, model.children_
 

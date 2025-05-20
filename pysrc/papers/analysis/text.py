@@ -17,6 +17,9 @@ from pysrc.config import EMBEDDINGS_VECTOR_LENGTH, WORD2VEC_WINDOW, WORD2VEC_EPO
 
 logger = logging.getLogger(__name__)
 
+# Launch with a Docker address or locally
+FASTTEXT_URL = os.getenv('FASTTEXT_URL', 'http://localhost:5001')
+
 # Ensure that modules are downloaded in advance
 # nltk averaged_perceptron_tagger required for nltk.pos_tag
 # nltk punkt required for word_tokenize
@@ -163,31 +166,13 @@ def _build_stems_to_tokens_map(stems_and_tokens):
     return stems_tokens_map
 
 
-# Launch with Docker address or locally
-FASTTEXT_URL = os.getenv('FASTTEXT_URL', 'http://localhost:5001')
-
-
 def tokens_embeddings(corpus, corpus_tokens, test=False):
-    if test:
+    if test or not is_fasttext_endpoint_ready():
         logger.debug(f'Compute words embeddings trained word2vec')
         return train_word2vec(corpus, corpus_tokens, test=test)
-
-    # Don't use model as is, since each celery process will load it's own copy.
-    # Shared model is available via additional service with single model.
-    logger.debug(f'Fetch embeddings from fasttext service')
-    try:
-        r = requests.request(
-            url=f'{FASTTEXT_URL}/fasttext',
-            method='POST',
-            json=corpus_tokens,
-            headers={'Accept': 'application/json'}
-        )
-        if r.status_code == 200:
-            return np.array(r.json()).reshape(len(corpus_tokens), EMBEDDINGS_VECTOR_LENGTH)
-        else:
-            logger.debug(f'Wrong response code {r.status_code}')
-    except Exception as e:
-        logger.debug(f'Failed to fetch embeddings ${e}')
+    embds = fetch_fasttext_tokens_embeddings(corpus_tokens)
+    if embds is not None:
+        return embds
     logger.debug('Fallback to in-house word2vec')
     return train_word2vec(corpus, corpus_tokens, test=test)
 
@@ -230,3 +215,58 @@ def texts_embeddings(corpus_counts, tokens_embeddings):
     ])
     logger.debug(f'Texts embeddings shape: {texts_embeddings.shape}')
     return texts_embeddings
+
+
+def is_fasttext_endpoint_ready():
+    logger.debug(f'Check fasttext endpoint is ready')
+    try:
+        r = requests.request(url=FASTTEXT_URL, method='GET')
+        if r.status_code != 200:
+            return False
+        r = requests.request(url=f'{FASTTEXT_URL}/check', method='GET', headers={'Accept': 'application/json'})
+        if r.status_code != 200 or r.json() is not True:
+            return False
+        return True
+    except Exception as e:
+        logger.debug(f'Fasttext endpoint is not ready: {e}')
+        return False
+
+
+def fetch_fasttext_tokens_embeddings(corpus_tokens):
+    # Don't use the model as is, since each celery process will load its own copy.
+    # Shared model is available via additional service with a single model.
+    logger.debug(f'Fetch tokens embeddings from fasttext service')
+    try:
+        r = requests.request(
+            url=f'{FASTTEXT_URL}/fasttext_tokens',
+            method='GET',
+            json=corpus_tokens,
+            headers={'Accept': 'application/json'}
+        )
+        if r.status_code == 200:
+            return np.array(r.json()).reshape(len(corpus_tokens), EMBEDDINGS_VECTOR_LENGTH)
+        else:
+            logger.debug(f'Wrong response code {r.status_code}')
+    except Exception as e:
+        logger.debug(f'Failed to fetch tokens embeddings ${e}')
+    return None
+
+
+def fetch_fasttext_text_embedding(text):
+    # Don't use the model as is, since each celery process will load its own copy.
+    # Shared model is available via additional service with a single model.
+    logger.debug(f'Fetch text embedding from fasttext service')
+    try:
+        r = requests.request(
+            url=f'{FASTTEXT_URL}/fasttext_text',
+            method='GET',
+            json=text,
+            headers={'Accept': 'application/json'}
+        )
+        if r.status_code == 200:
+            return r.json()
+        else:
+            logger.debug(f'Wrong response code {r.status_code}')
+    except Exception as e:
+        logger.debug(f'Failed to fetch text embedding ${e}')
+    return None

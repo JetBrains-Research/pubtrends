@@ -21,6 +21,7 @@ from pysrc.app.reports import get_predefined_jobs, \
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, analyze_pubmed_search, analyze_id_list
 from pysrc.config import PubtrendsConfig
+from pysrc.papers.analysis.text import is_fasttext_endpoint_ready
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plot_app import prepare_graph_data, prepare_papers_data, prepare_paper_data, prepare_result_data
 from pysrc.papers.utils import trim_query, IDS_ANALYSIS_TYPE, PAPER_ANALYSIS_TYPE, SORT_MOST_CITED
@@ -615,25 +616,6 @@ def are_predefined_jobs_ready():
         PREDEFINED_JOBS_LOCK.release()
 
 
-# Launch with Docker address or locally
-FASTTEXT_URL = os.getenv('FASTTEXT_URL', 'http://localhost:5001')
-
-
-def is_fasttext_endpoint_ready():
-    logger.debug(f'Check fasttext endpoint is ready')
-    try:
-        r = requests.request(url=FASTTEXT_URL, method='GET')
-        if r.status_code != 200:
-            return False
-        r = requests.request(url=f'{FASTTEXT_URL}/initialized', method='GET', headers={'Accept': 'application/json'})
-        if r.status_code != 200 or r.json() is not True:
-            return False
-        return True
-    except Exception as e:
-        logger.debug(f'Fasttext endpoint is not ready: {e}')
-        return False
-
-
 ##########################
 # Feedback functionality #
 ##########################
@@ -737,6 +719,6 @@ def get_app():
     return flask_app
 
 
-# With debug=True, Flask server will auto-reload on changes
+# With debug=True, the Flask server will auto-reload on changes
 if __name__ == '__main__':
     flask_app.run(host='0.0.0.0', debug=True, extra_files=['templates/'], port=5000)

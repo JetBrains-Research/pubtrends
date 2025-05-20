@@ -6,7 +6,8 @@ import threading
 from flask import Flask, request
 
 from pysrc.config import PubtrendsConfig
-from pysrc.fasttext.fasttext import PRETRAINED_MODEL_CACHE, PRETRAINED_MODEL_CACHE_LOCK, tokens_embeddings_fasttext
+from pysrc.fasttext.fasttext import PRETRAINED_MODEL_CACHE, PRETRAINED_MODEL_CACHE_LOCK, tokens_embeddings_fasttext, \
+    text_embedding_fasttext
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
@@ -49,8 +50,8 @@ def init_fasttext_model():
     return loaded_model
 
 
-@fasttext_app.route('/initialized', methods=['GET'])
-def initialized():
+@fasttext_app.route('/check', methods=['GET'])
+def check():
     if fasttext_app.config.get('LOADED', False):
         return json.dumps(True)
     if fasttext_app.config.get('LOADING', False):
@@ -68,17 +69,26 @@ def initialized():
         PRETRAINED_MODEL_CACHE_LOCK.release()
 
 
-@fasttext_app.route('/fasttext', methods=['POST'])
-def fasttext():
-    # Please ensure that already initialized, otherwise model loading may take some time
+@fasttext_app.route('/fasttext_tokens', methods=['GET'])
+def fasttext_tokens():
+    # Please ensure that already initialized. Otherwise, model loading may take some time
     corpus_tokens = request.get_json()
     logger.info('Computing embeddings')
     embeddings = tokens_embeddings_fasttext(corpus_tokens)
-    # Even if /initialize wasn't invoked, mark model as ready
+    # Even if /initialize wasn't invoked, mark the model as ready
     fasttext_app.config['LOADED'] = True
     logger.info(f'Return embeddings of shape {embeddings.shape} in JSON format')
     return json.dumps(embeddings.reshape(-1).tolist())
 
+@fasttext_app.route('/fasttext_text', methods=['GET'])
+def fasttext_text():
+    # Please ensure that already initialized. Otherwise, model loading may take some time
+    text = request.get_json()
+    logger.info('Computing text embedding')
+    text_embedding = text_embedding_fasttext(text)
+    # Even if /initialize wasn't invoked, mark the model as ready
+    fasttext_app.config['LOADED'] = True
+    return json.dumps(text_embedding)
 
 @fasttext_app.route('/', methods=['GET'])
 def index():
@@ -90,6 +100,6 @@ def get_app():
     return fasttext_app
 
 
-# With debug=True, Flask server will auto-reload on changes
+# With debug=True, the Flask server will auto-reload on changes
 if __name__ == '__main__':
     fasttext_app.run(host='0.0.0.0', debug=False, port=5001)
