@@ -20,7 +20,7 @@ from pysrc.app.reports import get_predefined_jobs, \
     load_result_data, _predefined_example_params_by_jobid, preprocess_string, load_paper_data
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, analyze_pubmed_search, analyze_id_list
-from pysrc.config import PubtrendsConfig
+from pysrc.config import PubtrendsConfig, USE_FASTTEXT_EMBEDDINGS
 from pysrc.papers.analysis.text import is_fasttext_endpoint_ready
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plot_app import prepare_graph_data, prepare_papers_data, prepare_paper_data, prepare_result_data
@@ -102,7 +102,7 @@ def log_request(r):
 
 @flask_app.route('/')
 def index():
-    if not is_fasttext_endpoint_ready():
+    if USE_FASTTEXT_EMBEDDINGS and not is_fasttext_endpoint_ready():
         return render_template('init.html', version=VERSION, message=SERVICE_LOADING_INITIALIZING)
     if not are_predefined_jobs_ready():
         return render_template('init.html', version=VERSION, message=SERVICE_LOADING_PREDEFINED_EXAMPLES)

@@ -14,7 +14,7 @@ from nltk.corpus import wordnet, stopwords
 from nltk.probability import FreqDist
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 
-from pysrc.config import EMBEDDINGS_VECTOR_LENGTH, WORD2VEC_WINDOW, WORD2VEC_EPOCHS
+from pysrc.config import EMBEDDINGS_VECTOR_LENGTH, WORD2VEC_WINDOW, WORD2VEC_EPOCHS, USE_FASTTEXT_EMBEDDINGS
 
 NLP = spacy.load("en_core_web_sm")
 
@@ -170,7 +170,7 @@ def _build_stems_to_tokens_map(stems_and_tokens):
 
 
 def tokens_embeddings(corpus, corpus_tokens, test=False):
-    if test or not is_fasttext_endpoint_ready():
+    if test or not USE_FASTTEXT_EMBEDDINGS or not is_fasttext_endpoint_ready():
         logger.debug(f'Compute words embeddings trained word2vec')
         return train_word2vec(corpus, corpus_tokens, test=test)
     embds = fetch_fasttext_tokens_embeddings(corpus_tokens)
