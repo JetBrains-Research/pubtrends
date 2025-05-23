@@ -275,7 +275,7 @@ def fetch_fasttext_text_embedding(text):
     return None
 
 
-def universal_chunk(text, max_tokens=64, overlap_sentences=1):
+def get_chunks(text, max_tokens=128, overlap_sentences=1):
     """
     Split text into a list of overlapping chunks.
 
@@ -325,11 +325,12 @@ def universal_chunk(text, max_tokens=64, overlap_sentences=1):
 
     return chunks
 
-def process_paper_chunks(args):
-    pid, text = args
+def collect_papers_chunks(args):
+    batch, max_tokens = args
     chunks = []
     chunk_idx = []
-    for i, chunk in enumerate(universal_chunk(text)):
-        chunk_idx.append((pid, i))
-        chunks.append(chunk)
+    for pid, text in batch:
+        for i, chunk in enumerate(get_chunks(text, max_tokens)):
+            chunk_idx.append((pid, i))
+            chunks.append(chunk)
     return chunks, chunk_idx
