@@ -33,12 +33,11 @@ USER root
 RUN ln -snf /bin/bash /bin/sh
 
 USER user
-RUN conda install -c conda-forge mamba
 
 # Install required dependencies
 COPY environment.yml /home/user/environment.yml
-RUN mamba env create -f ~/environment.yml \
-    && mamba clean -afy
+RUN conda env create -f ~/environment.yml \
+    && conda clean -afy
 
 # Download all the nltk and spacy resources
 COPY nlp.sh /home/user/nlp.sh
