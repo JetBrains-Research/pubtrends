@@ -2,7 +2,7 @@ import numpy as np
 import unittest
 
 from pysrc.config import PubtrendsConfig
-from pysrc.papers.analysis.text import stemmed_tokens, _build_stems_to_tokens_map, universal_chunk, NLP
+from pysrc.papers.analysis.text import stemmed_tokens, _build_stems_to_tokens_map, NLP, get_chunks
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.utils import SORT_MOST_CITED
 from pysrc.test.mock_loaders import MockLoader
@@ -98,25 +98,25 @@ class TestText(unittest.TestCase):
 class TestUniversalChunk(unittest.TestCase):
     def test_empty_text(self):
         """Test with empty text."""
-        self.assertEqual(universal_chunk(""), [""])
+        self.assertEqual(get_chunks(""), [""])
 
     def test_short_text(self):
         """Test with text shorter than max_tokens."""
         text = "This is a short text."
-        chunks = universal_chunk(text)
+        chunks = get_chunks(text)
         self.assertEqual(len(chunks), 1)
         self.assertEqual(chunks[0], text)
 
     def test_long_text(self):
         """Test with text longer than max_tokens."""
         text = "This is the first sentence. This is the second sentence. This is the third sentence. This is the fourth sentence. This is the fifth sentence."
-        chunks = universal_chunk(text, max_tokens=20)
+        chunks = get_chunks(text, max_tokens=20)
         self.assertTrue(len(chunks) > 1)
 
     def test_overlap(self):
         """Test that chunks overlap by the specified number of sentences."""
         text = "First sentence. Second sentence. Third sentence. Fourth sentence. Fifth sentence."
-        chunks = universal_chunk(text, max_tokens=6, overlap_sentences=1)
+        chunks = get_chunks(text, max_tokens=6, overlap_sentences=1)
 
         # Check that there's overlap between chunks
         doc1 = NLP(chunks[0])

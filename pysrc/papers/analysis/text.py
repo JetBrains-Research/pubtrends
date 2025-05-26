@@ -12,7 +12,7 @@ from gensim.models import Word2Vec
 from nltk import word_tokenize, WordNetLemmatizer, SnowballStemmer
 from nltk.corpus import wordnet, stopwords
 from nltk.probability import FreqDist
-from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from sklearn.feature_extraction.text import CountVectorizer
 
 from pysrc.config import EMBEDDINGS_VECTOR_LENGTH, WORD2VEC_WINDOW, WORD2VEC_EPOCHS, USE_FASTTEXT_EMBEDDINGS
 
@@ -200,25 +200,22 @@ def train_word2vec(corpus, corpus_tokens, vector_size=EMBEDDINGS_VECTOR_LENGTH, 
     ])
 
 
-def texts_embeddings(corpus_counts, tokens_embeddings):
+def compute_papers_embeddings(corpus, corpus_tokens, corpus_counts, test):
     """
-    Computes texts embeddings as TF-IDF weighted average of words embeddings.
-    :param corpus_counts: Vectorized papers matrix
-    :param tokens_embeddings: Tokens word2vec embeddings
+    Computes texts embeddings as average of words embeddings.
     :return: numpy array [publications x embeddings]
     """
-    logger.debug('Compute TF-IDF on tokens counts')
-    tfidf_transformer = TfidfTransformer()
-    tfidf = tfidf_transformer.fit_transform(corpus_counts)
-    logger.debug(f'TFIDF shape {tfidf.shape}')
 
-    logger.debug('Compute text embeddings as TF-IDF weighted average of tokens embeddings')
+    logger.debug('Analyzing tokens embeddings')
+    corpus_tokens_embedding = tokens_embeddings(
+        corpus, corpus_tokens, test=test
+    )
+    logger.debug('Compute text embeddings as average of tokens embeddings')
     texts_embeddings = np.array([
-        np.mean((tokens_embeddings.T * tfidf[i, :].T).T, axis=0) for i in range(tfidf.shape[0])
+        np.mean((corpus_tokens_embedding.T * corpus_counts[i, :].T).T, axis=0) for i in range(corpus_counts.shape[0])
     ])
     logger.debug(f'Texts embeddings shape: {texts_embeddings.shape}')
     return texts_embeddings
-
 
 def is_fasttext_endpoint_ready():
     logger.debug(f'Check fasttext endpoint is ready')

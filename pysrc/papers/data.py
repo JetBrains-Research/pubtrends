@@ -1,7 +1,6 @@
 import json
 from io import StringIO
 
-import numpy as np
 import pandas as pd
 from networkx.readwrite import json_graph
 from scipy.sparse import csr_matrix
@@ -13,8 +12,7 @@ class AnalysisData:
                  df, cit_df, cocit_grouped_df, bibliographic_coupling_df,
                  top_cited_df, max_gain_df, max_rel_gain_df,
                  corpus, corpus_tokens, corpus_counts,
-                 papers_graph, papers_embeddings,
-                 dendrogram,
+                 papers_graph,
                  author_stats, journal_stats, numbers_df):
         self.search_query = search_query  # Initial query for analysis
         self.search_ids = search_ids  # Initial ids for analysis
@@ -35,8 +33,6 @@ class AnalysisData:
         self.corpus_tokens = corpus_tokens
         self.corpus_counts = corpus_counts
         self.papers_graph = papers_graph
-        self.papers_embeddings = papers_embeddings
-        self.dendrogram = dendrogram
         self.author_stats = author_stats
         self.journal_stats = journal_stats
         self.numbers_df = numbers_df
@@ -67,12 +63,10 @@ class AnalysisData:
             top_cited_df=self.top_cited_df.to_json(),
             max_gain_df=self.max_gain_df.to_json(),
             max_rel_gain_df=self.max_rel_gain_df.to_json(),
-            dendrogram=self.dendrogram.tolist() if self.dendrogram is not None else None,
             corpus=self.corpus,
             corpus_tokens=self.corpus_tokens,
             corpus_counts=csm_json,
             papers_graph=json_graph.node_link_data(self.papers_graph),
-            papers_embeddings=self.papers_embeddings.tolist(),
             author_stats=self.author_stats.to_json() if self.author_stats is not None else None,
             journal_stats=self.journal_stats.to_json() if self.journal_stats is not None else None,
             numbers_df=self.numbers_df.to_json() if self.numbers_df is not None else None,
@@ -131,14 +125,6 @@ class AnalysisData:
         # Restore citation and structure graphs
         papers_graph = json_graph.node_link_graph(fields['papers_graph'])
 
-        # Restore original embeddings
-        papers_embeddings = np.array(fields['papers_embeddings'])
-
-        # Restore dendrogram
-        dendrogram = fields['dendrogram']
-        if dendrogram is not None:
-            dendrogram = np.array(dendrogram)
-
         # Restore additional analysis
         author_stats = pd.read_json(StringIO(fields['author_stats'])) if fields['author_stats'] is not None else None
         journal_stats = pd.read_json(StringIO(fields['journal_stats'])) if fields['journal_stats'] is not None else None
@@ -163,9 +149,7 @@ class AnalysisData:
             corpus=corpus,
             corpus_tokens=corpus_tokens,
             corpus_counts=corpus_counts,
-            papers_embeddings=papers_embeddings,
             papers_graph=papers_graph,
-            dendrogram=dendrogram,
             author_stats=author_stats,
             journal_stats=journal_stats,
             numbers_df=numbers_df,

@@ -1,8 +1,6 @@
 import logging
 from collections import Counter
-from math import fabs, log, sin, cos, pi
 from string import Template
-
 import holoviews as hv
 import numpy as np
 from bokeh.embed import components
@@ -13,15 +11,15 @@ from bokeh.models.graphs import NodesAndLinkedEdges
 from bokeh.plotting import figure
 from holoviews import opts
 from matplotlib import pyplot as plt
+from scipy.stats import trim_mean
 from sklearn.preprocessing import minmax_scale
 from wordcloud import WordCloud
 
 from pysrc.config import PAPERS_PLOT_WIDTH, WORD_CLOUD_WIDTH, WORD_CLOUD_KEYWORDS, WORD_CLOUD_HEIGHT, \
     PLOT_WIDTH, SHORT_PLOT_HEIGHT, MAX_LINEAR_AXIS, PLOT_HEIGHT, MAX_JOURNAL_LENGTH, MAX_AUTHOR_LENGTH, TALL_PLOT_HEIGHT
-from pysrc.papers.analysis.topics import get_topics_description
+from pysrc.papers.analysis.descriptions import get_topics_description
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
-from pysrc.papers.utils import cut_authors_list, trim_query, contrast_color, \
-    topics_palette_rgb, color_to_rgb, factor_colors, factors_colormap, trim
+from pysrc.papers.utils import cut_authors_list, topics_palette_rgb, color_to_rgb, factor_colors, factors_colormap, trim
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
 hv.extension('bokeh')
@@ -266,14 +264,6 @@ class Plotter:
             topics = [' '] * len(self.data.journal_stats)  # Ignore topics
         return list(zip([trim(j, MAX_JOURNAL_LENGTH) for j in journals], sums, topics))
 
-    def topics_hierarchy_with_keywords(self):
-        if self.data.dendrogram is None:
-            return None
-        kwd_df = PlotPreprocessor.compute_kwds(self.topics_description, self.config.topic_description_words)
-        return Plotter._plot_topics_hierarchy_with_keywords(
-            self.data.df, kwd_df, self.data.df['comp'], self.data.dendrogram
-        )
-
     def plot_papers_graph(self):
         return Plotter._plot_papers_graph(
             self.data.search_ids, self.data.source, self.data.papers_graph, self.data.df,
@@ -375,128 +365,6 @@ class Plotter:
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Number of papers'
         p.sizing_mode = 'stretch_width'
-        Plotter.remove_wheel_zoom_tool(p)
-        return p
-
-    @staticmethod
-    def _plot_topics_hierarchy_with_keywords(df, kwd_df, clusters, dendrogram_children,
-                                             width=PLOT_WIDTH, height=int(PLOT_WIDTH * 3 / 4)):
-        comp_sizes = Counter(df['comp'])
-        max_words = 3 if len(comp_sizes) >= 20 else 5
-        logger.debug('Computing dendrogram for clusters')
-        if dendrogram_children is None:
-            return None
-        clusters_dendrogram = PlotPreprocessor.compute_clusters_dendrogram_children(clusters, dendrogram_children)
-        paths, leaves_order = PlotPreprocessor.convert_clusters_dendrogram_to_paths(clusters, clusters_dendrogram)
-
-        # Configure dimensions, keep range ratios to keep circles round
-        mx = 180
-        # Hacky coefficients to make circular dendrogram look good
-        my = int(1.05 * mx * height / width)
-        p = figure(x_range=(-mx, mx),
-                   y_range=(-my, my),
-                   tools="save",
-                   width=width, height=height)
-        x_coefficient = 1.2  # Ellipse x coefficient
-        y_delta = 40  # Extra space near pi / 2 and 3 * pi / 2
-        n_topics = len(leaves_order)
-        radius = 100  # Radius of circular dendrogram
-        dendrogram_len = len(paths[0])
-        d_radius = radius / dendrogram_len
-        d_degree = 2 * pi / n_topics
-
-        # Leaves coordinates
-        leaves_degrees = dict((v, i * d_degree) for v, i in leaves_order.items())
-
-        # Draw dendrogram - from bottom to top
-        ds = leaves_degrees.copy()
-        for i in range(1, dendrogram_len):
-            next_ds = {}
-            for path in paths:
-                d = ds[path[i - 1]]
-                if path[i] not in next_ds:
-                    next_ds[path[i]] = []
-                next_ds[path[i]].append(d)
-
-                # Draw current level connections
-                p.line([cos(d) * d_radius * (dendrogram_len - i), cos(d) * d_radius * (dendrogram_len - i - 1)],
-                       [sin(d) * d_radius * (dendrogram_len - i), sin(d) * d_radius * (dendrogram_len - i - 1)],
-                       line_color='grey')
-
-            # Compute next connections and draw arcs
-            for v, nds in next_ds.items():
-                next_ds[v] = np.mean(nds)
-                if nds[0] != nds[-1]:
-                    p.arc(0, 0, d_radius * (dendrogram_len - i - 1), nds[0], nds[-1], line_color='grey')
-                    # logger.debug(f'ARC r={d_radius * (dendrogram_len - i - 1)}; d1={nds[0]}; d2={nds[-1]}')
-
-            ds = next_ds
-
-        # Draw leaves
-        n_comps = len(comp_sizes)
-        cmap = factors_colormap(n_comps)
-        topics_colors = dict((i, color_to_rgb(cmap(i))) for i in range(n_comps))
-        xs = [cos(d) * d_radius * (dendrogram_len - 1) for _, d in leaves_degrees.items()]
-        ys = [sin(d) * d_radius * (dendrogram_len - 1) for _, d in leaves_degrees.items()]
-        # noinspection PyTypeChecker
-        sizes = [8 + int(min(5, log(comp_sizes[v]))) for v, _ in leaves_degrees.items()]
-        comps = [v + 1 for v, _ in leaves_degrees.items()]
-        colors = [topics_colors[v] for v, _ in leaves_degrees.items()]
-        ds = ColumnDataSource(data=dict(x=xs, y=ys, size=sizes, comps=comps, color=colors))
-        p.rect(x='x', y='y', width='size', height='size', fill_color='color', line_color='black', source=ds)
-
-        # Topics labels
-        p.text(x=[cos(d) * d_radius * (dendrogram_len - 1) for _, d in leaves_degrees.items()],
-               y=[sin(d) * d_radius * (dendrogram_len - 1) for _, d in leaves_degrees.items()],
-               text=[str(v + 1) for v, _ in leaves_degrees.items()],
-               text_align='center', text_baseline='middle', text_font_size='10pt',
-               text_color=[contrast_color(topics_colors[v]) for v, _ in leaves_degrees.items()])
-
-        # Show words for components - most popular words per component
-        words2show = PlotPreprocessor.topics_words(kwd_df, max_words)
-
-        # Visualize words
-        for v, d in leaves_degrees.items():
-            if v not in words2show:  # No super-specific words for topic
-                continue
-            words = words2show[v]
-            xs = []
-            ys = []
-            for i, word in enumerate(words):
-                wd = d + d_degree * (i - len(words) / 2) / len(words)
-                # Make word degree in range 0 - 2 * pi
-                if wd < 0:
-                    wd += 2 * pi
-                elif wd > 2 * pi:
-                    wd -= 2 * pi
-                xs.append(cos(wd) * radius * x_coefficient)
-                y = sin(wd) * radius
-                # Additional vertical space around pi/2 and 3*pi/2
-                if pi / 4 <= wd < 3 * pi / 4:
-                    y += pow(pi / 4 - fabs(pi / 2 - wd), 1.5) * y_delta
-                elif 5 * pi / 4 <= wd < 7 * pi / 4:
-                    y -= pow(pi / 4 - fabs(3 * pi / 2 - wd), 1.5) * y_delta
-                ys.append(y)
-
-            # Different text alignment for left | right parts
-            p.text(x=[x for x in xs if x > 0], y=[y for i, y in enumerate(ys) if xs[i] > 0],
-                   text=[w for i, w in enumerate(words) if xs[i] > 0],
-                   text_align='left', text_baseline='middle', text_font_size='10pt',
-                   text_color=topics_colors[v])
-            p.text(x=[x for x in xs if x <= 0], y=[y for i, y in enumerate(ys) if xs[i] <= 0],
-                   text=[w for i, w in enumerate(words) if xs[i] <= 0],
-                   text_align='right', text_baseline='middle', text_font_size='10pt',
-                   text_color=topics_colors[v])
-
-        # Arcs fail at stretching, use fixed size only
-        # p.sizing_mode = 'stretch_width'
-        p.axis.major_tick_line_color = None
-        p.axis.minor_tick_line_color = None
-        p.axis.major_label_text_color = None
-        p.axis.major_label_text_font_size = '0pt'
-        p.axis.axis_line_color = None
-        p.grid.grid_line_color = None
-        p.outline_line_color = None
         Plotter.remove_wheel_zoom_tool(p)
         return p
 
@@ -659,8 +527,8 @@ class Plotter:
         p.renderers.append(graph)
 
         # Add Labels
-        lxs = [(df.loc[df['comp'] == c]['x'].mean() - xmin) / xrange * 100 for c in sorted(set(comps))]
-        lys = [(df.loc[df['comp'] == c]['y'].mean() - ymin) / yrange * 100 for c in sorted(set(comps))]
+        lxs = [(trim_mean(df[df['comp'] == c]['x'], 0.2) - xmin) / xrange * 100 for c in sorted(set(comps))]
+        lys = [(trim_mean(df[df['comp'] == c]['y'], 0.2) - ymin) / yrange * 100 for c in sorted(set(comps))]
         comp_labels = [f"#{c + 1}" for c in sorted(set(comps))]
         source = ColumnDataSource({'x': lxs, 'y': lys, 'name': comp_labels})
         labels = LabelSet(x='x', y='y', text='name', source=source,

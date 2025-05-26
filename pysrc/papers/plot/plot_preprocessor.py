@@ -4,7 +4,6 @@ import logging
 import networkx as nx
 import numpy as np
 import pandas as pd
-from more_itertools import unique_everseen
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
 from pysrc.papers.utils import cut_authors_list, rgb2hex
@@ -142,73 +141,6 @@ class PlotPreprocessor:
             else:
                 words2show[comp] = []
         return words2show
-
-    @staticmethod
-    def compute_clusters_dendrogram_children(clusters, children):
-        """
-        :param clusters: Clusters list for elements
-        :param children: Hierarchical clustering dendrogram encoding, list of pairs of groups to connect.
-        Three clusters (0, 1) + (2, 3) + (4), with children  [0, 1], [2, 3], [5, 6], [4, 7] encodes dendrogram:
-                   /\
-                /\    \
-             /\    /\  \
-            0  1  2  3  4
-        :return: List of groups to connect with respect to clusters.
-        Result for the example above:
-        [0, 1], [2, 3]
-        """
-        leaves_map = dict(enumerate(clusters))
-        nodes_map = {}
-        clusters_children = []
-        for i, (u, v) in enumerate(children):
-            u_cluster = leaves_map[u] if u in leaves_map else nodes_map[u]
-            v_cluster = leaves_map[v] if v in leaves_map else nodes_map[v]
-            node = len(leaves_map) + i
-            if u_cluster is not None and v_cluster is not None:
-                if u_cluster != v_cluster:
-                    nodes_map[node] = None  # Different clusters
-                    clusters_children.append((u, v, node))
-                else:
-                    nodes_map[node] = u_cluster
-            else:
-                nodes_map[node] = None  # Different clusters
-                clusters_children.append((u, v, node))
-
-        def renamed(x):
-            if x in leaves_map:
-                return leaves_map[x]
-            elif x in nodes_map:
-                res = nodes_map[x]
-                return res if res is not None else x
-            else:
-                return x
-
-        # Rename nodes to clusters
-        result = [(renamed(u), renamed(v), renamed(n)) for u, v, n in clusters_children]
-        #     logger.debug(f'Clusters based dendrogram children {result}')
-        return result
-
-    @staticmethod
-    def convert_clusters_dendrogram_to_paths(clusters, children):
-        logger.debug('Converting agglomerate clustering clusters dendrogram format to path for visualization')
-        paths = [[p] for p in sorted(set(clusters))]
-        for i, (u, v, n) in enumerate(children):
-            for p in paths:
-                if p[i] == u or p[i] == v:
-                    p.append(n)
-                else:
-                    p.append(p[i])
-        #     logger.debug(f'Paths {paths}')
-        logger.debug('Radix sort or paths to ensure no overlaps')
-        for i in range(len(children)):
-            paths.sort(key=lambda p: p[i])
-            # Reorder next level to keep order of previous if possible
-            if i != len(children):
-                order = dict((v, i) for i, v in enumerate(unique_everseen(p[i + 1] for p in paths)))
-                for p in paths:
-                    p[i + 1] = order[p[i + 1]]
-        leaves_order = dict((v, i) for i, v in enumerate(unique_everseen(p[0] for p in paths)))
-        return paths, leaves_order
 
     @staticmethod
     def frequent_keywords_data(freq_kwds, df, corpus_terms, corpus_counts, n):

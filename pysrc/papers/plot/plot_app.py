@@ -2,17 +2,15 @@ import json
 import logging
 from itertools import chain
 
-from scipy.spatial import distance
-
 from pysrc.app.reports import preprocess_string
 from pysrc.config import PubtrendsConfig
+from pysrc.papers.analysis.descriptions import get_topics_description
 from pysrc.papers.analysis.text import get_frequent_tokens
-from pysrc.papers.analysis.topics import get_topics_description
 from pysrc.papers.data import AnalysisData
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.plot.plotter import Plotter, components_list, topics_info_and_word_cloud
-from pysrc.papers.utils import trim_query, MAX_TITLE_LENGTH, topics_palette, MAX_QUERY_LENGTH, trim
+from pysrc.papers.utils import trim_query, MAX_TITLE_LENGTH, topics_palette, trim
 
 logger = logging.getLogger(__name__)
 
@@ -46,10 +44,6 @@ def prepare_result_data(config: PubtrendsConfig, data: AnalysisData):
             component_sizes=PlotPreprocessor.component_sizes(data.df),
             papers_graph=components_list(plotter.plot_papers_graph())
         ))
-
-        topics_hierarchy_with_keywords = plotter.topics_hierarchy_with_keywords()
-        if topics_hierarchy_with_keywords:
-            result['topics_hierarchy_with_keywords'] = components_list(topics_hierarchy_with_keywords)
 
     # Configure additional features
     result.update(dict(
@@ -169,18 +163,20 @@ def prepare_paper_data(
 
     logger.debug('Computing most similar papers')
     if len(data.df) > 1:
-        indx = {t: i for i, t in enumerate(data.df['id'])}
-        similar_papers = map(
-            lambda v: (data.df[data.df['id'] == v]['id'].values[0],
-                       data.df[data.df['id'] == v]['title'].values[0],
-                       data.df[data.df['id'] == v]['year'].values[0],
-                       data.df[data.df['id'] == v]['total'].values[0],
-                       1 / (1 + distance.euclidean(data.papers_embeddings[indx[pid], :],
-                                                   data.papers_embeddings[indx[v], :])),
-                       data.df[data.df['id'] == v]['comp'].values[0] + 1),
-            [p for p in data.df['id'] if p != pid]
-        )
-        similar_papers = sorted(similar_papers, key=lambda x: x[4], reverse=True)[:50]
+        graph = data.papers_graph
+        similar_papers = []
+        neighbors_data = sorted(list([(x, graph.get_edge_data(pid, x)) for x in graph.neighbors(pid)]),
+                                key=lambda x: x[1]['similarity'], reverse=True)
+        for v, d in neighbors_data[:50]:
+            similar_papers.append(
+                (v,
+                 data.df[data.df['id'] == v]['title'].values[0],
+                 data.df[data.df['id'] == v]['year'].values[0],
+                 data.df[data.df['id'] == v]['total'].values[0],
+                 d['similarity'],
+                 data.df[data.df['id'] == v]['comp'].values[0] + 1
+                 )
+            )
     else:
         similar_papers = None
 

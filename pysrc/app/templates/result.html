@@ -443,13 +443,6 @@
                         Topics are extracted based on similarity between papers based on <em>common references</em>,
                         <em>co-citations</em>, <em>direct citations</em>, and text similarity.<br>
                     </p>
-                    {% if topics_hierarchy_with_keywords is defined %}
-                    Topics are organized hierarchically. Clustering dendrogram with keywords is shown below.
-                    {% for script, div in topics_hierarchy_with_keywords %}
-                    {{ script|safe }}
-                    {{ div|safe }}
-                    {% endfor %}
-                    {% endif %}
                     <hr>
                     <strong>Topics by years</strong>
                     <p>

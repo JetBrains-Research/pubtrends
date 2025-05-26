@@ -85,7 +85,6 @@ logger = flask_app.logger
 @flask_app.route('/about_top_cited_papers.png')
 @flask_app.route('/about_topic.png')
 @flask_app.route('/about_topics_by_year.png')
-@flask_app.route('/about_topics_hierarchy.png')
 @flask_app.route('/smile.svg')
 @flask_app.route('/meh.svg')
 @flask_app.route('/frown.svg')

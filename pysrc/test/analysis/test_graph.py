@@ -61,7 +61,7 @@ class TestSparseGraph(unittest.TestCase):
               (8, 6, {'weight': 14}), (7, 1, {'weight': 8}), (7, 2, {'weight': 9}), (7, 6, {'weight': 13})]
 
     def test_sparse_graph(self):
-        sg = sparse_graph(self.g, 3, 'weight', False)
+        sg = sparse_graph(self.g, 3, 'weight')
         edges = list(sg.edges(data=True))
         print(edges)
         self.assertEqual(len(sg.edges), 12)
