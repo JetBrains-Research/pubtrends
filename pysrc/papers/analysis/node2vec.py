@@ -3,15 +3,15 @@ import logging
 import numpy as np
 from gensim.models import Word2Vec
 
-from pysrc.config import EMBEDDINGS_VECTOR_LENGTH, NODE2VEC_P, NODE2VEC_Q, NODE2VEC_WALK_LENGTH, \
-    NODE2VEC_WALKS_PER_NODE, NODE2VEC_WORD2VEC_WINDOW, NODE2VEC_WORD2VEC_EPOCHS
+from pysrc.config import NODE2VEC_P, NODE2VEC_Q, NODE2VEC_WALK_LENGTH, \
+    NODE2VEC_WALKS_PER_NODE, NODE2VEC_WORD2VEC_WINDOW, NODE2VEC_WORD2VEC_EPOCHS, NODE2VEC_EMBEDDINGS_VECTOR_LENGTH
 
 logger = logging.getLogger(__name__)
 
 def node2vec(
         ids, graph, p=NODE2VEC_P, q=NODE2VEC_Q,
         walk_length=NODE2VEC_WALK_LENGTH, walks_per_node=NODE2VEC_WALKS_PER_NODE,
-        vector_size=EMBEDDINGS_VECTOR_LENGTH, key='weight', seed=42
+        vector_size=NODE2VEC_EMBEDDINGS_VECTOR_LENGTH, key='weight', seed=42
 ):
     """
     :param ids: Ids or nodes for embedding

@@ -5,7 +5,8 @@ from itertools import chain
 from scipy.spatial import distance
 
 from pysrc.app.reports import preprocess_string
-from pysrc.config import PubtrendsConfig
+from pysrc.config import PubtrendsConfig, VISUALIZATION_GRAPH_EDGES
+from pysrc.papers.analysis.graph import sparse_graph
 from pysrc.papers.analysis.text import get_frequent_tokens
 from pysrc.papers.analysis.topics import get_topics_description
 from pysrc.papers.data import AnalysisData
@@ -169,18 +170,20 @@ def prepare_paper_data(
 
     logger.debug('Computing most similar papers')
     if len(data.df) > 1:
-        indx = {t: i for i, t in enumerate(data.df['id'])}
-        similar_papers = map(
-            lambda v: (data.df[data.df['id'] == v]['id'].values[0],
-                       data.df[data.df['id'] == v]['title'].values[0],
-                       data.df[data.df['id'] == v]['year'].values[0],
-                       data.df[data.df['id'] == v]['total'].values[0],
-                       1 / (1 + distance.euclidean(data.papers_embeddings[indx[pid], :],
-                                                   data.papers_embeddings[indx[v], :])),
-                       data.df[data.df['id'] == v]['comp'].values[0] + 1),
-            [p for p in data.df['id'] if p != pid]
-        )
-        similar_papers = sorted(similar_papers, key=lambda x: x[4], reverse=True)[:50]
+        graph = data.papers_graph
+        similar_papers = []
+        neighbors_data = sorted(list([(x, graph.get_edge_data(pid, x)) for x in graph.neighbors(pid)]),
+                                key=lambda x: x[1]['similarity'], reverse=True)
+        for v, d in neighbors_data[:50]:
+            similar_papers.append(
+                (v,
+                 data.df[data.df['id'] == v]['title'].values[0],
+                 data.df[data.df['id'] == v]['year'].values[0],
+                 data.df[data.df['id'] == v]['total'].values[0],
+                 d['similarity'],
+                 data.df[data.df['id'] == v]['comp'].values[0] + 1
+                 )
+            )
     else:
         similar_papers = None
 
@@ -216,16 +219,18 @@ def prepare_paper_data(
         result['derivative_papers'] = [(pid, trim(title, MAX_TITLE_LENGTH), url_prefix + pid, year, cited, topic + 1)
                                        for pid, title, year, cited, topic in derivative_papers]
 
-    logger.debug('Papers graph')
     if len(data.df) > 1:
+        logger.debug('Compute topics description')
         topics_description = get_topics_description(
             data.df,
             data.corpus, data.corpus_tokens, data.corpus_counts,
             n_words=config.topic_description_words,
         )
+        logger.debug('Prepare sparse graph to visualize with reduced number of edges')
+        visualize_graph = sparse_graph(data.papers_graph, VISUALIZATION_GRAPH_EDGES)
         result['papers_graph'] = components_list(
             Plotter._plot_papers_graph(
-                data.search_ids, source, data.papers_graph, data.df, config.topic_description_words,
+                data.search_ids, source, visualize_graph, data.df, config.topic_description_words,
                 shown_pid=pid, topics_tags=topics_description
             ))
 

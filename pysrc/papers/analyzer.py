@@ -1,17 +1,19 @@
 import logging
-import numpy as np
+
 from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
-from umap import UMAP
+
 from pysrc.config import *
 from pysrc.papers.analysis.citations import find_top_cited_papers, find_max_gain_papers, \
     find_max_relative_gain_papers, build_cit_stats_df, merge_citation_stats, build_cocit_grouped_df
-from pysrc.papers.analysis.graph import build_papers_graph, sparse_graph, add_artificial_text_similarities_edges
+from pysrc.papers.analysis.clustering import cluster_and_sort
+from pysrc.papers.analysis.graph import build_papers_graph, sparse_graph, add_text_similarities_edges, \
+    similarity
 from pysrc.papers.analysis.metadata import popular_authors, popular_journals
 from pysrc.papers.analysis.node2vec import node2vec
 from pysrc.papers.analysis.numbers import extract_numbers
 from pysrc.papers.analysis.text import texts_embeddings, vectorize_corpus, tokens_embeddings
-from pysrc.papers.analysis.topics import cluster_and_sort
 from pysrc.papers.data import AnalysisData
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
@@ -31,7 +33,7 @@ class PapersAnalyzer:
         self.source = Loaders.source(self.loader, test)
 
     def total_steps(self, config):
-        return 10 + config.feature_authors_enabled + config.feature_journals_enabled + config.feature_numbers_enabled
+        return 8 + config.feature_authors_enabled + config.feature_journals_enabled + config.feature_numbers_enabled
 
     def set_current_step(self, step=2):
         self.current_step = step
@@ -73,29 +75,9 @@ class PapersAnalyzer:
         if len(self.df) == 0:
             raise SearchError(f'Nothing found for ids: {ids}')
         else:
-            self.progress.info(f'Total {len(self.df)} papers in database',
+            self.progress.info(f'Loaded {len(self.df)} papers',
                                current=self.get_step_and_inc(), task=task)
         ids = list(self.df['id'])  # Limit ids to existing papers only!
-        self.progress.info('Analyzing title and abstract texts',
-                           current=self.get_step_and_inc(), task=task)
-        self.corpus, self.corpus_tokens, self.corpus_counts = vectorize_corpus(
-            self.df,
-            max_features=VECTOR_WORDS,
-            min_df=VECTOR_MIN_DF,
-            max_df=VECTOR_MAX_DF,
-            test=test
-        )
-        if TEXT_EMBEDDINGS_FACTOR != 0:
-            logger.debug('Analyzing tokens embeddings')
-            self.corpus_tokens_embedding = tokens_embeddings(
-                self.corpus, self.corpus_tokens, test=test
-            )
-            logger.debug('Analyzing texts embeddings')
-            papers_text_embeddings = texts_embeddings(
-                self.corpus_counts, self.corpus_tokens_embedding
-            )
-        else:
-            papers_text_embeddings = np.zeros(shape=(len(self.df), EMBEDDINGS_VECTOR_LENGTH))
 
         self.progress.info('Loading citations for papers',
                            current=self.get_step_and_inc(), task=task)
@@ -123,7 +105,7 @@ class PapersAnalyzer:
         else:
             self.cocit_grouped_df = cocit_grouped_df
 
-        self.progress.info('Processing bibliographic coupling for selected papers',
+        self.progress.info('Processing references for selected papers',
                            current=self.get_step_and_inc(), task=task)
         bibliographic_coupling_df = self.loader.load_bibliographic_coupling(ids)
         logger.debug(f'Found {len(bibliographic_coupling_df)} bibliographic coupling pairs of papers')
@@ -135,55 +117,72 @@ class PapersAnalyzer:
         else:
             self.bibliographic_coupling_df = bibliographic_coupling_df
 
-        full_papers_graph = build_papers_graph(
+        bibliographic_graph = build_papers_graph(
             self.df, self.cit_df, self.cocit_grouped_df, self.bibliographic_coupling_df,
         )
-        self.progress.info(f'Analyzing papers graph - {full_papers_graph.number_of_nodes()} nodes and '
-                           f'{full_papers_graph.number_of_edges()} edges',
+        logger.debug('Compute bibliographic similarity')
+        for i, j, data in bibliographic_graph.edges(data=True):
+            data['similarity'] = similarity(data, use_text=False)
+
+        self.progress.info('Analyzing title and abstract texts',
+                           current=self.get_step_and_inc(), task=task)
+        self.corpus, self.corpus_tokens, self.corpus_counts = vectorize_corpus(
+            self.df,
+            max_features=VECTOR_WORDS,
+            min_df=VECTOR_MIN_DF,
+            max_df=VECTOR_MAX_DF,
+            test=test
+        )
+        logger.debug('Analyzing tokens embeddings')
+        self.corpus_tokens_embedding = tokens_embeddings(
+            self.corpus, self.corpus_tokens, test=test
+        )
+        logger.debug('Analyzing texts embeddings')
+        papers_text_embeddings = texts_embeddings(
+            self.corpus_counts, self.corpus_tokens_embedding
+        )
+
+        self.progress.info(f'Analyzing papers citations and text similarity network',
                            current=self.get_step_and_inc(), task=task)
 
-        if GRAPH_EMBEDDINGS_FACTOR != 0:
-            logger.debug('Analyzing papers graph embeddings')
-            papers_graph_embeddings = node2vec(
-                self.df['id'],
-                sparse_graph(full_papers_graph, EMBEDDINGS_GRAPH_EDGES),
-                key='similarity'
-            )
-        else:
-            papers_graph_embeddings = np.zeros(shape=(len(self.df), 0))
+        # Analysis graph should keep a balance between graph and text
+        logger.debug('Preparing graph for analysis')
+        analysis_graph = sparse_graph(bibliographic_graph, GRAPH_BIBLIOGRAPHIC_EDGES)
+        logger.debug('Adding text similarities edges')
+        add_text_similarities_edges(ids, papers_text_embeddings, analysis_graph, GRAPH_TEXT_EDGES)
+        logger.debug('Compute summary graph and text similarity')
+        for i, j, data in analysis_graph.edges(data=True):
+            data['similarity'] = similarity(data, use_text=True)
+        self.papers_graph = analysis_graph
 
-        logger.debug('Computing aggregated graph and text embeddings for papers')
-        self.papers_embeddings = (papers_graph_embeddings * GRAPH_EMBEDDINGS_FACTOR +
-                                  papers_text_embeddings * TEXT_EMBEDDINGS_FACTOR
-                                  ) / (GRAPH_EMBEDDINGS_FACTOR + TEXT_EMBEDDINGS_FACTOR)
-
-        logger.debug('Prepare sparse graph to visualize')
-        self.papers_graph = sparse_graph(full_papers_graph, GRAPH_BIBLIOGRAPHIC_EDGES)
-
-        if TEXT_EMBEDDINGS_FACTOR != 0:
-            logger.debug('Adding artificial text similarities edges for visualization purposes')
-            add_artificial_text_similarities_edges(ids, papers_text_embeddings, self.papers_graph)
+        logger.debug('Analyzing papers graph embeddings')
+        graph_embeddings = node2vec(
+            self.df['id'],
+            analysis_graph,
+            key='similarity'
+        )
 
         if len(self.df) > 1:
             logger.debug('Computing PCA projection')
-            t = StandardScaler().fit_transform(self.papers_embeddings)
-            pca = PCA(n_components=0.95, svd_solver="full")
+            t = StandardScaler().fit_transform(graph_embeddings)
+            pca = PCA(n_components=PCA_VARIANCE, svd_solver="full")
             pca_coords = pca.fit_transform(t)
             logger.debug('Apply transformation')
-            umap = UMAP(n_neighbors=int((GRAPH_BIBLIOGRAPHIC_EDGES + GRAPH_TEXT_SIMILARITY_EDGES) / 2),
-                    n_components=2, n_jobs=1, random_state=42)
-            umap_embeddings = umap.fit_transform(pca_coords)
-            self.df['x'] = umap_embeddings[:, 0]
-            self.df['y'] = umap_embeddings[:, 1]
+            if not test:
+                tsne = TSNE(n_components=2, random_state=42, perplexity=min(30, len(self.df) - 1))
+            else:
+                tsne = TSNE(n_components=2, random_state=42, perplexity=3)
+            tse_coords = tsne.fit_transform(pca_coords)
+            self.df['x'] = tse_coords[:, 0]
+            self.df['y'] = tse_coords[:, 1]
         else:
-            pca_coords = np.zeros(shape=(len(self.df), PCA_COMPONENTS))
             self.df['x'] = 0
             self.df['y'] = 0
 
-        self.progress.info(f'Extracting {topics} number of topics from papers text and graph similarity',
+        self.progress.info(f'Extracting topics from papers based on similarity',
                            current=8, task=task)
         logger.debug('Extracting topics from papers embeddings')
-        self.clusters, self.dendrogram = cluster_and_sort(pca_coords, topics, self.config.topic_min_size)
+        self.clusters, self.dendrogram = cluster_and_sort(graph_embeddings, topics, self.config.topic_min_size)
         self.df['comp'] = self.clusters
 
         self.progress.info('Identifying top cited papers',
@@ -218,7 +217,7 @@ class PapersAnalyzer:
                 self.numbers_df = extract_numbers(self.df)
             else:
                 logger.debug('Not enough papers for numbers extraction')
-        self.progress.done('Done', task=task)
+        logger.debug('Analysis finished')
 
     def save(self, search_ids, search_query, source, sort, limit, noreviews, min_year, max_year) -> AnalysisData:
         return AnalysisData(
@@ -242,7 +241,6 @@ class PapersAnalyzer:
             corpus_tokens=self.corpus_tokens,
             corpus_counts=self.corpus_counts,
             papers_graph=self.papers_graph,
-            papers_embeddings=self.papers_embeddings,
             author_stats=self.author_stats,
             journal_stats=self.journal_stats,
             numbers_df=self.numbers_df,

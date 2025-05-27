@@ -15,30 +15,29 @@ SIMILARITY_COCITATION = 10  # x number of co-citations
 SIMILARITY_BIBLIOGRAPHIC_COUPLING = 3  # x number of references
 SIMILARITY_CITATION = 1  # x 0-1 citation
 
-# Reduce number of edges in papers graph for node2vec embeddings computations
-EMBEDDINGS_GRAPH_EDGES = 100
+SIMILARITY_TEXT = 10  # Usually similarity is < 0.1
 
-# Reduce number of edges in papers graph for visualization
-GRAPH_BIBLIOGRAPHIC_EDGES = 20
-
-# Add artificial text similarity nodes to sparse graph for visualisations
-GRAPH_TEXT_SIMILARITY_EDGES = 5
-
-# Minimal number of common references, used to reduce papers graph edges count
-# Value > 1 is especially useful while analysing single paper,
+# A minimal number of common references, used to reduce papers graph edges count
+# Value > 1 is especially useful while analysing a single paper,
 # removes meaningless connections by construction
 SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN = 5
 
 # Minimal number of common references, used to reduce papers graph edges count
 SIMILARITY_COCITATION_MIN = 2
 
+# Number of edges in papers graph for clustering
+GRAPH_BIBLIOGRAPHIC_EDGES = 50
+GRAPH_TEXT_EDGES = 10
+
 # Papers embeddings is a weighted average of graph and text embeddings
 USE_FASTTEXT_EMBEDDINGS = True
 EMBEDDINGS_VECTOR_LENGTH = 200
-GRAPH_EMBEDDINGS_FACTOR = 1
-TEXT_EMBEDDINGS_FACTOR = 1
 
-PCA_COMPONENTS = 15
+# Number of edges in papers graph for visualization
+VISUALIZATION_GRAPH_EDGES = 10
+
+# PCA for visualizing
+PCA_VARIANCE = 0.9
 
 # Global vectorization max vocabulary size
 VECTOR_WORDS = 10_000
@@ -53,24 +52,24 @@ VECTOR_MAX_DF = 0.8
 ## Expanding by references ##
 #############################
 
-# Control citations count while expanding
+# Control citation count while expanding
 EXPAND_CITATIONS_Q_LOW = 10
 EXPAND_CITATIONS_Q_HIGH = 90
 EXPAND_CITATIONS_SIGMA = 3
 
-# Impact of single paper when analyzing citations and mesh terms when analysing paper
+# Impact of a single paper when analyzing citations and mesh terms when analysing paper
 EXPAND_SINGLE_PAPER_IMPACT = 50
 
 #####################
 ## Node2vec config ##
 #####################
-
+NODE2VEC_EMBEDDINGS_VECTOR_LENGTH = 64
 NODE2VEC_P = 5.0
 NODE2VEC_Q = 2.0
 
-# Increasing number of walks increases node2vec representation accuracy
-NODE2VEC_WALKS_PER_NODE = 50
-NODE2VEC_WALK_LENGTH = 50
+# Increasing the number of walks increases node2vec representation accuracy
+NODE2VEC_WALKS_PER_NODE = int((GRAPH_BIBLIOGRAPHIC_EDGES + GRAPH_TEXT_EDGES) / 2)
+NODE2VEC_WALK_LENGTH = 20
 NODE2VEC_WORD2VEC_WINDOW = 5
 NODE2VEC_WORD2VEC_EPOCHS = 3
 

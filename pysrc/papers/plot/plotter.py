@@ -13,11 +13,14 @@ from bokeh.models.graphs import NodesAndLinkedEdges
 from bokeh.plotting import figure
 from holoviews import opts
 from matplotlib import pyplot as plt
+from scipy.stats import trim_mean
 from sklearn.preprocessing import minmax_scale
 from wordcloud import WordCloud
 
 from pysrc.config import PAPERS_PLOT_WIDTH, WORD_CLOUD_WIDTH, WORD_CLOUD_KEYWORDS, WORD_CLOUD_HEIGHT, \
-    PLOT_WIDTH, SHORT_PLOT_HEIGHT, MAX_LINEAR_AXIS, PLOT_HEIGHT, MAX_JOURNAL_LENGTH, MAX_AUTHOR_LENGTH, TALL_PLOT_HEIGHT
+    PLOT_WIDTH, SHORT_PLOT_HEIGHT, MAX_LINEAR_AXIS, PLOT_HEIGHT, MAX_JOURNAL_LENGTH, MAX_AUTHOR_LENGTH, \
+    TALL_PLOT_HEIGHT, VISUALIZATION_GRAPH_EDGES
+from pysrc.papers.analysis.graph import sparse_graph
 from pysrc.papers.analysis.topics import get_topics_description
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.utils import cut_authors_list, trim_query, contrast_color, \
@@ -275,8 +278,10 @@ class Plotter:
         )
 
     def plot_papers_graph(self):
+        logger.debug('Prepare sparse graph to visualize with reduced number of edges')
+        visualize_graph = sparse_graph(self.data.papers_graph, VISUALIZATION_GRAPH_EDGES)
         return Plotter._plot_papers_graph(
-            self.data.search_ids, self.data.source, self.data.papers_graph, self.data.df,
+            self.data.search_ids, self.data.source, visualize_graph, self.data.df,
             self.config.topic_description_words, topics_tags=self.topics_description
         )
 
@@ -659,8 +664,8 @@ class Plotter:
         p.renderers.append(graph)
 
         # Add Labels
-        lxs = [(df.loc[df['comp'] == c]['x'].mean() - xmin) / xrange * 100 for c in sorted(set(comps))]
-        lys = [(df.loc[df['comp'] == c]['y'].mean() - ymin) / yrange * 100 for c in sorted(set(comps))]
+        lxs = [(trim_mean(df[df['comp'] == c]['x'], 0.2) - xmin) / xrange * 100 for c in sorted(set(comps))]
+        lys = [(trim_mean(df[df['comp'] == c]['y'], 0.2) - ymin) / yrange * 100 for c in sorted(set(comps))]
         comp_labels = [f"#{c + 1}" for c in sorted(set(comps))]
         source = ColumnDataSource({'x': lxs, 'y': lys, 'name': comp_labels})
         labels = LabelSet(x='x', y='y', text='name', source=source,

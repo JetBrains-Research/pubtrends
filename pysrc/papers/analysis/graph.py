@@ -2,17 +2,20 @@ import logging
 
 import networkx as nx
 import numpy as np
+from sklearn.metrics.pairwise import cosine_distances
+from sklearn.preprocessing import normalize
 
 from pysrc.config import *
 
 logger = logging.getLogger(__name__)
 
 
-def similarity(d):
+def similarity(d, use_text=False):
     return \
             SIMILARITY_BIBLIOGRAPHIC_COUPLING * d.get('bibcoupling', 0) + \
             SIMILARITY_COCITATION * d.get('cocitation', 0) + \
-            SIMILARITY_CITATION * d.get('citation', 0)
+            SIMILARITY_CITATION * d.get('citation', 0) + \
+            (SIMILARITY_TEXT * d.get('textsimilarity', 0) if use_text else 0)
 
 
 def build_papers_graph(df, cit_df, cocit_df, bibliographic_coupling_df):
@@ -73,13 +76,18 @@ def sparse_graph(graph, k, key='similarity', add_similarity=True):
     return result
 
 
-def add_artificial_text_similarities_edges(ids, texts_embeddings, papers_graph):
+def add_text_similarities_edges(ids, texts_embeddings, papers_graph, top_similar):
+    """
+    Adds edges based on text similarity to a graph and updates existing edges with
+    text similarity values as a cosine similarity between text normalized embeddings.
+
+    """
+    texts_embeddings_norm = normalize(texts_embeddings, norm='l2', axis=1)
+    cosine_similarity_matrix = 1 - cosine_distances(texts_embeddings_norm)
     for node_i, node in enumerate(ids):
-        # Compute distances from the current node to all other nodes
-        distances = np.linalg.norm(texts_embeddings - texts_embeddings[node_i], axis=1)
-        similarities = 1 / (1 + distances)
         # Get indices of closest nodes (excluding the source node itself)
-        for similar_node_i in np.argsort(similarities)[-GRAPH_TEXT_SIMILARITY_EDGES-1:-1]:
+        similarities = cosine_similarity_matrix[node_i]
+        for similar_node_i in np.argsort(similarities)[-top_similar - 1:-1]:
             similar_node = ids[similar_node_i]
             if not papers_graph.has_edge(node, similar_node):
                 papers_graph.add_edge(node, similar_node, textsimilarity=(similarities[similar_node_i]))
