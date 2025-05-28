@@ -41,6 +41,28 @@
                 noreviews_checkbox.removeAttr("disabled")
             }
 
+            // Function to update placeholder based on selected paper-key
+            function updatePaperInputPlaceholder() {
+                const selectedValue = $('#paper-key').val();
+                let placeholderText = "";
+
+                if (selectedValue === "title") {
+                    placeholderText = "Enter title(s). Use semicolon to separate multiple papers.";
+                } else if (selectedValue === "doi") {
+                    placeholderText = "Enter DOI(s). Use semicolon to separate multiple papers.";
+                } else if (selectedValue === "id") {
+                    placeholderText = "Enter ID(s). Use semicolon to separate multiple papers.";
+                }
+
+                $('#paper-input').attr('placeholder', placeholderText);
+            }
+
+            // Handle paper-key change to update paper-input placeholder
+            $('#paper-key').change(updatePaperInputPlaceholder);
+
+            // Initialize placeholder on page load
+            updatePaperInputPlaceholder();
+
             $('#search-source-selector').change(function () {
                 if ($(this).val() === "Semantic Scholar") {
                     advanced_noreviews_disable();
@@ -93,7 +115,7 @@
                 <li id="step1" class="nav-item">
                     <a class="nav-link active grey" id="topic-tab" data-bs-toggle="tab" href="#topic"
                        role="tab"
-                       aria-controls="topic" aria-selected="true">Search</a>
+                       aria-controls="topic" aria-selected="true">Keywords</a>
                 </li>
                 <li id="step1-2" class="nav-item">
                     <a class="nav-link grey" id="paper-tab" data-bs-toggle="tab" href="#paper"
@@ -263,7 +285,7 @@
                             <div class="col mr-2">
                                 <input class="form-control form-control-borderless" type="search"
                                        name="value" id="paper-input"
-                                       placeholder="Enter paper(s) details, e.g. DOI, ID, or title. Use semicolon to separate multiple papers."
+                                       placeholder="Enter title(s). Use semicolon to separate multiple papers."
                                        aria-describedby="query-addon"
                                        autofocus
                                        required>
