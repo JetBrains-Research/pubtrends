@@ -5,11 +5,9 @@ import threading
 
 from flask import Flask, request
 
-from pysrc.config import PubtrendsConfig
-from pysrc.fasttext.fasttext import PRETRAINED_MODEL_CACHE, PRETRAINED_MODEL_CACHE_LOCK, tokens_embeddings_fasttext, \
+from pysrc.fasttext.fasttext import FASTTEXT_MODEL_CACHE, FASTTEXT_MODEL_CACHE_LOCK, tokens_embeddings_fasttext, \
     text_embedding_fasttext
 
-PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
 fasttext_app = Flask(__name__)
 
@@ -44,7 +42,7 @@ logger = fasttext_app.logger
 def init_fasttext_model():
     logger.info('Prepare embeddings pretrained model')
     # noinspection PyUnusedLocal
-    loaded_model = PRETRAINED_MODEL_CACHE.download_and_load_model
+    loaded_model = FASTTEXT_MODEL_CACHE.download_and_load_model
     logger.info('Model is ready')
     fasttext_app.config['LOADED'] = True
     return loaded_model
@@ -57,7 +55,7 @@ def check():
     if fasttext_app.config.get('LOADING', False):
         return json.dumps(False)
     try:
-        PRETRAINED_MODEL_CACHE_LOCK.acquire()
+        FASTTEXT_MODEL_CACHE_LOCK.acquire()
         if fasttext_app.config.get('LOADED', False):
             return json.dumps(True)
         if fasttext_app.config.get('LOADING', False):
@@ -66,7 +64,7 @@ def check():
         threading.Thread(target=init_fasttext_model, daemon=True).start()
         return json.dumps(False)
     finally:
-        PRETRAINED_MODEL_CACHE_LOCK.release()
+        FASTTEXT_MODEL_CACHE_LOCK.release()
 
 
 @fasttext_app.route('/fasttext_tokens', methods=['GET'])

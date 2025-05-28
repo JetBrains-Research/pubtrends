@@ -10,7 +10,7 @@ from lazy import lazy
 logger = logging.getLogger(__name__)
 
 # File URL
-MODEL_URL = "https://ftp.ncbi.nlm.nih.gov/pub/lu/Suppl/BioSentVec/BioWordVec_PubMed_MIMICIII_d200.vec.bin"
+FASTTEXT_MODEL_URL = "https://ftp.ncbi.nlm.nih.gov/pub/lu/Suppl/BioSentVec/BioWordVec_PubMed_MIMICIII_d200.vec.bin"
 
 MODEL_PATHS = ['/model', os.path.expanduser('~/.pubtrends/model')]
 for p in MODEL_PATHS:
@@ -22,19 +22,19 @@ else:
 
 
 
-class PretrainedModelCache:
+class FastTextModelCache:
     @lazy
     def download_and_load_model(self):
         # Extract filename from URL
-        model_name = os.path.basename(MODEL_URL)
+        model_name = os.path.basename(FASTTEXT_MODEL_URL)
         filename = os.path.join(model_dir, model_name)
 
         logger.info(f'Loading {model_name} fasttext model for biomedical texts')
 
-        # Check if file already exists
+        # Check if the file already exists
         if not os.path.exists(filename):
             print(f"Downloading {filename}...")
-            response = requests.get(MODEL_URL, stream=True)
+            response = requests.get(FASTTEXT_MODEL_URL, stream=True)
 
             if response.status_code == 200:
                 with open(filename, "wb") as file:
@@ -51,14 +51,14 @@ class PretrainedModelCache:
         return model
 
 
-PRETRAINED_MODEL_CACHE = PretrainedModelCache()
+FASTTEXT_MODEL_CACHE = FastTextModelCache()
 
-PRETRAINED_MODEL_CACHE_LOCK = Lock()
+FASTTEXT_MODEL_CACHE_LOCK = Lock()
 
 
 def tokens_embeddings_fasttext(corpus_tokens):
     logger.info('Compute words embeddings using pretrained fasttext model')
-    model = PRETRAINED_MODEL_CACHE.download_and_load_model
+    model = FASTTEXT_MODEL_CACHE.download_and_load_model
     logger.info('Retrieve word embeddings')
     return np.array([
         model.get_vector(t) if model.has_index_for(t)
@@ -68,7 +68,7 @@ def tokens_embeddings_fasttext(corpus_tokens):
 
 def text_embedding_fasttext(text):
     logger.info('Compute text embedding using pretrained fasttext model')
-    model_instance = PRETRAINED_MODEL_CACHE.download_and_load_model
+    model_instance = FASTTEXT_MODEL_CACHE.download_and_load_model
     return np.mean([
         model_instance.get_vector(t) if model_instance.has_index_for(t)
         else np.zeros(model_instance.vector_size)  # Support out-of-dictionary missing embeddings

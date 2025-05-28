@@ -9,8 +9,8 @@ USER user
 COPY nlp.sh /home/user/nlp.sh
 RUN /bin/bash ~/nlp.sh
 
-RUN mkdir -p /home/user/pubtrends/pysrc
-COPY pysrc /home/user/pubtrends/pysrc/
+RUN mkdir -p /home/user/pubtrends/pysrc/fasttext
+COPY pysrc/fasttext /home/user/pubtrends/pysrc/fasttext/
 
 USER root
 RUN chown -R user:pubtrends /home/user/pubtrends/pysrc
