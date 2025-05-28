@@ -29,15 +29,14 @@ SIMILARITY_COCITATION_MIN = 2
 GRAPH_BIBLIOGRAPHIC_EDGES = 50
 GRAPH_TEXT_EDGES = 10
 
-# Papers embeddings is a weighted average of graph and text embeddings
-USE_FASTTEXT_EMBEDDINGS = True
-EMBEDDINGS_VECTOR_LENGTH = 200
-
 # Number of edges in papers graph for visualization
 VISUALIZATION_GRAPH_EDGES = 10
 
 # PCA for visualizing
 PCA_VARIANCE = 0.9
+
+# Use fasttext BioWord2Vec for text embeddings
+USE_FASTTEXT_EMBEDDINGS = True
 
 # Global vectorization max vocabulary size
 VECTOR_WORDS = 10_000
@@ -77,6 +76,7 @@ NODE2VEC_WORD2VEC_EPOCHS = 3
 ## Word2vec config ##
 #####################
 
+WORD2VEC_EMBEDDINGS_LENGTH = 128
 WORD2VEC_WINDOW = 5
 WORD2VEC_EPOCHS = 3
 

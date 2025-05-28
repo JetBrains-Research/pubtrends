@@ -67,8 +67,8 @@ def check():
         FASTTEXT_MODEL_CACHE_LOCK.release()
 
 
-@fasttext_app.route('/fasttext_tokens', methods=['GET'])
-def fasttext_tokens():
+@fasttext_app.route('/embeddings_tokens', methods=['GET'])
+def embeddings_tokens():
     # Please ensure that already initialized. Otherwise, model loading may take some time
     corpus_tokens = request.get_json()
     logger.info('Computing embeddings')
@@ -78,8 +78,8 @@ def fasttext_tokens():
     logger.info(f'Return embeddings of shape {embeddings.shape} in JSON format')
     return json.dumps(embeddings.reshape(-1).tolist())
 
-@fasttext_app.route('/fasttext_text', methods=['GET'])
-def fasttext_text():
+@fasttext_app.route('/embeddings_text', methods=['GET'])
+def embeddings_text():
     # Please ensure that already initialized. Otherwise, model loading may take some time
     text = request.get_json()
     logger.info('Computing text embedding')

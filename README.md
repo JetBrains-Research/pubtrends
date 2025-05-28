@@ -269,7 +269,7 @@ Notebooks are located under the `/notebooks` folder. Please configure `PYTHONPAT
     ```
     docker run --rm --platform linux/amd64 --volume=$(pwd):/pubtrends -t biolabs/pubtrends-test /bin/bash -c \
     "/usr/lib/postgresql/17/bin/pg_ctl -D /home/user/postgres start; \
-    cd /pubtrends; mkdir ~/.pubtrends; cp config.properties ~/.pubtrends; \
+    cd /pubtrends; mkdir -p ~/.pubtrends; cp config.properties ~/.pubtrends; bash /pubtrends/init.sh; \
     source activate pubtrends; pytest pysrc"
     ```
 

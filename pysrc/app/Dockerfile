@@ -12,7 +12,7 @@ RUN /bin/bash ~/nlp.sh
 # Configure URLs for between containers communication
 ENV CELERY_BROKER_URL redis://redis:6379/0
 ENV CELERY_RESULT_BACKEND redis://redis:6379/0
-ENV FASTTEXT_URL=http://fasttext:5001
+ENV EMBEDDINGS_SERVICE_URL=http://fasttext:5001
 
 # Expose the app port, don't use default HTTP 80 or HTTPS 443
 EXPOSE 5000

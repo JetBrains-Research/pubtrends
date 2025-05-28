@@ -1,5 +1,4 @@
 import logging
-import os
 import re
 import spacy
 from itertools import chain
@@ -7,21 +6,18 @@ from threading import Lock
 
 import nltk
 import numpy as np
-import requests
 from gensim.models import Word2Vec
 from nltk import word_tokenize, WordNetLemmatizer, SnowballStemmer
 from nltk.corpus import wordnet, stopwords
 from nltk.probability import FreqDist
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 
-from pysrc.config import EMBEDDINGS_VECTOR_LENGTH, WORD2VEC_WINDOW, WORD2VEC_EPOCHS, USE_FASTTEXT_EMBEDDINGS
+from pysrc.config import WORD2VEC_EMBEDDINGS_LENGTH, WORD2VEC_WINDOW, WORD2VEC_EPOCHS
+from pysrc.papers.analysis.embeddings_service import is_embeddings_service_ready, fetch_tokens_embeddings
 
 NLP = spacy.load("en_core_web_sm")
 
 logger = logging.getLogger(__name__)
-
-# Launch with a Docker address or locally
-FASTTEXT_URL = os.getenv('FASTTEXT_URL', 'http://localhost:5001')
 
 # Ensure that modules are downloaded in advance
 # nltk averaged_perceptron_tagger required for nltk.pos_tag
@@ -170,20 +166,20 @@ def _build_stems_to_tokens_map(stems_and_tokens):
 
 
 def tokens_embeddings(corpus, corpus_tokens, test=False):
-    if test or not USE_FASTTEXT_EMBEDDINGS or not is_fasttext_endpoint_ready():
+    if test or not is_embeddings_service_ready():
         logger.debug(f'Compute words embeddings trained word2vec')
         return train_word2vec(corpus, corpus_tokens, test=test)
-    embds = fetch_fasttext_tokens_embeddings(corpus_tokens)
+    embds = fetch_tokens_embeddings(corpus_tokens)
     if embds is not None:
         return embds
     logger.debug('Fallback to in-house word2vec')
     return train_word2vec(corpus, corpus_tokens, test=test)
 
 
-def train_word2vec(corpus, corpus_tokens, vector_size=EMBEDDINGS_VECTOR_LENGTH, test=False):
+def train_word2vec(corpus, corpus_tokens, vector_size=WORD2VEC_EMBEDDINGS_LENGTH, test=False):
     logger.debug('Collecting sentences across dataset')
     sentences = list(filter(
-        lambda l: test or len(l) >= WORD2VEC_WINDOW,  # Ignore short sentences, less than window
+        lambda l: test or len(l) >= WORD2VEC_WINDOW,  # Ignore short sentences, less than a window
         chain.from_iterable(corpus)))
     logger.debug(f'Total {len(sentences)} sentences')
     logger.debug('Training word2vec model')
@@ -213,67 +209,11 @@ def texts_embeddings(corpus_counts, tokens_embeddings):
     logger.debug(f'TFIDF shape {tfidf.shape}')
 
     logger.debug('Compute text embeddings as TF-IDF weighted average of tokens embeddings')
-    texts_embeddings = np.array([
+    embeddings = np.array([
         np.mean((tokens_embeddings.T * tfidf[i, :].T).T, axis=0) for i in range(tfidf.shape[0])
     ])
-    logger.debug(f'Texts embeddings shape: {texts_embeddings.shape}')
-    return texts_embeddings
-
-
-def is_fasttext_endpoint_ready():
-    logger.debug(f'Check fasttext endpoint is ready')
-    try:
-        r = requests.request(url=FASTTEXT_URL, method='GET')
-        if r.status_code != 200:
-            return False
-        r = requests.request(url=f'{FASTTEXT_URL}/check', method='GET', headers={'Accept': 'application/json'})
-        if r.status_code != 200 or r.json() is not True:
-            return False
-        return True
-    except Exception as e:
-        logger.debug(f'Fasttext endpoint is not ready: {e}')
-        return False
-
-
-def fetch_fasttext_tokens_embeddings(corpus_tokens):
-    # Don't use the model as is, since each celery process will load its own copy.
-    # Shared model is available via additional service with a single model.
-    logger.debug(f'Fetch tokens embeddings from fasttext service')
-    try:
-        r = requests.request(
-            url=f'{FASTTEXT_URL}/fasttext_tokens',
-            method='GET',
-            json=corpus_tokens,
-            headers={'Accept': 'application/json'}
-        )
-        if r.status_code == 200:
-            return np.array(r.json()).reshape(len(corpus_tokens), EMBEDDINGS_VECTOR_LENGTH)
-        else:
-            logger.debug(f'Wrong response code {r.status_code}')
-    except Exception as e:
-        logger.debug(f'Failed to fetch tokens embeddings ${e}')
-    return None
-
-
-def fetch_fasttext_text_embedding(text):
-    # Don't use the model as is, since each celery process will load its own copy.
-    # Shared model is available via additional service with a single model.
-    logger.debug(f'Fetch text embedding from fasttext service')
-    try:
-        r = requests.request(
-            url=f'{FASTTEXT_URL}/fasttext_text',
-            method='GET',
-            json=text,
-            headers={'Accept': 'application/json'}
-        )
-        if r.status_code == 200:
-            return r.json()
-        else:
-            logger.debug(f'Wrong response code {r.status_code}')
-    except Exception as e:
-        logger.debug(f'Failed to fetch text embedding ${e}')
-    return None
-
+    logger.debug(f'Texts embeddings shape: {embeddings.shape}')
+    return embeddings
 
 def get_chunks(text, max_tokens=128, overlap_sentences=1):
     """
@@ -322,7 +262,6 @@ def get_chunks(text, max_tokens=128, overlap_sentences=1):
     if current_chunk_sentences:
         chunk_text = ' '.join([s.text for s in current_chunk_sentences])
         chunks.append(chunk_text)
-
     return chunks
 
 def collect_papers_chunks(args):

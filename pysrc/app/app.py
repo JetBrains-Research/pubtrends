@@ -7,7 +7,6 @@ import tempfile
 from threading import Lock
 from urllib.parse import quote
 
-import requests
 from celery.result import AsyncResult
 from flask import Flask, url_for, redirect, render_template, request, render_template_string, \
     send_from_directory, send_file
@@ -21,7 +20,7 @@ from pysrc.app.reports import get_predefined_jobs, \
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, analyze_pubmed_search, analyze_id_list
 from pysrc.config import PubtrendsConfig, USE_FASTTEXT_EMBEDDINGS
-from pysrc.papers.analysis.text import is_fasttext_endpoint_ready
+from pysrc.papers.analysis.embeddings_service import is_embeddings_service_ready
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plot_app import prepare_graph_data, prepare_papers_data, prepare_paper_data, prepare_result_data
 from pysrc.papers.utils import trim_query, IDS_ANALYSIS_TYPE, PAPER_ANALYSIS_TYPE, SORT_MOST_CITED
@@ -102,7 +101,7 @@ def log_request(r):
 
 @flask_app.route('/')
 def index():
-    if USE_FASTTEXT_EMBEDDINGS and not is_fasttext_endpoint_ready():
+    if USE_FASTTEXT_EMBEDDINGS and not is_embeddings_service_ready():
         return render_template('init.html', version=VERSION, message=SERVICE_LOADING_INITIALIZING)
     if not are_predefined_jobs_ready():
         return render_template('init.html', version=VERSION, message=SERVICE_LOADING_PREDEFINED_EXAMPLES)
@@ -438,8 +437,6 @@ def paper():
     value = request.args.get('value')
     limit = request.args.get('limit')
     noreviews = value_to_bool(request.form.get('noreviews'))
-    min_year = request.form.get('min_year')  # Minimal year of publications
-    max_year = request.form.get('max_year')  # Maximal year of publications
     expand = request.args.get('expand')
     topics = request.args.get('topics')
     try:
@@ -700,7 +697,7 @@ def get_result_api():
             return data.to_json(), 200
         return {'status': 'error'}, 500
     except Exception as e:
-        logger.exception(f'/check_status_api exception {e}')
+        logger.exception(f'/get_result_api exception {e}')
         return {'status': 'error'}, 500
 
 
