@@ -5,6 +5,12 @@ import os
 ## Analysis config ##
 #####################
 
+# Postgresql loader options
+MAX_NUMBER_OF_PAPERS = 1000000
+MAX_NUMBER_OF_CITATIONS = 10000000
+MAX_NUMBER_OF_COCITATIONS = 1000000
+MAX_NUMBER_OF_BIBLIOGRAPHIC_COUPLING = 1000000
+
 # Features are originally taken from paper:
 # 1) Which type of citation analysis generates the most accurate taxonomy of
 #   scientific and technical knowledge? (https://arxiv.org/pdf/1511.05078.pdf)
@@ -134,10 +140,7 @@ class PubtrendsConfig:
         self.ss_search_example_terms = [terms.strip() for terms in params['ss_search_example_terms'].split(';')]
 
         self.max_search_time_sec = params.getint('max_search_time_sec')
-        self.max_number_of_papers = params.getint('max_number_of_papers')
-        self.max_number_of_citations = params.getint('max_number_of_citations')
-        self.max_number_of_cocitations = params.getint('max_number_of_cocitations')
-        self.max_number_of_bibliographic_coupling = params.getint('max_number_of_bibliographic_coupling')
+
         self.max_number_to_expand = params.getint('max_number_to_expand')
 
         self.show_max_articles_options = [int(opt.strip()) for opt in params['show_max_articles_options'].split(',')]

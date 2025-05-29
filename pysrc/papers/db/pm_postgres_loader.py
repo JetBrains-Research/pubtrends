@@ -7,6 +7,8 @@ import numpy as np
 import pandas as pd
 import psycopg2
 
+from pysrc.config import MAX_NUMBER_OF_PAPERS, MAX_NUMBER_OF_CITATIONS, MAX_NUMBER_OF_COCITATIONS, \
+    MAX_NUMBER_OF_BIBLIOGRAPHIC_COUPLING
 from pysrc.papers.db.loader import Loader
 from pysrc.papers.db.postgres_connector import PostgresConnector
 from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres, \
@@ -134,7 +136,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 PMPublications P {sampling_filter}
                 WHERE {year_filter} AND P.tsv @@ query {noreviews_filter} {exact_phrase_filter} 
                 ORDER BY random()
-                LIMIT {self.config.max_number_of_papers})
+                LIMIT {MAX_NUMBER_OF_PAPERS})
             SELECT X.pmid as pmid
             FROM X
             LEFT JOIN matview_pmcitations C 
@@ -201,7 +203,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 JOIN PMPublications P
                 ON X.pmid_out = P.pmid
                 GROUP BY id, year
-                LIMIT {self.config.max_number_of_citations};
+                LIMIT {MAX_NUMBER_OF_CITATIONS};
             '''
         logger.debug(f'load_citations_by_year query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
@@ -262,7 +264,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                     FROM PMCitations C
                     WHERE pmid_out != pmid_in AND pmid_in IN (VALUES {vals}) AND pmid_out IN (VALUES {vals})
                     ORDER BY id_out, id_in
-                    LIMIT {self.config.max_number_of_citations};
+                    LIMIT {MAX_NUMBER_OF_CITATIONS};
                     '''
         logger.debug(f'load_citations query: {query[:1000]}')
         with self.postgres_connection.cursor() as cursor:
@@ -288,7 +290,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                         WHERE C.pmid_in != C.pmid_out AND C.pmid_in IN (VALUES {vals})
                         GROUP BY citing, year
                         HAVING COUNT(*) >= 2
-                        LIMIT {self.config.max_number_of_cocitations};
+                        LIMIT {MAX_NUMBER_OF_COCITATIONS};
                     '''
 
         logger.debug(f'load_cocitations query: {query[:1000]}')
@@ -346,7 +348,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                     WHERE C.pmid_out IN (VALUES {vals}) AND C.pmid_in != C.pmid_out
                     GROUP BY cited
                     HAVING COUNT(*) >= 2
-                    LIMIT {self.config.max_number_of_bibliographic_coupling};
+                    LIMIT {MAX_NUMBER_OF_BIBLIOGRAPHIC_COUPLING};
                     '''
 
         logger.debug(f'load_bibliographic_coupling query: {query[:1000]}')

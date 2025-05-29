@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import psycopg2
 
+from pysrc.config import MAX_NUMBER_OF_PAPERS, MAX_NUMBER_OF_CITATIONS, MAX_NUMBER_OF_COCITATIONS
 from pysrc.papers.db.loader import Loader
 from pysrc.papers.db.postgres_connector import PostgresConnector
 from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres, \
@@ -134,7 +135,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
                 SSPublications P {sampling_filter}
                 WHERE {year_filter} AND P.tsv @@ query {exact_phrase_filter}
                 ORDER BY random()
-                LIMIT {self.config.max_number_of_papers})
+                LIMIT {MAX_NUMBER_OF_PAPERS})
             SELECT X.ssid as ssid 
             FROM X
             LEFT JOIN matview_sscitations C 
@@ -209,7 +210,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
                   ON C.crc32id_out = P.crc32id AND C.ssid_out = P.ssid
                 WHERE (C.crc32id_in, C.ssid_in) IN (VALUES {vals})
                 GROUP BY C.ssid_in, P.year
-                LIMIT {self.config.max_number_of_citations};
+                LIMIT {MAX_NUMBER_OF_CITATIONS};
             '''
 
         logger.debug(f'load_citations_by_year query: {query[:1000]}')
@@ -274,7 +275,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
                     WHERE (C.crc32id_in, C.ssid_in) in (VALUES {vals})
                         AND (C.crc32id_out, C.ssid_out) in (VALUES {vals})
                     ORDER BY C.ssid_out, C.ssid_in
-                    LIMIT {self.config.max_number_of_citations};
+                    LIMIT {MAX_NUMBER_OF_CITATIONS};
                     '''
 
         logger.debug(f'load_citations query: {query[:1000]}')
@@ -308,7 +309,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
                 from X
                     join SSPublications P
                         on crc32id_out = P.crc32id and ssid_out = P.ssid
-                LIMIT {self.config.max_number_of_cocitations};
+                LIMIT {MAX_NUMBER_OF_COCITATIONS};
                 '''
 
         logger.debug(f'load_cocitations query: {query[:1000]}')
@@ -364,7 +365,7 @@ class SemanticScholarPostgresLoader(PostgresConnector, Loader):
         #                 FROM X
         #                 GROUP BY crc32id_in, ssid_in
         #                 HAVING COUNT(*) >= 2
-        #                 LIMIT {self.config.max_number_of_bibliographic_coupling};
+        #                 LIMIT {self.config.MAX_NUMBER_OF_BIBLIOGRAPHIC_COUPLING};
         #             '''
         #
         # logger.debug(f'load_bibliographic_coupling query: {query[:1000]}')
