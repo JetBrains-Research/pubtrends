@@ -9,28 +9,24 @@ services:
       - "5000:5000"
     depends_on:
       - redis
-      - fasttext
+      - embeddings
       - celery
     volumes:
       - ~/.pubtrends:/config:ro
       - ~/.pubtrends/logs:/logs
       - ~/.pubtrends/database:/database
-      - ~/.pubtrends/ssl:/ssl:ro
       - ~/.pubtrends/results:/results
-      - ~/.pubtrends/nltk-data:/home/user/nltk-data
-      - ~/.pubtrends/gensim-data:/home/user/gensim-data
+
   celery:
     build:
       context: .
       dockerfile: pysrc/celery/Dockerfile
     depends_on:
       - redis
-      - fasttext
+      - embeddings
     volumes:
       - ~/.pubtrends:/config:ro
       - ~/.pubtrends/logs:/logs
-      - ~/.pubtrends/model:/model:ro
-      - ~/.pubtrends/.cache:/home/user/.cache
       - ~/.pubtrends/results:/results
       - ~/.pubtrends/nltk-data:/home/user/nltk-data
       - ~/.pubtrends/gensim-data:/home/user/gensim-data
@@ -40,14 +36,14 @@ services:
       - ~/.pubtrends/logs:/log
     # This command is used to process huge analysis results of 40k+ papers
     command: redis-server --timeout 0 --client-output-buffer-limit normal 0 0 0
-  fasttext:
+  embeddings:
     build:
       context: .
-      dockerfile: pysrc/fasttext/Dockerfile
+      dockerfile: pysrc/embeddings/fasttext/Dockerfile
     restart: always
     volumes:
       - ~/.pubtrends:/config:ro
       - ~/.pubtrends/logs:/logs
-      - ~/.pubtrends/model:/model
+      - ~/.pubtrends/fasttext:/fasttext
       - ~/.pubtrends/nltk-data:/home/user/nltk-data
       - ~/.pubtrends/gensim-data:/home/user/gensim-data

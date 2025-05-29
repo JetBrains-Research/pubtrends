@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 # File URL
 FASTTEXT_MODEL_URL = "https://ftp.ncbi.nlm.nih.gov/pub/lu/Suppl/BioSentVec/BioWordVec_PubMed_MIMICIII_d200.vec.bin"
 
-MODEL_PATHS = ['/model', os.path.expanduser('~/.pubtrends/model')]
+MODEL_PATHS = ['/fasttext', os.path.expanduser('~/.pubtrends/fasttext')]
 for p in MODEL_PATHS:
     if os.path.isdir(p):
         model_dir = p
@@ -46,31 +46,21 @@ class FastTextModelCache:
         else:
             logger.info(f"File already exists: {filename}")
 
-        model = KeyedVectors.load_word2vec_format(filename, binary=True)
+        self.model = KeyedVectors.load_word2vec_format(filename, binary=True)
         logger.info('Successfully loaded model')
-        return model
+        return self
 
+    def tokens_embeddings_fasttext(self, tokens):
+        logger.info('Compute words embeddings using pretrained fasttext model')
+        return np.array([
+            self.model.get_vector(t) if self.model.has_index_for(t)
+            else np.zeros(self.model.vector_size)  # Support out-of-dictionary missing embeddings
+            for t in tokens
+        ])
 
 FASTTEXT_MODEL_CACHE = FastTextModelCache()
 
 FASTTEXT_MODEL_CACHE_LOCK = Lock()
 
 
-def tokens_embeddings_fasttext(corpus_tokens):
-    logger.info('Compute words embeddings using pretrained fasttext model')
-    model = FASTTEXT_MODEL_CACHE.download_and_load_model
-    logger.info('Retrieve word embeddings')
-    return np.array([
-        model.get_vector(t) if model.has_index_for(t)
-        else np.zeros(model.vector_size)  # Support out-of-dictionary missing embeddings
-        for t in corpus_tokens
-    ])
 
-def text_embedding_fasttext(text):
-    logger.info('Compute text embedding using pretrained fasttext model')
-    model_instance = FASTTEXT_MODEL_CACHE.download_and_load_model
-    return np.mean([
-        model_instance.get_vector(t) if model_instance.has_index_for(t)
-        else np.zeros(model_instance.vector_size)  # Support out-of-dictionary missing embeddings
-        for t in text.split()
-    ], axis=0).tolist()

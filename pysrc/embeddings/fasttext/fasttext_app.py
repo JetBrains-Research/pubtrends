@@ -5,9 +5,7 @@ import threading
 
 from flask import Flask, request
 
-from pysrc.fasttext.fasttext import FASTTEXT_MODEL_CACHE, FASTTEXT_MODEL_CACHE_LOCK, tokens_embeddings_fasttext, \
-    text_embedding_fasttext
-
+from pysrc.embeddings.fasttext.fasttext import FASTTEXT_MODEL_CACHE, FASTTEXT_MODEL_CACHE_LOCK
 
 fasttext_app = Flask(__name__)
 
@@ -41,11 +39,10 @@ logger = fasttext_app.logger
 
 def init_fasttext_model():
     logger.info('Prepare embeddings pretrained model')
-    # noinspection PyUnusedLocal
-    loaded_model = FASTTEXT_MODEL_CACHE.download_and_load_model
+    # noinspection PyUnusedLocal,PyStatementEffect
+    FASTTEXT_MODEL_CACHE.download_and_load_model
     logger.info('Model is ready')
     fasttext_app.config['LOADED'] = True
-    return loaded_model
 
 
 @fasttext_app.route('/check', methods=['GET'])
@@ -72,21 +69,11 @@ def embeddings_tokens():
     # Please ensure that already initialized. Otherwise, model loading may take some time
     corpus_tokens = request.get_json()
     logger.info('Computing embeddings')
-    embeddings = tokens_embeddings_fasttext(corpus_tokens)
+    embeddings = FASTTEXT_MODEL_CACHE.tokens_embeddings_fasttext(corpus_tokens).tolist()
     # Even if /initialize wasn't invoked, mark the model as ready
     fasttext_app.config['LOADED'] = True
-    logger.info(f'Return embeddings of shape {embeddings.shape} in JSON format')
-    return json.dumps(embeddings.reshape(-1).tolist())
-
-@fasttext_app.route('/embeddings_text', methods=['GET'])
-def embeddings_text():
-    # Please ensure that already initialized. Otherwise, model loading may take some time
-    text = request.get_json()
-    logger.info('Computing text embedding')
-    text_embedding = text_embedding_fasttext(text)
-    # Even if /initialize wasn't invoked, mark the model as ready
-    fasttext_app.config['LOADED'] = True
-    return json.dumps(text_embedding)
+    logger.info(f'Return embeddings in JSON format')
+    return json.dumps(embeddings)
 
 @fasttext_app.route('/', methods=['GET'])
 def index():

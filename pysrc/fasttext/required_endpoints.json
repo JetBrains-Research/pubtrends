@@ -1,6 +1,0 @@
-[
-  {"path": "/", "methods": ["GET"]},
-  {"path": "/check", "methods": ["GET"]},
-  {"path": "/embeddings_tokens", "methods": ["GET"]},
-  {"path": "/embeddings_text", "methods": ["GET"]}
-]

@@ -35,9 +35,6 @@ VISUALIZATION_GRAPH_EDGES = 10
 # PCA for visualizing
 PCA_VARIANCE = 0.9
 
-# Use fasttext BioWord2Vec for text embeddings
-USE_FASTTEXT_EMBEDDINGS = True
-
 # Global vectorization max vocabulary size
 VECTOR_WORDS = 10_000
 
@@ -101,6 +98,7 @@ WORD_CLOUD_HEIGHT = 300
 
 WORD_CLOUD_KEYWORDS = 15
 
+
 class PubtrendsConfig:
     """
     Main service configuration
@@ -154,6 +152,9 @@ class PubtrendsConfig:
 
         self.top_cited_papers = params.getint('top_cited_papers')
         self.topic_description_words = params.getint('topic_description_words')
+
+        self.sentence_transformer_model = params['sentence_transformer_model']
+        self.max_embeddings_text_length = params.getint('max_embeddings_text_length')
 
         self.popular_journals = params.getint('popular_journals')
         self.popular_authors = params.getint('popular_authors')

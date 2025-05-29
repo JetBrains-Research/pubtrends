@@ -9,8 +9,8 @@ USER user
 COPY nlp.sh /home/user/nlp.sh
 RUN /bin/bash ~/nlp.sh
 
-RUN mkdir -p /home/user/pubtrends/pysrc/fasttext
-COPY pysrc/fasttext /home/user/pubtrends/pysrc/fasttext/
+RUN mkdir -p /home/user/pubtrends/pysrc/embeddings/fasttext
+COPY pysrc/embeddings/fasttext /home/user/pubtrends/pysrc/embeddings/fasttext/
 
 USER root
 RUN chown -R user:pubtrends /home/user/pubtrends/pysrc
@@ -25,4 +25,4 @@ CMD source activate pubtrends \
    && gunicorn --bind 0.0.0.0:5001 --workers 1 --threads 1 --worker-class=gthread \
        --limit-request-line 0 --timeout=120 \
        --log-level=info --log-file=/logs/fasttext_gunicorn.log \
-       --preload "pysrc.fasttext.fasttext_app:get_app()"
+       --preload "pysrc.embeddings.fasttext.fasttext_app:get_app()"

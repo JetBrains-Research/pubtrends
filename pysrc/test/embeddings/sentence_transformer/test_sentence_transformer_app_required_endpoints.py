@@ -2,12 +2,14 @@ import json
 import os.path
 
 import pytest
-from pysrc.app.pubtrends_app import pubtrends_app  # your Flask app
+from pysrc.embeddings.sentence_transformer.sentence_transformer_app import sentence_transformer_app  # your Flask app
 
 # Load required endpoints from a JSON file
 @pytest.fixture(scope="module")
 def required_endpoints():
-    requirements_path = os.path.join(os.path.dirname(__file__), "../../../pysrc/app/required_endpoints.json")
+    requirements_path = os.path.join(
+        os.path.dirname(__file__), "../../../../pysrc/embeddings/sentence_transformer/required_endpoints.json"
+    )
     with open(requirements_path) as f:
         return [
             {"path": ep["path"], "methods": set(ep["methods"])}
@@ -17,10 +19,10 @@ def required_endpoints():
 # Extract all routes from the Flask app
 @pytest.fixture(scope="module")
 def actual_routes():
-    with pubtrends_app.test_request_context():
+    with sentence_transformer_app.test_request_context():
         return [
             {"path": rule.rule, "methods": rule.methods - {'HEAD', 'OPTIONS'}}
-            for rule in pubtrends_app.url_map.iter_rules()
+            for rule in sentence_transformer_app.url_map.iter_rules()
             if rule.endpoint != 'static'
         ]
 

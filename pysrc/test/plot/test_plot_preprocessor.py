@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 from bokeh.models import ColumnDataSource
 
-from pysrc.app.app import PUBTRENDS_CONFIG
+from pysrc.app.pubtrends_app import PUBTRENDS_CONFIG
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.plot.plotter import Plotter
 from pysrc.test.plot.mock_analyzer import MockAnalyzer

@@ -46,15 +46,6 @@ Please refer to [docker-compose.yml](docker-compose.yml) for more information ab
 Testing is done with Pytest and JUnit. Flake8 linter is used for quality assessment of Python code. Python tests are
 launched within Docker. Continuous integration is done with TeamCity using build chains.
 
-## Development Prerequisites
-
-* JDK 8+
-* Conda
-* Python 3.6+
-* Docker
-* Postgres 17 (in Docker)
-* Redis 5.0 (in Docker)
-
 ## Configuration
 
 1. Copy and modify `config.properties` to `~/.pubtrends/config.properties`.\
@@ -84,7 +75,7 @@ launched within Docker. Continuous integration is done with TeamCity using build
         -p 5432:5432 \
         -d postgres:17
     ``` 
-    * Create database (once database is created use `-d pubtrends` argument):
+    * Create a database (once a database is created use `-d pubtrends` argument):
     ```
     psql -h localhost -p 5432 -U biolabs
     ALTER ROLE biolabs WITH LOGIN;
@@ -108,7 +99,7 @@ launched within Docker. Continuous integration is done with TeamCity using build
 
 ## Kotlin/Java Build
 
-Use the following command to test and build JAR package:
+Use the following command to test and build the JAR package:
 
    ```
    ./gradlew clean test shadowJar
@@ -120,7 +111,7 @@ Postgresql should be configured and launched.
 
 ### Pubmed
 
-Launch crawler to download and keep up-to-date Pubmed database:
+Launch crawler to download and keep up to date a Pubmed database:
 
    ```
    java -cp build/libs/pubtrends-dev.jar org.jetbrains.bio.pubtrends.pm.PubmedLoader --fillDatabase
@@ -129,7 +120,7 @@ Launch crawler to download and keep up-to-date Pubmed database:
 Command line options supported:
 
 * `resetDatabase` - clear current contents of the database (for development)
-* `fillDatabase` - option to fill database with Pubmed data. Can be interrupted at any moment.
+* `fillDatabase` - option to fill a database with Pubmed data. Can be interrupted at any moment.
 * `lastId` - force downloading from given id from articles pack `pubmed20n{lastId+1}.xml`.
 
 Updates - add the following line to crontab:
@@ -193,7 +184,7 @@ The latest release can be found at: https://api.semanticscholar.org/api-docs/dat
 
 ## Development
 
-Please ensure that you have database configured, up and running. \
+Please ensure that you have a database configured, up and running. \
 Then launch web-service or use jupyter notebook for development.
 
 ### Web service
@@ -224,12 +215,16 @@ Then launch web-service or use jupyter notebook for development.
 
 5. Start flask server at http://localhost:5000/
     ```
-    python -m pysrc.app.app
+    python -m pysrc.app.pubtrends_app
     ```
 
-6. Start service for text embeddings based on pretrained fasttext model at http://localhost:5001/
+6. Start service for text embeddings based on either pretrained fasttext model or sentence-transformer at http://localhost:5001/
     ```
-    python -m pysrc.fasttext.fasttext_app
+    python -m pysrc.embeddings.fasttext.fasttext_app
+    ```
+or 
+    ```
+    python -m pysrc.embeddings.sentence_transformer.sentence_transformer_app
     ```
 
 
@@ -244,7 +239,7 @@ Notebooks are located under the `/notebooks` folder. Please configure `PYTHONPAT
 
 ## Testing
 
-1. Start Docker image with Postgres environment for tests (Kotlin and Python development)
+1. Start a Docker image with a Postgres environment for tests (Kotlin and Python development)
     ```
     docker run --rm --platform linux/amd64 --name pubtrends-test \
     --publish=5433:5432 --volume=$(pwd):/pubtrends -i -t biolabs/pubtrends-test
@@ -270,7 +265,8 @@ Notebooks are located under the `/notebooks` folder. Please configure `PYTHONPAT
     docker run --rm --platform linux/amd64 --volume=$(pwd):/pubtrends -t biolabs/pubtrends-test /bin/bash -c \
     "/usr/lib/postgresql/17/bin/pg_ctl -D /home/user/postgres start; \
     cd /pubtrends; mkdir -p ~/.pubtrends; cp config.properties ~/.pubtrends; bash /pubtrends/init.sh; \
-    source activate pubtrends; pytest pysrc"
+    source activate pubtrends; pip install torch --index-url https://download.pytorch.org/whl/cpu; \
+    pip install sentence-transformers; pytest pysrc"
     ```
 
 ## Deployment
@@ -298,8 +294,8 @@ Please ensure that you have configured and prepared the database(s).
     ```
    NOTE: stop Postgres docker image with timeout `--time=300` to avoid DB recovery.\
 
-   NOTE2: for speed reason we use materialize views, which are updated upon successful database update. In case of
-   emergency stop, the view should be refreshed manually to ensure sort by citations works correctly:
+   NOTE2: for speed reasons we use materialize views, which are updated upon successful database update. In case of
+    an emergency stop, the view should be refreshed manually to ensure sort by citations works correctly:
     ```
     psql -h localhost -p 5432 -U biolabs -d pubtrends
     refresh materialized view matview_pmcitations;
@@ -310,10 +306,11 @@ Please ensure that you have configured and prepared the database(s).
    dist.sh build=build-number ga=google-analytics-id
    ```
 
-4. Launch pubtrends with docker-compose.
+4. Launch pubtrends with docker-compose (one of the options)
     ```
     # start
-    docker-compose up -d --build
+    docker-compose -f docker-compose.sentence-transformer.yml up -d --build 
+    docker-compose -f docker-compose.fasttext.yml up -d --build
     ```
    Use these commands to stop compose build and check logs:
     ```

@@ -9,6 +9,15 @@ logger = logging.getLogger(__name__)
 # Launch with a Docker address or locally
 EMBEDDINGS_SERVICE_URL = os.getenv('EMBEDDINGS_SERVICE_URL', 'http://localhost:5001')
 
+def is_embeddings_service_available():
+    logger.debug(f'Check if embeddings service endpoint is available')
+    try:
+        r = requests.request(url=EMBEDDINGS_SERVICE_URL, method='GET')
+        return r.status_code == 200
+    except Exception as e:
+        logger.debug(f'Embeddings service is not available: {e}')
+        return False
+
 
 def is_embeddings_service_ready():
     logger.debug(f'Check if embeddings service endpoint is ready')
@@ -45,21 +54,25 @@ def fetch_tokens_embeddings(tokens):
     return None
 
 
-def fetch_text_embedding(text):
+def is_texts_embeddings_available():
+    return fetch_texts_embedding(['Test sentence 1.', 'Test sentence 2.']) is not None
+
+
+def fetch_texts_embedding(texts):
     # Don't use the model as is, since each celery process will load its own copy.
     # Shared model is available via additional service with a single model.
-    logger.debug(f'Fetch text embedding')
+    logger.debug(f'Fetch texts embeddings')
     try:
         r = requests.request(
-            url=f'{EMBEDDINGS_SERVICE_URL}/embeddings_text',
+            url=f'{EMBEDDINGS_SERVICE_URL}/embeddings_texts',
             method='GET',
-            json=text,
+            json=texts,
             headers={'Accept': 'application/json'}
         )
         if r.status_code == 200:
-            return r.json()
+            return np.array(r.json()).reshape(len(texts), -1)
         else:
             logger.debug(f'Wrong response code {r.status_code}')
     except Exception as e:
-        logger.debug(f'Failed to fetch text embedding ${e}')
+        logger.debug(f'Failed to fetch texts embeddings ${e}')
     return None

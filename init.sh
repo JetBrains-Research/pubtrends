@@ -9,4 +9,5 @@ mkdir -p ~/.pubtrends/.cache
 mkdir -p ~/.pubtrends/results
 mkdir -p ~/.pubtrends/nltk_data
 mkdir -p ~/.pubtrends/gensim-data
-mkdir -p ~/.pubtrends/model
+mkdir -p ~/.pubtrends/fasttext
+mkdir -p ~/.pubtrends/sentence-transformers

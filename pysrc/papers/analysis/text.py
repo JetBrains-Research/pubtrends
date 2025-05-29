@@ -1,19 +1,19 @@
 import logging
-import re
-import spacy
-from itertools import chain
-from threading import Lock
-
 import nltk
 import numpy as np
+import re
+import spacy
 from gensim.models import Word2Vec
+from itertools import chain
 from nltk import word_tokenize, WordNetLemmatizer, SnowballStemmer
 from nltk.corpus import wordnet, stopwords
 from nltk.probability import FreqDist
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from threading import Lock
 
-from pysrc.config import WORD2VEC_EMBEDDINGS_LENGTH, WORD2VEC_WINDOW, WORD2VEC_EPOCHS
-from pysrc.papers.analysis.embeddings_service import is_embeddings_service_ready, fetch_tokens_embeddings
+from pysrc.config import WORD2VEC_EMBEDDINGS_LENGTH, WORD2VEC_WINDOW, WORD2VEC_EPOCHS, PubtrendsConfig
+from pysrc.papers.analysis.embeddings_service import is_embeddings_service_ready, fetch_tokens_embeddings, \
+    fetch_texts_embedding, is_texts_embeddings_available
 
 NLP = spacy.load("en_core_web_sm")
 
@@ -29,6 +29,7 @@ NLTK_STOP_WORDS_SET = set(stopwords.words('english'))
 # Lock to support multithreading for NLTK
 # See https://github.com/nltk/nltk/issues/1576
 NLTK_LOCK = Lock()
+
 
 def vectorize_corpus(df, max_features, min_df, max_df, test=False):
     """
@@ -108,7 +109,7 @@ def stemmed_tokens(text, min_token_length=4):
     # Let tokens start with letters only
     tokens = [re.sub('^[^a-zA-Z]+', '', t) for t in tokens]
     # Ignore e-XX tokens
-    tokens = [t for t in tokens if not re.match('e-?[0-9]+' , t)]
+    tokens = [t for t in tokens if not re.match('e-?[0-9]+', t)]
     # Ignore stop words, take into accounts nouns and adjectives, fix plural forms
     lemmatizer = WordNetLemmatizer()
     lemmas = [lemmatizer.lemmatize(token, pos=NLTK_POS_TAG_TO_WORDNET[pos[:2]])
@@ -137,7 +138,7 @@ def build_stemmed_corpus(df):
                                                               df['abstract'],
                                                               df['mesh'].replace(',', '.'),
                                                               df['keywords'].replace(',', '.'))):
-        if i % 100 == 1 :
+        if i % 100 == 1:
             logger.debug(f'Processed {i} papers')
         papers_stemmed_sentences.append([
             stemmed_tokens(sentence)
@@ -165,18 +166,7 @@ def _build_stems_to_tokens_map(stems_and_tokens):
     return stems_tokens_map
 
 
-def tokens_embeddings(corpus, corpus_tokens, test=False):
-    if test or not is_embeddings_service_ready():
-        logger.debug(f'Compute words embeddings trained word2vec')
-        return train_word2vec(corpus, corpus_tokens, test=test)
-    embds = fetch_tokens_embeddings(corpus_tokens)
-    if embds is not None:
-        return embds
-    logger.debug('Fallback to in-house word2vec')
-    return train_word2vec(corpus, corpus_tokens, test=test)
-
-
-def train_word2vec(corpus, corpus_tokens, vector_size=WORD2VEC_EMBEDDINGS_LENGTH, test=False):
+def _train_word2vec(corpus, corpus_tokens, vector_size=WORD2VEC_EMBEDDINGS_LENGTH, test=False):
     logger.debug('Collecting sentences across dataset')
     sentences = list(filter(
         lambda l: test or len(l) >= WORD2VEC_WINDOW,  # Ignore short sentences, less than a window
@@ -196,7 +186,27 @@ def train_word2vec(corpus, corpus_tokens, vector_size=WORD2VEC_EMBEDDINGS_LENGTH
     ])
 
 
-def texts_embeddings(corpus_counts, tokens_embeddings):
+def texts_embeddings(df, corpus, corpus_tokens, corpus_counts, test=False):
+    if not test and is_embeddings_service_ready():
+        # Start with text embeddings
+        if is_texts_embeddings_available():
+            chunks = [
+                f'{title}. {abstract}'[:PubtrendsConfig(test=test).max_embeddings_text_length]
+                for title, abstract in zip(df['title'], df['abstract'])
+            ]
+            return fetch_texts_embedding(chunks)
+
+        # Fallback to tokens embeddings
+        tokens_embs = fetch_tokens_embeddings(corpus_tokens)
+        if tokens_embs is not None:
+            return _texts_embeddings(corpus_counts, tokens_embs)
+
+    logger.debug('Use to in-house word2vec')
+    tokens_embs = _train_word2vec(corpus, corpus_tokens, test=test)
+    return _texts_embeddings(corpus_counts, tokens_embs)
+
+
+def _texts_embeddings(corpus_counts, tokens_embeddings):
     """
     Computes texts embeddings as TF-IDF weighted average of words embeddings.
     :param corpus_counts: Vectorized papers matrix
@@ -214,6 +224,7 @@ def texts_embeddings(corpus_counts, tokens_embeddings):
     ])
     logger.debug(f'Texts embeddings shape: {embeddings.shape}')
     return embeddings
+
 
 def get_chunks(text, max_tokens=128, overlap_sentences=1):
     """
@@ -263,6 +274,7 @@ def get_chunks(text, max_tokens=128, overlap_sentences=1):
         chunk_text = ' '.join([s.text for s in current_chunk_sentences])
         chunks.append(chunk_text)
     return chunks
+
 
 def collect_papers_chunks(args):
     batch, max_tokens = args

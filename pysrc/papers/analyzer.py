@@ -13,7 +13,7 @@ from pysrc.papers.analysis.graph import build_papers_graph, sparse_graph, add_te
 from pysrc.papers.analysis.metadata import popular_authors, popular_journals
 from pysrc.papers.analysis.node2vec import node2vec
 from pysrc.papers.analysis.numbers import extract_numbers
-from pysrc.papers.analysis.text import texts_embeddings, vectorize_corpus, tokens_embeddings
+from pysrc.papers.analysis.text import texts_embeddings, vectorize_corpus
 from pysrc.papers.data import AnalysisData
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
@@ -127,19 +127,11 @@ class PapersAnalyzer:
         self.progress.info('Analyzing title and abstract texts',
                            current=self.get_step_and_inc(), task=task)
         self.corpus, self.corpus_tokens, self.corpus_counts = vectorize_corpus(
-            self.df,
-            max_features=VECTOR_WORDS,
-            min_df=VECTOR_MIN_DF,
-            max_df=VECTOR_MAX_DF,
-            test=test
-        )
-        logger.debug('Analyzing tokens embeddings')
-        self.corpus_tokens_embedding = tokens_embeddings(
-            self.corpus, self.corpus_tokens, test=test
+            self.df, max_features=VECTOR_WORDS, min_df=VECTOR_MIN_DF, max_df=VECTOR_MAX_DF, test=test
         )
         logger.debug('Analyzing texts embeddings')
         papers_text_embeddings = texts_embeddings(
-            self.corpus_counts, self.corpus_tokens_embedding
+            self.df, self.corpus, self.corpus_tokens, self.corpus_counts, test=test
         )
 
         self.progress.info(f'Analyzing papers citations and text similarity network',

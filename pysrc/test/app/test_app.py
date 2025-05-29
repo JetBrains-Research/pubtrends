@@ -9,7 +9,7 @@ from urllib.parse import quote
 from celery.contrib.testing.tasks import ping
 from celery.contrib.testing.worker import start_worker
 
-from pysrc.app.app import flask_app
+from pysrc.app.pubtrends_app import pubtrends_app
 from pysrc.celery.tasks import pubtrends_celery
 from pysrc.config import PubtrendsConfig
 from pysrc.papers.db.pm_postgres_loader import PubmedPostgresLoader
@@ -56,8 +56,8 @@ class TestApp(unittest.TestCase):
         cls.loader.close_connection()
 
     def test_terms_search(self):
-        flask_app.config['TESTING'] = True
-        with flask_app.test_client() as c:
+        pubtrends_app.config['TESTING'] = True
+        with pubtrends_app.test_client() as c:
             rv = c.post('/search_terms', data={
                 'query': 'Article Title',
                 'source': 'Pubmed',

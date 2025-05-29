@@ -19,8 +19,8 @@ from pysrc.app.reports import get_predefined_jobs, \
     load_result_data, _predefined_example_params_by_jobid, preprocess_string, load_paper_data
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, analyze_pubmed_search, analyze_id_list
-from pysrc.config import PubtrendsConfig, USE_FASTTEXT_EMBEDDINGS
-from pysrc.papers.analysis.embeddings_service import is_embeddings_service_ready
+from pysrc.config import PubtrendsConfig
+from pysrc.papers.analysis.embeddings_service import is_embeddings_service_ready, is_embeddings_service_available
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plot_app import prepare_graph_data, prepare_papers_data, prepare_paper_data, prepare_result_data
 from pysrc.papers.utils import trim_query, IDS_ANALYSIS_TYPE, PAPER_ANALYSIS_TYPE, SORT_MOST_CITED
@@ -28,14 +28,14 @@ from pysrc.version import VERSION
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
-flask_app = Flask(__name__)
+pubtrends_app = Flask(__name__)
 
-if not flask_app.config['TESTING'] and not flask_app.config['DEBUG']:
-    flask_app.config['CACHE_TYPE'] = 'RedisCache'
-flask_app.config['CACHE_REDIS_URL'] = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379')
-flask_app.config['CACHE_DEFAULT_TIMEOUT'] = 600  # 10 minutes
+if not pubtrends_app.config['TESTING'] and not pubtrends_app.config['DEBUG']:
+    pubtrends_app.config['CACHE_TYPE'] = 'RedisCache'
+pubtrends_app.config['CACHE_REDIS_URL'] = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379')
+pubtrends_app.config['CACHE_DEFAULT_TIMEOUT'] = 600  # 10 minutes
 
-cache = Cache(flask_app)
+cache = Cache(pubtrends_app)
 
 #####################
 # Configure logging #
@@ -60,36 +60,36 @@ logging.basicConfig(filename=logfile,
 # and then set your Flask application log level the same as Gunicorn’s.
 if __name__ != '__main__':
     gunicorn_logger = logging.getLogger('gunicorn.error')
-    flask_app.logger.setLevel(gunicorn_logger.level)
+    pubtrends_app.logger.setLevel(gunicorn_logger.level)
 
-logger = flask_app.logger
+logger = pubtrends_app.logger
 
 
 #############
 # Main page #
 #############
 
-@flask_app.route('/robots.txt')
-@flask_app.route('/sitemap.xml')
-@flask_app.route('/feedback.js')
-@flask_app.route('/style.css')
-@flask_app.route('/about_graph_explorer.png')
-@flask_app.route('/about_hot_papers.png')
-@flask_app.route('/about_keywords.png')
-@flask_app.route('/about_main.png')
-@flask_app.route('/about_network.png')
-@flask_app.route('/about_pubtrends_scheme.png')
-@flask_app.route('/about_report.png')
-@flask_app.route('/about_review.png')
-@flask_app.route('/about_top_cited_papers.png')
-@flask_app.route('/about_topic.png')
-@flask_app.route('/about_topics_by_year.png')
-@flask_app.route('/about_topics_hierarchy.png')
-@flask_app.route('/smile.svg')
-@flask_app.route('/meh.svg')
-@flask_app.route('/frown.svg')
+@pubtrends_app.route('/robots.txt')
+@pubtrends_app.route('/sitemap.xml')
+@pubtrends_app.route('/feedback.js')
+@pubtrends_app.route('/style.css')
+@pubtrends_app.route('/about_graph_explorer.png')
+@pubtrends_app.route('/about_hot_papers.png')
+@pubtrends_app.route('/about_keywords.png')
+@pubtrends_app.route('/about_main.png')
+@pubtrends_app.route('/about_network.png')
+@pubtrends_app.route('/about_pubtrends_scheme.png')
+@pubtrends_app.route('/about_report.png')
+@pubtrends_app.route('/about_review.png')
+@pubtrends_app.route('/about_top_cited_papers.png')
+@pubtrends_app.route('/about_topic.png')
+@pubtrends_app.route('/about_topics_by_year.png')
+@pubtrends_app.route('/about_topics_hierarchy.png')
+@pubtrends_app.route('/smile.svg')
+@pubtrends_app.route('/meh.svg')
+@pubtrends_app.route('/frown.svg')
 def static_from_root():
-    return send_from_directory(flask_app.static_folder, request.path[1:])
+    return send_from_directory(pubtrends_app.static_folder, request.path[1:])
 
 
 PREDEFINED_JOBS = get_predefined_jobs(PUBTRENDS_CONFIG)
@@ -99,9 +99,9 @@ def log_request(r):
     return f'addr:{r.remote_addr} args:{json.dumps(r.args)}'
 
 
-@flask_app.route('/')
+@pubtrends_app.route('/')
 def index():
-    if USE_FASTTEXT_EMBEDDINGS and not is_embeddings_service_ready():
+    if is_embeddings_service_available() and not is_embeddings_service_ready():
         return render_template('init.html', version=VERSION, message=SERVICE_LOADING_INITIALIZING)
     if not are_predefined_jobs_ready():
         return render_template('init.html', version=VERSION, message=SERVICE_LOADING_PREDEFINED_EXAMPLES)
@@ -130,7 +130,7 @@ def index():
                            search_example_terms=search_example_terms)
 
 
-@flask_app.route('/about.html', methods=['GET'])
+@pubtrends_app.route('/about.html', methods=['GET'])
 def about():
     return render_template('about.html', version=VERSION)
 
@@ -145,7 +145,7 @@ def value_to_bool(value):
 def bool_to_value(value):
     return 'on' if value else 'off'
 
-@flask_app.route('/search_terms', methods=['POST'])
+@pubtrends_app.route('/search_terms', methods=['POST'])
 def search_terms():
     logger.info(f'/search_terms {log_request(request)}')
     query = request.form.get('query')  # Original search query
@@ -163,7 +163,7 @@ def search_terms():
         if query and source and limit and topics and pubmed_syntax:
             # Regular analysis
             job = analyze_pubmed_search.delay(query=query, sort=sort, limit=limit, topics=topics,
-                                              test=flask_app.config['TESTING'])
+                                              test=pubtrends_app.config['TESTING'])
             return redirect(
                 url_for('.process', source='Pubmed', query=trim_query(query), limit=limit, sort='',
                         noreviews='on' if noreviews else '',
@@ -176,7 +176,7 @@ def search_terms():
             job = analyze_search_terms.delay(source, query=query, limit=int(limit), sort=sort,
                                              noreviews=noreviews, min_year=min_year, max_year=max_year,
                                              topics=topics,
-                                             test=flask_app.config['TESTING'])
+                                             test=pubtrends_app.config['TESTING'])
             return redirect(
                 url_for('.process', query=trim_query(query), source=source, limit=limit, sort=sort,
                         noreviews='on' if noreviews else '',
@@ -190,7 +190,7 @@ def search_terms():
         return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
 
 
-@flask_app.route('/search_paper', methods=['POST'])
+@pubtrends_app.route('/search_paper', methods=['POST'])
 def search_paper():
     logger.info(f'/search_paper {log_request(request)}')
     data = request.form
@@ -204,7 +204,7 @@ def search_paper():
             expand = data.get('expand')
             topics = data.get('topics')
             job = analyze_search_paper.delay(source, None, key, value, expand, limit, noreviews, topics,
-                                             test=flask_app.config['TESTING'])
+                                             test=pubtrends_app.config['TESTING'])
             return redirect(url_for('.process', query=trim_query(f'Papers {key}={value}'),
                                     analysis_type=PAPER_ANALYSIS_TYPE,
                                     key=key, value=value,
@@ -223,7 +223,7 @@ def search_paper():
 # Analysis progress and cancelling #
 ####################################
 
-@flask_app.route('/process')
+@pubtrends_app.route('/process')
 def process():
     """ Rendering process.html for task being queued or executed at the moment """
     if len(request.args) > 0:
@@ -301,7 +301,7 @@ def process():
     return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
 
 
-@flask_app.route('/status')
+@pubtrends_app.route('/status')
 def status():
     """ Check tasks status being executed by Celery """
     jobid = request.values.get('jobid')
@@ -333,7 +333,7 @@ def status():
     return json.dumps(dict(state='FAILURE', message='No task id'))
 
 
-@flask_app.route('/cancel')
+@pubtrends_app.route('/cancel')
 def cancel():
     if len(request.args) > 0:
         jobid = request.values.get('jobid')
@@ -350,7 +350,7 @@ def cancel():
 ####################################
 
 
-@flask_app.route('/result')
+@pubtrends_app.route('/result')
 @cache.cached(query_string=True)
 def result():
     jobid = request.args.get('jobid')
@@ -378,7 +378,7 @@ def result():
                                        **prepare_result_data(PUBTRENDS_CONFIG, data))
             logger.info(f'/result No job or out-of-date job, restart it {log_request(request)}')
             analyze_search_terms.apply_async(
-                args=[source, query, sort, int(limit), noreviews, min_year, max_year, topics, flask_app.config['TESTING']],
+                args=[source, query, sort, int(limit), noreviews, min_year, max_year, topics, pubtrends_app.config['TESTING']],
                 task_id=jobid
             )
             return redirect(
@@ -395,7 +395,7 @@ def result():
         return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
 
 
-@flask_app.route('/graph')
+@pubtrends_app.route('/graph')
 @cache.cached(query_string=True)
 def graph():
     jobid = request.values.get('jobid')
@@ -427,7 +427,7 @@ def graph():
         return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
 
 
-@flask_app.route('/paper')
+@pubtrends_app.route('/paper')
 @cache.cached(query_string=True)
 def paper():
     jobid = request.values.get('jobid')
@@ -451,7 +451,7 @@ def paper():
             else:
                 logger.info(f'/paper No job or out-of-date job, restart it {log_request(request)}')
                 analyze_search_paper.apply_async(
-                    args=[source, pid, key, value, expand, limit, noreviews, topics, flask_app.config['TESTING']],
+                    args=[source, pid, key, value, expand, limit, noreviews, topics, pubtrends_app.config['TESTING']],
                     task_id=jobid
                 )
                 return redirect(url_for('.process', query=trim_query(f'Paper {key}={value}'),
@@ -466,7 +466,7 @@ def paper():
         return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
 
 
-@flask_app.route('/papers')
+@pubtrends_app.route('/papers')
 @cache.cached(query_string=True)
 def show_ids():
     jobid = request.values.get('jobid')
@@ -532,7 +532,7 @@ def show_ids():
         return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
 
 
-@flask_app.route('/export_data', methods=['GET'])
+@pubtrends_app.route('/export_data', methods=['GET'])
 def export_data():
     logger.info(f'/export_data {log_request(request)}')
     try:
@@ -576,7 +576,7 @@ def are_predefined_jobs_ready():
         return True
     try:
         PREDEFINED_JOBS_LOCK.acquire()
-        if flask_app.config.get('PREDEFINED_TASKS_READY', False):
+        if pubtrends_app.config.get('PREDEFINED_TASKS_READY', False):
             return True
         ready = True
         inspect = pubtrends_celery.control.inspect()
@@ -602,12 +602,12 @@ def are_predefined_jobs_ready():
                     logger.info(f'No job or out-of-date job for source={source} query={query}, launch it')
                     analyze_search_terms.apply_async(
                         args=[source, query, sort, int(limit), False, None, None,
-                              PUBTRENDS_CONFIG.show_topics_default_value, flask_app.config['TESTING']],
+                              PUBTRENDS_CONFIG.show_topics_default_value, pubtrends_app.config['TESTING']],
                         task_id=jobid
                     )
                     ready = False
         if ready:
-            flask_app.config['PREDEFINED_TASKS_READY'] = True
+            pubtrends_app.config['PREDEFINED_TASKS_READY'] = True
         return ready
     finally:
         PREDEFINED_JOBS_LOCK.release()
@@ -617,7 +617,7 @@ def are_predefined_jobs_ready():
 # Feedback functionality #
 ##########################
 
-@flask_app.route('/feedback', methods=['POST'])
+@pubtrends_app.route('/feedback', methods=['POST'])
 def feedback():
     logger.info(f'/feedback {log_request(request)}')
     data = request.form
@@ -635,7 +635,7 @@ def feedback():
 # AIHKTN25-28 API     #
 #######################
 
-@flask_app.route('/search_terms_api', methods=['POST'])
+@pubtrends_app.route('/search_terms_api', methods=['POST'])
 def search_terms_api():
     logger.info(f'/search_terms_api {log_request(request)}')
     query = request.form.get('query')  # Original search query
@@ -653,7 +653,7 @@ def search_terms_api():
         logger.exception(f'/search_terms_api exception {e}')
         return {'success': False, 'jobid': None}, 500
 
-@flask_app.route('/analyse_ids_api', methods=['POST'])
+@pubtrends_app.route('/analyse_ids_api', methods=['POST'])
 def analyse_ids_api():
     logger.info(f'/analyse_ids_api {log_request(request)}')
     query = request.form.get('query')  # Original search query
@@ -670,7 +670,7 @@ def analyse_ids_api():
         return {'success': False, 'jobid': None}, 500
 
 
-@flask_app.route('/check_status_api/<jobid>', methods=['GET'])
+@pubtrends_app.route('/check_status_api/<jobid>', methods=['GET'])
 def check_status_api(jobid):
     logger.info(f'/check_status_api {log_request(request)}')
     try:
@@ -686,7 +686,7 @@ def check_status_api(jobid):
         logger.exception(f'/check_status_api exception {e}')
         return {'status': 'error'}, 500
 
-@flask_app.route('/get_result_api', methods=['GET'])
+@pubtrends_app.route('/get_result_api', methods=['GET'])
 def get_result_api():
     logger.info(f'/get_result_api {log_request(request)}')
     jobid = request.args.get('jobid')
@@ -705,7 +705,7 @@ def get_result_api():
 # Admin functionality #
 #######################
 
-configure_admin_functions(flask_app, pubtrends_celery, logfile)
+configure_admin_functions(pubtrends_app, pubtrends_celery, logfile)
 
 #######################
 # Additional features #
@@ -713,9 +713,9 @@ configure_admin_functions(flask_app, pubtrends_celery, logfile)
 
 # Application
 def get_app():
-    return flask_app
+    return pubtrends_app
 
 
 # With debug=True, the Flask server will auto-reload on changes
 if __name__ == '__main__':
-    flask_app.run(host='0.0.0.0', debug=True, extra_files=['templates/'], port=5000)
+    pubtrends_app.run(host='0.0.0.0', debug=True, extra_files=['templates/'], port=5000)

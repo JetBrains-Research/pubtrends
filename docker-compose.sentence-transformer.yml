@@ -1,0 +1,48 @@
+version: "3"
+services:
+  web:
+    build:
+      context: .
+      dockerfile: pysrc/app/Dockerfile
+    restart: always
+    ports:
+      - "5000:5000"
+    depends_on:
+      - redis
+      - embeddings
+      - celery
+    volumes:
+      - ~/.pubtrends:/config:ro
+      - ~/.pubtrends/logs:/logs
+      - ~/.pubtrends/database:/database
+      - ~/.pubtrends/results:/results
+
+  celery:
+    build:
+      context: .
+      dockerfile: pysrc/celery/Dockerfile
+    depends_on:
+      - redis
+      - embeddings
+    volumes:
+      - ~/.pubtrends:/config:ro
+      - ~/.pubtrends/logs:/logs
+      - ~/.pubtrends/results:/results
+      - ~/.pubtrends/nltk-data:/home/user/nltk-data
+      - ~/.pubtrends/gensim-data:/home/user/gensim-data
+  redis:
+    image: redis:7.4.2
+    volumes:
+      - ~/.pubtrends/logs:/log
+    # This command is used to process huge analysis results of 40k+ papers
+    command: redis-server --timeout 0 --client-output-buffer-limit normal 0 0 0
+  embeddings:
+    build:
+      context: .
+      dockerfile: pysrc/embeddings/sentence_transformer/Dockerfile
+    restart: always
+    volumes:
+      - ~/.pubtrends:/config:ro
+      - ~/.pubtrends/logs:/logs
+      - ~/.pubtrends/sentence-transformers:/sentence-transformers
+      - ~/.pubtrends/nltk-data:/home/user/nltk-data

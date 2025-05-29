@@ -2,12 +2,14 @@ import json
 import os.path
 
 import pytest
-from pysrc.fasttext.fasttext_app import fasttext_app  # your Flask app
+from pysrc.embeddings.fasttext.fasttext_app import fasttext_app  # your Flask app
 
 # Load required endpoints from a JSON file
 @pytest.fixture(scope="module")
 def required_endpoints():
-    requirements_path = os.path.join(os.path.dirname(__file__), "../../../pysrc/fasttext/required_endpoints.json")
+    requirements_path = os.path.join(
+        os.path.dirname(__file__), "../../../../pysrc/embeddings/fasttext/required_endpoints.json"
+    )
     with open(requirements_path) as f:
         return [
             {"path": ep["path"], "methods": set(ep["methods"])}
