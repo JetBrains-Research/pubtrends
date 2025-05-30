@@ -3,6 +3,15 @@ Pubtrends changelog
 
 Here you can see the full list of changes between each release.
 
+Version 1.3
+------------
+Released on XXX XX, 2025
+
+- Reworked text embeddings usage for global similarity network construction
+- Supported Sentence Transformer models for whole texts embeddings
+- Implemented Questions for paper feature using improved embeddings
+- Preview of Semantic search with Sentence Transformer for embeddings, Postgresql with vector extension for embeddings storage and Faiss for fast embeddings lookup 
+
 Version 1.2
 ------------
 Released on April 3, 2025
