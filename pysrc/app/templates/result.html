@@ -43,6 +43,9 @@
     <!--<script src="../../static/notify.js"/>-->
     <script src="{{ url_for('static', filename='notify.js') }}"></script>
 
+    <!-- Questions -->
+    <script src="{{ url_for('static', filename='questions.js') }}"></script>
+
     <script>
         "use strict";
 
@@ -211,7 +214,16 @@
                             Papers
                         </a>
                     </li>
-
+                    {% if feature_questions_enabled %}
+                    <li class="nav-item row">
+                        <a class="nav-link no-padding-right" href="#questions" title="Questions">
+                            <img class="nav-icon" src="{{ url_for('static', filename='question.svg') }}"/>
+                        </a>
+                        <a class="nav-link d-none d-xl-block no-padding" href="#questions">
+                            Questions
+                        </a>
+                    </li>
+                    {% endif %}
                     {% if topics_analyzed %}
                     <li class="nav-item row">
                         <a class="nav-link no-padding-right" href="#trends" title="Trends">
@@ -306,10 +318,11 @@
                             {% endfor %}
                         </div>
                     </div>
+                    {% if not feature_questions_enabled %}
                     <div id="search-in-papers" class="row">
                         <div class="col col-auto">
                             <input id="search-input" type="text" class="form-control"
-                                   placeholder="Search in papers...">
+                                   placeholder="Search in texts...">
                         </div>
                         <div class="col col-auto no-padding-left">
                             <button id="search_word" type="button" class="btn btn-light"
@@ -318,9 +331,46 @@
                             </button>
                         </div>
                     </div>
+                    {% endif %}
                     <div class="mt-3" id="feedback-papers-form"></div>
                 </div>
             </div>
+
+            {% if feature_questions_enabled %}
+            <div class="card mt-3">
+                <div class="card-title" id="questions">
+                    <h1 class="card-header">Questions</h1>
+                </div>
+                <div class="card-body">
+                    <strong>Ask questions about the papers</strong>
+                    <p>
+                        You can ask questions about the papers in this collection to find the most relevant information.
+                    </p>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="input-group mb-3">
+                                <input type="text" id="question-input" class="form-control" placeholder="Enter your question...">
+                                <div class="input-group-append">
+                                    <button id="ask-question" class="btn btn-primary" type="button">Ask</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="question-results" style="display: none;">
+                        <div id="question-results-loading" class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                            <p>Searching for relevant papers...</p>
+                        </div>
+                        <div id="question-results-content" class="mt-3">
+                            <!-- Results will be displayed here -->
+                        </div>
+                    </div>
+                    <div class="mt-3" id="feedback-questions-form"></div>
+                </div>
+            </div>
+            {% endif %}
 
             <div class="card mt-3">
                 <div class="card-title" id="trends">

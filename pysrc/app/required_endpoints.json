@@ -15,5 +15,6 @@
   {"path": "/search_terms_api", "methods": ["POST"]},
   {"path": "/analyse_ids_api", "methods": ["POST"]},
   {"path": "/check_status_api/<jobid>", "methods": ["GET"]},
-  {"path": "/get_result_api", "methods": ["GET"]}
+  {"path": "/get_result_api", "methods": ["GET"]},
+  {"path": "/question", "methods": ["POST"]}
 ]

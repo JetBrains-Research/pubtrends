@@ -6,6 +6,7 @@ from scipy.spatial import distance
 
 from pysrc.app.reports import preprocess_string
 from pysrc.config import PubtrendsConfig, VISUALIZATION_GRAPH_EDGES
+from pysrc.papers.analysis.embeddings_service import is_texts_embeddings_available
 from pysrc.papers.analysis.graph import sparse_graph
 from pysrc.papers.analysis.text import get_frequent_tokens
 from pysrc.papers.analysis.topics import get_topics_description
@@ -52,19 +53,16 @@ def prepare_result_data(config: PubtrendsConfig, data: AnalysisData):
         if topics_hierarchy_with_keywords:
             result['topics_hierarchy_with_keywords'] = components_list(topics_hierarchy_with_keywords)
 
-    # Configure additional features
-    result.update(dict(
-        feature_authors_enabled=config.feature_authors_enabled,
-        feature_journals_enabled=config.feature_journals_enabled,
-        feature_numbers_enabled=config.feature_numbers_enabled,
-    ))
 
+    result['feature_authors_enabled'] = config.feature_authors_enabled
     if config.feature_authors_enabled:
         result['author_statistics'] = plotter.author_statistics()
 
+    result['feature_journals_enabled'] = config.feature_journals_enabled
     if config.feature_journals_enabled:
         result['journal_statistics'] = plotter.journal_statistics()
 
+    result['feature_numbers_enabled'] = config.feature_numbers_enabled
     if config.feature_numbers_enabled:
         url_prefix = Loaders.get_url_prefix(data.source)
         if data.numbers_df is not None:
@@ -72,6 +70,8 @@ def prepare_result_data(config: PubtrendsConfig, data: AnalysisData):
                 (row['id'], url_prefix + str(row['id']), trim(row['title'], MAX_TITLE_LENGTH), row['numbers'])
                 for _, row in data.numbers_df.iterrows()
             ]
+
+    result['feature_questions_enabled'] = config.feature_questions_enabled and is_texts_embeddings_available()
 
     return result
 

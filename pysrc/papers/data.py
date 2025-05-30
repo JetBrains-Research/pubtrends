@@ -133,6 +133,9 @@ class AnalysisData:
         # Restore embeddings
         chunks_embeddings = np.array(fields['chunks_embeddings'])
         chunks_idx = fields['chunks_idx']
+        # Convert chunks_idx from list of lists to list of tuples
+        if chunks_idx is not None:
+            chunks_idx = [tuple(idx) for idx in chunks_idx]
 
         # Restore citation and structure graphs
         papers_graph = json_graph.node_link_graph(fields['papers_graph'])

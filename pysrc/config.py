@@ -116,7 +116,7 @@ class PubtrendsConfig:
     def __init__(self, test=True):
         config_parser = configparser.ConfigParser()
 
-        # Add fake section [params] for ConfigParser to accept the file
+        # Add a fake section [params] for ConfigParser to accept the file
         for config_path in [os.path.join(p, 'config.properties') for p in self.CONFIG_PATHS]:
             if os.path.exists(config_path):
                 with open(os.path.expanduser(config_path)) as f:
@@ -158,17 +158,24 @@ class PubtrendsConfig:
 
         self.sentence_transformer_model = params['sentence_transformer_model']
 
-        self.popular_journals = params.getint('popular_journals')
-        self.popular_authors = params.getint('popular_authors')
 
         self.paper_expands_steps = params.getint('paper_expands_steps')
         self.paper_expand_limit = params.getint('paper_expand_limit')
 
+        # Additional features configuration
+        self.feature_authors_enabled = params.getboolean('feature_authors_enabled')
+        self.popular_authors = params.getint('popular_authors')
+
+        self.feature_journals_enabled = params.getboolean('feature_journals_enabled')
+        self.popular_journals = params.getint('popular_journals')
+
+        self.feature_numbers_enabled = params.getboolean('feature_numbers_enabled')
+
+        # Questions based on embeddings
+        self.feature_questions_enabled = params.getboolean('feature_questions_enabled')
+        self.questions_threshold = params.getfloat('questions_threshold')
+        self.questions_top_n = params.getint('questions_top_n')
+
         # TODO Admin password - should be a better way
         self.admin_email = params['admin_email']
         self.admin_password = params['admin_password']
-
-        # Additional modules configuration
-        self.feature_authors_enabled = params.getboolean('feature_authors_enabled')
-        self.feature_journals_enabled = params.getboolean('feature_journals_enabled')
-        self.feature_numbers_enabled = params.getboolean('feature_numbers_enabled')

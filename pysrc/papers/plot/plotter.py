@@ -70,7 +70,6 @@ class Plotter:
         if self.data:
             if self.data.papers_graph.nodes():
                 self.comp_colors = topics_palette_rgb(self.data.df)
-                self.comp_palette = list(self.comp_colors.values())
 
             n_pub_types = len(self.pub_types)
             pub_types_cmap = plt.cm.get_cmap('jet', n_pub_types)

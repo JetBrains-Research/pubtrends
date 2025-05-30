@@ -20,9 +20,10 @@ from pysrc.app.reports import get_predefined_jobs, \
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, analyze_pubmed_search, analyze_id_list
 from pysrc.config import PubtrendsConfig
-from pysrc.papers.analysis.embeddings_service import is_embeddings_service_ready, is_embeddings_service_available
+from pysrc.papers.analysis.embeddings_service import is_embeddings_service_ready, is_embeddings_service_available, is_texts_embeddings_available, fetch_texts_embedding
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plot_app import prepare_graph_data, prepare_papers_data, prepare_paper_data, prepare_result_data
+from pysrc.papers.questions.questions import get_relevant_papers
 from pysrc.papers.utils import trim_query, IDS_ANALYSIS_TYPE, PAPER_ANALYSIS_TYPE, SORT_MOST_CITED
 from pysrc.version import VERSION
 
@@ -699,6 +700,38 @@ def get_result_api():
     except Exception as e:
         logger.exception(f'/get_result_api exception {e}')
         return {'status': 'error'}, 500
+
+
+@pubtrends_app.route('/question', methods=['POST'])
+def question():
+    logger.info(f'/question {log_request(request)}')
+    try:
+        data = request.json
+        question_text = data['question']
+        jobid = data['jobid']
+
+        if not question_text or not jobid:
+            logger.error(f'/question error: missing question or jobid {log_request(request)}')
+            return {'status': 'error', 'message': 'Missing question or jobid'}, 400
+
+        # Check if text embeddings are available
+        if not is_texts_embeddings_available():
+            logger.error(f'/question error: text embeddings not available {log_request(request)}')
+            return {'status': 'error', 'message': 'Text embeddings not available'}, 400
+
+        # Load result data
+        data = load_result_data(jobid, None, None, None, None, None, None, None, pubtrends_celery)
+        if data is None:
+            logger.error(f'/question error: no data for jobid {jobid} {log_request(request)}')
+            return {'status': 'error', 'message': 'No data found for jobid'}, 404
+
+        papers = get_relevant_papers(
+            question_text, data, PUBTRENDS_CONFIG.questions_threshold, PUBTRENDS_CONFIG.questions_top_n
+        )
+        return {'status': 'success', 'papers': papers}, 200
+    except Exception as e:
+        logger.exception(f'/question exception {e}')
+        return {'status': 'error', 'message': str(e)}, 500
 
 
 #######################
