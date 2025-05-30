@@ -28,7 +28,7 @@ services:
       - ~/.pubtrends:/config:ro
       - ~/.pubtrends/logs:/logs
       - ~/.pubtrends/results:/results
-      - ~/.pubtrends/nltk-data:/home/user/nltk-data
+      - ~/.pubtrends/nltk_data:/home/user/nltk_data
       - ~/.pubtrends/gensim-data:/home/user/gensim-data
   redis:
     image: redis:7.4.2
@@ -45,5 +45,5 @@ services:
       - ~/.pubtrends:/config:ro
       - ~/.pubtrends/logs:/logs
       - ~/.pubtrends/fasttext:/fasttext
-      - ~/.pubtrends/nltk-data:/home/user/nltk-data
+      - ~/.pubtrends/nltk_data:/home/user/nltk_data
       - ~/.pubtrends/gensim-data:/home/user/gensim-data

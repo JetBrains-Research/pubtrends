@@ -7,7 +7,8 @@ USER user
 
 # Download all the nltk and spacy resources
 COPY nlp.sh /home/user/nlp.sh
-RUN /bin/bash ~/nlp.sh
+RUN source activate pubtrends \
+    && python -m spacy download en_core_web_sm
 
 RUN mkdir -p /home/user/pubtrends/pysrc/endpoints/embeddings/fasttext
 COPY pysrc/endpoints/embeddings/fasttext /home/user/pubtrends/pysrc/endpoints/embeddings/fasttext/
@@ -21,6 +22,7 @@ WORKDIR /home/user/pubtrends
 EXPOSE 5001
 
 CMD source activate pubtrends \
+   && /bin/bash ~/nlp.sh \
    && export PYTHONPATH=/home/user/pubtrends \
    && gunicorn --bind 0.0.0.0:5001 --workers 1 --threads 1 --worker-class=gthread \
        --limit-request-line 0 --timeout=120 \
