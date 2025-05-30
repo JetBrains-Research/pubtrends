@@ -1,8 +1,7 @@
-import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
 from pysrc.config import MAX_AUTHOR_LENGTH
-from pysrc.papers.analysis.embeddings_service import fetch_texts_embedding
+from pysrc.services.embeddings_service import fetch_texts_embedding
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.utils import trim, topics_palette_rgb, rgb2hex
 

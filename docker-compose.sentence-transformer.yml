@@ -39,7 +39,7 @@ services:
   embeddings:
     build:
       context: .
-      dockerfile: pysrc/embeddings/sentence_transformer/Dockerfile
+      dockerfile: pysrc/endpoints/embeddings/sentence_transformer/Dockerfile
     restart: always
     volumes:
       - ~/.pubtrends:/config:ro

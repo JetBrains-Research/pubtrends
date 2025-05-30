@@ -2,11 +2,9 @@ import json
 import logging
 from itertools import chain
 
-from scipy.spatial import distance
-
 from pysrc.app.reports import preprocess_string
 from pysrc.config import PubtrendsConfig, VISUALIZATION_GRAPH_EDGES
-from pysrc.papers.analysis.embeddings_service import is_texts_embeddings_available
+from pysrc.services.embeddings_service import is_texts_embeddings_available
 from pysrc.papers.analysis.graph import sparse_graph
 from pysrc.papers.analysis.text import get_frequent_tokens
 from pysrc.papers.analysis.topics import get_topics_description

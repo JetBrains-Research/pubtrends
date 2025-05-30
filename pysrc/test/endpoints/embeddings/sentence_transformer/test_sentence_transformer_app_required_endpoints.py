@@ -2,13 +2,13 @@ import json
 import os.path
 
 import pytest
-from pysrc.embeddings.sentence_transformer.sentence_transformer_app import sentence_transformer_app  # your Flask app
+from pysrc.endpoints.embeddings.sentence_transformer.sentence_transformer_app import sentence_transformer_app  # your Flask app
 
 # Load required endpoints from a JSON file
 @pytest.fixture(scope="module")
 def required_endpoints():
     requirements_path = os.path.join(
-        os.path.dirname(__file__), "../../../../pysrc/embeddings/sentence_transformer/required_endpoints.json"
+        os.path.dirname(__file__), "../../../../../pysrc/endpoints/embeddings/sentence_transformer/required_endpoints.json"
     )
     with open(requirements_path) as f:
         return [

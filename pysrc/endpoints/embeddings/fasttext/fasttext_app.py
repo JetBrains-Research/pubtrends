@@ -5,7 +5,7 @@ import threading
 
 from flask import Flask, request
 
-from pysrc.embeddings.fasttext.fasttext import FASTTEXT_MODEL_CACHE, FASTTEXT_MODEL_CACHE_LOCK
+from pysrc.endpoints.embeddings.fasttext.fasttext import FASTTEXT_MODEL_CACHE, FASTTEXT_MODEL_CACHE_LOCK
 
 fasttext_app = Flask(__name__)
 
@@ -70,7 +70,7 @@ def embeddings_tokens():
     corpus_tokens = request.get_json()
     logger.info('Computing embeddings')
     embeddings = FASTTEXT_MODEL_CACHE.tokens_embeddings_fasttext(corpus_tokens).tolist()
-    # Even if /initialize wasn't invoked, mark the model as ready
+    # Even if /check wasn't invoked, mark the model as ready
     fasttext_app.config['LOADED'] = True
     logger.info(f'Return embeddings in JSON format')
     return json.dumps(embeddings)

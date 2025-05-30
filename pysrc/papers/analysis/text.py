@@ -18,8 +18,8 @@ import multiprocessing
 import concurrent.futures
 
 from pysrc.config import WORD2VEC_EMBEDDINGS_LENGTH, WORD2VEC_WINDOW, WORD2VEC_EPOCHS, PubtrendsConfig
-from pysrc.papers.analysis.embeddings_service import is_embeddings_service_ready, fetch_tokens_embeddings, \
-    fetch_texts_embedding, is_texts_embeddings_available
+from pysrc.services.embeddings_service import is_embeddings_service_ready, is_texts_embeddings_available, \
+    fetch_texts_embedding, fetch_tokens_embeddings
 
 NLP = spacy.load("en_core_web_sm")
 

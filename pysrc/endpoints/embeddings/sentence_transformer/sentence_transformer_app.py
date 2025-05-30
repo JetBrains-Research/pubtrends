@@ -5,7 +5,7 @@ import threading
 
 from flask import Flask, request
 
-from pysrc.embeddings.sentence_transformer.sentence_transformer import SENTENCE_TRANSFORMER_MODEL_CACHE, \
+from pysrc.endpoints.embeddings.sentence_transformer.sentence_transformer import SENTENCE_TRANSFORMER_MODEL_CACHE, \
     SENTENCE_TRANSFORMER_MODEL_CACHE_LOCK
 
 sentence_transformer_app = Flask(__name__)
@@ -38,7 +38,7 @@ if __name__ != '__main__':
 logger = sentence_transformer_app.logger
 
 
-def init_fasttext_model():
+def init_sentence_transformer_model():
     logger.info('Prepare embeddings pretrained model')
     # noinspection PyUnusedLocal
     loaded_model = SENTENCE_TRANSFORMER_MODEL_CACHE.download_and_load_model
@@ -60,7 +60,7 @@ def check():
         if sentence_transformer_app.config.get('LOADING', False):
             return json.dumps(False)
         sentence_transformer_app.config['LOADING'] = True
-        threading.Thread(target=init_fasttext_model, daemon=True).start()
+        threading.Thread(target=init_sentence_transformer_model, daemon=True).start()
         return json.dumps(False)
     finally:
         SENTENCE_TRANSFORMER_MODEL_CACHE_LOCK.release()
@@ -72,7 +72,7 @@ def embeddings_texts():
     texts = request.get_json()
     logger.info('Computing texts embeddings')
     embeddings = SENTENCE_TRANSFORMER_MODEL_CACHE.encode_parallel(texts).tolist()
-    # Even if /initialize wasn't invoked, mark the model as ready
+    # Even if /check wasn't invoked, mark the model as ready
     sentence_transformer_app.config['LOADED'] = True
     logger.info(f'Return embeddings in JSON format')
     return json.dumps(embeddings)

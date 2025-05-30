@@ -220,11 +220,11 @@ Then launch web-service or use jupyter notebook for development.
 
 6. Start service for text embeddings based on either pretrained fasttext model or sentence-transformer at http://localhost:5001/
     ```
-    python -m pysrc.embeddings.fasttext.fasttext_app
+    python -m pysrc.endpoints.embeddings.fasttext.fasttext_app
     ```
 or 
     ```
-    python -m pysrc.embeddings.sentence_transformer.sentence_transformer_app
+    python -m pysrc.endpoints.embeddings.sentence_transformer.sentence_transformer_app
     ```
 
 
@@ -308,9 +308,14 @@ Please ensure that you have configured and prepared the database(s).
 
 4. Launch pubtrends with docker-compose (one of the options)
     ```
-    # start
-    docker-compose -f docker-compose.sentence-transformer.yml up -d --build 
+    # start with local word2vec tf-idf tokens embeddings
+    docker-compose -f docker-compose.yml up -d --build
+    
+    # start with BioWord2Vec tokens embeddings
     docker-compose -f docker-compose.fasttext.yml up -d --build
+    
+    # start with Sentence Transformer for text embeddings
+    docker-compose -f docker-compose.sentence-transformer.yml up -d --build
     ```
    Use these commands to stop compose build and check logs:
     ```

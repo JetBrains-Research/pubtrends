@@ -20,10 +20,11 @@ from pysrc.app.reports import get_predefined_jobs, \
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, analyze_pubmed_search, analyze_id_list
 from pysrc.config import PubtrendsConfig
-from pysrc.papers.analysis.embeddings_service import is_embeddings_service_ready, is_embeddings_service_available, is_texts_embeddings_available, fetch_texts_embedding
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plot_app import prepare_graph_data, prepare_papers_data, prepare_paper_data, prepare_result_data
 from pysrc.papers.questions.questions import get_relevant_papers
+from pysrc.services.embeddings_service import is_embeddings_service_available, is_embeddings_service_ready, \
+    is_texts_embeddings_available
 from pysrc.papers.utils import trim_query, IDS_ANALYSIS_TYPE, PAPER_ANALYSIS_TYPE, SORT_MOST_CITED
 from pysrc.version import VERSION
 
