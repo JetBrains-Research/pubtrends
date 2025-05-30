@@ -13,6 +13,7 @@ class AnalysisData:
                  df, cit_df, cocit_grouped_df, bibliographic_coupling_df,
                  top_cited_df, max_gain_df, max_rel_gain_df,
                  corpus, corpus_tokens, corpus_counts,
+                 chunks_embeddings, chunks_idx,
                  papers_graph,
                  dendrogram,
                  author_stats, journal_stats, numbers_df):
@@ -34,6 +35,8 @@ class AnalysisData:
         self.corpus = corpus
         self.corpus_tokens = corpus_tokens
         self.corpus_counts = corpus_counts
+        self.chunks_embeddings = chunks_embeddings
+        self.chunks_idx = chunks_idx
         self.papers_graph = papers_graph
         self.dendrogram = dendrogram
         self.author_stats = author_stats
@@ -70,6 +73,8 @@ class AnalysisData:
             corpus=self.corpus,
             corpus_tokens=self.corpus_tokens,
             corpus_counts=csm_json,
+            chunks_embeddings=self.chunks_embeddings.tolist(),
+            chunks_idx=self.chunks_idx,
             papers_graph=json_graph.node_link_data(self.papers_graph),
             author_stats=self.author_stats.to_json() if self.author_stats is not None else None,
             journal_stats=self.journal_stats.to_json() if self.journal_stats is not None else None,
@@ -125,6 +130,9 @@ class AnalysisData:
         corpus_counts = json.loads(fields['corpus_counts'])
         corpus_counts = csr_matrix((corpus_counts['data'], (corpus_counts['indices'], corpus_counts['indptr'])))
 
+        # Restore embeddings
+        chunks_embeddings = np.array(fields['chunks_embeddings'])
+        chunks_idx = fields['chunks_idx']
 
         # Restore citation and structure graphs
         papers_graph = json_graph.node_link_graph(fields['papers_graph'])
@@ -158,6 +166,8 @@ class AnalysisData:
             corpus=corpus,
             corpus_tokens=corpus_tokens,
             corpus_counts=corpus_counts,
+            chunks_embeddings=chunks_embeddings,
+            chunks_idx=chunks_idx,
             papers_graph=papers_graph,
             dendrogram=dendrogram,
             author_stats=author_stats,

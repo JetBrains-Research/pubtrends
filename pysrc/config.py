@@ -157,7 +157,6 @@ class PubtrendsConfig:
         self.topic_description_words = params.getint('topic_description_words')
 
         self.sentence_transformer_model = params['sentence_transformer_model']
-        self.max_embeddings_text_length = params.getint('max_embeddings_text_length')
 
         self.popular_journals = params.getint('popular_journals')
         self.popular_authors = params.getint('popular_authors')

@@ -13,7 +13,7 @@ from pysrc.papers.analysis.graph import build_papers_graph, sparse_graph, add_te
 from pysrc.papers.analysis.metadata import popular_authors, popular_journals
 from pysrc.papers.analysis.node2vec import node2vec
 from pysrc.papers.analysis.numbers import extract_numbers
-from pysrc.papers.analysis.text import texts_embeddings, vectorize_corpus
+from pysrc.papers.analysis.text import embeddings, vectorize_corpus, chunks_to_text_embeddings
 from pysrc.papers.data import AnalysisData
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
@@ -130,9 +130,10 @@ class PapersAnalyzer:
             self.df, max_features=VECTOR_WORDS, min_df=VECTOR_MIN_DF, max_df=VECTOR_MAX_DF, test=test
         )
         logger.debug('Analyzing texts embeddings')
-        papers_text_embeddings = texts_embeddings(
+        self.chunks_embeddings, self.chunks_idx = embeddings(
             self.df, self.corpus, self.corpus_tokens, self.corpus_counts, test=test
         )
+        papers_text_embeddings = chunks_to_text_embeddings(self.df, self.chunks_embeddings, self.chunks_idx)
 
         self.progress.info(f'Analyzing papers citations and text similarity network',
                            current=self.get_step_and_inc(), task=task)
@@ -232,6 +233,8 @@ class PapersAnalyzer:
             corpus=self.corpus,
             corpus_tokens=self.corpus_tokens,
             corpus_counts=self.corpus_counts,
+            chunks_embeddings=self.chunks_embeddings,
+            chunks_idx=self.chunks_idx,
             papers_graph=self.papers_graph,
             author_stats=self.author_stats,
             journal_stats=self.journal_stats,

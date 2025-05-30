@@ -10,6 +10,12 @@ from nltk.corpus import wordnet, stopwords
 from nltk.probability import FreqDist
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from threading import Lock
+import pandas as pd
+from more_itertools import sliced
+from math import ceil
+import concurrent
+import multiprocessing
+import concurrent.futures
 
 from pysrc.config import WORD2VEC_EMBEDDINGS_LENGTH, WORD2VEC_WINDOW, WORD2VEC_EPOCHS, PubtrendsConfig
 from pysrc.papers.analysis.embeddings_service import is_embeddings_service_ready, fetch_tokens_embeddings, \
@@ -186,24 +192,36 @@ def _train_word2vec(corpus, corpus_tokens, vector_size=WORD2VEC_EMBEDDINGS_LENGT
     ])
 
 
-def texts_embeddings(df, corpus, corpus_tokens, corpus_counts, test=False):
+def embeddings(df, corpus, corpus_tokens, corpus_counts, test=False):
     if not test and is_embeddings_service_ready():
         # Start with text embeddings
         if is_texts_embeddings_available():
-            chunks = [
-                f'{title}. {abstract}'[:PubtrendsConfig(test=test).max_embeddings_text_length]
-                for title, abstract in zip(df['title'], df['abstract'])
-            ]
-            return fetch_texts_embedding(chunks)
+            chunks, chunks_idx = parallel_collect_chunks(
+                df['id'],
+                [f'{title}. {abstract}' for title, abstract in zip(df['title'], df['abstract'])],
+                256, 1)
+            return fetch_texts_embedding(chunks), chunks_idx
 
         # Fallback to tokens embeddings
         tokens_embs = fetch_tokens_embeddings(corpus_tokens)
         if tokens_embs is not None:
-            return _texts_embeddings(corpus_counts, tokens_embs)
+            return _texts_embeddings(corpus_counts, tokens_embs), None
 
     logger.debug('Use to in-house word2vec')
     tokens_embs = _train_word2vec(corpus, corpus_tokens, test=test)
-    return _texts_embeddings(corpus_counts, tokens_embs)
+    return _texts_embeddings(corpus_counts, tokens_embs), None
+
+def chunks_to_text_embeddings(df, chunks_embeddings, chunks_idx):
+    if chunks_idx is None:
+        return chunks_embeddings
+    text_embeddings = np.ndarray((len(df), chunks_embeddings.shape[1]))
+    chunks_df = pd.DataFrame(chunks_idx, columns=['pid', 'cid']).groupby('pid').agg('count')
+    ci = 0
+    for i, pid in enumerate(df['id']):
+        chunks = chunks_df.loc[pid, 'cid']
+        text_embeddings[i] = np.mean(chunks_embeddings[ci:ci + chunks], axis=0)
+        ci += chunks
+    return text_embeddings
 
 
 def _texts_embeddings(corpus_counts, tokens_embeddings):
@@ -277,11 +295,36 @@ def get_chunks(text, max_tokens=128, overlap_sentences=1):
 
 
 def collect_papers_chunks(args):
-    batch, max_tokens = args
+    batch, max_tokens, overlap_sentences = args
     chunks = []
     chunk_idx = []
     for pid, text in batch:
-        for i, chunk in enumerate(get_chunks(text, max_tokens)):
+        for i, chunk in enumerate(get_chunks(text, max_tokens, overlap_sentences)):
             chunk_idx.append((pid, i))
             chunks.append(chunk)
+    return chunks, chunk_idx
+
+def parallel_collect_chunks(
+        pids,
+        texts,
+        max_tokens,
+        overlap_sentences=1,
+        max_workers=multiprocessing.cpu_count()
+):
+    chunks = []
+    chunk_idx = []
+
+    parallel_batches = [(b, max_tokens, overlap_sentences)
+                        for b in sliced(list(zip(pids, texts)), int(ceil(len(texts) / max_workers)))]
+
+    # Process texts in parallel processes
+    with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
+        # Submit all tasks and wait for results
+        results = list(executor.map(collect_papers_chunks, parallel_batches))
+
+    # Combine results
+    for text_chunks, text_chunk_idx in results:
+        chunks.extend(text_chunks)
+        chunk_idx.extend(text_chunk_idx)
+    assert len(chunks) == len(chunk_idx)
     return chunks, chunk_idx
