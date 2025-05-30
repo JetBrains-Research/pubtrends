@@ -1,23 +1,24 @@
+import concurrent
+import concurrent.futures
 import logging
+import multiprocessing
+import re
+from itertools import chain
+from math import ceil
+from threading import Lock
+
 import nltk
 import numpy as np
-import re
+import pandas as pd
 import spacy
 from gensim.models import Word2Vec
-from itertools import chain
+from more_itertools import sliced
 from nltk import word_tokenize, WordNetLemmatizer, SnowballStemmer
 from nltk.corpus import wordnet, stopwords
 from nltk.probability import FreqDist
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
-from threading import Lock
-import pandas as pd
-from more_itertools import sliced
-from math import ceil
-import concurrent
-import multiprocessing
-import concurrent.futures
 
-from pysrc.config import WORD2VEC_EMBEDDINGS_LENGTH, WORD2VEC_WINDOW, WORD2VEC_EPOCHS, PubtrendsConfig
+from pysrc.config import WORD2VEC_EMBEDDINGS_LENGTH, WORD2VEC_WINDOW, WORD2VEC_EPOCHS
 from pysrc.services.embeddings_service import is_embeddings_service_ready, is_texts_embeddings_available, \
     fetch_texts_embedding, fetch_tokens_embeddings
 
@@ -196,10 +197,9 @@ def embeddings(df, corpus, corpus_tokens, corpus_counts, test=False):
     if not test and is_embeddings_service_ready():
         # Start with text embeddings
         if is_texts_embeddings_available():
-            chunks, chunks_idx = parallel_collect_chunks(
-                df['id'],
-                [f'{title}. {abstract}' for title, abstract in zip(df['title'], df['abstract'])],
-                256, 1)
+            data = [(pid, f'{title}. {abstract}')
+                     for pid, title, abstract in zip(df['id'], df['title'], df['abstract'])]
+            chunks, chunks_idx = collect_papers_chunks((data, 256, 1))
             return fetch_texts_embedding(chunks), chunks_idx
 
         # Fallback to tokens embeddings
@@ -210,6 +210,7 @@ def embeddings(df, corpus, corpus_tokens, corpus_counts, test=False):
     logger.debug('Use to in-house word2vec')
     tokens_embs = _train_word2vec(corpus, corpus_tokens, test=test)
     return _texts_embeddings(corpus_counts, tokens_embs), None
+
 
 def chunks_to_text_embeddings(df, chunks_embeddings, chunks_idx):
     if chunks_idx is None:
@@ -303,6 +304,7 @@ def collect_papers_chunks(args):
             chunk_idx.append((pid, i))
             chunks.append(chunk)
     return chunks, chunk_idx
+
 
 def parallel_collect_chunks(
         pids,
