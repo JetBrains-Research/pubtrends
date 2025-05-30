@@ -11,6 +11,7 @@ from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.utils import SORT_MOST_CITED, preprocess_doi, is_doi
+from pysrc.services.semantic_search_service import is_semantic_search_service_available, fetch_semantic_search
 
 logger = getLogger(__name__)
 
@@ -105,6 +106,28 @@ def analyze_search_paper(source, pid, key, value, expand, limit, noreviews, topi
     finally:
         loader.close_connection()
 
+@pubtrends_celery.task(name='analyze_semantic_search')
+def analyze_semantic_search(source, query, limit, noreviews, topics, test=False):
+    config = PubtrendsConfig(test=test)
+    loader = Loaders.get_loader('Pubmed', config)
+    analyzer = PapersAnalyzer(loader, config)
+    last_update = analyzer.loader.last_update()
+    if last_update is not None:
+        analyzer.progress.info(f'Last papers update {last_update}', current=0, task=current_task)
+    analyzer.progress.info(f"Searching semantic query: {query}, limit {limit}",
+                           current=1, task=current_task)
+    limit = int(limit) if limit is not None and limit != '' else analyzer.config.show_max_articles_default_value
+    topics = int(topics) if topics is not None and topics != '' else analyzer.config.show_topics_default_value
+    if not is_semantic_search_service_available():
+        raise Exception('Semantic search is not available')
+    ids = fetch_semantic_search(source, query, noreviews, limit)
+    if ids is None:
+        raise Exception('Failed to fetch semantic search results')
+    return _analyze_id_list(
+        analyzer, query, ids, ids, 'Pubmed', '', limit, False, None, None,
+        topics,
+        test=test, task=current_task
+    )
 
 @pubtrends_celery.task(name='analyze_pubmed_search')
 def analyze_pubmed_search(query, sort, limit, topics, test=False):

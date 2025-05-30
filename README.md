@@ -226,7 +226,10 @@ or
     ```
     python -m pysrc.endpoints.embeddings.sentence_transformer.sentence_transformer_app
     ```
-
+7. Optionally start semantic search service http://localhost:5002/
+    ```
+    python -m pysrc.semantic_search.semantic_search_app
+    ```
 
 ### Jupyter notebook
 
@@ -316,6 +319,9 @@ Please ensure that you have configured and prepared the database(s).
     
     # start with Sentence Transformer for text embeddings
     docker-compose -f docker-compose.sentence-transformer.yml up -d --build
+    
+    # Start with Semantic Search based on Sentence Transformer
+    docker-compose -f docker-compose.semantic-search.yml up -d --build 
     ```
    Use these commands to stop compose build and check logs:
     ```

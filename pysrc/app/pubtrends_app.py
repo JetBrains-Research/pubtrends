@@ -18,7 +18,8 @@ from pysrc.app.messages import SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, \
 from pysrc.app.reports import get_predefined_jobs, \
     load_result_data, _predefined_example_params_by_jobid, preprocess_string, load_paper_data
 from pysrc.celery.pubtrends_celery import pubtrends_celery
-from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, analyze_pubmed_search, analyze_id_list
+from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, analyze_pubmed_search, analyze_id_list, \
+    analyze_semantic_search
 from pysrc.config import PubtrendsConfig
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plot_app import prepare_graph_data, prepare_papers_data, prepare_paper_data, prepare_result_data
@@ -26,6 +27,7 @@ from pysrc.papers.questions.questions import get_relevant_papers
 from pysrc.services.embeddings_service import is_embeddings_service_available, is_embeddings_service_ready, \
     is_texts_embeddings_available
 from pysrc.papers.utils import trim_query, IDS_ANALYSIS_TYPE, PAPER_ANALYSIS_TYPE, SORT_MOST_CITED
+from pysrc.services.semantic_search_service import is_semantic_search_service_available
 from pysrc.version import VERSION
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
@@ -116,6 +118,8 @@ def index():
         search_example_source, search_example_terms = random.choice(list(PREDEFINED_JOBS.items()))
         search_example_message = 'Try one of our examples for ' + search_example_source
 
+    semantic_search_enabled = \
+        PUBTRENDS_CONFIG.feature_semantic_search_enabled and is_semantic_search_service_available()
     return render_template('main.html',
                            version=VERSION,
                            limits=PUBTRENDS_CONFIG.show_max_articles_options,
@@ -129,7 +133,8 @@ def index():
                            ss_enabled=PUBTRENDS_CONFIG.ss_enabled,
                            search_example_message=search_example_message,
                            search_example_source=search_example_source,
-                           search_example_terms=search_example_terms)
+                           search_example_terms=search_example_terms,
+                           semantic_search_enabled=semantic_search_enabled)
 
 
 @pubtrends_app.route('/about.html', methods=['GET'])
@@ -218,6 +223,33 @@ def search_paper():
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception as e:
         logger.exception(f'/search_paper exception {e}')
+        return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
+
+@pubtrends_app.route('/search_semantic', methods=['POST'])
+def search_semantic():
+    logger.info(f'/search_semantic {log_request(request)}')
+    query = request.form.get('query')  # Original search query
+    source = request.form.get('source')  # Pubmed or Semantic Scholar
+    limit = request.form.get('limit')  # Limit
+    noreviews = value_to_bool(request.form.get('noreviews'))
+    topics = request.form.get('topics')  # Topics sizes
+
+    try:
+        if query and source and limit and topics:
+            job = analyze_semantic_search.delay(
+                source, query=query, limit=int(limit), noreviews=noreviews,
+                topics=topics, test=pubtrends_app.config['TESTING']
+            )
+            return redirect(
+                url_for('.process', query=trim_query(query), source=source, limit=limit,
+                        noreviews='on' if noreviews else '',
+                        sort = '', min_year = '', max_year= '',
+                        topics=topics,
+                        jobid=job.id))
+        logger.error(f'/search_semantic error {log_request(request)}')
+        return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
+    except Exception as e:
+        logger.exception(f'/search_semantic exception {e}')
         return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
 
 

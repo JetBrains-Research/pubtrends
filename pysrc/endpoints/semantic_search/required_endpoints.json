@@ -1,0 +1,4 @@
+[
+  {"path": "/", "methods": ["GET"]},
+  {"path": "/semantic_search", "methods": ["GET"]}
+]

@@ -176,6 +176,9 @@ class PubtrendsConfig:
         self.questions_threshold = params.getfloat('questions_threshold')
         self.questions_top_n = params.getint('questions_top_n')
 
+        # Semantic search
+        self.feature_semantic_search_enabled = params.getboolean('feature_semantic_search_enabled')
+
         # TODO Admin password - should be a better way
         self.admin_email = params['admin_email']
         self.admin_password = params['admin_password']
