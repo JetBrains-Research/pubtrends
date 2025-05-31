@@ -47,11 +47,20 @@ RUN /usr/lib/postgresql/17/bin/pg_ctl -D /home/user/postgres start \
 # Expose the PostgreSQL port
 EXPOSE 5432
 
-USER root
-RUN mkdir /logs && chmod a+rw /logs \
-    && mkdir /database && chmod a+rw /database \
-    && mkdir /results && chmod a+rw /results
 USER user
+
+RUN source activate pubtrends \
+    && pip install torch --index-url https://download.pytorch.org/whl/cpu \
+    && pip install sentence-transformers \
+    && pip install faiss-cpu
+
+# Create nescessary folders
+COPY init.sh /home/user/init.sh
+RUN bash /home/user/init.sh
+
+# Download NLKT packages
+RUN source activate pubtrends \
+    && bash /home/user/nlp.sh
 
 # Use `-d` param to launch container as daemon
 CMD /usr/lib/postgresql/17/bin/pg_ctl -D /home/user/postgres start && sleep infinity

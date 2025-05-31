@@ -5,11 +5,6 @@ LABEL email="os@jetbrains.com"
 
 USER user
 
-# Download all the nltk and spacy resources
-COPY nlp.sh /home/user/nlp.sh
-RUN source activate pubtrends \
-    && python -m spacy download en_core_web_sm
-
 # Configure URLs for between containers communication
 ENV CELERY_BROKER_URL redis://redis:6379/0
 ENV CELERY_RESULT_BACKEND redis://redis:6379/0

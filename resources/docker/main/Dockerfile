@@ -38,3 +38,8 @@ USER user
 COPY environment.yml /home/user/environment.yml
 RUN conda env create -f ~/environment.yml \
     && conda clean -afy
+
+# Download all the nltk and spacy resources
+COPY nlp.sh /home/user/nlp.sh
+RUN source activate pubtrends \
+    && python -m spacy download en_core_web_sm

@@ -49,9 +49,6 @@ dependencies:
       - lazy==1.6
       - pytest-flake8==1.3.0
       - python-levenshtein==0.27.1 # Fix warning from gensim
-      - rouge==1.0.1
-      - sentence-transformers==4.1.0
       - teamcity-messages==1.33
       - text2num==2.5.1
-      - torch==2.7.0 --index-url https://download.pytorch.org/whl/cpu
       - vine==5.1.0

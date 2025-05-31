@@ -11,11 +11,6 @@ RUN source activate pubtrends \
    && pip install torch --index-url https://download.pytorch.org/whl/cpu \
    && pip install sentence-transformers
 
-# Download all the nltk and spacy resources
-COPY nlp.sh /home/user/nlp.sh
-RUN source activate pubtrends \
-    && python -m spacy download en_core_web_sm
-
 RUN mkdir -p /home/user/pubtrends/pysrc/endpoints/embeddings/sentence_transformer
 COPY pysrc/endpoints/embeddings/sentence_transformer /home/user/pubtrends/pysrc/endpoints/embeddings/sentence_transformer/
 COPY pysrc/config.py /home/user/pubtrends/pysrc/
@@ -29,7 +24,6 @@ WORKDIR /home/user/pubtrends
 EXPOSE 5001
 
 CMD source activate pubtrends \
-   && /bin/bash ~/nlp.sh \
    && export PYTHONPATH=/home/user/pubtrends \
    && gunicorn --bind 0.0.0.0:5001 --workers 1 --threads 1 --worker-class=gthread \
        --limit-request-line 0 --timeout=120 \

@@ -267,9 +267,8 @@ Notebooks are located under the `/notebooks` folder. Please configure `PYTHONPAT
     ```
     docker run --rm --platform linux/amd64 --volume=$(pwd):/pubtrends -t biolabs/pubtrends-test /bin/bash -c \
     "/usr/lib/postgresql/17/bin/pg_ctl -D /home/user/postgres start; \
-    cd /pubtrends; mkdir -p ~/.pubtrends; cp config.properties ~/.pubtrends; bash /pubtrends/init.sh; \
-    source activate pubtrends; pip install torch --index-url https://download.pytorch.org/whl/cpu; \
-    pip install sentence-transformers; pytest pysrc"
+    cd /pubtrends; cp config.properties /home/user/.pubtrends/; \
+    source activate pubtrends; pytest pysrc"
     ```
 
 ## Deployment
@@ -312,16 +311,16 @@ Please ensure that you have configured and prepared the database(s).
 4. Launch pubtrends with docker-compose (one of the options)
     ```
     # start with local word2vec tf-idf tokens embeddings
-    docker-compose -f docker-compose.yml up -d --build
+    docker-compose -f docker-compose.yml up --build
     
     # start with BioWord2Vec tokens embeddings
-    docker-compose -f docker-compose.fasttext.yml up -d --build
+    docker-compose -f docker-compose.fasttext.yml up --build
     
     # start with Sentence Transformer for text embeddings
-    docker-compose -f docker-compose.sentence-transformer.yml up -d --build
+    docker-compose -f docker-compose.sentence-transformer.yml up --build
     
     # Start with Semantic Search based on Sentence Transformer
-    docker-compose -f docker-compose.semantic-search.yml up -d --build 
+    docker-compose -f docker-compose.semantic-search.yml up --build 
     ```
    Use these commands to stop compose build and check logs:
     ```
