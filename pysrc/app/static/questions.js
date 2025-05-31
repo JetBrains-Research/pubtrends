@@ -58,7 +58,7 @@ $(document).ready(function() {
                         '</ul>';
                     $('#question-results-content').html(resultsHtml);
                 } else {
-                    $('#question-results-content').html('<p>No relevant papers were found for your question.</p>');
+                    $('#question-results-content').html('<p>No relevant information found for your question.</p>');
                 }
             },
             error: function(xhr, status, error) {
