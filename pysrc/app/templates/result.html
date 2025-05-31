@@ -132,8 +132,13 @@
             // @formatter:off
 
             // Setup datatables
+            {% if feature_authors_enabled %}
             $('#authors-table').DataTable();
+            {% endif %}
+
+            {% if feature_journals_enabled %}
             $('#journals-table').DataTable();
+            {% endif %}
 
             // Enable search for numbers only in numbers table
             {% if numbers is defined %}

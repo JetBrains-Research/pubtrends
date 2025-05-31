@@ -45,18 +45,41 @@ $(document).ready(function() {
                 
                 // Display results
                 if (response.papers && response.papers.length > 0) {
-                    const resultsHtml = '<p>Found ' + response.papers.length + ' relevant papers:</p>' +
-                        '<ul class="list-group">' +
-                        // pid, title, authors, url_prefix + pid if url_prefix else None, journal, year, total, doi, topic
-                        response.papers.map(function(paper) {
-                            return '<li class="list-group-item">' +
-                                '<a class="fas fa-square" style="color:' + paper.color + '" href="#topic-' + paper.topic + '"></a>&nbsp;' +
-                                '<a href="' + paper.url + '" target="_blank" style="color: black">' + paper.title + '</a>' +
-                                '<p class="text-muted small">' + paper.authors + ' (' + paper.journal + ', ' + paper.year + ')</p>' +
-                                '</li>';
-                        }).join('') +
-                        '</ul>';
+                    const foundHtml = '<p>Found ' + response.papers.length + ' relevant papers:</p>';
+                    const tableStartHtml =
+                        '<table id="questions-table" class="table table-sm table-bordered table-striped">\n' +
+                        '<thead>' +
+                        '<tr>' +
+                        '   <th scope="col">#</th>' +
+                        '   <th scope="col">Paper</th>' +
+                        '   <th scope="col">Authors</th>' +
+                        '   <th scope="col">Journal</th>' +
+                        '   <th scope="col">Year</th>' +
+                        '</tr>' +
+                        '</thead>' +
+                        '<tbody>'
+                    let i = 1;
+                    let tableContentHtml = ''
+                    for (const paper of response.papers) {
+                        tableContentHtml +=
+                            '<tr>' +
+                            '<th><p class="text-muted small">' + i.toString() + '</p></th>' +
+                            '<td>' +
+                            '   <a class="fas fa-square" style="color:' + paper.color + '" href="#topic-' + paper.topic + '"></a>&nbsp;' +
+                            '   <a href="' + paper.url + '" target="_blank" style="color: black">' + paper.title + '</a>' +
+                            '</td>' +
+                            '<td><p class="text-muted small">' + paper.authors + '</p></td>' +
+                            '<td><p class="text-muted small">' + paper.journal + '</p></td>' +
+                            '<td><p class="text-muted small">' + paper.year + '</p></td>' +
+                            '</tr>';
+                        i += 1;
+                    }
+                    const tableEndHtml =
+                        '</tbody>' +
+                        '</table>'
+                    const resultsHtml = foundHtml + tableStartHtml + tableContentHtml + tableEndHtml;
                     $('#question-results-content').html(resultsHtml);
+                    $('#questions-table').DataTable();
                 } else {
                     $('#question-results-content').html('<p>No relevant information found for your question.</p>');
                 }
