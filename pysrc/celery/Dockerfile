@@ -26,4 +26,4 @@ WORKDIR /home/user/pubtrends
 CMD source activate pubtrends \
     && /bin/bash ~/nlp.sh \
     && export PYTHONPATH=/home/user/pubtrends \
-    && celery --app pysrc.celery.tasks worker -c 4 --loglevel=info --logfile=/logs/celery.log
+    && celery --app pysrc.celery.tasks worker -c 2 --loglevel=info --logfile=/logs/celery.log
