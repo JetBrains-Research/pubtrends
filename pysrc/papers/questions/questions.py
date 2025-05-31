@@ -30,12 +30,17 @@ def get_relevant_papers(question_text, data, questions_threshold, questions_top_
     top_indices = sorted(filtered_indices, key=lambda i: similarities[i], reverse=True)
 
     # Get the corresponding paper IDs
-    paper_ids = set()
+    paper_ids = []
     for idx in top_indices:
-        paper_ids.add(chunks_idx[idx][0])  # The first element is paper ID
+        pid = chunks_idx[idx][0]
+        if pid not in paper_ids:
+            paper_ids.append(pid)  # The first element is paper ID
         if len(paper_ids) == questions_top_n:
             break
-    df = data.df[data.df['id'].isin(paper_ids)]
+
+    # Filter and reorder by similarity
+    df = data.df[data.df['id'].isin(paper_ids)].copy()
+    df = df.set_index('id').loc[paper_ids].reset_index()
 
     comp_colors = topics_palette_rgb(data.df)
 
