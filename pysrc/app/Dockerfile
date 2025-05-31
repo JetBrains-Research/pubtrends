@@ -24,6 +24,7 @@ USER user
 WORKDIR /home/user/pubtrends
 
 CMD source activate pubtrends \
+    && /bin/bash ~/nlp.sh \
     && export PYTHONPATH=/home/user/pubtrends \
     && gunicorn --bind 0.0.0.0:5000 --workers 5 \
         --limit-request-line 0 --timeout=120 \
