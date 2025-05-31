@@ -23,6 +23,7 @@ class TestBuildGraph(unittest.TestCase):
     def test_build_papers_graph(self):
         edges = list(self.data.papers_graph.edges(data=True))
         edges.sort(key=lambda x: (x[0], x[1]))
+        print(edges)
         self.assertEqual(len(PAPERS_GRAPH_EDGES), len(edges), msg='size')
         for expected, actual in zip(PAPERS_GRAPH_EDGES, edges):
             self.assertEqual(expected[0], actual[0], msg='source')

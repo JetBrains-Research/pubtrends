@@ -1,5 +1,7 @@
-import numpy as np
 import unittest
+from itertools import chain
+
+import numpy as np
 
 from pysrc.config import PubtrendsConfig
 from pysrc.papers.analysis.text import stemmed_tokens, _build_stems_to_tokens_map, get_chunks, NLP
@@ -28,7 +30,7 @@ class TestText(unittest.TestCase):
                     ('type', 'type'), ('eleph', 'elephant'), ('indian', 'indian'), ('african', 'african'),
                     ('realli', 'really'), ('beauti', 'beautiful'), ('opinion', 'opinion'), ('indian', 'indian'),
                     ('even', 'even'), ('cute', 'cute')]
-        actual = stemmed_tokens(text)
+        actual = stemmed_tokens(list(chain(*NLP(text).sents)))
         # print(actual)
         self.assertSequenceEqual(actual, expected)
 
@@ -54,21 +56,21 @@ class TestText(unittest.TestCase):
         expected = {'differ': 'difference', 'systol': 'systolic', 'diastol': 'diastolic', 'puls': 'pulse',
                     'pressur': 'pressure', 'infus': 'infusion', 'respect': 'respectively', 'specifi': 'specify',
                     'associ': 'association', 'advanc': 'advancement', 'medic': 'medical',
-                    'instrument': 'instrumentation', 'so-cal': 'so-called', 'describ': 'describe', 'farwel': 'farwell',
-                    'reli': 'rely', 'primarili': 'primarily', 'p300-evok': 'p300-evoked', 'potenti': 'potential',
-                    'minim': 'minimally', 'featur': 'feature', 'visual-evok': 'visual-evoked', 'evalu': 'evaluate',
-                    'perform': 'performance', 'healthi': 'healthy', 'condit': 'condition', 'intend': 'intended',
-                    'fixat': 'fixation', 'locat': 'locate', 'applic': 'applicability', 'find': 'finding',
-                    'peopl': 'people', 'sever': 'severe', 'disabl': 'disability', 'particular': 'particularly',
-                    'eye-mov': 'eye-movements', 'remain': 'remains', 'determin': 'determine'}
-        actual = _build_stems_to_tokens_map(stemmed_tokens(text))
-        print(actual)
+                    'instrument': 'instrumentation', 'describ': 'describe', 'farwel': 'farwell', 'reli': 'relies',
+                    'primarili': 'primarily', 'evok': 'evoke', 'potenti': 'potential', 'minim': 'minimally',
+                    'featur': 'feature', 'evalu': 'evaluate', 'perform': 'performance', 'healthi': 'healthy',
+                    'condit': 'condition', 'intend': 'intended', 'fixat': 'fixation', 'locat': 'locate',
+                    'applic': 'applicability', 'find': 'finding', 'peopl': 'people', 'sever': 'severe',
+                    'disabl': 'disability', 'particular': 'particularly', 'determin': 'determined'}
+        actual = _build_stems_to_tokens_map(stemmed_tokens(list(chain(*NLP(text).sents))))
+        # print(actual)
         self.assertSequenceEqual(actual, expected)
 
     def test_dashes(self):
         text = """Genome-wide whole-genome DNA-methylation"""
-        expected = [('genome-wid', 'genome-wide'), ('whole-genom', 'whole-genome'), ('dna-methyl', 'dna-methylation')]
-        actual = stemmed_tokens(text)
+        expected = [('genom', 'genome'), ('wide', 'wide'), ('whole', 'whole'), ('genom', 'genome'), ('dna', 'dna'),
+                    ('methyl', 'methylation')]
+        actual = stemmed_tokens(list(chain(*NLP(text).sents)))
         # print(actual)
         self.assertSequenceEqual(actual, expected)
 
@@ -78,21 +80,17 @@ class TestText(unittest.TestCase):
             ['abstract',
              'article',
              'breakthrough',
-             'interesting',
-             'paper',
-             'term1',
-             'term2',
-             'term3',
-             'term4',
-             'term5']
+             'interest',
+             'paper']
         )
+        # print(self.data.corpus_counts.toarray())
         self.assertTrue(np.array_equal(
             self.data.corpus_counts.toarray(),
-            [[0, 1, 0, 0, 1, 1, 1, 1, 0, 0],
-             [1, 1, 0, 0, 0, 0, 1, 1, 1, 0],
-             [1, 1, 0, 0, 0, 0, 0, 1, 1, 1],
-             [0, 1, 0, 1, 1, 1, 0, 0, 1, 1],
-             [0, 1, 1, 0, 0, 1, 1, 0, 0, 1]]))
+            [[0, 1, 0, 0, 1],
+             [1, 1, 0, 0, 0],
+             [1, 1, 0, 0, 0],
+             [0, 1, 0, 1, 1, ],
+             [0, 1, 1, 0, 0]]))
 
 
 class TestUniversalChunk(unittest.TestCase):

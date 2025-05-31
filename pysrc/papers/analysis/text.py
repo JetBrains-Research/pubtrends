@@ -2,7 +2,6 @@ import concurrent
 import concurrent.futures
 import logging
 import multiprocessing
-import re
 from itertools import chain
 from math import ceil
 from threading import Lock
@@ -13,7 +12,7 @@ import pandas as pd
 import spacy
 from gensim.models import Word2Vec
 from more_itertools import sliced
-from nltk import word_tokenize, WordNetLemmatizer, SnowballStemmer
+from nltk import WordNetLemmatizer, SnowballStemmer
 from nltk.corpus import wordnet, stopwords
 from nltk.probability import FreqDist
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
@@ -105,18 +104,11 @@ finally:
     NLTK_LOCK.release()
 
 
-def stemmed_tokens(text, min_token_length=4):
-    text = text.lower()
-    # Replace non-ascii or punctuation with space
-    text = re.sub('[^a-zA-Z0-9-+.,:!?]+', ' ', text)
-    # Whitespaces normalization, see #215
-    text = re.sub('\s{2,}', ' ', text.strip())
+def stemmed_tokens(sentence, min_token_length=3):
     # Tokenize text
-    tokens = word_tokenize(text)
-    # Let tokens start with letters only
-    tokens = [re.sub('^[^a-zA-Z]+', '', t) for t in tokens]
-    # Ignore e-XX tokens
-    tokens = [t for t in tokens if not re.match('e-?[0-9]+', t)]
+    tokens = [t.text.lower().strip() for t in sentence]
+    # Filter by length
+    tokens = [t for t in tokens if len(t) >= min_token_length]
     # Ignore stop words, take into accounts nouns and adjectives, fix plural forms
     lemmatizer = WordNetLemmatizer()
     lemmas = [lemmatizer.lemmatize(token, pos=NLTK_POS_TAG_TO_WORDNET[pos[:2]])
@@ -124,7 +116,6 @@ def stemmed_tokens(text, min_token_length=4):
               if len(token) >= min_token_length
               and token not in NLTK_STOP_WORDS_SET
               and pos[:2] in NLTK_POS_TAG_TO_WORDNET]
-
     # Apply stemming to reduce word length,
     # later shortest word will be used as actual word
     stemmer = SnowballStemmer('english')
@@ -135,23 +126,18 @@ def build_stemmed_corpus(df):
     """ Tokenization is done in several steps
     1. Lemmatization:  Ignore stop words, take into accounts nouns and adjectives, fix plural forms
     2. Stemming: reducing words
-    3. Matching stems to a shortest existing lemma in texts
+    3. Matching stems to the shortest existing lemma in texts
     """
     logger.info(f'Building corpus from {len(df)} papers')
     logger.info(f'Processing stemming for all papers')
     papers_stemmed_sentences = []
     # NOTE: we split mesh and keywords by commas into separate sentences
-    for i, (title, abstract, mesh, keywords) in enumerate(zip(df['title'],
-                                                              df['abstract'],
-                                                              df['mesh'].replace(',', '.'),
-                                                              df['keywords'].replace(',', '.'))):
+    for i, (title, abstract) in enumerate(zip(df['title'], df['abstract'])):
+        papers_stemmed_sentences.append([
+            stemmed_tokens(s) for s in NLP(f'{title}. {abstract}').sents
+        ])
         if i % 100 == 1:
             logger.debug(f'Processed {i} papers')
-        papers_stemmed_sentences.append([
-            stemmed_tokens(sentence)
-            for sentence in f'{title}.{abstract}.{mesh}.{keywords}'.split('.')
-            if len(sentence.strip()) > 0
-        ])
     logger.debug(f'Done processing stemming for {len(df)} papers')
     logger.info('Creating global shortest stem to word map')
     stems_tokens_map = _build_stems_to_tokens_map(chain(*chain(*papers_stemmed_sentences)))
@@ -197,9 +183,11 @@ def embeddings(df, corpus, corpus_tokens, corpus_counts, test=False):
     if not test and is_embeddings_service_ready():
         # Start with text embeddings
         if is_texts_embeddings_available():
+            logger.debug('Collecting chunks for embeddings')
             data = [(pid, f'{title}. {abstract}')
                      for pid, title, abstract in zip(df['id'], df['title'], df['abstract'])]
             chunks, chunks_idx = collect_papers_chunks((data, 256, 1))
+            logger.debug('Done collecting chunks for embeddings')
             return fetch_texts_embedding(chunks), chunks_idx
 
         # Fallback to tokens embeddings
@@ -299,10 +287,12 @@ def collect_papers_chunks(args):
     batch, max_tokens, overlap_sentences = args
     chunks = []
     chunk_idx = []
-    for pid, text in batch:
-        for i, chunk in enumerate(get_chunks(text, max_tokens, overlap_sentences)):
-            chunk_idx.append((pid, i))
+    for i, (pid, text) in enumerate(batch):
+        for chunk_id, chunk in enumerate(get_chunks(text, max_tokens, overlap_sentences)):
+            chunk_idx.append((pid, chunk_id))
             chunks.append(chunk)
+            if i % 100 == 1:
+                logger.debug(f'Processed {i} papers')
     return chunks, chunk_idx
 
 
