@@ -49,7 +49,7 @@ class SentenceTransformerModel:
     def encode(self, texts, show_progress_bar=False):
         return self.model.encode(texts, device=self.device, show_progress_bar=show_progress_bar)
 
-    def encode_parallel(self, texts, max_workers = multiprocessing.cpu_count()):
+    def encode_parallel(self, texts, max_workers = 2):
         if self.device != 'cpu':
             return self.model.encode(texts, show_progress_bar=False)
         # Compute parallel on different threads, since we use the same fasttext model
