@@ -230,6 +230,24 @@
                             </div>
                         </div>
                     </form>
+                    <!-- Preprocessed example -->
+                    <div id="predefined-semantic" class="d-flex flex-nowrap align-items-center">
+                        <div class="me-2">{{ search_example_message }}</div>
+                        {% for terms, jobid in semantic_search_example_terms %}
+                        <form action="result" method="GET" class="inline me-2">
+                            <input type="hidden" name="source" value="{{ search_example_source }}">
+                            <input type="hidden" name="topics" value="{{ default_topics }}">
+                            <input type="hidden" name="limit" value="{{ default_limit }}">
+                            <input type="hidden" name="noreviews" value="on">
+                            <input type="hidden" name="jobid" value="{{ jobid }}">
+                            <button type="submit" name="query" value="{{ terms }}"
+                                    class="btn btn-sm btn-outline-secondary"
+                                    style="border-radius: 10px;">
+                                {{ terms }}
+                            </button>
+                        </form>
+                        {% endfor %}
+                    </div>
                 </div>
                 <div class="tab-pane fade" id="topic" role="tabpanel" aria-labelledby="topic-tab">
                 {% else %}

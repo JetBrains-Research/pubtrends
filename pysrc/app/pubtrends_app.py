@@ -4,7 +4,6 @@ import logging
 import os
 import random
 import tempfile
-from threading import Lock
 from urllib.parse import quote
 
 from celery.result import AsyncResult
@@ -15,8 +14,8 @@ from flask_caching import Cache
 from pysrc.app.admin.admin import configure_admin_functions
 from pysrc.app.messages import SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, \
     SERVICE_LOADING_PREDEFINED_EXAMPLES, SERVICE_LOADING_INITIALIZING
-from pysrc.app.reports import get_predefined_jobs, \
-    load_result_data, _predefined_example_params_by_jobid, preprocess_string, load_paper_data
+from pysrc.app.predefined import are_predefined_jobs_ready, PREDEFINED_JOBS, is_semantic_predefined
+from pysrc.app.reports import load_result_data, preprocess_string, load_paper_data
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, analyze_pubmed_search, analyze_id_list, \
     analyze_semantic_search
@@ -24,9 +23,9 @@ from pysrc.config import PubtrendsConfig
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plot_app import prepare_graph_data, prepare_papers_data, prepare_paper_data, prepare_result_data
 from pysrc.papers.questions.questions import get_relevant_papers
+from pysrc.papers.utils import trim_query, IDS_ANALYSIS_TYPE, PAPER_ANALYSIS_TYPE, SORT_MOST_CITED
 from pysrc.services.embeddings_service import is_embeddings_service_available, is_embeddings_service_ready, \
     is_texts_embeddings_available
-from pysrc.papers.utils import trim_query, IDS_ANALYSIS_TYPE, PAPER_ANALYSIS_TYPE, SORT_MOST_CITED
 from pysrc.services.semantic_search_service import is_semantic_search_service_available
 from pysrc.version import VERSION
 
@@ -96,7 +95,7 @@ def static_from_root():
     return send_from_directory(pubtrends_app.static_folder, request.path[1:])
 
 
-PREDEFINED_JOBS = get_predefined_jobs(PUBTRENDS_CONFIG)
+SEMANTIC_SEARCH_AVAILABLE = PUBTRENDS_CONFIG.feature_semantic_search_enabled and is_semantic_search_service_available()
 
 
 def log_request(r):
@@ -107,19 +106,22 @@ def log_request(r):
 def index():
     if is_embeddings_service_available() and not is_embeddings_service_ready():
         return render_template('init.html', version=VERSION, message=SERVICE_LOADING_INITIALIZING)
-    if not are_predefined_jobs_ready():
+    if not are_predefined_jobs_ready(pubtrends_app, pubtrends_celery):
         return render_template('init.html', version=VERSION, message=SERVICE_LOADING_PREDEFINED_EXAMPLES)
 
     search_example_message = ''
     search_example_source = ''
     search_example_terms = []
+    semantic_search_example_terms = []
 
     if len(PREDEFINED_JOBS) != 0:
-        search_example_source, search_example_terms = random.choice(list(PREDEFINED_JOBS.items()))
+        search_example_source, example_terms = random.choice(list(PREDEFINED_JOBS.items()))
         search_example_message = 'Try one of our examples for ' + search_example_source
+        search_example_terms = [(q, jobid) for q, jobid in example_terms
+                                if not is_semantic_predefined(jobid)]
+        semantic_search_example_terms = [(q, jobid) for q, jobid in example_terms
+                                         if is_semantic_predefined(jobid)]
 
-    semantic_search_enabled = \
-        PUBTRENDS_CONFIG.feature_semantic_search_enabled and is_semantic_search_service_available()
     return render_template('main.html',
                            version=VERSION,
                            limits=PUBTRENDS_CONFIG.show_max_articles_options,
@@ -134,7 +136,8 @@ def index():
                            search_example_message=search_example_message,
                            search_example_source=search_example_source,
                            search_example_terms=search_example_terms,
-                           semantic_search_enabled=semantic_search_enabled)
+                           semantic_search_example_terms=semantic_search_example_terms,
+                           semantic_search_enabled=SEMANTIC_SEARCH_AVAILABLE)
 
 
 @pubtrends_app.route('/about.html', methods=['GET'])
@@ -149,8 +152,10 @@ def about():
 def value_to_bool(value):
     return str(value).lower() == 'on'
 
+
 def bool_to_value(value):
     return 'on' if value else 'off'
+
 
 @pubtrends_app.route('/search_terms', methods=['POST'])
 def search_terms():
@@ -225,6 +230,7 @@ def search_paper():
         logger.exception(f'/search_paper exception {e}')
         return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
 
+
 @pubtrends_app.route('/search_semantic', methods=['POST'])
 def search_semantic():
     logger.info(f'/search_semantic {log_request(request)}')
@@ -243,7 +249,7 @@ def search_semantic():
             return redirect(
                 url_for('.process', query=trim_query(query), source=source, limit=limit,
                         noreviews='on' if noreviews else '',
-                        sort = '', min_year = '', max_year= '',
+                        sort='', min_year='', max_year='',
                         topics=topics,
                         jobid=job.id))
         logger.error(f'/search_semantic error {log_request(request)}')
@@ -412,7 +418,8 @@ def result():
                                        **prepare_result_data(PUBTRENDS_CONFIG, data))
             logger.info(f'/result No job or out-of-date job, restart it {log_request(request)}')
             analyze_search_terms.apply_async(
-                args=[source, query, sort, int(limit), noreviews, min_year, max_year, topics, pubtrends_app.config['TESTING']],
+                args=[source, query, sort, int(limit), noreviews, min_year, max_year, topics,
+                      pubtrends_app.config['TESTING']],
                 task_id=jobid
             )
             return redirect(
@@ -582,7 +589,10 @@ def export_data():
                 noreviews = value_to_bool(request.form.get('noreviews'))
                 min_year = request.form.get('min_year')  # Minimal year of publications
                 max_year = request.form.get('max_year')  # Maximal year of publications
-                data = load_result_data(jobid, source, query, sort, limit, noreviews, min_year, max_year, pubtrends_celery)
+                data = load_result_data(
+                    jobid, source, query, sort, limit, noreviews, min_year, max_year,
+                    pubtrends_celery
+                )
             if data:
                 with tempfile.TemporaryDirectory() as tmpdir:
                     name = preprocess_string(f'{source}-{query}')
@@ -595,56 +605,6 @@ def export_data():
     except Exception as e:
         logger.exception(f'/export_results exception {e}')
         return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
-
-
-#########################
-# Loading functionality #
-#########################
-
-PREDEFINED_JOBS_LOCK = Lock()
-
-
-def are_predefined_jobs_ready():
-    """ Checks if all the precomputed examples are available and gensim fasttext model is loaded """
-    if len(PREDEFINED_JOBS) == 0:
-        return True
-    try:
-        PREDEFINED_JOBS_LOCK.acquire()
-        if pubtrends_app.config.get('PREDEFINED_TASKS_READY', False):
-            return True
-        ready = True
-        inspect = pubtrends_celery.control.inspect()
-        active = inspect.active()
-        if active is None:
-            return False
-        active_jobs = [j['id'] for j in list(active.items())[0][1]]
-        reserved = inspect.reserved()
-        if reserved is None:
-            return False
-        scheduled_jobs = [j['id'] for j in list(reserved.items())[0][1]]
-
-        for source, predefine_info in PREDEFINED_JOBS.items():
-            for query, jobid in predefine_info:
-                logger.info(f'Check predefined search for source={source} query={query} jobid={jobid}')
-                # Check celery queue
-                if jobid in active_jobs or jobid in scheduled_jobs:
-                    ready = False
-                    continue
-                query, sort, limit = _predefined_example_params_by_jobid(source, jobid, PREDEFINED_JOBS)
-                data = load_result_data(jobid, source, query, sort, limit, False, None, None, pubtrends_celery)
-                if data is None:
-                    logger.info(f'No job or out-of-date job for source={source} query={query}, launch it')
-                    analyze_search_terms.apply_async(
-                        args=[source, query, sort, int(limit), False, None, None,
-                              PUBTRENDS_CONFIG.show_topics_default_value, pubtrends_app.config['TESTING']],
-                        task_id=jobid
-                    )
-                    ready = False
-        if ready:
-            pubtrends_app.config['PREDEFINED_TASKS_READY'] = True
-        return ready
-    finally:
-        PREDEFINED_JOBS_LOCK.release()
 
 
 ##########################
@@ -687,6 +647,7 @@ def search_terms_api():
         logger.exception(f'/search_terms_api exception {e}')
         return {'success': False, 'jobid': None}, 500
 
+
 @pubtrends_app.route('/analyse_ids_api', methods=['POST'])
 def analyse_ids_api():
     logger.info(f'/analyse_ids_api {log_request(request)}')
@@ -719,6 +680,7 @@ def check_status_api(jobid):
     except Exception as e:
         logger.exception(f'/check_status_api exception {e}')
         return {'status': 'error'}, 500
+
 
 @pubtrends_app.route('/get_result_api', methods=['GET'])
 def get_result_api():
@@ -776,6 +738,7 @@ def question():
 #######################
 
 configure_admin_functions(pubtrends_app, pubtrends_celery, logfile)
+
 
 #######################
 # Additional features #

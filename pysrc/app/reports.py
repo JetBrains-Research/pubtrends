@@ -9,7 +9,6 @@ from threading import Lock
 from celery.result import AsyncResult
 
 from pysrc.papers.data import AnalysisData
-from pysrc.papers.utils import SORT_MOST_CITED
 from pysrc.version import VERSION
 
 logger = logging.getLogger(__name__)
@@ -29,18 +28,6 @@ else:
 
 def get_results_path():
     return results_path
-
-
-PREDEFINED_PREFIX = 'predefined-'
-
-
-def get_predefined_jobs(config):
-    result = {}
-    if config.pm_enabled:
-        result['Pubmed'] = _predefined_examples_jobid(config.pm_search_example_terms)
-    if config.ss_enabled:
-        result['Semantic Scholar'] = _predefined_examples_jobid(config.ss_search_example_terms)
-    return result
 
 
 def _save_result_data(data, log, jobid, source, query, sort, limit, noreviews, min_year, max_year):
@@ -69,7 +56,8 @@ def _save_data(name, data, log):
         FILES_LOCK.release()
 
 
-def load_result_data(jobid, source, query, sort, limit, noreviews, min_year, max_year, celery_app) -> AnalysisData | None:
+def load_result_data(jobid, source, query, sort, limit, noreviews, min_year, max_year,
+                     celery_app) -> AnalysisData | None:
     logger.info(f'Trying to load data for source={source} query={query} sort={sort} limit={limit} '
                 f'noreviews={noreviews} min_year={min_year} max_year={max_year}')
     try:
@@ -109,6 +97,7 @@ def load_paper_data(jobid, source, query, celery_app) -> AnalysisData | None:
         return AnalysisData.from_json(data)
     return None
 
+
 def preprocess_string(s):
     return re.sub(r'-{2,}', '-', re.sub(r'[^a-z0-9_]+', '-', s.lower())).strip('-')
 
@@ -141,16 +130,3 @@ def _find_folder(jobid):
         if p.startswith(jobid[:32]) and os.path.isdir(candidate_folder):
             return candidate_folder
     return None
-
-
-def _predefined_examples_jobid(examples):
-    return [(t, PREDEFINED_PREFIX + hashlib.md5(t.encode('utf-8')).hexdigest()) for t in examples]
-
-
-def _predefined_example_params_by_jobid(source, jobid, predefined_jobs):
-    logger.debug(f'Lookup search example by jobid: {jobid}')
-    for (t, predefined_jobid) in predefined_jobs[source]:
-        if jobid == predefined_jobid:
-            logger.debug(f'Example={t}, jobid={jobid}')
-            return t, SORT_MOST_CITED, 1000
-    raise Exception(f'Cannot find search example for jobid: {jobid}')
