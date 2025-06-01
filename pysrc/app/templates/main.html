@@ -112,30 +112,129 @@
     <main class="card border-light mt-3" role="main">
         <div class="card-header">
             <ul class="nav nav-tabs card-header-tabs" id="tabs-list" role="tablist">
+                {% if semantic_search_enabled %}
+                <li id="step1-3" class="nav-item">
+                    <a class="nav-link active grey" id="semantic-tab" data-bs-toggle="tab" href="#semantic"
+                       role="tab"
+                       aria-controls="semantic" aria-selected="false">Semantic</a>
+                </li>
+                <li id="step1" class="nav-item">
+                    <a class="nav-link grey" id="topic-tab" data-bs-toggle="tab" href="#topic"
+                       role="tab"
+                       aria-controls="topic" aria-selected="true">Keywords</a>
+                </li>
+                {% else %}
                 <li id="step1" class="nav-item">
                     <a class="nav-link active grey" id="topic-tab" data-bs-toggle="tab" href="#topic"
                        role="tab"
                        aria-controls="topic" aria-selected="true">Keywords</a>
                 </li>
+                {% endif %}
                 <li id="step1-2" class="nav-item">
                     <a class="nav-link grey" id="paper-tab" data-bs-toggle="tab" href="#paper"
                        role="tab"
                        aria-controls="paper" aria-selected="false">Paper</a>
                 </li>
-                {% if semantic_search_enabled %}
-                <li id="step1-3" class="nav-item">
-                    <a class="nav-link grey" id="semantic-tab" data-bs-toggle="tab" href="#semantic"
-                       role="tab"
-                       aria-controls="semantic" aria-selected="false">Semantic</a>
-                </li>
-                {% endif %}
             </ul>
         </div>
         <div class="card-body">
             <div class="tab-content">
-                <!-- Form for Search -->
-                <div class="tab-pane fade show active" id="topic" role="tabpanel"
-                     aria-labelledby="topic-tab">
+                {% if semantic_search_enabled %}
+                <!-- Form for Semantic Search -->
+                <div class="tab-pane fade show active" id="semantic" role="tabpanel" aria-labelledby="semantic-tab">
+                    <form action="search_semantic" method="POST" class="mb-2 needs-validation" novalidate>
+                        <div class="row g-0 align-items-center">
+                            <div class="col input-group mr-2">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text" id="semantic-query-addon">Query</span>
+                                </div>
+                                <input id="semantic-search-input-field" class="form-control form-control-borderless"
+                                       type="search"
+                                       name="query"
+                                       placeholder="Enter semantic search query."
+                                       aria-describedby="semantic-query-addon"
+                                       autofocus required>
+                            </div>
+                            <!--end of col-->
+                            <div class="col-auto">
+                                <button class="btn btn-success" type="submit">Search</button>
+                            </div>
+                            <!--end of col-->
+                        </div>
+                        <div class="mt-3 row g-0 align-items-center">
+                            <div class="col-6 input-group mr-2">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text" id="semantic-search-source-addon">Database</span>
+                                </div>
+                                <select id="semantic-search-source-selector" class="form-control" name="source"
+                                        aria-describedby="semantic-search-source-addon">
+                                    {% if pm_enabled %}
+                                    <option>Pubmed</option>
+                                    {% endif %}
+                                    {% if ss_enabled %}
+                                    <option>Semantic Scholar</option>
+                                    {% endif %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <a class="link" data-bs-toggle="collapse" href="#collapseSemanticAdvanced"
+                               role="button" aria-expanded="false">
+                                <small>Advanced settings</small>
+                            </a>
+                        </div>
+                        <div id="collapseSemanticAdvanced" class="collapse mt-4 mb-4">
+                            <div class="row g-0 align-items-center mt-2">
+                                <div class="col input-group mr-2">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text" id="semantic-amount-addon">Limit</span>
+                                    </div>
+                                    <select class="form-control" aria-describedby="semantic-amount-addon"
+                                            name="limit">
+                                        {% for limit in limits %}
+                                        {% if limit == default_limit %}
+                                        <option selected>{{ limit }}</option>
+                                        {% else %}
+                                        <option>{{ limit }}</option>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">papers</span>
+                                    </div>
+                                </div>
+                                <div id="semantic-noreviews-div" class="col input-group ml-2 mt-2 mb-2 mr-2">
+                                    <label style="margin-top: auto;margin-bottom: auto">
+                                        <input type="checkbox" name="noreviews" id="semantic-noreviews" checked>
+                                        <span class="checkmark">
+                                            Prefer no reviews</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="row g-0 align-items-center mt-2">
+                                <div class="col input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text" id="semantic-topics-addon">Topics number</span>
+                                    </div>
+                                    <select class="form-control" aria-describedby="semantic-topics-addon" name="topics">
+                                        {% for topics in topics_variants %}
+                                        {% if topics == default_topics %}
+                                        <option selected>{{ topics }}</option>
+                                        {% else %}
+                                        <option>{{ topics }}</option>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col input-group"></div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="tab-pane fade" id="topic" role="tabpanel" aria-labelledby="topic-tab">
+                {% else %}
+                <div class="tab-pane fade show active" id="topic" role="tabpanel" aria-labelledby="topic-tab">
+                {% endif %}
                     <form action="search_terms" method="POST" class="mb-2 needs-validation" novalidate>
                         <div class="row g-0 align-items-center">
                             <div id="step2" class="col input-group mr-2">
@@ -384,99 +483,6 @@
                         </div>
                     </form>
                 </div>
-                {% if semantic_search_enabled %}
-                <!-- Form for Semantic Search -->
-                <div class="tab-pane fade" id="semantic" role="tabpanel" aria-labelledby="semantic-tab">
-                    <form action="search_semantic" method="POST" class="mb-2 needs-validation" novalidate>
-                        <div class="row g-0 align-items-center">
-                            <div class="col input-group mr-2">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text" id="semantic-query-addon">Query</span>
-                                </div>
-                                <input id="semantic-search-input-field" class="form-control form-control-borderless"
-                                       type="search"
-                                       name="query"
-                                       placeholder="Enter semantic search query"
-                                       aria-describedby="semantic-query-addon"
-                                       autofocus required>
-                            </div>
-                            <!--end of col-->
-                            <div class="col-auto">
-                                <button class="btn btn-success" type="submit">Search</button>
-                            </div>
-                            <!--end of col-->
-                        </div>
-                        <div class="mt-3 row g-0 align-items-center">
-                            <div class="col-6 input-group mr-2">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text" id="semantic-search-source-addon">Database</span>
-                                </div>
-                                <select id="semantic-search-source-selector" class="form-control" name="source"
-                                        aria-describedby="semantic-search-source-addon">
-                                    {% if pm_enabled %}
-                                    <option>Pubmed</option>
-                                    {% endif %}
-                                    {% if ss_enabled %}
-                                    <option>Semantic Scholar</option>
-                                    {% endif %}
-                                </select>
-                            </div>
-                        </div>
-                        <div class="mt-2">
-                            <a class="link" data-bs-toggle="collapse" href="#collapseSemanticAdvanced"
-                               role="button" aria-expanded="false">
-                                <small>Advanced settings</small>
-                            </a>
-                        </div>
-                        <div id="collapseSemanticAdvanced" class="collapse mt-4 mb-4">
-                            <div class="row g-0 align-items-center mt-2">
-                                <div class="col input-group mr-2">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text" id="semantic-amount-addon">Limit</span>
-                                    </div>
-                                    <select class="form-control" aria-describedby="semantic-amount-addon"
-                                            name="limit">
-                                        {% for limit in limits %}
-                                        {% if limit == default_limit %}
-                                        <option selected>{{ limit }}</option>
-                                        {% else %}
-                                        <option>{{ limit }}</option>
-                                        {% endif %}
-                                        {% endfor %}
-                                    </select>
-                                    <div class="input-group-append">
-                                        <span class="input-group-text">papers</span>
-                                    </div>
-                                </div>
-                                <div id="semantic-noreviews-div" class="col input-group ml-2 mt-2 mb-2 mr-2">
-                                    <label style="margin-top: auto;margin-bottom: auto">
-                                        <input type="checkbox" name="noreviews" id="semantic-noreviews" checked>
-                                        <span class="checkmark">
-                                            Prefer no reviews</span>
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="row g-0 align-items-center mt-2">
-                                <div class="col input-group">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text" id="semantic-topics-addon">Topics number</span>
-                                    </div>
-                                    <select class="form-control" aria-describedby="semantic-topics-addon" name="topics">
-                                        {% for topics in topics_variants %}
-                                        {% if topics == default_topics %}
-                                        <option selected>{{ topics }}</option>
-                                        {% else %}
-                                        <option>{{ topics }}</option>
-                                        {% endif %}
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="col input-group"></div>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                {% endif %}
             </div>
         </div>
     </main>
