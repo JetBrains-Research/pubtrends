@@ -292,8 +292,8 @@ def collect_papers_chunks(args):
         for chunk_id, chunk in enumerate(get_chunks(text, max_tokens, overlap_sentences)):
             chunk_idx.append((pid, chunk_id))
             chunks.append(chunk)
-            if i % 100 == 1:
-                logger.debug(f'Processed {i} papers')
+        if i % 100 == 1:
+            logger.debug(f'Processed {i} papers')
     return chunks, chunk_idx
 
 
