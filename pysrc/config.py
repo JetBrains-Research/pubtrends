@@ -51,6 +51,15 @@ VECTOR_MIN_DF = 0.001
 VECTOR_MAX_DF = 0.8
 
 #############################
+## Embeddings settings #####
+#############################
+EMBEDDINGS_CHUNK_SIZE = 512
+EMBEDDINGS_SENTENCE_OVERLAP = 1
+
+EMBEDDINGS_QUESTIONS_CHUNK_SIZE = 64
+EMBEDDINGS_QUESTIONS_SENTENCE_OVERLAP = 0
+
+#############################
 ## Expanding by references ##
 #############################
 

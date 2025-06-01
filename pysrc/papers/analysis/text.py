@@ -17,7 +17,8 @@ from nltk.corpus import wordnet, stopwords
 from nltk.probability import FreqDist
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 
-from pysrc.config import WORD2VEC_EMBEDDINGS_LENGTH, WORD2VEC_WINDOW, WORD2VEC_EPOCHS
+from pysrc.config import WORD2VEC_EMBEDDINGS_LENGTH, WORD2VEC_WINDOW, WORD2VEC_EPOCHS, EMBEDDINGS_CHUNK_SIZE, \
+    EMBEDDINGS_SENTENCE_OVERLAP
 from pysrc.services.embeddings_service import is_embeddings_service_ready, is_texts_embeddings_available, \
     fetch_texts_embedding, fetch_tokens_embeddings
 
@@ -186,8 +187,8 @@ def embeddings(df, corpus, corpus_tokens, corpus_counts, test=False):
             logger.debug('Collecting chunks for embeddings')
             data = [(pid, f'{title}. {abstract}')
                      for pid, title, abstract in zip(df['id'], df['title'], df['abstract'])]
-            chunks, chunks_idx = collect_papers_chunks((data, 256, 1))
-            logger.debug('Done collecting chunks for embeddings')
+            chunks, chunks_idx = collect_papers_chunks((data, EMBEDDINGS_CHUNK_SIZE, EMBEDDINGS_SENTENCE_OVERLAP))
+            logger.debug(f'Done collecting chunks for embeddings: {len(chunks)}')
             return fetch_texts_embedding(chunks), chunks_idx
 
         # Fallback to tokens embeddings

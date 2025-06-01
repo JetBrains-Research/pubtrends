@@ -67,6 +67,7 @@ $(document).ready(function() {
                             '<td>' +
                             '   <a class="fas fa-square" style="color:' + paper.color + '" href="#topic-' + paper.topic + '"></a>&nbsp;' +
                             '   <a href="' + paper.url + '" target="_blank" style="color: black">' + paper.title + '</a>' +
+                            '   <p class="text-muted small">' + paper.chunk + '</p>' +
                             '</td>' +
                             '<td><p class="text-muted small">' + paper.authors + '</p></td>' +
                             '<td><p class="text-muted small">' + paper.journal + '</p></td>' +

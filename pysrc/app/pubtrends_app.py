@@ -759,7 +759,11 @@ def question():
             return {'status': 'error', 'message': 'No data found for jobid'}, 404
 
         papers = get_relevant_papers(
-            question_text, data, PUBTRENDS_CONFIG.questions_threshold, PUBTRENDS_CONFIG.questions_top_n
+            data.search_query,
+            question_text,
+            data,
+            PUBTRENDS_CONFIG.questions_threshold,
+            PUBTRENDS_CONFIG.questions_top_n
         )
         return {'status': 'success', 'papers': papers}, 200
     except Exception as e:
