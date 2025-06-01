@@ -648,6 +648,25 @@ def search_terms_api():
         return {'success': False, 'jobid': None}, 500
 
 
+@pubtrends_app.route('/semantic_search_api', methods=['POST'])
+def semantic_search_api():
+    logger.info(f'/semantic_search_api {log_request(request)}')
+    query = request.form.get('query')  # Original search query
+    try:
+        # Regular search syntax
+        if query:
+            job = analyze_semantic_search.delay('Pubmed', query=query, limit=1000,
+                                                noreviews=True,
+                                                topics=10,
+                                                test=False)
+            return {'success': True, 'jobid': job.id}
+        logger.error(f'/semantic_search_api error {log_request(request)}')
+        return {'success': False, 'jobid': None}
+    except Exception as e:
+        logger.exception(f'/semantic_search_api exception {e}')
+        return {'success': False, 'jobid': None}, 500
+
+
 @pubtrends_app.route('/analyse_ids_api', methods=['POST'])
 def analyse_ids_api():
     logger.info(f'/analyse_ids_api {log_request(request)}')
