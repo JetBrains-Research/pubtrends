@@ -14,6 +14,7 @@ services:
     volumes:
       - ~/.pubtrends:/config:ro
       - ~/.pubtrends/logs:/logs
+      - ~/.pubtrends/nltk_data:/home/user/nltk_data
       - ~/.pubtrends/database:/database
       - ~/.pubtrends/results:/results
 
