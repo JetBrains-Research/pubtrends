@@ -71,7 +71,7 @@ def embeddings_texts():
     # Please ensure that already initialized. Otherwise, model loading may take some time
     texts = request.get_json()
     logger.info('Computing texts embeddings')
-    embeddings = SENTENCE_TRANSFORMER_MODEL_CACHE.encode_parallel(texts).tolist()
+    embeddings = SENTENCE_TRANSFORMER_MODEL_CACHE.encode(texts).tolist()
     # Even if /check wasn't invoked, mark the model as ready
     sentence_transformer_app.config['LOADED'] = True
     logger.info(f'Return embeddings in JSON format')
