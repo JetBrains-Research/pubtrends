@@ -1,16 +1,10 @@
-import concurrent
 import logging
-import multiprocessing
-import numpy as np
 import os
-import requests
-import torch
-
-from lazy import lazy
-from math import ceil
-from more_itertools import sliced
-from sentence_transformers import SentenceTransformer
 from threading import Lock
+
+import torch
+from lazy import lazy
+from sentence_transformers import SentenceTransformer
 
 from pysrc.config import PubtrendsConfig
 
@@ -46,22 +40,15 @@ class SentenceTransformerModel:
         self.model = SentenceTransformer(self.model_name, device=self.device)
         return self
 
-    def encode(self, texts, show_progress_bar=False):
-        return self.model.encode(texts, device=self.device, show_progress_bar=show_progress_bar)
-
-    def encode_parallel(self, texts, max_workers = 2):
+    def encode(self, texts, max_workers = 4, show_progress_bar=False):
         if self.device != 'cpu':
-            return self.model.encode(texts, show_progress_bar=False)
-        # Compute parallel on different threads, since we use the same fasttext model
-        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = [
-                executor.submit(lambda ts: self.model.encode(ts, show_progress_bar=False), ts)
-                for ts in sliced(texts, int(ceil(len(texts) / max_workers)))
-            ]
-            # Important: keep order of results!!!
-            return np.vstack([future.result() for future in futures])
-
-
+            return self.model.encode(
+                texts, device=self.device, show_progress_bar=show_progress_bar
+            )
+        else:
+            return self.model.encode(
+                texts, batch_size=max_workers, device=self.device, show_progress_bar=show_progress_bar
+            )
 
 SENTENCE_TRANSFORMER_MODEL_CACHE = SentenceTransformerModel()
 

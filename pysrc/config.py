@@ -56,7 +56,7 @@ VECTOR_MAX_DF = 0.8
 
 # Size of a chunk for global text embeddings used for clustering
 EMBEDDINGS_CHUNK_SIZE = 512
-EMBEDDINGS_SENTENCE_OVERLAP = 1
+EMBEDDINGS_SENTENCE_OVERLAP = 0
 
 # Size of a chunk for precise questioning
 EMBEDDINGS_QUESTIONS_CHUNK_SIZE = 64
