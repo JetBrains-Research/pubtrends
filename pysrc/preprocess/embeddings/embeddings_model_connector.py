@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 
 class EmbeddingsModelConnector:
     def __init__(self):
-        print('Loading model')
         self.sentence_transformer_model = SentenceTransformerModel()
         # Init lazy model
         # noinspection PyStatementEffect
@@ -23,4 +22,3 @@ class EmbeddingsModelConnector:
         self.device = self.sentence_transformer_model.device
         emb = self.sentence_transformer_model.encode(['This is a test.', 'This is a test2'])
         self.embeddings_dimension = emb.shape[1]
-        print('Embeddings model ready')

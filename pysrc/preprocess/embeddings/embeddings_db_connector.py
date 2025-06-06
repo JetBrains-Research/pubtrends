@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import psycopg2
 from psycopg2.extras import execute_values
+from tqdm.auto import tqdm
 
 from pysrc.config import PubtrendsConfig
 from pysrc.papers.db.postgres_utils import ints_to_vals
@@ -22,8 +23,6 @@ class EmbeddingsDBConnector:
                     user={user} \
                     password={password}
                 """.strip()
-        with psycopg2.connect(self.connection_string):
-            pass
         self.embeddings_model_name = embeddings_model_name
         self.embedding_dimension = embedding_dimension
 
@@ -50,7 +49,7 @@ class EmbeddingsDBConnector:
                 cursor.execute(query)
             connection.commit()
 
-    def collect_ids_with_embeddings(self, pids):
+    def collect_ids_without_embeddings(self, pids):
         with psycopg2.connect(self.connection_string) as connection:
             connection.set_session(readonly=True)
             vals = ints_to_vals(pids)
@@ -61,7 +60,9 @@ class EmbeddingsDBConnector:
                         '''
             with connection.cursor() as cursor:
                 cursor.execute(query)
-                return list(set([v[0] for v in cursor.fetchall()]))
+                df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)
+                pids_with_embeddings = set(df['pmid'])
+                return [pid for pid in pids if pid not in pids_with_embeddings]
 
     def l2norm(self, v):
         norm = np.linalg.norm(v)
@@ -70,7 +71,7 @@ class EmbeddingsDBConnector:
         v /= norm
         return v
 
-    def store_embeddings(self, chunk_embeddings, chunk_idx):
+    def store_embeddings_to_postgresql(self, chunk_embeddings, chunk_idx):
         # Normalize embeddings if using cosine similarity
         data = [(pmid, chunk, self.l2norm(e).tolist())
                 for (pmid, chunk), e in zip(chunk_idx, chunk_embeddings)]
@@ -83,13 +84,6 @@ class EmbeddingsDBConnector:
                 )
             connection.commit()
 
-    def ntotal(self):
-        with psycopg2.connect(self.connection_string) as connection:
-            with connection.cursor() as cursor:
-                cursor.execute(f'SELECT COUNT(*) FROM {self.embeddings_model_name}')
-                total_rows = cursor.fetchone()[0]
-                return total_rows
-
     def sample_embeddings(self, n=10_000):
         with psycopg2.connect(self.connection_string) as connection:
             with connection.cursor() as cursor:
@@ -98,7 +92,7 @@ class EmbeddingsDBConnector:
                     LIMIT {n};
             """
                 cursor.execute(query)
-                embeddings = [ast.literal_eval(row[0]) for row in cursor.fetchall()]
+                embeddings = [ast.literal_eval(row[0]) for row in tqdm(cursor.fetchall())]
                 return np.array(embeddings).astype(np.float32)
 
     def load_embeddings_by_ids(self, pids):
@@ -114,4 +108,4 @@ class EmbeddingsDBConnector:
                 result = cursor.fetchall()
                 index = [(pmid, chunk) for pmid, chunk, _ in result]
                 embeddings = [np.array(ast.literal_eval(row[2])) for row in result]
-                return embeddings, index
+                return index, embeddings

@@ -44,16 +44,12 @@ class WorkManager:
         if pids is None or texts is None:
             return
         chunks, chunk_idx = parallel_collect_chunks(pids, texts, TEXT_CHUNK_SIZE)
-        assert len(chunks) == len(chunk_idx)
         self.chunks_queue.put((chunks, chunk_idx))
 
     def compute_embeddings_work(self):
         try:
             chunks, chunk_idx = self.chunks_queue.get_nowait()  # Non-blocking
             chunk_embeddings = self.embeddings_model_connector.batch_texts_embeddings(chunks)
-            if len(chunk_embeddings) != len(chunk_idx):
-                print(f'Problematic chunk embeddings')
-                return
             self.embeddings_queue.put((chunk_embeddings, chunk_idx))
         except queue.Empty:
             pass
@@ -62,7 +58,7 @@ class WorkManager:
         try:
             chunk_embeddings, chunk_idx = self.embeddings_queue.get_nowait()  # Non-blocking
             if self.embeddings_db_connector is not None:
-                self.embeddings_db_connector.store_embeddings(chunk_embeddings, chunk_idx)
+                self.embeddings_db_connector.store_embeddings_to_postgresql(chunk_embeddings, chunk_idx)
             if self.faiss_connector is not None:
                 self.faiss_connector.store_embeddings(chunk_embeddings, chunk_idx)
         except queue.Empty:
@@ -73,7 +69,7 @@ class WorkManager:
             chunks, chunk_idx = self.chunks_queue.get_nowait()  # Non-blocking
             chunk_embeddings = self.embeddings_model_connector.batch_texts_embeddings(chunks)
             if self.embeddings_db_connector is not None:
-                self.embeddings_db_connector.store_embeddings(chunk_embeddings, chunk_idx)
+                self.embeddings_db_connector.store_embeddings_to_postgresql(chunk_embeddings, chunk_idx)
             if self.faiss_connector is not None:
                 self.faiss_connector.store_embeddings(chunk_embeddings, chunk_idx)
         except queue.Empty:
@@ -106,8 +102,8 @@ class WorkManager:
     def load_embeddings_work(self, pids):
         if len(pids) == 0:
             return
-        embeddings, index = self.embeddings_db_connector.load_embeddings_by_ids(pids)
-        self.embeddings_queue.put((embeddings, index))
+        index, embeddings = self.embeddings_db_connector.load_embeddings_by_ids(pids)
+        self.embeddings_queue.put((index, embeddings))
 
 
     def store_embeddings_to_faiss_work(self):
@@ -123,7 +119,7 @@ class WorkManager:
         assert self.faiss_connector is not None
         # Create threads
         threads = [
-            threading.Thread(target=self.load_embeddings_work, args=(pids,)),
+            threading.Thread(target=self.load_embeddings_work, args=([pids])),
             threading.Thread(target=self.store_embeddings_to_faiss_work, args=()),
         ]
         # Start the threads
