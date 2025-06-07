@@ -1,17 +1,17 @@
 import argparse
 import logging
+import os
 
-import numpy as np
 import pandas as pd
 from more_itertools import sliced
 from tqdm.auto import tqdm
 
+from pysrc.config import PubtrendsConfig
 from pysrc.preprocess.embeddings.embeddings_db_connector import EmbeddingsDBConnector
 from pysrc.preprocess.embeddings.embeddings_model_connector import EmbeddingsModelConnector
 from pysrc.preprocess.embeddings.faiss_connector import FaissConnector
 from pysrc.preprocess.embeddings.publications_db_connector import PublicationsDBConnector
 from pysrc.preprocess.embeddings.work_manager import WorkManager
-from pysrc.config import PubtrendsConfig
 
 config = PubtrendsConfig(test=False)
 
@@ -189,6 +189,8 @@ def update_faiss(
 
 if __name__ == '__main__':
     print('Updating embeddings')
+    # Disabling parallelism to avoid deadlocks
+    os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
     parser = argparse.ArgumentParser(description='Update embeddings')
     parser.add_argument('--max-year', type=int, required=True, help='Maximum year to process')
