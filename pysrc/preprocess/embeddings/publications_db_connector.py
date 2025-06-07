@@ -30,14 +30,14 @@ class PublicationsDBConnector:
             connection.set_session(readonly=True)
         vals = ints_to_vals(pids)
         query = f'''
-                    SELECT P.pmid as id, title, abstract, type
+                    SELECT P.pmid as id, title, abstract, type, year
                     FROM PMPublications P
                     WHERE P.pmid IN (VALUES {vals});
                     '''
         with connection.cursor() as cursor:
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(),
-                              columns=['id', 'title', 'abstract', 'type'],
+                              columns=['id', 'title', 'abstract', 'type', 'year'],
                               dtype=object)
             return df
 
