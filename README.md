@@ -182,6 +182,12 @@ The latest release can be found at: https://api.semanticscholar.org/api-docs/dat
    java -cp $PUBTRENDS_JAR org.jetbrains.bio.pubtrends.ss.SemanticScholarLoader --index --finish
    ```
 
+### Updating embeddings
+   ```
+   python pysrc/preprocess/update_embeddings.py --host localhost --port 5430 --database pubtrends --user biolabs --password mysecretpassword --max-year <MAX_YEAR> --min-year <MIN_YEAR>
+   ```
+
+
 ## Development
 
 Please ensure that you have a database configured, up and running. \
