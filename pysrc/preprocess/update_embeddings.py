@@ -117,7 +117,7 @@ def update_embeddings(
     faiss_index, pids_idx = faiss_connector.create_or_load_faiss()
     for year in range(max_year, min_year, - 1):
         print(f'Processing year {year}')
-        df = publications_db_connector.fetch_year(year)
+        df = publications_db_connector.load_publications_year(year)
         pids_to_process = set(embeddings_db_connector.collect_ids_without_embeddings(df['id']))
         print(f'To process {len(pids_to_process)}')
         df = df[df['id'].isin(pids_to_process)]

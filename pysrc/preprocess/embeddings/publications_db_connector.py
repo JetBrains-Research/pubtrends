@@ -68,17 +68,3 @@ class PublicationsDBConnector:
         with connection.cursor() as cursor:
             cursor.execute(query)
             return [v[0] for v in cursor.fetchall()]
-
-    def fetch_year(self, year):
-        path = os.path.expanduser(f'{self.cache_dir}/{year}.csv.gz')
-        if os.path.exists(path):
-            try:
-                return pd.read_csv(path, compression='gzip')
-            except Exception as e:
-                logger.error(f'Error reading {path}: {e}')
-                os.path.remove(path)
-                return self.fetch_year(year)
-        else:
-            df = self.load_publications_year(year)
-            df.to_csv(path, index=None, compression='gzip')
-            return df
