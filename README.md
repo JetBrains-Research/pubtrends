@@ -26,7 +26,6 @@ Datasets:
 PubTrends is a web service developed in Python and JavaScript, designed to analyze and visualize information about scientific publications. It uses PostgreSQL as its main database for storing details like titles, abstracts, authors, and citations, along with its built-in text search for full-text search functionality. A Kotlin ORM is used to manage the database, while a separate SQLite database stores user roles and admin credentials.
 
 The web service is powered by Flask and Gunicorn, with Celery managing asynchronous tasks and Redis acting as the message broker. For data manipulation and analysis, libraries such as Pandas, NumPy, and Scikit-Learn are used, while text processing relies on NLTK and SpaCy. Graphs and embeddings are handled using NetworkX, word2vec (via GenSim), and a custom node2vec implementation.
-The service uses precomputed biomedical words embeddings https://github.com/ncbi-nlp/BioSentVec.
 
 For data visualization, Bokeh, Holoviews, Seaborn, and Matplotlib are used, with Bokeh providing interactive plots for web pages and Jupyter notebooks. The frontend is built with Bootstrap for layout, jQuery for interactivity, and Cytoscape.js for rendering graphs. 
 
@@ -183,6 +182,18 @@ The latest release can be found at: https://api.semanticscholar.org/api-docs/dat
    ```
 
 ### Updating embeddings
+Please ensure that embeddings Postgres DB with vector extension is up and running
+   ```
+   docker run --rm --name pgvector -p 5430:5432 \
+        -m 32G \
+        -e POSTGRES_USER=biolabs -e POSTGRES_PASSWORD=mysecretpassword \
+        -e POSTGRES_DB=pubtrends \
+        -v ~/pgvector/:/var/lib/postgresql/data \
+        -e PGDATA=/var/lib/postgresql/data/pgdata \
+        -d pgvector/pgvector:pg17
+   ```
+   Then you'll be able to update embeddings with a commandline below. It will compute embeddings and store them into
+   the vector DB, and update the Faiss index for fast search.
    ```
    python pysrc/preprocess/update_embeddings.py --host localhost --port 5430 --database pubtrends --user biolabs --password mysecretpassword --max-year <MAX_YEAR> --min-year <MIN_YEAR>
    ```
