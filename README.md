@@ -243,6 +243,7 @@ or
     ```
     python -m pysrc.endpoints.embeddings.sentence_transformer.sentence_transformer_app
     ```
+    
 7. Optionally start semantic search service http://localhost:5002/
     ```
     python -m pysrc.semantic_search.semantic_search_app
