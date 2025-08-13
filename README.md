@@ -16,7 +16,7 @@ With PubTrends, you can:
 * Discover new and promising research directions.
 
 Datasets:
-* [Pubmed](https://pubmed.ncbi.nlm.nih.gov) 30 mln papers and 175 mln citations
+* [Pubmed](https://pubmed.ncbi.nlm.nih.gov) ~40 mln papers and 450 mln citations
 * [Semantic Scholar](https://www.semanticscholar.org) 170 mln papers and 600 mln citations
 
 ![Scheme](pysrc/app/static/about_pubtrends_scheme.png?raw=true "Title")
