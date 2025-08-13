@@ -35,17 +35,19 @@ class FaissConnector:
 
     def create_or_load_faiss(self):
         if os.path.exists(self.faiss_index_file):
-            print('Loading Faiss index from existing file')
+            print(f'Loading Faiss index from existing file {self.faiss_index_file}')
             faiss_index = faiss.read_index(self.faiss_index_file)
             # For accurate search
             faiss_index.nprobe = 200
         else:
-            print('Creating empty Faiss index')
+            print(f'Creating empty Faiss index {self.faiss_index_file}')
             faiss_index = self.create_faiss()
         if os.path.exists(self.pids_index_file):
+            print(f'Loading Ids index from existing file {self.pids_index_file}')
             pids_idx = pd.read_csv(self.pids_index_file, compression='gzip')
         else:
             pids_idx = pd.DataFrame(data=[], columns=['pmid', 'chunk', 'year', 'noreview'], dtype=int)
+            print(f'Creating empty Ids index {self.pids_index_file}')
         self.pids_idx = pids_idx
         self.faiss_index = faiss_index
         return faiss_index, pids_idx
@@ -63,7 +65,7 @@ class FaissConnector:
 
     def save(self):
         assert len(self.pids_idx) == self.faiss_index.ntotal
-        print('Storing FAISS index')
+        print(f'Storing FAISS index {self.faiss_index_file}')
         faiss.write_index(self.faiss_index, self.faiss_index_file)
-        print('Storing Ids index')
+        print(f'Storing Ids index {self.pids_index_file} with {len(self.pids_idx)} rows')
         self.pids_idx.to_csv(self.pids_index_file, index=False, compression='gzip')

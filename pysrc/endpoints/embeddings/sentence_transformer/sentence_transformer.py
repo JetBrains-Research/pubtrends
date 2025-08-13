@@ -35,7 +35,7 @@ class SentenceTransformerModel:
 
     @lazy
     def download_and_load_model(self):
-        logger.info(f'Loading model into {self.device}')
+        logger.info(f'Loading model {self.model_name} into {self.device}')
         # Superfast general purpose, acceptable for biomedical texts
         self.model = SentenceTransformer(self.model_name, device=self.device)
         return self

@@ -1,5 +1,6 @@
 import argparse
 import logging
+import os
 
 import numpy as np
 import pandas as pd
@@ -181,7 +182,8 @@ def update_faiss(
 
 
 if __name__ == '__main__':
-    print('Updating embeddings')
+    # Disable tokenizers parallelism to avoid issues with multiprocessing
+    os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
     parser = argparse.ArgumentParser(description='Update embeddings')
     parser.add_argument('--max-year', type=int, default=2025, help='Maximum year to process')
