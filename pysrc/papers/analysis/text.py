@@ -19,8 +19,9 @@ from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 
 from pysrc.config import WORD2VEC_EMBEDDINGS_LENGTH, WORD2VEC_WINDOW, WORD2VEC_EPOCHS, EMBEDDINGS_CHUNK_SIZE, \
     EMBEDDINGS_SENTENCE_OVERLAP
+from pysrc.services.embeddings_service import is_embeddings_db_available
 from pysrc.services.embeddings_service import is_embeddings_service_ready, is_texts_embeddings_available, \
-    fetch_texts_embedding, fetch_tokens_embeddings
+    fetch_texts_embedding, fetch_tokens_embeddings, load_embeddings_from_df
 
 NLP = spacy.load("en_core_web_sm")
 
@@ -161,7 +162,7 @@ def _build_stems_to_tokens_map(stems_and_tokens):
 
 
 def _train_word2vec(corpus, corpus_tokens, vector_size=WORD2VEC_EMBEDDINGS_LENGTH, test=False):
-    logger.debug('Collecting sentences across dataset')
+    logger.debug('Training word2vec model from sentences')
     sentences = list(filter(
         lambda l: test or len(l) >= WORD2VEC_WINDOW,  # Ignore short sentences, less than a window
         chain.from_iterable(corpus)))
@@ -181,24 +182,55 @@ def _train_word2vec(corpus, corpus_tokens, vector_size=WORD2VEC_EMBEDDINGS_LENGT
 
 
 def embeddings(df, corpus, corpus_tokens, corpus_counts, test=False):
-    if not test and is_embeddings_service_ready():
-        # Start with text embeddings
-        if is_texts_embeddings_available():
-            logger.debug('Collecting chunks for embeddings')
-            data = [(pid, f'{title}. {abstract}')
-                     for pid, title, abstract in zip(df['id'], df['title'], df['abstract'])]
-            chunks, chunks_idx = collect_papers_chunks((data, EMBEDDINGS_CHUNK_SIZE, EMBEDDINGS_SENTENCE_OVERLAP))
-            logger.debug(f'Done collecting chunks for embeddings: {len(chunks)}')
-            return fetch_texts_embedding(chunks), chunks_idx
+    if not test:
+        if is_embeddings_service_ready():
+            if is_texts_embeddings_available():
+
+                # Fetching text embeddings from database
+                if is_embeddings_db_available():
+                    return _fetch_embeddings_from_db(df)
+
+                # Compute text embeddings from texts
+                return _embeddings_from_service(df)
 
         # Fallback to tokens embeddings
         tokens_embs = fetch_tokens_embeddings(corpus_tokens)
         if tokens_embs is not None:
             return _texts_embeddings(corpus_counts, tokens_embs), None
 
-    logger.debug('Use to in-house word2vec')
+    # Use in-house word2vec on tokens
     tokens_embs = _train_word2vec(corpus, corpus_tokens, test=test)
     return _texts_embeddings(corpus_counts, tokens_embs), None
+
+
+def _embeddings_from_service(df):
+    logger.debug("Fetching embeddings from embeddings service")
+    data = [(pid, f'{title}. {abstract}')
+            for pid, title, abstract in zip(df['id'], df['title'], df['abstract'])]
+    logger.debug('Collecting chunks for embeddings')
+    chunks, chunks_idx = collect_papers_chunks(
+        (data, EMBEDDINGS_CHUNK_SIZE, EMBEDDINGS_SENTENCE_OVERLAP))
+    logger.debug(f'Done collecting chunks for embeddings: {len(chunks)}')
+    return fetch_texts_embedding(chunks), chunks_idx
+
+
+def _fetch_embeddings_from_db(df):
+    logger.debug(f'Fetching embeddings from DB')
+    db_embeddings, db_index = load_embeddings_from_df(df['id'])
+    logger.debug(f'Fetched {len(db_index)} embeddings from DB')
+    pids_in_db = set([p for p, _ in db_index])
+    pids_not_in_db = [pid for pid in df['id'] if pid not in pids_in_db]
+    if len(pids_not_in_db) == 0:
+        logger.debug('All the pids found in embeddings DB')
+        return db_embeddings, db_index
+    logger.debug(f'Not all the pids found in embeddings DB: {len(pids_not_in_db)}')
+    not_in_db_df = df[df['id'].isin(pids_not_in_db)]
+    logger.debug('Collecting chunks for embeddings not in DB')
+    not_in_db_embeddings, not_in_db_index = _embeddings_from_service(not_in_db_df)
+    all_embeddings = np.concatenate([db_embeddings, not_in_db_embeddings])
+    all_index = db_index + not_in_db_index
+    logger.debug(f'Concatenated embeddings: {all_embeddings.shape}, index len: {len(all_index)}')
+    return all_embeddings, all_index
 
 
 def chunks_to_text_embeddings(df, chunks_embeddings, chunks_idx):

@@ -195,7 +195,7 @@ Please ensure that embeddings Postgres DB with vector extension is up and runnin
    Then you'll be able to update embeddings with a commandline below. It will compute embeddings and store them into
    the vector DB, and update the Faiss index for fast search.
    ```
-   python pysrc/preprocess/update_embeddings.py --host localhost --port 5430 --database pubtrends --user biolabs --password mysecretpassword --max-year <MAX_YEAR> --min-year <MIN_YEAR>
+   python pysrc/preprocess/update_embeddings.py
    ```
 
 
@@ -343,7 +343,7 @@ Please ensure that you have configured and prepared the database(s).
    Use these commands to stop compose build and check logs:
     ```
     # stop
-    docker-compose down
+    docker-compose down --remove-orphans
     # inpect logs
     docker-compose logs
     ```

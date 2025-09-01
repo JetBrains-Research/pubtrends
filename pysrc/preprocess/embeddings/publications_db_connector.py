@@ -21,9 +21,6 @@ class PublicationsDBConnector:
                     user={config.postgres_username} \
                     password={config.postgres_password}
                 """.strip()
-        self.cache_dir = os.path.expanduser(f'~/pubtrends_year')
-        if not os.path.exists(self.cache_dir):
-            os.makedirs(self.cache_dir)
 
     def load_publications(self, pids):
         with psycopg2.connect(self.connection_string) as connection:

@@ -21,7 +21,7 @@ class FaissConnector:
         if not os.path.exists(self.faiss_dir):
             os.makedirs(self.faiss_dir)
         self.faiss_index_file = os.path.expanduser(f'{self.faiss_dir}/embeddings.index')
-        self.pids_index_file = os.path.expanduser(f'{self.faiss_dir}/pids.csv.gz')
+        self.pids_index_file = os.path.expanduser(f'{self.faiss_dir}/pids.pq')
 
     def create_faiss(self):
         if self.exact:
@@ -44,7 +44,7 @@ class FaissConnector:
             faiss_index = self.create_faiss()
         if os.path.exists(self.pids_index_file):
             print(f'Loading Ids index from existing file {self.pids_index_file}')
-            pids_idx = pd.read_csv(self.pids_index_file, compression='gzip')
+            pids_idx = pd.read_parquet(self.pids_index_file)
         else:
             pids_idx = pd.DataFrame(data=[], columns=['pmid', 'chunk', 'year', 'noreview'], dtype=int)
             print(f'Creating empty Ids index {self.pids_index_file}')
@@ -68,4 +68,4 @@ class FaissConnector:
         print(f'Storing FAISS index {self.faiss_index_file}')
         faiss.write_index(self.faiss_index, self.faiss_index_file)
         print(f'Storing Ids index {self.pids_index_file} with {len(self.pids_idx)} rows')
-        self.pids_idx.to_csv(self.pids_index_file, index=False, compression='gzip')
+        self.pids_idx.to_parquet(self.pids_index_file, index=False, compression='gzip')

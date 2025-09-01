@@ -1,8 +1,8 @@
 import argparse
 import logging
 import os
+from datetime import datetime
 
-import numpy as np
 import pandas as pd
 from more_itertools import sliced
 from tqdm.auto import tqdm
@@ -184,10 +184,10 @@ def update_faiss(
 if __name__ == '__main__':
     # Disable tokenizers parallelism to avoid issues with multiprocessing
     os.environ['TOKENIZERS_PARALLELISM'] = 'false'
-
+    current_year = datetime.now().year
     parser = argparse.ArgumentParser(description='Update embeddings')
-    parser.add_argument('--max-year', type=int, default=2025, help='Maximum year to process')
-    parser.add_argument('--min-year', type=int, default=2024, help='Minimum year to process')
+    parser.add_argument('--max-year', type=int, default=current_year, help='Maximum year to process')
+    parser.add_argument('--min-year', type=int, default=current_year - 1, help='Minimum year to process')
     parser.add_argument('--host', type=str, default='', help='Embeddings database host')
     parser.add_argument('--port', type=str, default='', help='Embeddings database port')
     parser.add_argument('--user', type=str, default='', help='Embeddings database user')
@@ -209,14 +209,15 @@ if __name__ == '__main__':
         database=args.database,
         user=args.user,
         password=args.password,
-        embeddings_model_name=embeddings_model_connector.embeddings_model_name,
-        embedding_dimension=embeddings_model_connector.embeddings_dimension
+        embeddings_model_name=config.embeddings_model_name,
+        embedding_dimension=config.embeddings_dimension
     )
+    embeddings_db_connector.init_database()
 
     # Initialize FaissConnector
     faiss_connector = FaissConnector(
-        embeddings_model_name=embeddings_model_connector.embeddings_model_name,
-        embeddings_dimension=embeddings_model_connector.embeddings_dimension
+        embeddings_model_name=config.embeddings_model_name,
+        embeddings_dimension=config.embeddings_dimension
     )
 
     # Call update_embeddings with the initialized connectors and command line arguments

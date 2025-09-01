@@ -1,5 +1,6 @@
 import configparser
 import os
+import re
 
 #####################
 ## Analysis config ##
@@ -144,6 +145,12 @@ class PubtrendsConfig:
         self.postgres_password = params['postgres_password' if not test else 'test_postgres_password']
         self.postgres_database = params['postgres_database' if not test else 'test_postgres_database']
 
+        self.embeddings_postgres_host = params['embeddings_postgres_host']
+        self.embeddings_postgres_port = params['embeddings_postgres_port']
+        self.embeddings_postgres_username = params['embeddings_postgres_username']
+        self.embeddings_postgres_password = params['embeddings_postgres_password']
+        self.embeddings_postgres_database = params['embeddings_postgres_database']
+
         self.pm_enabled = params.getboolean('pm_enabled')
         self.pm_search_example_terms = [terms.strip() for terms in params['pm_search_example_terms'].split(';')]
         self.entrez_email = params['entrez_email'].strip()
@@ -168,8 +175,10 @@ class PubtrendsConfig:
         self.top_cited_papers = params.getint('top_cited_papers')
         self.topic_description_words = params.getint('topic_description_words')
 
+        # Model name used for embeddings
         self.sentence_transformer_model = params['sentence_transformer_model']
-
+        self.embeddings_model_name = re.sub('[^a-zA-Z0-9]+', '_', self.sentence_transformer_model)
+        self.embeddings_dimension = params.getint('embeddings_dimension')
 
         self.paper_expands_steps = params.getint('paper_expands_steps')
         self.paper_expand_limit = params.getint('paper_expand_limit')
