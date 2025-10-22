@@ -13,6 +13,7 @@ RUN source activate pubtrends \
 
 RUN mkdir -p /home/user/pubtrends/pysrc/semantic_search
 COPY pysrc/endpoints/semantic_search /home/user/pubtrends/pysrc/endpoints/semantic_search
+COPY pysrc/faiss /home/user/pubtrends/pysrc/faiss
 COPY pysrc/papers /home/user/pubtrends/pysrc/papers
 COPY pysrc/services /home/user/pubtrends/pysrc/services
 COPY pysrc/preprocess /home/user/pubtrends/pysrc/preprocess
