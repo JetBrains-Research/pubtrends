@@ -54,7 +54,7 @@ def semantic_search():
 
 @semantic_search_app.route('/', methods=['GET'])
 def index():
-    return f'Semantic search with {SEMANTIC_SEARCH.model_name} and FAISS DB'
+    return f'Semantic search with FAISS DB'
 
 
 # Application
