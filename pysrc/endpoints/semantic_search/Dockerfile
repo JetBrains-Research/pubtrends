@@ -8,7 +8,7 @@ USER user
 ENV EMBEDDINGS_SERVICE_URL=http://embeddings:5001
 
 RUN source activate pubtrends \
-   && pip install faiss-cpu
+   && pip install faiss-cpu pyarrow fastparquet
 
 
 RUN mkdir -p /home/user/pubtrends/pysrc/semantic_search

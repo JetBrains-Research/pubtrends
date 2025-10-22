@@ -9,7 +9,7 @@ from tqdm.auto import tqdm
 
 from pysrc.preprocess.embeddings.embeddings_db_connector import EmbeddingsDBConnector
 from pysrc.preprocess.embeddings.embeddings_model_connector import EmbeddingsModelConnector
-from pysrc.preprocess.embeddings.faiss_connector import FaissConnector
+from pysrc.faiss.faiss_connector import FaissConnector
 from pysrc.preprocess.embeddings.publications_db_connector import PublicationsDBConnector
 from pysrc.preprocess.embeddings.work_manager import WorkManager
 from pysrc.config import PubtrendsConfig
@@ -214,8 +214,10 @@ if __name__ == '__main__':
     )
     embeddings_db_connector.init_database()
 
+    # TODO: support other sources
     # Initialize FaissConnector
     faiss_connector = FaissConnector(
+        "Pubmed",
         embeddings_model_name=config.embeddings_model_name,
         embeddings_dimension=config.embeddings_dimension
     )

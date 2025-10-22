@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 
 import faiss
 import numpy as np
@@ -11,13 +12,21 @@ config = PubtrendsConfig(test=False)
 
 logger = logging.getLogger(__name__)
 
+FAISS_PATHS = ['/faiss', os.path.expanduser('~/.pubtrends/faiss')]
+for p in FAISS_PATHS:
+    if os.path.isdir(p):
+        faiss_path = p
+        break
+else:
+    raise RuntimeError('Failed to configure faiss directory')
+
 
 class FaissConnector:
-    def __init__(self, embeddings_model_name, embeddings_dimension, exact=False):
-        self.embeddings_model_name = embeddings_model_name
+    def __init__(self, source, embeddings_model_name, embeddings_dimension, exact=False):
         self.embeddings_dimension = embeddings_dimension
         self.exact = exact
-        self.faiss_dir = f'~/faiss_{embeddings_model_name}'
+        folder_name = re.sub('[^a-zA-Z0-9]', '_', embeddings_model_name)
+        self.faiss_dir = f'{faiss_path}/faiss_{source}_{folder_name}'
         if not os.path.exists(self.faiss_dir):
             os.makedirs(self.faiss_dir)
         self.faiss_index_file = os.path.expanduser(f'{self.faiss_dir}/embeddings.index')

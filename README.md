@@ -195,6 +195,17 @@ Please ensure that embeddings Postgres DB with vector extension is up and runnin
    Then you'll be able to update embeddings with a commandline below. It will compute embeddings and store them into
    the vector DB, and update the Faiss index for fast search.
    ```
+   docker build -f pysrc/preprocess/embeddings/Dockerfile -t update_embeddings --platform linux/amd64 .
+   docker run  -v ~/.pubtrends:/config:ro \
+      -v ~/.pubtrends/logs:/logs \
+      -v ~/.pubtrends/sentence-transformers:/sentence-transformers \
+      -v ~/.pubtrends/nltk_data:/home/user/nltk_data \
+      -v ~/.pubtrends/faiss:/faiss \
+      -it update_embeddings /bin/bash
+
+   source activate pubtrends
+   export PYTHONPATH=$PYTHONPATH:$(pwd)
+   /bin/bash ~/nlp.sh
    python pysrc/preprocess/update_embeddings.py
    ```
 
