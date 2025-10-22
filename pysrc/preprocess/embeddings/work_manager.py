@@ -4,7 +4,7 @@ import threading
 
 from pysrc.preprocess.embeddings.embeddings_db_connector import EmbeddingsDBConnector
 from pysrc.preprocess.embeddings.embeddings_model_connector import EmbeddingsModelConnector
-from pysrc.preprocess.embeddings.faiss_connector import FaissConnector
+from pysrc.faiss.faiss_connector import FaissConnector
 from pysrc.preprocess.embeddings.publications_db_connector import PublicationsDBConnector
 from pysrc.config import PubtrendsConfig
 from pysrc.papers.analysis.text import parallel_collect_chunks
