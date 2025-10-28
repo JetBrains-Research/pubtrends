@@ -41,8 +41,7 @@ RUN /usr/lib/postgresql/17/bin/pg_ctl -D /home/user/postgres start \
     && psql --command "CREATE ROLE biolabs WITH PASSWORD 'mysecretpassword';" \
     && psql --command "ALTER ROLE biolabs WITH LOGIN;" \
     && psql --command "CREATE DATABASE test_pubtrends OWNER biolabs;" \
-    # Stop db
-    && /usr/lib/postgresql/17/bin/pg_ctl -D /home/user/postgres stop
+    && /usr/lib/postgresql/17/bin/pg_ctl -D /home/user/postgres stop # Stop db
 
 # Expose the PostgreSQL port
 EXPOSE 5432
@@ -52,7 +51,7 @@ USER user
 RUN source activate pubtrends \
     && pip install torch --index-url https://download.pytorch.org/whl/cpu \
     && pip install sentence-transformers \
-    && pip install faiss-cpu
+    && pip install faiss-cpu pyarrow fastparquet
 
 # Create nescessary folders
 COPY init.sh /home/user/init.sh

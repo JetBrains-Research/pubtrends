@@ -12,7 +12,6 @@ ENV C_FORCE_ROOT=true
 ENV EMBEDDINGS_SERVICE_URL=http://embeddings:5001
 ENV SEMANTIC_SEARCH_SERVICE_URL=http://semantic:5002
 
-RUN mkdir -p /home/user/pubtrends/pysrc
 COPY pysrc /home/user/pubtrends/pysrc/
 
 USER root

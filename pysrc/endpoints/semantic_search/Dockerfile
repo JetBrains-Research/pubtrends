@@ -11,13 +11,7 @@ RUN source activate pubtrends \
    && pip install faiss-cpu pyarrow fastparquet
 
 
-RUN mkdir -p /home/user/pubtrends/pysrc/semantic_search
-COPY pysrc/endpoints/semantic_search /home/user/pubtrends/pysrc/endpoints/semantic_search
-COPY pysrc/faiss /home/user/pubtrends/pysrc/faiss
-COPY pysrc/papers /home/user/pubtrends/pysrc/papers
-COPY pysrc/services /home/user/pubtrends/pysrc/services
-COPY pysrc/preprocess /home/user/pubtrends/pysrc/preprocess
-COPY pysrc/config.py /home/user/pubtrends/pysrc/
+COPY pysrc /home/user/pubtrends/pysrc/
 
 USER root
 RUN chown -R user:pubtrends /home/user/pubtrends/pysrc

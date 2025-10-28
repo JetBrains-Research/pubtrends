@@ -11,9 +11,7 @@ RUN source activate pubtrends \
    && pip install torch --index-url https://download.pytorch.org/whl/cpu \
    && pip install sentence-transformers
 
-RUN mkdir -p /home/user/pubtrends/pysrc/endpoints/embeddings/sentence_transformer
-COPY pysrc/endpoints/embeddings/sentence_transformer /home/user/pubtrends/pysrc/endpoints/embeddings/sentence_transformer/
-COPY pysrc/config.py /home/user/pubtrends/pysrc/
+COPY pysrc /home/user/pubtrends/pysrc/
 
 USER root
 RUN chown -R user:pubtrends /home/user/pubtrends/pysrc
