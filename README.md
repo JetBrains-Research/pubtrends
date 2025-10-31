@@ -352,9 +352,9 @@ Please ensure that you have configured and prepared the database(s).
    Use these commands to stop compose build and check logs:
     ```
     # stop
-    docker-compose down --remove-orphans
+    docker-compose -f docker-compose/semantic-search.yml down --remove-orphans
     # inpect logs
-    docker-compose logs
+    docker-compose -f docker-compose/semantic-search.yml logs
     ```
 
    Pubtrends will be serving on port 5000.
