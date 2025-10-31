@@ -15,7 +15,7 @@ ENV SEMANTIC_SEARCH_SERVICE_URL=http://semantic:5002
 EXPOSE 5000
 
 RUN source activate pubtrends \
-   && pip install spacely
+   && pip install shapely
 
 COPY pysrc /home/user/pubtrends/pysrc/
 
