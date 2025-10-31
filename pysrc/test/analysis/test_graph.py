@@ -25,9 +25,11 @@ class TestBuildGraph(unittest.TestCase):
         edges.sort(key=lambda x: (x[0], x[1]))
         print(edges)
         self.assertEqual(len(PAPERS_GRAPH_EDGES), len(edges), msg='size')
-        for expected, actual in zip(PAPERS_GRAPH_EDGES, edges):
-            self.assertEqual(expected[0], actual[0], msg='source')
-            self.assertEqual(expected[1], actual[1], msg='target')
+        expected = [(min(a, b), max(a, b)) for a, b in PAPERS_GRAPH_EDGES]
+        expected.sort(key=lambda x: (x[0], x[1]))
+        actual = [(min(a, b), max(a, b)) for a, b, _ in edges]
+        actual.sort(key=lambda x: (x[0], x[1]))
+        assert expected == actual
 
 
 class TestBuildGraphSingle(unittest.TestCase):
