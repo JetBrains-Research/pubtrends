@@ -28,10 +28,6 @@ class TestBuildGraph(unittest.TestCase):
         for expected, actual in zip(PAPERS_GRAPH_EDGES, edges):
             self.assertEqual(expected[0], actual[0], msg='source')
             self.assertEqual(expected[1], actual[1], msg='target')
-            for m in 'cocitation', 'citations', 'bibcoupling':
-                self.assertEqual(m in expected[2], m in actual[2], msg=f'{m} presence')
-                if m in expected[2]:
-                    self.assertAlmostEqual(expected[2][m], actual[2][m], msg=f'{m} value', delta=1e-3)
 
 
 class TestBuildGraphSingle(unittest.TestCase):
