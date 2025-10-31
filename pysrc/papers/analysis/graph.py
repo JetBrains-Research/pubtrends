@@ -61,7 +61,7 @@ def sparse_graph(graph, k, key='similarity'):
     # Start from nodes with max number of neighbors
     for n in sorted(graph.nodes(), key=lambda x: len(list(graph.neighbors(x))), reverse=True):
         neighbors_data = sorted(list([(x, graph.get_edge_data(n, x)) for x in graph.neighbors(n)]),
-                                key=lambda x: x[1][key], reverse=True)
+                                key=lambda x: (x[1][key], x), reverse=True)
         for x, data in neighbors_data[:k]:
             if not result.has_edge(n, x) and (not result.has_node(x) or len(list(result.neighbors(x))) < k):
                 result.add_edge(n, x, **data)
@@ -71,7 +71,7 @@ def sparse_graph(graph, k, key='similarity'):
             result.add_node(n)
             # Ensure at least one edge
             for x, data in sorted(list([(x, graph.get_edge_data(n, x)) for x in graph.neighbors(n)]),
-                                   key=lambda x: x[1][key], reverse=True)[:1]:
+                                   key=lambda x: (x[1][key], x), reverse=True)[:1]:
                 result.add_edge(n, x, **data)
     logger.debug(f'Sparse {k}-neighbours graph edges/nodes={result.number_of_edges() / result.number_of_nodes()}')
     return result
