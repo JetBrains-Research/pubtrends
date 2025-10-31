@@ -5,11 +5,12 @@ LABEL email = "os@jetbrains.com"
 
 USER user
 
-RUN mkdir -p /home/user/pubtrends/pysrc/endpoints/embeddings/fasttext
-COPY pysrc/endpoints/embeddings/fasttext /home/user/pubtrends/pysrc/endpoints/embeddings/fasttext/
+COPY pysrc /home/user/pubtrends/pysrc/
+COPY scripts /home/user/pubtrends/scripts/
 
 USER root
 RUN chown -R user:pubtrends /home/user/pubtrends/pysrc
+RUN chown -R user:pubtrends /home/user/pubtrends/scripts
 
 USER user
 WORKDIR /home/user/pubtrends
@@ -17,7 +18,7 @@ WORKDIR /home/user/pubtrends
 EXPOSE 5001
 
 CMD source activate pubtrends \
-   && /bin/bash ~/nlp.sh \
+   && /bin/bash ~/pubtrends/scripts/nlp.sh \
    && export PYTHONPATH=/home/user/pubtrends \
    && gunicorn --bind 0.0.0.0:5001 --workers 1 --threads 1 --worker-class=gthread \
        --limit-request-line 0 --timeout=120 \

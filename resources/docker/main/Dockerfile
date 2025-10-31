@@ -35,11 +35,10 @@ RUN ln -snf /bin/bash /bin/sh
 USER user
 
 # Install required dependencies
-COPY environment.yml /home/user/environment.yml
+COPY env/environment.yml /home/user/environment.yml
 RUN conda env create -f ~/environment.yml \
     && conda clean -afy
 
-# Download all the nltk and spacy resources
-COPY nlp.sh /home/user/nlp.sh
+# Download spacy resources
 RUN source activate pubtrends \
     && python -m spacy download en_core_web_sm

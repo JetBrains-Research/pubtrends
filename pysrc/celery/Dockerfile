@@ -13,9 +13,11 @@ ENV EMBEDDINGS_SERVICE_URL=http://embeddings:5001
 ENV SEMANTIC_SEARCH_SERVICE_URL=http://semantic:5002
 
 COPY pysrc /home/user/pubtrends/pysrc/
+COPY scripts /home/user/pubtrends/scripts/
 
 USER root
 RUN chown -R user:pubtrends /home/user/pubtrends/pysrc
+RUN chown -R user:pubtrends /home/user/pubtrends/scripts
 
 USER user
 WORKDIR /home/user/pubtrends
@@ -23,6 +25,6 @@ WORKDIR /home/user/pubtrends
 
 # Launch celery workers
 CMD source activate pubtrends \
-    && /bin/bash ~/nlp.sh \
+    && /bin/bash ~/pubtrends/scripts/nlp.sh \
     && export PYTHONPATH=/home/user/pubtrends \
     && celery --app pysrc.celery.tasks worker -c 2 --loglevel=info --logfile=/logs/celery.log

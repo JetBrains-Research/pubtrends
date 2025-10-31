@@ -29,7 +29,7 @@ The web service is powered by Flask and Gunicorn, with Celery managing asynchron
 
 For data visualization, Bokeh, Holoviews, Seaborn, and Matplotlib are used, with Bokeh providing interactive plots for web pages and Jupyter notebooks. The frontend is built with Bootstrap for layout, jQuery for interactivity, and Cytoscape.js for rendering graphs. 
 
-Please refer to [environment.yml](environment.yml) for the full list of libraries used in the project.
+Please refer to [environment.yml](env/environment.yml) for the full list of libraries used in the project.
 
 ### Docker
 
@@ -53,7 +53,7 @@ launched within Docker. Continuous integration is done with TeamCity using build
 2. Conda environment `pubtrends` can be easily created for launching Jupyter Notebook and Web Service:
 
     ```
-    conda env create -f environment.yml
+    conda env create -f env/environment.yml
     source activate pubtrends
     ```
 
@@ -205,7 +205,7 @@ Please ensure that embeddings Postgres DB with vector extension is up and runnin
 
    source activate pubtrends
    export PYTHONPATH=$PYTHONPATH:$(pwd)
-   /bin/bash ~/nlp.sh
+   /bin/bash ~/pubtrends/scripts/nlp.sh
    python pysrc/preprocess/update_embeddings.py
    ```
 
@@ -217,12 +217,10 @@ Then launch web-service or use jupyter notebook for development.
 
 ### Web service
 
-1. Create necessary folders with script `init.sh` and download prerequisites.
+1. Create necessary folders with script `scripts/init.sh` and download prerequisites.
    ```
-   source activate pubtrends \
-      && python -m nltk.downloader averaged_perceptron_tagger averaged_perceptron_tagger_eng \
-      punkt punkt_tab stopwords wordnet omw-1.4 \
-      && python -m spacy download en_core_web_sm
+   bash scripts/init.sh
+   bash scripts/nlp.sh
    ```
 
 2. Start Redis
@@ -232,7 +230,7 @@ Then launch web-service or use jupyter notebook for development.
 
 3. Configure conda environment `pubtrends`
     ```
-    conda env create -f environment.yml
+    conda env create -f env/environment.yml
     ```
    Enable environment by command `source activate pubtrends`.
 
@@ -332,24 +330,24 @@ Please ensure that you have configured and prepared the database(s).
     refresh materialized view matview_pmcitations;
     ``` 
 
-3. Build ready for deployment package with script `dist.sh`.
+3. Build ready for deployment package with script `scripts/dist.sh`.
    ```
-   dist.sh build=build-number ga=google-analytics-id
+   scripts/dist.sh build=build-number ga=google-analytics-id
    ```
 
 4. Launch pubtrends with docker-compose (one of the options)
     ```
     # start with local word2vec tf-idf tokens embeddings
-    docker-compose -f docker-compose.yml up --build
+    docker-compose -f docker-compose/word2vec.yml up --build
     
     # start with BioWord2Vec tokens embeddings
-    docker-compose -f docker-compose.fasttext.yml up --build
+    docker-compose -f docker-compose/fasttext.yml up --build
     
     # start with Sentence Transformer for text embeddings
-    docker-compose -f docker-compose.sentence-transformer.yml up --build
+    docker-compose -f docker-compose/sentence-transformer.yml up --build
     
     # Start with Semantic Search based on Sentence Transformer
-    docker-compose -f docker-compose.semantic-search.yml up --build 
+    docker-compose -f docker-compose/semantic-search.yml up --build 
     ```
    Use these commands to stop compose build and check logs:
     ```
@@ -372,8 +370,8 @@ Use simple placeholder during maintenance.
 ## Release
 
 * Update `CHANGES.md`
-* Update version in `dist.sh`
-* Launch `dist.sh`, `pubtrends-XXX.tar.gz` will be created in the `dist` directory.
+* Update version in `scripts/dist.sh`
+* Launch `scripts/dist.sh`, `pubtrends-XXX.tar.gz` will be created in the `dist` directory.
 
 # Authors
 

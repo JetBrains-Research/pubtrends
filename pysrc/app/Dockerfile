@@ -15,15 +15,17 @@ ENV SEMANTIC_SEARCH_SERVICE_URL=http://semantic:5002
 EXPOSE 5000
 
 COPY pysrc /home/user/pubtrends/pysrc/
+COPY scripts /home/user/pubtrends/scripts/
 
 USER root
 RUN chown -R user:pubtrends /home/user/pubtrends/pysrc
+RUN chown -R user:pubtrends /home/user/pubtrends/scripts
 
 USER user
 WORKDIR /home/user/pubtrends
 
 CMD source activate pubtrends \
-    && /bin/bash ~/nlp.sh \
+    && /bin/bash ~/pubtrends/scripts/nlp.sh \
     && export PYTHONPATH=/home/user/pubtrends \
     && gunicorn --bind 0.0.0.0:5000 --workers 5 \
         --limit-request-line 0 --timeout=120 \

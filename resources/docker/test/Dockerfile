@@ -18,7 +18,7 @@ RUN echo "deb http://apt.postgresql.org/pub/repos/apt noble-pgdg main" > /etc/ap
     && apt-get update --fix-missing
 RUN DEBIAN_FRONTEND="noninteractive" apt-get install --no-install-recommends -y \
         openjdk-21-jre-headless \
-        postgresql-17 postgresql-client-17 postgresql-contrib-17 \
+        postgresql-17 postgresql-client-17 postgresql-contrib-17 postgresql-17-pgvector \
     && apt-get clean \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
@@ -53,12 +53,12 @@ RUN source activate pubtrends \
    && pip install sentence-transformers faiss-cpu
 
 # Create nescessary folders
-COPY init.sh /home/user/init.sh
-RUN bash /home/user/init.sh
+COPY scripts /home/user/pubtrends/scripts/
+RUN bash /home/user/pubtrends/scripts/init.sh
 
 # Download NLKT packages
 RUN source activate pubtrends \
-    && bash /home/user/nlp.sh
+    && bash /home/user/pubtrends/scripts/nlp.sh
 
 # Use `-d` param to launch container as daemon
 CMD /usr/lib/postgresql/17/bin/pg_ctl -D /home/user/postgres start && sleep infinity

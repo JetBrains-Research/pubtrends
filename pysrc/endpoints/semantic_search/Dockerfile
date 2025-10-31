@@ -12,9 +12,11 @@ RUN source activate pubtrends \
 
 
 COPY pysrc /home/user/pubtrends/pysrc/
+COPY scripts /home/user/pubtrends/scripts/
 
 USER root
 RUN chown -R user:pubtrends /home/user/pubtrends/pysrc
+RUN chown -R user:pubtrends /home/user/pubtrends/scripts
 
 USER user
 WORKDIR /home/user/pubtrends
