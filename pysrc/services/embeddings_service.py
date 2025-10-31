@@ -89,4 +89,4 @@ def is_embeddings_db_available():
 def load_embeddings_from_df(pids):
     logger.debug("Fetching embeddings from DB")
     index, embeddings = EMBEDDINGS_DB_CONNECTOR.load_embeddings_by_ids(pids)
-    return l2norm(np.array(embeddings).reshape(len(index), -1), [(str(p), c) for p, c in index])
+    return l2norm(np.array(embeddings).reshape(len(index), -1)), [(str(p), c) for p, c in index]
