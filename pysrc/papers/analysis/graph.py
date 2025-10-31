@@ -10,12 +10,12 @@ from pysrc.config import *
 logger = logging.getLogger(__name__)
 
 
-def similarity(d, use_text=False):
+def similarity(d):
     return \
             SIMILARITY_BIBLIOGRAPHIC_COUPLING * d.get('bibcoupling', 0) + \
             SIMILARITY_COCITATION * d.get('cocitation', 0) + \
             SIMILARITY_CITATION * d.get('citation', 0) + \
-            (SIMILARITY_TEXT * d.get('textsimilarity', 0) if use_text else 0)
+            (SIMILARITY_TEXT * d.get('textsimilarity', 0))
 
 
 def build_papers_graph(df, cit_df, cocit_df, bibliographic_coupling_df):
@@ -54,12 +54,9 @@ def build_papers_graph(df, cit_df, cocit_df, bibliographic_coupling_df):
     return result
 
 
-def sparse_graph(graph, k, key='similarity', add_similarity=True):
+def sparse_graph(graph, k, key='similarity'):
     logger.debug(f'Building {k}-neighbours sparse graph, '
                  f'edges/nodes={graph.number_of_edges() / graph.number_of_nodes()}')
-    if add_similarity:
-        for i, j in graph.edges():
-            graph[i][j]['similarity'] = similarity(graph.get_edge_data(i, j))
     result = nx.Graph()
     # Start from nodes with max number of neighbors
     for n in sorted(graph.nodes(), key=lambda x: len(list(graph.neighbors(x))), reverse=True):
@@ -72,6 +69,10 @@ def sparse_graph(graph, k, key='similarity', add_similarity=True):
     for n in graph.nodes():
         if not result.has_node(n):
             result.add_node(n)
+            # Ensure at least one edge
+            for x, data in sorted(list([(x, graph.get_edge_data(n, x)) for x in graph.neighbors(n)]),
+                                   key=lambda x: x[1][key], reverse=True)[:1]:
+                result.add_edge(n, x, **data)
     logger.debug(f'Sparse {k}-neighbours graph edges/nodes={result.number_of_edges() / result.number_of_nodes()}')
     return result
 
@@ -88,9 +89,10 @@ def add_text_similarities_edges(ids, texts_embeddings, papers_graph, top_similar
         # Get indices of closest nodes (excluding the source node itself)
         similarities = cosine_similarity_matrix[node_i]
         for similar_node_i in np.argsort(similarities)[-top_similar - 1:-1]:
+            similarity = similarities[similar_node_i]
             similar_node = ids[similar_node_i]
-            if not papers_graph.has_edge(node, similar_node):
-                papers_graph.add_edge(node, similar_node, textsimilarity=(similarities[similar_node_i]))
+            if similarity > 0 and not papers_graph.has_edge(node, similar_node):
+                papers_graph.add_edge(node, similar_node, textsimilarity=similarity)
         # Add text_similarity to all existing edges
         for neighbor_i, neighbor in enumerate(ids):
             if neighbor_i > node_i and papers_graph.has_edge(node, neighbor):

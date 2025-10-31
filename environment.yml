@@ -49,6 +49,7 @@ dependencies:
       - lazy==1.6
       - pytest-flake8==1.3.0
       - python-levenshtein==0.27.1 # Fix warning from gensim
+      - shapely==2.1.2
       - teamcity-messages==1.33
       - text2num==2.5.1
       - vine==5.1.0

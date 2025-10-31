@@ -20,21 +20,20 @@ MAX_NUMBER_OF_BIBLIOGRAPHIC_COUPLING = 1000000
 
 SIMILARITY_COCITATION = 10  # x number of co-citations
 SIMILARITY_BIBLIOGRAPHIC_COUPLING = 3  # x number of references
-SIMILARITY_CITATION = 1  # x 0-1 citation
+SIMILARITY_CITATION = 1  # x 0 - 1 citations
 
-SIMILARITY_TEXT = 10  # Usually similarity is < 0.1
+SIMILARITY_TEXT = 20  # cosine similarity between texts embeddings -1 - 1
 
 # A minimal number of common references, used to reduce papers graph edges count
 # Value > 1 is especially useful while analysing a single paper,
 # removes meaningless connections by construction
-SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN = 5
+SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN = 2
 
 # Minimal number of common references, used to reduce papers graph edges count
 SIMILARITY_COCITATION_MIN = 2
 
-# Number of edges in papers graph for clustering
-GRAPH_BIBLIOGRAPHIC_EDGES = 50
-GRAPH_TEXT_EDGES = 10
+# Number of text similarity edges in papers graph
+GRAPH_TEXT_SIMILARITY_EDGES = 100
 
 # Number of edges in papers graph for visualization
 VISUALIZATION_GRAPH_EDGES = 10
@@ -83,8 +82,9 @@ NODE2VEC_P = 5.0
 NODE2VEC_Q = 2.0
 
 # Increasing the number of walks increases node2vec representation accuracy
-NODE2VEC_WALKS_PER_NODE = int((GRAPH_BIBLIOGRAPHIC_EDGES + GRAPH_TEXT_EDGES) / 2)
-NODE2VEC_WALK_LENGTH = 20
+NODE2VEC_GRAPH_EDGES = 50
+NODE2VEC_WALKS_PER_NODE = 100
+NODE2VEC_WALK_LENGTH = 30
 NODE2VEC_WORD2VEC_WINDOW = 5
 NODE2VEC_WORD2VEC_EPOCHS = 3
 
@@ -168,7 +168,6 @@ class PubtrendsConfig:
 
         self.show_topics_options = [int(opt.strip()) for opt in params['show_topics_options'].split(',')]
         self.show_topics_default_value = int(params['show_topics_default_value'].strip())
-        self.topic_min_size = params.getint('topic_min_size')
 
         self.max_graph_size = params.getint('max_graph_size')
 

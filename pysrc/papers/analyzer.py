@@ -117,12 +117,11 @@ class PapersAnalyzer:
         else:
             self.bibliographic_coupling_df = bibliographic_coupling_df
 
-        bibliographic_graph = build_papers_graph(
+        graph = build_papers_graph(
             self.df, self.cit_df, self.cocit_grouped_df, self.bibliographic_coupling_df,
         )
-        logger.debug('Compute bibliographic similarity')
-        for i, j, data in bibliographic_graph.edges(data=True):
-            data['similarity'] = similarity(data, use_text=False)
+        logger.debug(f'Bibliographic edges/nodes='
+                     f'{graph.number_of_edges() / graph.number_of_nodes()}')
 
         self.progress.info('Analyzing title and abstract texts',
                            current=self.get_step_and_inc(), task=task)
@@ -138,21 +137,23 @@ class PapersAnalyzer:
         self.progress.info(f'Analyzing papers citations and text similarity network',
                            current=self.get_step_and_inc(), task=task)
 
-        # Analysis graph should keep a balance between graph and text
-        logger.debug('Preparing graph for analysis')
-        analysis_graph = sparse_graph(bibliographic_graph, GRAPH_BIBLIOGRAPHIC_EDGES)
         logger.debug('Adding text similarities edges')
-        add_text_similarities_edges(ids, papers_text_embeddings, analysis_graph, GRAPH_TEXT_EDGES)
+        add_text_similarities_edges(ids, papers_text_embeddings, graph, GRAPH_TEXT_SIMILARITY_EDGES)
+        logger.debug(f'Bibliographic+text edges/nodes='
+                     f'{graph.number_of_edges() / graph.number_of_nodes()}')
+
         logger.debug('Compute summary graph and text similarity')
-        for i, j, data in analysis_graph.edges(data=True):
-            data['similarity'] = similarity(data, use_text=True)
-        self.papers_graph = analysis_graph
+        for i, j, data in graph.edges(data=True):
+            data['similarity'] = similarity(data)
+
+        logger.debug('Preparing sparse graph for analysis')
+        self.papers_graph = sparse_graph(graph, NODE2VEC_GRAPH_EDGES)
 
         logger.debug('Analyzing papers graph embeddings')
         graph_embeddings = node2vec(
             self.df['id'],
-            analysis_graph,
-            key='similarity'
+            self.papers_graph,
+            'similarity'
         )
 
         if len(self.df) > 1:
@@ -175,7 +176,7 @@ class PapersAnalyzer:
         self.progress.info(f'Extracting topics from papers based on similarity',
                            current=8, task=task)
         logger.debug('Extracting topics from papers embeddings')
-        self.clusters, self.dendrogram = cluster_and_sort(graph_embeddings, topics, self.config.topic_min_size)
+        self.clusters, self.dendrogram = cluster_and_sort(graph_embeddings, topics)
         self.df['comp'] = self.clusters
 
         self.progress.info('Identifying top cited papers',

@@ -3,25 +3,26 @@ import logging
 import numpy as np
 from gensim.models import Word2Vec
 
+from pysrc.papers.utils import l2norm
 from pysrc.config import NODE2VEC_P, NODE2VEC_Q, NODE2VEC_WALK_LENGTH, \
     NODE2VEC_WALKS_PER_NODE, NODE2VEC_WORD2VEC_WINDOW, NODE2VEC_WORD2VEC_EPOCHS, NODE2VEC_EMBEDDINGS_VECTOR_LENGTH
 
 logger = logging.getLogger(__name__)
 
 def node2vec(
-        ids, graph, p=NODE2VEC_P, q=NODE2VEC_Q,
+        ids, graph, key, p=NODE2VEC_P, q=NODE2VEC_Q,
         walk_length=NODE2VEC_WALK_LENGTH, walks_per_node=NODE2VEC_WALKS_PER_NODE,
-        vector_size=NODE2VEC_EMBEDDINGS_VECTOR_LENGTH, key='weight', seed=42
+        vector_size=NODE2VEC_EMBEDDINGS_VECTOR_LENGTH, seed=42
 ):
     """
     :param ids: Ids or nodes for embedding
     :param graph: Undirected weighted networkx graph
+    :param key: key for weight
     :param p: Defines probability, 1/p, of returning to source node
     :param q: Defines probability, 1/q, for moving away from source node
     :param walk_length: Walk length for each node. Walk stops preliminary if no neighbors found
     :param walks_per_node: Number of walk actions performed starting from each node
     :param vector_size: Resulting embedding size
-    :param key: key for weight
     :param seed: seed
     :returns matrix of embeddings
     """
@@ -48,11 +49,13 @@ def node2vec(
         node_embeddings[indx[pid]] if pid in indx else np.zeros(node_embeddings.shape[1])  # Process missing
         for pid in ids
     ])
-    logger.debug('put 0 when edge has no neighbors')
+    nas = 0
     for i, node in enumerate(ids):
         if len(list(graph.neighbors(node))) == 0:
-            embeddings[i] = np.zeros(vector_size)
-    return embeddings
+            nas += 1
+            embeddings[i] = np.ones(vector_size)
+    logger.debug(f'Total {nas} nodes without neighbors')
+    return l2norm(embeddings)
 
 
 def _precompute(graph, key, p, q):

@@ -13,10 +13,11 @@ from bokeh.models.graphs import NodesAndLinkedEdges
 from bokeh.plotting import figure
 from holoviews import opts
 from matplotlib import pyplot as plt
-from scipy.stats import trim_mean
 from sklearn.preprocessing import minmax_scale
 from wordcloud import WordCloud
 
+from pysrc.papers.plot.geometry import compute_component_boundaries, rescaled_comp_corrds, \
+    shapely_to_bokeh_multipolygons
 from pysrc.config import PAPERS_PLOT_WIDTH, WORD_CLOUD_WIDTH, WORD_CLOUD_KEYWORDS, WORD_CLOUD_HEIGHT, \
     PLOT_WIDTH, SHORT_PLOT_HEIGHT, MAX_LINEAR_AXIS, PLOT_HEIGHT, MAX_JOURNAL_LENGTH, MAX_AUTHOR_LENGTH, \
     TALL_PLOT_HEIGHT, VISUALIZATION_GRAPH_EDGES
@@ -662,15 +663,28 @@ class Plotter:
 
         p.renderers.append(graph)
 
-        # Add Labels
-        lxs = [(trim_mean(df[df['comp'] == c]['x'], 0.2) - xmin) / xrange * 100 for c in sorted(set(comps))]
-        lys = [(trim_mean(df[df['comp'] == c]['y'], 0.2) - ymin) / yrange * 100 for c in sorted(set(comps))]
-        comp_labels = [f"#{c + 1}" for c in sorted(set(comps))]
-        source = ColumnDataSource({'x': lxs, 'y': lys, 'name': comp_labels})
+        # Compute component boundaries and centers
+        boundaries = compute_component_boundaries(rescaled_comp_corrds(df))
+
+        # Plot boundaries and compute centers
+        lxs = []
+        lys = []
+        labels = []
+        for comp, polygon in boundaries.items():
+            labels.append(f"#{comp + 1}")
+            xc, yx = polygon.centroid.xy
+            lxs.append(xc)
+            lys.append(yx)
+            xs, ys = shapely_to_bokeh_multipolygons(polygon)  # each returns lists with one record
+            src = ColumnDataSource({"comp": [comp], "xs": xs, "ys": ys, "alpha": [0.05], "color": [palette[comp]]})
+            p.multi_polygons(xs="xs", ys="ys", source=src, color="color", fill_alpha="alpha", line_width=0.1)
+
+        # Plot labels in centers
+        source = ColumnDataSource({'x': lxs, 'y': lys, 'name': labels})
         labels = LabelSet(x='x', y='y', text='name', source=source,
-                          background_fill_color='white',
-                          text_font_size='13px',
-                          background_fill_alpha=.9)
+                  background_fill_color='white',
+                  text_font_size='15px',
+                  background_fill_alpha=.9)
         p.renderers.append(labels)
 
         # Add topic tags in the top left corner

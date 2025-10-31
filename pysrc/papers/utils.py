@@ -156,3 +156,9 @@ def factors_colormap(n):
 def topics_palette(df):
     return dict((k, v.to_hex()) for k, v in topics_palette_rgb(df).items())
 
+def l2norm(v):
+    norm = np.linalg.norm(v)
+    if norm == 0:
+        norm = np.finfo(v.dtype).eps
+    v /= norm
+    return v

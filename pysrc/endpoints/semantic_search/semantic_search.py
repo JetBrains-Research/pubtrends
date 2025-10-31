@@ -3,6 +3,7 @@ from functools import cache
 
 import numpy as np
 
+from pysrc.papers.utils import l2norm
 from pysrc.config import PubtrendsConfig
 from pysrc.faiss.faiss_connector import FaissConnector
 from pysrc.papers.db.loaders import Loaders
@@ -11,14 +12,6 @@ from pysrc.services.embeddings_service import fetch_texts_embedding
 logger = logging.getLogger(__name__)
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
-
-
-def l2norm(v):
-    norm = np.linalg.norm(v)
-    if norm == 0:
-        norm = np.finfo(v.dtype).eps
-    v /= norm
-    return v
 
 
 def semantic_search_faiss(query_text, faiss_index, pids_idx, embeddings_func, k):

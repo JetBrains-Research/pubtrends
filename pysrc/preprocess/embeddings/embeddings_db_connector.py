@@ -7,6 +7,7 @@ import psycopg2
 from psycopg2.extras import execute_values
 from tqdm.auto import tqdm
 
+from pysrc.papers.utils import l2norm
 from pysrc.config import PubtrendsConfig
 from pysrc.papers.db.postgres_utils import ints_to_vals
 
@@ -77,17 +78,10 @@ class EmbeddingsDBConnector:
                 pids_with_embeddings = set(df['pmid'])
                 return [pid for pid in pids if pid not in pids_with_embeddings]
 
-    def l2norm(self, v):
-        norm = np.linalg.norm(v)
-        if norm == 0:
-            norm = np.finfo(v.dtype).eps
-        v /= norm
-        return v
-
     def store_embeddings_to_postgresql(self, chunk_embeddings, chunk_idx):
         logger.debug('store_embeddings_to_postgresql')
         # Normalize embeddings if using cosine similarity
-        data = [(pmid, chunk, self.l2norm(e).tolist())
+        data = [(pmid, chunk, l2norm(e).tolist())
                 for (pmid, chunk), e in zip(chunk_idx, chunk_embeddings)]
         with psycopg2.connect(self.connection_string) as connection:
             with connection.cursor() as cursor:
