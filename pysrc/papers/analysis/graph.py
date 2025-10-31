@@ -59,7 +59,7 @@ def sparse_graph(graph, k, key='similarity'):
                  f'edges/nodes={graph.number_of_edges() / graph.number_of_nodes()}')
     result = nx.Graph()
     # Start from nodes with max number of neighbors
-    for n in sorted(graph.nodes(), key=lambda x: len(list(graph.neighbors(x))), reverse=True):
+    for n in sorted(graph.nodes(), key=lambda x: (len(list(graph.neighbors(x))), x), reverse=True):
         neighbors_data = sorted(list([(x, graph.get_edge_data(n, x)) for x in graph.neighbors(n)]),
                                 key=lambda x: (x[1][key], x), reverse=True)
         for x, data in neighbors_data[:k]:
