@@ -28,9 +28,8 @@ echo "Copy sources"
 mkdir -p "${PTV}"
 cp resources/docker/main/Dockerfile "${PTV}"/
 cp config.properties "${PTV}"/
-cp *.yml "${PTV}"/
-cp scripts/init.sh "${PTV}"/
-cp scripts/nlp.sh "${PTV}"/
+cp -r docker-compose "${PTV}"/
+cp -r scripts "${PTV}"/
 cp README.md "${PTV}"/
 cp LICENSE.txt "${PTV}"/
 rsync -aiz pysrc "${PTV}"/ --exclude=**/.git* --exclude=**/__pycache__*
