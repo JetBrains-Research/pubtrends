@@ -2,7 +2,7 @@ version: "3"
 services:
   web:
     build:
-      context: .
+      context: ..
       dockerfile: pysrc/app/Dockerfile
     restart: always
     ports:
@@ -21,7 +21,7 @@ services:
 
   celery:
     build:
-      context: .
+      context: ..
       dockerfile: pysrc/celery/Dockerfile
     depends_on:
       - redis
@@ -40,7 +40,7 @@ services:
     command: redis-server --timeout 0 --client-output-buffer-limit normal 0 0 0
   embeddings:
     build:
-      context: .
+      context: ..
       dockerfile: pysrc/endpoints/embeddings/sentence_transformer/Dockerfile
     restart: always
     volumes:
@@ -50,7 +50,7 @@ services:
       - ~/.pubtrends/nltk_data:/home/user/nltk_data
   semantic:
     build:
-      context: .
+      context: ..
       dockerfile: pysrc/endpoints/semantic_search/Dockerfile
     restart: always
     depends_on:

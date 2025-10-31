@@ -2,7 +2,7 @@ version: "3"
 services:
   web:
     build:
-      context: .
+      context: ..
       dockerfile: pysrc/app/Dockerfile
     restart: always
     ports:
@@ -19,7 +19,7 @@ services:
 
   celery:
     build:
-      context: .
+      context: ..
       dockerfile: pysrc/celery/Dockerfile
     depends_on:
       - redis
