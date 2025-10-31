@@ -1,6 +1,6 @@
 buildscript {
-    ext.kotlin_version = "1.6.10"
-    ext.coroutines_version = "1.5.2"
+    ext.kotlin_version = "2.2.0"
+    ext.coroutines_version = "1.7.3"
 
     repositories {
         maven { url("https://cache-redirector.jetbrains.com/repo1.maven.org/maven2") }
@@ -10,7 +10,7 @@ buildscript {
     }
 
     dependencies {
-        classpath "com.github.jengelman.gradle.plugins:shadow:6.1.0"
+        classpath "gradle.plugin.com.github.johnrengelman:shadow:7.1.2"
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
@@ -30,7 +30,7 @@ project (":") {
     apply plugin: "application"
     apply plugin: "com.github.johnrengelman.shadow"
 
-    sourceCompatibility = 1.8
+    sourceCompatibility = 21
     targetCompatibility = sourceCompatibility
     compileKotlin { kotlinOptions.jvmTarget = sourceCompatibility }
     compileTestKotlin { kotlinOptions.jvmTarget = sourceCompatibility }
@@ -40,15 +40,15 @@ project (":") {
         implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlin_version")
         implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 
-        compile("org.jetbrains.exposed:exposed:0.17.14")
-        compile("org.postgresql:postgresql:42.4.0")
-        compile("commons-net:commons-net:3.6")
-        compile("com.opencsv:opencsv:4.6")
-        compile("com.google.code.gson:gson:2.2.4")
-        compile("net.sf.jopt-simple:jopt-simple:5.0.4")
-        compile("com.fasterxml.jackson.core:jackson-databind:2.9.9")
-        compile("commons-codec:commons-codec:1.9")
-        compile("commons-io:commons-io:2.0.1")
+        implementation("org.jetbrains.exposed:exposed:0.17.14")
+        implementation("org.postgresql:postgresql:42.4.0")
+        implementation("commons-net:commons-net:3.6")
+        implementation("com.opencsv:opencsv:4.6")
+        implementation("com.google.code.gson:gson:2.2.4")
+        implementation("net.sf.jopt-simple:jopt-simple:5.0.4")
+        implementation("com.fasterxml.jackson.core:jackson-databind:2.9.9")
+        implementation("commons-codec:commons-codec:1.9")
+        implementation("commons-io:commons-io:2.0.1")
 
         implementation("ch.qos.logback:logback-classic:1.2.3")
         implementation("ch.qos.logback:logback-core:1.2.3")
@@ -57,8 +57,8 @@ project (":") {
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version")
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:$coroutines_version")
 
-        testCompile("junit:junit:4.+")
-        testCompile("org.jetbrains.kotlin:kotlin-test:$kotlin_version")
+        testImplementation("junit:junit:4.+")
+        testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlin_version")
 
     }
 
@@ -79,14 +79,18 @@ project (":") {
     mainClassName = "org.jetbrains.bio.pubtrends.Main"
     applicationDefaultJvmArgs = ["-Xmx512m"]
 
+
     shadowJar {
-        baseName = "pubtrends"
-        classifier = ""
+        archiveBaseName.set("pubtrends")
+        archiveVersion.set("${version}")
+        archiveClassifier.set("")
         zip64 true
+        mustRunAfter test
+        // umm
+        mustRunAfter clean
     }
 
     jar {
-        baseName = "singlejar"
         manifest {
             attributes provider: "gradle"
             attributes "Application-Name": "PubTrends loader $version"
@@ -96,5 +100,5 @@ project (":") {
 }
 
 wrapper {
-    gradleVersion = "6.8"
+    gradleVersion = "8.5"
 }

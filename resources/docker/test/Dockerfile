@@ -49,9 +49,8 @@ EXPOSE 5432
 USER user
 
 RUN source activate pubtrends \
-    && pip install torch --index-url https://download.pytorch.org/whl/cpu \
-    && pip install sentence-transformers \
-    && pip install faiss-cpu pyarrow fastparquet
+   && pip install torch --index-url https://download.pytorch.org/whl/cpu \
+   && pip install sentence-transformers faiss-cpu
 
 # Create nescessary folders
 COPY init.sh /home/user/init.sh

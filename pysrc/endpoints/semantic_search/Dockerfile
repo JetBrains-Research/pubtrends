@@ -8,7 +8,7 @@ USER user
 ENV EMBEDDINGS_SERVICE_URL=http://embeddings:5001
 
 RUN source activate pubtrends \
-   && pip install faiss-cpu pyarrow fastparquet
+   && pip install faiss-cpu
 
 
 COPY pysrc /home/user/pubtrends/pysrc/

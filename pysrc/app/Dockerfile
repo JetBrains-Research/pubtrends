@@ -14,9 +14,6 @@ ENV SEMANTIC_SEARCH_SERVICE_URL=http://semantic:5002
 # Expose the app port, don't use default HTTP 80 or HTTPS 443
 EXPOSE 5000
 
-RUN source activate pubtrends \
-   && pip install shapely
-
 COPY pysrc /home/user/pubtrends/pysrc/
 
 USER root

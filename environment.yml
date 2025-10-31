@@ -9,6 +9,7 @@ dependencies:
   - bokeh=3.6.3
   - cachetools=5.5.2
   - celery=5.4.0
+  - fastparquet=2024.2.0
   - flask=3.1.0
   - flask-admin=1.6.0
   - flask-caching=2.3.1
@@ -27,6 +28,7 @@ dependencies:
   - parameterized=0.9.0
   - psutil=7.0.0
   - psycopg2=2.9.9
+  - pyarrow=21.0.0
   - pytest=8.3.5
   - python=3.10.16
   - requests=2.32.3

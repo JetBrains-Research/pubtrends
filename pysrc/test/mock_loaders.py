@@ -40,19 +40,25 @@ BIBLIOGRAPHIC_COUPLING_DATA = [['3', '4', 2],
                                ['4', '5', 2]]
 BIBCOUPLING_DF = pd.DataFrame(BIBLIOGRAPHIC_COUPLING_DATA, columns=['citing_1', 'citing_2', 'total'])
 
-PAPERS_GRAPH_EDGES = [
-    ('1', '2', {'cocitation': 3, 'similarity': 32, 'textsimilarity': 0.2}),
-    ('1', '3', {'citation': 1, 'similarity': 3, 'textsimilarity': 0.2}),
-    ('1', '4', {'citation': 1, 'similarity': 7, 'textsimilarity': 0.6}),
-    ('1', '5', {'citation': 1, 'similarity': 3, 'textsimilarity': 0.2}),
-    ('2', '2', {'textsimilarity': 1.0, 'similarity': 10.0}),
-    ('2', '3', {'citation': 1, 'similarity': 11.0, 'textsimilarity': 1.0}),
-    ('2', '4', {'citation': 1, 'similarity': 3, 'textsimilarity': 0.2}),
-    ('2', '5', {'citation': 1, 'similarity': 3, 'textsimilarity': 0.2}),
-    ('3', '5', {'bibcoupling': 2, 'citation': 1, 'similarity': 9, 'textsimilarity': 0.2}),
-    ('4', '3',{'cocitation': 1, 'bibcoupling': 2, 'similarity': 18, 'textsimilarity': 0.2}),
-    ('4', '5',{'bibcoupling': 2, 'citation': 1, 'similarity': 10, 'textsimilarity': 0.3})
-]
+PAPERS_GRAPH_EDGES = [('1', '3', {'citation': 1, 'textsimilarity': 0.2549619997229665, 'similarity': 6.09923999445933}),
+                      ('1', '4',
+                       {'citation': 1, 'textsimilarity': 0.6371768914218028, 'similarity': 13.743537828436056}),
+                      ('1', '5',
+                       {'citation': 1, 'textsimilarity': 0.2821364245004281, 'similarity': 6.642728490008562}),
+                      ('2', '1',
+                       {'cocitation': 3, 'textsimilarity': 0.2549619997229665, 'similarity': 35.09923999445933}),
+                      ('2', '2', {'textsimilarity': 1.0, 'similarity': 20.0}),
+                      ('2', '3', {'citation': 1, 'textsimilarity': 1.0, 'similarity': 21.0}), ('2', '4', {'citation': 1,
+                                                                                                          'textsimilarity': 0.2631248692784727,
+                                                                                                          'similarity': 6.2624973855694535}),
+                      ('2', '5',
+                       {'citation': 1, 'textsimilarity': 0.2634049818691173, 'similarity': 6.268099637382346}),
+                      ('3', '4', {'cocitation': 1, 'bibcoupling': 2, 'textsimilarity': 0.2631248692784727,
+                                  'similarity': 21.262497385569453}), ('3', '5', {'bibcoupling': 2, 'citation': 1,
+                                                                                  'textsimilarity': 0.2634049818691173,
+                                                                                  'similarity': 12.268099637382345}),
+                      ('5', '4', {'bibcoupling': 2, 'citation': 1, 'textsimilarity': 0.30479214393852994,
+                                  'similarity': 13.095842878770599})]
 EXPECTED_MAX_GAIN = {1972: '3', 1974: '1'}
 EXPECTED_MAX_RELATIVE_GAIN = {1972: '3', 1974: '4'}
 

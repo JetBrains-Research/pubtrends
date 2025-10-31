@@ -58,14 +58,15 @@ class TestSparseGraph(unittest.TestCase):
         cls.g = g
 
     SPARSE = [(0, 9, {'weight': 9}), (0, 8, {'weight': 8}), (0, 7, {'weight': 7}), (9, 1, {'weight': 10}),
-              (9, 2, {'weight': 11}), (9, 6, {'weight': 15}), (8, 1, {'weight': 9}), (8, 2, {'weight': 10}),
-              (8, 6, {'weight': 14}), (7, 1, {'weight': 8}), (7, 2, {'weight': 9}), (7, 6, {'weight': 13})]
+              (9, 2, {'weight': 11}), (9, 6, {'weight': 15}), (9, 3, {'weight': 12}), (9, 4, {'weight': 13}),
+              (9, 5, {'weight': 14}), (8, 1, {'weight': 9}), (8, 2, {'weight': 10}), (8, 6, {'weight': 14}),
+              (7, 1, {'weight': 8}), (7, 2, {'weight': 9}), (7, 6, {'weight': 13})]
 
     def test_sparse_graph(self):
         sg = sparse_graph(self.g, 3, 'weight')
         edges = list(sg.edges(data=True))
         print(edges)
-        self.assertEqual(len(sg.edges), 12)
+        self.assertEqual(len(sg.edges), 15)
         self.assertEqual(self.SPARSE, edges)
 
 
