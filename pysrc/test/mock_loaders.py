@@ -40,10 +40,10 @@ BIBLIOGRAPHIC_COUPLING_DATA = [['3', '4', 2],
                                ['4', '5', 2]]
 BIBCOUPLING_DF = pd.DataFrame(BIBLIOGRAPHIC_COUPLING_DATA, columns=['citing_1', 'citing_2', 'total'])
 
-PAPERS_GRAPH_EDGES = [('1', '3'), ('1', '4'), ('1', '5'),
-                      ('2', '1'), ('2', '2'), ('2', '3'), ('2', '4'), ('2', '5'),
-                      ('3', '4'), ('3', '5'),
-                      ('5', '4')]
+PAPERS_GRAPH_EDGES = [('1', '2'),
+                      ('3', '1'), ('3', '2'),
+                      ('4', '1'), ('4', '2'), ('4', '3'),
+                      ('5', '1'), ('5', '2'), ('5', '3'), ('5', '4')]
 
 EXPECTED_MAX_GAIN = {1972: '3', 1974: '1'}
 EXPECTED_MAX_RELATIVE_GAIN = {1972: '3', 1974: '4'}

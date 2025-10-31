@@ -88,7 +88,8 @@ def add_text_similarities_edges(ids, texts_embeddings, papers_graph, top_similar
     for node_i, node in enumerate(ids):
         # Get indices of closest nodes (excluding the source node itself)
         similarities = cosine_similarity_matrix[node_i]
-        for similar_node_i in np.argsort(similarities)[-top_similar - 1:-1]:
+        # Add node for deterministic sort
+        for similar_node_i in np.argsort(zip(similarities, range(len(similarities))))[-top_similar - 1:-1]:
             similarity = similarities[similar_node_i]
             similar_node = ids[similar_node_i]
             if similarity > 0 and not papers_graph.has_edge(node, similar_node):
