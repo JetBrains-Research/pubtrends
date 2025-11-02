@@ -1,12 +1,10 @@
 import logging
 from functools import cache
 
-import numpy as np
-
-from pysrc.papers.utils import l2norm
 from pysrc.config import PubtrendsConfig
 from pysrc.faiss.faiss_connector import FaissConnector
 from pysrc.papers.db.loaders import Loaders
+from pysrc.papers.utils import l2norm
 from pysrc.services.embeddings_service import fetch_texts_embedding
 
 logger = logging.getLogger(__name__)

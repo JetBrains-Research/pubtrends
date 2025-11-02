@@ -3,7 +3,6 @@ import logging
 import numpy as np
 from gensim.models import Word2Vec
 
-from pysrc.papers.utils import l2norm
 from pysrc.config import NODE2VEC_P, NODE2VEC_Q, NODE2VEC_WALK_LENGTH, \
     NODE2VEC_WALKS_PER_NODE, NODE2VEC_WORD2VEC_WINDOW, NODE2VEC_WORD2VEC_EPOCHS, NODE2VEC_EMBEDDINGS_VECTOR_LENGTH
 
@@ -55,7 +54,7 @@ def node2vec(
             nas += 1
             embeddings[i] = np.ones(vector_size)
     logger.debug(f'Total {nas} nodes without neighbors')
-    return l2norm(embeddings)
+    return embeddings
 
 
 def _precompute(graph, key, p, q):

@@ -17,7 +17,6 @@ from nltk.corpus import wordnet, stopwords
 from nltk.probability import FreqDist
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 
-from pysrc.papers.utils import l2norm
 from pysrc.config import WORD2VEC_EMBEDDINGS_LENGTH, WORD2VEC_WINDOW, WORD2VEC_EPOCHS, EMBEDDINGS_CHUNK_SIZE, \
     EMBEDDINGS_SENTENCE_OVERLAP
 from pysrc.services.embeddings_service import is_embeddings_db_available
@@ -176,10 +175,10 @@ def _train_word2vec(corpus, corpus_tokens, vector_size=WORD2VEC_EMBEDDINGS_LENGT
     logger.debug('Retrieve word embeddings, corresponding subjects and reorder according to corpus_terms')
     ids, embeddings = w2v.wv.index_to_key, w2v.wv.vectors
     indx = {t: i for i, t in enumerate(ids)}
-    return l2norm(np.array([
+    return np.array([
         embeddings[indx[t]] if t in indx else np.zeros(embeddings.shape[1])  # Process missing embeddings
         for t in corpus_tokens
-    ]))
+    ])
 
 
 def embeddings(df, corpus, corpus_tokens, corpus_counts, test=False):
@@ -244,7 +243,7 @@ def chunks_to_text_embeddings(df, chunks_embeddings, chunks_idx):
         chunks = chunks_df.loc[pid, 'cid']
         text_embeddings[i] = np.mean(chunks_embeddings[ci:ci + chunks], axis=0)
         ci += chunks
-    return l2norm(text_embeddings)
+    return text_embeddings
 
 
 def _texts_embeddings(corpus_counts, tokens_embeddings):
@@ -264,7 +263,7 @@ def _texts_embeddings(corpus_counts, tokens_embeddings):
         np.mean((tokens_embeddings.T * tfidf[i, :].T).T, axis=0) for i in range(tfidf.shape[0])
     ])
     logger.debug(f'Texts embeddings shape: {embeddings.shape}')
-    return l2norm(embeddings)
+    return embeddings
 
 
 def get_chunks(text, max_tokens=128, overlap_sentences=1):

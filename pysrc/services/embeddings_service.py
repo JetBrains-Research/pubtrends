@@ -1,10 +1,10 @@
 import logging
 import os
-import requests
 
 import numpy as np
+import requests
+from sklearn.preprocessing import normalize
 
-from pysrc.papers.utils import l2norm
 from pysrc.preprocess.embeddings.embeddings_db_connector import EmbeddingsDBConnector
 
 logger = logging.getLogger(__name__)
@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 EMBEDDINGS_SERVICE_URL = os.getenv('EMBEDDINGS_SERVICE_URL', 'http://localhost:5001')
 
 EMBEDDINGS_DB_CONNECTOR = EmbeddingsDBConnector()
+
 
 def is_embeddings_service_available():
     logger.debug(f'Check if embeddings service endpoint is available')
@@ -30,13 +31,15 @@ def is_embeddings_service_ready():
         r = requests.request(url=EMBEDDINGS_SERVICE_URL, method='GET')
         if r.status_code != 200:
             return False
-        r = requests.request(url=f'{EMBEDDINGS_SERVICE_URL}/check', method='GET', headers={'Accept': 'application/json'})
+        r = requests.request(url=f'{EMBEDDINGS_SERVICE_URL}/check', method='GET',
+                             headers={'Accept': 'application/json'})
         if r.status_code != 200 or r.json() is not True:
             return False
         return True
     except Exception as e:
         logger.debug(f'Embeddings service is not ready: {e}')
         return False
+
 
 def fetch_tokens_embeddings(tokens):
     # Don't use the model as is, since each celery process will load its own copy.
@@ -86,7 +89,8 @@ def is_embeddings_db_available():
     logger.debug(f'Check if embeddings db is available')
     return EMBEDDINGS_DB_CONNECTOR.is_embeddings_db_available()
 
+
 def load_embeddings_from_df(pids):
     logger.debug("Fetching embeddings from DB")
     index, embeddings = EMBEDDINGS_DB_CONNECTOR.load_embeddings_by_ids(pids)
-    return l2norm(np.array(embeddings).reshape(len(index), -1)), [(str(p), c) for p, c in index]
+    return normalize(np.array(embeddings).reshape(len(index), -1)), [(str(p), c) for p, c in index]
