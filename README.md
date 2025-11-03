@@ -5,45 +5,51 @@
 PubTrends
 =========
 
-PubTrends is a scientific literature exploratory tool for analyzing topics of a research field and similar papers
-analysis. 
+PubTrends is an interactive scientific literature exploration tool that helps researchers analyze topics, visualize
+research trends, and discover related works.
 
 Available online at: https://pubtrends.info/
 
+## Overview
 With PubTrends, you can:
+
 * Gain a concise overview of your research area.
 * Explore popular trends and impactful publications.
 * Discover new and promising research directions.
 
-Datasets:
+* See example of analysis at: https://pubtrends.info/about.html
+
+## Datasets:
+
 * [Pubmed](https://pubmed.ncbi.nlm.nih.gov) ~40 mln papers and 450 mln citations
 * [Semantic Scholar](https://www.semanticscholar.org) 170 mln papers and 600 mln citations
 
 ![Scheme](pysrc/app/static/about_pubtrends_scheme.png?raw=true "Title")
 
-## Technical details
+## Technical Architecture
 
-PubTrends is a web service developed in Python and JavaScript, designed to analyze and visualize information about scientific publications. It uses PostgreSQL as its main database for storing details like titles, abstracts, authors, and citations, along with its built-in text search for full-text search functionality. A Kotlin ORM is used to manage the database, while a separate SQLite database stores user roles and admin credentials.
+PubTrends is a Python / Kotlin + JavaScript web service with a PostgreSQL backend.
+It uses:
+* Backend: Nginx + Flask + Gunicorn
+* Task Queue: Celery + Redis
+* DataBase: Postgres + Kotlin ORM + Psycopg2
+* Data Analysis: Pandas, NumPy, Scikit-learn
+* Semantic Search: Faiss + Postgres pgvector
+* NLP: NLTK, SpaCy, word2vec (GenSim), Fasttext, Sentence-Transformers, custom node2vec
+* Visualization: Bokeh, Holoviews, Seaborn, Matplotlib
+* Frontend: Bootstrap, jQuery, Cytoscape.js
+* Deployment: Docker Compose 
+* Testing: JUnit + PyTest + Flake8 + TeamCity
 
-The web service is powered by Flask and Gunicorn, with Celery managing asynchronous tasks and Redis acting as the message broker. For data manipulation and analysis, libraries such as Pandas, NumPy, and Scikit-Learn are used, while text processing relies on NLTK and SpaCy. Graphs and embeddings are handled using NetworkX, word2vec (via GenSim), and a custom node2vec implementation.
+See [environment.yml](env/environment.yml) for the full list of libraries used in the project.
 
-For data visualization, Bokeh, Holoviews, Seaborn, and Matplotlib are used, with Bokeh providing interactive plots for web pages and Jupyter notebooks. The frontend is built with Bootstrap for layout, jQuery for interactivity, and Cytoscape.js for rendering graphs. 
+## Docker
 
-Please refer to [environment.yml](env/environment.yml) for the full list of libraries used in the project.
+Two Docker images are used for testing and deployment: 
+* [biolabs/pubtrends](resources/docker/main/Dockerfile) - production
+* [biolabs/pubtrends-test](resources/docker/test/Dockerfile) - testing 
 
-### Docker
-
-Two Docker images are used for testing and deployment: [biolabs/pubtrends-test](resources/docker/main/Dockerfile)
-and [biolabs/pubtrends](resources/docker/test/Dockerfile), respectively. We use [Docker Hub](https://hub.docker.com/) to
-store built images. Service deployment is done with Docker compose, which launches Redis container, Celery container and
-Gunicorn container.
-
-Please refer to [docker-compose.yml](docker-compose.yml) for more information about deployment.
-
-### Testing and CI
-
-Testing is done with Pytest and JUnit. Flake8 linter is used for quality assessment of Python code. Python tests are
-launched within Docker. Continuous integration is done with TeamCity using build chains.
+We use [Docker Hub](https://hub.docker.com/) to store built images. 
 
 ## Configuration
 
@@ -134,9 +140,11 @@ Updates - add the following line to crontab:
 
 Download Sample from [Semantic Scholar](https://www.semanticscholar.org/) or full archive. See Open Corpus.<br>
 The latest release can be found at: https://api.semanticscholar.org/api-docs/datasets#tag/Release-Data
+
    ```
    curl https://api.semanticscholar.org/datasets/v1/release/
    ```
+
 * Linux & Mac OS
 
    ```
@@ -182,7 +190,9 @@ The latest release can be found at: https://api.semanticscholar.org/api-docs/dat
    ```
 
 ### Updating embeddings
+
 Please ensure that embeddings Postgres DB with vector extension is up and running
+
    ```
    docker run --rm --name pgvector -p 5430:5432 \
         -m 32G \
@@ -192,8 +202,10 @@ Please ensure that embeddings Postgres DB with vector extension is up and runnin
         -e PGDATA=/var/lib/postgresql/data/pgdata \
         -d pgvector/pgvector:pg17
    ```
-   Then you'll be able to update embeddings with a commandline below. It will compute embeddings and store them into
-   the vector DB, and update the Faiss index for fast search.
+
+Then you'll be able to update embeddings with a commandline below. It will compute embeddings and store them into
+the vector DB, and update the Faiss index for fast search.
+
    ```
    docker build -f pysrc/preprocess/embeddings/Dockerfile -t update_embeddings --platform linux/amd64 .
    docker run  -v ~/.pubtrends:/config:ro \
@@ -208,7 +220,6 @@ Please ensure that embeddings Postgres DB with vector extension is up and runnin
    /bin/bash ~/pubtrends/scripts/nlp.sh
    python pysrc/preprocess/update_embeddings.py
    ```
-
 
 ## Development
 
@@ -244,15 +255,17 @@ Then launch web-service or use jupyter notebook for development.
     python -m pysrc.app.pubtrends_app
     ```
 
-6. Start service for text embeddings based on either pretrained fasttext model or sentence-transformer at http://localhost:5001/
+6. Start service for text embeddings based on either pretrained fasttext model or sentence-transformer
+   at http://localhost:5001/
     ```
     python -m pysrc.endpoints.embeddings.fasttext.fasttext_app
     ```
-or 
-    ```
-    python -m pysrc.endpoints.embeddings.sentence_transformer.sentence_transformer_app
-    ```
-    
+
+or
+```
+python -m pysrc.endpoints.embeddings.sentence_transformer.sentence_transformer_app
+```
+
 7. Optionally start semantic search service http://localhost:5002/
     ```
     python -m pysrc.semantic_search.semantic_search_app
@@ -301,6 +314,7 @@ Notebooks are located under the `/notebooks` folder. Please configure `PYTHONPAT
 ## Deployment
 
 Deployment is done with docker-compose:
+
 * Gunicorn serving main pubtrends Flask app
 * Redis as a message proxy
 * Celery workers queue
@@ -324,7 +338,7 @@ Please ensure that you have configured and prepared the database(s).
    NOTE: stop Postgres docker image with timeout `--time=300` to avoid DB recovery.\
 
    NOTE2: for speed reasons we use materialize views, which are updated upon successful database update. In case of
-    an emergency stop, the view should be refreshed manually to ensure sort by citations works correctly:
+   an emergency stop, the view should be refreshed manually to ensure sort by citations works correctly:
     ```
     psql -h localhost -p 5432 -U biolabs -d pubtrends
     refresh materialized view matview_pmcitations;
@@ -380,7 +394,8 @@ See [AUTHORS.md](AUTHORS.md) for a list of authors and contributors.
 # Materials
 
 * *Shpynov, O. and Kapralov, N., 2021, August. PubTrends: a scientific literature explorer. In Proceedings of the
-12th ACM Conference on Bioinformatics, Computational Biology, and Health Informatics (pp. 1-1).* https://doi.org/10.1145/3459930.3469501
+  12th ACM Conference on Bioinformatics, Computational Biology, and Health Informatics (pp.
+  1-1).* https://doi.org/10.1145/3459930.3469501
 
 * [Icons by Feather](https://feathericons.com/)
 
