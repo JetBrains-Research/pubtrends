@@ -16,15 +16,15 @@ from matplotlib import pyplot as plt
 from sklearn.preprocessing import minmax_scale
 from wordcloud import WordCloud
 
-from pysrc.papers.plot.geometry import compute_component_boundaries, rescaled_comp_corrds, \
-    shapely_to_bokeh_multipolygons
 from pysrc.config import PAPERS_PLOT_WIDTH, WORD_CLOUD_WIDTH, WORD_CLOUD_KEYWORDS, WORD_CLOUD_HEIGHT, \
     PLOT_WIDTH, SHORT_PLOT_HEIGHT, MAX_LINEAR_AXIS, PLOT_HEIGHT, MAX_JOURNAL_LENGTH, MAX_AUTHOR_LENGTH, \
     TALL_PLOT_HEIGHT, VISUALIZATION_GRAPH_EDGES
 from pysrc.papers.analysis.graph import sparse_graph
 from pysrc.papers.analysis.topics import get_topics_description
+from pysrc.papers.plot.geometry import compute_component_boundaries, rescaled_comp_corrds, \
+    shapely_to_bokeh_multipolygons
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
-from pysrc.papers.utils import cut_authors_list, trim_query, contrast_color, \
+from pysrc.papers.utils import cut_authors_list, contrast_color, \
     topics_palette_rgb, color_to_rgb, factor_colors, factors_colormap, trim
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
@@ -277,12 +277,13 @@ class Plotter:
             self.data.df, kwd_df, self.data.df['comp'], self.data.dendrogram
         )
 
-    def plot_papers_graph(self):
+    def plot_papers_graph(self, interactive=True):
         logger.debug('Prepare sparse graph to visualize with reduced number of edges')
         visualize_graph = sparse_graph(self.data.papers_graph, VISUALIZATION_GRAPH_EDGES)
         return Plotter._plot_papers_graph(
             self.data.search_ids, self.data.source, visualize_graph, self.data.df,
-            self.config.topic_description_words, topics_tags=self.topics_description
+            self.config.topic_description_words, topics_tags=self.topics_description,
+            interactive=interactive
         )
 
     def _to_colored_square(self, components, counts, sum, top=3):
@@ -555,7 +556,8 @@ class Plotter:
     def _plot_papers_graph(
             search_ids, source, gs, df, topic_words,
             shown_pid=None, topics_tags=None, topics_meshs=None, add_callback=True,
-            width=PLOT_WIDTH, height=TALL_PLOT_HEIGHT):
+            width=PLOT_WIDTH, height=TALL_PLOT_HEIGHT,
+            interactive=True):
         logger.debug('Processing plot_papers_graph')
         pids = df['id']
         pim = dict((p, i) for i, p in enumerate(pids))
@@ -568,6 +570,7 @@ class Plotter:
         pids_int = [pim[p] for p in pids]
         # Graph API requires id to be integer
         graph.node_renderer.data_source.add(pids_int, 'index')
+        graph.node_renderer.data_source.data['source'] = [source] * len(pids)
         graph.node_renderer.data_source.data['id'] = pids_int
         graph.node_renderer.data_source.data['pid'] = pids
         graph.node_renderer.data_source.data['title'] = df['title']
@@ -602,15 +605,12 @@ class Plotter:
             graph.node_renderer.data_source.data['line_width'] = [1] * len(pids)
             graph.node_renderer.data_source.data['alpha'] = [0.7] * len(pids)
 
-    # Edges
+        # Edges
         graph.edge_renderer.data_source.data = dict(start=[pim[u] for u, _ in gs.edges],
                                                     end=[pim[v] for _, v in gs.edges])
 
         # start of layout code
-        xs, ys = df['x'].copy(), df['y'].copy()
-        xmin, xrange = np.min(xs), np.max(xs) - np.min(xs)
-        ymin, yrange = np.min(ys), np.max(ys) - np.min(ys)
-        xs, ys = minmax_scale(xs) * 100, minmax_scale(ys) * 100
+        xs, ys = minmax_scale(df['x']) * 100, minmax_scale(df['y']) * 100
         p = figure(width=width,
                    height=height,
                    x_range=(-5, 105),
@@ -625,26 +625,6 @@ class Plotter:
         p.grid.grid_line_color = None
         p.outline_line_color = None
         p.sizing_mode = 'stretch_width'
-
-        hover_tags = [
-            ("Author(s)", '@authors'),
-            ("Journal", '@journal'),
-            ("Year", '@year'),
-            ("Type", '@type'),
-            ("Cited by", '@total paper(s) total'),
-            ("Mesh", '@mesh'),
-            ("Keywords", '@keywords'),
-            ("Topic", '@topic'),
-        ]
-        if topics_tags is not None:
-            hover_tags.append(("Topic tags", '@topic_tags'))
-        if topics_meshs is not None:
-            hover_tags.append(("Topic Mesh tags", '@topic_meshs'))
-        p.add_tools(HoverTool(tooltips=Plotter._paper_html_tooltips(source, hover_tags, idname='pid'),
-                              renderers=[graph]))
-
-        if add_callback:
-            p.js_on_event('tap', Plotter._paper_callback(graph.node_renderer.data_source, idname='pid'))
 
         graph_layout = dict(zip(pids_int, zip(xs, ys)))
         graph.layout_provider = StaticLayoutProvider(graph_layout=graph_layout)
@@ -682,9 +662,9 @@ class Plotter:
         # Plot labels in centers
         source = ColumnDataSource({'x': lxs, 'y': lys, 'name': labels})
         labels = LabelSet(x='x', y='y', text='name', source=source,
-                  background_fill_color='white',
-                  text_font_size='15px',
-                  background_fill_alpha=.9)
+                          background_fill_color='white',
+                          text_font_size='15px',
+                          background_fill_alpha=.9)
         p.renderers.append(labels)
 
         # Add topic tags in the top left corner
@@ -701,6 +681,27 @@ class Plotter:
                 ))
 
         Plotter.remove_wheel_zoom_tool(p)
+        if interactive:
+            hover_tags = [
+                ("Author(s)", '@authors'),
+                ("Journal", '@journal'),
+                ("Year", '@year'),
+                ("Type", '@type'),
+                ("Cited by", '@total paper(s) total'),
+                ("Source", '@source'),
+                ("Mesh", '@mesh'),
+                ("Keywords", '@keywords'),
+                ("Topic", '@topic'),
+            ]
+            if topics_tags is not None:
+                hover_tags.append(("Topic tags", '@topic_tags'))
+            if topics_meshs is not None:
+                hover_tags.append(("Topic Mesh tags", '@topic_meshs'))
+            p.add_tools(HoverTool(tooltips=Plotter._paper_html_tooltips(source, hover_tags, idname='pid'),
+                                  renderers=[graph]))
+            if add_callback:
+                p.js_on_event('tap', Plotter._paper_callback(graph.node_renderer.data_source, idname='pid'))
+
         return p
 
     @staticmethod

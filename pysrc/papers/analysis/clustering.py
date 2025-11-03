@@ -23,7 +23,7 @@ def cluster_and_sort(x, n_clusters):
     clusters_counter = Counter(model.labels_)
     min_cluster = clusters_counter.most_common()[-1][1]
     logger.debug(f'Clusters = {n_clusters}, min cluster size = {min_cluster}')
-
+    logger.debug(f'Clusters sizes: {clusters_counter}')
 
     # Estimate hierarchical clustering possibilities
     # Closer to 1 → Better hierarchical clustering.
@@ -39,7 +39,6 @@ def reorder_by_size(clusters):
     clusters_counter = Counter(clusters)
     logger.debug('Reorder clusters by size descending')
     min_size = clusters_counter.most_common()[-1][1]
-    logger.debug(f'Min cluster size = {min_size}')
     reorder_map = {c: i for i, (c, _) in enumerate(clusters_counter.most_common())}
     result = [reorder_map[c] for c in clusters]
     return result
