@@ -17,7 +17,7 @@ With PubTrends, you can:
 * Explore popular trends and impactful publications.
 * Discover new and promising research directions.
 
-* See example of analysis at: https://pubtrends.info/about.html
+See example of analysis at: https://pubtrends.info/about.html
 
 ## Datasets:
 
