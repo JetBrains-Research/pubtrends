@@ -5,8 +5,10 @@ Here you can see the full list of changes between each release.
 
 Version 1.4
 ------------
-Released on Aug XX, 2025
+Released on Nov 3, 2025
 
+- Improved clustering for topics by incorporating papers similarity based on LLM-embeddings into 
+    bibliographic graph and joint embeddings computation
 - Reuse embeddings DB for fetching text embeddings
 - Use parquet format for Faiss index storage
 
@@ -17,7 +19,8 @@ Released on Jun 01, 2025
 - Reworked text embeddings usage for global similarity network construction
 - Supported Sentence Transformer models for whole texts embeddings
 - Implemented Questions for paper feature using improved embeddings
-- Preview of Semantic search with Sentence Transformer for embeddings, Postgresql with vector extension for embeddings storage and Faiss for fast embeddings lookup 
+- Preview of Semantic search with Sentence Transformer for embeddings, 
+  Postgresql with vector extension for embeddings storage and Faiss for fast embeddings lookup 
 
 Version 1.2
 ------------

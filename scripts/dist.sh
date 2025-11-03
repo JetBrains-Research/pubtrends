@@ -3,7 +3,7 @@ set -euo pipefail
 # Script for building tar.gz archive for deployment
 # author Oleg.Shpynov os@jetbrains.com
 
-VERSION=1.3
+VERSION=1.4
 BUILD=development
 GA=""
 
