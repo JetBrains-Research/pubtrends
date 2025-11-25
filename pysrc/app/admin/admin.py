@@ -31,7 +31,7 @@ else:
 def configure_admin_functions(app, celery_app, logfile):
     """Configures flask-admin and flask-sqlalchemy"""
     with app.app_context():
-        app.config.from_pyfile('config.py')
+        app.config.from_object('pysrc.app.config.Config')
         service_database_path = os.path.join(SERVICE_DATABASE_PATH, app.config['DATABASE_FILE'])
         app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + service_database_path
 
@@ -175,7 +175,7 @@ def init_admin(app, celery_app, logfile):
     """Initialize Admin blueprint: DB, Security, seed data."""
     with app.app_context():
         # Load admin-specific config
-        app.config.from_pyfile('config.py')
+        app.config.from_object('pysrc.app.config.Config')
 
         # Configure DB path
         service_db_base_paths = ['/database', os.path.expanduser('~/.pubtrends/database')]
