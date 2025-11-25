@@ -6,8 +6,8 @@ from pysrc.celery.tasks_main import analyze_search_terms, analyze_semantic_searc
 from pysrc.papers.utils import SORT_MOST_CITED
 
 
-# Keep paths unchanged (no prefix) to avoid breaking external clients
-api_bp = Blueprint('api_bp', __name__)
+# API blueprint
+api_bp = Blueprint('api_bp', __name__, url_prefix='/api')
 
 
 def _log_request(r):
@@ -18,10 +18,10 @@ def _log_request(r):
         return 'addr:unknown args:{}'.format(dict())
 
 
-@api_bp.route('/search_terms_api', methods=['POST'])
+@api_bp.route('/search_terms', methods=['POST'])
 def search_terms_api():
     logger = current_app.logger
-    logger.info(f'/search_terms_api {_log_request(request)}')
+    logger.info(f'/search_terms {_log_request(request)}')
     query = request.form.get('query')
     try:
         if query:
@@ -32,17 +32,17 @@ def search_terms_api():
                 test=False
             )
             return {'success': True, 'jobid': job.id}
-        logger.error(f'/search_terms_api error {_log_request(request)}')
+        logger.error(f'/search_terms error {_log_request(request)}')
         return {'success': False, 'jobid': None}
     except Exception as e:
-        logger.exception(f'/search_terms_api exception {e}')
+        logger.exception(f'/search_terms exception {e}')
         return {'success': False, 'jobid': None}, 500
 
 
-@api_bp.route('/semantic_search_api', methods=['POST'])
+@api_bp.route('/semantic_search', methods=['POST'])
 def semantic_search_api():
     logger = current_app.logger
-    logger.info(f'/semantic_search_api {_log_request(request)}')
+    logger.info(f'/semantic_search {_log_request(request)}')
     query = request.form.get('query')
     try:
         if query:
@@ -50,17 +50,17 @@ def semantic_search_api():
                 'Pubmed', query=query, limit=1000, noreviews=True, topics=10, test=False
             )
             return {'success': True, 'jobid': job.id}
-        logger.error(f'/semantic_search_api error {_log_request(request)}')
+        logger.error(f'/semantic_search error {_log_request(request)}')
         return {'success': False, 'jobid': None}
     except Exception as e:
-        logger.exception(f'/semantic_search_api exception {e}')
+        logger.exception(f'/semantic_search exception {e}')
         return {'success': False, 'jobid': None}, 500
 
 
-@api_bp.route('/analyse_ids_api', methods=['POST'])
+@api_bp.route('/analyse_ids', methods=['POST'])
 def analyse_ids_api():
     logger = current_app.logger
-    logger.info(f'/analyse_ids_api {_log_request(request)}')
+    logger.info(f'/analyse_ids {_log_request(request)}')
     query = request.form.get('query')
     ids_raw = request.form.get('ids')
     job_id = request.form.get('job_id')
@@ -69,17 +69,17 @@ def analyse_ids_api():
         if query and job_id and ids:
             analyze_id_list.apply_async(args=['Pubmed', query, ids, 10, False], task_id=job_id)
             return {'success': True, 'jobid': job_id}
-        logger.error(f'/analyse_ids_api error {_log_request(request)}')
+        logger.error(f'/analyse_ids error {_log_request(request)}')
         return {'success': False, 'jobid': None}
     except Exception as e:
-        logger.exception(f'/analyse_ids_api exception {e}')
+        logger.exception(f'/analyse_ids exception {e}')
         return {'success': False, 'jobid': None}, 500
 
 
-@api_bp.route('/check_status_api/<jobid>', methods=['GET'])
+@api_bp.route('/check_status/<jobid>', methods=['GET'])
 def check_status_api(jobid):
     logger = current_app.logger
-    logger.info(f'/check_status_api {_log_request(request)}')
+    logger.info(f'/check_status {_log_request(request)}')
     try:
         job = pubtrends_celery.AsyncResult(jobid)
         if job.state == 'PENDING':
@@ -90,14 +90,14 @@ def check_status_api(jobid):
             return {'status': 'failed'}, 200
         return {'status': 'unknown'}, 200
     except Exception as e:
-        logger.exception(f'/check_status_api exception {e}')
+        logger.exception(f'/check_status exception {e}')
         return {'status': 'error'}, 500
 
 
-@api_bp.route('/get_result_api', methods=['GET'])
+@api_bp.route('/get_result', methods=['GET'])
 def get_result_api():
     logger = current_app.logger
-    logger.info(f'/get_result_api {_log_request(request)}')
+    logger.info(f'/get_result {_log_request(request)}')
     jobid = request.args.get('jobid')
     query = request.args.get('query')
     try:
@@ -106,5 +106,5 @@ def get_result_api():
             return data.to_json(), 200
         return {'status': 'error'}, 500
     except Exception as e:
-        logger.exception(f'/get_result_api exception {e}')
+        logger.exception(f'/get_result exception {e}')
         return {'status': 'error'}, 500
