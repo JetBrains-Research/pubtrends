@@ -6,12 +6,12 @@ import random
 import tempfile
 from urllib.parse import quote
 
-from celery.result import AsyncResult
 from flask import Flask, url_for, redirect, render_template, request, render_template_string, \
     send_from_directory, send_file
 from flask_caching import Cache
 
-from pysrc.app.admin.admin import configure_admin_functions
+from pysrc.app.admin import admin_bp, init_admin
+from pysrc.app.api import api_bp
 from pysrc.app.messages import SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, \
     SERVICE_LOADING_PREDEFINED_EXAMPLES, SERVICE_LOADING_INITIALIZING
 from pysrc.app.predefined import are_predefined_jobs_ready, PREDEFINED_JOBS, is_semantic_predefined
@@ -39,6 +39,10 @@ pubtrends_app.config['CACHE_REDIS_URL'] = os.environ.get('CELERY_BROKER_URL', 'r
 pubtrends_app.config['CACHE_DEFAULT_TIMEOUT'] = 600  # 10 minutes
 
 cache = Cache(pubtrends_app)
+
+# Register blueprints
+pubtrends_app.register_blueprint(admin_bp)
+pubtrends_app.register_blueprint(api_bp)
 
 #####################
 # Configure logging #
@@ -346,7 +350,7 @@ def status():
     """ Check tasks status being executed by Celery """
     jobid = request.values.get('jobid')
     if jobid:
-        job = AsyncResult(jobid, app=pubtrends_celery)
+        job = pubtrends_celery.AsyncResult(jobid)
         if job is None:
             return json.dumps(dict(state='FAILURE', message=f'Unknown task id {jobid}'))
         job_state, job_result = job.state, job.result
@@ -624,97 +628,9 @@ def feedback():
         logger.error(f'/feedback error')
     return render_template_string('Thanks you for the feedback!'), 200
 
-
-#######################
-# AIHKTN25-28 API     #
-#######################
-
-@pubtrends_app.route('/search_terms_api', methods=['POST'])
-def search_terms_api():
-    logger.info(f'/search_terms_api {log_request(request)}')
-    query = request.form.get('query')  # Original search query
-    try:
-        # Regular search syntax
-        if query:
-            job = analyze_search_terms.delay('Pubmed', query=query, limit=1000, sort=SORT_MOST_CITED,
-                                             noreviews=True, min_year=None, max_year=None,
-                                             topics=10,
-                                             test=False)
-            return {'success': True, 'jobid': job.id}
-        logger.error(f'/search_terms_api error {log_request(request)}')
-        return {'success': False, 'jobid': None}
-    except Exception as e:
-        logger.exception(f'/search_terms_api exception {e}')
-        return {'success': False, 'jobid': None}, 500
-
-
-@pubtrends_app.route('/semantic_search_api', methods=['POST'])
-def semantic_search_api():
-    logger.info(f'/semantic_search_api {log_request(request)}')
-    query = request.form.get('query')  # Original search query
-    try:
-        # Regular search syntax
-        if query:
-            job = analyze_semantic_search.delay('Pubmed', query=query, limit=1000,
-                                                noreviews=True,
-                                                topics=10,
-                                                test=False)
-            return {'success': True, 'jobid': job.id}
-        logger.error(f'/semantic_search_api error {log_request(request)}')
-        return {'success': False, 'jobid': None}
-    except Exception as e:
-        logger.exception(f'/semantic_search_api exception {e}')
-        return {'success': False, 'jobid': None}, 500
-
-
-@pubtrends_app.route('/analyse_ids_api', methods=['POST'])
-def analyse_ids_api():
-    logger.info(f'/analyse_ids_api {log_request(request)}')
-    query = request.form.get('query')  # Original search query
-    ids = request.form.get('ids').split(',')
-    job_id = request.form.get('job_id')
-    try:
-        if query and job_id and ids:
-            analyze_id_list.apply_async(args=['Pubmed', query, ids, 10, False], task_id=job_id)
-            return {'success': True, 'jobid': job_id}
-        logger.error(f'/analyse_ids_api error {log_request(request)}')
-        return {'success': False, 'jobid': None}
-    except Exception as e:
-        logger.exception(f'/analyse_ids_api exception {e}')
-        return {'success': False, 'jobid': None}, 500
-
-
-@pubtrends_app.route('/check_status_api/<jobid>', methods=['GET'])
-def check_status_api(jobid):
-    logger.info(f'/check_status_api {log_request(request)}')
-    try:
-        job = pubtrends_celery.AsyncResult(jobid)
-        if job.state == 'PENDING':
-            return {'status': 'pending'}, 200
-        elif job.state == 'SUCCESS':
-            return {'status': 'success'}, 200
-        elif job.state == 'FAILURE':
-            return {'status': 'failed'}, 200
-        return {'status': 'unknown'}, 200
-    except Exception as e:
-        logger.exception(f'/check_status_api exception {e}')
-        return {'status': 'error'}, 500
-
-
-@pubtrends_app.route('/get_result_api', methods=['GET'])
-def get_result_api():
-    logger.info(f'/get_result_api {log_request(request)}')
-    jobid = request.args.get('jobid')
-    query = request.args.get('query')
-    try:
-        if jobid and query:
-            data = load_result_data(jobid, 'Pubmed', query, SORT_MOST_CITED, 1000, True, None, None, pubtrends_celery)
-            return data.to_json(), 200
-        return {'status': 'error'}, 500
-    except Exception as e:
-        logger.exception(f'/get_result_api exception {e}')
-        return {'status': 'error'}, 500
-
+##########################
+# Question functionality #
+##########################
 
 @pubtrends_app.route('/question', methods=['POST'])
 def question():
@@ -756,8 +672,7 @@ def question():
 # Admin functionality #
 #######################
 
-configure_admin_functions(pubtrends_app, pubtrends_celery, logfile)
-
+init_admin(pubtrends_app, pubtrends_celery, logfile)
 
 #######################
 # Additional features #
