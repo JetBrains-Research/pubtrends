@@ -199,6 +199,22 @@ class PubtrendsConfig:
         # Semantic search
         self.feature_semantic_search_enabled = params.getboolean('feature_semantic_search_enabled')
 
-        # TODO Admin password - should be a better way
-        self.admin_email = params['admin_email']
-        self.admin_password = params['admin_password']
+        # Admin bootstrap credentials
+        self.admin_email = self._read_secret('ADMIN_EMAIL', params.get('admin_email'))
+        self.admin_password = self._read_secret('ADMIN_PASSWORD', params.get('admin_password'))
+
+
+    # Prefer environment variables (or Docker secrets via *_FILE),
+    # fallback to config.properties for backward compatibility
+    @staticmethod
+    def _read_secret(name: str, default: str = None):
+            # Support *_FILE convention for Docker Swarm/K8s secrets
+            file_var = os.getenv(f"{name}_FILE")
+            if file_var and os.path.exists(file_var):
+                try:
+                    with open(file_var, 'r') as fh:
+                        return fh.read().strip()
+                except Exception:
+                    # do not raise to avoid breaking startup; fall back to env/params
+                    pass
+            return os.getenv(name, default)
