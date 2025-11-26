@@ -1,68 +1,54 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Loading - PubTrends</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css">
+{% extends 'base.html' %}
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.min.js"></script>
+{% block title %}Loading – PubTrends{% endblock %}
+{% block meta_description %}Preparing your PubTrends analysis…{% endblock %}
+{% set active_page = None %}
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1"/>
-    <!--            <link rel="stylesheet" href="../static/style.css"/>-->
-    <style>
-        .progress-bar.indeterminate {
-            position: relative;
-            animation: progress-indeterminate 3s linear infinite;
+{% block styles_extra %}
+<style>
+    .progress-bar.indeterminate {
+        position: relative;
+        animation: progress-indeterminate 3s linear infinite;
+    }
+
+    @keyframes progress-indeterminate {
+        from {
+            left: -25%;
+            width: 25%;
         }
-
-        @keyframes progress-indeterminate {
-            from {
-                left: -25%;
-                width: 25%;
-            }
-            to {
-                left: 100%;
-                width: 25%;
-            }
+        to {
+            left: 100%;
+            width: 25%;
         }
-    </style>
-    <script>
-        "use strict";
+    }
+</style>
+{% endblock %}
 
-        const TIMEOUT = 20000; // 20 seconds
-
-        $(function () {
-            setTimeout(function () {
-                window.location.replace("/");
-            }, TIMEOUT);
-        });
-    </script>
-</head>
-<body>
-
-<div class="container">
-    <nav class="navbar navbar-light bg-light d-flex">
-        <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
-    </nav>
-    <div class="progress" style="position: relative;">
-        <div class="progress-bar progress-bar-striped indeterminate">
-        </div>
+{% block content %}
+<section class="pt-hero p-5 mb-4">
+    <h1 class="h4 mb-2">Initializing</h1>
+    <p>
+    <div class="progress" style="position: relative; height: 1.25rem;">
+        <div class="progress-bar progress-bar-striped indeterminate"></div>
     </div>
-    <div class="mt-3 ml-3">
-        <p>{{ message }}</p>
-        Learn about the project <a class="link" href="about.html" target="_blank" role="button">here</a>.
+    <div class="mt-3">
+        <p class="mb-1">{{ message }}</p>
     </div>
-</div>
-<footer class="container text-center">
-    <p>version <a href="https://github.com/JetBrains-Research/pubtrends/blob/master/CHANGES.md" title="{{ version }}"
-                  target="_blank" class="a-footer">{{ version }}</a><br/>
-        &copy; 2021-2025 <a href="https://research.jetbrains.org/groups/biolabs"
-                            title="JetBrains Research BioLabs"
-                            target="_blank" class="a-footer">JetBrains Research</a></p>
-</footer>
-</body>
-</html>
+    </p>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary" href="about.html">Learn more</a>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts_extra %}
+<script>
+    "use strict";
+    const TIMEOUT = 20000; // 20 seconds
+    window.addEventListener('DOMContentLoaded', function () {
+        setTimeout(function () {
+            window.location.replace('/');
+        }, TIMEOUT);
+    });
+</script>
+{% endblock %}

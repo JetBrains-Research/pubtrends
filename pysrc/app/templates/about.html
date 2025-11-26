@@ -1,175 +1,298 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>About PubTrends - Your Scientific Literature Explorer</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css">
+{% extends 'base.html' %}
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+{% block title %}About PubTrends - Your Scientific Literature Explorer{% endblock %}
+{% block meta_description %}Learn what PubTrends does and how it visualizes trends and citation networks to help researchers.{% endblock %}
+{% block og_title %}About PubTrends{% endblock %}
+{% block og_description %}Overview, datasets, workflow, and example visualizations used by PubTrends.{% endblock %}
 
-    <!-- Notify.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"></script>
-    <script src="{{ url_for('static', filename='feedback.js') }}"></script>
-    <!--    <script src="../static/feedback.js"/>-->
-    <link rel="stylesheet" href="{{ url_for('static', filename='feedback.css') }}?v=1">
-    <!--    <link rel="stylesheet" href="../static/feedback.css"/>-->
+{% set active_page = 'about' %}
 
-    <link rel="stylesheet" href="../static/style.css"/>
-    <script>
-        "use strict";
-        $(document).ready(function () {
+{% block styles_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='feedback.css') }}?v=1">
+{% endblock %}
+
+{% block scripts_head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"></script>
+<script src="{{ url_for('static', filename='feedback.js') }}"></script>
+<script src="{{ url_for('static', filename='navigate.js') }}?v=1"></script>
+{% endblock %}
+
+{% block scripts_extra %}
+<script>
+    "use strict";
+    $(document).ready(function () {
+        if (typeof createClickableFeedBackForm === 'function') {
             createClickableFeedBackForm("feedback-about-html-form", "feedback-about-html");
-        });
-    </script>
-</head>
-<body>
-<div class="container mt-4" role="main">
-    <h2>PubTrends</h2>
-    <p>
-        PubTrends is a powerful tool designed to help researchers navigate the ever-growing flow of scientific
-        publications.<br>
-        It accelerates trend analysis and the discovery of breakthrough papers, offering a streamlined approach to
-        staying ahead in your field.
-    </p>
-    With PubTrends, you can:
-    <ul>
-        <li>Gain a concise overview of your research area.</li>
-        <li>Explore popular trends and impactful publications.</li>
-        <li>Discover new and promising research directions.</li>
-    </ul>
-    <h5 id="datasets">Datasets</h5>
-    <ul>
-        <li><a class="link"
-               href="https://pubmed.ncbi.nlm.nih.gov/">Pubmed</a>
-        </li>
-        <li><a class="link" href="https://www.semanticscholar.org/">Semantic Scholar</a>
-        </li>
-    </ul>
-    <h5 id="workflow">Workflow</h5>
-    <p>
-        The workflow diagram below illustrates how PubTrends operates, offering a seamless path from data collection to
-        meaningful insights.
-        <img class="mx-auto d-block" src="../static/about_pubtrends_scheme.png" style="width: 100%; max-width: 700px;">
-    </p>
+        }
+        // Shared navigation behavior (desktop scroll‑spy + back‑to‑top)
+        if (window.PTNavigation && typeof window.PTNavigation.init === 'function') {
+            window.PTNavigation.init({
+                desktopNavId: 'onpage-desktop',
+                backToTopId: 'backToTop'
+            });
+        }
+    });
+</script>
+{% endblock %}
 
-    <h3 id="example">Example</h3>
-    <p>To demonstrate PubTrends in action, we showcase an analysis for the predefined search query <a
-            class="link" target="_blank"
-            href="/result?source=Pubmed&sort=Most+Cited&limit=1000&noreviews=on&topics=10&jobid=predefined_013615a5e39aa14ae55eba6d2a89b068&query=%22human+aging%22"
-    >"human aging"</a>. <br>
-    </p>
-
-    <h5>Papers</h5>
-    <p>The Papers section offers a comprehensive overview of the field, featuring the total number of articles,
-        extracted topics, and a word cloud of frequently used terms in titles and abstracts (clickable for accessing
-        related documents). It also includes a yearly summary of published papers and an option to view papers in a list
-        format.
-    </p>
-    <img class="mx-auto d-block" src="../static/about_report.png"
-         style="width: 100%; max-width: 700px">
-    <h5>Top Cited Papers</h5>
-    <p>
-        The Top Cited Papers visualization presents an interactive breakdown of the most-cited works, categorized by
-        citation count and article type, with distinct colors representing various types.
-    </p>
-    <img class="mx-auto d-block"
-         src="../static/about_top_cited_papers.png"
-         style="width: 100%; max-width: 700px">
-
-    <h5>Hot Papers</h5>
-    <p>
-        The Hot Papers plot identifies the most impactful papers by highlighting those with the highest citation counts
-        for each year.
-    </p>
-    <img class="mx-auto d-block" src="../static/about_hot_papers.png"
-         style="width: 100%; max-width: 700px">
-    <h5>Keywords</h5>
-    <p>The Keywords Frequency plot displays the most common terms used in papers and their evolution over time.<br>
-        You can hover over a keyword to see the exact number of papers in which it appears.
-    </p>
-    <img class="mx-auto d-block" src="../static/about_keywords.png"
-         style="width: 100%; max-width: 700px">
-
-    <h5 id="network">Network</h5>
-    <p>
-        Topics are closely related groups of documents. Aggregated graph and text embeddings are used to find similar
-        papers and detect topics.<br>
-        Overall structure of topics within a research field can be visualised as a papers similarity graph.
-    </p>
-    <img class="mx-auto d-block" src="../static/about_network.png"
-         style="width: 100%; max-width: 700px"><br>
-    <h5>Interactive Visualization</h5>
-    <p>The displayed graph represents the overall structure of the research field, but the dedicated graph explorer
-        offers a more comprehensive experience.<br>
-        It allows papers to be color-coded by year or topic and provides advanced search and filtering options using
-        available metadata.<br>
-        In the screenshot, papers are color-coded by topic, only papers with the word "methylation" are shown.
-    </p>
-    <img class="mx-auto d-block" src="../static/about_graph_explorer.png"
-         style="width: 100%; max-width: 700px"><br>
-
-    <h5 id="topics">Topics</h5>
-    <p>Topics are identified through hierarchical clustering of paper embeddings.<br>
-        Users can explore the topic hierarchy using a dendrogram in a dedicated plot.</p>
-    <img class="mx-auto d-block" src="../static/about_topics_hierarchy.png"
-         style="width: 100%; max-width: 700px"><br>
-    <h5>Topics by Year</h5>
-    <p>The Topics by Year plot displays the distribution of papers across different topics, highlighting the number of
-        papers for each topic annually.<br>
-        Each topic is summarized with key keywords and its overall share of total papers.
-    </p>
-    <img class="mx-auto d-block" src="../static/about_topics_by_year.png"
-         style="width: 100%; max-width: 700px">
-    <h5>Topic Keywords</h5>
-    <p>For each topic, the application displays a familiar word cloud and an articles plot.<br>
-        The word cloud is generated using terms specific to the selected topic, highlighting their significance compared
-        to other topics.<br>
-        The size of each word reflects its importance, based on the proportion of papers mentioning it.
-    </p>
-    <img class="mx-auto d-block" src="../static/about_topic.png"
-         style="width: 100%; max-width: 700px">
-    <h3>Materials</h3>
-    <ul>
-        <li>
-            <i>Shpynov, O. and Kapralov, N., PubTrends: a scientific literature explorer. In Proceedings of the 12th ACM
-                Conference on Bioinformatics, Computational Biology, and Health Informatics,
-                2021 (pp. 1-1).</i>
-            <a class="link" href="https://doi.org/10.1145/3459930.3469501">https://doi.org/10.1145/3459930.3469501</a>
-        </li>
-        <li>
-            <i>Nikiforovskaya, A., Kapralov, N., Vlasova, A., Shpynov, O. and Shpilman, A., 2020, December.
-                Automatic generation of reviews of scientific papers. In 2020 19th IEEE International Conference on
-                Machine Learning and Applications (ICMLA) (pp. 314-319). IEEE.</i>
-            <a class="link"
-               href="https://arxiv.org/abs/2010.04147">https://arxiv.org/abs/2010.04147</a>
-        </li>
-    </ul>
-    <h3>Code</h3>
-    <p>
-        Source code is available on GitHub at
-        <a href="https://github.com/JetBrains-Research/pubtrends" target="_blank">https://github.com/JetBrains-Research/PubTrends</a>.
-    </p>
-</div>
-<footer class="container text-center">
-    <div class="row">
-        <div class="col-4">
-            <div id="feedback-about-html-form" class="float-left vertical-center"></div>
+{% block content %}
+<section class="pt-hero p-5 mb-4">
+    <div class="row align-items-center gy-3">
+        <div class="col-lg-10">
+            <h1 class="display-6 mb-2">About PubTrends</h1>
+            <p class="lead pt-muted mb-3">Discover publications, trends, and visualize citation networks.</p>
         </div>
-        <div class="col-4">
-            <p>version <a href="https://github.com/JetBrains-Research/pubtrends/blob/master/CHANGES.md"
-                          title="{{ version }}"
-                          target="_blank" class="a-footer">{{ version }}</a><br/>
-                &copy; 2021-2025 <a href="https://research.jetbrains.org/groups/biolabs"
-                                    title="JetBrains Research BioLabs"
-                                    target="_blank" class="a-footer">JetBrains Research</a>
-            </p>
-        </div>
-        <div class="col-4"></div>
     </div>
-</footer>
-</body>
-</html>
+</section>
+
+<div class="row g-3">
+    <!-- Mobile quick navigation (top) -->
+    <div class="d-lg-none">
+        <div class="sticky-top bg-white border-bottom py-2 px-2" role="navigation">
+            <div class="nav nav-pills flex-nowrap overflow-auto" id="onpage-mobile">
+                <a class="nav-link py-1 px-2 me-1 grey" href="#about">About</a>
+                <a class="nav-link py-1 px-2 me-1 grey" href="#datasets">Datasets</a>
+                <a class="nav-link py-1 px-2 me-1 grey" href="#workflow">Workflow</a>
+                <a class="nav-link py-1 px-2 me-1 grey" href="#example">Example</a>
+                <a class="nav-link py-1 px-2 me-1 grey" href="#network">Network</a>
+                <a class="nav-link py-1 px-2 me-1 grey" href="#topics">Topics</a>
+                <a class="nav-link py-1 px-2 me-1 grey" href="#materials">Materials</a>
+                <a class="nav-link py-1 px-2 me-1 grey" href="#code">Code</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sticky sidebar (left) modern TOC -->
+    <nav class="d-none d-lg-block col-lg-2 col-xl-2">
+        <div id="sidebar" class="position-sticky" style="top: 1rem">
+            <div class="toc pt-card p-2" style="padding-bottom: 0;">
+                <!-- Scrollable area keeps the nav always visible while allowing internal scroll -->
+                <div style="max-height: calc(100vh - 6rem - 1rem); overflow-y: auto; overflow-x: hidden; padding-bottom: 0.5rem;">
+                    <ul class="nav flex-column" id="onpage-desktop">
+                        <li class="nav-item d-flex align-items-center">
+                            <img class="nav-icon me-2" alt="" src="{{ url_for('static', filename='info.svg') }}"/>
+                            <a class="nav-link px-0 py-1" href="#about">About</a>
+                        </li>
+                        <li class="nav-item d-flex align-items-center">
+                            <img class="nav-icon me-2" alt="" src="{{ url_for('static', filename='book-open.svg') }}"/>
+                            <a class="nav-link px-0 py-1" href="#datasets">Datasets</a>
+                        </li>
+                        <li class="nav-item d-flex align-items-center">
+                            <img class="nav-icon me-2" alt="" src="{{ url_for('static', filename='zap.svg') }}"/>
+                            <a class="nav-link px-0 py-1" href="#workflow">Workflow</a>
+                        </li>
+                        <li class="nav-item d-flex align-items-center">
+                            <img class="nav-icon me-2" alt="" src="{{ url_for('static', filename='home.svg') }}"/>
+                            <a class="nav-link px-0 py-1" href="#example">Example</a>
+                        </li>
+                        <li class="nav-item d-flex align-items-center">
+                            <img class="nav-icon me-2" alt="" src="{{ url_for('static', filename='globe.svg') }}"/>
+                            <a class="nav-link px-0 py-1" href="#network">Network</a>
+                        </li>
+                        <li class="nav-item d-flex align-items-center">
+                            <img class="nav-icon me-2" alt="" src="{{ url_for('static', filename='tag.svg') }}"/>
+                            <a class="nav-link px-0 py-1" href="#topics">Topics</a>
+                        </li>
+                        <li class="nav-item d-flex align-items-center">
+                            <img class="nav-icon me-2" alt="" src="{{ url_for('static', filename='book-open.svg') }}"/>
+                            <a class="nav-link px-0 py-1" href="#materials">Materials</a>
+                        </li>
+                        <li class="nav-item d-flex align-items-center">
+                            <img class="nav-icon me-2" alt="" src="{{ url_for('static', filename='hash.svg') }}"/>
+                            <a class="nav-link px-0 py-1" href="#code">Code</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main content -->
+    <main class="col-lg-10 col-xl-10" role="main">
+        <div class="card border-light pt-card" style="margin-top: 0;">
+            <div class="card-body">
+                <div id="about">
+                    <h5>PubTrends</h5>
+                    It is a powerful tool designed to help researchers navigate the ever-growing
+                    flow of scientific publications.<br>
+                    It accelerates trend analysis and the discovery of breakthrough papers, offering a streamlined
+                    approach to staying ahead in your field.<br>
+                    With PubTrends, you can:
+                    <ul>
+                        <li>Gain a concise overview of your research area.</li>
+                        <li>Explore popular trends and impactful publications.</li>
+                        <li>Discover new and promising research directions.</li>
+                    </ul>
+                </div>
+                <div id="datasets">
+                    <h5>Datasets</h5>
+                    <ul>
+                        <li><a class="link" href="https://pubmed.ncbi.nlm.nih.gov/">Pubmed</a></li>
+                        <li><a class="link" href="https://www.semanticscholar.org/">Semantic Scholar</a></li>
+                    </ul>
+                </div>
+                <div id="workflow">
+                    <h5>Workflow</h5>
+                    <p>
+                        The workflow diagram below illustrates how PubTrends operates, offering a seamless path from
+                        data collection
+                        to
+                        meaningful insights.
+                    </p>
+                    <img class="mx-auto d-block img-fluid" src="../static/about_pubtrends_scheme.png"
+                         style="width: 100%; max-width: 700px;" alt="PubTrends workflow scheme">
+                </div>
+                <div id="example">
+                    <h3 class="mt-4">Example</h3>
+                    <p>To demonstrate PubTrends in action, we showcase an analysis for the predefined search query <a
+                            class="link" target="_blank"
+                            href="/result?source=Pubmed&sort=Most+Cited&limit=1000&noreviews=on&topics=10&jobid=predefined_013615a5e39aa14ae55eba6d2a89b068&query=%22human+aging%22"
+                    >"human aging"</a>.
+                    </p>
+                    <h5>Papers</h5>
+                    <p>The Papers section offers a comprehensive overview of the field, featuring the total number of
+                        articles,
+                        extracted topics, and a word cloud of frequently used terms in titles and abstracts (clickable
+                        for
+                        accessing
+                        related documents). It also includes a yearly summary of published papers and an option to view
+                        papers in a
+                        list
+                        format.
+                    </p>
+                    <img class="mx-auto d-block img-fluid" src="../static/about_report.png"
+                         style="width: 100%; max-width: 700px"
+                         alt="Papers overview screenshot">
+
+                    <h5>Top Cited Papers</h5>
+                    <p>
+                        The Top Cited Papers visualization presents an interactive breakdown of the most-cited works,
+                        categorized by
+                        citation count and article type, with distinct colors representing various types.
+                    </p>
+                    <img class="mx-auto d-block img-fluid" src="../static/about_top_cited_papers.png"
+                         style="width: 100%; max-width: 700px" alt="Top cited papers visualization">
+
+                    <h5>Hot Papers</h5>
+                    <p>
+                        The Hot Papers plot identifies the most impactful papers by highlighting those with the highest
+                        citation
+                        counts
+                        for each year.
+                    </p>
+                    <img class="mx-auto d-block img-fluid" src="../static/about_hot_papers.png"
+                         style="width: 100%; max-width: 700px" alt="Hot papers plot">
+
+                    <h5>Keywords</h5>
+                    <p>The Keywords Frequency plot displays the most common terms used in papers and their evolution
+                        over
+                        time.<br>
+                        You can hover over a keyword to see the exact number of papers in which it appears.
+                    </p>
+                    <img class="mx-auto d-block img-fluid" src="../static/about_keywords.png"
+                         style="width: 100%; max-width: 700px"
+                         alt="Keywords frequency plot">
+                </div>
+                <div id="network">
+                    <h5>Network</h5>
+                    <p>
+                        Topics are closely related groups of documents. Aggregated graph and text embeddings are used to
+                        find
+                        similar
+                        papers and detect topics.<br>
+                        Overall structure of topics within a research field can be visualised as a papers similarity
+                        graph.
+                    </p>
+                    <img class="mx-auto d-block img-fluid" src="../static/about_network.png"
+                         style="width: 100%; max-width: 700px"
+                         alt="Papers similarity graph">
+
+                    <h5>Interactive Visualization</h5>
+                    <p>The displayed graph represents the overall structure of the research field, but the dedicated
+                        graph
+                        explorer
+                        offers a more comprehensive experience.<br>
+                        It allows papers to be color-coded by year or topic and provides advanced search and filtering
+                        options using
+                        available metadata.<br>
+                        In the screenshot, papers are color-coded by topic, only papers with the word "methylation" are
+                        shown.
+                    </p>
+                    <img class="mx-auto d-block img-fluid" src="../static/about_graph_explorer.png"
+                         style="width: 100%; max-width: 700px" alt="Graph explorer screenshot">
+                </div>
+                <div id="topics">
+                    <h5>Topics</h5>
+                    <p>Topics are identified through hierarchical clustering of paper embeddings.<br>
+                        Users can explore the topic hierarchy using a dendrogram in a dedicated plot.</p>
+                    <img class="mx-auto d-block img-fluid" src="../static/about_topics_hierarchy.png"
+                         style="width: 100%; max-width: 700px" alt="Topics hierarchy dendrogram">
+
+                    <h5>Topics by Year</h5>
+                    <p>The Topics by Year plot displays the distribution of papers across different topics, highlighting
+                        the
+                        number
+                        of
+                        papers for each topic annually.<br>
+                        Each topic is summarized with key keywords and its overall share of total papers.
+                    </p>
+                    <img class="mx-auto d-block img-fluid" src="../static/about_topics_by_year.png"
+                         style="width: 100%; max-width: 700px" alt="Topics by year plot">
+
+                    <h5>Topic Keywords</h5>
+                    <p>For each topic, the application displays a familiar word cloud and an articles plot.<br>
+                        The word cloud is generated using terms specific to the selected topic, highlighting their
+                        significance
+                        compared
+                        to other topics.<br>
+                        The size of each word reflects its importance, based on the proportion of papers mentioning it.
+                    </p>
+                    <img class="mx-auto d-block img-fluid" src="../static/about_topic.png"
+                         style="width: 100%; max-width: 700px"
+                         alt="Topic keywords visualization">
+                </div>
+                <div id="materials">
+                    <h3 class="mt-4">Materials</h3>
+                    <ul>
+                        <li>
+                            <i>Shpynov, O. and Kapralov, N., PubTrends: a scientific literature explorer. In Proceedings
+                                of
+                                the 12th
+                                ACM
+                                Conference on Bioinformatics, Computational Biology, and Health Informatics,
+                                2021 (pp. 1-1).</i>
+                            <a class="link"
+                               href="https://doi.org/10.1145/3459930.3469501">https://doi.org/10.1145/3459930.3469501</a>
+                        </li>
+                        <li>
+                            <i>Nikiforovskaya, A., Kapralov, N., Vlasova, A., Shpynov, O. and Shpilman, A., 2020,
+                                December.
+                                Automatic generation of reviews of scientific papers. In 2020 19th IEEE International
+                                Conference on
+                                Machine Learning and Applications (ICMLA) (pp. 314-319). IEEE.</i>
+                            <a class="link" href="https://arxiv.org/abs/2010.04147">https://arxiv.org/abs/2010.04147</a>
+                        </li>
+                    </ul>
+                </div>
+                <div id="code">
+                    <h3>Code</h3>
+                    <p>
+                        Source code is available on GitHub at
+                        <a class="link" href="https://github.com/JetBrains-Research/pubtrends" target="_blank">
+                            https://github.com/JetBrains-Research/PubTrends
+                        </a>.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div id="feedback-about-html-form" class="float-left vertical-center mb-3"></div>
+    </main>
+
+    <!-- Back to top button (shared behavior in navigate.js) -->
+    <button type="button" id="backToTop" class="btn btn-outline-secondary btn-sm back-to-top" aria-label="Back to top">
+        <i class="bi bi-arrow-up"></i>
+    </button>
+
+</div>
+
+{% endblock %}

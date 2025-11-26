@@ -1,186 +1,176 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>{{ query }} at {{ source }}{{ search_string }} {{ limit }} {{ sort }} - PubTrends</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css">
+{% extends 'base.html' %}
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
-    <!-- Slim version is not suitable here, since we need ajax calls -->
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.min.js"></script>
+{% block title %}Processing – PubTrends{% endblock %}
+{% block meta_description %}Running your PubTrends analysis and preparing visualizations…{% endblock %}
+{% set active_page = None %}
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1"/>
-    <!--            <link rel="stylesheet" href="../static/style.css"/>-->
-
-    <script>
-        "use strict";
-
-        window.onunload = function () {
-            if (confirm('Leave the page? Task will be cancelled.')) {
-                cancel();
-            }
-        };
-
-        const TIMEOUT = 1000; // 1 second
-        const MAX_RETRIES = 120; // 2 minutes total
-        let retries = 0;
-        let cancelled = false;
-
-        function check_status() {
-            if (cancelled) {
-                return;
-            }
-            let $status = $('#status');
-            let $progress = $('#progress');
-            let $log = $('#log');
-            $.ajax("{{url_for('.status', jobid=jobid)}}", {
-                dataType: "json",
-                success: function (response) {
-                    console.log(response);
-                    if (response.state === 'FAILURE') {
-                        let errorMsg = `<h2>Error</h2><span class="error-message"> ${response.message} </span>`;
-                        if (response.search_error) {
-                            $status.html(errorMsg);
-                        } else {
-                            $status.html(errorMsg + `<br>We're working on it. Please check back soon.`)
-                        }
-                        $status.show();
-                        $progress.hide();
-                        $log.html(response.log);
-                    } else if (response.state === 'SUCCESS') {
-                        // Disable formatter for the next section because of injections.
-                        // Enable formatter control in File > Settings > Editor > Code Style
-                        // @formatter:off
-                        // Join arg-value pairs for URL
-                        var args = {{ redirect_args|safe }};
-                        // @formatter:on
-
-                        const args_list = [];
-                        for (const key in args) {
-                            args_list.push(`${key}=${args[key]}`);
-                        }
-
-                        // Build href for given redirect page and args
-                        const href = `/{{ redirect_page }}?${args_list.join('&')}`;
-                        window.location.replace(href);
-                    } else if (response.state !== undefined) {
-                        if (response.progress !== undefined) {
-                            $('.progress-bar').css('width', response.progress + '%').attr('aria-valuenow', response.progress);
-                            $('.progress-bar-label').text(response.progress + '%');
-                            $progress.show();
-                        } else {
-                            $progress.hide();
-                        }
-                        if (response.message !== undefined) {
-                            $status.html(response.message);
-                            $status.show();
-                        } else {
-                            $status.hide();
-                        }
-                        if (response.log !== undefined) {
-                            $log.html(response.log);
-                            $log.show();
-                        } else {
-                            $log.hide();
-                        }
-                        if (response.state !== 'REVOKED') {
-                            setTimeout(check_status, TIMEOUT);
-                        }
-                    } else {
-                        retries += 1;
-                        if (retries > MAX_RETRIES) {
-                            $progress.hide();
-                            $status.html("<h2>Error</h2>Failed to fetch results.<br>We're working on it. Please check back soon.");
-                            $status.show();
-                        } else {
-                            setTimeout(check_status, TIMEOUT);
-                        }
-                    }
-                },
-                error: function (jqXHR, textStatus, errorThrown) {
-                    $progress.hide();
-                    $log.hide();
-                    if (textStatus === 'timeout') {
-                        $status.html("<h2>Server is not responding</h2>We're working on it. Please check back soon.");
-                    } else {
-                        $status.html("<h2>Error</h2>" + errorThrown + " We're working on it. Please check back soon.");
-                    }
-                    $status.show();
-                },
-                timeout: TIMEOUT * MAX_RETRIES
-            });
-        }
-
-        function cancel() {
-            let $status = $('#status');
-            let $log = $('#log');
-            let $progress = $('#progress');
-            $.ajax("{{url_for('.cancel', jobid=jobid)}}", {
-                dataType: "json", success: function (response) {
-                    console.log(response);
-                    if (response.state === 'CANCELLED') {
-                        $progress.hide();
-                        $log.hide();
-                        $status.html(response.message);
-                        $status.show();
-                        setTimeout(function () {
-                            window.location.replace("/");
-                        }, TIMEOUT);
-                    } else if (response.state === 'FAILURE') {
-                        $progress.hide();
-                        $log.hide();
-                        let errorMsg = `<h2>Error</h2><span class="error-message"> ${response.message} </span>`;
-                        if (response.search_error) {
-                            $status.html(errorMsg);
-                        } else {
-                            $status.html(errorMsg + `<br>We're working on it. Please check back soon.`)
-                        }
-                        $status.show();
-                        setTimeout(function () {
-                            window.location.replace("/");
-                        }, TIMEOUT);
-                    }
-                }
-            });
-            cancelled = true;
-        }
-
-        $(function () {
-            check_status();
-        });
-    </script>
-</head>
-<body>
-
-<div class="container">
-    <nav class="navbar navbar-light bg-light d-flex">
-        <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
-        <ol class="breadcrumb bg-light flex-grow-1 search-query">
-            <li class="breadcrumb-item">{{ source }}</li>
-            <li class="breadcrumb-item"><strong>{{ query }}</strong></li>
-            <li class="breadcrumb-item">{{ limit }} {{ sort }}</li>
-        </ol>
-        <button class="btn btn-lg btn-link grey no-padding-left" type="reset" onclick="cancel()">&#10006;&nbsp;Cancel
-        </button>
-    </nav>
-    <div id="progress" class="progress">
-        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
-             aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-            <span class="progress-bar-label">0%</span>
+{% block content %}
+<section class="pt-hero p-5 mb-4">
+    <div class="row align-items-center gy-3">
+        <div class="col-lg-10">
+            <h1 class="h5 mb-2">Processing analysis</h1>
+            <p class="mb-0 pt-muted">Please wait while we analyze
+                <strong>{{ query }}</strong> at <strong>{{ source }}</strong> ({{ limit }} {{ sort }}).</p>
+        </div>
+        <div class="col-lg-2 text-lg-end">
+            <button class="btn btn-outline-secondary" type="button" onclick="cancel()">
+                <i class="bi bi-x-lg"></i> Cancel
+            </button>
         </div>
     </div>
-    <div class="h6 mt-3 ml-3" id="status">Waiting for content...</div>
-    <pre class="ml-3 mt-3" id="log"></pre>
-</div>
-<footer class="container text-center">
-    <p>version <a href="https://github.com/JetBrains-Research/pubtrends/blob/master/CHANGES.md" title="{{ version }}"
-                  target="_blank" class="a-footer">{{ version }}</a><br/>
-        &copy; 2021-2025 <a href="https://research.jetbrains.org/groups/biolabs"
-                            title="JetBrains Research BioLabs"
-                            target="_blank" class="a-footer">JetBrains Research</a></p>
-</footer>
-</body>
-</html>
+    <p>
+    <div id="progress" class="progress" aria-live="polite">
+        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+             aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+            <span class="progress-bar-label" aria-live="polite">0%</span>
+        </div>
+    </div>
+    <div class="h6 mt-3 ms-3" id="status">Waiting for content...</div>
+    <pre class="ms-3 mt-3" id="log"></pre>
+    </p>
+</section>
+
+{% endblock %}
+
+{% block scripts_extra %}
+<script id="redirect-args" type="application/json">
+    // Disable formatter for the next section because of injections.
+    // Enable formatter control in File > Settings > Editor > Code Style
+    // @formatter:off
+    {{redirect_args | tojson}}
+    // @formatter:on
+</script>
+<script>
+    "use strict";
+
+    // Confirm and cancel when the user tries to leave the page
+    window.onunload = function () {
+        if (confirm('Leave the page? Task will be cancelled.')) {
+            cancel();
+        }
+    };
+
+    const TIMEOUT = 1000; // 1 second
+    const MAX_RETRIES = 120; // 2 minutes total
+    let retries = 0;
+    let cancelled = false;
+
+    function check_status() {
+        if (cancelled) {
+            return;
+        }
+        const $status = $('#status');
+        const $progress = $('#progress');
+        const $log = $('#log');
+        $.ajax("{{ url_for('.status', jobid=jobid) }}", {
+            dataType: "json",
+            success: function (response) {
+                if (response.state === 'FAILURE') {
+                    const errorMsg = `<h2>Error</h2><span class="error-message"> ${response.message} </span>`;
+                    if (response.search_error) {
+                        $status.html(errorMsg);
+                    } else {
+                        $status.html(errorMsg + `<br>We're working on it. Please check back soon.`);
+                    }
+                    $status.show();
+                    $progress.hide();
+                    $log.html(response.log);
+                } else if (response.state === 'SUCCESS') {
+                    // Read redirect args JSON embedded in the DOM to avoid inline templating issues
+                    const args = JSON.parse(document.getElementById('redirect-args').textContent);
+
+                    const args_list = [];
+                    for (const key in args) {
+                        args_list.push(`${key}=${args[key]}`);
+                    }
+
+                    // Build href for given redirect page and args
+                    const href = `/{{ redirect_page }}?${args_list.join('&')}`;
+                    window.location.replace(href);
+                } else if (response.state !== undefined) {
+                    if (response.progress !== undefined) {
+                        $('.progress-bar').css('width', response.progress + '%').attr('aria-valuenow', response.progress);
+                        $('.progress-bar-label').text(response.progress + '%');
+                        $progress.show();
+                    } else {
+                        $progress.hide();
+                    }
+                    if (response.message !== undefined) {
+                        $status.html(response.message);
+                        $status.show();
+                    } else {
+                        $status.hide();
+                    }
+                    if (response.log !== undefined) {
+                        $log.html(response.log);
+                        $log.show();
+                    } else {
+                        $log.hide();
+                    }
+                    if (response.state !== 'REVOKED') {
+                        setTimeout(check_status, TIMEOUT);
+                    }
+                } else {
+                    retries += 1;
+                    if (retries > MAX_RETRIES) {
+                        $progress.hide();
+                        $status.html("<h2>Error</h2>Failed to fetch results.<br>We're working on it. Please check back soon.");
+                        $status.show();
+                    } else {
+                        setTimeout(check_status, TIMEOUT);
+                    }
+                }
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                $progress.hide();
+                $log.hide();
+                if (textStatus === 'timeout') {
+                    $status.html("<h2>Server is not responding</h2>We're working on it. Please check back soon.");
+                } else {
+                    $status.html("<h2>Error</h2>" + errorThrown + " We're working on it. Please check back soon.");
+                }
+                $status.show();
+            },
+            timeout: TIMEOUT * MAX_RETRIES
+        });
+    }
+
+    function cancel() {
+        const $status = $('#status');
+        const $log = $('#log');
+        const $progress = $('#progress');
+        $.ajax("{{ url_for('.cancel', jobid=jobid) }}", {
+            dataType: "json",
+            success: function (response) {
+                if (response.state === 'CANCELLED') {
+                    $progress.hide();
+                    $log.hide();
+                    $status.html(response.message);
+                    $status.show();
+                    setTimeout(function () {
+                        window.location.replace('/');
+                    }, TIMEOUT);
+                } else if (response.state === 'FAILURE') {
+                    $progress.hide();
+                    $log.hide();
+                    const errorMsg = `<h2>Error</h2><span class="error-message"> ${response.message} </span>`;
+                    if (response.search_error) {
+                        $status.html(errorMsg);
+                    } else {
+                        $status.html(errorMsg + `<br>We're working on it. Please check back soon.`);
+                    }
+                    $status.show();
+                    setTimeout(function () {
+                        window.location.replace('/');
+                    }, TIMEOUT);
+                }
+            }
+        });
+        cancelled = true;
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        check_status();
+    });
+</script>
+{% endblock %}

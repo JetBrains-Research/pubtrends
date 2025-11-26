@@ -1,15 +1,35 @@
-html {
-    /* default font-size is 16px - this is set in the default browser stylesheet */
-    font-size: 14px;
+/* Design tokens and lightweight utilities (shared across public pages) */
+:root {
+    --pt-primary: #0d6efd;
+    --pt-bg-soft: linear-gradient(180deg, rgba(13, 110, 253, 0.06) 0%, rgba(13, 110, 253, 0.00) 60%);
 }
 
-.jumbotron {
-    /*background: rgba(0, 0, 0, 0.05);*/
-    border-radius: 4px;
-    background-image: url("../static/susan-yin-2JIvboGLeho-unsplash-processed.jpg");
-    background-size: cover;
-    padding-bottom: 16px;
-    margin-bottom: 0 !important;
+.pt-hero {
+    background: var(--pt-bg-soft);
+    border-radius: 1rem;
+}
+
+.pt-card {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, .05);
+    border: 1px solid rgba(0, 0, 0, .06);
+}
+
+.pt-muted {
+    color: #6c757d;
+}
+
+.nav-active {
+    font-weight: 600;
+}
+
+/* Smooth scrolling for in-page anchors */
+html {
+    scroll-behavior: smooth;
+}
+
+.container {
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .grey {
@@ -102,7 +122,60 @@ ol.breadcrumb {
 .parent {
     display: grid;
 }
+
 .parent div {
     grid-row-start: 1;
     grid-column-start: 1;
+}
+
+/* Modern TOC sidebar */
+.toc {
+    border-radius: .75rem;
+    background-color: #fff;
+}
+
+.toc .nav-link {
+    color: #344054;
+}
+
+.toc .nav-link:hover {
+    color: black;
+}
+
+.toc .nav-link.active {
+    font-weight: 600;
+    color: black;
+}
+
+.nav-icon {
+    width: 18px;
+    height: 18px;
+    opacity: .8;
+}
+
+/* Mobile horizontal pills navigation */
+.mobile-scrollnav {
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, .06);
+    border-radius: .75rem;
+}
+
+.mobile-scrollnav .nav-link {
+    white-space: nowrap;
+}
+
+/* Back to top floating button */
+.back-to-top {
+    position: fixed;
+    bottom: 0rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 50;
+    display: none;
+}
+
+.back-to-top.show {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }

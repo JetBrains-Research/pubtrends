@@ -17,13 +17,13 @@ from pysrc.app.messages import SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, \
 from pysrc.app.predefined import are_predefined_jobs_ready, PREDEFINED_JOBS, is_semantic_predefined
 from pysrc.app.reports import load_result_data, preprocess_string, load_paper_data
 from pysrc.celery.pubtrends_celery import pubtrends_celery
-from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, analyze_pubmed_search, analyze_id_list, \
+from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, analyze_pubmed_search, \
     analyze_semantic_search
 from pysrc.config import PubtrendsConfig
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plot_app import prepare_graph_data, prepare_papers_data, prepare_paper_data, prepare_result_data
 from pysrc.papers.questions.questions import get_relevant_papers
-from pysrc.papers.utils import trim_query, IDS_ANALYSIS_TYPE, PAPER_ANALYSIS_TYPE, SORT_MOST_CITED
+from pysrc.papers.utils import trim_query, IDS_ANALYSIS_TYPE, PAPER_ANALYSIS_TYPE
 from pysrc.services.embeddings_service import is_embeddings_service_available, is_embeddings_service_ready, \
     is_texts_embeddings_available
 from pysrc.services.semantic_search_service import is_semantic_search_service_available
@@ -79,6 +79,7 @@ logger = pubtrends_app.logger
 @pubtrends_app.route('/robots.txt')
 @pubtrends_app.route('/sitemap.xml')
 @pubtrends_app.route('/feedback.js')
+@pubtrends_app.route('/navigate.js')
 @pubtrends_app.route('/style.css')
 @pubtrends_app.route('/about_graph_explorer.png')
 @pubtrends_app.route('/about_hot_papers.png')

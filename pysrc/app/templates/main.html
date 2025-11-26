@@ -1,114 +1,112 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>PubTrends - Your Scientific Literature Explorer</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1"/>
-    <!--    <link rel="stylesheet" href="../static/style.css" />-->
+{% extends 'base.html' %}
 
-    <script>
-        'use strict';
-        // Example starter JavaScript for disabling form submissions if there are invalid fields
-        window.addEventListener('load', function () {
-            // Fetch all the forms we want to apply custom Bootstrap validation styles to
-            const forms = document.getElementsByClassName('needs-validation');
-            // Loop over them and prevent submission
-            Array.prototype.filter.call(forms, function (form) {
-                form.addEventListener('submit', function (event) {
-                    if (form.checkValidity() === false) {
-                        event.preventDefault();
-                        event.stopPropagation();
-                    }
-                    form.classList.add('was-validated');
-                }, false);
-            });
-        }, false);
+{% block title %}PubTrends - Your Scientific Literature Explorer{% endblock %}
+{% block meta_description %}Analyze scientific literature: discover trends, top-cited papers, and visualize citation networks.{% endblock %}
+{% block og_title %}PubTrends – Scientific Literature Explorer{% endblock %}
+{% block og_description %}Discover publications, trends, and visualize citation networks.{% endblock %}
 
-        $(document).ready(function () {
-            const noreviews_checkbox = $("#noreviews");
+{% set active_page = None %}
 
-            function advanced_noreviews_disable() {
-                noreviews_checkbox.prop("checked", false);
-                noreviews_checkbox.attr("disabled", "disabled");
-            }
-
-            function advanced_noreviews_enable() {
-                noreviews_checkbox.removeAttr("disabled")
-            }
-
-            // Function to update placeholder based on selected paper-key
-            function updatePaperInputPlaceholder() {
-                const selectedValue = $('#paper-key').val();
-                let placeholderText = "";
-
-                if (selectedValue === "title") {
-                    placeholderText = "Enter title(s). Use semicolon to separate multiple papers.";
-                } else if (selectedValue === "doi") {
-                    placeholderText = "Enter DOI(s). Use semicolon to separate multiple papers.";
-                } else if (selectedValue === "id") {
-                    placeholderText = "Enter ID(s). Use semicolon to separate multiple papers.";
+{% block scripts_extra %}
+<script>
+    'use strict';
+    // Example starter JavaScript for disabling form submissions if there are invalid fields
+    window.addEventListener('load', function () {
+        // Fetch all the forms we want to apply custom Bootstrap validation styles to
+        const forms = document.getElementsByClassName('needs-validation');
+        // Loop over them and prevent submission
+        Array.prototype.filter.call(forms, function (form) {
+            form.addEventListener('submit', function (event) {
+                if (form.checkValidity() === false) {
+                    event.preventDefault();
+                    event.stopPropagation();
                 }
-
-                $('#paper-input').attr('placeholder', placeholderText);
-            }
-
-            // Handle paper-key change to update paper-input placeholder
-            $('#paper-key').change(updatePaperInputPlaceholder);
-
-            // Initialize placeholder on page load
-            updatePaperInputPlaceholder();
-
-            $('#search-source-selector').change(function () {
-                if ($(this).val() === "Semantic Scholar") {
-                    advanced_noreviews_disable();
-                    $("#pubmed-syntax-div").hide();
-                    $("#pubmed-syntax").prop("checked", false);
-                    $("#search-input-field").prop("placeholder", "Use double quotes for phrase search, semicolon to join queries.");
-                } else {
-                    advanced_noreviews_enable();
-                    $("#pubmed-syntax-div").show();
-                }
-            });
-            $("#pubmed-syntax").change(function () {
-                let $sort = $("#sort-selector");
-                if ($("#pubmed-syntax").prop("checked") === true) {
-                    $("#search-input-field").prop("placeholder", "Use Pubmed search syntax.");
-                    advanced_noreviews_disable();
-                    $sort.empty(); // remove old options
-                    $sort.append($("<option>Most Relevant</option>"));
-                    $sort.append($("<option>Most Recent</option>"));
-                } else {
-                    $("#search-input-field").prop("placeholder", "Use double quotes for phrase search, join queries by commas.");
-                    advanced_noreviews_enable();
-                    $sort.empty(); // remove old options
-                    $sort.append($("<option>Most Cited</option>"));
-                    $sort.append($("<option>Most Recent</option>"));
-                }
-            });
+                form.classList.add('was-validated');
+            }, false);
         });
-    </script>
-</head>
-<body>
-<div class="container mt-3">
-    <div class="p-5 mb-4 bg-light rounded-3 border-light jumbotron">
-        <div class="container-fluid py-5">
-            <h1>PubTrends</h1>
-            <p id="jumbotron" class="lead">
-                Your Scientific Literature Explorer
-            </p>
-            <p>
-                Discover publications, top-cited papers, research trends, and frequent keywords.<br>
-                Visualize citation networks, explore similar papers, and analyze related works for papers
-                of interest.<br>
-                <a class="link" href="about.html">Learn more</a>
-            </p>
+    }, false);
+
+    // Replaced jQuery ready with DOMContentLoaded per project convention
+    document.addEventListener('DOMContentLoaded', function () {
+        const noreviews_checkbox = $("#noreviews");
+
+        function advanced_noreviews_disable() {
+            noreviews_checkbox.prop("checked", false);
+            noreviews_checkbox.attr("disabled", "disabled");
+        }
+
+        function advanced_noreviews_enable() {
+            noreviews_checkbox.removeAttr("disabled")
+        }
+
+        // Function to update placeholder based on selected paper-key
+        function updatePaperInputPlaceholder() {
+            const selectedValue = $('#paper-key').val();
+            let placeholderText = "";
+
+            if (selectedValue === "title") {
+                placeholderText = "Enter title(s). Use semicolon to separate multiple papers.";
+            } else if (selectedValue === "doi") {
+                placeholderText = "Enter DOI(s). Use semicolon to separate multiple papers.";
+            } else if (selectedValue === "id") {
+                placeholderText = "Enter ID(s). Use semicolon to separate multiple papers.";
+            }
+
+            $('#paper-input').attr('placeholder', placeholderText);
+        }
+
+        // Handle paper-key change to update paper-input placeholder
+        $('#paper-key').change(updatePaperInputPlaceholder);
+
+        // Initialize placeholder on page load
+        updatePaperInputPlaceholder();
+
+        $('#search-source-selector').change(function () {
+            if ($(this).val() === "Semantic Scholar") {
+                advanced_noreviews_disable();
+                $("#pubmed-syntax-div").hide();
+                $("#pubmed-syntax").prop("checked", false);
+                $("#search-input-field").prop("placeholder", "Use double quotes for phrase search, semicolon to join queries.");
+            } else {
+                advanced_noreviews_enable();
+                $("#pubmed-syntax-div").show();
+            }
+        });
+        $("#pubmed-syntax").change(function () {
+            let $sort = $("#sort-selector");
+            if ($("#pubmed-syntax").prop("checked") === true) {
+                $("#search-input-field").prop("placeholder", "Use Pubmed search syntax.");
+                advanced_noreviews_disable();
+                $sort.empty(); // remove old options
+                $sort.append($("<option>Most Relevant</option>"));
+                $sort.append($("<option>Most Recent</option>"));
+            } else {
+                $("#search-input-field").prop("placeholder", "Use double quotes for phrase search, join queries by commas.");
+                advanced_noreviews_enable();
+                $sort.empty(); // remove old options
+                $sort.append($("<option>Most Cited</option>"));
+                $sort.append($("<option>Most Recent</option>"));
+            }
+        });
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+    <section class="pt-hero p-5 mb-4">
+        <div class="row align-items-center gy-3">
+            <div class="col-lg-8">
+                <h1 class="display-6 mb-2">Your Scientific Literature Explorer</h1>
+                <p id="jumbotron" class="lead pt-muted mb-3">
+                    Discover publications, trends, and visualize citation networks.
+                </p>
+                <div class="d-flex gap-2">
+                    <a class="btn btn-outline-secondary" href="about.html">Learn more</a>
+                </div>
+            </div>
+
         </div>
-    </div>
+    </section>
     <main class="card border-light mt-3" role="main">
         <div class="card-header">
             <ul class="nav nav-tabs card-header-tabs" id="tabs-list" role="tablist">
@@ -157,7 +155,7 @@
                             </div>
                             <!--end of col-->
                             <div class="col-auto">
-                                <button class="btn btn-success" type="submit">Search</button>
+                                <button class="btn btn-success bi-search" type="submit">Search</button>
                             </div>
                             <!--end of col-->
                         </div>
@@ -234,7 +232,7 @@
                     <div id="predefined-semantic" class="d-flex flex-nowrap align-items-center">
                         <div class="me-2">{{ search_example_message }}</div>
                         {% for terms, jobid in semantic_search_example_terms %}
-                        <form action="result" method="GET" class="inline me-2">
+                        <form action="result" method="GET" class="me-2" style="display: inline;">
                             <input type="hidden" name="source" value="{{ search_example_source }}">
                             <input type="hidden" name="topics" value="{{ default_topics }}">
                             <input type="hidden" name="limit" value="{{ default_limit }}">
@@ -268,7 +266,7 @@
                             </div>
                             <!--end of col-->
                             <div id="step4" class="col-auto">
-                                <button class="btn btn-success" type="submit">Search</button>
+                                <button class="btn btn-success bi-search" type="submit">Search</button>
                             </div>
                             <!--end of col-->
                         </div>
@@ -359,14 +357,14 @@
                                     <div class="input-group-prepend">
                                         <span class="input-group-text" id="min-year-addon">Min year</span>
                                     </div>
-                                    <input type="number" class="form-control" aria-describedby="min-year-addon" 
+                                    <input type="number" class="form-control" aria-describedby="min-year-addon"
                                            name="min_year" placeholder="Optional" min="1800" max="2100">
                                 </div>
                                 <div class="col input-group">
                                     <div class="input-group-prepend">
                                         <span class="input-group-text" id="max-year-addon">Max year</span>
                                     </div>
-                                    <input type="number" class="form-control" aria-describedby="max-year-addon" 
+                                    <input type="number" class="form-control" aria-describedby="max-year-addon"
                                            name="max_year" placeholder="Optional" min="1800" max="2100">
                                 </div>
                             </div>
@@ -376,7 +374,7 @@
                     <div id="predefined" class="d-flex flex-nowrap align-items-center">
                         <div class="me-2">{{ search_example_message }}</div>
                         {% for terms, jobid in search_example_terms %}
-                        <form action="result" method="GET" class="inline me-2">
+                        <form action="result" method="GET" class="me-2" style="display: inline;">
                             <input type="hidden" name="source" value="{{ search_example_source }}">
                             <input type="hidden" name="sort" value="Most Cited">
                             <input type="hidden" name="topics" value="{{ default_topics }}">
@@ -414,9 +412,8 @@
                                        autofocus
                                        required>
                             </div>
-                            <!--end of col-->
                             <div class="col-auto">
-                                <button class="btn btn-success" type="submit">Search</button>
+                                <button class="btn btn-success bi-search" type="submit">Search</button>
                             </div>
                         </div>
                         <div class="mt-3 row g-0 align-items-center">
@@ -503,15 +500,7 @@
                 </div>
             </div>
         </div>
+        <!-- close potential leftover wrapper -->
+        </div>
     </main>
-</div>
-<footer class="container text-center">
-    <p>version <a href="https://github.com/JetBrains-Research/pubtrends/blob/master/CHANGES.md" title="{{ version }}"
-                  target="_blank" class="a-footer">{{ version }}</a><br/>
-        &copy; 2021-2025 <a href="https://research.jetbrains.org/groups/biolabs"
-                            title="JetBrains Research BioLabs"
-                            target="_blank" class="a-footer">JetBrains Research</a></p>
-</footer>
-
-</body>
-</html>
+{% endblock %}

@@ -1,301 +1,137 @@
-<!DOCTYPE html>
-<head>
-    <title>{{ query }} at {{ source }}{{ search_string }} {{ limit }} {{ sort }} - PubTrends</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css">
+{% extends 'base.html' %}
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.min.js"></script>
+{% block title %}{{ query }} at {{ source }}{{ search_string }} {{ limit }} {{ sort }} - PubTrends{% endblock %}
+{% block meta_description %}Results and visualizations for {{ query }} at {{ source }} ({{ limit }} {{ sort }}).{% endblock %}
 
+{% set active_page = None %}
+
+{% block styles_extra %}
+    <!-- Keep DataTables using Bootstrap 4 skin to avoid regressions in complex tables -->
+    <link href="https://cdn.datatables.net/2.3.3/css/dataTables.bootstrap4.min.css" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='feedback.css') }}?v=1">
+{% endblock %}
+{% block scripts_head %}
+    <!-- Vendor libs required before inline scripts -->
     <script src="https://cdn.bokeh.org/bokeh/release/bokeh-3.6.3.min.js"></script>
     <script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.6.3.min.js"></script>
 
     <!-- DataTables with search -->
     <script src="https://cdn.datatables.net/2.3.3/js/dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/2.3.3/js/dataTables.bootstrap4.min.js"></script>
-    <link href="https://cdn.datatables.net/2.3.3/css/dataTables.bootstrap4.min.css"
-          rel="stylesheet" type="text/css">
-    <!-- DataTables search highlight -->
     <script src="https://cdn.jsdelivr.net/g/mark.js(jquery.mark.min.js)"></script>
     <script src="https://cdn.datatables.net/plug-ins/2.3.3/features/mark.js/datatables.mark.js"></script>
-    <link href="https://cdn.datatables.net/plug-ins/2.3.3/features/mark.js/datatables.mark.min.css"
-          type="text/css">
 
-
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1"/>
-    <!--     <link rel="stylesheet" href="../static/style.css"/> -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='result.css') }}?v=1">
-    <!--    <link rel="stylesheet" href="../static/result.css"/>-->
+    <!-- App scripts -->
     <script src="{{ url_for('static', filename='wordcloud.js') }}"></script>
-    <!--    <script src="../static/wordcloud.js"/>-->
     <script src="{{ url_for('static', filename='text_utils.js') }}"></script>
-    <!--    <script src="../static/text_utils.js"/>-->
-
-    <!-- Feedback -->
     <script src="{{ url_for('static', filename='feedback.js') }}"></script>
-    <!--    <script src="../static/feedback.js"/>-->
-    <link rel="stylesheet" href="{{ url_for('static', filename='feedback.css') }}?v=1">
-    <!--    <link rel="stylesheet" href="../static/feedback.css"/>-->
-    <!-- Notify.js -->
-    <!--<script src="../../static/notify.js"/>-->
     <script src="{{ url_for('static', filename='notify.js') }}"></script>
-
-    <!-- Questions -->
     <script src="{{ url_for('static', filename='questions.js') }}"></script>
+    <script src="{{ url_for('static', filename='navigate.js') }}?v=1"></script>
+{% endblock %}
 
-    <script>
-        "use strict";
-
-        function papers_callback_impl(key, value) {
-            const url = '/papers?query=' + normalize('{{ query }}') +
-                '&source={{source}}&limit={{limit}}&sort={{sort}}' +
-                '&noreviews={{noreviews}}&min_year={{min_year}}&max_year={{max_year}}';
-            // Decode jobid from URL
-            const jobid = new URL(window.location).searchParams.get('jobid');
-            let args = '';
-            if (key != null) {
-                args = '&' + key + '=' + value;
-            }
-            window.open(url + args + '&jobid=' + jobid, '_blank');
-        }
-
-        function papers_callback() {
-            papers_callback_impl(null, null)
-        }
-
-        function papers_callback_topic(topic) {
-            papers_callback_impl('topic', topic)
-        }
-
-        function papers_callback_word(word) {
-            papers_callback_impl('word', word)
-        }
-
-        function papers_callback_author(author) {
-            papers_callback_impl('author', author)
-        }
-
-        function papers_callback_journal(journal) {
-            papers_callback_impl('journal', journal)
-        }
-
-        function papers_callback_top_papers() {
-            papers_callback_impl('papers_list', 'top')
-        }
-
-        function papers_callback_papers_of_the_year() {
-            papers_callback_impl('papers_list', 'year')
-        }
-
-        function papers_callback_hot_papers() {
-            papers_callback_impl('papers_list', 'hot')
-        }
-
-        function graph_callback() {
-            const url = '/graph?query=' + normalize('{{ query }}') +
-                '&source={{source}}&limit={{limit}}&sort={{sort}}' +
-                '&noreviews={{noreviews}}&min_year={{min_year}}&max_year={{max_year}}';
-            // Decode jobid from URL
-            const jobid = new URL(window.location).searchParams.get('jobid');
-            window.open(url + '&jobid=' + jobid, '_blank');
-        }
-
-        function export_data() {
-            const url = '/export_data?query=' + normalize('{{ query }}') +
-                '&source={{source}}&limit={{limit}}&sort={{sort}}' +
-                '&noreviews={{noreviews}}&min_year={{min_year}}&max_year={{max_year}}';
-            // Decode jobid from URL
-            const jobid = new URL(window.location).searchParams.get('jobid');
-            window.open(url + '&jobid=' + jobid, '_blank');
-        }
-
-        function review_callback(papersNumber, sentsNumber) {
-            const url = '/generate_review?query=' + normalize('{{ query }}') +
-                '&source={{source}}&limit={{limit}}&sort={{sort}}' +
-                '&noreviews={{noreviews}}&min_year={{min_year}}&max_year={{max_year}}';
-            // Decode jobid from URL
-            const jobid = new URL(window.location).searchParams.get('jobid');
-            window.open(url + '&jobid=' + jobid + '&papers_number=' + papersNumber + '&sents_number=' + sentsNumber, '_blank');
-        }
-
-        $(document).ready(function () {
-            // Mark search by default in datatables
-            $.extend(true, $.fn.dataTable.defaults, {
-                mark: true
-            });
-
-            // Disable formatter for the next section because of injections.
-            // Enable formatter control in File > Settings > Editor > Code Style
-            // @formatter:off
-
-            // Setup datatables
-            {% if feature_authors_enabled %}
-            $('#authors-table').DataTable();
-            {% endif %}
-
-            {% if feature_journals_enabled %}
-            $('#journals-table').DataTable();
-            {% endif %}
-
-            // Enable search for numbers only in numbers table
-            {% if numbers is defined %}
-            // disable search on the first column
-            $('#numbers-table').DataTable({
-                "columnDefs": [
-                    {"searchable": false, "targets": 1}
-                ]
-            });
-            {% endif %}
-
-            // Process main word cloud
-            let word_cloud = JSON.parse(normalize('{{ papers_word_cloud }}'));
-            process_word_cloud('papers_word_cloud', $('#papers_word_cloud').outerWidth(), 335,
-                word_cloud, papers_callback_word);
-
-            // Process topics word clouds
-            let wc_id = '';
-            {% for (script, div), word_cloud in topics_info_and_word_cloud %}
-                word_cloud = JSON.parse(normalize('{{ word_cloud }}'));
-                wc_id = 'topic_word_cloud_{{ loop.index }}';
-                process_word_cloud(wc_id, $('#' + wc_id).outerWidth(), 335,
-                    word_cloud, papers_callback_word);
-            {% endfor %}
-
-            // @formatter:on
-
-            // Configure jobid for feedback for text message form, decode jobid from URL
-            const jobid = new URL(window.location).searchParams.get('jobid');
-            $('#feedback-jobid').val(jobid);
-
-            // Create clickable feedback forms
-            createClickableFeedBackForm("feedback-papers-form", "feedback-papers");
-            createClickableFeedBackForm("feedback-trends-form", "feedback-trends");
-            createClickableFeedBackForm("feedback-network-form", "feedback-network");
-            createClickableFeedBackForm("feedback-topics-form", "feedback-topics");
-            createClickableFeedBackForm("feedback-authors-form", "feedback-authors");
-            createClickableFeedBackForm("feedback-journals-form", "feedback-journals");
-            createClickableFeedBackForm("feedback-numbers-form", "feedback-numbers");
-        });
-    </script>
-</head>
-<body>
-
-<!-- Fixed navbar -->
-<nav class="navbar navbar-light bg-light fixed-top border-bottom no-padding-right">
-    <div class="row container-fluid no-padding-right">
-        <div class="col-lg-1 col-xl-2 no-padding-left">
-            <a id="pubtrends" class="navbar-brand" href="/">PubTrends</a>
-        </div>
-        <div class="col-lg-11 col-xl-8 no-padding-left no-padding-right">
-            <div class="no-padding-left d-flex justify-content-between">
-                <ol class="breadcrumb bg-light search-query">
-                    <li class="breadcrumb-item vertical-center">{{ source }}</li>
-                    <li class="breadcrumb-item vertical-center"><strong>{{ query }}</strong></li>
-                    <li class="breadcrumb-item vertical-center">{{ limit }} {{ sort }}</li>
+{% block content %}
+    <!-- Compact page header: reduce vertical space on data-heavy result page -->
+    <section class="pt-hero py-3 px-3 px-md-4 mb-3">
+        <div class="row align-items-center gy-2">
+            <div class="col-lg-12">
+                <ol class="breadcrumb bg-transparent mb-1 search-query">
+                    <li class="breadcrumb-item">{{ source }}</li>
+                    <li class="breadcrumb-item"><strong>{{ query }}</strong></li>
+                    <li class="breadcrumb-item">{{ limit }} {{ sort }}</li>
                 </ol>
-                <a id="tour-start1" class="btn btn-secondary float-right d-xl-none"
-                   href="javascript:void(0);" onclick="startIntro();">?</a>
+                <p class="pt-muted small mb-0">Explore papers, trends, networks, topics, and more.</p>
             </div>
         </div>
-        <div class="d-none d-xl-block col-xl-2 float-right no-padding-right">
-        </div>
-    </div>
-</nav>
+    </section>
 
-<div class="container-fluid">
-    <div class="row ">
-        <!-- Sticky sidebar -->
-        <nav class="d-none d-xl-block d-lg-block col-lg-1 col-xl-2 sidebar no-padding">
-            <div class="sidebar-sticky" id="sidebar">
-                <ul class="nav flex-column">
-                    <li class="nav-item row">
-                        <a class="nav-link no-padding-right" href="#papers" title="Papers">
-                            <img class="nav-icon" src="{{ url_for('static', filename='home.svg') }}"/>
-                        </a>
-                        <a class="nav-link d-none d-xl-block no-padding" href="#papers">
-                            Papers
-                        </a>
-                    </li>
+    <div class="row g-3">
+        <!-- Mobile quick navigation (top) -->
+        <div class="d-lg-none">
+            <!-- Make the on-page nav stick to the top when scrolling on mobile -->
+            <div class="sticky-top bg-white border-bottom py-2 px-2" role="navigation" >
+                <div class="nav nav-pills flex-nowrap overflow-auto" id="onpage-mobile">
+                    <a class="nav-link py-1 px-2 me-1 grey" href="#papers">Papers</a>
                     {% if feature_questions_enabled %}
-                    <li class="nav-item row">
-                        <a class="nav-link no-padding-right" href="#questions" title="Questions">
-                            <img class="nav-icon" src="{{ url_for('static', filename='question.svg') }}"/>
-                        </a>
-                        <a class="nav-link d-none d-xl-block no-padding" href="#questions">
-                            Questions
-                        </a>
-                    </li>
+                    <a class="nav-link py-1 px-2 me-1 grey" href="#questions">Questions</a>
                     {% endif %}
                     {% if topics_analyzed %}
-                    <li class="nav-item row">
-                        <a class="nav-link no-padding-right" href="#trends" title="Trends">
-                            <img class="nav-icon" src="{{ url_for('static', filename='bar-chart-2.svg') }}"/>
-                        </a>
-                        <a class="nav-link d-none d-xl-block no-padding" href="#trends">
-                            Trends
-                        </a>
-                    </li>
-                    <li class="nav-item row">
-                        <a class="nav-link no-padding-right" href="#network" title="Network">
-                            <img class="nav-icon" src="{{ url_for('static', filename='globe.svg') }}"/>
-                        </a>
-                        <a class="nav-link d-none d-xl-block no-padding" href="#network">
-                            Network
-                        </a>
-                    </li>
-                    <li class="nav-item row">
-                        <a class="nav-link no-padding-right" href="#topics" title="Topics">
-                            <img class="nav-icon" src="{{ url_for('static', filename='tag.svg') }}"/>
-                        </a>
-                        <a class="nav-link d-none d-xl-block no-padding" href="#topics">
-                            Topics
-                        </a>
-                    </li>
+                    <a class="nav-link py-1 px-2 me-1 grey" href="#trends">Trends</a>
+                    <a class="nav-link py-1 px-2 me-1 grey" href="#network">Network</a>
+                    <a class="nav-link py-1 px-2 me-1 grey" href="#topics">Topics</a>
                     {% endif %}
-
                     {% if feature_authors_enabled %}
-                    <li class="nav-item row">
-                        <a class="nav-link no-padding-right" href="#authors" title="Authors">
-                            <img src="{{ url_for('static', filename='users.svg') }}"/>
-                        </a>
-                        <a class="nav-link d-none d-xl-block no-padding" href="#authors">
-                            Authors
-                        </a>
-                    </li>
+                    <a class="nav-link py-1 px-2 me-1 grey" href="#authors">Authors</a>
                     {% endif %}
-
                     {% if feature_journals_enabled %}
-                    <li class="nav-item row">
-                        <a class="nav-link no-padding-right" href="#journals" title="Journals">
-                            <img class="nav-icon" src="{{ url_for('static', filename='book-open.svg') }}"/>
-                        </a>
-                        <a class="nav-link d-none d-xl-block no-padding" href="#journals">
-                            Journals
-                        </a>
-                    </li>
+                    <a class="nav-link py-1 px-2 me-1 grey" href="#journals">Journals</a>
                     {% endif %}
-
                     {% if feature_numbers_enabled %}
-                    <li class="nav-item row">
-                        <a class="nav-link no-padding-right" href="#numbers" title="Numbers">
-                            <img src="{{ url_for('static', filename='hash.svg') }}"/>
-                        </a>
-                        <a class="nav-link d-none d-xl-block no-padding" href="#numbers">
-                            Numbers
-                        </a>
-                    </li>
+                    <a class="nav-link py-1 px-2 me-1 grey" href="#numbers">Numbers</a>
                     {% endif %}
-                </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sticky sidebar (left) modern TOC -->
+        <nav class="d-none d-lg-block col-lg-2 col-xl-2">
+            <div id="sidebar" class="position-sticky" style="top: 1rem">
+                <div class="toc pt-card p-2" style="padding-bottom: 0;">
+                    <!-- Scrollable area keeps the nav always visible while allowing internal scroll -->
+                    <div style="max-height: calc(100vh - 6rem - 1rem); overflow-y: auto; overflow-x: hidden; padding-bottom: 0.5rem;">
+                    <ul class="nav flex-column" id="onpage-desktop">
+                        <li class="nav-item d-flex align-items-center">
+                            <img class="nav-icon me-2" alt="" src="{{ url_for('static', filename='home.svg') }}"/>
+                            <a class="nav-link px-0 py-1" href="#papers">Papers</a>
+                        </li>
+                        {% if feature_questions_enabled %}
+                        <li class="nav-item d-flex align-items-center">
+                            <img class="nav-icon me-2" alt="" src="{{ url_for('static', filename='question.svg') }}"/>
+                            <a class="nav-link px-0 py-1" href="#questions">Questions</a>
+                        </li>
+                        {% endif %}
+                        {% if topics_analyzed %}
+                        <li class="nav-item d-flex align-items-center">
+                            <img class="nav-icon me-2" alt="" src="{{ url_for('static', filename='bar-chart-2.svg') }}"/>
+                            <a class="nav-link px-0 py-1" href="#trends">Trends</a>
+                        </li>
+                        <li class="nav-item d-flex align-items-center">
+                            <img class="nav-icon me-2" alt="" src="{{ url_for('static', filename='globe.svg') }}"/>
+                            <a class="nav-link px-0 py-1" href="#network">Network</a>
+                        </li>
+                        <li class="nav-item d-flex align-items-center">
+                            <img class="nav-icon me-2" alt="" src="{{ url_for('static', filename='tag.svg') }}"/>
+                            <a class="nav-link px-0 py-1" href="#topics">Topics</a>
+                        </li>
+                        {% endif %}
+                        {% if feature_authors_enabled %}
+                        <li class="nav-item d-flex align-items-center">
+                            <img class="nav-icon me-2" alt="" src="{{ url_for('static', filename='users.svg') }}"/>
+                            <a class="nav-link px-0 py-1" href="#authors">Authors</a>
+                        </li>
+                        {% endif %}
+                        {% if feature_journals_enabled %}
+                        <li class="nav-item d-flex align-items-center">
+                            <img class="nav-icon me-2" alt="" src="{{ url_for('static', filename='book-open.svg') }}"/>
+                            <a class="nav-link px-0 py-1" href="#journals">Journals</a>
+                        </li>
+                        {% endif %}
+                        {% if feature_numbers_enabled %}
+                        <li class="nav-item d-flex align-items-center">
+                            <img class="nav-icon me-2" alt="" src="{{ url_for('static', filename='hash.svg') }}"/>
+                            <a class="nav-link px-0 py-1" href="#numbers">Numbers</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                    </div>
+                </div>
             </div>
         </nav>
 
         <!-- Main content -->
-        <main class="col-lg-11 col-xl-8" role="main">
-            <div class="card mt-3" autofocus>
-                <div class="card-title" id="papers">
+        <main class="col-lg-10 col-xl-10" role="main">
+            <div id="papers" class="card mt-0">
+                <div class="card-title">
                     <h2 class="card-header">Papers</h2>
                 </div>
                 <div class="card-body">
@@ -307,14 +143,14 @@
                         <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
                     </button>
                     <div class="row mt-2">
-                        <div class="col-3 no-padding-right" style="min-width: 185px;">
+                        <div class="col-12 col-md-4 col-lg-3 no-padding-right" style="min-width: 185px;">
                             <small><strong>Frequent words</strong></small>
                             <br>
                             <canvas id="papers_word_cloud" style="border:1px solid #eee; width: 100%; height: 100%;">
                                 Canvas is not supported in your browser.
                             </canvas>
                         </div>
-                        <div class="col-9 no-padding-left">
+                        <div class="col-12 col-md-8 col-lg-9 no-padding-left">
                             <small><strong>&nbsp;&nbsp;&nbsp;Papers per year</strong></small>
                             <br>
                             {% for script, div in papers_stats %}
@@ -342,8 +178,8 @@
             </div>
 
             {% if feature_questions_enabled %}
-            <div class="card mt-3">
-                <div class="card-title" id="questions">
+            <div id="questions" class="card mt-3">
+                <div class="card-title">
                     <h1 class="card-header">Questions</h1>
                 </div>
                 <div class="card-body">
@@ -355,30 +191,26 @@
                         <div class="col">
                             <div class="input-group mb-3">
                                 <input type="text" id="question-input" class="form-control" placeholder="Enter your question...">
-                                <div class="input-group-append">
-                                    <button id="ask-question" class="btn btn-primary" type="button">Ask</button>
-                                </div>
+                                <button id="ask-question" class="btn btn-primary" type="button">Ask</button>
                             </div>
                         </div>
                     </div>
                     <div id="question-results" style="display: none;">
                         <div id="question-results-loading" class="text-center">
                             <div class="spinner-border text-primary" role="status">
-                                <span class="sr-only">Loading...</span>
+                                <span class="visually-hidden">Loading...</span>
                             </div>
                             <p>Searching for relevant papers...</p>
                         </div>
-                        <div id="question-results-content" class="mt-3">
-                            <!-- Results will be displayed here -->
-                        </div>
+                        <div id="question-results-content" class="mt-3"></div>
                     </div>
                     <div class="mt-3" id="feedback-questions-form"></div>
                 </div>
             </div>
             {% endif %}
 
-            <div class="card mt-3">
-                <div class="card-title" id="trends">
+            <div id="trends" class="card mt-3">
+                <div class="card-title">
                     <h1 class="card-header">Trends</h1>
                 </div>
                 <div class="card-body">
@@ -452,8 +284,8 @@
                 </div>
             </div>
 
-            <div class="card mt-3">
-                <div class="card-title" id="network">
+            <div id="network" class="card mt-3">
+                <div class="card-title">
                     <h1 class="card-header">Network</h1>
                 </div>
                 <div class="card-body">
@@ -485,8 +317,8 @@
                 </div>
             </div>
 
-            <div class="card mt-3">
-                <div class="card-title" id="topics">
+            <div id="topics" class="card mt-3">
+                <div class="card-title">
                     <h1 class="card-header">Topics</h1>
                 </div>
                 <div class="card-body">
@@ -530,8 +362,7 @@
                                 <strong id="topic-{{ loop.index }}">
                                     Topic {{ loop.index }}
                                 </strong>
-                                <button type="button" class="btn btn-light"
-                                        onclick="papers_callback_topic({{ loop.index }});">
+                                <button type="button" class="btn btn-light btn-topic-list" data-topic-index="{{ loop.index }}">
                                     <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show
                                     as
                                     list
@@ -539,7 +370,7 @@
                             </div>
                             Number of papers: {{ component_sizes[loop.index - 1] }}
                             <div class="row">
-                                <div class="col-3 no-padding-right" style="min-width: 185px;">
+                                <div class="col-12 col-md-4 col-lg-3 no-padding-right" style="min-width: 185px;">
                                     <small><strong>Topic words</strong></small>
                                     <br>
                                     <canvas id="topic_word_cloud_{{ loop.index }}"
@@ -547,7 +378,7 @@
                                         Canvas is not supported in your browser.
                                     </canvas>
                                 </div>
-                                <div class="col-9 no-padding-left" id="topic_chart_{{ loop.index }}">
+                                <div class="col-12 col-md-8 col-lg-9 no-padding-left" id="topic_chart_{{ loop.index }}">
                                     <small><strong>&nbsp;&nbsp;&nbsp;Publications</strong></small>
                                     {{ script|safe }}
                                     {{ div|safe }}
@@ -562,8 +393,8 @@
             </div>
 
             {% if feature_authors_enabled %}
-            <div class="card mt-3">
-                <div class="card-title" id="authors">
+            <div id="authors" class="card mt-3">
+                <div class="card-title">
                     <h1 class="card-header">Authors</h1>
                 </div>
                 <div class="card-body">
@@ -604,8 +435,8 @@
             {% endif %}
 
             {% if feature_journals_enabled %}
-            <div class="card mt-3">
-                <div class="card-title" id="journals">
+            <div id="journals" class="card mt-3">
+                <div class="card-title">
                     <h1 class="card-header">Journals</h1>
                 </div>
                 <div class="card-body">
@@ -645,8 +476,8 @@
             {% endif %}
 
             {% if feature_numbers_enabled %}
-            <div class="card mt-3">
-                <div class="card-title" id="numbers">
+            <div id="numbers" class="card mt-3">
+                <div class="card-title">
                     <h1 class="card-header">Numbers</h1>
                 </div>
                 <div class="card-body">
@@ -680,8 +511,7 @@
             </div>
             {% endif %}
 
-
-            <div class="mt-3 ml-3" id="log">
+            <div class="mt-3 ms-3" id="log">
                 <a href="javascript:void(0);"
                    class="btn btn-light"
                    role="button" onclick="export_data();">
@@ -690,16 +520,121 @@
             </div>
         </main>
 
-        <!--Right alignment-->
-        <div class="d-none d-xl-block col-xl-2"></div>
+        <!-- Back to top button -->
+        <button type="button" id="backToTop" class="btn btn-outline-secondary btn-sm back-to-top" aria-label="Back to top">
+            <i class="bi bi-arrow-up"></i>
+        </button>
+
+        <!--Right spacer removed to allow main content to fill horizontal space-->
     </div>
-</div>
-<footer class="container text-center">
-    <p>version <a href="https://github.com/JetBrains-Research/pubtrends/blob/master/CHANGES.md" title="{{ version }}"
-                  target="_blank" class="a-footer">{{ version }}</a><br/>
-        &copy; 2021-2025 <a href="https://research.jetbrains.org/groups/biolabs"
-                            title="JetBrains Research BioLabs"
-                            target="_blank" class="a-footer">JetBrains Research</a></p>
-</footer>
-</body>
-</html>
+{% endblock %}
+
+{% block scripts_extra %}
+<script>
+    "use strict";
+
+    function papers_callback_impl(key, value) {
+        const url = '/papers?query=' + normalize('{{ query }}') +
+            '&source={{source}}&limit={{limit}}&sort={{sort}}' +
+            '&noreviews={{noreviews}}&min_year={{min_year}}&max_year={{max_year}}';
+        // Decode jobid from URL
+        const jobid = new URL(window.location).searchParams.get('jobid');
+        let args = '';
+        if (key != null) {
+            args = '&' + key + '=' + value;
+        }
+        window.open(url + args + '&jobid=' + jobid, '_blank');
+    }
+
+    function papers_callback() { papers_callback_impl(null, null) }
+    function papers_callback_topic(topic) { papers_callback_impl('topic', topic) }
+    function papers_callback_word(word) { papers_callback_impl('word', word) }
+    function papers_callback_author(author) { papers_callback_impl('author', author) }
+    function papers_callback_journal(journal) { papers_callback_impl('journal', journal) }
+    function papers_callback_top_papers() { papers_callback_impl('papers_list', 'top') }
+    function papers_callback_papers_of_the_year() { papers_callback_impl('papers_list', 'year') }
+    function papers_callback_hot_papers() { papers_callback_impl('papers_list', 'hot') }
+
+    function graph_callback() {
+        const url = '/graph?query=' + normalize('{{ query }}') +
+            '&source={{source}}&limit={{limit}}&sort={{sort}}' +
+            '&noreviews={{noreviews}}&min_year={{min_year}}&max_year={{max_year}}';
+        // Decode jobid from URL
+        const jobid = new URL(window.location).searchParams.get('jobid');
+        window.open(url + '&jobid=' + jobid, '_blank');
+    }
+
+    function export_data() {
+        const url = '/export_data?query=' + normalize('{{ query }}') +
+            '&source={{source}}&limit={{limit}}&sort={{sort}}' +
+            '&noreviews={{noreviews}}&min_year={{min_year}}&max_year={{max_year}}';
+        // Decode jobid from URL
+        const jobid = new URL(window.location).searchParams.get('jobid');
+        window.open(url + '&jobid=' + jobid, '_blank');
+    }
+
+    $(document).ready(function () {
+        // Mark search by default in datatables
+        if ($ && $.fn && $.fn.dataTable) {
+            $.extend(true, $.fn.dataTable.defaults, { mark: true });
+        }
+
+        // Setup datatables (feature-gated by presence of tables to avoid template conditionals in JS)
+        if ($('#authors-table').length) {
+            $('#authors-table').DataTable();
+        }
+        if ($('#journals-table').length) {
+            $('#journals-table').DataTable();
+        }
+        if ($('#numbers-table').length) {
+            $('#numbers-table').DataTable({
+                columnDefs: [{ searchable: false, targets: 1 }]
+            });
+        }
+
+        // Process main word cloud
+        var word_cloud = JSON.parse(normalize('{{ papers_word_cloud }}'));
+        process_word_cloud('papers_word_cloud', $('#papers_word_cloud').outerWidth(), 335, word_cloud, papers_callback_word);
+
+        // Process topics word clouds (rendered by Jinja)
+        var wc_id = '';
+        {% for (script, div), word_cloud in topics_info_and_word_cloud %}
+            word_cloud = JSON.parse(normalize('{{ word_cloud }}'));
+            wc_id = 'topic_word_cloud_{{ loop.index }}';
+            process_word_cloud(wc_id, $('#' + wc_id).outerWidth(), 335, word_cloud, papers_callback_word);
+        {% endfor %}
+
+        // Configure jobid for feedback for text message form, decode jobid from URL
+        var jobid = new URL(window.location).searchParams.get('jobid');
+        $('#feedback-jobid').val(jobid);
+
+        // Create clickable feedback forms
+        if (typeof createClickableFeedBackForm === 'function') {
+            createClickableFeedBackForm("feedback-papers-form", "feedback-papers");
+            createClickableFeedBackForm("feedback-trends-form", "feedback-trends");
+            createClickableFeedBackForm("feedback-network-form", "feedback-network");
+            createClickableFeedBackForm("feedback-topics-form", "feedback-topics");
+            createClickableFeedBackForm("feedback-authors-form", "feedback-authors");
+            createClickableFeedBackForm("feedback-journals-form", "feedback-journals");
+            createClickableFeedBackForm("feedback-numbers-form", "feedback-numbers");
+        }
+
+        // Delegate: topics "Show as list" buttons
+        $(document).on('click', '.btn-topic-list', function () {
+            var idx = parseInt(this.getAttribute('data-topic-index'), 10);
+            if (!isNaN(idx) && typeof window.papers_callback_topic === 'function') {
+                window.papers_callback_topic(idx);
+            }
+        });
+
+        // Shared navigation behavior (desktop scroll‑spy + back‑to‑top)
+        if (window.PTNavigation && typeof window.PTNavigation.init === 'function') {
+            window.PTNavigation.init({
+                desktopNavId: 'onpage-desktop',
+                backToTopId: 'backToTop'
+                // currentLabelId is omitted here unless a label is present in markup
+            });
+        }
+    });
+    </script>
+{% endblock %}
