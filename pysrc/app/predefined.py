@@ -1,5 +1,6 @@
 import hashlib
 import logging
+import time
 from threading import Lock
 
 from pysrc.app.reports import load_result_data
@@ -54,6 +55,16 @@ PREDEFINED_JOBS = get_predefined_jobs(PUBTRENDS_CONFIG, SEMANTIC_SEARCH_AVAILABL
 
 PREDEFINED_JOBS_LOCK = Lock()
 
+# Throttle expensive readiness checks against Celery.
+# During start-up many concurrent '/' requests may arrive and each would call
+# `are_predefined_jobs_ready`, which performs multiple `celery.control.inspect()`
+# calls and filesystem reads. To avoid hammering Celery and disk, we only perform
+# a full check at most once per `READY_CHECK_INTERVAL_SEC` seconds while the
+# system is still becoming ready. Once ready, the result is persisted in
+# `pubtrends_app.config[PREDEFINED_TASKS_READY_KEY]` and no further checks are made.
+READY_CHECK_INTERVAL_SEC = 5
+_last_ready_check_ts = 0.0
+
 
 def are_predefined_jobs_ready(pubtrends_app, pubtrends_celery):
     """ Checks if all the precomputed examples are available and gensim fasttext model is loaded """
@@ -61,8 +72,15 @@ def are_predefined_jobs_ready(pubtrends_app, pubtrends_celery):
         return True
     try:
         PREDEFINED_JOBS_LOCK.acquire()
+        # If we already marked the app as ready, exit fast without any extra work.
         if pubtrends_app.config.get(PREDEFINED_TASKS_READY_KEY, False):
             return True
+        # Throttle expensive checks when not yet ready.
+        global _last_ready_check_ts
+        now = time.time()
+        if now - _last_ready_check_ts < READY_CHECK_INTERVAL_SEC:
+            return False
+        _last_ready_check_ts = now
         ready = True
         inspect = pubtrends_celery.control.inspect()
         active = inspect.active()

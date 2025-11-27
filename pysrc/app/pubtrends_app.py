@@ -108,6 +108,11 @@ def log_request(r):
 
 
 @pubtrends_app.route('/')
+@cache.cached(timeout=30, unless=lambda: (
+        # Do not cache while background services are initializing
+        (is_embeddings_service_available() and not is_embeddings_service_ready()) or
+        (not pubtrends_app.config.get('PREDEFINED_TASKS_READY', False))
+))
 def index():
     if is_embeddings_service_available() and not is_embeddings_service_ready():
         return render_template('init.html', version=VERSION, message=SERVICE_LOADING_INITIALIZING)
