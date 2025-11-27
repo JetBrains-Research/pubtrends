@@ -3,6 +3,14 @@ Pubtrends changelog
 
 Here you can see the full list of changes between each release.
 
+Version 1.5
+------------
+Released on Nov 27, 2025
+
+- UI updated, improved navigation
+- Fix network view for large graphs
+
+
 Version 1.4
 ------------
 Released on Nov 3, 2025
