@@ -14,6 +14,7 @@ from bokeh.plotting import figure
 from holoviews import opts
 from matplotlib import pyplot as plt
 from sklearn.preprocessing import minmax_scale
+from teamcity.common import split_output
 from wordcloud import WordCloud
 
 from pysrc.config import PAPERS_PLOT_WIDTH, WORD_CLOUD_WIDTH, WORD_CLOUD_KEYWORDS, WORD_CLOUD_HEIGHT, \
@@ -559,6 +560,10 @@ class Plotter:
             width=PLOT_WIDTH, height=TALL_PLOT_HEIGHT,
             interactive=True):
         logger.debug('Processing plot_papers_graph')
+        if search_ids is not None:
+            search_ids = [str(p) for p in search_ids]
+        if shown_pid is not None:
+            shown_pid = str(shown_pid)
         pids = df['id']
         pim = dict((p, i) for i, p in enumerate(pids))
         comps = df['comp']
@@ -596,11 +601,14 @@ class Plotter:
             minmax_scale([c / max(connections) * 0.5 for c in connections]) + 0.3
         graph.node_renderer.data_source.data['color'] = [palette[c] for c in comps]
         # Show search / shown ids
-        if search_ids is not None and len(search_ids) < len(df):
+        if search_ids is not None and len(search_ids) < len(df) or shown_pid is not None:
             graph.node_renderer.data_source.data['line_width'] = \
-                [5.0 if search_ids is not None and p in search_ids else 3.0 if p == shown_pid else 1 for p in pids]
+                [5.0 if search_ids is not None and str(p) in search_ids else
+                 3.0 if str(p) == shown_pid else 1
+                 for p in pids]
             graph.node_renderer.data_source.data['alpha'] = \
-                [1.0 if search_ids is not None and p in search_ids or p == shown_pid else 0.7 for p in pids]
+                [1.0 if search_ids is not None and str(p) in search_ids or str(p) == shown_pid else
+                 0.5 for p in pids]
         else:
             graph.node_renderer.data_source.data['line_width'] = [1] * len(pids)
             graph.node_renderer.data_source.data['alpha'] = [0.7] * len(pids)
