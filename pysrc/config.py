@@ -36,7 +36,7 @@ SIMILARITY_COCITATION_MIN = 2
 GRAPH_TEXT_SIMILARITY_EDGES = 100
 
 # Number of edges in papers graph for visualization
-VISUALIZATION_GRAPH_EDGES = 5
+VISUALIZATION_GRAPH_EDGES = 10
 
 # PCA for visualizing
 PCA_VARIANCE = 0.9

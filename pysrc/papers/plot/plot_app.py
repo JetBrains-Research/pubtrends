@@ -246,8 +246,9 @@ def prepare_graph_data(config: PubtrendsConfig, data: AnalysisData, shown_id=Non
         comp: ','.join([w[0] for w in topics_description[comp]]) for comp in sorted(set(data.df['comp']))
     }
     logger.debug('Computing sparse graph')
+    visualize_graph = sparse_graph(data.papers_graph, VISUALIZATION_GRAPH_EDGES)
     graph_cs = PlotPreprocessor.dump_similarity_graph_cytoscape(
-        data.df, data.papers_graph
+        data.df, visualize_graph
     )
     return dict(
         query=trim_query(data.search_query),
