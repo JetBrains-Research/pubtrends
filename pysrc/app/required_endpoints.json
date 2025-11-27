@@ -6,16 +6,15 @@
   {"path": "/status", "methods": ["GET"]},
   {"path": "/cancel", "methods": ["GET"]},
   {"path": "/result", "methods": ["GET"]},
-  {"path": "/result", "methods": ["GET"]},
   {"path": "/graph", "methods": ["GET"]},
   {"path": "/paper", "methods": ["GET"]},
   {"path": "/papers", "methods": ["GET"]},
   {"path": "/export_data", "methods": ["GET"]},
+  {"path": "/question", "methods": ["POST"]},
   {"path": "/feedback", "methods": ["POST"]},
-  {"path": "/search_terms_api", "methods": ["POST"]},
-  {"path": "/semantic_search_api", "methods": ["POST"]},
-  {"path": "/analyse_ids_api", "methods": ["POST"]},
-  {"path": "/check_status_api/<jobid>", "methods": ["GET"]},
-  {"path": "/get_result_api", "methods": ["GET"]},
-  {"path": "/question", "methods": ["POST"]}
+  {"path": "/api/search_terms", "methods": ["POST"]},
+  {"path": "/api/semantic_search", "methods": ["POST"]},
+  {"path": "/api/analyse_ids", "methods": ["POST"]},
+  {"path": "/api/check_status/<jobid>", "methods": ["GET"]},
+  {"path": "/api/get_result", "methods": ["GET"]}
 ]
