@@ -14,7 +14,8 @@ from pysrc.app.admin import admin_bp, init_admin
 from pysrc.app.api import api_bp
 from pysrc.app.messages import SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, \
     SERVICE_LOADING_PREDEFINED_EXAMPLES, SERVICE_LOADING_INITIALIZING
-from pysrc.app.predefined import are_predefined_jobs_ready, PREDEFINED_JOBS, is_semantic_predefined
+from pysrc.app.predefined import are_predefined_jobs_ready, PREDEFINED_JOBS, is_semantic_predefined, \
+    PREDEFINED_TASKS_READY_KEY
 from pysrc.app.reports import load_result_data, preprocess_string, load_paper_data
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, analyze_pubmed_search, \
@@ -108,11 +109,7 @@ def log_request(r):
 
 
 @pubtrends_app.route('/')
-@cache.cached(timeout=30, unless=lambda: (
-        # Do not cache while background services are initializing
-        (is_embeddings_service_available() and not is_embeddings_service_ready()) or
-        (not pubtrends_app.config.get('PREDEFINED_TASKS_READY', False))
-))
+@cache.cached(unless=lambda: not pubtrends_app.config.get(PREDEFINED_TASKS_READY_KEY, False))
 def index():
     if is_embeddings_service_available() and not is_embeddings_service_ready():
         return render_template('init.html', version=VERSION, message=SERVICE_LOADING_INITIALIZING)
