@@ -434,8 +434,12 @@ class Plotter:
             for v, nds in next_ds.items():
                 next_ds[v] = np.mean(nds)
                 if nds[0] != nds[-1]:
-                    p.arc(0, 0, d_radius * (dendrogram_len - i - 1), nds[0], nds[-1], line_color='grey')
-                    # logger.debug(f'ARC r={d_radius * (dendrogram_len - i - 1)}; d1={nds[0]}; d2={nds[-1]}')
+                    # Draw elliptical arc that accounts for non-1:1 aspect ratio.
+                    # Approximate the arc with a polyline for robustness across Bokeh versions.
+                    r = d_radius * (dendrogram_len - i - 1)
+                    start = nds[0]
+                    end = nds[-1]
+                    Plotter.arc(p, start, end, r)
 
             ds = next_ds
 
@@ -495,8 +499,10 @@ class Plotter:
                    text_align='right', text_baseline='middle', text_font_size='10pt',
                    text_color=topics_colors[v])
 
-        # Arcs fail at stretching, use fixed size only
-        # p.sizing_mode = 'stretch_width'
+        # Make the plot responsive to container width while preserving aspect ratio
+        p.sizing_mode = 'stretch_width'
+        # Keep circles round on resize by matching x/y scale
+        p.match_aspect = True
         p.axis.major_tick_line_color = None
         p.axis.minor_tick_line_color = None
         p.axis.major_label_text_color = None
@@ -506,6 +512,18 @@ class Plotter:
         p.outline_line_color = None
         Plotter.remove_wheel_zoom_tool(p)
         return p
+
+    @staticmethod
+    def arc(p: figure, start, end, r: float, nseg=32):
+        # handle wrap-around direction (ensure increasing parameter)
+        if end < start:
+            end += 2 * pi
+        # Sample points along the arc on a circle in data space;
+        # the plot's non-1.0 aspect will naturally render this as an ellipse on screen.
+        ts = np.linspace(start, end, nseg)
+        xs_arc = [r * cos(t) for t in ts]
+        ys_arc = [r * sin(t) for t in ts]
+        p.line(xs_arc, ys_arc, line_color='grey')
 
     @staticmethod
     def _plot_scatter_papers_layout(source, ds, year_range, width=PLOT_WIDTH):
