@@ -8,7 +8,7 @@
 <section class="pt-hero p-5 mb-4">
     <div class="row align-items-center gy-3">
         <div class="col-lg-10">
-            <h1 class="h5 mb-2">Processing analysis</h1>
+            <h1 class="h5 mb-2">Processing…</h1>
             <p class="mb-0 pt-muted">Please wait while we analyze
                 <strong>{{ query }}</strong> at <strong>{{ source }}</strong> ({{ limit }} {{ sort }}).</p>
         </div>
@@ -25,7 +25,7 @@
             <span class="progress-bar-label" aria-live="polite">0%</span>
         </div>
     </div>
-    <div class="h6 mt-3 ms-3" id="status">Waiting for content...</div>
+    <div class="h6 mt-3 ms-3" id="status">Waiting for content…</div>
     <pre class="ms-3 mt-3" id="log"></pre>
     </p>
 </section>
@@ -85,6 +85,7 @@
                     const href = `/{{ redirect_page }}?${args_list.join('&')}`;
                     // Show a manual link in case automatic redirect is blocked or fails
                     $progress.hide();
+                    $log.hide();
                     $status.html(
                         `Analysis complete. If you are not redirected automatically, open the results:
                          <a class="btn btn-primary btn-sm ms-2" href="${href}">Open results</a>
