@@ -14,7 +14,6 @@ from bokeh.plotting import figure
 from holoviews import opts
 from matplotlib import pyplot as plt
 from sklearn.preprocessing import minmax_scale
-from teamcity.common import split_output
 from wordcloud import WordCloud
 
 from pysrc.config import PAPERS_PLOT_WIDTH, WORD_CLOUD_WIDTH, WORD_CLOUD_KEYWORDS, WORD_CLOUD_HEIGHT, \
@@ -355,11 +354,24 @@ class Plotter:
         vdim = hv.Dimension('number', range=(-2, max_numbers + 2))
         # Define the dataset
         ds = hv.Dataset(keywords_df, vdims=vdim)
-        curves = ds.to(hv.Curve, 'year', groupby='keyword').overlay().redim(
-            year=dict(range=(min(years) - 1, max(years) + 3)))
-        # Define a function to get the text annotations
+        # Dynamically compute extra years to the right based on label length and plot width
         max_year = ds['year'].max()
-        label_df = keywords_df[keywords_df.year == max_year].copy().reset_index(drop=True)
+        min_year = ds['year'].min()
+        # longest keyword length in characters
+        max_label_len = keywords_df['keyword'].map(lambda x: len(str(x))).max()
+        # rough pixel width per character for the current font
+        label_px = max_label_len * 9
+        # pixels to years conversion factor
+        years_per_px = (max_year - min_year + 5) / float(PLOT_WIDTH)
+        # compute extra years needed to fit the longest label inside initial viewport
+        extra_years = int(label_px * years_per_px) + 2
+        # keep within reasonable bounds
+        extra_years = max(5, min(30, extra_years))
+        curves = ds.to(hv.Curve, 'year', groupby='keyword').overlay().redim(
+            year=dict(range=(min_year - 1, max_year + extra_years)))
+        # Define a function to get the text annotations
+        label_df = keywords_df[keywords_df['year'] == max_year].copy().reset_index(drop=True)
+        label_df['year'] += 1
         # Update layout for better labels representation
         label_df.sort_values(by='number', inplace=True)
         if len(label_df) > 1:
@@ -372,7 +384,7 @@ class Plotter:
         overlay.opts(
             opts.Curve(show_frame=False, labelled=[], tools=['hover'],
                        width=PLOT_WIDTH, height=len(label_df) * 25, show_legend=False,
-                       xticks=list(reversed(range(max(years), min(years), -5))),
+                       xticks=list(reversed(range(max_year, min_year, -5))),
                        color=hv.Cycle(values=palette), alpha=0.8, line_width=2, show_grid=True),
             opts.Labels(text_color='keyword', cmap=palette, text_align='left'),
             opts.NdOverlay(batched=False,
