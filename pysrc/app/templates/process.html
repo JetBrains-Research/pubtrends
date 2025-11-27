@@ -33,13 +33,6 @@
 {% endblock %}
 
 {% block scripts_extra %}
-<script id="redirect-args" type="application/json">
-    // Disable formatter for the next section because of injections.
-    // Enable formatter control in File > Settings > Editor > Code Style
-    // @formatter:off
-    {{redirect_args | tojson}}
-    // @formatter:on
-</script>
 <script>
     "use strict";
 
@@ -76,8 +69,12 @@
                     $progress.hide();
                     $log.html(response.log);
                 } else if (response.state === 'SUCCESS') {
-                    // Read redirect args JSON embedded in the DOM to avoid inline templating issues
-                    const args = JSON.parse(document.getElementById('redirect-args').textContent);
+                    // Disable formatter for the next section because of injections.
+                    // Enable formatter control in File > Settings > Editor > Code Style
+                    // @formatter:off
+                    // Join arg-value pairs for URL
+                    var args = {{ redirect_args | safe }};
+                    // @formatter:on
 
                     const args_list = [];
                     for (const key in args) {
@@ -86,6 +83,13 @@
 
                     // Build href for given redirect page and args
                     const href = `/{{ redirect_page }}?${args_list.join('&')}`;
+                    // Show a manual link in case automatic redirect is blocked or fails
+                    $progress.hide();
+                    $status.html(
+                        `Analysis complete. If you are not redirected automatically, open the results:
+                         <a class="btn btn-primary btn-sm ms-2" href="${href}">Open results</a>
+                         <div class="small mt-2">Direct link: <a class="grey" href="${href}">${href}</a></div>`
+                    ).show();
                     window.location.replace(href);
                 } else if (response.state !== undefined) {
                     if (response.progress !== undefined) {
