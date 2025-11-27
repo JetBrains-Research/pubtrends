@@ -23,15 +23,13 @@ function process_word_cloud(id, width, height, word_cloud, callback) {
     const word_records = word_cloud['word_records'];
     const ww = word_cloud['width'];
     const wh = word_cloud['height'];
-    const dx = 10;
-    const dy = 10;
     const canvas = document.getElementById(id);
     const ctx = canvas.getContext("2d");
     // Make canvas visible
     canvas.style.width = width.toString() + "px";
     canvas.style.height = height.toString() + "px";
-    const sx = (height - dx * 2) / wh;
-    const sy = (width - dx * 2) / ww;
+    const sx = height / wh;
+    const sy = width  / ww;
 
     // Retina/HiDPI fix
     if (isHighDensity()) {
@@ -46,7 +44,6 @@ function process_word_cloud(id, width, height, word_cloud, callback) {
     const links = []; // Links information
     let hoverWord = ""; // Word, which cursor points at
     ctx.textBaseline = "top"; // Makes left top point a start point for rendering text
-    const pointerHeight = 10;
 
     function addWord(word, x, y, size, vertical, color) {
         ctx.fillStyle = color;
@@ -79,38 +76,40 @@ function process_word_cloud(id, width, height, word_cloud, callback) {
     }
 
     function onMouseMove(ev) {
-        let x, y;
+        // Compute mouse position relative to the canvas in CSS pixels.
+        // Using getBoundingClientRect avoids Chrome issues with deprecated layerX/Y
+        // and stays correct when the canvas backing store is scaled for HiDPI.
+        const rect = canvas.getBoundingClientRect();
+        const x = ev.clientX - rect.left;
+        const y = ev.clientY - rect.top;
 
-        // Get the mouse position relative to the canvas element
-        if (ev.layerX || ev.layerX === 0) {
-            x = ev.layerX;
-            y = ev.layerY;
-        }
-
-        // For better navigation
-        if (!isSafari()) {
-            y -= pointerHeight;
-        }
+        let hit = false;
+        let word = "";
 
         // Link hover
         for (let i = 0; i < links.length; i++) {
             const link = links[i];
-            const linkX = link[0],
-                linkY = link[1],
-                linkWidth = link[2],
-                linkHeight = link[3],
-                linkWord = link[4];
+            const linkX = link[0];
+            const linkY = link[1];
+            const linkWidth = link[2];
+            const linkHeight = link[3];
+            const linkWord = link[4];
 
-            // Check if cursor is in the link area
-            if (linkX <= x - dx && x - dx <= linkX + linkWidth &&
-                linkY <= y - dy && y - dy <= linkY + linkHeight) {
-                document.body.style.cursor = "pointer";
-                hoverWord = linkWord;
+            // Check if cursor is in the link area (account for dx/dy shift used when drawing)
+            if (linkX <= x && x  <= linkX + linkWidth &&
+                linkY <= y  && y  <= linkY + linkHeight) {
+                hit = true;
+                word = linkWord;
                 break;
-            } else {
-                document.body.style.cursor = "";
-                hoverWord = "";
             }
+        }
+
+        if (hit) {
+            document.body.style.cursor = "pointer";
+            hoverWord = word;
+        } else {
+            document.body.style.cursor = "";
+            hoverWord = "";
         }
     }
 
@@ -125,7 +124,7 @@ function process_word_cloud(id, width, height, word_cloud, callback) {
         const wr = word_records[i];
         const word = wr[0], x = wr[1], y = wr[2], size = wr[3], vertical = wr[4], color = wr[5];
         // Add word with small shift, coordinates changed!
-        addWord(word, y * sy + dx, x * sx + dy, size, vertical, color);
+        addWord(word, y * sy, x * sx, size, vertical, color);
     }
 
     // Add mouse listeners
