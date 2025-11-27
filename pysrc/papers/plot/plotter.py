@@ -631,13 +631,16 @@ class Plotter:
             minmax_scale([c / max(connections) * 0.5 for c in connections]) + 0.3
         graph.node_renderer.data_source.data['color'] = [palette[c] for c in comps]
         # Show search / shown ids
-        if search_ids is not None and len(search_ids) < len(df) or shown_pid is not None:
+        highlight_search_ids = search_ids is not None and len(search_ids) < len(df)
+        highlight_shown_pid = shown_pid is not None
+        if highlight_search_ids or shown_pid is not None:
             graph.node_renderer.data_source.data['line_width'] = \
-                [5.0 if search_ids is not None and str(p) in search_ids else
-                 3.0 if str(p) == shown_pid else 1
-                 for p in pids]
+                [5.0 if highlight_search_ids and str(p) in search_ids else
+                 3.0 if highlight_shown_pid and str(p) == shown_pid else
+                 1 for p in pids]
             graph.node_renderer.data_source.data['alpha'] = \
-                [1.0 if search_ids is not None and str(p) in search_ids or str(p) == shown_pid else
+                [1.0 if highlight_search_ids and str(p) in search_ids or
+                        highlight_shown_pid and str(p) == shown_pid else
                  0.5 for p in pids]
         else:
             graph.node_renderer.data_source.data['line_width'] = [1] * len(pids)
