@@ -39,7 +39,7 @@
 <section class="pt-hero p-5 mb-4">
     <div class="row align-items-center gy-3">
         <div class="col-lg-10">
-            <h2 class="display-6 mb-2">About PubTrends</h1>
+            <h2 class="display-6 mb-2">About PubTrends</h2>
             <p class="lead pt-muted mb-3">Discover publications, trends, and visualize citation networks.</p>
         </div>
     </div>
@@ -54,6 +54,7 @@
                 <a class="nav-link py-1 px-2 me-1 grey" href="#example">Example</a>
                 <a class="nav-link py-1 px-2 me-1 grey" href="#network">Network</a>
                 <a class="nav-link py-1 px-2 me-1 grey" href="#topics">Topics</a>
+                <a class="nav-link py-1 px-2 me-1 grey" href="#questions">Questions</a>
                 <a class="nav-link py-1 px-2 me-1 grey" href="#other">Other</a>
             </div>
         </div>
@@ -81,6 +82,10 @@
                         <li class="nav-item d-flex align-items-center">
                             <img class="nav-icon me-2" alt="" src="{{ url_for('static', filename='tag.svg') }}"/>
                             <a class="nav-link px-0 py-1" href="#topics">Topics</a>
+                        </li>
+                        <li class="nav-item d-flex align-items-center">
+                            <img class="nav-icon me-2" alt="" src="{{ url_for('static', filename='question.svg') }}"/>
+                            <a class="nav-link px-0 py-1" href="#questions">Questions</a>
                         </li>
                         <li class="nav-item d-flex align-items-center">
                             <img class="nav-icon me-2" alt="" src="{{ url_for('static', filename='hash.svg') }}"/>
@@ -135,7 +140,8 @@
                 <div class="mt-4">
                     <h3 class="mb-2">Datasets</h3>
                     <p class="text-muted">PubTrends works with widely used, reputable sources of scholarly
-                        metadata.</p>
+                        metadata. We periodically refresh our local indices so that citation counts and links stay
+                        reasonably up to date without requiring users to manage any data.</p>
                     <div class="row g-3">
                         <div class="col-md-6">
                             <div class="border rounded-3 p-3 h-100">
@@ -178,8 +184,9 @@
                     <p class="text-muted mb-3">From data collection to insight: PubTrends automates the heavy
                         lifting so you can
                         focus on interpretation. Enter a query or paper → we fetch and enrich metadata → you explore
-                        trends, networks, and topics to draw conclusions.
-                    </p>
+                        trends, networks, and topics to draw conclusions. The entire process is reproducible — the
+                        same query with the same settings yields the same analysis snapshot. Nothing to install or
+                        configure: everything runs in the browser backed by our APIs.</p>
                     <img class="mx-auto d-block img-fluid" src="../static/about/about_pubtrends_scheme.png"
                          style="width: 100%; max-width: 900px;" alt="PubTrends workflow scheme">
                 </div>
@@ -189,26 +196,23 @@
                     </p>
                     <h3 class="mt-3">Papers</h3>
                     <p>The Papers view summarizes the field: total articles, extracted topics, a clickable word
-                        cloud of
-                        frequent terms, a yearly publications timeline, and a list view for quick scanning. Sort and
-                        filter to hone in on reviews, specific years, or article types.
-                    </p>
+                        cloud of frequent terms, a yearly publications timeline, and a list view for quick scanning.
+                        You can export tables for offline analysis or to share with collaborators.</p>
                     <img class="mx-auto d-block img-fluid" src="../static/about/about_report.png"
                          style="width: 100%; max-width: 900px"
                          alt="Papers overview screenshot">
 
                     <h3 class="mt-4">Top cited papers</h3>
                     <p>Explore the most influential works, grouped by citation count and article type, with
-                        intuitive
-                        color coding. Use this to identify seminal contributions and foundational reviews.
-                    </p>
+                        intuitive color coding. Use this to identify seminal contributions and foundational reviews.</p>
                     <img class="mx-auto d-block img-fluid" src="../static/about/about_top_cited_papers.png"
                          style="width: 100%; max-width: 900px" alt="Top cited papers visualization">
 
                     <h3 class="mt-4">Hot papers</h3>
                     <p>See per‑year standouts — papers with the highest yearly citation counts. A quick way to spot
-                        rising topics and high‑impact results in recent years.
-                    </p>
+                        rising topics and high‑impact results in recent years. Use this view to identify emerging
+                        areas before they accumulate long‑term citations. Comparing neighboring years highlights
+                        sustained momentum versus one‑off spikes.</p>
                     <img class="mx-auto d-block img-fluid" src="../static/about/about_hot_papers.png"
                          style="width: 100%; max-width: 900px" alt="Hot papers plot">
 
@@ -223,18 +227,16 @@
                          alt="Papers similarity graph">
                     <h3 class="mt-4">Interactive visualization</h3>
                     <p>The dedicated graph explorer lets you color by year or topic, filter using metadata, and
-                        search
-                        within the network. In the screenshot, nodes are colored by topic and filtered by the
-                        keyword
-                        “methylation”. Pan and zoom to focus on neighborhoods; click a node to open details.
-                    </p>
+                        search within the network. In the screenshot, nodes are colored by topic and filtered by the
+                        keyword “methylation”. Pan and zoom to focus on neighborhoods; click a node to open details. Hover to
+                        reveal tooltips with titles and key metadata.</p>
                     <img class="mx-auto d-block img-fluid" src="../static/about/about_graph_explorer.png"
                          style="width: 100%; max-width: 900px" alt="Graph explorer screenshot">
                 </div>
                 <div id="topics">
                     <h1 class="mt-4">Topics</h1>
                     <p class="mb-2">Topics are detected via hierarchical clustering on paper embeddings. Explore the
-                        hierarchy using an interactive dendrogram. Drill down to sub‑clusters to find focused areas
+                        hierarchy using an clusters dendrogram. Drill down to sub‑clusters to find focused areas
                         and representative works.
                     </p>
                     <img class="mx-auto d-block img-fluid" src="../static/about/about_topics_hierarchy.png"
@@ -242,44 +244,55 @@
 
                     <h3 class="mt-4">Topics by year</h3>
                     <p>See how interest shifts across topics year‑by‑year. Each topic is summarized by key keywords
-                        and
-                        its share of all papers. Compare rises and declines to time your literature reviews.
-                    </p>
+                        and its share of all papers. Compare rises and declines to time your literature reviews. The
+                        timeline helps distinguish transient bursts from steady growth areas.</p>
                     <img class="mx-auto d-block img-fluid" src="../static/about/about_topics_by_year.png"
                          style="width: 100%; max-width: 900px" alt="Topics by year plot">
 
                     <h3 class="mt-4">Topic keywords</h3>
                     <p>Each topic includes a word cloud and article plot. Word sizes reflect topic‑specific
-                        importance
-                        based on the share of papers mentioning the term. Use this to align terminology and quickly
-                        jump into the most relevant articles.
-                    </p>
+                        importance based on the share of papers mentioning the term. Use this to align terminology and quickly
+                        jump into the most relevant articles. Clicking a word filters the list to papers where the
+                        concept is most central. This is useful for curating reading lists around a precise theme.</p>
                     <img class="mx-auto d-block img-fluid" src="../static/about/about_topic.png"
                          style="width: 100%; max-width: 900px"
                          alt="Topic keywords visualization">
                 </div>
+                <div id="questions">
+                    <h1 class="mt-4">Questions</h1>
+                    <p>
+                    Quickly spot the most relevant information about the question among the available papers without any AI hallucinations.<br>
+                    Enter a question and PubTrends will find the most relevant papers and exact context.</p>
+                    <img class="mx-auto d-block img-fluid" src="../static/about/about_questions.png"
+                         style="width: 100%; max-width: 900px"
+                         alt="Question visualization">
+                </div>
+
                 <div id="other">
                     <h1 class="mt-4">Other</h1>
                     <h3 class="mt-4">Citations</h3>
+                    <p class="mb-2">If you use PubTrends in your research, please cite the following works. Including
+                        a citation helps others discover the tool and makes it easier for us to sustain future
+                        development.</p>
                     <ul>
                         <li>
-                            <i>Shpynov, O. and Kapralov, N., PubTrends: a scientific literature explorer. In
-                                Proceedings of the 12th ACM Conference on Bioinformatics, Computational Biology, and Health Informatics,
+                            <i>Shpynov, O. and Kapralov, N., PubTrends: a scientific literature explorer.
+                                In Proceedings of the 12th ACM Conference on Bioinformatics, Computational Biology, and Health Informatics,
                                 2021 (pp. 1-1).</i>
                             <a class="link"
                                href="https://doi.org/10.1145/3459930.3469501">https://doi.org/10.1145/3459930.3469501</a>
                         </li>
                         <li>
                             <i>Nikiforovskaya, A., Kapralov, N., Vlasova, A., Shpynov, O. and Shpilman, A., 2020,
-                                December.
-                                Automatic generation of reviews of scientific papers. In 2020 19th IEEE
+                                December. Automatic generation of reviews of scientific papers. In 2020 19th IEEE
                                 International Conference on Machine Learning and Applications (ICMLA) (pp. 314-319). IEEE.</i>
                             <a class="link"
                                href="https://arxiv.org/abs/2010.04147">https://arxiv.org/abs/2010.04147</a>
                         </li>
                     </ul>
                     <h3>Code</h3>
-                    <p class="mb-0">Source code is available on GitHub:</p>
+                    <p class="mb-0">Source code is available on GitHub. Contributions and bug reports are welcome
+                        through issues and pull requests.</p>
                     <p class="mb-3">
                         <a class="link" href="https://github.com/JetBrains-Research/pubtrends" target="_blank"
                            rel="noopener">
