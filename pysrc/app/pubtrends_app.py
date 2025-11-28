@@ -12,7 +12,7 @@ from pysrc.app.api import api_bp
 from pysrc.app.messages import SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, \
     SERVICE_LOADING_PREDEFINED_EXAMPLES, SERVICE_LOADING_INITIALIZING
 from pysrc.app.predefined import are_predefined_jobs_ready, PREDEFINED_JOBS, is_semantic_predefined, \
-    PREDEFINED_TASKS_READY_KEY
+    PREDEFINED_TASKS_READY_KEY, is_paper_predefined, is_terms_predefined
 from pysrc.app.reports import load_or_save_result_data, preprocess_string
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, analyze_pubmed_search, \
@@ -109,13 +109,16 @@ def index():
     search_example_message = ''
     search_example_source = ''
     search_example_terms = []
+    search_example_papers = []
     semantic_search_example_terms = []
 
     if len(PREDEFINED_JOBS) != 0:
         search_example_source, example_terms = random.choice(list(PREDEFINED_JOBS.items()))
+        search_example_papers = [(*q.split('='), jobid) for q, jobid in example_terms
+                                 if is_paper_predefined(jobid)]
         search_example_message = 'Try one of our examples for ' + search_example_source
         search_example_terms = [(q, jobid) for q, jobid in example_terms
-                                if not is_semantic_predefined(jobid)]
+                                if is_terms_predefined(jobid)]
         semantic_search_example_terms = [(q, jobid) for q, jobid in example_terms
                                          if is_semantic_predefined(jobid)]
 
@@ -133,6 +136,7 @@ def index():
                            search_example_message=search_example_message,
                            search_example_source=search_example_source,
                            search_example_terms=search_example_terms,
+                           search_example_papers=search_example_papers,
                            semantic_search_example_terms=semantic_search_example_terms,
                            semantic_search_enabled=SEMANTIC_SEARCH_AVAILABLE)
 

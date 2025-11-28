@@ -153,6 +153,7 @@ class PubtrendsConfig:
 
         self.pm_enabled = params.getboolean('pm_enabled')
         self.pm_search_example_terms = [terms.strip() for terms in params['pm_search_example_terms'].split(';')]
+        self.pm_paper_examples = [terms.strip().split('=') for terms in params['pm_paper_examples'].split(';')]
         self.entrez_email = params['entrez_email'].strip()
 
         self.ss_enabled = params.getboolean('ss_enabled')

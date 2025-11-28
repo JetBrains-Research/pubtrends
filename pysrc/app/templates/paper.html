@@ -353,16 +353,18 @@
         const url = '/result?query=' + normalize('{{ query }}');
         const params = new URL(window.location);
         const jobid = params.searchParams.get('jobid');
-        const pid = params.searchParams.get('id');
-        window.open(url + '&jobid=' + jobid + '&id=' + pid, '_blank');
+        window.open(url + '&jobid=' + jobid, '_blank');
     }
 
     function graph_callback() {
-        const url = '/graph?query=' + normalize('{{ query }}');
+        let url = '/graph?query=' + normalize('{{ query }}');
         const params = new URL(window.location);
-        const jobid = params.searchParams.get('jobid');
         const pid = params.searchParams.get('id');
-        window.open(url + '&id=' + pid + '&jobid=' + jobid, '_blank');
+        if (pid != null) {
+            url += '&id=' + pid;
+        }
+        const jobid = params.searchParams.get('jobid');
+        window.open(url + '&jobid=' + jobid, '_blank');
     }
 
     function export_data() {

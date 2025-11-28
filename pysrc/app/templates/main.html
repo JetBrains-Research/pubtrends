@@ -486,6 +486,20 @@
                             </div>
                         </div>
                     </form>
+                    <!-- Preprocessed example -->
+                    <div id="predefined" class="d-flex flex-nowrap align-items-center">
+                        <div class="me-2">{{ search_example_message }}</div>
+                        {% for key, value, jobid in search_example_papers %}
+                        <form action="paper" method="GET" class="me-2" style="display: inline;">
+                            <input type="hidden" name="query" value="{{ key }}={{ value }}">
+                            <button type="submit" name="jobid" value="{{ jobid }}"
+                                    class="btn btn-sm btn-outline-secondary"
+                                    style="border-radius: 10px;">
+                                {{ value }}
+                            </button>
+                        </form>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
         </div>
