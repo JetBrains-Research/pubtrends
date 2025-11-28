@@ -69,7 +69,7 @@ EMBEDDINGS_QUESTIONS_SENTENCE_OVERLAP = 1
 # Control citation count while expanding
 EXPAND_CITATIONS_Q_LOW = 10
 EXPAND_CITATIONS_Q_HIGH = 90
-EXPAND_CITATIONS_SIGMA = 3
+EXPAND_CITATIONS_SIGMA = 5
 
 # Impact of a single paper when analyzing citations and mesh terms when analysing paper
 EXPAND_SINGLE_PAPER_IMPACT = 50

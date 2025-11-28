@@ -39,9 +39,9 @@ def expand_ids(
 
     # Try to estimate citations ranges by references only
     cit_mean, cit_std = None, None
+    references = []
     if expand_steps >= 1:
         logger.debug(f'Estimating citations counts by direct references')
-        references = []
         for pid in search_ids:
             references.extend(loader.load_references(pid, limit))
         logger.debug(f'Loaded total {len(references)} references')
@@ -52,7 +52,14 @@ def expand_ids(
             )
 
     ids = search_ids.copy()
-    for step in range(1, expand_steps + 1):
+    start_step = 1
+    if expand_steps >= 1 and len(references) > 0:
+        logger.debug(f'Step 1/{expand_steps} - expand by references only')
+        ids += references[:limit - len(ids)]
+        start_step = 2
+
+    logger.debug('Starting from next steps, expand by both references and citations')
+    for step in range(start_step, expand_steps + 1):
         logger.debug(f'Expanding step {step}/{expand_steps}')
         if len(ids) >= limit:
             break

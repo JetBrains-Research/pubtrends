@@ -92,7 +92,7 @@ def analyze_search_paper(source, pid, key, value, expand, limit, noreviews, topi
         if len(result) == 0:
             raise SearchError(f'No papers found with {key}={value}')
 
-        analyzer.progress.info('Expanding related papers by references', current=1, task=current_task)
+        analyzer.progress.info('Expanding papers by references and citations', current=1, task=current_task)
         limit = int(limit) if limit is not None and limit != '' else analyzer.config.show_max_articles_default_value
         topics = int(topics) if topics is not None and topics != '' else analyzer.config.show_topics_default_value
         expand = int(expand) if expand is not None and expand != '' else analyzer.config.paper_expands_steps
