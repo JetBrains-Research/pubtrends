@@ -8,7 +8,9 @@ from scipy.sparse import csr_matrix
 
 
 class AnalysisData:
-    def __init__(self, search_query, search_ids,
+    def __init__(self,
+                 analysis_type,
+                 search_query, search_ids,
                  source, sort, limit, noreviews, min_year, max_year,
                  df, cit_df, cocit_grouped_df, bibliographic_coupling_df,
                  top_cited_df, max_gain_df, max_rel_gain_df,
@@ -17,6 +19,7 @@ class AnalysisData:
                  papers_graph,
                  dendrogram,
                  author_stats, journal_stats, numbers_df):
+        self.analysis_type = analysis_type # Type of analysis
         self.search_query = search_query  # Initial query for analysis
         self.search_ids = search_ids  # Initial ids for analysis
         self.source = source
@@ -54,6 +57,7 @@ class AnalysisData:
         )
 
         return dict(
+            analysis_type=self.analysis_type,
             search_query=self.search_query,
             search_ids=self.search_ids,
             source=self.source,
@@ -86,6 +90,7 @@ class AnalysisData:
         """
         Load from JSON-serializable dict.
         """
+        analysis_type = fields['analysis_type']
         search_ids = fields['search_ids']
         search_query = fields['search_query']
         source = fields['source']
@@ -151,6 +156,7 @@ class AnalysisData:
         numbers_df = pd.read_json(StringIO(fields['numbers_df'])) if fields['numbers_df'] is not None else None
 
         return AnalysisData(
+            analysis_type=analysis_type,
             search_query=search_query,
             search_ids=search_ids,
             source=source,

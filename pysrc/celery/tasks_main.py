@@ -10,7 +10,7 @@ from pysrc.papers.analysis.pubmed import pubmed_search
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
-from pysrc.papers.utils import SORT_MOST_CITED, preprocess_doi, is_doi
+from pysrc.papers.utils import SORT_MOST_CITED, preprocess_doi, is_doi, IDS_ANALYSIS_TYPE, PAPER_ANALYSIS_TYPE
 from pysrc.services.semantic_search_service import is_semantic_search_service_available, fetch_semantic_search
 
 logger = getLogger(__name__)
@@ -37,7 +37,7 @@ def analyze_search_terms(source, query, sort, limit, noreviews, min_year, max_ye
     finally:
         loader.close_connection()
 
-    data = analyzer.save(None, query, source, sort, limit, noreviews, min_year, max_year)
+    data = analyzer.save(IDS_ANALYSIS_TYPE, None, query, source, sort, limit, noreviews, min_year, max_year)
     analyzer.progress.done(task=current_task)
     analyzer.teardown()
     return data.to_json(), analyzer.progress.log()
@@ -50,11 +50,13 @@ def analyze_id_list(source, query, ids, topics, test=False):
     analyzer = PapersAnalyzer(loader, config)
     sort = SORT_MOST_CITED
     limit = analyzer.config.show_max_articles_default_value
-    return _analyze_id_list(analyzer, query, ids, ids, source, sort, limit, False, None, None, topics,
-                            test=test, task=current_task)
+    return _analyze_id_list(
+        IDS_ANALYSIS_TYPE, analyzer, query, ids, ids, source, sort, limit, False, None, None, topics,
+        test=test, task=current_task
+    )
 
 
-def _analyze_id_list(analyzer, query , search_ids,
+def _analyze_id_list(analysis_type, analyzer, query , search_ids,
                      ids, source, sort, limit, noreviews, min_year, max_year, topics,
                      test=False, task=None):
     if len(ids) == 0:
@@ -65,7 +67,7 @@ def _analyze_id_list(analyzer, query , search_ids,
     finally:
         analyzer.loader.close_connection()
 
-    data = analyzer.save(search_ids, query, source, sort, limit, noreviews, min_year, max_year)
+    data = analyzer.save(analysis_type, search_ids, query, source, sort, limit, noreviews, min_year, max_year)
     analyzer.teardown()
     return data.to_json(), analyzer.progress.log()
 
@@ -98,6 +100,7 @@ def analyze_search_paper(source, pid, key, value, expand, limit, noreviews, topi
                          expand_steps=expand, limit=limit, noreviews=noreviews,
                          max_expand=analyzer.config.paper_expand_limit)
         return _analyze_id_list(
+            PAPER_ANALYSIS_TYPE,
             analyzer, f'Paper {key}={value}', result,
             ids, source, None, limit, False, None, None,
             topics,
@@ -124,6 +127,7 @@ def analyze_semantic_search(source, query, limit, noreviews, topics, test=False)
     if ids is None:
         raise Exception('Failed to fetch semantic search results')
     return _analyze_id_list(
+        IDS_ANALYSIS_TYPE,
         analyzer, query, ids, ids, 'Pubmed', '', limit, False, None, None,
         topics,
         test=test, task=current_task
@@ -146,6 +150,7 @@ def analyze_pubmed_search(query, sort, limit, topics, test=False):
     topics = int(topics) if topics is not None and topics != '' else analyzer.config.show_topics_default_value
     ids = pubmed_search(query, sort, limit)
     return _analyze_id_list(
+        IDS_ANALYSIS_TYPE,
         analyzer, query, ids, ids, 'Pubmed', sort, limit, False, None, None,
         topics,
         test=test, task=current_task

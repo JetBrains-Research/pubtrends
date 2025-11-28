@@ -213,8 +213,20 @@ class PapersAnalyzer:
                 logger.debug('Not enough papers for numbers extraction')
         logger.debug('Analysis finished')
 
-    def save(self, search_ids, search_query, source, sort, limit, noreviews, min_year, max_year) -> AnalysisData:
+    def save(
+            self,
+            analysis_type,
+            search_ids,
+            search_query,
+            source,
+            sort,
+            limit,
+            noreviews,
+            min_year,
+            max_year
+    ) -> AnalysisData:
         return AnalysisData(
+            analysis_type=analysis_type,
             search_query=search_query,
             search_ids=search_ids,
             source=source,

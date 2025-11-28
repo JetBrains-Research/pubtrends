@@ -73,9 +73,35 @@ def prepare_result_data(config: PubtrendsConfig, data: AnalysisData):
 
     return result
 
+def prepare_search_string(topic, word, author, journal, papers_list) -> tuple[int, str]:
+    search_string = ''
+    if topic is not None:
+        search_string += f'topic: {topic}'
+        comp = int(topic) - 1  # Component was exposed so it was 1-based
+    else:
+        comp = None
+
+    if word is not None:
+        search_string += f'word: {word}'
+
+    if author is not None:
+        search_string += f'author: {author}'
+
+    if journal is not None:
+        search_string += f'journal: {journal}'
+
+    if papers_list == 'top':
+        search_string += 'Top Papers'
+    if papers_list == 'year':
+        search_string += 'Papers of the Year'
+    if papers_list == 'hot':
+        search_string += 'Hot Papers'
+
+    return comp, search_string
+
 
 def prepare_papers_data(
-        config: PubtrendsConfig, data: AnalysisData,
+        data: AnalysisData,
         comp=None, word=None, author=None, journal=None, papers_list=None
 ):
     df = data.df
@@ -132,10 +158,10 @@ def prepare_papers_data(
 
 
 def prepare_paper_data(
-        config: PubtrendsConfig, data: AnalysisData,
-        source, pid
+        config: PubtrendsConfig, data: AnalysisData, pid
 ):
     logger.debug('Extracting data for the current paper')
+    source = data.source
     url_prefix = Loaders.get_url_prefix(source)
     # Use pid if is given or show the very first paper
     pid = pid or data.df['id'].values[0]
@@ -186,13 +212,16 @@ def prepare_paper_data(
         similar_papers = None
 
     result = dict(title=title,
-                  trimmed_title=trim(title, MAX_TITLE_LENGTH),
+                  query=trim_query(data.search_query),
+                  source=source,
+                  sort=data.sort or '',
+                  limit=data.limit,
                   authors=authors,
                   journal=journal,
                   year=year,
                   doi=doi,
                   mesh=mesh,
-                  url=url_prefix + pid, source=source,
+                  url=url_prefix + pid,
                   topic=topic,
                   keywords=keywords,
                   n_papers=len(data.df),
@@ -257,7 +286,7 @@ def prepare_graph_data(config: PubtrendsConfig, data: AnalysisData, shown_id=Non
         search_ids=json.dumps(data.search_ids if data.search_ids and len(data.search_ids) < len(data.df) else []),
         shown_id=shown_id,
         limit=data.limit,
-        sort=data.sort,
+        sort=data.sort or '',
         topics_palette_json=json.dumps(topics_palette(data.df)),
         topics_tags_json=json.dumps(topics_tags),
         graph_cytoscape_json=json.dumps(graph_cs)

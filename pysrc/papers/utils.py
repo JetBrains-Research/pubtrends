@@ -12,7 +12,7 @@ from matplotlib import colors
 PUBMED_ARTICLE_BASE_URL = 'https://www.ncbi.nlm.nih.gov/pubmed/?term='
 SEMANTIC_SCHOLAR_BASE_URL = 'https://www.semanticscholar.org/paper/'
 
-IDS_ANALYSIS_TYPE = 'detailed'
+IDS_ANALYSIS_TYPE = 'ids'
 PAPER_ANALYSIS_TYPE = 'paper'
 
 SORT_MOST_CITED = 'Most Cited'

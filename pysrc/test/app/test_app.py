@@ -73,10 +73,8 @@ class TestApp(unittest.TestCase):
             self.assertIn('progressbar', response)  # Should get process page
             time.sleep(20)  # Should be enough time for processing
             # Form correct url to check results
-            args = re.search('var args = [^\n]+', rv.data.decode('utf-8')).group(0)
-            args = '&'.join('='.join(quote(x) for x in v.split(': '))
-                            for v in args[len('var args = '):].strip('{};').replace('\'', '').split(', '))
-            rv = c.get(f'/result?{args}')  # Result should be fine
+            jobid = re.search('"/status/([a-z0-9\\-]+)"', response).group(1)
+            rv = c.get(f'/result?jobid={jobid}')  # Result should be fine
             self.assertEqual(200, rv.status_code)
             response = rv.data.decode('utf-8')
             self.assertTrue('Analyzed <strong>9</strong> papers and <strong>1</strong> topics.' in response)

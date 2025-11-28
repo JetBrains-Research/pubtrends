@@ -25,8 +25,8 @@
             <span class="progress-bar-label" aria-live="polite">0%</span>
         </div>
     </div>
-    <div class="h6 mt-3 ms-3" id="status">Waiting for content…</div>
-    <pre class="ms-3 mt-3" id="log"></pre>
+    <div class="h6 mt-3" id="status">Waiting for content…</div>
+    <pre class="mt-3" id="log"></pre>
     </p>
 </section>
 
@@ -36,15 +36,8 @@
 <script>
     "use strict";
 
-    // Confirm and cancel when the user tries to leave the page
-    window.onunload = function () {
-        if (confirm('Leave the page? Task will be cancelled.')) {
-            cancel();
-        }
-    };
-
-    const TIMEOUT = 1000; // 1 second
-    const MAX_RETRIES = 120; // 2 minutes total
+    const TIMEOUT = 5000; // 5 second
+    const MAX_RETRIES = 30;
     let retries = 0;
     let cancelled = false;
 
@@ -55,41 +48,29 @@
         const $status = $('#status');
         const $progress = $('#progress');
         const $log = $('#log');
-        $.ajax("{{ url_for('.status', jobid=jobid) }}", {
+        // Show a manual link to go back to the main page
+        const back = `<br>Go back to <a class="grey" href="/">the main page</a>.`
+        // Don't modify the status call, since we use it in tests
+        $.ajax("/status/{{ jobid }}", {
             dataType: "json",
             success: function (response) {
                 if (response.state === 'FAILURE') {
                     const errorMsg = `<h2>Error</h2><span class="error-message"> ${response.message} </span>`;
                     if (response.search_error) {
-                        $status.html(errorMsg);
+                        $status.html(errorMsg + back);
                     } else {
-                        $status.html(errorMsg + `<br>We're working on it. Please check back soon.`);
+                        $status.html(errorMsg + `<br>We're working on it. Please check back soon.` + back);
                     }
                     $status.show();
                     $progress.hide();
-                    $log.html(response.log);
+                    $log.hide();
                 } else if (response.state === 'SUCCESS') {
-                    // Disable formatter for the next section because of injections.
-                    // Enable formatter control in File > Settings > Editor > Code Style
-                    // @formatter:off
-                    // Join arg-value pairs for URL
-                    var args = {{ redirect_args | safe }};
-                    // @formatter:on
-
-                    const args_list = [];
-                    for (const key in args) {
-                        args_list.push(`${key}=${args[key]}`);
-                    }
-
-                    // Build href for given redirect page and args
-                    const href = `/{{ redirect_page }}?${args_list.join('&')}`;
-                    // Show a manual link in case automatic redirect is blocked or fails
+                    const href = response.redirect;
                     $progress.hide();
                     $log.hide();
+                    // Show a manual link in case automatic redirect is blocked or fails
                     $status.html(
-                        `Analysis complete. If you are not redirected automatically, open the results:
-                         <a class="btn btn-primary btn-sm ms-2" href="${href}">Open results</a>
-                         <div class="small mt-2">Direct link: <a class="grey" href="${href}">${href}</a></div>`
+                        `Analysis complete. If you are not redirected automatically, open the <a class="grey" href="${href}">the results</a>.`
                     ).show();
                     window.location.replace(href);
                 } else if (response.state !== undefined) {
@@ -101,7 +82,7 @@
                         $progress.hide();
                     }
                     if (response.message !== undefined) {
-                        $status.html(response.message);
+                        $status.html(response.message + back);
                         $status.show();
                     } else {
                         $status.hide();
@@ -119,7 +100,8 @@
                     retries += 1;
                     if (retries > MAX_RETRIES) {
                         $progress.hide();
-                        $status.html("<h2>Error</h2>Failed to fetch results.<br>We're working on it. Please check back soon.");
+                        $log.hide();
+                        $status.html("<h2>Error</h2>Failed to fetch results.<br>We're working on it. Please check back soon." + back);
                         $status.show();
                     } else {
                         setTimeout(check_status, TIMEOUT);
@@ -130,9 +112,9 @@
                 $progress.hide();
                 $log.hide();
                 if (textStatus === 'timeout') {
-                    $status.html("<h2>Server is not responding</h2>We're working on it. Please check back soon.");
+                    $status.html("<h2>Server is not responding</h2>We're working on it. Please check back soon." + back);
                 } else {
-                    $status.html("<h2>Error</h2>" + errorThrown + " We're working on it. Please check back soon.");
+                    $status.html("<h2>Error</h2>" + errorThrown + " We're working on it. Please check back soon." + back);
                 }
                 $status.show();
             },
@@ -144,13 +126,16 @@
         const $status = $('#status');
         const $log = $('#log');
         const $progress = $('#progress');
-        $.ajax("{{ url_for('.cancel', jobid=jobid) }}", {
+        // Show a manual link in case automatic redirect is blocked or fails
+        const redirect = `<br>If you are not redirected automatically, go back to <a class="grey" href="/">the main page</a>.`
+        $.ajax("/cancel/{{ jobid }}", {
+            method: "POST",
             dataType: "json",
             success: function (response) {
                 if (response.state === 'CANCELLED') {
                     $progress.hide();
                     $log.hide();
-                    $status.html(response.message);
+                    $status.html(response.message + redirect);
                     $status.show();
                     setTimeout(function () {
                         window.location.replace('/');
@@ -160,9 +145,9 @@
                     $log.hide();
                     const errorMsg = `<h2>Error</h2><span class="error-message"> ${response.message} </span>`;
                     if (response.search_error) {
-                        $status.html(errorMsg);
+                        $status.html(errorMsg + redirect);
                     } else {
-                        $status.html(errorMsg + `<br>We're working on it. Please check back soon.`);
+                        $status.html(errorMsg + `<br>We're working on it. Please check back soon.` + redirect);
                     }
                     $status.show();
                     setTimeout(function () {

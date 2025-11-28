@@ -6,7 +6,7 @@ import numpy as np
 from pysrc.config import PubtrendsConfig
 from pysrc.papers.analysis.text import stemmed_tokens, _build_stems_to_tokens_map, get_chunks, NLP
 from pysrc.papers.analyzer import PapersAnalyzer
-from pysrc.papers.utils import SORT_MOST_CITED
+from pysrc.papers.utils import SORT_MOST_CITED, IDS_ANALYSIS_TYPE
 from pysrc.test.mock_loaders import MockLoader
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
@@ -19,7 +19,7 @@ class TestText(unittest.TestCase):
         analyzer = PapersAnalyzer(MockLoader(), PUBTRENDS_CONFIG, test=True)
         ids = analyzer.search_terms(query='query')
         analyzer.analyze_papers(ids, PUBTRENDS_CONFIG.show_topics_default_value, test=True)
-        cls.data = analyzer.save(None, 'query', 'Pubmed', SORT_MOST_CITED, 10, False, None, None)
+        cls.data = analyzer.save(IDS_ANALYSIS_TYPE, None, 'query', 'Pubmed', SORT_MOST_CITED, 10, False, None, None)
 
     def test_stemmed_tokens(self):
         text = """Very interesting article about elephants and donkeys.

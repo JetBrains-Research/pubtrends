@@ -4,7 +4,7 @@ from pandas._testing import assert_frame_equal
 
 from pysrc.config import PubtrendsConfig
 from pysrc.papers.analyzer import PapersAnalyzer
-from pysrc.papers.utils import SORT_MOST_CITED
+from pysrc.papers.utils import SORT_MOST_CITED, IDS_ANALYSIS_TYPE
 from pysrc.test.mock_loaders import MockLoader, \
     MockLoaderEmpty, MockLoaderSingle, BIBCOUPLING_DF, COCITATION_GROUPED_DF
 
@@ -18,7 +18,7 @@ class TestPapersAnalyzer(unittest.TestCase):
         analyzer = PapersAnalyzer(MockLoader(), PUBTRENDS_CONFIG, test=True)
         ids = analyzer.search_terms(query='query')
         analyzer.analyze_papers(ids, PUBTRENDS_CONFIG.show_topics_default_value, test=True)
-        cls.data = analyzer.save(None, 'query', 'Pubmed', SORT_MOST_CITED, 10, False, None, None)
+        cls.data = analyzer.save(IDS_ANALYSIS_TYPE, None, 'query', 'Pubmed', SORT_MOST_CITED, 10, False, None, None)
 
     def test_bibcoupling(self):
         assert_frame_equal(BIBCOUPLING_DF, self.data.bibliographic_coupling_df)

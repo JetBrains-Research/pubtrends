@@ -534,10 +534,7 @@
     "use strict";
 
     function papers_callback_impl(key, value) {
-        const url = '/papers?query=' + normalize('{{ query }}') +
-            '&source={{source}}&limit={{limit}}&sort={{sort}}' +
-            '&noreviews={{noreviews}}&min_year={{min_year}}&max_year={{max_year}}';
-        // Decode jobid from URL
+        const url = '/papers?query=' + normalize('{{ query }}');
         const jobid = new URL(window.location).searchParams.get('jobid');
         let args = '';
         if (key != null) {
@@ -556,21 +553,14 @@
     function papers_callback_hot_papers() { papers_callback_impl('papers_list', 'hot') }
 
     function graph_callback() {
-        const url = '/graph?query=' + normalize('{{ query }}') +
-            '&source={{source}}&limit={{limit}}&sort={{sort}}' +
-            '&noreviews={{noreviews}}&min_year={{min_year}}&max_year={{max_year}}';
-        // Decode jobid from URL
+        const url = '/graph?query=' + normalize('{{ query }}');
         const jobid = new URL(window.location).searchParams.get('jobid');
         window.open(url + '&jobid=' + jobid, '_blank');
     }
 
     function export_data() {
-        const url = '/export_data?query=' + normalize('{{ query }}') +
-            '&source={{source}}&limit={{limit}}&sort={{sort}}' +
-            '&noreviews={{noreviews}}&min_year={{min_year}}&max_year={{max_year}}';
-        // Decode jobid from URL
         const jobid = new URL(window.location).searchParams.get('jobid');
-        window.open(url + '&jobid=' + jobid, '_blank');
+        window.open('/export/' + jobid, '_blank');
     }
 
     $(document).ready(function () {
@@ -604,7 +594,6 @@
             process_word_cloud(wc_id, $('#' + wc_id).outerWidth(), 335, word_cloud, papers_callback_word);
         {% endfor %}
 
-        // Configure jobid for feedback for text message form, decode jobid from URL
         var jobid = new URL(window.location).searchParams.get('jobid');
         $('#feedback-jobid').val(jobid);
 

@@ -111,8 +111,7 @@
 <script>
     "use strict";
     function result() {
-        const url = '/result?query=' + normalize('{{ query }}') + '&source={{source}}&limit={{limit}}&sort={{sort}}';
-        // Decode jobid from URL
+        const url = '/result?query=' + normalize('{{ query }}');
         const jobid = new URL(window.location).searchParams.get('jobid');
         window.open(url + '&jobid=' + jobid, '_blank');
     }

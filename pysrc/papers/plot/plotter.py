@@ -752,47 +752,14 @@ class Plotter:
 
             // Decode params from URL
             const jobid = new URL(window.location).searchParams.get('jobid');
-            const source = new URL(window.location).searchParams.get('source');
+            const query = new URL(window.location).searchParams.get('query');
 
             // Max number of papers to be opened, others will be ignored
             var MAX_PAPERS = 3;
 
             for (var i = 0; i < Math.min(MAX_PAPERS, selected.length); i++){{
-                window.open('/paper?source=' + source + '&id=' + data['{idname}'][selected[i]] + '&jobid=' + jobid, '_blank');
+                window.open('/paper?query=' + query + '&id=' + data['{idname}'][selected[i]] + '&jobid=' + jobid, '_blank');
             }}
-        """)
-
-    @staticmethod
-    def _author_callback(ds):
-        return CustomJS(args=dict(ds=ds), code="""
-            var data = ds.data, selected = ds.selected.indices;
-
-            // Decode params from URL
-            const jobid = new URL(window.location).searchParams.get('jobid');
-            const source = new URL(window.location).searchParams.get('source');
-            const query = new URL(window.location).searchParams.get('query');
-            const limit = new URL(window.location).searchParams.get('limit');
-            const sort = new URL(window.location).searchParams.get('sort');
-
-            // Max number of authors to be opened, others will be ignored
-            var MAX_AUTHORS = 3;
-
-            for (var i = 0; i < Math.min(MAX_AUTHORS, selected.length); i++){
-                window.open('/papers?&query=' + query + '&source=' + source + '&limit=' + limit + '&sort=' + sort + 
-                '&author=' + data['id'][selected[i]] + '&jobid=' + jobid, '_blank');
-            }
-        """)
-
-    @staticmethod
-    def _topic_callback(source):
-        return CustomJS(args=dict(source=source), code="""
-            var data = source.data, selected = source.selected.indices;
-            if (selected.length == 1) {
-                // only consider case where one glyph is selected by user
-                selected_comp = data['comps'][selected[0]];
-                window.location.hash = '#topic-' + selected_comp;
-            }
-            source.selected.indices = [];
         """)
 
     @staticmethod

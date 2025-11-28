@@ -517,8 +517,7 @@
     }
 
     function result() {
-        const url = '/result?query=' + normalize('{{ query }}') + '&source={{source}}&limit={{limit}}&sort={{sort}}';
-        // Decode jobid from URL
+        const url = '/result?query=' + normalize('{{ query }}');
         const jobid = new URL(window.location).searchParams.get('jobid');
         window.open(url + '&jobid=' + jobid, '_blank');
     }
@@ -879,9 +878,10 @@
                 let data = ele.data();
                 if ('title' in data) {
                     event.stopPropagation();
-                    // Decode jobid from URL
-                    const jobid = new URL(window.location).searchParams.get('jobid');
-                    window.open('/paper?source={{source}}&id=' + data.id + '&jobid=' + jobid, '_blank');
+                    const url = '/paper?query=' + normalize('{{ query }}');
+                    const params = new URL(window.location);
+                    const jobid = params.searchParams.get('jobid');
+                    window.open(url + '&id=' + data.id + '&jobid=' + jobid, '_blank');
                 }
             });
 
@@ -980,10 +980,12 @@
             const shown_id = "{{ shown_id }}";
             const search_ids = JSON.parse({{ search_ids | tojson }});
             // @formatter:on
+            const params = new URL(window.location);
+            const pid = params.searchParams.get('id');
             cy.nodes().forEach(function (ele) {
                 let data = ele.data();
                 if ('title' in data) {
-                    if (data.id === shown_id || search_ids.includes(data.id)) {
+                    if (data.id === pid || data.id === shown_id || search_ids.includes(data.id)) {
                         ele.addClass('analyzed');
                     }
                 }

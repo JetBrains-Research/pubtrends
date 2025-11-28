@@ -1,6 +1,6 @@
 from flask import Blueprint, request, current_app
 
-from pysrc.app.reports import load_result_data
+from pysrc.app.reports import load_or_save_result_data
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.celery.tasks_main import analyze_search_terms, analyze_semantic_search, analyze_id_list
 from pysrc.papers.utils import SORT_MOST_CITED
@@ -102,7 +102,7 @@ def get_result_api():
     query = request.args.get('query')
     try:
         if jobid and query:
-            data = load_result_data(jobid, 'Pubmed', query, SORT_MOST_CITED, 1000, True, None, None, pubtrends_celery)
+            data = load_or_save_result_data(pubtrends_celery, jobid, 'Pubmed', query, SORT_MOST_CITED, 1000, True, None, None)
             return data.to_json(), 200
         return {'status': 'error'}, 500
     except Exception as e:

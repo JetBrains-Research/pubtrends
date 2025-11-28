@@ -8,6 +8,7 @@ from threading import Lock
 
 from celery.result import AsyncResult
 
+from pysrc.papers.utils import IDS_ANALYSIS_TYPE, PAPER_ANALYSIS_TYPE
 from pysrc.papers.data import AnalysisData
 from pysrc.version import VERSION
 
@@ -26,20 +27,8 @@ else:
     raise RuntimeError(f'Search results folder not found among: {RESULTS_PATH}')
 
 
-def get_results_path():
-    return results_path
-
-
-def _save_result_data(data, log, jobid, source, query, sort, limit, noreviews, min_year, max_year):
-    _save_data(result_folder_name(source, query, sort, limit, noreviews, min_year, max_year, jobid), data, log)
-
-
-def _save_paper_data(data, log, jobid, source, query):
-    _save_data(paper_folder_name(source, query, jobid), data, log)
-
-
-def _save_data(name, data, log):
-    folder = os.path.join(get_results_path(), preprocess_string(VERSION), name)
+def _save_data(name: str, data_json: dict, log: str):
+    folder = os.path.join(results_path, preprocess_string(VERSION), name)
     try:
         FILES_LOCK.acquire()
         if not os.path.exists(folder):
@@ -48,53 +37,49 @@ def _save_data(name, data, log):
         path_log = os.path.join(folder, 'log.gz')
         if not os.path.exists(path_data):
             with gzip.open(path_data, 'w') as f:
-                f.write(json.dumps(data).encode('utf-8'))
+                f.write(json.dumps(data_json).encode('utf-8'))
         if not os.path.exists(path_log):
             with gzip.open(path_log, 'w') as f:
                 f.write(log.encode('utf-8'))
     finally:
         FILES_LOCK.release()
 
-
-def load_result_data(jobid, source, query, sort, limit, noreviews, min_year, max_year,
-                     celery_app) -> AnalysisData | None:
-    logger.info(f'Trying to load data for source={source} query={query} sort={sort} limit={limit} '
-                f'noreviews={noreviews} min_year={min_year} max_year={max_year}')
+def is_data_saved(jobid: str) -> bool:
     try:
         FILES_LOCK.acquire()
-        folder = _find_folder(jobid)
-        if folder is not None:
-            path_data = os.path.join(folder, 'data.json.gz')
-            if os.path.exists(path_data):
-                with gzip.open(path_data, 'r') as f:
-                    return AnalysisData.from_json(json.loads(f.read().decode('utf-8')))
+        return _data_path(jobid) is not None
+    finally:
+        FILES_LOCK.release()
+
+def _data_path(jobid: str) -> str | None:
+    folder = _find_data_folder(jobid)
+    if folder is None:
+        return None
+    path_data = os.path.join(folder, 'data.json.gz')
+    return path_data if os.path.exists(path_data) else None
+
+
+def load_or_save_result_data(celery_app, jobid) -> AnalysisData | None:
+    logger.info(f'Trying to load data for job_id={jobid}')
+    try:
+        FILES_LOCK.acquire()
+        p = _data_path(jobid)
+        if p is not None:
+            with gzip.open(p, 'r') as f:
+                return AnalysisData.from_json(json.loads(f.read().decode('utf-8')))
     finally:
         FILES_LOCK.release()
     job = AsyncResult(jobid, app=celery_app)
     if job and job.state == 'SUCCESS':
-        data, log = job.result
-        _save_result_data(data, log, jobid, source, query, sort, limit, noreviews, min_year, max_year)
-        return AnalysisData.from_json(data)
-    return None
-
-
-def load_paper_data(jobid, source, query, celery_app) -> AnalysisData | None:
-    logger.info(f'Trying to load paper data for source={source} query={query}')
-    try:
-        FILES_LOCK.acquire()
-        folder = _find_folder(jobid)
-        if folder is not None:
-            path_data = os.path.join(folder, 'data.json.gz')
-            if os.path.exists(path_data):
-                with gzip.open(path_data, 'r') as f:
-                    return AnalysisData.from_json(json.loads(f.read().decode('utf-8')))
-    finally:
-        FILES_LOCK.release()
-    job = AsyncResult(jobid, app=celery_app)
-    if job and job.state == 'SUCCESS':
-        data, log = job.result
-        _save_paper_data(data, log, jobid, source, query)
-        return AnalysisData.from_json(data)
+        data_json, log = job.result
+        analysis_type = data_json['analysis_type']
+        if analysis_type == IDS_ANALYSIS_TYPE:
+            _save_data(result_folder_name(jobid, data_json), data_json, log)
+        elif analysis_type == PAPER_ANALYSIS_TYPE:
+            _save_data(paper_folder_name(jobid, data_json), data_json, log)
+        else:
+            raise Exception(f'Unknown analysis type {jobid} {analysis_type}')
+        return AnalysisData.from_json(data_json)
     return None
 
 
@@ -102,12 +87,14 @@ def preprocess_string(s):
     return re.sub(r'-{2,}', '-', re.sub(r'[^a-z0-9_]+', '-', s.lower())).strip('-')
 
 
-def result_folder_name(source, query, sort, limit, noreviews, min_year, max_year, jobid):
-    return get_folder_name(jobid, f'{source}-{query}-{sort}-{limit}-{noreviews}-{min_year}-{max_year}')
+def result_folder_name(jobid: str, data: dict) -> str:
+    fields = ['source', 'search_query', 'sort', 'limit', 'noreviews', 'min_year', 'max_year']
+    text = '-'.join(map(str, filter(None, map(lambda x: data[x], fields))))
+    return get_folder_name(jobid, text)
 
 
-def paper_folder_name(source, query, jobid):
-    return get_folder_name(jobid, f'paper-{source}-{query}')
+def paper_folder_name(jobid: str, data: dict):
+    return get_folder_name(jobid, f"paper-{data['source']}-{data['search_query']}")
 
 
 def get_folder_name(jobid, name, max_folder_length=100):
@@ -121,8 +108,8 @@ def get_folder_name(jobid, name, max_folder_length=100):
     return folder_name
 
 
-def _find_folder(jobid):
-    lookup_folder = os.path.join(get_results_path(), preprocess_string(VERSION))
+def _find_data_folder(jobid):
+    lookup_folder = os.path.join(results_path, preprocess_string(VERSION))
     if not os.path.exists(lookup_folder):
         os.makedirs(lookup_folder)
     for p in os.listdir(lookup_folder):

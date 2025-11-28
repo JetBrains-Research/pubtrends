@@ -5,7 +5,7 @@ import networkx as nx
 from pysrc.config import PubtrendsConfig
 from pysrc.papers.analysis.graph import sparse_graph
 from pysrc.papers.analyzer import PapersAnalyzer
-from pysrc.papers.utils import SORT_MOST_CITED
+from pysrc.papers.utils import SORT_MOST_CITED, IDS_ANALYSIS_TYPE
 from pysrc.test.mock_loaders import MockLoader, PAPERS_GRAPH_EDGES, MockLoaderSingle
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
@@ -18,7 +18,7 @@ class TestBuildGraph(unittest.TestCase):
         analyzer = PapersAnalyzer(MockLoader(), PUBTRENDS_CONFIG, test=True)
         ids = analyzer.search_terms(query='query')
         analyzer.analyze_papers(ids, PUBTRENDS_CONFIG.show_topics_default_value, test=True)
-        cls.data = analyzer.save(None, 'query', 'Pubmed', SORT_MOST_CITED, 10, False, None, None)
+        cls.data = analyzer.save(IDS_ANALYSIS_TYPE, None, 'query', 'Pubmed', SORT_MOST_CITED, 10, False, None, None)
 
     def test_build_papers_graph(self):
         edges = list(self.data.papers_graph.edges(data=True))

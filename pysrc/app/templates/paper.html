@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
-{% block title %}{{ trimmed_title }} - PubTrends{% endblock %}
+{% block title %}{{ title }} - PubTrends{% endblock %}
+{% block meta_description %}Paper information {{ title }}.{% endblock %}
 {% set active_page = None %}
 {% block styles_extra %}
     <!-- Keep DataTables using Bootstrap 4 skin to avoid regressions in complex tables -->
@@ -30,13 +31,14 @@
                 <div>
                     <ol class="breadcrumb bg-transparent mb-1 search-query">
                         <li class="breadcrumb-item">{{ source }}</li>
-                        <li class="breadcrumb-item"><strong>{{ trimmed_title }}</strong></li>
+                        <li class="breadcrumb-item"><strong>{{ query }}</strong></li>
+                        <li class="breadcrumb-item">{{ limit }} {{ sort }}</li>
                     </ol>
-                    <p class="pt-muted small mb-0">Explore this paper, its network and related works.</p>
+                    <p class="pt-muted small mb-0">Explore selected paper, its network and related works.</p>
                 </div>
                 <div>
                     <a id="result" href="javascript:void(0);" class="btn btn-outline-secondary" onclick="result();">
-                        Explore related papers
+                        Explore all papers
                     </a>
                 </div>
             </div>
@@ -348,27 +350,24 @@
 <script>
     "use strict";
     function result() {
-        const url = '/result?query=' + normalize('{{ title }}') + '&source={{source}}';
+        const url = '/result?query=' + normalize('{{ query }}');
         const params = new URL(window.location);
         const jobid = params.searchParams.get('jobid');
         const pid = params.searchParams.get('id');
-        const limit = params.searchParams.get('limit');
-        const sort = params.searchParams.get('sort');
-        window.open(url + '&jobid=' + jobid + '&id=' + pid + '&limit=' + limit + '&sort=' + sort, '_blank');
+        window.open(url + '&jobid=' + jobid + '&id=' + pid, '_blank');
     }
+
     function graph_callback() {
-        const url = '/graph?query=' + normalize('{{ title }}') + '&source={{source}}';
+        const url = '/graph?query=' + normalize('{{ query }}');
         const params = new URL(window.location);
         const jobid = params.searchParams.get('jobid');
         const pid = params.searchParams.get('id');
-        const limit = params.searchParams.get('limit');
-        const sort = params.searchParams.get('sort');
-        window.open(url + '&jobid=' + jobid + '&id=' + pid + '&limit=' + limit + '&sort=' + sort, '_blank');
+        window.open(url + '&id=' + pid + '&jobid=' + jobid, '_blank');
     }
+
     function export_data() {
-        const url = '/export_data?query=' + normalize('{{ title }}') + '&source={{source}}&paper=on';
         const jobid = new URL(window.location).searchParams.get('jobid');
-        window.open(url + '&jobid=' + jobid, '_blank');
+        window.open('/export/' + jobid, '_blank');
     }
 
     $(document).ready(function () {

@@ -7,7 +7,7 @@ from parameterized import parameterized
 from pysrc.config import PubtrendsConfig
 from pysrc.papers.analysis.topics import _get_topics_description_cosine
 from pysrc.papers.analyzer import PapersAnalyzer
-from pysrc.papers.utils import SORT_MOST_CITED
+from pysrc.papers.utils import SORT_MOST_CITED, IDS_ANALYSIS_TYPE
 from pysrc.test.mock_loaders import MockLoader
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=True)
@@ -20,7 +20,7 @@ class TestTopics(unittest.TestCase):
         analyzer = PapersAnalyzer(MockLoader(), PUBTRENDS_CONFIG, test=True)
         ids = analyzer.search_terms(query='query')
         analyzer.analyze_papers(ids, PUBTRENDS_CONFIG.show_topics_default_value, test=True)
-        cls.data = analyzer.save(None, 'query', 'Pubmed', SORT_MOST_CITED, 10, False, None, None)
+        cls.data = analyzer.save(IDS_ANALYSIS_TYPE, None, 'query', 'Pubmed', SORT_MOST_CITED, 10, False, None, None)
 
     def test_topic_analysis_all_nodes_assigned(self):
         nodes = self.data.papers_graph.nodes()

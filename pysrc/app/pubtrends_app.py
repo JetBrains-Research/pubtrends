@@ -4,31 +4,30 @@ import logging
 import os
 import random
 import tempfile
-from urllib.parse import quote
-
 from flask import Flask, url_for, redirect, render_template, request, render_template_string, \
     send_from_directory, send_file
 from flask_caching import Cache
-
 from pysrc.app.admin import admin_bp, init_admin
 from pysrc.app.api import api_bp
 from pysrc.app.messages import SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, \
     SERVICE_LOADING_PREDEFINED_EXAMPLES, SERVICE_LOADING_INITIALIZING
 from pysrc.app.predefined import are_predefined_jobs_ready, PREDEFINED_JOBS, is_semantic_predefined, \
     PREDEFINED_TASKS_READY_KEY
-from pysrc.app.reports import load_result_data, preprocess_string, load_paper_data
+from pysrc.app.reports import load_or_save_result_data, preprocess_string
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, analyze_pubmed_search, \
     analyze_semantic_search
 from pysrc.config import PubtrendsConfig
 from pysrc.papers.db.search_error import SearchError
-from pysrc.papers.plot.plot_app import prepare_graph_data, prepare_papers_data, prepare_paper_data, prepare_result_data
+from pysrc.papers.plot.plot_app import prepare_graph_data, prepare_papers_data, prepare_paper_data, prepare_result_data, \
+    prepare_search_string
 from pysrc.papers.questions.questions import get_relevant_papers
 from pysrc.papers.utils import trim_query, IDS_ANALYSIS_TYPE, PAPER_ANALYSIS_TYPE
 from pysrc.services.embeddings_service import is_embeddings_service_available, is_embeddings_service_ready, \
     is_texts_embeddings_available
 from pysrc.services.semantic_search_service import is_semantic_search_service_available
 from pysrc.version import VERSION
+from urllib.parse import quote
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
@@ -80,20 +79,8 @@ logger = pubtrends_app.logger
 @pubtrends_app.route('/robots.txt')
 @pubtrends_app.route('/sitemap.xml')
 @pubtrends_app.route('/feedback.js')
+@pubtrends_app.route('/wordcloud.js')
 @pubtrends_app.route('/navigate.js')
-@pubtrends_app.route('/style.css')
-@pubtrends_app.route('/about_graph_explorer.png')
-@pubtrends_app.route('/about_hot_papers.png')
-@pubtrends_app.route('/about_keywords.png')
-@pubtrends_app.route('/about_main.png')
-@pubtrends_app.route('/about_network.png')
-@pubtrends_app.route('/about_pubtrends_scheme.png')
-@pubtrends_app.route('/about_report.png')
-@pubtrends_app.route('/about_review.png')
-@pubtrends_app.route('/about_top_cited_papers.png')
-@pubtrends_app.route('/about_topic.png')
-@pubtrends_app.route('/about_topics_by_year.png')
-@pubtrends_app.route('/about_topics_hierarchy.png')
 @pubtrends_app.route('/smile.svg')
 @pubtrends_app.route('/meh.svg')
 @pubtrends_app.route('/frown.svg')
@@ -105,7 +92,10 @@ SEMANTIC_SEARCH_AVAILABLE = PUBTRENDS_CONFIG.feature_semantic_search_enabled and
 
 
 def log_request(r):
-    return f'addr:{r.remote_addr} args:{json.dumps(r.args)}'
+    v = f'addr:{r.remote_addr} args:{json.dumps(r.args)}'
+    if r.method == 'POST':
+        v += f' form:{json.dumps(r.form)}'
+    return v
 
 
 @pubtrends_app.route('/')
@@ -167,28 +157,24 @@ def bool_to_value(value):
 @pubtrends_app.route('/search_terms', methods=['POST'])
 def search_terms():
     logger.info(f'/search_terms {log_request(request)}')
-    query = request.form.get('query')  # Original search query
-    source = request.form.get('source')  # Pubmed or Semantic Scholar
-    sort = request.form.get('sort')  # Sort order
-    limit = request.form.get('limit')  # Limit
-    pubmed_syntax = request.form.get('pubmed-syntax') == 'on'
-    noreviews = value_to_bool(request.form.get('noreviews'))
-    min_year = request.form.get('min_year')  # Minimal year of publications
-    max_year = request.form.get('max_year')  # Maximal year of publications
-    topics = request.form.get('topics')  # Topics sizes
-
     try:
+        query = request.form.get('query')  # Original search query
+        source = request.form.get('source')  # Pubmed or Semantic Scholar
+        sort = request.form.get('sort')  # Sort order
+        limit = request.form.get('limit')  # Limit
+        pubmed_syntax = request.form.get('pubmed-syntax') == 'on'
+        noreviews = value_to_bool(request.form.get('noreviews'))
+        min_year = request.form.get('min_year')  # Minimal year of publications
+        max_year = request.form.get('max_year')  # Maximal year of publications
+        topics = request.form.get('topics')  # Topics sizes
+
         # PubMed syntax
         if query and source and limit and topics and pubmed_syntax:
-            # Regular analysis
-            job = analyze_pubmed_search.delay(query=query, sort=sort, limit=limit, topics=topics,
+            job = analyze_pubmed_search.delay(query=query, sort=sort, limit=int(limit), topics=topics,
                                               test=pubtrends_app.config['TESTING'])
-            return redirect(
-                url_for('.process', source='Pubmed', query=trim_query(query), limit=limit, sort='',
-                        noreviews='on' if noreviews else '',
-                        min_year=min_year or '', max_year=max_year or '',
-                        topics=topics,
-                        jobid=job.id))
+            return redirect(url_for('.process',
+                                    jobid=job.id,
+                                    query=trim_query(query), source=source, sort='', limit=limit))
 
         # Regular search syntax
         if query and source and sort and limit and topics:
@@ -196,12 +182,10 @@ def search_terms():
                                              noreviews=noreviews, min_year=min_year, max_year=max_year,
                                              topics=topics,
                                              test=pubtrends_app.config['TESTING'])
-            return redirect(
-                url_for('.process', query=trim_query(query), source=source, limit=limit, sort=sort,
-                        noreviews='on' if noreviews else '',
-                        min_year=min_year or '', max_year=max_year or '',
-                        topics=topics,
-                        jobid=job.id))
+            return redirect(url_for('.process',
+                                    query=trim_query(query), source=source, sort=sort, limit=limit,
+                                    jobid=job.id))
+
         logger.error(f'/search_terms error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception as e:
@@ -212,24 +196,19 @@ def search_terms():
 @pubtrends_app.route('/search_paper', methods=['POST'])
 def search_paper():
     logger.info(f'/search_paper {log_request(request)}')
-    data = request.form
     try:
-        if 'source' in data and 'key' in data and 'value' in data and 'topics' in data:
-            source = data.get('source')  # Pubmed or Semantic Scholar
-            key = data.get('key')
-            value = data.get('value')
-            limit = data.get('limit')
-            noreviews = value_to_bool(request.form.get('noreviews'))
-            expand = data.get('expand')
-            topics = data.get('topics')
+        source = request.form.get('source')  # Pubmed or Semantic Scholar
+        key = request.form.get('key')
+        value = request.form.get('value')
+        limit = request.form.get('limit')
+        noreviews = value_to_bool(request.form.get('noreviews'))
+        expand = request.form.get('expand')
+        topics = request.form.get('topics')
+        if source and key and value and limit and topics:
             job = analyze_search_paper.delay(source, None, key, value, expand, limit, noreviews, topics,
                                              test=pubtrends_app.config['TESTING'])
-            return redirect(url_for('.process', query=trim_query(f'Papers {key}={value}'),
-                                    analysis_type=PAPER_ANALYSIS_TYPE,
-                                    key=key, value=value,
-                                    source=source, expand=expand, limit=limit,
-                                    noreviews='on' if noreviews else '',
-                                    topics=topics,
+            return redirect(url_for('.process',
+                                    query=trim_query(f'{key}={value}'), source=source, sort='', limit=limit,
                                     jobid=job.id))
         logger.error(f'/search_paper error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
@@ -241,24 +220,20 @@ def search_paper():
 @pubtrends_app.route('/search_semantic', methods=['POST'])
 def search_semantic():
     logger.info(f'/search_semantic {log_request(request)}')
-    query = request.form.get('query')  # Original search query
-    source = request.form.get('source')  # Pubmed or Semantic Scholar
-    limit = request.form.get('limit')  # Limit
-    noreviews = value_to_bool(request.form.get('noreviews'))
-    topics = request.form.get('topics')  # Topics sizes
-
     try:
+        query = request.form.get('query')  # Original search query
+        source = request.form.get('source')  # Pubmed or Semantic Scholar
+        limit = request.form.get('limit')  # Limit
+        noreviews = value_to_bool(request.form.get('noreviews'))
+        topics = request.form.get('topics')  # Topics sizes
         if query and source and limit and topics:
             job = analyze_semantic_search.delay(
                 source, query=query, limit=int(limit), noreviews=noreviews,
                 topics=topics, test=pubtrends_app.config['TESTING']
             )
-            return redirect(
-                url_for('.process', query=trim_query(query), source=source, limit=limit,
-                        noreviews='on' if noreviews else '',
-                        sort='', min_year='', max_year='',
-                        topics=topics,
-                        jobid=job.id))
+            return redirect(url_for('.process',
+                                    query=trim_query(query), source=source, sort='semantic', limit=limit,
+                                    jobid=job.id))
         logger.error(f'/search_semantic error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception as e:
@@ -273,86 +248,29 @@ def search_semantic():
 @pubtrends_app.route('/process')
 def process():
     """ Rendering process.html for task being queued or executed at the moment """
-    if len(request.args) > 0:
-        jobid = request.values.get('jobid')
-
-        if not jobid:
-            logger.error(f'/process error wrong request {log_request(request)}')
-            return render_template_string(SOMETHING_WENT_WRONG_SEARCH)
-
-        query = request.args.get('query') or ''
-        analysis_type = request.values.get('analysis_type')
-        source = request.values.get('source')
-        noreviews = value_to_bool(request.form.get('noreviews'))
-        min_year = request.form.get('min_year')  # Minimal year of publications
-        max_year = request.form.get('max_year')  # Maximal year of publications
-        topics = request.values.get('topics')
-
-        if analysis_type == IDS_ANALYSIS_TYPE:
-            logger.info(f'/process ids {log_request(request)}')
-            return render_template('process.html',
-                                   redirect_page='result',  # redirect in case of success
-                                   redirect_args=dict(query=quote(trim_query(query)), source=source, jobid=jobid,
-                                                      limit=analysis_type, sort='',
-                                                      noreviews='on' if noreviews else '',
-                                                      min_year=min_year or '', max_year=max_year or '',
-                                                      topics=topics),
-                                   query=trim_query(query), source=source, limit=analysis_type, sort='',
-                                   jobid=jobid, version=VERSION)
-
-        elif analysis_type == PAPER_ANALYSIS_TYPE:
-            logger.info(f'/process paper analysis {log_request(request)}')
-            key = request.args.get('key')
-            value = request.args.get('value')
-            limit = request.args.get('limit') or PUBTRENDS_CONFIG.show_max_articles_default_value
-            noreviews = value_to_bool(request.args.get('noreviews'))
-            if ';' in value:
-                return render_template('process.html',
-                                       redirect_page='result',  # redirect in case of success
-                                       redirect_args=dict(query=quote(trim_query(f'Papers {key}={value}')),
-                                                          source=source, jobid=jobid, sort='', limit=limit,
-                                                          noreviews='on' if noreviews else '',
-                                                          min_year=min_year or '', max_year=max_year or '',
-                                                          topics=topics),
-                                       query=trim_query(query), source=source,
-                                       jobid=jobid, version=VERSION)
-            else:
-                return render_template('process.html',
-                                       redirect_page='paper',  # redirect in case of success
-                                       redirect_args=dict(query=quote(trim_query(f'Papers {key}={value}')),
-                                                          source=source, jobid=jobid, sort='',
-                                                          key=key, value=value, limit=limit,
-                                                          noreviews='on' if noreviews else '',
-                                                          min_year=min_year or '', max_year=max_year or '',
-                                                          topics=topics),
-                                       query=trim_query(query), source=source,
-                                       jobid=jobid, version=VERSION)
-
-        elif query:  # This option should be the last default
-            logger.info(f'/process regular search {log_request(request)}')
-            limit = request.args.get('limit') or PUBTRENDS_CONFIG.show_max_articles_default_value
-            sort = request.args.get('sort')
-            noreviews = value_to_bool(request.args.get('noreviews'))
-            return render_template('process.html',
-                                   redirect_page='result',  # redirect in case of success
-                                   redirect_args=dict(query=quote(trim_query(query)),
-                                                      source=source, limit=limit, sort=sort,
-                                                      noreviews='on' if noreviews else '',
-                                                      min_year=min_year or '', max_year=max_year or '',
-                                                      topics=topics, jobid=jobid),
-                                   query=trim_query(query), source=source,
-                                   limit=limit, sort=sort,
-                                   jobid=jobid, version=VERSION)
-
-    logger.error(f'/process error {log_request(request)}')
-    return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
-
-
-@pubtrends_app.route('/status')
-def status():
-    """ Check tasks status being executed by Celery """
     jobid = request.values.get('jobid')
-    if jobid:
+    if not jobid:
+        logger.error(f'/process error wrong request {log_request(request)}')
+        return render_template_string(SOMETHING_WENT_WRONG_SEARCH)
+
+    query = request.args.get('query')
+    source = request.args.get('source')
+    sort = request.args.get('sort')
+    limit = request.args.get('limit') or PUBTRENDS_CONFIG.show_max_articles_default_value
+
+    return render_template(
+        'process.html',
+        jobid=jobid,
+        query=query, source=source, sort=sort, limit=limit,
+        version=VERSION
+    )
+
+
+@pubtrends_app.route('/status/<jobid>')
+def status(jobid):
+    """ Check tasks status being executed by Celery """
+    logger.info(f'/status {log_request(request)}')
+    try:
         job = pubtrends_celery.AsyncResult(jobid)
         if job is None:
             return json.dumps(dict(state='FAILURE', message=f'Unknown task id {jobid}'))
@@ -361,35 +279,41 @@ def status():
             return json.dumps(dict(state=job_state, log=job_result['log'],
                                    progress=int(100.0 * job_result['current'] / job_result['total'])))
         elif job_state == 'SUCCESS':
-            return json.dumps(dict(state=job_state, progress=100))
+            data, _ = job.result
+            analysis_type = data['analysis_type']
+            query = quote(data['search_query'])
+            if analysis_type == IDS_ANALYSIS_TYPE:
+                href = f'/result?query={query}&jobid={jobid}'
+            elif analysis_type == PAPER_ANALYSIS_TYPE:
+                href = f'/paper?query={query}&jobid={jobid}'
+            else:
+                raise Exception(f'Unknown analysis type {analysis_type}')
+            return json.dumps(dict(state=job_state, progress=100, redirect=href))
         elif job_state == 'FAILURE':
             is_search_error = isinstance(job_result, SearchError)
             logger.info(f'/status failure. Search error: {is_search_error}. {log_request(request)}')
             return json.dumps(dict(state=job_state, message=str(job_result).replace('\\n', '\n').replace('\\t', '\t'),
                                    search_error=is_search_error))
-        elif job_state == 'STARTED':
+        elif job_state == 'STARTED' or job_state == 'PENDING':
             return json.dumps(dict(state=job_state, message='Task is starting, please wait...'))
-        elif job_state == 'PENDING':
-            return json.dumps(dict(state=job_state, message='Task is in queue, please wait...'))
         elif job_state == 'REVOKED':
             return json.dumps(
                 dict(state=job_state, message='Task was cancelled, please <a href="/">rerun</a> your search.'))
         else:
             return json.dumps(dict(state='FAILURE', message=f'Illegal task state {job_state}'))
-    # no jobid
-    return json.dumps(dict(state='FAILURE', message='No task id'))
+    except Exception as e:
+        logger.exception(f'/status exception {e}')
+        return json.dumps(dict(state='FAILURE', message=f'Error checking task status: {e}'))
 
 
-@pubtrends_app.route('/cancel')
-def cancel():
-    if len(request.args) > 0:
-        jobid = request.values.get('jobid')
-        if jobid:
-            pubtrends_celery.control.revoke(jobid, terminate=True)
-            return json.dumps(dict(state='CANCELLED', message=f'Successfully cancelled task {jobid}'))
-        else:
-            return json.dumps(dict(state='FAILURE', message=f'Failed to cancel task {jobid}'))
-    return json.dumps(dict(state='FAILURE', message='Unknown task id'))
+@pubtrends_app.route('/cancel/<jobid>', methods=['POST'])
+def cancel(jobid):
+    logger.info(f'/cancel {log_request(request)}')
+    try:
+        pubtrends_celery.control.revoke(jobid, terminate=True)
+        return json.dumps(dict(state='CANCELLED', message=f'Successfully cancelled task {jobid}'))
+    except Exception as e:
+        return json.dumps(dict(state='FAILURE', message=f'Error cancelling task: {e}'))
 
 
 ####################################
@@ -400,113 +324,44 @@ def cancel():
 @pubtrends_app.route('/result')
 @cache.cached(query_string=True)
 def result():
-    jobid = request.args.get('jobid')
-    query = request.args.get('query')
-    source = request.args.get('source')
-    limit = request.args.get('limit')
-    sort = request.args.get('sort')
-    noreviews = value_to_bool(request.form.get('noreviews'))
-    min_year = request.form.get('min_year')  # Minimal year of publications
-    max_year = request.form.get('max_year')  # Maximal year of publications
-    topics = request.args.get('topics')
+    logger.info(f'/result {log_request(request)}')
     try:
-        if jobid:
-            data = load_result_data(jobid, source, query, sort, limit, noreviews, min_year, max_year, pubtrends_celery)
-            if data is not None:
-                logger.info(f'/result success {log_request(request)}')
-                return render_template('result.html',
-                                       query=trim_query(query),
-                                       source=source,
-                                       limit=limit,
-                                       sort=sort,
-                                       max_graph_size=PUBTRENDS_CONFIG.max_graph_size,
-                                       version=VERSION,
-                                       is_predefined=True,
-                                       **prepare_result_data(PUBTRENDS_CONFIG, data))
-            logger.info(f'/result No job or out-of-date job, restart it {log_request(request)}')
-            analyze_search_terms.apply_async(
-                args=[source, query, sort, int(limit), noreviews, min_year, max_year, topics,
-                      pubtrends_app.config['TESTING']],
-                task_id=jobid
-            )
-            return redirect(
-                url_for('.process', query=trim_query(query), source=source, limit=limit, sort=sort,
-                        noreviews='on' if noreviews else '',
-                        min_year=min_year or '', max_year=max_year or '',
-                        topics=topics,
-                        jobid=jobid))
-        else:
+        jobid = request.args.get('jobid')
+        if not jobid:
             logger.error(f'/result error wrong request {log_request(request)}')
-            return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
+            return render_template_string(SOMETHING_WENT_WRONG_SEARCH)
+        data = load_or_save_result_data(pubtrends_celery, jobid)
+        if data is not None:
+            logger.info(f'/result success {log_request(request)}')
+            return render_template('result.html',
+                                   query=trim_query(data.search_query),
+                                   source=data.source,
+                                   limit=data.limit,
+                                   sort=data.sort,
+                                   max_graph_size=PUBTRENDS_CONFIG.max_graph_size,
+                                   version=VERSION,
+                                   is_predefined=True,
+                                   **prepare_result_data(PUBTRENDS_CONFIG, data))
     except Exception as e:
         logger.exception(f'/result exception {e}')
-        return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
-
-
-@pubtrends_app.route('/graph')
-@cache.cached(query_string=True)
-def graph():
-    jobid = request.values.get('jobid')
-    query = request.args.get('query')
-    source = request.args.get('source')
-    limit = request.args.get('limit')
-    sort = request.args.get('sort')
-    noreviews = value_to_bool(request.form.get('noreviews'))
-    min_year = request.form.get('min_year')  # Minimal year of publications
-    max_year = request.form.get('max_year')  # Maximal year of publications
-    pid = request.args.get('id')
-    try:
-        if jobid:
-            data = load_result_data(jobid, source, query, sort, limit, noreviews, min_year, max_year, pubtrends_celery)
-            if data is not None:
-                logger.info(f'/graph success {log_request(request)}')
-                return render_template(
-                    'graph.html',
-                    version=VERSION,
-                    **prepare_graph_data(PUBTRENDS_CONFIG, data, pid)
-                )
-            logger.error(f'/graph error job id {log_request(request)}')
-            return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
-        else:
-            logger.error(f'/graph error wrong request {log_request(request)}')
-            return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
-    except Exception as e:
-        logger.exception(f'/graph exception {e}')
         return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
 
 
 @pubtrends_app.route('/paper')
 @cache.cached(query_string=True)
 def paper():
-    jobid = request.values.get('jobid')
-    source = request.args.get('source')
-    pid = request.args.get('id')
-    key = request.args.get('key')
-    value = request.args.get('value')
-    limit = request.args.get('limit')
-    noreviews = value_to_bool(request.form.get('noreviews'))
-    expand = request.args.get('expand')
-    topics = request.args.get('topics')
+    logger.info(f'/paper {log_request(request)}')
     try:
+        jobid = request.values.get('jobid')
+        pid = request.args.get('id')
         if jobid:
-            data = load_paper_data(jobid, source, f'{key}={value}', pubtrends_celery)
+            data = load_or_save_result_data(pubtrends_celery, jobid)
             if data is not None:
                 logger.info(f'/paper success {log_request(request)}')
                 return render_template('paper.html',
-                                       **prepare_paper_data(PUBTRENDS_CONFIG, data, source, pid),
+                                       **prepare_paper_data(PUBTRENDS_CONFIG, data, pid),
                                        max_graph_size=PUBTRENDS_CONFIG.max_graph_size,
                                        version=VERSION)
-            else:
-                logger.info(f'/paper No job or out-of-date job, restart it {log_request(request)}')
-                analyze_search_paper.apply_async(
-                    args=[source, pid, key, value, expand, limit, noreviews, topics, pubtrends_app.config['TESTING']],
-                    task_id=jobid
-                )
-                return redirect(url_for('.process', query=trim_query(f'Paper {key}={value}'),
-                                        analysis_type=PAPER_ANALYSIS_TYPE,
-                                        source=source, key=key, value=value,
-                                        noreviews='on' if noreviews else '',
-                                        topics=topics, jobid=jobid))
         logger.error(f'/paper error wrong request {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception as e:
@@ -514,103 +369,83 @@ def paper():
         return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
 
 
+@pubtrends_app.route('/graph')
+@cache.cached(query_string=True)
+def graph():
+    logger.info(f'/graph {log_request(request)}')
+    try:
+        jobid = request.args.get('jobid')
+        pid = request.args.get('pid')
+        if jobid:
+            data = load_or_save_result_data(pubtrends_celery, jobid)
+            if data is not None:
+                logger.info(f'/graph success {log_request(request)}')
+                return render_template(
+                    'graph.html',
+                    version=VERSION,
+                    **prepare_graph_data(PUBTRENDS_CONFIG, data, pid)
+                )
+        logger.error(f'/graph error wrong request {log_request(request)}')
+        return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
+    except Exception as e:
+        logger.exception(f'/graph exception {e}')
+        return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
+
+
 @pubtrends_app.route('/papers')
 @cache.cached(query_string=True)
-def show_ids():
-    jobid = request.values.get('jobid')
-    query = request.args.get('query')
-    source = request.args.get('source')  # Pubmed or Semantic Scholar
-    limit = request.args.get('limit')
-    sort = request.args.get('sort')
-    noreviews = value_to_bool(request.form.get('noreviews'))
-    min_year = request.form.get('min_year')  # Minimal year of publications
-    max_year = request.form.get('max_year')  # Maximal year of publications
-    search_string = ''
-    topic = request.args.get('topic')
+def papers():
+    logger.info(f'/papers {log_request(request)}')
     try:
-        if topic is not None:
-            search_string += f'topic: {topic}'
-            comp = int(topic) - 1  # Component was exposed so it was 1-based
-        else:
-            comp = None
-
-        word = request.args.get('word')
-        if word is not None:
-            search_string += f'word: {word}'
-
-        author = request.args.get('author')
-        if author is not None:
-            search_string += f'author: {author}'
-
-        journal = request.args.get('journal')
-        if journal is not None:
-            search_string += f'journal: {journal}'
-
-        papers_list = request.args.get('papers_list')
-        if papers_list == 'top':
-            search_string += 'Top Papers'
-        if papers_list == 'year':
-            search_string += 'Papers of the Year'
-        if papers_list == 'hot':
-            search_string += 'Hot Papers'
-
+        jobid = request.args.get('jobid')
         if jobid:
-            data = load_result_data(jobid, source, query, sort, limit, noreviews, min_year, max_year, pubtrends_celery)
+            data = load_or_save_result_data(pubtrends_celery, jobid)
             if data is not None:
+                topic = request.args.get('topic')
+                word = request.args.get('word')
+                author = request.args.get('author')
+                journal = request.args.get('journal')
+                papers_list = request.args.get('papers_list')
+
                 logger.info(f'/papers success {log_request(request)}')
-                export_name = preprocess_string(f'{query}-{search_string}')
+                comp, search_string = prepare_search_string(topic, word, author, journal, papers_list)
+                export_name = preprocess_string(f'{data.search_query}-{search_string}')
                 papers_data = prepare_papers_data(
-                    PUBTRENDS_CONFIG, data, comp, word, author, journal, papers_list
+                    data, comp, word, author, journal, papers_list
                 )
                 return render_template('papers.html',
                                        version=VERSION,
-                                       source=source,
-                                       query=trim_query(query),
+                                       source=data.source,
+                                       query=trim_query(data.search_query),
                                        search_string=search_string,
-                                       limit=limit,
-                                       sort=sort,
-                                       noreviews='on' if noreviews else '',
-                                       min_year=min_year or '', max_year=max_year or '',
+                                       limit=data.limit or '',
+                                       sort=data.sort or '',
+                                       noreviews='on' if data.noreviews else '',
+                                       min_year=data.min_year or '',
+                                       max_year=data.max_year or '',
                                        export_name=export_name,
                                        papers=papers_data)
-        logger.error(f'/papers error {log_request(request)}')
-        return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception as e:
         logger.exception(f'/papers exception {e}')
         return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
 
 
-@pubtrends_app.route('/export_data', methods=['GET'])
-def export_data():
-    logger.info(f'/export_data {log_request(request)}')
+@pubtrends_app.route('/export/<jobid>', methods=['GET'])
+def export(jobid):
+    logger.info(f'/export {log_request(request)}')
     try:
-        jobid = request.values.get('jobid')
-        query = request.args.get('query')
-        source = request.args.get('source')
-        limit = request.args.get('limit')
-        sort = request.args.get('sort')
-        if jobid:
-            if request.args.get('paper') == 'on':
-                data = load_paper_data(jobid, source, query, pubtrends_celery)
-            else:
-                noreviews = value_to_bool(request.form.get('noreviews'))
-                min_year = request.form.get('min_year')  # Minimal year of publications
-                max_year = request.form.get('max_year')  # Maximal year of publications
-                data = load_result_data(
-                    jobid, source, query, sort, limit, noreviews, min_year, max_year,
-                    pubtrends_celery
-                )
-            if data:
-                with tempfile.TemporaryDirectory() as tmpdir:
-                    name = preprocess_string(f'{source}-{query}')
-                    path = os.path.join(tmpdir, f'{name}.json.gz')
-                    with gzip.open(path, 'w') as f:
-                        f.write(json.dumps(data.to_json()).encode('utf-8'))
+        data = load_or_save_result_data(pubtrends_celery, jobid)
+        if data:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                name = preprocess_string(f'{data.source}-{data.search_query}')
+                path = os.path.join(tmpdir, f'{name}.json.gz')
+                with gzip.open(path, 'w') as f:
+                    f.write(json.dumps(data.to_json()).encode('utf-8'))
                     return send_file(path, as_attachment=True)
-        logger.error(f'/export_results error {log_request(request)}')
+        logger.error(f'/export error {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception as e:
-        logger.exception(f'/export_results exception {e}')
+        logger.exception(f'/export exception {e}')
         return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
 
 
@@ -621,15 +456,15 @@ def export_data():
 @pubtrends_app.route('/feedback', methods=['POST'])
 def feedback():
     logger.info(f'/feedback {log_request(request)}')
-    data = request.form
-    if 'key' in data:
-        key = data.get('key')
-        value = data.get('value')
-        jobid = data.get('jobid')
+    jobid = request.form.get('jobid')
+    key = request.form.get('key')
+    value = request.form.get('value')
+    if key and value and jobid:
         logger.info('Feedback ' + json.dumps(dict(key=key, value=value, jobid=jobid)))
     else:
         logger.error(f'/feedback error')
     return render_template_string('Thanks you for the feedback!'), 200
+
 
 ##########################
 # Question functionality #
@@ -640,8 +475,8 @@ def question():
     logger.info(f'/question {log_request(request)}')
     try:
         data = request.json
-        question_text = data['question']
-        jobid = data['jobid']
+        jobid = data.get('jobid')
+        question_text = data.get('question')
 
         if not question_text or not jobid:
             logger.error(f'/question error: missing question or jobid {log_request(request)}')
@@ -653,7 +488,7 @@ def question():
             return {'status': 'error', 'message': 'Text embeddings not available'}, 400
 
         # Load result data
-        data = load_result_data(jobid, None, None, None, None, None, None, None, pubtrends_celery)
+        data = load_or_save_result_data(pubtrends_celery, jobid)
         if data is None:
             logger.error(f'/question error: no data for jobid {jobid} {log_request(request)}')
             return {'status': 'error', 'message': 'No data found for jobid'}, 404
@@ -676,6 +511,7 @@ def question():
 #######################
 
 init_admin(pubtrends_app, pubtrends_celery, logfile)
+
 
 #######################
 # Additional features #
