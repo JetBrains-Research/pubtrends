@@ -273,7 +273,6 @@ def process():
 @pubtrends_app.route('/status/<jobid>')
 def status(jobid):
     """ Check tasks status being executed by Celery """
-    logger.info(f'/status {log_request(request)}')
     try:
         job = pubtrends_celery.AsyncResult(jobid)
         if job is None:
@@ -283,6 +282,7 @@ def status(jobid):
             return json.dumps(dict(state=job_state, log=job_result['log'],
                                    progress=int(100.0 * job_result['current'] / job_result['total'])))
         elif job_state == 'SUCCESS':
+            logger.info(f'/status success {log_request(request)}')
             data, _ = job.result
             analysis_type = data['analysis_type']
             query = quote(data['search_query'])
@@ -341,7 +341,7 @@ def result():
                                    query=trim_query(data.search_query),
                                    source=data.source,
                                    limit=data.limit,
-                                   sort=data.sort,
+                                   sort=data.sort or '',
                                    max_graph_size=PUBTRENDS_CONFIG.max_graph_size,
                                    version=VERSION,
                                    is_predefined=True,

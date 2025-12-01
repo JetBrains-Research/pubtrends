@@ -10,7 +10,7 @@ from bokeh.plotting import figure
 from wordcloud import WordCloud
 
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
-from pysrc.papers.utils import trim_query, MAX_QUERY_LENGTH
+from pysrc.papers.utils import trim_query
 
 TOOLS = "hover,pan,tap,wheel_zoom,box_zoom,reset,save"
 PLOT_WIDTH = 900
@@ -42,7 +42,9 @@ def parse_stats_content(lines):
                 continue
             date = datetime.datetime.strptime(search_date.group(0), '%Y-%m-%d %H:%M:%S,%f')
 
-            if '/process regular search addr:' in line:
+            if ('/process regular search addr:' in line or
+                    '/search_terms addr:' in line or
+                    '/search_semantic addr:' in line):
                 terms_search_dates.append(date)
                 args = json.loads(re.sub(".*args:", "", line.strip()))
                 terms.append(args['query'].replace(',', ' ').replace('[^a-zA-Z0-9]+', ' '))
