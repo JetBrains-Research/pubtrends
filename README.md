@@ -24,7 +24,7 @@ See example of analysis at: https://pubtrends.info/about.html
 * [Pubmed](https://pubmed.ncbi.nlm.nih.gov) ~40 mln papers and 450 mln citations
 * [Semantic Scholar](https://www.semanticscholar.org) 170 mln papers and 600 mln citations
 
-![Scheme](pysrc/app/static/about_pubtrends_scheme.png?raw=true "Title")
+![Scheme](pysrc/app/static/about/about_pubtrends_scheme.png?raw=true "Title")
 
 ## Technical Architecture
 
