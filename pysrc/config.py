@@ -182,6 +182,7 @@ class PubtrendsConfig:
 
         self.paper_expands_steps = params.getint('paper_expands_steps')
         self.paper_expand_limit = params.getint('paper_expand_limit')
+        self.paper_expand_semantic = params.getfloat('paper_expand_semantic')
 
         # Additional features configuration
         self.feature_authors_enabled = params.getboolean('feature_authors_enabled')

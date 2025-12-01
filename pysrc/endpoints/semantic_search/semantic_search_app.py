@@ -8,8 +8,6 @@ from pysrc.endpoints.semantic_search.semantic_search import SEMANTIC_SEARCH
 
 semantic_search_app = Flask(__name__)
 
-
-
 #####################
 # Configure logging #
 #####################
@@ -48,6 +46,20 @@ def semantic_search():
     limit = data['limit']
     noreviews = data['noreviews']
     result = SEMANTIC_SEARCH.search(source, text, noreviews, limit)
+    logger.info(f'Return semantic search results in JSON format')
+    return json.dumps(result)
+
+
+@semantic_search_app.route('/semantic_search_embeddings', methods=['GET'])
+def semantic_search_embeddings():
+    # Please ensure that already initialized. Otherwise, model loading may take some time
+    data = request.get_json()
+    logger.info('Search embeddings')
+    source = data['source']
+    embeddings = json.loads(data['embeddings'])
+    noreviews = data['noreviews']
+    limit = data['limit']
+    result = SEMANTIC_SEARCH.search_embeddings(source, embeddings, noreviews, limit)
     logger.info(f'Return semantic search results in JSON format')
     return json.dumps(result)
 

@@ -3,6 +3,11 @@ import logging
 import numpy as np
 
 from pysrc.config import *
+from pysrc.papers.analysis.text import fetch_embeddings_from_db, embeddings_from_service, chunks_to_text_embeddings
+from pysrc.services.embeddings_service import is_embeddings_service_ready, is_texts_embeddings_available, \
+    is_embeddings_db_available
+from pysrc.services.semantic_search_service import is_semantic_search_service_available, \
+    fetch_semantic_search_embeddings
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +19,7 @@ def expand_ids(
         limit,
         noreviews,
         max_expand,
+        semantic_expand,
         citations_q_low=EXPAND_CITATIONS_Q_LOW,
         citations_q_high=EXPAND_CITATIONS_Q_HIGH,
         citations_sigma=EXPAND_CITATIONS_SIGMA,
@@ -26,6 +32,7 @@ def expand_ids(
     :param expand_steps: Number of expand steps
     :param loader: DB loader
     :param max_expand: Number of papers expanded by references by loader before any filtration
+    :type semantic_expand: Fraction of papers expanded by semantic search
     :param citations_q_low: Minimal percentile for groupwise citations count estimation, removes outliers
     :param citations_q_high: Max percentile for groupwise citations count estimation, removes outliers
     :param citations_sigma: Sigma for citations filtering range mean +- sigma * std
@@ -52,6 +59,21 @@ def expand_ids(
             )
 
     ids = search_ids.copy()
+    if (is_semantic_search_service_available() and
+            is_embeddings_service_ready() and
+            is_texts_embeddings_available()):
+        logger.debug(f'Step 0/{expand_steps} - expand by similar papers embeddings')
+        df = loader.load_publications(search_ids)
+        chunks_embeddings, chunks_idx =\
+            fetch_embeddings_from_db(df) if is_embeddings_db_available() else embeddings_from_service(df)
+        papers_text_embeddings = chunks_to_text_embeddings(df, chunks_embeddings, chunks_idx)
+        logger.debug(f'Loaded {len(papers_text_embeddings)} papers embeddings {papers_text_embeddings}')
+        logger.debug('Adding similar papers by embeddings')
+        similar_by_embds = fetch_semantic_search_embeddings(
+            'Pubmed', papers_text_embeddings, noreviews, int((limit - len(ids)) * semantic_expand)
+        )
+        ids += similar_by_embds
+
     start_step = 1
     if expand_steps >= 1 and len(references) > 0:
         logger.debug(f'Step 1/{expand_steps} - expand by references only')

@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 
@@ -45,4 +46,29 @@ def fetch_semantic_search(source, text, noreviews, limit):
             logger.debug(f'Wrong response code {r.status_code}')
     except Exception as e:
         logger.debug(f'Failed to fetch semantic search results ${e}')
+    return None
+
+
+def fetch_semantic_search_embeddings(source, embeddings, noreviews, limit):
+    logger.debug(f'Fetching semantic search results by embeddings')
+    embeddings = embeddings.tolist()
+    args = dict(
+        source=source,
+        embeddings=json.dumps(embeddings),
+        noreviews=noreviews,
+        limit=limit
+    )
+    try:
+        r = requests.request(
+            url=f'{SEMANTIC_SEARCH_SERVICE_URL}/semantic_search_embeddings',
+            method='GET',
+            json=args,
+            headers={'Accept': 'application/json'}
+        )
+        if r.status_code == 200:
+            return r.json()
+        else:
+            logger.debug(f'Wrong response code {r.status_code}')
+    except Exception as e:
+        logger.debug(f'Failed to fetch semantic search embeddings results ${e}')
     return None

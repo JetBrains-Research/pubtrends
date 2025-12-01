@@ -188,10 +188,10 @@ def embeddings(df, corpus, corpus_tokens, corpus_counts, test=False):
 
                 # Fetching text embeddings from database
                 if is_embeddings_db_available():
-                    return _fetch_embeddings_from_db(df)
+                    return fetch_embeddings_from_db(df)
 
                 # Compute text embeddings from texts
-                return _embeddings_from_service(df)
+                return embeddings_from_service(df)
 
         # Fallback to tokens embeddings
         tokens_embs = fetch_tokens_embeddings(corpus_tokens)
@@ -203,7 +203,7 @@ def embeddings(df, corpus, corpus_tokens, corpus_counts, test=False):
     return _texts_embeddings(corpus_counts, tokens_embs), None
 
 
-def _embeddings_from_service(df):
+def embeddings_from_service(df):
     logger.debug("Fetching embeddings from embeddings service")
     data = [(pid, f'{title}. {abstract}')
             for pid, title, abstract in zip(df['id'], df['title'], df['abstract'])]
@@ -214,7 +214,7 @@ def _embeddings_from_service(df):
     return fetch_texts_embedding(chunks), chunks_idx
 
 
-def _fetch_embeddings_from_db(df):
+def fetch_embeddings_from_db(df):
     logger.debug(f'Fetching embeddings from DB')
     db_embeddings, db_index = load_embeddings_from_df(df['id'])
     logger.debug(f'Fetched {len(db_index)} embeddings from DB')
@@ -226,7 +226,7 @@ def _fetch_embeddings_from_db(df):
     logger.debug(f'Not all the pids found in embeddings DB: {len(pids_not_in_db)}')
     not_in_db_df = df[df['id'].isin(pids_not_in_db)]
     logger.debug('Collecting chunks for embeddings not in DB')
-    not_in_db_embeddings, not_in_db_index = _embeddings_from_service(not_in_db_df)
+    not_in_db_embeddings, not_in_db_index = embeddings_from_service(not_in_db_df)
     all_embeddings = np.concatenate([db_embeddings, not_in_db_embeddings])
     all_index = db_index + not_in_db_index
     logger.debug(f'Concatenated embeddings: {all_embeddings.shape}, index len: {len(all_index)}')
