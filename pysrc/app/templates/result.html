@@ -6,79 +6,79 @@
 {% set active_page = None %}
 
 {% block styles_extra %}
-    <!-- Keep DataTables using Bootstrap 4 skin to avoid regressions in complex tables -->
-    <link href="https://cdn.datatables.net/2.3.3/css/dataTables.bootstrap4.min.css" rel="stylesheet" type="text/css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='feedback.css') }}?v=1">
+<!-- Keep DataTables using Bootstrap 4 skin to avoid regressions in complex tables -->
+<link href="https://cdn.datatables.net/2.3.3/css/dataTables.bootstrap4.min.css" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="{{ url_for('static', filename='feedback.css') }}?v=1">
 {% endblock %}
 {% block scripts_head %}
-    <!-- Vendor libs required before inline scripts -->
-    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-3.6.3.min.js"></script>
-    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.6.3.min.js"></script>
+<!-- Vendor libs required before inline scripts -->
+<script src="https://cdn.bokeh.org/bokeh/release/bokeh-3.6.3.min.js"></script>
+<script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.6.3.min.js"></script>
 
-    <!-- DataTables with search -->
-    <script src="https://cdn.datatables.net/2.3.3/js/dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/2.3.3/js/dataTables.bootstrap4.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/g/mark.js(jquery.mark.min.js)"></script>
-    <script src="https://cdn.datatables.net/plug-ins/2.3.3/features/mark.js/datatables.mark.js"></script>
+<!-- DataTables with search -->
+<script src="https://cdn.datatables.net/2.3.3/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/2.3.3/js/dataTables.bootstrap4.min.js"></script>
+<script src="https://cdn.jsdelivr.net/g/mark.js(jquery.mark.min.js)"></script>
+<script src="https://cdn.datatables.net/plug-ins/2.3.3/features/mark.js/datatables.mark.js"></script>
 
-    <!-- App scripts -->
-    <script src="{{ url_for('static', filename='wordcloud.js') }}"></script>
-    <script src="{{ url_for('static', filename='text_utils.js') }}"></script>
-    <script src="{{ url_for('static', filename='feedback.js') }}"></script>
-    <script src="{{ url_for('static', filename='notify.js') }}"></script>
-    <script src="{{ url_for('static', filename='questions.js') }}"></script>
-    <script src="{{ url_for('static', filename='navigate.js') }}?v=1"></script>
+<!-- App scripts -->
+<script src="{{ url_for('static', filename='wordcloud.js') }}"></script>
+<script src="{{ url_for('static', filename='text_utils.js') }}"></script>
+<script src="{{ url_for('static', filename='feedback.js') }}"></script>
+<script src="{{ url_for('static', filename='notify.js') }}"></script>
+<script src="{{ url_for('static', filename='questions.js') }}"></script>
+<script src="{{ url_for('static', filename='navigate.js') }}?v=1"></script>
 {% endblock %}
 
 {% block content %}
-    <!-- Compact page header: reduce vertical space on data-heavy result page -->
-    <section class="pt-hero py-3 px-3 px-md-4 mb-3">
-        <div class="row align-items-center gy-2">
-            <div class="col-lg-12">
-                <ol class="breadcrumb bg-transparent mb-1 search-query">
-                    <li class="breadcrumb-item">{{ source }}</li>
-                    <li class="breadcrumb-item"><strong>{{ query }}</strong></li>
-                    <li class="breadcrumb-item">{{ limit }} {{ sort }}</li>
-                </ol>
-                <p class="pt-muted small mb-0">Explore papers, trends, networks, topics, and more.</p>
+<!-- Compact page header: reduce vertical space on data-heavy result page -->
+<section class="pt-hero py-3 px-3 px-md-4 mb-3">
+    <div class="row align-items-center gy-2">
+        <div class="col-lg-12">
+            <ol class="breadcrumb bg-transparent mb-1 search-query">
+                <li class="breadcrumb-item">{{ source }}</li>
+                <li class="breadcrumb-item"><strong>{{ query }}</strong></li>
+                <li class="breadcrumb-item">{{ limit }} {{ sort }}</li>
+            </ol>
+            <p class="pt-muted small mb-0">Explore papers, trends, networks, topics, and more.</p>
+        </div>
+    </div>
+</section>
+
+<div class="row g-3">
+    <!-- Mobile quick navigation (top) -->
+    <div class="d-lg-none">
+        <!-- Make the on-page nav stick to the top when scrolling on mobile -->
+        <div class="sticky-top bg-white border-bottom py-2 px-2" role="navigation">
+            <div class="nav nav-pills flex-nowrap overflow-auto" id="onpage-mobile">
+                <a class="nav-link py-1 px-2 me-1 grey" href="#papers">Papers</a>
+                {% if feature_questions_enabled %}
+                <a class="nav-link py-1 px-2 me-1 grey" href="#questions">Questions</a>
+                {% endif %}
+                {% if topics_analyzed %}
+                <a class="nav-link py-1 px-2 me-1 grey" href="#trends">Trends</a>
+                <a class="nav-link py-1 px-2 me-1 grey" href="#network">Network</a>
+                <a class="nav-link py-1 px-2 me-1 grey" href="#topics">Topics</a>
+                {% endif %}
+                {% if feature_authors_enabled %}
+                <a class="nav-link py-1 px-2 me-1 grey" href="#authors">Authors</a>
+                {% endif %}
+                {% if feature_journals_enabled %}
+                <a class="nav-link py-1 px-2 me-1 grey" href="#journals">Journals</a>
+                {% endif %}
+                {% if feature_numbers_enabled %}
+                <a class="nav-link py-1 px-2 me-1 grey" href="#numbers">Numbers</a>
+                {% endif %}
             </div>
         </div>
-    </section>
+    </div>
 
-    <div class="row g-3">
-        <!-- Mobile quick navigation (top) -->
-        <div class="d-lg-none">
-            <!-- Make the on-page nav stick to the top when scrolling on mobile -->
-            <div class="sticky-top bg-white border-bottom py-2 px-2" role="navigation" >
-                <div class="nav nav-pills flex-nowrap overflow-auto" id="onpage-mobile">
-                    <a class="nav-link py-1 px-2 me-1 grey" href="#papers">Papers</a>
-                    {% if feature_questions_enabled %}
-                    <a class="nav-link py-1 px-2 me-1 grey" href="#questions">Questions</a>
-                    {% endif %}
-                    {% if topics_analyzed %}
-                    <a class="nav-link py-1 px-2 me-1 grey" href="#trends">Trends</a>
-                    <a class="nav-link py-1 px-2 me-1 grey" href="#network">Network</a>
-                    <a class="nav-link py-1 px-2 me-1 grey" href="#topics">Topics</a>
-                    {% endif %}
-                    {% if feature_authors_enabled %}
-                    <a class="nav-link py-1 px-2 me-1 grey" href="#authors">Authors</a>
-                    {% endif %}
-                    {% if feature_journals_enabled %}
-                    <a class="nav-link py-1 px-2 me-1 grey" href="#journals">Journals</a>
-                    {% endif %}
-                    {% if feature_numbers_enabled %}
-                    <a class="nav-link py-1 px-2 me-1 grey" href="#numbers">Numbers</a>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Sticky sidebar (left) modern TOC -->
-        <nav class="d-none d-lg-block col-lg-2 col-xl-2">
-            <div id="sidebar" class="position-sticky" style="top: 1rem">
-                <div class="toc pt-card p-2" style="padding-bottom: 0;">
-                    <!-- Scrollable area keeps the nav always visible while allowing internal scroll -->
-                    <div style="max-height: calc(100vh - 6rem - 1rem); overflow-y: auto; overflow-x: hidden; padding-bottom: 0.5rem;">
+    <!-- Sticky sidebar (left) modern TOC -->
+    <nav class="d-none d-lg-block col-lg-2 col-xl-2">
+        <div id="sidebar" class="position-sticky" style="top: 1rem">
+            <div class="toc pt-card p-2" style="padding-bottom: 0;">
+                <!-- Scrollable area keeps the nav always visible while allowing internal scroll -->
+                <div style="max-height: calc(100vh - 6rem - 1rem); overflow-y: auto; overflow-x: hidden; padding-bottom: 0.5rem;">
                     <ul class="nav flex-column" id="onpage-desktop">
                         <li class="nav-item d-flex align-items-center">
                             <img class="nav-icon me-2" alt="" src="{{ url_for('static', filename='home.svg') }}"/>
@@ -92,7 +92,8 @@
                         {% endif %}
                         {% if topics_analyzed %}
                         <li class="nav-item d-flex align-items-center">
-                            <img class="nav-icon me-2" alt="" src="{{ url_for('static', filename='bar-chart-2.svg') }}"/>
+                            <img class="nav-icon me-2" alt=""
+                                 src="{{ url_for('static', filename='bar-chart-2.svg') }}"/>
                             <a class="nav-link px-0 py-1" href="#trends">Trends</a>
                         </li>
                         <li class="nav-item d-flex align-items-center">
@@ -123,410 +124,405 @@
                         </li>
                         {% endif %}
                     </ul>
-                    </div>
                 </div>
             </div>
-        </nav>
+        </div>
+    </nav>
 
-        <!-- Main content -->
-        <main class="col-lg-10 col-xl-10" role="main">
-            <div id="papers" class="card mt-0">
-                <div class="card-title">
-                    <h2 class="card-header">Papers</h2>
+    <!-- Main content -->
+    <main class="col-lg-10 col-xl-10" role="main">
+        <div id="papers" class="card mt-0">
+            <div class="card-title">
+                <h2 class="card-header">Papers</h2>
+            </div>
+            <div class="card-body">
+                <p>
+                    Analyzed <strong>{{ n_papers }}</strong> papers and <strong>{{ n_topics }}</strong> topics.
+                </p>
+                <button id="papers-list" type="button" class="btn btn-light"
+                        onclick="papers_callback();">
+                    <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
+                </button>
+                <div class="row mt-2">
+                    <div class="col-12 col-md-4 col-lg-3 no-padding-right" style="min-width: 185px;">
+                        <small><strong>Frequent words</strong></small>
+                        <br>
+                        <canvas id="papers_word_cloud" style="border:1px solid #eee; width: 100%; height: 100%;">
+                            Canvas is not supported in your browser.
+                        </canvas>
+                    </div>
+                    <div class="col-12 col-md-8 col-lg-9 no-padding-left">
+                        <small><strong>&nbsp;&nbsp;&nbsp;Papers per year</strong></small>
+                        <br>
+                        {% for script, div in papers_stats %}
+                        {{ script|safe }}
+                        {{ div|safe }}
+                        {% endfor %}
+                    </div>
                 </div>
-                <div class="card-body">
-                    <p>
-                        Analyzed <strong>{{ n_papers }}</strong> papers and <strong>{{ n_topics }}</strong> topics.
-                    </p>
-                    <button id="papers-list" type="button" class="btn btn-light"
-                            onclick="papers_callback();">
-                        <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
-                    </button>
-                    <div class="row mt-2">
-                        <div class="col-12 col-md-4 col-lg-3 no-padding-right" style="min-width: 185px;">
-                            <small><strong>Frequent words</strong></small>
-                            <br>
-                            <canvas id="papers_word_cloud" style="border:1px solid #eee; width: 100%; height: 100%;">
-                                Canvas is not supported in your browser.
-                            </canvas>
-                        </div>
-                        <div class="col-12 col-md-8 col-lg-9 no-padding-left">
-                            <small><strong>&nbsp;&nbsp;&nbsp;Papers per year</strong></small>
-                            <br>
-                            {% for script, div in papers_stats %}
-                            {{ script|safe }}
-                            {{ div|safe }}
-                            {% endfor %}
+                {% if not feature_questions_enabled %}
+                <div id="search-in-papers" class="row">
+                    <div class="col col-auto">
+                        <input id="search-input" type="text" class="form-control"
+                               placeholder="Search in texts...">
+                    </div>
+                    <div class="col col-auto no-padding-left">
+                        <button id="search_word" type="button" class="btn btn-light"
+                                onclick="papers_callback_word($('#search-input').val().trim());">
+                            <img src="{{ url_for('static', filename='search.svg') }}" alt=""/>&nbsp;Search
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if feature_questions_enabled %}
+        <div id="questions" class="card mt-3">
+            <div class="card-title">
+                <h1 class="card-header">Questions</h1>
+            </div>
+            <div class="card-body">
+                <strong>Ask questions about the papers</strong>
+                <p>
+                    You can ask questions about the papers in this collection to find the most relevant information.
+                </p>
+                <div class="row">
+                    <div class="col">
+                        <div class="input-group mb-3">
+                            <input type="text" id="question-input" class="form-control"
+                                   placeholder="Enter your question...">
+                            <button id="ask-question" class="btn btn-primary" type="button">Ask</button>
                         </div>
                     </div>
-                    {% if not feature_questions_enabled %}
-                    <div id="search-in-papers" class="row">
-                        <div class="col col-auto">
-                            <input id="search-input" type="text" class="form-control"
-                                   placeholder="Search in texts...">
+                </div>
+                <div id="question-results" style="display: none;">
+                    <div id="question-results-loading" class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
                         </div>
-                        <div class="col col-auto no-padding-left">
-                            <button id="search_word" type="button" class="btn btn-light"
-                                    onclick="papers_callback_word($('#search-input').val().trim());">
-                                <img src="{{ url_for('static', filename='search.svg') }}" alt=""/>&nbsp;Search
+                        <p>Searching for relevant papers...</p>
+                    </div>
+                    <div id="question-results-content" class="mt-3"></div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div id="trends" class="card mt-3">
+            <div class="card-title">
+                <h1 class="card-header">Trends</h1>
+            </div>
+            <div class="card-body">
+                <strong>Top Cited Papers</strong>
+                <p>
+                    Top 50 cited papers are shown among all the papers for given search query.<br>
+                    Year reflects publication year of the original paper.
+                </p>
+                <button type="button" class="btn btn-light"
+                        onclick="papers_callback_top_papers();">
+                    <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
+                </button>
+                <div>
+                    {% for script, div in top_cited_papers %}
+                    {{ script|safe }}
+                    {{ div|safe }}
+                    {% endfor %}
+                </div>
+                <hr>
+
+                <strong>Top Cited Papers of the Year</strong>
+                <p>
+                    For each year we show the paper which has the most significant number of citations in a
+                    given year.<br>
+                    Different papers have different colors.
+                </p>
+                <button type="button" class="btn btn-light"
+                        onclick="papers_callback_papers_of_the_year();">
+                    <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
+                </button>
+                <div>
+                    {% for script, div in most_cited_per_year_papers %}
+                    {{ script|safe }}
+                    {{ div|safe }}
+                    {% endfor %}
+                </div>
+                <hr>
+
+                <strong>Hot Papers</strong>
+                <p>
+                    For each year we show a recent paper which has the biggest growth in citations.<br>
+                    Growth is computed as a fraction of citations count in particular year to the count in
+                    previous year.<br>
+                    Different papers have different colors.
+                </p>
+                <button type="button" class="btn btn-light"
+                        onclick="papers_callback_hot_papers();">
+                    Show as list
+                </button>
+                <div>
+                    {% for script, div in fastest_growth_per_year_papers %}
+                    {{ script|safe }}
+                    {{ div|safe }}
+                    {% endfor %}
+                </div>
+
+                <hr>
+                <strong>Keyword frequencies</strong>
+                <p>
+                    For each year we show a number of papers containing most frequent keywords.<br>
+                    <i>NOTE</i>: the plot is slightly smoothed.
+                </p>
+                <div>
+                    {% for script, div in keywords_frequencies %}
+                    {{ script|safe }}
+                    {{ div|safe }}
+                    {% endfor %}
+                </div>
+
+            </div>
+        </div>
+
+        <div id="network" class="card mt-3">
+            <div class="card-title">
+                <h1 class="card-header">Network</h1>
+            </div>
+            <div class="card-body">
+                {% if n_papers <= max_graph_size %}
+                {% if papers_graph is defined %}
+                <strong>Papers similarity</strong>
+                <p>
+                    The graph below shows papers similarity network. Similar papers are located closely.<br>
+                    Edges represent co-citations, common references and citations between papers.<br>
+                    Color represents topic, size - paper "importance" in the graph.
+                </p>
+                {% for script, div in papers_graph %}
+                {{ script|safe }}
+                {{ div|safe }}
+                {% endfor %}
+                {% endif %}
+                <br>
+                <p>
+                    Explore papers similarity in-depth in the interactive graph viewer.<br>
+                    Filter papers by keywords and apply different coloring schemes.
+                </p>
+                <button type="button" class="btn btn-light" onclick="graph_callback();">
+                    Explore
+                </button>
+                {% else %}
+                Too many papers to visualize papers graph.
+                {% endif %}
+            </div>
+        </div>
+
+        <div id="topics" class="card mt-3">
+            <div class="card-title">
+                <h1 class="card-header">Topics</h1>
+            </div>
+            <div class="card-body">
+                {% if topics_analyzed %}
+                <strong>Topics</strong>
+                <p>
+                    Topic is a group of similar papers which share common ideas, describe common features, etc.
+                    <br>
+                    Topics are extracted based on similarity between papers based on <em>common references</em>,
+                    <em>co-citations</em>, <em>direct citations</em>, and text similarity.<br>
+                </p>
+                {% if topics_hierarchy_with_keywords is defined %}
+                Topics are organized hierarchically. Clustering dendrogram with keywords is shown below.
+                {% for script, div in topics_hierarchy_with_keywords %}
+                {{ script|safe }}
+                {{ div|safe }}
+                {% endfor %}
+                {% endif %}
+                <hr>
+                <strong>Topics by years</strong>
+                <p>
+                    Information about topics - keywords, sizes, publication years are shown below.<br>
+                </p>
+
+                {% for script, div in topic_years_distribution %}
+                {{ script|safe }}
+                {{ div|safe }}
+                {% endfor %}
+
+                <hr>
+                <strong>Topics papers</strong>
+                <p>
+                    Papers for topics are sorted descending by citations number overall from bottom to top.<br>
+                    Word clouds show keywords specific for topics.
+                </p>
+                <div>
+                    {% for (script, div), word_cloud in topics_info_and_word_cloud %}
+                    <div id="topic-div-{{ loop.index }}">
+
+                        <div style="display: inline">
+                            <strong id="topic-{{ loop.index }}">
+                                Topic {{ loop.index }}
+                            </strong>
+                            <button type="button" class="btn btn-light btn-topic-list"
+                                    data-topic-index="{{ loop.index }}">
+                                <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show
+                                as
+                                list
                             </button>
                         </div>
-                    </div>
-                    {% endif %}
-                    <div class="mt-3" id="feedback-papers-form"></div>
-                </div>
-            </div>
-
-            {% if feature_questions_enabled %}
-            <div id="questions" class="card mt-3">
-                <div class="card-title">
-                    <h1 class="card-header">Questions</h1>
-                </div>
-                <div class="card-body">
-                    <strong>Ask questions about the papers</strong>
-                    <p>
-                        You can ask questions about the papers in this collection to find the most relevant information.
-                    </p>
-                    <div class="row">
-                        <div class="col">
-                            <div class="input-group mb-3">
-                                <input type="text" id="question-input" class="form-control" placeholder="Enter your question...">
-                                <button id="ask-question" class="btn btn-primary" type="button">Ask</button>
+                        Number of papers: {{ component_sizes[loop.index - 1] }}
+                        <div class="row">
+                            <div class="col-12 col-md-4 col-lg-3 no-padding-right" style="min-width: 185px;">
+                                <small><strong>Topic words</strong></small>
+                                <br>
+                                <canvas id="topic_word_cloud_{{ loop.index }}"
+                                        style="border:1px solid #eee; width: 100%; height: 100%;">
+                                    Canvas is not supported in your browser.
+                                </canvas>
+                            </div>
+                            <div class="col-12 col-md-8 col-lg-9 no-padding-left" id="topic_chart_{{ loop.index }}">
+                                <small><strong>&nbsp;&nbsp;&nbsp;Publications</strong></small>
+                                {{ script|safe }}
+                                {{ div|safe }}
                             </div>
                         </div>
                     </div>
-                    <div id="question-results" style="display: none;">
-                        <div id="question-results-loading" class="text-center">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                            <p>Searching for relevant papers...</p>
-                        </div>
-                        <div id="question-results-content" class="mt-3"></div>
-                    </div>
-                    <div class="mt-3" id="feedback-questions-form"></div>
-                </div>
-            </div>
-            {% endif %}
-
-            <div id="trends" class="card mt-3">
-                <div class="card-title">
-                    <h1 class="card-header">Trends</h1>
-                </div>
-                <div class="card-body">
-                    <strong>Top Cited Papers</strong>
-                    <p>
-                        Top 50 cited papers are shown among all the papers for given search query.<br>
-                        Year reflects publication year of the original paper.
-                    </p>
-                    <button type="button" class="btn btn-light"
-                            onclick="papers_callback_top_papers();">
-                        <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
-                    </button>
-                    <div>
-                        {% for script, div in top_cited_papers %}
-                        {{ script|safe }}
-                        {{ div|safe }}
-                        {% endfor %}
-                    </div>
-                    <hr>
-
-                    <strong>Top Cited Papers of the Year</strong>
-                    <p>
-                        For each year we show the paper which has the most significant number of citations in a
-                        given year.<br>
-                        Different papers have different colors.
-                    </p>
-                    <button type="button" class="btn btn-light"
-                            onclick="papers_callback_papers_of_the_year();">
-                        <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show as list
-                    </button>
-                    <div>
-                        {% for script, div in most_cited_per_year_papers %}
-                        {{ script|safe }}
-                        {{ div|safe }}
-                        {% endfor %}
-                    </div>
-                    <hr>
-
-                    <strong>Hot Papers</strong>
-                    <p>
-                        For each year we show a recent paper which has the biggest growth in citations.<br>
-                        Growth is computed as a fraction of citations count in particular year to the count in
-                        previous year.<br>
-                        Different papers have different colors.
-                    </p>
-                    <button type="button" class="btn btn-light"
-                            onclick="papers_callback_hot_papers();">
-                        Show as list
-                    </button>
-                    <div>
-                        {% for script, div in fastest_growth_per_year_papers %}
-                        {{ script|safe }}
-                        {{ div|safe }}
-                        {% endfor %}
-                    </div>
-
-                    <hr>
-                    <strong>Keyword frequencies</strong>
-                    <p>
-                        For each year we show a number of papers containing most frequent keywords.<br>
-                        <i>NOTE</i>: the plot is slightly smoothed.
-                    </p>
-                    <div>
-                        {% for script, div in keywords_frequencies %}
-                        {{ script|safe }}
-                        {{ div|safe }}
-                        {% endfor %}
-                    </div>
-
-                    <div class="mt-3" id="feedback-trends-form"></div>
-                </div>
-            </div>
-
-            <div id="network" class="card mt-3">
-                <div class="card-title">
-                    <h1 class="card-header">Network</h1>
-                </div>
-                <div class="card-body">
-                    {% if n_papers <= max_graph_size %}
-                    {% if papers_graph is defined %}
-                    <strong>Papers similarity</strong>
-                    <p>
-                        The graph below shows papers similarity network. Similar papers are located closely.<br>
-                        Edges represent co-citations, common references and citations between papers.<br>
-                        Color represents topic, size - paper "importance" in the graph.
-                    </p>
-                    {% for script, div in papers_graph %}
-                    {{ script|safe }}
-                    {{ div|safe }}
                     {% endfor %}
-                    {% endif %}
-                    <br>
-                    <p>
-                        Explore papers similarity in-depth in the interactive graph viewer.<br>
-                        Filter papers by keywords and apply different coloring schemes.
-                    </p>
-                    <button type="button" class="btn btn-light" onclick="graph_callback();">
-                        Explore
-                    </button>
-                    {% else %}
-                    Too many papers to visualize papers graph.
-                    {% endif %}
-                    <div class="mt-3" id="feedback-network-form"></div>
                 </div>
+                {% endif %}
             </div>
+        </div>
 
-            <div id="topics" class="card mt-3">
-                <div class="card-title">
-                    <h1 class="card-header">Topics</h1>
-                </div>
-                <div class="card-body">
-                    {% if topics_analyzed %}
-                    <strong>Topics</strong>
-                    <p>
-                        Topic is a group of similar papers which share common ideas, describe common features, etc.
-                        <br>
-                        Topics are extracted based on similarity between papers based on <em>common references</em>,
-                        <em>co-citations</em>, <em>direct citations</em>, and text similarity.<br>
-                    </p>
-                    {% if topics_hierarchy_with_keywords is defined %}
-                    Topics are organized hierarchically. Clustering dendrogram with keywords is shown below.
-                    {% for script, div in topics_hierarchy_with_keywords %}
-                    {{ script|safe }}
-                    {{ div|safe }}
+        {% if feature_authors_enabled %}
+        <div id="authors" class="card mt-3">
+            <div class="card-title">
+                <h1 class="card-header">Authors</h1>
+            </div>
+            <div class="card-body">
+                <strong>Authors papers and topics</strong>
+                <p>
+                    List of authors with the largest number of papers for given search query.<br>
+                    The colors of the circles in the topics column indicate top 3 most common topics among
+                    these papers.
+                </p>
+                <table id="authors-table" class="table table-sm table-bordered table-striped">
+                    <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Author</th>
+                        <th scope="col">Papers</th>
+                        <th scope="col">Topics</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for row in author_statistics %}
+                    <tr>
+                        <th scope="row">{{ loop.index }}</th>
+                        <td>{{ row[0] }}</td>
+                        <td>
+                            <button type="button" class="btn btn-link link"
+                                    onclick="papers_callback_author('{{ row[0] }}');">
+                                {{ row[1] }}
+                            </button>
+                        </td>
+                        <td>{{ row[2]|safe }}</td>
+                    </tr>
                     {% endfor %}
-                    {% endif %}
-                    <hr>
-                    <strong>Topics by years</strong>
-                    <p>
-                        Information about topics - keywords, sizes, publication years are shown below.<br>
-                    </p>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
 
-                    {% for script, div in topic_years_distribution %}
-                    {{ script|safe }}
-                    {{ div|safe }}
+        {% if feature_journals_enabled %}
+        <div id="journals" class="card mt-3">
+            <div class="card-title">
+                <h1 class="card-header">Journals</h1>
+            </div>
+            <div class="card-body">
+                <strong>Journals topics</strong>
+                <p>
+                    List of journals with the largest number of papers for given search query.<br>
+                    The colors of the circles in the topics column indicate top 3 most common topics among
+                    these papers.
+                </p>
+                <table id="journals-table" class="table table-sm table-bordered table-striped">
+                    <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Journal</th>
+                        <th scope="col">Papers</th>
+                        <th scope="col">Topics</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for row in journal_statistics %}
+                    <tr>
+                        <th scope="row">{{ loop.index }}</th>
+                        <td>{{ row[0] }}</td>
+                        <td>
+                            <button type="button" class="btn btn-link link"
+                                    onclick="papers_callback_journal('{{ row[0] }}');">{{ row[1] }}
+                            </button>
+                        </td>
+                        <td>{{ row[2]|safe }}</td>
+                    </tr>
                     {% endfor %}
-
-                    <hr>
-                    <strong>Topics papers</strong>
-                    <p>
-                        Papers for topics are sorted descending by citations number overall from bottom to top.<br>
-                        Word clouds show keywords specific for topics.
-                    </p>
-                    <div>
-                        {% for (script, div), word_cloud in topics_info_and_word_cloud %}
-                        <div id="topic-div-{{ loop.index }}">
-
-                            <div style="display: inline">
-                                <strong id="topic-{{ loop.index }}">
-                                    Topic {{ loop.index }}
-                                </strong>
-                                <button type="button" class="btn btn-light btn-topic-list" data-topic-index="{{ loop.index }}">
-                                    <img src="{{ url_for('static', filename='list.svg') }}" alt="+"/>&nbsp;Show
-                                    as
-                                    list
-                                </button>
-                            </div>
-                            Number of papers: {{ component_sizes[loop.index - 1] }}
-                            <div class="row">
-                                <div class="col-12 col-md-4 col-lg-3 no-padding-right" style="min-width: 185px;">
-                                    <small><strong>Topic words</strong></small>
-                                    <br>
-                                    <canvas id="topic_word_cloud_{{ loop.index }}"
-                                            style="border:1px solid #eee; width: 100%; height: 100%;">
-                                        Canvas is not supported in your browser.
-                                    </canvas>
-                                </div>
-                                <div class="col-12 col-md-8 col-lg-9 no-padding-left" id="topic_chart_{{ loop.index }}">
-                                    <small><strong>&nbsp;&nbsp;&nbsp;Publications</strong></small>
-                                    {{ script|safe }}
-                                    {{ div|safe }}
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-                    <div class="mt-3" id="feedback-topics-form"></div>
-                </div>
+                    </tbody>
+                </table>
             </div>
+        </div>
+        {% endif %}
 
-            {% if feature_authors_enabled %}
-            <div id="authors" class="card mt-3">
-                <div class="card-title">
-                    <h1 class="card-header">Authors</h1>
-                </div>
-                <div class="card-body">
-                    <strong>Authors papers and topics</strong>
-                    <p>
-                        List of authors with the largest number of papers for given search query.<br>
-                        The colors of the circles in the topics column indicate top 3 most common topics among
-                        these papers.
-                    </p>
-                    <table id="authors-table" class="table table-sm table-bordered table-striped">
-                        <thead>
-                        <tr>
-                            <th scope="col">#</th>
-                            <th scope="col">Author</th>
-                            <th scope="col">Papers</th>
-                            <th scope="col">Topics</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {% for row in author_statistics %}
-                        <tr>
-                            <th scope="row">{{ loop.index }}</th>
-                            <td>{{ row[0] }}</td>
-                            <td>
-                                <button type="button" class="btn btn-link link"
-                                        onclick="papers_callback_author('{{ row[0] }}');">
-                                    {{ row[1] }}
-                                </button>
-                            </td>
-                            <td>{{ row[2]|safe }}</td>
-                        </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                    <div class="mt-3" id="feedback-authors-form"></div>
-                </div>
+        {% if feature_numbers_enabled %}
+        <div id="numbers" class="card mt-3">
+            <div class="card-title">
+                <h1 class="card-header">Numbers</h1>
             </div>
-            {% endif %}
-
-            {% if feature_journals_enabled %}
-            <div id="journals" class="card mt-3">
-                <div class="card-title">
-                    <h1 class="card-header">Journals</h1>
-                </div>
-                <div class="card-body">
-                    <strong>Journals topics</strong>
-                    <p>
-                        List of journals with the largest number of papers for given search query.<br>
-                        The colors of the circles in the topics column indicate top 3 most common topics among
-                        these papers.
-                    </p>
-                    <table id="journals-table" class="table table-sm table-bordered table-striped">
-                        <thead>
-                        <tr>
-                            <th scope="col">#</th>
-                            <th scope="col">Journal</th>
-                            <th scope="col">Papers</th>
-                            <th scope="col">Topics</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {% for row in journal_statistics %}
-                        <tr>
-                            <th scope="row">{{ loop.index }}</th>
-                            <td>{{ row[0] }}</td>
-                            <td>
-                                <button type="button" class="btn btn-link link"
-                                        onclick="papers_callback_journal('{{ row[0] }}');">{{ row[1] }}
-                                </button>
-                            </td>
-                            <td>{{ row[2]|safe }}</td>
-                        </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                    <div class="mt-3" id="feedback-journals-form"></div>
-                </div>
+            <div class="card-body">
+                <strong>Numbers and features</strong>
+                <p>
+                    Quantitative features extracted from papers titles and abstracts, use search to filter the
+                    table.
+                </p>
+                {% if numbers is defined %}
+                <table id="numbers-table" class="table table-sm table-bordered table-striped">
+                    <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Title</th>
+                        <th scope="col">Numbers</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for id, url, title, metrics in numbers %}
+                    <tr>
+                        <th scope="row">{{ loop.index }}</th>
+                        <td><a class="link" href="{{ url }}">{{ title }}</a></td>
+                        <td>{{ metrics }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                {% endif %}
             </div>
-            {% endif %}
+        </div>
+        {% endif %}
+        <div class="mt-3">
+            <a href="javascript:void(0);"
+               class="btn btn-light"
+               role="button" onclick="export_data();">
+                Export
+            </a><br>
+            <span class="text-muted ms-2">Export data for additional analysis.</span>
+        </div>
+        <div class="mt-3" id="feedback-result-form"></div>
+    </main>
 
-            {% if feature_numbers_enabled %}
-            <div id="numbers" class="card mt-3">
-                <div class="card-title">
-                    <h1 class="card-header">Numbers</h1>
-                </div>
-                <div class="card-body">
-                    <strong>Numbers and features</strong>
-                    <p>
-                        Quantitative features extracted from papers titles and abstracts, use search to filter the
-                        table.
-                    </p>
-                    {% if numbers is defined %}
-                    <table id="numbers-table" class="table table-sm table-bordered table-striped">
-                        <thead>
-                        <tr>
-                            <th scope="col">#</th>
-                            <th scope="col">Title</th>
-                            <th scope="col">Numbers</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {% for id, url, title, metrics in numbers %}
-                        <tr>
-                            <th scope="row">{{ loop.index }}</th>
-                            <td><a class="link" href="{{ url }}">{{ title }}</a></td>
-                            <td>{{ metrics }}</td>
-                        </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                    {% endif %}
-                    <div class="mt-3" id="feedback-numbers-form"></div>
-                </div>
-            </div>
-            {% endif %}
+    <!-- Back to top button -->
+    <button type="button" id="backToTop" class="btn btn-outline-secondary btn-sm back-to-top" aria-label="Back to top">
+        <i class="bi bi-arrow-up"></i>
+    </button>
 
-            <div class="mt-3 ms-3" id="log">
-                <a href="javascript:void(0);"
-                   class="btn btn-light"
-                   role="button" onclick="export_data();">
-                    Export
-                </a>
-            </div>
-        </main>
-
-        <!-- Back to top button -->
-        <button type="button" id="backToTop" class="btn btn-outline-secondary btn-sm back-to-top" aria-label="Back to top">
-            <i class="bi bi-arrow-up"></i>
-        </button>
-
-        <!--Right spacer removed to allow main content to fill horizontal space-->
-    </div>
+    <!--Right spacer removed to allow main content to fill horizontal space-->
+</div>
 {% endblock %}
 
 {% block scripts_extra %}
@@ -543,14 +539,37 @@
         window.open(url + args + '&jobid=' + jobid, '_blank');
     }
 
-    function papers_callback() { papers_callback_impl(null, null) }
-    function papers_callback_topic(topic) { papers_callback_impl('topic', topic) }
-    function papers_callback_word(word) { papers_callback_impl('word', word) }
-    function papers_callback_author(author) { papers_callback_impl('author', author) }
-    function papers_callback_journal(journal) { papers_callback_impl('journal', journal) }
-    function papers_callback_top_papers() { papers_callback_impl('papers_list', 'top') }
-    function papers_callback_papers_of_the_year() { papers_callback_impl('papers_list', 'year') }
-    function papers_callback_hot_papers() { papers_callback_impl('papers_list', 'hot') }
+    function papers_callback() {
+        papers_callback_impl(null, null)
+    }
+
+    function papers_callback_topic(topic) {
+        papers_callback_impl('topic', topic)
+    }
+
+    function papers_callback_word(word) {
+        papers_callback_impl('word', word)
+    }
+
+    function papers_callback_author(author) {
+        papers_callback_impl('author', author)
+    }
+
+    function papers_callback_journal(journal) {
+        papers_callback_impl('journal', journal)
+    }
+
+    function papers_callback_top_papers() {
+        papers_callback_impl('papers_list', 'top')
+    }
+
+    function papers_callback_papers_of_the_year() {
+        papers_callback_impl('papers_list', 'year')
+    }
+
+    function papers_callback_hot_papers() {
+        papers_callback_impl('papers_list', 'hot')
+    }
 
     function graph_callback() {
         const url = '/graph?query=' + normalize('{{ query }}');
@@ -566,7 +585,7 @@
     $(document).ready(function () {
         // Mark search by default in datatables
         if ($ && $.fn && $.fn.dataTable) {
-            $.extend(true, $.fn.dataTable.defaults, { mark: true });
+            $.extend(true, $.fn.dataTable.defaults, {mark: true});
         }
 
         // Setup datatables (feature-gated by presence of tables to avoid template conditionals in JS)
@@ -578,7 +597,7 @@
         }
         if ($('#numbers-table').length) {
             $('#numbers-table').DataTable({
-                columnDefs: [{ searchable: false, targets: 1 }]
+                columnDefs: [{searchable: false, targets: 1}]
             });
         }
 
@@ -586,6 +605,9 @@
         var word_cloud = JSON.parse(normalize('{{ papers_word_cloud }}'));
         process_word_cloud('papers_word_cloud', $('#papers_word_cloud').outerWidth(), 335, word_cloud, papers_callback_word);
 
+        // Disable formatter for the next section because of injections.
+        // Enable formatter control in File > Settings > Editor > Code Style
+        // @formatter:off
         // Process topics word clouds (rendered by Jinja)
         var wc_id = '';
         {% for (script, div), word_cloud in topics_info_and_word_cloud %}
@@ -593,19 +615,14 @@
             wc_id = 'topic_word_cloud_{{ loop.index }}';
             process_word_cloud(wc_id, $('#' + wc_id).outerWidth(), 335, word_cloud, papers_callback_word);
         {% endfor %}
+        // @formatter:on
 
         var jobid = new URL(window.location).searchParams.get('jobid');
         $('#feedback-jobid').val(jobid);
 
         // Create clickable feedback forms
         if (typeof createClickableFeedBackForm === 'function') {
-            createClickableFeedBackForm("feedback-papers-form", "feedback-papers");
-            createClickableFeedBackForm("feedback-trends-form", "feedback-trends");
-            createClickableFeedBackForm("feedback-network-form", "feedback-network");
-            createClickableFeedBackForm("feedback-topics-form", "feedback-topics");
-            createClickableFeedBackForm("feedback-authors-form", "feedback-authors");
-            createClickableFeedBackForm("feedback-journals-form", "feedback-journals");
-            createClickableFeedBackForm("feedback-numbers-form", "feedback-numbers");
+            createClickableFeedBackForm("feedback-result-form", "feedback-result");
         }
 
         // Delegate: topics "Show as list" buttons
@@ -625,5 +642,5 @@
             });
         }
     });
-    </script>
+</script>
 {% endblock %}
