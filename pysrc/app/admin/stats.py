@@ -32,6 +32,7 @@ FEATURE_NAMES = [feature_name(feature) for feature in FEATURES]
 def prepare_stats_data(logfile):
     return parse_stats_content(open(logfile).readlines())
 
+
 def load_params(line):
     params = {}
     for t in ['args', 'form', 'json']:
@@ -59,7 +60,7 @@ class SearchInfo:
         return self.end - self.start if self.end is not None else None
 
 
-def parse_stats_content(lines):
+def parse_stats_content(lines, test=False):
     search_infos: Dict[str, SearchInfo] = dict()
     terms: List[str] = []
 
@@ -78,6 +79,10 @@ def parse_stats_content(lines):
                  or LOG_PROCESS in line)
                     and not (SUCCESS in line or ERROR in line or EXCEPTION in line)):
                 params = load_params(line)
+                if 'query' in params:
+                    query = params['query']
+                    if 'doi=' not in query and 'id=' not in query:
+                        terms.append(query.replace(',', ' ').replace('[^a-zA-Z0-9]+', ' '))
                 jobid = params['jobid']
                 if not jobid:
                     continue
@@ -106,7 +111,6 @@ def parse_stats_content(lines):
                     continue
                 if jobid not in search_infos:
                     search_infos[jobid] = SearchInfo(jobid, date)
-                terms.append(params['query'].replace(',', ' ').replace('[^a-zA-Z0-9]+', ' '))
                 info = search_infos[jobid]
                 info.type = 'terms'
                 info.status = 'Ok'
@@ -140,7 +144,7 @@ def parse_stats_content(lines):
                         break
 
         except Exception as e:
-            print(e) # Ignore single line error
+            print(e)  # Ignore single line error
 
     result = {}
     search_terms = [info for info in search_infos.values() if info.type == 'terms']
@@ -149,11 +153,11 @@ def parse_stats_content(lines):
     result['paper_searches_total'] = len(search_papers)
 
     # Build timeseries graphs for terms and papers searches
-    if search_terms:
+    if not test and search_terms:
         p = prepare_timeseries([info.start for info in search_terms], 'Terms searches')
         result['terms_searches_plot'] = [components(p)]
 
-    if search_papers:
+    if not test and search_papers:
         p = prepare_timeseries([info.start for info in search_papers], 'Paper searches')
         result['paper_searches_plot'] = [components(p)]
 
@@ -250,9 +254,12 @@ def parse_stats_content(lines):
     # Generate a word cloud
     text = ' '.join(terms).replace(',', ' ').replace('[^a-zA-Z0-9]+', ' ')
     if text:  # Check that string is not empty
-        wc = WordCloud(collocations=False, max_words=100,
-                       width=PLOT_WIDTH, height=WC_HEIGHT, background_color='white', max_font_size=100).generate(text)
-        result['word_cloud'] = PlotPreprocessor.word_cloud_prepare(wc)
+        if not test:
+            wc = WordCloud(collocations=False, max_words=100,
+                           width=PLOT_WIDTH, height=WC_HEIGHT, background_color='white', max_font_size=100).generate(text)
+            result['word_cloud'] = PlotPreprocessor.word_cloud_prepare(wc)
+        else:
+            result['terms'] = terms
 
     return result
 

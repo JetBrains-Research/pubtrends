@@ -62,6 +62,7 @@ EXPECTED_STATS = {'feature_counts': {'Graph': 2, 'Papers': 1, 'Question': 0},
                   'recent': 50,
                   'searches_papers_clicks': 2,
                   'searches_papers_list_shown': 1,
+                  'terms': ['Paper title', 'human microbiome', 'Bla-bla-bla'],
                   'terms_searches_avg_duration': '06:02:16',
                   'terms_searches_features_results': {'Graph': ['+', '+'],
                                                       'Papers': ['+', '-'],
@@ -98,12 +99,12 @@ class TestStats(unittest.TestCase):
     def test_duration(self, seconds, result):
         self.assertEqual(result, duration_seconds(seconds))
 
-    def test_stats(self):
-        content = parse_stats_content(LOG.split('\n'))
+    def test_stats_plots(self):
+        content = parse_stats_content(LOG.split('\n'), test=False)
         self.assertTrue('terms_searches_plot' in content)
         self.assertTrue('paper_searches_plot' in content)
         self.assertTrue('word_cloud' in content)
-        del content['terms_searches_plot']
-        del content['paper_searches_plot']
-        del content['word_cloud']
+
+    def test_stats(self):
+        content = parse_stats_content(LOG.split('\n'), test=True)
         self.assertEqual(EXPECTED_STATS, content)
