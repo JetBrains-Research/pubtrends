@@ -9,8 +9,7 @@ from flask import Flask, url_for, redirect, render_template, request, render_tem
 from flask_caching import Cache
 from pysrc.app.admin import admin_bp, init_admin
 from pysrc.app.api import api_bp
-from pysrc.app.messages import SOMETHING_WENT_WRONG_SEARCH, ERROR_OCCURRED, \
-    SERVICE_LOADING_PREDEFINED_EXAMPLES, SERVICE_LOADING_INITIALIZING
+from pysrc.app.messages import *
 from pysrc.app.predefined import are_predefined_jobs_ready, PREDEFINED_JOBS, is_semantic_predefined, \
     PREDEFINED_TASKS_READY_KEY, is_paper_predefined, is_terms_predefined
 from pysrc.app.reports import load_or_save_result_data, preprocess_string
@@ -95,6 +94,11 @@ def log_request(r):
     v = f'addr:{r.remote_addr} args:{json.dumps(r.args)}'
     if r.method == 'POST':
         v += f' form:{json.dumps(r.form)}'
+    try:
+        if r.json is not None:
+            v += f' json:{json.dumps(r.json)}'
+    except Exception:
+        pass
     return v
 
 
@@ -160,7 +164,7 @@ def bool_to_value(value):
 
 @pubtrends_app.route('/search_terms', methods=['POST'])
 def search_terms():
-    logger.info(f'/search_terms {log_request(request)}')
+    logger.info(f'{LOG_SEARCH_TERMS} {log_request(request)}')
     try:
         query = request.form.get('query')  # Original search query
         source = request.form.get('source')  # Pubmed or Semantic Scholar
@@ -190,16 +194,16 @@ def search_terms():
                                     query=trim_query(query), source=source, sort=sort, limit=limit,
                                     jobid=job.id))
 
-        logger.error(f'/search_terms error {log_request(request)}')
+        logger.error(f'{LOG_SEARCH_TERMS}_{ERROR} {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception as e:
-        logger.exception(f'/search_terms exception {e}')
+        logger.exception(f'{LOG_SEARCH_TERMS}_{EXCEPTION} {log_request(request)} {e}')
         return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
 
 
 @pubtrends_app.route('/search_paper', methods=['POST'])
 def search_paper():
-    logger.info(f'/search_paper {log_request(request)}')
+    logger.info(f'{LOG_SEARCH_PAPER} {log_request(request)}')
     try:
         source = request.form.get('source')  # Pubmed or Semantic Scholar
         key = request.form.get('key')
@@ -214,16 +218,16 @@ def search_paper():
             return redirect(url_for('.process',
                                     query=trim_query(f'{key}={value}'), source=source, sort='', limit=limit,
                                     jobid=job.id))
-        logger.error(f'/search_paper error {log_request(request)}')
+        logger.error(f'{LOG_SEARCH_TERMS} {ERROR} {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception as e:
-        logger.exception(f'/search_paper exception {e}')
+        logger.exception(f'{LOG_SEARCH_PAPER} {EXCEPTION} {log_request(request)} {e}')
         return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
 
 
 @pubtrends_app.route('/search_semantic', methods=['POST'])
 def search_semantic():
-    logger.info(f'/search_semantic {log_request(request)}')
+    logger.info(f'{LOG_SEMANTIC_SEARCH} {log_request(request)}')
     try:
         query = request.form.get('query')  # Original search query
         source = request.form.get('source')  # Pubmed or Semantic Scholar
@@ -238,10 +242,10 @@ def search_semantic():
             return redirect(url_for('.process',
                                     query=trim_query(query), source=source, sort='semantic', limit=limit,
                                     jobid=job.id))
-        logger.error(f'/search_semantic error {log_request(request)}')
+        logger.error(f'{LOG_SEMANTIC_SEARCH} {ERROR} {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception as e:
-        logger.exception(f'/search_semantic exception {e}')
+        logger.exception(f'{LOG_SEMANTIC_SEARCH} {EXCEPTION} {log_request(request)} {e}')
         return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
 
 
@@ -252,22 +256,21 @@ def search_semantic():
 @pubtrends_app.route('/process')
 def process():
     """ Rendering process.html for task being queued or executed at the moment """
+    logger.info(f'{LOG_PROCESS} {log_request(request)}')
     jobid = request.values.get('jobid')
-    if not jobid:
-        logger.error(f'/process error wrong request {log_request(request)}')
-        return render_template_string(SOMETHING_WENT_WRONG_SEARCH)
-
-    query = request.args.get('query')
-    source = request.args.get('source')
-    sort = request.args.get('sort')
-    limit = request.args.get('limit') or PUBTRENDS_CONFIG.show_max_articles_default_value
-
-    return render_template(
-        'process.html',
-        jobid=jobid,
-        query=query, source=source, sort=sort, limit=limit,
-        version=VERSION
-    )
+    if jobid:
+        query = request.args.get('query')
+        source = request.args.get('source')
+        sort = request.args.get('sort')
+        limit = request.args.get('limit') or PUBTRENDS_CONFIG.show_max_articles_default_value
+        return render_template(
+            'process.html',
+            jobid=jobid,
+            query=query, source=source, sort=sort, limit=limit,
+            version=VERSION
+        )
+    logger.error(f'{LOG_PROCESS} {ERROR} {log_request(request)}')
+    return render_template_string(SOMETHING_WENT_WRONG_SEARCH)
 
 
 @pubtrends_app.route('/status/<jobid>')
@@ -282,7 +285,7 @@ def status(jobid):
             return json.dumps(dict(state=job_state, log=job_result['log'],
                                    progress=int(100.0 * job_result['current'] / job_result['total'])))
         elif job_state == 'SUCCESS':
-            logger.info(f'/status success {log_request(request)}')
+            logger.info(f'{LOG_STATUS} {SUCCESS} {log_request(request)}')
             data, _ = job.result
             analysis_type = data['analysis_type']
             query = quote(data['search_query'])
@@ -295,7 +298,7 @@ def status(jobid):
             return json.dumps(dict(state=job_state, progress=100, redirect=href))
         elif job_state == 'FAILURE':
             is_search_error = isinstance(job_result, SearchError)
-            logger.info(f'/status failure. Search error: {is_search_error}. {log_request(request)}')
+            logger.info(f'{LOG_STATUS} {ERROR}. Search error: {is_search_error}. {log_request(request)}')
             return json.dumps(dict(state=job_state, message=str(job_result).replace('\\n', '\n').replace('\\t', '\t'),
                                    search_error=is_search_error))
         elif job_state == 'STARTED' or job_state == 'PENDING':
@@ -306,17 +309,18 @@ def status(jobid):
         else:
             return json.dumps(dict(state='FAILURE', message=f'Illegal task state {job_state}'))
     except Exception as e:
-        logger.exception(f'/status exception {e}')
+        logger.exception(f'{LOG_STATUS} {EXCEPTION} {log_request(request)} {e}')
         return json.dumps(dict(state='FAILURE', message=f'Error checking task status: {e}'))
 
 
 @pubtrends_app.route('/cancel/<jobid>', methods=['POST'])
 def cancel(jobid):
-    logger.info(f'/cancel {log_request(request)}')
+    logger.info(f'{LOG_CANCEL} {log_request(request)}')
     try:
         pubtrends_celery.control.revoke(jobid, terminate=True)
         return json.dumps(dict(state='CANCELLED', message=f'Successfully cancelled task {jobid}'))
     except Exception as e:
+        logger.exception(f'{LOG_CANCEL} {EXCEPTION} {log_request(request)} {e}')
         return json.dumps(dict(state='FAILURE', message=f'Error cancelling task: {e}'))
 
 
@@ -332,11 +336,11 @@ def result():
     try:
         jobid = request.args.get('jobid')
         if not jobid:
-            logger.error(f'/result error wrong request {log_request(request)}')
+            logger.error(f'{LOG_RESULT} {ERROR} {log_request(request)}')
             return render_template_string(SOMETHING_WENT_WRONG_SEARCH)
         data = load_or_save_result_data(pubtrends_celery, jobid)
         if data is not None:
-            logger.info(f'/result success {log_request(request)}')
+            logger.info(f'{LOG_RESULT} {SUCCESS} {log_request(request)}')
             return render_template('result.html',
                                    query=trim_query(data.search_query),
                                    source=data.source,
@@ -346,8 +350,10 @@ def result():
                                    version=VERSION,
                                    is_predefined=True,
                                    **prepare_result_data(PUBTRENDS_CONFIG, data))
+        logger.error(f'{LOG_RESULT} {ERROR} {log_request(request)}')
+        return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception as e:
-        logger.exception(f'/result exception {e}')
+        logger.exception(f'{LOG_RESULT} {EXCEPTION} {log_request(request)} {e}')
         return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
 
 
@@ -361,15 +367,15 @@ def paper():
         if jobid:
             data = load_or_save_result_data(pubtrends_celery, jobid)
             if data is not None:
-                logger.info(f'/paper success {log_request(request)}')
+                logger.info(f'{LOG_PAPER} {SUCCESS} {log_request(request)}')
                 return render_template('paper.html',
                                        **prepare_paper_data(PUBTRENDS_CONFIG, data, pid),
                                        max_graph_size=PUBTRENDS_CONFIG.max_graph_size,
                                        version=VERSION)
-        logger.error(f'/paper error wrong request {log_request(request)}')
+        logger.error(f'{LOG_PAPER} {ERROR} {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception as e:
-        logger.exception(f'/paper exception {e}')
+        logger.exception(f'{LOG_PAPER} {EXCEPTION} {log_request(request)} {e}')
         return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
 
 
@@ -383,23 +389,23 @@ def graph():
         if jobid:
             data = load_or_save_result_data(pubtrends_celery, jobid)
             if data is not None:
-                logger.info(f'/graph success {log_request(request)}')
+                logger.info(f'{LOG_GRAPH} {SUCCESS} {log_request(request)}')
                 return render_template(
                     'graph.html',
                     version=VERSION,
                     **prepare_graph_data(PUBTRENDS_CONFIG, data, pid)
                 )
-        logger.error(f'/graph error wrong request {log_request(request)}')
+        logger.error(f'{LOG_GRAPH} {ERROR} {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception as e:
-        logger.exception(f'/graph exception {e}')
+        logger.exception(f'{LOG_GRAPH} {EXCEPTION} {log_request(request)} {e}')
         return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
 
 
 @pubtrends_app.route('/papers')
 @cache.cached(query_string=True)
 def papers():
-    logger.info(f'/papers {log_request(request)}')
+    logger.info(f'{LOG_PAPERS} {log_request(request)}')
     try:
         jobid = request.args.get('jobid')
         if jobid:
@@ -411,7 +417,7 @@ def papers():
                 journal = request.args.get('journal')
                 papers_list = request.args.get('papers_list')
 
-                logger.info(f'/papers success {log_request(request)}')
+                logger.info(f'{LOG_PAPERS} {SUCCESS} {log_request(request)}')
                 comp, search_string = prepare_search_string(topic, word, author, journal, papers_list)
                 export_name = preprocess_string(f'{data.search_query}-{search_string}')
                 papers_data = prepare_papers_data(
@@ -429,27 +435,30 @@ def papers():
                                        max_year=data.max_year or '',
                                        export_name=export_name,
                                        papers=papers_data)
+        logger.error(f'{LOG_PAPERS} {ERROR} {log_request(request)}')
+        return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception as e:
-        logger.exception(f'/papers exception {e}')
+        logger.exception(f'{LOG_PAPERS} {EXCEPTION} {log_request(request)} {e}')
         return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
 
 
 @pubtrends_app.route('/export/<jobid>', methods=['GET'])
 def export(jobid):
-    logger.info(f'/export {log_request(request)}')
+    logger.info(f'{LOG_EXPORT} {log_request(request)}')
     try:
         data = load_or_save_result_data(pubtrends_celery, jobid)
         if data:
+            logger.info(f'{LOG_EXPORT} {SUCCESS} {log_request(request)}')
             with tempfile.TemporaryDirectory() as tmpdir:
                 name = preprocess_string(f'{data.source}-{data.search_query}')
                 path = os.path.join(tmpdir, f'{name}.json.gz')
                 with gzip.open(path, 'w') as f:
                     f.write(json.dumps(data.to_json()).encode('utf-8'))
                     return send_file(path, as_attachment=True)
-        logger.error(f'/export error {log_request(request)}')
+        logger.error(f'{LOG_EXPORT} {ERROR} {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
     except Exception as e:
-        logger.exception(f'/export exception {e}')
+        logger.exception(f'{LOG_EXPORT} {EXCEPTION} {log_request(request)} {e}')
         return render_template_string(f'<strong>{ERROR_OCCURRED}</strong><br>{e}'), 500
 
 
@@ -459,14 +468,15 @@ def export(jobid):
 
 @pubtrends_app.route('/feedback', methods=['POST'])
 def feedback():
-    logger.info(f'/feedback {log_request(request)}')
+    logger.info(f'{LOG_FEEDBACK} {log_request(request)}')
     jobid = request.form.get('jobid')
     key = request.form.get('key')
     value = request.form.get('value')
     if key and value and jobid:
         logger.info('Feedback ' + json.dumps(dict(key=key, value=value, jobid=jobid)))
+        logger.info(f'{LOG_FEEDBACK} {SUCCESS} {log_request(request)}')
     else:
-        logger.error(f'/feedback error')
+        logger.error(f'{LOG_FEEDBACK} {ERROR} {log_request(request)}')
     return render_template_string('Thanks you for the feedback!'), 200
 
 
@@ -476,25 +486,25 @@ def feedback():
 
 @pubtrends_app.route('/question', methods=['POST'])
 def question():
-    logger.info(f'/question {log_request(request)}')
+    logger.info(f'{LOG_QUESTION} {log_request(request)}')
     try:
         data = request.json
         jobid = data.get('jobid')
         question_text = data.get('question')
 
         if not question_text or not jobid:
-            logger.error(f'/question error: missing question or jobid {log_request(request)}')
+            logger.error(f'{LOG_QUESTION} {ERROR} {log_request(request)}')
             return {'status': 'error', 'message': 'Missing question or jobid'}, 400
 
         # Check if text embeddings are available
         if not is_texts_embeddings_available():
-            logger.error(f'/question error: text embeddings not available {log_request(request)}')
+            logger.error(f'{LOG_QUESTION} {ERROR} {log_request(request)}')
             return {'status': 'error', 'message': 'Text embeddings not available'}, 400
 
         # Load result data
         data = load_or_save_result_data(pubtrends_celery, jobid)
         if data is None:
-            logger.error(f'/question error: no data for jobid {jobid} {log_request(request)}')
+            logger.error(f'{LOG_QUESTION} {ERROR} {log_request(request)}')
             return {'status': 'error', 'message': 'No data found for jobid'}, 404
 
         papers = get_relevant_papers(
@@ -504,9 +514,10 @@ def question():
             PUBTRENDS_CONFIG.questions_threshold,
             PUBTRENDS_CONFIG.questions_top_n
         )
+        logger.info(f'{LOG_QUESTION} {SUCCESS} {log_request(request)}')
         return {'status': 'success', 'papers': papers}, 200
     except Exception as e:
-        logger.exception(f'/question exception {e}')
+        logger.exception(f'{LOG_QUESTION} {EXCEPTION} {log_request(request)} {e}')
         return {'status': 'error', 'message': str(e)}, 500
 
 

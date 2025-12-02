@@ -28,8 +28,9 @@
     Average duration: {{ terms_searches_avg_duration }}<br>
     Papers clicked: {{ searches_papers_clicks }}<br>
     Papers list shown: {{ searches_papers_list_shown }}<br>
-    Graph shown: {{ searches_graph_shown }}<br>
-    Review shown: {{ searches_review_shown }}<br>
+    {% for feature in features %}
+        {{ feature }}: {{ feature_counts[feature] }}<br>
+    {% endfor %}
 
     {% if terms_searches_total > 0 %}
         {% for script, div in terms_searches_plot %}
@@ -67,12 +68,14 @@
                 <th scope="col">Duration</th>
                 <th scope="col">Status</th>
                 <th scope="col">Papers Clicks</th>
-                <th scope="col">Papers List</th>
-                <th scope="col">Graph</th>
+                {% for feature in features %}
+                <th scope="col">{{feature}}</th>
+                {% endfor %}
             </tr>
             </thead>
             <tbody>
-            {% for date, source, query, link, duration, status, papers_clicks, papers_list, graph in terms_searches_recent %}
+            {% set ns = namespace(i=0) %}
+            {% for date, source, query, link, duration, status, papers_clicks in terms_searches_recent %}
                 <tr>
                     <th scope="row">{{ loop.index }}</th>
                     <td>{{ date }}</td>
@@ -83,9 +86,11 @@
                     <td>{{ duration }}</td>
                     <td>{{ status }}</td>
                     <td>{{ papers_clicks }}</td>
-                    <td>{{ papers_list }}</td>
-                    <td>{{ graph }}</td>
+                    {% for feature in features %}
+                    <td>{{ terms_searches_features_results[feature][ns.i] }}</td>
+                    {% endfor %}
                 </tr>
+                {% set ns.i = ns.i + 1 %}
             {% endfor %}
             </tbody>
         </table><small class="form-text text-muted">{{ recent }} recent.</small>
