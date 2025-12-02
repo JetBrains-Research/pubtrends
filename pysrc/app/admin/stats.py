@@ -82,6 +82,8 @@ def parse_stats_content(lines, test=False):
                 if 'query' in params:
                     query = params['query']
                     if 'doi=' not in query and 'id=' not in query:
+                        if 'title=' in query:
+                            query = re.sub('.*title=', '', query)
                         terms.append(query.replace(',', ' ').replace('[^a-zA-Z0-9]+', ' '))
                 jobid = params['jobid']
                 if not jobid:
