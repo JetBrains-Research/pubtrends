@@ -155,13 +155,19 @@ def parse_stats_content(lines, test=False):
     result['paper_searches_total'] = len(search_papers)
 
     # Build timeseries graphs for terms and papers searches
-    if not test and search_terms:
-        p = prepare_timeseries([info.start for info in search_terms], 'Terms searches')
-        result['terms_searches_plot'] = [components(p)]
+    if search_terms:
+        times = [info.start for info in search_terms]
+        if not test:
+            result['terms_searches_plot'] = [components(prepare_timeseries(times, 'Terms searches'))]
+        else:
+            result['terms_searches_plot'] = [t.strftime('%Y-%m-%d %H:%M:%S') for t in times]
 
-    if not test and search_papers:
-        p = prepare_timeseries([info.start for info in search_papers], 'Paper searches')
-        result['paper_searches_plot'] = [components(p)]
+    if search_papers:
+        times = [info.start for info in search_papers]
+        if not test:
+            result['paper_searches_plot'] = [components(prepare_timeseries(times, 'Paper searches'))]
+        else:
+            result['paper_searches_plot'] = [t.strftime('%Y-%m-%d %H:%M:%S') for t in times]
 
     # Terms search statistics
     terms_searches_successful = sum(info.status == 'Ok' for info in search_terms)
