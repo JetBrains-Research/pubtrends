@@ -30,16 +30,17 @@ See example of analysis at: https://pubtrends.info/about.html
 
 PubTrends is a Python / Kotlin + JavaScript web service with a PostgreSQL backend.
 It uses:
-* Backend: Nginx + Flask + Gunicorn
-* Task Queue: Celery + Redis
-* DataBase: Postgres + Kotlin ORM + Psycopg2
-* Data Analysis: Pandas, NumPy, Scikit-learn
-* Semantic Search: Faiss + Postgres pgvector
-* NLP: NLTK, SpaCy, word2vec (GenSim), Fasttext, Sentence-Transformers, custom node2vec
-* Visualization: Bokeh, Holoviews, Seaborn, Matplotlib
-* Frontend: Bootstrap, jQuery, Cytoscape.js
-* Deployment: Docker Compose 
-* Testing: JUnit + PyTest + Flake8 + TeamCity
+* Languages: [Python](https://www.python.org/) + [Kotlin](https://kotlinlang.org/) + [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+* Backend: [Nginx](https://nginx.org/en/index.html) + [Flask](https://flask.palletsprojects.com/en/stable/) + [Gunicorn](https://gunicorn.org/)
+* Task Queue: [Celery](https://docs.celeryq.dev/en/stable/index.html) + [Redis](https://redis.io/)
+* DataBase: [Postgres](https://www.postgresql.org/) + [Postgres pgvector](https://github.com/pgvector/pgvector) + [Psycopg2](https://www.psycopg.org/docs/) + [Kotlin ORM](https://www.jetbrains.com/exposed/)
+* Data Analysis: [Pandas](https://pandas.pydata.org/), [NumPy](https://numpy.org/), [Scikit-learn](https://scikit-learn.org/stable/index.html#)
+* Semantic Search: [Sentence-Tranformers](https://www.sbert.net/) + [Faiss](https://github.com/facebookresearch/faiss)
+* NLP: [NLTK](https://www.nltk.org/), [SpaCy](https://spacy.io/), [GenSim](https://radimrehurek.com/gensim/models/word2vec.html), [Fasttext](https://fasttext.cc/)
+* Visualization: [Bokeh](https://bokeh.org/), [Holoviews](https://holoviews.org/), [Seaborn](https://seaborn.pydata.org/), [Matplotlib](https://matplotlib.org/)
+* Frontend: [Bootstrap](https://getbootstrap.com/), [jQuery](https://jquery.com/), [Cytoscape.js](https://js.cytoscape.org/)
+* Deployment: [Docker Compose](https://docs.docker.com/compose/)
+* Testing: [PyTest](https://docs.pytest.org/en/stable/) + [Flake8](https://flake8.pycqa.org/en/latest/) + [JUnit](https://junit.org/) + [TeamCity](https://www.jetbrains.com/teamcity/)
 
 See [environment.yml](env/environment.yml) for the full list of libraries used in the project.
 
