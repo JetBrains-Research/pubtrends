@@ -51,14 +51,8 @@ EXTRA_ARTICLE = PubmedArticle(
 
 PART_OF_ARTICLES = [REQUIRED_ARTICLES[2], REQUIRED_ARTICLES[3]]
 
-EXPANDED_IDS_DF = pd.DataFrame([
-    [10, 1], [2, 1], [7, 1], [8, 1], [9, 1], [5, 3]],
-    columns=['id', 'total']
-)
-EXPANDED_IDS_DF['id'] = EXPANDED_IDS_DF['id'].astype(str)
-
-EXPANDED_TOP_CITED_5_DF = pd.DataFrame([[10, 1], [2, 1], [8, 1], [9, 1], [5, 3]], columns=['id', 'total'])
-EXPANDED_TOP_CITED_5_DF['id'] = EXPANDED_TOP_CITED_5_DF['id'].astype(str)
+EXPANDED_IDS = ['10', '2', '7', '8', '9', '3', '5', '4']
+EXPANDED_TOP_CITED_3 = ['3', '5', '4']
 
 OUTER_CITATIONS = [
     ('7', '1'), ('7', '2'), ('7', '3'), ('8', '1'), ('8', '3'),

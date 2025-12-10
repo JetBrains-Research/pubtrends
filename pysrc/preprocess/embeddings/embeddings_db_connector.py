@@ -69,7 +69,7 @@ class EmbeddingsDBConnector:
             query = f'''
                         SELECT pmid
                         FROM {self.embeddings_model_name} P
-                        WHERE P.pmid IN (VALUES {vals});
+                        WHERE P.pmid = ANY ('{{{vals}}}'::integer[]);
                         '''
             logger.debug(f'query: {query[:1000]}')
             with connection.cursor() as cursor:
@@ -112,7 +112,7 @@ class EmbeddingsDBConnector:
             with connection.cursor() as cursor:
                 query = f"""
                         SELECT pmid, chunk, embedding FROM {self.embeddings_model_name}
-                        WHERE pmid IN (VALUES {vals})
+                        WHERE pmid = ANY ('{{{vals}}}'::integer[])
                         ORDER BY pmid, chunk;
                 """
                 logger.debug(f'query: {query[:1000]}')

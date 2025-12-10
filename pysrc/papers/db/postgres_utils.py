@@ -3,18 +3,19 @@ import re
 
 import numpy as np
 import pandas as pd
-from nltk import SnowballStemmer
 from scipy.sparse import lil_matrix
 
 from pysrc.papers.db.search_error import SearchError
 
 logger = logging.getLogger(__name__)
 
+
 def ints_to_vals(xs):
-    return ','.join([f'({i})' for i in xs])
+    return ','.join(f'{i}' for i in xs)
+
 
 def strs_to_vals(xs):
-    return ','.join([f'(\'{i}\')' for i in xs])
+    return ','.join(f'(\'{i}\')' for i in xs)
 
 
 def preprocess_quotes(value):
@@ -90,6 +91,7 @@ def preprocess_search_query_for_postgres(query):
     else:
         raise SearchError(f'Illegal search query, please use search terms or '
                           f'all the query wrapped in "" for phrasal search. Query: {query}')
+
 
 def process_cocitations_postgres(cursor):
     data = []

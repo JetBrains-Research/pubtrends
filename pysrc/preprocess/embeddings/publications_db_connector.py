@@ -29,7 +29,7 @@ class PublicationsDBConnector:
         query = f'''
                     SELECT P.pmid as id, title, abstract, type
                     FROM PMPublications P
-                    WHERE P.pmid IN (VALUES {vals});
+                    WHERE P.pmid = ANY ('{{{vals}}}'::integer[]);
                     '''
         with connection.cursor() as cursor:
             cursor.execute(query)
