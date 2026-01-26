@@ -3,7 +3,7 @@ import logging
 from itertools import chain
 
 from pysrc.app.reports import preprocess_string
-from pysrc.config import PubtrendsConfig, VISUALIZATION_GRAPH_EDGES
+from pysrc.config import PubtrendsConfig, VISUALIZATION_GRAPH_EDGES, TOPIC_DESCRIPTION_WORDS
 from pysrc.services.embeddings_service import is_texts_embeddings_available
 from pysrc.papers.analysis.graph import sparse_graph
 from pysrc.papers.analysis.text import get_frequent_tokens
@@ -157,9 +157,7 @@ def prepare_papers_data(
     return result
 
 
-def prepare_paper_data(
-        config: PubtrendsConfig, data: AnalysisData, pid
-):
+def prepare_paper_data(data: AnalysisData, pid):
     logger.debug('Extracting data for the current paper')
     source = data.source
     url_prefix = Loaders.get_url_prefix(source)
@@ -180,9 +178,9 @@ def prepare_paper_data(
     topics_description = get_topics_description(
         data.df,
         data.corpus, data.corpus_tokens, data.corpus_counts,
-        n_words=config.topic_description_words,
+        n_words=TOPIC_DESCRIPTION_WORDS,
     )
-    topic_tags = ','.join(w[0] for w in topics_description[topic - 1][:config.topic_description_words])
+    topic_tags = ','.join(w[0] for w in topics_description[topic - 1][:TOPIC_DESCRIPTION_WORDS])
 
     logger.debug('Computing most cited prior and derivative papers')
     derivative_papers = PlotPreprocessor.get_top_papers_id_title_year_cited_topic(
@@ -251,25 +249,25 @@ def prepare_paper_data(
         topics_description = get_topics_description(
             data.df,
             data.corpus, data.corpus_tokens, data.corpus_counts,
-            n_words=config.topic_description_words,
+            n_words=TOPIC_DESCRIPTION_WORDS,
         )
         logger.debug('Prepare sparse graph to visualize with reduced number of edges')
         visualize_graph = sparse_graph(data.papers_graph, VISUALIZATION_GRAPH_EDGES)
         result['papers_graph'] = components_list(
             Plotter._plot_papers_graph(
-                data.search_ids, source, visualize_graph, data.df, config.topic_description_words,
+                data.search_ids, source, visualize_graph, data.df, TOPIC_DESCRIPTION_WORDS,
                 shown_pid=pid, topics_tags=topics_description
             ))
 
     return result
 
 
-def prepare_graph_data(config: PubtrendsConfig, data: AnalysisData, shown_id=None):
+def prepare_graph_data(data: AnalysisData, shown_id=None):
     logger.debug('Extracting graph data')
     topics_description = get_topics_description(
         data.df,
         data.corpus, data.corpus_tokens, data.corpus_counts,
-        n_words=config.topic_description_words,
+        n_words=TOPIC_DESCRIPTION_WORDS,
     )
     topics_tags = {
         comp: ','.join([w[0] for w in topics_description[comp]]) for comp in sorted(set(data.df['comp']))

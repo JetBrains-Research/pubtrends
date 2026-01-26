@@ -2,9 +2,23 @@ import configparser
 import os
 import re
 
+###################
+# Search settings #
+###################
+SHOW_MAX_ARTICLES_OPTIONS = [200, 1000, 2000]
+SHOW_MAX_ARTICLES_DEFAULT = 1000
+
+# Configure the number and size of topics
+SHOW_TOPICS_OPTIONS = [5, 10, 20]
+SHOW_TOPICS_DEFAULT = 10
+
+# Number of steps in expanding
+PAPER_EXPAND_STEPS = 2
+
 #####################
 ## Analysis config ##
 #####################
+MAX_SEARCH_TIME_SEC = 300
 
 # Postgresql loader options
 MAX_NUMBER_OF_PAPERS = 1000000
@@ -66,6 +80,11 @@ EMBEDDINGS_QUESTIONS_SENTENCE_OVERLAP = 1
 ## Expanding by references ##
 #############################
 
+# Expand the limit by references before filtration by citations and keywords
+PAPER_EXPAND_LIMIT = 5000
+# Fraction of papers to expand by similar papers embeddings
+PAPER_EXPAND_SEMANTIC = 0.25
+
 # Control citation count while expanding
 EXPAND_CITATIONS_Q_LOW = 10
 EXPAND_CITATIONS_Q_HIGH = 90
@@ -100,6 +119,12 @@ WORD2VEC_EPOCHS = 3
 ## Plot config ##
 #################
 
+# Number of top-cited papers to show
+TOP_CITED_PAPERS = 50
+
+# Number of words for topic description
+TOPIC_DESCRIPTION_WORDS = 5
+
 MAX_AUTHOR_LENGTH = 100
 MAX_JOURNAL_LENGTH = 100
 
@@ -116,6 +141,17 @@ WORD_CLOUD_WIDTH = 250
 WORD_CLOUD_HEIGHT = 300
 
 WORD_CLOUD_KEYWORDS = 15
+
+############
+# Features #
+############
+
+POPULAR_AUTHORS = 200
+POPULAR_JOURNALS = 200
+
+QUESTIONS_RELEVANCE_THRESHOLD = 0.5
+QUESTIONS_ANSWERS_TOP_N = 50
+
 
 
 class PubtrendsConfig:
@@ -139,18 +175,21 @@ class PubtrendsConfig:
             raise RuntimeError(f'Configuration file not found among: {self.CONFIG_PATHS}')
         params = config_parser['params']
 
+        # DB config
         self.postgres_host = params['postgres_host' if not test else 'test_postgres_host']
         self.postgres_port = params['postgres_port' if not test else 'test_postgres_port']
         self.postgres_username = params['postgres_username' if not test else 'test_postgres_username']
         self.postgres_password = params['postgres_password' if not test else 'test_postgres_password']
         self.postgres_database = params['postgres_database' if not test else 'test_postgres_database']
 
+        # Embeddings DB config
         self.embeddings_postgres_host = params['embeddings_postgres_host']
         self.embeddings_postgres_port = params['embeddings_postgres_port']
         self.embeddings_postgres_username = params['embeddings_postgres_username']
         self.embeddings_postgres_password = params['embeddings_postgres_password']
         self.embeddings_postgres_database = params['embeddings_postgres_database']
 
+        # Source config
         self.pm_enabled = params.getboolean('pm_enabled')
         self.pm_search_example_terms = [terms.strip() for terms in params['pm_search_example_terms'].split(';')]
         self.pm_paper_examples = [terms.strip().split('=') for terms in params['pm_paper_examples'].split(';')]
@@ -159,47 +198,17 @@ class PubtrendsConfig:
         self.ss_enabled = params.getboolean('ss_enabled')
         self.ss_search_example_terms = [terms.strip() for terms in params['ss_search_example_terms'].split(';')]
 
-        self.max_search_time_sec = params.getint('max_search_time_sec')
-
-        self.max_number_to_expand = params.getint('max_number_to_expand')
-
-        self.show_max_articles_options = [int(opt.strip()) for opt in params['show_max_articles_options'].split(',')]
-        self.show_max_articles_default_value = int(params['show_max_articles_default_value'].strip())
-        self.max_number_of_articles = max(self.show_max_articles_options)
-
-        self.show_topics_options = [int(opt.strip()) for opt in params['show_topics_options'].split(',')]
-        self.show_topics_default_value = int(params['show_topics_default_value'].strip())
-
-        self.max_graph_size = params.getint('max_graph_size')
-
-        self.top_cited_papers = params.getint('top_cited_papers')
-        self.topic_description_words = params.getint('topic_description_words')
-
         # Model name used for embeddings
         self.sentence_transformer_model = params['sentence_transformer_model']
         self.embeddings_model_name = re.sub('[^a-zA-Z0-9]+', '_', self.sentence_transformer_model)
         self.embeddings_dimension = params.getint('embeddings_dimension')
 
-        self.paper_expands_steps = params.getint('paper_expands_steps')
-        self.paper_expand_limit = params.getint('paper_expand_limit')
-        self.paper_expand_semantic = params.getfloat('paper_expand_semantic')
-
         # Additional features configuration
-        self.feature_authors_enabled = params.getboolean('feature_authors_enabled')
-        self.popular_authors = params.getint('popular_authors')
-
-        self.feature_journals_enabled = params.getboolean('feature_journals_enabled')
-        self.popular_journals = params.getint('popular_journals')
-
-        self.feature_numbers_enabled = params.getboolean('feature_numbers_enabled')
-
-        # Questions based on embeddings
-        self.feature_questions_enabled = params.getboolean('feature_questions_enabled')
-        self.questions_threshold = params.getfloat('questions_threshold')
-        self.questions_top_n = params.getint('questions_top_n')
-
-        # Semantic search
         self.feature_semantic_search_enabled = params.getboolean('feature_semantic_search_enabled')
+        self.feature_authors_enabled = params.getboolean('feature_authors_enabled')
+        self.feature_journals_enabled = params.getboolean('feature_journals_enabled')
+        self.feature_numbers_enabled = params.getboolean('feature_numbers_enabled')
+        self.feature_questions_enabled = params.getboolean('feature_questions_enabled')
 
         # Admin bootstrap credentials
         self.admin_email = self._read_secret('ADMIN_EMAIL', params.get('admin_email'))

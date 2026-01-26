@@ -28,8 +28,8 @@ def analyze_search_terms(source, query, sort, limit, noreviews, min_year, max_ye
         analyzer.progress.info(f'Last papers update {last_update}', current=0, task=current_task)
     try:
         sort = sort or SORT_MOST_CITED
-        limit = int(limit) if limit is not None and limit != '' else analyzer.config.show_max_articles_default_value
-        topics = int(topics) if topics is not None and topics != '' else analyzer.config.show_topics_default_value
+        limit = int(limit) if limit is not None and limit != '' else SHOW_MAX_ARTICLES_DEFAULT
+        topics = int(topics) if topics is not None and topics != '' else SHOW_TOPICS_DEFAULT
         ids = analyzer.search_terms(query, limit=limit, sort=sort,
                                     noreviews=noreviews, min_year=min_year, max_year=max_year,
                                     task=current_task)
@@ -49,7 +49,7 @@ def analyze_id_list(source, query, ids, topics, test=False):
     loader = Loaders.get_loader(source, config)
     analyzer = PapersAnalyzer(loader, config)
     sort = SORT_MOST_CITED
-    limit = analyzer.config.show_max_articles_default_value
+    limit = SHOW_MAX_ARTICLES_DEFAULT
     return _analyze_id_list(
         IDS_ANALYSIS_TYPE, analyzer, query, ids, ids, source, sort, limit, False, None, None, topics,
         test=test, task=current_task
@@ -93,13 +93,13 @@ def analyze_search_paper(source, pid, key, value, expand, limit, noreviews, topi
             raise SearchError(f'No papers found with {key}={value}')
 
         analyzer.progress.info('Expanding papers by references and citations', current=1, task=current_task)
-        limit = int(limit) if limit is not None and limit != '' else analyzer.config.show_max_articles_default_value
-        topics = int(topics) if topics is not None and topics != '' else analyzer.config.show_topics_default_value
-        expand = int(expand) if expand is not None and expand != '' else analyzer.config.paper_expands_steps
+        limit = int(limit) if limit is not None and limit != '' else SHOW_MAX_ARTICLES_DEFAULT
+        topics = int(topics) if topics is not None and topics != '' else SHOW_TOPICS_DEFAULT
+        expand = int(expand) if expand is not None and expand != '' else PAPER_EXPAND_STEPS
         ids = expand_ids(loader=analyzer.loader, search_ids=result,
                          expand_steps=expand, limit=limit, noreviews=noreviews,
-                         max_expand=analyzer.config.paper_expand_limit,
-                         semantic_expand=analyzer.config.paper_expand_semantic)
+                         max_expand=PAPER_EXPAND_LIMIT,
+                         semantic_expand=PAPER_EXPAND_SEMANTIC)
         return _analyze_id_list(
             PAPER_ANALYSIS_TYPE,
             analyzer, f'Paper {key}={value}', result,
@@ -120,8 +120,8 @@ def analyze_semantic_search(source, query, limit, noreviews, topics, test=False)
         analyzer.progress.info(f'Last papers update {last_update}', current=0, task=current_task)
     analyzer.progress.info(f"Searching semantic query: {query}, limit {limit}",
                            current=1, task=current_task)
-    limit = int(limit) if limit is not None and limit != '' else analyzer.config.show_max_articles_default_value
-    topics = int(topics) if topics is not None and topics != '' else analyzer.config.show_topics_default_value
+    limit = int(limit) if limit is not None and limit != '' else SHOW_MAX_ARTICLES_DEFAULT
+    topics = int(topics) if topics is not None and topics != '' else SHOW_TOPICS_DEFAULT
     if not is_semantic_search_service_available():
         raise Exception('Semantic search is not available')
     ids = fetch_semantic_search(source, query, noreviews, limit)
@@ -147,8 +147,8 @@ def analyze_pubmed_search(query, sort, limit, topics, test=False):
     analyzer.progress.info(f"Searching Pubmed query: {query}, {sort.lower()} limit {limit}",
                            current=1, task=current_task)
     sort = sort or SORT_MOST_CITED
-    limit = int(limit) if limit is not None and limit != '' else analyzer.config.show_max_articles_default_value
-    topics = int(topics) if topics is not None and topics != '' else analyzer.config.show_topics_default_value
+    limit = int(limit) if limit is not None and limit != '' else SHOW_MAX_ARTICLES_DEFAULT
+    topics = int(topics) if topics is not None and topics != '' else SHOW_TOPICS_DEFAULT
     ids = pubmed_search(query, sort, limit)
     return _analyze_id_list(
         IDS_ANALYSIS_TYPE,

@@ -5,7 +5,7 @@ import pandas as pd
 from pandas.testing import assert_frame_equal
 
 from pysrc.config import *
-from pysrc.papers.analysis.metadata import popular_authors, popular_journals, split_df_list
+from pysrc.papers.analysis.metadata import get_popular_authors, get_popular_journals, split_df_list
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.test.mock_loaders import MockLoader
 
@@ -17,8 +17,8 @@ class TestPaperMetadata(unittest.TestCase):
     def setUpClass(cls):
         cls.analyzer = PapersAnalyzer(MockLoader(), TestPaperMetadata.PUBTRENDS_CONFIG, test=True)
         cls.analyzer.df = df_authors_and_journals
-        cls.author_stats = popular_authors(cls.analyzer.df, cls.analyzer.config.popular_authors)
-        cls.journal_stats = popular_journals(cls.analyzer.df, cls.analyzer.config.popular_journals)
+        cls.author_stats = get_popular_authors(cls.analyzer.df, POPULAR_AUTHORS)
+        cls.journal_stats = get_popular_journals(cls.analyzer.df, POPULAR_JOURNALS)
 
     def test_author_stats_rows(self):
         expected_rows = author_df.shape[0]

@@ -6,7 +6,7 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 
-def popular_journals(df, n):
+def get_popular_journals(df, n):
     """
     Computes journals with the highest summary number of citations of papers
     :param df: Papers dataframe
@@ -29,7 +29,7 @@ def popular_journals(df, n):
     return journal_stats.head(n=n)
 
 
-def popular_authors(df, n):
+def get_popular_authors(df, n):
     """
     Computes authors of the papers with highest summary number of citations
     :param df: Papers dataframe

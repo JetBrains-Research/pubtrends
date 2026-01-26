@@ -16,9 +16,7 @@ from matplotlib import pyplot as plt
 from sklearn.preprocessing import minmax_scale
 from wordcloud import WordCloud
 
-from pysrc.config import PAPERS_PLOT_WIDTH, WORD_CLOUD_WIDTH, WORD_CLOUD_KEYWORDS, WORD_CLOUD_HEIGHT, \
-    PLOT_WIDTH, SHORT_PLOT_HEIGHT, MAX_LINEAR_AXIS, PLOT_HEIGHT, MAX_JOURNAL_LENGTH, MAX_AUTHOR_LENGTH, \
-    TALL_PLOT_HEIGHT, VISUALIZATION_GRAPH_EDGES
+from pysrc.config import *
 from pysrc.papers.analysis.graph import sparse_graph
 from pysrc.papers.analysis.topics import get_topics_description
 from pysrc.papers.plot.geometry import compute_component_boundaries, rescaled_comp_corrds, \
@@ -65,7 +63,7 @@ class Plotter:
         self.topics_description = get_topics_description(
             self.data.df,
             self.data.corpus, self.data.corpus_tokens, self.data.corpus_counts,
-            n_words=max(self.config.topic_description_words, WORD_CLOUD_KEYWORDS),
+            n_words=max(TOPIC_DESCRIPTION_WORDS, WORD_CLOUD_KEYWORDS),
         )
 
         if self.data:
@@ -85,9 +83,9 @@ class Plotter:
         plot_components, data = PlotPreprocessor.component_size_summary_data(
             self.data.df, set(self.data.df['comp']), min_year, max_year
         )
-        kwd_df = PlotPreprocessor.compute_kwds(self.topics_description, self.config.topic_description_words)
+        kwd_df = PlotPreprocessor.compute_kwds(self.topics_description, TOPIC_DESCRIPTION_WORDS)
         return self._plot_topics_years_distribution(
-            self.data.df, kwd_df, plot_components, data, self.config.topic_description_words, min_year, max_year
+            self.data.df, kwd_df, plot_components, data, TOPIC_DESCRIPTION_WORDS, min_year, max_year
         )
 
     def plot_topics_info_and_word_cloud(self):
@@ -272,7 +270,7 @@ class Plotter:
     def topics_hierarchy_with_keywords(self):
         if self.data.dendrogram is None:
             return None
-        kwd_df = PlotPreprocessor.compute_kwds(self.topics_description, self.config.topic_description_words)
+        kwd_df = PlotPreprocessor.compute_kwds(self.topics_description, TOPIC_DESCRIPTION_WORDS)
         return Plotter._plot_topics_hierarchy_with_keywords(
             self.data.df, kwd_df, self.data.df['comp'], self.data.dendrogram
         )
@@ -282,7 +280,7 @@ class Plotter:
         visualize_graph = sparse_graph(self.data.papers_graph, VISUALIZATION_GRAPH_EDGES)
         return Plotter._plot_papers_graph(
             self.data.search_ids, self.data.source, visualize_graph, self.data.df,
-            self.config.topic_description_words, topics_tags=self.topics_description,
+            TOPIC_DESCRIPTION_WORDS, topics_tags=self.topics_description,
             interactive=interactive
         )
 

@@ -10,7 +10,7 @@ from pysrc.papers.analysis.citations import find_top_cited_papers, find_max_gain
 from pysrc.papers.analysis.clustering import cluster_and_sort
 from pysrc.papers.analysis.graph import build_papers_graph, sparse_graph, add_text_similarities_edges, \
     similarity
-from pysrc.papers.analysis.metadata import popular_authors, popular_journals
+from pysrc.papers.analysis.metadata import get_popular_authors, get_popular_journals
 from pysrc.papers.analysis.node2vec import node2vec
 from pysrc.papers.analysis.numbers import extract_numbers
 from pysrc.papers.analysis.text import embeddings, vectorize_corpus, chunks_to_text_embeddings
@@ -49,7 +49,7 @@ class PapersAnalyzer:
     def search_terms(self, query, limit=None, sort=SORT_MOST_CITED,
                      noreviews=True, min_year=None, max_year=None,
                      task=None):
-        limit = limit or self.config.show_max_articles_default_value
+        limit = limit or SHOW_MAX_ARTICLES_DEFAULT
         # Search articles relevant to the terms
         if len(query) == 0:
             raise SearchError('Empty search string, please use search terms or '
@@ -182,7 +182,7 @@ class PapersAnalyzer:
         self.progress.info('Identifying top cited papers',
                            current=self.get_step_and_inc(), task=task)
         logger.debug('Top cited papers')
-        self.top_cited_df = find_top_cited_papers(self.df, self.config.top_cited_papers)
+        self.top_cited_df = find_top_cited_papers(self.df, TOP_CITED_PAPERS)
 
         logger.debug('Top cited papers per year')
         self.max_gain_df = find_max_gain_papers(self.df, self.citation_years)
@@ -195,13 +195,13 @@ class PapersAnalyzer:
         if self.config.feature_authors_enabled:
             self.progress.info("Analyzing authors and groups",
                                current=self.get_step_and_inc(), task=task)
-            self.author_stats = popular_authors(self.df, n=self.config.popular_authors)
+            self.author_stats = get_popular_authors(self.df, n=POPULAR_AUTHORS)
 
         self.journal_stats = None
         if self.config.feature_journals_enabled:
             self.progress.info("Analyzing popular journals",
                                current=self.get_step_and_inc(), task=task)
-            self.journal_stats = popular_journals(self.df, n=self.config.popular_journals)
+            self.journal_stats = get_popular_journals(self.df, n=POPULAR_JOURNALS)
 
         self.numbers_df = None
         if self.config.feature_numbers_enabled:

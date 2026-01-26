@@ -8,7 +8,7 @@ import pandas as pd
 import psycopg2
 
 from pysrc.config import MAX_NUMBER_OF_PAPERS, MAX_NUMBER_OF_CITATIONS, MAX_NUMBER_OF_COCITATIONS, \
-    MAX_NUMBER_OF_BIBLIOGRAPHIC_COUPLING
+    MAX_NUMBER_OF_BIBLIOGRAPHIC_COUPLING, MAX_SEARCH_TIME_SEC
 from pysrc.papers.db.loader import Loader
 from pysrc.papers.db.postgres_connector import PostgresConnector
 from pysrc.papers.db.postgres_utils import preprocess_search_query_for_postgres, \
@@ -148,7 +148,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
             with self.postgres_connection.cursor() as cursor:
                 try:
                     # Wait for execution
-                    timer = threading.Timer(self.config.max_search_time_sec, cancel_query)
+                    timer = threading.Timer(MAX_SEARCH_TIME_SEC, cancel_query)
                     timer.start()
                     cursor.execute(query)
                     df = pd.DataFrame(cursor.fetchall(), columns=['pmid'], dtype=object)

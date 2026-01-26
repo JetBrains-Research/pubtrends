@@ -16,7 +16,7 @@ from pysrc.app.reports import load_or_save_result_data, preprocess_string
 from pysrc.celery.pubtrends_celery import pubtrends_celery
 from pysrc.celery.tasks_main import analyze_search_paper, analyze_search_terms, analyze_pubmed_search, \
     analyze_semantic_search
-from pysrc.config import PubtrendsConfig
+from pysrc.config import *
 from pysrc.papers.db.search_error import SearchError
 from pysrc.papers.plot.plot_app import prepare_graph_data, prepare_papers_data, prepare_paper_data, prepare_result_data, \
     prepare_search_string
@@ -128,13 +128,13 @@ def index():
 
     return render_template('main.html',
                            version=VERSION,
-                           limits=PUBTRENDS_CONFIG.show_max_articles_options,
-                           default_limit=PUBTRENDS_CONFIG.show_max_articles_default_value,
-                           topics_variants=PUBTRENDS_CONFIG.show_topics_options,
-                           default_topics=PUBTRENDS_CONFIG.show_topics_default_value,
-                           expand_variants=range(PUBTRENDS_CONFIG.paper_expands_steps + 1),
-                           default_expand=PUBTRENDS_CONFIG.paper_expands_steps,
-                           max_papers=PUBTRENDS_CONFIG.max_number_of_articles,
+                           limits=SHOW_MAX_ARTICLES_OPTIONS,
+                           default_limit=SHOW_MAX_ARTICLES_DEFAULT,
+                           topics_variants=SHOW_TOPICS_OPTIONS,
+                           default_topics=SHOW_TOPICS_DEFAULT,
+                           expand_variants=range(PAPER_EXPAND_STEPS + 1),
+                           default_expand=PAPER_EXPAND_STEPS,
+                           max_papers=max_number_of_articles,
                            pm_enabled=PUBTRENDS_CONFIG.pm_enabled,
                            ss_enabled=PUBTRENDS_CONFIG.ss_enabled,
                            search_example_message=search_example_message,
@@ -369,7 +369,7 @@ def paper():
             if data is not None:
                 logger.info(f'{LOG_PAPER} {SUCCESS} {log_request(request)}')
                 return render_template('paper.html',
-                                       **prepare_paper_data(PUBTRENDS_CONFIG, data, pid),
+                                       **prepare_paper_data(data, pid),
                                        max_graph_size=PUBTRENDS_CONFIG.max_graph_size,
                                        version=VERSION)
         logger.error(f'{LOG_PAPER} {ERROR} {log_request(request)}')
@@ -393,7 +393,7 @@ def graph():
                 return render_template(
                     'graph.html',
                     version=VERSION,
-                    **prepare_graph_data(PUBTRENDS_CONFIG, data, pid)
+                    **prepare_graph_data(data, pid)
                 )
         logger.error(f'{LOG_GRAPH} {ERROR} {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
@@ -511,8 +511,8 @@ def question():
             data.search_query,
             question_text,
             data,
-            PUBTRENDS_CONFIG.questions_threshold,
-            PUBTRENDS_CONFIG.questions_top_n
+            QUESTIONS_RELEVANCE_THRESHOLD,
+            QUESTIONS_ANSWERS_TOP_N
         )
         logger.info(f'{LOG_QUESTION} {SUCCESS} {log_request(request)}')
         return {'status': 'success', 'papers': papers}, 200
