@@ -7,6 +7,7 @@ tmp
 logs
 
 .gradle
+.venv
 
 *.class
 

@@ -11,17 +11,23 @@ LABEL email="os@jetbrains.com"
 
 USER root
 
-# Install Java 21 and Postgresql 17 & clean apt
-RUN echo "deb http://apt.postgresql.org/pub/repos/apt noble-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
+# Install Java 21 and Postgresql 17 & clean apt in one layer
+RUN apt-get update --fix-missing \
+    && DEBIAN_FRONTEND="noninteractive" apt-get install --no-install-recommends -y \
+        gnupg2 lsb-release wget \
+    && echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
     && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | \
-    sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg \
-    && apt-get update --fix-missing
-RUN DEBIAN_FRONTEND="noninteractive" apt-get install --no-install-recommends -y \
-        openjdk-21-jre-headless \
+    gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg \
+    && mkdir -p /etc/apt/keyrings \
+    && wget -O - https://packages.adoptium.net/artifactory/api/gpg/key/public | tee /etc/apt/keyrings/adoptium.asc \
+    && echo "deb [signed-by=/etc/apt/keyrings/adoptium.asc] https://packages.adoptium.net/artifactory/deb $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/adoptium.list \
+    && apt-get update --fix-missing \
+    && DEBIAN_FRONTEND="noninteractive" apt-get install --no-install-recommends -y \
+        temurin-21-jre \
         postgresql-17 postgresql-client-17 postgresql-contrib-17 postgresql-17-pgvector \
     && apt-get clean \
     && apt-get autoremove -y \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Configure Postgresql
 RUN chmod -R a+w /var/run/postgresql
@@ -48,17 +54,16 @@ EXPOSE 5432
 
 USER user
 
-RUN source activate pubtrends \
-   && pip install torch --index-url https://download.pytorch.org/whl/cpu \
-   && pip install sentence-transformers faiss-cpu
+# Install additional dependencies (use absolute path since ENV PATH may not expand correctly)
+RUN /home/user/.local/bin/uv pip install --no-cache torch --index-url https://download.pytorch.org/whl/cpu \
+   && /home/user/.local/bin/uv pip install --no-cache sentence-transformers faiss-cpu \
+   && rm -rf /home/user/.cache
 
-# Create nescessary folders
-COPY scripts /home/user/pubtrends/scripts/
-RUN bash /home/user/pubtrends/scripts/init.sh
-
-# Download NLKT packages
-RUN source activate pubtrends \
-    && bash /home/user/pubtrends/scripts/nlp.sh
+# Create nescessary folders and download NLTK packages
+COPY --chown=user:pubtrends scripts /home/user/pubtrends/scripts/
+RUN bash /home/user/pubtrends/scripts/init.sh \
+    && bash /home/user/pubtrends/scripts/nlp.sh \
+    && rm -rf /home/user/.cache
 
 # Use `-d` param to launch container as daemon
 CMD /usr/lib/postgresql/17/bin/pg_ctl -D /home/user/postgres start && sleep infinity

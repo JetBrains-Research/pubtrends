@@ -2,7 +2,7 @@
 .gradle/*
 .idea/*
 .pytest_cache/*
+.venv/*
 build/*
 out/*
 **/*.gz
-docker-compose.yml

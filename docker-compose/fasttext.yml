@@ -4,6 +4,8 @@ services:
     build:
       context: ..
       dockerfile: pysrc/app/Dockerfile
+      platforms:
+        - linux/amd64
     restart: always
     ports:
       - "5000:5000"
@@ -22,6 +24,8 @@ services:
     build:
       context: ..
       dockerfile: pysrc/celery/Dockerfile
+      platforms:
+        - linux/amd64
     depends_on:
       - redis
       - embeddings
@@ -41,6 +45,8 @@ services:
     build:
       context: ..
       dockerfile: pysrc/endpoints/embeddings/fasttext/Dockerfile
+      platforms:
+        - linux/amd64
     restart: always
     volumes:
       - ~/.pubtrends:/config:ro

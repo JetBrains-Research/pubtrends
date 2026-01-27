@@ -4,41 +4,37 @@
 # Push to Docker hub
 # docker login -u biolabs && docker push biolabs/pubtrends
 
-FROM ubuntu:24.04
+FROM python:3.10-slim
 
 LABEL author="Oleg Shpynov"
 LABEL email="os@jetbrains.com"
 
-# Install required packages and cleanup
+# Install only essential packages and cleanup in one layer
 RUN DEBIAN_FRONTEND="noninteractive" apt-get update --fix-missing \
     && apt-get install --no-install-recommends -y \
-        build-essential curl bzip2 gnupg2 wget ca-certificates sudo \
+        curl ca-certificates gcc g++ libpq-dev \
     && apt-get clean \
     && apt-get autoremove -y \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Make new user
-RUN groupadd -r pubtrends && useradd -ms /bin/bash -g pubtrends user && usermod -aG sudo user
-# Sudo without password
-RUN echo "user     ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+RUN groupadd -r pubtrends && useradd -ms /bin/bash -g pubtrends user
 
-# Install Conda and create pubtrends conda env
+# Install uv and Python dependencies
 USER user
-RUN curl --location https://repo.anaconda.com/miniconda/Miniconda3-py310_25.1.1-2-Linux-x86_64.sh --output ~/miniconda.sh \
-    && /bin/bash ~/miniconda.sh -b \
-    && rm ~/miniconda.sh
-ENV PATH=/home/user/miniconda3/bin:$PATH
-# Fix shell for conda
-USER root
-RUN ln -snf /bin/bash /bin/sh
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/home/user/.local/bin:$PATH"
 
-USER user
+# Install required dependencies from pyproject.toml
+COPY --chown=user:pubtrends pyproject.toml /home/user/pyproject.toml
+WORKDIR /home/user
+RUN uv venv /home/user/.venv \
+    && uv pip install --no-cache pip tomli \
+    && /home/user/.venv/bin/python -c "import tomli; print(' '.join(tomli.load(open('pyproject.toml', 'rb'))['project']['dependencies']))" > /tmp/deps.txt \
+    && cat /tmp/deps.txt \
+    && uv pip install --no-cache $(cat /tmp/deps.txt) \
+    && rm -rf /home/user/.cache /tmp/deps.txt
 
-# Install required dependencies
-COPY env/environment.yml /home/user/environment.yml
-RUN conda env create -f ~/environment.yml \
-    && conda clean -afy
-
-# Download spacy resources
-RUN source activate pubtrends \
-    && python -m spacy download en_core_web_sm
+ENV PATH="/home/user/.venv/bin:$PATH"
+ENV VIRTUAL_ENV="/home/user/.venv"
+ENV PYTHONUNBUFFERED=1

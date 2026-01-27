@@ -42,7 +42,7 @@ It uses:
 * Deployment: [Docker Compose](https://docs.docker.com/compose/)
 * Testing: [PyTest](https://docs.pytest.org/en/stable/) + [Flake8](https://flake8.pycqa.org/en/latest/) + [JUnit](https://junit.org/) + [TeamCity](https://www.jetbrains.com/teamcity/)
 
-See [environment.yml](env/environment.yml) for the full list of libraries used in the project.
+See [pyproject.toml](pyproject.toml) for the full list of libraries used in the project.
 
 ## Docker
 
@@ -57,11 +57,12 @@ We use [Docker Hub](https://hub.docker.com/) to store built images.
 1. Copy and modify `config.properties` to `~/.pubtrends/config.properties`.\
    Ensure that file contains correct information about the database(s) (url, port, DB name, username and password).
 
-2. Conda environment `pubtrends` can be easily created for launching Jupyter Notebook and Web Service:
+2. Python environment `pubtrends` can be easily created using uv for launching Jupyter Notebook and Web Service:
 
     ```
-    conda env create -f env/environment.yml
-    source activate pubtrends
+    uv venv
+    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+    uv pip install -r pyproject.toml
     ```
 
 3. Build base Docker image `biolabs/pubtrends` and nested image `biolabs/pubtrends-test` for testing.
@@ -237,7 +238,6 @@ the vector DB, and update the Faiss index for fast search.
       -v ~/.pubtrends/faiss:/faiss \
       -it update_embeddings /bin/bash
 
-   source activate pubtrends
    export PYTHONPATH=$PYTHONPATH:$(pwd)
    /bin/bash ~/pubtrends/scripts/nlp.sh
    python pysrc/preprocess/update_embeddings.py
@@ -261,11 +261,12 @@ Then launch web-service or use jupyter notebook for development.
     docker run -p 6379:6379 redis:7.4.2
     ```
 
-3. Configure conda environment `pubtrends`
+3. Configure Python environment with uv
     ```
-    conda env create -f env/environment.yml
+    uv venv
+    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+    uv pip install -r pyproject.toml
     ```
-   Enable environment by command `source activate pubtrends`.
 
 4. Start Celery worker queue
     ```
@@ -288,7 +289,7 @@ or
 python -m pysrc.endpoints.embeddings.sentence_transformer.sentence_transformer_app
 ```
 
-7. Optionally start semantic search service http://localhost:5002/
+7. Optionally, start a semantic search service http://localhost:5002/
     ```
     python -m pysrc.semantic_search.semantic_search_app
     ```
@@ -321,7 +322,7 @@ Notebooks are located under the `/notebooks` folder. Please configure `PYTHONPAT
 3. Python tests with code style check for development (including integration with Kotlin DB writers)
 
     ```
-    source activate pubtrends; pytest pysrc
+    source .venv/bin/activate; pytest pysrc
     ```
 
 4. Python tests within Docker (ensure that `./build/libs/pubtrends-dev.jar` file is present)
@@ -330,7 +331,7 @@ Notebooks are located under the `/notebooks` folder. Please configure `PYTHONPAT
     docker run --rm --platform linux/amd64 --volume=$(pwd):/pubtrends -t biolabs/pubtrends-test /bin/bash -c \
     "/usr/lib/postgresql/17/bin/pg_ctl -D /home/user/postgres start; \
     cd /pubtrends; cp config.properties /home/user/.pubtrends/; \
-    source activate pubtrends; pytest pysrc"
+    pytest pysrc"
     ```
 
 ## Deployment
