@@ -2,7 +2,7 @@ import unittest
 
 from pandas._testing import assert_frame_equal
 
-from pysrc.config import PubtrendsConfig
+from pysrc.config import PubtrendsConfig, SHOW_TOPICS_DEFAULT
 from pysrc.papers.analyzer import PapersAnalyzer
 from pysrc.papers.utils import SORT_MOST_CITED, IDS_ANALYSIS_TYPE
 from pysrc.test.mock_loaders import MockLoader, \
@@ -17,7 +17,7 @@ class TestPapersAnalyzer(unittest.TestCase):
     def setUpClass(cls):
         analyzer = PapersAnalyzer(MockLoader(), PUBTRENDS_CONFIG, test=True)
         ids = analyzer.search_terms(query='query')
-        analyzer.analyze_papers(ids, PUBTRENDS_CONFIG.show_topics_default_value, test=True)
+        analyzer.analyze_papers(ids, SHOW_TOPICS_DEFAULT, test=True)
         cls.data = analyzer.save(IDS_ANALYSIS_TYPE, None, 'query', 'Pubmed', SORT_MOST_CITED, 10, False, None, None)
 
     def test_bibcoupling(self):
@@ -44,7 +44,7 @@ class TestPapersAnalyzerMissingPaper(unittest.TestCase):
         analyzer = PapersAnalyzer(MockLoaderSingle(), PUBTRENDS_CONFIG, test=True)
         good_ids = list(analyzer.search_terms(query='query'))
         analyzer.analyze_papers(
-            good_ids + ['non-existing-id'], PUBTRENDS_CONFIG.show_topics_default_value, test=True
+            good_ids + ['non-existing-id'], SHOW_TOPICS_DEFAULT, test=True
         )
         self.assertEqual(good_ids, list(analyzer.df['id']))
 
@@ -60,7 +60,7 @@ class TestPapersAnalyzerEmpty(unittest.TestCase):
         with self.assertRaises(Exception):
             ids = self.analyzer.search_terms(query='query')
             self.analyzer.analyze_papers(
-                ids, PUBTRENDS_CONFIG.show_topics_default_value, test=True
+                ids, SHOW_TOPICS_DEFAULT, test=True
             )
 
 
