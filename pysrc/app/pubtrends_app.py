@@ -135,7 +135,7 @@ def index():
                            default_topics=SHOW_TOPICS_DEFAULT,
                            expand_variants=range(PAPER_EXPAND_STEPS + 1),
                            default_expand=PAPER_EXPAND_STEPS,
-                           max_papers=max_number_of_articles,
+                           max_papers=MAX_NUMBER_OF_PAPERS,
                            pm_enabled=PUBTRENDS_CONFIG.pm_enabled,
                            ss_enabled=PUBTRENDS_CONFIG.ss_enabled,
                            search_example_message=search_example_message,
