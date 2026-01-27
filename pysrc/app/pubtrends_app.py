@@ -1,12 +1,14 @@
 import gzip
 import json
 import logging
-import os
 import random
 import tempfile
+from urllib.parse import quote
+
 from flask import Flask, url_for, redirect, render_template, request, render_template_string, \
     send_from_directory, send_file
 from flask_caching import Cache
+
 from pysrc.app.admin import admin_bp, init_admin
 from pysrc.app.api import api_bp
 from pysrc.app.messages import *
@@ -26,7 +28,6 @@ from pysrc.services.embeddings_service import is_embeddings_service_available, i
     is_texts_embeddings_available
 from pysrc.services.semantic_search_service import is_semantic_search_service_available
 from pysrc.version import VERSION
-from urllib.parse import quote
 
 PUBTRENDS_CONFIG = PubtrendsConfig(test=False)
 
@@ -346,7 +347,7 @@ def result():
                                    source=data.source,
                                    limit=data.limit,
                                    sort=data.sort or '',
-                                   max_graph_size=PUBTRENDS_CONFIG.max_graph_size,
+                                   max_graph_size=MAX_GRAPH_SIZE,
                                    version=VERSION,
                                    is_predefined=True,
                                    **prepare_result_data(PUBTRENDS_CONFIG, data))

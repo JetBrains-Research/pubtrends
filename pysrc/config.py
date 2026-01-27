@@ -46,6 +46,9 @@ SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN = 2
 # Minimal number of common references, used to reduce papers graph edges count
 SIMILARITY_COCITATION_MIN = 2
 
+# Maximal graph size for analysis
+MAX_GRAPH_SIZE = 10000
+
 # Number of text similarity edges in papers graph
 GRAPH_TEXT_SIMILARITY_EDGES = 100
 
