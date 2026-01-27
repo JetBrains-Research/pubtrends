@@ -5,7 +5,7 @@ from threading import Lock
 from pysrc.app.reports import is_data_saved
 from pysrc.app.reports import load_or_save_result_data
 from pysrc.celery.tasks_main import analyze_search_terms, analyze_semantic_search, analyze_search_paper
-from pysrc.config import PubtrendsConfig
+from pysrc.config import PubtrendsConfig, SHOW_TOPICS_DEFAULT, PAPER_EXPAND_STEPS
 from pysrc.papers.utils import SORT_MOST_CITED
 from pysrc.services.semantic_search_service import is_semantic_search_service_available
 
@@ -98,23 +98,23 @@ def are_predefined_jobs_ready(pubtrends_app, pubtrends_celery):
                             analyze_search_terms.apply_async(
                                 args=[source, query, PREDEFINED_SORT, PREDEFINED_LIMIT, PREDEFINED_NOREVIEWS,
                                       None, None,
-                                      PUBTRENDS_CONFIG.show_topics_default_value,
+                                      SHOW_TOPICS_DEFAULT,
                                       pubtrends_app.config['TESTING']],
                                 task_id=jobid
                                 )
                         elif is_paper_predefined(jobid):
                             key, value = query.split('=')
                             analyze_search_paper.apply_async(
-                                args=[source, None, key, value, PUBTRENDS_CONFIG.paper_expands_steps,
+                                args=[source, None, key, value, PAPER_EXPAND_STEPS,
                                       PREDEFINED_LIMIT,
-                                      PREDEFINED_NOREVIEWS, PUBTRENDS_CONFIG.show_topics_default_value,
+                                      PREDEFINED_NOREVIEWS, SHOW_TOPICS_DEFAULT,
                                       pubtrends_app.config['TESTING']],
                                 task_id=jobid
                             )
                         elif is_semantic_predefined(jobid):
                             analyze_semantic_search.apply_async(
                                 args=[source, query, PREDEFINED_LIMIT, PREDEFINED_NOREVIEWS,
-                                      PUBTRENDS_CONFIG.show_topics_default_value,
+                                      SHOW_TOPICS_DEFAULT,
                                       pubtrends_app.config['TESTING']],
                                 task_id=jobid
                             )
