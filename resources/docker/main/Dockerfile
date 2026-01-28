@@ -30,9 +30,9 @@ COPY --chown=user:pubtrends pyproject.toml /home/user/pyproject.toml
 WORKDIR /home/user
 RUN uv venv /home/user/.venv \
     && uv pip install --no-cache pip tomli \
-    && /home/user/.venv/bin/python -c "import tomli; print(' '.join(tomli.load(open('pyproject.toml', 'rb'))['project']['dependencies']))" > /tmp/deps.txt \
+    && /home/user/.venv/bin/python -c "import tomli; print('\n'.join(tomli.load(open('pyproject.toml', 'rb'))['project']['dependencies']))" > /tmp/deps.txt \
     && cat /tmp/deps.txt \
-    && uv pip install --no-cache $(cat /tmp/deps.txt) \
+    && uv pip install --no-cache -r /tmp/deps.txt \
     && rm -rf /home/user/.cache /tmp/deps.txt
 
 ENV PATH="/home/user/.venv/bin:$PATH"
