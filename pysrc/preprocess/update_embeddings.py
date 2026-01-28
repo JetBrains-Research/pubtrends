@@ -40,7 +40,7 @@ def update_year(
         chunk_df = df.iloc[index_slice]
         texts = [f'{title}. {abstract}' for title, abstract in zip(chunk_df['title'], chunk_df['abstract'])]
         wm.process_compute_and_store_embeddings_work(
-            list(chunk_df['id']), texts, embeddings_model_connector.device == 'cpu'
+            list(chunk_df['pmid']), texts, embeddings_model_connector.device == 'cpu'
         )
     # Finally, process the work left in the queue
     for _ in range(10):
@@ -98,7 +98,7 @@ def update_faiss_index(
         print(f'\rProcessing chunks {index_slice[0]}-{index_slice[-1]}          ', end='')
         chunk_df = df.iloc[index_slice]
         wm.process_load_and_store_embeddings_to_faiss_work(
-            list(list(chunk_df['id'])),
+            list(list(chunk_df['pmid'])),
         )
     # Finally, process the work left in the queue
     for _ in range(10):
@@ -119,9 +119,9 @@ def update_embeddings(
     for year in range(max_year, min_year, - 1):
         print(f'Processing year {year}')
         df = publications_db_connector.load_publications_year(year)
-        pids_to_process = set(embeddings_db_connector.collect_ids_without_embeddings(df['id']))
+        pids_to_process = set(embeddings_db_connector.collect_ids_without_embeddings(df['pmid']))
         print(f'To process {len(pids_to_process)}')
-        df = df[df['id'].isin(pids_to_process)]
+        df = df[df['pmid'].isin(pids_to_process)]
 
         if test_limit_per_year is not None:
             print(f'Limit to {test_limit_per_year}')
@@ -161,7 +161,7 @@ def update_faiss(
 
     for year in range(max_year, min_year, - 1):
         print(f'Processing year {year}')
-        pids_year = publications_db_connector.collect_pids_types_year(year)
+        pids_year = publications_db_connector.collect_pids_year(year)
         pids_year = list(set(pids_year) - set(pids_idx['pmid']))
 
         if test_limit_per_year is not None:
@@ -219,7 +219,8 @@ if __name__ == '__main__':
     faiss_connector = FaissConnector(
         "Pubmed",
         embeddings_model_name=config.embeddings_model_name,
-        embeddings_dimension=config.embeddings_dimension
+        embeddings_dimension=config.embeddings_dimension,
+        create=True
     )
 
     # Call update_embeddings with the initialized connectors and command line arguments

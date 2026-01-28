@@ -22,12 +22,15 @@ else:
 
 
 class FaissConnector:
-    def __init__(self, source, embeddings_model_name, embeddings_dimension, exact=False):
+    def __init__(self, source, embeddings_model_name, embeddings_dimension, create=False, exact=False):
         self.embeddings_dimension = embeddings_dimension
+        self.create = create
         self.exact = exact
         folder_name = re.sub('[^a-zA-Z0-9]', '_', embeddings_model_name)
         self.faiss_dir = f'{faiss_path}/faiss_{source}_{folder_name}'
         if not os.path.exists(self.faiss_dir):
+            if not self.create:
+                raise Exception(f'Faiss directory {self.faiss_dir} does not exist')
             os.makedirs(self.faiss_dir)
         self.faiss_index_file = os.path.expanduser(f'{self.faiss_dir}/embeddings.index')
         self.pids_index_file = os.path.expanduser(f'{self.faiss_dir}/pids.pq')
@@ -49,12 +52,16 @@ class FaissConnector:
             # For accurate search
             faiss_index.nprobe = 200
         else:
+            if not self.create:
+                raise Exception(f'Faiss index file {self.faiss_index_file} does not exist')
             print(f'Creating empty Faiss index {self.faiss_index_file}')
             faiss_index = self.create_faiss()
         if os.path.exists(self.pids_index_file):
             print(f'Loading Ids index from existing file {self.pids_index_file}')
             pids_idx = pd.read_parquet(self.pids_index_file)
         else:
+            if not self.create:
+                raise Exception(f'Ids index file {self.pids_index_file} does not exist')
             pids_idx = pd.DataFrame(data=[], columns=['pmid', 'chunk', 'year', 'noreview'], dtype=int)
             print(f'Creating empty Ids index {self.pids_index_file}')
         self.pids_idx = pids_idx

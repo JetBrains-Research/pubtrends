@@ -1,5 +1,4 @@
 import logging
-import os
 
 import pandas as pd
 import psycopg2
@@ -27,14 +26,14 @@ class PublicationsDBConnector:
             connection.set_session(readonly=True)
         vals = ints_to_vals(pids)
         query = f'''
-                    SELECT P.pmid as id, title, abstract, type
+                    SELECT P.pmid as id, title, abstract, type, year
                     FROM PMPublications P
                     WHERE P.pmid = ANY ('{{{vals}}}'::integer[]);
                     '''
         with connection.cursor() as cursor:
             cursor.execute(query)
             df = pd.DataFrame(cursor.fetchall(),
-                              columns=['id', 'title', 'abstract', 'type'],
+                              columns=['pmid', 'title', 'abstract', 'type', 'year'],
                               dtype=object)
             return df
 
@@ -50,11 +49,11 @@ class PublicationsDBConnector:
             with connection.cursor() as cursor:
                 cursor.execute(query)
                 df = pd.DataFrame(cursor.fetchall(),
-                                  columns=['id', 'title', 'abstract'],
+                                  columns=['pmid', 'title', 'abstract'],
                                   dtype=object)
                 return df
 
-    def collect_pids_types_year(self, year):
+    def collect_pids_year(self, year):
         with psycopg2.connect(self.connection_string) as connection:
             connection.set_session(readonly=True)
             query = f'''SELECT pmid

@@ -1,4 +1,3 @@
-import re
 import logging
 
 from pysrc.config import PubtrendsConfig

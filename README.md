@@ -237,9 +237,11 @@ the vector DB, and update the Faiss index for fast search.
       -v ~/.pubtrends/nltk_data:/home/user/nltk_data \
       -v ~/.pubtrends/faiss:/faiss \
       -it update_embeddings /bin/bash
-
+   
+   uv pip install --no-cache torch --index-url https://download.pytorch.org/whl/cpu
+   uv pip install --no-cache sentence-transformers faiss-cpu
    export PYTHONPATH=$PYTHONPATH:$(pwd)
-   /bin/bash ~/pubtrends/scripts/nlp.sh
+   /bin/bash scripts/nlp.sh
    python pysrc/preprocess/update_embeddings.py
    ```
 

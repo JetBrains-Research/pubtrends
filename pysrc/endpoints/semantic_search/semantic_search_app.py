@@ -13,7 +13,7 @@ semantic_search_app = Flask(__name__)
 #####################
 
 # Deployment and development
-LOG_PATHS = ['/logs', os.path.expanduser('~/.pubtrends/logs')]
+LOG_PATHS = ['/logs', os.path.expanduser('~/.pubk/logs')]
 for p in LOG_PATHS:
     if os.path.isdir(p):
         logfile = os.path.join(p, 'semantic_search_app.log')
@@ -43,25 +43,34 @@ def semantic_search():
     logger.info('Search')
     source = data['source']
     text = data['text']
-    limit = data['limit']
     noreviews = data['noreviews']
-    result = SEMANTIC_SEARCH.search(source, text, noreviews, limit)
-    logger.info(f'Return semantic search results in JSON format')
+    min_year = data.get('minyear', None)
+    max_year = data.get('maxyear', None)
+    limit = data['limit']
+    result = SEMANTIC_SEARCH.search(source, text, noreviews, min_year, max_year, limit)
+    logger.info(f'Return semantic search results in JSON format {len(result)}')
     return json.dumps(result)
 
 
 @semantic_search_app.route('/semantic_search_embeddings', methods=['GET'])
 def semantic_search_embeddings():
     # Please ensure that already initialized. Otherwise, model loading may take some time
-    data = request.get_json()
-    logger.info('Search embeddings')
-    source = data['source']
-    embeddings = json.loads(data['embeddings'])
-    noreviews = data['noreviews']
-    limit = data['limit']
-    result = SEMANTIC_SEARCH.search_embeddings(source, embeddings, noreviews, limit)
-    logger.info(f'Return semantic search results in JSON format')
-    return json.dumps(result)
+    try:
+        data = request.get_json()
+        logger.info('Search embeddings')
+        logger.info(f'Request data keys: {list(data.keys())}')
+        source = data['source']
+        embeddings = json.loads(data['embeddings'])
+        noreviews = data['noreviews']
+        min_year = data.get('minyear', None)
+        max_year = data.get('maxyear', None)
+        limit = data['limit']
+        result = SEMANTIC_SEARCH.search_embeddings(source, embeddings, noreviews, min_year, max_year, limit)
+        logger.info(f'Return semantic search results in JSON format {len(result)}')
+        return json.dumps(result)
+    except Exception as e:
+        logger.error(f'Error in semantic_search_embeddings: {e}', exc_info=True)
+        return json.dumps({'error': str(e)}), 500
 
 
 @semantic_search_app.route('/', methods=['GET'])
@@ -76,4 +85,4 @@ def get_app():
 
 # With debug=True, the Flask server will auto-reload on changes
 if __name__ == '__main__':
-    semantic_search_app.run(host='0.0.0.0', debug=False, port=5002)
+    semantic_search_app.run(host='0.0.0.0', debug=True, port=5002)
