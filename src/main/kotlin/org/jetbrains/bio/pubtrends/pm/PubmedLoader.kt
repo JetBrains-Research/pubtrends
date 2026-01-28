@@ -88,13 +88,11 @@ object PubmedLoader {
                             while (isUpdateRequired) {
                                 try {
                                     LOG.info("Init Pubmed processor")
-                                    val pubmedXMLParser =
-                                        PubmedXMLParser(dbWriter, config["loader_batch_size"].toString().toInt())
+                                    val pubmedXMLParser = PubmedXMLParser(dbWriter, 10_000)
 
                                     LOG.info("Init crawler")
-                                    val collectStats = config["loader_collect_stats"].toString().toBoolean()
                                     val pubmedCrawler = PubmedCrawler(
-                                        pubmedXMLParser, collectStats,
+                                        pubmedXMLParser, true,
                                         pubmedStatsFile, pubmedLastIdFile
                                     )
 
@@ -123,7 +121,7 @@ object PubmedLoader {
                         dbRetry = 1
                     }
                 } catch (e: Exception) {
-                    LOG.error("Database connection error, retrying in $WAIT_TIME seconds...")
+                    LOG.error("Database connection error, retrying in $WAIT_TIME seconds...", e)
                     dbWriter.close()
                     if (dbRetry > MAX_DB_RETRIES) {
                         LOG.error("Database connection error, maximum retries reached.")

@@ -70,14 +70,13 @@ object SemanticScholarLoader {
 
                 if (options.has("fillDatabase")) {
                     val statsFile = settingsRoot.resolve("semantic_scholar_stats.tsv")
-                    val collectStats = config["loader_collect_stats"].toString().toBoolean()
 
                     val file = File(options.valueOf("fillDatabase").toString())
                     LOG.info("Started parsing articles $file")
                     SemanticScholarArchiveParser(
                         dbWriter, file,
-                        config["loader_batch_size"].toString().toInt(),
-                        collectStats,
+                        10_000,
+                        true,
                         statsFile
                     ).parse()
                     LOG.info("Finished parsing articles")
