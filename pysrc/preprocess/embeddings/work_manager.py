@@ -47,33 +47,42 @@ class WorkManager:
         self.chunks_queue.put((chunks, chunk_idx))
 
     def compute_embeddings_work(self):
-        try:
-            chunks, chunk_idx = self.chunks_queue.get_nowait()  # Non-blocking
-            chunk_embeddings = self.embeddings_model_connector.batch_texts_embeddings(chunks)
-            self.embeddings_queue.put((chunk_embeddings, chunk_idx))
-        except queue.Empty:
-            pass
+        while True:
+            try:
+                chunks, chunk_idx = self.chunks_queue.get(timeout=1)  # Blocking with timeout
+                if chunks is None:  # Sentinel value
+                    break
+                chunk_embeddings = self.embeddings_model_connector.batch_texts_embeddings(chunks)
+                self.embeddings_queue.put((chunk_embeddings, chunk_idx))
+            except queue.Empty:
+                continue
 
     def store_embeddings_work(self):
-        try:
-            chunk_embeddings, chunk_idx = self.embeddings_queue.get_nowait()  # Non-blocking
-            if self.embeddings_db_connector is not None:
-                self.embeddings_db_connector.store_embeddings_to_postgresql(chunk_embeddings, chunk_idx)
-            if self.faiss_connector is not None:
-                self.faiss_connector.store_embeddings(chunk_embeddings, chunk_idx)
-        except queue.Empty:
-            pass
+        while True:
+            try:
+                chunk_embeddings, chunk_idx = self.embeddings_queue.get(timeout=1)  # Blocking with timeout
+                if chunk_embeddings is None:  # Sentinel value
+                    break
+                if self.embeddings_db_connector is not None:
+                    self.embeddings_db_connector.store_embeddings_to_postgresql(chunk_embeddings, chunk_idx)
+                if self.faiss_connector is not None:
+                    self.faiss_connector.store_embeddings(chunk_embeddings, chunk_idx)
+            except queue.Empty:
+                continue
 
     def compute_embeddings_and_store_work(self):
-        try:
-            chunks, chunk_idx = self.chunks_queue.get_nowait()  # Non-blocking
-            chunk_embeddings = self.embeddings_model_connector.batch_texts_embeddings(chunks)
-            if self.embeddings_db_connector is not None:
-                self.embeddings_db_connector.store_embeddings_to_postgresql(chunk_embeddings, chunk_idx)
-            if self.faiss_connector is not None:
-                self.faiss_connector.store_embeddings(chunk_embeddings, chunk_idx)
-        except queue.Empty:
-            pass
+        while True:
+            try:
+                chunks, chunk_idx = self.chunks_queue.get(timeout=1)  # Blocking with timeout
+                if chunks is None:  # Sentinel value
+                    break
+                chunk_embeddings = self.embeddings_model_connector.batch_texts_embeddings(chunks)
+                if self.embeddings_db_connector is not None:
+                    self.embeddings_db_connector.store_embeddings_to_postgresql(chunk_embeddings, chunk_idx)
+                if self.faiss_connector is not None:
+                    self.faiss_connector.store_embeddings(chunk_embeddings, chunk_idx)
+            except queue.Empty:
+                continue
 
     def process_compute_and_store_embeddings_work(self, pids, texts, cpu):
         assert self.publications_db_connector is not None
@@ -95,6 +104,12 @@ class WorkManager:
         # Start the threads
         for t in threads:
             t.start()
+        # Send sentinel values to stop worker threads
+        if cpu:
+            self.chunks_queue.put((None, None))
+        else:
+            self.chunks_queue.put((None, None))
+            self.embeddings_queue.put((None, None))
         # Wait for both threads to complete
         for t in threads:
             t.join()
@@ -107,11 +122,14 @@ class WorkManager:
 
 
     def store_embeddings_to_faiss_work(self):
-        try:
-            chunk_embeddings, chunk_idx = self.embeddings_queue.get_nowait()  # Non-blocking
-            self.faiss_connector.store_embeddings(chunk_embeddings, chunk_idx)
-        except queue.Empty:
-            pass
+        while True:
+            try:
+                chunk_embeddings, chunk_idx = self.embeddings_queue.get(timeout=1)  # Blocking with timeout
+                if chunk_embeddings is None:  # Sentinel value
+                    break
+                self.faiss_connector.store_embeddings(chunk_embeddings, chunk_idx)
+            except queue.Empty:
+                continue
 
     def process_load_and_store_embeddings_to_faiss_work(self, pids):
         assert self.publications_db_connector is not None
@@ -125,6 +143,8 @@ class WorkManager:
         # Start the threads
         for t in threads:
             t.start()
+        # Send sentinel value to stop worker thread
+        self.embeddings_queue.put((None, None))
         # Wait for both threads to complete
         for t in threads:
             t.join()
