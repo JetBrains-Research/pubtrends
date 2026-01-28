@@ -4,8 +4,7 @@ import numpy as np
 
 from pysrc.config import *
 from pysrc.papers.analysis.text import fetch_embeddings_from_db, embeddings_from_service, chunks_to_text_embeddings
-from pysrc.services.embeddings_service import is_embeddings_service_ready, is_texts_embeddings_available, \
-    is_embeddings_db_available
+from pysrc.services.embeddings_service import is_texts_embeddings_available, is_embeddings_db_available
 from pysrc.services.semantic_search_service import is_semantic_search_service_available, \
     fetch_semantic_search_embeddings
 
@@ -59,9 +58,7 @@ def expand_ids(
             )
 
     ids = search_ids.copy()
-    if (is_semantic_search_service_available() and
-            is_embeddings_service_ready() and
-            is_texts_embeddings_available()):
+    if is_semantic_search_service_available() and is_texts_embeddings_available():
         logger.debug(f'Step 0/{expand_steps} - expand by similar papers embeddings')
         df = loader.load_publications(search_ids)
         chunks_embeddings, chunks_idx =\

@@ -10,10 +10,14 @@ services:
     ports:
       - "5000:5000"
     depends_on:
-      - redis
-      - embeddings
-      - celery
-      - semantic
+      redis:
+        condition: service_healthy
+      embeddings:
+        condition: service_healthy
+      semantic:
+        condition: service_healthy
+      celery:
+        condition: service_started
     volumes:
       - ~/.pubtrends:/config:ro
       - ~/.pubtrends/logs:/logs
@@ -28,8 +32,10 @@ services:
       platforms:
         - linux/amd64
     depends_on:
-      - redis
-      - embeddings
+      redis:
+        condition: service_healthy
+      embeddings:
+        condition: service_healthy
     volumes:
       - ~/.pubtrends:/config:ro
       - ~/.pubtrends/logs:/logs
@@ -75,7 +81,8 @@ services:
         - linux/amd64
     restart: always
     depends_on:
-      - embeddings
+      embeddings:
+        condition: service_healthy
     volumes:
       - ~/.pubtrends:/config:ro
       - ~/.pubtrends/logs:/logs

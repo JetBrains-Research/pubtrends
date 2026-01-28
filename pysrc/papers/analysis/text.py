@@ -20,8 +20,8 @@ from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from pysrc.config import WORD2VEC_EMBEDDINGS_LENGTH, WORD2VEC_WINDOW, WORD2VEC_EPOCHS, EMBEDDINGS_CHUNK_SIZE, \
     EMBEDDINGS_SENTENCE_OVERLAP
 from pysrc.services.embeddings_service import is_embeddings_db_available
-from pysrc.services.embeddings_service import is_embeddings_service_ready, is_texts_embeddings_available, \
-    fetch_texts_embedding, fetch_tokens_embeddings, load_embeddings_from_df
+from pysrc.services.embeddings_service import is_texts_embeddings_available, fetch_texts_embedding, \
+    fetch_tokens_embeddings, load_embeddings_from_df
 
 NLP = spacy.load("en_core_web_sm")
 
@@ -183,15 +183,14 @@ def _train_word2vec(corpus, corpus_tokens, vector_size=WORD2VEC_EMBEDDINGS_LENGT
 
 def embeddings(df, corpus, corpus_tokens, corpus_counts, test=False):
     if not test:
-        if is_embeddings_service_ready():
-            if is_texts_embeddings_available():
+        if is_texts_embeddings_available():
 
-                # Fetching text embeddings from database
-                if is_embeddings_db_available():
-                    return fetch_embeddings_from_db(df)
+            # Fetching text embeddings from database
+            if is_embeddings_db_available():
+                return fetch_embeddings_from_db(df)
 
-                # Compute text embeddings from texts
-                return embeddings_from_service(df)
+            # Compute text embeddings from texts
+            return embeddings_from_service(df)
 
         # Fallback to tokens embeddings
         tokens_embs = fetch_tokens_embeddings(corpus_tokens)

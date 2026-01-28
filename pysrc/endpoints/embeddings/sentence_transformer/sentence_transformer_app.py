@@ -1,12 +1,10 @@
 import json
 import logging
 import os
-import threading
 
 from flask import Flask, request
 
-from pysrc.endpoints.embeddings.sentence_transformer.sentence_transformer import SENTENCE_TRANSFORMER_MODEL_CACHE, \
-    SENTENCE_TRANSFORMER_MODEL_CACHE_LOCK
+from pysrc.endpoints.embeddings.sentence_transformer.sentence_transformer import SENTENCE_TRANSFORMER_MODEL
 
 sentence_transformer_app = Flask(__name__)
 
@@ -38,40 +36,12 @@ if __name__ != '__main__':
 logger = sentence_transformer_app.logger
 
 
-def init_sentence_transformer_model():
-    logger.info('Prepare embeddings pretrained model')
-    # noinspection PyUnusedLocal
-    loaded_model = SENTENCE_TRANSFORMER_MODEL_CACHE.download_and_load_model
-    logger.info('Model is ready')
-    sentence_transformer_app.config['LOADED'] = True
-    return loaded_model
-
-
-@sentence_transformer_app.route('/check', methods=['GET'])
-def check():
-    if sentence_transformer_app.config.get('LOADED', False):
-        return json.dumps(True)
-    if sentence_transformer_app.config.get('LOADING', False):
-        return json.dumps(False)
-    try:
-        SENTENCE_TRANSFORMER_MODEL_CACHE_LOCK.acquire()
-        if sentence_transformer_app.config.get('LOADED', False):
-            return json.dumps(True)
-        if sentence_transformer_app.config.get('LOADING', False):
-            return json.dumps(False)
-        sentence_transformer_app.config['LOADING'] = True
-        threading.Thread(target=init_sentence_transformer_model, daemon=True).start()
-        return json.dumps(False)
-    finally:
-        SENTENCE_TRANSFORMER_MODEL_CACHE_LOCK.release()
-
-
 @sentence_transformer_app.route('/embeddings_texts', methods=['GET'])
 def embeddings_texts():
     # Please ensure that already initialized. Otherwise, model loading may take some time
     texts = request.get_json()
     logger.info('Computing texts embeddings')
-    embeddings = SENTENCE_TRANSFORMER_MODEL_CACHE.encode(texts).tolist()
+    embeddings = SENTENCE_TRANSFORMER_MODEL.encode(texts).tolist()
     # Even if /check wasn't invoked, mark the model as ready
     sentence_transformer_app.config['LOADED'] = True
     logger.info(f'Return embeddings in JSON format')
@@ -80,7 +50,7 @@ def embeddings_texts():
 
 @sentence_transformer_app.route('/', methods=['GET'])
 def index():
-    return f'Embedding with Sequence Transformer model {SENTENCE_TRANSFORMER_MODEL_CACHE.model_name}'
+    return f'Embedding with Sequence Transformer model {SENTENCE_TRANSFORMER_MODEL.model_name}'
 
 
 # Application

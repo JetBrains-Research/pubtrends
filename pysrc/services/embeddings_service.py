@@ -25,22 +25,6 @@ def is_embeddings_service_available():
         return False
 
 
-def is_embeddings_service_ready():
-    logger.debug(f'Check if embeddings service endpoint is ready')
-    try:
-        r = requests.request(url=EMBEDDINGS_SERVICE_URL, method='GET')
-        if r.status_code != 200:
-            return False
-        r = requests.request(url=f'{EMBEDDINGS_SERVICE_URL}/check', method='GET',
-                             headers={'Accept': 'application/json'})
-        if r.status_code != 200 or r.json() is not True:
-            return False
-        return True
-    except Exception as e:
-        logger.debug(f'Embeddings service is not ready: {e}')
-        return False
-
-
 def fetch_tokens_embeddings(tokens):
     # Don't use the model as is, since each celery process will load its own copy.
     # Shared model is available via additional service with a single model.

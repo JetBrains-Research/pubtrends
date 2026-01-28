@@ -111,6 +111,7 @@ def are_predefined_jobs_ready(pubtrends_app, pubtrends_celery):
                         elif is_semantic_predefined(jobid):
                             analyze_semantic_search.apply_async(
                                 args=[source, query, PREDEFINED_LIMIT, PREDEFINED_NOREVIEWS,
+                                      None, None,
                                       SHOW_TOPICS_DEFAULT,
                                       pubtrends_app.config['TESTING']],
                                 task_id=jobid

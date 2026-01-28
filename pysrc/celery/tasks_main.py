@@ -111,20 +111,27 @@ def analyze_search_paper(source, pid, key, value, expand, limit, noreviews, topi
         loader.close_connection()
 
 @pubtrends_celery.task(name='analyze_semantic_search')
-def analyze_semantic_search(source, query, limit, noreviews, topics, test=False):
+def analyze_semantic_search(source, query, limit, noreviews, min_year, max_year, topics, test=False):
     config = PubtrendsConfig(test=test)
     loader = Loaders.get_loader('Pubmed', config)
     analyzer = PapersAnalyzer(loader, config)
     last_update = analyzer.loader.last_update()
     if last_update is not None:
         analyzer.progress.info(f'Last papers update {last_update}', current=0, task=current_task)
-    analyzer.progress.info(f"Searching semantic query: {query}, limit {limit}",
+    restrictions = ""
+    if noreviews:
+        restrictions += f", no reviews"
+    if min_year:
+        restrictions += f", min year {min_year}"
+    if max_year:
+        restrictions += f", max year {max_year}"
+    analyzer.progress.info(f"Searching semantic query: {query}{restrictions}, limit {limit}",
                            current=1, task=current_task)
     limit = int(limit) if limit is not None and limit != '' else SHOW_MAX_ARTICLES_DEFAULT
     topics = int(topics) if topics is not None and topics != '' else SHOW_TOPICS_DEFAULT
     if not is_semantic_search_service_available():
         raise Exception('Semantic search is not available')
-    ids = fetch_semantic_search(source, query, noreviews, limit)
+    ids = fetch_semantic_search(source, query, noreviews, min_year, max_year, limit)
     if ids is None:
         raise Exception('Failed to fetch semantic search results')
     return _analyze_id_list(

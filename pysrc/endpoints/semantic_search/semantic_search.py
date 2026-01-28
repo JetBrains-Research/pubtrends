@@ -6,7 +6,6 @@ import pandas as pd
 
 from pysrc.config import PubtrendsConfig
 from pysrc.faiss.faiss_connector import FaissConnector
-from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.utils import l2norm
 from pysrc.preprocess.embeddings.publications_db_connector import PublicationsDBConnector
 from pysrc.services.embeddings_service import fetch_texts_embedding
@@ -58,8 +57,8 @@ class SemanticSearch:
         result = result[:n]
         logger.info(f'Final result after limiting to {n}: {len(result)} papers')
 
-        # Return list of [pmid, similarity] pairs
-        return [[int(row['pmid']), float(row['similarity'])] for _, row in result.iterrows()]
+        # Return list of [pmid]
+        return result['pmid'].tolist()
 
     def search_embeddings(self, source, embeddings, noreviews, min_year, max_year, n):
         # Only Pubmed is supported for now
@@ -76,8 +75,8 @@ class SemanticSearch:
         result = result[:n]
         logger.info(f'Final result after limiting to {n}: {len(result)} papers')
 
-        # Return list of [pmid, similarity] pairs
-        return [[int(row['pmid']), float(row['similarity'])] for _, row in result.iterrows()]
+        # Return list of [pmid]
+        return result['pmid'].tolist()
 
     @cache
     def _load_faiss_and_index(self):
@@ -101,7 +100,7 @@ class SemanticSearch:
 
     @staticmethod
     def _filter_results(result, noreviews, max_year, min_year):
-        if not(noreviews or min_year is not None or max_year is not None):
+        if not (noreviews or min_year is not None or max_year is not None):
             return result
         connector = PublicationsDBConnector()
         pmids = result['pmid'].tolist()
@@ -114,7 +113,8 @@ class SemanticSearch:
 
         if min_year is not None or max_year is not None:
             filtered_years = set(
-                df[df['year'].between(min_year if min_year else 0, max_year if max_year else 9999)]['pmid'])
+                df[df['year'].between(int(min_year) if min_year else 0,
+                                      int(max_year) if max_year else 9999)]['pmid'])
             result = result[result['pmid'].isin(filtered_years)]
             logger.info(f'After filtered years: {len(result)} papers')
 

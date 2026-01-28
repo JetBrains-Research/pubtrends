@@ -11,10 +11,6 @@ logger = logging.getLogger(__name__)
 class EmbeddingsModelConnector:
     def __init__(self):
         self.sentence_transformer_model = SentenceTransformerModel()
-        # Init lazy model
-        # noinspection PyStatementEffect
-        self.sentence_transformer_model.download_and_load_model
-
         self.text_embedding = lambda t: self.sentence_transformer_model.encode(t)
         self.batch_texts_embeddings = lambda t: self.sentence_transformer_model.encode(t)
         self.device = self.sentence_transformer_model.device

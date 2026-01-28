@@ -25,12 +25,14 @@ def is_semantic_search_service_available():
         return False
 
 
-def fetch_semantic_search(source, text, noreviews, limit):
+def fetch_semantic_search(source, text, noreviews, min_year, max_year, limit):
     logger.debug(f'Fetching semantic search results')
     args = dict(
         source=source,
         text=text,
         noreviews=noreviews,
+        minyear=min_year,
+        maxyear=max_year,
         limit=limit
     )
     try:

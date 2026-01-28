@@ -24,8 +24,7 @@ from pysrc.papers.plot.plot_app import prepare_graph_data, prepare_papers_data, 
     prepare_search_string
 from pysrc.papers.questions.questions import get_relevant_papers
 from pysrc.papers.utils import trim_query, IDS_ANALYSIS_TYPE, PAPER_ANALYSIS_TYPE
-from pysrc.services.embeddings_service import is_embeddings_service_available, is_embeddings_service_ready, \
-    is_texts_embeddings_available
+from pysrc.services.embeddings_service import is_embeddings_service_available, is_texts_embeddings_available
 from pysrc.services.semantic_search_service import is_semantic_search_service_available
 from pysrc.version import VERSION
 
@@ -106,7 +105,7 @@ def log_request(r):
 @pubtrends_app.route('/')
 @cache.cached(unless=lambda: not pubtrends_app.config.get(PREDEFINED_TASKS_READY_KEY, False))
 def index():
-    if is_embeddings_service_available() and not is_embeddings_service_ready():
+    if not (is_embeddings_service_available() and is_semantic_search_service_available()):
         return render_template('init.html', version=VERSION, message=SERVICE_LOADING_INITIALIZING)
     if not are_predefined_jobs_ready(pubtrends_app, pubtrends_celery):
         return render_template('init.html', version=VERSION, message=SERVICE_LOADING_PREDEFINED_EXAMPLES)
@@ -234,10 +233,13 @@ def search_semantic():
         source = request.form.get('source')  # Pubmed or Semantic Scholar
         limit = request.form.get('limit')  # Limit
         noreviews = value_to_bool(request.form.get('noreviews'))
+        min_year = request.form.get('min_year')  # Minimal year of publications
+        max_year = request.form.get('max_year')  # Maximal year of publications
         topics = request.form.get('topics')  # Topics sizes
         if query and source and limit and topics:
             job = analyze_semantic_search.delay(
                 source, query=query, limit=int(limit), noreviews=noreviews,
+                min_year=min_year, max_year=max_year,
                 topics=topics, test=pubtrends_app.config['TESTING']
             )
             return redirect(url_for('.process',

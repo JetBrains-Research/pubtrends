@@ -1,6 +1,5 @@
 import logging
 import os
-from threading import Lock
 
 import torch
 from lazy import lazy
@@ -32,6 +31,8 @@ class SentenceTransformerModel:
             self.device = 'cpu'
 
         self.model_name = PubtrendsConfig().sentence_transformer_model
+        # noinspection PyStatementEffect
+        self.download_and_load_model
 
     @lazy
     def download_and_load_model(self):
@@ -50,6 +51,6 @@ class SentenceTransformerModel:
                 texts, batch_size=max_workers, device=self.device, show_progress_bar=show_progress_bar
             )
 
-SENTENCE_TRANSFORMER_MODEL_CACHE = SentenceTransformerModel()
-
-SENTENCE_TRANSFORMER_MODEL_CACHE_LOCK = Lock()
+logger.info('Prepare embeddings pretrained model')
+SENTENCE_TRANSFORMER_MODEL = SentenceTransformerModel()
+logger.info('Model is ready')
