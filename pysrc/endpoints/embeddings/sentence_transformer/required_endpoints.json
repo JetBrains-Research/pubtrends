@@ -1,5 +1,4 @@
 [
   {"path": "/", "methods": ["GET"]},
-  {"path": "/check", "methods": ["GET"]},
   {"path": "/embeddings_texts", "methods": ["GET"]}
 ]
