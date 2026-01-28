@@ -373,7 +373,7 @@ def paper():
                 logger.info(f'{LOG_PAPER} {SUCCESS} {log_request(request)}')
                 return render_template('paper.html',
                                        **prepare_paper_data(data, pid),
-                                       max_graph_size=PUBTRENDS_CONFIG.max_graph_size,
+                                       max_graph_size=MAX_GRAPH_SIZE,
                                        version=VERSION)
         logger.error(f'{LOG_PAPER} {ERROR} {log_request(request)}')
         return render_template_string(SOMETHING_WENT_WRONG_SEARCH), 400
