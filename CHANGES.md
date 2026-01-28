@@ -3,6 +3,16 @@ Pubtrends changelog
 
 Here you can see the full list of changes between each release.
 
+Version 1.6
+------------
+Released on Jan 28, 2026
+
+- Semantic search supports year range configuration
+- Simplified configuration
+- Switched from conda to uv for dependency management
+- Improved docker compose orchestration by adding health checks
+
+
 Version 1.5
 ------------
 Released on Nov 27, 2025
