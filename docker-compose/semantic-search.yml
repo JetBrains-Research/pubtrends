@@ -42,6 +42,12 @@ services:
       - ~/.pubtrends/logs:/log
     # This command is used to process huge analysis results of 40k+ papers
     command: redis-server --timeout 0 --client-output-buffer-limit normal 0 0 0
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
   embeddings:
     build:
       context: ..
@@ -54,6 +60,13 @@ services:
       - ~/.pubtrends/logs:/logs
       - ~/.pubtrends/sentence-transformers:/sentence-transformers
       - ~/.pubtrends/nltk_data:/home/user/nltk_data
+    healthcheck:
+      test: [ "CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5001')" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
   semantic:
     build:
       context: ..
@@ -67,3 +80,9 @@ services:
       - ~/.pubtrends:/config:ro
       - ~/.pubtrends/logs:/logs
       - ~/.pubtrends/faiss:/faiss:ro
+    healthcheck:
+      test: [ "CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5002')" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s

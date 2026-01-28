@@ -33,9 +33,15 @@ services:
       - ~/.pubtrends/results:/results
       - ~/.pubtrends/nltk_data:/home/user/nltk_data
       - ~/.pubtrends/gensim-data:/home/user/gensim-data
+
   redis:
     image: redis:7.4.2
     volumes:
       - ~/.pubtrends/logs:/log
     # This command is used to process huge analysis results of 40k+ papers
     command: redis-server --timeout 0 --client-output-buffer-limit normal 0 0 0
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 3s
+      retries: 3
