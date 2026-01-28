@@ -26,7 +26,7 @@ dependencies = [
     "pandas==2.2.3",
     "parameterized==0.9.0",
     "psutil==7.0.0",
-    "psycopg2==2.9.9",
+    "psycopg2-binary==2.9.9",
     "pyarrow==21.0.0",
     "pytest==8.3.5",
     "requests==2.32.3",
@@ -50,7 +50,7 @@ dependencies = [
     "teamcity-messages==1.33",
     "text2num==2.5.1",
     "vine==5.1.0",
-    "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl",
+    "en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl",
 ]
 
 [build-system]
