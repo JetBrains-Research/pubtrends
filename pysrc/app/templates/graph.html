@@ -878,10 +878,13 @@
                 let data = ele.data();
                 if ('title' in data) {
                     event.stopPropagation();
-                    const url = '/paper?query=' + normalize('{{ query }}');
-                    const params = new URL(window.location);
-                    const jobid = params.searchParams.get('jobid');
-                    window.open(url + '&id=' + data.id + '&jobid=' + jobid, '_blank');
+                    let url;
+                    if ('{{ source }}' === 'Pubmed') {
+                        url = 'https://pubmed.ncbi.nlm.nih.gov/' + data.id;
+                    } else {
+                        url = 'https://www.semanticscholar.org/paper/' + data.id;
+                    }
+                    window.open(url, '_blank');
                 }
             });
 

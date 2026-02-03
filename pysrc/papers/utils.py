@@ -9,7 +9,7 @@ from bokeh.colors import RGB
 from bokeh.transform import factor_cmap
 from matplotlib import colors
 
-PUBMED_ARTICLE_BASE_URL = 'https://www.ncbi.nlm.nih.gov/pubmed/?term='
+PUBMED_ARTICLE_BASE_URL = 'https://pubmed.ncbi.nlm.nih.gov/'
 SEMANTIC_SCHOLAR_BASE_URL = 'https://www.semanticscholar.org/paper/'
 
 IDS_ANALYSIS_TYPE = 'ids'

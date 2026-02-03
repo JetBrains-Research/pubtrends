@@ -171,7 +171,7 @@ class Plotter:
         ])
         most_cited_per_year_df['count'] = most_cited_per_year_df['count'].astype(float)
         ds = ColumnDataSource(most_cited_per_year_df)
-        p.js_on_event('tap', self._paper_callback(ds))
+        p.js_on_event('tap', Plotter._paper_callback(ds, source=self.data.source))
         # Use explicit bottom for log scale as workaround
         # https://github.com/bokeh/bokeh/issues/6536
         bottom = most_cited_counts.min() - 0.01
@@ -209,7 +209,7 @@ class Plotter:
             ("Year", '@paper_year'),
             ("Relative Gain", '@rel_gain in @year')])
         ds = ColumnDataSource(fastest_growth_per_year_df)
-        p.js_on_event('tap', self._paper_callback(ds))
+        p.js_on_event('tap', Plotter._paper_callback(ds, source=self.data.source))
         # Use explicit bottom for log scale as workaround
         # https://github.com/bokeh/bokeh/issues/6536
         bottom = fastest_rel_gains.min() - 0.01
@@ -552,7 +552,7 @@ class Plotter:
             ("Year", '@year'),
             ("Type", '@type'),
             ("Cited by", '@total paper(s) total')])
-        p.js_on_event('tap', Plotter._paper_callback(ds))
+        p.js_on_event('tap', Plotter._paper_callback(ds, source=source))
         Plotter.remove_wheel_zoom_tool(p)
         return p
 
@@ -699,8 +699,8 @@ class Plotter:
             p.multi_polygons(xs="xs", ys="ys", source=src, color="color", fill_alpha="alpha", line_width=0.1)
 
         # Plot labels in centers
-        source = ColumnDataSource({'x': lxs, 'y': lys, 'name': labels})
-        labels = LabelSet(x='x', y='y', text='name', source=source,
+        ds = ColumnDataSource({'x': lxs, 'y': lys, 'name': labels})
+        labels = LabelSet(x='x', y='y', text='name', source=ds,
                           background_fill_color='white',
                           text_font_size='15px',
                           background_fill_alpha=.9)
@@ -736,27 +736,28 @@ class Plotter:
                 hover_tags.append(("Topic tags", '@topic_tags'))
             if topics_meshs is not None:
                 hover_tags.append(("Topic Mesh tags", '@topic_meshs'))
-            p.add_tools(HoverTool(tooltips=Plotter._paper_html_tooltips(source, hover_tags, idname='pid'),
+            p.add_tools(HoverTool(tooltips=Plotter._paper_html_tooltips(ds, hover_tags, idname='pid'),
                                   renderers=[graph]))
             if add_callback:
-                p.js_on_event('tap', Plotter._paper_callback(graph.node_renderer.data_source, idname='pid'))
+                p.js_on_event('tap', Plotter._paper_callback(ds, idname='pid', source=source))
 
         return p
 
     @staticmethod
-    def _paper_callback(ds, idname='id'):
+    def _paper_callback(ds, idname='id', source='pubmed'):
         return CustomJS(args=dict(ds=ds), code=f"""
             var data = ds.data, selected = ds.selected.indices;
-
-            // Decode params from URL
-            const jobid = new URL(window.location).searchParams.get('jobid');
-            const query = new URL(window.location).searchParams.get('query');
-
             // Max number of papers to be opened, others will be ignored
             var MAX_PAPERS = 3;
-
             for (var i = 0; i < Math.min(MAX_PAPERS, selected.length); i++){{
-                window.open('/paper?query=' + query + '&id=' + data['{idname}'][selected[i]] + '&jobid=' + jobid, '_blank');
+                var paperId = data['{idname}'][selected[i]];
+                var url;
+                if ('{source}' === 'pubmed') {{
+                    url = 'https://pubmed.ncbi.nlm.nih.gov/' + paperId;
+                }} else {{
+                    url = 'https://www.semanticscholar.org/paper/' + paperId;
+                }}
+                window.open(url, '_blank');
             }}
         """)
 
