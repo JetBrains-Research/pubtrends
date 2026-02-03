@@ -12,7 +12,7 @@ from pysrc.papers.data import AnalysisData
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.plot.plot_preprocessor import PlotPreprocessor
 from pysrc.papers.plot.plotter import Plotter, components_list, topics_info_and_word_cloud
-from pysrc.papers.utils import trim_query, MAX_TITLE_LENGTH, topics_palette, MAX_QUERY_LENGTH, trim
+from pysrc.papers.utils import trim_query, MAX_TITLE_LENGTH, topics_palette, MAX_QUERY_LENGTH, trim, PAPER_ANALYSIS_TYPE
 
 logger = logging.getLogger(__name__)
 
@@ -161,8 +161,9 @@ def prepare_paper_data(data: AnalysisData, pid):
     logger.debug('Extracting data for the current paper')
     source = data.source
     url_prefix = Loaders.get_url_prefix(source)
-    # Use pid if is given or show the very first paper
-    pid = pid or data.df['id'].values[0]
+    # Use pid if is given, or for PAPER_ANALYSIS_TYPE use the seed paper, otherwise show the very first paper
+    if not pid:
+        pid = data.search_ids[0] if data.analysis_type == PAPER_ANALYSIS_TYPE and data.search_ids else data.df['id'].values[0]
     sel = data.df[data.df['id'] == pid]
     title = sel['title'].values[0]
     authors = sel['authors'].values[0]
