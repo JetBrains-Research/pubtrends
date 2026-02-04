@@ -637,13 +637,15 @@ class Plotter:
             graph.node_renderer.data_source.data['line_width'] = \
                 [5.0 if highlight_search_ids and str(p) in search_ids else
                  3.0 if highlight_shown_pid and str(p) == shown_pid else
-                 1 for p in pids]
+                 1.0 if scale >= 1.0 else
+                 0.0
+                 for p in pids]
             graph.node_renderer.data_source.data['alpha'] = \
                 [1.0 if highlight_search_ids and str(p) in search_ids or
                         highlight_shown_pid and str(p) == shown_pid else
                  0.5 for p in pids]
         else:
-            graph.node_renderer.data_source.data['line_width'] = [1.0] * len(pids)
+            graph.node_renderer.data_source.data['line_width'] = [1.0 if scale >= 1.0 else 0.0] * len(pids)
             graph.node_renderer.data_source.data['alpha'] = [0.7] * len(pids)
 
         # Edges
