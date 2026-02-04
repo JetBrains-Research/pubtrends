@@ -6,7 +6,8 @@ import faiss
 import numpy as np
 import pandas as pd
 
-from pysrc.config import PubtrendsConfig
+from pysrc.config import PubtrendsConfig, FAISS_CLUSTERS, FAISS_SUBQUANTIZERS, FAISS_SUBQUANTIZER_BITS, \
+    FAISS_INDEX_NPROBE
 
 config = PubtrendsConfig(test=False)
 
@@ -42,15 +43,16 @@ class FaissConnector:
         else:
             print('Approximate search index')
             quantizer = faiss.IndexFlatL2(self.embeddings_dimension)
-            index = faiss.IndexIVFPQ(quantizer, self.embeddings_dimension, 200, 16, 8)
+            index = faiss.IndexIVFPQ(
+                quantizer, self.embeddings_dimension, FAISS_CLUSTERS, FAISS_SUBQUANTIZERS, FAISS_SUBQUANTIZER_BITS
+            )
         return index
 
     def create_or_load_faiss(self):
         if os.path.exists(self.faiss_index_file):
             print(f'Loading Faiss index from existing file {self.faiss_index_file}')
             faiss_index = faiss.read_index(self.faiss_index_file)
-            # For accurate search
-            faiss_index.nprobe = 200
+            faiss_index.nprobe = FAISS_INDEX_NPROBE
         else:
             if not self.create:
                 raise Exception(f'Faiss index file {self.faiss_index_file} does not exist')

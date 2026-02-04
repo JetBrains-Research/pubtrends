@@ -8,7 +8,7 @@ from psycopg2.extras import execute_values
 from tqdm.auto import tqdm
 
 from pysrc.papers.utils import l2norm
-from pysrc.config import PubtrendsConfig
+from pysrc.config import PubtrendsConfig, FAISS_EMBEDDIGNS_SAMPLE_PROBES
 from pysrc.papers.db.postgres_utils import ints_to_vals
 
 config = PubtrendsConfig(test=False)
@@ -92,7 +92,7 @@ class EmbeddingsDBConnector:
                 )
             connection.commit()
 
-    def sample_embeddings(self, n=10_000):
+    def sample_embeddings(self, n=FAISS_EMBEDDIGNS_SAMPLE_PROBES):
         logger.debug('sample_embeddings')
         with psycopg2.connect(self.connection_string) as connection:
             with connection.cursor() as cursor:

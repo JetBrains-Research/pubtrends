@@ -157,7 +157,12 @@ def update_faiss(
         test_limit_per_year = None
 ):
     faiss_index, pids_idx = faiss_connector.create_or_load_faiss()
-    assert faiss_index.ntotal != 0
+
+    if faiss_index.ntotal == 0:
+        print('Empty Faiss index - training on sampled embeddings')
+        embeddings = embeddings_db_connector.sample_embeddings()
+        faiss_connector.faiss_index.train(embeddings)
+        print('Faiss index trained')
 
     for year in range(max_year, min_year, - 1):
         print(f'Processing year {year}')
@@ -172,7 +177,7 @@ def update_faiss(
         if len(pids_year) == 0:
             continue
         update_faiss_index(
-            df=pd.DataFrame(dict(id=pids_year)),
+            df=pd.DataFrame(dict(pmid=pids_year)),
             publications_db_connector=publications_db_connector,
             embeddings_model_connector=embeddings_model_connector,
             embeddings_db_connector=embeddings_db_connector,
