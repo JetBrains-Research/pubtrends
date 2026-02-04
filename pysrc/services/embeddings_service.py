@@ -34,7 +34,8 @@ def fetch_tokens_embeddings(tokens):
             url=f'{EMBEDDINGS_SERVICE_URL}/embeddings_tokens',
             method='GET',
             json=tokens,
-            headers={'Accept': 'application/json'}
+            headers={'Accept': 'application/json'},
+            timeout=300  # 300 seconds timeout
         )
         if r.status_code == 200:
             return np.array(r.json()).reshape(len(tokens), -1)
@@ -58,7 +59,8 @@ def fetch_texts_embedding(texts):
             url=f'{EMBEDDINGS_SERVICE_URL}/embeddings_texts',
             method='GET',
             json=texts,
-            headers={'Accept': 'application/json'}
+            headers={'Accept': 'application/json'},
+            timeout=300  # 300 seconds timeout
         )
         if r.status_code == 200:
             return np.array(r.json()).reshape(len(texts), -1)

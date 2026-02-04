@@ -35,6 +35,7 @@ $(document).ready(function() {
             url: '/question',
             type: 'POST',
             contentType: 'application/json',
+            timeout: 300000,  // 300 seconds timeout
             data: JSON.stringify({
                 question: question,
                 jobid: jobid
