@@ -22,6 +22,6 @@ WORKDIR /home/user/pubtrends
 
 CMD /bin/bash ~/pubtrends/scripts/nlp.sh \
     && gunicorn --bind 0.0.0.0:5000 --workers 5 \
-        --limit-request-line 0 --timeout=120 \
+        --limit-request-line 0 --timeout=300 \
         --log-level=info --log-file=/logs/gunicorn.log \
         --preload "pysrc.app.pubtrends_app:get_app()"
