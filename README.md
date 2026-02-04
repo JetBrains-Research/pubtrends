@@ -398,6 +398,15 @@ Please ensure that you have configured and prepared the database(s).
 
    Pubtrends will be serving on port 5000.
 
+5. Update nginx timeouts.
+    ```
+    # increase timeouts
+    proxy_connect_timeout 60s;
+    proxy_send_timeout    600s;
+    proxy_read_timeout    600s;
+    send_timeout          600s;
+    ```
+
 ## Maintenance
 
 Use simple placeholder during maintenance.
