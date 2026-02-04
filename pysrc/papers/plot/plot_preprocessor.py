@@ -272,3 +272,4 @@ class PlotPreprocessor:
                  el[0]['total'].values[0],
                  el[0]['comp'].values[0])
                 for el in sorted(top_papers, key=lambda x: x[1], reverse=True)[:n]]
+

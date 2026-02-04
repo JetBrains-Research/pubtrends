@@ -1,3 +1,4 @@
+import hashlib
 import logging
 
 from sklearn.decomposition import PCA
@@ -14,6 +15,7 @@ from pysrc.papers.analysis.metadata import get_popular_authors, get_popular_jour
 from pysrc.papers.analysis.node2vec import node2vec
 from pysrc.papers.analysis.numbers import extract_numbers
 from pysrc.papers.analysis.text import embeddings, vectorize_corpus, chunks_to_text_embeddings
+from pysrc.papers.compute_or_load import compute_or_load
 from pysrc.papers.data import AnalysisData
 from pysrc.papers.db.loaders import Loaders
 from pysrc.papers.db.search_error import SearchError
@@ -68,9 +70,15 @@ class PapersAnalyzer:
             self.progress.info(f'Found {len(ids)} publications in the database', current=1, task=task)
         return ids
 
-    def analyze_papers(self, ids, topics, test=False, task=None):
+    def analyze_papers(self, ids, topics, test=False, task=None, cache=False):
         self.progress.info('Loading publication data', current=2, task=task)
-        self.df = self.loader.load_publications(ids)
+        ids_key = PapersAnalyzer.ids_key(ids)
+
+        self.df = compute_or_load(
+            f"publications_{ids_key}",
+            lambda: self.loader.load_publications(ids),
+            cache
+        )
         self.set_current_step(2)
         if len(self.df) == 0:
             raise SearchError(f'Nothing found for ids: {ids}')
@@ -82,7 +90,12 @@ class PapersAnalyzer:
         self.progress.info('Loading citations for papers',
                            current=self.get_step_and_inc(), task=task)
         logger.debug('Loading citations by year statistics')
-        cits_by_year_df = self.loader.load_citations_by_year(ids)
+
+        cits_by_year_df = compute_or_load(
+            f"citations_by_year_{ids_key}",
+            lambda: self.loader.load_citations_by_year(ids),
+            cache
+        )
         logger.debug(f'Found {len(cits_by_year_df)} records of citations by year')
 
         self.cit_stats_df = build_cit_stats_df(cits_by_year_df, len(ids))
@@ -90,12 +103,22 @@ class PapersAnalyzer:
             logger.warning('No citations of papers were found')
         self.df, self.citation_years = merge_citation_stats(ids, self.df, self.cit_stats_df)
         logger.debug('Loading citations information')
-        self.cit_df = self.loader.load_citations(ids)
+
+        self.cit_df = compute_or_load(
+            f"citations_{ids_key}",
+            lambda: self.loader.load_citations(ids),
+            cache
+        )
         logger.debug(f'Found {len(self.cit_df)} citations between papers')
 
         self.progress.info('Calculating co-citations for selected papers',
                            current=self.get_step_and_inc(), task=task)
-        self.cocit_df = self.loader.load_cocitations(ids)
+
+        self.cocit_df = compute_or_load(
+            f"cocitations_{ids_key}",
+            lambda: self.loader.load_cocitations(ids),
+            cache
+        )
         cocit_grouped_df = build_cocit_grouped_df(self.cocit_df)
         logger.debug(f'Found {len(cocit_grouped_df)} co-cited pairs of papers')
         if not test:
@@ -107,38 +130,66 @@ class PapersAnalyzer:
 
         self.progress.info('Processing references for selected papers',
                            current=self.get_step_and_inc(), task=task)
-        bibliographic_coupling_df = self.loader.load_bibliographic_coupling(ids)
+
+        bibliographic_coupling_df = compute_or_load(
+            f"bibliographic_coupling_{ids_key}",
+            lambda: self.loader.load_bibliographic_coupling(ids),
+            cache
+        )
         logger.debug(f'Found {len(bibliographic_coupling_df)} bibliographic coupling pairs of papers')
         if not test:
             self.bibliographic_coupling_df = bibliographic_coupling_df[
                 bibliographic_coupling_df['total'] >= SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN].copy()
-            logger.debug(f'Filtered {len(self.bibliographic_coupling_df)} bibliographic coupling pairs of papers '
+            logger.debug(f'Filtered {len(self.bibliographic_coupling_df)} bibliographic coupling pairs of papers, '
                          f'threshold {SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN}')
         else:
             self.bibliographic_coupling_df = bibliographic_coupling_df
 
-        graph = build_papers_graph(
-            self.df, self.cit_df, self.cocit_grouped_df, self.bibliographic_coupling_df,
+        graph = compute_or_load(
+            f"graph_bibliometric_{ids_key}",
+            lambda: build_papers_graph(self.df, self.cit_df, self.cocit_grouped_df, self.bibliographic_coupling_df),
+            cache
         )
         logger.debug(f'Bibliographic edges/nodes='
                      f'{graph.number_of_edges() / graph.number_of_nodes()}')
 
         self.progress.info('Analyzing title and abstract texts',
                            current=self.get_step_and_inc(), task=task)
-        self.corpus, self.corpus_tokens, self.corpus_counts = vectorize_corpus(
-            self.df, max_features=VECTOR_WORDS, min_df=VECTOR_MIN_DF, max_df=VECTOR_MAX_DF, test=test
+        self.corpus, self.corpus_tokens, self.corpus_counts = compute_or_load(
+            f"vectorize_corpus_{ids_key}_3",  # Explicitly specify number of outputs
+            lambda: vectorize_corpus(
+                self.df, max_features=VECTOR_WORDS, min_df=VECTOR_MIN_DF, max_df=VECTOR_MAX_DF, test=test
+            ),
+            cache
         )
+
         logger.debug('Analyzing texts embeddings')
-        self.chunks_embeddings, self.chunks_idx = embeddings(
-            self.df, self.corpus, self.corpus_tokens, self.corpus_counts, test=test
+        self.chunks_embeddings, self.chunks_idx = compute_or_load(
+            f"chunks_embeddings_{ids_key}_2",  # Explicitly specify number of outputs
+            lambda: embeddings(
+                self.df, self.corpus, self.corpus_tokens, self.corpus_counts, test=test
+            ),
+            cache
         )
-        papers_text_embeddings = chunks_to_text_embeddings(self.df, self.chunks_embeddings, self.chunks_idx)
+        papers_text_embeddings = compute_or_load(
+            f"papers_text_embeddings_{ids_key}",
+            lambda: chunks_to_text_embeddings(self.df, self.chunks_embeddings, self.chunks_idx),
+            cache
+        )
 
         self.progress.info(f'Analyzing papers citations and text similarity network',
                            current=self.get_step_and_inc(), task=task)
+        def add_text_to_graph(graph, papers_text_embeddings):
+            add_text_similarities_edges(ids, papers_text_embeddings, graph, GRAPH_TEXT_SIMILARITY_EDGES)
+            return graph
 
         logger.debug('Adding text similarities edges')
-        add_text_similarities_edges(ids, papers_text_embeddings, graph, GRAPH_TEXT_SIMILARITY_EDGES)
+        graph = compute_or_load(
+            f"graph_with_text_{ids_key}",
+            lambda: add_text_to_graph(graph, papers_text_embeddings),
+            cache
+        )
+
         logger.debug(f'Bibliographic+text edges/nodes='
                      f'{graph.number_of_edges() / graph.number_of_nodes()}')
 
@@ -147,36 +198,41 @@ class PapersAnalyzer:
             data['similarity'] = similarity(data)
 
         logger.debug('Preparing sparse graph for analysis')
-        self.papers_graph = sparse_graph(graph, NODE2VEC_GRAPH_EDGES)
-
-        logger.debug('Analyzing papers graph embeddings')
-        graph_embeddings = node2vec(
-            self.df['id'],
-            self.papers_graph,
-            'similarity'
+        self.papers_graph = compute_or_load(
+            f"papers_graph_{ids_key}",
+            lambda: sparse_graph(graph, NODE2VEC_GRAPH_EDGES),
+            cache
         )
 
-        if len(self.df) > 1:
-            logger.debug('Computing PCA projection')
-            t = StandardScaler().fit_transform(graph_embeddings)
-            pca = PCA(n_components=PCA_VARIANCE, svd_solver="full")
-            pca_coords = pca.fit_transform(t)
-            logger.debug('Apply transformation')
-            if not test:
-                tsne = TSNE(n_components=2, random_state=42, perplexity=min(30, len(self.df) - 1))
-            else:
-                tsne = TSNE(n_components=2, random_state=42, perplexity=3)
-            tse_coords = tsne.fit_transform(pca_coords)
+        logger.debug('Analyzing papers graph embeddings')
+        graph_embeddings = compute_or_load(
+            f"graph_embeddings_{ids_key}",
+            lambda: node2vec(self.df['id'], self.papers_graph, 'similarity'),
+            cache
+        )
+        logger.debug('Computing PCA projection')
+        pca_coords = compute_or_load(
+                f"pca_{ids_key}",
+                lambda: PCA(n_components=PCA_VARIANCE, svd_solver="full")\
+                    .fit_transform(StandardScaler().fit_transform(graph_embeddings)),
+                cache
+        )
+        if not test and len(self.df) > 1:
+            logger.debug('Apply visualization transformation')
+            tse_coords = compute_or_load(
+                f"tsne_{ids_key}",
+                lambda: TSNE(n_components=2, random_state=42, perplexity=min(30, len(self.df) - 1))\
+                    .fit_transform(pca_coords),
+                cache
+            )
             self.df['x'] = tse_coords[:, 0]
             self.df['y'] = tse_coords[:, 1]
         else:
             self.df['x'] = 0
             self.df['y'] = 0
 
-        self.progress.info(f'Extracting topics from papers based on similarity',
-                           current=8, task=task)
         logger.debug('Extracting topics from papers embeddings')
-        self.clusters, self.dendrogram = cluster_and_sort(graph_embeddings, topics)
+        self.clusters, self.dendrogram = cluster_and_sort(pca_coords, topics)
         self.df['comp'] = self.clusters
 
         self.progress.info('Identifying top cited papers',
@@ -212,6 +268,10 @@ class PapersAnalyzer:
             else:
                 logger.debug('Not enough papers for numbers extraction')
         logger.debug('Analysis finished')
+
+    @staticmethod
+    def ids_key(ids) -> str:
+        return hashlib.md5(str(sorted(ids)).encode()).hexdigest()
 
     def save(
             self,

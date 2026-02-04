@@ -91,8 +91,8 @@ def add_text_similarities_edges(ids, texts_embeddings, papers_graph, top_similar
 
     logger.debug(f"Computing cosine similarities in batches")
 
-    for batch_start in range(0, n_nodes, 1000):
-        batch_end = min(batch_start + 1000, n_nodes)
+    for batch_start in range(0, n_nodes, ANALYSIS_CHUNK):
+        batch_end = min(batch_start + ANALYSIS_CHUNK, n_nodes)
         logger.debug(f'Processing batch {batch_start}-{batch_end} of {n_nodes} nodes')
 
         # Compute similarities for this batch against all nodes

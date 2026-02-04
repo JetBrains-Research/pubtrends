@@ -21,10 +21,10 @@ PAPER_EXPAND_STEPS = 2
 MAX_SEARCH_TIME_SEC = 300
 
 # Postgresql loader options
-MAX_NUMBER_OF_PAPERS = 1000000
-MAX_NUMBER_OF_CITATIONS = 10000000
-MAX_NUMBER_OF_COCITATIONS = 1000000
-MAX_NUMBER_OF_BIBLIOGRAPHIC_COUPLING = 1000000
+MAX_NUMBER_OF_PAPERS = 1_000_000
+MAX_NUMBER_OF_CITATIONS = 100_000_000
+MAX_NUMBER_OF_COCITATIONS = 10_000_000
+MAX_NUMBER_OF_BIBLIOGRAPHIC_COUPLING = 10_000_000
 
 # Features are originally taken from paper:
 # 1) Which type of citation analysis generates the most accurate taxonomy of
@@ -66,6 +66,8 @@ VECTOR_MIN_DF = 0.001
 
 # Terms with higher frequency will be ignored, remove abundant words
 VECTOR_MAX_DF = 0.8
+
+ANALYSIS_CHUNK = 1000
 
 #############################
 ## Embeddings settings #####

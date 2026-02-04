@@ -18,7 +18,7 @@ from nltk.probability import FreqDist
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 
 from pysrc.config import WORD2VEC_EMBEDDINGS_LENGTH, WORD2VEC_WINDOW, WORD2VEC_EPOCHS, EMBEDDINGS_CHUNK_SIZE, \
-    EMBEDDINGS_SENTENCE_OVERLAP
+    EMBEDDINGS_SENTENCE_OVERLAP, ANALYSIS_CHUNK
 from pysrc.services.embeddings_service import is_embeddings_db_available
 from pysrc.services.embeddings_service import is_texts_embeddings_available, fetch_texts_embedding, \
     fetch_tokens_embeddings, load_embeddings_from_df
@@ -138,8 +138,8 @@ def build_stemmed_corpus(df):
         papers_stemmed_sentences.append([
             stemmed_tokens(s) for s in NLP(f'{title}. {abstract}').sents
         ])
-        if i % 100 == 1:
-            logger.debug(f'Processed {i} papers')
+        if i % ANALYSIS_CHUNK == 0:
+            logger.debug(f'Processed {i + 1} papers')
     logger.debug(f'Done processing stemming for {len(df)} papers')
     logger.info('Creating global shortest stem to word map')
     stems_tokens_map = _build_stems_to_tokens_map(chain(*chain(*papers_stemmed_sentences)))
@@ -323,8 +323,8 @@ def collect_papers_chunks(args):
         for chunk_id, chunk in enumerate(get_chunks(text, max_tokens, overlap_sentences)):
             chunk_idx.append((pid, chunk_id))
             chunks.append(chunk)
-        if i % 100 == 1:
-            logger.debug(f'Processed {i} papers')
+        if i % ANALYSIS_CHUNK == 0:
+            logger.debug(f'Processed {i + 1} papers')
     return chunks, chunk_idx
 
 

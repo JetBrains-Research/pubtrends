@@ -4,7 +4,8 @@ import numpy as np
 from gensim.models import Word2Vec
 
 from pysrc.config import NODE2VEC_P, NODE2VEC_Q, NODE2VEC_WALK_LENGTH, \
-    NODE2VEC_WALKS_PER_NODE, NODE2VEC_WORD2VEC_WINDOW, NODE2VEC_WORD2VEC_EPOCHS, NODE2VEC_EMBEDDINGS_VECTOR_LENGTH
+    NODE2VEC_WALKS_PER_NODE, NODE2VEC_WORD2VEC_WINDOW, NODE2VEC_WORD2VEC_EPOCHS, NODE2VEC_EMBEDDINGS_VECTOR_LENGTH, \
+    ANALYSIS_CHUNK
 
 logger = logging.getLogger(__name__)
 
@@ -69,8 +70,8 @@ def _precompute(graph, key, p, q):
     probabilities_next_step = {node: dict() for node in graph.nodes()}
 
     for i, node in enumerate(graph.nodes()):
-        if i % 100 == 1:
-            logger.debug(f'Analyzed probabilities for {i} nodes')
+        if i % ANALYSIS_CHUNK == 0:
+            logger.debug(f'Analyzed probabilities for {i + 1} nodes')
         first_step_weights = [graph[node][neighbor].get(key) for neighbor in (graph.neighbors(node))]
         probabilities_first_step[node] = _normalize(first_step_weights)
 

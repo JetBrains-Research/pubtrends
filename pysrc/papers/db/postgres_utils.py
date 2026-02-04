@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from scipy.sparse import lil_matrix
 
+from pysrc.config import ANALYSIS_CHUNK
 from pysrc.papers.db.search_error import SearchError
 
 logger = logging.getLogger(__name__)
@@ -96,9 +97,9 @@ def preprocess_search_query_for_postgres(query):
 def process_cocitations_postgres(cursor):
     data = []
     lines = 0
-    for row in cursor:
+    for i, row in enumerate(cursor):
         lines += 1
-        if lines % 1000 == 1:
+        if lines % ANALYSIS_CHUNK == 1:
             logger.debug(f'Processed {lines} lines of cocitations')
         citing, year, cited_list = row
         cited_list.sort()
@@ -121,7 +122,7 @@ def process_bibliographic_coupling_postgres(ids, cursor):
     indx = {pid: i for i, pid in enumerate(ids)}
     for row in cursor:
         lines += 1
-        if lines % 1000 == 1:
+        if lines % ANALYSIS_CHUNK == 1:
             logger.debug(f'Processed {lines} lines of bibliographic coupling')
         _, citing_list = row
         citing_list.sort()
