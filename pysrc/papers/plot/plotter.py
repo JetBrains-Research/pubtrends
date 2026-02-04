@@ -275,13 +275,13 @@ class Plotter:
             self.data.df, kwd_df, self.data.df['comp'], self.data.dendrogram
         )
 
-    def plot_papers_graph(self, interactive=True):
+    def plot_papers_graph(self, keywords=True, boundaries=True, centroids=True, interactive=True, scale=1.0):
         logger.debug('Prepare sparse graph to visualize with reduced number of edges')
         visualize_graph = sparse_graph(self.data.papers_graph, VISUALIZATION_GRAPH_EDGES)
         return Plotter._plot_papers_graph(
             self.data.search_ids, self.data.source, visualize_graph, self.data.df,
             TOPIC_DESCRIPTION_WORDS, topics_tags=self.topics_description,
-            interactive=interactive
+            keywords=keywords, boundaries=boundaries, centroids=centroids, interactive=interactive, scale=scale
         )
 
     def _to_colored_square(self, components, counts, sum, top=3):
@@ -586,7 +586,7 @@ class Plotter:
             search_ids, source, gs, df, topic_words,
             shown_pid=None, topics_tags=None, topics_meshs=None, add_callback=True,
             width=PLOT_WIDTH, height=TALL_PLOT_HEIGHT,
-            interactive=True):
+            keywords=True, boundaries=True, centroids=True, interactive=True, scale=1.0):
         logger.debug('Processing plot_papers_graph')
         if search_ids is not None:
             search_ids = [str(p) for p in search_ids]
@@ -627,6 +627,8 @@ class Plotter:
         # Aesthetics
         graph.node_renderer.data_source.data['radius'] = \
             minmax_scale([c / max(connections) * 0.5 for c in connections]) + 0.3
+        # Apply scaling
+        graph.node_renderer.data_source.data['radius'] *= scale
         graph.node_renderer.data_source.data['color'] = [palette[c] for c in comps]
         # Show search / shown ids
         highlight_search_ids = search_ids is not None and len(search_ids) < len(df)
@@ -641,7 +643,7 @@ class Plotter:
                         highlight_shown_pid and str(p) == shown_pid else
                  0.5 for p in pids]
         else:
-            graph.node_renderer.data_source.data['line_width'] = [1] * len(pids)
+            graph.node_renderer.data_source.data['line_width'] = [1.0] * len(pids)
             graph.node_renderer.data_source.data['alpha'] = [0.7] * len(pids)
 
         # Edges
@@ -682,32 +684,35 @@ class Plotter:
 
         p.renderers.append(graph)
 
-        # Compute component boundaries and centers
-        boundaries = compute_component_boundaries(rescaled_comp_corrds(df))
+        # Compute component boundaries
+        comp_boundaries = compute_component_boundaries(rescaled_comp_corrds(df)) if boundaries or centroids else None
 
         # Plot boundaries and compute centers
-        lxs = []
-        lys = []
-        labels = []
-        for comp, polygon in boundaries.items():
-            labels.append(f"#{comp + 1}")
-            xc, yx = polygon.centroid.xy
-            lxs.append(xc)
-            lys.append(yx)
-            xs, ys = shapely_to_bokeh_multipolygons(polygon)  # each returns lists with one record
-            src = ColumnDataSource({"comp": [comp], "xs": xs, "ys": ys, "alpha": [0.05], "color": [palette[comp]]})
-            p.multi_polygons(xs="xs", ys="ys", source=src, color="color", fill_alpha="alpha", line_width=0.1)
+        if boundaries:
+            for comp, polygon in comp_boundaries.items():
+                xs, ys = shapely_to_bokeh_multipolygons(polygon)  # each returns lists with one record
+                src = ColumnDataSource({"comp": [comp], "xs": xs, "ys": ys, "alpha": [0.05], "color": [palette[comp]]})
+                p.multi_polygons(xs="xs", ys="ys", source=src, color="color", fill_alpha="alpha", line_width=0.1)
 
         # Plot labels in centers
-        ds = ColumnDataSource({'x': lxs, 'y': lys, 'name': labels})
-        labels = LabelSet(x='x', y='y', text='name', source=ds,
-                          background_fill_color='white',
-                          text_font_size='15px',
-                          background_fill_alpha=.9)
-        p.renderers.append(labels)
+        if centroids:
+            lxs = []
+            lys = []
+            labels = []
+            for comp, polygon in comp_boundaries.items():
+                labels.append(f"#{comp + 1}")
+                xc, yx = polygon.centroid.xy
+                lxs.append(xc)
+                lys.append(yx)
+            ds = ColumnDataSource({'x': lxs, 'y': lys, 'name': labels})
+            labels = LabelSet(x='x', y='y', text='name', source=ds,
+                              background_fill_color='white',
+                              text_font_size='15px',
+                              background_fill_alpha=.9)
+            p.renderers.append(labels)
 
         # Add topic tags in the top left corner
-        if topics_tags is not None:
+        if keywords and topics_tags is not None:
             for i, c in enumerate(sorted(set(comps))):
                 p.rect(x=-3, y=103 - i * 2, width=1, height=2, fill_color=palette[c], line_color=None)
                 p.add_layout(Label(
@@ -720,7 +725,7 @@ class Plotter:
                 ))
 
         Plotter.remove_wheel_zoom_tool(p)
-        if interactive:
+        if interactive and len(df) <= MAX_GRAPH_SIZE:
             hover_tags = [
                 ("Author(s)", '@authors'),
                 ("Journal", '@journal'),

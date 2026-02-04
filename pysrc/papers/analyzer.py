@@ -232,7 +232,11 @@ class PapersAnalyzer:
             self.df['y'] = 0
 
         logger.debug('Extracting topics from papers embeddings')
-        self.clusters, self.dendrogram = cluster_and_sort(pca_coords, topics)
+        self.clusters, self.dendrogram = compute_or_load(
+            f"clusters_{ids_key}_2",
+            lambda: cluster_and_sort(pca_coords, topics),
+            cache
+        )
         self.df['comp'] = self.clusters
 
         self.progress.info('Identifying top cited papers',

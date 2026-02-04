@@ -47,7 +47,7 @@ SIMILARITY_BIBLIOGRAPHIC_COUPLING_MIN = 2
 SIMILARITY_COCITATION_MIN = 2
 
 # Maximal graph size for analysis
-MAX_GRAPH_SIZE = 10000
+MAX_GRAPH_SIZE = 10_000
 
 # Number of text similarity edges in papers graph
 GRAPH_TEXT_SIMILARITY_EDGES = 100
@@ -57,6 +57,9 @@ VISUALIZATION_GRAPH_EDGES = 10
 
 # PCA for visualizing
 PCA_VARIANCE = 0.9
+
+# Maximal dataset size for agglomerative clustering
+MAX_AGGLOMERATIVE_CLUSTERING = 5000
 
 # Global vectorization max vocabulary size
 VECTOR_WORDS = 10_000
