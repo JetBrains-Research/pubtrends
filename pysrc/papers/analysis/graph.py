@@ -2,7 +2,6 @@ import logging
 
 import networkx as nx
 import numpy as np
-from sklearn.metrics.pairwise import cosine_distances
 from sklearn.preprocessing import normalize
 
 from pysrc.config import *
@@ -83,21 +82,46 @@ def add_text_similarities_edges(ids, texts_embeddings, papers_graph, top_similar
     text similarity values as a cosine similarity between text normalized embeddings.
 
     """
+    logger.debug("Normalizing text embeddings")
     texts_embeddings_norm = normalize(texts_embeddings, norm='l2', axis=1)
-    cosine_similarity_matrix = 1 - cosine_distances(texts_embeddings_norm)
-    for node_i, node in enumerate(ids):
-        # Get indices of closest nodes (excluding the source node itself)
-        similarities = cosine_similarity_matrix[node_i].reshape(-1)
-        # Add node for deterministic sort
-        for similarity, similar_node_i in list(
-                sorted(zip(similarities, range(len(similarities))), reverse=True))[: top_similar + 1]:
-            if similar_node_i == node_i:
-                continue
-            similarity = similarities[similar_node_i]
-            similar_node = ids[similar_node_i]
-            if similarity > 0 and not papers_graph.has_edge(node, similar_node):
-                papers_graph.add_edge(node, similar_node, textsimilarity=similarity)
-        # Add text_similarity to all existing edges
-        for neighbor_i, neighbor in enumerate(ids):
-            if neighbor_i > node_i and papers_graph.has_edge(node, neighbor):
-                papers_graph[node][neighbor]['textsimilarity'] = similarities[neighbor_i]
+
+    # Build a lookup dict for faster id to index mapping
+    id_to_idx = {node_id: idx for idx, node_id in enumerate(ids)}
+    n_nodes = len(ids)
+
+    logger.debug(f"Computing cosine similarities in batches")
+
+    for batch_start in range(0, n_nodes, 1000):
+        batch_end = min(batch_start + 1000, n_nodes)
+        logger.debug(f'Processing batch {batch_start}-{batch_end} of {n_nodes} nodes')
+
+        # Compute similarities for this batch against all nodes
+        batch_embeddings = texts_embeddings_norm[batch_start:batch_end]
+        similarities_batch = batch_embeddings @ texts_embeddings_norm.T
+
+        for i in range(batch_end - batch_start):
+            node_i = batch_start + i
+            node = ids[node_i]
+            similarities = similarities_batch[i]
+
+            # Use argpartition for faster top-k selection (O(n) instead of O(n log n))
+            # We need top_similar + 1 to account for self-similarity
+            k = min(top_similar + 1, len(similarities))
+            top_indices = np.argpartition(similarities, -k)[-k:]
+
+            # Add edges for top similar nodes
+            for similar_node_i in top_indices:
+                if similar_node_i == node_i:
+                    continue
+                similarity = similarities[similar_node_i]
+                similar_node = ids[similar_node_i]
+                if similarity > 0 and not papers_graph.has_edge(node, similar_node):
+                    papers_graph.add_edge(node, similar_node, textsimilarity=similarity)
+
+            # Update text_similarity for existing edges (only check actual neighbors)
+            for neighbor in papers_graph.neighbors(node):
+                neighbor_i = id_to_idx.get(neighbor)
+                if neighbor_i is not None and neighbor_i > node_i:
+                    papers_graph[node][neighbor]['textsimilarity'] = similarities[neighbor_i]
+
+    logger.debug(f'Done processed {n_nodes} nodes for text similarities')
