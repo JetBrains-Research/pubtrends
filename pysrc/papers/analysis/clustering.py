@@ -30,7 +30,7 @@ def cluster_and_sort(x, n_clusters):
     print(f'Cophenetic Correlation Coefficient: {coph_corr}, the closer to 1, the better hierarchical clustering')
 
     clusters = reorder_by_size(model.labels_)
-    logger.debug(f'Clusters sizes: {clusters}')
+    logger.debug(f'Clusters sizes: {Counter(clusters)}')
     return clusters, model.children_
 
 
