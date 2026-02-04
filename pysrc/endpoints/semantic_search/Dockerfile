@@ -21,6 +21,6 @@ WORKDIR /home/user/pubtrends
 EXPOSE 5002
 
 CMD gunicorn --bind 0.0.0.0:5002 --workers 1 --threads 1 --worker-class=gthread \
-       --limit-request-line 0 --timeout=120 \
+       --limit-request-line 0 --timeout=600 \
        --log-level=info --log-file=/logs/semantic_search_gunicorn.log \
        --preload "pysrc.endpoints.semantic_search.semantic_search_app:get_app()"
