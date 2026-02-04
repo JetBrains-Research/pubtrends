@@ -558,7 +558,7 @@ class Plotter:
 
     @staticmethod
     def _paper_html_tooltips(source, tips_list, idname='id'):
-        if source == "pubmed":
+        if source == "Pubmed":
             tips_list.insert(0, ("PMID", f'@{idname}'))
         else:
             tips_list.insert(0, ("ID", f'@{idname}'))
@@ -744,7 +744,7 @@ class Plotter:
         return p
 
     @staticmethod
-    def _paper_callback(ds, idname='id', source='pubmed'):
+    def _paper_callback(ds, idname='id', source='Pubmed'):
         return CustomJS(args=dict(ds=ds), code=f"""
             var data = ds.data, selected = ds.selected.indices;
             // Max number of papers to be opened, others will be ignored
@@ -752,7 +752,7 @@ class Plotter:
             for (var i = 0; i < Math.min(MAX_PAPERS, selected.length); i++){{
                 var paperId = data['{idname}'][selected[i]];
                 var url;
-                if ('{source}' === 'pubmed') {{
+                if ('{source}' === 'Pubmed') {{
                     url = 'https://pubmed.ncbi.nlm.nih.gov/' + paperId;
                 }} else {{
                     url = 'https://www.semanticscholar.org/paper/' + paperId;
