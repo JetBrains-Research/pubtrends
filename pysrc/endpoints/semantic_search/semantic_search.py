@@ -45,38 +45,38 @@ class SemanticSearch:
     def search(self, source, text, noreviews, min_year, max_year, n):
         # Only Pubmed is supported for now
         assert source == 'Pubmed'
+        lookup_n = n
         if noreviews:
-            n *= 2
+            lookup_n *= 2
         if min_year is not None or max_year is not None:
-            n *= 2
-        result = self._search_raw(text, n)
+            lookup_n *= 2
+        result = self._search_raw(text, lookup_n)
         logger.info(f'After _search_raw: columns={result.columns.tolist()}, shape={result.shape}')
 
         result = self._filter_results(result, noreviews, max_year, min_year)
 
-        result = result[:n]
+        result = result['pmid'].unique().tolist()[:n]
         logger.info(f'Final result after limiting to {n}: {len(result)} papers')
-
         # Return list of [pmid]
-        return result['pmid'].tolist()
+        return result
 
     def search_embeddings(self, source, embeddings, noreviews, min_year, max_year, n):
         # Only Pubmed is supported for now
         assert source == 'Pubmed'
+        lookup_n = n
         if noreviews:
-            n *= 2
+            lookup_n *= 2
         if min_year is not None or max_year is not None:
-            n *= 2
-        result = self._search_embeddings_raw(embeddings, n)
+            lookup_n *= 2
+        result = self._search_embeddings_raw(embeddings, lookup_n)
         logger.info(f'After _search_embeddings_raw: columns={result.columns.tolist()}, shape={result.shape}')
 
         result = self._filter_results(result, noreviews, max_year, min_year)
 
-        result = result[:n]
+        result = result['pmid'].unique().tolist()[:n]
         logger.info(f'Final result after limiting to {n}: {len(result)} papers')
-
         # Return list of [pmid]
-        return result['pmid'].tolist()
+        return result
 
     @cache
     def _load_faiss_and_index(self):
