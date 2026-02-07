@@ -108,7 +108,7 @@ class SemanticSearch:
 
         if noreviews:
             noreivew_ids = set(df[df['type'] != 'Review']['pmid'])
-            result = result[~result['pmid'].isin(noreivew_ids)]
+            result = result[result['pmid'].isin(noreivew_ids)]
             logger.info(f'After no_reviews: {len(result)} papers')
 
         if min_year is not None or max_year is not None:
