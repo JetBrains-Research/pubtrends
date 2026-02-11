@@ -32,7 +32,8 @@ def semantic_search_faiss_embedding(faiss_index, pids_idx, query_embedding, k):
     similarities, indices = faiss_index.search(query_embedding.astype('float32'), k)
     t = pids_idx.iloc[indices[0]].copy().reset_index(drop=True)
     t['similarity'] = similarities[0]
-    return t
+    # Workaround for correct pids index table
+    return t[['pmid', 'chunk', 'similarity']]
 
 
 class SemanticSearch:
@@ -125,7 +126,7 @@ class SemanticSearch:
                                        int(max_year) if max_year else 9999)]
             logger.info(f'After filtered years: {len(df)} papers')
 
-        return df[['pmid', 'similarity']].copy().reset_index(drop=True)
+        return df[['pmid', 'chunk', 'similarity']].copy().reset_index(drop=True)
 
 
 # TODO: support other sources
