@@ -45,7 +45,7 @@ class SemanticSearch:
     def search(self, source, text, noreviews, min_year, max_year, n):
         # Only Pubmed is supported for now
         assert source == 'Pubmed'
-        lookup_n = n
+        lookup_n = n * 2  # For empty abstracts
         if noreviews:
             lookup_n *= 2
         if min_year is not None or max_year is not None:
@@ -63,7 +63,7 @@ class SemanticSearch:
     def search_embeddings(self, source, embeddings, noreviews, min_year, max_year, n):
         # Only Pubmed is supported for now
         assert source == 'Pubmed'
-        lookup_n = n
+        lookup_n = n * 2  # For empty abstracts
         if noreviews:
             lookup_n *= 2
         if min_year is not None or max_year is not None:
@@ -100,25 +100,32 @@ class SemanticSearch:
 
     @staticmethod
     def _filter_results(result, noreviews, max_year, min_year):
-        if not (noreviews or min_year is not None or max_year is not None):
-            return result
         connector = PublicationsDBConnector()
         pmids = result['pmid'].tolist()
         df = connector.load_publications(pmids)
+        df = df.merge(result, on='pmid', how='left')
 
+        # Make empty abstracts less similar
+        empty_abstracts_mask = df['abstract'].isna() | (df['abstract'].str.strip() == '')
+        df_non_empty_abstracts = df[~empty_abstracts_mask].copy().reset_index(drop=True)
+        df_empty_abstracts = df[empty_abstracts_mask].copy().reset_index(drop=True)
+        # Update empty abstracts similarity
+        df_empty_abstracts['similarity'] -= (
+                df_empty_abstracts['similarity'].max() - df_non_empty_abstracts['similarity'].min())
+        df = pd.concat([df_non_empty_abstracts, df_empty_abstracts]).reset_index(drop=True)
+
+        # Filter reviews
         if noreviews:
-            noreivew_ids = set(df[df['type'] != 'Review']['pmid'])
-            result = result[result['pmid'].isin(noreivew_ids)]
-            logger.info(f'After no_reviews: {len(result)} papers')
+            df = df[df['type'] != 'Review']
+            logger.info(f'After no_reviews: {len(df)} papers')
 
+        # Filter years
         if min_year is not None or max_year is not None:
-            filtered_years = set(
-                df[df['year'].between(int(min_year) if min_year else 0,
-                                      int(max_year) if max_year else 9999)]['pmid'])
-            result = result[result['pmid'].isin(filtered_years)]
-            logger.info(f'After filtered years: {len(result)} papers')
+            df = df[df['year'].between(int(min_year) if min_year else 0,
+                                       int(max_year) if max_year else 9999)]
+            logger.info(f'After filtered years: {len(df)} papers')
 
-        return result
+        return df[['pmid', 'similarity']].copy().reset_index(drop=True)
 
 
 # TODO: support other sources
