@@ -281,7 +281,8 @@ class Plotter:
         return Plotter._plot_papers_graph(
             self.data.search_ids, self.data.source, visualize_graph, self.data.df,
             TOPIC_DESCRIPTION_WORDS, topics_tags=self.topics_description,
-            keywords=keywords, boundaries=boundaries, centroids=centroids, interactive=interactive, scale=scale
+            keywords=keywords, boundaries=boundaries, centroids=centroids,
+            interactive=interactive and len(self.data.df) <= MAX_GRAPH_SIZE, scale=scale
         )
 
     def _to_colored_square(self, components, counts, sum, top=3):
@@ -584,9 +585,9 @@ class Plotter:
     @staticmethod
     def _plot_papers_graph(
             search_ids, source, gs, df, topic_words,
-            shown_pid=None, topics_tags=None, topics_meshs=None, add_callback=True,
+            shown_pid=None, topics_tags=None, topics_meshs=None,
             width=PLOT_WIDTH, height=TALL_PLOT_HEIGHT,
-            keywords=True, boundaries=True, centroids=True, interactive=True, scale=1.0):
+            keywords=True, boundaries=True, centroids=True, interactive=True, callbacks=True, scale=1.0):
         logger.debug('Processing plot_papers_graph')
         if search_ids is not None:
             search_ids = [str(p) for p in search_ids]
@@ -727,7 +728,7 @@ class Plotter:
                 ))
 
         Plotter.remove_wheel_zoom_tool(p)
-        if interactive and len(df) <= MAX_GRAPH_SIZE:
+        if interactive:
             hover_tags = [
                 ("Author(s)", '@authors'),
                 ("Journal", '@journal'),
@@ -743,10 +744,10 @@ class Plotter:
                 hover_tags.append(("Topic tags", '@topic_tags'))
             if topics_meshs is not None:
                 hover_tags.append(("Topic Mesh tags", '@topic_meshs'))
-            p.add_tools(HoverTool(tooltips=Plotter._paper_html_tooltips(ds, hover_tags, idname='pid'),
+            p.add_tools(HoverTool(tooltips=Plotter._paper_html_tooltips(source, hover_tags, idname='pid'),
                                   renderers=[graph]))
-            if add_callback:
-                p.js_on_event('tap', Plotter._paper_callback(ds, idname='pid', source=source))
+        if callbacks:
+            p.js_on_event('tap', Plotter._paper_callback(graph.node_renderer.data_source, idname='pid', source=source))
 
         return p
 
