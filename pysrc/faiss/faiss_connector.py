@@ -64,7 +64,7 @@ class FaissConnector:
         else:
             if not self.create:
                 raise Exception(f'Ids index file {self.pids_index_file} does not exist')
-            pids_idx = pd.DataFrame(data=[], columns=['pmid', 'chunk', 'year', 'noreview'], dtype=int)
+            pids_idx = pd.DataFrame(data=[], columns=['pmid', 'chunk'], dtype=int)
             print(f'Creating empty Ids index {self.pids_index_file}')
         self.pids_idx = pids_idx
         self.faiss_index = faiss_index
