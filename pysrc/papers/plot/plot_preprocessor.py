@@ -114,20 +114,20 @@ class PlotPreprocessor:
     def dump_to_cytoscape(df, graph):
         logger.debug('Collect attributes for nodes')
         attrs = {}
-        for node in df['id']:
-            sel = df[df['id'] == node]
+        for _, row in df.iterrows():
+            node = row['id']
             attrs[node] = dict(
-                title=sel['title'].values[0],
-                authors=cut_authors_list(sel['authors'].values[0]),
-                journal=sel['journal'].values[0],
-                year=int(sel['year'].values[0]),
-                cited=int(sel['total'].values[0]),
-                topic=int(sel['comp'].values[0]),
+                title=row['title'],
+                authors=cut_authors_list(row['authors']),
+                journal=row['journal'],
+                year=int(row['year']),
+                cited=int(row['total']),
+                topic=int(row['comp']),
                 connections=len(list(graph.neighbors(node))),
                 # These can be heavy
-                abstract=sel['abstract'].values[0],
-                mesh=sel['mesh'].values[0],
-                keywords=sel['keywords'].values[0],
+                abstract=row['abstract'],
+                mesh=row['mesh'],
+                keywords=row['keywords'],
             )
         nx.set_node_attributes(graph, attrs)
         return nx.cytoscape_data(graph)['elements']
@@ -265,11 +265,10 @@ class PlotPreprocessor:
 
     @staticmethod
     def get_top_papers_id_title_year_cited_topic(papers, df, n=50):
-        top_papers = map(lambda v: (df[df['id'] == v], df[df['id'] == v]['total'].values[0]), papers)
-        return [(el[0]['id'].values[0],
-                 el[0]['title'].values[0],
-                 el[0]['year'].values[0],
-                 el[0]['total'].values[0],
-                 el[0]['comp'].values[0])
-                for el in sorted(top_papers, key=lambda x: x[1], reverse=True)[:n]]
+        papers_set = set(papers)
+        top_papers = []
+        for _, row in df.iterrows():
+            if row['id'] in papers_set:
+                top_papers.append((row['id'], row['title'], row['year'], row['total'], row['comp']))
+        return sorted(top_papers, key=lambda x: x[3], reverse=True)[:n]
 
