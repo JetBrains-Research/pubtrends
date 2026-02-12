@@ -69,25 +69,27 @@ def expand_ids(
         similar_by_embds = fetch_semantic_search_embeddings(
             'Pubmed', papers_text_embeddings, noreviews, int((limit - len(ids)) * semantic_expand)
         )
+        logger.debug(f'Loaded {len(similar_by_embds)} similar papers by embeddings')
         for pid in similar_by_embds:
             if pid not in ids:
                 ids.append(pid)
 
     start_step = 1
     if expand_steps >= 1 and len(references) > 0:
-        logger.debug(f'Step 1/{expand_steps} - expand by references only')
+        logger.debug(f'Step {start_step}/{expand_steps} - expand by references only')
         ids += references[:limit - len(ids)]
-        start_step = 2
+        logger.debug(f'Step {start_step}/{expand_steps} - {len(ids)}')
+        start_step +=1
 
-    logger.debug('Starting from next steps, expand by both references and citations')
     for step in range(start_step, expand_steps + 1):
-        logger.debug(f'Expanding step {step}/{expand_steps}')
         if len(ids) >= limit:
             break
+        logger.debug(f'Expanding step {step}/{expand_steps} - expand by both references and citations')
         ids = _expand_ids_step(
             loader, ids, limit, noreviews, max_expand,
             cit_mean, cit_std, citations_sigma
         )
+        logger.debug(f'Step {start_step}/{expand_steps} - {len(ids)}')
 
     # Keep original start ids first
     return search_ids + [x for x in ids if x not in search_ids][:limit - len(search_ids)]

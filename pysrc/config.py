@@ -97,7 +97,7 @@ FAISS_EMBEDDIGNS_SAMPLE_PROBES = 100_000
 # Expand the limit by references before filtration by citations and keywords
 PAPER_EXPAND_LIMIT = 5000
 # Fraction of papers to expand by similar papers embeddings
-PAPER_EXPAND_SEMANTIC = 0.25
+PAPER_EXPAND_SEMANTIC = 0.1
 
 # Control citation count while expanding
 EXPAND_CITATIONS_Q_LOW = 10
