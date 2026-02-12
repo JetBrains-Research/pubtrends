@@ -268,32 +268,44 @@ Then launch web-service or use jupyter notebook for development.
     uv venv
     source .venv/bin/activate  # On Windows: .venv\Scripts\activate
     uv pip install -r pyproject.toml
+    pip install --no-cache torch --index-url https://download.pytorch.org/whl/cpu
+    pip install --no-cache sentence-transformers faiss-cpu jupyter notebook
     ```
 
 4. Start Celery worker queue
     ```
+    source .venv/bin/activate
+    export PYTHONPATH=$PYTHONPATH:$(pwd)
     celery -A pysrc.celery.tasks worker -c 1 --loglevel=debug
     ```
 
 5. Start flask server at http://localhost:5000/
     ```
+    source .venv/bin/activate
+    export PYTHONPATH=$PYTHONPATH:$(pwd)
     python -m pysrc.app.pubtrends_app
     ```
 
 6. Start service for text embeddings based on either pretrained fasttext model or sentence-transformer
    at http://localhost:5001/
     ```
+    source .venv/bin/activate
+    export PYTHONPATH=$PYTHONPATH:$(pwd)
     python -m pysrc.endpoints.embeddings.fasttext.fasttext_app
     ```
 
 or
 ```
-python -m pysrc.endpoints.embeddings.sentence_transformer.sentence_transformer_app
+    source .venv/bin/activate
+    export PYTHONPATH=$PYTHONPATH:$(pwd)
+    python -m pysrc.endpoints.embeddings.sentence_transformer.sentence_transformer_app
 ```
 
 7. Optionally, start a semantic search service http://localhost:5002/
     ```
-    python -m pysrc.semantic_search.semantic_search_app
+    source .venv/bin/activate
+    export PYTHONPATH=$PYTHONPATH:$(pwd)
+    python -m pysrc.endpoints.semantic_search.semantic_search_app
     ```
 
 ### Jupyter notebook
@@ -301,6 +313,7 @@ python -m pysrc.endpoints.embeddings.sentence_transformer.sentence_transformer_a
 Notebooks are located under the `/notebooks` folder. Please configure `PYTHONPATH` before using jupyter.
 
    ```
+   source .venv/bin/activate
    export PYTHONPATH=$PYTHONPATH:$(pwd)
    jupyter notebook
    ```
