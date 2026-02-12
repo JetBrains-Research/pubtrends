@@ -18,13 +18,13 @@ PAPER_EXPAND_STEPS = 2
 #####################
 ## Analysis config ##
 #####################
-MAX_SEARCH_TIME_SEC = 300
+MAX_SEARCH_TIME_SEC = 120
 
 # Postgresql loader options
-MAX_NUMBER_OF_PAPERS = 1_000_000
-MAX_NUMBER_OF_CITATIONS = 100_000_000
-MAX_NUMBER_OF_COCITATIONS = 10_000_000
-MAX_NUMBER_OF_BIBLIOGRAPHIC_COUPLING = 10_000_000
+MAX_NUMBER_OF_PAPERS = 100_000
+MAX_NUMBER_OF_CITATIONS = 1_000_000
+MAX_NUMBER_OF_COCITATIONS = 1_000_000
+MAX_NUMBER_OF_BIBLIOGRAPHIC_COUPLING = 1_000_000
 
 # Features are originally taken from paper:
 # 1) Which type of citation analysis generates the most accurate taxonomy of
@@ -116,7 +116,7 @@ NODE2VEC_Q = 2.0
 
 # Increasing the number of walks increases node2vec representation accuracy
 NODE2VEC_GRAPH_EDGES = 50
-NODE2VEC_WALKS_PER_NODE = 100
+NODE2VEC_WALKS_PER_NODE = 50
 NODE2VEC_WALK_LENGTH = 30
 NODE2VEC_WORD2VEC_WINDOW = 5
 NODE2VEC_WORD2VEC_EPOCHS = 3
