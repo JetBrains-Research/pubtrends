@@ -64,7 +64,7 @@ def expand_ids(
         chunks_embeddings, chunks_idx =\
             fetch_embeddings_from_db(df) if is_embeddings_db_available() else embeddings_from_service(df)
         papers_text_embeddings = chunks_to_text_embeddings(df, chunks_embeddings, chunks_idx)
-        logger.debug(f'Loaded {len(papers_text_embeddings)} papers embeddings {papers_text_embeddings}')
+        logger.debug(f'Loaded {len(papers_text_embeddings)} papers embeddings {papers_text_embeddings.shape}')
         logger.debug('Adding similar papers by embeddings')
         similar_by_embds = fetch_semantic_search_embeddings(
             'Pubmed', papers_text_embeddings, noreviews, int((limit - len(ids)) * semantic_expand)
