@@ -7,7 +7,7 @@ from parameterized import parameterized
 
 from pysrc.papers.utils import SORT_MOST_RECENT, SORT_MOST_CITED
 from pysrc.test.db.pm_test_articles import REQUIRED_ARTICLES, EXPECTED_PUB_DF, INNER_CITATIONS, PART_OF_ARTICLES, \
-    EXPECTED_PUB_DF_GIVEN_IDS, EXPANDED_IDS, EXPANDED_TOP_CITED_3, \
+    EXPECTED_PUB_DF_GIVEN_IDS, EXPANDED_IDS, EXPANDED_TOP, \
     EXPECTED_CIT_STATS_DF, EXPECTED_CIT_DF, EXPECTED_COCIT_DF
 
 
@@ -165,7 +165,7 @@ class AbstractTestPubmedLoader(metaclass=ABCMeta):
         ids_list = list(map(lambda article: str(article.pmid), PART_OF_ARTICLES))
         actual = self.get_loader().expand(ids_list, 3, noreviews=False).sort_values(
             by=['total', 'id']).reset_index(drop=True)
-        self.assertListEqual(EXPANDED_TOP_CITED_3, list(actual['id']),
+        self.assertListEqual(EXPANDED_TOP, list(actual['id']),
                              "Wrong list of expanded 3 ids")
 
     @parameterized.expand([

@@ -52,7 +52,7 @@ EXTRA_ARTICLE = PubmedArticle(
 PART_OF_ARTICLES = [REQUIRED_ARTICLES[2], REQUIRED_ARTICLES[3]]
 
 EXPANDED_IDS = ['10', '2', '7', '8', '9', '5']
-EXPANDED_TOP_CITED_3 = ['10', '2', '5']
+EXPANDED_TOP = ['2', '7', '5']
 
 OUTER_CITATIONS = [
     ('7', '1'), ('7', '2'), ('7', '3'), ('8', '1'), ('8', '3'),

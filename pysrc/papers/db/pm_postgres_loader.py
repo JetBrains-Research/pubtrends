@@ -314,7 +314,7 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
         # TODO[shpynov] transferring huge list of ids can be a problem
         query = f'''
             WITH X AS (
-                SELECT C.pmid_in AS pmid
+                (SELECT C.pmid_in AS pmid
                 FROM PMCitations C
                 JOIN PMPublications P
                 ON C.pmid_out = P.pmid
@@ -322,8 +322,9 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 C.pmid_out = ANY ('{{{vals}}}'::integer[]) AND
                 NOT (C.pmid_in = ANY ('{{{vals}}}'::integer[]))
                 {noreviews_filter}
+                LIMIT {int(limit * 0.75)})
                 UNION
-                SELECT C.pmid_out AS pmid
+                (SELECT C.pmid_out AS pmid
                 FROM PMCitations C
                 JOIN PMPublications P
                 ON C.pmid_out = P.pmid
@@ -331,14 +332,13 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 C.pmid_in = ANY ('{{{vals}}}'::integer[]) AND
                 NOT (C.pmid_out = ANY ('{{{vals}}}'::integer[]))
                 {noreviews_filter}
+                LIMIT {int(limit * 0.75)})
             )
             SELECT X.pmid as pmid, count
                 FROM X
                     LEFT JOIN matview_pmcitations C
                     ON X.pmid = C.pmid
-                WHERE NOT (X.pmid = ANY ('{{{vals}}}'::integer[]))
-                ORDER BY count DESC NULLS LAST
-                LIMIT {limit};
+                ORDER BY count, pmid DESC NULLS LAST;
                 '''
 
         logger.debug(f'expand query: {query[:1000]}')
