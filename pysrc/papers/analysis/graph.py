@@ -26,6 +26,8 @@ def build_papers_graph(df, cit_df, cocit_df, bibliographic_coupling_df):
 
     # Co-citations
     for start, end, cocitation in zip(cocit_df['cited_1'], cocit_df['cited_2'], cocit_df['total']):
+        if start == end:
+            raise ValueError('Self-co-citations are not allowed')
         result.add_edge(start, end, cocitation=cocitation)
 
     # Bibliographic coupling
@@ -33,6 +35,8 @@ def build_papers_graph(df, cit_df, cocit_df, bibliographic_coupling_df):
         for start, end, bibcoupling in zip(bibliographic_coupling_df['citing_1'],
                                            bibliographic_coupling_df['citing_2'],
                                            bibliographic_coupling_df['total']):
+            if start == end:
+                raise ValueError('Self-bibliographic coupling are not allowed')
             if result.has_edge(start, end):
                 result[start][end]['bibcoupling'] = bibcoupling
             else:
@@ -40,6 +44,8 @@ def build_papers_graph(df, cit_df, cocit_df, bibliographic_coupling_df):
 
     # Citations
     for start, end in zip(cit_df['id_out'], cit_df['id_in']):
+        if start == end:
+            raise ValueError('Self-citation are not allowed')
         if result.has_edge(start, end):
             result[start][end]['citation'] = 1
         else:
@@ -116,12 +122,16 @@ def add_text_similarities_edges(ids, texts_embeddings, papers_graph, top_similar
                 similarity = similarities[similar_node_i]
                 similar_node = ids[similar_node_i]
                 if similarity > 0 and not papers_graph.has_edge(node, similar_node):
+                    if node == similar_node:
+                        raise ValueError('Self-similarity is not allowed')
                     papers_graph.add_edge(node, similar_node, textsimilarity=similarity)
 
             # Update text_similarity for existing edges (only check actual neighbors)
             for neighbor in papers_graph.neighbors(node):
                 neighbor_i = id_to_idx.get(neighbor)
                 if neighbor_i is not None and neighbor_i > node_i:
+                    if node == neighbor:
+                        raise ValueError('Self-similarity is not allowed')
                     papers_graph[node][neighbor]['textsimilarity'] = similarities[neighbor_i]
 
     logger.debug(f'Done processed {n_nodes} nodes for text similarities')

@@ -286,14 +286,14 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
     def load_cocitations(self, ids):
         self.check_connection()
         vals = ints_to_vals(ids)
-        query = f'''SELECT C.pmid_out as citing, year, ARRAY_AGG(C.pmid_in) as cited_list
+        query = f'''SELECT C.pmid_out as citing, year, ARRAY_AGG(DISTINCT C.pmid_in) as cited_list
                         FROM PMCitations C
                         JOIN PMPublications P
                             ON C.pmid_out = P.pmid
-                        WHERE C.pmid_in != C.pmid_out AND 
+                        WHERE C.pmid_in != C.pmid_out AND
                         C.pmid_in = ANY ('{{{vals}}}'::integer[])
                         GROUP BY citing, year
-                        HAVING COUNT(*) >= 2
+                        HAVING COUNT(DISTINCT C.pmid_in) >= 2
                         LIMIT {MAX_NUMBER_OF_COCITATIONS};
                     '''
 
@@ -352,11 +352,11 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
     def load_bibliographic_coupling(self, ids):
         self.check_connection()
         vals = ints_to_vals(ids)
-        query = f'''SELECT C.pmid_in as cited, ARRAY_AGG(C.pmid_out) as citing_list
+        query = f'''SELECT C.pmid_in as cited, ARRAY_AGG(DISTINCT C.pmid_out) as citing_list
                     FROM PMCitations C
                     WHERE C.pmid_out = ANY ('{{{vals}}}'::integer[]) AND C.pmid_in != C.pmid_out
                     GROUP BY cited
-                    HAVING COUNT(*) >= 2
+                    HAVING COUNT(DISTINCT C.pmid_out) >= 2
                     LIMIT {MAX_NUMBER_OF_BIBLIOGRAPHIC_COUPLING};
                     '''
 
