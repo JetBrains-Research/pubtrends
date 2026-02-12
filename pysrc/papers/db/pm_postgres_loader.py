@@ -318,24 +318,25 @@ class PubmedPostgresLoader(PostgresConnector, Loader):
                 FROM PMCitations C
                 JOIN PMPublications P
                 ON C.pmid_out = P.pmid
-                WHERE C.pmid_in != C.pmid_out AND 
-                C.pmid_out = ANY ('{{{vals}}}'::integer[]) AND 
-                C.pmid_in != ANY ('{{{vals}}}'::integer[]) 
+                WHERE C.pmid_in != C.pmid_out AND
+                C.pmid_out = ANY ('{{{vals}}}'::integer[]) AND
+                NOT (C.pmid_in = ANY ('{{{vals}}}'::integer[]))
                 {noreviews_filter}
                 UNION
                 SELECT C.pmid_out AS pmid
-                FROM PMCitations C 
+                FROM PMCitations C
                 JOIN PMPublications P
                 ON C.pmid_out = P.pmid
-                WHERE C.pmid_in != C.pmid_out AND 
-                C.pmid_in = ANY ('{{{vals}}}'::integer[]) AND 
-                C.pmid_out != ANY ('{{{vals}}}'::integer[]) 
+                WHERE C.pmid_in != C.pmid_out AND
+                C.pmid_in = ANY ('{{{vals}}}'::integer[]) AND
+                NOT (C.pmid_out = ANY ('{{{vals}}}'::integer[]))
                 {noreviews_filter}
             )
-            SELECT X.pmid as pmid, count 
+            SELECT X.pmid as pmid, count
                 FROM X
                     LEFT JOIN matview_pmcitations C
                     ON X.pmid = C.pmid
+                WHERE NOT (X.pmid = ANY ('{{{vals}}}'::integer[]))
                 ORDER BY count DESC NULLS LAST
                 LIMIT {limit};
                 '''
