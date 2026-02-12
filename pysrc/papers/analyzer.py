@@ -72,8 +72,6 @@ class PapersAnalyzer:
 
     def analyze_papers(self, ids, topics, test=False, task=None, cache=False):
         self.progress.info('Loading publication data', current=2, task=task)
-        # Convert to int
-        ids = [int(id) for id in set(ids)]
         ids_key = PapersAnalyzer.ids_key(ids)
 
         self.df = compute_or_load(

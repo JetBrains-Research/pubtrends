@@ -59,7 +59,7 @@ class SemanticSearch:
         result = result['pmid'].unique().tolist()[:n]
         logger.info(f'Final result after limiting to {n}: {len(result)} papers')
         # Return list of [pmid]
-        return result
+        return [str(pid) for pid in result]
 
     def search_embeddings(self, source, embeddings, noreviews, min_year, max_year, n):
         # Only Pubmed is supported for now
@@ -77,7 +77,7 @@ class SemanticSearch:
         result = result['pmid'].unique().tolist()[:n]
         logger.info(f'Final result after limiting to {n}: {len(result)} papers')
         # Return list of [pmid]
-        return result
+        return [str(pid) for pid in result]
 
     @cache
     def _load_faiss_and_index(self):
