@@ -69,7 +69,9 @@ def expand_ids(
         similar_by_embds = fetch_semantic_search_embeddings(
             'Pubmed', papers_text_embeddings, noreviews, int((limit - len(ids)) * semantic_expand)
         )
-        ids += similar_by_embds
+        for pid in similar_by_embds:
+            if pid not in ids:
+                ids.append(pid)
 
     start_step = 1
     if expand_steps >= 1 and len(references) > 0:
