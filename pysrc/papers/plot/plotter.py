@@ -295,27 +295,98 @@ class Plotter:
 
     @staticmethod
     def _plot_topics_years_distribution(df, kwd_df, plot_components, data, topic_keywords, min_year, max_year):
-        source = ColumnDataSource(data=dict(x=[min_year - 1] + data['years'] + [max_year + 1]))
-        plot_titles = []
+        all_years = data['years']
+
+        # Calculate total papers per year
+        total_papers_per_year = {year: 0 for year in all_years}
+        for pc in plot_components:
+            for i, year in enumerate(all_years):
+                total_papers_per_year[year] += data[pc][i]
+
+        # Prepare words to show and comp sizes
         words2show = PlotPreprocessor.topics_words(kwd_df, topic_keywords)
         comp_sizes = Counter(df['comp'])
-        for c in sorted(set(df['comp'])):
-            percent = int(100 * comp_sizes[int(c)] / len(df))
-            plot_titles.append(f'#{c + 1} [{percent if percent > 0 else "<1"}%] {",".join(words2show[c])}')
-        # Fake additional y levels
-        p = figure(y_range=list(reversed(plot_titles)) + [' ', '  ', '   '],
-                   width=PLOT_WIDTH, height=50 * (len(plot_components) + 2),
-                   x_range=(min_year - 1, max_year + 1), toolbar_location=None)
         topics_colors = topics_palette_rgb(df)
-        max_papers_per_year = max(max(data[pc]) for pc in plot_components)
-        for i, (pc, pt) in enumerate(zip(plot_components, plot_titles)):
-            source.add([(pt, 0)] + [(pt, 3 * d / max_papers_per_year) for d in data[pc]] + [(pt, 0)], pt)
-            p.patch('x', pt, color=topics_colors[i], alpha=0.6, line_color="black", source=source)
+
+        # Create figure
+        p = figure(
+            width=PLOT_WIDTH,
+            height=PLOT_HEIGHT,
+            x_range=(min_year - 1, max_year + 1),
+            toolbar_location="right",
+            tools=TOOLS
+        )
+
+        # Calculate cumulative percentages for stacking
+        cumulative_percentages = [0.0] * len(all_years)
+
+        # Create bar traces for each topic in sorted order (numerically)
+        for i, pc in enumerate(sorted(plot_components, key=lambda x: int(x))):
+            year_counts = data[pc]
+
+            # Calculate percentages instead of counts
+            year_percentages = [
+                (count / total_papers_per_year[year] * 100.0) if total_papers_per_year[year] > 0 else 0.0
+                for count, year in zip(year_counts, all_years)
+            ]
+
+            # Calculate tops (bottom + height)
+            tops = [cumulative_percentages[j] + year_percentages[j] for j in range(len(all_years))]
+
+            # Build legend name with keywords
+            percent = int(100 * comp_sizes[int(pc)] / len(df))
+            keywords = words2show.get(int(pc) - 1)
+            legend_name = f'#{pc} [{percent if percent > 0 else "<1"}%] {",".join(keywords)}'
+
+            # Create data source with custom data for hover
+            source_data = {
+                'x': all_years,
+                'top': tops,
+                'bottom': cumulative_percentages.copy(),
+                'percentage': year_percentages,
+                'counts': year_counts,
+                'legend': [legend_name] * len(all_years)
+            }
+            source = ColumnDataSource(source_data)
+
+            # Add stacked bars
+            p.vbar(
+                x='x',
+                top='top',
+                bottom='bottom',
+                width=1.0,
+                source=source,
+                color=topics_colors[i],
+                alpha=0.6,
+                legend_label=legend_name
+            )
+
+            # Update cumulative percentages for next topic
+            cumulative_percentages = tops
+
+        # Configure axes
+        p.xaxis.axis_label = 'Year'
+        p.yaxis.axis_label = 'Proportion (%)'
+        p.yaxis.formatter = NumeralTickFormatter(format='0')
+
+        # Configure hover tool
+        p.hover.tooltips = [
+            ("Year", '@x'),
+            ("Papers", '@counts (@percentage{0.1f}%)'),
+            ("Topic", '@legend')
+        ]
+
+        # Configure legend - position outside plot area
+        p.add_layout(p.legend[0], 'right')
+        p.legend.click_policy = "hide"
+        p.legend.border_line_color = None
+        p.legend.location = "top_left"
+
+        # Set y-axis range
+        p.y_range.start = 0
+        p.y_range.end = 100
+
         p.sizing_mode = 'stretch_width'
-        p.outline_line_color = None
-        p.axis.minor_tick_line_color = None
-        p.axis.major_tick_line_color = None
-        p.axis.axis_line_color = None
         Plotter.remove_wheel_zoom_tool(p)
         return p
 
