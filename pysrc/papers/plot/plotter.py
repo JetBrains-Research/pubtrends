@@ -157,7 +157,7 @@ class Plotter:
         min_year, max_year = self.data.df['year'].min(), self.data.df['year'].max()
         p = figure(tools=TOOLS, toolbar_location="right",
                    width=PLOT_WIDTH, height=SHORT_PLOT_HEIGHT,
-                   x_range=(min_year - 1, max_year + 1),
+                   x_range=(min_year - 1.5, max_year + 1.5),
                    y_axis_type="log" if most_cited_counts.max() > MAX_LINEAR_AXIS else "linear")
         p.sizing_mode = 'stretch_width'
         p.xaxis.axis_label = 'Year'
@@ -197,7 +197,7 @@ class Plotter:
         min_year, max_year = self.data.df['year'].min(), self.data.df['year'].max()
         p = figure(tools=TOOLS, toolbar_location="right",
                    width=PLOT_WIDTH, height=SHORT_PLOT_HEIGHT,
-                   x_range=(min_year - 1, max_year + 1),
+                   x_range=(min_year - 1.5, max_year + 1.5),
                    y_axis_type="log" if fastest_rel_gains.max() > MAX_LINEAR_AXIS else "linear")
         p.sizing_mode = 'stretch_width'
         p.xaxis.axis_label = 'Year'
