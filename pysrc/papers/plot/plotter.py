@@ -94,9 +94,10 @@ class Plotter:
         # Prepare layouts
         result = []
 
-        min_year, max_year = self.data.df['year'].min(), self.data.df['year'].max()
         for comp in sorted(set(self.data.df['comp'])):
             df_comp = self.data.df[self.data.df['comp'] == comp]
+            # Use topic-specific year range instead of global range
+            min_year, max_year = df_comp['year'].min(), df_comp['year'].max()
             ds = ColumnDataSource(PlotPreprocessor.article_view_data_source(
                 df_comp, min_year, max_year, True, width=PAPERS_PLOT_WIDTH
             ))
@@ -107,7 +108,7 @@ class Plotter:
             )
             plot.scatter(x='year', y='y', fill_alpha=0.5, source=ds, size='size',
                          line_color='color', fill_color='color', legend_field='type')
-            plot.legend.location = "top_left"
+            plot.legend.location = "top_right"
 
             # Word cloud description of topic by titles and abstracts
             kwds = PlotPreprocessor.get_topic_word_cloud_data(
@@ -139,7 +140,7 @@ class Plotter:
 
         plot.scatter(x='year', y='y', fill_alpha=0.5, source=ds, size='size',
                      line_color='color', fill_color='color', legend_field='type')
-        plot.legend.location = "top_left"
+        plot.legend.location = "top_right"
         Plotter.remove_wheel_zoom_tool(plot)
         return plot
 
