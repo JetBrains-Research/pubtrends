@@ -424,46 +424,43 @@ class Plotter:
         vdim = hv.Dimension('number', range=(-2, max_numbers + 2))
         # Define the dataset
         ds = hv.Dataset(keywords_df, vdims=vdim)
-        # Dynamically compute extra years to the right based on label length and plot width
         max_year = ds['year'].max()
         min_year = ds['year'].min()
-        # longest keyword length in characters
-        max_label_len = keywords_df['keyword'].map(lambda x: len(str(x))).max()
-        # rough pixel width per character for the current font
-        label_px = max_label_len * 9
-        # pixels to years conversion factor
-        years_per_px = (max_year - min_year + 5) / float(PLOT_WIDTH)
-        # compute extra years needed to fit the longest label inside initial viewport
-        extra_years = int(label_px * years_per_px) + 2
-        # keep within reasonable bounds
-        extra_years = max(5, min(30, extra_years))
+
+        # Get sorted keywords for consistent coloring
+        keywords = sorted(keywords_df['keyword'].unique())
+        cmap = factors_colormap(len(keywords))
+        palette = [color_to_rgb(cmap(i)).to_hex() for i in range(len(keywords))]
+
+        # Create curves with legend
         curves = ds.to(hv.Curve, 'year', groupby='keyword').overlay().redim(
-            year=dict(range=(min_year - 1, max_year + extra_years)))
-        # Define a function to get the text annotations
-        label_df = keywords_df[keywords_df['year'] == max_year].copy().reset_index(drop=True)
-        label_df['year'] += 1
-        # Update layout for better labels representation
-        label_df.sort_values(by='number', inplace=True)
-        if len(label_df) > 1:
-            label_df['number'] = [i * max_numbers / (len(label_df) - 1) for i in range(len(label_df))]
-        label_df.sort_values(by='keyword', inplace=True)
-        labels = hv.Labels(label_df, ['year', 'number'], 'keyword')
-        overlay = curves * labels
-        cmap = factors_colormap(len(label_df))
-        palette = [color_to_rgb(cmap(i)).to_hex() for i in range(len(label_df))]
+            year=dict(range=(min_year - 1, max_year + 1)))
+
+        overlay = curves
         overlay.opts(
             opts.Curve(show_frame=False, labelled=[], tools=['hover'],
-                       width=PLOT_WIDTH, height=len(label_df) * 25, show_legend=False,
+                       width=PLOT_WIDTH, height=len(keywords) * 25, show_legend=True,
                        xticks=list(reversed(range(max_year, min_year, -5))),
                        color=hv.Cycle(values=palette), alpha=0.8, line_width=2, show_grid=True),
-            opts.Labels(text_color='keyword', cmap=palette, text_align='left'),
-            opts.NdOverlay(batched=False,
+            opts.NdOverlay(batched=False, legend_position='right',
                            gridstyle={'grid_line_dash': [6, 4], 'grid_line_width': 1, 'grid_bounds': (0, 100)})
         )
         p = hv.render(overlay, backend='bokeh')
         p.xaxis.axis_label = 'Year'
         p.yaxis.axis_label = 'Number of papers'
         p.sizing_mode = 'stretch_width'
+
+        # Configure legend to align by top edge and ensure all keywords fit
+        if p.legend:
+            p.legend.location = 'top_right'
+            p.legend.click_policy = 'hide'
+            # Set label text font size and spacing to ensure all keywords are visible
+            p.legend.label_text_font_size = '10pt'
+            p.legend.spacing = 2
+            p.legend.padding = 5
+            p.legend.label_height = 12
+            p.legend.glyph_height = 12
+
         Plotter.remove_wheel_zoom_tool(p)
         return p
 
