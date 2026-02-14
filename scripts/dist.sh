@@ -49,16 +49,19 @@ if [[ ! -z "${GA}" ]]; then
   gtag('config', '$GA');\
 </script>"
   echo "Google Analytics script: $GA_SCRIPT"
-  # Ignore init.html file and admin/ files
+  # Process all HTML files for version replacement
   for F in $(find "${PTV}"/pysrc -name "*.html" | grep -v init.html | grep -v admin/); do
     echo "Save version to $F"
     sed "s#{{ version }}#${FULL_VERSION}#" $F > $F.new
     mv $F.new $F
-    if [[ -z "$(echo $F | grep 'admin')" ]]; then
-      echo "Adding Google Analytics tracker to $F"
-      sed "s#<head>#<head>${GA_SCRIPT}#" $F > $F.new
-      mv $F.new $F
-    fi
+  done
+
+  # Add GA only to main.html and about.html by appending to {% block scripts_head %}
+  for F in $(find "${PTV}"/pysrc -name "main.html" -o -name "about.html"); do
+    echo "Adding Google Analytics tracker to $F"
+    sed "s#{% block scripts_head %}#{% block scripts_head %}\
+${GA_SCRIPT}#" $F > $F.new
+    mv $F.new $F
   done
 fi
 
